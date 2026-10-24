@@ -41,7 +41,8 @@ internal static class GameViews
             [.. snapshot.State.Position.Occupants.OrderBy(entry => entry.Key.Value)
                 .Select(entry => PieceOf(snapshot.Rules, entry.Key, entry.Value))],
             [.. snapshot.State.Seats.Select(seat => SeatOf(snapshot, seat.Id))],
-            [.. snapshot.LegalActions.Select(action => ActionOf(action.Describe()))]
+            [.. snapshot.LegalActions.Select(action => ActionOf(action.Describe()))],
+            snapshot.State.Dice
         );
 
     private static RulesetDto RulesetOf(IRulesApplying rules) =>

@@ -4,7 +4,8 @@ namespace Net.NowhereAtAll.Zaturnava.Contracts;
 
 /// <summary>
 /// A game as any client shows it: the board, the pieces, the seats, whose decision it is (null once
-/// the game is over), and the actions that seat may take.
+/// the game is over), the actions that seat may take, and the dice it has rolled this turn and not
+/// used yet.
 /// </summary>
 public sealed record GameViewDto(
     string Id,
@@ -16,5 +17,6 @@ public sealed record GameViewDto(
     ImmutableList<CellDto> Cells,
     ImmutableList<PieceDto> Pieces,
     ImmutableList<SeatDto> Seats,
-    ImmutableList<ActionDto> LegalActions
+    ImmutableList<ActionDto> LegalActions,
+    ImmutableList<int> Dice
 );

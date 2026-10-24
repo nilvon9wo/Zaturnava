@@ -13,7 +13,8 @@ internal sealed class StubGameServer : IGameServing
     public const string GameId = "g1";
     public const string Token = "secret";
 
-    public static readonly GameViewDto View = new(GameId, "classic", "Zaturnava (classic)", 3, 2, 0, [], [], [], []);
+    public static readonly GameViewDto View =
+        new(GameId, "classic", "Zaturnava (classic)", 3, 2, 0, [], [], [], [], []);
 
     public Exception? Failure { get; set; }
 

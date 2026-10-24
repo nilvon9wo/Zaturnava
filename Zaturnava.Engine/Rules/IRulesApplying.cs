@@ -10,8 +10,9 @@ namespace Net.NowhereAtAll.Zaturnava.Engine.Rules;
 /// <summary>
 /// A ruleset - one variant of the game - as a pure reducer: <c>(state, action) -> (state, events)</c>,
 /// with no I/O and no clock. Board, pieces, seats, teams and every rule are the ruleset's to choose;
-/// nothing outside it knows which it chose. Chance (dice) will be handed in as a port of its own, so
-/// that a replay or a test can supply the rolls that actually happened.
+/// nothing outside it knows which it chose. A ruleset never rolls dice: it asks for them
+/// (<see cref="GameState.AwaitedDice"/>), and whoever hosts the game rolls them and applies how they
+/// came up as a <see cref="DiceAction"/>, so that a replay or a test supplies the rolls that happened.
 /// </summary>
 public interface IRulesApplying
 {
@@ -23,7 +24,7 @@ public interface IRulesApplying
 
     GameState CreateInitialState();
 
-    /// <summary>What the deciding seat may do; empty once the game is over.</summary>
+    /// <summary>What the deciding seat may do; empty once the game is over, and while it waits on dice.</summary>
     ImmutableList<GameAction> LegalActions([Required] GameState state);
 
     /// <exception cref="IllegalActionException">The action is not among the legal actions.</exception>

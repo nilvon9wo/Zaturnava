@@ -1,7 +1,11 @@
 using System.Collections.Immutable;
 using Net.NowhereAtAll.Zaturnava.Application.Running;
 using Net.NowhereAtAll.Zaturnava.Application.Test.Fakes;
+using Net.NowhereAtAll.Zaturnava.Engine.Actions;
+using Net.NowhereAtAll.Zaturnava.Engine.Chance;
 using Net.NowhereAtAll.Zaturnava.Engine.Decisions;
+using Net.NowhereAtAll.Zaturnava.Engine.Rules;
+using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 
 namespace Net.NowhereAtAll.Zaturnava.Application.Test.Running;
 
@@ -11,6 +15,7 @@ public sealed class DecisionLoopTest
 
     private readonly TinyRules _rules = new(GameLength);
     private readonly ImmutableList<IDeciding> _players = [new FirstChoiceBot(), new FirstChoiceBot()];
+    private readonly LoadedDice _dice = new(4);
     private readonly CancellationToken _cancellation = TestContext.Current.CancellationToken;
 
     [Fact]
@@ -19,7 +24,7 @@ public sealed class DecisionLoopTest
         // Arrange - nothing beyond the rules and players
 
         // Act
-        Played played = await DecisionLoop.PlayAll(this._rules, this._players, 100, this._cancellation);
+        Played played = await DecisionLoop.PlayAll(this._rules, this._players, this._dice, 100, this._cancellation);
 
         // Assert
         Assert.Equal((GameLength, null), (played.Actions.Count, played.State.DecidingSeat));
@@ -31,7 +36,7 @@ public sealed class DecisionLoopTest
         // Arrange - nothing beyond the rules and players
 
         // Act
-        Played played = await DecisionLoop.PlayAll(this._rules, this._players, 2, this._cancellation);
+        Played played = await DecisionLoop.PlayAll(this._rules, this._players, this._dice, 2, this._cancellation);
 
         // Assert
         Assert.Equal(2, played.Actions.Count);
@@ -44,9 +49,59 @@ public sealed class DecisionLoopTest
         Played start = new(this._rules.CreateInitialState(), []);
 
         // Act
-        Played played = await DecisionLoop.PlayWhile(this._rules, start, _ => null, 100, this._cancellation);
+        Played played =
+            await DecisionLoop.PlayWhile(this._rules, start, _ => null, this._dice, 100, this._cancellation);
 
         // Assert
         Assert.Same(start, played);
+    }
+
+    [Fact]
+    public async Task PlayAll_WhenTheGameWaitsOnDice_RollsThemForTheSeat()
+    {
+        // Arrange
+        RollingRules rules = new(2);
+
+        // Act
+        Played played = await DecisionLoop.PlayAll(rules, this._players, this._dice, 100, this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            ["roll", "dice 4", "roll", "dice 4"],
+            played.Actions.Select(action => $"{action.Kind} {action.Arguments.GetValueOrDefault("values")}".Trim())
+        );
+    }
+
+    [Fact]
+    public async Task PlayWhile_WhenAPersonRolled_RollsTheirDiceAndThenWaitsForThem()
+    {
+        // Arrange
+        RollingRules rules = new(2);
+        GameState rolling = rules.CreateInitialState() with { AwaitedDice = new DiceRequest(1, 6) };
+        Played start = new(rolling, [new RollAction(new SeatId(0)).Describe()]);
+
+        // Act
+        Played played = await DecisionLoop.PlayWhile(rules, start, _ => null, this._dice, 100, this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            (2, new SeatId(1), 4),
+            (played.Actions.Count, played.State.DecidingSeat, played.State.Scores[new SeatId(0)])
+        );
+    }
+
+    [Fact]
+    public async Task PlayAll_WhenCancelledWhileDiceAreAwaited_StopsWithoutRolling()
+    {
+        // Arrange
+        RollingRules rules = new(2);
+        using CancellationTokenSource cancelled = new();
+        await cancelled.CancelAsync();
+
+        // Act
+        Task<Played> playing = DecisionLoop.PlayAll(rules, this._players, this._dice, 100, cancelled.Token);
+
+        // Assert
+        _ = await Assert.ThrowsAsync<TaskCanceledException>(() => playing);
     }
 }

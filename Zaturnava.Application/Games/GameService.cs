@@ -5,6 +5,7 @@ using Net.NowhereAtAll.Zaturnava.Application.Ports;
 using Net.NowhereAtAll.Zaturnava.Application.Rulesets;
 using Net.NowhereAtAll.Zaturnava.Application.Running;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
+using Net.NowhereAtAll.Zaturnava.Engine.Chance;
 using Net.NowhereAtAll.Zaturnava.Engine.Rules;
 using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 
@@ -19,6 +20,7 @@ public sealed class GameService(
     IBotLocating bots,
     IGamePersisting store,
     IGameNotifying notifier,
+    IDiceRolling dice,
     GameServiceSettings settings
 )
 {
@@ -26,6 +28,7 @@ public sealed class GameService(
     private readonly IBotLocating _bots = bots;
     private readonly IGamePersisting _store = store;
     private readonly IGameNotifying _notifier = notifier;
+    private readonly IDiceRolling _dice = dice;
     private readonly GameServiceSettings _settings = settings;
 
     public ImmutableList<IRulesApplying> Rulesets => this._rulesets.All;
@@ -81,7 +84,9 @@ public sealed class GameService(
     /// <exception cref="GameNotFoundException">There is no such game.</exception>
     /// <exception cref="MalformedActionException">The descriptor describes no action.</exception>
     /// <exception cref="NotYourTurnException">The token does not hold the seat that must decide.</exception>
-    /// <exception cref="IllegalActionException">The rules do not allow the action now.</exception>
+    /// <exception cref="IllegalActionException">
+    /// The rules do not allow the action now, or it is how dice came up, which only chance decides.
+    /// </exception>
     public async Task<GameSnapshot> Submit(
         GameId id,
         [Required] string token,
@@ -90,7 +95,7 @@ public sealed class GameService(
     )
     {
         GameSnapshot snapshot = await this.Get(id, cancellationToken);
-        GameAction action = snapshot.Rules.Parse(descriptor);
+        GameAction action = Chosen(snapshot.Rules.Parse(descriptor));
         Transition transition = snapshot.IsDecidedBy(action.Actor, token)
             ? snapshot.Rules.Apply(snapshot.State, action)
             : throw new NotYourTurnException(id, action.Actor);
@@ -100,6 +105,12 @@ public sealed class GameService(
         await this.Save(updated, cancellationToken);
         return GameSnapshot.Of(updated, snapshot.Rules, played.State);
     }
+
+    /// <exception cref="IllegalActionException">The action is how dice came up.</exception>
+    private static GameAction Chosen(GameAction action) =>
+        action is DiceAction
+            ? throw new IllegalActionException(action)
+            : action;
 
     private static GameState Replay(IRulesApplying rules, ImmutableList<ActionDescriptor> actions) =>
         actions.Aggregate(rules.CreateInitialState(), (state, descriptor) => Replayed(rules, state, descriptor));
@@ -125,6 +136,7 @@ public sealed class GameService(
             rules,
             played,
             seat => record.Controllers[seat.Value].DeciderFrom(this._bots),
+            this._dice,
             this._settings.MaximumBotSteps,
             cancellationToken
         );

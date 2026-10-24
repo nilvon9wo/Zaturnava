@@ -137,9 +137,12 @@ Apply(GameState, GameAction)    -> Transition(GameState, GameEvent[])
 Parse(ActionDescriptor)         -> GameAction
 ```
 
-- No I/O, no database, no clock. Chance (the dice, once implemented) will be
-  handed in as a port of its own, so that a replay or a test supplies the
-  rolls that actually happened.
+- No I/O, no database, no clock. Chance is a port of its own: a ruleset
+  that needs dice says so (`GameState.AwaitedDice`), and whatever runs the
+  game rolls them through `IDiceRolling` and applies the result as a
+  `DiceAction`. A replay or a test supplies the rolls that actually
+  happened; the server rolls `RandomDice`. A player can ask for a roll
+  (`roll`) but never choose its values.
 - `GameState` is an immutable record; every action produces a new state and
   the domain events (`PieceMoved`, `PieceCaptured`, `TurnPassed`, …) that
   everything else can be driven from.
@@ -332,7 +335,7 @@ scoring) are listed in [rules.md §12](rules.md#12-configuration-toggles). The
   settings.
 - A push channel to replace polling (§6), and keeping a seat's token in the
   browser between visits.
-- Dice as an injected port, the turn phase machine (§2.5), controlled armies
+- The turn phase machine (§2.5), controlled armies
   (§2.4) and rule modules (§2.6), as the remaining rules are implemented.
 - Exact `gameEnd.safetyNet.*` parameters (rules.md §13) — now that bots exist,
   `Games:MaximumBotSteps` bounds bot-only play per request, but the rules-level

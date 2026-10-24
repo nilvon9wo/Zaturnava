@@ -34,6 +34,32 @@ public sealed class ActionParserTest
     }
 
     [Fact]
+    public void Parse_WhenGivenADescribedRoll_ReturnsTheSameRoll()
+    {
+        // Arrange
+        RollAction roll = new(new SeatId(2));
+
+        // Act
+        GameAction parsed = ActionParser.Standard.Parse(roll.Describe());
+
+        // Assert
+        Assert.Equal(roll, parsed);
+    }
+
+    [Fact]
+    public void Parse_WhenGivenDescribedDice_ReturnsTheSameDice()
+    {
+        // Arrange
+        DiceAction dice = new(new SeatId(2), [5, 3]);
+
+        // Act
+        GameAction parsed = ActionParser.Standard.Parse(dice.Describe());
+
+        // Assert
+        Assert.Equal(dice, parsed);
+    }
+
+    [Fact]
     public void Parse_WhenTheKindIsUnknown_ThrowsMalformedActionException()
     {
         // Arrange

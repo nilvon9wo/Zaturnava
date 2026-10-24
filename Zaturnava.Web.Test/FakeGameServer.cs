@@ -29,7 +29,8 @@ internal sealed class FakeGameServer : IGameServing
         [.. Enumerable.Range(0, 4).Select(id => new CellDto(id, id % 2, Math.DivRem(id, 2).Quotient, "square"))],
         [new PieceDto(0, "raja", "Raja", 0, 0)],
         [new SeatDto(0, "Black", 0, 0, "human", null), new SeatDto(1, "Yellow", 1, 5, "bot", "random")],
-        [Pass, Advance, Leap]
+        [Pass, Advance, Leap],
+        []
     );
 
     public GameViewDto View { get; set; } = SeatZeroToMove;
