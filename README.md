@@ -39,12 +39,11 @@ The game server's host is not decided yet; see
 
 ## Source material
 
-- `Chaturaji.docx` / `Chaturaji Score Sheet.xlsx` — the original rules writeup and manual score
-  sheet this project started from.
-- `extracted/` — plain-text and image extraction of the above (via `_extract_docx.py`), kept for
-  reference; the embedded board-setup, piece movement, and boat-triumph diagrams informed details
-  in `docs/rules.md` that weren't fully spelled out in the doc's prose.
+- [`docs/origins/chaturaji.md`](docs/origins/chaturaji.md) and
+  [`docs/origins/score-sheet.md`](docs/origins/score-sheet.md) — the original rules write-up and
+  printable score sheet this project started from, converted from the Word and Excel files (still
+  in the repository's history).
 
-`docs/rules.md` is authoritative where it differs from the original `.docx` — several mechanics
-were clarified or deliberately corrected through design discussion (see the *(clarified)* notes
+`docs/rules.md` is authoritative where it differs from the originals — several mechanics were
+clarified or deliberately corrected through design discussion (see the *(clarified)* notes
 throughout that file).

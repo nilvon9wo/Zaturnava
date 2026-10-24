@@ -9,10 +9,10 @@ board shapes/sizes, army counts, etc.) is an architecture concern, covered in
 [architecture.md](architecture.md), not a rules concern — this document
 describes one concrete, fully-specified configuration.
 
-Source material: `Chaturaji.docx` and `Chaturaji Score Sheet.xlsx` (project
-root), clarified and corrected through design discussion on 2026-09-11 and
-2026-09-12. Where this document and the original `.docx` disagree, this
-document is authoritative — the discrepancies were deliberate corrections,
+Source material: the original [rules write-up](origins/chaturaji.md) and
+[score sheet](origins/score-sheet.md), clarified and corrected through design
+discussion on 2026-09-11 and 2026-09-12. Where this document and the originals
+disagree, this document is authoritative — the discrepancies were deliberate corrections,
 not accidents (see inline notes marked *(clarified)*).
 
 ## Implementation status
