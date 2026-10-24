@@ -1,31 +1,60 @@
-@* Any board, from the cells' layouts alone: a unit square per cell, the pieces on top, and the
-   cells a piece can be picked up from or put down on marked. *@
+@* Any board, from the cells' layouts alone: a unit square per cell, each throne outlined in its seat's
+   colour, the last move tinted, the pieces on top, then the marks of a move being made - a ring
+   around each piece that can move, and a dot (or, over a piece to capture, a ring) wherever the
+   piece picked up can go. The whole board turns by Turn; the pieces' symbols stay upright. *@
 
 <svg class="board" viewBox="@this._frame.ViewBox" role="grid">
-    @foreach (CellDto cell in this.View.Cells)
-    {
-        <rect class="@this.CellClass(cell)"
-              x="@Svg.Number(cell.X - BoardFrame.HalfCell)"
-              y="@Svg.Number(BoardFrame.ScreenY(cell.Y) - BoardFrame.HalfCell)"
-              width="1"
-              height="1"
-              data-cell="@cell.Id"
-              @onclick="() => this.OnCellClicked.InvokeAsync(cell.Id)" />
-    }
-    @foreach (PieceDto piece in this.View.Pieces)
-    {
-        CellDto cell = this._cells[piece.Cell];
-        <g class="piece seat-@piece.Owner" pointer-events="none">
-            <title>@piece.Name</title>
-            <circle cx="@Svg.Number(cell.X)" cy="@Svg.Number(BoardFrame.ScreenY(cell.Y))" r="0.38" />
-            <text x="@Svg.Number(cell.X)" y="@Svg.Number(BoardFrame.ScreenY(cell.Y))">@piece.Name[..1]</text>
-        </g>
-    }
+    <g transform="@this.Turn.Transform(this._frame)">
+        @foreach (CellDto cell in this.View.Cells)
+        {
+            <rect class="@this.CellClass(cell)"
+                  x="@Svg.Number(cell.X - BoardFrame.HalfCell)"
+                  y="@Svg.Number(BoardFrame.ScreenY(cell.Y) - BoardFrame.HalfCell)"
+                  width="1"
+                  height="1"
+                  data-cell="@cell.Id"
+                  @onclick="() => this.OnCellClicked.InvokeAsync(cell.Id)" />
+            @if (cell.Throne is { } owner)
+            {
+                <rect class="throne seat-@owner"
+                      pointer-events="none"
+                      x="@Svg.Number(cell.X - BoardFrame.HalfCell + ThroneInset)"
+                      y="@Svg.Number(BoardFrame.ScreenY(cell.Y) - BoardFrame.HalfCell + ThroneInset)"
+                      width="@Svg.Number(1 - (2 * ThroneInset))"
+                      height="@Svg.Number(1 - (2 * ThroneInset))" />
+            }
+        }
+        @foreach (PieceDto piece in this.View.Pieces)
+        {
+            CellDto cell = this._cells[piece.Cell];
+            double x = cell.X;
+            double y = BoardFrame.ScreenY(cell.Y);
+            <g class="@this.PieceClass(piece)" pointer-events="none">
+                <title>@piece.Name</title>
+                <circle cx="@Svg.Number(x)" cy="@Svg.Number(y)" r="0.4" />
+                <text x="@Svg.Number(x)" y="@Svg.Number(y)" transform="@this.Turn.Upright(x, y)"
+                    >@PieceStyle.GlyphOf(piece)</text>
+            </g>
+        }
+        @foreach (int target in this.Targets)
+        {
+            CellDto cell = this._cells[target];
+            bool isCapture = this._occupied.Contains(target);
+            <circle class="@(isCapture ? "mark capture" : "mark")"
+                    pointer-events="none"
+                    cx="@Svg.Number(cell.X)"
+                    cy="@Svg.Number(BoardFrame.ScreenY(cell.Y))"
+                    r="@(isCapture ? "0.46" : "0.14")" />
+        }
+    </g>
 </svg>
 
 @code {
+    private const double ThroneInset = 0.06;
+
     private BoardFrame _frame = BoardFrame.Empty;
     private ImmutableDictionary<int, CellDto> _cells = ImmutableDictionary<int, CellDto>.Empty;
+    private ImmutableHashSet<int> _occupied = [];
 
     [Parameter, EditorRequired]
     public GameViewDto View { get; set; } = null!;
@@ -37,12 +66,23 @@
     public BoardSelection Selection { get; set; } = null!;
 
     [Parameter]
+    public BoardTurn Turn { get; set; } = BoardTurn.None;
+
+    /// <summary>The cells the last move went from and to; tinted.</summary>
+    [Parameter]
+    public ImmutableHashSet<int> LastMove { get; set; } = [];
+
+    [Parameter]
     public EventCallback<int> OnCellClicked { get; set; }
+
+    private ImmutableHashSet<int> Targets =>
+        this.Selection.Selected is { } from ? this.Actions.TargetsFrom(from) : [];
 
     protected override void OnParametersSet()
     {
         this._frame = BoardFrame.Of(this.View.Cells);
         this._cells = this.View.Cells.ToImmutableDictionary(cell => cell.Id);
+        this._occupied = [.. this.View.Pieces.Select(piece => piece.Cell)];
     }
 
     private string CellClass(CellDto cell) =>
@@ -52,11 +92,22 @@
             {
                 "cell",
                 BoardFrame.IsDark(cell) ? "dark" : "light",
+                this.LastMove.Contains(cell.Id) ? "last" : null,
                 this.Actions.Origins.Contains(cell.Id) ? "origin" : null,
                 this.Selection.Selected == cell.Id ? "selected" : null,
-                this.Selection.Selected is { } from && this.Actions.TargetsFrom(from).Contains(cell.Id)
-                    ? "target"
-                    : null,
+                this.Targets.Contains(cell.Id) ? "target" : null,
+            }.OfType<string>()
+        );
+
+    private string PieceClass(PieceDto piece) =>
+        string.Join(
+            ' ',
+            new[]
+            {
+                "piece",
+                $"seat-{piece.Owner}",
+                this.Actions.Origins.Contains(piece.Cell) ? "movable" : null,
+                this.Selection.Selected == piece.Cell ? "picked" : null,
             }.OfType<string>()
         );
 }

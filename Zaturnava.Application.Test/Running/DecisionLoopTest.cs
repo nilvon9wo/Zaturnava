@@ -91,6 +91,28 @@ public sealed class DecisionLoopTest
     }
 
     [Fact]
+    public async Task PlayWhile_WhenNoDecisionsAreLeftButDiceAreAwaited_StillRollsThem()
+    {
+        // Arrange
+        RollingRules rules = new(2);
+        GameState rolling = rules.CreateInitialState() with { AwaitedDice = new DiceRequest(1, 6) };
+        Played start = new(rolling, [new RollAction(new SeatId(0)).Describe()]);
+
+        // Act
+        Played played = await DecisionLoop.PlayWhile(
+            rules,
+            start,
+            _ => new FirstChoiceBot(),
+            this._dice,
+            0,
+            this._cancellation
+        );
+
+        // Assert
+        Assert.Equal((2, new SeatId(1)), (played.Actions.Count, played.State.DecidingSeat));
+    }
+
+    [Fact]
     public async Task PlayAll_WhenCancelledWhileDiceAreAwaited_StopsWithoutRolling()
     {
         // Arrange

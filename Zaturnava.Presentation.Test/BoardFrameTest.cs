@@ -22,7 +22,11 @@ public sealed class BoardFrameTest
     {
         // Arrange
         ImmutableList<CellDto> cells =
-            [.. Enumerable.Range(0, 64).Select(id => new CellDto(id, id % 8, Math.DivRem(id, 8).Quotient, "square"))];
+        [
+            .. Enumerable
+                .Range(0, 64)
+                .Select(id => new CellDto(id, id % 8, Math.DivRem(id, 8).Quotient, "square", null)),
+        ];
 
         // Act
         BoardFrame frame = BoardFrame.Of(cells);
@@ -51,7 +55,7 @@ public sealed class BoardFrameTest
     public void IsDark_WhenGivenACell_AlternatesLikeAChessboard(double x, double y, bool expected)
     {
         // Arrange
-        CellDto cell = new(0, x, y, "square");
+        CellDto cell = new(0, x, y, "square", null);
 
         // Act
         bool isDark = BoardFrame.IsDark(cell);

@@ -1,7 +1,8 @@
 namespace Net.NowhereAtAll.Zaturnava.Web;
 
 /// <summary>
-/// How often a table asks the server for the game while other players decide: there is no push
-/// channel yet, so it polls.
+/// How a table keeps up with the game: there is no push channel yet, so it asks the server for the
+/// game every <see cref="PollInterval"/> while a person elsewhere decides, and lets a deciding bot take
+/// its next step every <see cref="BotPace"/>, slowly enough for people to follow.
 /// </summary>
-internal sealed record TableSettings(TimeSpan PollInterval);
+internal sealed record TableSettings(TimeSpan PollInterval, TimeSpan BotPace);

@@ -479,4 +479,41 @@ public sealed class ClassicRulesTest
         {
             Position = placements.Aggregate(Position.Empty, Placed),
         };
+
+    [Theory]
+    [InlineData(1, "Boat")]
+    [InlineData(2, "Horse")]
+    [InlineData(3, "Elephant")]
+    [InlineData(6, "Pawn or Raja")]
+    [InlineData(7, "Nothing")]
+    public void NameOfDie_WhenGivenAValue_NamesTheKindsItLetsMove(int value, string expected)
+    {
+        // Arrange - nothing beyond the rules
+
+        // Act
+        string name = this._rules.NameOfDie(value);
+
+        // Assert
+        Assert.Equal(expected, name);
+    }
+
+    [Fact]
+    public void Thrones_WhenRead_AreWhereEachRajaStarts()
+    {
+        // Arrange
+        GameState state = this._rules.CreateInitialState();
+
+        // Act
+        ImmutableDictionary<SeatId, CellId> thrones = this._rules.Thrones;
+
+        // Assert
+        Assert.Equal(
+            "raja 0|raja 1|raja 2|raja 3",
+            string.Join(
+                "|",
+                state.Seats.Select(seat => state.Position.PieceAt(thrones[seat.Id]))
+                    .Select(raja => $"{raja?.Kind.Value} {raja?.Owner.Value}")
+            )
+        );
+    }
 }

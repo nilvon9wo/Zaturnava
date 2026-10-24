@@ -26,6 +26,8 @@ internal sealed class TinyRules(int length) : IRulesApplying
 
     public ICellNavigating Topology => throw new NotSupportedException("Tiny has no board.");
 
+    public ImmutableDictionary<SeatId, CellId> Thrones => [];
+
     public GameState CreateInitialState() =>
         new(
             Position.Empty,
@@ -56,6 +58,8 @@ internal sealed class TinyRules(int length) : IRulesApplying
     public string NameOf(PieceKindId kind) => kind.Value;
 
     public string NameOf(SeatId seat) => $"Seat {seat.Value}";
+
+    public string NameOfDie(int value) => $"Die {value}";
 
     private GameState After(GameState state)
     {

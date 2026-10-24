@@ -52,16 +52,29 @@ public sealed class GameTools(IGameServing games)
     [McpServerTool(Name = "get_game", ReadOnly = true)]
     [Description(
         "A game as it stands: the cells (with where each is drawn), the pieces and their cells, the seats and "
-        + "scores, whose decision it is (decidingSeat, null once over), that seat's legal actions, and the dice "
-        + "it has rolled this turn and not used yet."
+        + "scores, whose decision it is (decidingSeat, null once over), that seat's legal actions, the dice "
+        + "it has rolled this turn and not used yet (with what each lets it move), and a log of what has "
+        + "happened lately."
     )]
     public Task<GameViewDto> GetGame(string gameId, CancellationToken cancellationToken) =>
         Explained(() => this._games.Get(gameId, cancellationToken));
 
+    [McpServerTool(Name = "advance_game")]
+    [Description(
+        "Lets the bot whose turn it is make one decision, if the game is still at the version given (from "
+        + "get_game); bots only play when someone advances the game. Returns the game after it."
+    )]
+    public Task<GameViewDto> AdvanceGame(
+        string gameId,
+        [Description("The game's version, as get_game gave it.")] int version,
+        CancellationToken cancellationToken
+    ) =>
+        Explained(() => this._games.Advance(gameId, version, cancellationToken));
+
     [McpServerTool(Name = "submit_action")]
     [Description(
         "Takes an action for the seat your token holds, when it is that seat's decision. Copy the kind and "
-        + "arguments of one of get_game's legalActions. Returns the game after it, and after any bots replied."
+        + "arguments of one of get_game's legalActions. Returns the game after it."
     )]
     public Task<GameViewDto> SubmitAction(
         string gameId,

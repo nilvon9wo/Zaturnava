@@ -86,6 +86,22 @@ public sealed class HttpGameClientTest
     }
 
     [Fact]
+    public async Task Advance_WhenGivenAVersion_PostsIt()
+    {
+        // Arrange
+        StubServer server = new(HttpStatusCode.OK, ViewJson);
+
+        // Act
+        _ = await Client(server).Advance("g", 7, this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            ("POST", "/api/games/g/advance", null, """{"version":7}"""),
+            (server.Method, server.Path, server.Authorization, server.Body)
+        );
+    }
+
+    [Fact]
     public async Task Claim_WhenGivenASeat_PostsToTheSeat()
     {
         // Arrange

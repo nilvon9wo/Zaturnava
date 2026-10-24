@@ -24,6 +24,7 @@ internal static class GameEndpoints
         _ = routes.MapGet(GameRoute, Get);
         _ = routes.MapPost(GameRoute + "/seats/{seat:int}", Claim);
         _ = routes.MapPost(GameRoute + "/actions", Submit);
+        _ = routes.MapPost(GameRoute + "/advance", Advance);
         return routes;
     }
 
@@ -52,6 +53,17 @@ internal static class GameEndpoints
     private static async Task<GameViewDto> Get(string gameId, GameService games, CancellationToken cancellationToken)
     {
         GameSnapshot snapshot = await games.Get(new GameId(gameId), cancellationToken);
+        return GameViews.ViewOf(snapshot);
+    }
+
+    private static async Task<GameViewDto> Advance(
+        string gameId,
+        AdvanceRequest request,
+        GameService games,
+        CancellationToken cancellationToken
+    )
+    {
+        GameSnapshot snapshot = await games.Advance(new GameId(gameId), request.Version, cancellationToken);
         return GameViews.ViewOf(snapshot);
     }
 

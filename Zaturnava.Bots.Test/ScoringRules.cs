@@ -25,6 +25,8 @@ internal sealed class ScoringRules(ImmutableDictionary<GameAction, int> points) 
 
     public ICellNavigating Topology => throw new NotSupportedException();
 
+    public ImmutableDictionary<SeatId, CellId> Thrones => throw new NotSupportedException();
+
     public static GameState State() => new(Position.Empty, [], TeamGraph.FromTeams([]), Seat, 1, [], []);
 
     public GameState CreateInitialState() => State();
@@ -48,4 +50,6 @@ internal sealed class ScoringRules(ImmutableDictionary<GameAction, int> points) 
     public string NameOf(PieceKindId kind) => throw new NotSupportedException();
 
     public string NameOf(SeatId seat) => throw new NotSupportedException();
+
+    public string NameOfDie(int value) => throw new NotSupportedException();
 }

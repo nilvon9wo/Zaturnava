@@ -6,6 +6,7 @@ using Net.NowhereAtAll.Zaturnava.Application.Test.Fakes;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Boards;
 using Net.NowhereAtAll.Zaturnava.Engine.Decisions;
+using Net.NowhereAtAll.Zaturnava.Engine.Events;
 using Net.NowhereAtAll.Zaturnava.Engine.Rules;
 using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 using Net.NowhereAtAll.Zaturnava.Persistence.InMemory;
@@ -15,23 +16,22 @@ namespace Net.NowhereAtAll.Zaturnava.Application.Test.Games;
 public sealed class GameServiceTest
 {
     private const int GameLength = 6;
+    private const int AtOnce = 100;
     private static readonly SeatId First = new(0);
     private static readonly SeatId Second = new(1);
     private static readonly SeatPlan Bot = new(FirstChoiceBot.BotId);
 
     private readonly RecordingNotifier _notifier = new();
     private readonly GameService _service;
+    private readonly GameService _paced;
     private readonly CancellationToken _cancellation = TestContext.Current.CancellationToken;
 
-    public GameServiceTest() =>
-        this._service = new GameService(
-            new RulesetCatalog([new TinyRules(GameLength), new RollingRules(GameLength)]),
-            new BotCatalog([new FirstChoiceBot()]),
-            new InMemoryGameStore(),
-            this._notifier,
-            new LoadedDice(4),
-            GameServiceSettings.Default
-        );
+    /// <summary>Two services: one whose bots reply at once, one whose bots wait to be advanced.</summary>
+    public GameServiceTest()
+    {
+        this._service = this.Service(new GameServiceSettings(AtOnce));
+        this._paced = this.Service(GameServiceSettings.Default);
+    }
 
     [Fact]
     public void Rulesets_WhenListed_AreTheRegisteredOnes()
@@ -301,5 +301,87 @@ public sealed class GameServiceTest
         _ = await Assert.ThrowsAsync<IllegalActionException>(() => submitting);
     }
 
+    [Fact]
+    public async Task Create_WhenBotsArePaced_LeavesTheFirstBotToBeAdvanced()
+    {
+        // Arrange
+        GameId id = await this._paced.Create(TinyRules.RulesetId, [Bot, SeatPlan.Open], this._cancellation);
+
+        // Act
+        GameSnapshot snapshot = await this._paced.Get(id, this._cancellation);
+
+        // Assert
+        Assert.Equal((0, First), (snapshot.Record.Actions.Count, snapshot.State.DecidingSeat));
+    }
+
+    [Fact]
+    public async Task Advance_WhenABotIsDeciding_LetsItMakeOneDecision()
+    {
+        // Arrange
+        GameId id = await this._paced.Create(TinyRules.RulesetId, [Bot, Bot], this._cancellation);
+
+        // Act
+        GameSnapshot snapshot = await this._paced.Advance(id, 0, this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            (1, Second, 1),
+            (snapshot.Record.Actions.Count, snapshot.State.DecidingSeat, snapshot.Record.Version)
+        );
+    }
+
+    [Fact]
+    public async Task Advance_WhenTheGameHasMovedOn_ChangesNothing()
+    {
+        // Arrange
+        GameId id = await this._paced.Create(TinyRules.RulesetId, [Bot, Bot], this._cancellation);
+        _ = await this._paced.Advance(id, 0, this._cancellation);
+
+        // Act
+        GameSnapshot snapshot = await this._paced.Advance(id, 0, this._cancellation);
+
+        // Assert
+        Assert.Equal((1, 1), (snapshot.Record.Actions.Count, snapshot.Record.Version));
+    }
+
+    [Fact]
+    public async Task Advance_WhenAPersonIsDeciding_ChangesNothing()
+    {
+        // Arrange
+        GameId id = await this._paced.Create(TinyRules.RulesetId, [SeatPlan.Open, Bot], this._cancellation);
+
+        // Act
+        GameSnapshot snapshot = await this._paced.Advance(id, 0, this._cancellation);
+
+        // Assert
+        Assert.Equal((0, 0, 0), (snapshot.Record.Actions.Count, snapshot.Record.Version, this._notifier.Changes.Count));
+    }
+
+    [Fact]
+    public async Task Get_WhenThePlayerHasRolled_TellsOfTheRoll()
+    {
+        // Arrange
+        GameId id =
+            await this._paced.Create(RollingRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
+        string token = await this._paced.Claim(id, First, this._cancellation);
+        _ = await this._paced.Submit(id, token, new RollAction(First).Describe(), this._cancellation);
+
+        // Act
+        GameSnapshot snapshot = await this._paced.Get(id, this._cancellation);
+
+        // Assert
+        Assert.Equal([new DiceRolled(First, [4])], snapshot.Events);
+    }
+
     private static ActionDescriptor Pass(SeatId seat) => new PassAction(seat).Describe();
+
+    private GameService Service(GameServiceSettings settings) =>
+        new(
+            new RulesetCatalog([new TinyRules(GameLength), new RollingRules(GameLength)]),
+            new BotCatalog([new FirstChoiceBot()]),
+            new InMemoryGameStore(),
+            this._notifier,
+            new LoadedDice(4),
+            settings
+        );
 }

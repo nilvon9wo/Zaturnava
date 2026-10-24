@@ -43,6 +43,7 @@ public sealed class ClassicRules : IRulesApplying
     {
         this._moves = new MoveGenerator(this._grid, ClassicPieces.Kinds);
         this._dice = dice;
+        this.Thrones = ClassicSetup.Thrones(this._grid);
     }
 
     public string Id => RulesetId;
@@ -50,6 +51,8 @@ public sealed class ClassicRules : IRulesApplying
     public string Name => "Zaturnava (classic)";
 
     public ICellNavigating Topology => this._grid;
+
+    public ImmutableDictionary<SeatId, CellId> Thrones { get; }
 
     public GameState CreateInitialState()
     {
@@ -80,6 +83,13 @@ public sealed class ClassicRules : IRulesApplying
     public string NameOf(PieceKindId kind) => ClassicPieces.TraditionalNames[kind];
 
     public string NameOf(SeatId seat) => ClassicSetup.SeatNames[seat.Value];
+
+    /// <summary>The kinds the die lets move: "Horse", or "Pawn or Raja"; "Nothing" for a value no die shows.</summary>
+    public string NameOfDie(int value)
+    {
+        ImmutableList<string> names = [.. this._dice.KindsOf(value).Select(this.NameOf).Order(StringComparer.Ordinal)];
+        return names.IsEmpty ? "Nothing" : string.Join(" or ", names);
+    }
 
     private static bool IsOpening(GameState state) => state.TurnNumber == OpeningTurn;
 

@@ -19,11 +19,12 @@ public sealed class WireFormatTest
             3,
             2,
             1,
-            [new CellDto(0, 0.5, 7.5, "square")],
+            [new CellDto(0, 0.5, 7.5, "square", 0)],
             [new PieceDto(0, "raja", "Raja", 0, 0)],
             [new SeatDto(0, "Black", 0, 5, "bot", "random"), new SeatDto(1, "Yellow", 1, 0, "open", null)],
             [new ActionDto("pass", ImmutableSortedDictionary.CreateRange([KeyValuePair.Create("actor", "1")]))],
-            [5, 3]
+            [new DieDto(5, "Pawn or Raja"), new DieDto(3, "Elephant")],
+            [new EventDto(7, EventDto.Moved, 0, "Black's Pawn moved.", 8, 16)]
         );
 
         // Act
@@ -37,7 +38,7 @@ public sealed class WireFormatTest
     public void GameView_WhenTheGameIsOver_SendsNoDecidingSeat()
     {
         // Arrange
-        GameViewDto view = new("g", "classic", "Classic", 3, 2, null, [], [], [], [], []);
+        GameViewDto view = new("g", "classic", "Classic", 3, 2, null, [], [], [], [], [], []);
 
         // Act
         string json = JsonSerializer.Serialize(view, Wire);
@@ -79,7 +80,8 @@ public sealed class WireFormatTest
     public void GameSummary_WhenSentAsJson_ArrivesUnchanged()
     {
         // Arrange
-        GameSummaryDto summary = new("g", "classic", 4, [1, 3]);
+        ImmutableList<string> players = [GameSummaryDto.Person, GameSummaryDto.Open, "midas"];
+        GameSummaryDto summary = new("g", "classic", 4, [1, 3], players, 9);
 
         // Act
         GameSummaryDto? arrived = RoundTrip(summary);
