@@ -1,0 +1,23 @@
+<Project>
+
+  <!--
+    Coverage, as Directory.Build.props sets it up: here, after the project's own properties. The
+    explicit exclude matters: left to its default, coverlet.MTP excludes every assembly loaded
+    alongside the tests, cut to its first two name segments, so one Net.NowhereAtAll.Zaturnava.*
+    assembly becomes [Net.NowhereAtAll.*]*, which excludes the measured assembly too, and the
+    threshold then fails on "No coverable data". The test assembly itself is never measured.
+  -->
+  <PropertyGroup Condition="'$(ZaturnavaCoverage)' == 'true' And '$(ZaturnavaCoveredAssembly)' != ''">
+    <TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) --coverlet --coverlet-include "[$(ZaturnavaCoveredAssembly)]*" --coverlet-exclude "[$(AssemblyName)]*" --coverlet-output-format cobertura --coverlet-threshold 100 --coverlet-threshold-type line --coverlet-threshold-type branch</TestingPlatformCommandLineArguments>
+  </PropertyGroup>
+
+  <!--
+    The one escape hatch: a source file that only its real host can run (a browser's .NET runtime
+    starting a WebAssembly app) is named in its test project's ZaturnavaUnmeasuredFile, with the
+    reason beside it. Such a file holds nothing but the call into code that is measured.
+  -->
+  <PropertyGroup Condition="'$(ZaturnavaCoverage)' == 'true' And '$(ZaturnavaUnmeasuredFile)' != ''">
+    <TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) --coverlet-exclude-by-file "$(ZaturnavaUnmeasuredFile)"</TestingPlatformCommandLineArguments>
+  </PropertyGroup>
+
+</Project>

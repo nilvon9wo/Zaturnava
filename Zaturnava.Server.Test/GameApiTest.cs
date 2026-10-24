@@ -1,0 +1,185 @@
+using System.Collections.Immutable;
+using Net.NowhereAtAll.Zaturnava.Client;
+using Net.NowhereAtAll.Zaturnava.Contracts;
+
+namespace Net.NowhereAtAll.Zaturnava.Server.Test;
+
+/// <summary>The server's API as a client sees it: every call through <see cref="HttpGameClient"/>.</summary>
+public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<ZaturnavaServer>
+{
+    private readonly HttpGameClient _client = server.GameClient();
+    private readonly CancellationToken _cancellation = TestContext.Current.CancellationToken;
+
+    [Fact]
+    public async Task Catalog_WhenAsked_OffersTheClassicRulesetAndTheRandomBot()
+    {
+        // Arrange - nothing beyond the server
+
+        // Act
+        CatalogDto catalog = await this._client.Catalog(this._cancellation);
+
+        // Assert
+        RulesetDto classic = catalog.Rulesets.Single();
+        Assert.Equal(
+            (ZaturnavaServer.Classic, 4, ZaturnavaServer.Random),
+            (classic.Id, classic.SeatCount, catalog.Bots.Single())
+        );
+    }
+
+    [Fact]
+    public async Task List_WhenAGameWasCreated_ShowsItsOpenSeats()
+    {
+        // Arrange
+        string gameId = await this.CreateGame();
+
+        // Act
+        ImmutableList<GameSummaryDto> games = await this._client.List(this._cancellation);
+
+        // Assert
+        Assert.Equal([0], games.Single(game => game.Id == gameId).OpenSeats);
+    }
+
+    [Fact]
+    public async Task Get_WhenTheGameIsNew_ShowsTheOpeningPosition()
+    {
+        // Arrange
+        string gameId = await this.CreateGame();
+
+        // Act
+        GameViewDto view = await this._client.Get(gameId, this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            (64, 32, 0, 10, "open", "bot", ZaturnavaServer.Random),
+            (
+                view.Cells.Count,
+                view.Pieces.Count,
+                view.DecidingSeat,
+                view.LegalActions.Count,
+                view.Seats[0].Controller,
+                view.Seats[1].Controller,
+                view.Seats[1].Bot
+            )
+        );
+    }
+
+    [Fact]
+    public async Task Get_WhenTheGameIsUnknown_IsRefusedAsNotFound()
+    {
+        // Arrange - nothing beyond the server
+
+        // Act
+        Task<GameViewDto> getting = this._client.Get("missing", this._cancellation);
+
+        // Assert
+        await AssertRefused(Refusal.NotFound, getting);
+    }
+
+    [Fact]
+    public async Task Create_WhenTheRulesetIsUnknown_IsRefusedAsInvalid()
+    {
+        // Arrange
+        CreateGameRequest request = new("checkers", ZaturnavaServer.OneOpenSeat);
+
+        // Act
+        Task<GameCreatedDto> creating = this._client.Create(request, this._cancellation);
+
+        // Assert
+        await AssertRefused(Refusal.Invalid, creating);
+    }
+
+    [Fact]
+    public async Task Claim_WhenTheSeatIsTaken_IsRefusedAsConflict()
+    {
+        // Arrange
+        string gameId = await this.CreateGame();
+        _ = await this._client.Claim(gameId, 0, this._cancellation);
+
+        // Act
+        Task<SeatClaimedDto> claiming = this._client.Claim(gameId, 0, this._cancellation);
+
+        // Assert
+        await AssertRefused(Refusal.Conflict, claiming);
+    }
+
+    [Fact]
+    public async Task Submit_WhenTheSeatsTokenActs_LetsTheBotsReplyUntilItIsTheSeatsTurnAgain()
+    {
+        // Arrange
+        (string gameId, string token, GameViewDto view) = await this.ClaimedGame();
+        ActionDto pass = view.LegalActions.First(action => action.Kind == "pass");
+
+        // Act
+        GameViewDto after = await this._client.Submit(gameId, token, pass, this._cancellation);
+
+        // Assert
+        Assert.Equal((0, 2), (after.DecidingSeat, after.Version));
+    }
+
+    [Fact]
+    public async Task Submit_WhenTheTokenHoldsNoSeat_IsRefusedAsForbidden()
+    {
+        // Arrange
+        (string gameId, _, GameViewDto view) = await this.ClaimedGame();
+
+        // Act
+        Task<GameViewDto> submitting = this._client.Submit(gameId, "forged", view.LegalActions[0], this._cancellation);
+
+        // Assert
+        await AssertRefused(Refusal.Forbidden, submitting);
+    }
+
+    [Fact]
+    public async Task Submit_WhenTheRulesForbidTheAction_IsRefusedAsIllegal()
+    {
+        // Arrange
+        (string gameId, string token, _) = await this.ClaimedGame();
+        ActionDto leap = new("move", Arguments(("actor", "0"), ("from", "0"), ("to", "63")));
+
+        // Act
+        Task<GameViewDto> submitting = this._client.Submit(gameId, token, leap, this._cancellation);
+
+        // Assert
+        await AssertRefused(Refusal.Illegal, submitting);
+    }
+
+    [Fact]
+    public async Task Submit_WhenTheActionIsOfNoKnownKind_IsRefusedAsInvalid()
+    {
+        // Arrange
+        (string gameId, string token, _) = await this.ClaimedGame();
+        ActionDto fly = new("fly", Arguments(("actor", "0")));
+
+        // Act
+        Task<GameViewDto> submitting = this._client.Submit(gameId, token, fly, this._cancellation);
+
+        // Assert
+        await AssertRefused(Refusal.Invalid, submitting);
+    }
+
+    private static async Task AssertRefused<T>(Refusal expected, Task<T> request)
+    {
+        GameRequestRefusedException refused = await Assert.ThrowsAsync<GameRequestRefusedException>(() => request);
+        Assert.Equal(expected, refused.Refusal);
+    }
+
+    private static ImmutableSortedDictionary<string, string> Arguments(
+        params (string Name, string Value)[] arguments
+    ) =>
+        arguments.ToImmutableSortedDictionary(argument => argument.Name, argument => argument.Value);
+
+    private async Task<string> CreateGame()
+    {
+        CreateGameRequest request = new(ZaturnavaServer.Classic, ZaturnavaServer.OneOpenSeat);
+        GameCreatedDto created = await this._client.Create(request, this._cancellation);
+        return created.GameId;
+    }
+
+    private async Task<(string GameId, string Token, GameViewDto View)> ClaimedGame()
+    {
+        string gameId = await this.CreateGame();
+        SeatClaimedDto claimed = await this._client.Claim(gameId, 0, this._cancellation);
+        GameViewDto view = await this._client.Get(gameId, this._cancellation);
+        return (gameId, claimed.Token, view);
+    }
+}

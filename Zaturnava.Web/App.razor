@@ -1,0 +1,19 @@
+@* The whole page: the lobby until the player sits at (or watches) a table. No URL routing, so the
+   page works from any address itch.io serves it at. *@
+
+@if (this._seating is { } seating)
+{
+    <Table Seating="seating" OnLeave="this.Leave" />
+}
+else
+{
+    <Lobby OnSeated="this.Sit" />
+}
+
+@code {
+    private Seating? _seating;
+
+    private void Sit(Seating seating) => this._seating = seating;
+
+    private void Leave() => this._seating = null;
+}

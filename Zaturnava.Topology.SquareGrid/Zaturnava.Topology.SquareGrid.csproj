@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- One board topology among any number: a rectangular grid of square cells. -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\Zaturnava.Engine\Zaturnava.Engine.csproj" />
+  </ItemGroup>
+
+</Project>

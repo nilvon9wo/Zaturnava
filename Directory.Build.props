@@ -1,0 +1,102 @@
+<Project>
+
+  <!--
+    Ported from Stipulate (and through it, XFTY): docs/contribute/coding-standards.md.
+    Without EnforceCodeStyleInBuild, the error-severity IDE0xxx rules in .editorconfig are
+    enforced only by an IDE's live analysis (or `dotnet format`), never by `dotnet build` or CI.
+    Everything is an error, the compiler's and NuGet's own warnings included.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <LangVersion>latest</LangVersion>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <!--
+    As in XFTY and Stipulate, every assembly and namespace lives under Net.NowhereAtAll, so
+    Zaturnava.Engine builds Net.NowhereAtAll.Zaturnava.Engine.dll; the folders and projects keep
+    the short name.
+  -->
+  <PropertyGroup Condition="$(MSBuildProjectName.StartsWith('Zaturnava.'))">
+    <AssemblyName>Net.NowhereAtAll.$(MSBuildProjectName)</AssemblyName>
+    <RootNamespace>Net.NowhereAtAll.$(MSBuildProjectName)</RootNamespace>
+  </PropertyGroup>
+
+  <!--
+    Every project uses Stipulate, the way a package consumer would: parameter preconditions are
+    DataAnnotations attributes, woven into run-time checks, and every implementation is held to
+    the contract of the interface it implements. Test projects get it through what they reference.
+  -->
+  <ItemGroup Condition="$(MSBuildProjectName.StartsWith('Zaturnava.')) And !$(MSBuildProjectName.EndsWith('.Test'))">
+    <PackageReference Include="Stipulate" Version="0.2.0-preview.1" />
+  </ItemGroup>
+
+  <!--
+    Library code never needs its caller's synchronization context back after an await, so
+    ConfigureAwait.Fody weaves ConfigureAwait(false) into every await, instead of each one being
+    written out (and CA2007 is off in .editorconfig, since it can't see the weaving). Test projects
+    are left out: xunit expects tests to keep their context. The configuration is given here, so
+    no project needs a FodyWeavers.xml.
+  -->
+  <PropertyGroup Condition="$(MSBuildProjectName.StartsWith('Zaturnava.')) And !$(MSBuildProjectName.EndsWith('.Test'))">
+    <WeaverConfiguration>
+      <Weavers>
+        <ConfigureAwait ContinueOnCapturedContext="false" />
+      </Weavers>
+    </WeaverConfiguration>
+  </PropertyGroup>
+  <ItemGroup Condition="$(MSBuildProjectName.StartsWith('Zaturnava.')) And !$(MSBuildProjectName.EndsWith('.Test'))">
+    <PackageReference Include="Fody" Version="6.9.3" PrivateAssets="all" />
+    <PackageReference Include="ConfigureAwait.Fody" Version="3.4.1" PrivateAssets="all" />
+  </ItemGroup>
+
+  <!--
+    Coverage is not an optional extra: every `dotnet test` of a Zaturnava.*.Test project, local or
+    CI, measures the one assembly that project tests and fails below 100% line AND branch
+    coverage (docs/contribute/coverage-standards.md).
+
+    - coverlet.MTP, not coverlet.collector: global.json selects the Microsoft Testing Platform
+      runner, under which coverlet.collector silently measures nothing.
+    - The include filter is derived from the project name (Zaturnava.Engine.Test measures
+      Net.NowhereAtAll.Zaturnava.Engine); the arguments are composed in Directory.Build.targets.
+    - Zaturnava.Architecture.Test checks how the other assemblies depend on one another; it
+      measures no one assembly, so it is not measured.
+    - Running a filtered subset (one class, say) cannot reach 100%: pass
+      `-p:ZaturnavaCoverage=false` to `dotnet test` for those runs.
+  -->
+  <PropertyGroup Condition="$(MSBuildProjectName.StartsWith('Zaturnava.')) And $(MSBuildProjectName.EndsWith('.Test')) And '$(MSBuildProjectName)' != 'Zaturnava.Architecture.Test'">
+    <ZaturnavaCoverage Condition="'$(ZaturnavaCoverage)' == ''">true</ZaturnavaCoverage>
+    <ZaturnavaCoveredAssembly>Net.NowhereAtAll.$(MSBuildProjectName.Substring(0, $(MSBuildProjectName.LastIndexOf('.Test'))))</ZaturnavaCoveredAssembly>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(ZaturnavaCoveredAssembly)' != ''">
+    <PackageReference Include="coverlet.MTP" Version="10.1.0" />
+  </ItemGroup>
+
+  <!--
+    A test project is a program, which xunit.v3's build files say, but restore reads them only
+    once they are restored: said here, restore sees it (otherwise MSB3030 on a newer SDK).
+  -->
+  <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('.Test'))">
+    <OutputType>Exe</OutputType>
+    <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
+  </PropertyGroup>
+  <ItemGroup Condition="$(MSBuildProjectName.EndsWith('.Test'))">
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="4.0.1">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="xunit.v3" Version="4.0.2" />
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <Version>0.0.0-dev</Version>
+  </PropertyGroup>
+
+</Project>

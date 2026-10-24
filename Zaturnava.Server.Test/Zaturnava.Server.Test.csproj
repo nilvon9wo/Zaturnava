@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.13" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Zaturnava.Client\Zaturnava.Client.csproj" />
+    <ProjectReference Include="..\Zaturnava.Server\Zaturnava.Server.csproj" />
+  </ItemGroup>
+
+</Project>

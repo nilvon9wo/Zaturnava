@@ -1,0 +1,52 @@
+using System.Collections.Immutable;
+using System.ComponentModel.DataAnnotations;
+using Net.NowhereAtAll.Zaturnava.Contracts;
+
+namespace Net.NowhereAtAll.Zaturnava.Mcp.Test;
+
+/// <summary>
+/// A game server behind the tools: it answers every request with a fixed reply, remembers the last
+/// request that carried data, and fails the next request with <see cref="Failure"/>.
+/// </summary>
+internal sealed class StubGameServer : IGameServing
+{
+    public const string GameId = "g1";
+    public const string Token = "secret";
+
+    public static readonly GameViewDto View = new(GameId, "classic", "Zaturnava (classic)", 3, 2, 0, [], [], [], []);
+
+    public Exception? Failure { get; set; }
+
+    public object? Received { get; private set; }
+
+    public Task<CatalogDto> Catalog(CancellationToken cancellationToken) =>
+        this.Answer(new CatalogDto([new RulesetDto("classic", "Zaturnava (classic)", 4)], ["random"]));
+
+    public Task<ImmutableList<GameSummaryDto>> List(CancellationToken cancellationToken) =>
+        this.Answer(ImmutableList.Create(new GameSummaryDto(GameId, "classic", 1, [0])));
+
+    public Task<GameCreatedDto> Create([Required] CreateGameRequest request, CancellationToken cancellationToken) =>
+        this.Answer(new GameCreatedDto(GameId), request);
+
+    public Task<GameViewDto> Get([Required] string gameId, CancellationToken cancellationToken) =>
+        this.Answer(View, gameId);
+
+    public Task<SeatClaimedDto> Claim([Required] string gameId, int seat, CancellationToken cancellationToken) =>
+        this.Answer(new SeatClaimedDto(Token), (gameId, seat));
+
+    public Task<GameViewDto> Submit(
+        [Required] string gameId,
+        [Required] string token,
+        [Required] ActionDto action,
+        CancellationToken cancellationToken
+    ) =>
+        this.Answer(View, (gameId, token, action));
+
+    private Task<T> Answer<T>(T answer, object? received = null)
+    {
+        this.Received = received ?? this.Received;
+        Exception? failure = this.Failure;
+        this.Failure = null;
+        return failure is null ? Task.FromResult(answer) : Task.FromException<T>(failure);
+    }
+}

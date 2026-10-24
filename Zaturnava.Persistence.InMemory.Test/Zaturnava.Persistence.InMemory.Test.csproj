@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Zaturnava.Persistence.InMemory\Zaturnava.Persistence.InMemory.csproj" />
+  </ItemGroup>
+
+</Project>

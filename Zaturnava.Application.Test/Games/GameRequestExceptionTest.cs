@@ -1,0 +1,52 @@
+using Net.NowhereAtAll.Zaturnava.Application.Bots;
+using Net.NowhereAtAll.Zaturnava.Application.Games;
+using Net.NowhereAtAll.Zaturnava.Application.Ports;
+using Net.NowhereAtAll.Zaturnava.Application.Rulesets;
+using Net.NowhereAtAll.Zaturnava.Engine.Seats;
+
+namespace Net.NowhereAtAll.Zaturnava.Application.Test.Games;
+
+public sealed class GameRequestExceptionTest
+{
+    private static readonly GameId Game = new("g");
+
+    public static TheoryData<GameRequestException, GameRequestFailure, string> Refusals => new()
+    {
+        { new GameNotFoundException(Game), GameRequestFailure.NotFound, "There is no game 'g'." },
+        { new InvalidGameSetupException("Bad."), GameRequestFailure.Invalid, "Bad." },
+        { new UnknownRulesetException("chess"), GameRequestFailure.Invalid, "There is no 'chess' ruleset." },
+        { new UnknownBotException("genius"), GameRequestFailure.Invalid, "There is no 'genius' bot." },
+        {
+            new NotYourTurnException(Game, new SeatId(1)),
+            GameRequestFailure.Forbidden,
+            "Seat 1 of game 'g' is not yours to play now."
+        },
+        {
+            new SeatUnavailableException(Game, new SeatId(2)),
+            GameRequestFailure.Conflict,
+            "Seat 2 of game 'g' is not open."
+        },
+        {
+            new ConcurrencyConflictException(Game),
+            GameRequestFailure.Conflict,
+            "Game 'g' changed meanwhile; read it again."
+        },
+    };
+
+    [Theory]
+    [MemberData(nameof(Refusals), DisableDiscoveryEnumeration = true)]
+    public void Failure_WhenRefused_SaysWhatKindOfRefusalAndWhy(
+        GameRequestException exception,
+        GameRequestFailure failure,
+        string message
+    )
+    {
+        // Arrange - nothing beyond the arguments
+
+        // Act
+        GameRequestFailure reported = exception.Failure;
+
+        // Assert
+        Assert.Equal((failure, message), (reported, exception.Message));
+    }
+}

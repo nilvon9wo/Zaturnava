@@ -1,0 +1,91 @@
+using System.Collections.Concurrent;
+using System.Collections.Immutable;
+using System.ComponentModel.DataAnnotations;
+using System.Globalization;
+using Net.NowhereAtAll.Zaturnava.Contracts;
+
+namespace Net.NowhereAtAll.Zaturnava.Web.Test;
+
+/// <summary>
+/// A game server the pages can call: it answers with <see cref="View"/> (a two-by-two board, seat 0
+/// to move), remembers what it was asked, and fails the next request with <see cref="Failure"/>.
+/// </summary>
+internal sealed class FakeGameServer : IGameServing
+{
+    public const string GameId = "game-0001";
+    public const string Token = "secret";
+
+    public static readonly ActionDto Pass = Action("pass");
+    public static readonly ActionDto Advance = Action("move", (ActionArguments.From, 0), (ActionArguments.To, 1));
+    public static readonly ActionDto Leap = Action("move", (ActionArguments.From, 0), (ActionArguments.To, 3));
+
+    public static readonly GameViewDto SeatZeroToMove = new(
+        GameId,
+        "classic",
+        "Zaturnava (classic)",
+        1,
+        1,
+        0,
+        [.. Enumerable.Range(0, 4).Select(id => new CellDto(id, id % 2, Math.DivRem(id, 2).Quotient, "square"))],
+        [new PieceDto(0, "raja", "Raja", 0, 0)],
+        [new SeatDto(0, "Black", 0, 0, "human", null), new SeatDto(1, "Yellow", 1, 5, "bot", "random")],
+        [Pass, Advance, Leap]
+    );
+
+    public GameViewDto View { get; set; } = SeatZeroToMove;
+
+    public ImmutableList<GameSummaryDto> Games { get; set; } = [new(GameId, "classic", 1, [1, 3])];
+
+    public Exception? Failure { get; set; }
+
+    public ConcurrentQueue<string> Calls { get; } = new();
+
+    public CreateGameRequest? Created { get; private set; }
+
+    public (string GameId, string Token, ActionDto Action)? Submitted { get; private set; }
+
+    public Task<CatalogDto> Catalog(CancellationToken cancellationToken) =>
+        this.Answer("catalog", new CatalogDto([new RulesetDto("classic", "Zaturnava (classic)", 4)], ["random"]));
+
+    public Task<ImmutableList<GameSummaryDto>> List(CancellationToken cancellationToken) =>
+        this.Answer("list", this.Games);
+
+    public Task<GameCreatedDto> Create([Required] CreateGameRequest request, CancellationToken cancellationToken)
+    {
+        this.Created = request;
+        return this.Answer("create", new GameCreatedDto(GameId));
+    }
+
+    public Task<GameViewDto> Get([Required] string gameId, CancellationToken cancellationToken) =>
+        this.Answer("get " + gameId, this.View);
+
+    public Task<SeatClaimedDto> Claim([Required] string gameId, int seat, CancellationToken cancellationToken) =>
+        this.Answer($"claim {gameId} {seat.ToString(CultureInfo.InvariantCulture)}", new SeatClaimedDto(Token));
+
+    public Task<GameViewDto> Submit(
+        [Required] string gameId,
+        [Required] string token,
+        [Required] ActionDto action,
+        CancellationToken cancellationToken
+    )
+    {
+        this.Submitted = (gameId, token, action);
+        return this.Answer("submit", this.View);
+    }
+
+    private static ActionDto Action(string kind, params (string Name, int Cell)[] cells) =>
+        new(
+            kind,
+            cells.Select(cell => (cell.Name, Value: cell.Cell.ToString(CultureInfo.InvariantCulture)))
+                .Append((Name: ActionArguments.Actor, Value: "0"))
+                .ToImmutableSortedDictionary(argument => argument.Name, argument => argument.Value)
+        );
+
+    private Task<T> Answer<T>(string call, T answer)
+    {
+        this.Calls.Enqueue(call);
+        Exception? failure = this.Failure;
+        this.Failure = null;
+        return failure is null ? Task.FromResult(answer) : Task.FromException<T>(failure);
+    }
+}

@@ -1,0 +1,62 @@
+@* Any board, from the cells' layouts alone: a unit square per cell, the pieces on top, and the
+   cells a piece can be picked up from or put down on marked. *@
+
+<svg class="board" viewBox="@this._frame.ViewBox" role="grid">
+    @foreach (CellDto cell in this.View.Cells)
+    {
+        <rect class="@this.CellClass(cell)"
+              x="@Svg.Number(cell.X - BoardFrame.HalfCell)"
+              y="@Svg.Number(BoardFrame.ScreenY(cell.Y) - BoardFrame.HalfCell)"
+              width="1"
+              height="1"
+              data-cell="@cell.Id"
+              @onclick="() => this.OnCellClicked.InvokeAsync(cell.Id)" />
+    }
+    @foreach (PieceDto piece in this.View.Pieces)
+    {
+        CellDto cell = this._cells[piece.Cell];
+        <g class="piece seat-@piece.Owner" pointer-events="none">
+            <title>@piece.Name</title>
+            <circle cx="@Svg.Number(cell.X)" cy="@Svg.Number(BoardFrame.ScreenY(cell.Y))" r="0.38" />
+            <text x="@Svg.Number(cell.X)" y="@Svg.Number(BoardFrame.ScreenY(cell.Y))">@piece.Name[..1]</text>
+        </g>
+    }
+</svg>
+
+@code {
+    private BoardFrame _frame = BoardFrame.Empty;
+    private ImmutableDictionary<int, CellDto> _cells = ImmutableDictionary<int, CellDto>.Empty;
+
+    [Parameter, EditorRequired]
+    public GameViewDto View { get; set; } = null!;
+
+    [Parameter, EditorRequired]
+    public BoardActions Actions { get; set; } = null!;
+
+    [Parameter, EditorRequired]
+    public BoardSelection Selection { get; set; } = null!;
+
+    [Parameter]
+    public EventCallback<int> OnCellClicked { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        this._frame = BoardFrame.Of(this.View.Cells);
+        this._cells = this.View.Cells.ToImmutableDictionary(cell => cell.Id);
+    }
+
+    private string CellClass(CellDto cell) =>
+        string.Join(
+            ' ',
+            new[]
+            {
+                "cell",
+                BoardFrame.IsDark(cell) ? "dark" : "light",
+                this.Actions.Origins.Contains(cell.Id) ? "origin" : null,
+                this.Selection.Selected == cell.Id ? "selected" : null,
+                this.Selection.Selected is { } from && this.Actions.TargetsFrom(from).Contains(cell.Id)
+                    ? "target"
+                    : null,
+            }.OfType<string>()
+        );
+}

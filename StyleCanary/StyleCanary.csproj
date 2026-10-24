@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Deliberately non-compliant code - see README.md. Not part of Zaturnava.slnx, so no ordinary
+    gate ever sees it; only scripts/verify-gates.py builds, formats, lays out and inspects it, to
+    prove each gate still reports what it is supposed to. Its name does not start with
+    "Zaturnava.", so Directory.Build.props gives it neither Stipulate nor the Fody weaving: those
+    would only add noise to what the gates report.
+  -->
+  <PropertyGroup>
+    <RootNamespace>Net.NowhereAtAll.Zaturnava.StyleCanary</RootNamespace>
+  </PropertyGroup>
+
+</Project>

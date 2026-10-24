@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    IGameServing over HTTP, for any .NET client (the Blazor page, the MCP server, a bot runner, a
+    command line, MAUI). It knows the contracts and nothing of the server behind them.
+  -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\Zaturnava.Contracts\Zaturnava.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>

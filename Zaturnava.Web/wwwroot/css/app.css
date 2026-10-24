@@ -1,0 +1,53 @@
+:root {
+    --light: #f0d9b5;
+    --dark: #b58863;
+    --origin: rgba(255, 255, 255, 0.35);
+    --target: rgba(40, 160, 70, 0.55);
+    --selected: rgba(240, 200, 40, 0.75);
+    --seat-0: #222;
+    --seat-1: #d4b106;
+    --seat-2: #2f8f3a;
+    --seat-3: #c0392b;
+    --ink: #1c1c1c;
+    --paper: #fafaf7;
+}
+
+body {
+    margin: 0;
+    padding: 16px;
+    font-family: system-ui, sans-serif;
+    color: var(--ink);
+    background: var(--paper);
+}
+
+.board {
+    width: min(92vw, 560px);
+    height: auto;
+    display: block;
+}
+
+.cell.light { fill: var(--light); }
+.cell.dark { fill: var(--dark); }
+.cell.origin { fill: var(--origin); cursor: pointer; }
+.cell.selected { fill: var(--selected); }
+.cell.target { fill: var(--target); cursor: pointer; }
+
+.piece circle { stroke: #fff; stroke-width: 0.04; }
+.piece text {
+    font-size: 0.45px;
+    fill: #fff;
+    text-anchor: middle;
+    dominant-baseline: central;
+}
+
+.seat-0 circle { fill: var(--seat-0); }
+.seat-1 circle { fill: var(--seat-1); }
+.seat-2 circle { fill: var(--seat-2); }
+.seat-3 circle { fill: var(--seat-3); }
+
+.seats { list-style: none; padding: 0; }
+.seat.deciding { font-weight: bold; }
+
+.problem { color: #b00020; }
+
+button { margin: 4px; }

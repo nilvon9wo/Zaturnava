@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The rules kernel: board topology, piece movement grammar, seats and teams, positions, actions,
+    events, and the contract every ruleset (variant) implements. It knows nothing of any one game,
+    of who or what is playing, or of storage, transport or user interface; see
+    docs/architecture.md.
+  -->
+
+</Project>

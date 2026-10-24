@@ -1,0 +1,97 @@
+@* Start a game (each seat a person or a bot) and sit at it, or join or watch one already started. *@
+@inject IGameServing Games
+
+<section class="lobby">
+    <h1>Zaturnava</h1>
+
+    @if (this._problem is { } problem)
+    {
+        <p class="problem" role="alert">@problem</p>
+    }
+
+    @if (this._catalog is { } catalog)
+    {
+        <h2>New game</h2>
+        <p class="rules">@Ruleset(catalog).Name</p>
+        <ol class="plans">
+            @foreach (int seat in Enumerable.Range(0, this._plans.Count))
+            {
+                <li>
+                    <select class="plan" @bind="this._plans[seat]">
+                        <option value="">Person</option>
+                        @foreach (string bot in catalog.Bots)
+                        {
+                            <option value="@bot">Bot: @bot</option>
+                        }
+                    </select>
+                </li>
+            }
+        </ol>
+        <button class="create" @onclick="() => this.Create(catalog)">Play</button>
+
+        <h2>Games</h2>
+        <ul class="games">
+            @foreach (GameSummaryDto game in this._games)
+            {
+                <li>
+                    <span class="game">@game.Id[..Math.Min(8, game.Id.Length)]</span>
+                    @foreach (int seat in game.OpenSeats)
+                    {
+                        <button class="join" @onclick="() => this.Join(game.Id, seat)">Join seat @(seat + 1)</button>
+                    }
+                    <button class="watch" @onclick="() => this.OnSeated.InvokeAsync(Seating.Watching(game.Id))">
+                        Watch
+                    </button>
+                </li>
+            }
+        </ul>
+    }
+</section>
+
+@code {
+    private CatalogDto? _catalog;
+    private ImmutableList<GameSummaryDto> _games = [];
+    private List<string> _plans = [];
+    private string? _problem;
+
+    [Parameter]
+    public EventCallback<Seating> OnSeated { get; set; }
+
+    protected override async Task OnInitializedAsync() => this._problem = await Requests.Attempt(this.Load);
+
+    private static RulesetDto Ruleset(CatalogDto catalog) => catalog.Rulesets[0];
+
+    private async Task Load()
+    {
+        CatalogDto catalog = await this.Games.Catalog(CancellationToken.None);
+        this._games = await this.Games.List(CancellationToken.None);
+        this._plans = [.. Enumerable.Range(0, Ruleset(catalog).SeatCount)
+            .Select(seat => seat == 0 ? string.Empty : catalog.Bots.FirstOrDefault(string.Empty))];
+        this._catalog = catalog;
+    }
+
+    private async Task Create(CatalogDto catalog) =>
+        this._problem = await Requests.Attempt(() => this.CreateAndSit(catalog));
+
+    private async Task CreateAndSit(CatalogDto catalog)
+    {
+        CreateGameRequest request = new(
+            Ruleset(catalog).Id,
+            [.. this._plans.Select(plan => plan.Length == 0 ? null : plan)]
+        );
+        GameCreatedDto created = await this.Games.Create(request, CancellationToken.None);
+        int person = this._plans.IndexOf(string.Empty);
+        await (person >= 0
+            ? this.Claim(created.GameId, person)
+            : this.OnSeated.InvokeAsync(Seating.Watching(created.GameId)));
+    }
+
+    private async Task Join(string gameId, int seat) =>
+        this._problem = await Requests.Attempt(() => this.Claim(gameId, seat));
+
+    private async Task Claim(string gameId, int seat)
+    {
+        SeatClaimedDto claimed = await this.Games.Claim(gameId, seat, CancellationToken.None);
+        await this.OnSeated.InvokeAsync(new Seating(gameId, new SeatClaim(seat, claimed.Token)));
+    }
+}

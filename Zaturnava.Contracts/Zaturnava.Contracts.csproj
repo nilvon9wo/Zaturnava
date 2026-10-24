@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The wire protocol between the server and every client: plain data, the routes it travels on,
+    and IGameServing, the one interface a client programs against. It references no other
+    Zaturnava project, so a client in any form (browser, phone, desktop, command line, MCP) needs
+    nothing else, and the server is free to change behind it.
+  -->
+
+</Project>

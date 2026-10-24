@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    What every .NET client shows and how a player's clicks become actions, independent of any UI
+    framework: the Blazor page uses it today; a MAUI, desktop or console client can tomorrow.
+    It knows the contracts and nothing else.
+  -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\Zaturnava.Contracts\Zaturnava.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>

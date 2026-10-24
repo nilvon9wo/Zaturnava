@@ -1,0 +1,112 @@
+@* A game: the board, the seats, and - on the player's turn - the actions they may take. While others
+   decide, it asks the server for the game again every TableSettings.PollInterval. *@
+@implements IDisposable
+@inject IGameServing Games
+@inject TableSettings Settings
+
+<section class="table">
+    <header>
+        <button class="leave" @onclick="this.OnLeave">Lobby</button>
+        @if (this._view is { } heading)
+        {
+            <h1>@heading.RulesetName</h1>
+            <p class="status">@this.Status(heading)</p>
+        }
+    </header>
+
+    @if (this._problem is { } problem)
+    {
+        <p class="problem" role="alert">@problem</p>
+    }
+
+    @if (this._view is { } view)
+    {
+        <Board View="view" Actions="this.Actions" Selection="this._selection" OnCellClicked="this.Click" />
+
+        <ol class="seats">
+            @foreach (SeatDto seat in view.Seats)
+            {
+                <li class="seat seat-@seat.Id @(seat.Id == view.DecidingSeat ? "deciding" : null)">
+                    @seat.Name: @seat.Score (@this.Player(seat))
+                </li>
+            }
+        </ol>
+    }
+
+    @if (this._turn is { } turn)
+    {
+        <div class="actions">
+            @foreach (ActionDto action in turn.Actions.OffBoard)
+            {
+                <button class="action" @onclick="() => this.Submit(turn.Claim, action)">@action.Kind</button>
+            }
+        </div>
+    }
+</section>
+
+@code {
+    private static readonly BoardActions NoActions = new([]);
+
+    private readonly Timer _poll;
+    private GameViewDto? _view;
+    private Turn? _turn;
+    private BoardSelection _selection = BoardSelection.None;
+    private string? _problem;
+
+    public Table() => this._poll = new Timer(this.Tick);
+
+    [Parameter, EditorRequired]
+    public Seating Seating { get; set; } = null!;
+
+    [Parameter]
+    public EventCallback OnLeave { get; set; }
+
+    private BoardActions Actions => this._turn?.Actions ?? NoActions;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _ = this._poll.Change(this.Settings.PollInterval, this.Settings.PollInterval);
+        await this.Refresh();
+    }
+
+    public void Dispose() => this._poll.Dispose();
+
+    private string Status(GameViewDto view) =>
+        view.DecidingSeat is { } seat
+            ? this._turn is null ? $"{view.Seats[seat].Name} to move." : "Your move."
+            : "The game is over.";
+
+    private void Tick(object? state) => _ = this.InvokeAsync(this.PollWhileWaiting);
+
+    private async Task PollWhileWaiting()
+    {
+        await (this._turn is null ? this.Refresh() : Task.CompletedTask);
+        this.StateHasChanged();
+    }
+
+    private string Player(SeatDto seat) => seat.Id == this.Seating.Claim?.Seat ? "you" : seat.Bot ?? seat.Controller;
+
+    private Task Refresh() => this.Request(() => this.Games.Get(this.Seating.GameId, CancellationToken.None));
+
+    private Task Click(int cell)
+    {
+        (BoardSelection next, ActionDto? chosen) = this._selection.Click(cell, this.Actions);
+        this._selection = next;
+        return this._turn is { } turn && chosen is { } action ? this.Submit(turn.Claim, action) : Task.CompletedTask;
+    }
+
+    private Task Submit(SeatClaim claim, ActionDto action) =>
+        this.Request(() => this.Games.Submit(this.Seating.GameId, claim.Token, action, CancellationToken.None));
+
+    private async Task Request(Func<Task<GameViewDto>> request) =>
+        this._problem = await Requests.Attempt(async () => this.Show(await request()));
+
+    private void Show(GameViewDto view)
+    {
+        this._view = view;
+        this._turn = view.DecidingSeat is { } deciding && this.Seating.Claim is { } claim && claim.Seat == deciding
+            ? new Turn(claim, new BoardActions(view.LegalActions))
+            : null;
+        this._selection = BoardSelection.None;
+    }
+}

@@ -1,0 +1,333 @@
+# Zaturnava — Architecture (v0.2 draft)
+
+How the code is shaped so that the base ruleset in [rules.md](rules.md) is one
+*configuration* of a more general system rather than the system itself, and so
+that every service, client, board and piece set around it can be replaced
+without touching the rest.
+
+Sections marked **(design)** describe where the engine is going; everything
+else describes the code as it stands. [rules.md](rules.md#implementation-status)
+lists which rules are implemented so far.
+
+## 1. Design Goals
+
+- The rules engine does not know or care what drives it: a browser, a phone,
+  a console, a bot, an AI over MCP — or what transport carries the requests.
+- Changing board shape or size, army count, team topology, piece set, dice
+  behavior, promotion rules or win conditions means writing or selecting a
+  configuration and small pluggable policies, not editing move legality or
+  turn sequencing.
+- The engine is deterministic and side-effect-free: the same starting state
+  and the same actions always produce the same result. That is what makes it
+  testable in isolation, replayable, and transport-agnostic.
+- Every dependency outside the engine — storage, hosting, notification,
+  clients — sits behind an interface (a *port*) with one or more replaceable
+  implementations (*adapters*), chosen by configuration in one place.
+- Async first, sync compatible: "submit a move and come back later" works
+  today; a live layer can be added later without changing the engine or the
+  stored data.
+- A seat is played by a human, a bot or an AI, and the engine cannot tell
+  which.
+
+## 2. Layered Abstraction Model
+
+### 2.1 Board topology
+
+The board is a set of cells and a way to move between them, never an assumed
+8×8 grid. `ICellNavigating` (Engine) gives the cells (`CellId`, an opaque
+number), the neighbour one step in a `Direction`, the concrete directions of a
+named `DirectionSet` (orthogonal, diagonal, knight, forward, forward
+diagonals) for a seat facing a given way, and a `CellLayout` for drawing.
+
+`SquareGridTopology(width, height)` (Topology.SquareGrid) is the only
+implementation so far. A hex topology would be another implementation of the
+same interface: pieces and move generation only ever step along directions,
+never through coordinates. Only the layout — where a client draws a cell —
+mentions geometry, and it travels to clients as data (`CellDto` with a
+`Shape`).
+
+### 2.2 Piece catalog and movement grammar
+
+A piece kind is data: a `PieceKind` holding a list of `MovementRule`s, each
+"travel along these directions between *m* and *n* steps, blocked or leaping,
+onto an empty cell, a capture, or either". `MovementRule.Step`, `Slide` and
+`Leap`, narrowed by `MoveOnly` and `CaptureOnly`, express all five base pieces
+(Variants.Classic `ClassicPieces`); `MoveGenerator` (Engine) turns them into
+moves on any topology. A new piece for a variant is a new entry, not new
+engine code.
+
+A piece's *identity* (its display name) is kept apart from its *behaviour*:
+`PieceKindId` is a key, and the ruleset's `NameOf` gives the label, so
+"Elephant" against a chess-styled "Rook" is a naming choice, not a code
+change.
+
+### 2.3 Seats, players, and teams
+
+- A **seat** (`Seat`, `SeatId`) is one army's structural slot, independent of
+  who plays it. So far it carries the direction its army calls forward; its
+  pieces' starting cells are the ruleset's setup, and its throne will join it
+  with throne control.
+- A **controller** is bound to each seat when a game is created
+  (`SeatController`: an open seat waiting for a person, a person holding the
+  seat's token, or a named bot). Anything that decides a seat implements
+  `IDeciding`; the engine only ever asks the rules for the legal actions of the
+  deciding seat.
+- **Teams** are a `TeamGraph` over the seats, not an assumption of two pairs
+  facing each other: adjacent teammates, 3-against-1 or free-for-all are other
+  graphs. Team membership is fixed for the lifetime of a game.
+
+### 2.4 Controlled Armies — the unifying primitive
+
+**(design)** Three rules in rules.md §6–7 are expressions of one concept:
+
+```
+ControlledArmies(decisionMaker, moment) =
+    { decisionMaker's own army }
+  ∪ { army of any seat whose throne decisionMaker's own Raja currently occupies }
+  ∪ { army of any ally who currently has no Raja on the board at all }
+```
+
+The third term is independent of throne occupation — it fires purely off the
+ally's Raja-less state (rules.md §6.1(b)), so it can apply even when
+`decisionMaker`'s Raja isn't sitting on anyone's throne.
+
+- **Expanded-pool movement** (rules.md §6.1): on a player's own turn, the
+  legal move pool is `ControlledArmies(thatPlayer, now)`.
+- **Doubles-escape scope** (rules.md §7) reuses the same function: an
+  escaping piece's *category* is checked against every army in
+  `ControlledArmies(decisionMaker, now)`.
+- **Regency delegation and forced shared turns** (rules.md §6.2, §6.3) are the
+  one deliberate exception, keyed on *who is deciding*: when someone other
+  than the seat's own player makes the decision, the pool is just that seat's
+  native army. The occupied player's *own* first move within a §6.3 forced
+  shared turn is not the exception — it draws normally from
+  `ControlledArmies(occupiedPlayer, now)`.
+
+One function with one exception path is simpler to get right, and to keep
+right as mechanics are layered on, than three independent rule systems.
+
+### 2.5 Turn / phase state machine
+
+**(design)** Several rules need multi-step turns with sub-decisions
+(roll or move, which die to act on first, whether to decline a move, a
+mid-turn hand-off per §6.2). A turn becomes an explicit sequence of phases —
+e.g. `ChooseModeAndRoll → ResolveDieResult(1) → ResolveDieResult(2) →
+TurnComplete` — with a delegation phase that can hand the remaining phases to
+another decision-maker. The engine already models this much of it:
+`GameState.DecidingSeat` names whose decision the game is waiting for, which
+need not be the seat whose turn it is.
+
+### 2.6 Rule modules
+
+**(design)** Mechanics that are exceptions to plain movement — throne
+control, boat triumph, promotion and ransom, dice, scoring bonuses — become
+discrete modules hooked around the core move application (before a move,
+after a move, at the start of a turn). The core applies a legal move and asks
+each module whether anything else happens; it never itself knows what a Boat
+Triumph is.
+
+## 3. Engine as a Pure Reducer
+
+A ruleset is an `IRulesApplying`:
+
+```
+CreateInitialState()            -> GameState
+LegalActions(GameState)         -> GameAction[]        (empty once the game is over)
+Apply(GameState, GameAction)    -> Transition(GameState, GameEvent[])
+Parse(ActionDescriptor)         -> GameAction
+```
+
+- No I/O, no database, no clock. Chance (the dice, once implemented) will be
+  handed in as a port of its own, so that a replay or a test supplies the
+  rolls that actually happened.
+- `GameState` is an immutable record; every action produces a new state and
+  the domain events (`PieceMoved`, `PieceCaptured`, `TurnPassed`, …) that
+  everything else can be driven from.
+- An action crosses process boundaries as an `ActionDescriptor` — a kind and
+  named string arguments (`actor`, `from`, `to`) — which the ruleset parses
+  back. Clients never need the engine's types.
+- An illegal action is refused (`IllegalActionException`); a malformed one
+  likewise (`MalformedActionException`). Nothing is ever partly applied.
+
+## 4. Persistence Model
+
+A game is stored as its ruleset, its seat controllers and the **list of every
+action taken** (`GameRecord`), never as a state snapshot: the state is
+replayed from the initial state. That gives replay and audit for free, and
+fits asynchronous play — there is no session to keep.
+
+Each save increments `GameRecord.Version`, and `IGamePersisting.Replace` only
+overwrites the version one less, so two concurrent changes cannot both win
+(`ConcurrencyConflictException`, answered as 409).
+
+Adapters, chosen by the server's `Storage:Provider` setting:
+
+| Provider | Project | Use |
+|---|---|---|
+| `InMemory` (default) | Persistence.InMemory | Development, tests; lost on restart. |
+| `Sqlite` | Persistence.EfCore | A single file; `ConnectionStrings:Games`. |
+| `SqlServer` | Persistence.EfCore | A hosted database; `ConnectionStrings:Games`. |
+
+A periodic snapshot beside the action list is a later optimization, if replay
+ever costs enough to matter.
+
+## 5. Projects and Dependencies
+
+Ports and adapters: the engine at the centre depends on nothing; the
+application layer depends only on the engine and declares the ports it needs;
+adapters implement them; the server is the one composition root that knows
+every concrete choice. The client side shares nothing with the server but the
+contracts.
+
+| Project | Role | May use |
+|---|---|---|
+| Engine | Pure rules primitives: cells, pieces, moves, state, `IRulesApplying`, `IDeciding` | — |
+| Topology.SquareGrid | `ICellNavigating` for rectangular grids | Engine |
+| Variants.Classic | The base ruleset (`ClassicRules`) | Engine, Topology.SquareGrid |
+| Bots | Bot players (`RandomBot`) | Engine |
+| Application | Use cases (`GameService`), the decision loop, catalogs of rulesets and bots; ports `IGamePersisting`, `IGameNotifying` | Engine |
+| Persistence.InMemory | `IGamePersisting` in memory | Application, Engine |
+| Persistence.EfCore | `IGamePersisting` over EF Core (SQLite, SQL Server) | Application, Engine |
+| Contracts | The wire protocol: DTOs, routes, refusals, `IGameServing` | — |
+| Client | `IGameServing` over HTTP (`HttpGameClient`) | Contracts |
+| Presentation | Client-side board logic: frame, clickable actions, selection | Contracts |
+| Web | Blazor WebAssembly client | Client, Contracts, Presentation |
+| Mcp | MCP server (stdio) letting an AI play through any server | Client, Contracts |
+| BotRunner | Command-line self-play: bots against bots, games as JSON lines | Application, Bots, Engine, Variants.Classic |
+| Server | ASP.NET Core host; the composition root | Application, Bots, Contracts, Engine, Persistence.*, Topology.SquareGrid, Variants.Classic |
+
+The table is enforced: `Zaturnava.Architecture.Test` reads every project
+reference and fails on any dependency not listed, and on any project in
+`Zaturnava.slnx` the table does not know.
+
+What each replaceable part is swapped through:
+
+| To replace | Implement | Register in |
+|---|---|---|
+| Board shape | `ICellNavigating` | the ruleset |
+| Piece set | `PieceKind` entries | the ruleset |
+| Ruleset / variant | `IRulesApplying` | Server `ZaturnavaServices` (and BotRunner) |
+| Bot | `IDeciding` | the bot catalog in the same places |
+| Storage | `IGamePersisting` | Server `GameStorage`, chosen by `Storage:Provider` |
+| Notification / push | `IGameNotifying` (now `SilentNotifier`: clients poll) | Server `ZaturnavaServices` |
+| Server, for a client | `IGameServing` | the client's composition (`Server:Url`, `ZATURNAVA_SERVER_URL`) |
+| Client | anything speaking §6 | — |
+
+## 6. Protocol
+
+HTTP and JSON (`JsonSerializerOptions.Web`), routes relative to the server's
+base address (`GameRoutes`):
+
+| Request | Route | Answer |
+|---|---|---|
+| Rulesets and bots on offer | `GET api/catalog` | `CatalogDto` |
+| Games | `GET api/games` | `GameSummaryDto[]` |
+| Create a game | `POST api/games` with `CreateGameRequest` (a ruleset, and per seat a bot id or null for a person) | 201, `GameCreatedDto` |
+| A game | `GET api/games/{id}` | `GameViewDto`: cells, pieces, seats, scores, whose decision, the legal actions |
+| Claim an open seat | `POST api/games/{id}/seats/{seat}` | `SeatClaimedDto` with the seat's token |
+| Act | `POST api/games/{id}/actions` with `ActionDto`, `Authorization: Bearer {token}` | `GameViewDto` after the action and any bot replies |
+
+- **Seat tokens** are the only credential. One is issued when a seat is
+  claimed, shown once, and stored only as a hash; no accounts, no personal
+  data.
+- **Bots** reply inside the request that made it their turn, up to
+  `Games:MaximumBotSteps` in a row.
+- **Refusals** are RFC 9457 problem details, and each `Refusal` has one
+  status: Invalid 400, Forbidden 403, NotFound 404, Conflict 409, Illegal 422.
+  `HttpGameClient` turns them back into `GameRequestRefusedException`, so a
+  client sees the same refusal however it is connected.
+- **CORS** admits the browser origins under `Cors:Origins`, each under a name
+  of its own so that another settings file adds an origin rather than
+  replacing one.
+- **Change notification**: none yet; the Web client polls every
+  `Table:PollSeconds` (default 2). A push channel would be an `IGameNotifying`
+  adapter plus a client subscription, with no change to the engine or the
+  stored data.
+
+## 7. Clients
+
+- **Web** — Blazor WebAssembly, a static site of about 16 MB, meant to be
+  uploaded to itch.io as an HTML game. It renders the board as SVG from the
+  cell layouts it is sent, so a different topology needs no client change.
+  `wwwroot/appsettings.json` names the server (`Server:Url`).
+- **MCP** — a stdio MCP server whose tools (`catalog`, `list_games`,
+  `create_game`, `claim_seat`, `get_game`, `submit_action`) call a game server
+  through `IGameServing`; an AI plays exactly as a person would, by claiming a
+  seat and acting with its token.
+- **BotRunner** — runs bots against bots in-process, for testing rulesets and
+  bots, and writes each game as a JSON line (`--ruleset`, `--bots`, `--games`,
+  `--max-steps`, `--out`).
+- Android, iPhone, Windows or command-line clients would reuse Contracts and
+  Client (or speak the protocol directly); Presentation holds board logic that
+  is not Blazor-specific.
+
+## 8. Tech Stack & Hosting
+
+| Concern | Choice |
+|---|---|
+| Language, runtime | C#, .NET 10 |
+| Engine, application | Plain class libraries; parameter preconditions by Stipulate; `ConfigureAwait(false)` woven by ConfigureAwait.Fody |
+| Server | ASP.NET Core minimal API |
+| Storage | EF Core (SQLite, SQL Server) or in memory |
+| Web client | Blazor WebAssembly |
+| AI access | ModelContextProtocol SDK |
+| Tests | xUnit v3 on Microsoft Testing Platform, bUnit, Xfty test data; 100% line and branch coverage per project |
+
+### Hosting — status: **leading option, not decided**
+
+Constraints (2026-10-24): free, **with no credit card on file anywhere**, so
+that neither popularity nor abuse can produce a bill; every provider
+replaceable.
+
+- **Front door: itch.io** (agreed), hosting the Web client as an HTML game.
+- **Game server: MonsterASP.NET free tier** is the leading candidate: no
+  card, EU datacenter, ASP.NET Core and SQL Server, 256 MB RAM, 1 GB database,
+  WebSockets. Its limits: the site stops when idle and starts on the next
+  request; free HTTPS needs a support ticket; a free site unused for six
+  months is archived; no backups. Its traffic limits are still to be
+  confirmed with their support.
+- **Fallback**: a relay on Cloudflare's free plan behind the same protocol.
+
+Nothing in the code depends on the host: the server reads its storage,
+origins and limits from configuration, and the clients read the server's
+address from theirs.
+
+The table-top platforms that could have hosted the game outright were ruled
+out: Game Courier's four-handed chaturanga does not enforce rules, Board Game
+Arena licenses only published games, and Zillions of Games' piece model cannot
+express controlled armies (§2.4). For discoverability, being *listed* —
+chessvariants.com and BoardGameGeek pages linking to the itch.io page — reaches
+the same audience.
+
+## 9. Configuration Surface (cross-reference)
+
+Per-game **rule** toggles (dice profile, promotion pool, end-game safety nets,
+scoring) are listed in [rules.md §12](rules.md#12-configuration-toggles). The
+**structural** configuration is chosen by the ruleset:
+
+| Axis | Base configuration | Generalizes to |
+|---|---|---|
+| Board topology | 8×8 square grid | Any size; hex grid; non-grid topologies |
+| Seat count / layout | 4 seats, pinwheel corners | Any arrangement the topology supports |
+| Team graph | 2 teams of 2, opposite seats | Adjacent teammates, 3v1, free-for-all |
+| Piece catalog | Raja, Elephant, Horse, Boat, Pawn | Any piece the movement grammar expresses |
+| Seat controller | Chosen per seat at creation | Person, bot or AI, in any mix |
+
+## 10. Open Questions / Deferred
+
+- The game server's host (§8): confirm MonsterASP.NET's traffic limits and
+  archiving rules, and its site address for the Web client's production
+  settings.
+- A push channel to replace polling (§6), and keeping a seat's token in the
+  browser between visits.
+- Dice as an injected port, the turn phase machine (§2.5), controlled armies
+  (§2.4) and rule modules (§2.6), as the remaining rules are implemented.
+- Exact `gameEnd.safetyNet.*` parameters (rules.md §13) — now that bots exist,
+  `Games:MaximumBotSteps` bounds bot-only play per request, but the rules-level
+  defaults are still open.
+- Fluid team membership mid-game — out of scope, a possible future variant.
+- Whether a throne should follow a relocated Raja starting square, for
+  configurations that vary where the Raja starts (rules.md §2) — only matters
+  once such a variance exists.
+- Piece naming and the Boat's identity (rules.md §13) — cosmetic only; the
+  movement grammar (§2.2) is unaffected either way.
