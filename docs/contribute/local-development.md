@@ -43,8 +43,8 @@ Build first, then run both with `--no-build`: two builds at once collide on the 
 assemblies.
 
 - The page finds the server through `Zaturnava.Web/wwwroot/appsettings.json` (`Server:Url`).
-- The server admits the page's origin through `Cors:Origins`; `appsettings.Development.json`
-  adds `http://localhost:5165`.
+- The server admits the page's origin through its page host; `appsettings.Development.json`
+  chooses the `Listed` host, with `http://localhost:5165`.
 - Games are kept in memory unless `Storage:Provider` says `Sqlite` or `SqlServer`, with
   `ConnectionStrings:Games`; for a file that survives restarts:
 

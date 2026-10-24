@@ -88,19 +88,39 @@ public sealed class RawHttpTest(ZaturnavaServer server) : IClassFixture<Zaturnav
     }
 
     [Fact]
-    public async Task Preflight_WhenTheOriginIsTheItchIoPage_AllowsIt()
+    public async Task Preflight_WhenTheOriginIsTheListedPage_AllowsIt()
     {
         // Arrange
-        const string itchIo = "https://html-classic.itch.zone";
-        using HttpRequestMessage preflight = new(HttpMethod.Options, GameRoutes.Games);
-        preflight.Headers.Add("Origin", itchIo);
-        preflight.Headers.Add("Access-Control-Request-Method", "POST");
+        const string page = "http://localhost:5165";
+        using HttpRequestMessage preflight = Preflight(page);
 
         // Act
         using HttpResponseMessage response = await this._http.SendAsync(preflight, this._cancellation);
 
         // Assert
-        Assert.Equal([itchIo], response.Headers.GetValues("Access-Control-Allow-Origin"));
+        Assert.Equal([page], response.Headers.GetValues("Access-Control-Allow-Origin"));
+    }
+
+    [Fact]
+    public async Task Preflight_WhenTheOriginIsNotThePage_AllowsNothing()
+    {
+        // Arrange
+        using HttpRequestMessage preflight = Preflight("https://elsewhere.example");
+
+        // Act
+        using HttpResponseMessage response = await this._http.SendAsync(preflight, this._cancellation);
+
+        // Assert
+        Assert.False(response.Headers.Contains("Access-Control-Allow-Origin"));
+    }
+
+    /// <summary>What a browser asks before posting to the server from a page at <paramref name="origin"/>.</summary>
+    private static HttpRequestMessage Preflight(string origin)
+    {
+        HttpRequestMessage preflight = new(HttpMethod.Options, GameRoutes.Games);
+        preflight.Headers.Add("Origin", origin);
+        preflight.Headers.Add("Access-Control-Request-Method", "POST");
+        return preflight;
     }
 
     private async Task<string> CreateGame()

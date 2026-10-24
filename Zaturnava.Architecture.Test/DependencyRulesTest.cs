@@ -38,14 +38,18 @@ public sealed class DependencyRulesTest
             ["Web"] = ["Client", "Contracts", "Presentation"],
             ["Mcp"] = ["Client", "Contracts"],
 
+            // the services around the game, each vendor in an adapter of its own
+            ["Hosting"] = [],
+            ["Hosting.Itch"] = ["Hosting"],
+
             // self-play: the application's decision loop, with the server's rulesets and bots
             ["BotRunner"] = ["Application", "Bots", "Engine", "Variants.Classic"],
 
             // the composition root: the one project that knows everything
             ["Server"] =
             [
-                "Application", "Bots", "Contracts", "Engine", "Persistence.EfCore", "Persistence.InMemory",
-                "Topology.SquareGrid", "Variants.Classic",
+                "Application", "Bots", "Contracts", "Engine", "Hosting", "Hosting.Itch", "Persistence.EfCore",
+                "Persistence.InMemory", "Topology.SquareGrid", "Variants.Classic",
             ],
         }.ToImmutableDictionary();
 

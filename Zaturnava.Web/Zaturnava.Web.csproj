@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
 
   <!--
-    The browser client, published as static files to itch.io: a lobby and a table, drawing any
+    The browser client, published as static files to any web host: a lobby and a table, drawing any
     board from the cell layouts the server sends. It reaches the server only through
     IGameServing (Zaturnava.Client) and decides what to show through Zaturnava.Presentation,
     so it knows no ruleset, board or piece set.

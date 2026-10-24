@@ -1,8 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    Games kept in a relational database through Entity Framework Core. Which database (SQL Server
-    on MonsterASP.NET, SQLite, PostgreSQL, ...) is the host's choice of provider, made where the
+    Games kept in a relational database through Entity Framework Core. Which database (SQL Server,
+    SQLite, PostgreSQL, ...) is the host's choice of provider, made where the
     DbContext is registered; nothing here names one.
   -->
 

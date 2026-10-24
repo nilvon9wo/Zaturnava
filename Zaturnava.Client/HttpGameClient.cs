@@ -9,7 +9,7 @@ namespace Net.NowhereAtAll.Zaturnava.Client;
 
 /// <summary>
 /// A game server reached over HTTP. <paramref name="http"/> carries the server's base address, so
-/// which server (local, MonsterASP, anything else) is the caller's configuration, never this class's.
+/// which server (on this machine, at any host) is the caller's configuration, never this class's.
 /// </summary>
 /// <remarks>
 /// A refusal the contracts know (<see cref="RefusalStatus"/>) becomes a

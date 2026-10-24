@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The ports of hosting the game: what the server needs to know about the services around it,
+    asked without naming any of them. Each service's specifics live in an adapter project of its
+    own (Zaturnava.Hosting.Itch), which only the composition root references.
+  -->
+
+</Project>

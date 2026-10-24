@@ -12,6 +12,10 @@
   <Project Path="Zaturnava.Contracts/Zaturnava.Contracts.csproj" />
   <Project Path="Zaturnava.Engine.Test/Zaturnava.Engine.Test.csproj" />
   <Project Path="Zaturnava.Engine/Zaturnava.Engine.csproj" />
+  <Project Path="Zaturnava.Hosting.Itch.Test/Zaturnava.Hosting.Itch.Test.csproj" />
+  <Project Path="Zaturnava.Hosting.Itch/Zaturnava.Hosting.Itch.csproj" />
+  <Project Path="Zaturnava.Hosting.Test/Zaturnava.Hosting.Test.csproj" />
+  <Project Path="Zaturnava.Hosting/Zaturnava.Hosting.csproj" />
   <Project Path="Zaturnava.Mcp.Test/Zaturnava.Mcp.Test.csproj" />
   <Project Path="Zaturnava.Mcp/Zaturnava.Mcp.csproj" />
   <Project Path="Zaturnava.Persistence.EfCore.Test/Zaturnava.Persistence.EfCore.Test.csproj" />

@@ -6,7 +6,7 @@ namespace Net.NowhereAtAll.Zaturnava.Application.Games;
 
 /// <summary>
 /// A claimed seat's token is its only credential: whoever holds it plays the seat, with no account
-/// and no identity provider needed. A login (itch.io, or any other) can be layered on later.
+/// and no identity provider needed. A login of any kind can be layered on later.
 /// </summary>
 public static class SeatTokens
 {

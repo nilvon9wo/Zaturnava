@@ -188,13 +188,21 @@ contracts.
 | Application | Use cases (`GameService`), the decision loop, catalogs of rulesets and bots; ports `IGamePersisting`, `IGameNotifying` | Engine |
 | Persistence.InMemory | `IGamePersisting` in memory | Application, Engine |
 | Persistence.EfCore | `IGamePersisting` over EF Core (SQLite, SQL Server) | Application, Engine |
+| Hosting | Ports for the services around the game (`IPageHosting`), and `ListedPageHost` | — |
+| Hosting.Itch | `IPageHosting` for a page published on itch.io | Hosting |
 | Contracts | The wire protocol: DTOs, routes, refusals, `IGameServing` | — |
 | Client | `IGameServing` over HTTP (`HttpGameClient`) | Contracts |
 | Presentation | Client-side board logic: frame, clickable actions, selection | Contracts |
 | Web | Blazor WebAssembly client | Client, Contracts, Presentation |
 | Mcp | MCP server (stdio) letting an AI play through any server | Client, Contracts |
 | BotRunner | Command-line self-play: bots against bots, games as JSON lines | Application, Bots, Engine, Variants.Classic |
-| Server | ASP.NET Core host; the composition root | Application, Bots, Contracts, Engine, Persistence.*, Topology.SquareGrid, Variants.Classic |
+| Server | ASP.NET Core host; the composition root | Application, Bots, Contracts, Engine, Hosting, Hosting.Itch, Persistence.*, Topology.SquareGrid, Variants.Classic |
+
+**Vendors stay in their adapters.** A third-party service — a page host, a
+game host, a database provider — is named only in its own adapter project and
+in the composition root that selects it by a provider name from
+configuration. Nothing else in the solution, its configuration keys included,
+knows which service is in use.
 
 The table is enforced: `Zaturnava.Architecture.Test` reads every project
 reference and fails on any dependency not listed, and on any project in
@@ -209,6 +217,7 @@ What each replaceable part is swapped through:
 | Ruleset / variant | `IRulesApplying` | Server `ZaturnavaServices` (and BotRunner) |
 | Bot | `IDeciding` | the bot catalog in the same places |
 | Storage | `IGamePersisting` | Server `GameStorage`, chosen by `Storage:Provider` |
+| Where the page is served from | `IPageHosting` | Server `PageHosting`, chosen by `PageHosting:Provider` |
 | Notification / push | `IGameNotifying` (now `SilentNotifier`: clients poll) | Server `ZaturnavaServices` |
 | Server, for a client | `IGameServing` | the client's composition (`Server:Url`, `ZATURNAVA_SERVER_URL`) |
 | Client | anything speaking §6 | — |
@@ -236,9 +245,10 @@ base address (`GameRoutes`):
   status: Invalid 400, Forbidden 403, NotFound 404, Conflict 409, Illegal 422.
   `HttpGameClient` turns them back into `GameRequestRefusedException`, so a
   client sees the same refusal however it is connected.
-- **CORS** admits the browser origins under `Cors:Origins`, each under a name
-  of its own so that another settings file adds an origin rather than
-  replacing one.
+- **CORS** admits the origins of the page host (`IPageHosting`) chosen by
+  `PageHosting:Provider`: `Itch`, or `Listed` with its origins under
+  `PageHosting:Origins`, each under a name of its own so that another settings
+  file adds an origin rather than replacing one.
 - **Change notification**: none yet; the Web client polls every
   `Table:PollSeconds` (default 2). A push channel would be an `IGameNotifying`
   adapter plus a client subscription, with no change to the engine or the
@@ -288,9 +298,10 @@ replaceable.
   confirmed with their support.
 - **Fallback**: a relay on Cloudflare's free plan behind the same protocol.
 
-Nothing in the code depends on the host: the server reads its storage,
-origins and limits from configuration, and the clients read the server's
-address from theirs.
+Nothing in the code depends on the host: the server reads its storage, page
+host and limits from configuration, and the clients read the server's address
+from theirs. The game server's host, once chosen, gets an adapter of its own
+for whatever it needs that is specific to it.
 
 The table-top platforms that could have hosted the game outright were ruled
 out: Game Courier's four-handed chaturanga does not enforce rules, Board Game
@@ -315,7 +326,8 @@ scoring) are listed in [rules.md §12](rules.md#12-configuration-toggles). The
 
 ## 10. Open Questions / Deferred
 
-- The game server's host (§8): confirm MonsterASP.NET's traffic limits and
+- Hosting waits until the game is playable on one machine against simple
+  bots. Then, the game server's host (§8): confirm MonsterASP.NET's traffic limits and
   archiving rules, and its site address for the Web client's production
   settings.
 - A push channel to replace polling (§6), and keeping a seat's token in the
@@ -325,6 +337,10 @@ scoring) are listed in [rules.md §12](rules.md#12-configuration-toggles). The
 - Exact `gameEnd.safetyNet.*` parameters (rules.md §13) — now that bots exist,
   `Games:MaximumBotSteps` bounds bot-only play per request, but the rules-level
   defaults are still open.
+- An SDK for variants: once the classic game works, boards, piece sets,
+  starting positions, rulesets and bots become things others implement. Their
+  extension points should then be gathered into a documented SDK, with
+  examples checked by the build (as Stipulate's documentation examples are).
 - Fluid team membership mid-game — out of scope, a possible future variant.
 - Whether a throne should follow a relocated Raja starting square, for
   configurations that vary where the Raja starts (rules.md §2) — only matters
