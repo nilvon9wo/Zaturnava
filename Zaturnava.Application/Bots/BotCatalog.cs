@@ -4,11 +4,12 @@ using Net.NowhereAtAll.Zaturnava.Engine.Decisions;
 
 namespace Net.NowhereAtAll.Zaturnava.Application.Bots;
 
-public sealed class BotCatalog(ImmutableDictionary<string, IDeciding> bots) : IBotLocating
+public sealed class BotCatalog(ImmutableList<IBotPlaying> bots) : IBotLocating
 {
-    private readonly ImmutableDictionary<string, IDeciding> _bots = bots;
+    private readonly ImmutableDictionary<string, IBotPlaying> _bots = bots.ToImmutableDictionary(bot => bot.Profile.Id);
 
-    public ImmutableList<string> BotIds => [.. this._bots.Keys.Order()];
+    public ImmutableList<BotProfile> Bots =>
+        [.. this._bots.Values.Select(bot => bot.Profile).OrderBy(profile => profile.Id, StringComparer.Ordinal)];
 
     public IDeciding Find([Required] string botId) =>
         this._bots.GetValueOrDefault(botId) ?? throw new UnknownBotException(botId);

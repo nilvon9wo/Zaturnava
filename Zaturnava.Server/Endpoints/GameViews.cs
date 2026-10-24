@@ -3,6 +3,7 @@ using Net.NowhereAtAll.Zaturnava.Application.Games;
 using Net.NowhereAtAll.Zaturnava.Contracts;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Boards;
+using Net.NowhereAtAll.Zaturnava.Engine.Decisions;
 using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
 using Net.NowhereAtAll.Zaturnava.Engine.Rules;
 using Net.NowhereAtAll.Zaturnava.Engine.Seats;
@@ -16,8 +17,8 @@ namespace Net.NowhereAtAll.Zaturnava.Server.Endpoints;
 /// </summary>
 internal static class GameViews
 {
-    public static CatalogDto CatalogOf(ImmutableList<IRulesApplying> rulesets, ImmutableList<string> botIds) =>
-        new([.. rulesets.Select(RulesetOf)], botIds);
+    public static CatalogDto CatalogOf(ImmutableList<IRulesApplying> rulesets, ImmutableList<BotProfile> bots) =>
+        new([.. rulesets.Select(RulesetOf)], [.. bots.Select(BotOf)]);
 
     public static GameSummaryDto SummaryOf(GameRecord record) =>
         new(
@@ -47,6 +48,8 @@ internal static class GameViews
 
     private static RulesetDto RulesetOf(IRulesApplying rules) =>
         new(rules.Id, rules.Name, rules.CreateInitialState().Seats.Count);
+
+    private static BotDto BotOf(BotProfile bot) => new(bot.Id, bot.Name, bot.Description, bot.UsesAi);
 
     private static CellDto CellOf(ICellNavigating topology, CellId cell)
     {

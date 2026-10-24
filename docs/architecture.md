@@ -187,7 +187,7 @@ contracts.
 | Engine | Pure rules primitives: cells, pieces, moves, state, `IRulesApplying`, `IDeciding` | — |
 | Topology.SquareGrid | `ICellNavigating` for rectangular grids | Engine |
 | Variants.Classic | The base ruleset (`ClassicRules`) | Engine, Topology.SquareGrid |
-| Bots | Bot players (`RandomBot`) | Engine |
+| Bots | Bot players, each describing itself (`BotProfile`: name, description, whether it uses AI): `RandomBot`; `MidasBot`, greedy for the best immediate score | Engine |
 | Application | Use cases (`GameService`), the decision loop, catalogs of rulesets and bots; ports `IGamePersisting`, `IGameNotifying` | Engine |
 | Persistence.InMemory | `IGamePersisting` in memory | Application, Engine |
 | Persistence.EfCore | `IGamePersisting` over EF Core (SQLite, SQL Server) | Application, Engine |
@@ -232,7 +232,7 @@ base address (`GameRoutes`):
 
 | Request | Route | Answer |
 |---|---|---|
-| Rulesets and bots on offer | `GET api/catalog` | `CatalogDto` |
+| Rulesets and bots on offer, each bot with its name, description and whether it uses AI | `GET api/catalog` | `CatalogDto` |
 | Games | `GET api/games` | `GameSummaryDto[]` |
 | Create a game | `POST api/games` with `CreateGameRequest` (a ruleset, and per seat a bot id or null for a person) | 201, `GameCreatedDto` |
 | A game | `GET api/games/{id}` | `GameViewDto`: cells, pieces, seats, scores, whose decision, the legal actions |

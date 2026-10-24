@@ -5,7 +5,6 @@ using Net.NowhereAtAll.Zaturnava.Application.Games;
 using Net.NowhereAtAll.Zaturnava.Application.Rulesets;
 using Net.NowhereAtAll.Zaturnava.Application.Running;
 using Net.NowhereAtAll.Zaturnava.Bots;
-using Net.NowhereAtAll.Zaturnava.Engine.Decisions;
 using Net.NowhereAtAll.Zaturnava.Engine.Rules;
 using Net.NowhereAtAll.Zaturnava.Variants.Classic;
 
@@ -22,8 +21,7 @@ internal static class SelfPlayCommand
 
     private static readonly RulesetCatalog Rulesets = new([new ClassicRules()]);
 
-    private static readonly BotCatalog Bots =
-        new(ImmutableDictionary<string, IDeciding>.Empty.Add(RandomBot.BotId, new RandomBot(Random.Shared)));
+    private static readonly BotCatalog Bots = new([new MidasBot(Random.Shared), new RandomBot(Random.Shared)]);
 
     public static async Task<int> Run(
         [Required] IReadOnlyList<string> args,

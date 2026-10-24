@@ -32,6 +32,27 @@ public sealed class LobbyTest : IDisposable
     }
 
     [Fact]
+    public void Render_WhenLoaded_DescribesEachBotAndWhetherItUsesAi()
+    {
+        // Arrange - nothing beyond the server's catalog
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Assert
+        Assert.Equal(
+            "Bot: Random=Any move.|Bot: Oracle (AI)=Asks a model.",
+            string.Join(
+                "|",
+                lobby.FindAll("dl.bots dt").Zip(
+                    lobby.FindAll("dl.bots dd"),
+                    (name, description) => $"{name.TextContent}={description.TextContent}"
+                )
+            )
+        );
+    }
+
+    [Fact]
     public void Play_WhenTheFirstSeatIsForAPerson_CreatesTheGameAndSitsThere()
     {
         // Arrange

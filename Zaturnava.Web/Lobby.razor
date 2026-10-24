@@ -19,15 +19,22 @@
                 <li>
                     <select class="plan" @bind="this._plans[seat]">
                         <option value="">Person</option>
-                        @foreach (string bot in catalog.Bots)
+                        @foreach (BotDto bot in catalog.Bots)
                         {
-                            <option value="@bot">Bot: @bot</option>
+                            <option value="@bot.Id">@Label(bot)</option>
                         }
                     </select>
                 </li>
             }
         </ol>
         <button class="create" @onclick="() => this.Create(catalog)">Play</button>
+        <dl class="bots">
+            @foreach (BotDto bot in catalog.Bots)
+            {
+                <dt>@Label(bot)</dt>
+                <dd>@bot.Description</dd>
+            }
+        </dl>
 
         <h2>Games</h2>
         <ul class="games">
@@ -61,12 +68,14 @@
 
     private static RulesetDto Ruleset(CatalogDto catalog) => catalog.Rulesets[0];
 
+    private static string Label(BotDto bot) => bot.UsesAi ? $"Bot: {bot.Name} (AI)" : $"Bot: {bot.Name}";
+
     private async Task Load()
     {
         CatalogDto catalog = await this.Games.Catalog(CancellationToken.None);
         this._games = await this.Games.List(CancellationToken.None);
         this._plans = [.. Enumerable.Range(0, Ruleset(catalog).SeatCount)
-            .Select(seat => seat == 0 ? string.Empty : catalog.Bots.FirstOrDefault(string.Empty))];
+            .Select(seat => seat == 0 ? string.Empty : catalog.Bots.FirstOrDefault()?.Id ?? string.Empty)];
         this._catalog = catalog;
     }
 

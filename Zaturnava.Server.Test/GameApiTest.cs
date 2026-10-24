@@ -11,7 +11,7 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
     private readonly CancellationToken _cancellation = TestContext.Current.CancellationToken;
 
     [Fact]
-    public async Task Catalog_WhenAsked_OffersTheClassicRulesetAndTheRandomBot()
+    public async Task Catalog_WhenAsked_OffersTheClassicRulesetAndItsBots()
     {
         // Arrange - nothing beyond the server
 
@@ -21,8 +21,13 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
         // Assert
         RulesetDto classic = catalog.Rulesets.Single();
         Assert.Equal(
-            (ZaturnavaServer.Classic, 4, ZaturnavaServer.Random),
-            (classic.Id, classic.SeatCount, catalog.Bots.Single())
+            (ZaturnavaServer.Classic, 4, "midas,random", false),
+            (
+                classic.Id,
+                classic.SeatCount,
+                string.Join(",", catalog.Bots.Select(bot => bot.Id)),
+                catalog.Bots.Any(bot => bot.UsesAi)
+            )
         );
     }
 

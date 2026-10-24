@@ -50,7 +50,10 @@ public sealed class WireFormatTest
     public void Catalog_WhenSentAsJson_ArrivesUnchanged()
     {
         // Arrange
-        CatalogDto catalog = new([new RulesetDto("classic", "Classic", 4)], ["random"]);
+        CatalogDto catalog = new(
+            [new RulesetDto("classic", "Classic", 4)],
+            [new BotDto("random", "Random", "Any move.", UsesAi: false)]
+        );
 
         // Act
         CatalogDto? arrived = RoundTrip(catalog);

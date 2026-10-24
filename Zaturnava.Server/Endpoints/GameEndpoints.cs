@@ -27,7 +27,7 @@ internal static class GameEndpoints
         return routes;
     }
 
-    private static CatalogDto Catalog(GameService games) => GameViews.CatalogOf(games.Rulesets, games.BotIds);
+    private static CatalogDto Catalog(GameService games) => GameViews.CatalogOf(games.Rulesets, games.Bots);
 
     private static async Task<ImmutableList<GameSummaryDto>> List(
         GameService games,

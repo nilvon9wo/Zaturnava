@@ -91,7 +91,7 @@ public static class DecisionLoop
     )
     {
         SeatId seat = played.State.DecidingSeat!.Value; // only called once a deciding seat has a decider
-        DecisionRequest request = new(played.State, seat, rules.LegalActions(played.State));
+        DecisionRequest request = new(rules, played.State, seat, rules.LegalActions(played.State));
         GameAction action = await decider.Decide(request, cancellationToken);
         Transition transition = rules.Apply(played.State, action);
         return new Played(transition.State, played.Actions.Add(action.Describe()));

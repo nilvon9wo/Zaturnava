@@ -1,4 +1,3 @@
-using System.Collections.Immutable;
 using Net.NowhereAtAll.Zaturnava.Application.Bots;
 using Net.NowhereAtAll.Zaturnava.Application.Games;
 using Net.NowhereAtAll.Zaturnava.Application.Ports;
@@ -6,7 +5,6 @@ using Net.NowhereAtAll.Zaturnava.Application.Rulesets;
 using Net.NowhereAtAll.Zaturnava.Application.Running;
 using Net.NowhereAtAll.Zaturnava.Bots;
 using Net.NowhereAtAll.Zaturnava.Engine.Chance;
-using Net.NowhereAtAll.Zaturnava.Engine.Decisions;
 using Net.NowhereAtAll.Zaturnava.Server.Endpoints;
 using Net.NowhereAtAll.Zaturnava.Variants.Classic;
 
@@ -34,8 +32,7 @@ internal static class ZaturnavaServices
             .AddProblemDetails()
             .AddExceptionHandler<RefusalHandler>();
 
-    private static BotCatalog Bots() =>
-        new(ImmutableDictionary<string, IDeciding>.Empty.Add(RandomBot.BotId, new RandomBot(Random.Shared)));
+    private static BotCatalog Bots() => new([new MidasBot(Random.Shared), new RandomBot(Random.Shared)]);
 
     private static GameServiceSettings Settings(IConfiguration configuration) =>
         new(configuration.GetValue(MaximumBotStepsKey, GameServiceSettings.DefaultMaximumBotSteps));
