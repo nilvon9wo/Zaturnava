@@ -22,13 +22,14 @@ Everything else here is specified but not yet played by the engine.
 
 | Section | Status |
 |---|---|
-| §2 Board & setup | Implemented: the 8×8 board, the pinwheel setup, teams of opposite seats. Thrones not yet. |
-| §3 Pieces & movement | Implemented, captures included. |
-| §4 Turns & dice | Implemented: the single-die opening, then a deliberate move, a pass or two dice, clockwise from seat 0; an unusable die is forfeit. Doubles let one piece move twice, but escape (§7) is not yet. The dice profile is the weighted d6 one; a d4 profile exists but cannot yet be chosen. |
-| §5 Captures & scoring | Partly: captures score by piece. No bonuses yet. |
-| §6–§9 Throne control, doubles, promotion and ransom, boat triumph | Not yet. |
-| §10 Game end | Not yet: a game does not end. |
-| §11 Setup roll-off | Not yet. |
+| §2 Board & setup | Implemented: the 8×8 board, the pinwheel setup, teams of opposite seats, thrones. |
+| §3 Pieces & movement | Implemented, captures included. A piece moved for another army moves the way its own army faces, and never takes a piece of its own army. |
+| §4 Turns & dice | Implemented: the opening plays the die that won the roll-off, then a deliberate move, a pass or two dice, clockwise from the roll-off's winner; an unusable die is forfeit. Doubles let one piece move twice, but escape (§7) is not yet. The dice profile is the weighted d6 one; a d4 profile exists but cannot yet be chosen. |
+| §5 Captures & scoring | Partly: captures score by piece, with both throne bonuses. The empire bonus is not yet. |
+| §6 Throne control | Partly: the expanded pool (§6.1, both triggers) and the forced shared turn (§6.3). Voluntary regency (§6.2) is not yet. |
+| §7–§9 Escape, promotion and ransom, boat triumph | Not yet. Prisoners are kept, and shown, with the seat that took them. |
+| §10 Game end | Partly: elimination (a seat with no pieces is skipped), honourable peace, team elimination, and a safety net (below). Retirement and ending by agreement are not yet. |
+| §11 Setup roll-off | Implemented. |
 | §12 Toggles | None yet; the defaults are fixed. |
 
 ## 1. Overview
@@ -83,8 +84,10 @@ occupied square. The Pawn captures only diagonally forward, never straight.
 Turn order is clockwise around the board, starting from whichever player wins
 the opening roll-off (each player rolls once; highest wins; re-roll ties).
 The opening move is special only in that the first player doesn't get the
-usual deliberate-move-vs-dice choice: they roll a single die (not two) and
-may move the indicated piece category, with no second move. *(Clarified)*
+usual deliberate-move-vs-dice choice: they play the single die that won them
+the roll-off (they do not roll again) and may move the indicated piece
+category, with no second move. *(Clarified, 2026-10-25)* Every later turn,
+including every other player's first, is an ordinary one. *(Clarified)*
 Moving it is still not mandatory — nothing ever is, see below — and if the
 indicated category has no legal move at all, no move happens. In particular,
 rolling the Elephant category (3 or 4 on the default profile) on the opening
@@ -151,7 +154,8 @@ Points are never subtracted or returned when a piece is given back.
 ### Bonus points
 
 - **+1** each time a player's Raja *enters* an opponent's throne square
-  (leaving and re-entering scores again, but may be poor strategy).
+  (leaving and re-entering scores again, but may be poor strategy). The engine
+  reads "opponent" as an enemy: entering an ally's throne scores nothing.
 - **+2** if a player captures an opponent's Raja *on that opponent's own
   throne square* (separate from, and in addition to, any entry bonus scored
   when moving onto that square).
@@ -420,11 +424,19 @@ both the triumphing player and their ally may move each other's Boat.
     off by default for human games and are an architecture/engine concern
     (see architecture.md) more than a core rules concern — exact parameters
     are deliberately left open for now.
+  - *(Provisional, 2026-10-25)* The `classic` ruleset has one safety net on,
+    for every game: when no one has rolled or moved for **three rounds** (every
+    seat still playing has passed its turn three times in a row without
+    rolling), the game ends, and the team with more points wins (a draw if
+    the teams are level). The number of rounds is a constructor argument, not
+    yet a per-game toggle.
 
 ## 11. Setup Roll-off
 
 Each player rolls one die (matching whatever dice profile is configured) to
-determine seating/turn order; highest goes first, re-rolling to break ties.
+determine seating/turn order; highest goes first, re-rolling to break ties
+(only the tied players roll again). The winner's die is their opening move
+(§4).
 
 ## 12. Configuration Toggles
 
@@ -464,9 +476,8 @@ and are tracked in [architecture.md](architecture.md) instead.)*
 Nothing rules-level is currently blocking. Noted for later attention:
 
 - Exact default parameters for the `gameEnd.safetyNet.*` toggles (move cap
-  size, etc.). Bots now exist; until a game can end (§10), the server only
-  bounds how many bot moves one request may play (`Games:MaximumBotSteps`,
-  architecture.md §6) — that is a hosting limit, not a rule.
+  size, etc.), and whether the provisional three idle rounds (§10) should be a
+  per-game toggle.
 - Whether team membership can ever change *during* a game (a future variant
   idea raised during design discussion) is explicitly out of scope for now —
   team assignment is fixed at game creation.

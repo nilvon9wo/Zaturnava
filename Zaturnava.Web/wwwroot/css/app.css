@@ -187,13 +187,29 @@ select {
 .mark.capture { fill: none; stroke: var(--mark); stroke-width: 0.08; }
 
 .piece.seat-0 circle { fill: var(--seat-0); }
-.piece.seat-0 text { fill: var(--seat-0-ink); }
+.piece.seat-0 text, .piece.seat-0 path { fill: var(--seat-0-ink); }
 .piece.seat-1 circle { fill: var(--seat-1); }
-.piece.seat-1 text { fill: var(--seat-1-ink); }
+.piece.seat-1 text, .piece.seat-1 path { fill: var(--seat-1-ink); }
 .piece.seat-2 circle { fill: var(--seat-2); }
-.piece.seat-2 text { fill: var(--seat-2-ink); }
+.piece.seat-2 text, .piece.seat-2 path { fill: var(--seat-2-ink); }
 .piece.seat-3 circle { fill: var(--seat-3); }
-.piece.seat-3 text { fill: var(--seat-3-ink); }
+.piece.seat-3 text, .piece.seat-3 path { fill: var(--seat-3-ink); }
+
+.cell-name text {
+    font-size: 0.15px;
+    fill: var(--muted);
+    opacity: 0.7;
+    dominant-baseline: hanging;
+}
+
+.piece-icon { width: 20px; height: 20px; vertical-align: middle; }
+.piece-icon circle { stroke: var(--piece-edge); stroke-width: 0.035; }
+.piece-icon text {
+    font-family: "Segoe UI Symbol", "DejaVu Sans", "Noto Sans Symbols 2", serif;
+    font-size: 0.58px;
+    text-anchor: middle;
+    dominant-baseline: central;
+}
 
 .side {
     flex: 1 1 280px;
@@ -247,7 +263,8 @@ select {
 .seat-2 .swatch { background: var(--seat-2); }
 .seat-3 .swatch { background: var(--seat-3); }
 .seat .name { min-width: 56px; }
-.seat .player { color: var(--muted); flex: 1; }
+.seat .player { color: var(--muted); }
+.seat .prisoners { flex: 1; display: flex; flex-wrap: wrap; gap: 1px; }
 .seat .score { font-variant-numeric: tabular-nums; font-weight: 700; }
 
 .log {
@@ -264,4 +281,6 @@ select {
 
 .log .event { padding: 2px 0; }
 .log .event.passed { color: var(--muted); }
-.log .event.captured { font-weight: 700; color: var(--accent); }
+.log .event.captured, .log .event.bonus { font-weight: 700; color: var(--accent); }
+.log .event.rolled-off, .log .event.shared { font-style: italic; }
+.log .event.ended { font-weight: 700; }

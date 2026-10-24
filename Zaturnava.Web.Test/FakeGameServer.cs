@@ -26,13 +26,17 @@ internal sealed class FakeGameServer : IGameServing
         1,
         1,
         0,
-        [.. Enumerable.Range(0, 4)
-            .Select(id => new CellDto(id, id % 2, Math.DivRem(id, 2).Quotient, "square", id == 1 ? 1 : null))],
+        null,
+        [.. Enumerable.Range(0, 4).Select(Cell)],
         [new PieceDto(0, "raja", "Raja", 0, 0)],
-        [new SeatDto(0, "Black", 0, 0, "human", null), new SeatDto(1, "Yellow", 1, 5, "bot", "random")],
+        [
+            new SeatDto(0, "Black", 0, 0, "human", null, []),
+            new SeatDto(1, "Yellow", 1, 5, "bot", "Random", [new PrisonerDto("boat", "Boat", 0)]),
+        ],
         [Pass, Forward, Leap],
         [],
-        []
+        [],
+        null
     );
 
     public GameViewDto View { get; set; } = SeatZeroToMove;
@@ -113,4 +117,8 @@ internal sealed class FakeGameServer : IGameServing
         this.Failure = null;
         return failure is null ? Task.FromResult(answer) : Task.FromException<T>(failure);
     }
+
+    /// <summary>Cell <paramref name="id"/> of a two-by-two board; cell 1 is seat 1's throne.</summary>
+    private static CellDto Cell(int id) =>
+        new(id, id % 2, Math.DivRem(id, 2).Quotient, "square", id == 1 ? 1 : null, $"c{id}");
 }

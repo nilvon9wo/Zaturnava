@@ -53,7 +53,7 @@ internal static class GameEndpoints
     private static async Task<GameViewDto> Get(string gameId, GameService games, CancellationToken cancellationToken)
     {
         GameSnapshot snapshot = await games.Get(new GameId(gameId), cancellationToken);
-        return GameViews.ViewOf(snapshot);
+        return GameViews.ViewOf(snapshot, games.Bots);
     }
 
     private static async Task<GameViewDto> Advance(
@@ -64,7 +64,7 @@ internal static class GameEndpoints
     )
     {
         GameSnapshot snapshot = await games.Advance(new GameId(gameId), request.Version, cancellationToken);
-        return GameViews.ViewOf(snapshot);
+        return GameViews.ViewOf(snapshot, games.Bots);
     }
 
     private static async Task<SeatClaimedDto> Claim(
@@ -90,6 +90,6 @@ internal static class GameEndpoints
         ActionDescriptor descriptor = new(action.Kind, action.Arguments);
         string token = SeatToken.From(request, id);
         GameSnapshot snapshot = await games.Submit(id, token, descriptor, cancellationToken);
-        return GameViews.ViewOf(snapshot);
+        return GameViews.ViewOf(snapshot, games.Bots);
     }
 }

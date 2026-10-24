@@ -25,7 +25,7 @@ public sealed class BoardFrameTest
         [
             .. Enumerable
                 .Range(0, 64)
-                .Select(id => new CellDto(id, id % 8, Math.DivRem(id, 8).Quotient, "square", null)),
+                .Select(id => new CellDto(id, id % 8, Math.DivRem(id, 8).Quotient, "square", null, $"{id}")),
         ];
 
         // Act
@@ -55,7 +55,7 @@ public sealed class BoardFrameTest
     public void IsDark_WhenGivenACell_AlternatesLikeAChessboard(double x, double y, bool expected)
     {
         // Arrange
-        CellDto cell = new(0, x, y, "square", null);
+        CellDto cell = new(0, x, y, "square", null, "a1");
 
         // Act
         bool isDark = BoardFrame.IsDark(cell);

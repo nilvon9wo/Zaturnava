@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Bunit;
 using Net.NowhereAtAll.Zaturnava.Contracts;
 
@@ -146,7 +147,7 @@ public sealed class TableTest : IDisposable
 
         // Assert
         Assert.Equal(
-            (null, "Black to move (human).", "Black human 0", "Yellow random 5", "turn"),
+            (null, "Black to move (human).", "Black human 0", "Yellow Random Boat 5", "turn"),
             (
                 this._page.Server.Submitted,
                 table.Find("p.status").TextContent,
@@ -456,7 +457,7 @@ public sealed class TableTest : IDisposable
         table.Find($"rect[data-cell='{id}']");
 
     private static string Text(AngleSharp.Dom.IElement element) =>
-        string.Join(' ', element.Children.Select(child => child.TextContent).Where(text => text.Length > 0));
+        string.Join(' ', element.Children.Select(child => child.TextContent.Trim()).Where(text => text.Length > 0));
 
     private static string Turn(IRenderedComponent<Table> table) =>
         table.Find("svg.board > g").GetAttribute("transform") ?? string.Empty;
@@ -466,4 +467,84 @@ public sealed class TableTest : IDisposable
 
     private IRenderedComponent<Table> Render(Seating seating) =>
         this._page.Render<Table>(parameters => parameters.Add(x => x.Seating, seating));
+
+    [Fact]
+    public void Status_WhenTheGameHasEnded_TellsHow()
+    {
+        // Arrange
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            DecidingSeat = null,
+            Outcome = new OutcomeDto([1], "Yellow won: only one team has pieces left."),
+        };
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Assert
+        Assert.Equal("Yellow won: only one team has pieces left.", table.Find("p.status").TextContent);
+    }
+
+    [Theory]
+    [InlineData(0, 1, "Your move, for Yellow.")]
+    [InlineData(1, 0, "Yellow to move, for Black (Random).")]
+    public void Status_WhenOneSeatMovesForAnother_SaysForWhom(int deciding, int actingFor, string expected)
+    {
+        // Arrange
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with { DecidingSeat = deciding, ActingFor = actingFor };
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Assert
+        Assert.Equal(expected, table.Find("p.status").TextContent);
+    }
+
+    [Fact]
+    public void Board_WhenDrawn_NamesEachCellAndDrawsTheBoatAsAShape()
+    {
+        // Arrange
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Pieces = [.. FakeGameServer.SeatZeroToMove.Pieces, new PieceDto(1, "boat", "Boat", 1, 3)],
+        };
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Assert
+        Assert.Equal(
+            ("c0,c1,c2,c3", 1, 1),
+            (
+                string.Join(",", table.FindAll("g.cell-name text").Select(name => name.TextContent)),
+                table.FindAll("svg.board g.piece path").Count,
+                table.FindAll("svg.board g.piece text").Count
+            )
+        );
+    }
+
+    [Fact]
+    public void Seats_WhenTheyHoldPrisoners_ShowEachAsItsPiece()
+    {
+        // Arrange
+        ImmutableList<SeatDto> seats = FakeGameServer.SeatZeroToMove.Seats;
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Seats = seats.SetItem(0, seats[0] with { Prisoners = [new PrisonerDto("pawn", "Pawn", 1)] }),
+        };
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Assert
+        Assert.Equal(
+            ("piece-icon piece seat-1", "♟︎", "piece-icon piece seat-0", 1),
+            (
+                table.FindAll("li.seat")[0].QuerySelector("svg")?.GetAttribute("class"),
+                table.FindAll("li.seat")[0].QuerySelector("svg text")?.TextContent,
+                table.FindAll("li.seat")[1].QuerySelector("svg")?.GetAttribute("class"),
+                table.FindAll("li.seat")[1].QuerySelectorAll("svg path").Length
+            )
+        );
+    }
 }

@@ -31,8 +31,9 @@ line or branch is missing.
 ## Running the game
 
 The server and the web client run side by side, the server on port 5164, the page on 5165 (their
-launch profiles, so Visual Studio's F5 does the same). One command builds both and runs them until
-Ctrl+C; run it again to restart:
+launch profiles). In Visual Studio (2022 17.11 or later), the **Play** launch profile, shared in
+`Zaturnava.slnLaunch`, starts both: choose it beside the start button. One command does the same
+from a shell, building both and running them until Ctrl+C; run it again to restart:
 
 ```shell
 python3 scripts/play.py                                # then open http://localhost:5165

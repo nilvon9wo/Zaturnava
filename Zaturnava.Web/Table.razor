@@ -72,6 +72,12 @@
                             <span class="swatch"></span>
                             <span class="name">@seat.Name</span>
                             <span class="player">@this.Player(seat)</span>
+                            <span class="prisoners" title="Prisoners">
+                                @foreach (PrisonerDto prisoner in seat.Prisoners)
+                                {
+                                    <PieceIcon Kind="@prisoner.Kind" Name="@prisoner.Name" Owner="prisoner.Owner" />
+                                }
+                            </span>
                             <span class="score">@seat.Score</span>
                         </li>
                     }
@@ -130,10 +136,18 @@
                 ? "Pick a ringed piece, then a marked square."
                 : "Move a ringed piece (pick it, then a marked square), or:";
 
+    /// <summary>How the game ended; else whose move it is, and for whom if not for themselves.</summary>
     private string Status(GameViewDto view) =>
-        view.DecidingSeat is { } seat
-            ? this._turn is null ? $"{view.Seats[seat].Name} to move ({this.Player(view.Seats[seat])})." : "Your move."
-            : "The game is over.";
+        (view.Outcome, view.DecidingSeat, this._turn) switch
+        {
+            ({ } outcome, _, _) => outcome.Text,
+            (_, { } seat, null) => $"{view.Seats[seat].Name} to move{ForWhom(view)} ({this.Player(view.Seats[seat])}).",
+            (_, { }, _) => $"Your move{ForWhom(view)}.",
+            _ => "The game is over.",
+        };
+
+    private static string ForWhom(GameViewDto view) =>
+        view.ActingFor is { } seat ? $", for {view.Seats[seat].Name}" : string.Empty;
 
     private string Player(SeatDto seat) => seat.Id == this.Seating.Claim?.Seat ? "you" : seat.Bot ?? seat.Controller;
 

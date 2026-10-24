@@ -2,7 +2,7 @@
   "profiles": {
     "Zaturnava.Server": {
       "commandName": "Project",
-      "launchBrowser": true,
+      "launchBrowser": false,
       "launchUrl": "api/catalog",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"

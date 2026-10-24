@@ -12,7 +12,7 @@ public sealed class BoardTurnTest
     [
         .. Enumerable
             .Range(0, 16)
-            .Select(id => new CellDto(id, id % 4, Math.DivRem(id, 4).Quotient, "square", ThroneAt(id))),
+            .Select(id => new CellDto(id, id % 4, Math.DivRem(id, 4).Quotient, "square", ThroneAt(id), $"{id}")),
     ];
 
     [Theory]
@@ -122,5 +122,5 @@ public sealed class BoardTurnTest
         };
 
     private static GameViewDto View(ImmutableList<CellDto> cells, ImmutableList<PieceDto> pieces) =>
-        new("g", "test", "Test", 1, 1, 0, cells, pieces, [], [], [], []);
+        new("g", "test", "Test", 1, 1, 0, null, cells, pieces, [], [], [], [], null);
 }

@@ -19,12 +19,17 @@ public sealed class WireFormatTest
             3,
             2,
             1,
-            [new CellDto(0, 0.5, 7.5, "square", 0)],
+            3,
+            [new CellDto(0, 0.5, 7.5, "square", 0, "a8")],
             [new PieceDto(0, "raja", "Raja", 0, 0)],
-            [new SeatDto(0, "Black", 0, 5, "bot", "random"), new SeatDto(1, "Yellow", 1, 0, "open", null)],
+            [
+                new SeatDto(0, "Black", 0, 5, "bot", "Random", [new PrisonerDto("pawn", "Pawn", 1)]),
+                new SeatDto(1, "Yellow", 1, 0, "open", null, []),
+            ],
             [new ActionDto("pass", ImmutableSortedDictionary.CreateRange([KeyValuePair.Create("actor", "1")]))],
             [new DieDto(5, "Pawn or Raja"), new DieDto(3, "Elephant")],
-            [new EventDto(7, EventDto.Moved, 0, "Black's Pawn moved.", 8, 16)]
+            [new EventDto(7, EventDto.Moved, 0, "Black moved their Pawn from a2 to a3.", 8, 16)],
+            new OutcomeDto([0, 2], "Black and Green won: only one team has pieces left.")
         );
 
         // Act
@@ -38,7 +43,7 @@ public sealed class WireFormatTest
     public void GameView_WhenTheGameIsOver_SendsNoDecidingSeat()
     {
         // Arrange
-        GameViewDto view = new("g", "classic", "Classic", 3, 2, null, [], [], [], [], [], []);
+        GameViewDto view = new("g", "classic", "Classic", 3, 2, null, null, [], [], [], [], [], [], null);
 
         // Act
         string json = JsonSerializer.Serialize(view, Wire);

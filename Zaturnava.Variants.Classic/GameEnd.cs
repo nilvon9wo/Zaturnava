@@ -1,0 +1,82 @@
+using System.Collections.Immutable;
+using System.Globalization;
+using Net.NowhereAtAll.Zaturnava.Engine.Events;
+using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
+using Net.NowhereAtAll.Zaturnava.Engine.Rules;
+using Net.NowhereAtAll.Zaturnava.Engine.Seats;
+
+namespace Net.NowhereAtAll.Zaturnava.Variants.Classic;
+
+/// <summary>
+/// When the game ends (rules.md §10): when only one team has pieces left, which wins outright; when
+/// only Rajas are left, an honourable peace; and, as a safety net, when every seat still playing has
+/// passed its turn some rounds in a row without rolling, the team with more points wins.
+/// </summary>
+internal static class GameEnd
+{
+    public const string OneTeamLeft = "only one team has pieces left";
+    public const string OnlyRajasLeft = "only Rajas are left, an honourable peace";
+
+    /// <summary>The ended game, if the board leaves nothing to play for; otherwise null.</summary>
+    public static Transition? AfterMove(Transition transition)
+    {
+        GameState state = transition.State;
+        ImmutableList<Piece> pieces = [.. state.Position.Occupants.Values];
+        ImmutableList<int> teams = [.. pieces.Select(piece => state.Teams.TeamOf(piece.Owner)).Distinct()];
+        GameOutcome? outcome = (teams.Count, pieces.All(piece => piece.Kind == ClassicPieces.Raja)) switch
+        {
+            (1, _) => new GameOutcome(TeamOf(state, teams[0]), OneTeamLeft),
+            (_, true) => new GameOutcome([], OnlyRajasLeft),
+            _ => null,
+        };
+        return outcome is null
+            ? null
+            : Ended(transition, outcome);
+    }
+
+    /// <summary>The ended game, once no one has rolled or moved for <paramref name="rounds"/> rounds.</summary>
+    public static Transition? AfterIdlePass(Transition transition, int rounds)
+    {
+        GameState state = transition.State;
+        int playing = state.Seats.Count(seat => IsPlaying(state, seat.Id));
+        return state.IdlePasses >= rounds * playing
+            ? Ended(transition, ByPoints(state, rounds))
+            : null;
+    }
+
+    public static bool IsPlaying(GameState state, SeatId seat) =>
+        state.Position.Occupants.Values.Any(piece => piece.Owner == seat);
+
+    private static GameOutcome ByPoints(GameState state, int rounds)
+    {
+        ImmutableList<(int Team, int Points)> totals =
+        [
+            .. state.Seats
+                .GroupBy(seat => state.Teams.TeamOf(seat.Id))
+                .Select(team => (team.Key, team.Sum(seat => state.Scores[seat.Id]))),
+        ];
+        int best = totals.Max(total => total.Points);
+        ImmutableList<int> leaders = [.. totals.Where(total => total.Points == best).Select(total => total.Team)];
+        string reason = string.Create(
+            CultureInfo.InvariantCulture,
+            $"no one rolled or moved for {rounds} rounds, so points decide"
+        );
+        return new GameOutcome(leaders.Count == 1 ? TeamOf(state, leaders[0]) : [], reason);
+    }
+
+    private static ImmutableList<SeatId> TeamOf(GameState state, int team) =>
+        [.. state.Seats.Select(seat => seat.Id).Where(seat => state.Teams.TeamOf(seat) == team)];
+
+    private static Transition Ended(Transition transition, GameOutcome outcome)
+    {
+        GameState ended = transition.State with
+        {
+            DecidingSeat = null,
+            ActingFor = null,
+            AwaitedDice = null,
+            Dice = [],
+            Outcome = outcome,
+        };
+        return new Transition(ended, transition.Events.Add(new GameEnded(outcome)));
+    }
+}

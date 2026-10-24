@@ -235,7 +235,7 @@ base address (`GameRoutes`):
 | Rulesets and bots on offer, each bot with its name, description and whether it uses AI | `GET api/catalog` | `CatalogDto` |
 | Games | `GET api/games` | `GameSummaryDto[]` |
 | Create a game | `POST api/games` with `CreateGameRequest` (a ruleset, and per seat a bot id or null for a person) | 201, `GameCreatedDto` |
-| A game | `GET api/games/{id}` | `GameViewDto`: cells (with thrones), pieces, seats, scores, the dice and what each allows, the latest events, whose decision, the legal actions |
+| A game | `GET api/games/{id}` | `GameViewDto`: cells (with names and thrones), pieces, seats (with scores, bot names and prisoners), the dice and what each allows, the latest events, whose decision and for which seat, the legal actions, and how the game ended |
 | Let a bot decide | `POST api/games/{id}/advance` with `AdvanceRequest` (the version the caller saw) | `GameViewDto` after one bot decision, or unchanged if the version is stale or no bot is deciding |
 | Claim an open seat | `POST api/games/{id}/seats/{seat}` | `SeatClaimedDto` with the seat's token |
 | Act | `POST api/games/{id}/actions` with `ActionDto`, `Authorization: Bearer {token}` | `GameViewDto` after the action and any bot replies |
@@ -249,7 +249,13 @@ base address (`GameRoutes`):
   can still reply with up to `Games:MaximumBotSteps` bot steps inside the
   request that made it a bot's turn; the default is 0.
 - **The log** in a view is the latest 40 events, each told in the ruleset's
-  own names ("Black rolled 2 (Horse) and 5 (Pawn or Raja).").
+  own names and the topology's cell names ("Black rolled 2 (Horse) and 5
+  (Pawn or Raja).", "Yellow moved their Pawn from b5 to c5, without
+  rolling.").
+- **Acting for another seat**: while one seat moves for another (an enemy
+  Raja on a throne shares that seat's turn), the view's `DecidingSeat` is the
+  seat that decides, holding the token that may act, and `ActingFor` is the
+  seat whose turn it is.
 - **Refusals** are RFC 9457 problem details, and each `Refusal` has one
   status: Invalid 400, Forbidden 403, NotFound 404, Conflict 409, Illegal 422.
   `HttpGameClient` turns them back into `GameRequestRefusedException`, so a

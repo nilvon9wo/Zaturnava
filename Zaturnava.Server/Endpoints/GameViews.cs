@@ -32,7 +32,8 @@ internal static class GameViews
             record.Actions.Count
         );
 
-    public static GameViewDto ViewOf(GameSnapshot snapshot)
+    /// <summary>The game as its seats see it, naming each bot as <paramref name="bots"/> do.</summary>
+    public static GameViewDto ViewOf(GameSnapshot snapshot, ImmutableList<BotProfile> bots)
     {
         ImmutableDictionary<CellId, SeatId> thrones =
             snapshot.Rules.Thrones.ToImmutableDictionary(throne => throne.Value, throne => throne.Key);
@@ -43,13 +44,15 @@ internal static class GameViews
             snapshot.Record.Version,
             snapshot.State.TurnNumber,
             snapshot.State.DecidingSeat?.Value,
+            snapshot.State.ActingFor?.Value,
             [.. snapshot.Rules.Topology.Cells.Select(cell => CellOf(snapshot.Rules.Topology, thrones, cell))],
             [.. snapshot.State.Position.Occupants.OrderBy(entry => entry.Key.Value)
                 .Select(entry => PieceOf(snapshot.Rules, entry.Key, entry.Value))],
-            [.. snapshot.State.Seats.Select(seat => SeatOf(snapshot, seat.Id))],
+            [.. snapshot.State.Seats.Select(seat => SeatOf(snapshot, bots, seat.Id))],
             [.. snapshot.LegalActions.Select(action => ActionOf(action.Describe()))],
             [.. snapshot.State.Dice.Select(value => new DieDto(value, snapshot.Rules.NameOfDie(value)))],
-            GameLog.LatestOf(snapshot)
+            GameLog.LatestOf(snapshot),
+            OutcomeOf(snapshot.Rules, snapshot.State.Outcome)
         );
     }
 
@@ -66,24 +69,39 @@ internal static class GameViews
     {
         CellLayout layout = topology.LayoutOf(cell);
         int? throne = thrones.TryGetValue(cell, out SeatId seat) ? seat.Value : null;
-        return new CellDto(cell.Value, layout.X, layout.Y, layout.Shape, throne);
+        return new CellDto(cell.Value, layout.X, layout.Y, layout.Shape, throne, topology.NameOf(cell));
     }
 
     private static PieceDto PieceOf(IRulesApplying rules, CellId cell, Piece piece) =>
         new(piece.Id.Value, piece.Kind.Value, rules.NameOf(piece.Kind), piece.Owner.Value, cell.Value);
 
-    private static SeatDto SeatOf(GameSnapshot snapshot, SeatId seat)
+    private static SeatDto SeatOf(GameSnapshot snapshot, ImmutableList<BotProfile> bots, SeatId seat)
     {
         SeatController controller = snapshot.Record.Controllers[seat.Value];
+        string? bot = controller is BotSeat botSeat ? BotNameOf(bots, botSeat.BotId) : null;
         return new SeatDto(
             seat.Value,
             snapshot.Rules.NameOf(seat),
             snapshot.State.Teams.TeamOf(seat),
             snapshot.State.Scores.GetValueOrDefault(seat),
             controller.Kind,
-            controller is BotSeat ? controller.Detail : null
+            bot,
+            [.. snapshot.State.Prisoners.Where(prisoner => prisoner.Holder == seat)
+                .Select(prisoner => PrisonerOf(snapshot.Rules, prisoner.Piece))]
         );
     }
+
+    /// <summary>The bot's name; its id, should it no longer be on offer.</summary>
+    private static string BotNameOf(ImmutableList<BotProfile> bots, string id) =>
+        bots.Find(bot => bot.Id == id)?.Name ?? id;
+
+    private static PrisonerDto PrisonerOf(IRulesApplying rules, Piece piece) =>
+        new(piece.Kind.Value, rules.NameOf(piece.Kind), piece.Owner.Value);
+
+    private static OutcomeDto? OutcomeOf(IRulesApplying rules, GameOutcome? outcome) =>
+        outcome is null
+            ? null
+            : new OutcomeDto([.. outcome.Winners.Select(seat => seat.Value)], GameLog.Story(rules, outcome));
 
     private static string PlayerOf(SeatController controller) =>
         controller switch
