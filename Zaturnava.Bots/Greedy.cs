@@ -26,7 +26,7 @@ internal static class Greedy
     private static ImmutableList<GameAction> Choices(DecisionRequest request)
     {
         ImmutableList<(GameAction Action, int Gain)> gains =
-            [.. request.LegalActions.Select(action => (action, Gain(request, action)))];
+            [.. request.LegalActions.Select(action => (action, Gain(request, action, After(request, action))))];
         int best = gains.Max(gain => gain.Gain);
         return best > 0
             ? [.. gains.Where(gain => gain.Gain == best).Select(gain => gain.Action)]
@@ -43,8 +43,9 @@ internal static class Greedy
             : active;
     }
 
-    private static int Gain(DecisionRequest request, GameAction action) =>
-        ScoreOf(request.Rules.Apply(request.State, action).State, request.Seat)
+    /// <summary>What the action scores the bot, and what a promotion puts on the board for its team.</summary>
+    internal static int Gain(DecisionRequest request, GameAction action, GameState after) =>
+        ScoreOf(after, request.Seat)
             - ScoreOf(request.State, request.Seat)
             + (action is PromoteAction promotion ? PromotionGain(request, promotion) : 0);
 
@@ -62,6 +63,9 @@ internal static class Greedy
         request.State.Teams.AreAllied(piece.Owner, request.Seat)
             ? request.Rules.WorthOf(piece.Kind)
             : -request.Rules.WorthOf(piece.Kind);
+
+    private static GameState After(DecisionRequest request, GameAction action) =>
+        request.Rules.Apply(request.State, action).State;
 
     private static int ScoreOf(GameState state, SeatId seat) => state.Scores.GetValueOrDefault(seat);
 }

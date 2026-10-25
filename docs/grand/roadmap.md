@@ -16,7 +16,7 @@ and written for a *leader* rather than a Raja, so that they carry over unchanged
 - **Smarter bots**: before moving, a bot weighs what its opponents could take in reply (and how
   the exchange on that cell would end), and counts a piece left unguarded, or a throne under threat,
   against what the move gains. Still one move deep, so still fast on a large board; looking further
-  ahead, across the dice, comes later. Every playtest of either game needs this.
+  ahead, across the dice, comes later. Every playtest of either game needs this. *Done*: Argus.
 - Escape on doubles (rules.md §7), the empire bonus (§5), voluntary regency (§6.2).
 - Ending the game by agreement.
 

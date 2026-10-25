@@ -175,6 +175,65 @@ public sealed class MoveGeneratorTest
         Assert.Equal("The line topology has no 'diagonal' directions.", exception.Message);
     }
 
+    [Fact]
+    public void AttacksFrom_WhenNoPieceIsThere_ThrowsArgumentException()
+    {
+        // Arrange - nothing beyond the empty position
+
+        // Act
+        ArgumentException exception = Assert.Throws<ArgumentException>(
+            () => this._generator.AttacksFrom(Position.Empty, new CellId(0), MySeat)
+        );
+
+        // Assert
+        Assert.Equal("from", exception.ParamName);
+    }
+
+    [Fact]
+    public void AttacksFrom_WhenASliderMeetsAFriend_GuardsItAndGoesNoFurther()
+    {
+        // Arrange
+        Piece slider = Friend(Slider);
+        Position position = Position.Empty
+            .Place(new CellId(2), slider)
+            .Place(new CellId(4), Friend(Stepper));
+
+        // Act
+        ImmutableList<Attack> attacks = this._generator.AttacksFrom(position, new CellId(2), MySeat);
+
+        // Assert
+        Assert.Equal(
+            [(slider, 2, 3), (slider, 2, 4), (slider, 2, 1), (slider, 2, 0)],
+            attacks.Select(attack => (attack.Attacker, attack.From.Value, attack.Target.Value))
+        );
+    }
+
+    [Fact]
+    public void AttacksFrom_WhenAPieceOnlyMoves_AttacksNothing()
+    {
+        // Arrange
+        Position position = Position.Empty.Place(new CellId(0), Friend(Walker));
+
+        // Act
+        ImmutableList<Attack> attacks = this._generator.AttacksFrom(position, new CellId(0), MySeat);
+
+        // Assert
+        Assert.Empty(attacks);
+    }
+
+    [Fact]
+    public void AttacksFrom_WhenAPieceOnlyCaptures_AttacksTheEmptyCellItWouldCaptureOn()
+    {
+        // Arrange
+        Position position = Position.Empty.Place(new CellId(0), Friend(Striker));
+
+        // Act
+        ImmutableList<Attack> attacks = this._generator.AttacksFrom(position, new CellId(0), MySeat);
+
+        // Assert
+        Assert.Equal(1, Assert.Single(attacks).Target.Value);
+    }
+
     private static PieceKind Kind(PieceKindId id, MovementRule rule) => new(id, [rule]);
 
     private static Piece Friend(PieceKindId kind) => new(new PieceId(1), kind, MySeatId);

@@ -107,3 +107,10 @@ After the second playtest (2026-10-25):
 - **15** Ransom (§8): on their turn, and in a timed window once it is over, a player may offer
   prisoners back, for prisoners in return or as a gift; the receiver accepts or declines against
   the clock (bots answer at once).
+
+Toward the grand game's [Stage 0](grand/roadmap.md#stage-0--finish-what-the-grand-game-inherits):
+
+- Argus, a new bot, looks at the reply before it moves: it weighs each action by what it gains, less
+  the worst an enemy could do in return (take a piece left unguarded, win an exchange, or step a
+  leader onto its empty throne). It trades prisoners as Solomon does. In 40 games of self-play, a
+  team of two Arguses beat a team of two Midases 38 times.

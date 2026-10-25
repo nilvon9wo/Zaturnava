@@ -32,13 +32,13 @@ public sealed class SolomonBot(Random random) : IBotPlaying
             ? Task.FromCanceled<GameAction>(cancellationToken)
             : Task.FromResult(AnswerTo(request) ?? FairTrade(request) ?? Greedy.Choose(request, this._random));
 
-    private static GameAction? AnswerTo(DecisionRequest request) =>
+    internal static GameAction? AnswerTo(DecisionRequest request) =>
         Trading.BalanceOf(request) is { } balance
             ? MidasBot.Answer(request.Seat, balance >= -Leeway)
             : null;
 
     /// <summary>A gift to an ally, if one may be made; else an even trade, the most valuable first.</summary>
-    private static OfferAction? FairTrade(DecisionRequest request) =>
+    internal static OfferAction? FairTrade(DecisionRequest request) =>
         Trading.TradesOf(request)
             .Where(trade => trade.IsGift || trade.Gain == 0)
             .OrderByDescending(trade => trade.IsGift)

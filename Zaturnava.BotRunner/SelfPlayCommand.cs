@@ -22,7 +22,12 @@ internal static class SelfPlayCommand
     private static readonly RulesetCatalog Rulesets = new([new ClassicRules()]);
 
     private static readonly BotCatalog Bots = new(
-        [new MidasBot(Random.Shared), new SolomonBot(Random.Shared), new RandomBot(Random.Shared)]
+        [
+            new ArgusBot(Random.Shared),
+            new MidasBot(Random.Shared),
+            new SolomonBot(Random.Shared),
+            new RandomBot(Random.Shared),
+        ]
     );
 
     public static async Task<int> Run(

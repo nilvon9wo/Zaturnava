@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Boards;
 using Net.NowhereAtAll.Zaturnava.Engine.Decisions;
+using Net.NowhereAtAll.Zaturnava.Engine.Moves;
 using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
 using Net.NowhereAtAll.Zaturnava.Engine.Positions;
 using Net.NowhereAtAll.Zaturnava.Engine.Rules;
@@ -58,6 +59,11 @@ file sealed class UnplayableRules : IRulesApplying
     public string NameOf(SeatId seat) => throw new NotSupportedException();
 
     public int WorthOf(PieceKindId kind) => throw new NotSupportedException();
+
+    public ImmutableList<Attack> AttacksOf([Required] GameState state, SeatId seat) =>
+        throw new NotSupportedException();
+
+    public bool IsLeader(PieceKindId kind) => throw new NotSupportedException();
 
     public string NameOfDie(int value) => throw new NotSupportedException();
 }

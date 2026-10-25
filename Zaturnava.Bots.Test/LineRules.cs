@@ -1,0 +1,113 @@
+using System.Collections.Immutable;
+using System.ComponentModel.DataAnnotations;
+using Net.NowhereAtAll.Zaturnava.Engine.Actions;
+using Net.NowhereAtAll.Zaturnava.Engine.Boards;
+using Net.NowhereAtAll.Zaturnava.Engine.Decisions;
+using Net.NowhereAtAll.Zaturnava.Engine.Moves;
+using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
+using Net.NowhereAtAll.Zaturnava.Engine.Positions;
+using Net.NowhereAtAll.Zaturnava.Engine.Rules;
+using Net.NowhereAtAll.Zaturnava.Engine.Seats;
+
+namespace Net.NowhereAtAll.Zaturnava.Bots.Test;
+
+/// <summary>
+/// Rules on a line of cells, in which every piece attacks the cells either side of it, and the legal
+/// actions are whichever the test says. A move goes where it says, and scores its actor what it takes
+/// (<see cref="ScoringRules.Worth"/>); passing does nothing. Seats 0 and 2 are allied against 1 and 3;
+/// seat 0's throne is cell 0, and the Raja leads.
+/// </summary>
+internal sealed class LineRules(ImmutableList<GameAction> legalActions) : IRulesApplying
+{
+    public static readonly SeatId Seat = new(0);
+    public static readonly SeatId Enemy = new(1);
+    public static readonly CellId Throne = new(0);
+    public static readonly PieceKindId Pawn = new("pawn");
+    public static readonly PieceKindId Horse = new("horse");
+    public static readonly PieceKindId Raja = new("raja");
+
+    private const int Length = 8;
+
+    private readonly ImmutableList<GameAction> _legalActions = legalActions;
+
+    public string Id => "line";
+
+    public string Name => "Line";
+
+    public ICellNavigating Topology => throw new NotSupportedException();
+
+    public ImmutableDictionary<SeatId, CellId> Thrones => ImmutableDictionary<SeatId, CellId>.Empty.Add(Seat, Throne);
+
+    /// <summary>Seat 0 deciding, among <paramref name="legalActions"/>, with each piece on its cell.</summary>
+    public static DecisionRequest Request(
+        ImmutableList<GameAction> legalActions,
+        params (int Cell, PieceKindId Kind, SeatId Owner)[] pieces
+    )
+    {
+        LineRules rules = new(legalActions);
+        ImmutableList<Seat> seats =
+            [.. Enumerable.Range(0, 4).Select(index => new Seat(new SeatId(index), new Direction(1, 0)))];
+        Position position = pieces
+            .Select((piece, index) => (piece, index))
+            .Aggregate(
+                Position.Empty,
+                (placed, next) => placed.Place(
+                    new CellId(next.piece.Cell),
+                    new Piece(new PieceId(next.index), next.piece.Kind, next.piece.Owner)
+                )
+            );
+        TeamGraph teams = TeamGraph.FromTeams([[Seat, new SeatId(2)], [Enemy, new SeatId(3)]]);
+        GameState state = new(position, seats, teams, Seat, 1, [], []);
+        return new DecisionRequest(rules, state, Seat, rules.LegalActions(state));
+    }
+
+    public static MoveAction Move(int from, int to) => new(Seat, new CellId(from), new CellId(to));
+
+    public GameState CreateInitialState() => throw new NotSupportedException();
+
+    public ImmutableList<GameAction> LegalActions([Required] GameState state) => this._legalActions;
+
+    public Transition Apply([Required] GameState state, [Required] GameAction action) =>
+        action is MoveAction move
+            ? new Transition(Moved(state, move), [])
+            : new Transition(state, []);
+
+    public bool MayOffer([Required] GameState state) => false;
+
+    public DecisionTimer TimerOf([Required] GameState state) => throw new NotSupportedException();
+
+    public GameAction Parse([Required] ActionDescriptor descriptor) => throw new NotSupportedException();
+
+    public int WorthOf(PieceKindId kind) => ScoringRules.Worth[kind];
+
+    public ImmutableList<Attack> AttacksOf([Required] GameState state, SeatId seat) =>
+    [
+        .. state.Position.Occupants
+            .Where(occupant => occupant.Value.Owner == seat)
+            .SelectMany(occupant => new[] { occupant.Key.Value - 1, occupant.Key.Value + 1 }
+                .Where(cell => cell is >= 0 and < Length)
+                .Select(cell => new Attack(occupant.Value, occupant.Key, new CellId(cell)))
+            ),
+    ];
+
+    public bool IsLeader(PieceKindId kind) => kind == Raja;
+
+    public string NameOf(PieceKindId kind) => throw new NotSupportedException();
+
+    public string NameOf(SeatId seat) => throw new NotSupportedException();
+
+    public string NameOfDie(int value) => throw new NotSupportedException();
+
+    private static GameState Moved(GameState state, MoveAction move)
+    {
+        Piece? taken = state.Position.PieceAt(move.To);
+        int gain = taken is null
+            ? 0
+            : ScoringRules.Worth[taken.Kind];
+        return state with
+        {
+            Position = state.Position.Relocate(move.From, move.To),
+            Scores = state.Scores.SetItem(move.Actor, state.Scores.GetValueOrDefault(move.Actor) + gain),
+        };
+    }
+}
