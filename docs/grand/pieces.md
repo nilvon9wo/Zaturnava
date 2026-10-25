@@ -79,13 +79,13 @@ The dice name a class, not a piece ([specification §6.1](specification.md#61-th
 | Pawn (Western) | One square forward; captures one square diagonally forward | Move: blocked straight ahead | First move two squares; *en passant*; → Queen, Rook, Bishop or Knight on the last rank | 8 | 2 / — |
 | Guard (Janggi) | One square orthogonally, or diagonally along palace lines | Area: its 3 × 3 palace | Palace lines | 7 | — / 5 |
 | Noble (Makruk) | One square diagonally, or straight forward | — | — | 5 | — / — |
-| Soldier (Janggi) | One square forward or sideways (diagonally forward along palace lines) | Move: may not go back; Area: palace diagonals only | Palace lines | 5 | — / 2 |
+| Soldier (Janggi) | One square forward or sideways (diagonally forward along palace lines) | Move: may not go back; Area: palace diagonals only | Palace lines | 5 | 2 / 2 |
 | Minister | One square orthogonally | — | — | 4 | — / — |
 | Pawn (Shogi) | One square forward | Move: blocked straight ahead | → Gold General in the far three ranks | 4 | 2 / — |
 | Pawn (Makruk) | One square forward; captures one square diagonally forward | Move: blocked straight ahead | → Courtier on the sixth rank | 3 | 2 / — |
 | Courtier | One square diagonally | One colour (by its move) | — | 3 | — / — |
 | Advisor (Xiangqi) | One square diagonally | Area: its 3 × 3 palace | — | 2 | — / 5 |
-| Soldier (Xiangqi) | One square forward, or sideways | Move: no sideways before crossing the river, never back | — | 2 | — / 3 |
+| Soldier (Xiangqi) | One square forward, or sideways | Move: no sideways before crossing the river, never back | — | 2 | 2 / 3 |
 
 Any Infantry piece that reaches the far edge may also be promoted into any captured piece, as in
 the classic game.
@@ -108,7 +108,7 @@ the classic game.
 
 | Piece | Moves | Restrictions | Value | Lifts |
 |---|---|---|---|---|
-| Knightrider | Repeats 2+1 leaps in one direction | Move: each landing cell short of the last must be empty | 12 | — / — |
+| Knightrider | Repeats 2+1 leaps in one direction | Move: each landing cell short of the last must be empty | 12 | 3 / — |
 | Zebra | Leaps 3+2 | — | 8 | — / — |
 | Knight | Leaps 2+1 | — | 8 | — / — |
 | Camel | Leaps 3+1 | One colour (by its move) | 7 | — / — |
@@ -150,6 +150,9 @@ the classic game.
   and diagonally forward along palace lines (5, not 6; value unchanged).
 - A Horse whose restriction is lifted (7 + 2) costs a point more than a Knight bought outright
   (8): meant, as the price of not buying the Knight.
+- Lifts for the three movement restrictions that had none: the **Knightrider** 3 (it may leap on
+  past an occupied landing cell), each **Soldier** 2 (it may step back). Lift prices stay as they
+  were set, beside the new values.
 - **Cannon (Janggi)**: as in Janggi, it may neither jump over nor capture a Cannon, of either kind;
   its devaluation is −2 for it. Every Cannon is the safer for it.
 - The **Minister** and **Courtier** are **Infantry** (the sheet had them as Cavalry / Leaper).
@@ -160,19 +163,26 @@ the classic game.
 
 Together, **Q20** of the [specification](specification.md#9-open-questions).
 
-1. **Lifts for the three movement restrictions without one** (*proposed*), each a point over what
-   the restriction takes off the value, as the Horse's is:
-   - **Knightrider**, 3: it may leap on past an occupied landing cell, as the Grasshopper and the
-     Cannons hop;
-   - **Soldier (Janggi)**, 2: it may step back;
-   - **Soldier (Xiangqi)**, 2: it may step back. (Stepping sideways before the river is its area
-     lift, 3, as now.)
-2. **The Western Pawn is now worth a Knight** (8 each): its promotion bonus of 5 was set beside a
-   Knight worth 11, and now outweighs its reach (3). In chess a Knight is worth about three Pawns.
-   Should the promotion bonuses (Western Pawn 5, Shogi Pawn 4, Silver General and Lance 3, Makruk
-   Pawn 1) be scaled down, given that any Infantry may also promote at the far edge?
-3. **Lift prices** were set on the old scale, when the small pieces were worth more: a lift of 2
-   is now over a quarter of a Horse (7). They are left as they were; should they shrink too?
+1. **Pricing a promotion** (*proposed*). A promotion is an option: worth what the piece would gain,
+   times the chance of getting there. The designer's first idea, the promoted value over the
+   distance to cross, is that, with one over the distance standing for the chance. Taking the gain
+   (the promoted value less the piece's own value without the bonus) and counting distance on
+   8 × 8 to the first row where its condition holds, from row 2 for Infantry (the furthest it may
+   start and keep its start-row powers) and from row 1 for the rest:
+
+   | Piece | Promotes to | Gain | Distance | Bonus now | Bonus proposed | Value |
+   |---|---|---|---|---|---|---|
+   | Pawn (Western) | Queen (27) | 24 | 6 | 5 | 4 | 7 |
+   | Pawn (Shogi) | Gold General (66) | 66 | 4 | 4 | 17 | 17 |
+   | Lance (Shogi) | Gold General (66) | 63 | 5 | 3 | 13 | 16 |
+   | Silver General (Shogi) | Gold General (66) | 1 | 5 | 3 | 0 | 65 |
+   | Pawn (Makruk) | Courtier (3) | 1 | 4 | 1 | 0 | 2 |
+
+   The Gold General is now a **Leader**, so a Shogi Pawn or a Lance that reaches the far three ranks
+   becomes a leader worth 66, free: by this pricing, worth more than a Rook from the start. Is a
+   promoted Gold General meant to be a leader (with its leader bonus, and all a leader may do)?
+   The far-edge promotion into any captured piece is open to every Infantry piece alike, so it is
+   left out of every piece's price.
 
 ### Names the program keeps apart
 
