@@ -163,7 +163,8 @@
                         <div class="actions">
                             @foreach (ActionDto action in turn.Actions.OffBoard)
                             {
-                                <button class="action primary" @onclick="() => this.Submit(turn.Claim, action)">
+                                <button class="action primary @(IsUrged(view, action) ? "urged" : null)"
+                                        @onclick="() => this.Submit(turn.Claim, action)">
                                     @this.Named(ActionLabels.LabelOf(action))
                                 </button>
                             }
@@ -228,6 +229,7 @@
 
 @code {
     private const string BotController = "bot";
+    private const string RollKind = "roll";
     private static readonly BoardActions NoActions = new([]);
 
     private readonly Timer _poll;
@@ -300,9 +302,27 @@
             (_, { } seat, null, _, true) => $"{view.Seats[seat].Name}'s turn is over: they may still offer prisoners back.",
             (_, { }, _, _, true) => "Your turn is over: offer prisoners back, or be done.",
             (_, { } seat, null, _, _) => $"{view.Seats[seat].Name} to move{ForWhom(view)} ({this.Player(view.Seats[seat])}).",
+            (_, { }, _, _, _) when view.ThroneHeldBy is { } holder => this.Held(view, holder),
             (_, { }, _, _, _) => $"Your move{ForWhom(view)}.",
             _ => "The game is over.",
         };
+
+    /// <summary>
+    /// "Yellow's Raja holds your throne: you must roll, then move first; Yellow moves second." - or, once
+    /// rolled, "...: you move first; Yellow moves second."
+    /// </summary>
+    private string Held(GameViewDto view, int holder)
+    {
+        int throne = view.Cells.First(cell => cell.Throne == view.DecidingSeat).Id;
+        string leader = view.Pieces.First(piece => piece.Cell == throne).Name;
+        string holders = view.Seats[holder].Name;
+        string roll = view.LegalActions.Any(action => action.Kind == RollKind) ? "you must roll, then move first" : "you move first";
+        return this.Named($"{holders}'s {leader} holds your throne: {roll}; {holders} moves second.");
+    }
+
+    /// <summary>Rolling, when the player may do nothing else for an enemy leader on their throne.</summary>
+    private static bool IsUrged(GameViewDto view, ActionDto action) =>
+        view.ThroneHeldBy is not null && action.Kind == RollKind;
 
     private static string ForWhom(GameViewDto view) =>
         view.ActingFor is { } seat ? $", for {view.Seats[seat].Name}" : string.Empty;

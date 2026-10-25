@@ -1,8 +1,10 @@
 using System.Collections.Immutable;
 using Net.NowhereAtAll.Zaturnava.Application.Games;
 using Net.NowhereAtAll.Zaturnava.Contracts;
+using Net.NowhereAtAll.Zaturnava.Engine.Boards;
 using Net.NowhereAtAll.Zaturnava.Engine.Decisions;
 using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
+using Net.NowhereAtAll.Zaturnava.Engine.Positions;
 using Net.NowhereAtAll.Zaturnava.Engine.Rules;
 using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 using Net.NowhereAtAll.Zaturnava.Server.Endpoints;
@@ -181,6 +183,41 @@ public sealed class GameViewsTest
         );
     }
 
+    [Theory]
+    [InlineData("enemy's Raja", 1)]
+    [InlineData("ally's Raja", null)]
+    [InlineData("enemy's Pawn", null)]
+    [InlineData("empty", null)]
+    [InlineData("acting for another", null)]
+    [InlineData("game over", null)]
+    public void ViewOf_WhenALeaderSitsOnTheDecidingSeatsThrone_SaysWhoseIfAnEnemys(string why, int? expected)
+    {
+        // Arrange - Black to decide, with Yellow's (an enemy's) or Green's (an ally's) piece on its throne
+        GameState start = Rules.CreateInitialState();
+        CellId throne = Rules.Thrones[new SeatId(0)];
+        Position position = why switch
+        {
+            "ally's Raja" => start.Position.Place(throne, Holder(ClassicPieces.Raja, 2)),
+            "enemy's Pawn" => start.Position.Place(throne, Holder(ClassicPieces.Pawn, 1)),
+            "empty" => new Position(start.Position.Occupants.Remove(throne)),
+            _ => start.Position.Place(throne, Holder(ClassicPieces.Raja, 1)),
+        };
+        GameState state = start with
+        {
+            RollOff = [],
+            AwaitedDice = null,
+            DecidingSeat = why == "game over" ? null : new SeatId(0),
+            ActingFor = why == "acting for another" ? new SeatId(2) : null,
+            Position = position,
+        };
+
+        // Act
+        GameViewDto view = GameViews.ViewOf(Snapshot(state), Bots);
+
+        // Assert
+        Assert.Equal(expected, view.ThroneHeldBy);
+    }
+
     [Fact]
     public void ViewOf_WhenAPieceGoingHomeWaitsOnWhereItGoes_SaysWhichAndOffersItsPlaces()
     {
@@ -260,6 +297,8 @@ public sealed class GameViewsTest
         // Assert
         Assert.Equal(("a1", "h8"), (view.Cells[0].Name, view.Cells[63].Name));
     }
+
+    private static Piece Holder(PieceKindId kind, int owner) => new(new PieceId(99), kind, new SeatId(owner));
 
     private static string Listed(ImmutableList<PrisonerDto> prisoners) =>
         string.Join(", ", prisoners.Select(prisoner => $"{prisoner.Id} {prisoner.Name} {prisoner.Owner}"));

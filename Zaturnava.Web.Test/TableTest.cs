@@ -641,6 +641,36 @@ public sealed class TableTest : IDisposable
     }
 
     [Theory]
+    [InlineData(true, "Yellow's Raja holds your throne: you must roll, then move first; Yellow moves second.", 1)]
+    [InlineData(false, "Yellow's Raja holds your throne: you move first; Yellow moves second.", 0)]
+    public void Status_WhenAnEnemyLeaderHoldsTheirThrone_SaysWhoMovesAndUrgesARoll(
+        bool mayRoll,
+        string expected,
+        int urged
+    )
+    {
+        // Arrange - Yellow's Raja on cell 2, Black's throne
+        ActionDto roll = new("roll", ImmutableSortedDictionary<string, string>.Empty.Add(ActionArguments.Actor, "0"));
+        GameViewDto view = FakeGameServer.SeatZeroToMove;
+        this._page.Server.View = view with
+        {
+            Cells = view.Cells.SetItem(2, view.Cells[2] with { Throne = 0 }),
+            Pieces = [new PieceDto(0, "raja", "Raja", 1, 2)],
+            LegalActions = mayRoll ? [roll] : [FakeGameServer.Pass],
+            ThroneHeldBy = 1,
+        };
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Assert
+        Assert.Equal(
+            (expected, urged),
+            (table.Find("p.status").TextContent, table.FindAll("button.urged").Count)
+        );
+    }
+
+    [Theory]
     [InlineData(0, "Your Pawn is going home: choose a marked square for it.")]
     [InlineData(1, "Yellow is choosing where their Pawn goes home (Random).")]
     public void Status_WhenAPieceGoingHomeWaitsOnWhereItGoes_SaysWhoChooses(int deciding, string expected)

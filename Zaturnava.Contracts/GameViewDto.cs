@@ -14,7 +14,8 @@ namespace Net.NowhereAtAll.Zaturnava.Contracts;
 /// leave for later. <see cref="IsTurnOver"/> says that the deciding seat's turn is over, and it may
 /// only offer ransoms, or be done. <see cref="Returning"/> is a piece going home from a ransom, which
 /// waits on the deciding seat, its owner, to choose where it goes (a <c>place</c> action, drawn on the
-/// board as a cell to drop it on).
+/// board as a cell to drop it on). <see cref="ThroneHeldBy"/> is the enemy seat whose leader sits on the
+/// throne of the seat deciding for itself, which may change what that seat may do, and who moves.
 /// </summary>
 public sealed record GameViewDto(
     string Id,
@@ -36,5 +37,6 @@ public sealed record GameViewDto(
     double? SecondsLeft,
     int? PromotionDue,
     bool IsTurnOver,
-    PrisonerDto? Returning = null
+    PrisonerDto? Returning = null,
+    int? ThroneHeldBy = null
 );

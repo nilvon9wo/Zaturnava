@@ -58,9 +58,22 @@ internal static class GameViews
             snapshot.TimeLeft?.TotalSeconds,
             snapshot.State.PromotionDue?.Value,
             snapshot.State.IsRansomWindow,
-            snapshot.State.Returning is { } due ? PrisonerOf(snapshot.Rules, due.Prisoners[0]) : null
+            snapshot.State.Returning is { } due ? PrisonerOf(snapshot.Rules, due.Prisoners[0]) : null,
+            ThroneHolderOf(snapshot.Rules, snapshot.State)
         );
     }
+
+    /// <summary>The enemy seat whose leader sits on the throne of the seat deciding for itself; null if none.</summary>
+    private static int? ThroneHolderOf(IRulesApplying rules, GameState state) =>
+        state.ActingFor is null && state.DecidingSeat is { } seat
+            ? rules.Thrones
+                .Where(throne => throne.Key == seat)
+                .Select(throne => state.Position.PieceAt(throne.Value))
+                .OfType<Piece>()
+                .Where(holder => rules.IsLeader(holder.Kind) && !state.Teams.AreAllied(holder.Owner, seat))
+                .Select(holder => (int?)holder.Owner.Value)
+                .FirstOrDefault()
+            : null;
 
     private static RulesetDto RulesetOf(IRulesApplying rules) =>
         new(rules.Id, rules.Name, rules.CreateInitialState().Seats.Count);
