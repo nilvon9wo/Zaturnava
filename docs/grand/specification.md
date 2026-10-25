@@ -1,4 +1,4 @@
-# The grand game — Specification (v0.2 draft)
+# The grand game — Specification (v0.3 draft)
 
 The [classic game](../rules.md) is one small part of a larger design, which has no name yet; this
 document calls it **the grand game** until it does. The classic game stays available, unchanged,
@@ -117,8 +117,8 @@ on, with what follows in place of the Raja-and-dice parts.
 
 - **Stated — dice.** A die names a **class** of piece (Leader, Cavalry, Heavy, Infantry,
   Artillery), not a kind: the player may move any piece of that class.
-  - **Proposed.** On the default two six-sided dice, as the classic faces map: 1 Artillery,
-    2 Cavalry, 3–4 Heavy, 5–6 Infantry or Leader (the player's choice). **Q10**.
+  - **Stated.** On the default two six-sided dice, as the classic faces map: 1 Artillery,
+    2 Cavalry, 3–4 Heavy, 5–6 Infantry or Leader (the player's choice).
 - **Stated — throne control.** What the classic rules say of a Raja holds of every leader. A
   player whose leaders sit on several thrones commands (or is made to share the turn of) each of
   those armies, as in rules.md §6.
@@ -126,7 +126,8 @@ on, with what follows in place of the Raja-and-dice parts.
   that ally, as in rules.md §6.1.
 - **Stated — promotion at the far edge.** Any Infantry piece that reaches the far edge may be
   promoted into any captured piece, as a classic Pawn is (rules.md §8).
-- The end of the game, and how it is won, is **Q11**.
+- **Stated — the end.** The game ends as the classic game does (rules.md §10). Points decide it,
+  unless the end itself does: a team with no opposition left wins.
 
 ### 6.2 Points: scoring and spending
 
@@ -143,15 +144,20 @@ on, with what follows in place of the Raja-and-dice parts.
 - **Stated.** A player whose own leaders sit on all four thrones at once wins a bonus of **60**
   points. **Q12**: once, or again every time the state is entered afresh (as the classic empire
   bonus is)?
-- **Q13.** Is a promotion by a piece's own condition (a Shogi piece in the far three ranks, a
-  Makruk Pawn on the sixth rank, a Western Pawn on the last rank) free, as a classic Pawn's is, or
-  only bought in a palace?
+- **Stated — a piece's own promotion.** A piece that meets its own promotion condition (a Shogi
+  piece in the far three ranks, a Makruk Pawn on the sixth rank, a Western Pawn on the last rank)
+  is promoted free.
+- **Stated.** Every promotion is optional, and may be put off for as long as its condition holds:
+  a player who expects the piece to be captured at once need not hand its captor the dearer score.
+- **Stated.** An Infantry piece with a promotion of its own (a Western Pawn) chooses, at the far
+  edge, between that promotion and becoming any captured piece.
 
 ### 6.3 Other classic scores
 
 The classic bonuses (entering an enemy throne, taking a leader on its own throne, the empire) were
-reckoned against pieces worth 1 to 5. **Q14**: do they stay as they are, beside captures worth up
-to 75, or scale?
+reckoned against pieces worth 1 to 5. **Stated.** Whether they stay as they are, beside captures
+worth up to 75, or scale, is for playtesting to show; so is the leader bonus of 60, which is meant
+to make players guard their leaders even when they are not using them to take thrones.
 
 ### 6.4 Leaders' powers
 
@@ -180,6 +186,10 @@ to 75, or scale?
 
 - **Stated.** A restriction may be lifted at draft time, at its listed cost, and later in play,
   under §6.2; one that the piece's own move imposes, never.
+- **Stated.** A piece bound to one colour (or a smaller share of the board) by its own move can
+  never reach the rest, however it is moved: a leader that keeps to the other colour is safe from
+  it. Its value should show that. **Q21**: how; a proposal is in
+  [pieces.md](pieces.md#binding-proposed).
 - **Q19.** What a piece becomes once its movement restriction is lifted (a Horse whose leg may no
   longer be blocked is a Knight; a Shogi Pawn no longer blocked straight ahead moves… how?).
 
@@ -200,6 +210,7 @@ to 75, or scale?
 
 Answered on 2026-10-25, and folded in above: dice, leaders and throne control, scoring and
 spending, unspent points, promotion at the far edge and its price, drafting in secret or in view.
+The numbers stay as they are; answered questions are marked so.
 
 1. **Q1** Smallest and largest board; ranges for each random setting (board, army points).
 2. **Q2** What crossing the river means for an army in a corner, with one river or two.
@@ -211,14 +222,17 @@ spending, unspent points, promotion at the far edge and its price, drafting in s
 8. **Q8** Palace lines: "toward the throne" from a cell not in line with it; moving away along
    the line.
 9. **Q9** Confinement: to the piece's own palace, or to whichever it is in?
-10. **Q10** Which die faces name which class.
-11. **Q11** How the game ends, and how it is won.
+10. **Q10** *Answered:* which die faces name which class (§6.1).
+11. **Q11** *Answered:* how the game ends, and how it is won (§6.1).
 12. **Q12** The four-throne bonus: once, or every time?
-13. **Q13** Promotion by a piece's own condition: free, or bought?
-14. **Q14** The classic bonuses beside the new piece values.
+13. **Q13** *Answered:* promotion by a piece's own condition is free, optional and may wait (§6.2).
+14. **Q14** *For playtesting:* the classic bonuses, and the leader bonus of 60 (§6.3).
 15. **Q15** The flying-general capture: which lines; which die.
 16. **Q16** The palace face-off: when, and for how long, may it be called?
 17. **Q17** Castling: which pieces count as the Rook?
 18. **Q18** Castling: what "across check" means without check; which die.
 19. **Q19** What lifting each movement restriction yields (§7).
 20. **Q20** The catalogue's own questions: [pieces.md](pieces.md#still-open).
+21. **Q21** How a piece's value shows that its move binds it to part of the board (§7).
+22. **Q22** A name for the Makruk Pawn's promotion, now called the Private
+    ([pieces.md](pieces.md#still-open)).

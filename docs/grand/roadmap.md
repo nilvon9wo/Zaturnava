@@ -9,10 +9,8 @@ Nothing here is scheduled; the order is a proposal. Each stage names the open qu
 
 ## Stage 0 — Agree the design
 
-- Settle the open questions, first those that shape the engine: the dice faces (**Q10**), how the
-  game is won (**Q11**), promotion by a piece's own condition (**Q13**), the classic bonuses
-  (**Q14**).
-- Settle the catalogue's [open notes](pieces.md#still-open) (**Q20**).
+- Settle the open questions, first those that shape the catalogue: its open notes (**Q20**), the
+  value of bound pieces (**Q21**), the Private's name (**Q22**).
 - Choose a name, or keep "grand" as the working name of the variant's project and key.
 
 ## Stage 1 — The catalogue as data
@@ -31,14 +29,14 @@ rest, each a few lines of data once the grammar knows how:
 The piece-information card (§8 of the specification) can come here too, and serve the classic game
 at once.
 
-Waits on: **Q7**, **Q19**, **Q20**.
+Waits on: **Q7**, **Q19**, **Q20**, **Q21**, **Q22**.
 
 ## Stage 2 — The board and the dice
 
 - Any even width and length; four kingdoms; rivers drawn on the board.
 - Same-side and opposite-corner arrangements, with forward for each (**Q2**, **Q6**).
 - A team game or everyone for themselves (`TeamGraph` already allows both).
-- Dice that name a class (**Q10**).
+- Dice that name a class: 1 Artillery, 2 Cavalry, 3–4 Heavy, 5–6 Infantry or Leader.
 - The lobby's game-creation form, with "at random" for every setting (**Q1**).
 - To be playable before the draft exists: each army a fixed one, set by the program.
 
@@ -48,8 +46,8 @@ Waits on: **Q7**, **Q19**, **Q20**.
   (**Q8**); confinement to a palace (**Q9**).
 - Several leaders in one army: throne control, and everything the classic rules say of "the Raja",
   said of leaders.
-- Scoring by piece value, with the classic bonuses as settled (**Q14**), and the end of the game
-  (**Q11**).
+- Scoring by piece value, with the classic bonuses as they are until playtesting says otherwise
+  (**Q14**); the game ends as the classic game does, and points decide it.
 
 ## Stage 4 — The draft
 
@@ -63,7 +61,9 @@ Waits on: **Q7**, **Q19**, **Q20**.
 
 - Upgrades and promotions bought in play, in a palace with the player's own leader on its throne,
   lowering the score.
-- Promotion by a piece's own condition (**Q13**), and Infantry promoting at the far edge.
+- Promotion by a piece's own condition, free; Infantry promoting at the far edge, into its own
+  promotion or any captured piece; every promotion optional, and able to wait while its condition
+  holds.
 - The four-throne bonus (**Q12**).
 - Bots that spend.
 
@@ -78,7 +78,8 @@ Waits on: **Q7**, **Q19**, **Q20**.
 ## Stage 7 — Looks
 
 - Every kind its own look, in both piece sets; the class told at a glance (spec §8).
-- Playtest, as the classic game was, and act on what it asks for.
+- Playtest, as the classic game was, and act on what it asks for: among other things, the classic
+  bonuses and the leader bonus of 60 (**Q14**).
 
 ## Later
 
