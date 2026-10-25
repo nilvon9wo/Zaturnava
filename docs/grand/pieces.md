@@ -6,14 +6,14 @@ together.
 
 ## Value
 
-A piece's value is the sum of the sheet's bonus columns; the sheet enters each by hand (it has no
-formulas):
+A piece's value is the sum of the sheet's bonus columns, with the speed bonus counted twice, so
+that range weighs more than the number of directions (`=O+P+Q*2+R+S+T`):
 
 | Part | As entered |
 |---|---|
 | Leader bonus | 60 for a leader, else 0 |
 | Direction bonus | usually the number of directions it may move in (1 direction: 0) |
-| Speed bonus | its greatest distance on an 8 × 8 board; 0 for a piece that moves one square |
+| Speed bonus (×2) | its greatest distance on an 8 × 8 board; 0 for a piece that moves one square |
 | Promotion bonus | what its promotion is worth (Western Pawn 5, Shogi Pawn 4…) |
 | Special-power bonus | what its powers are worth (1 to 3) |
 | Limitation devaluation | −1 or −2 for each kind of restriction |
@@ -55,9 +55,9 @@ The dice name a class, not a piece ([specification §6.1](specification.md#61-th
 
 | Piece | Moves | Restrictions | Powers / promotion | Value | Lifts |
 |---|---|---|---|---|---|
-| Dragon King (Shogi) | Any distance orthogonally, or one square diagonally | — | — | 75 | — / — |
-| General (Xiangqi) | One square orthogonally | Area: its 3 × 3 palace | Flying-general capture | 72 | — / 5 |
-| Fairy General (custom) | One square in any direction, or leaps 2+1 | — | — | 71 | — / — |
+| Dragon King (Shogi) | Any distance orthogonally, or one square diagonally | — | — | 82 | — / — |
+| General (Xiangqi) | One square orthogonally | Area: its 3 × 3 palace | Flying-general capture | 79 | — / 5 |
+| Fairy General (custom) | One square in any direction, or leaps 2+1 | — | — | 74 | — / — |
 | King (Western) | One square in any direction | — | Castling | 70 | — / — |
 | Silver General (Shogi) | One square diagonally, or straight forward | — | → Gold General in the far three ranks | 68 | — / — |
 | General (Janggi) | One square orthogonally, or diagonally along palace lines | Area: its 3 × 3 palace | Palace face-off; palace lines | 68 | — / 5 |
@@ -68,13 +68,15 @@ The dice name a class, not a piece ([specification §6.1](specification.md#61-th
 | Piece | Moves | Restrictions | Powers / promotion | Value | Lifts |
 |---|---|---|---|---|---|
 | Pawn (Western) | One square forward; captures one square diagonally forward | Move: blocked straight ahead | First move two squares; *en passant*; → Queen, Rook, Bishop or Knight on the last rank | 8 | 2 / — |
-| Noble (Makruk) | One square diagonally, or straight forward | — | — | 5 | — / — |
 | Guard (Janggi) | One square orthogonally, or diagonally along palace lines | Area: its 3 × 3 palace | Palace lines | 7 | — / 5 |
+| Noble (Makruk) | One square diagonally, or straight forward | — | — | 5 | — / — |
 | Soldier (Janggi) | One square forward or sideways (diagonally forward along palace lines) | Move: may not go back; Area: palace diagonals only | Palace lines | 5 | — / 2 |
+| Minister | One square orthogonally | — | — | 4 | — / — |
 | Pawn (Shogi) | One square forward | Move: blocked straight ahead | → Gold General in the far three ranks | 3 | 2 / — |
 | Pawn (Makruk) | One square forward; captures one square diagonally forward | Move: blocked straight ahead | → Courtier on the sixth rank | 3 | 2 / — |
 | Advisor (Xiangqi) | One square diagonally | Area: its 3 × 3 palace | — | 2 | — / 5 |
 | Soldier (Xiangqi) | One square forward, or sideways | Move: no sideways before crossing the river, never back | — | 2 | — / 3 |
+| Courtier | One square diagonally | One colour (by its move) | — | 2 | — / — |
 
 Any Infantry piece that reaches the far edge may also be promoted into any captured piece, as in
 the classic game.
@@ -83,41 +85,39 @@ the classic game.
 
 | Piece | Moves | Restrictions | Powers / promotion | Value | Lifts |
 |---|---|---|---|---|---|
-| Amazon | Any distance in any direction, or leaps 2+1 | — | — | 17 | — / — |
-| Queen (Western) | Any distance in any direction | — | — | 15 | — / — |
-| Archbishop | Any distance diagonally, or leaps 2+1 | — | — | 15 | — / — |
-| Chancellor | Any distance orthogonally, or leaps 2+1 | — | — | 15 | — / — |
-| Dragon Horse (Shogi) | Any distance diagonally, or one square orthogonally | — | — | 15 | — / — |
-| Dragon Bishop (custom) | Any distance diagonally, or leaps 2+1 | — | — | 15 | — / — |
-| Rook (Western) | Any distance orthogonally | — | — | 11 | — / — |
-| Bishop (Western) | Any distance diagonally | One colour (by its move) | — | 9 | — / — |
-| Lance (Shogi) | Any distance straight forward | Move: blocked by pieces in its path | → Gold General in the far three ranks | 9 | 2 / — |
+| Amazon | Any distance in any direction, or leaps 2+1 | — | — | 24 | — / — |
+| Queen (Western) | Any distance in any direction | — | — | 22 | — / — |
+| Archbishop | Any distance diagonally, or leaps 2+1 | — | — | 22 | — / — |
+| Chancellor | Any distance orthogonally, or leaps 2+1 | — | — | 22 | — / — |
+| Dragon Horse (Shogi) | Any distance diagonally, or one square orthogonally | — | — | 22 | — / — |
+| Dragon Bishop (custom) | Any distance diagonally, or leaps 2+1 | — | — | 22 | — / — |
+| Rook (Western) | Any distance orthogonally | — | — | 18 | — / — |
+| Bishop (Western) | Any distance diagonally | One colour (by its move) | — | 16 | — / — |
+| Lance (Shogi) | Any distance straight forward | Move: blocked by pieces in its path | → Gold General in the far three ranks | 16 | 2 / — |
 
 ### Cavalry / Leaper
 
 | Piece | Moves | Restrictions | Value | Lifts |
 |---|---|---|---|---|
-| Knightrider | Repeats 2+1 leaps in one direction | Move: each landing cell short of the last must be empty | 16 | — / — |
-| Giraffe | Leaps 4+1 | — | 13 | — / — |
-| Zebra | Leaps 3+2 | Area: one colour | 12 | — / 3 |
-| Camel | Leaps 3+1 | One colour (by its move) | 10 | — / — |
-| Knight | Leaps 2+1 | — | 11 | — / — |
-| Horse | Leaps 2+1 | Move: the first square of the two-square leg must be empty | 10 | 2 / — |
-| Elephant (Janggi) | One orthogonal step, then two diagonal steps outward | Move: each cell on the way must be empty | 10 | 2 / — |
-| Elephant (Alfil) | Leaps 2+2 diagonally | One cell in eight (by its move) | 4 | — / — |
-| Threeleaper | Leaps three squares orthogonally | One cell in nine (by its move) | 3 | — / — |
-| Elephant (Xiangqi) | Two squares diagonally | Move: the square between must be empty; Area: may not cross the river; one cell in eight (by its move) | 2 | 2 / 3 |
-| War Engine | Leaps two squares orthogonally | One cell in four (by its move) | 3 | — / — |
-| Minister | One square orthogonally | — | 4 | — / — |
-| Courtier | One square diagonally | One colour (by its move) | 2 | — / — |
+| Knightrider | Repeats 2+1 leaps in one direction | Move: each landing cell short of the last must be empty | 24 | — / — |
+| Giraffe | Leaps 4+1 | — | 18 | — / — |
+| Zebra | Leaps 3+2 | — | 18 | — / — |
+| Camel | Leaps 3+1 | One colour (by its move) | 14 | — / — |
+| Knight | Leaps 2+1 | — | 14 | — / — |
+| Horse | Leaps 2+1 | Move: the first square of the two-square leg must be empty | 13 | 2 / — |
+| Elephant (Janggi) | One orthogonal step, then two diagonal steps outward | Move: each cell on the way must be empty | 13 | 2 / — |
+| Elephant (Alfil) | Leaps 2+2 diagonally | One cell in eight (by its move) | 8 | — / — |
+| Threeleaper | Leaps three squares orthogonally | One cell in nine (by its move) | 6 | — / — |
+| Elephant (Xiangqi) | Two squares diagonally | Move: the square between must be empty; Area: may not cross the river; one cell in eight (by its move) | 6 | 2 / 3 |
+| War Engine | Leaps two squares orthogonally | One cell in four (by its move) | 5 | — / — |
 
 ### Specialty / Artillery
 
 | Piece | Moves | Captures | Restrictions | Value | Lifts |
 |---|---|---|---|---|---|
-| Grasshopper | Along any line, over the first piece met, to the cell just beyond | Same | Move: must hop, landing just beyond | 14 | 3 / — |
-| Cannon (Xiangqi) | Any distance orthogonally | By hopping one piece, at any distance beyond | — | 13 | — / — |
-| Cannon (Janggi) | Over exactly one piece, to any cell beyond, orthogonally | Same | Move: must hop exactly one piece, never a Cannon of either kind | 12 | 3 / — |
+| Grasshopper | Along any line, over the first piece met, to the cell just beyond | Same | Move: must hop, landing just beyond | 21 | 3 / — |
+| Cannon (Xiangqi) | Any distance orthogonally | By hopping one piece, at any distance beyond | — | 20 | — / — |
+| Cannon (Janggi) | Over exactly one piece, to any cell beyond, orthogonally | Same | Move: must hop exactly one piece; may neither hop nor capture a Cannon of either kind | 18 | 3 / — |
 
 ## Review notes
 
@@ -140,21 +140,36 @@ the classic game.
   and diagonally forward along palace lines (5, not 6; value unchanged).
 - A Horse whose restriction is lifted (10 + 2) costs a point more than a Knight bought outright
   (11): meant, as the price of not buying the Knight.
-- **Cannon (Janggi)**: it may not jump over a Cannon of either kind. *Proposed:* unlike in Janggi,
-  it may capture one.
+- **Cannon (Janggi)**: as in Janggi, it may neither jump over nor capture a Cannon, of either kind;
+  its devaluation is −2 for it. Every Cannon is the safer for it.
+- The **Minister** and **Courtier** are **Infantry** (the sheet had them as Cavalry / Leaper).
+- The **Zebra** has no colour restriction: its leap changes colour every time.
+- The speed bonus counts twice in the value, so that the Rook comes out above the Knight.
 
 ### Still open
 
 Together, **Q20** of the [specification](specification.md#9-open-questions).
 
-1. **Minister** and **Courtier**: classed as *Cavalry / Leaper*, though they step. The class decides
-   which die moves them.
-2. Three restrictions have no lift cost: the Knightrider's, the Janggi Soldier's and the Xiangqi
-   Soldier's movement restrictions. Are they part of what the piece *is*, and not for sale?
-3. The Zebra (3+2) changes colour every leap, so for it "one colour" is a real rule, which a lift
-   removes. Is that the intent?
-4. By the formula the Knight (11) is worth what the Rook is, and twice the Xiangqi Soldier; in
-   chess a Rook is usually reckoned at nearly twice a Knight. Raised only in case it is not meant.
+1. **Lifts for the three movement restrictions without one** (*proposed*), each a point over what
+   the restriction takes off the value, as the Horse's is:
+   - **Knightrider**, 3: it may leap on past an occupied landing cell, as the Grasshopper and the
+     Cannons hop;
+   - **Soldier (Janggi)**, 2: it may step back;
+   - **Soldier (Xiangqi)**, 2: it may step back. (Stepping sideways before the river is its area
+     lift, 3, as now.)
+2. **Weighing speed** (*proposed*). Doubling every speed doubles leaps too, though a leap reaches
+   one cell, not every cell along a line: the Giraffe and Zebra (18) now equal the Rook, and the
+   Grasshopper (21) and both Cannons (20, 18) outrank it. Two ways on:
+   - **(a) Double only sliding.** A slide (Rook, Bishop, Lance, the Knightrider's ride, the slides
+     of the compound pieces) counts twice; a leap, a hop, or the flying-general capture once. The
+     Rook stays 18, the Knight goes back to 11, the Giraffe and Zebra to 13, the Grasshopper to 14,
+     the Cannons (which take only by hopping, and so count as hoppers) to 13 and 11.
+   - **(b) Count reach.** In place of the direction and speed bonuses, count the cells a piece
+     could reach from a central cell of an empty 8 × 8 board: Queen 27, Rook 14, Bishop 13,
+     Knight 8, King 8, Chancellor 22, Archbishop 21, Amazon 35, Zebra 8, Camel 8, Giraffe 4. These
+     follow the values chess players use (Queen 9, Rook 5, Bishop and Knight 3) more closely than
+     either sum does, and a compound piece is worth about its parts. Hoppers and other pieces whose
+     reach depends on the pieces around them would be valued by hand.
 
 ### Names the program keeps apart
 
