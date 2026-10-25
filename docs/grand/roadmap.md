@@ -28,13 +28,14 @@ rest, each a few lines of data once the grammar knows how:
 The piece-information card (§8 of the specification) can come here too, and serve the classic game
 at once.
 
-Waits on: **Q7**, **Q19**, **Q20**.
+Nothing here waits on an open question.
 
 ## Stage 2 — The board and the dice
 
 - A board and a kingdom size (at least 3 × 3), set apart; a kingdom in each corner, lying as the
   game is set (pinwheel, or top and bottom); rivers drawn on the board.
-- Same-side and opposite-corner arrangements, with forward for each (**Q2**, **Q6**).
+- Same-side and opposite-corner arrangements, with forward away from each kingdom's back rank.
+- Rivers, and what they mean to the pieces that care (**Q2**).
 - A team game or everyone for themselves (`TeamGraph` already allows both).
 - Dice that name a class: 1 Artillery, 2 Cavalry, 3–4 Heavy, 5–6 Infantry or Leader.
 - The lobby's game-creation form, with "at random" for every setting (**Q1**).
@@ -51,9 +52,10 @@ Waits on: **Q7**, **Q19**, **Q20**.
 ## Stage 4 — The draft
 
 - A setup phase before play: each player drafts within the budget, buys lifts, places their palace,
-  throne and pieces, in secret or in turn as the game is set (**Q4**, **Q5**); a "fill at random"
+  throne and pieces, in secret or in turn as the game is set; a "fill at random"
   for each step. Points not spent start the player's score.
-- Infantry losing start-row powers when placed beyond row 2 (**Q3**).
+- Infantry placed beyond the start rows (2, or as the game is set) without start-row powers (**Q3**).
+- Pieces confined to a palace placed in it.
 - Bots draft too: Random at random, Midas by value, Solomon… evenly.
 - Later: prices for each game, from its own board and kingdoms
   ([pieces.md](pieces.md#prices-for-each-game-proposed)).

@@ -1,4 +1,4 @@
-# The grand game — Specification (v0.6 draft)
+# The grand game — Specification (v0.7 draft)
 
 The [classic game](../rules.md) is one small part of a larger design, which has no name yet; this
 document calls it **the grand game** until it does. The classic game stays available, unchanged,
@@ -41,15 +41,26 @@ than a piece, and with points won in play to be spent on upgrades and promotions
   kingdoms, kingdoms of unequal size, or kingdoms elsewhere may come later.
 - **Stated.** With the kingdom's size set apart from the board's, the setup can keep every
   army a distance from the enemy, and from any promotion zone.
-- **Proposed.** Kingdoms may not overlap or touch, so that there is open ground between them. A
-  smallest and a largest board and kingdom (**Q1**) keep both the draft and the page workable.
+- **Stated.** The smallest game is a 6 × 6 board with four 3 × 3 kingdoms, which touch. Kingdoms
+  may not overlap.
+- **Stated.** There need be no largest board in the rules: some players may want 100 × 100 with
+  12 × 12 kingdoms. **Proposed:** the first version allows up to 26 × 26 (cells named a to z, and
+  the whole board on one screen); larger boards wait for a page that zooms and scrolls, and for
+  playtesting to show what bots and players can manage (**Q1**).
 - **Stated.** Which way the kingdoms lie in their corners is a setting: the classic pinwheel by
   default, or every back rank along the top or bottom edge.
-- **Proposed.** A river runs along a midline, between two cells, so no cell is on the river; the
-  north–south river separates the north kingdoms from the south ones. A river matters only to pieces
-  whose rules name it (the Xiangqi Elephant and Soldier, so far). What "crossing the river" means
-  for an army in a corner, which has a river on two sides when both are present, is **Q2**.
-- Random values need ranges: **Q1**.
+- **Stated.** A river halves the board, or two rivers quarter it, as the game is set, and the page
+  shows them. A river matters only to the pieces whose rules name it: those that may not cross it
+  (the Xiangqi Elephant), or that change when they have crossed it (the Xiangqi Soldier). Later, a
+  river might wind.
+- **Proposed.** A river runs along a midline, between two rows of cells, so no cell is on it.
+- **Proposed** (**Q2**). With two rivers, a kingdom in a corner has a river on two sides. A piece
+  that may not cross *the* river may cross *neither*: the Xiangqi Elephant keeps to its own quarter.
+  A piece changed by crossing it is changed by crossing *either*: the Xiangqi Soldier steps sideways
+  once it is across a river from its kingdom. With no river at all, neither rule has anything to
+  apply to: the Elephant goes anywhere, and the Soldier never steps sideways.
+- Random values need ranges: **Q1**. **Proposed:** board 8 × 8 to 16 × 16; kingdom 3 × 3 to half
+  the board; army points 120 to 240, so that a leader is always within reach, and two sometimes.
 
 ## 3. Joining: building an army
 
@@ -69,18 +80,24 @@ than a piece, and with points won in play to be spent on upgrades and promotions
   score.
 - **Stated.** Whether players draft and place in secret and all at once, or in turn and in view of
   each other, is a setting of the game (§2).
-- **Stated.** An infantry piece's **forward** is always toward the enemy. With allies in opposite
-  corners, forward follows the classic pinwheel (rules.md §3) or its nearest equivalent.
-- **Stated.** An infantry piece that does not start on its army's first or second row loses every
-  power tied to starting there: a Western Pawn on row 3 may not step two squares on its first move,
-  nor be taken *en passant*… (**Q3**: does it lose the power for good, or only until it is back on
-  row 1–2?)
-- **Q4.** May an army have no leader at all? May the same piece be drafted more than once?
-- **Q5.** May a player buy a second palace, on a board large enough, and at what price? The
-  designer's view so far: more than one throne at the start may confuse.
-- **Proposed.** Forward on a rectangular board: in a same-side game, straight toward the far side;
-  in a corner game, as in the classic game, the direction that leads out of the kingdom toward the
-  next army round the board (**Q6** if the designer means otherwise).
+- **Stated.** An infantry piece's **forward** is toward the enemy; with the kingdoms in a pinwheel,
+  its place on the pinwheel sets it, as in the classic game (rules.md §3). That is, forward is away
+  from its kingdom's back rank.
+- **Stated.** Start-row powers make up for the distance to cross, and speed the game. An infantry
+  piece placed beyond its army's first two rows has been brought forward already, and has none of
+  them: a Western Pawn on row 3 may not step two squares on its first move, nor take *en passant*.
+  **Stated:** how many rows count as start rows (2) may be a setting of the game.
+  **Proposed** (**Q3**): a piece that starts without them never gains them.
+- **Stated.** An army may have no leader, as an army in the classic game may lose its Raja and play
+  on. A player who starts without one plays as one whose leader has been captured, except that
+  there is no leader to ransom, to escape, or to promote into.
+- **Stated.** A player may draft any pieces the budget allows: several leaders, and several of one
+  kind, leaders included.
+- **Q5.** May a player buy a second palace, on a board large enough, and at what price? Left open.
+  A palace without a throne gives little (a few more moves for few pieces, and a cage for others);
+  a palace is worth its place as the seat of a leader, which its throne gives pieces a reason to
+  guard. A second throne would raise who rules when two thrones of one army are held by different
+  players.
 
 ## 4. Pieces
 
@@ -98,10 +115,10 @@ move), and perhaps:
 **Stated.** A restriction that the piece's own move imposes (a piece that moves only diagonally
 never leaves its colour) is listed, but cannot be bought off.
 
-**Proposed.** The classic pieces (Raja, Elephant, Horse, Boat, Pawn) keep their own kinds for the
-classic game. Whether they also join the grand catalogue is **Q7**; the grand Horse, Elephants and
-Pawns move differently from the classic ones of the same names, so the program keeps their keys
-apart whatever the answer.
+**Stated.** The classic pieces do not join the grand catalogue, which already has their moves: the
+Raja moves as the King (without castling), the classic Elephant as the Rook, the classic Horse as
+the Knight, the Boat as the Alfil, the classic Pawn as the Makruk Pawn (without its own promotion).
+They may be added later. The program keeps their keys apart from the grand pieces' all the same.
 
 ## 5. Palaces and thrones
 
@@ -114,14 +131,18 @@ apart whatever the answer.
   for 3 × 3, and the second the board's rectangle, which rivers and drawing assume.
 - **Stated.** Later still, palaces may be turned off, leaving bare thrones. The pieces bound to a
   palace (confined to it, or with powers in it) are then left out of the draft.
-- **Stated.** A piece with the power "can move diagonally along marked palace lines" may move from
-  any cell of any palace directly *toward* that palace's throne, even in a direction it could not
-  otherwise take. The page marks these lines.
-- **Q8.** What "directly toward the throne" means for a cell that is not on a line with it (a
-  corner, when the throne is at the middle of an edge, is a knight's move away); and whether such a
-  piece may also move *away* from the throne along the same line, as in Janggi.
-- **Q9.** "Confined to the 3 × 3 palace": to its own army's palace, or to whichever palace it is
-  in? The Xiangqi General's rule (§6.4) suggests the second.
+- **Stated.** Every palace has a line from each of its cells to its throne, and the page draws
+  them. A piece with the power "can move diagonally along marked palace lines" may follow them,
+  even in a direction it could not otherwise take.
+- **Proposed** (**Q8**). A step along a line goes to the next cell whose centre the line passes
+  through, toward the throne or away from it. Most lines are straight or diagonal, and the step is
+  one cell. A line from a cell a knight's move from the throne (a corner, when the throne is in the
+  middle of an edge) passes through no other cell's centre, so the step goes straight to the throne.
+- **Stated.** A piece confined to a palace must start in one: since a player places their army in
+  their own kingdom, at most nine such pieces fit, in their own palace.
+- **Proposed** (**Q9**). A confined piece is confined to the palace it is in. Only one that has
+  left its palace (the Xiangqi General, by its flying-general capture) or bought off its confinement
+  can ever be in another.
 
 ## 6. Play
 
@@ -157,8 +178,8 @@ on, with what follows in place of the Raja-and-dice parts.
 - **Stated.** Spending lowers the player's score: if the score decides the game, what is spent is
   lost to it.
 - **Stated.** A player whose own leaders sit on all four thrones at once wins a bonus of **60**
-  points. **Q12**: once, or again every time the state is entered afresh (as the classic empire
-  bonus is)?
+  points, once for each set of leaders that does it: not again for walking the same leaders off
+  and back on.
 - **Stated — a piece's own promotion.** A piece that meets its own promotion condition (a Shogi
   piece in the far three ranks, a Makruk Pawn on the sixth rank, a Western Pawn on the last rank)
   is promoted free.
@@ -180,22 +201,27 @@ to make players guard their leaders even when they are not using them to take th
   flying-general capture. Once he is outside every palace his confinement is suspended; it returns
   as soon as he enters any palace. Only a visit to a palace whose throne holds another of his
   player's leaders lets that player buy off the confinement; he cannot buy it off by himself.
-  - **Q15.** When may the capture be made: along an open orthogonal line of any length (as in
-    Xiangqi), or diagonally too? Which die allows it, as a Leader's move?
+  - **Proposed** (**Q15**). As in Xiangqi: along an open orthogonal line, of any length, with
+    nothing between the two; the General moves onto the captured leader's cell. It is the General's
+    move, so a Leader die allows it, or a move made without rolling.
 - **Stated — Janggi General, palace face-off.** The General may call a palace face-off against any
   enemy leader, even when it is not his turn: each leader is captured by the other's side at once,
   and both players score the capture.
-  - **Q16.** When may it be called: when the two leaders face each other on an open line, or when
-    both stand in palaces, or…? How long does the chance last, if it is not his turn — until the
-    next move?
+  - **Proposed** (**Q16**). As Janggi's *bikjang*, which this is: when the General and an enemy
+    leader face each other along an open orthogonal line, with nothing between. The chance comes
+    whenever a move, anyone's, makes it so, and lasts until the next move is made; the page offers
+    it to the General's player, as it offers a ransom, and a bot answers at once. Does either
+    leader have to be in a palace, as "palace face-off" suggests?
 - **Stated — Western King, castling.** The King may castle with "the Rook": nothing between them,
   the two in one orthogonal line, and not castling across check. The King steps two squares toward
   the Rook, and the Rook goes to the King's far side. Castling is allowed even after either piece
   has moved, or castled before.
-  - **Q17.** Which pieces count as "the Rook": only the Western Rook, or any orthogonal slider?
-  - **Q18.** There is no check in the classic game (a Raja is simply captured). Does "not across
-    check" mean the King may not start on, pass over, or land on a cell an enemy piece could move
-    to? And castling moves two classes at once: which die allows it?
+  - **Proposed** (**Q17**). Only the Western Rook: with the Chancellor or the Queen, castling would
+    move a far stronger piece for free.
+  - **Proposed** (**Q18**). There is no check in this game (a leader is simply captured), so "not
+    across check" means that the King may not start on, pass over, or land on a cell an enemy piece
+    could capture on. Castling is the King's move, so a Leader die allows it, or a move made without
+    rolling.
 
 ## 7. Upgrades and restrictions
 
@@ -204,8 +230,8 @@ to make players guard their leaders even when they are not using them to take th
 - **Stated.** A piece bound to one colour (or a smaller share of the board) by its own move can
   never reach the rest, however it is moved: a leader that keeps to the other colour is safe from
   it. Its value shows that, by the share of the board it can reach ([pieces.md](pieces.md#binding)).
-- **Q19.** What a piece becomes once its movement restriction is lifted (a Horse whose leg may no
-  longer be blocked is a Knight; a Shogi Pawn no longer blocked straight ahead moves… how?).
+- **Stated.** A piece whose restriction is lifted stays the piece it was: it keeps its kind, and
+  only has more legal moves, the restriction no longer applying to it.
 
 ## 8. The page
 
@@ -226,26 +252,27 @@ Answered on 2026-10-25, and folded in above: dice, leaders and throne control, s
 spending, unspent points, promotion at the far edge and its price, drafting in secret or in view.
 The numbers stay as they are; answered questions are marked so.
 
-1. **Q1** Smallest and largest board; ranges for each random setting (board, army points).
-2. **Q2** What crossing the river means for an army in a corner, with one river or two.
-3. **Q3** Does an infantry piece that started on row 3 or beyond lose its start-row powers for good?
-4. **Q4** May an army have no leader at all? May a piece be drafted more than once?
-5. **Q5** A second palace: may it be bought, and at what price?
-6. **Q6** Forward, on a rectangular board, in each arrangement (§3).
-7. **Q7** Do the classic pieces join the grand catalogue?
-8. **Q8** Palace lines: "toward the throne" from a cell not in line with it; moving away along
-   the line.
-9. **Q9** Confinement: to the piece's own palace, or to whichever it is in?
+1. **Q1** *Partly answered:* the smallest game (§2). The first version's largest, and the random
+   ranges, are proposed.
+2. **Q2** Rivers and a corner kingdom; no river at all (§2, proposed).
+3. **Q3** *Partly answered:* a piece that starts beyond the start rows has no start-row powers;
+   that it never gains them is proposed (§3).
+4. **Q4** *Answered:* an army may have no leader, and pieces may be drafted more than once (§3).
+5. **Q5** A second palace: may it be bought, and at what price? Left open (§3).
+6. **Q6** *Answered:* forward is away from the kingdom's back rank (§3).
+7. **Q7** *Answered:* the classic pieces do not join the catalogue, for now (§4).
+8. **Q8** Palace lines: a step along one (§5, proposed).
+9. **Q9** Confinement: to the palace the piece is in (§5, proposed).
 10. **Q10** *Answered:* which die faces name which class (§6.1).
 11. **Q11** *Answered:* how the game ends, and how it is won (§6.1).
-12. **Q12** The four-throne bonus: once, or every time?
+12. **Q12** *Answered:* the four-throne bonus, once for each set of leaders (§6.2).
 13. **Q13** *Answered:* promotion by a piece's own condition is free, optional and may wait (§6.2).
 14. **Q14** *For playtesting:* the classic bonuses, and the leader bonus of 60 (§6.3).
-15. **Q15** The flying-general capture: which lines; which die.
-16. **Q16** The palace face-off: when, and for how long, may it be called?
-17. **Q17** Castling: which pieces count as the Rook?
-18. **Q18** Castling: what "across check" means without check; which die.
-19. **Q19** What lifting each movement restriction yields (§7).
+15. **Q15** The flying-general capture (§6.4, proposed).
+16. **Q16** The palace face-off (§6.4, proposed); must a leader be in a palace?
+17. **Q17** Castling: only with the Western Rook (§6.4, proposed).
+18. **Q18** Castling: "across check" without check (§6.4, proposed).
+19. **Q19** *Answered:* a piece with a restriction lifted stays itself, with more moves (§7).
 20. **Q20** The catalogue's own questions: [pieces.md](pieces.md#still-open).
 21. **Q21** *Answered:* a bound piece's value, by the share of the board it can reach (§7).
 22. **Q22** *Answered:* the Makruk Pawn promotes to the Courtier; the Private is gone.
