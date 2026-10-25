@@ -8,7 +8,6 @@ public sealed class PieceStyleTest
     [InlineData("raja", "♚︎")]
     [InlineData("elephant", "♜︎")]
     [InlineData("horse", "♞︎")]
-    [InlineData("boat", "♝︎")]
     [InlineData("pawn", "♟︎")]
     public void GlyphOf_WhenTheKindMovesLikeAChessPiece_IsThatPiece(string kind, string expected)
     {
@@ -33,5 +32,29 @@ public sealed class PieceStyleTest
 
         // Assert
         Assert.Equal("W", glyph);
+    }
+
+    [Fact]
+    public void ShapeOf_WhenTheKindIsTheBoat_IsASailingBoatsPath()
+    {
+        // Arrange - nothing beyond the style
+
+        // Act
+        string? shape = PieceStyle.ShapeOf("boat");
+
+        // Assert
+        Assert.StartsWith("M-0.27 0.1", shape, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ShapeOf_WhenTheKindIsDrawnAsAGlyph_IsNull()
+    {
+        // Arrange - nothing beyond the style
+
+        // Act
+        string? shape = PieceStyle.ShapeOf("horse");
+
+        // Assert
+        Assert.Null(shape);
     }
 }

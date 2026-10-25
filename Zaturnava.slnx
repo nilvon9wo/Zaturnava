@@ -1,4 +1,8 @@
 <Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="README.md" />
+    <File Path="Zaturnava.slnLaunch" />
+  </Folder>
   <Project Path="docs/docs.msbuildproj" Type="13b669be-bb05-4ddf-9536-439f39a36129" />
   <Project Path="Zaturnava.Application.Test/Zaturnava.Application.Test.csproj" />
   <Project Path="Zaturnava.Application/Zaturnava.Application.csproj" />

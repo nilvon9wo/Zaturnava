@@ -7,8 +7,12 @@ namespace Net.NowhereAtAll.Zaturnava.Contracts;
 /// </summary>
 public sealed record EventDto(int Number, string Kind, int Seat, string Text, int? From, int? To)
 {
+    public const string RolledOff = "rolled-off";
     public const string Rolled = "rolled";
     public const string Moved = "moved";
     public const string Captured = "captured";
+    public const string Bonus = "bonus";
+    public const string Shared = "shared";
     public const string Passed = "passed";
+    public const string Ended = "ended";
 }

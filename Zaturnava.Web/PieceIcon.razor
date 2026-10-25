@@ -1,0 +1,27 @@
+@* One piece drawn on its own, as the board draws it: a prisoner beside the seat that holds it. *@
+
+<svg class="piece-icon piece seat-@this.Owner" viewBox="-0.5 -0.5 1 1" role="img">
+    <title>@this.Name</title>
+    <circle cx="0" cy="0" r="0.4" />
+    @if (PieceStyle.ShapeOf(this.Kind) is { } shape)
+    {
+        <path d="@shape" />
+    }
+    else
+    {
+        <g>
+            <text x="0" y="0">@PieceStyle.GlyphOf(this.Kind, this.Name)</text>
+        </g>
+    }
+</svg>
+
+@code {
+    [Parameter, EditorRequired]
+    public string Kind { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public string Name { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public int Owner { get; set; }
+}

@@ -5,12 +5,26 @@ rather than one hard-coded ruleset: the board, the teams, the seats, the pieces 
 meant to change through configuration and small plugins, and every service and client around
 the engine can be replaced on its own.
 
+## Play it
+
+You need the .NET SDK named in `global.json`. Then, from the repository's folder:
+
+```shell
+python3 scripts/play.py      # or: py -3 scripts/play.py on Windows
+```
+
+and open <http://localhost:5165>. It builds and starts the game server (port 5164) and the page
+(port 5165), and stops both on Ctrl+C. In Visual Studio, pick the **Play** launch profile beside
+the start button (it starts both projects) and press it. Don't rebuild while the game runs; restart
+it instead. More in [running the game](docs/contribute/local-development.md#running-the-game).
+
 ## Status
 
 Playable end to end, with a partial ruleset: create a game in the browser, seat people and bots,
-and move. The `classic` ruleset so far has the board, the pieces' moves and captures, scoring by
-piece, and turns of one move or a pass; dice, throne control, promotion, boat triumph and game
-end are still to come ([rules.md, implementation status](docs/rules.md#implementation-status)).
+and play. The `classic` ruleset so far has the board, the pieces' moves and captures, the roll-off
+for who goes first, dice, scoring by piece with the throne bonuses, command of other armies through
+thrones, and the end of the game; voluntary regency, escape, promotion, ransom, boat triumph and the
+empire bonus are still to come ([rules.md, implementation status](docs/rules.md#implementation-status)).
 
 | Part | |
 |---|---|

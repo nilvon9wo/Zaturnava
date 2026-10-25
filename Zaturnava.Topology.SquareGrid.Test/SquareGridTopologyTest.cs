@@ -146,4 +146,22 @@ public sealed class SquareGridTopologyTest
         // Assert
         Assert.Equal(new CellLayout(3, 1, "square"), layout);
     }
+
+    [Theory]
+    [InlineData(0, 0, "a1")]
+    [InlineData(7, 7, "h8")]
+    [InlineData(25, 1, "z2")]
+    [InlineData(26, 0, "aa1")]
+    [InlineData(53, 9, "bb10")]
+    public void NameOf_WhenGivenACell_NamesItsColumnByLettersAndItsRowByNumber(int column, int row, string expected)
+    {
+        // Arrange
+        SquareGridTopology grid = new(60, 10);
+
+        // Act
+        string name = grid.NameOf(grid.CellAt(column, row));
+
+        // Assert
+        Assert.Equal(expected, name);
+    }
 }

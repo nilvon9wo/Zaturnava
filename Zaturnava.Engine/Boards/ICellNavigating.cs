@@ -21,4 +21,7 @@ public interface ICellNavigating
     ImmutableList<Direction> Resolve([Required] DirectionSet set, Direction forward);
 
     CellLayout LayoutOf(CellId cell);
+
+    /// <summary>The cell's name for people, such as "c3": what a log or a player calls it.</summary>
+    string NameOf(CellId cell);
 }

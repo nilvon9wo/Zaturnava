@@ -45,7 +45,7 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
     }
 
     [Fact]
-    public async Task Get_WhenTheGameIsNew_ShowsTheOpeningPosition()
+    public async Task Get_WhenTheGameIsNew_ShowsTheOpeningPositionAndTheRollOff()
     {
         // Arrange
         string gameId = await this.CreateGame();
@@ -55,7 +55,7 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
 
         // Assert
         Assert.Equal(
-            (64, 4, 32, 0, 1, "open", "bot", ZaturnavaServer.Random),
+            (64, 4, 32, 0, 7, "open", "bot", "Random", "6"),
             (
                 view.Cells.Count,
                 view.Cells.Count(cell => cell.Throne is not null),
@@ -64,9 +64,11 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
                 view.LegalActions.Count,
                 view.Seats[0].Controller,
                 view.Seats[1].Controller,
-                view.Seats[1].Bot
+                view.Seats[1].Bot,
+                string.Join(",", view.Dice.Select(die => die.Value))
             )
         );
+        Assert.Equal("Black goes first, with the 6 (Pawn or Raja) they rolled.", view.Log[^1].Text);
     }
 
     [Fact]
@@ -109,19 +111,21 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
     }
 
     [Fact]
-    public async Task Submit_WhenTheSeatRolls_TellsOfTheRollAndLeavesTheBotsToBeAdvanced()
+    public async Task Submit_WhenTheSeatPlaysItsOpeningDie_TellsOfTheMoveAndLeavesTheBotsToBeAdvanced()
     {
         // Arrange
         (string gameId, string token, GameViewDto view) = await this.ClaimedGame();
-        ActionDto roll = view.LegalActions.First(action => action.Kind == "roll");
+        ActionDto pawnForward = view.LegalActions.Single(
+            action => action.Kind == "move" && action.Arguments["from"] == "8"
+        );
 
         // Act
-        GameViewDto after = await this._client.Submit(gameId, token, roll, this._cancellation);
+        GameViewDto after = await this._client.Submit(gameId, token, pawnForward, this._cancellation);
 
         // Assert
         Assert.Equal(
-            (1, 2, "Black rolled 3 (Elephant).|Yellow to play."),
-            (after.DecidingSeat, after.Version, string.Join("|", after.Log.Select(happened => happened.Text)))
+            (1, 2, "Black moved their Pawn from a2 to a3.|Yellow to play."),
+            (after.DecidingSeat, after.Version, string.Join("|", after.Log.TakeLast(2).Select(told => told.Text)))
         );
     }
 

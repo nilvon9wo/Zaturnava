@@ -36,4 +36,6 @@ internal sealed class LineTopology(int length) : ICellNavigating
         };
 
     public CellLayout LayoutOf(CellId cell) => new(cell.Value, 0, "square");
+
+    public string NameOf(CellId cell) => $"{cell.Value}";
 }

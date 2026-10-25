@@ -1,7 +1,8 @@
 @* Any board, from the cells' layouts alone: a unit square per cell, each throne outlined in its seat's
    colour, the last move tinted, the pieces on top, then the marks of a move being made - a ring
    around each piece that can move, and a dot (or, over a piece to capture, a ring) wherever the
-   piece picked up can go. The whole board turns by Turn; the pieces' symbols stay upright. *@
+   piece picked up can go. Each cell's name is written small in its corner, so that the log's "from c2
+   to c3" can be found. The whole board turns by Turn; the pieces' symbols and the names stay upright. *@
 
 <svg class="board" viewBox="@this._frame.ViewBox" role="grid">
     <g transform="@this.Turn.Transform(this._frame)">
@@ -14,6 +15,12 @@
                   height="1"
                   data-cell="@cell.Id"
                   @onclick="() => this.OnCellClicked.InvokeAsync(cell.Id)" />
+            double nameX = cell.X - BoardFrame.HalfCell + NameInset;
+            double nameY = BoardFrame.ScreenY(cell.Y) - BoardFrame.HalfCell + NameInset;
+            <g class="cell-name" pointer-events="none">
+                <text x="@Svg.Number(nameX)" y="@Svg.Number(nameY)" transform="@this.Turn.Upright(nameX, nameY)"
+                    >@cell.Name</text>
+            </g>
             @if (cell.Throne is { } owner)
             {
                 <rect class="throne seat-@owner"
@@ -32,8 +39,17 @@
             <g class="@this.PieceClass(piece)" pointer-events="none">
                 <title>@piece.Name</title>
                 <circle cx="@Svg.Number(x)" cy="@Svg.Number(y)" r="0.4" />
-                <text x="@Svg.Number(x)" y="@Svg.Number(y)" transform="@this.Turn.Upright(x, y)"
-                    >@PieceStyle.GlyphOf(piece)</text>
+                @if (PieceStyle.ShapeOf(piece.Kind) is { } shape)
+                {
+                    <path d="@shape" transform="@ShapeTransform(this.Turn, x, y)" />
+                }
+                else
+                {
+                    <g>
+                        <text x="@Svg.Number(x)" y="@Svg.Number(y)" transform="@this.Turn.Upright(x, y)"
+                            >@PieceStyle.GlyphOf(piece)</text>
+                    </g>
+                }
             </g>
         }
         @foreach (int target in this.Targets)
@@ -51,6 +67,7 @@
 
 @code {
     private const double ThroneInset = 0.06;
+    private const double NameInset = 0.05;
 
     private BoardFrame _frame = BoardFrame.Empty;
     private ImmutableDictionary<int, CellDto> _cells = ImmutableDictionary<int, CellDto>.Empty;
@@ -84,6 +101,10 @@
         this._cells = this.View.Cells.ToImmutableDictionary(cell => cell.Id);
         this._occupied = [.. this.View.Pieces.Select(piece => piece.Cell)];
     }
+
+    /// <summary>A shape drawn about the origin, moved to its piece and kept upright.</summary>
+    private static string ShapeTransform(BoardTurn turn, double x, double y) =>
+        $"{turn.Upright(x, y)} translate({Svg.Number(x)} {Svg.Number(y)})";
 
     private string CellClass(CellDto cell) =>
         string.Join(

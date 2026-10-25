@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.ComponentModel.DataAnnotations;
+using System.Globalization;
 using Net.NowhereAtAll.Zaturnava.Engine.Boards;
 
 namespace Net.NowhereAtAll.Zaturnava.Topology.SquareGrid;
@@ -16,6 +17,8 @@ public sealed class SquareGridTopology(
     public const int MaximumSide = 1024;
     public const string TopologyName = "square grid";
     public const string CellShape = "square";
+
+    private const int Letters = 26;
 
     private static readonly ImmutableList<Direction> OrthogonalDirections =
         [new(1, 0), new(0, 1), new(-1, 0), new(0, -1)];
@@ -62,11 +65,23 @@ public sealed class SquareGridTopology(
 
     public CellLayout LayoutOf(CellId cell) => new(this.ColumnOf(cell), this.RowOf(cell), CellShape);
 
+    /// <summary>
+    /// The column's letters and the row's number, counted from the bottom left: "a1", "h8"; after "z"
+    /// the columns go on "aa", "ab"...
+    /// </summary>
+    public string NameOf(CellId cell) =>
+        string.Create(CultureInfo.InvariantCulture, $"{ColumnName(this.ColumnOf(cell))}{this.RowOf(cell) + 1}");
+
     public int ColumnOf(CellId cell) => cell.Value % this._width;
 
     public int RowOf(CellId cell) => cell.Value / this._width;
 
     private static CellId Cell(int index) => new(index);
+
+    private static string ColumnName(int column) =>
+        column < Letters
+            ? $"{(char)('a' + column)}"
+            : ColumnName((column / Letters) - 1) + ColumnName(column % Letters);
 
     private static ImmutableList<Direction> ForwardDiagonals(Direction forward)
     {

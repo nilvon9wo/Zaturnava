@@ -6,23 +6,28 @@ did them.
 
 ## Seeing what happens
 
-- **15** Show each seat's prisoners (and, later, the ransom offers they allow).
+- **15** (rest) The ransom offers prisoners allow.
 - **25** In the lobby, say when each game started (who plays, how many moves and which seats are
   open are shown).
 
 ## Look and feel
 
-- **2** Pieces drawn as pictures of their own; for now they are chess glyphs.
+- **2** Pieces drawn as pictures of their own; for now they are chess glyphs, and the boat a
+  drawn sailing boat.
 - **3** A choice between classic chaturanga pieces and "modern" ones (the elephant is effectively
   a rook).
 
 ## Rules not yet played
 
-- **30** Roll off for who goes first (rules §11), rather than Black always starting.
-- **19** Thrones: a Raja on another army's throne commands that army (rules §6).
-- **21, 22, 26** The game must end: when no opponents are left, by agreement, and when every
-  remaining player passes without rolling three times in a row (configurable).
+- **19** (rest) Voluntary regency (rules §6.2): an ally taking the turn of a seat whose throne it
+  holds, or that has no Raja, with that seat's consent.
+- **21, 22, 26** (rest) Ending the game by agreement; the idle-rounds safety net as a per-game
+  setting.
 - **20** Offer to end the game, for the other players to accept.
+- Ransom (rules §8): an offer of prisoners for prisoners, which the other player accepts or
+  declines. Its protocol is still open (rules §13): it needs actions from a seat whose turn it is
+  not.
+- Escape on doubles (§7), promotion (§8), boat triumph (§9), the empire bonus (§5).
 
 ## Players and identity
 
@@ -62,3 +67,22 @@ did them.
 - **1** A dark theme by default, and a light one.
 - **2** (partly) Pieces are drawn as chess glyphs: raja ♚, elephant ♜, horse ♞, boat ♝, pawn ♟.
 - **31, 32, 33** The board starts from your own corner and turns 90° either way, and back.
+
+Second playtest (2026-10-25):
+
+- **30** Every seat rolls off for who goes first, ties rolling again, and the winner plays that
+  die as the opening move; the log shows each roll.
+- A move made without rolling says so in the log ("..., without rolling"), so it is clear why no
+  roll is shown; every move names its cells ("from b5 to c5"), and the board names every cell.
+- **19** (partly) A Raja on another seat's throne lets its seat move that army too, as does an
+  ally with no Raja left (rules §6.1); an enemy Raja on a seat's throne forces it to roll, and
+  then moves for it (§6.3).
+- Throne bonuses: +1 for a Raja entering an enemy's throne, +2 more for taking a Raja on its own
+  throne.
+- **21, 22, 26** (partly) The game ends when only one team has pieces (that team wins), when only
+  Rajas are left (a draw), or when no one has rolled or moved for three rounds (points decide); a
+  seat with no pieces is skipped.
+- **15** Each seat shows the prisoners it holds.
+- **2** (more) The boat is a drawn sailing boat, not a bishop.
+- The page and server start together from Visual Studio's **Play** launch profile, and the README
+  says how to play.
