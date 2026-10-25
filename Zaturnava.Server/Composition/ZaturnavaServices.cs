@@ -42,7 +42,10 @@ internal static class ZaturnavaServices
             .AddProblemDetails()
             .AddExceptionHandler<RefusalHandler>();
 
-    private static BotCatalog Bots() => new([new MidasBot(Random.Shared), new RandomBot(Random.Shared)]);
+    private static BotCatalog Bots() =>
+        new(
+            [new MidasBot(Random.Shared), new SolomonBot(Random.Shared), new RandomBot(Random.Shared)]
+        );
 
     private static GameServiceSettings Settings(IConfiguration configuration)
     {

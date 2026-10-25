@@ -123,6 +123,7 @@ select {
 .panel h2 { margin-top: 0; }
 .plans { padding-left: 20px; }
 .plans li { margin: 4px 0; }
+.lobby .quick { margin-left: 8px; }
 .bots dt { font-weight: 600; margin-top: 8px; }
 .bots dd { margin-left: 0; color: var(--muted); }
 .games { list-style: none; padding: 0; }
@@ -285,6 +286,7 @@ select {
 }
 .promotion .choice:hover { border-color: var(--accent); }
 .promotion .choice .piece-icon { width: 26px; height: 26px; }
+.promotion .choice .holder { color: var(--muted); font-size: 0.85rem; }
 
 .dice { list-style: none; padding: 0; margin: 4px 0; }
 .dice li { font-size: 1.1rem; margin: 2px 0; }

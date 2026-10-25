@@ -151,7 +151,7 @@ public sealed class GameViewsTest
 
         // Assert
         Assert.Equal(
-            ["Promote the Pawn on c8 to Green's Elephant"],
+            ["Promote the Pawn on c8 to Green's Elephant, held by Red"],
             view.LegalActions.Where(action => action.Kind == "promote").Select(action => action.Label)
         );
     }

@@ -187,7 +187,7 @@ contracts.
 | Engine | Pure rules primitives: cells, pieces, moves, state, `IRulesApplying`, `IDeciding` | — |
 | Topology.SquareGrid | `ICellNavigating` for rectangular grids | Engine |
 | Variants.Classic | The base ruleset (`ClassicRules`) | Engine, Topology.SquareGrid |
-| Bots | Bot players, each describing itself (`BotProfile`: name, description, whether it uses AI): `RandomBot`; `MidasBot`, greedy for the best immediate score | Engine |
+| Bots | Bot players, each describing itself (`BotProfile`: name, description, whether it uses AI): `RandomBot`; `MidasBot`, greedy for the best immediate score, trading prisoners only at a profit; `SolomonBot`, as greedy on the board, giving allies' prisoners back and trading evenly | Engine |
 | Application | Use cases (`GameService`), the decision loop, catalogs of rulesets and bots; ports `IGamePersisting`, `IGameNotifying` | Engine |
 | Persistence.InMemory | `IGamePersisting` in memory | Application, Engine |
 | Persistence.EfCore | `IGamePersisting` over EF Core (SQLite, SQL Server) | Application, Engine |

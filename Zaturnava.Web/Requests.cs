@@ -3,8 +3,8 @@ using Net.NowhereAtAll.Zaturnava.Contracts;
 namespace Net.NowhereAtAll.Zaturnava.Web;
 
 /// <summary>
-/// A request to the game server, from a page: a refusal, or a server that cannot be reached (a free
-/// host asleep or gone), is something to tell the player, not a crash.
+/// A request to the game server, from a page: a refusal, or a server that cannot be reached or does
+/// not answer in time (a free host asleep or gone), is something to tell the player, not a crash.
 /// </summary>
 internal static class Requests
 {
@@ -16,7 +16,8 @@ internal static class Requests
             await request();
             return null;
         }
-        catch (Exception exception) when (exception is GameRequestRefusedException or HttpRequestException)
+        catch (Exception exception)
+            when (exception is GameRequestRefusedException or HttpRequestException or TaskCanceledException)
         {
             return exception.Message;
         }

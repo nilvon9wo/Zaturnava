@@ -900,7 +900,7 @@ public sealed class ClassicRulesTest
     }
 
     [Fact]
-    public void LegalActions_WhenAPawnStandsOnTheFarEdge_MayBecomeEachCapturedPieceOnceButAPawnOfItsOwnArmy()
+    public void LegalActions_WhenAPawnStandsOnTheFarEdge_MayBecomeEachCapturedPieceButAPawnOfItsOwnArmy()
     {
         // Arrange - Black's pawns face up: one is on the top edge, one is not
         GameState state = PromotionPool(this.StateWith(
@@ -912,9 +912,10 @@ public sealed class ClassicRulesTest
         // Act
         ImmutableList<GameAction> actions = this._rules.LegalActions(state);
 
-        // Assert - the highest-scoring first, then by owner; Green's second Elephant is the first one's like
+        // Assert - the highest-scoring first, then by owner, then by holder; Red holds two Elephants alike
         Assert.Equal(
             [
+                new PromoteAction(Black, Grid.CellAt(2, 7), new PieceId(15)),
                 new PromoteAction(Black, Grid.CellAt(2, 7), new PieceId(11)),
                 new PromoteAction(Black, Grid.CellAt(2, 7), new PieceId(10)),
                 new PromoteAction(Black, Grid.CellAt(2, 7), new PieceId(13)),
@@ -944,7 +945,7 @@ public sealed class ClassicRulesTest
 
         // Assert
         Assert.Equal(
-            [new PieceId(11), new PieceId(10), new PieceId(13)],
+            [new PieceId(15), new PieceId(11), new PieceId(10), new PieceId(13)],
             actions.OfType<PromoteAction>().Select(promotion => promotion.Into)
         );
     }
@@ -1183,6 +1184,50 @@ public sealed class ClassicRulesTest
 
         // Assert
         Assert.Equal(true, transition.State.Outcome?.IsDraw);
+    }
+
+    [Fact]
+    public void Apply_WhenAnOfferIsMadeAgainInTheSameTurn_RefusesIt()
+    {
+        // Arrange
+        OfferAction offer = new(Black, Yellow, [new PieceId(12)], [new PieceId(1)]);
+        GameState offered = this._rules.Apply(this.Ransoms(), offer).State;
+        GameState declined = this._rules.Apply(offered, new DeclineAction(Yellow)).State;
+
+        // Act
+        Transition Offering() => this._rules.Apply(declined, offer);
+
+        // Assert
+        _ = Assert.Throws<IllegalActionException>(Offering);
+    }
+
+    [Fact]
+    public void Apply_WhenTheTurnPasses_ForgetsTheOffersMade()
+    {
+        // Arrange
+        GameState state = this.Ransoms() with
+        {
+            IsRansomWindow = true,
+            OffersMade = [new RansomOffer(Black, Yellow, [new PieceId(12)], [])],
+        };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new PassAction(Black));
+
+        // Assert
+        Assert.Equal((Yellow, 0), (transition.State.DecidingSeat, transition.State.OffersMade.Count));
+    }
+
+    [Fact]
+    public void WorthOf_WhenAsked_IsWhatTakingThePieceScores()
+    {
+        // Arrange - nothing beyond the rules
+
+        // Act
+        int worth = this._rules.WorthOf(ClassicPieces.Elephant);
+
+        // Assert
+        Assert.Equal(4, worth);
     }
 
     [Fact]
@@ -1544,8 +1589,8 @@ public sealed class ClassicRulesTest
         };
 
     /// <summary>
-    /// Captured pieces to promote into: Black's Horse and Pawn, Green's Elephant (twice), Yellow's Boat
-    /// and Pawn.
+    /// Captured pieces to promote into: Black's Horse and Pawn, Green's Elephant (twice held by Red, once
+    /// by Black), Yellow's Boat and Pawn.
     /// </summary>
     private static GameState PromotionPool(GameState state) =>
         state with
@@ -1558,6 +1603,7 @@ public sealed class ClassicRulesTest
                 new Prisoner(Piece(13, ClassicPieces.Boat, Yellow), Black),
                 new Prisoner(Piece(15, ClassicPieces.Elephant, Green), Black),
                 new Prisoner(Piece(16, ClassicPieces.Pawn, Yellow), Green),
+                new Prisoner(Piece(17, ClassicPieces.Elephant, Green), Red),
             ],
         };
 

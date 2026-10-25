@@ -130,6 +130,9 @@ public sealed class ClassicRules : IRulesApplying
 
     public GameAction Parse([Required] ActionDescriptor descriptor) => ActionParser.Standard.Parse(descriptor);
 
+    /// <summary>A piece is worth what taking it scores (rules.md §5).</summary>
+    public int WorthOf(PieceKindId kind) => ClassicPieces.Points[kind];
+
     public string NameOf(PieceKindId kind) => ClassicPieces.TraditionalNames[kind];
 
     public string NameOf(SeatId seat) => ClassicSetup.SeatNames[seat.Value];
@@ -185,8 +188,9 @@ public sealed class ClassicRules : IRulesApplying
     /// <summary>
     /// Each Pawn of an army the seat commands that stands on the far edge - with nowhere forward left
     /// to go - may become any captured piece, whoever holds it: the piece goes back to its own army
-    /// (rules.md §8). A Pawn of an enemy army waits on a die that moves a Pawn. Pieces alike are offered
-    /// once - the first taken - the highest-scoring first, then by owner.
+    /// (rules.md §8). A Pawn of an enemy army waits on a die that moves a Pawn. Pieces alike held by the
+    /// same seat are offered once - the first taken - the highest-scoring first, then by owner, then by
+    /// holder.
     /// </summary>
     private IEnumerable<PromoteAction> PromotionsOf(GameState state, SeatId seat)
     {
@@ -194,10 +198,12 @@ public sealed class ClassicRules : IRulesApplying
         bool mayMoveAPawn = this.RolledKinds(state).Contains(ClassicPieces.Pawn);
         ImmutableList<Piece> pool =
         [
-            .. state.Prisoners.Select(prisoner => prisoner.Piece)
-                .DistinctBy(piece => (piece.Owner, piece.Kind))
-                .OrderByDescending(piece => ClassicPieces.Points[piece.Kind])
-                .ThenBy(piece => piece.Owner.Value),
+            .. state.Prisoners
+                .DistinctBy(prisoner => (prisoner.Piece.Owner, prisoner.Piece.Kind, prisoner.Holder))
+                .OrderByDescending(prisoner => ClassicPieces.Points[prisoner.Piece.Kind])
+                .ThenBy(prisoner => prisoner.Piece.Owner.Value)
+                .ThenBy(prisoner => prisoner.Holder.Value)
+                .Select(prisoner => prisoner.Piece),
         ];
         return state.Position.Occupants
             .Where(occupant => occupant.Value.Kind == ClassicPieces.Pawn && armies.Contains(occupant.Value.Owner))
@@ -497,6 +503,7 @@ public sealed class ClassicRules : IRulesApplying
             AwaitedDice = null,
             Dice = [],
             IsRansomWindow = false,
+            OffersMade = [],
         };
         return new Transition(passed, transition.Events.Add(new TurnPassed(current, next)));
     }

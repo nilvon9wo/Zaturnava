@@ -68,6 +68,8 @@ internal sealed class TinyRules(int length) : IRulesApplying
 
     public string NameOf(SeatId seat) => $"Seat {seat.Value}";
 
+    public int WorthOf(PieceKindId kind) => 1;
+
     public string NameOfDie(int value) => $"Die {value}";
 
     private GameState After(GameState state)

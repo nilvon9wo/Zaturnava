@@ -381,7 +381,9 @@ available (via a future capture, by anyone).
   `never` rules Pawns out. A Pawn is never promoted into a Pawn of its own
   army, which would change nothing.
 - *(Clarified 2026-10-25)* Captured pieces alike — the same kind, of the same
-  army — are one choice: the first captured is the one used.
+  army, held by the same player — are one choice: the first captured is the
+  one used. Alike pieces held by different players are separate choices, since
+  which is used changes what each holder can offer as ransom.
 
 ### Ransom
 
@@ -424,7 +426,8 @@ available (via a future capture, by anyone).
     the host (`Games:Timers:ransom-window`, `Games:Timers:ransom-answer`).
     When the window runs out, it closes; when the answer runs out, the offer
     is declined.
-  - Bots answer at once; bots do not yet offer.
+  - The same offer may not be made twice in one turn.
+  - Bots answer at once, and offer only once their turn is over.
 
 ### Raja Return
 
@@ -539,7 +542,7 @@ Nothing rules-level is currently blocking. Noted for later attention:
   idea raised during design discussion) is explicitly out of scope for now —
   team assignment is fixed at game creation.
 - Ransom (§8): letting the receiving player choose among equidistant squares
-  for a returning piece, and whether bots should offer ransoms.
+  for a returning piece.
 - **Piece naming/set**: *(updated)* traditional-vs-chess-standard naming is
   now the `pieceSet.naming` toggle in §12, rather than a one-time decision —
   players can pick either label set (Pawn/Boat/Horse/Elephant/Raja vs.

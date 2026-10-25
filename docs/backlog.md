@@ -24,7 +24,7 @@ did them.
   setting.
 - **20** Offer to end the game, for the other players to accept.
 - Escape on doubles (§7), boat triumph (§9), the empire bonus (§5).
-- Ransom (§8): the receiving player choosing among equidistant squares; bots that offer ransoms.
+- Ransom (§8): the receiving player choosing among equidistant squares; bots that offer during their turn.
 - The commanded-captures toggle (`control.enemyArmyCaptures`) as a per-game setting.
 
 ## Players and identity
@@ -93,6 +93,13 @@ After the second playtest (2026-10-25):
   then commands; at once (the page opens its choices) or later (the page rings the Pawn, and picking
   it up opens them). An enemy promotes only with a die that moves a Pawn.
 - Dice no piece can use are told as lost, in the log and on the page, before the turn passes.
+- Bots: Midas promotes into its team's best piece and trades prisoners at a profit; Solomon, a new
+  bot, gives allies' prisoners back and trades evenly. No offer may be made twice in a turn.
+- The lobby gives each bot one seat at most, and starts a quick game at a random seat with the bots
+  shuffled.
+- The pieces show as traditional (Raja, Elephant, Horse as silhouettes) or chess (King, Rook,
+  Knight), as the player chooses.
+- A page whose request fails keeps looking, rather than stopping.
 - **15** Ransom (§8): on their turn, and in a timed window once it is over, a player may offer
   prisoners back, for prisoners in return or as a gift; the receiver accepts or declines against
   the clock (bots answer at once).

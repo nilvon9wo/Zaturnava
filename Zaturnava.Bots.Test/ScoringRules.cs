@@ -11,11 +11,18 @@ namespace Net.NowhereAtAll.Zaturnava.Bots.Test;
 
 /// <summary>
 /// Rules in which each action scores whatever <paramref name="points"/> says for it (nothing, if it
-/// says nothing), for its actor; all a bot can learn from them is what each action is worth.
+/// says nothing), for its actor; all a bot can learn from them is what each action is worth, and what
+/// each kind of piece is worth (<see cref="Worth"/>). Any seat may offer once its turn is over.
 /// </summary>
 internal sealed class ScoringRules(ImmutableDictionary<GameAction, int> points) : IRulesApplying
 {
     public static readonly SeatId Seat = new(0);
+
+    public static readonly ImmutableDictionary<PieceKindId, int> Worth =
+        ImmutableDictionary<PieceKindId, int>.Empty
+            .Add(new PieceKindId("pawn"), 1)
+            .Add(new PieceKindId("horse"), 3)
+            .Add(new PieceKindId("raja"), 5);
 
     private readonly ImmutableDictionary<GameAction, int> _points = points;
 
@@ -45,11 +52,13 @@ internal sealed class ScoringRules(ImmutableDictionary<GameAction, int> points) 
             []
         );
 
-    public bool MayOffer([Required] GameState state) => throw new NotSupportedException();
+    public bool MayOffer([Required] GameState state) => true;
 
     public DecisionTimer TimerOf([Required] GameState state) => throw new NotSupportedException();
 
     public GameAction Parse([Required] ActionDescriptor descriptor) => throw new NotSupportedException();
+
+    public int WorthOf(PieceKindId kind) => Worth[kind];
 
     public string NameOf(PieceKindId kind) => throw new NotSupportedException();
 

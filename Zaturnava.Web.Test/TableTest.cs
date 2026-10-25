@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using System.Globalization;
 using Bunit;
 using Net.NowhereAtAll.Zaturnava.Contracts;
+using Net.NowhereAtAll.Zaturnava.Presentation;
 
 namespace Net.NowhereAtAll.Zaturnava.Web.Test;
 
@@ -29,10 +30,10 @@ public sealed class TableTest : IDisposable
 
         // Assert
         Assert.Equal(
-            (4, "♚︎", "Your move.", "Black you 0", "Pass", "turn yours", true),
+            (4, "Raja", "Your move.", "Black you 0", "Pass", "turn yours", true),
             (
                 table.FindAll("rect.cell").Count,
-                table.Find(".piece text").TextContent,
+                table.Find(".piece title").TextContent,
                 table.Find("p.status").TextContent,
                 Text(table.FindAll("li.seat")[0]),
                 table.Find("button.action").TextContent.Trim(),
@@ -502,7 +503,7 @@ public sealed class TableTest : IDisposable
     }
 
     [Fact]
-    public void Board_WhenDrawn_NamesEachCellAndDrawsTheBoatAsAShape()
+    public void Board_WhenDrawn_NamesEachCellAndDrawsTheRajaAndBoatAsShapes()
     {
         // Arrange
         this._page.Server.View = FakeGameServer.SeatZeroToMove with
@@ -515,7 +516,7 @@ public sealed class TableTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ("c0,c1,c2,c3", 1, 1),
+            ("c0,c1,c2,c3", 2, 0),
             (
                 string.Join(",", table.FindAll("g.cell-name text").Select(name => name.TextContent)),
                 table.FindAll("svg.board g.piece path").Count,
@@ -641,6 +642,24 @@ public sealed class TableTest : IDisposable
     }
 
     [Fact]
+    public void Poll_WhenARequestFails_TriesAgain()
+    {
+        // Arrange
+        using PageContext page = new(TimeSpan.FromMilliseconds(10));
+        FakeGameServer server = page.Server;
+        server.View = FakeGameServer.SeatZeroToMove with { DecidingSeat = 1 };
+        IRenderedComponent<Table> table = page.Render<Table>(parameters => parameters.Add(x => x.Seating, SeatZero));
+
+        // Act
+        server.Failure = new HttpRequestException("Asleep.");
+
+        // Assert
+        table.WaitForAssertion(() =>
+            Assert.True(server.Calls.Count(call => call.StartsWith("advance", StringComparison.Ordinal)) > 2)
+        );
+    }
+
+    [Fact]
     public void Poll_WhenTimeIsUp_AdvancesTheGameForTheServerToDecide()
     {
         // Arrange
@@ -681,10 +700,14 @@ public sealed class TableTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ("Promote Black's Pawn on c2 to:", "Green's Elephant|Black's Boat", "Promote later"),
+            (
+                "Promote Black's Pawn on c2 to:",
+                "Green's Elephant held by Yellow|Black's Boat held by you",
+                "Promote later"
+            ),
             (
                 table.Find(".promotion p.hint").TextContent,
-                string.Join('|', table.FindAll(".promotion .choice .name").Select(name => name.TextContent)),
+                string.Join('|', table.FindAll(".promotion .choice").Select(Choice)),
                 table.Find(".promotion button.later").TextContent.Trim()
             )
         );
@@ -703,6 +726,27 @@ public sealed class TableTest : IDisposable
         Assert.Equal(
             (1, 0),
             (table.FindAll(".piece.promotable").Count, table.FindAll(".promotion").Count)
+        );
+    }
+
+    [Fact]
+    public void Render_WhenChessPiecesAreChosen_NamesAndDrawsThemSo()
+    {
+        // Arrange
+        this._page.Server.View = Promotions() with { PromotionDue = 2 };
+
+        // Act
+        IRenderedComponent<Table> table = this._page.Render<Table>(
+            parameters => parameters.Add(x => x.Seating, SeatZero).Add(x => x.Pieces, PieceSet.Chess)
+        );
+
+        // Assert
+        Assert.Equal(
+            ("Green's Rook|Black's Boat", 1),
+            (
+                string.Join('|', table.FindAll(".promotion .choice .name").Select(name => name.TextContent)),
+                table.FindAll(".promotion .choice path").Count
+            )
         );
     }
 
@@ -807,8 +851,8 @@ public sealed class TableTest : IDisposable
     }
 
     /// <summary>
-    /// Black's turn, with its Pawn on c2 (cell 2) able to become Green's Elephant 8 or Black's Boat 7,
-    /// which Yellow holds.
+    /// Black's turn, with its Pawn on c2 (cell 2) able to become Green's Elephant 8, which Yellow holds,
+    /// or Black's Boat 7, which Black does.
     /// </summary>
     private static GameViewDto Promotions() =>
         FakeGameServer.SeatZeroToMove with
@@ -816,15 +860,18 @@ public sealed class TableTest : IDisposable
             Pieces = [.. FakeGameServer.SeatZeroToMove.Pieces, new PieceDto(1, "pawn", "Pawn", 0, 2)],
             Seats =
             [
-                FakeGameServer.SeatZeroToMove.Seats[0],
+                FakeGameServer.SeatZeroToMove.Seats[0] with { Prisoners = [new PrisonerDto(7, "boat", "Boat", 0)] },
                 FakeGameServer.SeatZeroToMove.Seats[1] with
                 {
-                    Prisoners = [new PrisonerDto(7, "boat", "Boat", 0), new PrisonerDto(8, "elephant", "Elephant", 2)],
+                    Prisoners = [new PrisonerDto(8, "elephant", "Elephant", 2)],
                 },
                 new SeatDto(2, "Green", 0, 0, "open", null, []),
             ],
             LegalActions = [FakeGameServer.Pass with { Label = "Promote later" }, Promotion(8), Promotion(7)],
         };
+
+    private static string Choice(AngleSharp.Dom.IElement choice) =>
+        $"{choice.QuerySelector(".name")!.TextContent} {choice.QuerySelector(".holder")!.TextContent}";
 
     private static ActionDto Promotion(int into) =>
         new(

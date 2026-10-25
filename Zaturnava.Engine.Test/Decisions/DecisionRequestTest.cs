@@ -57,5 +57,7 @@ file sealed class UnplayableRules : IRulesApplying
 
     public string NameOf(SeatId seat) => throw new NotSupportedException();
 
+    public int WorthOf(PieceKindId kind) => throw new NotSupportedException();
+
     public string NameOfDie(int value) => throw new NotSupportedException();
 }

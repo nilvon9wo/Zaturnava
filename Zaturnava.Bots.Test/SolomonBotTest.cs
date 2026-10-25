@@ -1,0 +1,100 @@
+using Net.NowhereAtAll.Zaturnava.Engine.Actions;
+using Net.NowhereAtAll.Zaturnava.Engine.Decisions;
+using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
+
+namespace Net.NowhereAtAll.Zaturnava.Bots.Test;
+
+public sealed class SolomonBotTest
+{
+    private readonly CancellationToken _cancellation = TestContext.Current.CancellationToken;
+
+    [Theory]
+    [InlineData(new[] { 20 }, new[] { 10 }, "accept")]
+    [InlineData(new[] { 20, 21 }, new[] { 30 }, "accept")]
+    [InlineData(new[] { 21 }, new[] { 11 }, "decline")]
+    public async Task Decide_WhenOfferedARansom_AcceptsIfItIsWithinAPointOfEven(
+        int[] given,
+        int[] asked,
+        string answer
+    )
+    {
+        // Arrange - worth 3 for 1; 4 for 5; 1 for 3
+        DecisionRequest offered = Ransoms.Offered([.. given], [.. asked]);
+
+        // Act
+        GameAction action = await new SolomonBot(new Random(1)).Decide(offered, this._cancellation);
+
+        // Assert
+        Assert.Equal(answer, action.Describe().Kind);
+    }
+
+    [Fact]
+    public async Task Decide_WhenItsTurnIsOver_GivesItsAllysPieceBackFirst()
+    {
+        // Arrange
+        DecisionRequest request = Ransoms.Window();
+
+        // Act
+        GameAction action = await new SolomonBot(new Random(1)).Decide(request, this._cancellation);
+
+        // Assert
+        Assert.Equal(new OfferAction(Ransoms.Black, Ransoms.Green, [new PieceId(30)], []), action);
+    }
+
+    [Fact]
+    public async Task Decide_WhenNoGiftIsLeft_OffersTheMostValuableEvenTrade()
+    {
+        // Arrange - a Horse for a Horse, rather than a Pawn for a Pawn
+        DecisionRequest request = Ransoms.Window(Ransoms.Offer(Ransoms.Green, [30], []));
+
+        // Act
+        GameAction action = await new SolomonBot(new Random(1)).Decide(request, this._cancellation);
+
+        // Assert
+        Assert.Equal(new OfferAction(Ransoms.Black, Ransoms.Yellow, [new PieceId(11)], [new PieceId(20)]), action);
+    }
+
+    [Fact]
+    public async Task Decide_WhenNothingFairIsLeftToOffer_IsDone()
+    {
+        // Arrange
+        DecisionRequest request = Ransoms.Window(
+            Ransoms.Offer(Ransoms.Green, [30], []),
+            Ransoms.Offer(Ransoms.Yellow, [11], [20]),
+            Ransoms.Offer(Ransoms.Yellow, [10], [21])
+        );
+
+        // Act
+        GameAction action = await new SolomonBot(new Random(1)).Decide(request, this._cancellation);
+
+        // Assert
+        Assert.Equal(Ransoms.Done, action);
+    }
+
+    [Fact]
+    public async Task Decide_WhenCancelled_ThrowsTaskCanceledException()
+    {
+        // Arrange
+        DecisionRequest request = Ransoms.Window();
+        SolomonBot bot = new(new Random(1));
+
+        // Act
+        Task<GameAction> deciding = bot.Decide(request, new CancellationToken(canceled: true));
+
+        // Assert
+        _ = await Assert.ThrowsAsync<TaskCanceledException>(() => deciding);
+    }
+
+    [Fact]
+    public void Profile_WhenAsked_IsAPlainAlgorithmCalledSolomon()
+    {
+        // Arrange
+        SolomonBot bot = new(new Random(1));
+
+        // Act
+        BotProfile profile = bot.Profile;
+
+        // Assert
+        Assert.Equal((SolomonBot.BotId, "Solomon", false), (profile.Id, profile.Name, profile.UsesAi));
+    }
+}

@@ -42,6 +42,7 @@
                    Selection="this._selection"
                    Turn="this._boardTurn"
                    LastMove="this._lastMove"
+                   Pieces="this.Pieces"
                    OnCellClicked="this.Click" />
 
             <aside class="side">
@@ -50,7 +51,7 @@
                     @if (this._notice is { } notice)
                     {
                         <p class="notice" role="status">
-                            @notice
+                            @this.Named(notice)
                             <button class="dismiss" @onclick="this.Dismiss">OK</button>
                         </p>
                     }
@@ -60,14 +61,14 @@
                     }
                     @if (view.Offer is { } offer)
                     {
-                        <p class="offer">@OfferText(view, offer)</p>
+                        <p class="offer">@this.Named(OfferText(view, offer))</p>
                     }
                     @if (view.Dice.Count > 0)
                     {
                         <ul class="dice">
                             @foreach (DieDto die in view.Dice)
                             {
-                                <li><span class="face">@DieFaces.FaceOf(die.Value)</span> @die.Value: @die.Meaning</li>
+                                <li><span class="face">@DieFaces.FaceOf(die.Value)</span> @die.Value: @this.Named(die.Meaning)</li>
                             }
                         </ul>
                     }
@@ -77,16 +78,17 @@
                         @if (!promotions.IsEmpty)
                         {
                             <div class="promotion">
-                                <p class="hint">@PromotionHeading(view, this._selection.Selected!.Value)</p>
+                                <p class="hint">@this.Named(PromotionHeading(view, this._selection.Selected!.Value))</p>
                                 <div class="promotion-choices">
                                     @foreach (ActionDto action in promotions)
                                     {
-                                        PrisonerDto into = IntoOf(view, action);
+                                        (SeatDto holder, PrisonerDto into) = IntoOf(view, action);
                                         <button class="choice"
-                                                title="@ActionLabels.LabelOf(action)"
+                                                title="@this.Named(ActionLabels.LabelOf(action))"
                                                 @onclick="() => this.Submit(turn.Claim, action)">
-                                            <PieceIcon Kind="@into.Kind" Name="@into.Name" Owner="into.Owner" />
-                                            <span class="name">@Owned(view, into)</span>
+                                            <PieceIcon Kind="@into.Kind" Name="@into.Name" Owner="into.Owner" Pieces="this.Pieces" />
+                                            <span class="name">@this.Named(Owned(view, into))</span>
+                                            <span class="holder">@HeldBy(holder, turn.Claim.Seat)</span>
                                         </button>
                                     }
                                 </div>
@@ -99,7 +101,7 @@
                                     @foreach (ActionDto action in turn.Actions.OffBoard)
                                     {
                                         <button class="action later" @onclick="() => this.Submit(turn.Claim, action)">
-                                            @ActionLabels.LabelOf(action)
+                                            @this.Named(ActionLabels.LabelOf(action))
                                         </button>
                                     }
                                 }
@@ -112,7 +114,7 @@
                                 @foreach (ActionDto action in turn.Actions.OffBoard)
                                 {
                                     <button class="action primary" @onclick="() => this.Submit(turn.Claim, action)">
-                                        @ActionLabels.LabelOf(action)
+                                        @this.Named(ActionLabels.LabelOf(action))
                                     </button>
                                 }
                             </div>
@@ -130,7 +132,7 @@
                                             <button class="prisoner @(this._given.Contains(prisoner.Id) ? "chosen" : null)"
                                                     title="@prisoner.Name"
                                                     @onclick="() => this.Give(receiver.Id, [prisoner.Id])">
-                                                <PieceIcon Kind="@prisoner.Kind" Name="@prisoner.Name" Owner="prisoner.Owner" />
+                                                <PieceIcon Kind="@prisoner.Kind" Name="@prisoner.Name" Owner="prisoner.Owner" Pieces="this.Pieces" />
                                             </button>
                                         }
                                         <button class="all"
@@ -149,7 +151,7 @@
                                             <button class="prisoner @(this._asked.Contains(prisoner.Id) ? "chosen" : null)"
                                                     title="@prisoner.Name"
                                                     @onclick="() => this.Ask(prisoner.Id)">
-                                                <PieceIcon Kind="@prisoner.Kind" Name="@prisoner.Name" Owner="prisoner.Owner" />
+                                                <PieceIcon Kind="@prisoner.Kind" Name="@prisoner.Name" Owner="prisoner.Owner" Pieces="this.Pieces" />
                                             </button>
                                         }
                                     </div>
@@ -174,7 +176,7 @@
                             <span class="prisoners" title="Prisoners">
                                 @foreach (PrisonerDto prisoner in seat.Prisoners)
                                 {
-                                    <PieceIcon Kind="@prisoner.Kind" Name="@prisoner.Name" Owner="prisoner.Owner" />
+                                    <PieceIcon Kind="@prisoner.Kind" Name="@prisoner.Name" Owner="prisoner.Owner" Pieces="this.Pieces" />
                                 }
                             </span>
                             <span class="score">@seat.Score</span>
@@ -185,7 +187,7 @@
                 <ol class="log">
                     @foreach (EventDto happened in view.Log.Reverse())
                     {
-                        <li class="event @happened.Kind seat-@happened.Seat">@happened.Text</li>
+                        <li class="event @happened.Kind seat-@happened.Seat">@this.Named(happened.Text)</li>
                     }
                 </ol>
             </aside>
@@ -219,6 +221,10 @@
 
     [Parameter]
     public bool IsSoundOn { get; set; } = true;
+
+    /// <summary>How the pieces are drawn and named, the server's names being the traditional ones.</summary>
+    [Parameter]
+    public PieceSet Pieces { get; set; }
 
     [Parameter]
     public EventCallback OnLeave { get; set; }
@@ -256,12 +262,12 @@
     /// <summary>"Black offers Yellow Yellow's Pawn back, for Green's Horse.", or "..., as a gift."</summary>
     private static string OfferText(GameViewDto view, OfferDto offer)
     {
-        string asking = offer.Asked.IsEmpty ? "as a gift" : $"for {Pieces(view, offer.Asked)}";
-        string given = Pieces(view, offer.Given);
+        string asking = offer.Asked.IsEmpty ? "as a gift" : $"for {Listed(view, offer.Asked)}";
+        string given = Listed(view, offer.Given);
         return $"{view.Seats[offer.From].Name} offers {view.Seats[offer.To].Name} {given} back, {asking}.";
     }
 
-    private static string Pieces(GameViewDto view, ImmutableList<PrisonerDto> prisoners) =>
+    private static string Listed(GameViewDto view, ImmutableList<PrisonerDto> prisoners) =>
         string.Join(", ", prisoners.Select(prisoner => Owned(view, prisoner)));
 
     /// <summary>"Green's Elephant".</summary>
@@ -280,13 +286,21 @@
         return $"Promote {view.Seats[pawn.Owner].Name}'s {pawn.Name} on {name} to:";
     }
 
-    /// <summary>The captured piece a promotion brings back.</summary>
-    private static PrisonerDto IntoOf(GameViewDto view, ActionDto promotion) =>
-        view.Seats.SelectMany(seat => seat.Prisoners).First(prisoner =>
-            prisoner.Id.ToString(CultureInfo.InvariantCulture) == promotion.Arguments[ActionArguments.Into]
-        );
+    /// <summary>The captured piece a promotion brings back, and the seat holding it.</summary>
+    private static (SeatDto Holder, PrisonerDto Prisoner) IntoOf(GameViewDto view, ActionDto promotion) =>
+        view.Seats
+            .SelectMany(seat => seat.Prisoners.Select(prisoner => (seat, prisoner)))
+            .First(held =>
+                held.prisoner.Id.ToString(CultureInfo.InvariantCulture) == promotion.Arguments[ActionArguments.Into]
+            );
+
+    /// <summary>"held by Red", or "held by you" if the player's own <paramref name="seat"/> holds it.</summary>
+    private static string HeldBy(SeatDto holder, int seat) =>
+        $"held by {(holder.Id == seat ? "you" : holder.Name)}";
 
     private void PutDown() => this._selection = BoardSelection.None;
+
+    private string Named(string text) => PieceStyle.Named(text, this.Pieces);
 
     private void Dismiss() => this._notice = null;
 
@@ -400,8 +414,16 @@
     private Task Submit(SeatClaim claim, ActionDto action) =>
         this.Request(() => this.Games.Submit(this.Seating.GameId, claim.Token, action, CancellationToken.None));
 
-    private async Task Request(Func<Task<GameViewDto>> request) =>
+    /// <summary>
+    /// Makes the request, and shows the game it answers with; if it fails, says why, and looks again
+    /// when it would have anyway, so that a game waiting on others does not stop when one request does.
+    /// </summary>
+    private async Task Request(Func<Task<GameViewDto>> request)
+    {
         this._problem = await Requests.Attempt(async () => await this.Show(await request()));
+        _ = this._problem is not null && this._view is { } view
+            && this._poll.Change(this.Wait(view), Timeout.InfiniteTimeSpan);
+    }
 
     private async Task Show(GameViewDto view)
     {

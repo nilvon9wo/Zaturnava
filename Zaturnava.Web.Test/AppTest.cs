@@ -101,6 +101,24 @@ public sealed class AppTest : IDisposable
         Assert.Equal(("Sound: off", "Sound: on"), (afterOne, app.Find("button.sound").TextContent));
     }
 
+    [Fact]
+    public void PiecesButton_WhenClicked_ShowsChessPiecesAndBack()
+    {
+        // Arrange
+        IRenderedComponent<App> app = this._page.Render<App>();
+
+        // Act
+        app.Find("button.pieces").Click();
+        string afterOne = app.Find("button.pieces").TextContent.Trim();
+        app.Find("button.pieces").Click();
+
+        // Assert
+        Assert.Equal(
+            ("Pieces: chess", "Pieces: traditional"),
+            (afterOne, app.Find("button.pieces").TextContent.Trim())
+        );
+    }
+
     private IEnumerable<JSRuntimeInvocation> SeatsRemembered() =>
         this._page.JSInterop.Invocations["zaturnava.save"]
             .Where(call => ((string)call.Arguments[0]!).StartsWith("zaturnava.seat.", StringComparison.Ordinal));

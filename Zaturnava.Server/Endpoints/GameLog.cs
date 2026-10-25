@@ -44,9 +44,14 @@ internal static class GameLog
             : $"{Listed(rules, outcome.Winners)} won: {outcome.Reason}.";
 }
 
-/// <summary>What has been told so far, and whether the seat whose turn it is has rolled yet.</summary>
+/// <summary>
+/// What has been told so far, whether the seat whose turn it is has rolled yet, and whom an occupier
+/// moves for, while it shares that turn.
+/// </summary>
 file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bool HasRolled)
 {
+    private SeatId? SharedFor { get; init; }
+
     public Teller Tell(GameEvent happened, int number) =>
         happened switch
         {
@@ -80,8 +85,8 @@ file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bo
                 number,
                 EventDto.Forfeited,
                 forfeited.Seat,
-                $"{this.Name(forfeited.Seat)} could move nothing with {this.Faces(forfeited.Values)}, "
-                    + $"so lost {(forfeited.Values.Count == 1 ? "it" : "them")}."
+                $"{this.Name(forfeited.Seat)} could move nothing{this.OfWhom()} with "
+                    + $"{this.Faces(forfeited.Values)}, so lost {(forfeited.Values.Count == 1 ? "it" : "them")}."
             ),
             PieceMoved moved => this.Moved(number, moved),
             PieceCaptured captured => this.Add(
@@ -137,10 +142,11 @@ file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bo
                 shared.Occupier,
                 $"{this.Name(shared.Occupier)} holds {this.Name(shared.Seat)}'s throne, so moves for "
                     + $"{this.Name(shared.Seat)} now."
-            ),
+            ) with
+            { SharedFor = shared.Seat },
             TurnPassed passed => this.Add(number, EventDto.Passed, passed.From, $"{this.Name(passed.To)} to play.")
                 with
-            { HasRolled = false },
+            { HasRolled = false, SharedFor = null },
             GameEnded ended => this.Add(
                 number,
                 EventDto.Ended,
@@ -201,6 +207,9 @@ file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bo
     private string Name(SeatId seat) => this.Rules.NameOf(seat);
 
     private string Face(int value) => $"{Text(value)} ({this.Rules.NameOfDie(value)})";
+
+    /// <summary>" of Red's", while moving for Red; nothing otherwise.</summary>
+    private string OfWhom() => this.SharedFor is { } seat ? $" of {this.Name(seat)}'s" : string.Empty;
 
     /// <summary>"2 (Horse) and 5 (Pawn or Raja)".</summary>
     private string Faces(ImmutableList<int> values) => string.Join(" and ", values.Select(this.Face));

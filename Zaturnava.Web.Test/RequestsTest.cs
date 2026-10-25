@@ -43,6 +43,19 @@ public sealed class RequestsTest
     }
 
     [Fact]
+    public async Task Attempt_WhenTheServerDoesNotAnswerInTime_TellsWhy()
+    {
+        // Arrange
+        TaskCanceledException timedOut = new("The request timed out.");
+
+        // Act
+        string? problem = await Requests.Attempt(() => Task.FromException(timedOut));
+
+        // Assert
+        Assert.Equal("The request timed out.", problem);
+    }
+
+    [Fact]
     public async Task Attempt_WhenThePageItselfFails_LetsItFail()
     {
         // Arrange

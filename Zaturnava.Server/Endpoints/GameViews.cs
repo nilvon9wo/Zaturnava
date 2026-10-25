@@ -157,13 +157,14 @@ internal static class GameViews
             _ => null,
         };
 
-    /// <summary>"Promote the Pawn on c8 to Green's Elephant".</summary>
+    /// <summary>"Promote the Pawn on c8 to Green's Elephant, held by Red".</summary>
     private static string PromotionOf(GameSnapshot snapshot, PromoteAction promote)
     {
         IRulesApplying rules = snapshot.Rules;
         Piece pawn = snapshot.State.Position.PieceAt(promote.Cell)!; // a legal promotion has a Pawn to promote
-        Piece into = snapshot.State.Prisoners.First(prisoner => prisoner.Piece.Id == promote.Into).Piece;
+        Prisoner into = snapshot.State.Prisoners.First(prisoner => prisoner.Piece.Id == promote.Into);
         return $"Promote the {rules.NameOf(pawn.Kind)} on {rules.Topology.NameOf(promote.Cell)} "
-            + $"to {rules.NameOf(into.Owner)}'s {rules.NameOf(into.Kind)}";
+            + $"to {rules.NameOf(into.Piece.Owner)}'s {rules.NameOf(into.Piece.Kind)}, "
+            + $"held by {rules.NameOf(into.Holder)}";
     }
 }

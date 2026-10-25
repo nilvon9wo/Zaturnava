@@ -1,4 +1,5 @@
 using Bunit;
+using Net.NowhereAtAll.Zaturnava.Presentation;
 
 namespace Net.NowhereAtAll.Zaturnava.Web.Test;
 
@@ -75,6 +76,38 @@ public sealed class BrowserTest : IDisposable
 
         // Assert
         Assert.Equal(expected, isOn);
+    }
+
+    [Theory]
+    [InlineData("chess", PieceSet.Chess)]
+    [InlineData(null, PieceSet.Traditional)]
+    public async Task Pieces_WhenRead_AreTraditionalUnlessChessWasChosen(string? remembered, PieceSet expected)
+    {
+        // Arrange
+        _ = this._context.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.pieces").SetResult(remembered);
+
+        // Act
+        PieceSet pieces = await this._browser.Pieces();
+
+        // Assert
+        Assert.Equal(expected, pieces);
+    }
+
+    [Theory]
+    [InlineData(PieceSet.Chess, "chess")]
+    [InlineData(PieceSet.Traditional, "traditional")]
+    public async Task SetPieces_WhenSet_RemembersThem(PieceSet pieces, string expected)
+    {
+        // Arrange - nothing beyond the browser
+
+        // Act
+        await this._browser.SetPieces(pieces);
+
+        // Assert
+        Assert.Equal(
+            ["zaturnava.pieces", expected],
+            this._context.JSInterop.Invocations["zaturnava.save"].Single().Arguments
+        );
     }
 
     [Theory]

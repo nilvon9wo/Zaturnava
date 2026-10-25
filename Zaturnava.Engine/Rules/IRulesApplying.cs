@@ -45,6 +45,9 @@ public interface IRulesApplying
     /// <exception cref="MalformedActionException">The descriptor describes no action of this ruleset.</exception>
     GameAction Parse([Required] ActionDescriptor descriptor);
 
+    /// <summary>What a piece of <paramref name="kind"/> is worth, to one weighing a trade of prisoners.</summary>
+    int WorthOf(PieceKindId kind);
+
     string NameOf(PieceKindId kind);
 
     string NameOf(SeatId seat);

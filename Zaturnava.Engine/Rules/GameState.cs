@@ -49,6 +49,9 @@ public sealed record GameState(
     /// </summary>
     public bool IsRansomWindow { get; init; }
 
+    /// <summary>The ransoms offered this turn, which may not be offered again until it passes.</summary>
+    public ImmutableList<RansomOffer> OffersMade { get; init; } = [];
+
     /// <summary>
     /// The cell of a Pawn just come to the far edge, which the deciding seat may promote at once, before
     /// the turn goes on, or leave for later; null if none.

@@ -1,5 +1,6 @@
-@* Start a game (each seat a person or a bot) and sit at it, or join, watch or go back to one already
-   started. *@
+@* Start a game (each seat a person or a bot, no bot in two seats) and sit at it - or start one at once,
+   at a seat chosen at random, the bots shuffled among the others - or join, watch or go back to one
+   already started. *@
 @inject IGameServing Games
 @inject Browser Browser
 
@@ -22,13 +23,14 @@
                             <option value="">Person</option>
                             @foreach (BotDto bot in catalog.Bots)
                             {
-                                <option value="@bot.Id">@Label(bot)</option>
+                                <option value="@bot.Id" disabled="@this.IsTaken(bot.Id, seat)">@Label(bot)</option>
                             }
                         </select>
                     </li>
                 }
             </ol>
             <button class="create primary" @onclick="() => this.Create(catalog)">Play</button>
+            <button class="quick" @onclick="() => this.Quick(catalog)">Quick game: any seat, bots shuffled</button>
             <dl class="bots">
                 @foreach (BotDto bot in catalog.Bots)
                 {
@@ -89,8 +91,7 @@
     {
         CatalogDto catalog = await this.Games.Catalog(CancellationToken.None);
         this._games = await this.Games.List(CancellationToken.None);
-        this._plans = [.. Enumerable.Range(0, Ruleset(catalog).SeatCount)
-            .Select(seat => seat == 0 ? string.Empty : catalog.Bots.FirstOrDefault()?.Id ?? string.Empty)];
+        this._plans = Plans(catalog, 0, catalog.Bots.Select(bot => bot.Id));
         this._catalog = catalog;
         foreach (GameSummaryDto game in this._games)
         {
@@ -98,17 +99,39 @@
         }
     }
 
-    private async Task Create(CatalogDto catalog) =>
-        this._problem = await Requests.Attempt(() => this.CreateAndSit(catalog));
+    /// <summary>
+    /// The player at <paramref name="person"/>, and the bots, in the order given, in the other seats -
+    /// each at most once; a seat with no bot left is for a person.
+    /// </summary>
+    private static List<string> Plans(CatalogDto catalog, int person, IEnumerable<string> bots)
+    {
+        Queue<string> left = new(bots);
+        return [.. Enumerable.Range(0, Ruleset(catalog).SeatCount)
+            .Select(seat => seat == person || left.Count == 0 ? string.Empty : left.Dequeue())];
+    }
 
-    private async Task CreateAndSit(CatalogDto catalog)
+    /// <summary>Whether <paramref name="bot"/> plays a seat other than <paramref name="seat"/>.</summary>
+    private bool IsTaken(string bot, int seat) =>
+        this._plans.Where((_, other) => other != seat).Contains(bot);
+
+    private async Task Create(CatalogDto catalog) =>
+        this._problem = await Requests.Attempt(() => this.CreateAndSit(catalog, this._plans.IndexOf(string.Empty)));
+
+    /// <summary>A game at once: the player at a seat chosen at random, the bots shuffled among the others.</summary>
+    private async Task Quick(CatalogDto catalog)
+    {
+        int person = Random.Shared.Next(Ruleset(catalog).SeatCount);
+        this._plans = Plans(catalog, person, catalog.Bots.Select(bot => bot.Id).OrderBy(_ => Random.Shared.Next()));
+        this._problem = await Requests.Attempt(() => this.CreateAndSit(catalog, person));
+    }
+
+    private async Task CreateAndSit(CatalogDto catalog, int person)
     {
         CreateGameRequest request = new(
             Ruleset(catalog).Id,
             [.. this._plans.Select(plan => plan.Length == 0 ? null : plan)]
         );
         GameCreatedDto created = await this.Games.Create(request, CancellationToken.None);
-        int person = this._plans.IndexOf(string.Empty);
         await (person >= 0
             ? this.Claim(created.GameId, person)
             : this.OnSeated.InvokeAsync(Seating.Watching(created.GameId)));

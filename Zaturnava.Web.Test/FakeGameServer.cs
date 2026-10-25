@@ -73,6 +73,8 @@ internal sealed class FakeGameServer : IGameServing
                 [
                     new BotDto("random", "Random", "Any move.", UsesAi: false),
                     new BotDto("oracle", "Oracle", "Asks a model.", UsesAi: true),
+                    new BotDto("midas", "Midas", "Greedy.", UsesAi: false),
+                    new BotDto("solomon", "Solomon", "Fair.", UsesAi: false),
                 ]
             )
         );

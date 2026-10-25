@@ -95,7 +95,8 @@ public sealed class GameLogTest
             new PieceMoved(Pawn, Cell("h2"), Cell("g2"), Black),
             new ThroneEntered(RedRaja, Yellow, 1),
             new PieceCaptured(RedRaja, Black, 5),
-            new RajaCapturedOnThrone(RedRaja, Black, 2)
+            new RajaCapturedOnThrone(RedRaja, Black, 2),
+            new DiceForfeited(Black, [1])
         );
 
         // Act
@@ -109,6 +110,7 @@ public sealed class GameLogTest
                 "bonus 3: Red's Raja entered Yellow's throne (+1).",
                 "captured 0: Black took Red's Raja (+5).",
                 "bonus 0: Black took that Raja on its own throne (+2 more).",
+                "forfeited 0: Black could move nothing of Red's with 1 (Boat), so lost it.",
             ],
             log.Select(Told)
         );

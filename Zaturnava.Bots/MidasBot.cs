@@ -1,8 +1,6 @@
-using System.Collections.Immutable;
 using System.ComponentModel.DataAnnotations;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Decisions;
-using Net.NowhereAtAll.Zaturnava.Engine.Rules;
 using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 
 namespace Net.NowhereAtAll.Zaturnava.Bots;
@@ -11,8 +9,9 @@ namespace Net.NowhereAtAll.Zaturnava.Bots;
 /// Greedy and short-sighted, like the king whose wish turned even his bread to gold: takes whichever
 /// legal action scores the most at once, choosing at random among equals. When nothing scores, it moves
 /// or rolls at random, passing only when it can do nothing else. It never looks past its own action, so
-/// it walks into every trap. Offered a ransom, it counts pieces: it accepts if it gets back at least as
-/// many as it gives up.
+/// it walks into every trap. In ransom it counts worth: it accepts an offer that gives it back at least
+/// as much as it asks, and, once its turn is over, offers the trade that gains it the most, if any
+/// gains it anything. It never gives anything away.
 /// </summary>
 public sealed class MidasBot(Random random) : IBotPlaying
 {
@@ -24,49 +23,27 @@ public sealed class MidasBot(Random random) : IBotPlaying
         BotId,
         "Midas",
         "Greedy and short-sighted: grabs whatever scores the most right now, and otherwise moves at random. "
-            + "A plain algorithm: no AI.",
+            + "Trades prisoners only at a profit. A plain algorithm: no AI.",
         UsesAi: false
     );
 
     public Task<GameAction> Decide([Required] DecisionRequest request, CancellationToken cancellationToken) =>
         cancellationToken.IsCancellationRequested
             ? Task.FromCanceled<GameAction>(cancellationToken)
-            : Task.FromResult(AnswerTo(request) ?? this.Pick(Choices(request)));
+            : Task.FromResult(AnswerTo(request) ?? BestTrade(request) ?? Greedy.Choose(request, this._random));
 
     /// <summary>The answer to the ransom offered, if one is; null if none is.</summary>
     private static GameAction? AnswerTo(DecisionRequest request) =>
-        request.State.Offer is { } offer
-            ? Answer(request.Seat, offer.Given.Count >= offer.Asked.Count)
+        Trading.BalanceOf(request) is { } balance
+            ? Answer(request.Seat, balance >= 0)
             : null;
 
-    private static GameAction Answer(SeatId seat, bool isAccepted) =>
+    /// <summary>The offer that gains the most, if any gains anything.</summary>
+    private static OfferAction? BestTrade(DecisionRequest request) =>
+        Trading.TradesOf(request).Where(trade => trade.Gain > 0).MaxBy(trade => trade.Gain)?.Offer;
+
+    internal static GameAction Answer(SeatId seat, bool isAccepted) =>
         isAccepted
             ? new AcceptAction(seat)
             : new DeclineAction(seat);
-
-    /// <summary>The best scoring actions, if any score; otherwise every action that does something.</summary>
-    private static ImmutableList<GameAction> Choices(DecisionRequest request)
-    {
-        ImmutableList<(GameAction Action, int Gain)> gains =
-            [.. request.LegalActions.Select(action => (action, Gain(request, action)))];
-        int best = gains.Max(gain => gain.Gain);
-        return best > 0
-            ? [.. gains.Where(gain => gain.Gain == best).Select(gain => gain.Action)]
-            : Active(request.LegalActions);
-    }
-
-    /// <summary>Anything but passing, if there is anything else.</summary>
-    private static ImmutableList<GameAction> Active(ImmutableList<GameAction> actions)
-    {
-        ImmutableList<GameAction> active = actions.RemoveAll(action => action is PassAction);
-        return active.IsEmpty ? actions : active;
-    }
-
-    private static int Gain(DecisionRequest request, GameAction action) =>
-        ScoreOf(request.Rules.Apply(request.State, action).State, request.Seat)
-            - ScoreOf(request.State, request.Seat);
-
-    private static int ScoreOf(GameState state, SeatId seat) => state.Scores.GetValueOrDefault(seat);
-
-    private GameAction Pick(ImmutableList<GameAction> choices) => choices[this._random.Next(choices.Count)];
 }

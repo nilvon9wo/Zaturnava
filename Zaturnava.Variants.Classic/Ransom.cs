@@ -43,7 +43,8 @@ internal sealed class Ransom(SquareGridTopology grid, ImmutableDictionary<PieceI
 
     /// <summary>
     /// The offer may be made: the offerer may offer, gives back at least one prisoner it holds of the
-    /// receiver's, and asks only for prisoners the receiver holds of the offerer's team.
+    /// receiver's, asks only for prisoners the receiver holds of the offerer's team, and has not made
+    /// the same offer this turn.
     /// </summary>
     public static bool IsValid(GameState state, OfferAction offer)
     {
@@ -56,12 +57,18 @@ internal sealed class Ransom(SquareGridTopology grid, ImmutableDictionary<PieceI
             && offer.Receiver != offer.Actor
             && !given.IsEmpty
             && given.Count == offer.Given.Count
-            && asked.Count == offer.Asked.Count;
+            && asked.Count == offer.Asked.Count
+            && !state.OffersMade.Contains(offer.Offer);
     }
 
     public static Transition Offered(GameState state, OfferAction offer)
     {
-        GameState waiting = state with { Offer = offer.Offer, DecidingSeat = offer.Receiver };
+        GameState waiting = state with
+        {
+            Offer = offer.Offer,
+            DecidingSeat = offer.Receiver,
+            OffersMade = state.OffersMade.Add(offer.Offer),
+        };
         return new Transition(waiting, [new RansomOffered(offer.Offer)]);
     }
 
