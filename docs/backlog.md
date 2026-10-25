@@ -42,6 +42,8 @@ did them.
 
 - **3** Variant pieces: two Chinese-chess-like elephants, one confined by two "rivers" that divide
   the board in four, and a dearer one that may cross them; the boat is to be replaced.
+- The grand game, of which the classic game is a part: its [specification](grand/specification.md),
+  [pieces](grand/pieces.md) and [roadmap](grand/roadmap.md).
 
 ## Done
 
