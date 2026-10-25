@@ -134,6 +134,13 @@ file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bo
                 onThrone.CapturedBy,
                 $"{this.Name(onThrone.CapturedBy)} took that Raja on its own throne (+{Text(onThrone.Points)} more)."
             ),
+            EmpireCreated empire => this.Add(
+                number,
+                EventDto.Bonus,
+                empire.Creator,
+                $"{this.Name(empire.Creator)} created the empire, with no enemy Raja left on the board "
+                    + $"(+{Text(empire.Points)})."
+            ),
             ThroneEntered entered => this.Add(
                 number,
                 EventDto.Bonus,

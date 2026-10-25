@@ -26,6 +26,9 @@ public sealed class ClassicRulesTest
     /// <summary>Yellow's throne, the square its Raja starts on.</summary>
     private static readonly CellId YellowThrone = Grid.CellAt(0, 4);
 
+    /// <summary>Green's throne.</summary>
+    private static readonly CellId GreenThrone = Grid.CellAt(4, 7);
+
     /// <summary>Red's throne.</summary>
     private static readonly CellId RedThrone = Grid.CellAt(7, 3);
 
@@ -499,6 +502,88 @@ public sealed class ClassicRulesTest
         Assert.Equal((null, won), (transition.State.DecidingSeat, transition.State.Outcome));
         Assert.Equal(new GameEnded(won), transition.Events[^1]);
         Assert.Empty(this._rules.LegalActions(transition.State));
+    }
+
+    [Theory]
+    [InlineData(5, 8, 3)]
+    [InlineData(4, 12, 5)]
+    public void Apply_WhenTheLastEnemyRajaIsTakenByOneCommandingAnAlly_CreatesTheEmpire(
+        int row,
+        int score,
+        int empire
+    )
+    {
+        // Arrange - Green has no Raja, so Black commands it; Red's Raja is gone; Yellow's is on a6, or a5, its throne
+        GameState state = this.Empire(Grid.CellAt(3, 3), hasGreenRaja: false, yellowRajaRow: row);
+
+        // Act
+        Transition transition = this._rules.Apply(state, new MoveAction(Black, Grid.CellAt(0, 0), Grid.CellAt(0, row)));
+
+        // Assert
+        Assert.Equal([new EmpireCreated(Black, empire)], transition.Events.OfType<EmpireCreated>());
+        Assert.Equal(score, transition.State.Scores[Black]);
+    }
+
+    [Fact]
+    public void Apply_WhenTheLastEnemyRajaIsTakenWithBlacksRajaOnGreensThrone_CreatesTheEmpire()
+    {
+        // Arrange - Green has its Raja, but Black's sits on Green's throne
+        GameState state = this.Empire(GreenThrone, hasGreenRaja: true);
+
+        // Act
+        Transition transition = this._rules.Apply(state, new MoveAction(Black, Grid.CellAt(0, 0), Grid.CellAt(0, 5)));
+
+        // Assert
+        Assert.Equal([new EmpireCreated(Black, 3)], transition.Events.OfType<EmpireCreated>());
+    }
+
+    [Fact]
+    public void Apply_WhenTheLastEnemyRajaIsTakenByOneCommandingNoAlly_CreatesNoEmpire()
+    {
+        // Arrange - Black's Raja holds Red's throne, an enemy's; Green has its Raja
+        GameState state = this.Empire(RedThrone, hasGreenRaja: true);
+
+        // Act
+        Transition transition = this._rules.Apply(state, new MoveAction(Black, Grid.CellAt(0, 0), Grid.CellAt(0, 5)));
+
+        // Assert
+        Assert.Equal((5, false), (transition.State.Scores[Black], transition.Events.OfType<EmpireCreated>().Any()));
+    }
+
+    [Fact]
+    public void Apply_WhenAnotherEnemyRajaIsLeft_CreatesNoEmpire()
+    {
+        // Arrange - Red's Raja is still on the board
+        GameState empire = this.Empire(Grid.CellAt(3, 3), hasGreenRaja: false);
+        GameState state = empire with
+        {
+            Position = empire.Position.Place(Grid.CellAt(7, 7), Piece(27, ClassicPieces.Raja, Red)),
+        };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new MoveAction(Black, Grid.CellAt(0, 0), Grid.CellAt(0, 5)));
+
+        // Assert
+        Assert.DoesNotContain(transition.Events, happened => happened is EmpireCreated);
+    }
+
+    [Fact]
+    public void Apply_WhenTheCaptorCommandsNoAllyButItsAllyDoes_CreatesTheEmpireForTheAllyOnly()
+    {
+        // Arrange - Green, with no Raja, takes with its Elephant; Black, with its Raja, commands Green
+        GameState empire = this.Empire(Grid.CellAt(3, 3), hasGreenRaja: false);
+        GameState state = empire with
+        {
+            DecidingSeat = Green,
+            Position = empire.Position.Place(Grid.CellAt(0, 0), Piece(18, ClassicPieces.Elephant, Green)),
+        };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new MoveAction(Green, Grid.CellAt(0, 0), Grid.CellAt(0, 5)));
+
+        // Assert
+        Assert.Equal([new EmpireCreated(Black, 1)], transition.Events.OfType<EmpireCreated>());
+        Assert.Equal((1, 5), (transition.State.Scores[Black], transition.State.Scores[Green]));
     }
 
     [Fact]
@@ -1879,6 +1964,26 @@ public sealed class ClassicRulesTest
                 new Prisoner(Piece(0, ClassicPieces.Boat, Black), Yellow),
             ],
         };
+
+    /// <summary>
+    /// Black's Elephant on a1, with Black's Raja on <paramref name="blackRaja"/>; Yellow's Raja on the a-file, the
+    /// last enemy Raja, beside a Pawn each of Yellow's and Red's; and Green's Pawn, and its Raja if
+    /// <paramref name="hasGreenRaja"/>.
+    /// </summary>
+    private GameState Empire(CellId blackRaja, bool hasGreenRaja, int yellowRajaRow = 5)
+    {
+        GameState state = this.StateWith(
+            (Grid.CellAt(0, 0), Piece(2, ClassicPieces.Elephant, Black)),
+            (blackRaja, Piece(3, ClassicPieces.Raja, Black)),
+            (Grid.CellAt(0, yellowRajaRow), Piece(11, ClassicPieces.Raja, Yellow)),
+            (Grid.CellAt(5, 5), Piece(13, ClassicPieces.Pawn, Yellow)),
+            (Grid.CellAt(6, 6), Piece(29, ClassicPieces.Pawn, Red)),
+            (Grid.CellAt(2, 6), Piece(21, ClassicPieces.Pawn, Green))
+        );
+        return hasGreenRaja
+            ? state with { Position = state.Position.Place(Grid.CellAt(6, 2), Piece(19, ClassicPieces.Raja, Green)) }
+            : state;
+    }
 
     private GameState AcceptingRansom() =>
         this.Ransoms() with

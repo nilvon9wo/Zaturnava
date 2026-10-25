@@ -96,6 +96,7 @@ public sealed class GameLogTest
             new ThroneEntered(RedRaja, Yellow, 1),
             new PieceCaptured(RedRaja, Black, 5),
             new RajaCapturedOnThrone(RedRaja, Black, 2),
+            new EmpireCreated(Black, 5),
             new DiceForfeited(Black, [1])
         );
 
@@ -110,6 +111,7 @@ public sealed class GameLogTest
                 "bonus 3: Red's Raja entered Yellow's throne (+1).",
                 "captured 0: Black took Red's Raja, with Yellow's Pawn, and holds it prisoner (+5).",
                 "bonus 0: Black took that Raja on its own throne (+2 more).",
+                "bonus 0: Black created the empire, with no enemy Raja left on the board (+5).",
                 "forfeited 0: Black could move nothing of Red's with 1 (Boat), so lost it.",
             ],
             log.Select(Told)

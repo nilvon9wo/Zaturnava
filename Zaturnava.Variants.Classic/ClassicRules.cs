@@ -15,10 +15,10 @@ namespace Net.NowhereAtAll.Zaturnava.Variants.Classic;
 /// <summary>
 /// Zaturnava's base rules. So far: a roll-off for who goes first, whose winning die is the opening
 /// move (rules.md §4, §11); then turns of a deliberate move, a pass, or a roll of the dice (§4);
-/// captures scored by piece, with the throne bonuses (§5); command of other armies through thrones
+/// captures scored by piece, with the throne bonuses and the empire (§5); command of other armies through thrones
 /// and Raja-less allies, and turns shared with an enemy Raja on one's throne (§6.1, §6.3); promotion
-/// and ransom (§8); escape on doubles (§7); and the end of the game (§10). Voluntary regency, boat
-/// triumph and the empire bonus follow; docs/rules.md lists what is implemented.
+/// and ransom (§8); escape on doubles (§7); and the end of the game (§10). Voluntary regency and boat
+/// triumph follow; docs/rules.md lists what is implemented.
 /// </summary>
 public sealed class ClassicRules : IRulesApplying
 {
@@ -38,6 +38,15 @@ public sealed class ClassicRules : IRulesApplying
 
     /// <summary>The points, on top of the capture, for taking a Raja on its own throne (rules.md §5).</summary>
     public const int RajaOnThroneBonus = 2;
+
+    /// <summary>The points for creating the empire (rules.md §5).</summary>
+    public const int EmpireBonus = 1;
+
+    /// <summary>The points, on top of <see cref="EmpireBonus"/>, for taking the Raja that creates it.</summary>
+    public const int EmpireByCaptureBonus = 2;
+
+    /// <summary>The points instead of <see cref="EmpireByCaptureBonus"/> when that Raja was on its throne.</summary>
+    public const int EmpireByThroneCaptureBonus = 4;
 
     /// <summary>The timer on a seat whose turn is over, while it may still offer ransoms.</summary>
     public const string RansomWindowTimer = "ransom-window";
@@ -597,9 +606,8 @@ public sealed class ClassicRules : IRulesApplying
         int points = isEnemy
             ? ClassicPieces.Points[captured.Kind]
             : 0;
-        bool isOnThrone = isEnemy
-            && captured.Kind == ClassicPieces.Raja
-            && this._control.IsThroneOf(cell, captured.Owner);
+        bool isEnemyRaja = isEnemy && captured.Kind == ClassicPieces.Raja;
+        bool isOnThrone = isEnemyRaja && this._control.IsThroneOf(cell, captured.Owner);
         Transition scored = Scored(moved, captor, points, new PieceCaptured(captured, captor, points));
         GameState state = scored.State;
         Transition taken = scored with
@@ -607,10 +615,48 @@ public sealed class ClassicRules : IRulesApplying
             State = state with { Prisoners = state.Prisoners.Add(new Prisoner(captured, captor)) },
         };
         RajaCapturedOnThrone bonus = new(captured, captor, RajaOnThroneBonus);
-        return isOnThrone
+        Transition onThrone = isOnThrone
             ? Scored(taken, captor, RajaOnThroneBonus, bonus)
             : taken;
+        return isEnemyRaja
+            ? this.Empire(onThrone, captured.Owner, captor, isOnThrone)
+            : onThrone;
     }
+
+    /// <summary>
+    /// Taking the last Raja of <paramref name="enemy"/>'s team creates the empire (rules.md §5) for every
+    /// seat of the other team that commands an ally's army then: the captor first, then by seat.
+    /// </summary>
+    private Transition Empire(Transition taken, SeatId enemy, SeatId captor, bool isOnThrone)
+    {
+        GameState state = taken.State;
+        bool isLastRaja = !state.Position.Occupants.Values
+            .Any(piece => piece.Kind == ClassicPieces.Raja && state.Teams.AreAllied(piece.Owner, enemy));
+        IEnumerable<SeatId> creators = isLastRaja
+            ? state.Seats
+                .Select(seat => seat.Id)
+                .Where(seat => !state.Teams.AreAllied(seat, enemy) && this._control.CommandsAnAlly(state, seat))
+                .OrderBy(seat => seat != captor)
+                .ThenBy(seat => seat.Value)
+            : [];
+        return creators.Aggregate(
+            taken,
+            (empire, creator) =>
+            {
+                int points = EmpirePoints(creator == captor, isOnThrone);
+                return Scored(empire, creator, points, new EmpireCreated(creator, points));
+            }
+        );
+    }
+
+    /// <summary>The empire's points: more for its captor, and more still if it took the Raja on its throne.</summary>
+    private static int EmpirePoints(bool isCaptor, bool isOnThrone) =>
+        (isCaptor, isOnThrone) switch
+        {
+            (false, _) => EmpireBonus,
+            (true, false) => EmpireBonus + EmpireByCaptureBonus,
+            (true, true) => EmpireBonus + EmpireByThroneCaptureBonus,
+        };
 
     /// <summary>A Raja entering an enemy's throne scores its owner a bonus (rules.md §5).</summary>
     private Transition EnteredThrone(Transition moved, Piece mover, CellId cell)
