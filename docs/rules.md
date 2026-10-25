@@ -315,10 +315,10 @@ forced into either):
     kind's, else the free squares fewest king's steps from its own. *(Stated
     2026-10-25)* When it may go to more than one, the player letting it
     escape chooses, as part of choosing the escape.
-  - *(Proposed)* The escape is instead of the double move: it uses both dice,
-    and the turn ends. It is offered only while both dice of the doubles are
-    unused. What the escaping piece takes is the escaping player's, scored as
-    any capture is (§5).
+  - *(Stated 2026-10-26)* The escape is instead of the double move, and the
+    player chooses between them: it uses both dice, and the turn ends. It is
+    offered only while both dice of the doubles are unused. What the escaping
+    piece takes is the escaping player's, scored as any capture is (§5).
 
 If multiple valid captured pieces qualify (e.g. both the player's own captured
 Raja and an ally's captured Raja qualify under a "5 or 6" roll), the player
