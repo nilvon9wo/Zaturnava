@@ -33,7 +33,8 @@ public sealed class WireFormatTest
             true,
             new OfferDto(0, 1, [new PrisonerDto(9, "pawn", "Pawn", 1)], []),
             12.5,
-            58
+            58,
+            true
         );
 
         // Act
@@ -65,7 +66,8 @@ public sealed class WireFormatTest
             false,
             null,
             null,
-            null
+            null,
+            false
         );
 
         // Act

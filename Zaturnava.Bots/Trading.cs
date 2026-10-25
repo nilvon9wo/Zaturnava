@@ -10,7 +10,8 @@ namespace Net.NowhereAtAll.Zaturnava.Bots;
 /// <summary>
 /// Ransoms as a bot weighs them, by what the rules say each piece is worth: the offer it is answering,
 /// and the offers it could make once its turn is over - one prisoner it holds for one its team lost to
-/// that prisoner's owner, or, to an ally, one back for nothing - leaving out those made already.
+/// that prisoner's owner, or, to an ally, one back for nothing. A bot makes one offer a turn at most,
+/// so that an answer is not asked of its opponents over and over.
 /// </summary>
 internal static class Trading
 {
@@ -20,11 +21,16 @@ internal static class Trading
             ? WorthOf(request, offer.Given) - WorthOf(request, offer.Asked)
             : null;
 
-    /// <summary>The offers the bot may make now, each with what it would gain; none during its turn.</summary>
+    /// <summary>
+    /// The offers the bot may make now, each with what it would gain; none during its turn, nor once it
+    /// has made one this turn.
+    /// </summary>
     public static ImmutableList<Trade> TradesOf(DecisionRequest request)
     {
         GameState state = request.State;
-        bool mayOffer = state.IsRansomWindow && request.Rules.MayOffer(state);
+        bool mayOffer = state.IsRansomWindow
+            && state.OffersMade.All(offer => offer.From != request.Seat)
+            && request.Rules.MayOffer(state);
         ImmutableList<Prisoner> held =
         [
             .. state.Prisoners.Where(prisoner =>
@@ -32,7 +38,7 @@ internal static class Trading
             ),
         ];
         return mayOffer
-            ? [.. held.SelectMany(prisoner => TradesFor(request, prisoner)).Where(trade => !IsMade(state, trade))]
+            ? [.. held.SelectMany(prisoner => TradesFor(request, prisoner))]
             : [];
     }
 
@@ -52,8 +58,6 @@ internal static class Trading
             ? exchanges.Append(gift)
             : exchanges;
     }
-
-    private static bool IsMade(GameState state, Trade trade) => state.OffersMade.Contains(trade.Offer.Offer);
 
     private static int WorthOf(DecisionRequest request, ImmutableList<PieceId> pieces) =>
         pieces.Sum(id => request.Rules.WorthOf(request.State.Prisoners.First(held => held.Piece.Id == id).Piece.Kind));

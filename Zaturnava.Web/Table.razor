@@ -246,13 +246,21 @@
                 ? "Pick a ringed piece, then a marked square."
                 : "Move a ringed piece (pick it, then a marked square), or:";
 
-    /// <summary>How the game ended; else whose move it is, and for whom if not for themselves.</summary>
+    /// <summary>
+    /// How the game ended; else who is answering an offer, or whose turn is over but who may still offer;
+    /// else whose move it is, and for whom if not for themselves.
+    /// </summary>
     private string Status(GameViewDto view) =>
-        (view.Outcome, view.DecidingSeat, this._turn) switch
+        (view.Outcome, view.DecidingSeat, this._turn, view.Offer, view.IsTurnOver) switch
         {
-            ({ } outcome, _, _) => outcome.Text,
-            (_, { } seat, null) => $"{view.Seats[seat].Name} to move{ForWhom(view)} ({this.Player(view.Seats[seat])}).",
-            (_, { }, _) => $"Your move{ForWhom(view)}.",
+            ({ } outcome, _, _, _, _) => outcome.Text,
+            (_, { } seat, null, { } offer, _) =>
+                $"{view.Seats[seat].Name} is answering {view.Seats[offer.From].Name}'s offer ({this.Player(view.Seats[seat])}).",
+            (_, { }, _, { } offer, _) => $"Answer {view.Seats[offer.From].Name}'s offer.",
+            (_, { } seat, null, _, true) => $"{view.Seats[seat].Name}'s turn is over: they may still offer prisoners back.",
+            (_, { }, _, _, true) => "Your turn is over: offer prisoners back, or be done.",
+            (_, { } seat, null, _, _) => $"{view.Seats[seat].Name} to move{ForWhom(view)} ({this.Player(view.Seats[seat])}).",
+            (_, { }, _, _, _) => $"Your move{ForWhom(view)}.",
             _ => "The game is over.",
         };
 

@@ -137,7 +137,20 @@ public sealed class MidasBotTest
     }
 
     [Fact]
-    public async Task Decide_WhenNoTradeLeftGainsAnything_IsDone()
+    public async Task Decide_WhenNoTradeGainsAnything_IsDone()
+    {
+        // Arrange - without its own Horse 20 to ask back, every trade loses or breaks even
+        DecisionRequest request = Ransoms.WindowWithout(20);
+
+        // Act
+        GameAction action = await new MidasBot(new Random(1)).Decide(request, this._cancellation);
+
+        // Assert
+        Assert.Equal(Ransoms.Done, action);
+    }
+
+    [Fact]
+    public async Task Decide_WhenItHasOfferedThisTurn_IsDone()
     {
         // Arrange
         DecisionRequest request = Ransoms.Window(Ransoms.Offer(Ransoms.Yellow, [10], [20]));

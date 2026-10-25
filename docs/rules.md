@@ -427,7 +427,8 @@ available (via a future capture, by anyone).
     When the window runs out, it closes; when the answer runs out, the offer
     is declined.
   - The same offer may not be made twice in one turn.
-  - Bots answer at once, and offer only once their turn is over.
+  - Bots answer at once, and offer only once their turn is over: one offer a
+    turn at most.
 
 ### Raja Return
 

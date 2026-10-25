@@ -45,7 +45,7 @@ public sealed class SolomonBotTest
     public async Task Decide_WhenNoGiftIsLeft_OffersTheMostValuableEvenTrade()
     {
         // Arrange - a Horse for a Horse, rather than a Pawn for a Pawn
-        DecisionRequest request = Ransoms.Window(Ransoms.Offer(Ransoms.Green, [30], []));
+        DecisionRequest request = Ransoms.WindowWithout(30);
 
         // Act
         GameAction action = await new SolomonBot(new Random(1)).Decide(request, this._cancellation);
@@ -57,12 +57,21 @@ public sealed class SolomonBotTest
     [Fact]
     public async Task Decide_WhenNothingFairIsLeftToOffer_IsDone()
     {
+        // Arrange - no ally's prisoner to give back, and no pair alike in worth
+        DecisionRequest request = Ransoms.WindowWithout(30, 20, 21);
+
+        // Act
+        GameAction action = await new SolomonBot(new Random(1)).Decide(request, this._cancellation);
+
+        // Assert
+        Assert.Equal(Ransoms.Done, action);
+    }
+
+    [Fact]
+    public async Task Decide_WhenItHasOfferedThisTurn_IsDone()
+    {
         // Arrange
-        DecisionRequest request = Ransoms.Window(
-            Ransoms.Offer(Ransoms.Green, [30], []),
-            Ransoms.Offer(Ransoms.Yellow, [11], [20]),
-            Ransoms.Offer(Ransoms.Yellow, [10], [21])
-        );
+        DecisionRequest request = Ransoms.Window(Ransoms.Offer(Ransoms.Green, [30], []));
 
         // Act
         GameAction action = await new SolomonBot(new Random(1)).Decide(request, this._cancellation);

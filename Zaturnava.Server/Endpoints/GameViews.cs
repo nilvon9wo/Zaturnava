@@ -56,7 +56,8 @@ internal static class GameViews
             snapshot.Rules.MayOffer(snapshot.State),
             OfferOf(snapshot),
             snapshot.TimeLeft?.TotalSeconds,
-            snapshot.State.PromotionDue?.Value
+            snapshot.State.PromotionDue?.Value,
+            snapshot.State.IsRansomWindow
         );
     }
 

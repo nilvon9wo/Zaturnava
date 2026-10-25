@@ -11,7 +11,8 @@ namespace Net.NowhereAtAll.Zaturnava.Contracts;
 /// among the legal actions); and <see cref="SecondsLeft"/>, if its decision is timed, how long it
 /// has left, after which anyone may advance the game to decide for it. <see cref="PromotionDue"/> is
 /// the cell of a Pawn just come to the far edge, which the deciding seat promotes now or passes to
-/// leave for later.
+/// leave for later. <see cref="IsTurnOver"/> says that the deciding seat's turn is over, and it may
+/// only offer ransoms, or be done.
 /// </summary>
 public sealed record GameViewDto(
     string Id,
@@ -31,5 +32,6 @@ public sealed record GameViewDto(
     bool MayOffer,
     OfferDto? Offer,
     double? SecondsLeft,
-    int? PromotionDue
+    int? PromotionDue,
+    bool IsTurnOver
 );

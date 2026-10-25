@@ -22,6 +22,17 @@ internal static class Ransoms
 
     public static readonly PassAction Done = new(Black);
 
+    /// <summary>Once seat 0's turn is over, when it may offer, without the prisoners <paramref name="gone"/>.</summary>
+    public static DecisionRequest WindowWithout(params int[] gone)
+    {
+        DecisionRequest request = Window();
+        GameState state = request.State;
+        return request with
+        {
+            State = state with { Prisoners = state.Prisoners.RemoveAll(held => gone.Contains(held.Piece.Id.Value)) },
+        };
+    }
+
     /// <summary>Once seat 0's turn is over, when it may offer, having made <paramref name="made"/>.</summary>
     public static DecisionRequest Window(params RansomOffer[] made)
     {

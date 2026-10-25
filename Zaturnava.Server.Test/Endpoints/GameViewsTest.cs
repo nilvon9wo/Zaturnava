@@ -198,7 +198,10 @@ public sealed class GameViewsTest
         GameViewDto view = GameViews.ViewOf(Snapshot(state), Bots);
 
         // Assert
-        Assert.Equal("pass: Done offering", $"{view.LegalActions.Single().Kind}: {view.LegalActions.Single().Label}");
+        Assert.Equal(
+            ("pass: Done offering", true),
+            ($"{view.LegalActions.Single().Kind}: {view.LegalActions.Single().Label}", view.IsTurnOver)
+        );
     }
 
     [Fact]

@@ -32,7 +32,8 @@ internal sealed class StubGameServer : IGameServing
             false,
             null,
             null,
-            null
+            null,
+            false
         );
 
     public Exception? Failure { get; set; }

@@ -40,7 +40,8 @@ internal sealed class FakeGameServer : IGameServing
         false,
         null,
         null,
-        null
+        null,
+        false
     );
 
     public GameViewDto View { get; set; } = SeatZeroToMove;
