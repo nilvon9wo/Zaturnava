@@ -4,14 +4,28 @@ How the [grand game](specification.md) is to be built, in stages that can each b
 least tested, on their own. As with the classic game, it is played locally against bots before it
 is hosted. The classic game stays playable, and its tests passing, at every stage.
 
-Nothing here is scheduled; the order is a proposal. Each stage names the open questions
-([specification §9](specification.md#9-open-questions)) it waits on.
+The order is agreed (2026-10-26); nothing is scheduled. The design's questions are answered, but
+for a second palace (**Q5**, for later) and what playtesting is to settle (**Q14**)
+([specification §9](specification.md#9-open-questions)).
 
-## Stage 0 — Agree the design
+## Stage 0 — Finish what the grand game inherits
 
-- The design's questions are answered, but for a second palace (**Q5**, for later) and what
-  playtesting is to settle (**Q14**).
-- Choose a name, or keep "grand" as the working name of the variant's project and key.
+The grand game plays by the classic rules, so the classic rules it inherits come first, built once,
+and written for a *leader* rather than a Raja, so that they carry over unchanged.
+
+- **Smarter bots**: before moving, a bot weighs what its opponents could take in reply (and how
+  the exchange on that cell would end), and counts a piece left unguarded, or a throne under threat,
+  against what the move gains. Still one move deep, so still fast on a large board; looking further
+  ahead, across the dice, comes later. Every playtest of either game needs this.
+- Escape on doubles (rules.md §7), the empire bonus (§5), voluntary regency (§6.2).
+- Ending the game by agreement.
+
+Not first, and blocking nothing: boat triumph (classic only, and a near-impossible condition, so a
+nice-to-have); games that survive a restart, identities, statistics and chat (part of going
+online, not of either game's rules).
+
+Choose a name for the grand game at any point, or keep "grand" as the working name of its project
+and key.
 
 ## Stage 1 — The catalogue as data
 
@@ -50,6 +64,11 @@ Nothing here waits on an open question.
   said of leaders.
 - Scoring by piece value, with the classic bonuses as they are until playtesting says otherwise
   (**Q14**); the game ends as the classic game does, and points decide it.
+
+## Playtest — fixed armies
+
+Before the draft is built: a playtest of stages 1–3, with armies the program sets, and each piece
+drawn simply, a shape for its class and a letter for its kind.
 
 ## Stage 4 — The draft
 
