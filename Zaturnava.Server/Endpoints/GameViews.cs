@@ -57,7 +57,8 @@ internal static class GameViews
             OfferOf(snapshot),
             snapshot.TimeLeft?.TotalSeconds,
             snapshot.State.PromotionDue?.Value,
-            snapshot.State.IsRansomWindow
+            snapshot.State.IsRansomWindow,
+            snapshot.State.Returning is { } due ? PrisonerOf(snapshot.Rules, due.Prisoners[0]) : null
         );
     }
 

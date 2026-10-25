@@ -58,6 +58,12 @@ public sealed record GameState(
     /// </summary>
     public CellId? PromotionDue { get; init; }
 
+    /// <summary>
+    /// Prisoners going home that wait on where the first is to go, chosen by its owner, the deciding
+    /// seat; null if none.
+    /// </summary>
+    public ReturnsDue? Returning { get; init; }
+
     /// <summary>How the game ended; null while it goes on.</summary>
     public GameOutcome? Outcome { get; init; }
 

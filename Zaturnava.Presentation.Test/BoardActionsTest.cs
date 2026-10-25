@@ -26,7 +26,7 @@ public sealed class BoardActionsTest
         IEnumerable<ActionDto> offBoard = this._actions.OffBoard;
 
         // Assert
-        Assert.Equal([Actions.Pass, Unreadable, OneEnded], offBoard);
+        Assert.Equal([Actions.Pass, Unreadable], offBoard);
     }
 
     [Fact]
@@ -99,5 +99,31 @@ public sealed class BoardActionsTest
 
         // Assert
         Assert.Null(move);
+    }
+
+    [Fact]
+    public void Drops_WhenAnActionGoesToACellFromNone_AreThoseCells()
+    {
+        // Arrange - nothing beyond the actions
+
+        // Act
+        IEnumerable<int> drops = this._actions.Drops;
+
+        // Assert
+        Assert.Equal([16], drops);
+    }
+
+    [Theory]
+    [InlineData(16, true)]
+    [InlineData(17, false)]
+    public void DropAt_WhenGivenACell_ReturnsTheActionDroppingThere(int cell, bool isDrop)
+    {
+        // Arrange - nothing beyond the actions
+
+        // Act
+        ActionDto? drop = this._actions.DropAt(cell);
+
+        // Assert
+        Assert.Equal(isDrop ? OneEnded : null, drop);
     }
 }

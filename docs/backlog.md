@@ -26,7 +26,7 @@ did them.
 - Escape on doubles (§7), the empire bonus (§5): next, with the grand game's
   [Stage 0](grand/roadmap.md#stage-0--finish-what-the-grand-game-inherits).
 - Boat triumph (§9): a nice-to-have; the condition is so unlikely that no one may miss it.
-- Ransom (§8): the receiving player choosing among equidistant squares; bots that offer during their turn.
+- Ransom (§8): bots that offer during their turn.
 - The commanded-captures toggle (`control.enemyArmyCaptures`) as a per-game setting.
 
 ## Players and identity
@@ -125,3 +125,5 @@ After playing against Argus (2026-10-25):
   that leaves their team weaker against that enemy's, counting what each has on the board. So an
   even trade suits only the team that is behind, and nothing given back revives a team that has
   nothing left.
+- Ransom (§8): when a piece going home has several free squares as near its own, its owner chooses
+  among them, marked on the board (a Pawn need no longer land in the Boat's corner).

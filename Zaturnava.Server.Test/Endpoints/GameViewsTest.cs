@@ -182,6 +182,30 @@ public sealed class GameViewsTest
     }
 
     [Fact]
+    public void ViewOf_WhenAPieceGoingHomeWaitsOnWhereItGoes_SaysWhichAndOffersItsPlaces()
+    {
+        // Arrange - Black's Pawn 4 is going home from a ransom, Yellow to decide once it is placed
+        Piece pawn = new(new PieceId(4), ClassicPieces.Pawn, new SeatId(0));
+        Prisoner going = new(pawn, new SeatId(1));
+        GameState state = Rules.CreateInitialState() with
+        {
+            RollOff = [],
+            AwaitedDice = null,
+            Prisoners = [going],
+            Returning = new ReturnsDue([going], new SeatId(1)),
+        };
+
+        // Act
+        GameViewDto view = GameViews.ViewOf(Snapshot(state), Bots);
+
+        // Assert
+        Assert.Equal(
+            (new PrisonerDto(4, "pawn", "Pawn", 0), "place"),
+            (view.Returning, view.LegalActions.Select(action => action.Kind).Distinct().Single())
+        );
+    }
+
+    [Fact]
     public void ViewOf_WhenATurnIsOverButItsSeatMayStillOffer_LabelsPassingAsDone()
     {
         // Arrange

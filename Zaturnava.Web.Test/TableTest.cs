@@ -511,6 +511,25 @@ public sealed class TableTest : IDisposable
     }
 
     [Theory]
+    [InlineData(0, "Your Pawn is going home: choose a marked square for it.")]
+    [InlineData(1, "Yellow is choosing where their Pawn goes home (Random).")]
+    public void Status_WhenAPieceGoingHomeWaitsOnWhereItGoes_SaysWhoChooses(int deciding, string expected)
+    {
+        // Arrange
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            DecidingSeat = deciding,
+            Returning = new PrisonerDto(4, "pawn", "Pawn", deciding),
+        };
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Assert
+        Assert.Equal(expected, table.Find("p.status").TextContent);
+    }
+
+    [Theory]
     [InlineData(0, 1, "Your move, for Yellow.")]
     [InlineData(1, 0, "Yellow to move, for Black (Random).")]
     public void Status_WhenOneSeatMovesForAnother_SaysForWhom(int deciding, int actingFor, string expected)

@@ -7,17 +7,30 @@ namespace Net.NowhereAtAll.Zaturnava.Presentation;
 
 /// <summary>
 /// A game's legal actions, sorted for a player: those drawn on the board (they go from one cell to
-/// another, see <see cref="ActionArguments"/>); those taken at a cell, offered once its piece is
-/// picked up; and the rest, offered as buttons. Nothing here knows what any kind of action means.
+/// another, see <see cref="ActionArguments"/>, or only to one, as a piece put on the board is); those
+/// taken at a cell, offered once its piece is picked up; and the rest, offered as buttons. Nothing here
+/// knows what any kind of action means.
 /// </summary>
 public sealed class BoardActions([Required] ImmutableList<ActionDto> legal)
 {
     private readonly ImmutableList<(int From, int To, ActionDto Action)> _moves = [.. legal.SelectMany(MoveOf)];
     private readonly ImmutableList<(int Cell, ActionDto Action)> _atCells = [.. legal.SelectMany(AtCellOf)];
+    private readonly ImmutableList<(int Cell, ActionDto Action)> _drops = [.. legal.SelectMany(DropOf)];
 
     /// <summary>The actions that are neither drawn on the board nor taken at a cell.</summary>
     public ImmutableList<ActionDto> OffBoard { get; } =
-        [.. legal.Where(action => CellsOf(action) is null && CellOf(action, ActionArguments.Cell) is null)];
+        [
+            .. legal.Where(action =>
+                CellsOf(action) is null && CellOf(action, ActionArguments.Cell) is null && !DropOf(action).Any()
+            ),
+        ];
+
+    /// <summary>The cells something may be put on, with nothing picked up: a piece coming onto the board.</summary>
+    public ImmutableHashSet<int> Drops => [.. this._drops.Select(drop => drop.Cell)];
+
+    /// <summary>The action putting something on <paramref name="cell"/>, if there is one.</summary>
+    public ActionDto? DropAt(int cell) =>
+        this._drops.Where(drop => drop.Cell == cell).Select(drop => drop.Action).FirstOrDefault();
 
     /// <summary>The cells some action on the board starts from, or is taken at.</summary>
     public ImmutableHashSet<int> Origins => [.. this._moves.Select(move => move.From), .. this.AtCells];
@@ -39,6 +52,11 @@ public sealed class BoardActions([Required] ImmutableList<ActionDto> legal)
 
     private static IEnumerable<(int From, int To, ActionDto Action)> MoveOf(ActionDto action) =>
         CellsOf(action) is { } cells ? [(cells.From, cells.To, action)] : [];
+
+    private static IEnumerable<(int Cell, ActionDto Action)> DropOf(ActionDto action) =>
+        !action.Arguments.ContainsKey(ActionArguments.From) && CellOf(action, ActionArguments.To) is { } cell
+            ? [(cell, action)]
+            : [];
 
     private static IEnumerable<(int Cell, ActionDto Action)> AtCellOf(ActionDto action) =>
         CellOf(action, ActionArguments.Cell) is { } cell ? [(cell, action)] : [];

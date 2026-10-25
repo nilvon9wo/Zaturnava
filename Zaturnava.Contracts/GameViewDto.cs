@@ -12,7 +12,9 @@ namespace Net.NowhereAtAll.Zaturnava.Contracts;
 /// has left, after which anyone may advance the game to decide for it. <see cref="PromotionDue"/> is
 /// the cell of a Pawn just come to the far edge, which the deciding seat promotes now or passes to
 /// leave for later. <see cref="IsTurnOver"/> says that the deciding seat's turn is over, and it may
-/// only offer ransoms, or be done.
+/// only offer ransoms, or be done. <see cref="Returning"/> is a piece going home from a ransom, which
+/// waits on the deciding seat, its owner, to choose where it goes (a <c>place</c> action, drawn on the
+/// board as a cell to drop it on).
 /// </summary>
 public sealed record GameViewDto(
     string Id,
@@ -33,5 +35,6 @@ public sealed record GameViewDto(
     OfferDto? Offer,
     double? SecondsLeft,
     int? PromotionDue,
-    bool IsTurnOver
+    bool IsTurnOver,
+    PrisonerDto? Returning = null
 );

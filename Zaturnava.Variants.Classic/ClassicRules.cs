@@ -42,6 +42,9 @@ public sealed class ClassicRules : IRulesApplying
     /// <summary>The timer on a seat whose turn is over, while it may still offer ransoms.</summary>
     public const string RansomWindowTimer = "ransom-window";
 
+    /// <summary>The timer on choosing where a piece going home from a ransom goes.</summary>
+    public const string ReturnTimer = "ransom-return";
+
     /// <summary>The timer on a seat offered a ransom; declining is its default.</summary>
     public const string RansomAnswerTimer = "ransom-answer";
 
@@ -119,16 +122,24 @@ public sealed class ClassicRules : IRulesApplying
 
     public bool MayOffer([Required] GameState state) => Ransom.MayOffer(state);
 
-    /// <summary>A seat answering an offer, or offering once its turn is over, has only so long.</summary>
+    /// <summary>
+    /// A seat choosing where a piece goes home, answering an offer, or offering once its turn is over, has
+    /// only so long.
+    /// </summary>
     public DecisionTimer? TimerOf([Required] GameState state) =>
+        state.Returning is null
+            ? RansomTimerOf(state)
+            : new DecisionTimer(ReturnTimer, this._ransom.PlacesOf(state)[0]);
+
+    public GameAction Parse([Required] ActionDescriptor descriptor) => ActionParser.Standard.Parse(descriptor);
+
+    private static DecisionTimer? RansomTimerOf(GameState state) =>
         (state.Offer, state.IsRansomWindow, state.DecidingSeat) switch
         {
             ({ } offer, _, _) => new DecisionTimer(RansomAnswerTimer, new DeclineAction(offer.To)),
             (_, true, { } seat) => new DecisionTimer(RansomWindowTimer, new PassAction(seat)),
             _ => null,
         };
-
-    public GameAction Parse([Required] ActionDescriptor descriptor) => ActionParser.Standard.Parse(descriptor);
 
     /// <summary>A piece is worth what taking it scores (rules.md §5).</summary>
     public int WorthOf(PieceKindId kind) => ClassicPieces.Points[kind];
@@ -156,21 +167,23 @@ public sealed class ClassicRules : IRulesApplying
     private DiceRequest RollOffDie => new(RollOffDice, this._dice.Sides);
 
     /// <summary>
-    /// An offer waiting is answered; once a turn is over, its seat may only offer, or be done; a Pawn just
+    /// A piece going home is placed; an offer waiting is answered; once a turn is over, its seat may only
+    /// offer, or be done; a Pawn just
     /// come to the far edge is promoted, or left for later (a pass); with dice rolled, the seat moves what
     /// they show, promotes, or passes.
     /// </summary>
     private ImmutableList<GameAction> ChoicesOf(GameState state, SeatId seat) =>
-        (state.Offer, state.IsRansomWindow, state.PromotionDue, state.Dice.IsEmpty) switch
+        (state.Returning, state.Offer, state.IsRansomWindow, state.PromotionDue, state.Dice.IsEmpty) switch
         {
-            ({ }, _, _, _) => [new AcceptAction(seat), new DeclineAction(seat)],
-            (_, true, _, _) => [new PassAction(seat)],
-            (_, _, { } cell, _) =>
+            ({ }, _, _, _, _) => [.. this._ransom.PlacesOf(state)],
+            (_, { }, _, _, _) => [new AcceptAction(seat), new DeclineAction(seat)],
+            (_, _, true, _, _) => [new PassAction(seat)],
+            (_, _, _, { } cell, _) =>
             [
                 new PassAction(seat),
                 .. this.PromotionsOf(state, seat).Where(promotion => promotion.Cell == cell),
             ],
-            (_, _, _, true) => this.TurnChoicesOf(state, seat),
+            (_, _, _, _, true) => this.TurnChoicesOf(state, seat),
             _ =>
             [
                 new PassAction(seat),
@@ -277,6 +290,7 @@ public sealed class ClassicRules : IRulesApplying
             MoveAction move => this.AfterMove(state, move),
             PromoteAction promote => this.Promoted(state, promote),
             AcceptAction => this._ransom.Accepted(state),
+            PlaceAction place => this._ransom.Placed(state, place),
             DeclineAction => Ransom.Declined(state),
             _ when state.PromotionDue is not null =>
                 this.GoneOn(new Transition(state with { PromotionDue = null }, [])),

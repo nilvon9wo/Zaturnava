@@ -29,7 +29,7 @@ Everything else here is specified but not yet played by the engine.
 | §6 Throne control | Partly: the expanded pool (§6.1, both triggers) and the forced shared turn (§6.3). Voluntary regency (§6.2) is not yet. |
 | §6.4 Commanded captures | Implemented, with the toggle as a constructor argument. |
 | §7 Escape, §9 Boat triumph | Not yet. |
-| §8 Promotion & ransom | Implemented, as clarified below: promotion into any captured piece (`promotion.pawns` a constructor argument; `promotion.pool` fixed at `unrestricted`), and ransom with its timed protocol. The receiving player's choice among equidistant squares is not offered yet. |
+| §8 Promotion & ransom | Implemented, as clarified below: promotion into any captured piece (`promotion.pawns` a constructor argument; `promotion.pool` fixed at `unrestricted`), and ransom with its timed protocol, including the receiving player's choice among equidistant squares. |
 | §10 Game end | Partly: elimination (a seat with no pieces is skipped), honourable peace, team elimination, and a safety net (below). Retirement and ending by agreement are not yet. |
 | §11 Setup roll-off | Implemented. |
 | §12 Toggles | None per game yet: `control.enemyArmyCaptures` is a constructor argument; the other defaults are fixed. |
@@ -423,8 +423,12 @@ available (via a future capture, by anyone).
     decides again.
   - Accepted, the prisoners given go home first, then those asked for. Each
     goes to its starting square, or the free square fewest king's steps
-    from it. Until the receiving player can choose among equals, the one
-    nearest the first rank is taken, then the one nearest the a-file.
+    from it. *(Clarified 2026-10-25)* When several are as near, the piece's
+    owner (the player receiving it back) chooses among them, and the game
+    waits on that choice, timed as an answer is (`Games:Timers:ransom-return`).
+    A player out of time, or a bot that cannot tell them apart, gets the one
+    on the piece's own starting row; else the one nearest its army's back
+    rank; then the one nearest its army's left.
   - The window and the answer are timed: 30 seconds each by default, set by
     the host (`Games:Timers:ransom-window`, `Games:Timers:ransom-answer`).
     When the window runs out, it closes; when the answer runs out, the offer
@@ -545,8 +549,6 @@ Nothing rules-level is currently blocking. Noted for later attention:
 - Whether team membership can ever change *during* a game (a future variant
   idea raised during design discussion) is explicitly out of scope for now —
   team assignment is fixed at game creation.
-- Ransom (§8): letting the receiving player choose among equidistant squares
-  for a returning piece.
 - **Piece naming/set**: *(updated)* traditional-vs-chess-standard naming is
   now the `pieceSet.naming` toggle in §12, rather than a one-time decision —
   players can pick either label set (Pawn/Boat/Horse/Elephant/Raja vs.
