@@ -78,9 +78,7 @@ public sealed class ClassicRules : IRulesApplying
         this._pawnPromotion = pawnPromotion;
         this.Thrones = ClassicSetup.Thrones(this._grid);
         this._control = new ThroneControl(this.Thrones);
-        ImmutableDictionary<PieceId, CellId> homes = ClassicSetup.InitialPosition(this._grid)
-            .Occupants.ToImmutableDictionary(occupant => occupant.Value.Id, occupant => occupant.Key);
-        this._ransom = new Ransom(this._grid, homes);
+        this._ransom = new Ransom(this._grid, ClassicSetup.InitialPosition(this._grid));
     }
 
     public string Id => RulesetId;

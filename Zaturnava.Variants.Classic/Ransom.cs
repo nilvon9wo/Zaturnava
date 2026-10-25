@@ -3,6 +3,7 @@ using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Boards;
 using Net.NowhereAtAll.Zaturnava.Engine.Events;
 using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
+using Net.NowhereAtAll.Zaturnava.Engine.Positions;
 using Net.NowhereAtAll.Zaturnava.Engine.Rules;
 using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 using Net.NowhereAtAll.Zaturnava.Topology.SquareGrid;
@@ -13,13 +14,26 @@ namespace Net.NowhereAtAll.Zaturnava.Variants.Classic;
 /// Ransom (rules.md §8): on its own turn, or once it is over, a seat may offer another seat back
 /// prisoners it holds of that seat's, for prisoners that seat holds of the offerer's team - or for
 /// nothing. The game waits on the receiver, who accepts or declines; either way the offerer decides
-/// again. Accepted, each prisoner goes home to the free square nearest its starting square; when
-/// several are as near, its owner chooses among them, and the game waits on that choice.
+/// again. Accepted, each prisoner goes home to its own starting square if free; else to a free starting
+/// square of its kind's (any of its army's Pawns' for a Pawn); else to the free squares nearest its own.
+/// When it may go to more than one, its owner chooses, and the game waits on that choice.
 /// </summary>
-internal sealed class Ransom(SquareGridTopology grid, ImmutableDictionary<PieceId, CellId> homes)
+internal sealed class Ransom(SquareGridTopology grid, Position start)
 {
     private readonly SquareGridTopology _grid = grid;
-    private readonly ImmutableDictionary<PieceId, CellId> _homes = homes;
+
+    private readonly ImmutableDictionary<PieceId, CellId> _homes =
+        start.Occupants.ToImmutableDictionary(occupant => occupant.Value.Id, occupant => occupant.Key);
+
+    /// <summary>For each piece, the starting squares of its army's pieces of its kind, its own among them.</summary>
+    private readonly ImmutableDictionary<PieceId, ImmutableList<CellId>> _kin =
+        start.Occupants.ToImmutableDictionary(
+            occupant => occupant.Value.Id,
+            occupant => start.Occupants
+                .Where(other => other.Value.Owner == occupant.Value.Owner && other.Value.Kind == occupant.Value.Kind)
+                .Select(other => other.Key)
+                .ToImmutableList()
+        );
 
     /// <summary>Whether <paramref name="seat"/> holds a prisoner it could offer back to its owner.</summary>
     public static bool HoldsRansom(GameState state, SeatId seat) =>
@@ -93,9 +107,8 @@ internal sealed class Ransom(SquareGridTopology grid, ImmutableDictionary<PieceI
     }
 
     /// <summary>
-    /// Where the first prisoner waiting may go, its owner's choice: the free squares nearest its starting
-    /// square, the one a seat out of time would be given first - on the piece's own starting row, else
-    /// nearest its army's back rank, then nearest its army's left.
+    /// Where the first prisoner waiting may go, its owner's choice, the one a seat out of time would be
+    /// given first.
     /// </summary>
     public ImmutableList<PlaceAction> PlacesOf(GameState state)
     {
@@ -155,20 +168,27 @@ internal sealed class Ransom(SquareGridTopology grid, ImmutableDictionary<PieceI
     }
 
     /// <summary>
-    /// The free squares fewest king's steps from the prisoner's home: on its own starting row first, then
-    /// nearest its army's back rank, then nearest its army's left.
+    /// The prisoner's own starting square, if free; else the free starting squares of its kind's; else the
+    /// free squares fewest king's steps from its own. Nearest its own first; then on its own starting row,
+    /// then nearest its army's back rank, then nearest its army's left.
     /// </summary>
     private ImmutableList<CellId> PlacesFor(GameState state, Prisoner prisoner)
     {
         CellId home = this._homes[prisoner.Piece.Id];
         Direction forward = state.SeatOf(prisoner.Piece.Owner).Forward;
         ImmutableList<CellId> free = [.. this._grid.Cells.Where(cell => state.Position.PieceAt(cell) is null)];
-        int nearest = free.Min(cell => this.Distance(home, cell));
+        ImmutableList<CellId> kin = [.. this._kin[prisoner.Piece.Id].Where(free.Contains)];
+        IEnumerable<CellId> places = (kin.Contains(home), kin.IsEmpty) switch
+        {
+            (true, _) => [home],
+            (_, false) => kin,
+            _ => free.Where(cell => this.Distance(home, cell) == free.Min(near => this.Distance(home, near))),
+        };
         return
         [
-            .. free
-                .Where(cell => this.Distance(home, cell) == nearest)
-                .OrderBy(cell => this.RankOf(cell, forward) != this.RankOf(home, forward))
+            .. places
+                .OrderBy(cell => this.Distance(home, cell))
+                .ThenBy(cell => this.RankOf(cell, forward) != this.RankOf(home, forward))
                 .ThenBy(cell => this.RankOf(cell, forward))
                 .ThenBy(cell => this.FileOf(cell, forward)),
         ];

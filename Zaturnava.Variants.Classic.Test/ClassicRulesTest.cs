@@ -1386,15 +1386,42 @@ public sealed class ClassicRulesTest
     }
 
     [Fact]
-    public void Apply_WhenAnOfferIsAcceptedAndAPiecesHomeIsTaken_WaitsOnItsOwnerToChooseAmongTheNearest()
+    public void Apply_WhenAnOfferIsAcceptedAndAPiecesHomeIsTaken_WaitsOnItsOwnerToChooseAmongItsKindsSquares()
     {
-        // Arrange - Yellow's pawn 12 starts on b8, where Green's pawn stands; Yellow faces right
+        // Arrange - Yellow's pawn 12 starts on b8, where Green's pawn stands; Yellow's other Pawns' are free
         GameState state = this.AcceptingRansom();
 
         // Act
         Transition transition = this._rules.Apply(state, new AcceptAction(Yellow));
 
-        // Assert - the pawn's own row first, then nearest Yellow's back rank, then nearest its left
+        // Assert - nearest its own square first
+        Assert.Equal(
+            [
+                new PlaceAction(Yellow, Grid.CellAt(1, 6)),
+                new PlaceAction(Yellow, Grid.CellAt(1, 5)),
+                new PlaceAction(Yellow, Grid.CellAt(1, 4)),
+            ],
+            this._rules.LegalActions(transition.State)
+        );
+    }
+
+    [Fact]
+    public void Apply_WhenAnOfferIsAcceptedAndEverySquareOfAPiecesKindIsTaken_WaitsOnItsOwnerToChooseAmongTheNearest()
+    {
+        // Arrange - Yellow's pawn 12 starts on b8, where Green's pawn stands; Yellow faces right
+        GameState accepting = this.AcceptingRansom();
+        GameState state = accepting with
+        {
+            Position = accepting.Position
+                .Place(Grid.CellAt(1, 6), Piece(20, ClassicPieces.Pawn, Green))
+                .Place(Grid.CellAt(1, 5), Piece(21, ClassicPieces.Pawn, Green))
+                .Place(Grid.CellAt(1, 4), Piece(22, ClassicPieces.Pawn, Green)),
+        };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new AcceptAction(Yellow));
+
+        // Assert - nearest Yellow's back rank, then nearest its left
         Assert.Equal([new RansomAccepted(state.Offer!)], transition.Events);
         Assert.Equal(
             (Yellow, null, 2, Black, false),
@@ -1408,7 +1435,6 @@ public sealed class ClassicRulesTest
         );
         Assert.Equal(
             [
-                new PlaceAction(Yellow, Grid.CellAt(1, 6)),
                 new PlaceAction(Yellow, Grid.CellAt(0, 7)),
                 new PlaceAction(Yellow, Grid.CellAt(0, 6)),
                 new PlaceAction(Yellow, Grid.CellAt(2, 7)),
@@ -1417,7 +1443,7 @@ public sealed class ClassicRulesTest
             this._rules.LegalActions(transition.State)
         );
         Assert.Equal(
-            new DecisionTimer("ransom-return", new PlaceAction(Yellow, Grid.CellAt(1, 6))),
+            new DecisionTimer("ransom-return", new PlaceAction(Yellow, Grid.CellAt(0, 7))),
             this._rules.TimerOf(transition.State)
         );
     }
@@ -1429,13 +1455,13 @@ public sealed class ClassicRulesTest
         GameState waiting = this._rules.Apply(this.AcceptingRansom(), new AcceptAction(Yellow)).State;
 
         // Act
-        Transition transition = this._rules.Apply(waiting, new PlaceAction(Yellow, Grid.CellAt(2, 7)));
+        Transition transition = this._rules.Apply(waiting, new PlaceAction(Yellow, Grid.CellAt(1, 5)));
 
         // Assert
         Piece pawn = Piece(12, ClassicPieces.Pawn, Yellow);
         Piece horse = Piece(1, ClassicPieces.Horse, Black);
         Assert.Equal(
-            [new PieceReturned(pawn, Grid.CellAt(2, 7)), new PieceReturned(horse, Grid.CellAt(1, 0))],
+            [new PieceReturned(pawn, Grid.CellAt(1, 5)), new PieceReturned(horse, Grid.CellAt(1, 0))],
             transition.Events
         );
         Assert.Equal(
@@ -1444,7 +1470,7 @@ public sealed class ClassicRulesTest
                 transition.State.DecidingSeat,
                 transition.State.Returning,
                 transition.State.Prisoners.Count,
-                transition.State.Position.PieceAt(Grid.CellAt(2, 7)),
+                transition.State.Position.PieceAt(Grid.CellAt(1, 5)),
                 transition.State.Position.PieceAt(Grid.CellAt(1, 0))
             )
         );

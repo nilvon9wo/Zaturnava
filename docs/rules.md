@@ -422,13 +422,15 @@ available (via a future capture, by anyone).
   - The game waits for the receiver's answer. Either way, the offerer then
     decides again.
   - Accepted, the prisoners given go home first, then those asked for. Each
-    goes to its starting square, or the free square fewest king's steps
-    from it. *(Clarified 2026-10-25)* When several are as near, the piece's
-    owner (the player receiving it back) chooses among them, and the game
-    waits on that choice, timed as an answer is (`Games:Timers:ransom-return`).
-    A player out of time, or a bot that cannot tell them apart, gets the one
-    on the piece's own starting row; else the one nearest its army's back
-    rank; then the one nearest its army's left.
+    goes to its own starting square if that is free; else to a free starting
+    square of its kind's (for a Pawn, any of its army's Pawns' squares); else
+    to the free squares fewest king's steps from its own. *(Stated
+    2026-10-25)* When it may go to more than one, the piece's owner (the
+    player receiving it back) chooses, and the game waits on that choice,
+    timed as an answer is (`Games:Timers:ransom-return`). A player out of
+    time, or a bot that cannot tell them apart, gets the one nearest the
+    piece's own square; then the one on its own starting row; else the one
+    nearest its army's back rank; then the one nearest its army's left.
   - The window and the answer are timed: 30 seconds each by default, set by
     the host (`Games:Timers:ransom-window`, `Games:Timers:ransom-answer`).
     When the window runs out, it closes; when the answer runs out, the offer
