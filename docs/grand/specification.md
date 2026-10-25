@@ -1,4 +1,4 @@
-# The grand game — Specification (v0.5 draft)
+# The grand game — Specification (v0.6 draft)
 
 The [classic game](../rules.md) is one small part of a larger design, which has no name yet; this
 document calls it **the grand game** until it does. The classic game stays available, unchanged,
@@ -32,6 +32,7 @@ than a piece, and with points won in play to be spent on upgrades and promotions
 | Kingdom size | width × depth | Set apart from the board's size; one **kingdom** in each corner, as in the classic game (an 8 × 8 board with kingdoms of 4 × 2). |
 | Team game | yes / no | No: everyone for themselves. |
 | Allies' kingdoms | same side / opposite corners | Same side: neighbouring corners. Opposite corners: the classic pinwheel. |
+| Kingdoms' facing | pinwheel / top and bottom | Pinwheel (the default): each kingdom turned a quarter from the last, so that each army's back rank lies along a different edge. Top and bottom: every back rank along the top or bottom edge. |
 | Rivers | north–south, east–west, both, neither | Drawn on the board where present. |
 | Army points | a number | What each player has to spend on their army. |
 | Drafting | in secret, all at once / in turn, in view | How players build and place their armies (§3). |
@@ -42,9 +43,8 @@ than a piece, and with points won in play to be spent on upgrades and promotions
   army a distance from the enemy, and from any promotion zone.
 - **Proposed.** Kingdoms may not overlap or touch, so that there is open ground between them. A
   smallest and a largest board and kingdom (**Q1**) keep both the draft and the page workable.
-- **Q24.** Which way a kingdom of width × depth lies in each corner: as in the classic pinwheel
-  (each kingdom turned a quarter from the last, so that each army's back rank lies along a
-  different edge), or with every kingdom's back rank along the top or bottom edge?
+- **Stated.** Which way the kingdoms lie in their corners is a setting: the classic pinwheel by
+  default, or every back rank along the top or bottom edge.
 - **Proposed.** A river runs along a midline, between two cells, so no cell is on the river; the
   north–south river separates the north kingdoms from the south ones. A river matters only to pieces
   whose rules name it (the Xiangqi Elephant and Soldier, so far). What "crossing the river" means
@@ -59,8 +59,7 @@ than a piece, and with points won in play to be spent on upgrades and promotions
    **Piece Value**.
 2. **Buys upgrades** at draft time: paying a piece's lift cost removes a restriction on it
    (movement restrictions and area restrictions are priced apart).
-3. **Places a palace**: a 3 × 3 square within their kingdom (or, where it does not fit, as **Q23**
-   settles).
+3. **Places a palace**: a 3 × 3 square within their kingdom.
 4. **Places a throne** on any cell of the palace; it need not be the centre.
 5. **Places every drafted piece** on any cell of their kingdom.
 
@@ -107,16 +106,14 @@ apart whatever the answer.
 ## 5. Palaces and thrones
 
 - **Stated.** Each army has one palace (3 × 3, inside its kingdom) holding its throne.
-- **Q23.** A kingdom less than 3 deep (the classic 4 × 2) cannot hold a palace. The designer's
-  options, perhaps a setting of the game:
-  - **(A)** the palace shrinks to fit;
-  - **(B)** the palace may stand partly off the board, adding those cells to the board;
-  - **(C)** the palace may stand partly outside the kingdom, on the open board, if it lies along
-    the board's edge and most of it is inside (with a 4 × 2 kingdom: 6 cells in, 3 out).
-- **Proposed** for the first version: kingdoms are at least 3 × 3, so that a palace always fits;
-  then (C). Of the three, (C) alone keeps the palace whole (palace lines and confinement are
-  written for 3 × 3) and the board rectangular (rivers and drawing assume it); (B) changes the
-  board's shape, and (A) the palace's.
+- **Stated.** In the first version a kingdom is at least 3 × 3, so that a palace always fits.
+- **Stated.** Later, a kingdom too small for a palace (the classic 4 × 2) lets the palace stand
+  partly outside it, on the open board, if the palace lies along the board's edge and most of it
+  is inside (with a 4 × 2 kingdom: 6 cells in, 3 out). Shrinking the palace, or letting it stand off
+  the board, were the other choices: the first would break palace lines and confinement, written
+  for 3 × 3, and the second the board's rectangle, which rivers and drawing assume.
+- **Stated.** Later still, palaces may be turned off, leaving bare thrones. The pieces bound to a
+  palace (confined to it, or with powers in it) are then left out of the draft.
 - **Stated.** A piece with the power "can move diagonally along marked palace lines" may move from
   any cell of any palace directly *toward* that palace's throne, even in a direction it could not
   otherwise take. The page marks these lines.
@@ -252,6 +249,5 @@ The numbers stay as they are; answered questions are marked so.
 20. **Q20** The catalogue's own questions: [pieces.md](pieces.md#still-open).
 21. **Q21** *Answered:* a bound piece's value, by the share of the board it can reach (§7).
 22. **Q22** *Answered:* the Makruk Pawn promotes to the Courtier; the Private is gone.
-23. **Q23** A palace that does not fit in its kingdom: shrink it, let it off the board, or let it
-    out of the kingdom (§5).
-24. **Q24** Which way a kingdom lies in each corner (§2).
+23. **Q23** *Answered:* a palace that does not fit its kingdom (§5).
+24. **Q24** *Answered:* which way a kingdom lies in its corner is a setting (§2).

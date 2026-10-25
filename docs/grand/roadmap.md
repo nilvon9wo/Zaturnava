@@ -32,8 +32,8 @@ Waits on: **Q7**, **Q19**, **Q20**.
 
 ## Stage 2 — The board and the dice
 
-- A board and a kingdom size, set apart; a kingdom in each corner, and which way it lies (**Q24**);
-  rivers drawn on the board.
+- A board and a kingdom size (at least 3 × 3), set apart; a kingdom in each corner, lying as the
+  game is set (pinwheel, or top and bottom); rivers drawn on the board.
 - Same-side and opposite-corner arrangements, with forward for each (**Q2**, **Q6**).
 - A team game or everyone for themselves (`TeamGraph` already allows both).
 - Dice that name a class: 1 Artillery, 2 Cavalry, 3–4 Heavy, 5–6 Infantry or Leader.
@@ -42,8 +42,7 @@ Waits on: **Q7**, **Q19**, **Q20**.
 
 ## Stage 3 — Palaces, thrones and leaders
 
-- A palace (3 × 3) and its throne, per army, and a palace that does not fit its kingdom (**Q23**);
-  palace lines drawn, and the move toward the throne (**Q8**); confinement to a palace (**Q9**).
+- A palace (3 × 3) and its throne, per army; palace lines drawn, and the move toward the throne (**Q8**); confinement to a palace (**Q9**).
 - Several leaders in one army: throne control, and everything the classic rules say of "the Raja",
   said of leaders.
 - Scoring by piece value, with the classic bonuses as they are until playtesting says otherwise
@@ -88,3 +87,5 @@ Waits on: **Q7**, **Q19**, **Q20**.
 - More kingdoms than four, or of unequal size.
 - More pieces.
 - A second palace, if one may be bought (**Q5**).
+- Kingdoms smaller than 3 × 3, with the palace partly outside the kingdom.
+- Games without palaces: bare thrones, and no palace-bound pieces in the draft.
