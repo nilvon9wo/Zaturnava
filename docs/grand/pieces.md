@@ -107,7 +107,7 @@ The dice name a class, not a piece ([specification §6.1](specification.md#61-th
 | Fairy General (custom) | One square in any direction, or leaps 2+1 | — | — | 76 | — / — |
 | King (Western) | One square in any direction | — | Castling | 70 | — / — |
 | General (Xiangqi) | One square orthogonally | Area: its 3 × 3 palace | Flying-general capture | 69 | — / 5 |
-| General (Janggi) | One square orthogonally, or diagonally along palace lines | Area: its 3 × 3 palace | Palace face-off; palace lines | 68 | — / 5 |
+| General (Janggi) | One square orthogonally, or diagonally along palace lines | Area: its 3 × 3 palace | Leader face-off; palace lines | 68 | — / 5 |
 | Gold General (Shogi) | One square orthogonally, or diagonally forward | — | — | 66 | — / — |
 | Silver General (Shogi) | One square diagonally, or straight forward | — | → Gold General in the far three ranks | 65 | — / — |
 
