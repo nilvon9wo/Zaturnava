@@ -129,3 +129,5 @@ After playing against Argus (2026-10-25):
   among them, marked on the board (a Pawn need no longer land in the Boat's corner).
 - Once a game is over, the table offers to play it again (the same seats, played the same way, the
   player at the same seat) or a quick game.
+- A promotion's choices list the player's own pieces first, then their allies', then the rest, each
+  group the most valuable first.

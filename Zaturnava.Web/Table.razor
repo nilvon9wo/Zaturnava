@@ -82,7 +82,7 @@
                     }
                     @if (this._turn is { } turn)
                     {
-                        ImmutableList<ActionDto> promotions = this.AtSelection(turn);
+                        ImmutableList<ActionDto> promotions = ByKinship(view, turn.Claim.Seat, this.AtSelection(turn));
                         @if (!promotions.IsEmpty)
                         {
                             <div class="promotion">
@@ -301,6 +301,22 @@
     /// <summary>What may be done at the piece picked up, as a promotion is; nothing if none is picked up.</summary>
     private ImmutableList<ActionDto> AtSelection(Turn turn) =>
         this._selection.Selected is { } cell ? turn.Actions.At(cell) : [];
+
+    /// <summary>
+    /// The promotions, into the player's own pieces first, then their allies', then the rest; each as the
+    /// ruleset orders them otherwise, the most valuable first.
+    /// </summary>
+    private static ImmutableList<ActionDto> ByKinship(GameViewDto view, int seat, ImmutableList<ActionDto> promotions) =>
+        [.. promotions.OrderBy(promotion => KinshipOf(view, seat, IntoOf(view, promotion).Prisoner.Owner))];
+
+    /// <summary>0 for the player's own seat, 1 for an ally's, 2 for anyone else's.</summary>
+    private static int KinshipOf(GameViewDto view, int seat, int owner) =>
+        (owner == seat, view.Seats[owner].Team == view.Seats[seat].Team) switch
+        {
+            (true, _) => 0,
+            (_, true) => 1,
+            _ => 2,
+        };
 
     /// <summary>"Promote Black's Pawn on c8 to:".</summary>
     private static string PromotionHeading(GameViewDto view, int cell)

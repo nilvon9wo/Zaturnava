@@ -819,7 +819,7 @@ public sealed class TableTest : IDisposable
         Assert.Equal(
             (
                 "Promote Black's Pawn on c2 to:",
-                "Green's Elephant held by Yellow|Black's Boat held by you",
+                "Black's Boat held by you|Green's Elephant held by Yellow|Yellow's Horse held by you",
                 "Promote later"
             ),
             (
@@ -859,7 +859,7 @@ public sealed class TableTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ("Green's Rook|Black's Boat", 1),
+            ("Black's Boat|Green's Rook|Yellow's Knight", 1),
             (
                 string.Join('|', table.FindAll(".promotion .choice .name").Select(name => name.TextContent)),
                 table.FindAll(".promotion .choice path").Count
@@ -893,7 +893,7 @@ public sealed class TableTest : IDisposable
         table.FindAll(".promotion button.choice")[1].Click();
 
         // Assert
-        Assert.Equal("7", this._page.Server.Submitted?.Action.Arguments[ActionArguments.Into]);
+        Assert.Equal("8", this._page.Server.Submitted?.Action.Arguments[ActionArguments.Into]);
     }
 
     [Fact]
@@ -977,14 +977,23 @@ public sealed class TableTest : IDisposable
             Pieces = [.. FakeGameServer.SeatZeroToMove.Pieces, new PieceDto(1, "pawn", "Pawn", 0, 2)],
             Seats =
             [
-                FakeGameServer.SeatZeroToMove.Seats[0] with { Prisoners = [new PrisonerDto(7, "boat", "Boat", 0)] },
+                FakeGameServer.SeatZeroToMove.Seats[0] with
+                {
+                    Prisoners = [new PrisonerDto(7, "boat", "Boat", 0), new PrisonerDto(9, "horse", "Horse", 1)],
+                },
                 FakeGameServer.SeatZeroToMove.Seats[1] with
                 {
                     Prisoners = [new PrisonerDto(8, "elephant", "Elephant", 2)],
                 },
                 new SeatDto(2, "Green", 0, 0, "open", null, []),
             ],
-            LegalActions = [FakeGameServer.Pass with { Label = "Promote later" }, Promotion(8), Promotion(7)],
+            LegalActions =
+            [
+                FakeGameServer.Pass with { Label = "Promote later" },
+                Promotion(9),
+                Promotion(8),
+                Promotion(7),
+            ],
         };
 
     private static string Choice(AngleSharp.Dom.IElement choice) =>
