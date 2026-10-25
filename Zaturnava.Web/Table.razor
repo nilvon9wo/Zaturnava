@@ -1,7 +1,7 @@
 @* A game: the board (turned so the player's own corner is bottom left), and beside it whose turn it is,
    the dice and what each lets move, on the player's turn what they may do - prisoners they may offer
    back among it, and, for a Pawn picked up or just come to the far edge, what it may be promoted to -
-   the seats, and what has happened. Dice the player lost, unable to use them, are told until they
+   the seats, by team, each team with its total, and what has happened. Dice the player lost, unable to use them, are told until they
    dismiss it or their turn comes round again: the turn has passed on by then. While a bot decides, it advances the game every
    TableSettings.BotPace, so that bots take their turns one at a time; while a person elsewhere
    decides, it asks for the game again every TableSettings.PollInterval. While a decision is timed, it
@@ -188,23 +188,34 @@
                     }
                 </div>
 
-                <ol class="seats">
-                    @foreach (SeatDto seat in view.Seats)
+                <div class="seats">
+                    @foreach (IGrouping<int, SeatDto> team in this.TeamsOf(view))
                     {
-                        <li class="seat seat-@seat.Id @(seat.Id == view.DecidingSeat ? "deciding" : null)">
-                            <span class="swatch"></span>
-                            <span class="name">@seat.Name</span>
-                            <span class="player">@this.Player(seat)</span>
-                            <span class="prisoners" title="Prisoners">
-                                @foreach (PrisonerDto prisoner in seat.Prisoners)
+                        <section class="team @(this.IsMine(team) ? "mine" : null)">
+                            <header class="team-head">
+                                <span class="team-name">@string.Join(" & ", team.Select(seat => seat.Name))</span>
+                                <span class="team-score" title="Team score">@team.Sum(seat => seat.Score)</span>
+                            </header>
+                            <ol class="team-seats">
+                                @foreach (SeatDto seat in team)
                                 {
-                                    <PieceIcon Kind="@prisoner.Kind" Name="@prisoner.Name" Owner="prisoner.Owner" Pieces="this.Pieces" />
+                                    <li class="seat seat-@seat.Id @(seat.Id == view.DecidingSeat ? "deciding" : null)">
+                                        <span class="swatch"></span>
+                                        <span class="name">@seat.Name</span>
+                                        <span class="player">@this.Player(seat)</span>
+                                        <span class="prisoners" title="Prisoners">
+                                            @foreach (PrisonerDto prisoner in seat.Prisoners)
+                                            {
+                                                <PieceIcon Kind="@prisoner.Kind" Name="@prisoner.Name" Owner="prisoner.Owner" Pieces="this.Pieces" />
+                                            }
+                                        </span>
+                                        <span class="score">@seat.Score</span>
+                                    </li>
                                 }
-                            </span>
-                            <span class="score">@seat.Score</span>
-                        </li>
+                            </ol>
+                        </section>
                     }
-                </ol>
+                </div>
 
                 <ol class="log">
                     @foreach (EventDto happened in view.Log.Reverse())
@@ -436,6 +447,12 @@
         this._deadline is { } deadline
             ? $"{Math.Max(0, (int)Math.Ceiling((deadline - this.Clock.GetUtcNow()).TotalSeconds))} s left"
             : null;
+
+    /// <summary>The seats by team, the player's own team first, each team's seats in the order they sit.</summary>
+    private IEnumerable<IGrouping<int, SeatDto>> TeamsOf(GameViewDto view) =>
+        view.Seats.GroupBy(seat => seat.Team).OrderByDescending(this.IsMine).ThenBy(team => team.Key);
+
+    private bool IsMine(IGrouping<int, SeatDto> team) => team.Any(seat => seat.Id == this.Seating.Claim?.Seat);
 
     private string Player(SeatDto seat) => seat.Id == this.Seating.Claim?.Seat ? "you" : seat.Bot ?? seat.Controller;
 

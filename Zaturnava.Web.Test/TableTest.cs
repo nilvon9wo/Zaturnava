@@ -698,6 +698,34 @@ public sealed class TableTest : IDisposable
     }
 
     [Fact]
+    public void Seats_WhenSeated_GroupsThemByTeamWithItsTotalTheirOwnTeamFirst()
+    {
+        // Arrange - Black (0) and Green (3) against Yellow (5) and Red (2); the player is Yellow
+        ImmutableList<SeatDto> seats = FakeGameServer.SeatZeroToMove.Seats;
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Seats =
+            [
+                .. seats,
+                new SeatDto(2, "Green", 0, 3, "bot", "Random", []),
+                new SeatDto(3, "Red", 1, 2, "bot", "Random", []),
+            ],
+        };
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatOne);
+
+        // Assert
+        Assert.Equal(
+            ["Yellow & Red 7 mine", "Black & Green 3 "],
+            table.FindAll("section.team").Select(team =>
+                $"{team.QuerySelector(".team-name")!.TextContent} {team.QuerySelector(".team-score")!.TextContent} "
+                + (team.ClassList.Contains("mine") ? "mine" : string.Empty)
+            )
+        );
+    }
+
+    [Fact]
     public void Seats_WhenTheyHoldPrisoners_ShowEachAsItsPiece()
     {
         // Arrange

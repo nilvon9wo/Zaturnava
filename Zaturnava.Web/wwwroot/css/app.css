@@ -313,13 +313,23 @@ html { scrollbar-gutter: stable; }
 .dice .face { font-size: 1.8rem; vertical-align: middle; margin-right: 6px; }
 
 .seats {
-    list-style: none;
-    padding: 0;
-    margin: 0;
     background: var(--panel);
     border: 1px solid var(--panel-edge);
     border-radius: 10px;
 }
+
+/* Each team: its seats' names and its total, large, over its seats' own rows. */
+.team + .team { border-top: 1px solid var(--panel-edge); }
+.team-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    padding: 6px 12px 0 16px;
+    font-weight: 700;
+}
+.team.mine .team-head { color: var(--accent); }
+.team-score { font-size: 1.5rem; font-variant-numeric: tabular-nums; }
+.team-seats { list-style: none; padding: 0 0 4px; margin: 0; }
 
 .seat {
     display: flex;
@@ -338,7 +348,7 @@ html { scrollbar-gutter: stable; }
 .seat .name { min-width: 56px; }
 .seat .player { color: var(--muted); }
 .seat .prisoners { flex: 1; display: flex; flex-wrap: wrap; gap: 1px; }
-.seat .score { font-variant-numeric: tabular-nums; font-weight: 700; }
+.seat .score { font-variant-numeric: tabular-nums; color: var(--muted); }
 
 .log {
     list-style: none;
