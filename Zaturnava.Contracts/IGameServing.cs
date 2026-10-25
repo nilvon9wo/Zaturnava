@@ -17,6 +17,12 @@ public interface IGameServing
 
     Task<GameViewDto> Get([Required] string gameId, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Lets the bot whose turn it is make one decision, if the game is still at <paramref name="version"/>;
+    /// otherwise, or when no bot is deciding, changes nothing. Either way, returns the game as it is then.
+    /// </summary>
+    Task<GameViewDto> Advance([Required] string gameId, int version, CancellationToken cancellationToken);
+
     /// <summary>Claims an open seat; the token returned is the only way to act for it.</summary>
     Task<SeatClaimedDto> Claim([Required] string gameId, int seat, CancellationToken cancellationToken);
 

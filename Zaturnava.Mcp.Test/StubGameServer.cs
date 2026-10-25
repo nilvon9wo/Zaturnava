@@ -14,7 +14,7 @@ internal sealed class StubGameServer : IGameServing
     public const string Token = "secret";
 
     public static readonly GameViewDto View =
-        new(GameId, "classic", "Zaturnava (classic)", 3, 2, 0, [], [], [], [], []);
+        new(GameId, "classic", "Zaturnava (classic)", 3, 2, 0, [], [], [], [], [], []);
 
     public Exception? Failure { get; set; }
 
@@ -29,13 +29,18 @@ internal sealed class StubGameServer : IGameServing
         );
 
     public Task<ImmutableList<GameSummaryDto>> List(CancellationToken cancellationToken) =>
-        this.Answer(ImmutableList.Create(new GameSummaryDto(GameId, "classic", 1, [0])));
+        this.Answer(
+            ImmutableList.Create(new GameSummaryDto(GameId, "classic", 1, [0], [GameSummaryDto.Open, "random"], 0))
+        );
 
     public Task<GameCreatedDto> Create([Required] CreateGameRequest request, CancellationToken cancellationToken) =>
         this.Answer(new GameCreatedDto(GameId), request);
 
     public Task<GameViewDto> Get([Required] string gameId, CancellationToken cancellationToken) =>
         this.Answer(View, gameId);
+
+    public Task<GameViewDto> Advance([Required] string gameId, int version, CancellationToken cancellationToken) =>
+        this.Answer(View, (gameId, version));
 
     public Task<SeatClaimedDto> Claim([Required] string gameId, int seat, CancellationToken cancellationToken) =>
         this.Answer(new SeatClaimedDto(Token), (gameId, seat));

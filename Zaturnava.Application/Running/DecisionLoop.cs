@@ -16,9 +16,10 @@ namespace Net.NowhereAtAll.Zaturnava.Application.Running;
 public static class DecisionLoop
 {
     /// <summary>
-    /// Plays on while the game waits on dice or <paramref name="deciderFor"/> gives the deciding seat a
-    /// decider, the game is not over, and fewer than <paramref name="maximumSteps"/> decisions (rolls
-    /// included) have been made.
+    /// Rolls whatever dice the game waits on, then plays on while <paramref name="deciderFor"/> gives the
+    /// deciding seat a decider, the game is not over, and fewer than <paramref name="maximumSteps"/>
+    /// decisions have been made. Rolling is not deciding, so it is never held back: with no steps
+    /// left, the dice a person just asked for are still rolled.
     /// </summary>
     public static async Task<Played> PlayWhile(
         [Required] IRulesApplying rules,
@@ -29,13 +30,14 @@ public static class DecisionLoop
         CancellationToken cancellationToken
     )
     {
-        Func<SeatId, IDeciding?> chanceFirst = ChanceFirst(played.State, deciderFor, dice);
-        IDeciding? decider = maximumSteps > 0
-            ? DeciderOf(played.State, chanceFirst)
+        bool isChance = played.State.AwaitedDice is not null;
+        IDeciding? decider = isChance || maximumSteps > 0
+            ? DeciderOf(played.State, ChanceFirst(played.State, deciderFor, dice))
             : null;
+        int stepsLeft = isChance ? maximumSteps : maximumSteps - 1;
         return decider is null
             ? played
-            : await PlayOn(rules, played, decider, deciderFor, dice, maximumSteps, cancellationToken);
+            : await PlayOn(rules, played, decider, deciderFor, dice, stepsLeft, cancellationToken);
     }
 
     /// <summary>A whole game in which every seat is played by the decider at its index.</summary>
@@ -75,12 +77,12 @@ public static class DecisionLoop
         IDeciding decider,
         Func<SeatId, IDeciding?> deciderFor,
         IDiceRolling dice,
-        int maximumSteps,
+        int stepsLeft,
         CancellationToken cancellationToken
     )
     {
         Played next = await Step(rules, played, decider, cancellationToken);
-        return await PlayWhile(rules, next, deciderFor, dice, maximumSteps - 1, cancellationToken);
+        return await PlayWhile(rules, next, deciderFor, dice, stepsLeft, cancellationToken);
     }
 
     private static async Task<Played> Step(

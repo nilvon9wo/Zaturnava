@@ -19,7 +19,7 @@ public sealed class GameViewsTest
             [],
             0
         );
-        GameSnapshot over = new(record, rules, rules.CreateInitialState() with { DecidingSeat = null }, []);
+        GameSnapshot over = new(record, rules, rules.CreateInitialState() with { DecidingSeat = null }, [], []);
 
         // Act
         GameViewDto view = GameViews.ViewOf(over);

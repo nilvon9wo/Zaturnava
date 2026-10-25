@@ -235,15 +235,21 @@ base address (`GameRoutes`):
 | Rulesets and bots on offer, each bot with its name, description and whether it uses AI | `GET api/catalog` | `CatalogDto` |
 | Games | `GET api/games` | `GameSummaryDto[]` |
 | Create a game | `POST api/games` with `CreateGameRequest` (a ruleset, and per seat a bot id or null for a person) | 201, `GameCreatedDto` |
-| A game | `GET api/games/{id}` | `GameViewDto`: cells, pieces, seats, scores, whose decision, the legal actions |
+| A game | `GET api/games/{id}` | `GameViewDto`: cells (with thrones), pieces, seats, scores, the dice and what each allows, the latest events, whose decision, the legal actions |
+| Let a bot decide | `POST api/games/{id}/advance` with `AdvanceRequest` (the version the caller saw) | `GameViewDto` after one bot decision, or unchanged if the version is stale or no bot is deciding |
 | Claim an open seat | `POST api/games/{id}/seats/{seat}` | `SeatClaimedDto` with the seat's token |
 | Act | `POST api/games/{id}/actions` with `ActionDto`, `Authorization: Bearer {token}` | `GameViewDto` after the action and any bot replies |
 
 - **Seat tokens** are the only credential. One is issued when a seat is
   claimed, shown once, and stored only as a hash; no accounts, no personal
   data.
-- **Bots** reply inside the request that made it their turn, up to
-  `Games:MaximumBotSteps` in a row.
+- **Bots** decide one step per `advance`, so that a client can show their
+  turns at a pace people can follow (`Table:BotPaceSeconds`, default 0.9).
+  Dice a bot awaits are always rolled and do not count as a step. The server
+  can still reply with up to `Games:MaximumBotSteps` bot steps inside the
+  request that made it a bot's turn; the default is 0.
+- **The log** in a view is the latest 40 events, each told in the ruleset's
+  own names ("Black rolled 2 (Horse) and 5 (Pawn or Raja).").
 - **Refusals** are RFC 9457 problem details, and each `Refusal` has one
   status: Invalid 400, Forbidden 403, NotFound 404, Conflict 409, Illegal 422.
   `HttpGameClient` turns them back into `GameRequestRefusedException`, so a
@@ -264,7 +270,7 @@ base address (`GameRoutes`):
   cell layouts it is sent, so a different topology needs no client change.
   `wwwroot/appsettings.json` names the server (`Server:Url`).
 - **MCP** — a stdio MCP server whose tools (`catalog`, `list_games`,
-  `create_game`, `claim_seat`, `get_game`, `submit_action`) call a game server
+  `create_game`, `claim_seat`, `get_game`, `submit_action`, `advance_game`) call a game server
   through `IGameServing`; an AI plays exactly as a person would, by claiming a
   seat and acting with its token.
 - **BotRunner** — runs bots against bots in-process, for testing rulesets and
@@ -333,12 +339,11 @@ scoring) are listed in [rules.md §12](rules.md#12-configuration-toggles). The
   bots. Then, the game server's host (§8): confirm MonsterASP.NET's traffic limits and
   archiving rules, and its site address for the Web client's production
   settings.
-- A push channel to replace polling (§6), and keeping a seat's token in the
-  browser between visits.
+- A push channel to replace polling (§6).
 - The turn phase machine (§2.5), controlled armies
   (§2.4) and rule modules (§2.6), as the remaining rules are implemented.
 - Exact `gameEnd.safetyNet.*` parameters (rules.md §13) — now that bots exist,
-  `Games:MaximumBotSteps` bounds bot-only play per request, but the rules-level
+  bots advance one step at a time, but the rules-level
   defaults are still open.
 - An SDK for variants: once the classic game works, boards, piece sets,
   starting positions, rulesets and bots become things others implement. Their

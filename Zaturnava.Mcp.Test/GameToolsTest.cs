@@ -24,7 +24,7 @@ public sealed class GameToolsTest : IAsyncLifetime
 
         // Assert
         Assert.Equal(
-            ["catalog", "claim_seat", "create_game", "get_game", "list_games", "submit_action"],
+            ["advance_game", "catalog", "claim_seat", "create_game", "get_game", "list_games", "submit_action"],
             tools.Select(tool => tool.Name).Order(StringComparer.Ordinal)
         );
     }
@@ -112,6 +112,19 @@ public sealed class GameToolsTest : IAsyncLifetime
             (true, StubGameServer.GameId),
             (text.Contains("\"decidingSeat\":0", StringComparison.Ordinal), this._session.Server.Received)
         );
+    }
+
+    [Fact]
+    public async Task AdvanceGame_WhenGivenAVersion_AdvancesTheGameFromIt()
+    {
+        // Arrange
+        Dictionary<string, object?> arguments = new() { ["gameId"] = StubGameServer.GameId, ["version"] = 3 };
+
+        // Act
+        _ = await this._session.Call("advance_game", arguments, this._cancellation);
+
+        // Assert
+        Assert.Equal((StubGameServer.GameId, 3), this._session.Server.Received);
     }
 
     [Fact]

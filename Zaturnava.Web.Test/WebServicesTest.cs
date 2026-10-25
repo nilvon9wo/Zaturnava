@@ -15,7 +15,8 @@ public sealed class WebServicesTest
         // Arrange
         IConfiguration configuration = Configuration(
             (WebServices.ServerUrlKey, "https://zaturnava.example/"),
-            (WebServices.PollSecondsKey, "5")
+            (WebServices.PollSecondsKey, "5"),
+            (WebServices.BotPaceSecondsKey, "1.5")
         );
 
         // Act
@@ -24,17 +25,21 @@ public sealed class WebServicesTest
 
         // Assert
         Assert.Equal(
-            ("https://zaturnava.example/", TimeSpan.FromSeconds(5), typeof(HttpGameClient)),
+            (
+                "https://zaturnava.example/",
+                new TableSettings(TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(1.5)),
+                typeof(HttpGameClient)
+            ),
             (
                 services.GetRequiredService<HttpClient>().BaseAddress?.ToString(),
-                services.GetRequiredService<TableSettings>().PollInterval,
+                services.GetRequiredService<TableSettings>(),
                 services.GetRequiredService<IGameServing>().GetType()
             )
         );
     }
 
     [Fact]
-    public void AddZaturnavaWeb_WhenNothingIsConfigured_CallsThePagesOwnSiteEveryTwoSeconds()
+    public void AddZaturnavaWeb_WhenNothingIsConfigured_CallsThePagesOwnSiteEveryTwoSecondsAndPacesBotsGently()
     {
         // Arrange
         IConfiguration configuration = Configuration();
@@ -45,10 +50,10 @@ public sealed class WebServicesTest
 
         // Assert
         Assert.Equal(
-            (Page, TimeSpan.FromSeconds(2)),
+            (Page, new TableSettings(TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(0.9))),
             (
                 services.GetRequiredService<HttpClient>().BaseAddress?.ToString(),
-                services.GetRequiredService<TableSettings>().PollInterval
+                services.GetRequiredService<TableSettings>()
             )
         );
     }

@@ -27,34 +27,46 @@ internal static class GameViews
             record.Version,
             [.. record.Controllers.Select((controller, seat) => (controller, seat))
                 .Where(entry => entry.controller.IsOpen)
-                .Select(entry => entry.seat)]
+                .Select(entry => entry.seat)],
+            [.. record.Controllers.Select(PlayerOf)],
+            record.Actions.Count
         );
 
-    public static GameViewDto ViewOf(GameSnapshot snapshot) =>
-        new(
+    public static GameViewDto ViewOf(GameSnapshot snapshot)
+    {
+        ImmutableDictionary<CellId, SeatId> thrones =
+            snapshot.Rules.Thrones.ToImmutableDictionary(throne => throne.Value, throne => throne.Key);
+        return new GameViewDto(
             snapshot.Record.Id.Value,
             snapshot.Rules.Id,
             snapshot.Rules.Name,
             snapshot.Record.Version,
             snapshot.State.TurnNumber,
             snapshot.State.DecidingSeat?.Value,
-            [.. snapshot.Rules.Topology.Cells.Select(cell => CellOf(snapshot.Rules.Topology, cell))],
+            [.. snapshot.Rules.Topology.Cells.Select(cell => CellOf(snapshot.Rules.Topology, thrones, cell))],
             [.. snapshot.State.Position.Occupants.OrderBy(entry => entry.Key.Value)
                 .Select(entry => PieceOf(snapshot.Rules, entry.Key, entry.Value))],
             [.. snapshot.State.Seats.Select(seat => SeatOf(snapshot, seat.Id))],
             [.. snapshot.LegalActions.Select(action => ActionOf(action.Describe()))],
-            snapshot.State.Dice
+            [.. snapshot.State.Dice.Select(value => new DieDto(value, snapshot.Rules.NameOfDie(value)))],
+            GameLog.LatestOf(snapshot)
         );
+    }
 
     private static RulesetDto RulesetOf(IRulesApplying rules) =>
         new(rules.Id, rules.Name, rules.CreateInitialState().Seats.Count);
 
     private static BotDto BotOf(BotProfile bot) => new(bot.Id, bot.Name, bot.Description, bot.UsesAi);
 
-    private static CellDto CellOf(ICellNavigating topology, CellId cell)
+    private static CellDto CellOf(
+        ICellNavigating topology,
+        ImmutableDictionary<CellId, SeatId> thrones,
+        CellId cell
+    )
     {
         CellLayout layout = topology.LayoutOf(cell);
-        return new CellDto(cell.Value, layout.X, layout.Y, layout.Shape);
+        int? throne = thrones.TryGetValue(cell, out SeatId seat) ? seat.Value : null;
+        return new CellDto(cell.Value, layout.X, layout.Y, layout.Shape, throne);
     }
 
     private static PieceDto PieceOf(IRulesApplying rules, CellId cell, Piece piece) =>
@@ -72,6 +84,14 @@ internal static class GameViews
             controller is BotSeat ? controller.Detail : null
         );
     }
+
+    private static string PlayerOf(SeatController controller) =>
+        controller switch
+        {
+            BotSeat bot => bot.BotId,
+            HumanSeat => GameSummaryDto.Person,
+            _ => GameSummaryDto.Open,
+        };
 
     private static ActionDto ActionOf(ActionDescriptor descriptor) => new(descriptor.Kind, descriptor.Arguments);
 }

@@ -27,7 +27,8 @@ public sealed class SelfPlayCommandTest
                 lines.Length,
                 first.GetProperty("rulesetId").GetString(),
                 first.GetProperty("players").GetArrayLength(),
-                first.GetProperty("actions").GetArrayLength(),
+                first.GetProperty("actions").EnumerateArray()
+                    .Count(action => action.GetProperty("kind").GetString() != "dice"),
                 first.GetProperty("isFinished").GetBoolean()
             )
         );

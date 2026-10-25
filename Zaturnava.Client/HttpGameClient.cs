@@ -34,6 +34,15 @@ public sealed class HttpGameClient(HttpClient http) : IGameServing
     public Task<GameViewDto> Get([Required] string gameId, CancellationToken cancellationToken) =>
         this.Send<GameViewDto>(HttpMethod.Get, GameRoutes.Game(gameId), null, null, cancellationToken);
 
+    public Task<GameViewDto> Advance([Required] string gameId, int version, CancellationToken cancellationToken) =>
+        this.Send<GameViewDto>(
+            HttpMethod.Post,
+            GameRoutes.Advance(gameId),
+            new AdvanceRequest(version),
+            null,
+            cancellationToken
+        );
+
     public Task<SeatClaimedDto> Claim([Required] string gameId, int seat, CancellationToken cancellationToken) =>
         this.Send<SeatClaimedDto>(HttpMethod.Post, GameRoutes.Seat(gameId, seat), null, null, cancellationToken);
 

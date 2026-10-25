@@ -6,6 +6,12 @@ namespace Net.NowhereAtAll.Zaturnava.Web.Test;
 public sealed class TableTest : IDisposable
 {
     private static readonly Seating SeatZero = new(FakeGameServer.GameId, new SeatClaim(0, FakeGameServer.Token));
+    private static readonly Seating SeatOne = new(FakeGameServer.GameId, new SeatClaim(1, FakeGameServer.Token));
+
+    private static readonly EventDto Rolled = new(4, EventDto.Rolled, 1, "Yellow rolled 2 (Horse).", null, null);
+    private static readonly EventDto Moved = new(5, EventDto.Moved, 1, "Yellow's Horse moved.", 2, 3);
+    private static readonly EventDto Captured =
+        new(6, EventDto.Captured, 1, "Yellow took Black's Pawn (+1).", null, null);
 
     private readonly PageContext _page = new();
 
@@ -21,16 +27,52 @@ public sealed class TableTest : IDisposable
 
         // Assert
         Assert.Equal(
-            (4, "R", "Your move.", "Black: 0 (you)", "pass", true),
+            (4, "♚︎", "Your move.", "Black you 0", "Pass", "turn yours", true),
             (
                 table.FindAll("rect.cell").Count,
                 table.Find(".piece text").TextContent,
                 table.Find("p.status").TextContent,
-                table.FindAll("li.seat")[0].TextContent.Trim(),
-                table.Find("button.action").TextContent,
-                Cell(table, 0).ClassList.Contains("origin")
+                Text(table.FindAll("li.seat")[0]),
+                table.Find("button.action").TextContent.Trim(),
+                table.Find("div.turn").ClassName,
+                table.Find(".piece").ClassList.Contains("movable")
             )
         );
+    }
+
+    [Fact]
+    public void Render_WhenACellIsAThrone_OutlinesItInItsSeatsColour()
+    {
+        // Arrange - nothing beyond the board, whose cell 1 is seat 1's throne
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Assert
+        Assert.Equal("throne seat-1", table.Find("rect.throne").GetAttribute("class"));
+    }
+
+    [Theory]
+    [InlineData(true, false, "Pick a ringed piece, then a marked square.")]
+    [InlineData(false, true, "Choose what to do:")]
+    [InlineData(true, true, "Move a ringed piece (pick it, then a marked square), or:")]
+    public void Render_WhenItIsThePlayersTurn_SaysHowToTakeIt(bool hasMoves, bool hasOthers, string expected)
+    {
+        // Arrange
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            LegalActions =
+            [
+                .. hasMoves ? new[] { FakeGameServer.Forward } : [],
+                .. hasOthers ? new[] { FakeGameServer.Pass } : [],
+            ],
+        };
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Assert
+        Assert.Equal(expected, table.Find("p.hint").TextContent);
     }
 
     [Fact]
@@ -44,13 +86,35 @@ public sealed class TableTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ("selected", true, false, true),
+            ("selected", true, false, true, "mark|mark", "piece seat-0 movable picked"),
             (
                 Cell(table, 0).ClassList.Contains("selected") ? "selected" : "not selected",
                 Cell(table, 1).ClassList.Contains("target"),
                 Cell(table, 2).ClassList.Contains("target"),
-                Cell(table, 3).ClassList.Contains("target")
+                Cell(table, 3).ClassList.Contains("target"),
+                string.Join("|", table.FindAll("circle.mark").Select(mark => mark.GetAttribute("class"))),
+                table.Find(".piece").GetAttribute("class")
             )
+        );
+    }
+
+    [Fact]
+    public void Click_WhenThePiecePickedUpCanTakeAnother_RingsThatOne()
+    {
+        // Arrange
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Pieces = [.. FakeGameServer.SeatZeroToMove.Pieces, new PieceDto(1, "pawn", "Pawn", 1, 3)],
+        };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Act
+        Cell(table, 0).Click();
+
+        // Assert
+        Assert.Equal(
+            "mark|mark capture",
+            string.Join("|", table.FindAll("circle.mark").Select(mark => mark.GetAttribute("class")))
         );
     }
 
@@ -66,7 +130,7 @@ public sealed class TableTest : IDisposable
 
         // Assert
         Assert.Equal(
-            (FakeGameServer.GameId, FakeGameServer.Token, FakeGameServer.Advance),
+            (FakeGameServer.GameId, FakeGameServer.Token, FakeGameServer.Forward),
             this._page.Server.Submitted
         );
     }
@@ -82,12 +146,13 @@ public sealed class TableTest : IDisposable
 
         // Assert
         Assert.Equal(
-            (null, "Black to move.", "Black: 0 (human)", "Yellow: 5 (random)"),
+            (null, "Black to move (human).", "Black human 0", "Yellow random 5", "turn"),
             (
                 this._page.Server.Submitted,
                 table.Find("p.status").TextContent,
-                table.FindAll("li.seat")[0].TextContent.Trim(),
-                table.FindAll("li.seat")[1].TextContent.Trim()
+                Text(table.FindAll("li.seat")[0]),
+                Text(table.FindAll("li.seat")[1]),
+                table.Find("div.turn").ClassName
             )
         );
     }
@@ -122,15 +187,14 @@ public sealed class TableTest : IDisposable
     [Fact]
     public void Render_WhenAnotherSeatIsDeciding_WaitsWithoutOfferingActions()
     {
-        // Arrange
-        Seating seatOne = new(FakeGameServer.GameId, new SeatClaim(1, FakeGameServer.Token));
+        // Arrange - nothing beyond seat 0 to move
 
         // Act
-        IRenderedComponent<Table> table = this.Render(seatOne);
+        IRenderedComponent<Table> table = this.Render(SeatOne);
 
         // Assert
         Assert.Equal(
-            ("Black to move.", 0, false),
+            ("Black to move (human).", 0, false),
             (
                 table.Find("p.status").TextContent,
                 table.FindAll("button.action").Count,
@@ -169,16 +233,22 @@ public sealed class TableTest : IDisposable
     }
 
     [Fact]
-    public void Render_WhenDiceAreRolled_ShowsThem()
+    public void Render_WhenDiceAreRolled_ShowsEachAndWhatItLetsMove()
     {
         // Arrange
-        this._page.Server.View = FakeGameServer.SeatZeroToMove with { Dice = [5, 3] };
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Dice = [new DieDto(5, "Pawn or Raja"), new DieDto(2, "Horse")],
+        };
 
         // Act
         IRenderedComponent<Table> table = this.Render(SeatZero);
 
         // Assert
-        Assert.Equal("Dice: 5, 3", table.Find("p.dice").TextContent);
+        Assert.Equal(
+            "⚄ 5: Pawn or Raja|⚁ 2: Horse",
+            string.Join("|", table.FindAll("ul.dice li").Select(die => die.TextContent))
+        );
     }
 
     [Fact]
@@ -190,11 +260,82 @@ public sealed class TableTest : IDisposable
         IRenderedComponent<Table> table = this.Render(SeatZero);
 
         // Assert
-        Assert.Empty(table.FindAll("p.dice"));
+        Assert.Empty(table.FindAll("ul.dice"));
     }
 
     [Fact]
-    public void Poll_WhenOthersAreDeciding_ShowsTheirMoves()
+    public void Render_WhenThingsHaveHappened_ListsThemNewestFirstAndTintsTheLastMove()
+    {
+        // Arrange
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with { Log = [Rolled, Moved] };
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Assert
+        Assert.Equal(
+            ("Yellow's Horse moved.|Yellow rolled 2 (Horse).", "event moved seat-1", false, true, true),
+            (
+                string.Join("|", table.FindAll("ol.log li").Select(happened => happened.TextContent)),
+                table.Find("ol.log li").ClassName,
+                Cell(table, 1).ClassList.Contains("last"),
+                Cell(table, 2).ClassList.Contains("last"),
+                Cell(table, 3).ClassList.Contains("last")
+            )
+        );
+    }
+
+    [Fact]
+    public void TurnButtons_WhenClicked_TurnTheBoardAndBackToTheSeatsOwnView()
+    {
+        // Arrange
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        string home = Turn(table);
+
+        // Act
+        table.Find("button.turn-right").Click();
+        string right = Turn(table);
+        table.Find("button.turn-left").Click();
+        table.Find("button.turn-left").Click();
+        string left = Turn(table);
+        table.Find("button.turn-home").Click();
+
+        // Assert
+        Assert.Equal(
+            ("rotate(0 0.5 -0.5)", "rotate(90 0.5 -0.5)", "rotate(270 0.5 -0.5)", "rotate(0 0.5 -0.5)"),
+            (home, right, left, Turn(table))
+        );
+    }
+
+    [Fact]
+    public void TurnButtons_WhenTheGameCannotBeLoaded_AreNotShown()
+    {
+        // Arrange
+        this._page.Server.Failure = new HttpRequestException("Asleep.");
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Assert
+        Assert.Empty(table.FindAll("button.turn-home"));
+    }
+
+    [Fact]
+    public void TurnHome_WhenOnlyWatching_ShowsTheBoardUnturned()
+    {
+        // Arrange
+        IRenderedComponent<Table> table = this.Render(Seating.Watching(FakeGameServer.GameId));
+        table.Find("button.turn-right").Click();
+
+        // Act
+        table.Find("button.turn-home").Click();
+
+        // Assert
+        Assert.Equal("rotate(0 0.5 -0.5)", Turn(table));
+    }
+
+    [Fact]
+    public void Poll_WhenAPersonElsewhereIsDeciding_ShowsTheirMoves()
     {
         // Arrange
         using PageContext page = new(TimeSpan.FromMilliseconds(10));
@@ -209,6 +350,21 @@ public sealed class TableTest : IDisposable
     }
 
     [Fact]
+    public void Poll_WhenABotIsDeciding_AdvancesTheGame()
+    {
+        // Arrange
+        using PageContext page = new(TimeSpan.FromMilliseconds(10));
+        FakeGameServer server = page.Server;
+        server.View = FakeGameServer.SeatZeroToMove with { DecidingSeat = 1, Version = 4 };
+
+        // Act
+        IRenderedComponent<Table> table = page.Render<Table>(parameters => parameters.Add(x => x.Seating, SeatZero));
+
+        // Assert
+        table.WaitForAssertion(() => Assert.Contains($"advance {FakeGameServer.GameId} 4", server.Calls));
+    }
+
+    [Fact]
     public async Task Poll_WhenItIsThePlayersTurn_LeavesTheGameAlone()
     {
         // Arrange
@@ -219,7 +375,65 @@ public sealed class TableTest : IDisposable
         await Task.Delay(TimeSpan.FromMilliseconds(150), Xunit.TestContext.Current.CancellationToken);
 
         // Assert
-        _ = Assert.Single(page.Server.Calls, call => call.StartsWith("get", StringComparison.Ordinal));
+        _ = Assert.Single(page.Server.Calls);
+    }
+
+    [Theory]
+    [MemberData(nameof(Sounds), DisableDiscoveryEnumeration = true)]
+    public void Sound_WhenSomethingHappensAfterwards_PlaysTheMostTellingSound(EventDto[] happened, string expected)
+    {
+        // Arrange
+        using PageContext page = new(TimeSpan.FromMilliseconds(10));
+        IRenderedComponent<Table> table = page.Render<Table>(parameters => parameters.Add(x => x.Seating, SeatOne));
+
+        // Act
+        page.Server.View = FakeGameServer.SeatZeroToMove with { DecidingSeat = null, Log = [.. happened] };
+
+        // Assert
+        table.WaitForAssertion(() => Assert.Equal("The game is over.", table.Find("p.status").TextContent));
+        Assert.Equal(expected, string.Join(",", Played(page)));
+    }
+
+    public static TheoryData<EventDto[], string> Sounds =>
+        new()
+        {
+            { [Rolled], "rolled" },
+            { [Rolled, Moved], "moved" },
+            { [Rolled, Moved, Captured], "captured" },
+            { [new EventDto(4, EventDto.Passed, 1, "Black to play.", null, null)], string.Empty },
+        };
+
+    [Fact]
+    public void Sound_WhenTheTurnComesRound_PlaysTheTurnSound()
+    {
+        // Arrange
+        using PageContext page = new(TimeSpan.FromMilliseconds(10));
+        page.Server.View = FakeGameServer.SeatZeroToMove with { DecidingSeat = 1 };
+        IRenderedComponent<Table> table = page.Render<Table>(parameters => parameters.Add(x => x.Seating, SeatZero));
+
+        // Act
+        page.Server.View = FakeGameServer.SeatZeroToMove with { Log = [Moved] };
+
+        // Assert
+        table.WaitForAssertion(() => Assert.Equal("Your move.", table.Find("p.status").TextContent));
+        Assert.Equal("turn", string.Join(",", Played(page)));
+    }
+
+    [Fact]
+    public void Sound_WhenSoundIsOff_PlaysNothing()
+    {
+        // Arrange
+        using PageContext page = new(TimeSpan.FromMilliseconds(10));
+        IRenderedComponent<Table> table = page.Render<Table>(
+            parameters => parameters.Add(x => x.Seating, SeatOne).Add(x => x.IsSoundOn, false)
+        );
+
+        // Act
+        page.Server.View = FakeGameServer.SeatZeroToMove with { DecidingSeat = null, Log = [Moved] };
+
+        // Assert
+        table.WaitForAssertion(() => Assert.Equal("The game is over.", table.Find("p.status").TextContent));
+        Assert.Empty(Played(page));
     }
 
     [Fact]
@@ -240,6 +454,15 @@ public sealed class TableTest : IDisposable
 
     private static AngleSharp.Dom.IElement Cell(IRenderedComponent<Table> table, int id) =>
         table.Find($"rect[data-cell='{id}']");
+
+    private static string Text(AngleSharp.Dom.IElement element) =>
+        string.Join(' ', element.Children.Select(child => child.TextContent).Where(text => text.Length > 0));
+
+    private static string Turn(IRenderedComponent<Table> table) =>
+        table.Find("svg.board > g").GetAttribute("transform") ?? string.Empty;
+
+    private static IEnumerable<string> Played(PageContext page) =>
+        page.JSInterop.Invocations["zaturnava.play"].Select(call => (string)call.Arguments[0]!);
 
     private IRenderedComponent<Table> Render(Seating seating) =>
         this._page.Render<Table>(parameters => parameters.Add(x => x.Seating, seating));

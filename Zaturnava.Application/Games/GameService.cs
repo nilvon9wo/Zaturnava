@@ -14,7 +14,9 @@ namespace Net.NowhereAtAll.Zaturnava.Application.Games;
 
 /// <summary>
 /// The use cases every host and client goes through. Each request replays the game from its stored
-/// actions, applies what was asked, lets any bot seats that are next play, then stores the result.
+/// actions, applies what was asked, lets any bot seats that are next play (up to
+/// <see cref="GameServiceSettings.MaximumBotSteps"/>), then stores the result. Bots left to play
+/// take their turns one <see cref="Advance"/> at a time.
 /// </summary>
 public sealed class GameService(
     IRulesetLocating rulesets,
@@ -61,9 +63,22 @@ public sealed class GameService(
     public async Task<GameSnapshot> Get(GameId id, CancellationToken cancellationToken)
     {
         GameRecord record = await this.Load(id, cancellationToken);
-        IRulesApplying rules = this._rulesets.Find(record.RulesetId);
-        GameState state = Replay(rules, record.Actions);
-        return GameSnapshot.Of(record, rules, state);
+        return GameSnapshot.Of(record, this._rulesets.Find(record.RulesetId));
+    }
+
+    /// <summary>
+    /// Lets the bot whose turn it is make one decision (rolling the dice it asks for), if the game is
+    /// still at <paramref name="version"/>; otherwise, or when no bot is deciding, leaves it as it is.
+    /// Clients call it to let bots play at a pace people can follow; the version keeps two watchers
+    /// from moving one bot twice.
+    /// </summary>
+    /// <exception cref="GameNotFoundException">There is no such game.</exception>
+    public async Task<GameSnapshot> Advance(GameId id, int version, CancellationToken cancellationToken)
+    {
+        GameSnapshot snapshot = await this.Get(id, cancellationToken);
+        return snapshot.Record.Version == version
+            ? await this.Advanced(snapshot, cancellationToken)
+            : snapshot;
     }
 
     /// <summary>Claims an open seat for whoever holds the returned token.</summary>
@@ -103,8 +118,7 @@ public sealed class GameService(
         Played acted = new(transition.State, snapshot.Record.Actions.Add(action.Describe()));
         Played played = await this.PlayBots(snapshot.Rules, snapshot.Record, acted, cancellationToken);
         GameRecord updated = snapshot.Record.Next() with { Actions = played.Actions };
-        await this.Save(updated, cancellationToken);
-        return GameSnapshot.Of(updated, snapshot.Rules, played.State);
+        return await this.Saved(updated, snapshot.Rules, cancellationToken);
     }
 
     /// <exception cref="IllegalActionException">The action is how dice came up.</exception>
@@ -113,13 +127,26 @@ public sealed class GameService(
             ? throw new IllegalActionException(action)
             : action;
 
-    private static GameState Replay(IRulesApplying rules, ImmutableList<ActionDescriptor> actions) =>
-        actions.Aggregate(rules.CreateInitialState(), (state, descriptor) => Replayed(rules, state, descriptor));
-
-    private static GameState Replayed(IRulesApplying rules, GameState state, ActionDescriptor descriptor)
+    private async Task<GameSnapshot> Advanced(GameSnapshot snapshot, CancellationToken cancellationToken)
     {
-        GameAction action = rules.Parse(descriptor);
-        return rules.Apply(state, action).State;
+        Played played = await DecisionLoop.PlayWhile(
+            snapshot.Rules,
+            new Played(snapshot.State, snapshot.Record.Actions),
+            this.DecidersOf(snapshot.Record),
+            this._dice,
+            1,
+            cancellationToken
+        );
+        GameRecord updated = snapshot.Record.Next() with { Actions = played.Actions };
+        return played.Actions.Count == snapshot.Record.Actions.Count
+            ? snapshot
+            : await this.Saved(updated, snapshot.Rules, cancellationToken);
+    }
+
+    private async Task<GameSnapshot> Saved(GameRecord record, IRulesApplying rules, CancellationToken cancellationToken)
+    {
+        await this.Save(record, cancellationToken);
+        return GameSnapshot.Of(record, rules);
     }
 
     private ImmutableList<SeatController> ControllersFor(GameState initial, ImmutableList<SeatPlan> seats) =>
@@ -136,11 +163,15 @@ public sealed class GameService(
         DecisionLoop.PlayWhile(
             rules,
             played,
-            seat => record.Controllers[seat.Value].DeciderFrom(this._bots),
+            this.DecidersOf(record),
             this._dice,
             this._settings.MaximumBotSteps,
             cancellationToken
         );
+
+    /// <summary>Each seat's bot; null for a seat that is open or held by a person.</summary>
+    private Func<SeatId, IDeciding?> DecidersOf(GameRecord record) =>
+        seat => record.Controllers[seat.Value].DeciderFrom(this._bots);
 
     private async Task<GameRecord> Load(GameId id, CancellationToken cancellationToken) =>
         await this._store.Find(id, cancellationToken) ?? throw new GameNotFoundException(id);

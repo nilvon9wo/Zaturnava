@@ -37,4 +37,16 @@ public sealed class GameRoutesTest
         // Assert
         Assert.Equal("api/games/g/actions", route);
     }
+
+    [Fact]
+    public void Advance_WhenGivenAGame_RoutesUnderIt()
+    {
+        // Arrange - nothing beyond the id
+
+        // Act
+        string route = GameRoutes.Advance("g");
+
+        // Assert
+        Assert.Equal("api/games/g/advance", route);
+    }
 }

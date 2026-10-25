@@ -112,6 +112,51 @@ public sealed class LobbyTest : IDisposable
         Assert.Equal(Seating.Watching(FakeGameServer.GameId), this._seated);
     }
 
+    [Theory]
+    [InlineData(12, "12 moves")]
+    [InlineData(1, "1 move")]
+    public void Render_WhenGamesAreListed_SaysWhoPlaysAndHowFarAlongEachIs(int moves, string expected)
+    {
+        // Arrange
+        this._page.Server.Games = [this._page.Server.Games[0] with { Moves = moves }];
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Assert
+        Assert.Equal(
+            ("person, open, random, open", expected),
+            (lobby.Find("span.players").TextContent, lobby.Find("span.moves").TextContent)
+        );
+    }
+
+    [Fact]
+    public void Resume_WhenThisBrowserHeldASeat_GoesBackToIt()
+    {
+        // Arrange
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.seat." + FakeGameServer.GameId)
+            .SetResult("2 kept");
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Act
+        lobby.Find("button.resume").Click();
+
+        // Assert
+        Assert.Equal(new Seating(FakeGameServer.GameId, new SeatClaim(2, "kept")), this._seated);
+    }
+
+    [Fact]
+    public void Render_WhenThisBrowserHeldNoSeat_OffersNoReturn()
+    {
+        // Arrange - nothing remembered
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Assert
+        Assert.Empty(lobby.FindAll("button.resume"));
+    }
+
     [Fact]
     public void Render_WhenTheServerCannotBeReached_SaysWhy()
     {

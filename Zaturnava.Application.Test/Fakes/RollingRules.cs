@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Boards;
 using Net.NowhereAtAll.Zaturnava.Engine.Chance;
+using Net.NowhereAtAll.Zaturnava.Engine.Events;
 using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
 using Net.NowhereAtAll.Zaturnava.Engine.Positions;
 using Net.NowhereAtAll.Zaturnava.Engine.Rules;
@@ -28,6 +29,8 @@ internal sealed class RollingRules(int length) : IRulesApplying
 
     public ICellNavigating Topology => throw new NotSupportedException("Rolling has no board.");
 
+    public ImmutableDictionary<SeatId, CellId> Thrones => [];
+
     public GameState CreateInitialState() =>
         new(
             Position.Empty,
@@ -47,7 +50,8 @@ internal sealed class RollingRules(int length) : IRulesApplying
     public Transition Apply([Required] GameState state, [Required] GameAction action) =>
         action switch
         {
-            DiceAction dice when state.AwaitedDice is not null => new Transition(this.Scored(state, dice), []),
+            DiceAction dice when state.AwaitedDice is not null =>
+                new Transition(this.Scored(state, dice), [new DiceRolled(dice.Actor, dice.Values)]),
             RollAction when this.LegalActions(state).Contains(action) =>
                 new Transition(state with { AwaitedDice = OneDie }, []),
             _ => throw new IllegalActionException(action),
@@ -58,6 +62,8 @@ internal sealed class RollingRules(int length) : IRulesApplying
     public string NameOf(PieceKindId kind) => kind.Value;
 
     public string NameOf(SeatId seat) => $"Seat {seat.Value}";
+
+    public string NameOfDie(int value) => $"Die {value}";
 
     private GameState Scored(GameState state, DiceAction dice)
     {

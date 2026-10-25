@@ -1,27 +1,41 @@
 using System.Collections.Immutable;
 using System.ComponentModel.DataAnnotations;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
+using Net.NowhereAtAll.Zaturnava.Engine.Events;
 using Net.NowhereAtAll.Zaturnava.Engine.Rules;
 using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 
 namespace Net.NowhereAtAll.Zaturnava.Application.Games;
 
-/// <summary>A game as it stands: its record, its rules, the replayed state, and what may be done next.</summary>
+/// <summary>
+/// A game as it stands: its record, its rules, the replayed state, everything that has happened so far
+/// (in order), and what may be done next.
+/// </summary>
 public sealed record GameSnapshot(
     GameRecord Record,
     IRulesApplying Rules,
     GameState State,
+    ImmutableList<GameEvent> Events,
     ImmutableList<GameAction> LegalActions
 )
 {
-    public static GameSnapshot Of(
-        [Required] GameRecord record,
-        [Required] IRulesApplying rules,
-        [Required] GameState state
-    ) =>
-        new(record, rules, state, rules.LegalActions(state));
+    /// <summary>The game <paramref name="record"/> describes, replayed by <paramref name="rules"/>.</summary>
+    public static GameSnapshot Of([Required] GameRecord record, [Required] IRulesApplying rules)
+    {
+        Transition replayed = record.Actions.Aggregate(
+            new Transition(rules.CreateInitialState(), []),
+            (sofar, descriptor) => Replayed(rules, sofar, descriptor)
+        );
+        return new GameSnapshot(record, rules, replayed.State, replayed.Events, rules.LegalActions(replayed.State));
+    }
 
     /// <summary>Whether <paramref name="seat"/> is deciding now, and <paramref name="token"/> holds it.</summary>
     public bool IsDecidedBy(SeatId seat, [Required] string token) =>
         this.State.DecidingSeat == seat && this.Record.Controllers[seat.Value].IsHeldBy(token);
+
+    private static Transition Replayed(IRulesApplying rules, Transition sofar, ActionDescriptor descriptor)
+    {
+        Transition next = rules.Apply(sofar.State, rules.Parse(descriptor));
+        return next with { Events = sofar.Events.AddRange(next.Events) };
+    }
 }

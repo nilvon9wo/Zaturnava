@@ -16,7 +16,7 @@ internal sealed class FakeGameServer : IGameServing
     public const string Token = "secret";
 
     public static readonly ActionDto Pass = Action("pass");
-    public static readonly ActionDto Advance = Action("move", (ActionArguments.From, 0), (ActionArguments.To, 1));
+    public static readonly ActionDto Forward = Action("move", (ActionArguments.From, 0), (ActionArguments.To, 1));
     public static readonly ActionDto Leap = Action("move", (ActionArguments.From, 0), (ActionArguments.To, 3));
 
     public static readonly GameViewDto SeatZeroToMove = new(
@@ -26,16 +26,28 @@ internal sealed class FakeGameServer : IGameServing
         1,
         1,
         0,
-        [.. Enumerable.Range(0, 4).Select(id => new CellDto(id, id % 2, Math.DivRem(id, 2).Quotient, "square"))],
+        [.. Enumerable.Range(0, 4)
+            .Select(id => new CellDto(id, id % 2, Math.DivRem(id, 2).Quotient, "square", id == 1 ? 1 : null))],
         [new PieceDto(0, "raja", "Raja", 0, 0)],
         [new SeatDto(0, "Black", 0, 0, "human", null), new SeatDto(1, "Yellow", 1, 5, "bot", "random")],
-        [Pass, Advance, Leap],
+        [Pass, Forward, Leap],
+        [],
         []
     );
 
     public GameViewDto View { get; set; } = SeatZeroToMove;
 
-    public ImmutableList<GameSummaryDto> Games { get; set; } = [new(GameId, "classic", 1, [1, 3])];
+    public ImmutableList<GameSummaryDto> Games { get; set; } =
+    [
+        new(
+            GameId,
+            "classic",
+            1,
+            [1, 3],
+            [GameSummaryDto.Person, GameSummaryDto.Open, "random", GameSummaryDto.Open],
+            12
+        ),
+    ];
 
     public Exception? Failure { get; set; }
 
@@ -68,6 +80,9 @@ internal sealed class FakeGameServer : IGameServing
 
     public Task<GameViewDto> Get([Required] string gameId, CancellationToken cancellationToken) =>
         this.Answer("get " + gameId, this.View);
+
+    public Task<GameViewDto> Advance([Required] string gameId, int version, CancellationToken cancellationToken) =>
+        this.Answer($"advance {gameId} {version.ToString(CultureInfo.InvariantCulture)}", this.View);
 
     public Task<SeatClaimedDto> Claim([Required] string gameId, int seat, CancellationToken cancellationToken) =>
         this.Answer($"claim {gameId} {seat.ToString(CultureInfo.InvariantCulture)}", new SeatClaimedDto(Token));

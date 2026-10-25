@@ -55,9 +55,10 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
 
         // Assert
         Assert.Equal(
-            (64, 32, 0, 1, "open", "bot", ZaturnavaServer.Random),
+            (64, 4, 32, 0, 1, "open", "bot", ZaturnavaServer.Random),
             (
                 view.Cells.Count,
+                view.Cells.Count(cell => cell.Throne is not null),
                 view.Pieces.Count,
                 view.DecidingSeat,
                 view.LegalActions.Count,
@@ -108,7 +109,7 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
     }
 
     [Fact]
-    public async Task Submit_WhenTheSeatsTokenActs_LetsTheBotsReplyUntilItIsTheSeatsTurnAgain()
+    public async Task Submit_WhenTheSeatRolls_TellsOfTheRollAndLeavesTheBotsToBeAdvanced()
     {
         // Arrange
         (string gameId, string token, GameViewDto view) = await this.ClaimedGame();
@@ -118,7 +119,24 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
         GameViewDto after = await this._client.Submit(gameId, token, roll, this._cancellation);
 
         // Assert
-        Assert.Equal((0, 2), (after.DecidingSeat, after.Version));
+        Assert.Equal(
+            (1, 2, "Black rolled 3 (Elephant).|Yellow to play."),
+            (after.DecidingSeat, after.Version, string.Join("|", after.Log.Select(happened => happened.Text)))
+        );
+    }
+
+    [Fact]
+    public async Task Advance_WhenABotIsDeciding_LetsItMakeOneDecision()
+    {
+        // Arrange
+        (string gameId, string token, GameViewDto view) = await this.ClaimedGame();
+        GameViewDto rolled = await this._client.Submit(gameId, token, view.LegalActions[0], this._cancellation);
+
+        // Act
+        GameViewDto after = await this._client.Advance(gameId, rolled.Version, this._cancellation);
+
+        // Assert
+        Assert.Equal(rolled.Version + 1, after.Version);
     }
 
     [Fact]

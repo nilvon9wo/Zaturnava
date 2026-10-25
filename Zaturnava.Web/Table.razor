@@ -1,20 +1,26 @@
-@* A game: the board, the seats, and - on the player's turn - the actions they may take. While others
-   decide, it asks the server for the game again every TableSettings.PollInterval. *@
+@* A game: the board (turned so the player's own corner is bottom left), and beside it whose turn it is,
+   the dice and what each lets move, on the player's turn what they may do, the seats, and what has
+   happened. While a bot decides, it advances the game every TableSettings.BotPace, so that bots take
+   their turns one at a time; while a person elsewhere decides, it asks for the game again every
+   TableSettings.PollInterval. *@
 @implements IDisposable
 @inject IGameServing Games
 @inject TableSettings Settings
+@inject Browser Browser
 
 <section class="table">
-    <header>
+    <header class="table-bar">
         <button class="leave" @onclick="this.OnLeave">Lobby</button>
         @if (this._view is { } heading)
         {
             <h1>@heading.RulesetName</h1>
-            <p class="status">@this.Status(heading)</p>
-            @if (heading.Dice.Count > 0)
-            {
-                <p class="dice">Dice: @string.Join(", ", heading.Dice)</p>
-            }
+            <span class="turns">
+                <button class="turn-left" title="Turn the board anticlockwise" @onclick="this.TurnLeft">&#x27F2;</button>
+                <button class="turn-home" title="Your own view of the board" @onclick="() => this.TurnHome(heading)">
+                    My view
+                </button>
+                <button class="turn-right" title="Turn the board clockwise" @onclick="this.TurnRight">&#x27F3;</button>
+            </span>
         }
     </header>
 
@@ -25,42 +31,84 @@
 
     @if (this._view is { } view)
     {
-        <Board View="view" Actions="this.Actions" Selection="this._selection" OnCellClicked="this.Click" />
+        <div class="play">
+            <Board View="view"
+                   Actions="this.Actions"
+                   Selection="this._selection"
+                   Turn="this._boardTurn"
+                   LastMove="this._lastMove"
+                   OnCellClicked="this.Click" />
 
-        <ol class="seats">
-            @foreach (SeatDto seat in view.Seats)
-            {
-                <li class="seat seat-@seat.Id @(seat.Id == view.DecidingSeat ? "deciding" : null)">
-                    @seat.Name: @seat.Score (@this.Player(seat))
-                </li>
-            }
-        </ol>
-    }
+            <aside class="side">
+                <div class="@(this._turn is null ? "turn" : "turn yours")">
+                    <p class="status">@this.Status(view)</p>
+                    @if (view.Dice.Count > 0)
+                    {
+                        <ul class="dice">
+                            @foreach (DieDto die in view.Dice)
+                            {
+                                <li><span class="face">@DieFaces.FaceOf(die.Value)</span> @die.Value: @die.Meaning</li>
+                            }
+                        </ul>
+                    }
+                    @if (this._turn is { } turn)
+                    {
+                        <p class="hint">@Hint(turn.Actions)</p>
+                        <div class="actions">
+                            @foreach (ActionDto action in turn.Actions.OffBoard)
+                            {
+                                <button class="action primary" @onclick="() => this.Submit(turn.Claim, action)">
+                                    @ActionLabels.LabelOf(action)
+                                </button>
+                            }
+                        </div>
+                    }
+                </div>
 
-    @if (this._turn is { } turn)
-    {
-        <div class="actions">
-            @foreach (ActionDto action in turn.Actions.OffBoard)
-            {
-                <button class="action" @onclick="() => this.Submit(turn.Claim, action)">@action.Kind</button>
-            }
+                <ol class="seats">
+                    @foreach (SeatDto seat in view.Seats)
+                    {
+                        <li class="seat seat-@seat.Id @(seat.Id == view.DecidingSeat ? "deciding" : null)">
+                            <span class="swatch"></span>
+                            <span class="name">@seat.Name</span>
+                            <span class="player">@this.Player(seat)</span>
+                            <span class="score">@seat.Score</span>
+                        </li>
+                    }
+                </ol>
+
+                <ol class="log">
+                    @foreach (EventDto happened in view.Log.Reverse())
+                    {
+                        <li class="event @happened.Kind seat-@happened.Seat">@happened.Text</li>
+                    }
+                </ol>
+            </aside>
         </div>
     }
 </section>
 
 @code {
+    private const string BotController = "bot";
     private static readonly BoardActions NoActions = new([]);
 
     private readonly Timer _poll;
     private GameViewDto? _view;
     private Turn? _turn;
     private BoardSelection _selection = BoardSelection.None;
+    private BoardTurn _boardTurn = BoardTurn.None;
+    private ImmutableHashSet<int> _lastMove = [];
+    private int _heard = -1;
     private string? _problem;
+    private bool _isBotDeciding;
 
     public Table() => this._poll = new Timer(this.Tick);
 
     [Parameter, EditorRequired]
     public Seating Seating { get; set; } = null!;
+
+    [Parameter]
+    public bool IsSoundOn { get; set; } = true;
 
     [Parameter]
     public EventCallback OnLeave { get; set; }
@@ -69,26 +117,43 @@
 
     protected override async Task OnInitializedAsync()
     {
-        _ = this._poll.Change(this.Settings.PollInterval, this.Settings.PollInterval);
         await this.Refresh();
+        this._boardTurn = this._view is null ? BoardTurn.None : BoardTurn.HomeOf(this.Seating.Claim?.Seat, this._view);
     }
 
     public void Dispose() => this._poll.Dispose();
 
+    private static string Hint(BoardActions actions) =>
+        actions.Origins.IsEmpty
+            ? "Choose what to do:"
+            : actions.OffBoard.IsEmpty
+                ? "Pick a ringed piece, then a marked square."
+                : "Move a ringed piece (pick it, then a marked square), or:";
+
     private string Status(GameViewDto view) =>
         view.DecidingSeat is { } seat
-            ? this._turn is null ? $"{view.Seats[seat].Name} to move." : "Your move."
+            ? this._turn is null ? $"{view.Seats[seat].Name} to move ({this.Player(view.Seats[seat])})." : "Your move."
             : "The game is over.";
 
-    private void Tick(object? state) => _ = this.InvokeAsync(this.PollWhileWaiting);
+    private string Player(SeatDto seat) => seat.Id == this.Seating.Claim?.Seat ? "you" : seat.Bot ?? seat.Controller;
 
-    private async Task PollWhileWaiting()
+    private void TurnLeft() => this._boardTurn = this._boardTurn.Anticlockwise();
+
+    private void TurnRight() => this._boardTurn = this._boardTurn.Clockwise();
+
+    private void TurnHome(GameViewDto view) => this._boardTurn = BoardTurn.HomeOf(this.Seating.Claim?.Seat, view);
+
+    private void Tick(object? state) => _ = this.InvokeAsync(this.Next);
+
+    /// <summary>Lets a deciding bot take its next step, or else looks for what others have done.</summary>
+    private async Task Next()
     {
-        await (this._turn is null ? this.Refresh() : Task.CompletedTask);
+        int version = this._view!.Version;
+        await (this._isBotDeciding
+            ? this.Request(() => this.Games.Advance(this.Seating.GameId, version, CancellationToken.None))
+            : this.Refresh());
         this.StateHasChanged();
     }
-
-    private string Player(SeatDto seat) => seat.Id == this.Seating.Claim?.Seat ? "you" : seat.Bot ?? seat.Controller;
 
     private Task Refresh() => this.Request(() => this.Games.Get(this.Seating.GameId, CancellationToken.None));
 
@@ -103,14 +168,43 @@
         this.Request(() => this.Games.Submit(this.Seating.GameId, claim.Token, action, CancellationToken.None));
 
     private async Task Request(Func<Task<GameViewDto>> request) =>
-        this._problem = await Requests.Attempt(async () => this.Show(await request()));
+        this._problem = await Requests.Attempt(async () => await this.Show(await request()));
 
-    private void Show(GameViewDto view)
+    private async Task Show(GameViewDto view)
     {
+        bool wasTheirTurn = this._turn is not null;
+        bool isFirst = this._view is null;
         this._view = view;
         this._turn = view.DecidingSeat is { } deciding && this.Seating.Claim is { } claim && claim.Seat == deciding
             ? new Turn(claim, new BoardActions(view.LegalActions))
             : null;
+        this._isBotDeciding = view.DecidingSeat is { } seat && view.Seats[seat].Controller == BotController;
         this._selection = BoardSelection.None;
+        this._lastMove = view.Log.LastOrDefault(happened => happened.Kind == EventDto.Moved) is { } moved
+            ? [moved.From!.Value, moved.To!.Value]
+            : [];
+        string? sound = this.SoundOf(view, isFirst, wasTheirTurn);
+        this._heard = view.Log.Count > 0 ? view.Log[^1].Number : this._heard;
+        await (sound is not null && this.IsSoundOn ? this.Browser.Play(sound) : ValueTask.CompletedTask);
+        _ = this._poll.Change(this.Wait(view), Timeout.InfiniteTimeSpan);
     }
+
+    /// <summary>The sound for what happened since the last view: a turn come round, a capture, a move, a roll.</summary>
+    private string? SoundOf(GameViewDto view, bool isFirst, bool wasTheirTurn)
+    {
+        ImmutableHashSet<string> kinds = [.. view.Log.Where(happened => happened.Number > this._heard).Select(happened => happened.Kind)];
+        return isFirst
+            ? null
+            : this._turn is not null && !wasTheirTurn
+                ? "turn"
+                : new[] { EventDto.Captured, EventDto.Moved, EventDto.Rolled }.FirstOrDefault(kinds.Contains);
+    }
+
+    /// <summary>How long until the next look at the game: never while it is the player's turn or the game is over.</summary>
+    private TimeSpan Wait(GameViewDto view) =>
+        this._turn is not null || view.DecidingSeat is null
+            ? Timeout.InfiniteTimeSpan
+            : this.PaceOfOthers();
+
+    private TimeSpan PaceOfOthers() => this._isBotDeciding ? this.Settings.BotPace : this.Settings.PollInterval;
 }

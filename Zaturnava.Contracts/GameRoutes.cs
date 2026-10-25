@@ -19,4 +19,6 @@ public static class GameRoutes
         $"{Game(gameId)}/seats/{seat.ToString(CultureInfo.InvariantCulture)}";
 
     public static string Actions([Required] string gameId) => $"{Game(gameId)}/actions";
+
+    public static string Advance([Required] string gameId) => $"{Game(gameId)}/advance";
 }

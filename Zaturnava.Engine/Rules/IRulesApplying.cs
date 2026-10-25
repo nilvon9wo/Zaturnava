@@ -22,6 +22,9 @@ public interface IRulesApplying
 
     ICellNavigating Topology { get; }
 
+    /// <summary>Each seat's throne, if the ruleset has thrones; empty if it has none.</summary>
+    ImmutableDictionary<SeatId, CellId> Thrones { get; }
+
     GameState CreateInitialState();
 
     /// <summary>What the deciding seat may do; empty once the game is over, and while it waits on dice.</summary>
@@ -36,4 +39,7 @@ public interface IRulesApplying
     string NameOf(PieceKindId kind);
 
     string NameOf(SeatId seat);
+
+    /// <summary>What a die showing <paramref name="value"/> lets its roller do, for people: "Horse".</summary>
+    string NameOfDie(int value);
 }
