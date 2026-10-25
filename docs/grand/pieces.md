@@ -58,6 +58,17 @@ and has no such premium.
 The sheet keeps the three settings apart, to be tuned by playtesting: `PremiumFactor` (1),
 `FarEdgeTarget` (the Rook) and `FarEdgeDistance` (6).
 
+### Prices for each game (proposed)
+
+The sheet prices every piece on an 8 × 8 board. A game may be set on a much larger board, where a
+promotion is further away and a slider reaches further, or a smaller one. **Proposed**, for later:
+the program prices each game's pieces by the same rules, on that game's board and kingdoms, and
+shows the prices in the draft; the sheet stays the reference, on 8 × 8.
+
+- Reach is counted from the board's centre.
+- A promotion's distance is counted from the kingdom's front row, the furthest forward a piece may
+  start, to the zone: placing a piece well forward cannot buy its premium cheap.
+
 ### Binding
 
 Some pieces can never leave part of the board, whatever is paid: a piece that moves only diagonally

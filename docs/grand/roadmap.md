@@ -32,7 +32,8 @@ Waits on: **Q7**, **Q19**, **Q20**.
 
 ## Stage 2 — The board and the dice
 
-- Any even width and length; four kingdoms; rivers drawn on the board.
+- A board and a kingdom size, set apart; a kingdom in each corner, and which way it lies (**Q24**);
+  rivers drawn on the board.
 - Same-side and opposite-corner arrangements, with forward for each (**Q2**, **Q6**).
 - A team game or everyone for themselves (`TeamGraph` already allows both).
 - Dice that name a class: 1 Artillery, 2 Cavalry, 3–4 Heavy, 5–6 Infantry or Leader.
@@ -41,8 +42,8 @@ Waits on: **Q7**, **Q19**, **Q20**.
 
 ## Stage 3 — Palaces, thrones and leaders
 
-- A palace (3 × 3) and its throne, per army; palace lines drawn, and the move toward the throne
-  (**Q8**); confinement to a palace (**Q9**).
+- A palace (3 × 3) and its throne, per army, and a palace that does not fit its kingdom (**Q23**);
+  palace lines drawn, and the move toward the throne (**Q8**); confinement to a palace (**Q9**).
 - Several leaders in one army: throne control, and everything the classic rules say of "the Raja",
   said of leaders.
 - Scoring by piece value, with the classic bonuses as they are until playtesting says otherwise
@@ -55,6 +56,8 @@ Waits on: **Q7**, **Q19**, **Q20**.
   for each step. Points not spent start the player's score.
 - Infantry losing start-row powers when placed beyond row 2 (**Q3**).
 - Bots draft too: Random at random, Midas by value, Solomon… evenly.
+- Later: prices for each game, from its own board and kingdoms
+  ([pieces.md](pieces.md#prices-for-each-game-proposed)).
 
 ## Stage 5 — Points to spend
 
