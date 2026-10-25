@@ -1,11 +1,12 @@
 using System.Globalization;
 using Microsoft.JSInterop;
+using Net.NowhereAtAll.Zaturnava.Presentation;
 
 namespace Net.NowhereAtAll.Zaturnava.Web;
 
 /// <summary>
 /// What the page asks of the browser itself (wwwroot/js/zaturnava.js): sounds, a memory that outlives
-/// the page, and the colour theme.
+/// the page (seats held, and settings: sound and pieces), and the colour theme.
 /// </summary>
 internal sealed class Browser(IJSRuntime js)
 {
@@ -15,6 +16,8 @@ internal sealed class Browser(IJSRuntime js)
     private const string SeatKey = "zaturnava.seat.";
     private const string ThemeKey = "zaturnava.theme";
     private const string SoundKey = "zaturnava.sound";
+    private const string PiecesKey = "zaturnava.pieces";
+    private const string ChessPieces = "chess";
     private const string Off = "off";
 
     private readonly IJSRuntime _js = js;
@@ -44,6 +47,13 @@ internal sealed class Browser(IJSRuntime js)
     public async ValueTask<bool> IsSoundOn() => await this.Load(SoundKey) != Off;
 
     public ValueTask SetSound(bool isOn) => this.Save(SoundKey, isOn ? "on" : Off);
+
+    /// <summary>The pieces as the player last chose to see them: traditional, unless they chose chess.</summary>
+    public async ValueTask<PieceSet> Pieces() =>
+        await this.Load(PiecesKey) == ChessPieces ? PieceSet.Chess : PieceSet.Traditional;
+
+    public ValueTask SetPieces(PieceSet pieces) =>
+        this.Save(PiecesKey, pieces == PieceSet.Chess ? ChessPieces : "traditional");
 
     private ValueTask<string?> Load(string key) => this._js.InvokeAsync<string?>("zaturnava.load", key);
 

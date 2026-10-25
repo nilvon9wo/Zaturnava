@@ -47,11 +47,17 @@ file sealed class UnplayableRules : IRulesApplying
     public Transition Apply([Required] GameState state, [Required] GameAction action) =>
         throw new NotSupportedException();
 
+    public bool MayOffer([Required] GameState state) => throw new NotSupportedException();
+
+    public DecisionTimer TimerOf([Required] GameState state) => throw new NotSupportedException();
+
     public GameAction Parse([Required] ActionDescriptor descriptor) => throw new NotSupportedException();
 
     public string NameOf(PieceKindId kind) => throw new NotSupportedException();
 
     public string NameOf(SeatId seat) => throw new NotSupportedException();
+
+    public int WorthOf(PieceKindId kind) => throw new NotSupportedException();
 
     public string NameOfDie(int value) => throw new NotSupportedException();
 }

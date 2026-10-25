@@ -11,8 +11,10 @@ public sealed class BoardActionsTest
 
     private static readonly ActionDto OneEnded = Actions.Of("drop", (ActionArguments.To, "16"));
 
+    private static readonly ActionDto Promote = Actions.Of("promote", (ActionArguments.Cell, "40"));
+
     private readonly BoardActions _actions = new(
-        [Actions.Pass, Actions.Move(8, 16), Far, Actions.Move(9, 17), Unreadable, OneEnded]
+        [Actions.Pass, Actions.Move(8, 16), Far, Actions.Move(9, 17), Unreadable, OneEnded, Promote]
     );
 
     [Fact]
@@ -36,7 +38,31 @@ public sealed class BoardActionsTest
         IEnumerable<int> origins = this._actions.Origins.Order();
 
         // Assert
-        Assert.Equal([8, 9], origins);
+        Assert.Equal([8, 9, 40], origins);
+    }
+
+    [Fact]
+    public void AtCells_WhenAnActionIsTakenAtACell_AreThoseCells()
+    {
+        // Arrange - nothing beyond the actions
+
+        // Act
+        IEnumerable<int> cells = this._actions.AtCells;
+
+        // Assert
+        Assert.Equal([40], cells);
+    }
+
+    [Fact]
+    public void At_WhenAnActionIsTakenAtTheCell_ReturnsIt()
+    {
+        // Arrange - nothing beyond the actions
+
+        // Act
+        (ActionDto At, int Elsewhere) actions = (this._actions.At(40).Single(), this._actions.At(8).Count);
+
+        // Assert
+        Assert.Equal((Promote, 0), actions);
     }
 
     [Fact]

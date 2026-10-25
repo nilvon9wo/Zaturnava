@@ -1,5 +1,5 @@
 @* The whole page: the lobby until the player sits at (or watches) a table, under a bar of the page's
-   own settings. No URL routing, so the page works from any address it is served at. A seat the
+   own settings (theme, sound, and how the pieces are shown). No URL routing, so the page works from any address it is served at. A seat the
    player takes is remembered in the browser, so that they can come back to it. *@
 @inject Browser Browser
 
@@ -7,11 +7,14 @@
     <span class="brand">Zaturnava</span>
     <button class="theme" @onclick="this.SwitchTheme">@(this._theme == Browser.Dark ? "Light theme" : "Dark theme")</button>
     <button class="sound" @onclick="this.SwitchSound">@(this._isSoundOn ? "Sound: on" : "Sound: off")</button>
+    <button class="pieces" @onclick="this.SwitchPieces">
+        @(this._pieces == PieceSet.Chess ? "Pieces: chess" : "Pieces: traditional")
+    </button>
 </nav>
 
 @if (this._seating is { } seating)
 {
-    <Table Seating="seating" IsSoundOn="this._isSoundOn" OnLeave="this.Leave" />
+    <Table Seating="seating" IsSoundOn="this._isSoundOn" Pieces="this._pieces" OnLeave="this.Leave" />
 }
 else
 {
@@ -22,11 +25,13 @@ else
     private Seating? _seating;
     private string _theme = Browser.Dark;
     private bool _isSoundOn = true;
+    private PieceSet _pieces;
 
     protected override async Task OnInitializedAsync()
     {
         this._theme = await this.Browser.Theme();
         this._isSoundOn = await this.Browser.IsSoundOn();
+        this._pieces = await this.Browser.Pieces();
         await this.Browser.ShowTheme(this._theme);
     }
 
@@ -42,6 +47,12 @@ else
     {
         this._theme = this._theme == Browser.Dark ? Browser.Light : Browser.Dark;
         await this.Browser.ShowTheme(this._theme);
+    }
+
+    private async Task SwitchPieces()
+    {
+        this._pieces = this._pieces == PieceSet.Chess ? PieceSet.Traditional : PieceSet.Chess;
+        await this.Browser.SetPieces(this._pieces);
     }
 
     private async Task SwitchSound()

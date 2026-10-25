@@ -147,14 +147,22 @@ public sealed class ClassicRulesTest
 
         // Assert
         Assert.Equal((Red, 2), (transition.State.DecidingSeat, transition.State.TurnNumber));
-        Assert.Equal([new RollOffWon(Green, 4), new TurnPassed(Green, Red)], transition.Events.TakeLast(2));
+        Assert.Equal(
+            [new RollOffWon(Green, 4), new DiceForfeited(Green, [4]), new TurnPassed(Green, Red)],
+            transition.Events.TakeLast(3)
+        );
     }
 
     [Fact]
     public void Apply_WhenRollingOffWithFourSidedDice_WaitsOnAFourSidedDie()
     {
         // Arrange
-        ClassicRules rules = new(DiceProfile.FourSided, ClassicRules.DefaultIdleRounds);
+        ClassicRules rules = new(
+            DiceProfile.FourSided,
+            ClassicRules.DefaultIdleRounds,
+            CommandedCaptures.Anything,
+            PawnPromotion.OtherArmies
+        );
 
         // Act
         GameState state = rules.CreateInitialState();
@@ -249,7 +257,7 @@ public sealed class ClassicRulesTest
     }
 
     [Fact]
-    public void LegalActions_WhenARajaSitsOnAnEnemyThrone_ItsSeatAlsoMovesThatArmyTheWayItFaces()
+    public void LegalActions_WhenARajaSitsOnAnEnemyThrone_ItsSeatMovesThatArmyTheWayItFacesTakingAnything()
     {
         // Arrange - Red's pawns face left; one of Red's own pieces and one of Yellow's are ahead of it
         GameState state = this.StateWith(
@@ -264,7 +272,7 @@ public sealed class ClassicRulesTest
 
         // Assert
         Assert.Equal(
-            [Grid.CellAt(5, 0), Grid.CellAt(5, 1)],
+            [Grid.CellAt(5, 0), Grid.CellAt(5, 1), Grid.CellAt(5, 2)],
             actions
                 .OfType<MoveAction>()
                 .Where(move => move.From == Grid.CellAt(6, 1))
@@ -576,7 +584,10 @@ public sealed class ClassicRulesTest
 
         // Assert
         Assert.Equal((Yellow, 0), (transition.State.DecidingSeat, transition.State.Dice.Count));
-        Assert.Equal([new DiceRolled(Black, [3, 4]), new TurnPassed(Black, Yellow)], transition.Events);
+        Assert.Equal(
+            [new DiceRolled(Black, [3, 4]), new DiceForfeited(Black, [3, 4]), new TurnPassed(Black, Yellow)],
+            transition.Events
+        );
     }
 
     [Theory]
@@ -782,8 +793,8 @@ public sealed class ClassicRulesTest
 
         // Assert
         Assert.Equal(
-            [new TurnShared(Yellow, Black), new TurnPassed(Yellow, Green)],
-            transition.Events.TakeLast(2)
+            [new TurnShared(Yellow, Black), new DiceForfeited(Black, [1]), new TurnPassed(Yellow, Green)],
+            transition.Events.TakeLast(3)
         );
     }
 
@@ -829,6 +840,611 @@ public sealed class ClassicRulesTest
             (Black, Yellow, new TurnShared(Yellow, Black)),
             (transition.State.DecidingSeat, transition.State.ActingFor, transition.Events[^1])
         );
+    }
+
+    [Fact]
+    public void LegalActions_WhenCommandedArmiesMayNotTakeTheirCommandersTeam_TakesAnyoneElse()
+    {
+        // Arrange - Black commands Red; Red's pawn faces left, with Red's and Green's pieces ahead of it
+        ClassicRules rules = new(
+            DiceProfile.WeightedSixSided,
+            ClassicRules.DefaultIdleRounds,
+            CommandedCaptures.NotOwnTeam,
+            PawnPromotion.OtherArmies
+        );
+        GameState state = this.StateWith(
+            (RedThrone, Piece(1, ClassicPieces.Raja, Black)),
+            (Grid.CellAt(6, 1), Piece(2, ClassicPieces.Pawn, Red)),
+            (Grid.CellAt(5, 2), Piece(3, ClassicPieces.Elephant, Red)),
+            (Grid.CellAt(5, 0), Piece(4, ClassicPieces.Pawn, Green))
+        );
+
+        // Act
+        ImmutableList<GameAction> actions = rules.LegalActions(state);
+
+        // Assert
+        Assert.Equal(
+            [Grid.CellAt(5, 1), Grid.CellAt(5, 2)],
+            actions
+                .OfType<MoveAction>()
+                .Where(move => move.From == Grid.CellAt(6, 1))
+                .Select(move => move.To)
+                .OrderBy(cell => cell.Value)
+        );
+    }
+
+    [Fact]
+    public void Apply_WhenACommandedArmyTakesThePiecesOfItsCommandersTeam_ScoresNoOne()
+    {
+        // Arrange - Black commands Red, whose pawn can take Green's Raja on Green's own throne, e8
+        Piece raja = Piece(3, ClassicPieces.Raja, Green);
+        GameState state = this.StateWith(
+            (RedThrone, Piece(1, ClassicPieces.Raja, Black)),
+            (Grid.CellAt(5, 6), Piece(2, ClassicPieces.Pawn, Red)),
+            (Grid.CellAt(4, 7), raja)
+        );
+
+        // Act
+        Transition transition = this._rules.Apply(state, new MoveAction(Black, Grid.CellAt(5, 6), Grid.CellAt(4, 7)));
+
+        // Assert
+        Assert.Equal(
+            (0, new PieceCaptured(raja, Black, 0), false),
+            (
+                transition.State.Scores[Black],
+                transition.Events[1],
+                transition.Events.OfType<RajaCapturedOnThrone>().Any()
+            )
+        );
+        Assert.Equal([new Prisoner(raja, Black)], transition.State.Prisoners);
+    }
+
+    [Fact]
+    public void LegalActions_WhenAPawnStandsOnTheFarEdge_MayBecomeEachCapturedPieceButAPawnOfItsOwnArmy()
+    {
+        // Arrange - Black's pawns face up: one is on the top edge, one is not
+        GameState state = PromotionPool(this.StateWith(
+            (Grid.CellAt(2, 7), Piece(1, ClassicPieces.Pawn, Black)),
+            (Grid.CellAt(3, 3), Piece(2, ClassicPieces.Pawn, Black)),
+            (Grid.CellAt(0, 0), Piece(3, ClassicPieces.Raja, Yellow))
+        ));
+
+        // Act
+        ImmutableList<GameAction> actions = this._rules.LegalActions(state);
+
+        // Assert - the highest-scoring first, then by owner, then by holder; Red holds two Elephants alike
+        Assert.Equal(
+            [
+                new PromoteAction(Black, Grid.CellAt(2, 7), new PieceId(15)),
+                new PromoteAction(Black, Grid.CellAt(2, 7), new PieceId(11)),
+                new PromoteAction(Black, Grid.CellAt(2, 7), new PieceId(10)),
+                new PromoteAction(Black, Grid.CellAt(2, 7), new PieceId(13)),
+                new PromoteAction(Black, Grid.CellAt(2, 7), new PieceId(16)),
+            ],
+            actions.OfType<PromoteAction>()
+        );
+    }
+
+    [Fact]
+    public void LegalActions_WhenPawnsMayNeverBePromotedIntoPawns_OffersNoPawn()
+    {
+        // Arrange
+        ClassicRules rules = new(
+            DiceProfile.WeightedSixSided,
+            ClassicRules.DefaultIdleRounds,
+            CommandedCaptures.Anything,
+            PawnPromotion.Never
+        );
+        GameState state = PromotionPool(this.StateWith(
+            (Grid.CellAt(2, 7), Piece(1, ClassicPieces.Pawn, Black)),
+            (Grid.CellAt(0, 0), Piece(3, ClassicPieces.Raja, Yellow))
+        ));
+
+        // Act
+        ImmutableList<GameAction> actions = rules.LegalActions(state);
+
+        // Assert
+        Assert.Equal(
+            [new PieceId(15), new PieceId(11), new PieceId(10), new PieceId(13)],
+            actions.OfType<PromoteAction>().Select(promotion => promotion.Into)
+        );
+    }
+
+    [Theory]
+    [InlineData(5, true)]
+    [InlineData(2, false)]
+    public void LegalActions_WhenAnEnemyMovesForTheSeat_PromotesItsPawnsOnlyWithADieThatMovesAPawn(
+        int die,
+        bool mayPromote
+    )
+    {
+        // Arrange - Black moves for Yellow, whose pawns face right; one is on the right edge
+        GameState state = this.SharedTurn() with
+        {
+            DecidingSeat = Black,
+            ActingFor = Yellow,
+            Dice = [die],
+            Position = this.SharedTurn().Position.Place(Grid.CellAt(7, 2), Piece(5, ClassicPieces.Pawn, Yellow)),
+            Prisoners =
+            [
+                new Prisoner(Piece(10, ClassicPieces.Horse, Black), Yellow),
+                new Prisoner(Piece(11, ClassicPieces.Elephant, Yellow), Green),
+            ],
+        };
+
+        // Act
+        ImmutableList<GameAction> actions = this._rules.LegalActions(state);
+
+        // Assert
+        Assert.Equal(
+            mayPromote ? [new PieceId(11), new PieceId(10)] : [],
+            actions.OfType<PromoteAction>().Select(promotion => promotion.Into)
+        );
+    }
+
+    [Fact]
+    public void LegalActions_WhenAnEnemyRajaSitsOnTheSeatsThroneAtTheStartOfItsTurn_MayRollOrPromote()
+    {
+        // Arrange - Yellow's Raja on Black's throne
+        Piece elephant = Piece(11, ClassicPieces.Elephant, Green);
+        GameState state = this.StateWith(
+            (this._rules.Thrones[Black], Piece(3, ClassicPieces.Raja, Yellow)),
+            (Grid.CellAt(2, 7), Piece(1, ClassicPieces.Pawn, Black))
+        ) with
+        {
+            Prisoners = [new Prisoner(elephant, Red)],
+        };
+
+        // Act
+        ImmutableList<GameAction> actions = this._rules.LegalActions(state);
+
+        // Assert
+        Assert.Equal([new RollAction(Black), new PromoteAction(Black, Grid.CellAt(2, 7), elephant.Id)], actions);
+    }
+
+    [Fact]
+    public void Apply_WhenAPawnMovesToTheFarEdge_WaitsOnItsPromotionOrAPassBeforeTheTurnGoesOn()
+    {
+        // Arrange - a deliberate move, which would otherwise end the turn
+        Piece elephant = Piece(11, ClassicPieces.Elephant, Green);
+        GameState state = this.FarEdgeAhead();
+
+        // Act
+        Transition transition = this._rules.Apply(state, new MoveAction(Black, Grid.CellAt(2, 6), Grid.CellAt(2, 7)));
+
+        // Assert
+        Assert.Equal(
+            (Black, Grid.CellAt(2, 7), false),
+            (transition.State.DecidingSeat, transition.State.PromotionDue, this._rules.MayOffer(transition.State))
+        );
+        Assert.Equal(
+            [new PassAction(Black), new PromoteAction(Black, Grid.CellAt(2, 7), elephant.Id)],
+            this._rules.LegalActions(transition.State)
+        );
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Apply_WhenAPromotionDueAfterADeliberateMoveIsDecided_ThePawnsTurnPasses(bool isPromoted)
+    {
+        // Arrange
+        GameState moved = this._rules.Apply(
+            this.FarEdgeAhead(),
+            new MoveAction(Black, Grid.CellAt(2, 6), Grid.CellAt(2, 7))
+        ).State;
+        GameAction decision = isPromoted
+            ? new PromoteAction(Black, Grid.CellAt(2, 7), new PieceId(11))
+            : new PassAction(Black);
+
+        // Act
+        Transition transition = this._rules.Apply(moved, decision);
+
+        // Assert
+        Assert.Equal(
+            (Yellow, null, isPromoted ? ClassicPieces.Elephant : ClassicPieces.Pawn),
+            (
+                transition.State.DecidingSeat,
+                transition.State.PromotionDue,
+                transition.State.Position.PieceAt(Grid.CellAt(2, 7))?.Kind
+            )
+        );
+    }
+
+    [Fact]
+    public void Apply_WhenAPromotionDueAfterARolledMoveIsPassed_TheTurnGoesOnWithTheDiceLeft()
+    {
+        // Arrange - Black rolled a Pawn and a Horse
+        GameState state = this.FarEdgeAhead() with
+        {
+            Dice = [5, 2],
+            Position = this.FarEdgeAhead().Position.Place(Grid.CellAt(0, 0), Piece(4, ClassicPieces.Horse, Black)),
+        };
+        GameState moved = this._rules.Apply(state, new MoveAction(Black, Grid.CellAt(2, 6), Grid.CellAt(2, 7))).State;
+
+        // Act
+        Transition transition = this._rules.Apply(moved, new PassAction(Black));
+
+        // Assert
+        Assert.Equal(
+            (Grid.CellAt(2, 7), "2", Black, null, "2"),
+            (
+                moved.PromotionDue,
+                string.Join(',', moved.Dice),
+                transition.State.DecidingSeat,
+                transition.State.PromotionDue,
+                string.Join(',', transition.State.Dice)
+            )
+        );
+    }
+
+    [Fact]
+    public void Apply_WhenOnlyAnEnemysPawnCanUseTheDice_PromotingItUsesADie()
+    {
+        // Arrange - Black's Raja on Red's throne is boxed in by its Elephants; Red's pawn faces left
+        Piece elephant = Piece(11, ClassicPieces.Elephant, Green);
+        GameState state = this.StateWith(
+            (RedThrone, Piece(1, ClassicPieces.Raja, Black)),
+            (Grid.CellAt(6, 2), Piece(2, ClassicPieces.Elephant, Black)),
+            (Grid.CellAt(6, 3), Piece(3, ClassicPieces.Elephant, Black)),
+            (Grid.CellAt(6, 4), Piece(4, ClassicPieces.Elephant, Black)),
+            (Grid.CellAt(7, 2), Piece(5, ClassicPieces.Elephant, Black)),
+            (Grid.CellAt(7, 4), Piece(6, ClassicPieces.Elephant, Black)),
+            (Grid.CellAt(0, 5), Piece(7, ClassicPieces.Pawn, Red)),
+            (Grid.CellAt(0, 0), Piece(8, ClassicPieces.Raja, Yellow))
+        ) with
+        {
+            AwaitedDice = new DiceRequest(2, 6),
+            Prisoners = [new Prisoner(elephant, Yellow)],
+        };
+        GameState rolled = this._rules.Apply(state, new DiceAction(Black, [5, 6])).State;
+
+        // Act
+        Transition transition = this._rules.Apply(rolled, new PromoteAction(Black, Grid.CellAt(0, 5), elephant.Id));
+
+        // Assert - one die is left, which nothing can use, so the turn passes
+        Assert.Equal(
+            (Black, "5,6", elephant, Yellow),
+            (
+                rolled.DecidingSeat,
+                string.Join(',', rolled.Dice),
+                transition.State.Position.PieceAt(Grid.CellAt(0, 5)),
+                transition.State.DecidingSeat
+            )
+        );
+    }
+
+    [Fact]
+    public void Apply_WhenAnEnemyMovingForTheSeatPromotes_ItUsesADieAndGoesOn()
+    {
+        // Arrange - Black moves for Yellow, with a Pawn's die and a Horse's
+        GameState state = this.SharedTurn() with
+        {
+            DecidingSeat = Black,
+            ActingFor = Yellow,
+            Position = this.SharedTurn().Position.Place(Grid.CellAt(7, 2), Piece(5, ClassicPieces.Pawn, Yellow)),
+            Prisoners = [new Prisoner(Piece(10, ClassicPieces.Horse, Black), Yellow)],
+        };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new PromoteAction(Black, Grid.CellAt(7, 2), new PieceId(10)));
+
+        // Assert
+        Assert.Equal(
+            (Black, Yellow, "2"),
+            (transition.State.DecidingSeat, transition.State.ActingFor, string.Join(',', transition.State.Dice))
+        );
+    }
+
+    [Fact]
+    public void Apply_WhenPromoting_ThePawnBecomesTheCapturedPieceForItsOwnArmyAndTheTurnGoesOn()
+    {
+        // Arrange
+        Piece pawn = Piece(1, ClassicPieces.Pawn, Black);
+        Piece elephant = Piece(11, ClassicPieces.Elephant, Green);
+        GameState state = this.StateWith(
+            (Grid.CellAt(2, 7), pawn),
+            (Grid.CellAt(0, 0), Piece(3, ClassicPieces.Raja, Yellow))
+        ) with
+        {
+            Prisoners = [new Prisoner(elephant, Red)],
+        };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new PromoteAction(Black, Grid.CellAt(2, 7), elephant.Id));
+
+        // Assert
+        Assert.Equal(
+            (elephant, 0, Black, new PiecePromoted(pawn, elephant, Grid.CellAt(2, 7), Black)),
+            (
+                transition.State.Position.PieceAt(Grid.CellAt(2, 7)),
+                transition.State.Prisoners.Count,
+                transition.State.DecidingSeat,
+                transition.Events.Single()
+            )
+        );
+    }
+
+    [Fact]
+    public void Apply_WhenAPromotionLeavesOnlyRajas_EndsTheGameInADraw()
+    {
+        // Arrange
+        Piece raja = Piece(11, ClassicPieces.Raja, Green);
+        GameState state = this.StateWith(
+            (Grid.CellAt(2, 7), Piece(1, ClassicPieces.Pawn, Black)),
+            (Grid.CellAt(3, 3), Piece(2, ClassicPieces.Raja, Black)),
+            (Grid.CellAt(0, 0), Piece(3, ClassicPieces.Raja, Yellow))
+        ) with
+        {
+            Prisoners = [new Prisoner(raja, Yellow)],
+        };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new PromoteAction(Black, Grid.CellAt(2, 7), raja.Id));
+
+        // Assert
+        Assert.Equal(true, transition.State.Outcome?.IsDraw);
+    }
+
+    [Fact]
+    public void Apply_WhenAnOfferIsMadeAgainInTheSameTurn_RefusesIt()
+    {
+        // Arrange
+        OfferAction offer = new(Black, Yellow, [new PieceId(12)], [new PieceId(1)]);
+        GameState offered = this._rules.Apply(this.Ransoms(), offer).State;
+        GameState declined = this._rules.Apply(offered, new DeclineAction(Yellow)).State;
+
+        // Act
+        Transition Offering() => this._rules.Apply(declined, offer);
+
+        // Assert
+        _ = Assert.Throws<IllegalActionException>(Offering);
+    }
+
+    [Fact]
+    public void Apply_WhenTheTurnPasses_ForgetsTheOffersMade()
+    {
+        // Arrange
+        GameState state = this.Ransoms() with
+        {
+            IsRansomWindow = true,
+            OffersMade = [new RansomOffer(Black, Yellow, [new PieceId(12)], [])],
+        };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new PassAction(Black));
+
+        // Assert
+        Assert.Equal((Yellow, 0), (transition.State.DecidingSeat, transition.State.OffersMade.Count));
+    }
+
+    [Fact]
+    public void WorthOf_WhenAsked_IsWhatTakingThePieceScores()
+    {
+        // Arrange - nothing beyond the rules
+
+        // Act
+        int worth = this._rules.WorthOf(ClassicPieces.Elephant);
+
+        // Assert
+        Assert.Equal(4, worth);
+    }
+
+    [Fact]
+    public void MayOffer_WhenTheSeatHoldsAnotherSeatsPieceOnItsOwnTurn_IsTrue()
+    {
+        // Arrange
+        GameState state = this.Ransoms();
+
+        // Act
+        bool mayOffer = this._rules.MayOffer(state);
+
+        // Assert
+        Assert.True(mayOffer);
+    }
+
+    [Theory]
+    [InlineData("offer waiting")]
+    [InlineData("dice awaited")]
+    [InlineData("acting for")]
+    [InlineData("rolling off")]
+    [InlineData("game over")]
+    [InlineData("promotion due")]
+    [InlineData("own piece")]
+    public void MayOffer_WhenNotOnItsOwnTurnOrHoldingNoOtherSeatsPiece_IsFalse(string why)
+    {
+        // Arrange
+        GameState ransoms = this.Ransoms();
+        GameState state = why switch
+        {
+            "offer waiting" => ransoms with { Offer = new RansomOffer(Black, Yellow, [new PieceId(12)], []) },
+            "dice awaited" => ransoms with { AwaitedDice = new DiceRequest(2, 6) },
+            "acting for" => ransoms with { ActingFor = Yellow },
+            "rolling off" => ransoms with { RollOff = [Black, Yellow] },
+            "game over" => ransoms with { DecidingSeat = null },
+            "promotion due" => ransoms with { PromotionDue = Grid.CellAt(2, 7) },
+            _ => ransoms with { Prisoners = [new Prisoner(Piece(20, ClassicPieces.Pawn, Black), Black)] },
+        };
+
+        // Act
+        bool mayOffer = this._rules.MayOffer(state);
+
+        // Assert
+        Assert.False(mayOffer);
+    }
+
+    [Fact]
+    public void Apply_WhenOffering_WaitsOnTheReceiversAnswerAgainstTheClock()
+    {
+        // Arrange
+        GameState state = this.Ransoms();
+        OfferAction offer = new(Black, Yellow, [new PieceId(12)], [new PieceId(1)]);
+
+        // Act
+        Transition transition = this._rules.Apply(state, offer);
+
+        // Assert
+        Assert.Equal(
+            (Yellow, offer.Offer, new RansomOffered(offer.Offer)),
+            (transition.State.DecidingSeat, transition.State.Offer, transition.Events.Single())
+        );
+        Assert.Equal([new AcceptAction(Yellow), new DeclineAction(Yellow)], this._rules.LegalActions(transition.State));
+        DecisionTimer answer = new("ransom-answer", new DeclineAction(Yellow));
+        Assert.Equal(answer, this._rules.TimerOf(transition.State));
+    }
+
+    public static TheoryData<string, OfferAction> InvalidOffers =>
+        new()
+        {
+            { "game over", new OfferAction(Black, Yellow, [new PieceId(12)], []) },
+            { "dice awaited", new OfferAction(Black, Yellow, [new PieceId(12)], []) },
+            { "not deciding", new OfferAction(Yellow, Black, [new PieceId(1)], []) },
+            { "to oneself", new OfferAction(Black, Black, [new PieceId(12)], []) },
+            { "nothing given", new OfferAction(Black, Yellow, [], [new PieceId(1)]) },
+            { "not held", new OfferAction(Black, Yellow, [new PieceId(12), new PieceId(99)], []) },
+            { "asked for the enemy's", new OfferAction(Black, Yellow, [new PieceId(12)], [new PieceId(14)]) },
+        };
+
+    [Theory]
+    [MemberData(nameof(InvalidOffers), DisableDiscoveryEnumeration = true)]
+    public void Apply_WhenTheOfferMayNotBeMade_ThrowsIllegalActionException(string why, OfferAction offer)
+    {
+        // Arrange
+        GameState ransoms = this.Ransoms();
+        GameState state = why switch
+        {
+            "game over" => ransoms with { DecidingSeat = null },
+            "dice awaited" => ransoms with { AwaitedDice = new DiceRequest(2, 6) },
+            _ => ransoms,
+        };
+
+        // Act
+        IllegalActionException exception = Assert.Throws<IllegalActionException>(() => this._rules.Apply(state, offer));
+
+        // Assert
+        Assert.Contains("is not legal now", exception.Message);
+    }
+
+    [Fact]
+    public void Apply_WhenAnOfferIsAccepted_EachPrisonerGoesHomeOrToTheNearestFreeSquare()
+    {
+        // Arrange - Yellow's pawn 12 starts on b8, where Green's pawn stands; Black's horse 1 on b1
+        GameState state = this.Ransoms() with
+        {
+            DecidingSeat = Yellow,
+            Offer = new RansomOffer(Black, Yellow, [new PieceId(12)], [new PieceId(1)]),
+        };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new AcceptAction(Yellow));
+
+        // Assert
+        Piece pawn = Piece(12, ClassicPieces.Pawn, Yellow);
+        Piece horse = Piece(1, ClassicPieces.Horse, Black);
+        Assert.Equal(
+            [
+                new RansomAccepted(state.Offer),
+                new PieceReturned(pawn, Grid.CellAt(0, 6)),
+                new PieceReturned(horse, Grid.CellAt(1, 0)),
+            ],
+            transition.Events
+        );
+        Assert.Equal(
+            (Black, null, 1, pawn, horse),
+            (
+                transition.State.DecidingSeat,
+                transition.State.Offer,
+                transition.State.Prisoners.Count,
+                transition.State.Position.PieceAt(Grid.CellAt(0, 6)),
+                transition.State.Position.PieceAt(Grid.CellAt(1, 0))
+            )
+        );
+    }
+
+    [Fact]
+    public void Apply_WhenAnOfferIsDeclined_KeepsThePrisonersAndTheOffererDecidesAgain()
+    {
+        // Arrange
+        GameState state = this.Ransoms() with
+        {
+            DecidingSeat = Yellow,
+            Offer = new RansomOffer(Black, Yellow, [new PieceId(12)], []),
+        };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new DeclineAction(Yellow));
+
+        // Assert
+        Assert.Equal(
+            (Black, null, 3, new RansomDeclined(state.Offer)),
+            (
+                transition.State.DecidingSeat,
+                transition.State.Offer,
+                transition.State.Prisoners.Count,
+                transition.Events.Single()
+            )
+        );
+    }
+
+    [Fact]
+    public void Apply_WhenATurnEndsWithPrisonersHeld_OpensTheRansomWindowAgainstTheClock()
+    {
+        // Arrange
+        GameState state = this.Ransoms();
+
+        // Act
+        Transition transition = this._rules.Apply(state, new PassAction(Black));
+
+        // Assert
+        Assert.Equal(
+            (Black, true, 1, 2, new RansomWindowOpened(Black)),
+            (
+                transition.State.DecidingSeat,
+                transition.State.IsRansomWindow,
+                transition.State.IdlePasses,
+                transition.State.TurnNumber,
+                transition.Events.Single()
+            )
+        );
+        Assert.Equal([new PassAction(Black)], this._rules.LegalActions(transition.State));
+        Assert.Equal(
+            (new DecisionTimer("ransom-window", new PassAction(Black)), true),
+            (this._rules.TimerOf(transition.State), this._rules.MayOffer(transition.State))
+        );
+    }
+
+    [Fact]
+    public void Apply_WhenDoneOffering_PassesTheTurnKeepingTheIdlePasses()
+    {
+        // Arrange
+        GameState state = this.Ransoms() with { IsRansomWindow = true, IdlePasses = 1 };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new PassAction(Black));
+
+        // Assert
+        Assert.Equal(
+            (Yellow, false, 1, new TurnPassed(Black, Yellow)),
+            (
+                transition.State.DecidingSeat,
+                transition.State.IsRansomWindow,
+                transition.State.IdlePasses,
+                transition.Events.Single()
+            )
+        );
+    }
+
+    [Fact]
+    public void TimerOf_WhenNoOfferWaitsAndTheTurnGoesOn_IsNull()
+    {
+        // Arrange
+        GameState state = this.Ransoms();
+
+        // Act
+        DecisionTimer? timer = this._rules.TimerOf(state);
+
+        // Assert
+        Assert.Null(timer);
     }
 
     [Fact]
@@ -951,6 +1567,57 @@ public sealed class ClassicRulesTest
         {
             DecidingSeat = Yellow,
             Dice = [5, 2],
+        };
+
+    /// <summary>
+    /// Black's turn, before rolling: Black holds Yellow's pawn 12 (which starts on b8, where Green's
+    /// pawn stands) and Red's pawn 14; Yellow holds Black's horse 1, which starts on b1.
+    /// </summary>
+    private GameState Ransoms() =>
+        this.StateWith(
+            (Grid.CellAt(3, 3), Piece(2, ClassicPieces.Raja, Black)),
+            (Grid.CellAt(1, 7), Piece(3, ClassicPieces.Pawn, Green)),
+            (Grid.CellAt(5, 5), Piece(4, ClassicPieces.Raja, Yellow))
+        ) with
+        {
+            Prisoners =
+            [
+                new Prisoner(Piece(12, ClassicPieces.Pawn, Yellow), Black),
+                new Prisoner(Piece(14, ClassicPieces.Pawn, Red), Black),
+                new Prisoner(Piece(1, ClassicPieces.Horse, Black), Yellow),
+            ],
+        };
+
+    /// <summary>
+    /// Captured pieces to promote into: Black's Horse and Pawn, Green's Elephant (twice held by Red, once
+    /// by Black), Yellow's Boat and Pawn.
+    /// </summary>
+    private static GameState PromotionPool(GameState state) =>
+        state with
+        {
+            Prisoners =
+            [
+                new Prisoner(Piece(10, ClassicPieces.Horse, Black), Yellow),
+                new Prisoner(Piece(11, ClassicPieces.Elephant, Green), Red),
+                new Prisoner(Piece(12, ClassicPieces.Pawn, Black), Yellow),
+                new Prisoner(Piece(13, ClassicPieces.Boat, Yellow), Black),
+                new Prisoner(Piece(15, ClassicPieces.Elephant, Green), Black),
+                new Prisoner(Piece(16, ClassicPieces.Pawn, Yellow), Green),
+                new Prisoner(Piece(17, ClassicPieces.Elephant, Green), Red),
+            ],
+        };
+
+    /// <summary>
+    /// Black's turn, before rolling: its pawn is a step from the top edge; Red holds Green's Elephant
+    /// 11, and Yellow has a Raja to play on.
+    /// </summary>
+    private GameState FarEdgeAhead() =>
+        this.StateWith(
+            (Grid.CellAt(2, 6), Piece(1, ClassicPieces.Pawn, Black)),
+            (Grid.CellAt(5, 5), Piece(3, ClassicPieces.Raja, Yellow))
+        ) with
+        {
+            Prisoners = [new Prisoner(Piece(11, ClassicPieces.Elephant, Green), Red)],
         };
 
     private GameState StateWith(params (CellId Cell, Piece Piece)[] placements) =>

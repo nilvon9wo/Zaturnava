@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Net.NowhereAtAll.Zaturnava.Engine.Boards;
 using Net.NowhereAtAll.Zaturnava.Engine.Chance;
 using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
 using Net.NowhereAtAll.Zaturnava.Engine.Positions;
@@ -38,6 +39,24 @@ public sealed record GameState(
 
     /// <summary>How many turns in a row have been passed without rolling or moving.</summary>
     public int IdlePasses { get; init; }
+
+    /// <summary>The ransom waiting on its receiver, who decides meanwhile; null if none is.</summary>
+    public RansomOffer? Offer { get; init; }
+
+    /// <summary>
+    /// Whether the turn is over and its seat, deciding, may still offer ransoms before it passes; the
+    /// turn passes with <see cref="IdlePasses"/> as they stand.
+    /// </summary>
+    public bool IsRansomWindow { get; init; }
+
+    /// <summary>The ransoms offered this turn, which may not be offered again until it passes.</summary>
+    public ImmutableList<RansomOffer> OffersMade { get; init; } = [];
+
+    /// <summary>
+    /// The cell of a Pawn just come to the far edge, which the deciding seat may promote at once, before
+    /// the turn goes on, or leave for later; null if none.
+    /// </summary>
+    public CellId? PromotionDue { get; init; }
 
     /// <summary>How the game ended; null while it goes on.</summary>
     public GameOutcome? Outcome { get; init; }

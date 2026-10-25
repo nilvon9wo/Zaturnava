@@ -60,8 +60,10 @@ public sealed class GameLogTest
             new DiceRolled(Black, [2, 5]),
             new PieceMoved(Horse, Cell("b1"), Cell("c3"), Black),
             new PieceCaptured(Pawn, Black, 1),
+            new DiceForfeited(Black, [5]),
             new TurnPassed(Black, Yellow),
             new PieceMoved(Pawn, Cell("h2"), Cell("g2"), Yellow),
+            new DiceForfeited(Yellow, [1, 3]),
             new TurnPassed(Yellow, Green)
         );
 
@@ -74,8 +76,10 @@ public sealed class GameLogTest
                 "rolled 0: Black rolled 2 (Horse) and 5 (Pawn or Raja).",
                 "moved 0: Black moved their Horse from b1 to c3. 1-18",
                 "captured 0: Black took Yellow's Pawn (+1).",
+                "forfeited 0: Black could move nothing with 5 (Pawn or Raja), so lost it.",
                 "passed 0: Yellow to play.",
                 "moved 1: Yellow moved their Pawn from h2 to g2, without rolling. 15-14",
+                "forfeited 1: Yellow could move nothing with 1 (Boat) and 3 (Elephant), so lost them.",
                 "passed 1: Green to play.",
             ],
             log.Select(Told)
@@ -91,7 +95,8 @@ public sealed class GameLogTest
             new PieceMoved(Pawn, Cell("h2"), Cell("g2"), Black),
             new ThroneEntered(RedRaja, Yellow, 1),
             new PieceCaptured(RedRaja, Black, 5),
-            new RajaCapturedOnThrone(RedRaja, Black, 2)
+            new RajaCapturedOnThrone(RedRaja, Black, 2),
+            new DiceForfeited(Black, [1])
         );
 
         // Act
@@ -105,9 +110,51 @@ public sealed class GameLogTest
                 "bonus 3: Red's Raja entered Yellow's throne (+1).",
                 "captured 0: Black took Red's Raja (+5).",
                 "bonus 0: Black took that Raja on its own throne (+2 more).",
+                "forfeited 0: Black could move nothing of Red's with 1 (Boat), so lost it.",
             ],
             log.Select(Told)
         );
+    }
+
+    [Fact]
+    public void LatestOf_WhenPrisonersArePromotedOrRansomed_TellsOfIt()
+    {
+        // Arrange
+        Piece blackPawn = new(new PieceId(4), ClassicPieces.Pawn, Black);
+        Piece elephant = new(new PieceId(18), ClassicPieces.Elephant, Green);
+        RansomOffer gift = new(Black, Yellow, [Pawn.Id], []);
+        RansomOffer trade = new(Black, Yellow, [Pawn.Id, new PieceId(21)], [Horse.Id]);
+        GameSnapshot snapshot = Snapshot(
+            new PiecePromoted(Pawn, Horse, Cell("h8"), Black),
+            new PiecePromoted(blackPawn, elephant, Cell("c8"), Black),
+            new PieceCaptured(Horse, Black, 0),
+            new RansomWindowOpened(Black),
+            new RansomOffered(gift),
+            new RansomDeclined(gift),
+            new RansomOffered(trade),
+            new RansomAccepted(trade),
+            new PieceReturned(Pawn, Cell("a7"))
+        );
+
+        // Act
+        ImmutableList<EventDto> log = GameLog.LatestOf(snapshot);
+
+        // Assert
+        Assert.Equal(
+            [
+                "promoted 0: Black promoted Yellow's Pawn on h8 to their Horse.",
+                "promoted 0: Black promoted their Pawn on c8 to Green's Elephant.",
+                "captured 0: Black took their Horse (no points).",
+                "ransom 0: Black's turn is over, but they may still offer prisoners back.",
+                "ransom 0: Black offered Yellow a prisoner back, as a gift.",
+                "ransom 1: Yellow declined Black's offer.",
+                "ransom 0: Black offered Yellow 2 prisoners back, for a prisoner in return.",
+                "ransom 1: Yellow accepted Black's offer.",
+                "ransom 1: Yellow's Pawn went home, to a7.",
+            ],
+            log.Select(Told)
+        );
+        Assert.Equal((Cell("h8").Value, Cell("a7").Value), (log[0].To, log[^1].To));
     }
 
     [Theory]

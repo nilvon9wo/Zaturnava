@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Boards;
 using Net.NowhereAtAll.Zaturnava.Engine.Decisions;
+using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
 using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 
 namespace Net.NowhereAtAll.Zaturnava.Bots.Test;
@@ -26,7 +27,7 @@ public sealed class MidasBotTest
             ImmutableDictionary<GameAction, int>.Empty.Add(Pass, 0).Add(Small, 1).Add(Big, 5).Add(Roll, 0);
 
         // Act
-        ImmutableHashSet<GameAction> chosen = await this.Choices(points);
+        ImmutableHashSet<GameAction> chosen = await Choices(points);
 
         // Assert
         Assert.Equal([Big], chosen);
@@ -40,7 +41,7 @@ public sealed class MidasBotTest
             ImmutableDictionary<GameAction, int>.Empty.Add(Small, 1).Add(Big, 5).Add(AlsoBig, 5);
 
         // Act
-        ImmutableHashSet<GameAction> chosen = await this.Choices(points);
+        ImmutableHashSet<GameAction> chosen = await Choices(points);
 
         // Assert
         Assert.Subset(ImmutableHashSet.Create(Big, AlsoBig), chosen);
@@ -54,10 +55,25 @@ public sealed class MidasBotTest
             ImmutableDictionary<GameAction, int>.Empty.Add(Pass, 0).Add(Roll, 0).Add(Small, 0);
 
         // Act
-        ImmutableHashSet<GameAction> chosen = await this.Choices(points);
+        ImmutableHashSet<GameAction> chosen = await Choices(points);
 
         // Assert
         Assert.Subset(ImmutableHashSet.Create(Roll, Small), chosen);
+    }
+
+    [Theory]
+    [InlineData(30)]
+    [InlineData(20)]
+    public async Task Decide_WhenAPawnMayBePromoted_PromotesItIntoItsTeamsPieceNotAnEnemys(int teams)
+    {
+        // Arrange - its Pawn 40 on the edge; Green's Raja 30 is its ally's, Yellow's Horse 11 an enemy's
+        DecisionRequest request = Ransoms.Promoting(teams);
+
+        // Act
+        ImmutableHashSet<GameAction> chosen = await Choices(request);
+
+        // Assert
+        Assert.Equal([new PromoteAction(Seat, new CellId(7), new PieceId(teams))], chosen);
     }
 
     [Fact]
@@ -67,7 +83,7 @@ public sealed class MidasBotTest
         ImmutableDictionary<GameAction, int> points = ImmutableDictionary<GameAction, int>.Empty.Add(Pass, 0);
 
         // Act
-        ImmutableHashSet<GameAction> chosen = await this.Choices(points);
+        ImmutableHashSet<GameAction> chosen = await Choices(points);
 
         // Assert
         Assert.Equal([Pass], chosen);
@@ -85,6 +101,65 @@ public sealed class MidasBotTest
 
         // Assert
         _ = await Assert.ThrowsAsync<TaskCanceledException>(() => deciding);
+    }
+
+    [Theory]
+    [InlineData(20, 10, "accept")]
+    [InlineData(20, 11, "accept")]
+    [InlineData(21, 30, "decline")]
+    public async Task Decide_WhenOfferedARansom_AcceptsIfItGetsBackAtLeastTheWorthItGives(
+        int given,
+        int asked,
+        string answer
+    )
+    {
+        // Arrange
+        DecisionRequest offered = Ransoms.Offered([given], [asked]);
+
+        // Act
+        GameAction action = await new MidasBot(new Random(1)).Decide(offered, this._cancellation);
+
+        // Assert
+        Assert.Equal(answer, action.Describe().Kind);
+    }
+
+    [Fact]
+    public async Task Decide_WhenItsTurnIsOver_OffersTheTradeThatGainsTheMost()
+    {
+        // Arrange - its Pawn for its own Horse back gains 2
+        DecisionRequest request = Ransoms.Window();
+
+        // Act
+        GameAction action = await new MidasBot(new Random(1)).Decide(request, this._cancellation);
+
+        // Assert
+        Assert.Equal(new OfferAction(Seat, Ransoms.Yellow, [new PieceId(10)], [new PieceId(20)]), action);
+    }
+
+    [Fact]
+    public async Task Decide_WhenNoTradeGainsAnything_IsDone()
+    {
+        // Arrange - without its own Horse 20 to ask back, every trade loses or breaks even
+        DecisionRequest request = Ransoms.WindowWithout(20);
+
+        // Act
+        GameAction action = await new MidasBot(new Random(1)).Decide(request, this._cancellation);
+
+        // Assert
+        Assert.Equal(Ransoms.Done, action);
+    }
+
+    [Fact]
+    public async Task Decide_WhenItHasOfferedThisTurn_IsDone()
+    {
+        // Arrange
+        DecisionRequest request = Ransoms.Window(Ransoms.Offer(Ransoms.Yellow, [10], [20]));
+
+        // Act
+        GameAction action = await new MidasBot(new Random(1)).Decide(request, this._cancellation);
+
+        // Assert
+        Assert.Equal(Ransoms.Done, action);
     }
 
     [Fact]
@@ -109,12 +184,14 @@ public sealed class MidasBotTest
     }
 
     /// <summary>Everything Midas chose, over many tries with different dice.</summary>
-    private async Task<ImmutableHashSet<GameAction>> Choices(ImmutableDictionary<GameAction, int> points)
+    private static Task<ImmutableHashSet<GameAction>> Choices(ImmutableDictionary<GameAction, int> points) =>
+        Choices(Request(points));
+
+    private static async Task<ImmutableHashSet<GameAction>> Choices(DecisionRequest request)
     {
-        DecisionRequest request = Request(points);
         GameAction[] chosen = await Task.WhenAll(
             Enumerable.Range(0, Tries)
-                .Select(seed => new MidasBot(new Random(seed)).Decide(request, this._cancellation))
+                .Select(seed => new MidasBot(new Random(seed)).Decide(request, CancellationToken.None))
         );
         return [.. chosen];
     }

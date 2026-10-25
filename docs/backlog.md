@@ -6,7 +6,6 @@ did them.
 
 ## Seeing what happens
 
-- **15** (rest) The ransom offers prisoners allow.
 - **25** In the lobby, say when each game started (who plays, how many moves and which seats are
   open are shown).
 
@@ -24,10 +23,9 @@ did them.
 - **21, 22, 26** (rest) Ending the game by agreement; the idle-rounds safety net as a per-game
   setting.
 - **20** Offer to end the game, for the other players to accept.
-- Ransom (rules §8): an offer of prisoners for prisoners, which the other player accepts or
-  declines. Its protocol is still open (rules §13): it needs actions from a seat whose turn it is
-  not.
-- Escape on doubles (§7), promotion (§8), boat triumph (§9), the empire bonus (§5).
+- Escape on doubles (§7), boat triumph (§9), the empire bonus (§5).
+- Ransom (§8): the receiving player choosing among equidistant squares; bots that offer during their turn.
+- The commanded-captures toggle (`control.enemyArmyCaptures`) as a per-game setting.
 
 ## Players and identity
 
@@ -86,3 +84,22 @@ Second playtest (2026-10-25):
 - **2** (more) The boat is a drawn sailing boat, not a bishop.
 - The page and server start together from Visual Studio's **Play** launch profile, and the README
   says how to play.
+
+After the second playtest (2026-10-25):
+
+- A commanded enemy army may take any piece (rules §6.4), by default; taking a piece of one's own
+  team scores nothing.
+- Promotion (§8): a Pawn on the far edge may become any captured piece, which its original owner
+  then commands; at once (the page opens its choices) or later (the page rings the Pawn, and picking
+  it up opens them). An enemy promotes only with a die that moves a Pawn.
+- Dice no piece can use are told as lost, in the log and on the page, before the turn passes.
+- Bots: Midas promotes into its team's best piece and trades prisoners at a profit; Solomon, a new
+  bot, gives allies' prisoners back and trades evenly. No offer may be made twice in a turn.
+- The lobby gives each bot one seat at most, and starts a quick game at a random seat with the bots
+  shuffled.
+- The pieces show as traditional (Raja, Elephant, Horse as silhouettes) or chess (King, Rook,
+  Knight), as the player chooses.
+- A page whose request fails keeps looking, rather than stopping.
+- **15** Ransom (§8): on their turn, and in a timed window once it is over, a player may offer
+  prisoners back, for prisoners in return or as a gift; the receiver accepts or declines against
+  the clock (bots answer at once).

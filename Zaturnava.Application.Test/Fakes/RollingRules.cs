@@ -57,11 +57,17 @@ internal sealed class RollingRules(int length) : IRulesApplying
             _ => throw new IllegalActionException(action),
         };
 
+    public bool MayOffer([Required] GameState state) => false;
+
+    public DecisionTimer? TimerOf([Required] GameState state) => null;
+
     public GameAction Parse([Required] ActionDescriptor descriptor) => ActionParser.Standard.Parse(descriptor);
 
     public string NameOf(PieceKindId kind) => kind.Value;
 
     public string NameOf(SeatId seat) => $"Seat {seat.Value}";
+
+    public int WorthOf(PieceKindId kind) => 1;
 
     public string NameOfDie(int value) => $"Die {value}";
 

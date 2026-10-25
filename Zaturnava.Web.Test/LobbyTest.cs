@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Bunit;
 
 namespace Net.NowhereAtAll.Zaturnava.Web.Test;
@@ -19,12 +20,11 @@ public sealed class LobbyTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ("Zaturnava (classic)", 4, "", "random", "Join seat 2", "game-000"),
+            ("Zaturnava (classic)", 4, "|random|oracle|midas", "Join seat 2", "game-000"),
             (
                 lobby.Find("p.rules").TextContent,
                 lobby.FindAll("select.plan").Count,
-                lobby.FindAll("select.plan")[0].GetAttribute("value"),
-                lobby.FindAll("select.plan")[1].GetAttribute("value"),
+                string.Join('|', lobby.FindAll("select.plan").Select(plan => plan.GetAttribute("value"))),
                 lobby.Find("button.join").TextContent,
                 lobby.Find("span.game").TextContent
             )
@@ -41,7 +41,7 @@ public sealed class LobbyTest : IDisposable
 
         // Assert
         Assert.Equal(
-            "Bot: Random=Any move.|Bot: Oracle (AI)=Asks a model.",
+            "Bot: Random=Any move.|Bot: Oracle (AI)=Asks a model.|Bot: Midas=Greedy.|Bot: Solomon=Fair.",
             string.Join(
                 "|",
                 lobby.FindAll("dl.bots dt").Zip(
@@ -64,7 +64,7 @@ public sealed class LobbyTest : IDisposable
         // Assert
         Assert.Equivalent(
             (
-                new[] { null, "random", "random", "random" },
+                new[] { null, "random", "oracle", "midas" },
                 new Seating(FakeGameServer.GameId, new SeatClaim(0, "secret"))
             ),
             (this._page.Server.Created?.Bots, this._seated),
@@ -77,13 +77,52 @@ public sealed class LobbyTest : IDisposable
     {
         // Arrange
         IRenderedComponent<Lobby> lobby = this.Render();
-        lobby.FindAll("select.plan")[0].Change("random");
+        lobby.FindAll("select.plan")[0].Change("solomon");
 
         // Act
         lobby.Find("button.create").Click();
 
         // Assert
         Assert.Equal(Seating.Watching(FakeGameServer.GameId), this._seated);
+    }
+
+    [Fact]
+    public void Render_WhenABotPlaysOneSeat_CannotBeChosenForAnother()
+    {
+        // Arrange - nothing beyond the server's catalog
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Assert - Random plays seat 2, so seat 1 cannot have it; seat 2 can
+        Assert.Equal(
+            (true, false),
+            (
+                lobby.FindAll("select.plan")[0].QuerySelector("option[value=random]")!.HasAttribute("disabled"),
+                lobby.FindAll("select.plan")[1].QuerySelector("option[value=random]")!.HasAttribute("disabled")
+            )
+        );
+    }
+
+    [Fact]
+    public void Quick_WhenClicked_SitsAtSomeSeatWithEachBotOnceAmongTheOthers()
+    {
+        // Arrange
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Act
+        lobby.Find("button.quick").Click();
+
+        // Assert
+        ImmutableList<string?> bots = this._page.Server.Created!.Bots;
+        Assert.Equal(
+            (3, 3, true),
+            (
+                bots.OfType<string>().Count(),
+                bots.OfType<string>().Distinct(StringComparer.Ordinal).Count(),
+                bots[this._seated!.Claim!.Seat] is null
+            )
+        );
     }
 
     [Fact]

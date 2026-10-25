@@ -1,6 +1,8 @@
 using System.Collections.Immutable;
+using System.Globalization;
 using Bunit;
 using Net.NowhereAtAll.Zaturnava.Contracts;
+using Net.NowhereAtAll.Zaturnava.Presentation;
 
 namespace Net.NowhereAtAll.Zaturnava.Web.Test;
 
@@ -28,10 +30,10 @@ public sealed class TableTest : IDisposable
 
         // Assert
         Assert.Equal(
-            (4, "♚︎", "Your move.", "Black you 0", "Pass", "turn yours", true),
+            (4, "Raja", "Your move.", "Black you 0", "Pass", "turn yours", true),
             (
                 table.FindAll("rect.cell").Count,
-                table.Find(".piece text").TextContent,
+                table.Find(".piece title").TextContent,
                 table.Find("p.status").TextContent,
                 Text(table.FindAll("li.seat")[0]),
                 table.Find("button.action").TextContent.Trim(),
@@ -486,6 +488,29 @@ public sealed class TableTest : IDisposable
     }
 
     [Theory]
+    [InlineData(0, false, "Answer Yellow's offer.")]
+    [InlineData(1, false, "Yellow is answering Black's offer (Random).")]
+    [InlineData(0, true, "Your turn is over: offer prisoners back, or be done.")]
+    [InlineData(1, true, "Yellow's turn is over: they may still offer prisoners back.")]
+    public void Status_WhenOnlyRansomsAreBeingDealtWith_SaysSo(int deciding, bool isTurnOver, string expected)
+    {
+        // Arrange
+        OfferDto offer = new(1 - deciding, deciding, [], []);
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            DecidingSeat = deciding,
+            Offer = isTurnOver ? null : offer,
+            IsTurnOver = isTurnOver,
+        };
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Assert
+        Assert.Equal(expected, table.Find("p.status").TextContent);
+    }
+
+    [Theory]
     [InlineData(0, 1, "Your move, for Yellow.")]
     [InlineData(1, 0, "Yellow to move, for Black (Random).")]
     public void Status_WhenOneSeatMovesForAnother_SaysForWhom(int deciding, int actingFor, string expected)
@@ -501,7 +526,7 @@ public sealed class TableTest : IDisposable
     }
 
     [Fact]
-    public void Board_WhenDrawn_NamesEachCellAndDrawsTheBoatAsAShape()
+    public void Board_WhenDrawn_NamesEachCellAndDrawsTheRajaAndBoatAsShapes()
     {
         // Arrange
         this._page.Server.View = FakeGameServer.SeatZeroToMove with
@@ -514,7 +539,7 @@ public sealed class TableTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ("c0,c1,c2,c3", 1, 1),
+            ("c0,c1,c2,c3", 2, 0),
             (
                 string.Join(",", table.FindAll("g.cell-name text").Select(name => name.TextContent)),
                 table.FindAll("svg.board g.piece path").Count,
@@ -530,7 +555,7 @@ public sealed class TableTest : IDisposable
         ImmutableList<SeatDto> seats = FakeGameServer.SeatZeroToMove.Seats;
         this._page.Server.View = FakeGameServer.SeatZeroToMove with
         {
-            Seats = seats.SetItem(0, seats[0] with { Prisoners = [new PrisonerDto("pawn", "Pawn", 1)] }),
+            Seats = seats.SetItem(0, seats[0] with { Prisoners = [new PrisonerDto(9, "pawn", "Pawn", 1)] }),
         };
 
         // Act
@@ -547,4 +572,373 @@ public sealed class TableTest : IDisposable
             )
         );
     }
+
+    [Fact]
+    public void Offer_WhenPrisonersAreChosenToGiveAndToAskFor_SubmitsThatOffer()
+    {
+        // Arrange
+        this._page.Server.View = Ransoms();
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Act
+        table.FindAll(".ransom-to")[0].QuerySelector("button.prisoner")!.Click();
+        table.Find(".ransom-ask button.prisoner").Click();
+        table.Find("button.offer").Click();
+
+        // Assert
+        Assert.Equal(("offer", "1", "9", "7"), Offered(this._page.Server));
+    }
+
+    [Fact]
+    public void Offer_WhenAllOfASeatsPrisonersAreChosen_GivesThemAllBack()
+    {
+        // Arrange
+        this._page.Server.View = Ransoms();
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        table.FindAll(".ransom-to")[0].QuerySelector("button.prisoner")!.Click();
+
+        // Act
+        table.FindAll(".ransom-to")[0].QuerySelector("button.all")!.Click();
+        string label = table.Find("button.offer").TextContent.Trim();
+        table.Find("button.offer").Click();
+
+        // Assert
+        Assert.Equal(("Give them back", ("offer", "1", "9,10", string.Empty)), (label, Offered(this._page.Server)));
+    }
+
+    [Fact]
+    public void Offer_WhenAnotherSeatsPrisonerIsChosen_StartsAfresh()
+    {
+        // Arrange
+        this._page.Server.View = Ransoms();
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        table.FindAll(".ransom-to")[0].QuerySelector("button.prisoner")!.Click();
+        table.Find(".ransom-ask button.prisoner").Click();
+
+        // Act
+        table.FindAll(".ransom-to")[1].QuerySelector("button.all")!.Click();
+        table.Find("button.offer").Click();
+
+        // Assert
+        Assert.Equal(("offer", "3", "11", string.Empty), Offered(this._page.Server));
+    }
+
+    [Fact]
+    public void Offer_WhenItsOnlyPrisonerIsChosenAgain_CannotBeMade()
+    {
+        // Arrange
+        this._page.Server.View = Ransoms();
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        table.FindAll(".ransom-to")[1].QuerySelector("button.prisoner")!.Click();
+
+        // Act
+        table.FindAll(".ransom-to")[1].QuerySelector("button.prisoner")!.Click();
+
+        // Assert
+        Assert.True(table.Find("button.offer").HasAttribute("disabled"));
+    }
+
+    [Theory]
+    [InlineData(false, "Black offers Yellow Yellow's Pawn back, as a gift.")]
+    [InlineData(true, "Black offers Yellow Yellow's Pawn back, for Black's Boat.")]
+    public void Render_WhenAnOfferWaitsOnItsAnswer_SaysWhatIsOfferedAndHowLongIsLeft(bool isAsking, string expected)
+    {
+        // Arrange
+        GameViewDto ransoms = Ransoms();
+        ImmutableList<PrisonerDto> asked = isAsking ? [ransoms.Seats[1].Prisoners[0]] : [];
+        this._page.Server.View = ransoms with
+        {
+            DecidingSeat = 1,
+            MayOffer = false,
+            Offer = new OfferDto(0, 1, [ransoms.Seats[0].Prisoners[0]], asked),
+            SecondsLeft = 30,
+        };
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Assert
+        Assert.Equal(
+            (expected, "30 s left"),
+            (table.Find("p.offer").TextContent, table.Find("p.countdown").TextContent)
+        );
+    }
+
+    [Fact]
+    public void Poll_WhenARequestFails_TriesAgain()
+    {
+        // Arrange
+        using PageContext page = new(TimeSpan.FromMilliseconds(10));
+        FakeGameServer server = page.Server;
+        server.View = FakeGameServer.SeatZeroToMove with { DecidingSeat = 1 };
+        IRenderedComponent<Table> table = page.Render<Table>(parameters => parameters.Add(x => x.Seating, SeatZero));
+
+        // Act
+        server.Failure = new HttpRequestException("Asleep.");
+
+        // Assert
+        table.WaitForAssertion(() =>
+            Assert.True(server.Calls.Count(call => call.StartsWith("advance", StringComparison.Ordinal)) > 2)
+        );
+    }
+
+    [Fact]
+    public void Poll_WhenTimeIsUp_AdvancesTheGameForTheServerToDecide()
+    {
+        // Arrange
+        using PageContext page = new(TimeSpan.FromMilliseconds(10));
+        FakeGameServer server = page.Server;
+        server.View = FakeGameServer.SeatZeroToMove with { SecondsLeft = 0, Version = 4 };
+
+        // Act
+        IRenderedComponent<Table> table = page.Render<Table>(parameters => parameters.Add(x => x.Seating, SeatZero));
+
+        // Assert
+        table.WaitForAssertion(() => Assert.Contains($"advance {FakeGameServer.GameId} 4", server.Calls));
+    }
+
+    [Fact]
+    public async Task Poll_WhenThePlayersTimedTurnHasTimeLeft_OnlyCountsDown()
+    {
+        // Arrange
+        await using PageContext page = new(TimeSpan.FromMilliseconds(10));
+        page.Server.View = FakeGameServer.SeatZeroToMove with { SecondsLeft = 30 };
+        _ = page.Render<Table>(parameters => parameters.Add(x => x.Seating, SeatZero));
+
+        // Act
+        await Task.Delay(TimeSpan.FromMilliseconds(150), Xunit.TestContext.Current.CancellationToken);
+
+        // Assert
+        _ = Assert.Single(page.Server.Calls);
+    }
+
+    [Fact]
+    public void Render_WhenAPromotionIsDue_OffersEachPieceAndToPromoteLater()
+    {
+        // Arrange
+        this._page.Server.View = Promotions() with { PromotionDue = 2 };
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Assert
+        Assert.Equal(
+            (
+                "Promote Black's Pawn on c2 to:",
+                "Green's Elephant held by Yellow|Black's Boat held by you",
+                "Promote later"
+            ),
+            (
+                table.Find(".promotion p.hint").TextContent,
+                string.Join('|', table.FindAll(".promotion .choice").Select(Choice)),
+                table.Find(".promotion button.later").TextContent.Trim()
+            )
+        );
+    }
+
+    [Fact]
+    public void Render_WhenAPawnMayBePromoted_RingsItWithoutOpeningItsMenu()
+    {
+        // Arrange
+        this._page.Server.View = Promotions();
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Assert
+        Assert.Equal(
+            (1, 0),
+            (table.FindAll(".piece.promotable").Count, table.FindAll(".promotion").Count)
+        );
+    }
+
+    [Fact]
+    public void Render_WhenChessPiecesAreChosen_NamesAndDrawsThemSo()
+    {
+        // Arrange
+        this._page.Server.View = Promotions() with { PromotionDue = 2 };
+
+        // Act
+        IRenderedComponent<Table> table = this._page.Render<Table>(
+            parameters => parameters.Add(x => x.Seating, SeatZero).Add(x => x.Pieces, PieceSet.Chess)
+        );
+
+        // Assert
+        Assert.Equal(
+            ("Green's Rook|Black's Boat", 1),
+            (
+                string.Join('|', table.FindAll(".promotion .choice .name").Select(name => name.TextContent)),
+                table.FindAll(".promotion .choice path").Count
+            )
+        );
+    }
+
+    [Fact]
+    public void Later_WhenAPromotionIsDue_Passes()
+    {
+        // Arrange
+        this._page.Server.View = Promotions() with { PromotionDue = 2 };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Act
+        table.Find(".promotion button.later").Click();
+
+        // Assert
+        Assert.Equal("pass", this._page.Server.Submitted?.Action.Kind);
+    }
+
+    [Fact]
+    public void Choice_WhenAPawnIsPickedUp_PromotesIt()
+    {
+        // Arrange
+        this._page.Server.View = Promotions();
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        Cell(table, 2).Click();
+
+        // Act
+        table.FindAll(".promotion button.choice")[1].Click();
+
+        // Assert
+        Assert.Equal("7", this._page.Server.Submitted?.Action.Arguments[ActionArguments.Into]);
+    }
+
+    [Fact]
+    public void Later_WhenAPawnIsPickedUp_PutsItDown()
+    {
+        // Arrange
+        this._page.Server.View = Promotions();
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        Cell(table, 2).Click();
+
+        // Act
+        table.Find(".promotion button.later").Click();
+
+        // Assert
+        Assert.Equal((0, null), (table.FindAll(".promotion").Count, this._page.Server.Submitted));
+    }
+
+    [Fact]
+    public void Submit_WhenThePlayerLosesDiceTheyCannotUse_SaysSoUntilDismissed()
+    {
+        // Arrange
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        this._page.Server.View = Forfeited();
+        table.Find("button.action").Click();
+        string told = table.Find("p.notice").TextContent;
+
+        // Act
+        table.Find("p.notice button.dismiss").Click();
+
+        // Assert
+        Assert.Equal(
+            (true, 0),
+            (told.Contains("Black could move nothing", StringComparison.Ordinal), table.FindAll("p.notice").Count)
+        );
+    }
+
+    [Fact]
+    public void Poll_WhenThePlayersTurnComesRoundAgain_ForgetsTheDiceTheyLost()
+    {
+        // Arrange
+        using PageContext page = new(TimeSpan.FromMilliseconds(200));
+        IRenderedComponent<Table> table = page.Render<Table>(parameters => parameters.Add(x => x.Seating, SeatZero));
+        page.Server.View = Forfeited();
+        table.Find("button.action").Click();
+        int told = table.FindAll("p.notice").Count;
+
+        // Act
+        page.Server.View = FakeGameServer.SeatZeroToMove with { Version = 3 };
+
+        // Assert
+        table.WaitForAssertion(() => Assert.Equal((1, 0), (told, table.FindAll("p.notice").Count)));
+    }
+
+    /// <summary>Yellow, a bot, to move, once Black has lost the dice it rolled.</summary>
+    private static GameViewDto Forfeited() =>
+        FakeGameServer.SeatZeroToMove with
+        {
+            Version = 2,
+            DecidingSeat = 1,
+            Log =
+            [
+                new EventDto(0, EventDto.Rolled, 0, "Black rolled 1 (Boat).", null, null),
+                new EventDto(1, EventDto.Forfeited, 0, "Black could move nothing with 1 (Boat).", null, null),
+                new EventDto(2, EventDto.Passed, 0, "Yellow to play.", null, null),
+            ],
+        };
+
+    private static (string Kind, string Receiver, string Given, string Asked) Offered(FakeGameServer server)
+    {
+        ActionDto action = server.Submitted!.Value.Action;
+        return (action.Kind, action.Arguments["receiver"], action.Arguments["given"], action.Arguments["asked"]);
+    }
+
+    /// <summary>
+    /// Black's turn, with its Pawn on c2 (cell 2) able to become Green's Elephant 8, which Yellow holds,
+    /// or Black's Boat 7, which Black does.
+    /// </summary>
+    private static GameViewDto Promotions() =>
+        FakeGameServer.SeatZeroToMove with
+        {
+            Pieces = [.. FakeGameServer.SeatZeroToMove.Pieces, new PieceDto(1, "pawn", "Pawn", 0, 2)],
+            Seats =
+            [
+                FakeGameServer.SeatZeroToMove.Seats[0] with { Prisoners = [new PrisonerDto(7, "boat", "Boat", 0)] },
+                FakeGameServer.SeatZeroToMove.Seats[1] with
+                {
+                    Prisoners = [new PrisonerDto(8, "elephant", "Elephant", 2)],
+                },
+                new SeatDto(2, "Green", 0, 0, "open", null, []),
+            ],
+            LegalActions = [FakeGameServer.Pass with { Label = "Promote later" }, Promotion(8), Promotion(7)],
+        };
+
+    private static string Choice(AngleSharp.Dom.IElement choice) =>
+        $"{choice.QuerySelector(".name")!.TextContent} {choice.QuerySelector(".holder")!.TextContent}";
+
+    private static ActionDto Promotion(int into) =>
+        new(
+            "promote",
+            ImmutableSortedDictionary<string, string>.Empty
+                .Add(ActionArguments.Actor, "0")
+                .Add(ActionArguments.Cell, "2")
+                .Add(ActionArguments.Into, into.ToString(CultureInfo.InvariantCulture))
+        );
+
+    /// <summary>
+    /// Black's turn, holding Yellow's Pawn 9 and Horse 10 and Red's Pawn 11; Yellow holds Black's Boat 7
+    /// and Green's Elephant 8.
+    /// </summary>
+    private static GameViewDto Ransoms() =>
+        FakeGameServer.SeatZeroToMove with
+        {
+            MayOffer = true,
+            Seats =
+            [
+                new SeatDto(
+                    0,
+                    "Black",
+                    0,
+                    0,
+                    "human",
+                    null,
+                    [
+                        new PrisonerDto(9, "pawn", "Pawn", 1),
+                        new PrisonerDto(10, "horse", "Horse", 1),
+                        new PrisonerDto(11, "pawn", "Pawn", 3),
+                    ]
+                ),
+                new SeatDto(
+                    1,
+                    "Yellow",
+                    1,
+                    5,
+                    "bot",
+                    "Random",
+                    [new PrisonerDto(7, "boat", "Boat", 0), new PrisonerDto(8, "elephant", "Elephant", 2)]
+                ),
+                new SeatDto(2, "Green", 0, 0, "open", null, []),
+                new SeatDto(3, "Red", 1, 0, "open", null, []),
+            ],
+        };
 }

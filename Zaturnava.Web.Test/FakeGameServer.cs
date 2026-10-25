@@ -31,12 +31,17 @@ internal sealed class FakeGameServer : IGameServing
         [new PieceDto(0, "raja", "Raja", 0, 0)],
         [
             new SeatDto(0, "Black", 0, 0, "human", null, []),
-            new SeatDto(1, "Yellow", 1, 5, "bot", "Random", [new PrisonerDto("boat", "Boat", 0)]),
+            new SeatDto(1, "Yellow", 1, 5, "bot", "Random", [new PrisonerDto(7, "boat", "Boat", 0)]),
         ],
         [Pass, Forward, Leap],
         [],
         [],
-        null
+        null,
+        false,
+        null,
+        null,
+        null,
+        false
     );
 
     public GameViewDto View { get; set; } = SeatZeroToMove;
@@ -69,6 +74,8 @@ internal sealed class FakeGameServer : IGameServing
                 [
                     new BotDto("random", "Random", "Any move.", UsesAi: false),
                     new BotDto("oracle", "Oracle", "Asks a model.", UsesAi: true),
+                    new BotDto("midas", "Midas", "Greedy.", UsesAi: false),
+                    new BotDto("solomon", "Solomon", "Fair.", UsesAi: false),
                 ]
             )
         );

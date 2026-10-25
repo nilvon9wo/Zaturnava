@@ -33,8 +33,20 @@ public interface IRulesApplying
     /// <exception cref="IllegalActionException">The action is not among the legal actions.</exception>
     Transition Apply([Required] GameState state, [Required] GameAction action);
 
+    /// <summary>
+    /// Whether the deciding seat may offer a ransom now. Offers are not among the legal actions:
+    /// there are too many; <see cref="Apply"/> refuses one that may not be made.
+    /// </summary>
+    bool MayOffer([Required] GameState state);
+
+    /// <summary>How the deciding seat's decision is timed; null if it may take as long as it likes.</summary>
+    DecisionTimer? TimerOf([Required] GameState state);
+
     /// <exception cref="MalformedActionException">The descriptor describes no action of this ruleset.</exception>
     GameAction Parse([Required] ActionDescriptor descriptor);
+
+    /// <summary>What a piece of <paramref name="kind"/> is worth, to one weighing a trade of prisoners.</summary>
+    int WorthOf(PieceKindId kind);
 
     string NameOf(PieceKindId kind);
 

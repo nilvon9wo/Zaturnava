@@ -1,6 +1,6 @@
 @* Any board, from the cells' layouts alone: a unit square per cell, each throne outlined in its seat's
    colour, the last move tinted, the pieces on top, then the marks of a move being made - a ring
-   around each piece that can move, and a dot (or, over a piece to capture, a ring) wherever the
+   around each piece that can move (flashing around one that can be promoted), and a dot (or, over a piece to capture, a ring) wherever the
    piece picked up can go. Each cell's name is written small in its corner, so that the log's "from c2
    to c3" can be found. The whole board turns by Turn; the pieces' symbols and the names stay upright. *@
 
@@ -37,9 +37,9 @@
             double x = cell.X;
             double y = BoardFrame.ScreenY(cell.Y);
             <g class="@this.PieceClass(piece)" pointer-events="none">
-                <title>@piece.Name</title>
+                <title>@PieceStyle.Named(piece.Name, this.Pieces)</title>
                 <circle cx="@Svg.Number(x)" cy="@Svg.Number(y)" r="0.4" />
-                @if (PieceStyle.ShapeOf(piece.Kind) is { } shape)
+                @if (PieceStyle.ShapeOf(piece.Kind, this.Pieces) is { } shape)
                 {
                     <path d="@shape" transform="@ShapeTransform(this.Turn, x, y)" />
                 }
@@ -47,7 +47,7 @@
                 {
                     <g>
                         <text x="@Svg.Number(x)" y="@Svg.Number(y)" transform="@this.Turn.Upright(x, y)"
-                            >@PieceStyle.GlyphOf(piece)</text>
+                            >@PieceStyle.GlyphOf(piece, this.Pieces)</text>
                     </g>
                 }
             </g>
@@ -84,6 +84,9 @@
 
     [Parameter]
     public BoardTurn Turn { get; set; } = BoardTurn.None;
+
+    [Parameter]
+    public PieceSet Pieces { get; set; }
 
     /// <summary>The cells the last move went from and to; tinted.</summary>
     [Parameter]
@@ -128,6 +131,7 @@
                 "piece",
                 $"seat-{piece.Owner}",
                 this.Actions.Origins.Contains(piece.Cell) ? "movable" : null,
+                this.Actions.AtCells.Contains(piece.Cell) ? "promotable" : null,
                 this.Selection.Selected == piece.Cell ? "picked" : null,
             }.OfType<string>()
         );

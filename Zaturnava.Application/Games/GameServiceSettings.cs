@@ -1,3 +1,6 @@
+using System.Collections.Immutable;
+using System.ComponentModel.DataAnnotations;
+
 namespace Net.NowhereAtAll.Zaturnava.Application.Games;
 
 /// <summary>
@@ -5,10 +8,21 @@ namespace Net.NowhereAtAll.Zaturnava.Application.Games;
 /// action runs before it answers. The default is none: bots then play one
 /// <see cref="GameService.Advance"/> at a time, at whatever pace the clients advance them, so that
 /// people can follow every turn. A host for scripts or self-play may raise it.
+/// <see cref="Timers"/> gives how long each timed decision a ruleset names may take, by name;
+/// <see cref="DefaultTimer"/>, any it does not name.
 /// </summary>
-public sealed record GameServiceSettings(int MaximumBotSteps)
+public sealed record GameServiceSettings(
+    int MaximumBotSteps,
+    TimeSpan DefaultTimer,
+    ImmutableDictionary<string, TimeSpan> Timers
+)
 {
     public const int DefaultMaximumBotSteps = 0;
 
-    public static readonly GameServiceSettings Default = new(DefaultMaximumBotSteps);
+    public static readonly TimeSpan DefaultTimerLength = TimeSpan.FromSeconds(30);
+
+    public static readonly GameServiceSettings Default = new(DefaultMaximumBotSteps, DefaultTimerLength, []);
+
+    /// <summary>How long the decision timed by <paramref name="timer"/> may take.</summary>
+    public TimeSpan LengthOf([Required] string timer) => this.Timers.GetValueOrDefault(timer, this.DefaultTimer);
 }

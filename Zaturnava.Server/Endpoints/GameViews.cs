@@ -49,10 +49,15 @@ internal static class GameViews
             [.. snapshot.State.Position.Occupants.OrderBy(entry => entry.Key.Value)
                 .Select(entry => PieceOf(snapshot.Rules, entry.Key, entry.Value))],
             [.. snapshot.State.Seats.Select(seat => SeatOf(snapshot, bots, seat.Id))],
-            [.. snapshot.LegalActions.Select(action => ActionOf(action.Describe()))],
+            [.. snapshot.LegalActions.Select(action => ActionOf(snapshot, action))],
             [.. snapshot.State.Dice.Select(value => new DieDto(value, snapshot.Rules.NameOfDie(value)))],
             GameLog.LatestOf(snapshot),
-            OutcomeOf(snapshot.Rules, snapshot.State.Outcome)
+            OutcomeOf(snapshot.Rules, snapshot.State.Outcome),
+            snapshot.Rules.MayOffer(snapshot.State),
+            OfferOf(snapshot),
+            snapshot.TimeLeft?.TotalSeconds,
+            snapshot.State.PromotionDue?.Value,
+            snapshot.State.IsRansomWindow
         );
     }
 
@@ -87,7 +92,7 @@ internal static class GameViews
             controller.Kind,
             bot,
             [.. snapshot.State.Prisoners.Where(prisoner => prisoner.Holder == seat)
-                .Select(prisoner => PrisonerOf(snapshot.Rules, prisoner.Piece))]
+                .Select(prisoner => PrisonerOf(snapshot.Rules, prisoner))]
         );
     }
 
@@ -95,8 +100,30 @@ internal static class GameViews
     private static string BotNameOf(ImmutableList<BotProfile> bots, string id) =>
         bots.Find(bot => bot.Id == id)?.Name ?? id;
 
-    private static PrisonerDto PrisonerOf(IRulesApplying rules, Piece piece) =>
-        new(piece.Kind.Value, rules.NameOf(piece.Kind), piece.Owner.Value);
+    private static PrisonerDto PrisonerOf(IRulesApplying rules, Prisoner prisoner) =>
+        new(
+            prisoner.Piece.Id.Value,
+            prisoner.Piece.Kind.Value,
+            rules.NameOf(prisoner.Piece.Kind),
+            prisoner.Piece.Owner.Value
+        );
+
+    /// <summary>The ransom waiting on its answer, naming its prisoners, who are held until it is answered.</summary>
+    private static OfferDto? OfferOf(GameSnapshot snapshot) =>
+        snapshot.State.Offer is { } offer
+            ? new OfferDto(
+                offer.From.Value,
+                offer.To.Value,
+                PrisonersOf(snapshot, offer.Given),
+                PrisonersOf(snapshot, offer.Asked)
+            )
+            : null;
+
+    private static ImmutableList<PrisonerDto> PrisonersOf(GameSnapshot snapshot, ImmutableList<PieceId> pieces) =>
+        [
+            .. pieces.Select(piece => snapshot.State.Prisoners.First(prisoner => prisoner.Piece.Id == piece))
+                .Select(prisoner => PrisonerOf(snapshot.Rules, prisoner)),
+        ];
 
     private static OutcomeDto? OutcomeOf(IRulesApplying rules, GameOutcome? outcome) =>
         outcome is null
@@ -111,5 +138,34 @@ internal static class GameViews
             _ => GameSummaryDto.Open,
         };
 
-    private static ActionDto ActionOf(ActionDescriptor descriptor) => new(descriptor.Kind, descriptor.Arguments);
+    private static ActionDto ActionOf(GameSnapshot snapshot, GameAction action)
+    {
+        ActionDescriptor descriptor = action.Describe();
+        return new ActionDto(descriptor.Kind, descriptor.Arguments) { Label = LabelOf(snapshot, action) };
+    }
+
+    /// <summary>
+    /// What a button says that its kind alone cannot: which Pawn becomes what; that passing once a turn
+    /// is over means being done offering ransoms; and that passing on a promotion due leaves it for
+    /// later. Null for any other action.
+    /// </summary>
+    private static string? LabelOf(GameSnapshot snapshot, GameAction action) =>
+        (action, snapshot.State.IsRansomWindow, snapshot.State.PromotionDue) switch
+        {
+            (PromoteAction promote, _, _) => PromotionOf(snapshot, promote),
+            (PassAction, true, _) => "Done offering",
+            (PassAction, _, { }) => "Promote later",
+            _ => null,
+        };
+
+    /// <summary>"Promote the Pawn on c8 to Green's Elephant, held by Red".</summary>
+    private static string PromotionOf(GameSnapshot snapshot, PromoteAction promote)
+    {
+        IRulesApplying rules = snapshot.Rules;
+        Piece pawn = snapshot.State.Position.PieceAt(promote.Cell)!; // a legal promotion has a Pawn to promote
+        Prisoner into = snapshot.State.Prisoners.First(prisoner => prisoner.Piece.Id == promote.Into);
+        return $"Promote the {rules.NameOf(pawn.Kind)} on {rules.Topology.NameOf(promote.Cell)} "
+            + $"to {rules.NameOf(into.Piece.Owner)}'s {rules.NameOf(into.Piece.Kind)}, "
+            + $"held by {rules.NameOf(into.Holder)}";
+    }
 }

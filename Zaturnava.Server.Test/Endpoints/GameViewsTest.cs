@@ -84,6 +84,127 @@ public sealed class GameViewsTest
     }
 
     [Fact]
+    public void ViewOf_WhenARansomWaitsOnItsAnswer_ShowsItsPrisonersAndTheTimeLeft()
+    {
+        // Arrange
+        Piece pawn = new(new PieceId(20), ClassicPieces.Pawn, new SeatId(1));
+        Piece horse = new(new PieceId(9), ClassicPieces.Horse, new SeatId(0));
+        GameState state = Rules.CreateInitialState() with
+        {
+            RollOff = [],
+            AwaitedDice = null,
+            DecidingSeat = new SeatId(1),
+            Prisoners = [new Prisoner(pawn, new SeatId(0)), new Prisoner(horse, new SeatId(1))],
+            Offer = new RansomOffer(new SeatId(0), new SeatId(1), [pawn.Id], [horse.Id]),
+        };
+        GameSnapshot snapshot = Snapshot(state) with { TimeLeft = TimeSpan.FromSeconds(12.5) };
+
+        // Act
+        GameViewDto view = GameViews.ViewOf(snapshot, Bots);
+
+        // Assert
+        Assert.Equal(
+            ("0>1: 20 Pawn 1 for 9 Horse 0", false, 12.5),
+            (
+                $"{view.Offer!.From}>{view.Offer.To}: {Listed(view.Offer.Given)} for {Listed(view.Offer.Asked)}",
+                view.MayOffer,
+                view.SecondsLeft
+            )
+        );
+    }
+
+    [Fact]
+    public void ViewOf_WhenTheDecidingSeatHoldsPrisonersOnItsTurn_SaysItMayOffer()
+    {
+        // Arrange
+        Piece pawn = new(new PieceId(20), ClassicPieces.Pawn, new SeatId(1));
+        GameState state = Rules.CreateInitialState() with
+        {
+            RollOff = [],
+            AwaitedDice = null,
+            Prisoners = [new Prisoner(pawn, new SeatId(0))],
+        };
+
+        // Act
+        GameViewDto view = GameViews.ViewOf(Snapshot(state), Bots);
+
+        // Assert
+        Assert.Equal((true, null, null), (view.MayOffer, view.Offer, view.SecondsLeft));
+    }
+
+    [Fact]
+    public void ViewOf_WhenAPawnMayBePromoted_LabelsEachPromotion()
+    {
+        // Arrange - Black's Pawn on c8, the far edge; Green's Elephant is held by Red
+        Piece pawn = new(new PieceId(4), ClassicPieces.Pawn, new SeatId(0));
+        Piece elephant = new(new PieceId(18), ClassicPieces.Elephant, new SeatId(2));
+        GameState state = Rules.CreateInitialState() with
+        {
+            RollOff = [],
+            AwaitedDice = null,
+            Position = Rules.CreateInitialState().Position.Place(Rules.Topology.Cells[58], pawn),
+            Prisoners = [new Prisoner(elephant, new SeatId(3))],
+        };
+
+        // Act
+        GameViewDto view = GameViews.ViewOf(Snapshot(state), Bots);
+
+        // Assert
+        Assert.Equal(
+            ["Promote the Pawn on c8 to Green's Elephant, held by Red"],
+            view.LegalActions.Where(action => action.Kind == "promote").Select(action => action.Label)
+        );
+    }
+
+    [Fact]
+    public void ViewOf_WhenAPromotionIsDue_SaysWhereAndLabelsPassingAsLater()
+    {
+        // Arrange - Black's Pawn has just come to c8
+        Piece pawn = new(new PieceId(4), ClassicPieces.Pawn, new SeatId(0));
+        Piece elephant = new(new PieceId(18), ClassicPieces.Elephant, new SeatId(2));
+        GameState state = Rules.CreateInitialState() with
+        {
+            RollOff = [],
+            AwaitedDice = null,
+            Position = Rules.CreateInitialState().Position.Place(Rules.Topology.Cells[58], pawn),
+            Prisoners = [new Prisoner(elephant, new SeatId(3))],
+            PromotionDue = Rules.Topology.Cells[58],
+        };
+
+        // Act
+        GameViewDto view = GameViews.ViewOf(Snapshot(state), Bots);
+
+        // Assert
+        Assert.Equal(
+            (58, "pass: Promote later"),
+            (view.PromotionDue, $"{view.LegalActions[0].Kind}: {view.LegalActions[0].Label}")
+        );
+    }
+
+    [Fact]
+    public void ViewOf_WhenATurnIsOverButItsSeatMayStillOffer_LabelsPassingAsDone()
+    {
+        // Arrange
+        Piece pawn = new(new PieceId(20), ClassicPieces.Pawn, new SeatId(1));
+        GameState state = Rules.CreateInitialState() with
+        {
+            RollOff = [],
+            AwaitedDice = null,
+            IsRansomWindow = true,
+            Prisoners = [new Prisoner(pawn, new SeatId(0))],
+        };
+
+        // Act
+        GameViewDto view = GameViews.ViewOf(Snapshot(state), Bots);
+
+        // Assert
+        Assert.Equal(
+            ("pass: Done offering", true),
+            ($"{view.LegalActions.Single().Kind}: {view.LegalActions.Single().Label}", view.IsTurnOver)
+        );
+    }
+
+    [Fact]
     public void ViewOf_WhenSeatsArePlayedByBots_NamesThemAsTheyAreOffered()
     {
         // Arrange
@@ -116,6 +237,9 @@ public sealed class GameViewsTest
         Assert.Equal(("a1", "h8"), (view.Cells[0].Name, view.Cells[63].Name));
     }
 
+    private static string Listed(ImmutableList<PrisonerDto> prisoners) =>
+        string.Join(", ", prisoners.Select(prisoner => $"{prisoner.Id} {prisoner.Name} {prisoner.Owner}"));
+
     private static GameSnapshot Snapshot(GameState state)
     {
         GameRecord record = new(
@@ -125,6 +249,6 @@ public sealed class GameViewsTest
             [],
             0
         );
-        return new GameSnapshot(record, Rules, state, [], []);
+        return new GameSnapshot(record, Rules, state, [], Rules.LegalActions(state));
     }
 }

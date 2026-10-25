@@ -3,6 +3,7 @@ using System.Globalization;
 using Net.NowhereAtAll.Zaturnava.Application.Games;
 using Net.NowhereAtAll.Zaturnava.Contracts;
 using Net.NowhereAtAll.Zaturnava.Engine.Events;
+using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
 using Net.NowhereAtAll.Zaturnava.Engine.Rules;
 using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 
@@ -43,9 +44,14 @@ internal static class GameLog
             : $"{Listed(rules, outcome.Winners)} won: {outcome.Reason}.";
 }
 
-/// <summary>What has been told so far, and whether the seat whose turn it is has rolled yet.</summary>
+/// <summary>
+/// What has been told so far, whether the seat whose turn it is has rolled yet, and whom an occupier
+/// moves for, while it shares that turn.
+/// </summary>
 file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bool HasRolled)
 {
+    private SeatId? SharedFor { get; init; }
+
     public Teller Tell(GameEvent happened, int number) =>
         happened switch
         {
@@ -72,17 +78,51 @@ file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bo
                 number,
                 EventDto.Rolled,
                 rolled.Seat,
-                $"{this.Name(rolled.Seat)} rolled {string.Join(" and ", rolled.Values.Select(this.Face))}."
+                $"{this.Name(rolled.Seat)} rolled {this.Faces(rolled.Values)}."
             ) with
             { HasRolled = true },
+            DiceForfeited forfeited => this.Add(
+                number,
+                EventDto.Forfeited,
+                forfeited.Seat,
+                $"{this.Name(forfeited.Seat)} could move nothing{this.OfWhom()} with "
+                    + $"{this.Faces(forfeited.Values)}, so lost {(forfeited.Values.Count == 1 ? "it" : "them")}."
+            ),
             PieceMoved moved => this.Moved(number, moved),
             PieceCaptured captured => this.Add(
                 number,
                 EventDto.Captured,
                 captured.CapturedBy,
-                $"{this.Name(captured.CapturedBy)} took {this.Name(captured.Piece.Owner)}'s "
-                    + $"{this.Rules.NameOf(captured.Piece.Kind)} (+{Text(captured.Points)})."
+                $"{this.Name(captured.CapturedBy)} took {this.Whose(captured.Piece.Owner, captured.CapturedBy)} "
+                    + $"{this.Rules.NameOf(captured.Piece.Kind)} ({Scored(captured.Points)})."
             ),
+            PiecePromoted promoted => this.Promoted(number, promoted),
+            RansomWindowOpened window => this.Add(
+                number,
+                EventDto.Ransom,
+                window.Seat,
+                $"{this.Name(window.Seat)}'s turn is over, but they may still offer prisoners back."
+            ),
+            RansomOffered offered => this.Add(
+                number,
+                EventDto.Ransom,
+                offered.Offer.From,
+                $"{this.Name(offered.Offer.From)} offered {this.Name(offered.Offer.To)} "
+                    + $"{Prisoners(offered.Offer.Given.Count)} back, {Asking(offered.Offer.Asked.Count)}."
+            ),
+            RansomAccepted accepted => this.Add(
+                number,
+                EventDto.Ransom,
+                accepted.Offer.To,
+                $"{this.Name(accepted.Offer.To)} accepted {this.Name(accepted.Offer.From)}'s offer."
+            ),
+            RansomDeclined declined => this.Add(
+                number,
+                EventDto.Ransom,
+                declined.Offer.To,
+                $"{this.Name(declined.Offer.To)} declined {this.Name(declined.Offer.From)}'s offer."
+            ),
+            PieceReturned returned => this.Returned(number, returned),
             RajaCapturedOnThrone onThrone => this.Add(
                 number,
                 EventDto.Bonus,
@@ -102,10 +142,11 @@ file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bo
                 shared.Occupier,
                 $"{this.Name(shared.Occupier)} holds {this.Name(shared.Seat)}'s throne, so moves for "
                     + $"{this.Name(shared.Seat)} now."
-            ),
+            ) with
+            { SharedFor = shared.Seat },
             TurnPassed passed => this.Add(number, EventDto.Passed, passed.From, $"{this.Name(passed.To)} to play.")
                 with
-            { HasRolled = false },
+            { HasRolled = false, SharedFor = null },
             GameEnded ended => this.Add(
                 number,
                 EventDto.Ended,
@@ -117,6 +158,49 @@ file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bo
 
     private static string Text(int value) => value.ToString(CultureInfo.InvariantCulture);
 
+    /// <summary>"+3"; "no points", for taking a piece of one's own team.</summary>
+    private static string Scored(int points) =>
+        points > 0
+            ? $"+{Text(points)}"
+            : "no points";
+
+    private static string Prisoners(int count) =>
+        count == 1
+            ? "a prisoner"
+            : $"{Text(count)} prisoners";
+
+    private static string Asking(int count) =>
+        count == 0
+            ? "as a gift"
+            : $"for {Prisoners(count)} in return";
+
+    /// <summary>"their", for the seat's own piece; "Red's", for another's.</summary>
+    private string Whose(SeatId owner, SeatId seat) =>
+        owner == seat
+            ? "their"
+            : $"{this.Name(owner)}'s";
+
+    /// <summary>"Black promoted Red's Pawn on h4 to Green's Elephant."</summary>
+    private Teller Promoted(int number, PiecePromoted promoted)
+    {
+        string pawn = $"{this.Whose(promoted.Pawn.Owner, promoted.PromotedBy)} {this.Rules.NameOf(promoted.Pawn.Kind)}";
+        string into = $"{this.Whose(promoted.Into.Owner, promoted.PromotedBy)} {this.Rules.NameOf(promoted.Into.Kind)}";
+        string cell = this.Rules.Topology.NameOf(promoted.Cell);
+        string text = $"{this.Name(promoted.PromotedBy)} promoted {pawn} on {cell} to {into}.";
+        EventDto told = new(number, EventDto.Promoted, promoted.PromotedBy.Value, text, null, promoted.Cell.Value);
+        return this with { Told = this.Told.Add(told) };
+    }
+
+    /// <summary>"Yellow's Pawn went home, to a7."</summary>
+    private Teller Returned(int number, PieceReturned returned)
+    {
+        Piece piece = returned.Piece;
+        string cell = this.Rules.Topology.NameOf(returned.Cell);
+        string text = $"{this.Name(piece.Owner)}'s {this.Rules.NameOf(piece.Kind)} went home, to {cell}.";
+        EventDto told = new(number, EventDto.Ransom, piece.Owner.Value, text, null, returned.Cell.Value);
+        return this with { Told = this.Told.Add(told) };
+    }
+
     private Teller Add(int number, string kind, SeatId seat, string text) =>
         this with { Told = this.Told.Add(new EventDto(number, kind, seat.Value, text, null, null)) };
 
@@ -124,12 +208,16 @@ file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bo
 
     private string Face(int value) => $"{Text(value)} ({this.Rules.NameOfDie(value)})";
 
+    /// <summary>" of Red's", while moving for Red; nothing otherwise.</summary>
+    private string OfWhom() => this.SharedFor is { } seat ? $" of {this.Name(seat)}'s" : string.Empty;
+
+    /// <summary>"2 (Horse) and 5 (Pawn or Raja)".</summary>
+    private string Faces(ImmutableList<int> values) => string.Join(" and ", values.Select(this.Face));
+
     /// <summary>"Black moved their Horse from b1 to c3, without rolling.", or "Black moved Red's Pawn...".</summary>
     private Teller Moved(int number, PieceMoved moved)
     {
-        string whose = moved.Piece.Owner == moved.MovedBy
-            ? "their"
-            : $"{this.Name(moved.Piece.Owner)}'s";
+        string whose = this.Whose(moved.Piece.Owner, moved.MovedBy);
         string how = this.HasRolled
             ? string.Empty
             : ", without rolling";
