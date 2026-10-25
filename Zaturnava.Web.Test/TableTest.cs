@@ -210,6 +210,22 @@ public sealed class TableTest : IDisposable
     public void Render_WhenTheGameCannotBeLoaded_SaysWhy()
     {
         // Arrange
+        this._page.Server.Failure = new GameRequestRefusedException(Refusal.Illegal, "Not now.");
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Assert
+        Assert.Equal(
+            ("Not now.", 0, 0),
+            (table.Find("p.problem").TextContent, table.FindAll("svg").Count, table.FindAll("p.status").Count)
+        );
+    }
+
+    [Fact]
+    public void Render_WhenTheServerHasNoSuchGame_SaysItIsGone()
+    {
+        // Arrange
         this._page.Server.Failure = new GameRequestRefusedException(Refusal.NotFound, "There is no such game.");
 
         // Act
@@ -217,9 +233,48 @@ public sealed class TableTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ("There is no such game.", 0, 0),
-            (table.Find("p.problem").TextContent, table.FindAll("svg").Count, table.FindAll("p.status").Count)
+            ("This game is gone: the server no longer has it, perhaps because it was restarted.", 0),
+            (table.Find(".gone p.problem").TextContent.Trim(), table.FindAll("svg").Count)
         );
+    }
+
+    [Fact]
+    public void ActionButton_WhenTheGameIsGoneMeanwhile_PutsTheBoardAwayAndStopsAsking()
+    {
+        // Arrange
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        this._page.Server.Failure = new GameRequestRefusedException(Refusal.NotFound, "There is no such game.");
+
+        // Act
+        table.Find("button.action").Click();
+
+        // Assert
+        Assert.Equal(
+            (1, 0, 0, 2),
+            (
+                table.FindAll(".gone").Count,
+                table.FindAll("svg").Count,
+                table.FindAll("p.status").Count,
+                this._page.Server.Calls.Count
+            )
+        );
+    }
+
+    [Fact]
+    public void BackToTheLobby_WhenTheGameIsGone_ReturnsToTheLobby()
+    {
+        // Arrange
+        bool hasLeft = false;
+        this._page.Server.Failure = new GameRequestRefusedException(Refusal.NotFound, "There is no such game.");
+        IRenderedComponent<Table> table = this._page.Render<Table>(
+            parameters => parameters.Add(x => x.Seating, SeatZero).Add(x => x.OnLeave, () => hasLeft = true)
+        );
+
+        // Act
+        table.Find(".gone button.back").Click();
+
+        // Assert
+        Assert.True(hasLeft);
     }
 
     [Fact]

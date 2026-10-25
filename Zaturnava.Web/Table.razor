@@ -6,7 +6,8 @@
    TableSettings.BotPace, so that bots take their turns one at a time; while a person elsewhere
    decides, it asks for the game again every TableSettings.PollInterval. While a decision is timed, it
    counts down, and advances the game once time is up, for the server to decide for that seat. Once the
-   game is over, the player may play it again, the same seats played the same way, or start a quick game. *@
+   game is over, the player may play it again, the same seats played the same way, or start a quick game.
+   If the server no longer has the game (restarted, say), it says so, stops asking, and offers the lobby. *@
 @implements IDisposable
 @inject IGameServing Games
 @inject TableSettings Settings
@@ -35,7 +36,16 @@
         <p class="problem" role="alert">@problem</p>
     }
 
-    @if (this._view is { } view)
+    @if (this._isGone)
+    {
+        <div class="gone">
+            <p class="problem" role="alert">
+                This game is gone: the server no longer has it, perhaps because it was restarted.
+            </p>
+            <button class="action primary back" @onclick="this.OnLeave">Back to the lobby</button>
+        </div>
+    }
+    else if (this._view is { } view)
     {
         <div class="play">
             <Board View="view"
@@ -221,6 +231,7 @@
     private string? _problem;
     private string? _notice;
     private bool _isBotDeciding;
+    private bool _isGone;
 
     public Table() => this._poll = new Timer(this.Tick);
 
@@ -475,9 +486,22 @@
     /// </summary>
     private async Task Request(Func<Task<GameViewDto>> request)
     {
-        this._problem = await Requests.Attempt(async () => await this.Show(await request()));
+        this._problem = await Requests.Attempt(async () => await this.ShowUnlessGone(request));
         _ = this._problem is not null && this._view is { } view
             && this._poll.Change(this.Wait(view), Timeout.InfiniteTimeSpan);
+    }
+
+    private async Task ShowUnlessGone(Func<Task<GameViewDto>> request)
+    {
+        try
+        {
+            await this.Show(await request());
+        }
+        catch (GameRequestRefusedException refused) when (refused.Refusal == Refusal.NotFound)
+        {
+            this._isGone = true;
+            _ = this._poll.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
+        }
     }
 
     private async Task Show(GameViewDto view)
