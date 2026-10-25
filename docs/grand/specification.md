@@ -219,7 +219,7 @@ to make players guard their leaders even when they are not using them to take th
   the Rook, and the Rook goes to the King's far side. Castling is allowed even after either piece
   has moved, or castled before.
   - **Stated.** Only with a Western Rook: a player who has none, never bought or since lost, cannot
-    castle.
+    castle. A Rook gained by promotion (a Western Pawn's) counts as any other.
   - **Stated.** There is no check in this game (a leader is simply captured), so "not
     across check" means that the King may not start on, pass over, or land on a cell an enemy piece
     could capture on. Castling is the King's move, so a Leader die allows it, or a move made without
