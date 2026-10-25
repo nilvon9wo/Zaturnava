@@ -24,7 +24,7 @@ Everything else here is specified but not yet played by the engine.
 |---|---|
 | §2 Board & setup | Implemented: the 8×8 board, the pinwheel setup, teams of opposite seats. Thrones not yet. |
 | §3 Pieces & movement | Implemented, captures included. |
-| §4 Turns & dice | Partly: a turn is one deliberate move or a pass, clockwise from seat 0. No dice yet. |
+| §4 Turns & dice | Implemented: the single-die opening, then a deliberate move, a pass or two dice, clockwise from seat 0; an unusable die is forfeit. Doubles let one piece move twice, but escape (§7) is not yet. The dice profile is the weighted d6 one; a d4 profile exists but cannot yet be chosen. |
 | §5 Captures & scoring | Partly: captures score by piece. No bonuses yet. |
 | §6–§9 Throne control, doubles, promotion and ransom, boat triumph | Not yet. |
 | §10 Game end | Not yet: a game does not end. |

@@ -11,6 +11,10 @@
         {
             <h1>@heading.RulesetName</h1>
             <p class="status">@this.Status(heading)</p>
+            @if (heading.Dice.Count > 0)
+            {
+                <p class="dice">Dice: @string.Join(", ", heading.Dice)</p>
+            }
         }
     </header>
 

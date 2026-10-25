@@ -13,6 +13,8 @@ public sealed class ActionParser(ImmutableDictionary<string, Func<ActionDescript
         ImmutableDictionary<string, Func<ActionDescriptor, GameAction>>.Empty
             .Add(MoveAction.Kind, MoveAction.Parse)
             .Add(PassAction.Kind, PassAction.Parse)
+            .Add(RollAction.Kind, RollAction.Parse)
+            .Add(DiceAction.Kind, DiceAction.Parse)
     );
 
     /// <exception cref="MalformedActionException">The kind is unknown, or an argument is malformed.</exception>

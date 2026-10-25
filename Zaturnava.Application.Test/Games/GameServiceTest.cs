@@ -25,10 +25,11 @@ public sealed class GameServiceTest
 
     public GameServiceTest() =>
         this._service = new GameService(
-            new RulesetCatalog([new TinyRules(GameLength)]),
+            new RulesetCatalog([new TinyRules(GameLength), new RollingRules(GameLength)]),
             new BotCatalog(ImmutableDictionary<string, IDeciding>.Empty.Add(Bot.BotId!, new FirstChoiceBot())),
             new InMemoryGameStore(),
             this._notifier,
+            new LoadedDice(4),
             GameServiceSettings.Default
         );
 
@@ -41,7 +42,7 @@ public sealed class GameServiceTest
         ImmutableList<IRulesApplying> rulesets = this._service.Rulesets;
 
         // Assert
-        Assert.Equal([TinyRules.RulesetId], rulesets.Select(rules => rules.Id));
+        Assert.Equal([TinyRules.RulesetId, RollingRules.RulesetId], rulesets.Select(rules => rules.Id));
     }
 
     [Fact]
@@ -200,6 +201,44 @@ public sealed class GameServiceTest
             (2, First, 2),
             (snapshot.Record.Actions.Count, snapshot.State.DecidingSeat, snapshot.Record.Version)
         );
+    }
+
+    [Fact]
+    public async Task Submit_WhenThePlayerRolls_RollsTheirDiceAtOnce()
+    {
+        // Arrange
+        GameId id =
+            await this._service.Create(RollingRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
+        string token = await this._service.Claim(id, First, this._cancellation);
+        ActionDescriptor roll = new RollAction(First).Describe();
+
+        // Act
+        GameSnapshot snapshot = await this._service.Submit(id, token, roll, this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            ("roll dice", Second, 4),
+            (
+                string.Join(' ', snapshot.Record.Actions.Select(action => action.Kind)),
+                snapshot.State.DecidingSeat,
+                snapshot.State.Scores[First]
+            )
+        );
+    }
+
+    [Fact]
+    public async Task Submit_WhenTheActionIsHowDiceCameUp_ThrowsIllegalActionException()
+    {
+        // Arrange
+        GameId id = await this._service.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
+        string token = await this._service.Claim(id, First, this._cancellation);
+        ActionDescriptor sixes = new DiceAction(First, [6, 6]).Describe();
+
+        // Act
+        Task<GameSnapshot> submitting = this._service.Submit(id, token, sixes, this._cancellation);
+
+        // Assert
+        _ = await Assert.ThrowsAsync<IllegalActionException>(() => submitting);
     }
 
     [Fact]

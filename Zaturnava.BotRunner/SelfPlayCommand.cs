@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations;
 using Net.NowhereAtAll.Zaturnava.Application.Bots;
 using Net.NowhereAtAll.Zaturnava.Application.Games;
 using Net.NowhereAtAll.Zaturnava.Application.Rulesets;
+using Net.NowhereAtAll.Zaturnava.Application.Running;
 using Net.NowhereAtAll.Zaturnava.Bots;
 using Net.NowhereAtAll.Zaturnava.Engine.Decisions;
 using Net.NowhereAtAll.Zaturnava.Engine.Rules;
@@ -54,7 +55,7 @@ internal static class SelfPlayCommand
     {
         IRulesApplying rules = Rulesets.Find(options.RulesetId);
         ImmutableList<string> botIds = options.Bots ?? [.. Enumerable.Repeat(RandomBot.BotId, SeatCount(rules))];
-        return new SelfPlay(rules, botIds, [.. botIds.Select(Bots.Find)]);
+        return new SelfPlay(rules, botIds, [.. botIds.Select(Bots.Find)], new RandomDice(Random.Shared));
     }
 
     private static int SeatCount(IRulesApplying rules) => rules.CreateInitialState().Seats.Count;

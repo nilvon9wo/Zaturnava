@@ -169,6 +169,31 @@ public sealed class TableTest : IDisposable
     }
 
     [Fact]
+    public void Render_WhenDiceAreRolled_ShowsThem()
+    {
+        // Arrange
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with { Dice = [5, 3] };
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Assert
+        Assert.Equal("Dice: 5, 3", table.Find("p.dice").TextContent);
+    }
+
+    [Fact]
+    public void Render_WhenNoDiceAreRolled_ShowsNone()
+    {
+        // Arrange - nothing beyond seat 0 to move, with no dice
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Assert
+        Assert.Empty(table.FindAll("p.dice"));
+    }
+
+    [Fact]
     public void Poll_WhenOthersAreDeciding_ShowsTheirMoves()
     {
         // Arrange

@@ -22,7 +22,8 @@ public sealed class WireFormatTest
             [new CellDto(0, 0.5, 7.5, "square")],
             [new PieceDto(0, "raja", "Raja", 0, 0)],
             [new SeatDto(0, "Black", 0, 5, "bot", "random"), new SeatDto(1, "Yellow", 1, 0, "open", null)],
-            [new ActionDto("pass", ImmutableSortedDictionary.CreateRange([KeyValuePair.Create("actor", "1")]))]
+            [new ActionDto("pass", ImmutableSortedDictionary.CreateRange([KeyValuePair.Create("actor", "1")]))],
+            [5, 3]
         );
 
         // Act
@@ -36,7 +37,7 @@ public sealed class WireFormatTest
     public void GameView_WhenTheGameIsOver_SendsNoDecidingSeat()
     {
         // Arrange
-        GameViewDto view = new("g", "classic", "Classic", 3, 2, null, [], [], [], []);
+        GameViewDto view = new("g", "classic", "Classic", 3, 2, null, [], [], [], [], []);
 
         // Act
         string json = JsonSerializer.Serialize(view, Wire);

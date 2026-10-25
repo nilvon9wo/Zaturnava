@@ -50,7 +50,7 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
 
         // Assert
         Assert.Equal(
-            (64, 32, 0, 10, "open", "bot", ZaturnavaServer.Random),
+            (64, 32, 0, 1, "open", "bot", ZaturnavaServer.Random),
             (
                 view.Cells.Count,
                 view.Pieces.Count,
@@ -107,10 +107,10 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
     {
         // Arrange
         (string gameId, string token, GameViewDto view) = await this.ClaimedGame();
-        ActionDto pass = view.LegalActions.First(action => action.Kind == "pass");
+        ActionDto roll = view.LegalActions.First(action => action.Kind == "roll");
 
         // Act
-        GameViewDto after = await this._client.Submit(gameId, token, pass, this._cancellation);
+        GameViewDto after = await this._client.Submit(gameId, token, roll, this._cancellation);
 
         // Assert
         Assert.Equal((0, 2), (after.DecidingSeat, after.Version));

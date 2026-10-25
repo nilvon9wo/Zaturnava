@@ -31,7 +31,16 @@ line or branch is missing.
 ## Running the game
 
 The server and the web client run side by side, the server on port 5164, the page on 5165 (their
-launch profiles, so Visual Studio's F5 does the same):
+launch profiles, so Visual Studio's F5 does the same). One command builds both and runs them until
+Ctrl+C; run it again to restart:
+
+```shell
+python3 scripts/play.py                                # then open http://localhost:5165
+```
+
+Don't rebuild them while they run: the page server indexes its files once, at startup, and a
+rebuild beneath it (a test run from the same folder, say) leaves the page stuck on "Loading...".
+Restart instead. By hand, that is:
 
 ```shell
 dotnet build Zaturnava.Server && dotnet build Zaturnava.Web
@@ -94,6 +103,15 @@ rewrite the `obj/` folders Visual Studio uses:
 rsync -a --delete --exclude bin --exclude obj --exclude .vs --exclude .git --exclude TestResults \
     /mnt/e/path/to/Zaturnava/ ~/zaturnava/
 cd ~/zaturnava && python3 scripts/run-tests.py --solution Zaturnava.slnx
+```
+
+Play from a second copy, so that a test run in the first never rebuilds the game beneath you
+(WSL forwards the ports, so the page still opens in a Windows browser):
+
+```shell
+rsync -a --delete --exclude bin --exclude obj --exclude .vs --exclude .git --exclude TestResults \
+    /mnt/e/path/to/Zaturnava/ ~/zaturnava-play/
+cd ~/zaturnava-play && python3 scripts/play.py
 ```
 
 The static gates (`dotnet format`, `check-line-layout.py`, `inspect-code.py`) run no test host

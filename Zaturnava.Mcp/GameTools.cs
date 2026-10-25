@@ -52,7 +52,8 @@ public sealed class GameTools(IGameServing games)
     [McpServerTool(Name = "get_game", ReadOnly = true)]
     [Description(
         "A game as it stands: the cells (with where each is drawn), the pieces and their cells, the seats and "
-        + "scores, whose decision it is (decidingSeat, null once over), and that seat's legal actions."
+        + "scores, whose decision it is (decidingSeat, null once over), that seat's legal actions, and the dice "
+        + "it has rolled this turn and not used yet."
     )]
     public Task<GameViewDto> GetGame(string gameId, CancellationToken cancellationToken) =>
         Explained(() => this._games.Get(gameId, cancellationToken));
