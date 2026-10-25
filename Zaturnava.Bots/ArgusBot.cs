@@ -8,7 +8,7 @@ namespace Net.NowhereAtAll.Zaturnava.Bots;
 /// Watchful, like the giant of a hundred eyes: deals in prisoners as Solomon does, but on the board it
 /// looks at the reply before it moves. It weighs each action by what it gains, less the worst any enemy
 /// could do in return: take a piece left unguarded, or win an exchange, or step a leader onto its empty
-/// throne. Still one move deep, and blind to the dice.
+/// throne; and it keeps out of the way of its allies' attacks. Still one move deep, and blind to the dice.
 /// </summary>
 public sealed class ArgusBot(Random random) : IBotPlaying
 {
@@ -20,7 +20,8 @@ public sealed class ArgusBot(Random random) : IBotPlaying
         BotId,
         "Argus",
         "Watchful: before it moves, it looks at what its opponents could take in reply, and keeps its pieces "
-            + "guarded and its throne safe. Trades prisoners as Solomon does. A plain algorithm: no AI.",
+            + "guarded, its throne safe and its allies' lines of attack open. Trades prisoners as Solomon does. "
+            + "A plain algorithm: no AI.",
         UsesAi: false
     );
 

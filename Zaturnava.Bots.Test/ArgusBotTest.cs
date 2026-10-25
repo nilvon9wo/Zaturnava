@@ -11,6 +11,7 @@ public sealed class ArgusBotTest
     private const int Tries = 20;
     private static readonly SeatId Mine = LineRules.Seat;
     private static readonly SeatId Theirs = LineRules.Enemy;
+    private static readonly SeatId Ally = new(2);
     private static readonly GameAction Pass = new PassAction(Mine);
 
     private readonly CancellationToken _cancellation = TestContext.Current.CancellationToken;
@@ -190,6 +191,60 @@ public sealed class ArgusBotTest
 
         // Assert
         _ = await Assert.ThrowsAsync<TaskCanceledException>(() => deciding);
+    }
+
+    [Fact]
+    public async Task Decide_WhenAMoveWouldBlockAnAllysAttack_MovesElsewhere()
+    {
+        // Arrange - the ally's Boat on 7 has the enemy Raja on 3 in its line, which the Horse would cut on 5
+        DecisionRequest request = LineRules.Request(
+            [LineRules.Move(0, 1), LineRules.Move(0, 5)],
+            (0, LineRules.Horse, Mine),
+            (3, LineRules.Raja, Theirs),
+            (7, LineRules.Boat, Ally)
+        );
+
+        // Act
+        ImmutableHashSet<GameAction> chosen = await Choices(request);
+
+        // Assert
+        Assert.Equal([LineRules.Move(0, 1)], chosen);
+    }
+
+    [Fact]
+    public async Task Decide_WhenAPieceBlocksAnAllysAttack_MovesItOutOfTheWay()
+    {
+        // Arrange - the Horse on 5 cuts the ally's Boat on 7 off from the enemy Raja on 3
+        DecisionRequest request = LineRules.Request(
+            [LineRules.Move(5, 6), LineRules.Move(5, 1)],
+            (5, LineRules.Horse, Mine),
+            (3, LineRules.Raja, Theirs),
+            (7, LineRules.Boat, Ally)
+        );
+
+        // Act
+        ImmutableHashSet<GameAction> chosen = await Choices(request);
+
+        // Assert
+        Assert.Equal([LineRules.Move(5, 1)], chosen);
+    }
+
+    [Fact]
+    public async Task Decide_WhenItCouldTakeWhatItsAllyThreatens_TakesItItself()
+    {
+        // Arrange - the enemy Raja on 3 is in the line of the ally's Boat on 7, and next to the Horse
+        DecisionRequest request = LineRules.Request(
+            [LineRules.Move(2, 1), LineRules.Move(2, 3)],
+            (2, LineRules.Horse, Mine),
+            (3, LineRules.Raja, Theirs),
+            (7, LineRules.Boat, Ally)
+        );
+
+        // Act
+        ImmutableHashSet<GameAction> chosen = await Choices(request);
+
+        // Assert
+        Assert.Equal([LineRules.Move(2, 3)], chosen);
     }
 
     [Fact]

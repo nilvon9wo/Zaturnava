@@ -23,7 +23,7 @@ internal static class Greedy
     }
 
     /// <summary>The best scoring actions, if any score; otherwise every action that does something.</summary>
-    private static ImmutableList<GameAction> Choices(DecisionRequest request)
+    internal static ImmutableList<GameAction> Choices(DecisionRequest request)
     {
         ImmutableList<(GameAction Action, int Gain)> gains =
             [.. request.LegalActions.Select(action => (action, Gain(request, action, After(request, action))))];

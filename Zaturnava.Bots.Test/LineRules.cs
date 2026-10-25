@@ -12,7 +12,8 @@ using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 namespace Net.NowhereAtAll.Zaturnava.Bots.Test;
 
 /// <summary>
-/// Rules on a line of cells, in which every piece attacks the cells either side of it, and the legal
+/// Rules on a line of cells, in which every piece attacks the cells either side of it - but a Boat
+/// attacks along the line either way, up to the first piece in its way - and the legal
 /// actions are whichever the test says. A move goes where it says, and scores its actor what it takes
 /// (<see cref="ScoringRules.Worth"/>); passing does nothing. Seats 0 and 2 are allied against 1 and 3;
 /// seat 0's throne is cell 0, and the Raja leads.
@@ -24,6 +25,7 @@ internal sealed class LineRules(ImmutableList<GameAction> legalActions) : IRules
     public static readonly CellId Throne = new(0);
     public static readonly PieceKindId Pawn = new("pawn");
     public static readonly PieceKindId Horse = new("horse");
+    public static readonly PieceKindId Boat = new("boat");
     public static readonly PieceKindId Raja = new("raja");
 
     private const int Length = 8;
@@ -84,11 +86,27 @@ internal sealed class LineRules(ImmutableList<GameAction> legalActions) : IRules
     [
         .. state.Position.Occupants
             .Where(occupant => occupant.Value.Owner == seat)
-            .SelectMany(occupant => new[] { occupant.Key.Value - 1, occupant.Key.Value + 1 }
-                .Where(cell => cell is >= 0 and < Length)
+            .SelectMany(occupant => new[] { -1, 1 }
+                .SelectMany(step => Reach(state, occupant.Value, occupant.Key.Value, step))
                 .Select(cell => new Attack(occupant.Value, occupant.Key, new CellId(cell)))
             ),
     ];
+
+    /// <summary>The cells a piece attacks one way: the next, or, for a Boat, every one up to a piece.</summary>
+    private static IEnumerable<int> Reach(GameState state, Piece piece, int from, int step)
+    {
+        int cell = from + step;
+        while (cell is >= 0 and < Length)
+        {
+            yield return cell;
+            if (piece.Kind != Boat || state.Position.PieceAt(new CellId(cell)) is not null)
+            {
+                yield break;
+            }
+
+            cell += step;
+        }
+    }
 
     public bool IsLeader(PieceKindId kind) => kind == Raja;
 

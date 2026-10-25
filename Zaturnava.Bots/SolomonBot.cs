@@ -6,7 +6,8 @@ namespace Net.NowhereAtAll.Zaturnava.Bots;
 
 /// <summary>
 /// Fair-minded, like the king who judged between two mothers: plays the board as greedily as Midas,
-/// but deals in prisoners to see armies whole again. Once its turn is over, it gives its allies' pieces
+/// though keeping out of its allies' way (<see cref="Teamwork"/>), and deals in prisoners to see armies
+/// whole again. Once its turn is over, it gives its allies' pieces
 /// back for nothing, then offers even trades - a prisoner for one of its team's of the same worth. It
 /// accepts any offer within a point of even.
 /// </summary>
@@ -22,15 +23,15 @@ public sealed class SolomonBot(Random random) : IBotPlaying
     public BotProfile Profile { get; } = new(
         BotId,
         "Solomon",
-        "Fair-minded: plays the board greedily, but gives allies' pieces back, trades prisoners evenly, "
-            + "and accepts any offer close to even. A plain algorithm: no AI.",
+        "Fair-minded: plays the board greedily, keeping out of its allies' way, gives allies' pieces back, "
+            + "trades prisoners evenly, and accepts any offer close to even. A plain algorithm: no AI.",
         UsesAi: false
     );
 
     public Task<GameAction> Decide([Required] DecisionRequest request, CancellationToken cancellationToken) =>
         cancellationToken.IsCancellationRequested
             ? Task.FromCanceled<GameAction>(cancellationToken)
-            : Task.FromResult(AnswerTo(request) ?? FairTrade(request) ?? Greedy.Choose(request, this._random));
+            : Task.FromResult(AnswerTo(request) ?? FairTrade(request) ?? Teamwork.Choose(request, this._random));
 
     internal static GameAction? AnswerTo(DecisionRequest request) => Trading.AnswerTo(request, Leeway);
 

@@ -24,6 +24,7 @@ internal sealed class ScoringRules(ImmutableDictionary<GameAction, int> points) 
         ImmutableDictionary<PieceKindId, int>.Empty
             .Add(new PieceKindId("pawn"), 1)
             .Add(new PieceKindId("horse"), 3)
+            .Add(new PieceKindId("boat"), 4)
             .Add(new PieceKindId("raja"), 5);
 
     private readonly ImmutableDictionary<GameAction, int> _points = points;

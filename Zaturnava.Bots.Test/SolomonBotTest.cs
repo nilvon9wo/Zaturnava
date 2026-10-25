@@ -1,6 +1,8 @@
+using System.Collections.Immutable;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Decisions;
 using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
+using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 
 namespace Net.NowhereAtAll.Zaturnava.Bots.Test;
 
@@ -126,6 +128,26 @@ public sealed class SolomonBotTest
 
         // Assert
         _ = await Assert.ThrowsAsync<TaskCanceledException>(() => deciding);
+    }
+
+    [Fact]
+    public async Task Decide_WhenAMoveWouldBlockAnAllysAttack_MovesElsewhere()
+    {
+        // Arrange - the ally's Boat on 7 has the enemy Raja on 3 in its line, which the Horse would cut on 5
+        DecisionRequest request = LineRules.Request(
+            [LineRules.Move(0, 1), LineRules.Move(0, 5)],
+            (0, LineRules.Horse, LineRules.Seat),
+            (3, LineRules.Raja, LineRules.Enemy),
+            (7, LineRules.Boat, new SeatId(2))
+        );
+
+        // Act
+        GameAction[] chosen = await Task.WhenAll(
+            Enumerable.Range(0, 20).Select(seed => new SolomonBot(new Random(seed)).Decide(request, this._cancellation))
+        );
+
+        // Assert
+        Assert.Equal([LineRules.Move(0, 1)], chosen.ToImmutableHashSet());
     }
 
     [Fact]
