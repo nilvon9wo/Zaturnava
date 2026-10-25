@@ -868,6 +868,24 @@ public sealed class TableTest : IDisposable
     }
 
     [Fact]
+    public void Choice_WhenAPromotionIsDue_PromotesIntoTheChosenPiece()
+    {
+        // Arrange - the Pawn has just come to the far edge, so its choices are open
+        this._page.Server.View = Promotions() with { PromotionDue = 2 };
+        IRenderedComponent<Table> table = this._page.Render<Table>(
+            parameters => parameters.Add(x => x.Seating, SeatZero).Add(x => x.Pieces, PieceSet.Chess)
+        );
+
+        // Act
+        table.FindAll(".promotion button.choice")
+            .First(choice => choice.TextContent.Contains("Green's Rook", StringComparison.Ordinal))
+            .Click();
+
+        // Assert
+        Assert.Equal("8", this._page.Server.Submitted?.Action.Arguments[ActionArguments.Into]);
+    }
+
+    [Fact]
     public void Later_WhenAPromotionIsDue_Passes()
     {
         // Arrange
