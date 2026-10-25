@@ -9,7 +9,9 @@ namespace Net.NowhereAtAll.Zaturnava.Contracts;
 /// game ended, once it has. While a ransom waits on its answer, <see cref="Offer"/> is it;
 /// <see cref="MayOffer"/> says whether the deciding seat may offer one (an <c>offer</c> action, not
 /// among the legal actions); and <see cref="SecondsLeft"/>, if its decision is timed, how long it
-/// has left, after which anyone may advance the game to decide for it.
+/// has left, after which anyone may advance the game to decide for it. <see cref="PromotionDue"/> is
+/// the cell of a Pawn just come to the far edge, which the deciding seat promotes now or passes to
+/// leave for later.
 /// </summary>
 public sealed record GameViewDto(
     string Id,
@@ -28,5 +30,6 @@ public sealed record GameViewDto(
     OutcomeDto? Outcome,
     bool MayOffer,
     OfferDto? Offer,
-    double? SecondsLeft
+    double? SecondsLeft,
+    int? PromotionDue
 );

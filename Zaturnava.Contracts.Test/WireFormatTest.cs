@@ -32,7 +32,8 @@ public sealed class WireFormatTest
             new OutcomeDto([0, 2], "Black and Green won: only one team has pieces left."),
             true,
             new OfferDto(0, 1, [new PrisonerDto(9, "pawn", "Pawn", 1)], []),
-            12.5
+            12.5,
+            58
         );
 
         // Act
@@ -62,6 +63,7 @@ public sealed class WireFormatTest
             [],
             null,
             false,
+            null,
             null,
             null
         );

@@ -39,6 +39,7 @@ internal sealed class FakeGameServer : IGameServing
         null,
         false,
         null,
+        null,
         null
     );
 

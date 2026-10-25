@@ -55,7 +55,8 @@ internal static class GameViews
             OutcomeOf(snapshot.Rules, snapshot.State.Outcome),
             snapshot.Rules.MayOffer(snapshot.State),
             OfferOf(snapshot),
-            snapshot.TimeLeft?.TotalSeconds
+            snapshot.TimeLeft?.TotalSeconds,
+            snapshot.State.PromotionDue?.Value
         );
     }
 
@@ -143,14 +144,16 @@ internal static class GameViews
     }
 
     /// <summary>
-    /// What a button says that its kind alone cannot: which Pawn becomes what, and that passing once a
-    /// turn is over means being done offering ransoms. Null for any other action.
+    /// What a button says that its kind alone cannot: which Pawn becomes what; that passing once a turn
+    /// is over means being done offering ransoms; and that passing on a promotion due leaves it for
+    /// later. Null for any other action.
     /// </summary>
     private static string? LabelOf(GameSnapshot snapshot, GameAction action) =>
-        (action, snapshot.State.IsRansomWindow) switch
+        (action, snapshot.State.IsRansomWindow, snapshot.State.PromotionDue) switch
         {
-            (PromoteAction promote, _) => PromotionOf(snapshot, promote),
-            (PassAction, true) => "Done offering",
+            (PromoteAction promote, _, _) => PromotionOf(snapshot, promote),
+            (PassAction, true, _) => "Done offering",
+            (PassAction, _, { }) => "Promote later",
             _ => null,
         };
 

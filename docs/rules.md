@@ -29,7 +29,7 @@ Everything else here is specified but not yet played by the engine.
 | §6 Throne control | Partly: the expanded pool (§6.1, both triggers) and the forced shared turn (§6.3). Voluntary regency (§6.2) is not yet. |
 | §6.4 Commanded captures | Implemented, with the toggle as a constructor argument. |
 | §7 Escape, §9 Boat triumph | Not yet. |
-| §8 Promotion & ransom | Implemented, as clarified below: promotion into the commanding team's captured pieces, and ransom with its timed protocol. The receiving player's choice among equidistant squares is not offered yet. |
+| §8 Promotion & ransom | Implemented, as clarified below: promotion into any captured piece (`promotion.pawns` a constructor argument; `promotion.pool` fixed at `unrestricted`), and ransom with its timed protocol. The receiving player's choice among equidistant squares is not offered yet. |
 | §10 Game end | Partly: elimination (a seat with no pieces is skipped), honourable peace, team elimination, and a safety net (below). Retirement and ending by agreement are not yet. |
 | §11 Setup roll-off | Implemented. |
 | §12 Toggles | None per game yet: `control.enemyArmyCaptures` is a constructor argument; the other defaults are fixed. |
@@ -360,15 +360,28 @@ available (via a future capture, by anyone).
   turn (the owner normally, or an ally/enemy currently controlling that army
   under §6). No one's consent is needed to consume the captured piece it's
   promoted into, regardless of who currently holds that piece prisoner.
-- *(Clarified 2026-10-25, as the `classic` ruleset plays it)* The pool is the
-  captured pieces of the **controlling player's own team** — their own, or
-  their ally's (the ally then commands the promoted piece) — never a Pawn. An
-  enemy controlling the Pawn's army (holding its throne, §6.1a, or moving for
-  it, §6.3) may so promote it into one of *their* team's pieces. A Pawn on the
-  far edge is one with nowhere forward left to go. Promoting is its own
-  decision, at any time the controlling player may move that army on their
-  turn (before rolling, or with dice left); it uses no die, and the turn goes
-  on.
+- *(Clarified 2026-10-25)* A Pawn on the far edge is one with nowhere
+  forward left to go. Whoever originally owned the captured piece commands it
+  once it is back on the board, in the promoted Pawn's place — so an enemy
+  holding the Pawn's army's throne (§6.1a, §6.3) may promote it into their own
+  team's piece, or into the Pawn owner's own piece, to take it again for the
+  points.
+- *(Clarified 2026-10-25)* Promoting a Pawn of one's own team (one's own, or
+  a Raja-less ally's) is its own decision, at any time during one's turn:
+  before rolling, or between moves. It uses no die, and the turn goes on.
+  Promoting an **enemy's** Pawn — whose throne one's Raja holds — takes a die
+  that moves a Pawn, which it uses up, as a Pawn's move would.
+- *(Clarified 2026-10-25)* A Pawn that has just come to the far edge, if it
+  may be promoted, is offered at once: the player promotes it, or leaves it
+  for later, before the turn goes on. Later, the player picks the Pawn up to
+  promote it.
+- **[toggle: `promotion.pawns`]** — Default: `otherArmies`. A Pawn may be
+  promoted into another army's captured Pawn, which then moves the way its
+  own army faces (and may reach another edge, and be promoted again);
+  `never` rules Pawns out. A Pawn is never promoted into a Pawn of its own
+  army, which would change nothing.
+- *(Clarified 2026-10-25)* Captured pieces alike — the same kind, of the same
+  army — are one choice: the first captured is the one used.
 
 ### Ransom
 
@@ -405,8 +418,8 @@ available (via a future capture, by anyone).
     decides again.
   - Accepted, the prisoners given go home first, then those asked for. Each
     goes to its starting square, or the free square fewest king's steps
-    from it. Until the receiving player can choose among equals, the
-    lowest-numbered square is taken.
+    from it. Until the receiving player can choose among equals, the one
+    nearest the first rank is taken, then the one nearest the a-file.
   - The window and the answer are timed: 30 seconds each by default, set by
     the host (`Games:Timers:ransom-window`, `Games:Timers:ransom-answer`).
     When the window runs out, it closes; when the answer runs out, the offer
@@ -488,7 +501,8 @@ configuration this document describes.
 | Toggle | Default | Description |
 |---|---|---|
 | `dice.profile` | `2d6-weighted` | Dice count/sides and value→piece-category mapping. Alternative: `2d4-uniform`. |
-| `promotion.pool` | `unrestricted` | Whether a promoting Pawn may become any captured piece, or only one that started on the same file/column. (The `classic` ruleset limits the pool to the controlling team's pieces, §8.) |
+| `promotion.pool` | `unrestricted` | Whether a promoting Pawn may become any captured piece, or only one that started on the same file/column. |
+| `promotion.pawns` | `otherArmies` | Whether a promoting Pawn may become another army's captured Pawn, or never a Pawn (§8). |
 | `control.enemyArmyCaptures` | `anything` | What a piece of an enemy army a player commands may take: `anything`, or `notOwnTeam` (§6.4). |
 | `gameEnd.safetyNet.*` | off | Optional auto-end conditions (move cap, universal-pass, etc.) layered on top of end-by-agreement, mainly for unattended/bot games. |
 | `scoring.points.pawn` | `1` | Points awarded for capturing a Pawn. |

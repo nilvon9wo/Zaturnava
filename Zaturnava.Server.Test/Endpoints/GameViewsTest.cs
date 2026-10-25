@@ -157,6 +157,31 @@ public sealed class GameViewsTest
     }
 
     [Fact]
+    public void ViewOf_WhenAPromotionIsDue_SaysWhereAndLabelsPassingAsLater()
+    {
+        // Arrange - Black's Pawn has just come to c8
+        Piece pawn = new(new PieceId(4), ClassicPieces.Pawn, new SeatId(0));
+        Piece elephant = new(new PieceId(18), ClassicPieces.Elephant, new SeatId(2));
+        GameState state = Rules.CreateInitialState() with
+        {
+            RollOff = [],
+            AwaitedDice = null,
+            Position = Rules.CreateInitialState().Position.Place(Rules.Topology.Cells[58], pawn),
+            Prisoners = [new Prisoner(elephant, new SeatId(3))],
+            PromotionDue = Rules.Topology.Cells[58],
+        };
+
+        // Act
+        GameViewDto view = GameViews.ViewOf(Snapshot(state), Bots);
+
+        // Assert
+        Assert.Equal(
+            (58, "pass: Promote later"),
+            (view.PromotionDue, $"{view.LegalActions[0].Kind}: {view.LegalActions[0].Label}")
+        );
+    }
+
+    [Fact]
     public void ViewOf_WhenATurnIsOverButItsSeatMayStillOffer_LabelsPassingAsDone()
     {
         // Arrange

@@ -22,6 +22,18 @@ public sealed class ActionArgumentsTest
     }
 
     [Fact]
+    public void PromotionNames_WhenComparedWithTheEngines_AreTheSame()
+    {
+        // Arrange - nothing beyond the constants
+
+        // Act
+        (string, string) contracts = (ActionArguments.Cell, ActionArguments.Into);
+
+        // Assert
+        Assert.Equal((PromoteAction.CellArgument, PromoteAction.IntoArgument), contracts);
+    }
+
+    [Fact]
     public void OfferNames_WhenComparedWithTheEngines_AreTheSame()
     {
         // Arrange - nothing beyond the constants

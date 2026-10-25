@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Globalization;
 using Bunit;
 using Net.NowhereAtAll.Zaturnava.Contracts;
 
@@ -669,11 +670,170 @@ public sealed class TableTest : IDisposable
         _ = Assert.Single(page.Server.Calls);
     }
 
+    [Fact]
+    public void Render_WhenAPromotionIsDue_OffersEachPieceAndToPromoteLater()
+    {
+        // Arrange
+        this._page.Server.View = Promotions() with { PromotionDue = 2 };
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Assert
+        Assert.Equal(
+            ("Promote Black's Pawn on c2 to:", "Green's Elephant|Black's Boat", "Promote later"),
+            (
+                table.Find(".promotion p.hint").TextContent,
+                string.Join('|', table.FindAll(".promotion .choice .name").Select(name => name.TextContent)),
+                table.Find(".promotion button.later").TextContent.Trim()
+            )
+        );
+    }
+
+    [Fact]
+    public void Render_WhenAPawnMayBePromoted_RingsItWithoutOpeningItsMenu()
+    {
+        // Arrange
+        this._page.Server.View = Promotions();
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Assert
+        Assert.Equal(
+            (1, 0),
+            (table.FindAll(".piece.promotable").Count, table.FindAll(".promotion").Count)
+        );
+    }
+
+    [Fact]
+    public void Later_WhenAPromotionIsDue_Passes()
+    {
+        // Arrange
+        this._page.Server.View = Promotions() with { PromotionDue = 2 };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Act
+        table.Find(".promotion button.later").Click();
+
+        // Assert
+        Assert.Equal("pass", this._page.Server.Submitted?.Action.Kind);
+    }
+
+    [Fact]
+    public void Choice_WhenAPawnIsPickedUp_PromotesIt()
+    {
+        // Arrange
+        this._page.Server.View = Promotions();
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        Cell(table, 2).Click();
+
+        // Act
+        table.FindAll(".promotion button.choice")[1].Click();
+
+        // Assert
+        Assert.Equal("7", this._page.Server.Submitted?.Action.Arguments[ActionArguments.Into]);
+    }
+
+    [Fact]
+    public void Later_WhenAPawnIsPickedUp_PutsItDown()
+    {
+        // Arrange
+        this._page.Server.View = Promotions();
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        Cell(table, 2).Click();
+
+        // Act
+        table.Find(".promotion button.later").Click();
+
+        // Assert
+        Assert.Equal((0, null), (table.FindAll(".promotion").Count, this._page.Server.Submitted));
+    }
+
+    [Fact]
+    public void Submit_WhenThePlayerLosesDiceTheyCannotUse_SaysSoUntilDismissed()
+    {
+        // Arrange
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        this._page.Server.View = Forfeited();
+        table.Find("button.action").Click();
+        string told = table.Find("p.notice").TextContent;
+
+        // Act
+        table.Find("p.notice button.dismiss").Click();
+
+        // Assert
+        Assert.Equal(
+            (true, 0),
+            (told.Contains("Black could move nothing", StringComparison.Ordinal), table.FindAll("p.notice").Count)
+        );
+    }
+
+    [Fact]
+    public void Poll_WhenThePlayersTurnComesRoundAgain_ForgetsTheDiceTheyLost()
+    {
+        // Arrange
+        using PageContext page = new(TimeSpan.FromMilliseconds(200));
+        IRenderedComponent<Table> table = page.Render<Table>(parameters => parameters.Add(x => x.Seating, SeatZero));
+        page.Server.View = Forfeited();
+        table.Find("button.action").Click();
+        int told = table.FindAll("p.notice").Count;
+
+        // Act
+        page.Server.View = FakeGameServer.SeatZeroToMove with { Version = 3 };
+
+        // Assert
+        table.WaitForAssertion(() => Assert.Equal((1, 0), (told, table.FindAll("p.notice").Count)));
+    }
+
+    /// <summary>Yellow, a bot, to move, once Black has lost the dice it rolled.</summary>
+    private static GameViewDto Forfeited() =>
+        FakeGameServer.SeatZeroToMove with
+        {
+            Version = 2,
+            DecidingSeat = 1,
+            Log =
+            [
+                new EventDto(0, EventDto.Rolled, 0, "Black rolled 1 (Boat).", null, null),
+                new EventDto(1, EventDto.Forfeited, 0, "Black could move nothing with 1 (Boat).", null, null),
+                new EventDto(2, EventDto.Passed, 0, "Yellow to play.", null, null),
+            ],
+        };
+
     private static (string Kind, string Receiver, string Given, string Asked) Offered(FakeGameServer server)
     {
         ActionDto action = server.Submitted!.Value.Action;
         return (action.Kind, action.Arguments["receiver"], action.Arguments["given"], action.Arguments["asked"]);
     }
+
+    /// <summary>
+    /// Black's turn, with its Pawn on c2 (cell 2) able to become Green's Elephant 8 or Black's Boat 7,
+    /// which Yellow holds.
+    /// </summary>
+    private static GameViewDto Promotions() =>
+        FakeGameServer.SeatZeroToMove with
+        {
+            Pieces = [.. FakeGameServer.SeatZeroToMove.Pieces, new PieceDto(1, "pawn", "Pawn", 0, 2)],
+            Seats =
+            [
+                FakeGameServer.SeatZeroToMove.Seats[0],
+                FakeGameServer.SeatZeroToMove.Seats[1] with
+                {
+                    Prisoners = [new PrisonerDto(7, "boat", "Boat", 0), new PrisonerDto(8, "elephant", "Elephant", 2)],
+                },
+                new SeatDto(2, "Green", 0, 0, "open", null, []),
+            ],
+            LegalActions = [FakeGameServer.Pass with { Label = "Promote later" }, Promotion(8), Promotion(7)],
+        };
+
+    private static ActionDto Promotion(int into) =>
+        new(
+            "promote",
+            ImmutableSortedDictionary<string, string>.Empty
+                .Add(ActionArguments.Actor, "0")
+                .Add(ActionArguments.Cell, "2")
+                .Add(ActionArguments.Into, into.ToString(CultureInfo.InvariantCulture))
+        );
 
     /// <summary>
     /// Black's turn, holding Yellow's Pawn 9 and Horse 10 and Red's Pawn 11; Yellow holds Black's Boat 7

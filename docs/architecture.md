@@ -235,7 +235,7 @@ base address (`GameRoutes`):
 | Rulesets and bots on offer, each bot with its name, description and whether it uses AI | `GET api/catalog` | `CatalogDto` |
 | Games | `GET api/games` | `GameSummaryDto[]` |
 | Create a game | `POST api/games` with `CreateGameRequest` (a ruleset, and per seat a bot id or null for a person) | 201, `GameCreatedDto` |
-| A game | `GET api/games/{id}` | `GameViewDto`: cells (with names and thrones), pieces, seats (with scores, bot names and prisoners), the dice and what each allows, the latest events, whose decision and for which seat, the legal actions (labelled where the kind alone cannot say), how the game ended, whether the deciding seat may offer a ransom, the offer waiting on its answer, and the time left on a timed decision |
+| A game | `GET api/games/{id}` | `GameViewDto`: cells (with names and thrones), pieces, seats (with scores, bot names and prisoners), the dice and what each allows, the latest events, whose decision and for which seat, the legal actions (labelled where the kind alone cannot say), how the game ended, whether the deciding seat may offer a ransom, the offer waiting on its answer, the time left on a timed decision, and the cell of a Pawn whose promotion is due |
 | Let a bot or a timer decide | `POST api/games/{id}/advance` with `AdvanceRequest` (the version the caller saw) | `GameViewDto` after one bot decision, or the timer's decision once a timed one has run out of time; unchanged if the version is stale or neither is due |
 | Claim an open seat | `POST api/games/{id}/seats/{seat}` | `SeatClaimedDto` with the seat's token |
 | Act | `POST api/games/{id}/actions` with `ActionDto`, `Authorization: Bearer {token}` | `GameViewDto` after the action and any bot replies |

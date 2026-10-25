@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Net.NowhereAtAll.Zaturnava.Engine.Boards;
 using Net.NowhereAtAll.Zaturnava.Engine.Chance;
 using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
 using Net.NowhereAtAll.Zaturnava.Engine.Positions;
@@ -47,6 +48,12 @@ public sealed record GameState(
     /// turn passes with <see cref="IdlePasses"/> as they stand.
     /// </summary>
     public bool IsRansomWindow { get; init; }
+
+    /// <summary>
+    /// The cell of a Pawn just come to the far edge, which the deciding seat may promote at once, before
+    /// the turn goes on, or leave for later; null if none.
+    /// </summary>
+    public CellId? PromotionDue { get; init; }
 
     /// <summary>How the game ended; null while it goes on.</summary>
     public GameOutcome? Outcome { get; init; }

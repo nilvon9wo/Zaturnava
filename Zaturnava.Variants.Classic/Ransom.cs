@@ -25,9 +25,20 @@ internal sealed class Ransom(SquareGridTopology grid, ImmutableDictionary<PieceI
     public static bool HoldsRansom(GameState state, SeatId seat) =>
         state.Prisoners.Any(prisoner => prisoner.Holder == seat && prisoner.Piece.Owner != seat);
 
-    /// <summary>On its own turn, with no dice awaited and no offer waiting, a seat with prisoners may offer.</summary>
+    /// <summary>
+    /// On its own turn, with no dice awaited, no offer waiting and no promotion due, a seat with prisoners
+    /// may offer.
+    /// </summary>
     public static bool MayOffer(GameState state) =>
-        state is { Offer: null, AwaitedDice: null, ActingFor: null, RollOff.IsEmpty: true, DecidingSeat: { } seat }
+        state is
+        {
+            Offer: null,
+            AwaitedDice: null,
+            ActingFor: null,
+            PromotionDue: null,
+            RollOff.IsEmpty: true,
+            DecidingSeat: { } seat,
+        }
         && HoldsRansom(state, seat);
 
     /// <summary>

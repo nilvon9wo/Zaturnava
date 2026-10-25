@@ -89,8 +89,10 @@ After the second playtest (2026-10-25):
 
 - A commanded enemy army may take any piece (rules §6.4), by default; taking a piece of one's own
   team scores nothing.
-- Promotion (§8): a Pawn on the far edge may become any captured piece of its controller's team,
-  now or later; an enemy moving the army may promote into its own team's pieces.
+- Promotion (§8): a Pawn on the far edge may become any captured piece, which its original owner
+  then commands; at once (the page opens its choices) or later (the page rings the Pawn, and picking
+  it up opens them). An enemy promotes only with a die that moves a Pawn.
+- Dice no piece can use are told as lost, in the log and on the page, before the turn passes.
 - **15** Ransom (§8): on their turn, and in a timed window once it is over, a player may offer
   prisoners back, for prisoners in return or as a gift; the receiver accepts or declines against
   the clock (bots answer at once).

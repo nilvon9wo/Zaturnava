@@ -1,6 +1,6 @@
 @* Any board, from the cells' layouts alone: a unit square per cell, each throne outlined in its seat's
    colour, the last move tinted, the pieces on top, then the marks of a move being made - a ring
-   around each piece that can move, and a dot (or, over a piece to capture, a ring) wherever the
+   around each piece that can move (flashing around one that can be promoted), and a dot (or, over a piece to capture, a ring) wherever the
    piece picked up can go. Each cell's name is written small in its corner, so that the log's "from c2
    to c3" can be found. The whole board turns by Turn; the pieces' symbols and the names stay upright. *@
 
@@ -128,6 +128,7 @@
                 "piece",
                 $"seat-{piece.Owner}",
                 this.Actions.Origins.Contains(piece.Cell) ? "movable" : null,
+                this.Actions.AtCells.Contains(piece.Cell) ? "promotable" : null,
                 this.Selection.Selected == piece.Cell ? "picked" : null,
             }.OfType<string>()
         );

@@ -13,6 +13,7 @@
     --last: rgba(242, 179, 61, 0.28);
     --mark: rgba(120, 220, 140, 0.85);
     --ring: #f2b33d;
+    --promotable: #ff5fd2;
     --problem: #ff7b7b;
     --seat-0: #2b2b2b;
     --seat-0-ink: #f4f4f4;
@@ -39,6 +40,7 @@
     --last: rgba(201, 130, 26, 0.3);
     --mark: rgba(30, 140, 60, 0.8);
     --ring: #c9821a;
+    --promotable: #c01c9a;
     --problem: #b00020;
     --piece-edge: #ffffff;
     color-scheme: light;
@@ -182,6 +184,15 @@ select {
 
 .piece.movable circle { stroke: var(--ring); stroke-width: 0.09; }
 .piece.picked circle { stroke: var(--ring); stroke-width: 0.13; filter: drop-shadow(0 0 0.08px var(--ring)); }
+.piece.promotable circle {
+    stroke: var(--promotable);
+    stroke-width: 0.12;
+    animation: promotable 1.2s ease-in-out infinite;
+}
+@keyframes promotable { 50% { stroke-opacity: 0.2; } }
+@media (prefers-reduced-motion: reduce) {
+    .piece.promotable circle { animation: none; stroke-dasharray: 0.15 0.08; }
+}
 
 .mark { fill: var(--mark); }
 .mark.capture { fill: none; stroke: var(--mark); stroke-width: 0.08; }
@@ -236,6 +247,14 @@ select {
 .turn .hint { color: var(--muted); margin: 8px 0 4px; }
 .turn .countdown { font-variant-numeric: tabular-nums; color: var(--accent); margin: 0 0 6px; }
 .turn .offer { font-weight: 700; margin: 0 0 6px; }
+.turn .notice {
+    margin: 0 0 8px;
+    padding: 6px 8px;
+    border-left: 4px solid var(--accent);
+    background: var(--panel-edge);
+    border-radius: 4px;
+}
+.turn .notice .dismiss { margin-left: 8px; }
 
 .ransom { margin-top: 10px; border-top: 1px solid var(--panel-edge); padding-top: 6px; }
 .ransom-to, .ransom-ask { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin: 4px 0; }
@@ -251,6 +270,21 @@ select {
 .ransom .prisoner .piece-icon { width: 26px; height: 26px; }
 .ransom .all { font-size: 0.85rem; }
 .ransom .action.offer { margin-top: 6px; }
+
+.promotion-choices { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0 8px; }
+.promotion .choice {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px 2px 2px;
+    color: inherit;
+    background: transparent;
+    border: 2px solid var(--panel-edge);
+    border-radius: 6px;
+    cursor: pointer;
+}
+.promotion .choice:hover { border-color: var(--accent); }
+.promotion .choice .piece-icon { width: 26px; height: 26px; }
 
 .dice { list-style: none; padding: 0; margin: 4px 0; }
 .dice li { font-size: 1.1rem; margin: 2px 0; }

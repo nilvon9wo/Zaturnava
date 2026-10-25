@@ -52,24 +52,27 @@ public sealed class ClassicRules : IRulesApplying
     private readonly DiceProfile _dice;
     private readonly int _idleRounds;
     private readonly CommandedCaptures _commandedCaptures;
+    private readonly PawnPromotion _pawnPromotion;
     private readonly ThroneControl _control;
     private readonly Ransom _ransom;
 
     public ClassicRules()
-        : this(DiceProfile.WeightedSixSided, DefaultIdleRounds, CommandedCaptures.Anything)
+        : this(DiceProfile.WeightedSixSided, DefaultIdleRounds, CommandedCaptures.Anything, PawnPromotion.OtherArmies)
     {
     }
 
     public ClassicRules(
         [Required] DiceProfile dice,
         [Range(1, int.MaxValue)] int idleRounds,
-        CommandedCaptures commandedCaptures
+        CommandedCaptures commandedCaptures,
+        PawnPromotion pawnPromotion
     )
     {
         this._moves = new MoveGenerator(this._grid, ClassicPieces.Kinds);
         this._dice = dice;
         this._idleRounds = idleRounds;
         this._commandedCaptures = commandedCaptures;
+        this._pawnPromotion = pawnPromotion;
         this.Thrones = ClassicSetup.Thrones(this._grid);
         this._control = new ThroneControl(this.Thrones);
         ImmutableDictionary<PieceId, CellId> homes = ClassicSetup.InitialPosition(this._grid)
@@ -141,15 +144,21 @@ public sealed class ClassicRules : IRulesApplying
     private DiceRequest RollOffDie => new(RollOffDice, this._dice.Sides);
 
     /// <summary>
-    /// An offer waiting is answered; once a turn is over, its seat may only offer, or be done; with dice
-    /// rolled, the seat moves what they show, promotes, or passes.
+    /// An offer waiting is answered; once a turn is over, its seat may only offer, or be done; a Pawn just
+    /// come to the far edge is promoted, or left for later (a pass); with dice rolled, the seat moves what
+    /// they show, promotes, or passes.
     /// </summary>
     private ImmutableList<GameAction> ChoicesOf(GameState state, SeatId seat) =>
-        (state.Offer, state.IsRansomWindow, state.Dice.IsEmpty) switch
+        (state.Offer, state.IsRansomWindow, state.PromotionDue, state.Dice.IsEmpty) switch
         {
-            ({ }, _, _) => [new AcceptAction(seat), new DeclineAction(seat)],
-            (_, true, _) => [new PassAction(seat)],
-            (_, _, true) => this.TurnChoicesOf(state, seat),
+            ({ }, _, _, _) => [new AcceptAction(seat), new DeclineAction(seat)],
+            (_, true, _, _) => [new PassAction(seat)],
+            (_, _, { } cell, _) =>
+            [
+                new PassAction(seat),
+                .. this.PromotionsOf(state, seat).Where(promotion => promotion.Cell == cell),
+            ],
+            (_, _, _, true) => this.TurnChoicesOf(state, seat),
             _ =>
             [
                 new PassAction(seat),
@@ -159,8 +168,8 @@ public sealed class ClassicRules : IRulesApplying
         };
 
     /// <summary>
-    /// At the start of a turn: roll, or move any piece, or promote, or pass - but only roll while an
-    /// enemy Raja sits on the seat's throne (rules.md §6.3).
+    /// At the start of a turn: roll, or move any piece, or promote, or pass - but only roll, or promote,
+    /// while an enemy Raja sits on the seat's throne (rules.md §6.3).
     /// </summary>
     private ImmutableList<GameAction> TurnChoicesOf(GameState state, SeatId seat) =>
         this._control.OccupierOf(state, seat) is null
@@ -171,27 +180,43 @@ public sealed class ClassicRules : IRulesApplying
                 .. this.MovesOf(state, seat, _ => true),
                 .. this.PromotionsOf(state, seat),
             ]
-            : [new RollAction(seat)];
+            : [new RollAction(seat), .. this.PromotionsOf(state, seat)];
 
     /// <summary>
     /// Each Pawn of an army the seat commands that stands on the far edge - with nowhere forward left
-    /// to go - may become any captured piece but a Pawn of the seat's own team, whoever holds it: the
-    /// piece goes back to its own army (rules.md §8).
+    /// to go - may become any captured piece, whoever holds it: the piece goes back to its own army
+    /// (rules.md §8). A Pawn of an enemy army waits on a die that moves a Pawn. Pieces alike are offered
+    /// once - the first taken - the highest-scoring first, then by owner.
     /// </summary>
-    private IEnumerable<GameAction> PromotionsOf(GameState state, SeatId seat)
+    private IEnumerable<PromoteAction> PromotionsOf(GameState state, SeatId seat)
     {
         ImmutableHashSet<SeatId> armies = this._control.ArmiesOf(state, seat);
-        ImmutableList<Prisoner> pool =
+        bool mayMoveAPawn = this.RolledKinds(state).Contains(ClassicPieces.Pawn);
+        ImmutableList<Piece> pool =
         [
-            .. state.Prisoners.Where(prisoner =>
-                prisoner.Piece.Kind != ClassicPieces.Pawn && state.Teams.AreAllied(prisoner.Piece.Owner, seat)
-            ),
+            .. state.Prisoners.Select(prisoner => prisoner.Piece)
+                .DistinctBy(piece => (piece.Owner, piece.Kind))
+                .OrderByDescending(piece => ClassicPieces.Points[piece.Kind])
+                .ThenBy(piece => piece.Owner.Value),
         ];
         return state.Position.Occupants
             .Where(occupant => occupant.Value.Kind == ClassicPieces.Pawn && armies.Contains(occupant.Value.Owner))
+            .Where(occupant => mayMoveAPawn || state.Teams.AreAllied(occupant.Value.Owner, seat))
             .Where(occupant => this._grid.Step(occupant.Key, state.SeatOf(occupant.Value.Owner).Forward) is null)
-            .SelectMany(occupant => pool.Select(prisoner => new PromoteAction(seat, occupant.Key, prisoner.Piece.Id)));
+            .SelectMany(occupant => pool
+                .Where(piece => this.MayBecome(occupant.Value, piece))
+                .Select(piece => new PromoteAction(seat, occupant.Key, piece.Id))
+            );
     }
+
+    /// <summary>Into any piece but a Pawn of its own army; into another army's Pawn, as the rules are set.</summary>
+    private bool MayBecome(Piece pawn, Piece piece) =>
+        piece.Kind != ClassicPieces.Pawn
+        || (this._pawnPromotion == PawnPromotion.OtherArmies && piece.Owner != pawn.Owner);
+
+    /// <summary>Promoting a Pawn of an enemy army takes a die that moves a Pawn; one's own team's, none.</summary>
+    private static bool UsesDie(GameState state, PromoteAction promotion) =>
+        !state.Teams.AreAllied(state.Position.PieceAt(promotion.Cell)!.Owner, promotion.Actor);
 
     private ImmutableHashSet<PieceKindId> RolledKinds(GameState state) =>
         [.. state.Dice.SelectMany(this._dice.KindsOf)];
@@ -235,9 +260,11 @@ public sealed class ClassicRules : IRulesApplying
         {
             RollAction => new Transition(state with { AwaitedDice = new DiceRequest(TurnDice, this._dice.Sides) }, []),
             MoveAction move => this.AfterMove(state, move),
-            PromoteAction promote => Promoted(state, promote),
+            PromoteAction promote => this.Promoted(state, promote),
             AcceptAction => this._ransom.Accepted(state),
             DeclineAction => Ransom.Declined(state),
+            _ when state.PromotionDue is not null =>
+                this.GoneOn(new Transition(state with { PromotionDue = null }, [])),
             _ when state.IsRansomWindow => Handed(new Transition(state, [])),
             _ when state.Dice.IsEmpty => this.IdlePass(new Transition(state, [])),
             _ => this.Declined(new Transition(state, [])),
@@ -250,10 +277,11 @@ public sealed class ClassicRules : IRulesApplying
             : throw new IllegalActionException(offer);
 
     /// <summary>
-    /// The Pawn becomes the captured piece, for that piece's own army. It uses no die, and takes away no
-    /// piece that could use one, so the turn goes on - unless it leaves only Rajas on the board.
+    /// The Pawn becomes the captured piece, for that piece's own army - unless that leaves only Rajas on
+    /// the board. Promoting one's own team's Pawn uses no die, so the turn goes on as it was; an enemy's
+    /// uses a die, as a move does; a Pawn just come to the edge lets the turn go on from that move.
     /// </summary>
-    private static Transition Promoted(GameState state, PromoteAction promote)
+    private Transition Promoted(GameState state, PromoteAction promote)
     {
         Piece pawn = state.Position.PieceAt(promote.Cell)!; // the promotion is legal, so the Pawn stands there
         Prisoner prisoner = state.Prisoners.First(held => held.Piece.Id == promote.Into);
@@ -261,9 +289,19 @@ public sealed class ClassicRules : IRulesApplying
         {
             Position = state.Position.Place(promote.Cell, prisoner.Piece),
             Prisoners = state.Prisoners.Remove(prisoner),
+            PromotionDue = null,
         };
         Transition transition = new(promoted, [new PiecePromoted(pawn, prisoner.Piece, promote.Cell, promote.Actor)]);
-        return GameEnd.AfterMove(transition) ?? transition;
+        bool usesDie = UsesDie(state, promote);
+        Transition used = usesDie
+            ? this.WithoutDieFor(transition, ClassicPieces.Pawn)
+            : transition;
+        return (GameEnd.AfterMove(transition), usesDie || state.PromotionDue is not null) switch
+        {
+            ({ } over, _) => over,
+            (_, true) => this.GoneOn(used),
+            _ => used,
+        };
     }
 
     /// <exception cref="IllegalActionException">The game is not waiting on these dice.</exception>
@@ -288,7 +326,7 @@ public sealed class ClassicRules : IRulesApplying
         Transition rolled = new(state with { Dice = dice.Values }, [new DiceRolled(dice.Actor, dice.Values)]);
         return this.HasUsableDie(rolled.State)
             ? rolled
-            : this.Declined(rolled);
+            : this.Declined(Forfeited(rolled));
     }
 
     /// <summary>
@@ -325,33 +363,44 @@ public sealed class ClassicRules : IRulesApplying
     private GameState NextToRollOff(GameState state, SeatId seat, ImmutableList<int> rolled) =>
         state with { DecidingSeat = seat, Dice = rolled, AwaitedDice = this.RollOffDie };
 
-    /// <summary>A deliberate move ends the turn; a rolled one uses up its die.</summary>
+    /// <summary>
+    /// A deliberate move ends the turn; a rolled one uses up its die. A Pawn come to the far edge, if it
+    /// may be promoted, waits on that first (rules.md §8).
+    /// </summary>
     private Transition AfterMove(GameState state, MoveAction move)
     {
         PieceKindId kind = state.Position.PieceAt(move.From)!.Kind; // the move is legal, so a piece stands there
         Transition moved = this.Moved(state, move);
-        Transition? ended = GameEnd.AfterMove(moved);
-        return (ended, state.Dice.IsEmpty) switch
+        Transition used = this.WithoutDieFor(moved, kind);
+        bool isDue = this.PromotionsOf(used.State, move.Actor).Any(promotion => promotion.Cell == move.To);
+        return (GameEnd.AfterMove(moved), isDue) switch
         {
             ({ } over, _) => over,
-            (_, true) => PassTurn(moved),
-            _ => this.UsedDie(moved, kind),
+            (_, true) => used with { State = used.State with { PromotionDue = move.To } },
+            _ => this.GoneOn(used),
         };
     }
 
     /// <summary>
-    /// Uses up the die the move took. While an enemy Raja still sits on the throne of the seat whose
-    /// turn it is, its first move is all it gets: the occupier moves for it next (rules.md §6.3).
+    /// Uses up a die that lets <paramref name="kind"/> move, if any was rolled: a deliberate move uses
+    /// none (and removes 0, which no die shows).
     /// </summary>
-    private Transition UsedDie(Transition moved, PieceKindId kind)
+    private Transition WithoutDieFor(Transition transition, PieceKindId kind)
     {
-        GameState state = moved.State;
-        int die = state.Dice.First(value => this._dice.KindsOf(value).Contains(kind)); // a die allowed the move
-        Transition used = moved with { State = state with { Dice = state.Dice.Remove(die) } };
-        return used.State.Dice.IsEmpty
-            ? PassTurn(used)
-            : this.HandOverOrGoOn(used);
+        GameState state = transition.State;
+        int die = state.Dice.FirstOrDefault(value => this._dice.KindsOf(value).Contains(kind));
+        return transition with { State = state with { Dice = state.Dice.Remove(die) } };
     }
+
+    /// <summary>
+    /// The turn goes on with the dice left, if any; else it is over. While an enemy Raja still sits on
+    /// the throne of the seat whose turn it is, its first move is all it gets: the occupier moves for it
+    /// next (rules.md §6.3).
+    /// </summary>
+    private Transition GoneOn(Transition transition) =>
+        transition.State.Dice.IsEmpty
+            ? PassTurn(transition)
+            : this.HandOverOrGoOn(transition);
 
     private Transition HandOverOrGoOn(Transition transition) =>
         this.OccupierToHandTo(transition.State) is { } occupier
@@ -382,12 +431,21 @@ public sealed class ClassicRules : IRulesApplying
     private Transition EndTurnIfStuck(Transition transition) =>
         this.HasUsableDie(transition.State)
             ? transition
-            : PassTurn(transition);
+            : PassTurn(Forfeited(transition));
+
+    /// <summary>The deciding seat loses the dice it has left, which nothing it commands can use.</summary>
+    private static Transition Forfeited(Transition transition)
+    {
+        GameState state = transition.State;
+        SeatId seat = state.DecidingSeat!.Value; // dice are only rolled and used by the deciding seat
+        return transition with { Events = transition.Events.Add(new DiceForfeited(seat, state.Dice)) };
+    }
 
     private bool HasUsableDie(GameState state)
     {
         SeatId seat = state.DecidingSeat!.Value; // dice are only rolled and used by the deciding seat
-        return this.MovesOf(state, seat, this.RolledKinds(state).Contains).Any();
+        return this.MovesOf(state, seat, this.RolledKinds(state).Contains).Any()
+            || this.PromotionsOf(state, seat).Any(promotion => UsesDie(state, promotion));
     }
 
     /// <summary>A turn passed without rolling or moving: enough of those in a row end the game.</summary>

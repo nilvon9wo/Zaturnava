@@ -122,5 +122,5 @@ public sealed class BoardTurnTest
         };
 
     private static GameViewDto View(ImmutableList<CellDto> cells, ImmutableList<PieceDto> pieces) =>
-        new("g", "test", "Test", 1, 1, 0, null, cells, pieces, [], [], [], [], null, false, null, null);
+        new("g", "test", "Test", 1, 1, 0, null, cells, pieces, [], [], [], [], null, false, null, null, null);
 }

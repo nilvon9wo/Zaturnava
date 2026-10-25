@@ -73,9 +73,16 @@ file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bo
                 number,
                 EventDto.Rolled,
                 rolled.Seat,
-                $"{this.Name(rolled.Seat)} rolled {string.Join(" and ", rolled.Values.Select(this.Face))}."
+                $"{this.Name(rolled.Seat)} rolled {this.Faces(rolled.Values)}."
             ) with
             { HasRolled = true },
+            DiceForfeited forfeited => this.Add(
+                number,
+                EventDto.Forfeited,
+                forfeited.Seat,
+                $"{this.Name(forfeited.Seat)} could move nothing with {this.Faces(forfeited.Values)}, "
+                    + $"so lost {(forfeited.Values.Count == 1 ? "it" : "them")}."
+            ),
             PieceMoved moved => this.Moved(number, moved),
             PieceCaptured captured => this.Add(
                 number,
@@ -194,6 +201,9 @@ file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bo
     private string Name(SeatId seat) => this.Rules.NameOf(seat);
 
     private string Face(int value) => $"{Text(value)} ({this.Rules.NameOfDie(value)})";
+
+    /// <summary>"2 (Horse) and 5 (Pawn or Raja)".</summary>
+    private string Faces(ImmutableList<int> values) => string.Join(" and ", values.Select(this.Face));
 
     /// <summary>"Black moved their Horse from b1 to c3, without rolling.", or "Black moved Red's Pawn...".</summary>
     private Teller Moved(int number, PieceMoved moved)

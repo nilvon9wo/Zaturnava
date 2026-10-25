@@ -1,6 +1,8 @@
 @* A game: the board (turned so the player's own corner is bottom left), and beside it whose turn it is,
    the dice and what each lets move, on the player's turn what they may do - prisoners they may offer
-   back among it - the seats, and what has happened. While a bot decides, it advances the game every
+   back among it, and, for a Pawn picked up or just come to the far edge, what it may be promoted to -
+   the seats, and what has happened. Dice the player lost, unable to use them, are told until they
+   dismiss it or their turn comes round again: the turn has passed on by then. While a bot decides, it advances the game every
    TableSettings.BotPace, so that bots take their turns one at a time; while a person elsewhere
    decides, it asks for the game again every TableSettings.PollInterval. While a decision is timed, it
    counts down, and advances the game once time is up, for the server to decide for that seat. *@
@@ -9,6 +11,7 @@
 @inject TableSettings Settings
 @inject Browser Browser
 @inject TimeProvider Clock
+@using System.Globalization
 
 <section class="table">
     <header class="table-bar">
@@ -44,6 +47,13 @@
             <aside class="side">
                 <div class="@(this._turn is null ? "turn" : "turn yours")">
                     <p class="status">@this.Status(view)</p>
+                    @if (this._notice is { } notice)
+                    {
+                        <p class="notice" role="status">
+                            @notice
+                            <button class="dismiss" @onclick="this.Dismiss">OK</button>
+                        </p>
+                    }
                     @if (this.Countdown() is { } countdown)
                     {
                         <p class="countdown">@countdown</p>
@@ -63,15 +73,50 @@
                     }
                     @if (this._turn is { } turn)
                     {
-                        <p class="hint">@Hint(turn.Actions)</p>
-                        <div class="actions">
-                            @foreach (ActionDto action in turn.Actions.OffBoard)
-                            {
-                                <button class="action primary" @onclick="() => this.Submit(turn.Claim, action)">
-                                    @ActionLabels.LabelOf(action)
-                                </button>
-                            }
-                        </div>
+                        ImmutableList<ActionDto> promotions = this.AtSelection(turn);
+                        @if (!promotions.IsEmpty)
+                        {
+                            <div class="promotion">
+                                <p class="hint">@PromotionHeading(view, this._selection.Selected!.Value)</p>
+                                <div class="promotion-choices">
+                                    @foreach (ActionDto action in promotions)
+                                    {
+                                        PrisonerDto into = IntoOf(view, action);
+                                        <button class="choice"
+                                                title="@ActionLabels.LabelOf(action)"
+                                                @onclick="() => this.Submit(turn.Claim, action)">
+                                            <PieceIcon Kind="@into.Kind" Name="@into.Name" Owner="into.Owner" />
+                                            <span class="name">@Owned(view, into)</span>
+                                        </button>
+                                    }
+                                </div>
+                                @if (view.PromotionDue is null)
+                                {
+                                    <button class="action later" @onclick="this.PutDown">Promote later</button>
+                                }
+                                else
+                                {
+                                    @foreach (ActionDto action in turn.Actions.OffBoard)
+                                    {
+                                        <button class="action later" @onclick="() => this.Submit(turn.Claim, action)">
+                                            @ActionLabels.LabelOf(action)
+                                        </button>
+                                    }
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="hint">@Hint(turn.Actions)</p>
+                            <div class="actions">
+                                @foreach (ActionDto action in turn.Actions.OffBoard)
+                                {
+                                    <button class="action primary" @onclick="() => this.Submit(turn.Claim, action)">
+                                        @ActionLabels.LabelOf(action)
+                                    </button>
+                                }
+                            </div>
+                        }
                         @if (view.MayOffer)
                         {
                             <div class="ransom">
@@ -164,6 +209,7 @@
     private ImmutableHashSet<int> _asked = [];
     private int _heard = -1;
     private string? _problem;
+    private string? _notice;
     private bool _isBotDeciding;
 
     public Table() => this._poll = new Timer(this.Tick);
@@ -216,7 +262,53 @@
     }
 
     private static string Pieces(GameViewDto view, ImmutableList<PrisonerDto> prisoners) =>
-        string.Join(", ", prisoners.Select(prisoner => $"{view.Seats[prisoner.Owner].Name}'s {prisoner.Name}"));
+        string.Join(", ", prisoners.Select(prisoner => Owned(view, prisoner)));
+
+    /// <summary>"Green's Elephant".</summary>
+    private static string Owned(GameViewDto view, PrisonerDto prisoner) =>
+        $"{view.Seats[prisoner.Owner].Name}'s {prisoner.Name}";
+
+    /// <summary>What may be done at the piece picked up, as a promotion is; nothing if none is picked up.</summary>
+    private ImmutableList<ActionDto> AtSelection(Turn turn) =>
+        this._selection.Selected is { } cell ? turn.Actions.At(cell) : [];
+
+    /// <summary>"Promote Black's Pawn on c8 to:".</summary>
+    private static string PromotionHeading(GameViewDto view, int cell)
+    {
+        PieceDto pawn = view.Pieces.First(piece => piece.Cell == cell);
+        string name = view.Cells.First(at => at.Id == cell).Name;
+        return $"Promote {view.Seats[pawn.Owner].Name}'s {pawn.Name} on {name} to:";
+    }
+
+    /// <summary>The captured piece a promotion brings back.</summary>
+    private static PrisonerDto IntoOf(GameViewDto view, ActionDto promotion) =>
+        view.Seats.SelectMany(seat => seat.Prisoners).First(prisoner =>
+            prisoner.Id.ToString(CultureInfo.InvariantCulture) == promotion.Arguments[ActionArguments.Into]
+        );
+
+    private void PutDown() => this._selection = BoardSelection.None;
+
+    private void Dismiss() => this._notice = null;
+
+    /// <summary>
+    /// What to tell the player: that they have just lost dice they could not use; nothing on first sight
+    /// of the game, or once their turn comes round again; else what they were told already.
+    /// </summary>
+    private string? NoticeOf(GameViewDto view, bool isFirst, bool wasTheirTurn)
+    {
+        EventDto? lost = view.Log.LastOrDefault(happened =>
+            happened.Number > this._heard
+            && happened.Kind == EventDto.Forfeited
+            && happened.Seat == this.Seating.Claim?.Seat
+        );
+        return (isFirst, lost, this._turn is not null && !wasTheirTurn) switch
+        {
+            (true, _, _) => null,
+            (_, { } forfeited, _) => forfeited.Text,
+            (_, _, true) => null,
+            _ => this._notice,
+        };
+    }
 
     /// <summary>The seats the player holds prisoners of, to offer them back to.</summary>
     private static IEnumerable<SeatDto> Receivers(GameViewDto view, int seat) =>
@@ -325,11 +417,14 @@
             ? new Turn(claim, new BoardActions(view.LegalActions))
             : null;
         this._isBotDeciding = view.DecidingSeat is { } seat && view.Seats[seat].Controller == BotController;
-        this._selection = BoardSelection.None;
+        this._selection = this._turn is not null && view.PromotionDue is { } due
+            ? new BoardSelection(due)
+            : BoardSelection.None;
         this._lastMove = view.Log.LastOrDefault(happened => happened.Kind == EventDto.Moved) is { } moved
             ? [moved.From!.Value, moved.To!.Value]
             : [];
         string? sound = this.SoundOf(view, isFirst, wasTheirTurn);
+        this._notice = this.NoticeOf(view, isFirst, wasTheirTurn);
         this._heard = view.Log.Count > 0 ? view.Log[^1].Number : this._heard;
         await (sound is not null && this.IsSoundOn ? this.Browser.Play(sound) : ValueTask.CompletedTask);
         _ = this._poll.Change(this.Wait(view), Timeout.InfiniteTimeSpan);

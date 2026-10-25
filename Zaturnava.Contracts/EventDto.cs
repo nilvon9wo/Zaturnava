@@ -10,6 +10,7 @@ public sealed record EventDto(int Number, string Kind, int Seat, string Text, in
 {
     public const string RolledOff = "rolled-off";
     public const string Rolled = "rolled";
+    public const string Forfeited = "forfeited";
     public const string Moved = "moved";
     public const string Captured = "captured";
     public const string Bonus = "bonus";

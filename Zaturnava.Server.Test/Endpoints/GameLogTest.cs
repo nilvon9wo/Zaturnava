@@ -60,8 +60,10 @@ public sealed class GameLogTest
             new DiceRolled(Black, [2, 5]),
             new PieceMoved(Horse, Cell("b1"), Cell("c3"), Black),
             new PieceCaptured(Pawn, Black, 1),
+            new DiceForfeited(Black, [5]),
             new TurnPassed(Black, Yellow),
             new PieceMoved(Pawn, Cell("h2"), Cell("g2"), Yellow),
+            new DiceForfeited(Yellow, [1, 3]),
             new TurnPassed(Yellow, Green)
         );
 
@@ -74,8 +76,10 @@ public sealed class GameLogTest
                 "rolled 0: Black rolled 2 (Horse) and 5 (Pawn or Raja).",
                 "moved 0: Black moved their Horse from b1 to c3. 1-18",
                 "captured 0: Black took Yellow's Pawn (+1).",
+                "forfeited 0: Black could move nothing with 5 (Pawn or Raja), so lost it.",
                 "passed 0: Yellow to play.",
                 "moved 1: Yellow moved their Pawn from h2 to g2, without rolling. 15-14",
+                "forfeited 1: Yellow could move nothing with 1 (Boat) and 3 (Elephant), so lost them.",
                 "passed 1: Green to play.",
             ],
             log.Select(Told)
