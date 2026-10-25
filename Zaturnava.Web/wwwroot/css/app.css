@@ -144,11 +144,11 @@ html { scrollbar-gutter: stable; }
 
 .table-bar h1 { font-size: 1.3rem; margin: 0 auto 0 8px; }
 
+/* On a narrow screen, one above another: the teams, the board, the turn, the log. */
 .play {
     display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
-    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
     margin-top: 12px;
 }
 
@@ -226,19 +226,8 @@ html { scrollbar-gutter: stable; }
     dominant-baseline: central;
 }
 
-/* The side keeps one width, whatever it says, so that nothing beside or under it moves. */
-.side {
-    flex: 0 1 400px;
-    width: 400px;
-    min-width: 0;
-    max-width: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-/* Room for the usual turn (two lines of status, a countdown, a hint and a row of buttons), so that it
-   seldom grows; the border is as thick whoever's turn it is. */
+/* Room for the usual turn (two lines of status, a countdown, a hint and a row of buttons); the border
+   is as thick whoever's turn it is. */
 .turn {
     background: var(--panel);
     border: 2px solid var(--panel-edge);
@@ -253,15 +242,6 @@ html { scrollbar-gutter: stable; }
 }
 
 .turn .problem { margin: 0 0 8px; }
-
-/* Beside the board, the side is as tall as it: the turn at the top, the seats at the bottom, and the
-   log between them takes up whatever the turn does not, so neither the turn nor the seats move. */
-@media (min-width: 1060px) {
-    .play { flex-wrap: nowrap; }
-    .side { min-height: 600px; }
-    .side .seats { order: 3; }
-    .side .log { flex: 1 1 0; min-height: 120px; max-height: none; }
-}
 
 .turn .status { font-size: 1.25rem; font-weight: 700; margin: 0 0 8px; }
 .turn.yours .status { color: var(--accent); }
@@ -315,14 +295,17 @@ html { scrollbar-gutter: stable; }
 .dice li { font-size: 1.1rem; margin: 2px 0; }
 .dice .face { font-size: 1.8rem; vertical-align: middle; margin-right: 6px; }
 
-.seats {
+/* The teams side by side over the table: each its seats' names and its total, large, over its seats'
+   own rows. */
+.seats { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; }
+.team {
+    flex: 1 1 300px;
+    min-width: 0;
     background: var(--panel);
     border: 1px solid var(--panel-edge);
     border-radius: 10px;
 }
-
-/* Each team: its seats' names and its total, large, over its seats' own rows. */
-.team + .team { border-top: 1px solid var(--panel-edge); }
+.team.mine { border-color: var(--accent); }
 .team-head {
     display: flex;
     align-items: baseline;
@@ -350,7 +333,9 @@ html { scrollbar-gutter: stable; }
 .seat-3 .swatch { background: var(--seat-3); }
 .seat .name { min-width: 56px; }
 .seat .player { color: var(--muted); }
-.seat .prisoners { flex: 1; display: flex; flex-wrap: wrap; gap: 1px; }
+/* On one line, however many: the icons shrink rather than the row growing. */
+.seat .prisoners { flex: 1; min-width: 0; display: flex; gap: 1px; overflow: hidden; }
+.seat .prisoners .piece-icon { flex: 0 1 20px; min-width: 6px; }
 .seat .score { font-variant-numeric: tabular-nums; color: var(--muted); }
 
 .log {
@@ -371,3 +356,35 @@ html { scrollbar-gutter: stable; }
 .log .event.rolled-off, .log .event.shared { font-style: italic; }
 .log .event.ended { font-weight: 700; }
 .log .event.promoted, .log .event.ransom { font-style: italic; }
+
+/* On a wider screen, the table fills the window under the teams: the board as large as fits, the turn
+   beside it at a size of its own, scrolling rather than growing, and the log under the turn - or, on
+   a wide screen, beside it, taking whatever width is left. Nothing changes size as the game goes on. */
+@media (min-width: 900px) {
+    body { padding-bottom: 0; }
+    #app { min-height: 100dvh; display: flex; flex-direction: column; }
+    .table { flex: 1 1 auto; display: flex; flex-direction: column; padding-bottom: 16px; }
+    .play {
+        flex: 1 1 0;
+        min-height: 480px;
+        container-type: size;
+        display: grid;
+        gap: 16px;
+        justify-content: center;
+        grid-template-columns: auto 400px;
+        grid-template-rows: minmax(0, 1fr) 180px;
+        grid-template-areas: "board turn" "board log";
+    }
+    .board { grid-area: board; width: min(100cqh, 100cqw - 416px); }
+    .turn { grid-area: turn; min-height: 0; overflow-y: auto; }
+    .log { grid-area: log; max-height: none; }
+}
+
+@media (min-width: 1400px) {
+    .play {
+        grid-template-columns: auto 420px minmax(260px, 1fr);
+        grid-template-rows: minmax(0, 1fr);
+        grid-template-areas: "board turn log";
+    }
+    .board { width: min(100cqh, 100cqw - 712px); }
+}

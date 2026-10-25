@@ -33,12 +33,12 @@ public sealed class TableTest : IDisposable
             (4, "Raja", "Your move.", "Black you 0", "Pass", "turn yours", true),
             (
                 table.FindAll("rect.cell").Count,
-                table.Find(".piece title").TextContent,
+                table.Find("svg.board .piece title").TextContent,
                 table.Find("p.status").TextContent,
                 Text(table.FindAll("li.seat")[0]),
                 table.Find("button.action").TextContent.Trim(),
                 table.Find("div.turn").ClassName,
-                table.Find(".piece").ClassList.Contains("movable")
+                table.Find("svg.board .piece").ClassList.Contains("movable")
             )
         );
     }
@@ -96,7 +96,7 @@ public sealed class TableTest : IDisposable
                 Cell(table, 2).ClassList.Contains("target"),
                 Cell(table, 3).ClassList.Contains("target"),
                 string.Join("|", table.FindAll("circle.mark").Select(mark => mark.GetAttribute("class"))),
-                table.Find(".piece").GetAttribute("class")
+                table.Find("svg.board .piece").GetAttribute("class")
             )
         );
     }
