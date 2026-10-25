@@ -149,7 +149,7 @@ public sealed class TableTest : IDisposable
 
         // Assert
         Assert.Equal(
-            (null, "Black to move (human).", "Black human 0", "Yellow Random Boat 5", "turn"),
+            (null, "Black (human) to move.", "Black human 0", "Yellow Random Boat 5", "turn"),
             (
                 this._page.Server.Submitted,
                 table.Find("p.status").TextContent,
@@ -197,7 +197,7 @@ public sealed class TableTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ("Black to move (human).", 0, false),
+            ("Black (human) to move.", 0, false),
             (
                 table.Find("p.status").TextContent,
                 table.FindAll("button.action").Count,
@@ -619,7 +619,7 @@ public sealed class TableTest : IDisposable
 
     [Theory]
     [InlineData(0, false, "Answer Yellow's offer.")]
-    [InlineData(1, false, "Yellow is answering Black's offer (Random).")]
+    [InlineData(1, false, "Random (Yellow) is answering Black's offer.")]
     [InlineData(0, true, "Your turn is over: offer prisoners back, or be done.")]
     [InlineData(1, true, "Yellow's turn is over: they may still offer prisoners back.")]
     public void Status_WhenOnlyRansomsAreBeingDealtWith_SaysSo(int deciding, bool isTurnOver, string expected)
@@ -672,7 +672,7 @@ public sealed class TableTest : IDisposable
 
     [Theory]
     [InlineData(0, "Your Pawn is going home: choose a marked square for it.")]
-    [InlineData(1, "Yellow is choosing where their Pawn goes home (Random).")]
+    [InlineData(1, "Random (Yellow) is choosing where their Pawn goes home.")]
     public void Status_WhenAPieceGoingHomeWaitsOnWhereItGoes_SaysWhoChooses(int deciding, string expected)
     {
         // Arrange
@@ -691,7 +691,7 @@ public sealed class TableTest : IDisposable
 
     [Theory]
     [InlineData(0, 1, "Your move, for Yellow.")]
-    [InlineData(1, 0, "Yellow to move, for Black (Random).")]
+    [InlineData(1, 0, "Random (Yellow) to move, for Black.")]
     public void Status_WhenOneSeatMovesForAnother_SaysForWhom(int deciding, int actingFor, string expected)
     {
         // Arrange

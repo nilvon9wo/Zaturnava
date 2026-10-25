@@ -293,15 +293,15 @@
         {
             ({ } outcome, _, _, _, _) => outcome.Text,
             (_, { } seat, null, _, _) when view.Returning is { } piece =>
-                $"{view.Seats[seat].Name} is choosing where their {piece.Name} goes home ({this.Player(view.Seats[seat])}).",
+                $"{Who(view.Seats[seat])} is choosing where their {piece.Name} goes home.",
             (_, { }, _, _, _) when view.Returning is { } piece =>
                 $"Your {piece.Name} is going home: choose a marked square for it.",
             (_, { } seat, null, { } offer, _) =>
-                $"{view.Seats[seat].Name} is answering {view.Seats[offer.From].Name}'s offer ({this.Player(view.Seats[seat])}).",
+                $"{Who(view.Seats[seat])} is answering {view.Seats[offer.From].Name}'s offer.",
             (_, { }, _, { } offer, _) => $"Answer {view.Seats[offer.From].Name}'s offer.",
             (_, { } seat, null, _, true) => $"{view.Seats[seat].Name}'s turn is over: they may still offer prisoners back.",
             (_, { }, _, _, true) => "Your turn is over: offer prisoners back, or be done.",
-            (_, { } seat, null, _, _) => $"{view.Seats[seat].Name} to move{ForWhom(view)} ({this.Player(view.Seats[seat])}).",
+            (_, { } seat, null, _, _) => $"{Who(view.Seats[seat])} to move{ForWhom(view)}.",
             (_, { }, _, _, _) when view.ThroneHeldBy is { } holder => this.Held(view, holder),
             (_, { }, _, _, _) => $"Your move{ForWhom(view)}.",
             _ => "The game is over.",
@@ -323,6 +323,10 @@
     /// <summary>Rolling, when the player may do nothing else for an enemy leader on their throne.</summary>
     private static bool IsUrged(GameViewDto view, ActionDto action) =>
         view.ThroneHeldBy is not null && action.Kind == RollKind;
+
+    /// <summary>Who plays another seat, then the seat: "Argus (Yellow)", or "Black (human)".</summary>
+    private static string Who(SeatDto seat) =>
+        seat.Bot is { } bot ? $"{bot} ({seat.Name})" : $"{seat.Name} ({seat.Controller})";
 
     private static string ForWhom(GameViewDto view) =>
         view.ActingFor is { } seat ? $", for {view.Seats[seat].Name}" : string.Empty;
