@@ -21,7 +21,12 @@ internal sealed class StubGameServer : IGameServing
     public object? Received { get; private set; }
 
     public Task<CatalogDto> Catalog(CancellationToken cancellationToken) =>
-        this.Answer(new CatalogDto([new RulesetDto("classic", "Zaturnava (classic)", 4)], ["random"]));
+        this.Answer(
+            new CatalogDto(
+                [new RulesetDto("classic", "Zaturnava (classic)", 4)],
+                [new BotDto("random", "Random", "Any move.", UsesAi: false)]
+            )
+        );
 
     public Task<ImmutableList<GameSummaryDto>> List(CancellationToken cancellationToken) =>
         this.Answer(ImmutableList.Create(new GameSummaryDto(GameId, "classic", 1, [0])));

@@ -26,7 +26,7 @@ public sealed class GameServiceTest
     public GameServiceTest() =>
         this._service = new GameService(
             new RulesetCatalog([new TinyRules(GameLength), new RollingRules(GameLength)]),
-            new BotCatalog(ImmutableDictionary<string, IDeciding>.Empty.Add(Bot.BotId!, new FirstChoiceBot())),
+            new BotCatalog([new FirstChoiceBot()]),
             new InMemoryGameStore(),
             this._notifier,
             new LoadedDice(4),
@@ -46,15 +46,15 @@ public sealed class GameServiceTest
     }
 
     [Fact]
-    public void BotIds_WhenListed_AreTheRegisteredOnes()
+    public void Bots_WhenListed_AreTheRegisteredOnes()
     {
         // Arrange - nothing beyond the service
 
         // Act
-        ImmutableList<string> botIds = this._service.BotIds;
+        ImmutableList<BotProfile> bots = this._service.Bots;
 
         // Assert
-        Assert.Equal([FirstChoiceBot.BotId], botIds);
+        Assert.Equal([FirstChoiceBot.BotId], bots.Select(bot => bot.Id));
     }
 
     [Fact]

@@ -6,6 +6,7 @@ using Net.NowhereAtAll.Zaturnava.Application.Rulesets;
 using Net.NowhereAtAll.Zaturnava.Application.Running;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Chance;
+using Net.NowhereAtAll.Zaturnava.Engine.Decisions;
 using Net.NowhereAtAll.Zaturnava.Engine.Rules;
 using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 
@@ -33,7 +34,7 @@ public sealed class GameService(
 
     public ImmutableList<IRulesApplying> Rulesets => this._rulesets.All;
 
-    public ImmutableList<string> BotIds => this._bots.BotIds;
+    public ImmutableList<BotProfile> Bots => this._bots.Bots;
 
     /// <exception cref="UnknownRulesetException">There is no such ruleset.</exception>
     /// <exception cref="InvalidGameSetupException">The plan does not give every seat exactly one plan.</exception>

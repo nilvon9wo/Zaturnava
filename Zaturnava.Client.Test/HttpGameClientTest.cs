@@ -20,7 +20,10 @@ public sealed class HttpGameClientTest
         // Arrange
         StubServer server = new(
             HttpStatusCode.OK,
-            """{"rulesets":[{"id":"classic","name":"Classic","seatCount":4}],"bots":["random"]}"""
+            """
+            {"rulesets":[{"id":"classic","name":"Classic","seatCount":4}],
+            "bots":[{"id":"random","name":"Random","description":"Any move.","usesAi":false}]}
+            """
         );
 
         // Act
@@ -29,7 +32,7 @@ public sealed class HttpGameClientTest
         // Assert
         Assert.Equal(
             ("GET", "/api/catalog", "classic", "random"),
-            (server.Method, server.Path, catalog.Rulesets.Single().Id, catalog.Bots.Single())
+            (server.Method, server.Path, catalog.Rulesets.Single().Id, catalog.Bots.Single().Id)
         );
     }
 

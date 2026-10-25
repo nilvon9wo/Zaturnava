@@ -1,15 +1,12 @@
-using System.Collections.Immutable;
 using Net.NowhereAtAll.Zaturnava.Application.Bots;
 using Net.NowhereAtAll.Zaturnava.Application.Games;
 using Net.NowhereAtAll.Zaturnava.Application.Test.Fakes;
-using Net.NowhereAtAll.Zaturnava.Engine.Decisions;
 
 namespace Net.NowhereAtAll.Zaturnava.Application.Test.Games;
 
 public sealed class SeatPlanTest
 {
-    private static readonly BotCatalog Bots =
-        new(ImmutableDictionary<string, IDeciding>.Empty.Add(FirstChoiceBot.BotId, new FirstChoiceBot()));
+    private static readonly BotCatalog Bots = new([new FirstChoiceBot()]);
 
     [Fact]
     public void ToController_WhenOpen_IsAnOpenSeat()

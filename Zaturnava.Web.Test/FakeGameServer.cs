@@ -46,7 +46,16 @@ internal sealed class FakeGameServer : IGameServing
     public (string GameId, string Token, ActionDto Action)? Submitted { get; private set; }
 
     public Task<CatalogDto> Catalog(CancellationToken cancellationToken) =>
-        this.Answer("catalog", new CatalogDto([new RulesetDto("classic", "Zaturnava (classic)", 4)], ["random"]));
+        this.Answer(
+            "catalog",
+            new CatalogDto(
+                [new RulesetDto("classic", "Zaturnava (classic)", 4)],
+                [
+                    new BotDto("random", "Random", "Any move.", UsesAi: false),
+                    new BotDto("oracle", "Oracle", "Asks a model.", UsesAi: true),
+                ]
+            )
+        );
 
     public Task<ImmutableList<GameSummaryDto>> List(CancellationToken cancellationToken) =>
         this.Answer("list", this.Games);
