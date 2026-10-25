@@ -7,7 +7,7 @@ namespace Net.NowhereAtAll.Zaturnava.Server.Composition;
 
 /// <summary>
 /// Where games are kept, chosen by configuration: <c>InMemory</c> (the default; lost on restart),
-/// <c>Sqlite</c>, or <c>SqlServer</c> (MonsterASP's database). The database ones take the
+/// <c>Sqlite</c>, or <c>SqlServer</c>. The database ones take the
 /// <c>Games</c> connection string, and create their tables on start if there are none.
 /// </summary>
 internal static class GameStorage

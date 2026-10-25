@@ -143,6 +143,9 @@ Run the same checks locally before pushing; see [local-development](local-develo
   [architecture §5](../architecture.md#5-projects-and-dependencies).
 - **Replaceable by configuration.** Hosts, storage, origins and server addresses are read from
   configuration, never written into code.
+- **Vendors stay in their adapters.** A third-party service is named only in its own adapter
+  project (`Zaturnava.Hosting.Itch`) and in the composition root that selects it by a provider
+  name; never in other code, comments or configuration keys.
 - **The engine is pure.** No I/O, no clock, no randomness except through what is handed in.
 - **Polymorphism over branching.** A type check made in more than one place is a missing type.
 - **Immutability.** Records and immutable collections; derive rather than mutate.
@@ -165,7 +168,7 @@ Run the same checks locally before pushing; see [local-development](local-develo
 - **AAA comments, verbatim**: `// Arrange`, `// Act`, `// Assert`; an Arrange with nothing to do
   says why (`// Arrange - nothing beyond the arguments`).
 - **Names:** `<MethodUnderTest>_When<Condition>_<ExpectedOutcome>`, with no `Test` prefix:
-  `Preflight_WhenTheOriginIsTheItchIoPage_AllowsIt`.
+  `Preflight_WhenTheOriginIsTheListedPage_AllowsIt`.
 - **`Assert.Throws<TheSpecificException>`** as the Act, never a bare `Exception`, and never a
   try/catch.
 - **Test data through [Xfty](https://github.com/nilvon9wo/ExtremeCSharpTestDataFactory)

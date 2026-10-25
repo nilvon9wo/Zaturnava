@@ -7,7 +7,7 @@ namespace Net.NowhereAtAll.Zaturnava.Web.Test;
 
 public sealed class WebServicesTest
 {
-    private const string Page = "https://html-classic.itch.zone/html/1/";
+    private const string Page = "https://games.example/zaturnava/";
 
     [Fact]
     public void AddZaturnavaWeb_WhenAServerIsConfigured_CallsIt()

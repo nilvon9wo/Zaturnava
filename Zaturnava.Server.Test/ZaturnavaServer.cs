@@ -4,7 +4,10 @@ using Net.NowhereAtAll.Zaturnava.Client;
 
 namespace Net.NowhereAtAll.Zaturnava.Server.Test;
 
-/// <summary>The server, hosted in the test process as configured in appsettings.json: games kept in memory.</summary>
+/// <summary>
+/// The server, hosted in the test process as configured for development (appsettings.json, then
+/// appsettings.Development.json): games kept in memory, the page served from this machine.
+/// </summary>
 public class ZaturnavaServer : WebApplicationFactory<Program>
 {
     public const string Classic = "classic";

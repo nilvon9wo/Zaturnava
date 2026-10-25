@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.Build.NoTargets">
+
+  <!--
+    Makes docs/ visible in Visual Studio and other IDEs: every file in this folder and below shows
+    up by itself, with nothing to list here. It builds nothing. Its name keeps it out of
+    Directory.Build.props' Zaturnava.* settings and Zaturnava.Architecture.Test's dependency table.
+    The SDK's version is pinned in global.json.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="**/*" Exclude="bin/**;obj/**;$(MSBuildProjectFile)" />
+  </ItemGroup>
+
+</Project>

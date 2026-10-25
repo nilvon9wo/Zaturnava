@@ -1,4 +1,5 @@
 <Solution>
+  <Project Path="docs/docs.msbuildproj" Type="13b669be-bb05-4ddf-9536-439f39a36129" />
   <Project Path="Zaturnava.Application.Test/Zaturnava.Application.Test.csproj" />
   <Project Path="Zaturnava.Application/Zaturnava.Application.csproj" />
   <Project Path="Zaturnava.Architecture.Test/Zaturnava.Architecture.Test.csproj" />
@@ -12,6 +13,10 @@
   <Project Path="Zaturnava.Contracts/Zaturnava.Contracts.csproj" />
   <Project Path="Zaturnava.Engine.Test/Zaturnava.Engine.Test.csproj" />
   <Project Path="Zaturnava.Engine/Zaturnava.Engine.csproj" />
+  <Project Path="Zaturnava.Hosting.Itch.Test/Zaturnava.Hosting.Itch.Test.csproj" />
+  <Project Path="Zaturnava.Hosting.Itch/Zaturnava.Hosting.Itch.csproj" />
+  <Project Path="Zaturnava.Hosting.Test/Zaturnava.Hosting.Test.csproj" />
+  <Project Path="Zaturnava.Hosting/Zaturnava.Hosting.csproj" />
   <Project Path="Zaturnava.Mcp.Test/Zaturnava.Mcp.Test.csproj" />
   <Project Path="Zaturnava.Mcp/Zaturnava.Mcp.csproj" />
   <Project Path="Zaturnava.Persistence.EfCore.Test/Zaturnava.Persistence.EfCore.Test.csproj" />

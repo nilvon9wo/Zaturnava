@@ -11,7 +11,9 @@ their tests and documentation.
 | [coverage-standards](coverage-standards.md) | 100% line and branch coverage on every test run, and the one escape hatch. |
 | [ci](ci.md) | What the GitHub Actions workflow runs, and how `verify-gates.py` proves each gate still fires. |
 
-How the code is organized, and why, is in [architecture](../architecture.md). The standards are
+How the code is organized, and why, is in [architecture](../architecture.md). The `docs` project
+in `Zaturnava.slnx` shows this folder in Visual Studio and other IDEs; any file or folder added
+under `docs/` appears there by itself. The standards are
 those of [ExtremeCSharpTestDataFactory](https://github.com/nilvon9wo/ExtremeCSharpTestDataFactory)
 (XFTY) and [Stipulate](https://github.com/nilvon9wo/Stipulate), adopted wholesale; where this
 repository differs, these pages say so.

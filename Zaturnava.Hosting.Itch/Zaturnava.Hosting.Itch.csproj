@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The web client published as an HTML game on itch.io. Everything the solution knows about
+    itch.io is here, reached only through the Zaturnava.Hosting ports; the server's composition
+    root chooses it by name from configuration.
+  -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\Zaturnava.Hosting\Zaturnava.Hosting.csproj" />
+  </ItemGroup>
+
+</Project>
