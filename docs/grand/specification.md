@@ -1,4 +1,4 @@
-# The grand game — Specification (v0.3 draft)
+# The grand game — Specification (v0.4 draft)
 
 The [classic game](../rules.md) is one small part of a larger design, which has no name yet; this
 document calls it **the grand game** until it does. The classic game stays available, unchanged,
@@ -188,8 +188,7 @@ to make players guard their leaders even when they are not using them to take th
   under §6.2; one that the piece's own move imposes, never.
 - **Stated.** A piece bound to one colour (or a smaller share of the board) by its own move can
   never reach the rest, however it is moved: a leader that keeps to the other colour is safe from
-  it. Its value should show that. **Q21**: how; a proposal is in
-  [pieces.md](pieces.md#binding-proposed).
+  it. Its value shows that, by the share of the board it can reach ([pieces.md](pieces.md#binding)).
 - **Q19.** What a piece becomes once its movement restriction is lifted (a Horse whose leg may no
   longer be blocked is a Knight; a Shogi Pawn no longer blocked straight ahead moves… how?).
 
@@ -233,6 +232,5 @@ The numbers stay as they are; answered questions are marked so.
 18. **Q18** Castling: what "across check" means without check; which die.
 19. **Q19** What lifting each movement restriction yields (§7).
 20. **Q20** The catalogue's own questions: [pieces.md](pieces.md#still-open).
-21. **Q21** How a piece's value shows that its move binds it to part of the board (§7).
-22. **Q22** A name for the Makruk Pawn's promotion, now called the Private
-    ([pieces.md](pieces.md#still-open)).
+21. **Q21** *Answered:* a bound piece's value, by the share of the board it can reach (§7).
+22. **Q22** *Answered:* the Makruk Pawn promotes to the Courtier; the Private is gone.

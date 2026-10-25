@@ -9,8 +9,7 @@ Nothing here is scheduled; the order is a proposal. Each stage names the open qu
 
 ## Stage 0 — Agree the design
 
-- Settle the open questions, first those that shape the catalogue: its open notes (**Q20**), the
-  value of bound pieces (**Q21**), the Private's name (**Q22**).
+- Settle the open questions, first the catalogue's last notes (**Q20**).
 - Choose a name, or keep "grand" as the working name of the variant's project and key.
 
 ## Stage 1 — The catalogue as data
@@ -29,7 +28,7 @@ rest, each a few lines of data once the grammar knows how:
 The piece-information card (§8 of the specification) can come here too, and serve the classic game
 at once.
 
-Waits on: **Q7**, **Q19**, **Q20**, **Q21**, **Q22**.
+Waits on: **Q7**, **Q19**, **Q20**.
 
 ## Stage 2 — The board and the dice
 
