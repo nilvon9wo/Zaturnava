@@ -455,6 +455,81 @@ public sealed class TableTest : IDisposable
         Assert.True(hasLeft);
     }
 
+    [Theory]
+    [InlineData(true, 0)]
+    [InlineData(false, null)]
+    public void PlayAgain_WhenTheGameIsOver_StartsItAgainWithTheSameBotsInTheSameSeats(bool isSeated, int? seat)
+    {
+        // Arrange - Yellow is the Random bot
+        this._page.Server.View = Over() with
+        {
+            Seats =
+            [
+                .. FakeGameServer.SeatZeroToMove.Seats
+                    .Select(held => held with { BotId = held.Bot is null ? null : "random" }),
+            ],
+        };
+        Seating? seated = null;
+        IRenderedComponent<Table> table = this._page.Render<Table>(parameters => parameters
+            .Add(x => x.Seating, isSeated ? SeatZero : Seating.Watching(FakeGameServer.GameId))
+            .Add(x => x.OnSeated, next => seated = next)
+        );
+
+        // Act
+        table.Find("button.again").Click();
+
+        // Assert
+        Assert.Equal(
+            ("classic", "person,random", seat),
+            (
+                this._page.Server.Created!.RulesetId,
+                string.Join(',', this._page.Server.Created.Bots.Select(bot => bot ?? "person")),
+                seated!.Claim?.Seat
+            )
+        );
+    }
+
+    [Fact]
+    public void QuickGame_WhenTheGameIsOver_SitsAtSomeSeatWithEachBotOnceAmongTheOthers()
+    {
+        // Arrange
+        this._page.Server.View = Over();
+        Seating? seated = null;
+        IRenderedComponent<Table> table = this._page.Render<Table>(parameters => parameters
+            .Add(x => x.Seating, SeatZero)
+            .Add(x => x.OnSeated, next => seated = next)
+        );
+
+        // Act
+        table.Find("button.quick").Click();
+
+        // Assert
+        ImmutableList<string?> bots = this._page.Server.Created!.Bots;
+        Assert.Equal(
+            (3, true),
+            (bots.OfType<string>().Distinct(StringComparer.Ordinal).Count(), bots[seated!.Claim!.Seat] is null)
+        );
+    }
+
+    [Fact]
+    public void Again_WhileTheGameGoesOn_IsNotOffered()
+    {
+        // Arrange - nothing beyond the game, still going on
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Assert
+        Assert.Empty(table.FindAll("button.again"));
+    }
+
+    private static GameViewDto Over() =>
+        FakeGameServer.SeatZeroToMove with
+        {
+            DecidingSeat = null,
+            Outcome = new OutcomeDto([1], "Yellow won: only one team has pieces left."),
+        };
+
     private static AngleSharp.Dom.IElement Cell(IRenderedComponent<Table> table, int id) =>
         table.Find($"rect[data-cell='{id}']");
 

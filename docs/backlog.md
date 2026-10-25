@@ -127,3 +127,5 @@ After playing against Argus (2026-10-25):
   nothing left.
 - Ransom (§8): when a piece going home has several free squares as near its own, its owner chooses
   among them, marked on the board (a Pawn need no longer land in the Boat's corner).
+- Once a game is over, the table offers to play it again (the same seats, played the same way, the
+  player at the same seat) or a quick game.

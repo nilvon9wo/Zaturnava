@@ -84,16 +84,17 @@ internal static class GameViews
     private static SeatDto SeatOf(GameSnapshot snapshot, ImmutableList<BotProfile> bots, SeatId seat)
     {
         SeatController controller = snapshot.Record.Controllers[seat.Value];
-        string? bot = controller is BotSeat botSeat ? BotNameOf(bots, botSeat.BotId) : null;
+        string? botId = controller is BotSeat botSeat ? botSeat.BotId : null;
         return new SeatDto(
             seat.Value,
             snapshot.Rules.NameOf(seat),
             snapshot.State.Teams.TeamOf(seat),
             snapshot.State.Scores.GetValueOrDefault(seat),
             controller.Kind,
-            bot,
+            botId is null ? null : BotNameOf(bots, botId),
             [.. snapshot.State.Prisoners.Where(prisoner => prisoner.Holder == seat)
-                .Select(prisoner => PrisonerOf(snapshot.Rules, prisoner))]
+                .Select(prisoner => PrisonerOf(snapshot.Rules, prisoner))],
+            botId
         );
     }
 

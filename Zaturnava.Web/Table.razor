@@ -5,7 +5,8 @@
    dismiss it or their turn comes round again: the turn has passed on by then. While a bot decides, it advances the game every
    TableSettings.BotPace, so that bots take their turns one at a time; while a person elsewhere
    decides, it asks for the game again every TableSettings.PollInterval. While a decision is timed, it
-   counts down, and advances the game once time is up, for the server to decide for that seat. *@
+   counts down, and advances the game once time is up, for the server to decide for that seat. Once the
+   game is over, the player may play it again, the same seats played the same way, or start a quick game. *@
 @implements IDisposable
 @inject IGameServing Games
 @inject TableSettings Settings
@@ -48,6 +49,13 @@
             <aside class="side">
                 <div class="@(this._turn is null ? "turn" : "turn yours")">
                     <p class="status">@this.Status(view)</p>
+                    @if (view.Outcome is not null)
+                    {
+                        <div class="actions">
+                            <button class="action primary again" @onclick="() => this.PlayAgain(view)">Play again</button>
+                            <button class="action quick" @onclick="this.QuickGame">Quick game</button>
+                        </div>
+                    }
                     @if (this._notice is { } notice)
                     {
                         <p class="notice" role="status">
@@ -229,6 +237,10 @@
     [Parameter]
     public EventCallback OnLeave { get; set; }
 
+    /// <summary>The player sat at (or watching) another game, started from this one once it is over.</summary>
+    [Parameter]
+    public EventCallback<Seating> OnSeated { get; set; }
+
     private BoardActions Actions => this._turn?.Actions ?? NoActions;
 
     protected override async Task OnInitializedAsync()
@@ -311,6 +323,21 @@
         $"held by {(holder.Id == seat ? "you" : holder.Name)}";
 
     private void PutDown() => this._selection = BoardSelection.None;
+
+    /// <summary>The same game again: its ruleset, its bots in the same seats, the player at the same seat.</summary>
+    private Task PlayAgain(GameViewDto view) =>
+        this.SitAgain(() => GameStarter.Start(
+            this.Games,
+            view.RulesetId,
+            [.. view.Seats.Select(seat => seat.BotId)],
+            this.Seating.Claim is { } claim ? claim.Seat : -1
+        ));
+
+    private Task QuickGame() =>
+        this.SitAgain(async () => await GameStarter.Quick(this.Games, await this.Games.Catalog(CancellationToken.None)));
+
+    private async Task SitAgain(Func<Task<Seating>> seating) =>
+        this._problem = await Requests.Attempt(async () => await this.OnSeated.InvokeAsync(await seating()));
 
     private string Named(string text) => PieceStyle.Named(text, this.Pieces);
 
