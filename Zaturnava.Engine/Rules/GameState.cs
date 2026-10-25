@@ -39,6 +39,15 @@ public sealed record GameState(
     /// <summary>How many turns in a row have been passed without rolling or moving.</summary>
     public int IdlePasses { get; init; }
 
+    /// <summary>The ransom waiting on its receiver, who decides meanwhile; null if none is.</summary>
+    public RansomOffer? Offer { get; init; }
+
+    /// <summary>
+    /// Whether the turn is over and its seat, deciding, may still offer ransoms before it passes; the
+    /// turn passes with <see cref="IdlePasses"/> as they stand.
+    /// </summary>
+    public bool IsRansomWindow { get; init; }
+
     /// <summary>How the game ended; null while it goes on.</summary>
     public GameOutcome? Outcome { get; init; }
 

@@ -234,6 +234,23 @@ select {
 .turn .status { font-size: 1.25rem; font-weight: 700; margin: 0 0 8px; }
 .turn.yours .status { color: var(--accent); }
 .turn .hint { color: var(--muted); margin: 8px 0 4px; }
+.turn .countdown { font-variant-numeric: tabular-nums; color: var(--accent); margin: 0 0 6px; }
+.turn .offer { font-weight: 700; margin: 0 0 6px; }
+
+.ransom { margin-top: 10px; border-top: 1px solid var(--panel-edge); padding-top: 6px; }
+.ransom-to, .ransom-ask { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin: 4px 0; }
+.ransom-to .name { min-width: 80px; }
+.ransom .prisoner {
+    padding: 2px;
+    background: transparent;
+    border: 2px solid transparent;
+    border-radius: 6px;
+    cursor: pointer;
+}
+.ransom .prisoner.chosen { border-color: var(--accent); }
+.ransom .prisoner .piece-icon { width: 26px; height: 26px; }
+.ransom .all { font-size: 0.85rem; }
+.ransom .action.offer { margin-top: 6px; }
 
 .dice { list-style: none; padding: 0; margin: 4px 0; }
 .dice li { font-size: 1.1rem; margin: 2px 0; }
@@ -284,3 +301,4 @@ select {
 .log .event.captured, .log .event.bonus { font-weight: 700; color: var(--accent); }
 .log .event.rolled-off, .log .event.shared { font-style: italic; }
 .log .event.ended { font-weight: 700; }
+.log .event.promoted, .log .event.ransom { font-style: italic; }

@@ -110,6 +110,47 @@ public sealed class GameLogTest
         );
     }
 
+    [Fact]
+    public void LatestOf_WhenPrisonersArePromotedOrRansomed_TellsOfIt()
+    {
+        // Arrange
+        Piece blackPawn = new(new PieceId(4), ClassicPieces.Pawn, Black);
+        Piece elephant = new(new PieceId(18), ClassicPieces.Elephant, Green);
+        RansomOffer gift = new(Black, Yellow, [Pawn.Id], []);
+        RansomOffer trade = new(Black, Yellow, [Pawn.Id, new PieceId(21)], [Horse.Id]);
+        GameSnapshot snapshot = Snapshot(
+            new PiecePromoted(Pawn, Horse, Cell("h8"), Black),
+            new PiecePromoted(blackPawn, elephant, Cell("c8"), Black),
+            new PieceCaptured(Horse, Black, 0),
+            new RansomWindowOpened(Black),
+            new RansomOffered(gift),
+            new RansomDeclined(gift),
+            new RansomOffered(trade),
+            new RansomAccepted(trade),
+            new PieceReturned(Pawn, Cell("a7"))
+        );
+
+        // Act
+        ImmutableList<EventDto> log = GameLog.LatestOf(snapshot);
+
+        // Assert
+        Assert.Equal(
+            [
+                "promoted 0: Black promoted Yellow's Pawn on h8 to their Horse.",
+                "promoted 0: Black promoted their Pawn on c8 to Green's Elephant.",
+                "captured 0: Black took their Horse (no points).",
+                "ransom 0: Black's turn is over, but they may still offer prisoners back.",
+                "ransom 0: Black offered Yellow a prisoner back, as a gift.",
+                "ransom 1: Yellow declined Black's offer.",
+                "ransom 0: Black offered Yellow 2 prisoners back, for a prisoner in return.",
+                "ransom 1: Yellow accepted Black's offer.",
+                "ransom 1: Yellow's Pawn went home, to a7.",
+            ],
+            log.Select(Told)
+        );
+        Assert.Equal((Cell("h8").Value, Cell("a7").Value), (log[0].To, log[^1].To));
+    }
+
     [Theory]
     [InlineData(new[] { 0, 2 }, "ended 0: Black and Green won: only one team has pieces left.")]
     [InlineData(new[] { 1 }, "ended 1: Yellow won: only one team has pieces left.")]

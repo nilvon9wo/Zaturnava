@@ -11,12 +11,14 @@ namespace Net.NowhereAtAll.Zaturnava.Application.Test.Fakes;
 
 /// <summary>
 /// The smallest ruleset that still ends: two seats take turns passing until <paramref name="length"/>
-/// turns have been played. Enough to drive the application without any real game.
+/// turns have been played; the second seat has only so long to pass. Enough to drive the
+/// application without any real game.
 /// </summary>
 internal sealed class TinyRules(int length) : IRulesApplying
 {
     public const string RulesetId = "tiny";
     public const int SeatCount = 2;
+    public const string Timer = "tiny-turn";
 
     private readonly int _length = length;
 
@@ -52,6 +54,13 @@ internal sealed class TinyRules(int length) : IRulesApplying
             : throw new IllegalActionException(action);
         return new Transition(next, []);
     }
+
+    public bool MayOffer([Required] GameState state) => false;
+
+    public DecisionTimer? TimerOf([Required] GameState state) =>
+        state.DecidingSeat?.Value == 1
+            ? new DecisionTimer(Timer, new PassAction(new SeatId(1)))
+            : null;
 
     public GameAction Parse([Required] ActionDescriptor descriptor) => ActionParser.Standard.Parse(descriptor);
 

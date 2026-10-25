@@ -20,4 +20,20 @@ public sealed class ActionArgumentsTest
         // Assert
         Assert.Equal((ActionDescriptor.ActorArgument, MoveAction.FromArgument, MoveAction.ToArgument), contracts);
     }
+
+    [Fact]
+    public void OfferNames_WhenComparedWithTheEngines_AreTheSame()
+    {
+        // Arrange - nothing beyond the constants
+
+        // Act
+        (string, string, string, string) contracts =
+            (OfferDto.Kind, OfferDto.ReceiverArgument, OfferDto.GivenArgument, OfferDto.AskedArgument);
+
+        // Assert
+        Assert.Equal(
+            (OfferAction.Kind, OfferAction.ReceiverArgument, OfferAction.GivenArgument, OfferAction.AskedArgument),
+            contracts
+        );
+    }
 }

@@ -235,8 +235,8 @@ base address (`GameRoutes`):
 | Rulesets and bots on offer, each bot with its name, description and whether it uses AI | `GET api/catalog` | `CatalogDto` |
 | Games | `GET api/games` | `GameSummaryDto[]` |
 | Create a game | `POST api/games` with `CreateGameRequest` (a ruleset, and per seat a bot id or null for a person) | 201, `GameCreatedDto` |
-| A game | `GET api/games/{id}` | `GameViewDto`: cells (with names and thrones), pieces, seats (with scores, bot names and prisoners), the dice and what each allows, the latest events, whose decision and for which seat, the legal actions, and how the game ended |
-| Let a bot decide | `POST api/games/{id}/advance` with `AdvanceRequest` (the version the caller saw) | `GameViewDto` after one bot decision, or unchanged if the version is stale or no bot is deciding |
+| A game | `GET api/games/{id}` | `GameViewDto`: cells (with names and thrones), pieces, seats (with scores, bot names and prisoners), the dice and what each allows, the latest events, whose decision and for which seat, the legal actions (labelled where the kind alone cannot say), how the game ended, whether the deciding seat may offer a ransom, the offer waiting on its answer, and the time left on a timed decision |
+| Let a bot or a timer decide | `POST api/games/{id}/advance` with `AdvanceRequest` (the version the caller saw) | `GameViewDto` after one bot decision, or the timer's decision once a timed one has run out of time; unchanged if the version is stale or neither is due |
 | Claim an open seat | `POST api/games/{id}/seats/{seat}` | `SeatClaimedDto` with the seat's token |
 | Act | `POST api/games/{id}/actions` with `ActionDto`, `Authorization: Bearer {token}` | `GameViewDto` after the action and any bot replies |
 
@@ -252,6 +252,18 @@ base address (`GameRoutes`):
   own names and the topology's cell names ("Black rolled 2 (Horse) and 5
   (Pawn or Raja).", "Yellow moved their Pawn from b5 to c5, without
   rolling.").
+- **Timed decisions**: a ruleset names the decisions that may take only so
+  long, and what is decided once time is up (`IRulesApplying.TimerOf`); the
+  host says how long, by name (`Games:Timers:{name}`, in seconds;
+  `Games:Timers:Default`, 30, for any not named). The time runs from when
+  the server first saw the game at its version, in memory, so a restart
+  gives a waiting decision its full time again. The server never acts on its
+  own: a client showing a countdown advances the game once it runs out.
+- **Offers** of ransom are not among the legal actions, which would have to
+  list every combination of prisoners. The view says when the deciding seat
+  may offer, and a client builds the action with `OfferDto.ActionOf`; the
+  rules refuse an offer that may not be made, as they refuse any illegal
+  action.
 - **Acting for another seat**: while one seat moves for another (an enemy
   Raja on a throne shares that seat's turn), the view's `DecidingSeat` is the
   seat that decides, holding the token that may act, and `ActingFor` is the

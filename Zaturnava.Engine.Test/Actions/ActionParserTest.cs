@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Boards;
+using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
 using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 
 namespace Net.NowhereAtAll.Zaturnava.Engine.Test.Actions;
@@ -57,6 +58,28 @@ public sealed class ActionParserTest
 
         // Assert
         Assert.Equal(dice, parsed);
+    }
+
+    public static TheoryData<GameAction> RansomAndPromotion =>
+    [
+        new PromoteAction(new SeatId(1), new CellId(7), new PieceId(12)),
+        new OfferAction(new SeatId(1), new SeatId(2), [new PieceId(16), new PieceId(17)], [new PieceId(4)]),
+        new OfferAction(new SeatId(1), new SeatId(2), [new PieceId(16)], []),
+        new AcceptAction(new SeatId(2)),
+        new DeclineAction(new SeatId(2)),
+    ];
+
+    [Theory]
+    [MemberData(nameof(RansomAndPromotion), DisableDiscoveryEnumeration = true)]
+    public void Parse_WhenGivenADescribedPromotionOrRansomAction_ReturnsTheSameAction(GameAction action)
+    {
+        // Arrange - nothing beyond the action
+
+        // Act
+        GameAction parsed = ActionParser.Standard.Parse(action.Describe());
+
+        // Assert
+        Assert.Equal(action, parsed);
     }
 
     [Fact]

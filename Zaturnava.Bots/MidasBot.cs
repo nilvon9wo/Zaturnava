@@ -11,7 +11,8 @@ namespace Net.NowhereAtAll.Zaturnava.Bots;
 /// Greedy and short-sighted, like the king whose wish turned even his bread to gold: takes whichever
 /// legal action scores the most at once, choosing at random among equals. When nothing scores, it moves
 /// or rolls at random, passing only when it can do nothing else. It never looks past its own action, so
-/// it walks into every trap.
+/// it walks into every trap. Offered a ransom, it counts pieces: it accepts if it gets back at least as
+/// many as it gives up.
 /// </summary>
 public sealed class MidasBot(Random random) : IBotPlaying
 {
@@ -30,7 +31,18 @@ public sealed class MidasBot(Random random) : IBotPlaying
     public Task<GameAction> Decide([Required] DecisionRequest request, CancellationToken cancellationToken) =>
         cancellationToken.IsCancellationRequested
             ? Task.FromCanceled<GameAction>(cancellationToken)
-            : Task.FromResult(this.Pick(Choices(request)));
+            : Task.FromResult(AnswerTo(request) ?? this.Pick(Choices(request)));
+
+    /// <summary>The answer to the ransom offered, if one is; null if none is.</summary>
+    private static GameAction? AnswerTo(DecisionRequest request) =>
+        request.State.Offer is { } offer
+            ? Answer(request.Seat, offer.Given.Count >= offer.Asked.Count)
+            : null;
+
+    private static GameAction Answer(SeatId seat, bool isAccepted) =>
+        isAccepted
+            ? new AcceptAction(seat)
+            : new DeclineAction(seat);
 
     /// <summary>The best scoring actions, if any score; otherwise every action that does something.</summary>
     private static ImmutableList<GameAction> Choices(DecisionRequest request)

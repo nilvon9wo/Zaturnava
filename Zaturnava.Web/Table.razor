@@ -1,12 +1,14 @@
 @* A game: the board (turned so the player's own corner is bottom left), and beside it whose turn it is,
-   the dice and what each lets move, on the player's turn what they may do, the seats, and what has
-   happened. While a bot decides, it advances the game every TableSettings.BotPace, so that bots take
-   their turns one at a time; while a person elsewhere decides, it asks for the game again every
-   TableSettings.PollInterval. *@
+   the dice and what each lets move, on the player's turn what they may do - prisoners they may offer
+   back among it - the seats, and what has happened. While a bot decides, it advances the game every
+   TableSettings.BotPace, so that bots take their turns one at a time; while a person elsewhere
+   decides, it asks for the game again every TableSettings.PollInterval. While a decision is timed, it
+   counts down, and advances the game once time is up, for the server to decide for that seat. *@
 @implements IDisposable
 @inject IGameServing Games
 @inject TableSettings Settings
 @inject Browser Browser
+@inject TimeProvider Clock
 
 <section class="table">
     <header class="table-bar">
@@ -42,6 +44,14 @@
             <aside class="side">
                 <div class="@(this._turn is null ? "turn" : "turn yours")">
                     <p class="status">@this.Status(view)</p>
+                    @if (this.Countdown() is { } countdown)
+                    {
+                        <p class="countdown">@countdown</p>
+                    }
+                    @if (view.Offer is { } offer)
+                    {
+                        <p class="offer">@OfferText(view, offer)</p>
+                    }
                     @if (view.Dice.Count > 0)
                     {
                         <ul class="dice">
@@ -62,6 +72,50 @@
                                 </button>
                             }
                         </div>
+                        @if (view.MayOffer)
+                        {
+                            <div class="ransom">
+                                <p class="hint">Offer prisoners back:</p>
+                                @foreach (SeatDto receiver in Receivers(view, turn.Claim.Seat))
+                                {
+                                    <div class="ransom-to">
+                                        <span class="name">To @receiver.Name:</span>
+                                        @foreach (PrisonerDto prisoner in HeldOf(view, turn.Claim.Seat, receiver.Id))
+                                        {
+                                            <button class="prisoner @(this._given.Contains(prisoner.Id) ? "chosen" : null)"
+                                                    title="@prisoner.Name"
+                                                    @onclick="() => this.Give(receiver.Id, [prisoner.Id])">
+                                                <PieceIcon Kind="@prisoner.Kind" Name="@prisoner.Name" Owner="prisoner.Owner" />
+                                            </button>
+                                        }
+                                        <button class="all"
+                                                @onclick="() => this.GiveAll(view, turn.Claim.Seat, receiver.Id)">
+                                            All
+                                        </button>
+                                    </div>
+                                }
+                                @{ ImmutableList<PrisonerDto> askable = this.Askable(view, turn.Claim.Seat); }
+                                @if (!askable.IsEmpty)
+                                {
+                                    <p class="hint">Ask for in return (or nothing, for a gift):</p>
+                                    <div class="ransom-ask">
+                                        @foreach (PrisonerDto prisoner in askable)
+                                        {
+                                            <button class="prisoner @(this._asked.Contains(prisoner.Id) ? "chosen" : null)"
+                                                    title="@prisoner.Name"
+                                                    @onclick="() => this.Ask(prisoner.Id)">
+                                                <PieceIcon Kind="@prisoner.Kind" Name="@prisoner.Name" Owner="prisoner.Owner" />
+                                            </button>
+                                        }
+                                    </div>
+                                }
+                                <button class="action offer"
+                                        disabled="@this._given.IsEmpty"
+                                        @onclick="() => this.Offer(turn.Claim)">
+                                    @(this._asked.IsEmpty ? "Give them back" : "Offer the exchange")
+                                </button>
+                            </div>
+                        }
                     }
                 </div>
 
@@ -104,6 +158,10 @@
     private BoardSelection _selection = BoardSelection.None;
     private BoardTurn _boardTurn = BoardTurn.None;
     private ImmutableHashSet<int> _lastMove = [];
+    private DateTimeOffset? _deadline;
+    private int? _receiver;
+    private ImmutableHashSet<int> _given = [];
+    private ImmutableHashSet<int> _asked = [];
     private int _heard = -1;
     private string? _problem;
     private bool _isBotDeciding;
@@ -149,6 +207,60 @@
     private static string ForWhom(GameViewDto view) =>
         view.ActingFor is { } seat ? $", for {view.Seats[seat].Name}" : string.Empty;
 
+    /// <summary>"Black offers Yellow Yellow's Pawn back, for Green's Horse.", or "..., as a gift."</summary>
+    private static string OfferText(GameViewDto view, OfferDto offer)
+    {
+        string asking = offer.Asked.IsEmpty ? "as a gift" : $"for {Pieces(view, offer.Asked)}";
+        string given = Pieces(view, offer.Given);
+        return $"{view.Seats[offer.From].Name} offers {view.Seats[offer.To].Name} {given} back, {asking}.";
+    }
+
+    private static string Pieces(GameViewDto view, ImmutableList<PrisonerDto> prisoners) =>
+        string.Join(", ", prisoners.Select(prisoner => $"{view.Seats[prisoner.Owner].Name}'s {prisoner.Name}"));
+
+    /// <summary>The seats the player holds prisoners of, to offer them back to.</summary>
+    private static IEnumerable<SeatDto> Receivers(GameViewDto view, int seat) =>
+        view.Seats[seat].Prisoners.Select(prisoner => prisoner.Owner).Where(owner => owner != seat).Distinct()
+            .Order().Select(owner => view.Seats[owner]);
+
+    private static IEnumerable<PrisonerDto> HeldOf(GameViewDto view, int seat, int owner) =>
+        view.Seats[seat].Prisoners.Where(prisoner => prisoner.Owner == owner);
+
+    /// <summary>
+    /// The prisoners the chosen receiver holds of the player's team: what the player may ask for; none
+    /// until a receiver is chosen.
+    /// </summary>
+    private ImmutableList<PrisonerDto> Askable(GameViewDto view, int seat) =>
+        this._receiver is { } receiver
+            ? [.. view.Seats[receiver].Prisoners.Where(prisoner => view.Seats[prisoner.Owner].Team == view.Seats[seat].Team)]
+            : [];
+
+    /// <summary>Chooses prisoners to give back, or no longer; choosing another seat's starts afresh.</summary>
+    private void Give(int receiver, ImmutableHashSet<int> prisoners)
+    {
+        bool isSameReceiver = this._receiver == receiver;
+        this._asked = isSameReceiver ? this._asked : [];
+        this._given = isSameReceiver ? this._given.SymmetricExcept(prisoners) : prisoners;
+        this._receiver = receiver;
+    }
+
+    private void GiveAll(GameViewDto view, int seat, int receiver)
+    {
+        ImmutableHashSet<int> all = [.. HeldOf(view, seat, receiver).Select(prisoner => prisoner.Id)];
+        this.Give(receiver, this._receiver == receiver ? all.Except(this._given) : all);
+    }
+
+    private void Ask(int prisoner) => this._asked = this._asked.SymmetricExcept([prisoner]);
+
+    private Task Offer(SeatClaim claim) =>
+        this.Submit(claim, OfferDto.ActionOf(claim.Seat, this._receiver!.Value, this._given.Order(), this._asked.Order()));
+
+    /// <summary>"12 s left", while the deciding seat's decision is timed.</summary>
+    private string? Countdown() =>
+        this._deadline is { } deadline
+            ? $"{Math.Max(0, (int)Math.Ceiling((deadline - this.Clock.GetUtcNow()).TotalSeconds))} s left"
+            : null;
+
     private string Player(SeatDto seat) => seat.Id == this.Seating.Claim?.Seat ? "you" : seat.Bot ?? seat.Controller;
 
     private void TurnLeft() => this._boardTurn = this._boardTurn.Anticlockwise();
@@ -159,14 +271,29 @@
 
     private void Tick(object? state) => _ = this.InvokeAsync(this.Next);
 
-    /// <summary>Lets a deciding bot take its next step, or else looks for what others have done.</summary>
+    /// <summary>
+    /// Lets a deciding bot take its next step, or the server decide once time is up; else looks for what
+    /// others have done; else, on the player's own timed turn, counts down.
+    /// </summary>
     private async Task Next()
     {
-        int version = this._view!.Version;
-        await (this._isBotDeciding
-            ? this.Request(() => this.Games.Advance(this.Seating.GameId, version, CancellationToken.None))
-            : this.Refresh());
+        GameViewDto view = this._view!;
+        bool isDue = this._isBotDeciding || this._deadline <= this.Clock.GetUtcNow();
+        await ((isDue, this._turn) switch
+        {
+            (true, _) => this.Request(
+                () => this.Games.Advance(this.Seating.GameId, view.Version, CancellationToken.None)
+            ),
+            (_, null) => this.Refresh(),
+            _ => this.CountDown(view),
+        });
         this.StateHasChanged();
+    }
+
+    private Task CountDown(GameViewDto view)
+    {
+        _ = this._poll.Change(this.Wait(view), Timeout.InfiniteTimeSpan);
+        return Task.CompletedTask;
     }
 
     private Task Refresh() => this.Request(() => this.Games.Get(this.Seating.GameId, CancellationToken.None));
@@ -188,7 +315,12 @@
     {
         bool wasTheirTurn = this._turn is not null;
         bool isFirst = this._view is null;
+        bool isNew = view.Version != this._view?.Version;
         this._view = view;
+        this._deadline = view.SecondsLeft is { } seconds ? this.Clock.GetUtcNow().AddSeconds(seconds) : null;
+        this._receiver = isNew ? null : this._receiver;
+        this._given = isNew ? [] : this._given;
+        this._asked = isNew ? [] : this._asked;
         this._turn = view.DecidingSeat is { } deciding && this.Seating.Claim is { } claim && claim.Seat == deciding
             ? new Turn(claim, new BoardActions(view.LegalActions))
             : null;
@@ -214,11 +346,18 @@
                 : new[] { EventDto.Captured, EventDto.Moved, EventDto.Rolled }.FirstOrDefault(kinds.Contains);
     }
 
-    /// <summary>How long until the next look at the game: never while it is the player's turn or the game is over.</summary>
+    /// <summary>
+    /// How long until the next look at the game: a countdown step while the decision is timed; else never
+    /// while it is the player's turn or the game is over.
+    /// </summary>
     private TimeSpan Wait(GameViewDto view) =>
-        this._turn is not null || view.DecidingSeat is null
-            ? Timeout.InfiniteTimeSpan
-            : this.PaceOfOthers();
+        (view.DecidingSeat, this._deadline, this._turn) switch
+        {
+            (null, _, _) => Timeout.InfiniteTimeSpan,
+            (_, { }, _) => this.Settings.CountdownStep,
+            (_, _, { }) => Timeout.InfiniteTimeSpan,
+            _ => this.PaceOfOthers(),
+        };
 
     private TimeSpan PaceOfOthers() => this._isBotDeciding ? this.Settings.BotPace : this.Settings.PollInterval;
 }

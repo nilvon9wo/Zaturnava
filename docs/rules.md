@@ -23,14 +23,16 @@ Everything else here is specified but not yet played by the engine.
 | Section | Status |
 |---|---|
 | §2 Board & setup | Implemented: the 8×8 board, the pinwheel setup, teams of opposite seats, thrones. |
-| §3 Pieces & movement | Implemented, captures included. A piece moved for another army moves the way its own army faces, and never takes a piece of its own army. |
+| §3 Pieces & movement | Implemented, captures included. A piece moved for another army moves the way its own army faces; what it may take is §6.4. |
 | §4 Turns & dice | Implemented: the opening plays the die that won the roll-off, then a deliberate move, a pass or two dice, clockwise from the roll-off's winner; an unusable die is forfeit. Doubles let one piece move twice, but escape (§7) is not yet. The dice profile is the weighted d6 one; a d4 profile exists but cannot yet be chosen. |
 | §5 Captures & scoring | Partly: captures score by piece, with both throne bonuses. The empire bonus is not yet. |
 | §6 Throne control | Partly: the expanded pool (§6.1, both triggers) and the forced shared turn (§6.3). Voluntary regency (§6.2) is not yet. |
-| §7–§9 Escape, promotion and ransom, boat triumph | Not yet. Prisoners are kept, and shown, with the seat that took them. |
+| §6.4 Commanded captures | Implemented, with the toggle as a constructor argument. |
+| §7 Escape, §9 Boat triumph | Not yet. |
+| §8 Promotion & ransom | Implemented, as clarified below: promotion into the commanding team's captured pieces, and ransom with its timed protocol. The receiving player's choice among equidistant squares is not offered yet. |
 | §10 Game end | Partly: elimination (a seat with no pieces is skipped), honourable peace, team elimination, and a safety net (below). Retirement and ending by agreement are not yet. |
 | §11 Setup roll-off | Implemented. |
-| §12 Toggles | None yet; the defaults are fixed. |
+| §12 Toggles | None per game yet: `control.enemyArmyCaptures` is a constructor argument; the other defaults are fixed. |
 
 ## 1. Overview
 
@@ -267,6 +269,20 @@ Aside from the expanded-pool exception in step 2 above, neither side moves
 their own separate army during this shared turn — it is otherwise entirely
 about the occupied player's army for that turn.
 
+### 6.4 Captures with a commanded army
+
+*(Clarified 2026-10-25)* A piece of the commanding player's own team (their
+own army, or a Raja-less ally's) takes only that player's enemies. A piece
+of an **enemy** army the player commands — through a throne their Raja holds
+(§6.1a), or moving for a seat whose throne their Raja holds (§6.3) — may take
+**any** piece: its own army's, its ally's, or the commanding player's own
+team's. **[toggle: `control.enemyArmyCaptures`]** — Default: `anything`;
+`notOwnTeam` forbids taking the commanding player's own team's pieces.
+
+Taking a piece of one's own team scores no one: no points for the piece, and
+no on-throne bonus. The piece is still taken prisoner, by the player who
+made the move.
+
 ## 7. Doubles & Escape
 
 When a player rolls dice and both dice show the same value ("doubles"), two
@@ -344,6 +360,15 @@ available (via a future capture, by anyone).
   turn (the owner normally, or an ally/enemy currently controlling that army
   under §6). No one's consent is needed to consume the captured piece it's
   promoted into, regardless of who currently holds that piece prisoner.
+- *(Clarified 2026-10-25, as the `classic` ruleset plays it)* The pool is the
+  captured pieces of the **controlling player's own team** — their own, or
+  their ally's (the ally then commands the promoted piece) — never a Pawn. An
+  enemy controlling the Pawn's army (holding its throne, §6.1a, or moving for
+  it, §6.3) may so promote it into one of *their* team's pieces. A Pawn on the
+  far edge is one with nowhere forward left to go. Promoting is its own
+  decision, at any time the controlling player may move that army on their
+  turn (before rolling, or with dice left); it uses no die, and the turn goes
+  on.
 
 ### Ransom
 
@@ -367,9 +392,26 @@ available (via a future capture, by anyone).
 - Releasing a piece via ransom never returns the points already scored for
   capturing it, and if the released piece is captured again by anyone, that
   capture scores again.
-- *(Open item)* The exact turn-timing protocol (how an offer is made and
-  responded to without stalling play while the other player decides) needs
-  further refinement — see [§13](#13-open-items--deferred).
+- *(Clarified 2026-10-25)* The turn-timing protocol:
+  - A player may offer on their own turn: before rolling, or with dice left,
+    but not while moving for another seat (§6.3).
+  - Once their turn is over, a player holding any other seat's pieces
+    prisoner gets a short window to offer more, which they may end at once
+    ("Done"). The turn passes when it ends.
+  - An offer gives back one or more prisoners the offerer holds of the
+    receiver's, and asks for any number (none makes it a gift) of the
+    prisoners the receiver holds of the offerer's team.
+  - The game waits for the receiver's answer. Either way, the offerer then
+    decides again.
+  - Accepted, the prisoners given go home first, then those asked for. Each
+    goes to its starting square, or the free square fewest king's steps
+    from it. Until the receiving player can choose among equals, the
+    lowest-numbered square is taken.
+  - The window and the answer are timed: 30 seconds each by default, set by
+    the host (`Games:Timers:ransom-window`, `Games:Timers:ransom-answer`).
+    When the window runs out, it closes; when the answer runs out, the offer
+    is declined.
+  - Bots answer at once; bots do not yet offer.
 
 ### Raja Return
 
@@ -446,7 +488,8 @@ configuration this document describes.
 | Toggle | Default | Description |
 |---|---|---|
 | `dice.profile` | `2d6-weighted` | Dice count/sides and value→piece-category mapping. Alternative: `2d4-uniform`. |
-| `promotion.pool` | `unrestricted` | Whether a promoting Pawn may become any captured piece, or only one that started on the same file/column. |
+| `promotion.pool` | `unrestricted` | Whether a promoting Pawn may become any captured piece, or only one that started on the same file/column. (The `classic` ruleset limits the pool to the controlling team's pieces, §8.) |
+| `control.enemyArmyCaptures` | `anything` | What a piece of an enemy army a player commands may take: `anything`, or `notOwnTeam` (§6.4). |
 | `gameEnd.safetyNet.*` | off | Optional auto-end conditions (move cap, universal-pass, etc.) layered on top of end-by-agreement, mainly for unattended/bot games. |
 | `scoring.points.pawn` | `1` | Points awarded for capturing a Pawn. |
 | `scoring.points.boat` | `2` | Points awarded for capturing a Boat. |
@@ -481,9 +524,8 @@ Nothing rules-level is currently blocking. Noted for later attention:
 - Whether team membership can ever change *during* a game (a future variant
   idea raised during design discussion) is explicitly out of scope for now —
   team assignment is fixed at game creation.
-- Ransom's turn-timing protocol (§8) — how an offer is presented and
-  accepted/declined without stalling play while the other player decides —
-  needs refinement once there's an actual turn-flow/UI to design it against.
+- Ransom (§8): letting the receiving player choose among equidistant squares
+  for a returning piece, and whether bots should offer ransoms.
 - **Piece naming/set**: *(updated)* traditional-vs-chess-standard naming is
   now the `pieceSet.naming` toggle in §12, rather than a one-time decision —
   players can pick either label set (Pawn/Boat/Horse/Elephant/Raja vs.

@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Boards;
 using Net.NowhereAtAll.Zaturnava.Engine.Decisions;
+using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
 using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 
 namespace Net.NowhereAtAll.Zaturnava.Bots.Test;
@@ -85,6 +86,32 @@ public sealed class MidasBotTest
 
         // Assert
         _ = await Assert.ThrowsAsync<TaskCanceledException>(() => deciding);
+    }
+
+    [Theory]
+    [InlineData(2, 2, "accept")]
+    [InlineData(1, 2, "decline")]
+    public async Task Decide_WhenOfferedARansom_AcceptsIfItGetsBackAsManyPiecesAsItGives(
+        int given,
+        int asked,
+        string answer
+    )
+    {
+        // Arrange
+        RansomOffer offer = new(
+            new SeatId(1),
+            Seat,
+            [.. Enumerable.Range(10, given).Select(id => new PieceId(id))],
+            [.. Enumerable.Range(20, asked).Select(id => new PieceId(id))]
+        );
+        DecisionRequest request = Request(ImmutableDictionary<GameAction, int>.Empty.Add(Pass, 0));
+        DecisionRequest offered = request with { State = request.State with { Offer = offer } };
+
+        // Act
+        GameAction action = await new MidasBot(new Random(1)).Decide(offered, this._cancellation);
+
+        // Assert
+        Assert.Equal(answer, action.Describe().Kind);
     }
 
     [Fact]

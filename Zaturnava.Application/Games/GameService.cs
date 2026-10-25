@@ -16,7 +16,7 @@ namespace Net.NowhereAtAll.Zaturnava.Application.Games;
 /// The use cases every host and client goes through. Each request replays the game from its stored
 /// actions, applies what was asked, lets any bot seats that are next play (up to
 /// <see cref="GameServiceSettings.MaximumBotSteps"/>), then stores the result. Bots left to play
-/// take their turns one <see cref="Advance"/> at a time.
+/// take their turns one <see cref="Advance"/> at a time, as do decisions whose time has run out.
 /// </summary>
 public sealed class GameService(
     IRulesetLocating rulesets,
@@ -24,6 +24,7 @@ public sealed class GameService(
     IGamePersisting store,
     IGameNotifying notifier,
     IDiceRolling dice,
+    DecisionClock clock,
     GameServiceSettings settings
 )
 {
@@ -32,6 +33,7 @@ public sealed class GameService(
     private readonly IGamePersisting _store = store;
     private readonly IGameNotifying _notifier = notifier;
     private readonly IDiceRolling _dice = dice;
+    private readonly DecisionClock _clock = clock;
     private readonly GameServiceSettings _settings = settings;
 
     public ImmutableList<IRulesApplying> Rulesets => this._rulesets.All;
@@ -63,14 +65,15 @@ public sealed class GameService(
     public async Task<GameSnapshot> Get(GameId id, CancellationToken cancellationToken)
     {
         GameRecord record = await this.Load(id, cancellationToken);
-        return GameSnapshot.Of(record, this._rulesets.Find(record.RulesetId));
+        return this.Timed(GameSnapshot.Of(record, this._rulesets.Find(record.RulesetId)));
     }
 
     /// <summary>
-    /// Lets the bot whose turn it is make one decision (rolling the dice it asks for), if the game is
-    /// still at <paramref name="version"/>; otherwise, or when no bot is deciding, leaves it as it is.
-    /// Clients call it to let bots play at a pace people can follow; the version keeps two watchers
-    /// from moving one bot twice.
+    /// Decides for the deciding seat what its timer decides once its time has run out; otherwise lets
+    /// the bot whose turn it is make one decision (rolling the dice it asks for). Either only if the
+    /// game is still at <paramref name="version"/>; otherwise, or when neither is due, leaves it as it
+    /// is. Clients call it to let bots play at a pace people can follow, and once a timer they show
+    /// has run out; the version keeps two watchers from moving one bot twice.
     /// </summary>
     /// <exception cref="GameNotFoundException">There is no such game.</exception>
     public async Task<GameSnapshot> Advance(GameId id, int version, CancellationToken cancellationToken)
@@ -129,24 +132,50 @@ public sealed class GameService(
 
     private async Task<GameSnapshot> Advanced(GameSnapshot snapshot, CancellationToken cancellationToken)
     {
-        Played played = await DecisionLoop.PlayWhile(
-            snapshot.Rules,
-            new Played(snapshot.State, snapshot.Record.Actions),
-            this.DecidersOf(snapshot.Record),
-            this._dice,
-            1,
-            cancellationToken
-        );
+        Played start = new(snapshot.State, snapshot.Record.Actions);
+        Played played = snapshot.TimeLeft == TimeSpan.Zero
+            ? TimedOut(snapshot.Rules, start)
+            : await DecisionLoop.PlayWhile(
+                snapshot.Rules,
+                start,
+                this.DecidersOf(snapshot.Record),
+                this._dice,
+                1,
+                cancellationToken
+            );
         GameRecord updated = snapshot.Record.Next() with { Actions = played.Actions };
         return played.Actions.Count == snapshot.Record.Actions.Count
             ? snapshot
             : await this.Saved(updated, snapshot.Rules, cancellationToken);
     }
 
+    /// <summary>The deciding seat's time is up: its timer decides for it.</summary>
+    private static Played TimedOut(IRulesApplying rules, Played played)
+    {
+        GameAction action = rules.TimerOf(played.State)!.Default; // only a timed decision runs out of time
+        Transition transition = rules.Apply(played.State, action);
+        return new Played(transition.State, played.Actions.Add(action.Describe()));
+    }
+
     private async Task<GameSnapshot> Saved(GameRecord record, IRulesApplying rules, CancellationToken cancellationToken)
     {
         await this.Save(record, cancellationToken);
-        return GameSnapshot.Of(record, rules);
+        return this.Timed(GameSnapshot.Of(record, rules));
+    }
+
+    /// <summary>The snapshot with the time its deciding seat has left, if its decision is timed.</summary>
+    private GameSnapshot Timed(GameSnapshot snapshot)
+    {
+        DecisionTimer? timer = snapshot.Rules.TimerOf(snapshot.State);
+        return timer is null
+            ? snapshot
+            : snapshot with { TimeLeft = this.TimeLeft(snapshot.Record, timer) };
+    }
+
+    private TimeSpan TimeLeft(GameRecord record, DecisionTimer timer)
+    {
+        DateTimeOffset deadline = this._clock.Since(record.Id, record.Version) + this._settings.LengthOf(timer.Name);
+        return TimeSpan.FromTicks(Math.Max(0, (deadline - this._clock.Now).Ticks));
     }
 
     private ImmutableList<SeatController> ControllersFor(GameState initial, ImmutableList<SeatPlan> seats) =>

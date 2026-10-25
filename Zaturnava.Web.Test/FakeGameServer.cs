@@ -31,11 +31,14 @@ internal sealed class FakeGameServer : IGameServing
         [new PieceDto(0, "raja", "Raja", 0, 0)],
         [
             new SeatDto(0, "Black", 0, 0, "human", null, []),
-            new SeatDto(1, "Yellow", 1, 5, "bot", "Random", [new PrisonerDto("boat", "Boat", 0)]),
+            new SeatDto(1, "Yellow", 1, 5, "bot", "Random", [new PrisonerDto(7, "boat", "Boat", 0)]),
         ],
         [Pass, Forward, Leap],
         [],
         [],
+        null,
+        false,
+        null,
         null
     );
 

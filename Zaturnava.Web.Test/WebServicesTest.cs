@@ -27,7 +27,7 @@ public sealed class WebServicesTest
         Assert.Equal(
             (
                 "https://zaturnava.example/",
-                new TableSettings(TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(1.5)),
+                new TableSettings(TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(1.5), TimeSpan.FromSeconds(1)),
                 typeof(HttpGameClient)
             ),
             (
@@ -50,7 +50,7 @@ public sealed class WebServicesTest
 
         // Assert
         Assert.Equal(
-            (Page, new TableSettings(TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(0.9))),
+            (Page, new TableSettings(TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(0.9), TimeSpan.FromSeconds(1))),
             (
                 services.GetRequiredService<HttpClient>().BaseAddress?.ToString(),
                 services.GetRequiredService<TableSettings>()

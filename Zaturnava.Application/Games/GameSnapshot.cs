@@ -9,7 +9,8 @@ namespace Net.NowhereAtAll.Zaturnava.Application.Games;
 
 /// <summary>
 /// A game as it stands: its record, its rules, the replayed state, everything that has happened so far
-/// (in order), and what may be done next.
+/// (in order), and what may be done next - and, if the deciding seat's decision is timed, how long it
+/// has left.
 /// </summary>
 public sealed record GameSnapshot(
     GameRecord Record,
@@ -19,6 +20,9 @@ public sealed record GameSnapshot(
     ImmutableList<GameAction> LegalActions
 )
 {
+    /// <summary>How long the deciding seat has left to decide; null if it may take as long as it likes.</summary>
+    public TimeSpan? TimeLeft { get; init; }
+
     /// <summary>The game <paramref name="record"/> describes, replayed by <paramref name="rules"/>.</summary>
     public static GameSnapshot Of([Required] GameRecord record, [Required] IRulesApplying rules)
     {

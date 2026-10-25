@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using Net.NowhereAtAll.Zaturnava.Application.Bots;
 using Net.NowhereAtAll.Zaturnava.Application.Games;
 using Net.NowhereAtAll.Zaturnava.Application.Rulesets;
+using Net.NowhereAtAll.Zaturnava.Application.Running;
 using Net.NowhereAtAll.Zaturnava.Application.Test.Fakes;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Boards;
@@ -21,7 +22,10 @@ public sealed class GameServiceTest
     private static readonly SeatId Second = new(1);
     private static readonly SeatPlan Bot = new(FirstChoiceBot.BotId);
 
+    private static readonly TimeSpan FiveSeconds = TimeSpan.FromSeconds(5);
+
     private readonly RecordingNotifier _notifier = new();
+    private readonly SteppedTime _time = new();
     private readonly GameService _service;
     private readonly GameService _paced;
     private readonly CancellationToken _cancellation = TestContext.Current.CancellationToken;
@@ -29,7 +33,7 @@ public sealed class GameServiceTest
     /// <summary>Two services: one whose bots reply at once, one whose bots wait to be advanced.</summary>
     public GameServiceTest()
     {
-        this._service = this.Service(new GameServiceSettings(AtOnce));
+        this._service = this.Service(GameServiceSettings.Default with { MaximumBotSteps = AtOnce });
         this._paced = this.Service(GameServiceSettings.Default);
     }
 
@@ -358,6 +362,75 @@ public sealed class GameServiceTest
     }
 
     [Fact]
+    public async Task Get_WhenTheDecisionIsTimed_SaysHowLongIsLeft()
+    {
+        // Arrange
+        (GameId id, _) = await this.SecondSeatToPass();
+        this._time.Pass(FiveSeconds);
+
+        // Act
+        GameSnapshot snapshot = await this._paced.Get(id, this._cancellation);
+
+        // Assert
+        Assert.Equal(TimeSpan.FromSeconds(25), snapshot.TimeLeft);
+    }
+
+    [Fact]
+    public async Task Get_WhenTheTimerIsSet_TakesItsLength()
+    {
+        // Arrange
+        GameServiceSettings settings = GameServiceSettings.Default with
+        {
+            Timers = ImmutableDictionary<string, TimeSpan>.Empty.Add(TinyRules.Timer, FiveSeconds),
+        };
+        GameService service = this.Service(settings);
+        GameId id = await service.Create(TinyRules.RulesetId, [Bot, SeatPlan.Open], this._cancellation);
+        GameSnapshot started = await service.Advance(id, 0, this._cancellation);
+
+        // Act
+        GameSnapshot snapshot = await service.Get(id, this._cancellation);
+
+        // Assert
+        Assert.Equal((Second, FiveSeconds), (started.State.DecidingSeat, snapshot.TimeLeft));
+    }
+
+    [Fact]
+    public async Task Advance_WhenATimedDecisionHasRunOutOfTime_DecidesWhatItsTimerDecides()
+    {
+        // Arrange
+        (GameId id, GameSnapshot waiting) = await this.SecondSeatToPass();
+        this._time.Pass(TimeSpan.FromSeconds(31));
+
+        // Act
+        GameSnapshot snapshot = await this._paced.Advance(id, waiting.Record.Version, this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            (First, "pass", "1", null),
+            (
+                snapshot.State.DecidingSeat,
+                snapshot.Record.Actions[^1].Kind,
+                snapshot.Record.Actions[^1].Arguments["actor"],
+                snapshot.TimeLeft
+            )
+        );
+    }
+
+    [Fact]
+    public async Task Advance_WhenATimedPersonStillHasTime_ChangesNothing()
+    {
+        // Arrange
+        (GameId id, GameSnapshot waiting) = await this.SecondSeatToPass();
+        this._time.Pass(FiveSeconds);
+
+        // Act
+        GameSnapshot snapshot = await this._paced.Advance(id, waiting.Record.Version, this._cancellation);
+
+        // Assert
+        Assert.Equal(waiting.Record.Version, snapshot.Record.Version);
+    }
+
+    [Fact]
     public async Task Get_WhenThePlayerHasRolled_TellsOfTheRoll()
     {
         // Arrange
@@ -375,6 +448,16 @@ public sealed class GameServiceTest
 
     private static ActionDescriptor Pass(SeatId seat) => new PassAction(seat).Describe();
 
+    /// <summary>A paced game of two people in which the first has passed: the second has 30 seconds to.</summary>
+    private async Task<(GameId Id, GameSnapshot Waiting)> SecondSeatToPass()
+    {
+        GameId id =
+            await this._paced.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
+        string token = await this._paced.Claim(id, First, this._cancellation);
+        GameSnapshot waiting = await this._paced.Submit(id, token, Pass(First), this._cancellation);
+        return (id, waiting);
+    }
+
     private GameService Service(GameServiceSettings settings) =>
         new(
             new RulesetCatalog([new TinyRules(GameLength), new RollingRules(GameLength)]),
@@ -382,6 +465,7 @@ public sealed class GameServiceTest
             new InMemoryGameStore(),
             this._notifier,
             new LoadedDice(4),
+            new DecisionClock(this._time),
             settings
         );
 }

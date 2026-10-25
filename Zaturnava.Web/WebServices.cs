@@ -16,6 +16,8 @@ internal static class WebServices
     public const double DefaultPollSeconds = 2;
     public const double DefaultBotPaceSeconds = 0.9;
 
+    private static readonly TimeSpan CountdownStep = TimeSpan.FromSeconds(1);
+
     public static IServiceCollection AddZaturnavaWeb(
         this IServiceCollection services,
         IConfiguration configuration,
@@ -25,10 +27,12 @@ internal static class WebServices
             .AddSingleton(new HttpClient { BaseAddress = new Uri(configuration[ServerUrlKey] ?? pageAddress) })
             .AddSingleton<IGameServing, HttpGameClient>()
             .AddSingleton<Browser>()
+            .AddSingleton(TimeProvider.System)
             .AddSingleton(
                 new TableSettings(
                     TimeSpan.FromSeconds(configuration.GetValue(PollSecondsKey, DefaultPollSeconds)),
-                    TimeSpan.FromSeconds(configuration.GetValue(BotPaceSecondsKey, DefaultBotPaceSeconds))
+                    TimeSpan.FromSeconds(configuration.GetValue(BotPaceSecondsKey, DefaultBotPaceSeconds)),
+                    CountdownStep
                 )
             );
 }

@@ -14,7 +14,8 @@ internal sealed class PageContext : BunitContext
         _ = this.Services.AddSingleton<IGameServing>(this.Server);
         _ = this.Services.AddSingleton<Browser>();
         TimeSpan interval = pollInterval ?? Timeout.InfiniteTimeSpan;
-        _ = this.Services.AddSingleton(new TableSettings(interval, interval));
+        _ = this.Services.AddSingleton(new TableSettings(interval, interval, interval));
+        _ = this.Services.AddSingleton(TimeProvider.System);
     }
 
     public FakeGameServer Server { get; } = new();

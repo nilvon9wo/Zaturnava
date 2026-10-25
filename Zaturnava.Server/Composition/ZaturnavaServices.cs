@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Net.NowhereAtAll.Zaturnava.Application.Bots;
 using Net.NowhereAtAll.Zaturnava.Application.Games;
 using Net.NowhereAtAll.Zaturnava.Application.Ports;
@@ -19,6 +20,14 @@ internal static class ZaturnavaServices
     /// <summary>The configuration key for the most moves bots may make in a row before a person must.</summary>
     public const string MaximumBotStepsKey = "Games:MaximumBotSteps";
 
+    /// <summary>
+    /// The configuration section giving, in seconds, how long each timed decision may take, by the
+    /// ruleset's name for its timer; <c>Default</c> for any it does not name.
+    /// </summary>
+    public const string TimersKey = "Games:Timers";
+
+    private const string DefaultTimerKey = "Default";
+
     public static IServiceCollection AddZaturnava(this IServiceCollection services, IConfiguration configuration) =>
         services
             .AddGameStorage(configuration)
@@ -27,6 +36,7 @@ internal static class ZaturnavaServices
             .AddSingleton<IBotLocating>(Bots())
             .AddSingleton<IGameNotifying, SilentNotifier>()
             .AddSingleton<IDiceRolling>(new RandomDice(Random.Shared))
+            .AddSingleton(new DecisionClock(TimeProvider.System))
             .AddSingleton(Settings(configuration))
             .AddScoped<GameService>()
             .AddProblemDetails()
@@ -34,6 +44,17 @@ internal static class ZaturnavaServices
 
     private static BotCatalog Bots() => new([new MidasBot(Random.Shared), new RandomBot(Random.Shared)]);
 
-    private static GameServiceSettings Settings(IConfiguration configuration) =>
-        new(configuration.GetValue(MaximumBotStepsKey, GameServiceSettings.DefaultMaximumBotSteps));
+    private static GameServiceSettings Settings(IConfiguration configuration)
+    {
+        IConfigurationSection timers = configuration.GetSection(TimersKey);
+        double defaultSeconds =
+            timers.GetValue(DefaultTimerKey, GameServiceSettings.DefaultTimerLength.TotalSeconds);
+        return new GameServiceSettings(
+            configuration.GetValue(MaximumBotStepsKey, GameServiceSettings.DefaultMaximumBotSteps),
+            TimeSpan.FromSeconds(defaultSeconds),
+            timers.GetChildren()
+                .Where(timer => timer.Key != DefaultTimerKey)
+                .ToImmutableDictionary(timer => timer.Key, timer => TimeSpan.FromSeconds(timer.Get<double>()))
+        );
+    }
 }
