@@ -20,6 +20,9 @@ public sealed class ClassicRulesTest
     private static readonly SeatId Red = new(3);
     private static readonly SquareGridTopology Grid = new(ClassicSetup.Side, ClassicSetup.Side);
 
+    /// <summary>Black's throne, the square its Raja starts on.</summary>
+    private static readonly CellId BlackThrone = Grid.CellAt(3, 0);
+
     /// <summary>Yellow's throne, the square its Raja starts on.</summary>
     private static readonly CellId YellowThrone = Grid.CellAt(0, 4);
 
@@ -1476,6 +1479,130 @@ public sealed class ClassicRulesTest
         );
     }
 
+    [Theory]
+    [InlineData(5, 5, true)]
+    [InlineData(5, 6, false)]
+    public void LegalActions_WhenDoublesAreRolled_LetACapturedPieceOfTheirKindEscapeHome(
+        int first,
+        int second,
+        bool mayEscape
+    )
+    {
+        // Arrange - Yellow holds Black's Raja 3, which starts on d1, and Black's Boat 0
+        GameState state = this.Escapes() with { Dice = [first, second] };
+
+        // Act
+        ImmutableList<GameAction> actions = this._rules.LegalActions(state);
+
+        // Assert
+        Assert.Equal(
+            mayEscape ? [new EscapeAction(Black, new PieceId(3), BlackThrone)] : [],
+            actions.OfType<EscapeAction>()
+        );
+    }
+
+    [Fact]
+    public void Apply_WhenAPieceEscapes_PutsItHomeForItsArmyAndEndsTheTurn()
+    {
+        // Arrange
+        GameState state = this.Escapes() with { Dice = [5, 5] };
+        Piece raja = Piece(3, ClassicPieces.Raja, Black);
+
+        // Act
+        Transition transition = this._rules.Apply(state, new EscapeAction(Black, raja.Id, BlackThrone));
+
+        // Assert
+        Assert.Equal(new PieceEscaped(raja, BlackThrone, Black), transition.Events[0]);
+        Assert.Equal(
+            (raja, 1, Yellow, true),
+            (
+                transition.State.Position.PieceAt(BlackThrone),
+                transition.State.Prisoners.Count,
+                transition.State.DecidingSeat,
+                transition.State.Dice.IsEmpty
+            )
+        );
+    }
+
+    [Fact]
+    public void Apply_WhenAnEnemyStandsWhereAPieceEscapesTo_TakesIt()
+    {
+        // Arrange - Yellow's Pawn stands on d1
+        GameState escapes = this.Escapes();
+        Piece pawn = Piece(20, ClassicPieces.Pawn, Yellow);
+        GameState state = escapes with { Dice = [5, 5], Position = escapes.Position.Place(BlackThrone, pawn) };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new EscapeAction(Black, new PieceId(3), BlackThrone));
+
+        // Assert
+        Assert.Equal(new PieceCaptured(pawn, Black, 1), transition.Events[1]);
+        Assert.Equal(
+            (1, new Prisoner(pawn, Black)),
+            (transition.State.Scores[Black], transition.State.Prisoners[^1])
+        );
+    }
+
+    [Fact]
+    public void Apply_WhenAnEscapeTakesTheLastEnemyPiece_EndsTheGameWithThatTeamWinning()
+    {
+        // Arrange - Yellow's Pawn on d1 is the last enemy piece
+        GameState state = this.Escapes() with
+        {
+            Dice = [5, 5],
+            Position = Position.Empty
+                .Place(Grid.CellAt(3, 3), Piece(4, ClassicPieces.Pawn, Black))
+                .Place(BlackThrone, Piece(13, ClassicPieces.Pawn, Yellow)),
+        };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new EscapeAction(Black, new PieceId(3), BlackThrone));
+
+        // Assert
+        GameOutcome won = new([Black, Green], "only one team has pieces left");
+        Assert.Equal((null, won), (transition.State.DecidingSeat, transition.State.Outcome));
+    }
+
+    [Fact]
+    public void LegalActions_WhenAnAllyStandsWhereAPieceWouldEscapeTo_OffersTheNearestFreeSquares()
+    {
+        // Arrange - Green's Pawn stands on d1, and Black has no other Raja's square to go to
+        GameState escapes = this.Escapes();
+        GameState state = escapes with
+        {
+            Dice = [5, 5],
+            Position = escapes.Position.Place(BlackThrone, Piece(21, ClassicPieces.Pawn, Green)),
+        };
+
+        // Act
+        ImmutableList<GameAction> actions = this._rules.LegalActions(state);
+
+        // Assert - on its own row first, then nearest the back rank, then nearest the left
+        Assert.Equal(
+            [Grid.CellAt(2, 0), Grid.CellAt(4, 0), Grid.CellAt(2, 1), Grid.CellAt(3, 1), Grid.CellAt(4, 1)],
+            actions.OfType<EscapeAction>().Select(escape => escape.Home)
+        );
+    }
+
+    [Fact]
+    public void Apply_WhenOnlyAnEscapeCanUseTheDoubles_DoesNotForfeitThem()
+    {
+        // Arrange - Boats rolled, and Black has no Boat on the board, but Yellow holds one of Black's
+        GameState state = this.Escapes();
+        int[] boats = [1, 1];
+
+        // Act
+        Transition transition =
+            this._rules.Apply(state with { AwaitedDice = new DiceRequest(2, 6) }, new DiceAction(Black, [.. boats]));
+
+        // Assert
+        Assert.Equal(Black, transition.State.DecidingSeat);
+        Assert.Equal(
+            [new PassAction(Black), new EscapeAction(Black, new PieceId(0), Grid.CellAt(0, 0))],
+            this._rules.LegalActions(transition.State)
+        );
+    }
+
     [Fact]
     public void Apply_WhenAnOfferIsDeclined_KeepsThePrisonersAndTheOffererDecidesAgain()
     {
@@ -1736,6 +1863,23 @@ public sealed class ClassicRulesTest
         };
 
     /// <summary>Yellow answering Black's offer of Yellow's pawn 12 back, for Black's horse 1.</summary>
+    /// <summary>
+    /// Black's turn, with a Pawn in mid-board: Yellow holds Black's Raja 3 (which starts on d1, Black's
+    /// throne) and Black's Boat 0 (which starts on a1); Yellow has a Pawn to take the next turn.
+    /// </summary>
+    private GameState Escapes() =>
+        this.StateWith(
+            (Grid.CellAt(3, 3), Piece(4, ClassicPieces.Pawn, Black)),
+            (Grid.CellAt(5, 5), Piece(13, ClassicPieces.Pawn, Yellow))
+        ) with
+        {
+            Prisoners =
+            [
+                new Prisoner(Piece(3, ClassicPieces.Raja, Black), Yellow),
+                new Prisoner(Piece(0, ClassicPieces.Boat, Black), Yellow),
+            ],
+        };
+
     private GameState AcceptingRansom() =>
         this.Ransoms() with
         {

@@ -157,6 +157,31 @@ public sealed class GameLogTest
         Assert.Equal((Cell("h8").Value, Cell("a7").Value), (log[0].To, log[^1].To));
     }
 
+    [Fact]
+    public void LatestOf_WhenPrisonersEscape_TellsOfItAndOfWhatTheyTake()
+    {
+        // Arrange - Black's own Horse escapes, taking Yellow's Pawn; then Red lets Yellow's Pawn escape
+        GameSnapshot snapshot = Snapshot(
+            new PieceEscaped(Horse, Cell("b1"), Black),
+            new PieceCaptured(Pawn, Black, 1),
+            new PieceEscaped(Pawn, Cell("a7"), Red)
+        );
+
+        // Act
+        ImmutableList<EventDto> log = GameLog.LatestOf(snapshot);
+
+        // Assert
+        Assert.Equal(
+            [
+                "escaped 0: Black's Horse escaped, to b1.",
+                "captured 0: Black took Yellow's Pawn (+1).",
+                "escaped 3: Red let Yellow's Pawn escape, to a7.",
+            ],
+            log.Select(Told)
+        );
+        Assert.Equal(Cell("a7").Value, log[^1].To);
+    }
+
     [Theory]
     [InlineData(new[] { 0, 2 }, "ended 0: Black and Green won: only one team has pieces left.")]
     [InlineData(new[] { 1 }, "ended 1: Yellow won: only one team has pieces left.")]

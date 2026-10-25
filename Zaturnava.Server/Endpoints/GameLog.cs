@@ -127,6 +127,7 @@ file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bo
                 $"{this.Name(declined.Offer.To)} declined {this.Name(declined.Offer.From)}'s offer."
             ),
             PieceReturned returned => this.Returned(number, returned),
+            PieceEscaped escaped => this.Escaped(number, escaped),
             RajaCapturedOnThrone onThrone => this.Add(
                 number,
                 EventDto.Bonus,
@@ -203,6 +204,19 @@ file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bo
         string text = $"{this.Name(piece.Owner)}'s {this.Rules.NameOf(piece.Kind)} went home, to {cell}.";
         EventDto told = new(number, EventDto.Ransom, piece.Owner.Value, text, null, returned.Cell.Value);
         return this with { Told = this.Told.Add(told) };
+    }
+
+    /// <summary>"Black's Raja escaped, to d1.", or "Black let Green's Raja escape, to h4."</summary>
+    private Teller Escaped(int number, PieceEscaped escaped)
+    {
+        Piece piece = escaped.Piece;
+        string kind = this.Rules.NameOf(piece.Kind);
+        string cell = this.Rules.Topology.NameOf(escaped.Cell);
+        string text = piece.Owner == escaped.EscapedBy
+            ? $"{this.Name(piece.Owner)}'s {kind} escaped, to {cell}."
+            : $"{this.Name(escaped.EscapedBy)} let {this.Name(piece.Owner)}'s {kind} escape, to {cell}.";
+        EventDto told = new(number, EventDto.Escaped, escaped.EscapedBy.Value, text, null, escaped.Cell.Value);
+        return this with { Told = this.Told.Add(told), LastMoved = piece };
     }
 
     private Teller Add(int number, string kind, SeatId seat, string text) =>

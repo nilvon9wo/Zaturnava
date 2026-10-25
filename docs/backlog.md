@@ -23,7 +23,7 @@ did them.
 - **21, 22, 26** (rest) Ending the game by agreement; the idle-rounds safety net as a per-game
   setting.
 - **20** Offer to end the game, for the other players to accept.
-- Escape on doubles (§7), the empire bonus (§5): next, with the grand game's
+- The empire bonus (§5): next, with the grand game's
   [Stage 0](grand/roadmap.md#stage-0--finish-what-the-grand-game-inherits).
 - Boat triumph (§9): a nice-to-have; the condition is so unlikely that no one may miss it.
 - Ransom (§8): bots that offer during their turn.
@@ -131,3 +131,5 @@ After playing against Argus (2026-10-25):
   player at the same seat) or a quick game.
 - A promotion's choices list the player's own pieces first, then their allies', then the rest, each
   group the most valuable first.
+- Escape on doubles (rules §7): a prisoner of the kind the doubles show, of an army the player
+  commands, goes home instead of the double move, taking an enemy that stands there.

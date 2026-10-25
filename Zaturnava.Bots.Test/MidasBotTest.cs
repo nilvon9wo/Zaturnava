@@ -77,6 +77,19 @@ public sealed class MidasBotTest
     }
 
     [Fact]
+    public async Task Decide_WhenItsPieceMayEscape_LetsItEscape()
+    {
+        // Arrange - Yellow holds its Horse 20
+        DecisionRequest request = Ransoms.Escaping();
+
+        // Act
+        ImmutableHashSet<GameAction> chosen = await Choices(request);
+
+        // Assert
+        Assert.Equal([new EscapeAction(Seat, new PieceId(20), new CellId(7))], chosen);
+    }
+
+    [Fact]
     public async Task Decide_WhenPassingIsAllThereIs_Passes()
     {
         // Arrange

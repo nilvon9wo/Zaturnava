@@ -160,18 +160,28 @@ internal static class GameViews
     }
 
     /// <summary>
-    /// What a button says that its kind alone cannot: which Pawn becomes what; that passing once a turn
-    /// is over means being done offering ransoms; and that passing on a promotion due leaves it for
-    /// later. Null for any other action.
+    /// What a button says that its kind alone cannot: which Pawn becomes what; which prisoner escapes, and
+    /// where to; that passing once a turn is over means being done offering ransoms; and that passing on a
+    /// promotion due leaves it for later. Null for any other action.
     /// </summary>
     private static string? LabelOf(GameSnapshot snapshot, GameAction action) =>
         (action, snapshot.State.IsRansomWindow, snapshot.State.PromotionDue) switch
         {
             (PromoteAction promote, _, _) => PromotionOf(snapshot, promote),
+            (EscapeAction escape, _, _) => EscapeOf(snapshot, escape),
             (PassAction, true, _) => "Done offering",
             (PassAction, _, { }) => "Promote later",
             _ => null,
         };
+
+    /// <summary>"Escape Green's Raja, held by Red, to h4".</summary>
+    private static string EscapeOf(GameSnapshot snapshot, EscapeAction escape)
+    {
+        IRulesApplying rules = snapshot.Rules;
+        Prisoner prisoner = snapshot.State.Prisoners.First(held => held.Piece.Id == escape.Piece);
+        return $"Escape {rules.NameOf(prisoner.Piece.Owner)}'s {rules.NameOf(prisoner.Piece.Kind)}, "
+            + $"held by {rules.NameOf(prisoner.Holder)}, to {rules.Topology.NameOf(escape.Home)}";
+    }
 
     /// <summary>"Promote the Pawn on c8 to Green's Elephant, held by Red".</summary>
     private static string PromotionOf(GameSnapshot snapshot, PromoteAction promote)
