@@ -57,7 +57,7 @@ public sealed class ClassicRules : IRulesApplying
     private readonly Ransom _ransom;
 
     public ClassicRules()
-        : this(DiceProfile.WeightedSixSided, DefaultIdleRounds, CommandedCaptures.Anything, PawnPromotion.OtherArmies)
+        : this(DiceProfile.WeightedSixSided, DefaultIdleRounds, CommandedCaptures.NotOwnTeam, PawnPromotion.OtherArmies)
     {
     }
 

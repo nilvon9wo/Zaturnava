@@ -275,13 +275,16 @@ about the occupied player's army for that turn.
 own army, or a Raja-less ally's) takes only that player's enemies. A piece
 of an **enemy** army the player commands — through a throne their Raja holds
 (§6.1a), or moving for a seat whose throne their Raja holds (§6.3) — may take
-**any** piece: its own army's, its ally's, or the commanding player's own
-team's. **[toggle: `control.enemyArmyCaptures`]** — Default: `anything`;
-`notOwnTeam` forbids taking the commanding player's own team's pieces.
+any piece but the commanding player's own team's: its own army's, or its
+ally's. **[toggle: `control.enemyArmyCaptures`]** — Default: `notOwnTeam`;
+`anything` lets it take the commanding player's own team's pieces too.
+*(Changed 2026-10-25: the default was `anything`, until a player took their
+own Pawn so, and could never ransom it back from themselves.)*
 
-Taking a piece of one's own team scores no one: no points for the piece, and
-no on-throne bonus. The piece is still taken prisoner, by the player who
-made the move.
+Taking a piece of one's own team (with `anything`) scores no one: no points
+for the piece, and no on-throne bonus. The piece is still taken prisoner, by
+the player who made the move: whoever moves a piece holds what it takes, and
+the log says so when the piece was another army's.
 
 ## 7. Doubles & Escape
 
@@ -507,7 +510,7 @@ configuration this document describes.
 | `dice.profile` | `2d6-weighted` | Dice count/sides and value→piece-category mapping. Alternative: `2d4-uniform`. |
 | `promotion.pool` | `unrestricted` | Whether a promoting Pawn may become any captured piece, or only one that started on the same file/column. |
 | `promotion.pawns` | `otherArmies` | Whether a promoting Pawn may become another army's captured Pawn, or never a Pawn (§8). |
-| `control.enemyArmyCaptures` | `anything` | What a piece of an enemy army a player commands may take: `anything`, or `notOwnTeam` (§6.4). |
+| `control.enemyArmyCaptures` | `notOwnTeam` | What a piece of an enemy army a player commands may take: `anything`, or `notOwnTeam` (§6.4). |
 | `gameEnd.safetyNet.*` | off | Optional auto-end conditions (move cap, universal-pass, etc.) layered on top of end-by-agreement, mainly for unattended/bot games. |
 | `scoring.points.pawn` | `1` | Points awarded for capturing a Pawn. |
 | `scoring.points.boat` | `2` | Points awarded for capturing a Boat. |

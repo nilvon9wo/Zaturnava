@@ -12,8 +12,9 @@ namespace Net.NowhereAtAll.Zaturnava.Bots.Test;
 
 /// <summary>
 /// Rules in which each action scores whatever <paramref name="points"/> says for it (nothing, if it
-/// says nothing), for its actor; all a bot can learn from them is what each action is worth, and what
-/// each kind of piece is worth (<see cref="Worth"/>). Any seat may offer once its turn is over.
+/// says nothing), for its actor; all a bot can learn from them is what each action is worth, what each
+/// kind of piece is worth (<see cref="Worth"/>), and that the Raja leads. Any seat may offer once its
+/// turn is over.
 /// </summary>
 internal sealed class ScoringRules(ImmutableDictionary<GameAction, int> points) : IRulesApplying
 {
@@ -63,7 +64,7 @@ internal sealed class ScoringRules(ImmutableDictionary<GameAction, int> points) 
 
     public ImmutableList<Attack> AttacksOf([Required] GameState state, SeatId seat) => [];
 
-    public bool IsLeader(PieceKindId kind) => false;
+    public bool IsLeader(PieceKindId kind) => kind == new PieceKindId("raja");
 
     public string NameOf(PieceKindId kind) => throw new NotSupportedException();
 

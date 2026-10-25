@@ -108,7 +108,7 @@ public sealed class GameLogTest
                 "shared 0: Black holds Red's throne, so moves for Red now.",
                 "moved 0: Black moved Yellow's Pawn from h2 to g2, without rolling. 15-14",
                 "bonus 3: Red's Raja entered Yellow's throne (+1).",
-                "captured 0: Black took Red's Raja (+5).",
+                "captured 0: Black took Red's Raja, with Yellow's Pawn, and holds it prisoner (+5).",
                 "bonus 0: Black took that Raja on its own throne (+2 more).",
                 "forfeited 0: Black could move nothing of Red's with 1 (Boat), so lost it.",
             ],

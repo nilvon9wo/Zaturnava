@@ -52,6 +52,9 @@ file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bo
 {
     private SeatId? SharedFor { get; init; }
 
+    /// <summary>The piece moved last, which takes whatever the move takes.</summary>
+    private Piece? LastMoved { get; init; }
+
     public Teller Tell(GameEvent happened, int number) =>
         happened switch
         {
@@ -94,7 +97,8 @@ file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bo
                 EventDto.Captured,
                 captured.CapturedBy,
                 $"{this.Name(captured.CapturedBy)} took {this.Whose(captured.Piece.Owner, captured.CapturedBy)} "
-                    + $"{this.Rules.NameOf(captured.Piece.Kind)} ({Scored(captured.Points)})."
+                    + $"{this.Rules.NameOf(captured.Piece.Kind)}{this.With(captured.CapturedBy)} "
+                    + $"({Scored(captured.Points)})."
             ),
             PiecePromoted promoted => this.Promoted(number, promoted),
             RansomWindowOpened window => this.Add(
@@ -208,6 +212,15 @@ file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bo
 
     private string Face(int value) => $"{Text(value)} ({this.Rules.NameOfDie(value)})";
 
+    /// <summary>
+    /// ", with Red's Elephant, and holds it prisoner", when the captor took with another army's piece;
+    /// nothing otherwise.
+    /// </summary>
+    private string With(SeatId captor) =>
+        this.LastMoved is { } taker && taker.Owner != captor
+            ? $", with {this.Name(taker.Owner)}'s {this.Rules.NameOf(taker.Kind)}, and holds it prisoner"
+            : string.Empty;
+
     /// <summary>" of Red's", while moving for Red; nothing otherwise.</summary>
     private string OfWhom() => this.SharedFor is { } seat ? $" of {this.Name(seat)}'s" : string.Empty;
 
@@ -226,6 +239,6 @@ file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bo
         string text = $"{this.Name(moved.MovedBy)} moved {whose} {this.Rules.NameOf(moved.Piece.Kind)} "
             + $"from {from} to {to}{how}.";
         EventDto told = new(number, EventDto.Moved, moved.MovedBy.Value, text, moved.From.Value, moved.To.Value);
-        return this with { Told = this.Told.Add(told) };
+        return this with { Told = this.Told.Add(told), LastMoved = moved.Piece };
     }
 }

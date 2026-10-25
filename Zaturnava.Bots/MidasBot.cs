@@ -30,13 +30,9 @@ public sealed class MidasBot(Random random) : IBotPlaying
     public Task<GameAction> Decide([Required] DecisionRequest request, CancellationToken cancellationToken) =>
         cancellationToken.IsCancellationRequested
             ? Task.FromCanceled<GameAction>(cancellationToken)
-            : Task.FromResult(AnswerTo(request) ?? BestTrade(request) ?? Greedy.Choose(request, this._random));
-
-    /// <summary>The answer to the ransom offered, if one is; null if none is.</summary>
-    private static GameAction? AnswerTo(DecisionRequest request) =>
-        Trading.BalanceOf(request) is { } balance
-            ? Answer(request.Seat, balance >= 0)
-            : null;
+            : Task.FromResult(
+                Trading.AnswerTo(request, 0) ?? BestTrade(request) ?? Greedy.Choose(request, this._random)
+            );
 
     /// <summary>The offer that gains the most, if any gains anything.</summary>
     private static OfferAction? BestTrade(DecisionRequest request) =>

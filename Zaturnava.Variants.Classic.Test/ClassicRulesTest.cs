@@ -878,6 +878,12 @@ public sealed class ClassicRulesTest
     public void Apply_WhenACommandedArmyTakesThePiecesOfItsCommandersTeam_ScoresNoOne()
     {
         // Arrange - Black commands Red, whose pawn can take Green's Raja on Green's own throne, e8
+        ClassicRules rules = new(
+            DiceProfile.WeightedSixSided,
+            ClassicRules.DefaultIdleRounds,
+            CommandedCaptures.Anything,
+            PawnPromotion.OtherArmies
+        );
         Piece raja = Piece(3, ClassicPieces.Raja, Green);
         GameState state = this.StateWith(
             (RedThrone, Piece(1, ClassicPieces.Raja, Black)),
@@ -886,7 +892,7 @@ public sealed class ClassicRulesTest
         );
 
         // Act
-        Transition transition = this._rules.Apply(state, new MoveAction(Black, Grid.CellAt(5, 6), Grid.CellAt(4, 7)));
+        Transition transition = rules.Apply(state, new MoveAction(Black, Grid.CellAt(5, 6), Grid.CellAt(4, 7)));
 
         // Assert
         Assert.Equal(

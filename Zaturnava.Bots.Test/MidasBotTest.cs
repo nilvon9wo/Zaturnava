@@ -123,6 +123,27 @@ public sealed class MidasBotTest
         Assert.Equal(answer, action.Describe().Kind);
     }
 
+    [Theory]
+    [InlineData(false, "decline")]
+    [InlineData(true, "accept")]
+    public async Task Decide_WhenOfferedAProfitByAnEnemyTeam_AcceptsOnlyIfThatTeamHasAPieceLeft(
+        bool hasAPiece,
+        string answer
+    )
+    {
+        // Arrange - its Horse back for a Pawn: worth 2 more, but it would bring back a team with nothing
+        (string, SeatId)[] pieces = hasAPiece
+            ? [("pawn", Seat), ("pawn", Ransoms.Yellow)]
+            : [("pawn", Seat)];
+        DecisionRequest offered = Ransoms.On(Ransoms.Offered([20], [10]), pieces);
+
+        // Act
+        GameAction action = await new MidasBot(new Random(1)).Decide(offered, this._cancellation);
+
+        // Assert
+        Assert.Equal(answer, action.Describe().Kind);
+    }
+
     [Fact]
     public async Task Decide_WhenItsTurnIsOver_OffersTheTradeThatGainsTheMost()
     {

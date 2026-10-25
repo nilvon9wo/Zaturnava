@@ -29,6 +29,40 @@ public sealed class SolomonBotTest
     }
 
     [Fact]
+    public async Task Decide_WhenAskedForAnEnemyLeader_DeclinesEvenWithinAPoint()
+    {
+        // Arrange - its Horse and Green's Pawn back, worth 4, for Yellow's Raja, worth 5
+        DecisionRequest offered = Ransoms.HoldingYellowsRaja(Ransoms.Offered([20, 21], [12]));
+
+        // Act
+        GameAction action = await new SolomonBot(new Random(1)).Decide(offered, this._cancellation);
+
+        // Assert
+        Assert.Equal("decline", action.Describe().Kind);
+    }
+
+    [Theory]
+    [InlineData("pawn", "horse", true)]
+    [InlineData("horse", "pawn", false)]
+    public async Task Decide_WhenAnEvenTradeIsOpen_OffersItOnlyIfItsTeamIsBehindOnTheBoard(
+        string ours,
+        string theirs,
+        bool offers
+    )
+    {
+        // Arrange - no ally's piece to give back; a Horse for a Horse, worth the same to both
+        DecisionRequest request =
+            Ransoms.On(Ransoms.WindowWithout(30), (ours, Ransoms.Black), (theirs, Ransoms.Yellow));
+        OfferAction even = new(Ransoms.Black, Ransoms.Yellow, [new PieceId(11)], [new PieceId(20)]);
+
+        // Act
+        GameAction action = await new SolomonBot(new Random(1)).Decide(request, this._cancellation);
+
+        // Assert
+        Assert.Equal(offers, action == even);
+    }
+
+    [Fact]
     public async Task Decide_WhenItsTurnIsOver_GivesItsAllysPieceBackFirst()
     {
         // Arrange

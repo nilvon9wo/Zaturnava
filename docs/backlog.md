@@ -114,3 +114,14 @@ Toward the grand game's [Stage 0](grand/roadmap.md#stage-0--finish-what-the-gran
   the worst an enemy could do in return (take a piece left unguarded, win an exchange, or step a
   leader onto its empty throne). It trades prisoners as Solomon does. In 40 games of self-play, a
   team of two Arguses beat a team of two Midases 38 times.
+
+After playing against Argus (2026-10-25):
+
+- A commanded enemy army may no longer take its commander's own team's pieces, by default (rules
+  §6.4): a player took their own Pawn so, and could never ransom it back from themselves.
+- The log says when a capture was made with another army's piece, and who holds the prisoner:
+  "Yellow took Black's Elephant, with Red's Elephant, and holds it prisoner (+4)."
+- Bots mind the table when they trade with an enemy: they never give a leader back, and make no trade
+  that leaves their team weaker against that enemy's, counting what each has on the board. So an
+  even trade suits only the team that is behind, and nothing given back revives a team that has
+  nothing left.
