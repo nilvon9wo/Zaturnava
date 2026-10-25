@@ -9,68 +9,71 @@ Nothing here is scheduled; the order is a proposal. Each stage names the open qu
 
 ## Stage 0 — Agree the design
 
-- Settle the open questions, first those that shape the engine: dice (**Q1**), leaders (**Q5**),
-  scoring and the purse (**Q12**, **Q13**), promotion (**Q14**).
-- Settle the sheet's [review notes](pieces.md#review-notes) (**Q22**).
-- Decide whether the spreadsheet is committed, as the catalogue's source, or the catalogue is kept
-  in Markdown (or as data in the code) and the sheet kept privately.
+- Settle the open questions, first those that shape the engine: the dice faces (**Q10**), how the
+  game is won (**Q11**), promotion by a piece's own condition (**Q13**), the classic bonuses
+  (**Q14**).
+- Settle the catalogue's [open notes](pieces.md#still-open) (**Q20**).
 - Choose a name, or keep "grand" as the working name of the variant's project and key.
 
 ## Stage 1 — The catalogue as data
 
 A new variant project (working name `Zaturnava.Variants.Grand`), holding every piece of
-[pieces.md](pieces.md) as data. The engine's movement grammar (`MovementRule`: step, slide, leap,
-move-only, capture-only) already covers most of them. It grows to cover the rest, each a few
-lines of data once the grammar knows how:
+[pieces.md](pieces.md) as data, with its class. The engine's movement grammar (`MovementRule`:
+step, slide, leap, move-only, capture-only) already covers most of them. It grows to cover the
+rest, each a few lines of data once the grammar knows how:
 
 - **Lame leapers**: Horse, the Janggi and Xiangqi Elephants (a leap blocked by a cell on the way).
 - **Hoppers**: the Cannons, the Grasshopper (a move or capture that needs a piece to jump).
 - **Riders**: the Knightrider (a slide by leaps).
-- **Area rules**: palace, river, colour — kept as a piece's restrictions, so that they can be lifted.
+- **Area rules**: palace, river, colour — kept as a piece's restrictions, so that those that may be
+  bought off can be.
 
 The piece-information card (§8 of the specification) can come here too, and serve the classic game
 at once.
 
-Waits on: **Q9**, **Q20**, **Q21**, **Q22**.
+Waits on: **Q7**, **Q19**, **Q20**.
 
-## Stage 2 — The board
+## Stage 2 — The board and the dice
 
 - Any even width and length; four kingdoms; rivers drawn on the board.
-- Same-side and opposite-corner arrangements, with forward for each (**Q3**, **Q8**).
+- Same-side and opposite-corner arrangements, with forward for each (**Q2**, **Q6**).
 - A team game or everyone for themselves (`TeamGraph` already allows both).
-- The lobby's game-creation form, with "at random" for every setting (**Q2**).
+- Dice that name a class (**Q10**).
+- The lobby's game-creation form, with "at random" for every setting (**Q1**).
 - To be playable before the draft exists: each army a fixed one, set by the program.
 
 ## Stage 3 — Palaces, thrones and leaders
 
 - A palace (3 × 3) and its throne, per army; palace lines drawn, and the move toward the throne
-  (**Q10**); confinement to a palace (**Q11**).
+  (**Q8**); confinement to a palace (**Q9**).
 - Several leaders in one army: throne control, and everything the classic rules say of "the Raja",
-  said of leaders (**Q1**, **Q5**).
+  said of leaders.
+- Scoring by piece value, with the classic bonuses as settled (**Q14**), and the end of the game
+  (**Q11**).
 
 ## Stage 4 — The draft
 
 - A setup phase before play: each player drafts within the budget, buys lifts, places their palace,
-  throne and pieces (**Q6**, **Q7**); a "fill at random" for each step.
-- Infantry losing start-row powers when placed beyond row 2 (**Q4**).
+  throne and pieces, in secret or in turn as the game is set (**Q4**, **Q5**); a "fill at random"
+  for each step. Points not spent start the player's score.
+- Infantry losing start-row powers when placed beyond row 2 (**Q3**).
 - Bots draft too: Random at random, Midas by value, Solomon… evenly.
 
 ## Stage 5 — Points to spend
 
-- Upgrades and promotions bought in play, in a palace with the player's own leader on its throne
-  (**Q13**, **Q14**).
-- The four-throne bonus (**Q15**).
+- Upgrades and promotions bought in play, in a palace with the player's own leader on its throne,
+  lowering the score.
+- Promotion by a piece's own condition (**Q13**), and Infantry promoting at the far edge.
+- The four-throne bonus (**Q12**).
 - Bots that spend.
 
 ## Stage 6 — Special powers
 
 - Start-row powers: the two-square first move, *en passant*.
-- Castling (**Q18**, **Q19**).
-- The flying-general capture (**Q16**).
-- The palace face-off (**Q17**): a decision out of turn, which the turn machine handles as it
+- Castling (**Q17**, **Q18**).
+- The flying-general capture (**Q15**).
+- The palace face-off (**Q16**): a decision out of turn, which the turn machine handles as it
   handles a ransom window.
-- Each promotion by its own condition (Shogi's far three ranks, Makruk's sixth rank, the Western
-  last rank).
 
 ## Stage 7 — Looks
 
@@ -81,3 +84,4 @@ Waits on: **Q9**, **Q20**, **Q21**, **Q22**.
 
 - More kingdoms than four, or of unequal size.
 - More pieces.
+- A second palace, if one may be bought (**Q5**).
