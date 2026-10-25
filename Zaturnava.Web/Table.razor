@@ -31,7 +31,7 @@
         }
     </header>
 
-    @if (this._problem is { } problem)
+    @if (this._problem is { } problem && this._view is null)
     {
         <p class="problem" role="alert">@problem</p>
     }
@@ -58,6 +58,10 @@
 
             <aside class="side">
                 <div class="@(this._turn is null ? "turn" : "turn yours")">
+                    @if (this._problem is { } trouble)
+                    {
+                        <p class="problem" role="alert">@trouble</p>
+                    }
                     <p class="status">@this.Status(view)</p>
                     @if (view.Outcome is not null)
                     {
