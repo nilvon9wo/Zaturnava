@@ -6,13 +6,13 @@ source; this page is a readable copy of it, and the two are changed together.
 
 ## Value
 
-A piece's value is the sum of the sheet's bonus columns (`=O+P+Q+R+S`):
+A piece's value is the sum of the sheet's columns (`=O+P+Q+R+S`):
 
 | Part | What it counts |
 |---|---|
 | Leader bonus | 60 for a leader, else 0 |
 | Reach | the cells it could move to or capture on from d4, on an empty 8 × 8 board |
-| Promotion bonus | what its promotion is worth (Western Pawn 5, Shogi Pawn 4…) |
+| Promotion premium | what the chance of promoting is worth ([below](#promotion-premium)) |
 | Special-power bonus | what its powers are worth, where reach does not count them |
 | Limitation devaluation | what its restrictions take off |
 
@@ -29,6 +29,34 @@ piece is worth about its parts (Chancellor 22 = Rook 14 + Knight 8).
 - A power that reach does not see is a special-power bonus: the Xiangqi General's flying-general
   capture is worth 7.
 - Reach is counted on 8 × 8 even when the board is larger, so that it stays bounded.
+
+### Promotion premium
+
+A piece that may promote is bought, in part, for what it may become: its price carries a premium,
+as an option's does. The premium is what promotion would gain it (the promoted piece's value, less
+its own without the premium) over the distance it has to cross and survive, counted on 8 × 8 from
+row 2 for Infantry and row 1 for the rest. At a premium factor of 1 the bet breaks even if one in
+"distance" such pieces gets through: cheap enough to be worth the risk, not so cheap as to be no
+risk. The value is also what the piece scores when captured, so a piece taken before it promotes
+hands its captor the premium too.
+
+Every Infantry piece may also promote at the far edge into any captured piece. Which pieces will
+have been captured is not known when the army is bought, so that option is priced as a promotion
+into a stand-in, the Rook, over 6 rows; an Infantry piece pays the higher of its own premium and
+this one, as it can take only one of them. A piece confined to its palace cannot reach the far edge,
+and has no such premium.
+
+| Piece | Promotes to | Premium | Value |
+|---|---|---|---|
+| Pawn (Shogi) | Gold General, 66 over 4 rows | 17 | 17 |
+| Lance (Shogi) | Gold General, 63 over 5 rows | 13 | 16 |
+| Pawn (Western) | Queen, 24 over 6 rows | 4 | 7 |
+| Silver General (Shogi) | Gold General, 1 over 5 rows | 0 | 65 |
+| Pawn (Makruk) | Courtier, 3 over 4 rows; the far edge pays more | 2 | 4 |
+| Other Infantry, not confined | the far edge (Rook, 14), over 6 rows | 2 | +2 |
+
+The sheet keeps the three settings apart, to be tuned by playtesting: `PremiumFactor` (1),
+`FarEdgeTarget` (the Rook) and `FarEdgeDistance` (6).
 
 ### Binding
 
@@ -68,24 +96,24 @@ The dice name a class, not a piece ([specification §6.1](specification.md#61-th
 | Fairy General (custom) | One square in any direction, or leaps 2+1 | — | — | 76 | — / — |
 | King (Western) | One square in any direction | — | Castling | 70 | — / — |
 | General (Xiangqi) | One square orthogonally | Area: its 3 × 3 palace | Flying-general capture | 69 | — / 5 |
-| Silver General (Shogi) | One square diagonally, or straight forward | — | → Gold General in the far three ranks | 68 | — / — |
 | General (Janggi) | One square orthogonally, or diagonally along palace lines | Area: its 3 × 3 palace | Palace face-off; palace lines | 68 | — / 5 |
 | Gold General (Shogi) | One square orthogonally, or diagonally forward | — | — | 66 | — / — |
+| Silver General (Shogi) | One square diagonally, or straight forward | — | → Gold General in the far three ranks | 65 | — / — |
 
 ### Infantry
 
 | Piece | Moves | Restrictions | Powers / promotion | Value | Lifts |
 |---|---|---|---|---|---|
-| Pawn (Western) | One square forward; captures one square diagonally forward | Move: blocked straight ahead | First move two squares; *en passant*; → Queen, Rook, Bishop or Knight on the last rank | 8 | 2 / — |
+| Pawn (Shogi) | One square forward | Move: blocked straight ahead | → Gold General in the far three ranks | 17 | 2 / — |
+| Pawn (Western) | One square forward; captures one square diagonally forward | Move: blocked straight ahead | First move two squares; *en passant*; → Queen, Rook, Bishop or Knight on the last rank | 7 | 2 / — |
 | Guard (Janggi) | One square orthogonally, or diagonally along palace lines | Area: its 3 × 3 palace | Palace lines | 7 | — / 5 |
-| Noble (Makruk) | One square diagonally, or straight forward | — | — | 5 | — / — |
-| Soldier (Janggi) | One square forward or sideways (diagonally forward along palace lines) | Move: may not go back; Area: palace diagonals only | Palace lines | 5 | 2 / 2 |
-| Minister | One square orthogonally | — | — | 4 | — / — |
-| Pawn (Shogi) | One square forward | Move: blocked straight ahead | → Gold General in the far three ranks | 4 | 2 / — |
-| Pawn (Makruk) | One square forward; captures one square diagonally forward | Move: blocked straight ahead | → Courtier on the sixth rank | 3 | 2 / — |
-| Courtier | One square diagonally | One colour (by its move) | — | 3 | — / — |
+| Noble (Makruk) | One square diagonally, or straight forward | — | — | 7 | — / — |
+| Soldier (Janggi) | One square forward or sideways (diagonally forward along palace lines) | Move: may not go back; Area: palace diagonals only | Palace lines | 7 | 2 / 2 |
+| Minister | One square orthogonally | — | — | 6 | — / — |
+| Courtier | One square diagonally | One colour (by its move) | — | 5 | — / — |
+| Pawn (Makruk) | One square forward; captures one square diagonally forward | Move: blocked straight ahead | → Courtier on the sixth rank | 4 | 2 / — |
+| Soldier (Xiangqi) | One square forward, or sideways | Move: no sideways before crossing the river, never back | — | 4 | 2 / 3 |
 | Advisor (Xiangqi) | One square diagonally | Area: its 3 × 3 palace | — | 2 | — / 5 |
-| Soldier (Xiangqi) | One square forward, or sideways | Move: no sideways before crossing the river, never back | — | 2 | 2 / 3 |
 
 Any Infantry piece that reaches the far edge may also be promoted into any captured piece, as in
 the classic game.
@@ -100,9 +128,9 @@ the classic game.
 | Archbishop | Any distance diagonally, or leaps 2+1 | — | — | 21 | — / — |
 | Dragon Bishop (custom) | Any distance diagonally, or leaps 2+1 | — | — | 21 | — / — |
 | Dragon Horse (Shogi) | Any distance diagonally, or one square orthogonally | — | — | 17 | — / — |
+| Lance (Shogi) | Any distance straight forward | Move: blocked by pieces in its path | → Gold General in the far three ranks | 16 | 2 / — |
 | Rook (Western) | Any distance orthogonally | — | — | 14 | — / — |
 | Bishop (Western) | Any distance diagonally | One colour (by its move) | — | 12 | — / — |
-| Lance (Shogi) | Any distance straight forward | Move: blocked by pieces in its path | → Gold General in the far three ranks | 6 | 2 / — |
 
 ### Cavalry / Leaper
 
@@ -158,31 +186,15 @@ the classic game.
 - The **Minister** and **Courtier** are **Infantry** (the sheet had them as Cavalry / Leaper).
 - The **Zebra** has no colour restriction: its leap changes colour every time.
 - Value counts **reach** in place of a direction bonus and a speed bonus ([Value](#value)).
+- A promotion is priced as an option, and every Infantry piece holds one on the far edge
+  ([Promotion premium](#promotion-premium)). A Shogi Pawn or Lance promotes into a Gold General,
+  which is a leader: high risk, high reward, priced to match.
 
 ### Still open
 
 Together, **Q20** of the [specification](specification.md#9-open-questions).
 
-1. **Pricing a promotion** (*proposed*). A promotion is an option: worth what the piece would gain,
-   times the chance of getting there. The designer's first idea, the promoted value over the
-   distance to cross, is that, with one over the distance standing for the chance. Taking the gain
-   (the promoted value less the piece's own value without the bonus) and counting distance on
-   8 × 8 to the first row where its condition holds, from row 2 for Infantry (the furthest it may
-   start and keep its start-row powers) and from row 1 for the rest:
-
-   | Piece | Promotes to | Gain | Distance | Bonus now | Bonus proposed | Value |
-   |---|---|---|---|---|---|---|
-   | Pawn (Western) | Queen (27) | 24 | 6 | 5 | 4 | 7 |
-   | Pawn (Shogi) | Gold General (66) | 66 | 4 | 4 | 17 | 17 |
-   | Lance (Shogi) | Gold General (66) | 63 | 5 | 3 | 13 | 16 |
-   | Silver General (Shogi) | Gold General (66) | 1 | 5 | 3 | 0 | 65 |
-   | Pawn (Makruk) | Courtier (3) | 1 | 4 | 1 | 0 | 2 |
-
-   The Gold General is now a **Leader**, so a Shogi Pawn or a Lance that reaches the far three ranks
-   becomes a leader worth 66, free: by this pricing, worth more than a Rook from the start. Is a
-   promoted Gold General meant to be a leader (with its leader bonus, and all a leader may do)?
-   The far-edge promotion into any captured piece is open to every Infantry piece alike, so it is
-   left out of every piece's price.
+None, for now.
 
 ### Names the program keeps apart
 
