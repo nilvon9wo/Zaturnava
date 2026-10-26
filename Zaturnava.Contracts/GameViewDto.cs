@@ -16,6 +16,7 @@ namespace Net.NowhereAtAll.Zaturnava.Contracts;
 /// waits on the deciding seat, its owner, to choose where it goes (a <c>place</c> action, drawn on the
 /// board as a cell to drop it on). <see cref="ThroneHeldBy"/> is the enemy seat whose leader sits on the
 /// throne of the seat deciding for itself, which may change what that seat may do, and who moves.
+/// <see cref="Proposal"/> is a proposal to end the game, waiting on the deciding seat's answer.
 /// </summary>
 public sealed record GameViewDto(
     string Id,
@@ -38,5 +39,6 @@ public sealed record GameViewDto(
     int? PromotionDue,
     bool IsTurnOver,
     PrisonerDto? Returning = null,
-    int? ThroneHeldBy = null
+    int? ThroneHeldBy = null,
+    EndProposalDto? Proposal = null
 );

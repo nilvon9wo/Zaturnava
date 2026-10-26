@@ -49,6 +49,10 @@
                                 <span class="swatch"></span>
                                 <span class="name">@seat.Name</span>
                                 <span class="player">@this.Player(seat)</span>
+                                @if (seat.HasGivenUp)
+                                {
+                                    <span class="gave-up">gave up</span>
+                                }
                                 <span class="prisoners" title="Prisoners">
                                     @foreach (PrisonerDto prisoner in seat.Prisoners)
                                     {
@@ -202,6 +206,12 @@
                         </div>
                     }
                 }
+                @if (this.Seating.Claim is { } mine && view.Seats[mine.Seat].MayProposeEnd)
+                {
+                    <div class="end-area">
+                        <button class="end-game" @onclick="this.AskToEnd">End game</button>
+                    </div>
+                }
             </div>
 
             <div class="log">
@@ -216,6 +226,48 @@
                         <li class="event @happened.Kind seat-@happened.Seat">@this.Named(happened.Text)</li>
                     }
                 </ol>
+            </div>
+        </div>
+    }
+
+    @if (this._view is { } asked && this.Seating.Claim is { } proposer && this._isProposing)
+    {
+        <div class="backdrop">
+            <div class="dialog proposing" role="dialog" aria-modal="true" aria-labelledby="proposing-title">
+                <h2 id="proposing-title">End the game?</h2>
+                <p>The other players will be asked to agree. If all of them do, the game ends now, and points decide: @Totals(asked).</p>
+                <p>Meanwhile, will you wait for their answers, or pass on all your remaining turns?</p>
+                <div class="actions">
+                    <button class="action wait" @onclick="() => this.ProposeEnd(proposer, false)">Wait for them to agree</button>
+                    <button class="action resign" @onclick="() => this.ProposeEnd(proposer, true)">Pass on all my turns</button>
+                    <button class="action cancel" @onclick="this.KeepPlaying">Cancel</button>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (this._view?.Proposal is { } proposal && this._turn is { } voting)
+    {
+        <div class="backdrop">
+            <div class="dialog voting" role="alertdialog" aria-modal="true" aria-labelledby="voting-title">
+                <h2 id="voting-title">@this._view.Seats[proposal.Proposer].Name proposes ending the game</h2>
+                @if (proposal.Resigns)
+                {
+                    <p>They have given up their remaining turns.</p>
+                }
+                <p>If everyone agrees, the game ends now, and points decide: @Totals(this._view).</p>
+                @if (this.Countdown() is { } left)
+                {
+                    <p class="countdown">@left; no answer keeps the game going.</p>
+                }
+                <div class="actions">
+                    @foreach (ActionDto action in voting.Actions.OffBoard)
+                    {
+                        <button class="action answer" @onclick="() => this.Submit(voting.Claim, action)">
+                            @ActionLabels.LabelOf(action)
+                        </button>
+                    }
+                </div>
             </div>
         </div>
     }
@@ -250,7 +302,7 @@
     /// game ended.
     /// </summary>
     private static readonly ImmutableHashSet<string> Highlights =
-        [EventDto.Captured, EventDto.Bonus, EventDto.Escaped, EventDto.Promoted, EventDto.Ended];
+        [EventDto.Captured, EventDto.Bonus, EventDto.Escaped, EventDto.Promoted, EventDto.Ending, EventDto.Ended];
     private static readonly BoardActions NoActions = new([]);
 
     private readonly Timer _poll;
@@ -260,6 +312,7 @@
     private BoardTurn _boardTurn = BoardTurn.None;
     private ImmutableHashSet<int> _lastMove = [];
     private bool _isHighlightsOnly = true;
+    private bool _isProposing;
     private DateTimeOffset? _deadline;
     private int? _receiver;
     private ImmutableHashSet<int> _given = [];
@@ -329,6 +382,10 @@
         (view.Outcome, view.DecidingSeat, this._turn, view.Offer, view.IsTurnOver) switch
         {
             ({ } outcome, _, _, _, _) => outcome.Text,
+            (_, { } seat, null, _, _) when view.Proposal is { } proposal =>
+                $"{view.Seats[proposal.Proposer].Name} proposes ending the game: waiting for {Who(view.Seats[seat])}.",
+            (_, { }, _, _, _) when view.Proposal is { } proposal =>
+                $"{view.Seats[proposal.Proposer].Name} proposes ending the game: do you agree?",
             (_, { } seat, null, _, _) when view.Returning is { } piece =>
                 $"{Who(view.Seats[seat])} is choosing where their {piece.Name} goes home.",
             (_, { }, _, _, _) when view.Returning is { } piece =>
@@ -497,6 +554,23 @@
     }
 
     private void Ask(int prisoner) => this._asked = this._asked.SymmetricExcept([prisoner]);
+
+    private void AskToEnd() => this._isProposing = true;
+
+    private void KeepPlaying() => this._isProposing = false;
+
+    private Task ProposeEnd(SeatClaim claim, bool resigns)
+    {
+        this._isProposing = false;
+        return this.Submit(claim, EndProposalDto.ActionOf(claim.Seat, resigns));
+    }
+
+    /// <summary>Each team's points, the player's own first: "Black &amp; Green 39, Yellow &amp; Red 20".</summary>
+    private string Totals(GameViewDto view) =>
+        string.Join(
+            ", ",
+            this.TeamsOf(view).Select(team => $"{string.Join(" & ", team.Select(seat => seat.Name))} {team.Sum(seat => seat.Score)}")
+        );
 
     private Task Offer(SeatClaim claim) =>
         this.Submit(claim, OfferDto.ActionOf(claim.Seat, this._receiver!.Value, this._given.Order(), this._asked.Order()));

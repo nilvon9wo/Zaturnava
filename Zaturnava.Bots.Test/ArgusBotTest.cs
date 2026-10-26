@@ -260,6 +260,22 @@ public sealed class ArgusBotTest
         Assert.Equal([LineRules.Move(2, 3)], chosen);
     }
 
+    [Theory]
+    [InlineData(3, 2, true)]
+    [InlineData(2, 2, false)]
+    [InlineData(1, 2, false)]
+    public async Task Decide_WhenAskedToEndTheGame_AgreesOnlyIfItsTeamLeads(int ours, int theirs, bool agrees)
+    {
+        // Arrange
+        DecisionRequest asked = Proposals.Asked(ours, theirs);
+
+        // Act
+        GameAction action = await new ArgusBot(new Random(1)).Decide(asked, this._cancellation);
+
+        // Assert
+        Assert.Equal(new AnswerEndAction(Proposals.Black, agrees), action);
+    }
+
     [Fact]
     public void Profile_WhenAsked_IsAPlainAlgorithmCalledArgus()
     {

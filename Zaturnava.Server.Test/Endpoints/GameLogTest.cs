@@ -87,6 +87,34 @@ public sealed class GameLogTest
     }
 
     [Fact]
+    public void LatestOf_WhenEndingTheGameIsProposed_TellsOfTheProposalAndEachAnswer()
+    {
+        // Arrange
+        GameSnapshot snapshot = Snapshot(
+            new EndProposed(Black, false),
+            new EndAgreed(Yellow),
+            new EndRefused(Green),
+            new EndProposed(Red, true),
+            new TurnGivenUp(Red)
+        );
+
+        // Act
+        ImmutableList<EventDto> log = GameLog.LatestOf(snapshot);
+
+        // Assert
+        Assert.Equal(
+            [
+                "ending 0: Black proposed ending the game, and waits for the others to agree.",
+                "ending 1: Yellow agreed to end the game.",
+                "ending 2: Green would rather play on, so the game goes on.",
+                "ending 3: Red proposed ending the game, and gave up their turns.",
+                "passed 3: Red has given up their turns, so passes.",
+            ],
+            log.Select(Told)
+        );
+    }
+
+    [Fact]
     public void LatestOf_WhenThronesComeIntoPlay_TellsOfTheBonusesAndTheSharedTurn()
     {
         // Arrange

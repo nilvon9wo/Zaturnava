@@ -17,6 +17,9 @@ public sealed record ActionDescriptor(string Kind, ImmutableSortedDictionary<str
     /// <summary>What separates the items of an argument that lists integers: "3,5".</summary>
     public const char ListSeparator = ',';
 
+    public const string True = "true";
+    public const string False = "false";
+
     public SeatId Actor() => new(this.IntegerArgument(ActorArgument));
 
     public CellId CellArgument([Required] string name) => new(this.IntegerArgument(name));
@@ -30,6 +33,18 @@ public sealed record ActionDescriptor(string Kind, ImmutableSortedDictionary<str
             ? value
             : throw new MalformedActionException($"The '{this.Kind}' action needs an integer '{name}'.");
     }
+
+    /// <summary>How a yes-or-no argument is written: "true" or "false".</summary>
+    public static string Flag(bool value) => value ? True : False;
+
+    /// <exception cref="MalformedActionException">The argument is missing, or neither "true" nor "false".</exception>
+    public bool BooleanArgument([Required] string name) =>
+        this.Arguments.GetValueOrDefault(name, string.Empty) switch
+        {
+            True => true,
+            False => false,
+            _ => throw new MalformedActionException($"The '{this.Kind}' action needs '{name}' to be true or false."),
+        };
 
     /// <summary>An argument listing integers, such as "3,5"; empty if the argument is empty or missing.</summary>
     /// <exception cref="MalformedActionException">An item is not an integer.</exception>

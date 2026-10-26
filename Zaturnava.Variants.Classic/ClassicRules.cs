@@ -57,6 +57,9 @@ public sealed class ClassicRules : IRulesApplying
     /// <summary>The timer on a seat offered a ransom; declining is its default.</summary>
     public const string RansomAnswerTimer = "ransom-answer";
 
+    /// <summary>The timer on answering a proposal to end the game.</summary>
+    public const string EndAnswerTimer = "end-answer";
+
     private const int OpeningTurn = 1;
 
     private readonly SquareGridTopology _grid = new(ClassicSetup.Side, ClassicSetup.Side);
@@ -120,23 +123,31 @@ public sealed class ClassicRules : IRulesApplying
             : [];
 
     public Transition Apply([Required] GameState state, [Required] GameAction action) =>
-        action switch
-        {
-            DiceAction dice => this.Rolled(state, dice),
-            OfferAction offer => Offered(state, offer),
-            _ => this.Decided(state, action),
-        };
+        this.Unstalled(
+            action switch
+            {
+                DiceAction dice => this.Rolled(state, dice),
+                OfferAction offer => Offered(state, offer),
+                ProposeEndAction propose => this.Proposed(state, propose),
+                _ => this.Decided(state, action),
+            }
+        );
 
     public bool MayOffer([Required] GameState state) => Ransom.MayOffer(state);
+
+    public bool MayProposeEnd([Required] GameState state, SeatId seat) => Agreement.MayPropose(state, seat);
 
     /// <summary>
     /// A seat choosing where a piece goes home, answering an offer, or offering once its turn is over, has
     /// only so long.
     /// </summary>
     public DecisionTimer? TimerOf([Required] GameState state) =>
-        state.Returning is null
-            ? RansomTimerOf(state)
-            : new DecisionTimer(ReturnTimer, this._ransom.PlacesOf(state)[0]);
+        (state.Proposal, state.Returning, state.DecidingSeat) switch
+        {
+            ({ }, _, { } seat) => new DecisionTimer(EndAnswerTimer, new AnswerEndAction(seat, false)),
+            (_, { }, _) => new DecisionTimer(ReturnTimer, this._ransom.PlacesOf(state)[0]),
+            _ => RansomTimerOf(state),
+        };
 
     public GameAction Parse([Required] ActionDescriptor descriptor) => ActionParser.Standard.Parse(descriptor);
 
@@ -174,12 +185,17 @@ public sealed class ClassicRules : IRulesApplying
     private DiceRequest RollOffDie => new(RollOffDice, this._dice.Sides);
 
     /// <summary>
-    /// A piece going home is placed; an offer waiting is answered; once a turn is over, its seat may only
-    /// offer, or be done; a Pawn just
+    /// A proposal to end the game is answered; a piece going home is placed; an offer waiting is answered;
+    /// once a turn is over, its seat may only offer, or be done; a Pawn just
     /// come to the far edge is promoted, or left for later (a pass); with dice rolled, the seat moves what
     /// they show, promotes, or passes.
     /// </summary>
     private ImmutableList<GameAction> ChoicesOf(GameState state, SeatId seat) =>
+        state.Proposal is null
+            ? this.PlayChoicesOf(state, seat)
+            : [new AnswerEndAction(seat, true), new AnswerEndAction(seat, false)];
+
+    private ImmutableList<GameAction> PlayChoicesOf(GameState state, SeatId seat) =>
         (state.Returning, state.Offer, state.IsRansomWindow, state.PromotionDue, state.Dice.IsEmpty) switch
         {
             ({ }, _, _, _, _) => [.. this._ransom.PlacesOf(state)],
@@ -333,12 +349,13 @@ public sealed class ClassicRules : IRulesApplying
             PromoteAction promote => this.Promoted(state, promote),
             EscapeAction escape => this.Escaped(state, escape),
             HandOverAction handOver => HandedToRegent(state, handOver),
+            AnswerEndAction answer => Agreement.Answered(state, answer),
             AcceptAction => this._ransom.Accepted(state),
             PlaceAction place => this._ransom.Placed(state, place),
             DeclineAction => Ransom.Declined(state),
             _ when state.PromotionDue is not null =>
                 this.GoneOn(new Transition(state with { PromotionDue = null }, [])),
-            _ when state.IsRansomWindow => Handed(new Transition(state, [])),
+            _ when state.IsRansomWindow => this.Handed(new Transition(state, [])),
             _ when state.Dice.IsEmpty => this.IdlePass(new Transition(state, [])),
             _ => this.Declined(new Transition(state, [])),
         };
@@ -349,6 +366,27 @@ public sealed class ClassicRules : IRulesApplying
             state with { DecidingSeat = handOver.Regent, ActingFor = handOver.Actor },
             [new TurnHandedOver(handOver.Actor, handOver.Regent)]
         );
+
+    /// <exception cref="IllegalActionException">The seat may not propose ending the game now.</exception>
+    private Transition Proposed(GameState state, ProposeEndAction propose) =>
+        this.MayProposeEnd(state, propose.Actor)
+            ? Agreement.Proposed(state, propose)
+            : throw new IllegalActionException(propose);
+
+    /// <summary>
+    /// A seat that has given up its turns passes on whatever it is left to decide that no timer decides
+    /// for it (rules.md §10): its turn, or its share of another's.
+    /// </summary>
+    private Transition Unstalled(Transition transition)
+    {
+        GameState state = transition.State;
+        return state.DecidingSeat is { } seat && state.Resigned.Contains(seat) && this.TimerOf(state) is null
+            ? this.Unstalled(Followed(transition, this.Act(state, new PassAction(seat)), new TurnGivenUp(seat)))
+            : transition;
+    }
+
+    private static Transition Followed(Transition first, Transition then, GameEvent between) =>
+        then with { Events = [.. first.Events, between, .. then.Events] };
 
     /// <exception cref="IllegalActionException">The offer may not be made.</exception>
     private static Transition Offered(GameState state, OfferAction offer) =>
@@ -500,7 +538,7 @@ public sealed class ClassicRules : IRulesApplying
     /// </summary>
     private Transition GoneOn(Transition transition) =>
         transition.State.Dice.IsEmpty
-            ? PassTurn(transition)
+            ? this.PassTurn(transition)
             : this.HandOverOrGoOn(transition);
 
     private Transition HandOverOrGoOn(Transition transition) =>
@@ -512,7 +550,7 @@ public sealed class ClassicRules : IRulesApplying
     private Transition Declined(Transition transition) =>
         this.OccupierToHandTo(transition.State) is { } occupier
             ? this.HandedOver(transition, occupier)
-            : PassTurn(transition);
+            : this.PassTurn(transition);
 
     /// <summary>
     /// The enemy on the throne of the seat whose turn it is, before it has moved for that seat this turn -
@@ -539,7 +577,7 @@ public sealed class ClassicRules : IRulesApplying
     private Transition EndTurnIfStuck(Transition transition) =>
         this.HasUsableDie(transition.State)
             ? transition
-            : PassTurn(Forfeited(transition));
+            : this.PassTurn(Forfeited(transition));
 
     /// <summary>The deciding seat loses the dice it has left, which nothing it commands can use.</summary>
     private static Transition Forfeited(Transition transition)
@@ -562,17 +600,17 @@ public sealed class ClassicRules : IRulesApplying
     {
         GameState state = transition.State;
         Transition counted = transition with { State = state with { IdlePasses = state.IdlePasses + 1 } };
-        return GameEnd.AfterIdlePass(counted, this._idleRounds) ?? Ending(counted);
+        return GameEnd.AfterIdlePass(counted, this._idleRounds) ?? this.Ending(counted);
     }
 
-    private static Transition PassTurn(Transition transition) =>
-        Ending(transition with { State = transition.State with { IdlePasses = 0 } });
+    private Transition PassTurn(Transition transition) =>
+        this.Ending(transition with { State = transition.State with { IdlePasses = 0 } });
 
     /// <summary>
     /// The turn is over. A seat holding prisoners may still offer ransoms (rules.md §8) before it
-    /// passes; any other seat's turn passes now.
+    /// passes, unless it has given up its turns; any other seat's turn passes now.
     /// </summary>
-    private static Transition Ending(Transition transition)
+    private Transition Ending(Transition transition)
     {
         GameState state = transition.State;
         SeatId seat = (state.ActingFor ?? state.DecidingSeat)!.Value; // someone just took a turn
@@ -584,13 +622,16 @@ public sealed class ClassicRules : IRulesApplying
             Dice = [],
             IsRansomWindow = true,
         };
-        return Ransom.HoldsRansom(state, seat)
+        return Ransom.HoldsRansom(state, seat) && !state.Resigned.Contains(seat)
             ? new Transition(window, transition.Events.Add(new RansomWindowOpened(seat)))
-            : Handed(transition);
+            : this.Handed(transition);
     }
 
-    /// <summary>The turn goes clockwise to the next seat with pieces left (rules.md §10).</summary>
-    private static Transition Handed(Transition transition)
+    /// <summary>
+    /// The turn goes clockwise to the next seat with pieces left (rules.md §10) - and, if that seat has
+    /// given up its turns, on to its ally, if the ally may be its regent (§6.2).
+    /// </summary>
+    private Transition Handed(Transition transition)
     {
         GameState state = transition.State;
         SeatId current = (state.ActingFor ?? state.DecidingSeat)!.Value; // someone just took a turn
@@ -607,8 +648,18 @@ public sealed class ClassicRules : IRulesApplying
             Dice = [],
             IsRansomWindow = false,
             OffersMade = [],
+            PromotionDue = null,
         };
-        return new Transition(passed, transition.Events.Add(new TurnPassed(current, next)));
+        SeatId? regent = passed.Resigned.Contains(next)
+            ? this._control.RegentsFor(passed, next).Cast<SeatId?>().FirstOrDefault()
+            : null;
+        Transition handed = new(passed, transition.Events.Add(new TurnPassed(current, next)));
+        return regent is { } ally
+            ? HandedToRegent(passed, new HandOverAction(next, ally)) with
+            {
+                Events = handed.Events.Add(new TurnHandedOver(next, ally)),
+            }
+            : handed;
     }
 
     private Transition Moved(GameState state, MoveAction move)

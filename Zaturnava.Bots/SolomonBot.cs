@@ -31,7 +31,12 @@ public sealed class SolomonBot(Random random) : IBotPlaying
     public Task<GameAction> Decide([Required] DecisionRequest request, CancellationToken cancellationToken) =>
         cancellationToken.IsCancellationRequested
             ? Task.FromCanceled<GameAction>(cancellationToken)
-            : Task.FromResult(AnswerTo(request) ?? FairTrade(request) ?? Teamwork.Choose(request, this._random));
+            : Task.FromResult(
+                Ending.AnswerTo(request)
+                    ?? AnswerTo(request)
+                    ?? FairTrade(request)
+                    ?? Teamwork.Choose(request, this._random)
+            );
 
     internal static GameAction? AnswerTo(DecisionRequest request) => Trading.AnswerTo(request, Leeway);
 

@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Net.NowhereAtAll.Zaturnava.Application.Games;
 using Net.NowhereAtAll.Zaturnava.Contracts;
+using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Boards;
 using Net.NowhereAtAll.Zaturnava.Engine.Decisions;
 using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
@@ -206,6 +207,26 @@ public sealed class GameViewsTest
     }
 
     [Fact]
+    public void ViewOf_WhenEndingTheGameIsProposed_ShowsTheProposalAndLabelsTheAnswers()
+    {
+        // Arrange - Green proposes, giving up its turns, while Black decides
+        GameState playing = Rules.CreateInitialState() with { RollOff = [], AwaitedDice = null };
+        GameState state = Rules.Apply(playing, new ProposeEndAction(new SeatId(2), Resigns: true)).State;
+
+        // Act
+        GameViewDto before = GameViews.ViewOf(Snapshot(playing), Bots);
+        GameViewDto view = GameViews.ViewOf(Snapshot(state), Bots);
+
+        // Assert
+        Assert.Equal((null, "True,True,True,True"), (before.Proposal, Flags(before, seat => seat.MayProposeEnd)));
+        Assert.Equal(
+            (new EndProposalDto(2, true), "False,False,True,False", "False,False,False,False"),
+            (view.Proposal, Flags(view, seat => seat.HasGivenUp), Flags(view, seat => seat.MayProposeEnd))
+        );
+        Assert.Equal(["Agree to end the game", "Keep playing"], view.LegalActions.Select(action => action.Label));
+    }
+
+    [Fact]
     public void ViewOf_WhenAPromotionIsDue_SaysWhereAndLabelsPassingAsLater()
     {
         // Arrange - Black's Pawn has just come to c8
@@ -346,6 +367,9 @@ public sealed class GameViewsTest
     }
 
     private static Piece Holder(PieceKindId kind, int owner) => new(new PieceId(99), kind, new SeatId(owner));
+
+    private static string Flags(GameViewDto view, Func<SeatDto, bool> flag) =>
+        string.Join(',', view.Seats.Select(flag));
 
     private static string Listed(ImmutableList<PrisonerDto> prisoners) =>
         string.Join(", ", prisoners.Select(prisoner => $"{prisoner.Id} {prisoner.Name} {prisoner.Owner}"));

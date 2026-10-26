@@ -31,7 +31,10 @@ public sealed class MidasBot(Random random) : IBotPlaying
         cancellationToken.IsCancellationRequested
             ? Task.FromCanceled<GameAction>(cancellationToken)
             : Task.FromResult(
-                Trading.AnswerTo(request, 0) ?? BestTrade(request) ?? Greedy.Choose(request, this._random)
+                Ending.AnswerTo(request)
+                    ?? Trading.AnswerTo(request, 0)
+                    ?? BestTrade(request)
+                    ?? Greedy.Choose(request, this._random)
             );
 
     /// <summary>The offer that gains the most, if any gains anything.</summary>

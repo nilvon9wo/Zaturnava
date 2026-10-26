@@ -274,6 +274,37 @@ public sealed class GameServiceTest
     }
 
     [Fact]
+    public async Task Submit_WhenAProposalToEndComesOutOfTurnFromASeatThatMay_TakesIt()
+    {
+        // Arrange - the first seat decides, but the second may propose ending the game
+        GameId id = await this._service.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
+        string token = await this._service.Claim(id, Second, this._cancellation);
+        ActionDescriptor proposal = new ProposeEndAction(Second, Resigns: false).Describe();
+
+        // Act
+        GameSnapshot snapshot = await this._service.Submit(id, token, proposal, this._cancellation);
+
+        // Assert
+        Assert.Null(snapshot.State.DecidingSeat);
+    }
+
+    [Fact]
+    public async Task Submit_WhenAProposalToEndComesFromASeatThatMayNot_ThrowsNotYourTurnException()
+    {
+        // Arrange - the first seat has passed, so the second decides; the first may not propose
+        GameId id = await this._service.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
+        string token = await this._service.Claim(id, First, this._cancellation);
+        _ = await this._service.Submit(id, token, Pass(First), this._cancellation);
+        ActionDescriptor proposal = new ProposeEndAction(First, Resigns: true).Describe();
+
+        // Act
+        Task<GameSnapshot> submitting = this._service.Submit(id, token, proposal, this._cancellation);
+
+        // Assert
+        _ = await Assert.ThrowsAsync<NotYourTurnException>(() => submitting);
+    }
+
+    [Fact]
     public async Task Submit_WhenTheGameIsOver_ThrowsNotYourTurnException()
     {
         // Arrange

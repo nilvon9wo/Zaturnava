@@ -12,8 +12,8 @@ namespace Net.NowhereAtAll.Zaturnava.Application.Test.Fakes;
 
 /// <summary>
 /// The smallest ruleset that still ends: two seats take turns passing until <paramref name="length"/>
-/// turns have been played; the second seat has only so long to pass. Enough to drive the
-/// application without any real game.
+/// turns have been played; the second seat has only so long to pass, and may end the game whenever it
+/// likes, by proposing so. Enough to drive the application without any real game.
 /// </summary>
 internal sealed class TinyRules(int length) : IRulesApplying
 {
@@ -50,13 +50,18 @@ internal sealed class TinyRules(int length) : IRulesApplying
     public Transition Apply([Required] GameState state, [Required] GameAction action)
     {
         bool isLegal = this.LegalActions(state).Contains(action);
-        GameState next = isLegal
-            ? this.After(state)
-            : throw new IllegalActionException(action);
+        GameState next = (action, isLegal) switch
+        {
+            (ProposeEndAction, _) => state with { DecidingSeat = null },
+            (_, true) => this.After(state),
+            _ => throw new IllegalActionException(action),
+        };
         return new Transition(next, []);
     }
 
     public bool MayOffer([Required] GameState state) => false;
+
+    public bool MayProposeEnd([Required] GameState state, SeatId seat) => seat.Value == SeatCount - 1;
 
     public DecisionTimer? TimerOf([Required] GameState state) =>
         state.DecidingSeat?.Value == 1

@@ -1800,6 +1800,226 @@ public sealed class ClassicRulesTest
     }
 
     [Fact]
+    public void Apply_WhenASeatProposesEndingTheGame_AsksTheNextSeatClockwiseAgainstTheClock()
+    {
+        // Arrange - Black's turn; Green proposes, out of turn
+        GameState state = this.Regency(hasBlackRaja: true, Grid.CellAt(6, 2));
+
+        // Act
+        Transition transition = this._rules.Apply(state, new ProposeEndAction(Green, Resigns: false));
+
+        // Assert
+        Assert.Equal(
+            (Red, new EndProposal(Green, false, Black, null), new EndProposed(Green, false)),
+            (transition.State.DecidingSeat, transition.State.Proposal, transition.Events.Single())
+        );
+        Assert.Equal(
+            [new AnswerEndAction(Red, true), new AnswerEndAction(Red, false)],
+            this._rules.LegalActions(transition.State)
+        );
+        Assert.Equal(
+            (new DecisionTimer("end-answer", new AnswerEndAction(Red, false)), false),
+            (this._rules.TimerOf(transition.State), this._rules.MayProposeEnd(transition.State, Yellow))
+        );
+    }
+
+    [Fact]
+    public void Apply_WhenEverySeatStillPlayingAgrees_EndsTheGameOnPoints()
+    {
+        // Arrange - Red has no pieces left, so is not asked; Black and Green lead
+        GameState state = this.StateWith(
+            (Grid.CellAt(3, 3), Piece(3, ClassicPieces.Raja, Black)),
+            (Grid.CellAt(5, 5), Piece(13, ClassicPieces.Pawn, Yellow)),
+            (Grid.CellAt(2, 6), Piece(21, ClassicPieces.Pawn, Green))
+        ) with
+        {
+            Scores = this.Later().Scores.SetItem(Green, 4),
+        };
+
+        // Act
+        GameState proposed = this._rules.Apply(state, new ProposeEndAction(Black, Resigns: false)).State;
+        GameState once = this._rules.Apply(proposed, new AnswerEndAction(Yellow, true)).State;
+        Transition twice = this._rules.Apply(once, new AnswerEndAction(Green, true));
+
+        // Assert
+        GameOutcome won = new([Black, Green], "every player agreed to end it, so points decide");
+        Assert.Equal((Green, null), (once.DecidingSeat, once.Outcome));
+        Assert.Equal(
+            (null, null, won),
+            (twice.State.DecidingSeat, twice.State.Proposal, twice.State.Outcome)
+        );
+        Assert.Equal(new EndAgreed(Green), twice.Events[0]);
+    }
+
+    [Fact]
+    public void Apply_WhenASeatRefusesToEndTheGame_ResumesWhereTheGameWas()
+    {
+        // Arrange - Green moves for Black, which has no Raja, with dice rolled; Yellow proposes
+        GameState rolled = this.Regency(hasBlackRaja: false, Grid.CellAt(6, 2)) with { Dice = [3, 4] };
+        GameState regency = this._rules.Apply(rolled, new HandOverAction(Black, Green)).State;
+        GameState state = this._rules.Apply(regency, new ProposeEndAction(Yellow, Resigns: false)).State;
+
+        // Act
+        Transition transition = this._rules.Apply(state, new AnswerEndAction(Green, false));
+
+        // Assert
+        Assert.Equal(
+            (Green, Black, null, "3,4", new EndRefused(Green)),
+            (
+                transition.State.DecidingSeat,
+                transition.State.ActingFor,
+                transition.State.Proposal,
+                string.Join(',', transition.State.Dice),
+                transition.Events.Single()
+            )
+        );
+    }
+
+    [Fact]
+    public void Apply_WhenASeatThatGaveUpItsTurnsWouldBeAsked_TakesItsAgreementAsGiven()
+    {
+        // Arrange - Yellow gave up its turns earlier
+        GameState state = this.Regency(hasBlackRaja: true, Grid.CellAt(6, 2)) with { Resigned = [Yellow] };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new ProposeEndAction(Black, Resigns: false));
+
+        // Assert
+        Assert.Equal(Green, transition.State.DecidingSeat);
+    }
+
+    [Fact]
+    public void Apply_WhenTheProposerGaveUpItsTurnsAndIsRefused_PassesItsTurn()
+    {
+        // Arrange - Black, deciding, gives up its turns
+        GameState state = this.Regency(hasBlackRaja: true, Grid.CellAt(6, 2));
+        GameState proposed = this._rules.Apply(state, new ProposeEndAction(Black, Resigns: true)).State;
+
+        // Act
+        Transition transition = this._rules.Apply(proposed, new AnswerEndAction(Yellow, false));
+
+        // Assert
+        Assert.Equal(
+            (Yellow, true),
+            (transition.State.DecidingSeat, transition.State.Resigned.Contains(Black))
+        );
+        Assert.Equal(
+            [new EndRefused(Yellow), new TurnGivenUp(Black), new TurnPassed(Black, Yellow)],
+            transition.Events
+        );
+    }
+
+    [Fact]
+    public void Apply_WhenTheTurnComesToASeatThatGaveUpWithAnAllyToRule_HandsItToTheRegent()
+    {
+        // Arrange - Black, with no Raja, gave up its turns; Green has a Raja
+        GameState state = this.Regency(hasBlackRaja: false, Grid.CellAt(6, 2)) with
+        {
+            DecidingSeat = Red,
+            Resigned = [Black],
+        };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new PassAction(Red));
+
+        // Assert
+        Assert.Equal((Green, Black), (transition.State.DecidingSeat, transition.State.ActingFor));
+        Assert.Equal([new TurnPassed(Red, Black), new TurnHandedOver(Black, Green)], transition.Events);
+    }
+
+    [Fact]
+    public void Apply_WhenTheTurnComesToASeatThatGaveUpWithNoRegent_PassesItOn()
+    {
+        // Arrange - Black, with its Raja, gave up its turns
+        GameState state = this.Regency(hasBlackRaja: true, Grid.CellAt(6, 2)) with
+        {
+            DecidingSeat = Red,
+            Resigned = [Black],
+        };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new PassAction(Red));
+
+        // Assert
+        Assert.Equal(Yellow, transition.State.DecidingSeat);
+        Assert.Equal(
+            [new TurnPassed(Red, Black), new TurnGivenUp(Black), new TurnPassed(Black, Yellow)],
+            transition.Events
+        );
+    }
+
+    [Fact]
+    public void Apply_WhenASeatThatGaveUpMustAnswerAgainstTheClock_LeavesItToTheClock()
+    {
+        // Arrange - Yellow gave up its turns
+        GameState state = this.Ransoms() with { Resigned = [Yellow] };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new OfferAction(Black, Yellow, [new PieceId(12)], []));
+
+        // Assert
+        Assert.Equal(
+            (Yellow, false),
+            (transition.State.DecidingSeat, transition.Events.OfType<TurnGivenUp>().Any())
+        );
+    }
+
+    [Fact]
+    public void Apply_WhenATurnEndsWithPrisonersHeldByASeatThatGaveUp_PassesTheTurnWithoutARansomWindow()
+    {
+        // Arrange - Black holds prisoners, but gave up its turns while deciding
+        GameState state = this.Ransoms() with { Resigned = [Black] };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new PassAction(Black));
+
+        // Assert
+        Assert.Equal((Yellow, false), (transition.State.DecidingSeat, transition.State.IsRansomWindow));
+    }
+
+    [Theory]
+    [InlineData("game over")]
+    [InlineData("proposal waiting")]
+    [InlineData("dice awaited")]
+    [InlineData("rolling off")]
+    [InlineData("no pieces")]
+    public void MayProposeEnd_WhenTheGameCannotPause_IsFalse(string situation)
+    {
+        // Arrange - Red has no pieces left in the ransoms' position
+        GameState playing = this.Regency(hasBlackRaja: true, Grid.CellAt(6, 2));
+        (GameState state, SeatId seat) = situation switch
+        {
+            "game over" => (playing with { Outcome = new GameOutcome([], "over") }, Black),
+            "proposal waiting" => (playing with { Proposal = new EndProposal(Yellow, false, Black, null) }, Black),
+            "dice awaited" => (playing with { AwaitedDice = new DiceRequest(2, 6) }, Black),
+            "rolling off" => (this._rules.CreateInitialState() with { AwaitedDice = null }, Black),
+            _ => (this.Ransoms(), Red),
+        };
+
+        // Act
+        bool mayPropose = this._rules.MayProposeEnd(state, seat);
+
+        // Assert
+        Assert.False(mayPropose);
+    }
+
+    [Fact]
+    public void Apply_WhenASeatMayNotProposeEndingTheGame_ThrowsIllegalActionException()
+    {
+        // Arrange - the dice are awaited
+        GameState state = this.Later() with { AwaitedDice = new DiceRequest(2, 6) };
+        ProposeEndAction propose = new(Yellow, Resigns: false);
+
+        // Act
+        IllegalActionException exception = Assert.Throws<IllegalActionException>(
+            () => this._rules.Apply(state, propose)
+        );
+
+        // Assert
+        Assert.Contains("is not legal now", exception.Message);
+    }
+
+    [Fact]
     public void Apply_WhenAnOfferIsDeclined_KeepsThePrisonersAndTheOffererDecidesAgain()
     {
         // Arrange

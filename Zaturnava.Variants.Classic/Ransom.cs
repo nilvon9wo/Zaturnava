@@ -46,6 +46,7 @@ internal sealed class Ransom(SquareGridTopology grid, Position start)
     public static bool MayOffer(GameState state) =>
         state is
         {
+            Proposal: null,
             Offer: null,
             AwaitedDice: null,
             ActingFor: null,

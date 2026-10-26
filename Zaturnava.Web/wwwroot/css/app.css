@@ -15,6 +15,8 @@
     --ring: #f2b33d;
     --promotable: #ff5fd2;
     --problem: #ff7b7b;
+    --danger: #c62828;
+    --danger-ink: #ffffff;
     --seat-0: #2b2b2b;
     --seat-0-ink: #f4f4f4;
     --seat-1: #e3c21a;
@@ -42,6 +44,8 @@
     --ring: #c9821a;
     --promotable: #c01c9a;
     --problem: #b00020;
+    --danger: #b71c1c;
+    --danger-ink: #ffffff;
     --piece-edge: #ffffff;
     color-scheme: light;
 }
@@ -231,12 +235,49 @@ html { scrollbar-gutter: stable; }
 /* Room for the usual turn (two lines of status, a countdown, a hint and a row of buttons); the border
    is as thick whoever's turn it is. */
 .turn {
+    display: flex;
+    flex-direction: column;
     background: var(--panel);
     border: 2px solid var(--panel-edge);
     border-radius: 10px;
     padding: 12px 16px;
     min-height: 11rem;
 }
+
+/* Ending the game: red, and as far from the turn's usual buttons as the panel allows. */
+.end-area { margin-top: auto; padding-top: 32px; display: flex; justify-content: flex-end; }
+.end-game {
+    background: var(--danger);
+    color: var(--danger-ink);
+    border-color: var(--danger);
+    font-weight: 700;
+}
+.end-game:hover { border-color: var(--danger-ink); }
+
+/* A question the player must answer before anything else, over the whole page. */
+.backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: rgba(0, 0, 0, 0.55);
+}
+.dialog {
+    width: 100%;
+    max-width: 480px;
+    background: var(--panel);
+    border: 2px solid var(--accent);
+    border-radius: 12px;
+    padding: 18px 22px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+}
+.dialog h2 { margin: 0 0 10px; font-size: 1.2rem; }
+.dialog .countdown { color: var(--accent); font-variant-numeric: tabular-nums; }
+.dialog .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.dialog .resign { background: var(--danger); color: var(--danger-ink); border-color: var(--danger); }
 
 .turn.yours {
     border-color: var(--accent);
@@ -335,6 +376,7 @@ html { scrollbar-gutter: stable; }
 .seat-3 .swatch { background: var(--seat-3); }
 .seat .name { min-width: 56px; }
 .seat .player { color: var(--muted); }
+.seat .gave-up { color: var(--muted); font-style: italic; font-size: 0.85rem; }
 /* On one line, however many: the icons shrink rather than the row growing. */
 .seat .prisoners { flex: 1; min-width: 0; display: flex; gap: 1px; overflow: hidden; }
 .seat .prisoners .piece-icon { flex: 0 1 20px; min-width: 6px; }
@@ -387,6 +429,7 @@ html { scrollbar-gutter: stable; }
 .log .event.rolled-off, .log .event.shared { font-style: italic; }
 .log .event.ended { font-weight: 700; }
 .log .event.promoted, .log .event.ransom, .log .event.escaped { font-style: italic; }
+.log .event.ending { font-weight: 700; }
 
 /* On a wider screen, the table fills the window under the teams: the board as large as fits, the turn
    to its left at a size of its own, scrolling rather than growing, and the log under the turn - or, on

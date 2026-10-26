@@ -29,6 +29,9 @@ public sealed class ArgusBot(Random random) : IBotPlaying
         cancellationToken.IsCancellationRequested
             ? Task.FromCanceled<GameAction>(cancellationToken)
             : Task.FromResult(
-                SolomonBot.AnswerTo(request) ?? SolomonBot.FairTrade(request) ?? Careful.Choose(request, this._random)
+                Ending.AnswerTo(request)
+                    ?? SolomonBot.AnswerTo(request)
+                    ?? SolomonBot.FairTrade(request)
+                    ?? Careful.Choose(request, this._random)
             );
 }
