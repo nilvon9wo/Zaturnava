@@ -34,6 +34,8 @@ did them.
   allows it, without pretending to be several people.
 - **34** Games survive a server restart (storage that persists, and identities to go with it).
 - **35** Player statistics: games played and won, points scored...
+- The page's preferences (theme, sound, pieces, the log's highlights) kept with the player's identity
+  once there is one, not only in the browser.
 
 ## Talking
 
