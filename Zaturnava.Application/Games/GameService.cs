@@ -115,7 +115,7 @@ public sealed class GameService(
     {
         GameSnapshot snapshot = await this.Get(id, cancellationToken);
         GameAction action = Chosen(snapshot.Rules.Parse(descriptor));
-        Transition transition = snapshot.IsDecidedBy(action.Actor, token)
+        Transition transition = snapshot.MayAct(action, token)
             ? snapshot.Rules.Apply(snapshot.State, action)
             : throw new NotYourTurnException(id, action.Actor);
         Played acted = new(transition.State, snapshot.Record.Actions.Add(action.Describe()));

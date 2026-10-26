@@ -19,6 +19,7 @@ public sealed record EventDto(int Number, string Kind, int Seat, string Text, in
     public const string Promoted = "promoted";
     public const string Escaped = "escaped";
     public const string Ransom = "ransom";
+    public const string Ending = "ending";
     public const string Passed = "passed";
     public const string Ended = "ended";
 }

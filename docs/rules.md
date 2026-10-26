@@ -26,12 +26,12 @@ Everything else here is specified but not yet played by the engine.
 | §3 Pieces & movement | Implemented, captures included. A piece moved for another army moves the way its own army faces; what it may take is §6.4. |
 | §4 Turns & dice | Implemented: the opening plays the die that won the roll-off, then a deliberate move, a pass or two dice, clockwise from the roll-off's winner; an unusable die is forfeit. Doubles let one piece move twice, or a prisoner escape (§7). The dice profile is the weighted d6 one; a d4 profile exists but cannot yet be chosen. |
 | §5 Captures & scoring | Implemented: captures score by piece, with both throne bonuses and the empire, as clarified below. |
-| §6 Throne control | Implemented: the expanded pool (§6.1, both triggers), voluntary regency (§6.2, as proposed below) and the forced shared turn (§6.3). |
+| §6 Throne control | Implemented: the expanded pool (§6.1, both triggers), voluntary regency (§6.2, as stated below) and the forced shared turn (§6.3). |
 | §6.4 Commanded captures | Implemented, with the toggle as a constructor argument. |
 | §7 Escape | Implemented, as clarified below: the escape takes the place of the double move and ends the turn. |
 | §9 Boat triumph | Not yet. |
 | §8 Promotion & ransom | Implemented, as clarified below: promotion into any captured piece (`promotion.pawns` a constructor argument; `promotion.pool` fixed at `unrestricted`), and ransom with its timed protocol, including the receiving player's choice among equidistant squares. |
-| §10 Game end | Partly: elimination (a seat with no pieces is skipped), honourable peace, team elimination, and a safety net (below). Retirement and ending by agreement are not yet. |
+| §10 Game end | Partly: elimination (a seat with no pieces is skipped), honourable peace, team elimination, ending by agreement (as stated and proposed below), and a safety net (below). Retirement is not yet. |
 | §11 Setup roll-off | Implemented. |
 | §12 Toggles | None per game yet: `control.enemyArmyCaptures` is a constructor argument; the other defaults are fixed. |
 
@@ -249,7 +249,7 @@ of it (e.g. let the ally decide direct-move-vs-dice, or roll it themself and
 hand off only the piece selection, or make the first of two dice-moves
 themself and hand off only the second).
 
-*(Proposed)* How the engine plays it:
+*(Stated 2026-10-26)* How the engine plays it:
 
 - Consent is the occupied player's own choice: "Let Green take over",
   offered whenever they decide their own turn - before rolling, once rolled,
@@ -517,6 +517,32 @@ both the triumphing player and their ally may move each other's Boat.
   gap is large enough, and the trailing team has no realistic path back given
   remaining pieces) or agreeing to a draw. This is comparable to how Go games
   end by mutual agreement rather than forced checkmate.
+  - *(Stated 2026-10-26)* How a player proposes it: a distinctive red **End
+    game** button, set apart from the buttons a turn usually needs, asks
+    whether to wait for the others to agree, or to pass on all their
+    remaining turns. Either way, the other players are at once asked whether
+    they agree, with a reasonable time to answer; no answer counts as no. If
+    everyone agrees, the game ends at once, and points decide who won (a
+    draw if the teams are level). If anyone disagrees, the game goes on. A
+    player who chose not to wait passes on all their turns from then on,
+    unless, and until, their ally may be their regent (§6.2), who then takes
+    those turns for them.
+  - *(Proposed)* The details:
+    - Any player still playing may propose it at any time, on anyone's turn,
+      except while the dice are awaited (the roll-off included) or another
+      proposal waits.
+    - The game pauses while the others answer, one at a time, clockwise from
+      the proposer, each with 60 seconds (the `end-answer` timer). A player
+      who has given up their turns is not asked: they want the game over
+      already. On a refusal, the game resumes exactly where it was.
+    - A player who has given up their turns passes on whatever is left to
+      them that no clock decides: their turn, or their part of someone
+      else's (§6.3). What a clock decides (answering an offer of ransom, or
+      where a piece goes home) the clock still decides. They do not get the
+      window to offer ransoms once their turn is over (§8).
+    - At the start of their turn, their ally takes it as regent if they may
+      (§6.2); otherwise the turn passes.
+    - Bots agree only when their team leads on points.
   - **[toggle group: `gameEnd.safetyNet.*`]** — because unattended games
     (bot vs. bot, or an abandoned async game) can't rely on human judgment to
     "agree," the engine should support optional supplementary auto-end

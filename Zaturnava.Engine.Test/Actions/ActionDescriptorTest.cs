@@ -40,6 +40,24 @@ public sealed class ActionDescriptorTest
     }
 
     [Fact]
+    public void BooleanArgument_WhenNeitherTrueNorFalse_ThrowsMalformedActionException()
+    {
+        // Arrange
+        ActionDescriptor descriptor = new(
+            "answer-end",
+            ImmutableSortedDictionary<string, string>.Empty.Add("agrees", "yes")
+        );
+
+        // Act
+        MalformedActionException exception = Assert.Throws<MalformedActionException>(
+            () => descriptor.BooleanArgument("agrees")
+        );
+
+        // Assert
+        Assert.Equal("The 'answer-end' action needs 'agrees' to be true or false.", exception.Message);
+    }
+
+    [Fact]
     public void IntegerArgument_WhenMissing_ThrowsMalformedActionException()
     {
         // Arrange - nothing beyond the descriptor

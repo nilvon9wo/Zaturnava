@@ -3,7 +3,6 @@ using System.ComponentModel.DataAnnotations;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Events;
 using Net.NowhereAtAll.Zaturnava.Engine.Rules;
-using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 
 namespace Net.NowhereAtAll.Zaturnava.Application.Games;
 
@@ -33,9 +32,14 @@ public sealed record GameSnapshot(
         return new GameSnapshot(record, rules, replayed.State, replayed.Events, rules.LegalActions(replayed.State));
     }
 
-    /// <summary>Whether <paramref name="seat"/> is deciding now, and <paramref name="token"/> holds it.</summary>
-    public bool IsDecidedBy(SeatId seat, [Required] string token) =>
-        this.State.DecidingSeat == seat && this.Record.Controllers[seat.Value].IsHeldBy(token);
+    /// <summary>
+    /// Whether <paramref name="token"/> holds the seat that acts, and it may act now: it is deciding, or it
+    /// proposes ending the game, which a seat may do whoever decides, if the rules let it.
+    /// </summary>
+    public bool MayAct([Required] GameAction action, [Required] string token) =>
+        (this.State.DecidingSeat == action.Actor
+            || (action is ProposeEndAction && this.Rules.MayProposeEnd(this.State, action.Actor)))
+        && this.Record.Controllers[action.Actor.Value].IsHeldBy(token);
 
     private static Transition Replayed(IRulesApplying rules, Transition sofar, ActionDescriptor descriptor)
     {

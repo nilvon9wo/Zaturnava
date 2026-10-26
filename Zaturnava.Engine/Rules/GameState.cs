@@ -64,6 +64,12 @@ public sealed record GameState(
     /// </summary>
     public ReturnsDue? Returning { get; init; }
 
+    /// <summary>A proposal to end the game, waiting on the deciding seat's answer; null if none is.</summary>
+    public EndProposal? Proposal { get; init; }
+
+    /// <summary>The seats that have given up their turns, having proposed ending the game.</summary>
+    public ImmutableHashSet<SeatId> Resigned { get; init; } = [];
+
     /// <summary>How the game ended; null while it goes on.</summary>
     public GameOutcome? Outcome { get; init; }
 

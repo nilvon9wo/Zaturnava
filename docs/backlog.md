@@ -18,10 +18,7 @@ did them.
 
 ## Rules not yet played
 
-- **21, 22, 26** (rest) Ending the game by agreement; the idle-rounds safety net as a per-game
-  setting. Next, with the grand game's
-  [Stage 0](grand/roadmap.md#stage-0--finish-what-the-grand-game-inherits).
-- **20** Offer to end the game, for the other players to accept.
+- **21, 22, 26** (rest) The idle-rounds safety net as a per-game setting.
 - Boat triumph (§9): a nice-to-have; the condition is so unlikely that no one may miss it.
 - Ransom (§8): bots that offer during their turn.
 - The commanded-captures toggle (`control.enemyArmyCaptures`) as a per-game setting.
@@ -136,3 +133,7 @@ After playing against Argus (2026-10-25):
   commands an ally +1, and the captor +2 more, or +4 if the Raja was on its own throne.
 - **19** (rest) Voluntary regency (rules §6.2): a seat whose ally's Raja holds its throne, or that
   has no Raja, may let that ally take over the rest of its turn, with its own army only.
+- **20, 21, 22, 26** (more) Ending the game by agreement (rules §10): a red End game button, apart
+  from the turn's other buttons, proposes it, waiting for the others or passing on all one's turns
+  meanwhile. Each other player is asked in turn, against the clock, no answer counting as no; if all
+  agree, points decide, and if one refuses, the game goes on where it was.

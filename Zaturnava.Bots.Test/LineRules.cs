@@ -76,6 +76,8 @@ internal sealed class LineRules(ImmutableList<GameAction> legalActions) : IRules
 
     public bool MayOffer([Required] GameState state) => false;
 
+    public bool MayProposeEnd([Required] GameState state, SeatId seat) => false;
+
     public DecisionTimer TimerOf([Required] GameState state) => throw new NotSupportedException();
 
     public GameAction Parse([Required] ActionDescriptor descriptor) => throw new NotSupportedException();

@@ -40,6 +40,12 @@ public interface IRulesApplying
     /// </summary>
     bool MayOffer([Required] GameState state);
 
+    /// <summary>
+    /// Whether <paramref name="seat"/> may propose ending the game now. A proposal may come from any seat,
+    /// whoever decides: <see cref="Apply"/> takes one from a seat this allows.
+    /// </summary>
+    bool MayProposeEnd([Required] GameState state, SeatId seat);
+
     /// <summary>How the deciding seat's decision is timed; null if it may take as long as it likes.</summary>
     DecisionTimer? TimerOf([Required] GameState state);
 

@@ -59,9 +59,15 @@ internal static class GameViews
             snapshot.State.PromotionDue?.Value,
             snapshot.State.IsRansomWindow,
             snapshot.State.Returning is { } due ? PrisonerOf(snapshot.Rules, due.Prisoners[0]) : null,
-            ThroneHolderOf(snapshot.Rules, snapshot.State)
+            ThroneHolderOf(snapshot.Rules, snapshot.State),
+            ProposalOf(snapshot.State)
         );
     }
+
+    private static EndProposalDto? ProposalOf(GameState state) =>
+        state.Proposal is { } proposal
+            ? new EndProposalDto(proposal.Proposer.Value, proposal.Resigns)
+            : null;
 
     /// <summary>The enemy seat whose leader sits on the throne of the seat deciding for itself; null if none.</summary>
     private static int? ThroneHolderOf(IRulesApplying rules, GameState state) =>
@@ -107,7 +113,9 @@ internal static class GameViews
             botId is null ? null : BotNameOf(bots, botId),
             [.. snapshot.State.Prisoners.Where(prisoner => prisoner.Holder == seat)
                 .Select(prisoner => PrisonerOf(snapshot.Rules, prisoner))],
-            botId
+            botId,
+            snapshot.State.Resigned.Contains(seat),
+            snapshot.Rules.MayProposeEnd(snapshot.State, seat)
         );
     }
 
@@ -161,8 +169,9 @@ internal static class GameViews
 
     /// <summary>
     /// What a button says that its kind alone cannot: which Pawn becomes what; which prisoner escapes, and
-    /// where to; which ally a turn is handed to; that passing once a turn is over means being done offering
-    /// ransoms; and that passing on a promotion due leaves it for later. Null for any other action.
+    /// where to; which ally a turn is handed to; the answers to a proposal to end the game; that passing once
+    /// a turn is over means being done offering ransoms; and that passing on a promotion due leaves it for
+    /// later. Null for any other action.
     /// </summary>
     private static string? LabelOf(GameSnapshot snapshot, GameAction action) =>
         (action, snapshot.State.IsRansomWindow, snapshot.State.PromotionDue) switch
@@ -170,6 +179,8 @@ internal static class GameViews
             (PromoteAction promote, _, _) => PromotionOf(snapshot, promote),
             (EscapeAction escape, _, _) => EscapeOf(snapshot, escape),
             (HandOverAction handOver, _, _) => $"Let {snapshot.Rules.NameOf(handOver.Regent)} take over",
+            (AnswerEndAction { Agrees: true }, _, _) => "Agree to end the game",
+            (AnswerEndAction, _, _) => "Keep playing",
             (PassAction, true, _) => "Done offering",
             (PassAction, _, { }) => "Promote later",
             _ => null,

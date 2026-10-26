@@ -9,8 +9,9 @@ namespace Net.NowhereAtAll.Zaturnava.Variants.Classic;
 
 /// <summary>
 /// When the game ends (rules.md §10): when only one team has pieces left, which wins outright; when
-/// only Rajas are left, an honourable peace; and, as a safety net, when every seat still playing has
-/// passed its turn some rounds in a row without rolling, the team with more points wins.
+/// only Rajas are left, an honourable peace; by points, the team with more winning, when the players
+/// agree to end it, or, as a safety net, when every seat still playing has passed its turn some rounds in
+/// a row without rolling.
 /// </summary>
 internal static class GameEnd
 {
@@ -39,15 +40,23 @@ internal static class GameEnd
     {
         GameState state = transition.State;
         int playing = state.Seats.Count(seat => IsPlaying(state, seat.Id));
+        string reason = string.Create(
+            CultureInfo.InvariantCulture,
+            $"no one rolled or moved for {rounds} rounds, so points decide"
+        );
         return state.IdlePasses >= rounds * playing
-            ? Ended(transition, ByPoints(state, rounds))
+            ? ByPoints(transition, reason)
             : null;
     }
+
+    /// <summary>The ended game, the team with more points winning; a draw, if the teams are level.</summary>
+    public static Transition ByPoints(Transition transition, string reason) =>
+        Ended(transition, OutcomeByPoints(transition.State, reason));
 
     public static bool IsPlaying(GameState state, SeatId seat) =>
         state.Position.Occupants.Values.Any(piece => piece.Owner == seat);
 
-    private static GameOutcome ByPoints(GameState state, int rounds)
+    private static GameOutcome OutcomeByPoints(GameState state, string reason)
     {
         ImmutableList<(int Team, int Points)> totals =
         [
@@ -57,10 +66,6 @@ internal static class GameEnd
         ];
         int best = totals.Max(total => total.Points);
         ImmutableList<int> leaders = [.. totals.Where(total => total.Points == best).Select(total => total.Team)];
-        string reason = string.Create(
-            CultureInfo.InvariantCulture,
-            $"no one rolled or moved for {rounds} rounds, so points decide"
-        );
         return new GameOutcome(leaders.Count == 1 ? TeamOf(state, leaders[0]) : [], reason);
     }
 

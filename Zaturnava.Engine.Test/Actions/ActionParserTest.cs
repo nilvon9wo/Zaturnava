@@ -70,6 +70,8 @@ public sealed class ActionParserTest
         new PlaceAction(new SeatId(2), new CellId(9)),
         new EscapeAction(new SeatId(3), new PieceId(11), new CellId(32)),
         new HandOverAction(new SeatId(1), new SeatId(3)),
+        new ProposeEndAction(new SeatId(2), Resigns: true),
+        new AnswerEndAction(new SeatId(0), Agrees: false),
     ];
 
     [Theory]

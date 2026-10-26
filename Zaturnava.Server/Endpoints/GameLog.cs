@@ -148,6 +148,31 @@ file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bo
                 $"{this.Name(entered.Raja.Owner)}'s Raja entered {this.Name(entered.Throne)}'s throne "
                     + $"(+{Text(entered.Points)})."
             ),
+            EndProposed proposed => this.Add(
+                number,
+                EventDto.Ending,
+                proposed.Proposer,
+                $"{this.Name(proposed.Proposer)} proposed ending the game"
+                    + (proposed.Resigns ? ", and gave up their turns." : ", and waits for the others to agree.")
+            ),
+            EndAgreed agreed => this.Add(
+                number,
+                EventDto.Ending,
+                agreed.Seat,
+                $"{this.Name(agreed.Seat)} agreed to end the game."
+            ),
+            EndRefused refused => this.Add(
+                number,
+                EventDto.Ending,
+                refused.Seat,
+                $"{this.Name(refused.Seat)} would rather play on, so the game goes on."
+            ),
+            TurnGivenUp givenUp => this.Add(
+                number,
+                EventDto.Passed,
+                givenUp.Seat,
+                $"{this.Name(givenUp.Seat)} has given up their turns, so passes."
+            ),
             TurnHandedOver handed => this.Add(
                 number,
                 EventDto.Shared,

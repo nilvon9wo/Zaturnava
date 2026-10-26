@@ -617,6 +617,41 @@ public sealed class TableTest : IDisposable
         Assert.Empty(table.FindAll("button.again"));
     }
 
+    /// <summary>Seat 0 to move, which may propose ending the game if <paramref name="mayPropose"/>.</summary>
+    private static GameViewDto Proposable(bool mayPropose) =>
+        FakeGameServer.SeatZeroToMove with
+        {
+            Seats = FakeGameServer.SeatZeroToMove.Seats.SetItem(
+                0,
+                FakeGameServer.SeatZeroToMove.Seats[0] with { MayProposeEnd = mayPropose }
+            ),
+        };
+
+    /// <summary>Seat <paramref name="deciding"/> asked whether to end the game; Yellow proposed, giving up.</summary>
+    private static GameViewDto Proposed(int deciding) =>
+        FakeGameServer.SeatZeroToMove with
+        {
+            DecidingSeat = deciding,
+            Proposal = new EndProposalDto(1, Resigns: true),
+            SecondsLeft = 60,
+            Seats = FakeGameServer.SeatZeroToMove.Seats.SetItem(
+                1,
+                FakeGameServer.SeatZeroToMove.Seats[1] with { HasGivenUp = true }
+            ),
+            LegalActions = [Answer(deciding, agrees: true), Answer(deciding, agrees: false)],
+        };
+
+    private static ActionDto Answer(int seat, bool agrees) =>
+        new(
+            "answer-end",
+            ImmutableSortedDictionary<string, string>.Empty
+                .Add(ActionArguments.Actor, seat.ToString(CultureInfo.InvariantCulture))
+                .Add("agrees", agrees ? "true" : "false")
+        )
+        {
+            Label = agrees ? "Agree to end the game" : "Keep playing",
+        };
+
     private static GameViewDto Over() =>
         FakeGameServer.SeatZeroToMove with
         {
@@ -907,6 +942,133 @@ public sealed class TableTest : IDisposable
         Assert.Equal(
             (expected, "30 s left"),
             (table.Find("p.offer").TextContent, table.Find("p.countdown").TextContent)
+        );
+    }
+
+    [Theory]
+    [InlineData(true, true, 1)]
+    [InlineData(true, false, 0)]
+    [InlineData(false, true, 0)]
+    public void EndGame_WhenTheSeatMayProposeEndingTheGame_IsOffered(bool isSeated, bool mayPropose, int expected)
+    {
+        // Arrange
+        this._page.Server.View = Proposable(mayPropose);
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(isSeated ? SeatZero : Seating.Watching(FakeGameServer.GameId));
+
+        // Assert
+        Assert.Equal(expected, table.FindAll("button.end-game").Count);
+    }
+
+    [Theory]
+    [InlineData("wait", "false")]
+    [InlineData("resign", "true")]
+    public void EndGame_WhenChosenHowToWait_ProposesEndingTheGameSo(string choice, string resigns)
+    {
+        // Arrange
+        this._page.Server.View = Proposable(mayPropose: true);
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        table.Find("button.end-game").Click();
+
+        // Act
+        table.Find($".dialog button.{choice}").Click();
+
+        // Assert
+        ActionDto? submitted = this._page.Server.Submitted?.Action;
+        Assert.Equal(
+            ("propose-end", "0", resigns, 0),
+            (
+                submitted?.Kind,
+                submitted?.Arguments[ActionArguments.Actor],
+                submitted?.Arguments[EndProposalDto.ResignsArgument],
+                table.FindAll(".dialog").Count
+            )
+        );
+    }
+
+    [Fact]
+    public void EndGame_WhenCancelled_KeepsPlaying()
+    {
+        // Arrange
+        this._page.Server.View = Proposable(mayPropose: true);
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        table.Find("button.end-game").Click();
+        int asked = table.FindAll(".dialog").Count;
+
+        // Act
+        table.Find(".dialog button.cancel").Click();
+
+        // Assert
+        Assert.Equal((1, 0, null), (asked, table.FindAll(".dialog").Count, this._page.Server.Submitted));
+    }
+
+    [Fact]
+    public void Render_WhenAskedWhetherToEndTheGame_AsksWithTheScoresAndTheTimeLeft()
+    {
+        // Arrange - Yellow, with 5 points, proposed, giving up its turns
+        this._page.Server.View = Proposed(deciding: 0);
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Assert
+        Assert.Equal(
+            (
+                "Yellow proposes ending the game",
+                "They have given up their remaining turns.",
+                "60 s left; no answer keeps the game going.",
+                "Yellow proposes ending the game: do you agree?"
+            ),
+            (
+                table.Find(".dialog h2").TextContent,
+                table.FindAll(".dialog p")[0].TextContent,
+                table.Find(".dialog .countdown").TextContent,
+                table.Find("p.status").TextContent
+            )
+        );
+        Assert.Contains("Black 0, Yellow 5", table.FindAll(".dialog p")[1].TextContent, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Answer_WhenClicked_SubmitsIt()
+    {
+        // Arrange - Yellow waits for the answers, which no clock hurries
+        this._page.Server.View = Proposed(deciding: 0) with
+        {
+            Proposal = new EndProposalDto(1, Resigns: false),
+            SecondsLeft = null,
+        };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        int said = table.FindAll(".dialog p").Count;
+
+        // Act
+        table.Find(".dialog button.answer").Click();
+
+        // Assert
+        Assert.Equal(
+            ("answer-end", "true", 1),
+            (this._page.Server.Submitted?.Action.Kind, this._page.Server.Submitted?.Action.Arguments["agrees"], said)
+        );
+    }
+
+    [Fact]
+    public void Render_WhenAnotherSeatIsAskedWhetherToEndTheGame_SaysWhoWithoutAsking()
+    {
+        // Arrange
+        this._page.Server.View = Proposed(deciding: 0);
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatOne);
+
+        // Assert
+        Assert.Equal(
+            ("Yellow proposes ending the game: waiting for Black (human).", 0, "gave up"),
+            (
+                table.Find("p.status").TextContent,
+                table.FindAll(".dialog").Count,
+                table.Find(".seat .gave-up").TextContent
+            )
         );
     }
 

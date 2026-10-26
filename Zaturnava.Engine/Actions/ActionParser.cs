@@ -19,6 +19,8 @@ public sealed class ActionParser(ImmutableDictionary<string, Func<ActionDescript
             .Add(PlaceAction.Kind, PlaceAction.Parse)
             .Add(EscapeAction.Kind, EscapeAction.Parse)
             .Add(HandOverAction.Kind, HandOverAction.Parse)
+            .Add(ProposeEndAction.Kind, ProposeEndAction.Parse)
+            .Add(AnswerEndAction.Kind, AnswerEndAction.Parse)
             .Add(OfferAction.Kind, OfferAction.Parse)
             .Add(AcceptAction.Kind, AcceptAction.Parse)
             .Add(DeclineAction.Kind, DeclineAction.Parse)

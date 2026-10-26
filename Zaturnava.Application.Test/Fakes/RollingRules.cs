@@ -60,6 +60,8 @@ internal sealed class RollingRules(int length) : IRulesApplying
 
     public bool MayOffer([Required] GameState state) => false;
 
+    public bool MayProposeEnd([Required] GameState state, SeatId seat) => false;
+
     public DecisionTimer? TimerOf([Required] GameState state) => null;
 
     public GameAction Parse([Required] ActionDescriptor descriptor) => ActionParser.Standard.Parse(descriptor);
