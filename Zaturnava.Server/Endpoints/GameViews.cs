@@ -57,9 +57,23 @@ internal static class GameViews
             OfferOf(snapshot),
             snapshot.TimeLeft?.TotalSeconds,
             snapshot.State.PromotionDue?.Value,
-            snapshot.State.IsRansomWindow
+            snapshot.State.IsRansomWindow,
+            snapshot.State.Returning is { } due ? PrisonerOf(snapshot.Rules, due.Prisoners[0]) : null,
+            ThroneHolderOf(snapshot.Rules, snapshot.State)
         );
     }
+
+    /// <summary>The enemy seat whose leader sits on the throne of the seat deciding for itself; null if none.</summary>
+    private static int? ThroneHolderOf(IRulesApplying rules, GameState state) =>
+        state.ActingFor is null && state.DecidingSeat is { } seat
+            ? rules.Thrones
+                .Where(throne => throne.Key == seat)
+                .Select(throne => state.Position.PieceAt(throne.Value))
+                .OfType<Piece>()
+                .Where(holder => rules.IsLeader(holder.Kind) && !state.Teams.AreAllied(holder.Owner, seat))
+                .Select(holder => (int?)holder.Owner.Value)
+                .FirstOrDefault()
+            : null;
 
     private static RulesetDto RulesetOf(IRulesApplying rules) =>
         new(rules.Id, rules.Name, rules.CreateInitialState().Seats.Count);
@@ -83,16 +97,17 @@ internal static class GameViews
     private static SeatDto SeatOf(GameSnapshot snapshot, ImmutableList<BotProfile> bots, SeatId seat)
     {
         SeatController controller = snapshot.Record.Controllers[seat.Value];
-        string? bot = controller is BotSeat botSeat ? BotNameOf(bots, botSeat.BotId) : null;
+        string? botId = controller is BotSeat botSeat ? botSeat.BotId : null;
         return new SeatDto(
             seat.Value,
             snapshot.Rules.NameOf(seat),
             snapshot.State.Teams.TeamOf(seat),
             snapshot.State.Scores.GetValueOrDefault(seat),
             controller.Kind,
-            bot,
+            botId is null ? null : BotNameOf(bots, botId),
             [.. snapshot.State.Prisoners.Where(prisoner => prisoner.Holder == seat)
-                .Select(prisoner => PrisonerOf(snapshot.Rules, prisoner))]
+                .Select(prisoner => PrisonerOf(snapshot.Rules, prisoner))],
+            botId
         );
     }
 

@@ -13,15 +13,17 @@ namespace Net.NowhereAtAll.Zaturnava.Bots;
 /// once it is done. That is the most an enemy could win by starting an exchange on a cell where one of
 /// the team's pieces stands, if both sides go on taking while it pays, or, if the bot's throne is
 /// empty, what the enemy leader who could step onto it is worth. The dice and whose turn comes next
-/// are left aside: any enemy might reply, with any piece. Among actions worth the same, it would rather
-/// do something than pass, and picks at random.
+/// are left aside: any enemy might reply, with any piece. Half of what the action leaves its allies to
+/// win next, or takes from them (<see cref="Teamwork"/>), counts too. Among actions worth the same, it
+/// would rather do something than pass, and picks at random.
 /// </summary>
 internal static class Careful
 {
     public static GameAction Choose(DecisionRequest request, Random random)
     {
+        int allied = Teamwork.ThreatOf(request, request.State);
         ImmutableList<(GameAction Action, int Worth)> worths =
-            [.. request.LegalActions.Select(action => (action, WorthOf(request, action)))];
+            [.. request.LegalActions.Select(action => (action, WorthOf(request, action, allied)))];
         int best = worths.Max(worth => worth.Worth);
         ImmutableList<GameAction> top = [.. worths.Where(worth => worth.Worth == best).Select(worth => worth.Action)];
         ImmutableList<GameAction> active = [.. top.Where(action => action is not PassAction)];
@@ -31,10 +33,17 @@ internal static class Careful
         return choices[random.Next(choices.Count)];
     }
 
-    private static int WorthOf(DecisionRequest request, GameAction action)
+    /// <summary>
+    /// Twice what the action gains less what it exposes, and what it leaves the bot's allies to win
+    /// beyond the <paramref name="allied"/> they could before: half as much as the bot's own, being
+    /// theirs to take, if no enemy gets in first.
+    /// </summary>
+    private static int WorthOf(DecisionRequest request, GameAction action, int allied)
     {
         GameState after = request.Rules.Apply(request.State, action).State;
-        return Greedy.Gain(request, action, after) - Exposure(request, after);
+        return (2 * (Greedy.Gain(request, action, after) - Exposure(request, after)))
+            + Teamwork.ThreatOf(request, after)
+            - allied;
     }
 
     /// <summary>The worst an enemy could do to the bot's team in reply: one exchange, or a throne taken.</summary>
@@ -57,7 +66,7 @@ internal static class Careful
     /// <paramref name="takers"/>, the other side retakes with its cheapest, and so on, each side stopping
     /// when going on would lose it more than it wins.
     /// </summary>
-    private static int Exchange(int target, ImmutableList<int> takers, ImmutableList<int> retakers) =>
+    internal static int Exchange(int target, ImmutableList<int> takers, ImmutableList<int> retakers) =>
         takers.IsEmpty
             ? 0
             : Math.Max(0, target - Exchange(takers[0], retakers, takers.RemoveAt(0)));
@@ -82,6 +91,7 @@ internal static class Careful
             .SelectMany(seat => request.Rules.AttacksOf(after, seat.Id))
             .ToLookup(attack => attack.Target);
 
-    private static ImmutableList<int> WorthsOf(DecisionRequest request, IEnumerable<Attack> attacks) =>
+    /// <summary>What the attackers are worth, the cheapest first.</summary>
+    internal static ImmutableList<int> WorthsOf(DecisionRequest request, IEnumerable<Attack> attacks) =>
         [.. attacks.Select(attack => request.Rules.WorthOf(attack.Attacker.Kind)).Order()];
 }

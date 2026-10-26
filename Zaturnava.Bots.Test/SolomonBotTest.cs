@@ -1,6 +1,8 @@
+using System.Collections.Immutable;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Decisions;
 using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
+using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 
 namespace Net.NowhereAtAll.Zaturnava.Bots.Test;
 
@@ -26,6 +28,40 @@ public sealed class SolomonBotTest
 
         // Assert
         Assert.Equal(answer, action.Describe().Kind);
+    }
+
+    [Fact]
+    public async Task Decide_WhenAskedForAnEnemyLeader_DeclinesEvenWithinAPoint()
+    {
+        // Arrange - its Horse and Green's Pawn back, worth 4, for Yellow's Raja, worth 5
+        DecisionRequest offered = Ransoms.HoldingYellowsRaja(Ransoms.Offered([20, 21], [12]));
+
+        // Act
+        GameAction action = await new SolomonBot(new Random(1)).Decide(offered, this._cancellation);
+
+        // Assert
+        Assert.Equal("decline", action.Describe().Kind);
+    }
+
+    [Theory]
+    [InlineData("pawn", "horse", true)]
+    [InlineData("horse", "pawn", false)]
+    public async Task Decide_WhenAnEvenTradeIsOpen_OffersItOnlyIfItsTeamIsBehindOnTheBoard(
+        string ours,
+        string theirs,
+        bool offers
+    )
+    {
+        // Arrange - no ally's piece to give back; a Horse for a Horse, worth the same to both
+        DecisionRequest request =
+            Ransoms.On(Ransoms.WindowWithout(30), (ours, Ransoms.Black), (theirs, Ransoms.Yellow));
+        OfferAction even = new(Ransoms.Black, Ransoms.Yellow, [new PieceId(11)], [new PieceId(20)]);
+
+        // Act
+        GameAction action = await new SolomonBot(new Random(1)).Decide(request, this._cancellation);
+
+        // Assert
+        Assert.Equal(offers, action == even);
     }
 
     [Fact]
@@ -92,6 +128,26 @@ public sealed class SolomonBotTest
 
         // Assert
         _ = await Assert.ThrowsAsync<TaskCanceledException>(() => deciding);
+    }
+
+    [Fact]
+    public async Task Decide_WhenAMoveWouldBlockAnAllysAttack_MovesElsewhere()
+    {
+        // Arrange - the ally's Boat on 7 has the enemy Raja on 3 in its line, which the Horse would cut on 5
+        DecisionRequest request = LineRules.Request(
+            [LineRules.Move(0, 1), LineRules.Move(0, 5)],
+            (0, LineRules.Horse, LineRules.Seat),
+            (3, LineRules.Raja, LineRules.Enemy),
+            (7, LineRules.Boat, new SeatId(2))
+        );
+
+        // Act
+        GameAction[] chosen = await Task.WhenAll(
+            Enumerable.Range(0, 20).Select(seed => new SolomonBot(new Random(seed)).Decide(request, this._cancellation))
+        );
+
+        // Assert
+        Assert.Equal([LineRules.Move(0, 1)], chosen.ToImmutableHashSet());
     }
 
     [Fact]

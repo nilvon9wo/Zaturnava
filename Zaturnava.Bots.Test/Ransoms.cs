@@ -68,6 +68,28 @@ internal static class Ransoms
         return new DecisionRequest(rules, state, Black, rules.LegalActions(state));
     }
 
+    /// <summary>The request, with each piece on its cell (cells from 0), worth what its kind is.</summary>
+    public static DecisionRequest On(DecisionRequest request, params (string Kind, SeatId Owner)[] pieces)
+    {
+        Position position = pieces
+            .Select((piece, index) => (piece, index))
+            .Aggregate(
+                Position.Empty,
+                (placed, next) => placed.Place(
+                    new CellId(next.index),
+                    new Piece(Id(100 + next.index), new PieceKindId(next.piece.Kind), next.piece.Owner)
+                )
+            );
+        return request with { State = request.State with { Position = position } };
+    }
+
+    /// <summary>The request, with seat 0 also holding Yellow's Raja 12.</summary>
+    public static DecisionRequest HoldingYellowsRaja(DecisionRequest request) =>
+        request with
+        {
+            State = request.State with { Prisoners = request.State.Prisoners.Add(Held(12, "raja", Yellow, Black)) },
+        };
+
     public static RansomOffer Offer(SeatId to, ImmutableList<int> given, ImmutableList<int> asked) =>
         new(Black, to, [.. given.Select(Id)], [.. asked.Select(Id)]);
 

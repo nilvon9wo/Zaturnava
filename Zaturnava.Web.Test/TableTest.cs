@@ -33,12 +33,12 @@ public sealed class TableTest : IDisposable
             (4, "Raja", "Your move.", "Black you 0", "Pass", "turn yours", true),
             (
                 table.FindAll("rect.cell").Count,
-                table.Find(".piece title").TextContent,
+                table.Find("svg.board .piece title").TextContent,
                 table.Find("p.status").TextContent,
                 Text(table.FindAll("li.seat")[0]),
                 table.Find("button.action").TextContent.Trim(),
                 table.Find("div.turn").ClassName,
-                table.Find(".piece").ClassList.Contains("movable")
+                table.Find("svg.board .piece").ClassList.Contains("movable")
             )
         );
     }
@@ -96,7 +96,7 @@ public sealed class TableTest : IDisposable
                 Cell(table, 2).ClassList.Contains("target"),
                 Cell(table, 3).ClassList.Contains("target"),
                 string.Join("|", table.FindAll("circle.mark").Select(mark => mark.GetAttribute("class"))),
-                table.Find(".piece").GetAttribute("class")
+                table.Find("svg.board .piece").GetAttribute("class")
             )
         );
     }
@@ -149,7 +149,7 @@ public sealed class TableTest : IDisposable
 
         // Assert
         Assert.Equal(
-            (null, "Black to move (human).", "Black human 0", "Yellow Random Boat 5", "turn"),
+            (null, "Black (human) to move.", "Black human 0", "Yellow Random Boat 5", "turn"),
             (
                 this._page.Server.Submitted,
                 table.Find("p.status").TextContent,
@@ -197,7 +197,7 @@ public sealed class TableTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ("Black to move (human).", 0, false),
+            ("Black (human) to move.", 0, false),
             (
                 table.Find("p.status").TextContent,
                 table.FindAll("button.action").Count,
@@ -210,6 +210,22 @@ public sealed class TableTest : IDisposable
     public void Render_WhenTheGameCannotBeLoaded_SaysWhy()
     {
         // Arrange
+        this._page.Server.Failure = new GameRequestRefusedException(Refusal.Illegal, "Not now.");
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Assert
+        Assert.Equal(
+            ("Not now.", 0, 0),
+            (table.Find("p.problem").TextContent, table.FindAll("svg").Count, table.FindAll("p.status").Count)
+        );
+    }
+
+    [Fact]
+    public void Render_WhenTheServerHasNoSuchGame_SaysItIsGone()
+    {
+        // Arrange
         this._page.Server.Failure = new GameRequestRefusedException(Refusal.NotFound, "There is no such game.");
 
         // Act
@@ -217,9 +233,48 @@ public sealed class TableTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ("There is no such game.", 0, 0),
-            (table.Find("p.problem").TextContent, table.FindAll("svg").Count, table.FindAll("p.status").Count)
+            ("This game is gone: the server no longer has it, perhaps because it was restarted.", 0),
+            (table.Find(".gone p.problem").TextContent.Trim(), table.FindAll("svg").Count)
         );
+    }
+
+    [Fact]
+    public void ActionButton_WhenTheGameIsGoneMeanwhile_PutsTheBoardAwayAndStopsAsking()
+    {
+        // Arrange
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        this._page.Server.Failure = new GameRequestRefusedException(Refusal.NotFound, "There is no such game.");
+
+        // Act
+        table.Find("button.action").Click();
+
+        // Assert
+        Assert.Equal(
+            (1, 0, 0, 2),
+            (
+                table.FindAll(".gone").Count,
+                table.FindAll("svg").Count,
+                table.FindAll("p.status").Count,
+                this._page.Server.Calls.Count
+            )
+        );
+    }
+
+    [Fact]
+    public void BackToTheLobby_WhenTheGameIsGone_ReturnsToTheLobby()
+    {
+        // Arrange
+        bool hasLeft = false;
+        this._page.Server.Failure = new GameRequestRefusedException(Refusal.NotFound, "There is no such game.");
+        IRenderedComponent<Table> table = this._page.Render<Table>(
+            parameters => parameters.Add(x => x.Seating, SeatZero).Add(x => x.OnLeave, () => hasLeft = true)
+        );
+
+        // Act
+        table.Find(".gone button.back").Click();
+
+        // Assert
+        Assert.True(hasLeft);
     }
 
     [Fact]
@@ -455,6 +510,81 @@ public sealed class TableTest : IDisposable
         Assert.True(hasLeft);
     }
 
+    [Theory]
+    [InlineData(true, 0)]
+    [InlineData(false, null)]
+    public void PlayAgain_WhenTheGameIsOver_StartsItAgainWithTheSameBotsInTheSameSeats(bool isSeated, int? seat)
+    {
+        // Arrange - Yellow is the Random bot
+        this._page.Server.View = Over() with
+        {
+            Seats =
+            [
+                .. FakeGameServer.SeatZeroToMove.Seats
+                    .Select(held => held with { BotId = held.Bot is null ? null : "random" }),
+            ],
+        };
+        Seating? seated = null;
+        IRenderedComponent<Table> table = this._page.Render<Table>(parameters => parameters
+            .Add(x => x.Seating, isSeated ? SeatZero : Seating.Watching(FakeGameServer.GameId))
+            .Add(x => x.OnSeated, next => seated = next)
+        );
+
+        // Act
+        table.Find("button.again").Click();
+
+        // Assert
+        Assert.Equal(
+            ("classic", "person,random", seat),
+            (
+                this._page.Server.Created!.RulesetId,
+                string.Join(',', this._page.Server.Created.Bots.Select(bot => bot ?? "person")),
+                seated!.Claim?.Seat
+            )
+        );
+    }
+
+    [Fact]
+    public void QuickGame_WhenTheGameIsOver_SitsAtSomeSeatWithEachBotOnceAmongTheOthers()
+    {
+        // Arrange
+        this._page.Server.View = Over();
+        Seating? seated = null;
+        IRenderedComponent<Table> table = this._page.Render<Table>(parameters => parameters
+            .Add(x => x.Seating, SeatZero)
+            .Add(x => x.OnSeated, next => seated = next)
+        );
+
+        // Act
+        table.Find("button.quick").Click();
+
+        // Assert
+        ImmutableList<string?> bots = this._page.Server.Created!.Bots;
+        Assert.Equal(
+            (3, true),
+            (bots.OfType<string>().Distinct(StringComparer.Ordinal).Count(), bots[seated!.Claim!.Seat] is null)
+        );
+    }
+
+    [Fact]
+    public void Again_WhileTheGameGoesOn_IsNotOffered()
+    {
+        // Arrange - nothing beyond the game, still going on
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Assert
+        Assert.Empty(table.FindAll("button.again"));
+    }
+
+    private static GameViewDto Over() =>
+        FakeGameServer.SeatZeroToMove with
+        {
+            DecidingSeat = null,
+            Outcome = new OutcomeDto([1], "Yellow won: only one team has pieces left."),
+        };
+
     private static AngleSharp.Dom.IElement Cell(IRenderedComponent<Table> table, int id) =>
         table.Find($"rect[data-cell='{id}']");
 
@@ -489,7 +619,7 @@ public sealed class TableTest : IDisposable
 
     [Theory]
     [InlineData(0, false, "Answer Yellow's offer.")]
-    [InlineData(1, false, "Yellow is answering Black's offer (Random).")]
+    [InlineData(1, false, "Random (Yellow) is answering Black's offer.")]
     [InlineData(0, true, "Your turn is over: offer prisoners back, or be done.")]
     [InlineData(1, true, "Yellow's turn is over: they may still offer prisoners back.")]
     public void Status_WhenOnlyRansomsAreBeingDealtWith_SaysSo(int deciding, bool isTurnOver, string expected)
@@ -511,8 +641,57 @@ public sealed class TableTest : IDisposable
     }
 
     [Theory]
+    [InlineData(true, "Yellow's Raja holds your throne: you must roll, then move first; Yellow moves second.", 1)]
+    [InlineData(false, "Yellow's Raja holds your throne: you move first; Yellow moves second.", 0)]
+    public void Status_WhenAnEnemyLeaderHoldsTheirThrone_SaysWhoMovesAndUrgesARoll(
+        bool mayRoll,
+        string expected,
+        int urged
+    )
+    {
+        // Arrange - Yellow's Raja on cell 2, Black's throne
+        ActionDto roll = new("roll", ImmutableSortedDictionary<string, string>.Empty.Add(ActionArguments.Actor, "0"));
+        GameViewDto view = FakeGameServer.SeatZeroToMove;
+        this._page.Server.View = view with
+        {
+            Cells = view.Cells.SetItem(2, view.Cells[2] with { Throne = 0 }),
+            Pieces = [new PieceDto(0, "raja", "Raja", 1, 2)],
+            LegalActions = mayRoll ? [roll] : [FakeGameServer.Pass],
+            ThroneHeldBy = 1,
+        };
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Assert
+        Assert.Equal(
+            (expected, urged),
+            (table.Find("p.status").TextContent, table.FindAll("button.urged").Count)
+        );
+    }
+
+    [Theory]
+    [InlineData(0, "Your Pawn is going home: choose a marked square for it.")]
+    [InlineData(1, "Random (Yellow) is choosing where their Pawn goes home.")]
+    public void Status_WhenAPieceGoingHomeWaitsOnWhereItGoes_SaysWhoChooses(int deciding, string expected)
+    {
+        // Arrange
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            DecidingSeat = deciding,
+            Returning = new PrisonerDto(4, "pawn", "Pawn", deciding),
+        };
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Assert
+        Assert.Equal(expected, table.Find("p.status").TextContent);
+    }
+
+    [Theory]
     [InlineData(0, 1, "Your move, for Yellow.")]
-    [InlineData(1, 0, "Yellow to move, for Black (Random).")]
+    [InlineData(1, 0, "Random (Yellow) to move, for Black.")]
     public void Status_WhenOneSeatMovesForAnother_SaysForWhom(int deciding, int actingFor, string expected)
     {
         // Arrange
@@ -544,6 +723,34 @@ public sealed class TableTest : IDisposable
                 string.Join(",", table.FindAll("g.cell-name text").Select(name => name.TextContent)),
                 table.FindAll("svg.board g.piece path").Count,
                 table.FindAll("svg.board g.piece text").Count
+            )
+        );
+    }
+
+    [Fact]
+    public void Seats_WhenSeated_GroupsThemByTeamWithItsTotalTheirOwnTeamFirst()
+    {
+        // Arrange - Black (0) and Green (3) against Yellow (5) and Red (2); the player is Yellow
+        ImmutableList<SeatDto> seats = FakeGameServer.SeatZeroToMove.Seats;
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Seats =
+            [
+                .. seats,
+                new SeatDto(2, "Green", 0, 3, "bot", "Random", []),
+                new SeatDto(3, "Red", 1, 2, "bot", "Random", []),
+            ],
+        };
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatOne);
+
+        // Assert
+        Assert.Equal(
+            ["Yellow & Red 7 mine", "Black & Green 3 "],
+            table.FindAll("section.team").Select(team =>
+                $"{team.QuerySelector(".team-name")!.TextContent} {team.QuerySelector(".team-score")!.TextContent} "
+                + (team.ClassList.Contains("mine") ? "mine" : string.Empty)
             )
         );
     }
@@ -725,7 +932,7 @@ public sealed class TableTest : IDisposable
         Assert.Equal(
             (
                 "Promote Black's Pawn on c2 to:",
-                "Green's Elephant held by Yellow|Black's Boat held by you",
+                "Black's Boat held by you|Green's Elephant held by Yellow|Yellow's Horse held by you",
                 "Promote later"
             ),
             (
@@ -765,12 +972,30 @@ public sealed class TableTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ("Green's Rook|Black's Boat", 1),
+            ("Black's Boat|Green's Rook|Yellow's Knight", 1),
             (
                 string.Join('|', table.FindAll(".promotion .choice .name").Select(name => name.TextContent)),
                 table.FindAll(".promotion .choice path").Count
             )
         );
+    }
+
+    [Fact]
+    public void Choice_WhenAPromotionIsDue_PromotesIntoTheChosenPiece()
+    {
+        // Arrange - the Pawn has just come to the far edge, so its choices are open
+        this._page.Server.View = Promotions() with { PromotionDue = 2 };
+        IRenderedComponent<Table> table = this._page.Render<Table>(
+            parameters => parameters.Add(x => x.Seating, SeatZero).Add(x => x.Pieces, PieceSet.Chess)
+        );
+
+        // Act
+        table.FindAll(".promotion button.choice")
+            .First(choice => choice.TextContent.Contains("Green's Rook", StringComparison.Ordinal))
+            .Click();
+
+        // Assert
+        Assert.Equal("8", this._page.Server.Submitted?.Action.Arguments[ActionArguments.Into]);
     }
 
     [Fact]
@@ -799,7 +1024,7 @@ public sealed class TableTest : IDisposable
         table.FindAll(".promotion button.choice")[1].Click();
 
         // Assert
-        Assert.Equal("7", this._page.Server.Submitted?.Action.Arguments[ActionArguments.Into]);
+        Assert.Equal("8", this._page.Server.Submitted?.Action.Arguments[ActionArguments.Into]);
     }
 
     [Fact]
@@ -883,14 +1108,23 @@ public sealed class TableTest : IDisposable
             Pieces = [.. FakeGameServer.SeatZeroToMove.Pieces, new PieceDto(1, "pawn", "Pawn", 0, 2)],
             Seats =
             [
-                FakeGameServer.SeatZeroToMove.Seats[0] with { Prisoners = [new PrisonerDto(7, "boat", "Boat", 0)] },
+                FakeGameServer.SeatZeroToMove.Seats[0] with
+                {
+                    Prisoners = [new PrisonerDto(7, "boat", "Boat", 0), new PrisonerDto(9, "horse", "Horse", 1)],
+                },
                 FakeGameServer.SeatZeroToMove.Seats[1] with
                 {
                     Prisoners = [new PrisonerDto(8, "elephant", "Elephant", 2)],
                 },
                 new SeatDto(2, "Green", 0, 0, "open", null, []),
             ],
-            LegalActions = [FakeGameServer.Pass with { Label = "Promote later" }, Promotion(8), Promotion(7)],
+            LegalActions =
+            [
+                FakeGameServer.Pass with { Label = "Promote later" },
+                Promotion(9),
+                Promotion(8),
+                Promotion(7),
+            ],
         };
 
     private static string Choice(AngleSharp.Dom.IElement choice) =>

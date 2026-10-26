@@ -29,7 +29,7 @@ Everything else here is specified but not yet played by the engine.
 | §6 Throne control | Partly: the expanded pool (§6.1, both triggers) and the forced shared turn (§6.3). Voluntary regency (§6.2) is not yet. |
 | §6.4 Commanded captures | Implemented, with the toggle as a constructor argument. |
 | §7 Escape, §9 Boat triumph | Not yet. |
-| §8 Promotion & ransom | Implemented, as clarified below: promotion into any captured piece (`promotion.pawns` a constructor argument; `promotion.pool` fixed at `unrestricted`), and ransom with its timed protocol. The receiving player's choice among equidistant squares is not offered yet. |
+| §8 Promotion & ransom | Implemented, as clarified below: promotion into any captured piece (`promotion.pawns` a constructor argument; `promotion.pool` fixed at `unrestricted`), and ransom with its timed protocol, including the receiving player's choice among equidistant squares. |
 | §10 Game end | Partly: elimination (a seat with no pieces is skipped), honourable peace, team elimination, and a safety net (below). Retirement and ending by agreement are not yet. |
 | §11 Setup roll-off | Implemented. |
 | §12 Toggles | None per game yet: `control.enemyArmyCaptures` is a constructor argument; the other defaults are fixed. |
@@ -275,13 +275,16 @@ about the occupied player's army for that turn.
 own army, or a Raja-less ally's) takes only that player's enemies. A piece
 of an **enemy** army the player commands — through a throne their Raja holds
 (§6.1a), or moving for a seat whose throne their Raja holds (§6.3) — may take
-**any** piece: its own army's, its ally's, or the commanding player's own
-team's. **[toggle: `control.enemyArmyCaptures`]** — Default: `anything`;
-`notOwnTeam` forbids taking the commanding player's own team's pieces.
+any piece but the commanding player's own team's: its own army's, or its
+ally's. **[toggle: `control.enemyArmyCaptures`]** — Default: `notOwnTeam`;
+`anything` lets it take the commanding player's own team's pieces too.
+*(Changed 2026-10-25: the default was `anything`, until a player took their
+own Pawn so, and could never ransom it back from themselves.)*
 
-Taking a piece of one's own team scores no one: no points for the piece, and
-no on-throne bonus. The piece is still taken prisoner, by the player who
-made the move.
+Taking a piece of one's own team (with `anything`) scores no one: no points
+for the piece, and no on-throne bonus. The piece is still taken prisoner, by
+the player who made the move: whoever moves a piece holds what it takes, and
+the log says so when the piece was another army's.
 
 ## 7. Doubles & Escape
 
@@ -419,9 +422,15 @@ available (via a future capture, by anyone).
   - The game waits for the receiver's answer. Either way, the offerer then
     decides again.
   - Accepted, the prisoners given go home first, then those asked for. Each
-    goes to its starting square, or the free square fewest king's steps
-    from it. Until the receiving player can choose among equals, the one
-    nearest the first rank is taken, then the one nearest the a-file.
+    goes to its own starting square if that is free; else to a free starting
+    square of its kind's (for a Pawn, any of its army's Pawns' squares); else
+    to the free squares fewest king's steps from its own. *(Stated
+    2026-10-25)* When it may go to more than one, the piece's owner (the
+    player receiving it back) chooses, and the game waits on that choice,
+    timed as an answer is (`Games:Timers:ransom-return`). A player out of
+    time, or a bot that cannot tell them apart, gets the one nearest the
+    piece's own square; then the one on its own starting row; else the one
+    nearest its army's back rank; then the one nearest its army's left.
   - The window and the answer are timed: 30 seconds each by default, set by
     the host (`Games:Timers:ransom-window`, `Games:Timers:ransom-answer`).
     When the window runs out, it closes; when the answer runs out, the offer
@@ -507,7 +516,7 @@ configuration this document describes.
 | `dice.profile` | `2d6-weighted` | Dice count/sides and value→piece-category mapping. Alternative: `2d4-uniform`. |
 | `promotion.pool` | `unrestricted` | Whether a promoting Pawn may become any captured piece, or only one that started on the same file/column. |
 | `promotion.pawns` | `otherArmies` | Whether a promoting Pawn may become another army's captured Pawn, or never a Pawn (§8). |
-| `control.enemyArmyCaptures` | `anything` | What a piece of an enemy army a player commands may take: `anything`, or `notOwnTeam` (§6.4). |
+| `control.enemyArmyCaptures` | `notOwnTeam` | What a piece of an enemy army a player commands may take: `anything`, or `notOwnTeam` (§6.4). |
 | `gameEnd.safetyNet.*` | off | Optional auto-end conditions (move cap, universal-pass, etc.) layered on top of end-by-agreement, mainly for unattended/bot games. |
 | `scoring.points.pawn` | `1` | Points awarded for capturing a Pawn. |
 | `scoring.points.boat` | `2` | Points awarded for capturing a Boat. |
@@ -542,8 +551,6 @@ Nothing rules-level is currently blocking. Noted for later attention:
 - Whether team membership can ever change *during* a game (a future variant
   idea raised during design discussion) is explicitly out of scope for now —
   team assignment is fixed at game creation.
-- Ransom (§8): letting the receiving player choose among equidistant squares
-  for a returning piece.
 - **Piece naming/set**: *(updated)* traditional-vs-chess-standard naming is
   now the `pieceSet.naming` toggle in §12, rather than a one-time decision —
   players can pick either label set (Pawn/Boat/Horse/Elephant/Raja vs.

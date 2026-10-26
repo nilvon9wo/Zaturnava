@@ -26,7 +26,7 @@ did them.
 - Escape on doubles (§7), the empire bonus (§5): next, with the grand game's
   [Stage 0](grand/roadmap.md#stage-0--finish-what-the-grand-game-inherits).
 - Boat triumph (§9): a nice-to-have; the condition is so unlikely that no one may miss it.
-- Ransom (§8): the receiving player choosing among equidistant squares; bots that offer during their turn.
+- Ransom (§8): bots that offer during their turn.
 - The commanded-captures toggle (`control.enemyArmyCaptures`) as a per-game setting.
 
 ## Players and identity
@@ -114,3 +114,20 @@ Toward the grand game's [Stage 0](grand/roadmap.md#stage-0--finish-what-the-gran
   the worst an enemy could do in return (take a piece left unguarded, win an exchange, or step a
   leader onto its empty throne). It trades prisoners as Solomon does. In 40 games of self-play, a
   team of two Arguses beat a team of two Midases 38 times.
+
+After playing against Argus (2026-10-25):
+
+- A commanded enemy army may no longer take its commander's own team's pieces, by default (rules
+  §6.4): a player took their own Pawn so, and could never ransom it back from themselves.
+- The log says when a capture was made with another army's piece, and who holds the prisoner:
+  "Yellow took Black's Elephant, with Red's Elephant, and holds it prisoner (+4)."
+- Bots mind the table when they trade with an enemy: they never give a leader back, and make no trade
+  that leaves their team weaker against that enemy's, counting what each has on the board. So an
+  even trade suits only the team that is behind, and nothing given back revives a team that has
+  nothing left.
+- Ransom (§8): when a piece going home has several free squares as near its own, its owner chooses
+  among them, marked on the board (a Pawn need no longer land in the Boat's corner).
+- Once a game is over, the table offers to play it again (the same seats, played the same way, the
+  player at the same seat) or a quick game.
+- A promotion's choices list the player's own pieces first, then their allies', then the rest, each
+  group the most valuable first.

@@ -6,9 +6,9 @@ namespace Net.NowhereAtAll.Zaturnava.Variants.Classic;
 /// </summary>
 public enum CommandedCaptures
 {
-    /// <summary>Any piece: that army's own, its ally's, or the commanding team's. The default.</summary>
+    /// <summary>Any piece: that army's own, its ally's, or the commanding team's.</summary>
     Anything,
 
-    /// <summary>Any piece but the commanding team's.</summary>
+    /// <summary>Any piece but the commanding team's. The default.</summary>
     NotOwnTeam,
 }

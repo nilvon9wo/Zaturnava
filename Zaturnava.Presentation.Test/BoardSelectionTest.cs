@@ -72,4 +72,20 @@ public sealed class BoardSelectionTest
         // Assert
         Assert.Equal((BoardSelection.None, null), (next, chosen));
     }
+
+    [Theory]
+    [InlineData(20, true)]
+    [InlineData(21, false)]
+    public void Click_WhenNothingIsSelectedAndSomethingMayBeDroppedThere_ChoosesTheDrop(int cell, bool isDrop)
+    {
+        // Arrange
+        ActionDto drop = Actions.Of("place", (ActionArguments.To, "20"));
+        BoardActions actions = new([drop]);
+
+        // Act
+        (BoardSelection next, ActionDto? chosen) = BoardSelection.None.Click(cell, actions);
+
+        // Assert
+        Assert.Equal((BoardSelection.None, isDrop ? drop : null), (next, chosen));
+    }
 }

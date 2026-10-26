@@ -67,6 +67,7 @@ public sealed class ActionParserTest
         new OfferAction(new SeatId(1), new SeatId(2), [new PieceId(16)], []),
         new AcceptAction(new SeatId(2)),
         new DeclineAction(new SeatId(2)),
+        new PlaceAction(new SeatId(2), new CellId(9)),
     ];
 
     [Theory]

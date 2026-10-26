@@ -878,6 +878,12 @@ public sealed class ClassicRulesTest
     public void Apply_WhenACommandedArmyTakesThePiecesOfItsCommandersTeam_ScoresNoOne()
     {
         // Arrange - Black commands Red, whose pawn can take Green's Raja on Green's own throne, e8
+        ClassicRules rules = new(
+            DiceProfile.WeightedSixSided,
+            ClassicRules.DefaultIdleRounds,
+            CommandedCaptures.Anything,
+            PawnPromotion.OtherArmies
+        );
         Piece raja = Piece(3, ClassicPieces.Raja, Green);
         GameState state = this.StateWith(
             (RedThrone, Piece(1, ClassicPieces.Raja, Black)),
@@ -886,7 +892,7 @@ public sealed class ClassicRulesTest
         );
 
         // Act
-        Transition transition = this._rules.Apply(state, new MoveAction(Black, Grid.CellAt(5, 6), Grid.CellAt(4, 7)));
+        Transition transition = rules.Apply(state, new MoveAction(Black, Grid.CellAt(5, 6), Grid.CellAt(4, 7)));
 
         // Assert
         Assert.Equal(
@@ -1380,36 +1386,91 @@ public sealed class ClassicRulesTest
     }
 
     [Fact]
-    public void Apply_WhenAnOfferIsAccepted_EachPrisonerGoesHomeOrToTheNearestFreeSquare()
+    public void Apply_WhenAnOfferIsAcceptedAndAPiecesHomeIsTaken_WaitsOnItsOwnerToChooseAmongItsKindsSquares()
     {
-        // Arrange - Yellow's pawn 12 starts on b8, where Green's pawn stands; Black's horse 1 on b1
-        GameState state = this.Ransoms() with
+        // Arrange - Yellow's pawn 12 starts on b8, where Green's pawn stands; Yellow's other Pawns' are free
+        GameState state = this.AcceptingRansom();
+
+        // Act
+        Transition transition = this._rules.Apply(state, new AcceptAction(Yellow));
+
+        // Assert - nearest its own square first
+        Assert.Equal(
+            [
+                new PlaceAction(Yellow, Grid.CellAt(1, 6)),
+                new PlaceAction(Yellow, Grid.CellAt(1, 5)),
+                new PlaceAction(Yellow, Grid.CellAt(1, 4)),
+            ],
+            this._rules.LegalActions(transition.State)
+        );
+    }
+
+    [Fact]
+    public void Apply_WhenAnOfferIsAcceptedAndEverySquareOfAPiecesKindIsTaken_WaitsOnItsOwnerToChooseAmongTheNearest()
+    {
+        // Arrange - Yellow's pawn 12 starts on b8, where Green's pawn stands; Yellow faces right
+        GameState accepting = this.AcceptingRansom();
+        GameState state = accepting with
         {
-            DecidingSeat = Yellow,
-            Offer = new RansomOffer(Black, Yellow, [new PieceId(12)], [new PieceId(1)]),
+            Position = accepting.Position
+                .Place(Grid.CellAt(1, 6), Piece(20, ClassicPieces.Pawn, Green))
+                .Place(Grid.CellAt(1, 5), Piece(21, ClassicPieces.Pawn, Green))
+                .Place(Grid.CellAt(1, 4), Piece(22, ClassicPieces.Pawn, Green)),
         };
 
         // Act
         Transition transition = this._rules.Apply(state, new AcceptAction(Yellow));
 
+        // Assert - nearest Yellow's back rank, then nearest its left
+        Assert.Equal([new RansomAccepted(state.Offer!)], transition.Events);
+        Assert.Equal(
+            (Yellow, null, 2, Black, false),
+            (
+                transition.State.DecidingSeat,
+                transition.State.Offer,
+                transition.State.Returning!.Prisoners.Count,
+                transition.State.Returning.Resume,
+                this._rules.MayOffer(transition.State)
+            )
+        );
+        Assert.Equal(
+            [
+                new PlaceAction(Yellow, Grid.CellAt(0, 7)),
+                new PlaceAction(Yellow, Grid.CellAt(0, 6)),
+                new PlaceAction(Yellow, Grid.CellAt(2, 7)),
+                new PlaceAction(Yellow, Grid.CellAt(2, 6)),
+            ],
+            this._rules.LegalActions(transition.State)
+        );
+        Assert.Equal(
+            new DecisionTimer("ransom-return", new PlaceAction(Yellow, Grid.CellAt(0, 7))),
+            this._rules.TimerOf(transition.State)
+        );
+    }
+
+    [Fact]
+    public void Apply_WhenAPieceGoingHomeIsPlaced_TheRestFollowAndTheOffererDecidesAgain()
+    {
+        // Arrange - Black's horse 1 follows Yellow's pawn, to its own free square, b1
+        GameState waiting = this._rules.Apply(this.AcceptingRansom(), new AcceptAction(Yellow)).State;
+
+        // Act
+        Transition transition = this._rules.Apply(waiting, new PlaceAction(Yellow, Grid.CellAt(1, 5)));
+
         // Assert
         Piece pawn = Piece(12, ClassicPieces.Pawn, Yellow);
         Piece horse = Piece(1, ClassicPieces.Horse, Black);
         Assert.Equal(
-            [
-                new RansomAccepted(state.Offer),
-                new PieceReturned(pawn, Grid.CellAt(0, 6)),
-                new PieceReturned(horse, Grid.CellAt(1, 0)),
-            ],
+            [new PieceReturned(pawn, Grid.CellAt(1, 5)), new PieceReturned(horse, Grid.CellAt(1, 0))],
             transition.Events
         );
         Assert.Equal(
             (Black, null, 1, pawn, horse),
             (
                 transition.State.DecidingSeat,
-                transition.State.Offer,
+                transition.State.Returning,
                 transition.State.Prisoners.Count,
-                transition.State.Position.PieceAt(Grid.CellAt(0, 6)),
+                transition.State.Position.PieceAt(Grid.CellAt(1, 5)),
                 transition.State.Position.PieceAt(Grid.CellAt(1, 0))
             )
         );
@@ -1672,6 +1733,14 @@ public sealed class ClassicRulesTest
         ) with
         {
             Prisoners = [new Prisoner(Piece(11, ClassicPieces.Elephant, Green), Red)],
+        };
+
+    /// <summary>Yellow answering Black's offer of Yellow's pawn 12 back, for Black's horse 1.</summary>
+    private GameState AcceptingRansom() =>
+        this.Ransoms() with
+        {
+            DecidingSeat = Yellow,
+            Offer = new RansomOffer(Black, Yellow, [new PieceId(12)], [new PieceId(1)]),
         };
 
     private GameState StateWith(params (CellId Cell, Piece Piece)[] placements) =>

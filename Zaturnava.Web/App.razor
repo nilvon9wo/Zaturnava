@@ -14,7 +14,12 @@
 
 @if (this._seating is { } seating)
 {
-    <Table Seating="seating" IsSoundOn="this._isSoundOn" Pieces="this._pieces" OnLeave="this.Leave" />
+    <Table @key="seating.GameId"
+           Seating="seating"
+           IsSoundOn="this._isSoundOn"
+           Pieces="this._pieces"
+           OnLeave="this.Leave"
+           OnSeated="this.Sit" />
 }
 else
 {
