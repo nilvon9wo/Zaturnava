@@ -550,6 +550,39 @@ both the triumphing player and their ally may move each other's Boat.
       to its end. Having given up their turns, a player cannot propose again
       until they rejoin.
     - Bots agree only when their team leads on points.
+- **A player away**: someone may leave a game unattended, with no clock to
+  decide for them.
+  - *(Stated 2026-10-26)* The other players may then vote that the absent
+    player has passed. After three such turns in a row (a configurable
+    number), it is as if the absent player had chosen to pass on all their
+    turns. On the absent player's first such turn, the vote opens only after
+    two minutes; on the turns that follow, it opens at once. It takes every
+    other human player: bots do not vote. Each vote is a standing choice,
+    **Keep waiting** or **Stop waiting**, which a player may change at any
+    time, and which holds from turn to turn.
+  - *(Stated 2026-10-26)* Once the others first play on without them, the
+    absent player's page says so at once, with a flashing green **Rejoin
+    game** button, which they may press at any time, on anyone's turn. It
+    changes nothing in play, but gives them their two minutes again. If they
+    then do not play on their next turn and are voted past again, it is as
+    if they had never pressed it.
+  - *(Proposed)* The details:
+    - The two minutes are a server setting (`Games:AwayGraceSeconds`, 120);
+      the number of turns is a `classic` constructor argument (3), not yet a
+      per-game toggle.
+    - The voters are the human players still playing, other than the absent
+      one. Keep waiting may be chosen at any time; Stop waiting only once
+      the vote is open. When all have chosen Stop waiting, the absent
+      player's turn passes, and that turn counts as missed.
+    - Playing (moving, passing, proposing an end, offering a ransom...)
+      clears the count of missed turns, and everyone's Stop waiting votes
+      for that player. Rejoining does not clear the count: it only gives the
+      two minutes back.
+    - At the last missed turn the player gives up their turns, as in the
+      ordinary end above, and may rejoin the same way.
+    - A player who has given up their turns, whose turn it is to say
+      whether to offer a ransom (§8), now passes on it, rather than leaving
+      the game waiting for them.
   - **[toggle group: `gameEnd.safetyNet.*`]** — because unattended games
     (bot vs. bot, or an abandoned async game) can't rely on human judgment to
     "agree," the engine should support optional supplementary auto-end

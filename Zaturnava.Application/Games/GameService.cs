@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.ComponentModel.DataAnnotations;
+using System.Globalization;
 using Net.NowhereAtAll.Zaturnava.Application.Bots;
 using Net.NowhereAtAll.Zaturnava.Application.Ports;
 using Net.NowhereAtAll.Zaturnava.Application.Rulesets;
@@ -124,9 +125,11 @@ public sealed class GameService(
         return await this.Saved(updated, snapshot.Rules, cancellationToken);
     }
 
-    /// <exception cref="IllegalActionException">The action is how dice came up.</exception>
+    /// <exception cref="IllegalActionException">
+    /// The action is how dice came up, or passing for a seat away, which only the host decides.
+    /// </exception>
     private static GameAction Chosen(GameAction action) =>
-        action is DiceAction
+        action is DiceAction or PassAwayAction
             ? throw new IllegalActionException(action)
             : action;
 
@@ -134,7 +137,7 @@ public sealed class GameService(
     {
         Played start = new(snapshot.State, snapshot.Record.Actions);
         Played played = snapshot.TimeLeft == TimeSpan.Zero
-            ? TimedOut(snapshot.Rules, start)
+            ? TimedOut(snapshot, start)
             : await DecisionLoop.PlayWhile(
                 snapshot.Rules,
                 start,
@@ -149,11 +152,15 @@ public sealed class GameService(
             : await this.Saved(updated, snapshot.Rules, cancellationToken);
     }
 
-    /// <summary>The deciding seat's time is up: its timer decides for it.</summary>
-    private static Played TimedOut(IRulesApplying rules, Played played)
+    /// <summary>
+    /// The deciding seat's time is up: its timer decides for it; or, if no timer does, it was away, and the
+    /// others have stopped waiting, so it passes.
+    /// </summary>
+    private static Played TimedOut(GameSnapshot snapshot, Played played)
     {
-        GameAction action = rules.TimerOf(played.State)!.Default; // only a timed decision runs out of time
-        Transition transition = rules.Apply(played.State, action);
+        GameAction action = snapshot.Rules.TimerOf(played.State)?.Default
+            ?? new PassAwayAction(played.State.DecidingSeat.GetValueOrDefault()); // only a seat deciding times out
+        Transition transition = snapshot.Rules.Apply(played.State, action);
         return new Played(transition.State, played.Actions.Add(action.Describe()));
     }
 
@@ -163,13 +170,56 @@ public sealed class GameService(
         return this.Timed(GameSnapshot.Of(record, rules));
     }
 
-    /// <summary>The snapshot with the time its deciding seat has left, if its decision is timed.</summary>
+    /// <summary>
+    /// The snapshot with the time its deciding seat has left, if its decision is timed; else, with who may
+    /// vote to stop waiting for it, and, once they all would, the time it has left before it passes.
+    /// </summary>
     private GameSnapshot Timed(GameSnapshot snapshot)
     {
         DecisionTimer? timer = snapshot.Rules.TimerOf(snapshot.State);
-        return timer is null
-            ? snapshot
-            : snapshot with { TimeLeft = this.TimeLeft(snapshot.Record, timer) };
+        AwayVoting? away = timer is null ? this.AwayVotingOf(snapshot) : null;
+        return (timer, away) switch
+        {
+            ({ }, _) => snapshot with { TimeLeft = this.TimeLeft(snapshot.Record, timer) },
+            (_, { IsAgreed: true }) => snapshot with { Away = away, TimeLeft = away.GraceLeft },
+            _ => snapshot with { Away = away },
+        };
+    }
+
+    /// <summary>
+    /// The vote on waiting for the deciding seat, if a person (or no one yet) plays it and other people
+    /// still play; its grace runs from when this host first saw it so waited for.
+    /// </summary>
+    private AwayVoting? AwayVotingOf(GameSnapshot snapshot)
+    {
+        GameState state = snapshot.State;
+        GameRecord record = snapshot.Record;
+        SeatId absent = state.DecidingSeat.GetValueOrDefault();
+        ImmutableList<SeatId> voters =
+        [
+            .. state.Seats
+                .Select(seat => seat.Id)
+                .Where(seat => record.Controllers[seat.Value] is HumanSeat)
+                .Where(seat => snapshot.Rules.MayVoteAway(state, seat, absent)),
+        ];
+        Absence absence = state.Absence;
+        bool isReturning = absence.Returning.Contains(absent);
+        bool hasGrace = absence.MissedBy(absent) == 0 || isReturning;
+        // whom the game waits on, for whom, on which turn, and how far it has waited on them already
+        string wait = string.Create(
+            CultureInfo.InvariantCulture,
+            $"{state.TurnNumber}/{absent.Value}/{state.ActingFor.GetValueOrDefault(absent).Value}/"
+                + $"{absence.MissedBy(absent)}/{isReturning}"
+        );
+        TimeSpan grace = hasGrace ? this._settings.AwayGrace : TimeSpan.Zero;
+        DateTimeOffset end = this._clock.WaitingSince(record.Id, wait) + grace;
+        TimeSpan left = TimeSpan.FromTicks(Math.Max(0, (end - this._clock.Now).Ticks));
+        bool isWaited = state.DecidingSeat is not null
+            && record.Controllers[absent.Value] is not BotSeat
+            && !voters.IsEmpty;
+        return isWaited
+            ? new AwayVoting(absent, voters, absence.StoppingFor(absent), left)
+            : null;
     }
 
     private TimeSpan TimeLeft(GameRecord record, DecisionTimer timer)

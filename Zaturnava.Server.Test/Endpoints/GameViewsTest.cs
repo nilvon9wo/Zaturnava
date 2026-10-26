@@ -227,6 +227,27 @@ public sealed class GameViewsTest
     }
 
     [Fact]
+    public void ViewOf_WhenOthersVoteOnWaitingForASeatAway_ShowsTheVoteAndTheTurnsItMissed()
+    {
+        // Arrange - Black missed a turn; Yellow and Red may vote, and Red would stop waiting
+        GameState state = Rules.CreateInitialState() with
+        {
+            RollOff = [],
+            AwaitedDice = null,
+            Absence = Absence.None with { Missed = Absence.None.Missed.Add(new SeatId(0), 1) },
+        };
+        AwayVoting away = new(new SeatId(0), [new SeatId(1), new SeatId(3)], [new SeatId(3)], TimeSpan.Zero);
+
+        // Act
+        GameViewDto view = GameViews.ViewOf(Snapshot(state) with { Away = away }, Bots);
+
+        // Assert
+        Assert.Equal((0, true, 1), (view.Away!.Seat, view.Away.IsOpen, view.Seats[0].TurnsMissed));
+        Assert.Equal([1, 3], view.Away.Voters);
+        Assert.Equal([3], view.Away.Stopping);
+    }
+
+    [Fact]
     public void ViewOf_WhenASeatHasGivenUpItsTurns_SaysItMayRejoinButNotProposeAgain()
     {
         // Arrange - Green gave up its turns; no proposal waits

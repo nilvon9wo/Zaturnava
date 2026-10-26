@@ -1912,6 +1912,23 @@ public sealed class ClassicRulesTest
     }
 
     [Fact]
+    public void Apply_WhenASeatGivesUpItsTurnsWhileItMayOfferRansoms_PassesOnOfferingOnceRefused()
+    {
+        // Arrange - Black's turn is over, and it may still offer ransoms; it gives up its turns
+        GameState window = this.Ransoms() with { IsRansomWindow = true };
+        GameState proposed = this._rules.Apply(window, new ProposeEndAction(Black, Resigns: true)).State;
+
+        // Act
+        Transition transition = this._rules.Apply(proposed, new AnswerEndAction(Yellow, false));
+
+        // Assert
+        Assert.Equal(
+            (Yellow, false, new TurnGivenUp(Black)),
+            (transition.State.DecidingSeat, transition.State.IsRansomWindow, transition.Events[1])
+        );
+    }
+
+    [Fact]
     public void Apply_WhenTheTurnComesToASeatThatGaveUpWithAnAllyToRule_HandsItToTheRegent()
     {
         // Arrange - Black, with no Raja, gave up its turns; Green has a Raja
@@ -2160,6 +2177,185 @@ public sealed class ClassicRulesTest
 
         // Assert
         Assert.Contains(new CommandBegun(Black, Green, CommandBasis.LeaderlessAlly), transition.Events);
+    }
+
+    [Fact]
+    public void Apply_WhenASeatVotesOnWaitingForAnother_StandsByItUntilChanged()
+    {
+        // Arrange - Black's turn
+        GameState state = this.Commands(Grid.CellAt(3, 3), Grid.CellAt(6, 2));
+
+        // Act
+        Transition stopped = this._rules.Apply(state, new VoteAwayAction(Yellow, Black, Stops: true));
+        Transition waits = this._rules.Apply(stopped.State, new VoteAwayAction(Yellow, Black, Stops: false));
+
+        // Assert
+        Assert.Equal([Yellow], stopped.State.Absence.StoppingFor(Black));
+        Assert.Equal(
+            (new AwayVoted(Yellow, Black, true), Black),
+            (stopped.Events.Single(), stopped.State.DecidingSeat)
+        );
+        Assert.Equal(
+            (true, new AwayVoted(Yellow, Black, false)),
+            (waits.State.Absence.StopVotes.IsEmpty, waits.Events.Single())
+        );
+    }
+
+    [Theory]
+    [InlineData("game over")]
+    [InlineData("oneself")]
+    [InlineData("voter has no pieces")]
+    [InlineData("voter gave up")]
+    [InlineData("absent has no pieces")]
+    public void MayVoteAway_WhenEitherSeatIsOutOrTheyAreOne_IsFalse(string why)
+    {
+        // Arrange - in the ransoms' position, Red has no pieces
+        GameState playing = this.Ransoms();
+        (GameState state, SeatId voter, SeatId absent) = why switch
+        {
+            "game over" => (playing with { Outcome = new GameOutcome([], "over") }, Yellow, Black),
+            "oneself" => (playing, Black, Black),
+            "voter has no pieces" => (playing, Red, Black),
+            "voter gave up" => (playing with { Resigned = [Yellow] }, Yellow, Black),
+            _ => (playing, Yellow, Red),
+        };
+
+        // Act
+        (bool May, bool Otherwise) mayVote =
+            (this._rules.MayVoteAway(state, voter, absent), this._rules.MayVoteAway(playing, Yellow, Black));
+
+        // Assert
+        Assert.Equal((false, true), mayVote);
+    }
+
+    [Fact]
+    public void Apply_WhenASeatMayNotVoteOnWaiting_ThrowsIllegalActionException()
+    {
+        // Arrange
+        GameState state = this.Later();
+
+        // Act
+        IllegalActionException exception = Assert.Throws<IllegalActionException>(
+            () => this._rules.Apply(state, new VoteAwayAction(Black, Black, Stops: true))
+        );
+
+        // Assert
+        Assert.Contains("is not legal now", exception.Message);
+    }
+
+    [Fact]
+    public void Apply_WhenASeatAwayPasses_CountsTheTurnItMissed()
+    {
+        // Arrange - Black's turn; it had said it was back
+        GameState state = this.Commands(Grid.CellAt(3, 3), Grid.CellAt(6, 2)) with
+        {
+            Absence = Absence.None with { Returning = [Black] },
+        };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new PassAwayAction(Black));
+
+        // Assert
+        Assert.Equal(
+            (Yellow, 1, false, false),
+            (
+                transition.State.DecidingSeat,
+                transition.State.Absence.MissedBy(Black),
+                transition.State.Absence.Returning.Contains(Black),
+                transition.State.Resigned.Contains(Black)
+            )
+        );
+        Assert.Equal([new TurnPassedAway(Black, 1, 3), new TurnPassed(Black, Yellow)], transition.Events);
+    }
+
+    [Fact]
+    public void Apply_WhenASeatAwayMissesItsLastTurnAllowed_GivesUpItsTurns()
+    {
+        // Arrange - Black missed two turns already
+        GameState state = this.Commands(Grid.CellAt(3, 3), Grid.CellAt(6, 2)) with
+        {
+            Absence = Absence.None with { Missed = Absence.None.Missed.Add(Black, 2) },
+        };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new PassAwayAction(Black));
+
+        // Assert
+        Assert.Equal(
+            (true, true, new TurnPassedAway(Black, 3, 3)),
+            (
+                transition.State.Resigned.Contains(Black),
+                this._rules.MayRejoin(transition.State, Black),
+                transition.Events[0]
+            )
+        );
+    }
+
+    [Theory]
+    [InlineData("not deciding")]
+    [InlineData("game over")]
+    [InlineData("dice awaited")]
+    [InlineData("timed")]
+    public void Apply_WhenASeatMayNotPassAsAway_ThrowsIllegalActionException(string why)
+    {
+        // Arrange
+        GameState state = why switch
+        {
+            "game over" => this.Later() with { DecidingSeat = null, Outcome = new GameOutcome([], "over") },
+            "dice awaited" => this.Later() with { AwaitedDice = new DiceRequest(2, 6) },
+            "timed" => this.Ransoms() with { IsRansomWindow = true },
+            _ => this.Later(),
+        };
+        SeatId seat = why == "not deciding" ? Yellow : Black;
+
+        // Act
+        IllegalActionException exception = Assert.Throws<IllegalActionException>(
+            () => this._rules.Apply(state, new PassAwayAction(seat))
+        );
+
+        // Assert
+        Assert.Contains("is not legal now", exception.Message);
+    }
+
+    [Fact]
+    public void Apply_WhenASeatThatWasAwayPlays_ForgetsItsAbsence()
+    {
+        // Arrange - Black missed a turn, and Yellow would stop waiting for it
+        GameState state = this.Later() with
+        {
+            Absence = new Absence([new KeyValuePair<SeatId, int>(Black, 1)], [new AwayVote(Yellow, Black)], []),
+        };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new RollAction(Black));
+
+        // Assert
+        Assert.Equal((0, true), (transition.State.Absence.MissedBy(Black), transition.State.Absence.StopVotes.IsEmpty));
+    }
+
+    [Fact]
+    public void Apply_WhenASeatThatMissedTurnsSaysItIsBack_IsWaitedForAgainButStillCountsThem()
+    {
+        // Arrange - Black missed a turn; Yellow decides
+        GameState state = this.Later() with
+        {
+            DecidingSeat = Yellow,
+            Absence = Absence.None with { Missed = Absence.None.Missed.Add(Black, 1) },
+        };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new RejoinAction(Black));
+
+        // Assert
+        Assert.Equal(
+            (true, 1, false, new Rejoined(Black)),
+            (
+                transition.State.Absence.Returning.Contains(Black),
+                transition.State.Absence.MissedBy(Black),
+                this._rules.MayRejoin(transition.State, Black),
+                transition.Events.Single()
+            )
+        );
     }
 
     [Fact]

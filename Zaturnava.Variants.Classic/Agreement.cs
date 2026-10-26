@@ -10,7 +10,8 @@ namespace Net.NowhereAtAll.Zaturnava.Variants.Classic;
 /// is, giving up its own turns meanwhile if it likes. The game waits while each other seat still playing
 /// answers, clockwise from the proposer - but for any that has given up its turns, which wants it over
 /// already. Once all have agreed, the game ends, and points decide; once one refuses, it goes on where
-/// it was. A seat that gave up its turns may take them back, once no proposal waits.
+/// it was. A seat that gave up its turns may take them back, once no proposal waits; so may one that
+/// missed turns while away say it is back.
 /// </summary>
 internal static class Agreement
 {
@@ -24,11 +25,27 @@ internal static class Agreement
         && GameEnd.IsPlaying(state, seat)
         && !state.Resigned.Contains(seat);
 
+    /// <summary>
+    /// A seat may rejoin once it has given up its turns, or, if it has missed turns while away, to be
+    /// waited for again; not while a proposal waits.
+    /// </summary>
     public static bool MayRejoin(GameState state, SeatId seat) =>
-        state.Outcome is null && state.Proposal is null && state.Resigned.Contains(seat);
+        state.Outcome is null
+        && state.Proposal is null
+        && (state.Resigned.Contains(seat)
+            || (state.Absence.MissedBy(seat) > 0 && !state.Absence.Returning.Contains(seat)));
 
-    public static Transition Rejoined(GameState state, RejoinAction rejoin) =>
-        new(state with { Resigned = state.Resigned.Remove(rejoin.Actor) }, [new Rejoined(rejoin.Actor)]);
+    public static Transition Rejoined(GameState state, RejoinAction rejoin)
+    {
+        SeatId seat = rejoin.Actor;
+        Absence absence = state.Absence;
+        GameState rejoined = state with
+        {
+            Resigned = state.Resigned.Remove(seat),
+            Absence = absence.MissedBy(seat) > 0 ? absence with { Returning = absence.Returning.Add(seat) } : absence,
+        };
+        return new Transition(rejoined, [new Rejoined(seat)]);
+    }
 
     public static Transition Proposed(GameState state, ProposeEndAction propose)
     {

@@ -444,17 +444,19 @@ public sealed class TableTest : IDisposable
     }
 
     [Fact]
-    public async Task Poll_WhenItIsThePlayersTurn_LeavesTheGameAlone()
+    public void Poll_WhenItIsThePlayersUntimedTurn_LooksAgainKeepingThePiecePickedUp()
     {
         // Arrange
-        await using PageContext page = new(TimeSpan.FromMilliseconds(10));
-        _ = page.Render<Table>(parameters => parameters.Add(x => x.Seating, SeatZero));
+        using PageContext page = new(TimeSpan.FromMilliseconds(10));
+        IRenderedComponent<Table> table = page.Render<Table>(parameters => parameters.Add(x => x.Seating, SeatZero));
+        FakeGameServer server = page.Server;
 
         // Act
-        await Task.Delay(TimeSpan.FromMilliseconds(150), Xunit.TestContext.Current.CancellationToken);
+        Cell(table, 0).Click();
 
         // Assert
-        _ = Assert.Single(page.Server.Calls);
+        table.WaitForAssertion(() => Assert.True(server.Calls.Count > 2));
+        Assert.True(Cell(table, 0).ClassList.Contains("selected"));
     }
 
     [Theory]
@@ -1017,6 +1019,148 @@ public sealed class TableTest : IDisposable
                 this._page.Server.Submitted?.Action.Arguments[ActionArguments.Actor]
             )
         );
+    }
+
+    [Fact]
+    public void Render_WhenTheVoteOnWaitingForAnotherIsOpen_LetsThePlayerStopWaitingAndSaysHowOthersStand()
+    {
+        // Arrange - Black is away; Yellow, the player, may vote
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with { Away = new AwayDto(0, true, [1], []) };
+        IRenderedComponent<Table> table = this.Render(SeatOne);
+        (string, string, string) shown = (
+            table.Find(".away-vote p").TextContent,
+            table.Find("button.keep-waiting").GetAttribute("aria-pressed")!,
+            table.Find(".away-vote .hint").TextContent
+        );
+
+        // Act
+        table.Find("button.stop-waiting").Click();
+
+        // Assert
+        Assert.Equal(
+            (
+                "Black (human) is taking a long time. Keep waiting for them?",
+                "true",
+                "0 of 1 would stop waiting; all must, for their turn to pass."
+            ),
+            shown
+        );
+        Assert.Equal(
+            ("vote-away", "0", "true"),
+            (
+                this._page.Server.Submitted?.Action.Kind,
+                this._page.Server.Submitted?.Action.Arguments[AwayDto.AbsentArgument],
+                this._page.Server.Submitted?.Action.Arguments[AwayDto.StopsArgument]
+            )
+        );
+    }
+
+    [Theory]
+    [InlineData(false, true, 1)]
+    [InlineData(true, true, 1)]
+    [InlineData(false, false, 0)]
+    public void Render_WhenThePlayerMayVoteOnWaiting_ShowsTheVoteOnceOpenOrWhileTheyWouldStop(
+        bool isOpen,
+        bool isStopping,
+        int expected
+    )
+    {
+        // Arrange
+        AwayDto away = new(0, isOpen, [1], isStopping ? [1] : []);
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with { Away = away };
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatOne);
+
+        // Assert
+        Assert.Equal(expected, table.FindAll(".away-vote").Count);
+    }
+
+    [Fact]
+    public void Render_WhenThePlayerIsNotAmongTheVoters_ShowsNoVote()
+    {
+        // Arrange
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with { Away = new AwayDto(0, true, [3], []) };
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatOne);
+
+        // Assert
+        Assert.Empty(table.FindAll(".away-vote"));
+    }
+
+    [Theory]
+    [InlineData(2, true, false, "The others are playing on without you: you missed 2 turns in a row.", 1)]
+    [InlineData(1, false, true, "The others are playing on without you: you missed 1 turn in a row.", 0)]
+    [InlineData(1, false, false, "You are back: the others will wait for you again, unless you miss another turn.", 0)]
+    [InlineData(0, false, false, "Yellow would stop waiting for you.", 0)]
+    public void Render_WhenThePlayerIsAway_SaysWhatTheOthersDidAndOffersToRejoin(
+        int missed,
+        bool mayRejoin,
+        bool hasGivenUp,
+        string expected,
+        int buttons
+    )
+    {
+        // Arrange - Yellow would stop waiting for Black, the player
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Away = new AwayDto(0, true, [1], [1]),
+            Seats = FakeGameServer.SeatZeroToMove.Seats.SetItem(
+                0,
+                FakeGameServer.SeatZeroToMove.Seats[0] with
+                {
+                    TurnsMissed = missed,
+                    MayRejoin = mayRejoin,
+                    HasGivenUp = hasGivenUp,
+                }
+            ),
+        };
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Assert
+        Assert.Equal(
+            (expected, buttons),
+            (table.Find(".away-notice p").TextContent, table.FindAll(".away-notice button.rejoin.flashing").Count)
+        );
+    }
+
+    [Fact]
+    public void Rejoin_WhenTheFlashingButtonIsClicked_SaysThePlayerIsBack()
+    {
+        // Arrange
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Seats = FakeGameServer.SeatZeroToMove.Seats.SetItem(
+                0,
+                FakeGameServer.SeatZeroToMove.Seats[0] with { TurnsMissed = 1, MayRejoin = true }
+            ),
+        };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Act
+        table.Find("button.rejoin.flashing").Click();
+
+        // Assert
+        Assert.Equal(
+            ("rejoin", 0),
+            (this._page.Server.Submitted?.Action.Kind, table.FindAll(".end-area button.rejoin").Count)
+        );
+    }
+
+    [Fact]
+    public void Render_WhenNoOneWouldStopWaitingForTheAbsentPlayer_SaysNothingOfIt()
+    {
+        // Arrange - another seat is the one waited for
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with { Away = new AwayDto(1, true, [0], [0]) };
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Assert
+        Assert.Empty(table.FindAll(".away-notice"));
     }
 
     [Fact]

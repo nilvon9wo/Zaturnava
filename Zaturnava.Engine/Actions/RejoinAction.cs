@@ -3,7 +3,10 @@ using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 
 namespace Net.NowhereAtAll.Zaturnava.Engine.Actions;
 
-/// <summary>Take back the turns given up in proposing to end the game, whoever's turn it is.</summary>
+/// <summary>
+/// Take back the turns given up, whoever's turn it is; or, for a seat whose turns were passed while it
+/// was away, say it is back, to be waited for again.
+/// </summary>
 public sealed record RejoinAction(SeatId Actor) : GameAction(Actor)
 {
     public const string Kind = "rejoin";

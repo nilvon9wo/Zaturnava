@@ -142,3 +142,7 @@ After playing against Argus (2026-10-25):
   highlights tell when a player gains or loses control of another's army, complete (playing that army's
   turn as regent) or partial (moving it on their own turns, because their Raja holds its throne, or an ally
   has no Raja), and when a team's empire begins or ends.
+- When a player leaves a game unattended, the other players may vote, after two minutes, to stop waiting
+  for them, and their turn passes; three such turns in a row and they have given up their turns. The
+  absent player is told at once, with a flashing Rejoin game button that gives them their two minutes
+  back.

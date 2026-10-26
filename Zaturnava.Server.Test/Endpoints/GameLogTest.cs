@@ -122,6 +122,33 @@ public sealed class GameLogTest
     }
 
     [Fact]
+    public void LatestOf_WhenAPlayerIsAway_TellsOfTheVotesAndEachTurnTheyMissed()
+    {
+        // Arrange
+        GameSnapshot snapshot = Snapshot(
+            new AwayVoted(Yellow, Black, true),
+            new AwayVoted(Red, Black, false),
+            new TurnPassedAway(Black, 1, 3),
+            new TurnPassedAway(Black, 3, 3)
+        );
+
+        // Act
+        ImmutableList<EventDto> log = GameLog.LatestOf(snapshot);
+
+        // Assert
+        Assert.Equal(
+            [
+                "away 1: Yellow would stop waiting for Black.",
+                "away 3: Red will keep waiting for Black.",
+                "away 0: Black is away, so passes: 1 of 3 turns missed in a row.",
+                "away 0: Black is away, so passes: 3 of 3 turns missed in a row. Black has given up their turns, "
+                    + "until they rejoin.",
+            ],
+            log.Select(Told)
+        );
+    }
+
+    [Fact]
     public void LatestOf_WhenAPieceIsCaptured_SaysWhoseItWasAndWhetherItLed()
     {
         // Arrange
@@ -161,7 +188,7 @@ public sealed class GameLogTest
                 "ending 2: Green would rather play on, so the game goes on.",
                 "ending 3: Red proposed ending the game, and gave up their turns.",
                 "passed 3: Red has given up their turns, so passes.",
-                "ending 3: Red rejoined the game, and plays their turns again.",
+                "ending 3: Red is back in the game.",
             ],
             log.Select(Told)
         );

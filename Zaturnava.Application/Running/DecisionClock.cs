@@ -13,6 +13,7 @@ public sealed class DecisionClock(TimeProvider time)
 {
     private readonly TimeProvider _time = time;
     private readonly ConcurrentDictionary<GameId, (int Version, DateTimeOffset Since)> _seen = new();
+    private readonly ConcurrentDictionary<GameId, (string Wait, DateTimeOffset Since)> _waits = new();
 
     public DateTimeOffset Now => this._time.GetUtcNow();
 
@@ -24,5 +25,18 @@ public sealed class DecisionClock(TimeProvider time)
             (_, seen) => seen.Version == version
                 ? seen
                 : (version, this.Now)
+        ).Since;
+
+    /// <summary>
+    /// When the game was first seen waiting as <paramref name="wait"/> describes (on whom, for which turn):
+    /// now, if it has not been. Unlike <see cref="Since"/>, other seats acting meanwhile do not restart it.
+    /// </summary>
+    public DateTimeOffset WaitingSince([Required] GameId game, [Required] string wait) =>
+        this._waits.AddOrUpdate(
+            game,
+            _ => (wait, this.Now),
+            (_, seen) => seen.Wait == wait
+                ? seen
+                : (wait, this.Now)
         ).Since;
 }

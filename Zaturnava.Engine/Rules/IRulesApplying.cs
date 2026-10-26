@@ -52,6 +52,13 @@ public interface IRulesApplying
     /// </summary>
     bool MayRejoin([Required] GameState state, SeatId seat);
 
+    /// <summary>
+    /// Whether <paramref name="voter"/> may vote whether to stop waiting for <paramref name="absent"/>, both
+    /// still playing. Like a proposal, a vote is cast whoever decides; <see cref="Apply"/> takes one this
+    /// allows. When to ask for votes, and whose, is the host's to say: it knows who is a person.
+    /// </summary>
+    bool MayVoteAway([Required] GameState state, SeatId voter, SeatId absent);
+
     /// <summary>How the deciding seat's decision is timed; null if it may take as long as it likes.</summary>
     DecisionTimer? TimerOf([Required] GameState state);
 

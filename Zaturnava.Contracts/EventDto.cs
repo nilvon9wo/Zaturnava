@@ -32,6 +32,7 @@ public sealed record EventDto(
     public const string Ending = "ending";
     public const string Command = "command";
     public const string Empire = "empire";
+    public const string Away = "away";
     public const string Passed = "passed";
     public const string Ended = "ended";
 }

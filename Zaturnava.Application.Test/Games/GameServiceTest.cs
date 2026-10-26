@@ -23,6 +23,7 @@ public sealed class GameServiceTest
     private static readonly SeatPlan Bot = new(FirstChoiceBot.BotId);
 
     private static readonly TimeSpan FiveSeconds = TimeSpan.FromSeconds(5);
+    private static readonly TimeSpan Grace = GameServiceSettings.DefaultAwayGrace;
 
     private readonly RecordingNotifier _notifier = new();
     private readonly SteppedTime _time = new();
@@ -477,6 +478,153 @@ public sealed class GameServiceTest
     }
 
     [Fact]
+    public async Task Get_WhenAPersonTakesLongOverWhatNoTimerLimits_OpensTheVoteOnWaitingOnlyAfterTheGrace()
+    {
+        // Arrange - the first seat, no one's yet, decides; a person plays the second
+        (GameId id, _) = await this.FirstSeatAway();
+        GameSnapshot before = await this._paced.Get(id, this._cancellation);
+        this._time.Pass(Grace);
+
+        // Act
+        GameSnapshot after = await this._paced.Get(id, this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            (First, false, Grace, true, null),
+            (before.Away!.Absent, before.Away.IsOpen, before.Away.GraceLeft, after.Away!.IsOpen, after.TimeLeft)
+        );
+        Assert.Equal([Second], after.Away.Voters);
+    }
+
+    [Fact]
+    public async Task Advance_WhenEveryoneHasStoppedWaitingForASeatAway_PassesForIt()
+    {
+        // Arrange
+        (GameId id, string voter) = await this.FirstSeatAway();
+        this._time.Pass(Grace);
+        GameSnapshot voted = await this._paced.Submit(id, voter, StopWaitingFor(First), this._cancellation);
+
+        // Act
+        GameSnapshot snapshot = await this._paced.Advance(id, voted.Record.Version, this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            (TimeSpan.Zero, true, Second, PassAwayAction.Kind),
+            (voted.TimeLeft, voted.Away!.IsAgreed, snapshot.State.DecidingSeat, snapshot.Record.Actions[^1].Kind)
+        );
+    }
+
+    [Fact]
+    public async Task Get_WhenTheSeatAwayMissedItsLastTurn_PassesItAtOnceAsTheVotesStand()
+    {
+        // Arrange - the first seat was passed while away; the second has passed back to it
+        (GameId id, string voter) = await this.FirstSeatPassedAway();
+
+        // Act
+        GameSnapshot snapshot = await this._paced.Get(id, this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            (First, true, TimeSpan.Zero),
+            (snapshot.State.DecidingSeat, snapshot.Away!.IsOpen, snapshot.TimeLeft)
+        );
+        Assert.NotNull(voter);
+    }
+
+    [Fact]
+    public async Task Get_WhenTheSeatAwaySaysItIsBack_GivesItItsGraceAgain()
+    {
+        // Arrange
+        (GameId id, _) = await this.FirstSeatPassedAway();
+        string token = await this._paced.Claim(id, First, this._cancellation);
+        ActionDescriptor back = new RejoinAction(First).Describe();
+
+        // Act
+        GameSnapshot snapshot = await this._paced.Submit(id, token, back, this._cancellation);
+
+        // Assert
+        Assert.Equal((false, Grace), (snapshot.Away!.IsOpen, snapshot.TimeLeft));
+    }
+
+    [Fact]
+    public async Task Submit_WhenVotingToKeepWaitingBeforeTheVoteIsOpen_TakesIt()
+    {
+        // Arrange
+        (GameId id, string voter) = await this.FirstSeatAway();
+        ActionDescriptor wait = new VoteAwayAction(Second, First, Stops: false).Describe();
+
+        // Act
+        GameSnapshot snapshot = await this._paced.Submit(id, voter, wait, this._cancellation);
+
+        // Assert
+        Assert.Equal((1, false), (snapshot.Record.Actions.Count, snapshot.Away!.IsOpen));
+    }
+
+    [Theory]
+    [InlineData("before the grace")]
+    [InlineData("for a seat not deciding")]
+    [InlineData("while no one may vote")]
+    [InlineData("for oneself")]
+    public async Task Submit_WhenAVoteOnWaitingMayNotBeCast_ThrowsNotYourTurnException(string when)
+    {
+        // Arrange
+        (GameId id, string voter) = await this.FirstSeatAway();
+        this._time.Pass(when == "before the grace" ? TimeSpan.Zero : Grace);
+        string first = await this._paced.Claim(id, First, this._cancellation);
+        _ = when == "while no one may vote"
+            ? await this._paced.Submit(id, first, Pass(First), this._cancellation)
+            : null;
+        (string token, ActionDescriptor vote) = when switch
+        {
+            "while no one may vote" => (first, StopWaitingFor(Second, First)),
+            "for oneself" => (voter, new VoteAwayAction(Second, Second, Stops: false).Describe()),
+            "for a seat not deciding" => (voter, StopWaitingFor(Second, Second)),
+            _ => (voter, StopWaitingFor(First)),
+        };
+
+        // Act
+        Task<GameSnapshot> submitting = this._paced.Submit(id, token, vote, this._cancellation);
+
+        // Assert
+        _ = await Assert.ThrowsAsync<NotYourTurnException>(() => submitting);
+    }
+
+    [Fact]
+    public async Task Submit_WhenAPlayerPassesAsIfAway_ThrowsIllegalActionException()
+    {
+        // Arrange
+        (GameId id, _) = await this.FirstSeatAway();
+        string token = await this._paced.Claim(id, First, this._cancellation);
+        ActionDescriptor pass = new PassAwayAction(First).Describe();
+
+        // Act
+        Task<GameSnapshot> submitting = this._paced.Submit(id, token, pass, this._cancellation);
+
+        // Assert
+        _ = await Assert.ThrowsAsync<IllegalActionException>(() => submitting);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Get_WhenABotDecidesOrNoPersonCouldVote_HasNoVoteOnWaiting(bool isBotDeciding)
+    {
+        // Arrange
+        GameId id = await this._paced.Create(
+            TinyRules.RulesetId,
+            [isBotDeciding ? Bot : SeatPlan.Open, SeatPlan.Open],
+            this._cancellation
+        );
+        _ = isBotDeciding ? await this._paced.Claim(id, Second, this._cancellation) : null;
+
+        // Act
+        GameSnapshot snapshot = await this._paced.Get(id, this._cancellation);
+
+        // Assert
+        Assert.Null(snapshot.Away);
+    }
+
+    [Fact]
     public async Task Get_WhenThePlayerHasRolled_TellsOfTheRoll()
     {
         // Arrange
@@ -493,6 +641,36 @@ public sealed class GameServiceTest
     }
 
     private static ActionDescriptor Pass(SeatId seat) => new PassAction(seat).Describe();
+
+    private static ActionDescriptor StopWaitingFor(SeatId absent, SeatId? voter = null) =>
+        new VoteAwayAction(voter ?? Second, absent, Stops: true).Describe();
+
+    /// <summary>
+    /// A paced game in which the first seat, no one's yet, decides; a person plays the second, and has seen
+    /// the game, so the first seat's grace has begun.
+    /// </summary>
+    private async Task<(GameId Id, string Voter)> FirstSeatAway()
+    {
+        GameId id =
+            await this._paced.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
+        string voter = await this._paced.Claim(id, Second, this._cancellation);
+        _ = await this._paced.Get(id, this._cancellation);
+        return (id, voter);
+    }
+
+    /// <summary>
+    /// As <see cref="FirstSeatAway"/>, once the second seat stopped waiting for the first, which passed, and
+    /// the second passed back to it.
+    /// </summary>
+    private async Task<(GameId Id, string Voter)> FirstSeatPassedAway()
+    {
+        (GameId id, string voter) = await this.FirstSeatAway();
+        this._time.Pass(Grace);
+        GameSnapshot voted = await this._paced.Submit(id, voter, StopWaitingFor(First), this._cancellation);
+        _ = await this._paced.Advance(id, voted.Record.Version, this._cancellation);
+        _ = await this._paced.Submit(id, voter, Pass(Second), this._cancellation);
+        return (id, voter);
+    }
 
     /// <summary>A paced game of two people in which the first has passed: the second has 30 seconds to.</summary>
     private async Task<(GameId Id, GameSnapshot Waiting)> SecondSeatToPass()

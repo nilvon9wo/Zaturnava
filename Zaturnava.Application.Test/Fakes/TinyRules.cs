@@ -13,7 +13,8 @@ namespace Net.NowhereAtAll.Zaturnava.Application.Test.Fakes;
 /// <summary>
 /// The smallest ruleset that still ends: two seats take turns passing until <paramref name="length"/>
 /// turns have been played; the second seat has only so long to pass, and may end the game whenever it
-/// likes, by proposing so. Enough to drive the application without any real game.
+/// likes, by proposing so. Either may vote on waiting for the other while it decides; a seat passed while
+/// away may say it is back. Enough to drive the application without any real game.
 /// </summary>
 internal sealed class TinyRules(int length) : IRulesApplying
 {
@@ -53,6 +54,12 @@ internal sealed class TinyRules(int length) : IRulesApplying
         GameState next = (action, isLegal) switch
         {
             (ProposeEndAction, _) => state with { DecidingSeat = null },
+            (VoteAwayAction vote, _) => state with { Absence = Voted(state.Absence, vote) },
+            (PassAwayAction pass, _) => this.After(state) with { Absence = Missing(state.Absence, pass.Actor) },
+            (RejoinAction rejoin, _) => state with
+            {
+                Absence = state.Absence with { Returning = state.Absence.Returning.Add(rejoin.Actor) },
+            },
             (_, true) => this.After(state),
             _ => throw new IllegalActionException(action),
         };
@@ -63,7 +70,10 @@ internal sealed class TinyRules(int length) : IRulesApplying
 
     public bool MayProposeEnd([Required] GameState state, SeatId seat) => seat.Value == SeatCount - 1;
 
-    public bool MayRejoin([Required] GameState state, SeatId seat) => false;
+    public bool MayRejoin([Required] GameState state, SeatId seat) => state.Absence.MissedBy(seat) > 0;
+
+    public bool MayVoteAway([Required] GameState state, SeatId voter, SeatId absent) =>
+        voter != absent && state.DecidingSeat is not null;
 
     public DecisionTimer? TimerOf([Required] GameState state) =>
         state.DecidingSeat?.Value == 1
@@ -83,6 +93,19 @@ internal sealed class TinyRules(int length) : IRulesApplying
     public bool IsLeader(PieceKindId kind) => false;
 
     public string NameOfDie(int value) => $"Die {value}";
+
+    private static Absence Voted(Absence absence, VoteAwayAction vote)
+    {
+        AwayVote stop = new(vote.Actor, vote.Absent);
+        return absence with { StopVotes = vote.Stops ? absence.StopVotes.Add(stop) : absence.StopVotes.Remove(stop) };
+    }
+
+    private static Absence Missing(Absence absence, SeatId seat) =>
+        absence with
+        {
+            Missed = absence.Missed.SetItem(seat, absence.MissedBy(seat) + 1),
+            Returning = absence.Returning.Remove(seat),
+        };
 
     private GameState After(GameState state)
     {

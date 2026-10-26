@@ -19,6 +19,7 @@ internal static class ZaturnavaServices
 {
     /// <summary>The configuration key for the most moves bots may make in a row before a person must.</summary>
     public const string MaximumBotStepsKey = "Games:MaximumBotSteps";
+    public const string AwayGraceKey = "Games:AwayGraceSeconds";
 
     /// <summary>
     /// The configuration section giving, in seconds, how long each timed decision may take, by the
@@ -63,6 +64,11 @@ internal static class ZaturnavaServices
             timers.GetChildren()
                 .Where(timer => timer.Key != DefaultTimerKey)
                 .ToImmutableDictionary(timer => timer.Key, timer => TimeSpan.FromSeconds(timer.Get<double>()))
-        );
+        )
+        {
+            AwayGrace = TimeSpan.FromSeconds(
+                configuration.GetValue(AwayGraceKey, GameServiceSettings.DefaultAwayGrace.TotalSeconds)
+            ),
+        };
     }
 }
