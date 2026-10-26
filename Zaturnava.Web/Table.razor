@@ -242,6 +242,8 @@
 @code {
     private const string BotController = "bot";
     private const string RollKind = "roll";
+    private const string Alarm = "alarm";
+    private const string Rescued = "rescued";
 
     /// <summary>
     /// What the log shows when it shows only the highlights: points scored, pieces brought back, and how the
@@ -609,16 +611,40 @@
         _ = this._poll.Change(this.Wait(view), Timeout.InfiniteTimeSpan);
     }
 
-    /// <summary>The sound for what happened since the last view: a turn come round, a capture, a move, a roll.</summary>
+    /// <summary>
+    /// The sound for what happened since the last view: an enemy's piece escaping, or one of the player's
+    /// team's; a turn come round, a capture, a move, a roll.
+    /// </summary>
     private string? SoundOf(GameViewDto view, bool isFirst, bool wasTheirTurn)
     {
-        ImmutableHashSet<string> kinds = [.. view.Log.Where(happened => happened.Number > this._heard).Select(happened => happened.Kind)];
-        return isFirst
-            ? null
-            : this._turn is not null && !wasTheirTurn
-                ? "turn"
-                : new[] { EventDto.Captured, EventDto.Moved, EventDto.Rolled }.FirstOrDefault(kinds.Contains);
+        ImmutableList<EventDto> fresh = [.. view.Log.Where(happened => happened.Number > this._heard)];
+        ImmutableHashSet<int> ours = [.. this.TeamsOf(view).Where(this.IsMine).SelectMany(team => team).Select(seat => seat.Id)];
+        ImmutableHashSet<string> kinds =
+        [
+            .. fresh.Select(happened => happened.Kind),
+            .. fresh.Where(happened => happened.Kind == EventDto.Escaped).Select(escaped => EscapeSoundOf(ours, escaped)),
+        ];
+        string? escape = new[] { Alarm, Rescued }.FirstOrDefault(kinds.Contains);
+        return (isFirst, escape, this._turn is not null && !wasTheirTurn) switch
+        {
+            (true, _, _) => null,
+            (_, { } heard, _) => heard,
+            (_, _, true) => "turn",
+            _ => new[] { EventDto.Captured, EventDto.Moved, EventDto.Rolled }.FirstOrDefault(kinds.Contains),
+        };
     }
+
+    /// <summary>
+    /// A cheer for a piece of the player's own team escaping, an alarm for an enemy's; for someone only
+    /// watching, no more than a move.
+    /// </summary>
+    private static string EscapeSoundOf(ImmutableHashSet<int> ours, EventDto escaped) =>
+        (ours.IsEmpty, ours.Contains(escaped.Owner.GetValueOrDefault())) switch
+        {
+            (true, _) => EventDto.Moved,
+            (_, true) => Rescued,
+            _ => Alarm,
+        };
 
     /// <summary>
     /// How long until the next look at the game: a countdown step while the decision is timed; else never

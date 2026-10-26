@@ -5,9 +5,9 @@ namespace Net.NowhereAtAll.Zaturnava.Contracts;
 /// the kinds below, done by <see cref="Seat"/> (for a turn passing, the seat it passes to), told as
 /// <see cref="Text"/>. A move or a capture also names the cells it went <see cref="From"/> and
 /// <see cref="To"/>, so a client can mark them; a promotion, a piece going home or one escaping, its cell
-/// as <see cref="To"/>.
+/// as <see cref="To"/>. A piece escaping also names its <see cref="Owner"/>, the seat whose army it is.
 /// </summary>
-public sealed record EventDto(int Number, string Kind, int Seat, string Text, int? From, int? To)
+public sealed record EventDto(int Number, string Kind, int Seat, string Text, int? From, int? To, int? Owner = null)
 {
     public const string RolledOff = "rolled-off";
     public const string Rolled = "rolled";

@@ -222,7 +222,8 @@ file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bo
         string text = piece.Owner == escaped.EscapedBy
             ? $"{this.Name(piece.Owner)}'s {kind} escaped, to {cell}."
             : $"{this.Name(escaped.EscapedBy)} let {this.Name(piece.Owner)}'s {kind} escape, to {cell}.";
-        EventDto told = new(number, EventDto.Escaped, escaped.EscapedBy.Value, text, null, escaped.Cell.Value);
+        EventDto told =
+            new(number, EventDto.Escaped, escaped.EscapedBy.Value, text, null, escaped.Cell.Value, piece.Owner.Value);
         return this with { Told = this.Told.Add(told), LastMoved = piece };
     }
 

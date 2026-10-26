@@ -480,7 +480,25 @@ public sealed class TableTest : IDisposable
             { [Rolled, Moved], "moved" },
             { [Rolled, Moved, Captured], "captured" },
             { [new EventDto(4, EventDto.Passed, 1, "Black to play.", null, null)], string.Empty },
+            { [Rolled, Escaped(1)], "rescued" },
+            { [Rolled, Escaped(1), Escaped(0)], "alarm" },
         };
+
+    [Fact]
+    public void Sound_WhenOnlyWatchingAPieceEscape_PlaysAMove()
+    {
+        // Arrange
+        using PageContext page = new(TimeSpan.FromMilliseconds(10));
+        IRenderedComponent<Table> table =
+            page.Render<Table>(parameters => parameters.Add(x => x.Seating, Seating.Watching(FakeGameServer.GameId)));
+
+        // Act
+        page.Server.View = FakeGameServer.SeatZeroToMove with { DecidingSeat = null, Log = [Escaped(0)] };
+
+        // Assert
+        table.WaitForAssertion(() => Assert.Equal("The game is over.", table.Find("p.status").TextContent));
+        Assert.Equal("moved", string.Join(",", Played(page)));
+    }
 
     [Fact]
     public void Sound_WhenTheTurnComesRound_PlaysTheTurnSound()
@@ -1098,6 +1116,10 @@ public sealed class TableTest : IDisposable
         // Assert
         table.WaitForAssertion(() => Assert.Equal((1, 0), (told, table.FindAll("p.notice").Count)));
     }
+
+    /// <summary>A piece of <paramref name="owner"/>'s escaping, let out by Yellow.</summary>
+    private static EventDto Escaped(int owner) =>
+        new(7 + owner, EventDto.Escaped, 1, "A piece escaped.", null, 9, owner);
 
     /// <summary>Yellow, a bot, to move, once Black has lost the dice it rolled.</summary>
     private static GameViewDto Forfeited() =>

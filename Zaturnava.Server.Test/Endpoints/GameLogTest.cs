@@ -181,7 +181,7 @@ public sealed class GameLogTest
             ],
             log.Select(Told)
         );
-        Assert.Equal(Cell("a7").Value, log[^1].To);
+        Assert.Equal((Cell("a7").Value, Yellow.Value), (log[^1].To, log[^1].Owner));
     }
 
     [Theory]
