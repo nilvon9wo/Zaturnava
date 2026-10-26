@@ -7,8 +7,9 @@ namespace Net.NowhereAtAll.Zaturnava.Contracts;
 /// the kinds below, done by <see cref="Seat"/> (for a turn passing, the seat it passes to), told as
 /// <see cref="Text"/>. A move or a capture also names the cells it went <see cref="From"/> and
 /// <see cref="To"/>, so a client can mark them; a promotion, a piece going home or one escaping, its cell
-/// as <see cref="To"/>. A piece escaping or captured also names its <see cref="Owner"/>, the seat whose army
-/// it is; a capture, whether the piece <see cref="IsLeader"/>.
+/// as <see cref="To"/>. A piece escaping, captured or going home also names its <see cref="Owner"/>, the seat
+/// whose army it is, and whether it <see cref="IsLeader"/>. A command or an empire ending
+/// <see cref="IsOver"/>; its <see cref="Seat"/> is the commander, or the first of the rulers.
 /// </summary>
 public sealed record EventDto(
     int Number,
@@ -18,7 +19,8 @@ public sealed record EventDto(
     int? From,
     int? To,
     int? Owner = null,
-    bool IsLeader = false
+    bool IsLeader = false,
+    bool IsOver = false
 )
 {
     public const string RolledOff = "rolled-off";

@@ -152,3 +152,5 @@ After playing against Argus (2026-10-25):
 - Passing no longer opens a window to offer ransoms, which the player could have offered before passing;
   the window is left for a turn that ended on its own. Bots offer as they pass, instead.
 - Argus no longer counts a lone piece on its throne as keeping an enemy Raja off it.
+- Sounds tell a Raja back on the board (hopeful or ominous) and command or an empire begun or ended (good
+  or bad for the player's team) apart from a Raja taken; when both happen, one plays after the other.

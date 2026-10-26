@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Globalization;
 using Microsoft.JSInterop;
 using Net.NowhereAtAll.Zaturnava.Presentation;
@@ -24,7 +25,7 @@ internal sealed class Browser(IJSRuntime js)
 
     private readonly IJSRuntime _js = js;
 
-    public ValueTask Play(string sound) => this._js.InvokeVoidAsync("zaturnava.play", sound);
+    public ValueTask Play(ImmutableList<string> sounds) => this._js.InvokeVoidAsync("zaturnava.play", [.. sounds]);
 
     /// <summary>Remembers the seat held at a game, so that the player can come back to it.</summary>
     public ValueTask Remember(string gameId, SeatClaim claim) =>

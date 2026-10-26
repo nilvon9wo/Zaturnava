@@ -58,16 +58,58 @@ window.zaturnava = (() => {
             tone(1047, 0.5, "triangle", 0.2, 0.33);
             tone(784, 0.5, "sine", 0.1, 0.33);
         },
+        // One of the team's Rajas back on the board: a rising arpeggio, ringing out like a bell.
+        restored: () => {
+            [440, 554, 659, 880].forEach((frequency, i) => tone(frequency, 0.18, "sine", 0.16, i * 0.1));
+            [880, 1109, 1319].forEach(frequency => tone(frequency, 1.1, "sine", 0.08, 0.42));
+        },
+        // An enemy Raja back on the board: two low notes a semitone apart, beating against each other.
+        dread: () => {
+            tone(147, 1.3, "sawtooth", 0.07, 0);
+            tone(156, 1.3, "sawtooth", 0.07, 0);
+            tone(98, 1.4, "sine", 0.18, 0.2);
+        },
+        // The team gaining command of an army, or an enemy losing it: a horn call, up a fourth and a third.
+        rally: () => {
+            tone(392, 0.16, "triangle", 0.16, 0);
+            tone(523, 0.16, "triangle", 0.16, 0.18);
+            tone(659, 0.55, "triangle", 0.18, 0.36);
+        },
+        // An enemy gaining command of an army, or the team losing it: three heavy low beats.
+        menace: () => [0, 0.32, 0.64].forEach(delay => {
+            tone(82, 0.28, "sawtooth", 0.1, delay);
+            tone(55, 0.3, "sine", 0.25, delay);
+        }),
+        // The team's empire begun, or an enemy's over: a cadence, from the fourth to the fifth to home.
+        glory: () => [[349, 440, 523], [392, 494, 587], [523, 659, 784, 1047]].forEach((chord, i) =>
+            chord.forEach(frequency => tone(frequency, i === 2 ? 1.2 : 0.3, "triangle", 0.08, i * 0.32))
+        ),
+        // An enemy empire begun, or the team's over: a slow minor chord sinking over a low drone.
+        doom: () => {
+            [[220, 262, 330], [208, 247, 311]].forEach((chord, i) =>
+                chord.forEach(frequency => tone(frequency, 0.9, "sine", 0.08, i * 0.6))
+            );
+            tone(55, 1.6, "sawtooth", 0.05, 0);
+        },
     };
 
+    // How long apart sounds told together are played, so that each is heard.
+    const gap = 1.6;
+
     return {
-        play(sound) {
+        play(...names) {
             try {
                 audio = audio ?? new AudioContext();
                 if (audio.state === "suspended") {
                     audio.resume();
                 }
-                (sounds[sound] || (() => { }))();
+                names.forEach((name, i) => setTimeout(() => {
+                    try {
+                        (sounds[name] || (() => { }))();
+                    } catch {
+                        // no sound, then
+                    }
+                }, i * gap * 1000));
             } catch {
                 // no sound, then
             }
