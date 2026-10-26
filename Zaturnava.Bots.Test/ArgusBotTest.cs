@@ -89,9 +89,9 @@ public sealed class ArgusBotTest
     }
 
     [Fact]
-    public async Task Decide_WhenAnEnemyRajaCouldTakeItsEmptyThrone_BlocksIt()
+    public async Task Decide_WhenAnEnemyRajaCouldTakeAnyPieceOnItsThrone_PutsNoneThereAlone()
     {
-        // Arrange
+        // Arrange - the Raja on 1 would take a Pawn on the throne, and enter it all the same
         DecisionRequest request = LineRules.Request(
             [Pass, LineRules.Move(5, 6), LineRules.Move(5, 0)],
             (1, LineRules.Raja, Theirs),
@@ -102,7 +102,24 @@ public sealed class ArgusBotTest
         ImmutableHashSet<GameAction> chosen = await Choices(request);
 
         // Assert
-        Assert.Equal([LineRules.Move(5, 0)], chosen);
+        Assert.Equal([LineRules.Move(5, 6)], chosen);
+    }
+
+    [Fact]
+    public async Task Decide_WhenAnEnemyRajaCouldTakeItsLonePieceOnItsThrone_SavesThePieceAtLeast()
+    {
+        // Arrange - the Raja on 1 enters the throne either way; on it, the Pawn would be lost too
+        DecisionRequest request = LineRules.Request(
+            [Pass, LineRules.Move(0, 7)],
+            (0, LineRules.Pawn, Mine),
+            (1, LineRules.Raja, Theirs)
+        );
+
+        // Act
+        ImmutableHashSet<GameAction> chosen = await Choices(request);
+
+        // Assert
+        Assert.Equal([LineRules.Move(0, 7)], chosen);
     }
 
     [Fact]
