@@ -91,6 +91,7 @@ public sealed class GameLogTest
     {
         // Arrange
         GameSnapshot snapshot = Snapshot(
+            new TurnHandedOver(Red, Black),
             new TurnShared(Red, Black),
             new PieceMoved(Pawn, Cell("h2"), Cell("g2"), Black),
             new ThroneEntered(RedRaja, Yellow, 1),
@@ -106,6 +107,7 @@ public sealed class GameLogTest
         // Assert
         Assert.Equal(
             [
+                "shared 0: Red let Black take the rest of their turn.",
                 "shared 0: Black holds Red's throne, so moves for Red now.",
                 "moved 0: Black moved Yellow's Pawn from h2 to g2, without rolling. 15-14",
                 "bonus 3: Red's Raja entered Yellow's throne (+1).",

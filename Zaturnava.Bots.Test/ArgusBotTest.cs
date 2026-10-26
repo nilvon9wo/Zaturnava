@@ -123,6 +123,19 @@ public sealed class ArgusBotTest
     }
 
     [Fact]
+    public async Task Decide_WhenItMayHandItsTurnToAnAlly_KeepsIt()
+    {
+        // Arrange
+        DecisionRequest request = LineRules.Request([Pass, new HandOverAction(Mine, Ally)], (3, LineRules.Pawn, Mine));
+
+        // Act
+        ImmutableHashSet<GameAction> chosen = await Choices(request);
+
+        // Assert
+        Assert.Equal([Pass], chosen);
+    }
+
+    [Fact]
     public async Task Decide_WhenActionsAreWorthTheSame_PicksAmongThoseThatDoSomething()
     {
         // Arrange

@@ -148,6 +148,13 @@ file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bo
                 $"{this.Name(entered.Raja.Owner)}'s Raja entered {this.Name(entered.Throne)}'s throne "
                     + $"(+{Text(entered.Points)})."
             ),
+            TurnHandedOver handed => this.Add(
+                number,
+                EventDto.Shared,
+                handed.Regent,
+                $"{this.Name(handed.Seat)} let {this.Name(handed.Regent)} take the rest of their turn."
+            ) with
+            { SharedFor = handed.Seat },
             TurnShared shared => this.Add(
                 number,
                 EventDto.Shared,

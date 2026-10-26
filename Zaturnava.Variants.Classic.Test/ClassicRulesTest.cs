@@ -1688,6 +1688,117 @@ public sealed class ClassicRulesTest
         );
     }
 
+    [Theory]
+    [InlineData(true, "elsewhere", false)]
+    [InlineData(false, "elsewhere", true)]
+    [InlineData(true, "on Black's throne", true)]
+    [InlineData(false, "nowhere", false)]
+    public void LegalActions_WhenAnAllyMayBeRegent_LetTheSeatHandItsTurnOver(
+        bool hasBlackRaja,
+        string greenRaja,
+        bool mayHandOver
+    )
+    {
+        // Arrange - Green may be regent while it has a Raja, and Black has none, or Green's is on Black's throne
+        CellId? green = greenRaja switch
+        {
+            "elsewhere" => Grid.CellAt(6, 2),
+            "on Black's throne" => BlackThrone,
+            _ => null,
+        };
+        GameState state = this.Regency(hasBlackRaja, green);
+
+        // Act
+        ImmutableList<GameAction> actions = this._rules.LegalActions(state);
+
+        // Assert
+        Assert.Equal(mayHandOver ? [new HandOverAction(Black, Green)] : [], actions.OfType<HandOverAction>());
+    }
+
+    [Fact]
+    public void Apply_WhenASeatHandsItsTurnOver_LetsTheRegentMoveTheSeatsOwnArmyOnly()
+    {
+        // Arrange - Black has no Raja; Green has
+        GameState state = this.Regency(hasBlackRaja: false, Grid.CellAt(6, 2));
+
+        // Act
+        Transition transition = this._rules.Apply(state, new HandOverAction(Black, Green));
+
+        // Assert
+        ImmutableList<GameAction> actions = this._rules.LegalActions(transition.State);
+        Assert.Equal(
+            (Green, Black, new TurnHandedOver(Black, Green)),
+            (transition.State.DecidingSeat, transition.State.ActingFor, transition.Events.Single())
+        );
+        Assert.Equal(
+            (true, false),
+            (actions.Contains(new RollAction(Green)), actions.OfType<HandOverAction>().Any())
+        );
+        Assert.All(
+            actions.OfType<MoveAction>(),
+            move => Assert.Equal((Green, Grid.CellAt(0, 0)), (move.Actor, move.From))
+        );
+    }
+
+    [Fact]
+    public void Apply_WhenTheRegentHasUsedTheDice_PassesTheTurnOnFromTheSeat()
+    {
+        // Arrange - Black rolled two Elephants, then handed the turn to Green
+        GameState rolled = this.Regency(hasBlackRaja: false, Grid.CellAt(6, 2)) with { Dice = [3, 4] };
+        GameState state = this._rules.Apply(rolled, new HandOverAction(Black, Green)).State;
+
+        // Act
+        GameState once = this._rules.Apply(state, new MoveAction(Green, Grid.CellAt(0, 0), Grid.CellAt(0, 1))).State;
+        Transition twice = this._rules.Apply(once, new MoveAction(Green, Grid.CellAt(0, 1), Grid.CellAt(0, 2)));
+
+        // Assert
+        Assert.Equal((Green, Black), (once.DecidingSeat, once.ActingFor));
+        Assert.Equal(
+            (Yellow, null, new TurnPassed(Black, Yellow)),
+            (twice.State.DecidingSeat, twice.State.ActingFor, twice.Events[^1])
+        );
+    }
+
+    [Fact]
+    public void Apply_WhenTheRegentHasMovedForASeatWithAnEnemyOnItsThrone_HandsTheOtherDieToTheOccupier()
+    {
+        // Arrange - Black has no Raja, and Yellow's sits on Black's throne; Black handed its turn to Green
+        GameState regency = this.Regency(hasBlackRaja: false, Grid.CellAt(6, 2));
+        GameState rolled = regency with
+        {
+            Dice = [3, 4],
+            Position = regency.Position.Place(BlackThrone, Piece(11, ClassicPieces.Raja, Yellow)),
+        };
+        GameState state = this._rules.Apply(rolled, new HandOverAction(Black, Green)).State;
+
+        // Act
+        Transition transition = this._rules.Apply(state, new MoveAction(Green, Grid.CellAt(0, 0), Grid.CellAt(0, 1)));
+
+        // Assert
+        Assert.Equal(
+            (Yellow, Black, new TurnShared(Black, Yellow)),
+            (transition.State.DecidingSeat, transition.State.ActingFor, transition.Events[^1])
+        );
+    }
+
+    [Fact]
+    public void Apply_WhenASeatWithAnEnemyOnItsThroneHandsOverBeforeRolling_LeavesTheRegentOnlyTheRoll()
+    {
+        // Arrange - Black has no Raja, and Yellow's sits on Black's throne
+        GameState regency = this.Regency(hasBlackRaja: false, Grid.CellAt(6, 2));
+        GameState state = regency with
+        {
+            Position = regency.Position.Place(BlackThrone, Piece(11, ClassicPieces.Raja, Yellow)),
+        };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new HandOverAction(Black, Green));
+
+        // Assert
+        Assert.Equal([new RollAction(Black), new HandOverAction(Black, Green)], this._rules.LegalActions(state));
+        Assert.Equal([new RollAction(Green)], this._rules.LegalActions(transition.State));
+    }
+
     [Fact]
     public void Apply_WhenAnOfferIsDeclined_KeepsThePrisonersAndTheOffererDecidesAgain()
     {
@@ -1983,6 +2094,27 @@ public sealed class ClassicRulesTest
         return hasGreenRaja
             ? state with { Position = state.Position.Place(Grid.CellAt(6, 2), Piece(19, ClassicPieces.Raja, Green)) }
             : state;
+    }
+
+    /// <summary>
+    /// Black's turn, with its Elephant on a1, and its Raja on d4 if <paramref name="hasBlackRaja"/>; Green's
+    /// Pawn, and Green's Raja on <paramref name="greenRaja"/> if any; a Pawn each of Yellow's and Red's.
+    /// </summary>
+    private GameState Regency(bool hasBlackRaja, CellId? greenRaja)
+    {
+        GameState state = this.StateWith(
+            (Grid.CellAt(0, 0), Piece(2, ClassicPieces.Elephant, Black)),
+            (Grid.CellAt(5, 5), Piece(13, ClassicPieces.Pawn, Yellow)),
+            (Grid.CellAt(6, 6), Piece(29, ClassicPieces.Pawn, Red)),
+            (Grid.CellAt(2, 6), Piece(21, ClassicPieces.Pawn, Green))
+        );
+        Position black = hasBlackRaja
+            ? state.Position.Place(Grid.CellAt(3, 3), Piece(3, ClassicPieces.Raja, Black))
+            : state.Position;
+        return state with
+        {
+            Position = greenRaja is { } cell ? black.Place(cell, Piece(19, ClassicPieces.Raja, Green)) : black,
+        };
     }
 
     private GameState AcceptingRansom() =>

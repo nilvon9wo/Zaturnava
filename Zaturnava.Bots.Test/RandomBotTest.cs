@@ -27,6 +27,21 @@ public sealed class RandomBotTest
     }
 
     [Fact]
+    public async Task Decide_WhenItMayHandItsTurnToAnAlly_KeepsIt()
+    {
+        // Arrange
+        DecisionRequest request =
+            new(Rules, ScoringRules.State(), Seat, [new HandOverAction(Seat, new SeatId(2)), new PassAction(Seat)]);
+        RandomBot bot = new(new Random(Seed));
+
+        // Act
+        GameAction action = await bot.Decide(request, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(new PassAction(Seat), action);
+    }
+
+    [Fact]
     public async Task Decide_WhenCancelled_ThrowsTaskCanceledException()
     {
         // Arrange

@@ -1,10 +1,11 @@
+using System.Collections.Immutable;
 using System.ComponentModel.DataAnnotations;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Decisions;
 
 namespace Net.NowhereAtAll.Zaturnava.Bots;
 
-/// <summary>Picks any legal action, uniformly at random: the baseline every smarter bot must beat.</summary>
+/// <summary>Picks any action it may, uniformly at random: the baseline every smarter bot must beat.</summary>
 public sealed class RandomBot(Random random) : IBotPlaying
 {
     public const string BotId = "random";
@@ -18,8 +19,11 @@ public sealed class RandomBot(Random random) : IBotPlaying
         UsesAi: false
     );
 
-    public Task<GameAction> Decide([Required] DecisionRequest request, CancellationToken cancellationToken) =>
-        cancellationToken.IsCancellationRequested
+    public Task<GameAction> Decide([Required] DecisionRequest request, CancellationToken cancellationToken)
+    {
+        ImmutableList<GameAction> choices = Playable.Of(request);
+        return cancellationToken.IsCancellationRequested
             ? Task.FromCanceled<GameAction>(cancellationToken)
-            : Task.FromResult(request.LegalActions[this._random.Next(request.LegalActions.Count)]);
+            : Task.FromResult(choices[this._random.Next(choices.Count)]);
+    }
 }

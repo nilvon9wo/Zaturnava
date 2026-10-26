@@ -184,6 +184,28 @@ public sealed class GameViewsTest
     }
 
     [Fact]
+    public void ViewOf_WhenAnAllyMayTakeTheTurn_LabelsHandingItOver()
+    {
+        // Arrange - Black's Raja is gone, so Green, which has its own, may take Black's turn
+        GameState start = Rules.CreateInitialState();
+        GameState state = start with
+        {
+            RollOff = [],
+            AwaitedDice = null,
+            Position = new Position(start.Position.Occupants.Remove(Rules.Thrones[new SeatId(0)])),
+        };
+
+        // Act
+        GameViewDto view = GameViews.ViewOf(Snapshot(state), Bots);
+
+        // Assert
+        Assert.Equal(
+            ["Let Green take over"],
+            view.LegalActions.Where(action => action.Kind == "hand-over").Select(action => action.Label)
+        );
+    }
+
+    [Fact]
     public void ViewOf_WhenAPromotionIsDue_SaysWhereAndLabelsPassingAsLater()
     {
         // Arrange - Black's Pawn has just come to c8

@@ -18,11 +18,9 @@ did them.
 
 ## Rules not yet played
 
-- **19** (rest) Voluntary regency (rules §6.2): an ally taking the turn of a seat whose throne it
-  holds, or that has no Raja, with that seat's consent. Next, with the grand game's
-  [Stage 0](grand/roadmap.md#stage-0--finish-what-the-grand-game-inherits).
 - **21, 22, 26** (rest) Ending the game by agreement; the idle-rounds safety net as a per-game
-  setting.
+  setting. Next, with the grand game's
+  [Stage 0](grand/roadmap.md#stage-0--finish-what-the-grand-game-inherits).
 - **20** Offer to end the game, for the other players to accept.
 - Boat triumph (§9): a nice-to-have; the condition is so unlikely that no one may miss it.
 - Ransom (§8): bots that offer during their turn.
@@ -136,3 +134,5 @@ After playing against Argus (2026-10-25):
   commands, goes home instead of the double move, taking an enemy that stands there.
 - The empire bonus (rules §5): taking the last enemy Raja scores each player of that team who
   commands an ally +1, and the captor +2 more, or +4 if the Raja was on its own throne.
+- **19** (rest) Voluntary regency (rules §6.2): a seat whose ally's Raja holds its throne, or that
+  has no Raja, may let that ally take over the rest of its turn, with its own army only.
