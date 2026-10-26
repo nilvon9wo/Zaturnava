@@ -159,6 +159,31 @@ public sealed class GameViewsTest
     }
 
     [Fact]
+    public void ViewOf_WhenAPieceMayEscape_LabelsEachEscape()
+    {
+        // Arrange - Black rolled two 5s; Yellow holds Black's Raja 3, whose square, d1, is free
+        Piece raja = new(new PieceId(3), ClassicPieces.Raja, new SeatId(0));
+        GameState start = Rules.CreateInitialState();
+        GameState state = start with
+        {
+            RollOff = [],
+            AwaitedDice = null,
+            Dice = [5, 5],
+            Position = new Position(start.Position.Occupants.Remove(Rules.Thrones[new SeatId(0)])),
+            Prisoners = [new Prisoner(raja, new SeatId(1))],
+        };
+
+        // Act
+        GameViewDto view = GameViews.ViewOf(Snapshot(state), Bots);
+
+        // Assert
+        Assert.Equal(
+            ["Escape Black's Raja, held by Yellow, to d1"],
+            view.LegalActions.Where(action => action.Kind == "escape").Select(action => action.Label)
+        );
+    }
+
+    [Fact]
     public void ViewOf_WhenAPromotionIsDue_SaysWhereAndLabelsPassingAsLater()
     {
         // Arrange - Black's Pawn has just come to c8

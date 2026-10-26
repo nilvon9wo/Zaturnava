@@ -12,7 +12,7 @@ namespace Net.NowhereAtAll.Zaturnava.Bots;
 /// most at once, at random among equals; when nothing gains, any action that does something and loses
 /// nothing, passing only when nothing else is left. An action gains what it scores, and a promotion
 /// what it puts on the board for the bot's team, less what it takes off: so a Pawn is promoted into
-/// the team's best piece, and never into an enemy's.
+/// the team's best piece, and never into an enemy's. An escape, likewise, gains what it puts back.
 /// </summary>
 internal static class Greedy
 {
@@ -47,16 +47,23 @@ internal static class Greedy
     internal static int Gain(DecisionRequest request, GameAction action, GameState after) =>
         ScoreOf(after, request.Seat)
             - ScoreOf(request.State, request.Seat)
-            + (action is PromoteAction promotion ? PromotionGain(request, promotion) : 0);
+            + action switch
+            {
+                PromoteAction promotion => PromotionGain(request, promotion),
+                EscapeAction escape => SideOf(request, PrisonerOf(request, escape.Piece)),
+                _ => 0,
+            };
 
     /// <summary>What the piece brought back is worth to the bot's team, less what the Pawn was.</summary>
     private static int PromotionGain(DecisionRequest request, PromoteAction promotion)
     {
         GameState state = request.State;
         Piece pawn = state.Position.PieceAt(promotion.Cell)!; // a legal promotion has a Pawn to promote
-        Piece into = state.Prisoners.First(prisoner => prisoner.Piece.Id == promotion.Into).Piece;
-        return SideOf(request, into) - SideOf(request, pawn);
+        return SideOf(request, PrisonerOf(request, promotion.Into)) - SideOf(request, pawn);
     }
+
+    private static Piece PrisonerOf(DecisionRequest request, PieceId piece) =>
+        request.State.Prisoners.First(prisoner => prisoner.Piece.Id == piece).Piece;
 
     /// <summary>A piece's worth, for the bot's team; less than nothing, for an enemy's.</summary>
     private static int SideOf(DecisionRequest request, Piece piece) =>

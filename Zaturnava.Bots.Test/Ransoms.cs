@@ -68,6 +68,15 @@ internal static class Ransoms
         return new DecisionRequest(rules, state, Black, rules.LegalActions(state));
     }
 
+    /// <summary>Seat 0's turn, when its Horse 20, which Yellow holds, may escape to cell 7, or it may pass.</summary>
+    public static DecisionRequest Escaping()
+    {
+        EscapeAction escape = new(Black, Id(20), new CellId(7));
+        ScoringRules rules = new(ImmutableDictionary<GameAction, int>.Empty.Add(Done, 0).Add(escape, 0));
+        GameState state = Request().State;
+        return new DecisionRequest(rules, state, Black, rules.LegalActions(state));
+    }
+
     /// <summary>The request, with each piece on its cell (cells from 0), worth what its kind is.</summary>
     public static DecisionRequest On(DecisionRequest request, params (string Kind, SeatId Owner)[] pieces)
     {

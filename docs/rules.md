@@ -24,11 +24,12 @@ Everything else here is specified but not yet played by the engine.
 |---|---|
 | §2 Board & setup | Implemented: the 8×8 board, the pinwheel setup, teams of opposite seats, thrones. |
 | §3 Pieces & movement | Implemented, captures included. A piece moved for another army moves the way its own army faces; what it may take is §6.4. |
-| §4 Turns & dice | Implemented: the opening plays the die that won the roll-off, then a deliberate move, a pass or two dice, clockwise from the roll-off's winner; an unusable die is forfeit. Doubles let one piece move twice, but escape (§7) is not yet. The dice profile is the weighted d6 one; a d4 profile exists but cannot yet be chosen. |
+| §4 Turns & dice | Implemented: the opening plays the die that won the roll-off, then a deliberate move, a pass or two dice, clockwise from the roll-off's winner; an unusable die is forfeit. Doubles let one piece move twice, or a prisoner escape (§7). The dice profile is the weighted d6 one; a d4 profile exists but cannot yet be chosen. |
 | §5 Captures & scoring | Partly: captures score by piece, with both throne bonuses. The empire bonus is not yet. |
 | §6 Throne control | Partly: the expanded pool (§6.1, both triggers) and the forced shared turn (§6.3). Voluntary regency (§6.2) is not yet. |
 | §6.4 Commanded captures | Implemented, with the toggle as a constructor argument. |
-| §7 Escape, §9 Boat triumph | Not yet. |
+| §7 Escape | Implemented, as clarified below: the escape takes the place of the double move and ends the turn. |
+| §9 Boat triumph | Not yet. |
 | §8 Promotion & ransom | Implemented, as clarified below: promotion into any captured piece (`promotion.pawns` a constructor argument; `promotion.pool` fixed at `unrestricted`), and ransom with its timed protocol, including the receiving player's choice among equidistant squares. |
 | §10 Game end | Partly: elimination (a seat with no pieces is skipped), honourable peace, team elimination, and a safety net (below). Retirement and ending by agreement are not yet. |
 | §11 Setup roll-off | Implemented. |
@@ -309,9 +310,15 @@ forced into either):
   its own starting square, **no ransom consent required**:
   - If an enemy piece occupies that starting square, the escaping piece still
     lands there and captures it (scored normally).
-  - If an ally's piece occupies it, the escaping piece instead goes to the
-    closest free square (player's choice among equidistant options) — same
-    placement rule as [Raja return](#raja-return) below.
+  - If an ally's piece occupies it, the escaping piece instead goes where a
+    piece given back by ransom would (§8): a free starting square of its
+    kind's, else the free squares fewest king's steps from its own. *(Stated
+    2026-10-25)* When it may go to more than one, the player letting it
+    escape chooses, as part of choosing the escape.
+  - *(Stated 2026-10-26)* The escape is instead of the double move, and the
+    player chooses between them: it uses both dice, and the turn ends. It is
+    offered only while both dice of the doubles are unused. What the escaping
+    piece takes is the escaping player's, scored as any capture is (§5).
 
 If multiple valid captured pieces qualify (e.g. both the player's own captured
 Raja and an ally's captured Raja qualify under a "5 or 6" roll), the player

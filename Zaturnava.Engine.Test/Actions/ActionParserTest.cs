@@ -68,6 +68,7 @@ public sealed class ActionParserTest
         new AcceptAction(new SeatId(2)),
         new DeclineAction(new SeatId(2)),
         new PlaceAction(new SeatId(2), new CellId(9)),
+        new EscapeAction(new SeatId(3), new PieceId(11), new CellId(32)),
     ];
 
     [Theory]

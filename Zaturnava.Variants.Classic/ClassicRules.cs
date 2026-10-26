@@ -17,8 +17,8 @@ namespace Net.NowhereAtAll.Zaturnava.Variants.Classic;
 /// move (rules.md §4, §11); then turns of a deliberate move, a pass, or a roll of the dice (§4);
 /// captures scored by piece, with the throne bonuses (§5); command of other armies through thrones
 /// and Raja-less allies, and turns shared with an enemy Raja on one's throne (§6.1, §6.3); promotion
-/// and ransom (§8); and the end of the game (§10). Voluntary regency, escape, boat triumph and the
-/// empire bonus follow; docs/rules.md lists what is implemented.
+/// and ransom (§8); escape on doubles (§7); and the end of the game (§10). Voluntary regency, boat
+/// triumph and the empire bonus follow; docs/rules.md lists what is implemented.
 /// </summary>
 public sealed class ClassicRules : IRulesApplying
 {
@@ -187,8 +187,31 @@ public sealed class ClassicRules : IRulesApplying
                 new PassAction(seat),
                 .. this.MovesOf(state, seat, this.RolledKinds(state).Contains),
                 .. this.PromotionsOf(state, seat),
+                .. this.EscapesOf(state, seat),
             ],
         };
+
+    /// <summary>
+    /// On doubles, not yet used, instead of moving: a captured piece of the kind they show, of an army the
+    /// seat commands, whoever holds it, may escape (rules.md §7) - to each square it may go to. Pieces alike
+    /// held by the same seat are offered once, the highest-scoring first, then by owner, then by holder.
+    /// </summary>
+    private IEnumerable<EscapeAction> EscapesOf(GameState state, SeatId seat)
+    {
+        ImmutableHashSet<SeatId> armies = this._control.ArmiesOf(state, seat);
+        ImmutableHashSet<PieceKindId> kinds = state.Dice.Count == TurnDice && state.Dice.Distinct().Count() == 1
+            ? [.. this._dice.KindsOf(state.Dice[0])]
+            : [];
+        return state.Prisoners
+            .Where(prisoner => armies.Contains(prisoner.Piece.Owner) && kinds.Contains(prisoner.Piece.Kind))
+            .DistinctBy(prisoner => (prisoner.Piece.Owner, prisoner.Piece.Kind, prisoner.Holder))
+            .OrderByDescending(prisoner => ClassicPieces.Points[prisoner.Piece.Kind])
+            .ThenBy(prisoner => prisoner.Piece.Owner.Value)
+            .ThenBy(prisoner => prisoner.Holder.Value)
+            .SelectMany(prisoner => this._ransom.EscapesFor(state, prisoner)
+                .Select(home => new EscapeAction(seat, prisoner.Piece.Id, home))
+            );
+    }
 
     /// <summary>
     /// At the start of a turn: roll, or move any piece, or promote, or pass - but only roll, or promote,
@@ -287,6 +310,7 @@ public sealed class ClassicRules : IRulesApplying
             RollAction => new Transition(state with { AwaitedDice = new DiceRequest(TurnDice, this._dice.Sides) }, []),
             MoveAction move => this.AfterMove(state, move),
             PromoteAction promote => this.Promoted(state, promote),
+            EscapeAction escape => this.Escaped(state, escape),
             AcceptAction => this._ransom.Accepted(state),
             PlaceAction place => this._ransom.Placed(state, place),
             DeclineAction => Ransom.Declined(state),
@@ -329,6 +353,27 @@ public sealed class ClassicRules : IRulesApplying
             (_, true) => this.GoneOn(used),
             _ => used,
         };
+    }
+
+    /// <summary>
+    /// The prisoner goes back onto the board for its own army, taking whatever stands there, and uses up
+    /// both dice: the turn is over.
+    /// </summary>
+    private Transition Escaped(GameState state, EscapeAction escape)
+    {
+        Prisoner prisoner = state.Prisoners.First(held => held.Piece.Id == escape.Piece);
+        Piece? captured = state.Position.PieceAt(escape.Home);
+        GameState escaped = state with
+        {
+            Position = state.Position.Place(escape.Home, prisoner.Piece),
+            Prisoners = state.Prisoners.Remove(prisoner),
+            Dice = [],
+        };
+        Transition transition = new(escaped, [new PieceEscaped(prisoner.Piece, escape.Home, escape.Actor)]);
+        Transition taken = captured is null
+            ? transition
+            : this.Captured(transition, captured, escape.Actor, escape.Home);
+        return GameEnd.AfterMove(taken) ?? this.GoneOn(taken);
     }
 
     /// <exception cref="IllegalActionException">The game is not waiting on these dice.</exception>
@@ -472,7 +517,8 @@ public sealed class ClassicRules : IRulesApplying
     {
         SeatId seat = state.DecidingSeat!.Value; // dice are only rolled and used by the deciding seat
         return this.MovesOf(state, seat, this.RolledKinds(state).Contains).Any()
-            || this.PromotionsOf(state, seat).Any(promotion => UsesDie(state, promotion));
+            || this.PromotionsOf(state, seat).Any(promotion => UsesDie(state, promotion))
+            || this.EscapesOf(state, seat).Any();
     }
 
     /// <summary>A turn passed without rolling or moving: enough of those in a row end the game.</summary>
@@ -537,29 +583,32 @@ public sealed class ClassicRules : IRulesApplying
         Transition moved = new(relocated, [new PieceMoved(mover, move.From, move.To, move.Actor)]);
         Transition taken = captured is null
             ? moved
-            : this.Captured(moved, captured, move);
+            : this.Captured(moved, captured, move.Actor, move.To);
         return this.EnteredThrone(taken, mover, move.To);
     }
 
-    /// <summary>A capture scores by piece, but taking a piece of one's own team scores no one.</summary>
-    private Transition Captured(Transition moved, Piece captured, MoveAction move)
+    /// <summary>
+    /// A capture by <paramref name="captor"/> on <paramref name="cell"/> scores by piece, but taking a piece of
+    /// one's own team scores no one.
+    /// </summary>
+    private Transition Captured(Transition moved, Piece captured, SeatId captor, CellId cell)
     {
-        bool isEnemy = !moved.State.Teams.AreAllied(captured.Owner, move.Actor);
+        bool isEnemy = !moved.State.Teams.AreAllied(captured.Owner, captor);
         int points = isEnemy
             ? ClassicPieces.Points[captured.Kind]
             : 0;
         bool isOnThrone = isEnemy
             && captured.Kind == ClassicPieces.Raja
-            && this._control.IsThroneOf(move.To, captured.Owner);
-        Transition scored = Scored(moved, move.Actor, points, new PieceCaptured(captured, move.Actor, points));
+            && this._control.IsThroneOf(cell, captured.Owner);
+        Transition scored = Scored(moved, captor, points, new PieceCaptured(captured, captor, points));
         GameState state = scored.State;
         Transition taken = scored with
         {
-            State = state with { Prisoners = state.Prisoners.Add(new Prisoner(captured, move.Actor)) },
+            State = state with { Prisoners = state.Prisoners.Add(new Prisoner(captured, captor)) },
         };
-        RajaCapturedOnThrone bonus = new(captured, move.Actor, RajaOnThroneBonus);
+        RajaCapturedOnThrone bonus = new(captured, captor, RajaOnThroneBonus);
         return isOnThrone
-            ? Scored(taken, move.Actor, RajaOnThroneBonus, bonus)
+            ? Scored(taken, captor, RajaOnThroneBonus, bonus)
             : taken;
     }
 
