@@ -183,9 +183,9 @@ Points are never subtracted or returned when a piece is given back.
     one who took that Raja, if they also command an ally. A player commands
     an ally's army, for this, whoever's turn it is: their Raja sits on the
     ally's throne, or the ally has no Raja while they have one (§6.1).
-  - *(Proposed)* The +2 for taking a Raja on its own throne is scored as
-    well as the empire's +4: taking the last enemy Raja on its throne while
-    commanding an ally scores 5 + 2 + 1 + 4.
+  - *(Stated 2026-10-26)* The +2 for taking a Raja on its own throne is
+    scored as well as the empire's +4: taking the last enemy Raja on its
+    throne while commanding an ally scores 5 + 2 + 1 + 4.
 
 ## 6. Throne Control
 
