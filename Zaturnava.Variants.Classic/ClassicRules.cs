@@ -133,6 +133,15 @@ public sealed class ClassicRules : IRulesApplying
     /// <summary>A piece is worth what taking it scores (rules.md §5).</summary>
     public int WorthOf(PieceKindId kind) => ClassicPieces.Points[kind];
 
+    public ImmutableList<Attack> AttacksOf([Required] GameState state, SeatId seat) =>
+    [
+        .. state.Position.Occupants
+            .Where(occupant => occupant.Value.Owner == seat)
+            .SelectMany(occupant => this._moves.AttacksFrom(state.Position, occupant.Key, state.SeatOf(seat))),
+    ];
+
+    public bool IsLeader(PieceKindId kind) => kind == ClassicPieces.Raja;
+
     public string NameOf(PieceKindId kind) => ClassicPieces.TraditionalNames[kind];
 
     public string NameOf(SeatId seat) => ClassicSetup.SeatNames[seat.Value];

@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using System.ComponentModel.DataAnnotations;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Boards;
+using Net.NowhereAtAll.Zaturnava.Engine.Moves;
 using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
 using Net.NowhereAtAll.Zaturnava.Engine.Positions;
 using Net.NowhereAtAll.Zaturnava.Engine.Rules;
@@ -32,7 +33,7 @@ internal sealed class ScoringRules(ImmutableDictionary<GameAction, int> points) 
 
     public ICellNavigating Topology => throw new NotSupportedException();
 
-    public ImmutableDictionary<SeatId, CellId> Thrones => throw new NotSupportedException();
+    public ImmutableDictionary<SeatId, CellId> Thrones => [];
 
     public static GameState State() => new(Position.Empty, [], TeamGraph.FromTeams([]), Seat, 1, [], []);
 
@@ -59,6 +60,10 @@ internal sealed class ScoringRules(ImmutableDictionary<GameAction, int> points) 
     public GameAction Parse([Required] ActionDescriptor descriptor) => throw new NotSupportedException();
 
     public int WorthOf(PieceKindId kind) => Worth[kind];
+
+    public ImmutableList<Attack> AttacksOf([Required] GameState state, SeatId seat) => [];
+
+    public bool IsLeader(PieceKindId kind) => false;
 
     public string NameOf(PieceKindId kind) => throw new NotSupportedException();
 

@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using System.ComponentModel.DataAnnotations;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Boards;
+using Net.NowhereAtAll.Zaturnava.Engine.Moves;
 using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
 using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 
@@ -47,6 +48,15 @@ public interface IRulesApplying
 
     /// <summary>What a piece of <paramref name="kind"/> is worth, to one weighing a trade of prisoners.</summary>
     int WorthOf(PieceKindId kind);
+
+    /// <summary>
+    /// The cells the pieces of <paramref name="seat"/>'s own army could capture on, whatever stands on
+    /// them, the dice and whose turn it is aside: for one weighing what a move leaves open.
+    /// </summary>
+    ImmutableList<Attack> AttacksOf([Required] GameState state, SeatId seat);
+
+    /// <summary>Whether a piece of <paramref name="kind"/> leads its army, as the classic Raja does.</summary>
+    bool IsLeader(PieceKindId kind);
 
     string NameOf(PieceKindId kind);
 

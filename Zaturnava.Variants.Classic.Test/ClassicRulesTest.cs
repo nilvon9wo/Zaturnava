@@ -3,6 +3,7 @@ using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Boards;
 using Net.NowhereAtAll.Zaturnava.Engine.Chance;
 using Net.NowhereAtAll.Zaturnava.Engine.Events;
+using Net.NowhereAtAll.Zaturnava.Engine.Moves;
 using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
 using Net.NowhereAtAll.Zaturnava.Engine.Positions;
 using Net.NowhereAtAll.Zaturnava.Engine.Rules;
@@ -1216,6 +1217,59 @@ public sealed class ClassicRulesTest
 
         // Assert
         Assert.Equal((Yellow, 0), (transition.State.DecidingSeat, transition.State.OffersMade.Count));
+    }
+
+    [Fact]
+    public void AttacksOf_WhenAPawnStandsBesideAFriend_AttacksBothForwardDiagonalsButNotAhead()
+    {
+        // Arrange
+        GameState state = this.StateWith(
+            (Grid.CellAt(3, 3), Piece(1, ClassicPieces.Pawn, Black)),
+            (Grid.CellAt(4, 4), Piece(2, ClassicPieces.Pawn, Black))
+        );
+
+        // Act
+        ImmutableList<Attack> attacks = this._rules.AttacksOf(state, Black);
+
+        // Assert
+        Assert.Equal(
+            [Grid.CellAt(2, 4), Grid.CellAt(4, 4)],
+            attacks
+                .Where(attack => attack.From == Grid.CellAt(3, 3))
+                .Select(attack => attack.Target)
+                .OrderBy(cell => cell.Value)
+        );
+    }
+
+    [Fact]
+    public void AttacksOf_WhenOtherArmiesStandOnTheBoard_CountsOnlyTheSeatsOwnPieces()
+    {
+        // Arrange
+        GameState state = this.StateWith(
+            (Grid.CellAt(3, 3), Piece(1, ClassicPieces.Pawn, Black)),
+            (Grid.CellAt(5, 5), Piece(2, ClassicPieces.Raja, Yellow)),
+            (Grid.CellAt(1, 1), Piece(3, ClassicPieces.Raja, Green))
+        );
+
+        // Act
+        ImmutableList<Attack> attacks = this._rules.AttacksOf(state, Black);
+
+        // Assert
+        Assert.Equal([new PieceId(1)], attacks.Select(attack => attack.Attacker.Id).Distinct());
+    }
+
+    [Theory]
+    [InlineData(ClassicPiecesKind.Raja, true)]
+    [InlineData(ClassicPiecesKind.Pawn, false)]
+    public void IsLeader_WhenGivenAKind_IsTrueOnlyForTheRaja(ClassicPiecesKind kind, bool expected)
+    {
+        // Arrange - nothing beyond the rules
+
+        // Act
+        bool isLeader = this._rules.IsLeader(KindOf(kind));
+
+        // Assert
+        Assert.Equal(expected, isLeader);
     }
 
     [Fact]

@@ -4,6 +4,7 @@ using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Boards;
 using Net.NowhereAtAll.Zaturnava.Engine.Chance;
 using Net.NowhereAtAll.Zaturnava.Engine.Events;
+using Net.NowhereAtAll.Zaturnava.Engine.Moves;
 using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
 using Net.NowhereAtAll.Zaturnava.Engine.Positions;
 using Net.NowhereAtAll.Zaturnava.Engine.Rules;
@@ -68,6 +69,10 @@ internal sealed class RollingRules(int length) : IRulesApplying
     public string NameOf(SeatId seat) => $"Seat {seat.Value}";
 
     public int WorthOf(PieceKindId kind) => 1;
+
+    public ImmutableList<Attack> AttacksOf([Required] GameState state, SeatId seat) => [];
+
+    public bool IsLeader(PieceKindId kind) => false;
 
     public string NameOfDie(int value) => $"Die {value}";
 
