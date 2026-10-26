@@ -7,7 +7,9 @@
    decides, it asks for the game again every TableSettings.PollInterval. While a decision is timed, it
    counts down, and advances the game once time is up, for the server to decide for that seat. Once the
    game is over, the player may play it again, the same seats played the same way, or start a quick game.
-   If the server no longer has the game (restarted, say), it says so, stops asking, and offers the lobby. *@
+   If the server no longer has the game (restarted, say), it says so, stops asking, and offers the lobby.
+   Under it all, a quiet bar: the game's name and the way back to the lobby, the buttons that turn the
+   board, and the page's own settings. *@
 @implements IDisposable
 @inject IGameServing Games
 @inject TableSettings Settings
@@ -16,21 +18,6 @@
 @using System.Globalization
 
 <section class="table">
-    <header class="table-bar">
-        <button class="leave" @onclick="this.OnLeave">Lobby</button>
-        @if (this._view is { } heading)
-        {
-            <h1>@heading.RulesetName</h1>
-            <span class="turns">
-                <button class="turn-left" title="Turn the board anticlockwise" @onclick="this.TurnLeft">&#x27F2;</button>
-                <button class="turn-home" title="Your own view of the board" @onclick="() => this.TurnHome(heading)">
-                    My view
-                </button>
-                <button class="turn-right" title="Turn the board clockwise" @onclick="this.TurnRight">&#x27F3;</button>
-            </span>
-        }
-    </header>
-
     @if (this._problem is { } problem && this._view is null)
     {
         <p class="problem" role="alert">@problem</p>
@@ -217,19 +204,53 @@
                 }
             </div>
 
-            <ol class="log">
-                @foreach (EventDto happened in view.Log.Reverse())
-                {
-                    <li class="event @happened.Kind seat-@happened.Seat">@this.Named(happened.Text)</li>
-                }
-            </ol>
+            <div class="log">
+                <div class="log-head">
+                    <button class="log-filter" aria-pressed="@(this._isHighlightsOnly ? "true" : "false")" @onclick="this.ToggleHighlights">
+                        @(this._isHighlightsOnly ? "Show everything" : "Highlights only")
+                    </button>
+                </div>
+                <ol class="events">
+                    @foreach (EventDto happened in this.Shown(view))
+                    {
+                        <li class="event @happened.Kind seat-@happened.Seat">@this.Named(happened.Text)</li>
+                    }
+                </ol>
+            </div>
         </div>
     }
+
+    <footer class="bar table-bar">
+        <span class="where">
+            <span class="brand">@(this._view?.RulesetName ?? "Zaturnava")</span>
+            <button class="leave" @onclick="this.OnLeave">Lobby</button>
+        </span>
+        @if (this._view is { } shown)
+        {
+            <span class="turns">
+                <button class="turn-left" title="Turn the board anticlockwise" @onclick="this.TurnLeft">&#x27F2;</button>
+                <button class="turn-home" title="Your own view of the board" @onclick="() => this.TurnHome(shown)">
+                    My view
+                </button>
+                <button class="turn-right" title="Turn the board clockwise" @onclick="this.TurnRight">&#x27F3;</button>
+            </span>
+        }
+        @this.PageSettings
+    </footer>
 </section>
 
 @code {
     private const string BotController = "bot";
     private const string RollKind = "roll";
+    private const string Alarm = "alarm";
+    private const string Rescued = "rescued";
+
+    /// <summary>
+    /// What the log shows when it shows only the highlights: points scored, pieces brought back, and how the
+    /// game ended.
+    /// </summary>
+    private static readonly ImmutableHashSet<string> Highlights =
+        [EventDto.Captured, EventDto.Bonus, EventDto.Escaped, EventDto.Promoted, EventDto.Ended];
     private static readonly BoardActions NoActions = new([]);
 
     private readonly Timer _poll;
@@ -238,6 +259,7 @@
     private BoardSelection _selection = BoardSelection.None;
     private BoardTurn _boardTurn = BoardTurn.None;
     private ImmutableHashSet<int> _lastMove = [];
+    private bool _isHighlightsOnly = true;
     private DateTimeOffset? _deadline;
     private int? _receiver;
     private ImmutableHashSet<int> _given = [];
@@ -250,6 +272,16 @@
 
     public Table() => this._poll = new Timer(this.Tick);
 
+    /// <summary>The log, newest first: all of it, or only its highlights.</summary>
+    private IEnumerable<EventDto> Shown(GameViewDto view) =>
+        view.Log.Reverse().Where(happened => !this._isHighlightsOnly || Highlights.Contains(happened.Kind));
+
+    private async Task ToggleHighlights()
+    {
+        this._isHighlightsOnly = !this._isHighlightsOnly;
+        await this.Browser.SetLogHighlightsOnly(this._isHighlightsOnly);
+    }
+
     [Parameter, EditorRequired]
     public Seating Seating { get; set; } = null!;
 
@@ -259,6 +291,10 @@
     /// <summary>How the pieces are drawn and named, the server's names being the traditional ones.</summary>
     [Parameter]
     public PieceSet Pieces { get; set; }
+
+    /// <summary>The page's own settings, for the table's bar.</summary>
+    [Parameter]
+    public RenderFragment? PageSettings { get; set; }
 
     [Parameter]
     public EventCallback OnLeave { get; set; }
@@ -271,6 +307,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        this._isHighlightsOnly = await this.Browser.IsLogHighlightsOnly();
         await this.Refresh();
         this._boardTurn = this._view is null ? BoardTurn.None : BoardTurn.HomeOf(this.Seating.Claim?.Seat, this._view);
     }
@@ -574,16 +611,40 @@
         _ = this._poll.Change(this.Wait(view), Timeout.InfiniteTimeSpan);
     }
 
-    /// <summary>The sound for what happened since the last view: a turn come round, a capture, a move, a roll.</summary>
+    /// <summary>
+    /// The sound for what happened since the last view: an enemy's piece escaping, or one of the player's
+    /// team's; a turn come round, a capture, a move, a roll.
+    /// </summary>
     private string? SoundOf(GameViewDto view, bool isFirst, bool wasTheirTurn)
     {
-        ImmutableHashSet<string> kinds = [.. view.Log.Where(happened => happened.Number > this._heard).Select(happened => happened.Kind)];
-        return isFirst
-            ? null
-            : this._turn is not null && !wasTheirTurn
-                ? "turn"
-                : new[] { EventDto.Captured, EventDto.Moved, EventDto.Rolled }.FirstOrDefault(kinds.Contains);
+        ImmutableList<EventDto> fresh = [.. view.Log.Where(happened => happened.Number > this._heard)];
+        ImmutableHashSet<int> ours = [.. this.TeamsOf(view).Where(this.IsMine).SelectMany(team => team).Select(seat => seat.Id)];
+        ImmutableHashSet<string> kinds =
+        [
+            .. fresh.Select(happened => happened.Kind),
+            .. fresh.Where(happened => happened.Kind == EventDto.Escaped).Select(escaped => EscapeSoundOf(ours, escaped)),
+        ];
+        string? escape = new[] { Alarm, Rescued }.FirstOrDefault(kinds.Contains);
+        return (isFirst, escape, this._turn is not null && !wasTheirTurn) switch
+        {
+            (true, _, _) => null,
+            (_, { } heard, _) => heard,
+            (_, _, true) => "turn",
+            _ => new[] { EventDto.Captured, EventDto.Moved, EventDto.Rolled }.FirstOrDefault(kinds.Contains),
+        };
     }
+
+    /// <summary>
+    /// A cheer for a piece of the player's own team escaping, an alarm for an enemy's; for someone only
+    /// watching, no more than a move.
+    /// </summary>
+    private static string EscapeSoundOf(ImmutableHashSet<int> ours, EventDto escaped) =>
+        (ours.IsEmpty, ours.Contains(escaped.Owner.GetValueOrDefault())) switch
+        {
+            (true, _) => EventDto.Moved,
+            (_, true) => Rescued,
+            _ => Alarm,
+        };
 
     /// <summary>
     /// How long until the next look at the game: a countdown step while the decision is timed; else never

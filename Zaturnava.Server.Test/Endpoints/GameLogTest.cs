@@ -77,10 +77,10 @@ public sealed class GameLogTest
                 "moved 0: Black moved their Horse from b1 to c3. 1-18",
                 "captured 0: Black took Yellow's Pawn (+1).",
                 "forfeited 0: Black could move nothing with 5 (Pawn or Raja), so lost it.",
-                "passed 0: Yellow to play.",
+                "passed 1: Yellow to play.",
                 "moved 1: Yellow moved their Pawn from h2 to g2, without rolling. 15-14",
                 "forfeited 1: Yellow could move nothing with 1 (Boat) and 3 (Elephant), so lost them.",
-                "passed 1: Green to play.",
+                "passed 2: Green to play.",
             ],
             log.Select(Told)
         );
@@ -181,7 +181,7 @@ public sealed class GameLogTest
             ],
             log.Select(Told)
         );
-        Assert.Equal(Cell("a7").Value, log[^1].To);
+        Assert.Equal((Cell("a7").Value, Yellow.Value), (log[^1].To, log[^1].Owner));
     }
 
     [Theory]

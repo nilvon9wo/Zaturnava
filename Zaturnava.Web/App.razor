@@ -1,16 +1,8 @@
-@* The whole page: the lobby until the player sits at (or watches) a table, under a bar of the page's
-   own settings (theme, sound, and how the pieces are shown). No URL routing, so the page works from any address it is served at. A seat the
-   player takes is remembered in the browser, so that they can come back to it. *@
+@* The whole page: the lobby until the player sits at (or watches) a table, over a quiet bar of the
+   page's name and its own settings (theme, sound, and how the pieces are shown); at a table, the table
+   shows the settings in its own bar. No URL routing, so the page works from any address it is served
+   at. A seat the player takes is remembered in the browser, so that they can come back to it. *@
 @inject Browser Browser
-
-<nav class="bar">
-    <span class="brand">Zaturnava</span>
-    <button class="theme" @onclick="this.SwitchTheme">@(this._theme == Browser.Dark ? "Light theme" : "Dark theme")</button>
-    <button class="sound" @onclick="this.SwitchSound">@(this._isSoundOn ? "Sound: on" : "Sound: off")</button>
-    <button class="pieces" @onclick="this.SwitchPieces">
-        @(this._pieces == PieceSet.Chess ? "Pieces: chess" : "Pieces: traditional")
-    </button>
-</nav>
 
 @if (this._seating is { } seating)
 {
@@ -18,12 +10,17 @@
            Seating="seating"
            IsSoundOn="this._isSoundOn"
            Pieces="this._pieces"
+           PageSettings="this.Settings"
            OnLeave="this.Leave"
            OnSeated="this.Sit" />
 }
 else
 {
     <Lobby OnSeated="this.Sit" />
+    <footer class="bar">
+        <span class="brand">Zaturnava</span>
+        @this.Settings
+    </footer>
 }
 
 @code {
@@ -31,6 +28,15 @@ else
     private string _theme = Browser.Dark;
     private bool _isSoundOn = true;
     private PieceSet _pieces;
+
+    private RenderFragment Settings =>
+        @<span class="settings">
+            <button class="theme" @onclick="this.SwitchTheme">@(this._theme == Browser.Dark ? "Light theme" : "Dark theme")</button>
+            <button class="sound" @onclick="this.SwitchSound">@(this._isSoundOn ? "Sound: on" : "Sound: off")</button>
+            <button class="pieces" @onclick="this.SwitchPieces">
+                @(this._pieces == PieceSet.Chess ? "Pieces: chess" : "Pieces: traditional")
+            </button>
+        </span>;
 
     protected override async Task OnInitializedAsync()
     {

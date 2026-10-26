@@ -310,6 +310,26 @@ public sealed class TableTest : IDisposable
     }
 
     [Fact]
+    public void Click_WhenOnlyTheHighlightsAreShown_ShowsEverythingAndRemembersIt()
+    {
+        // Arrange - nothing chosen yet, so only what scored is shown
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with { Log = [Rolled, Moved, Captured] };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        (int, string) highlights =
+            (table.FindAll("ol.events li").Count, table.Find("button.log-filter").GetAttribute("aria-pressed")!);
+
+        // Act
+        table.Find("button.log-filter").Click();
+
+        // Assert
+        Assert.Equal(((1, "true"), 3), (highlights, table.FindAll("ol.events li").Count));
+        Assert.Equal(
+            ["zaturnava.log", "everything"],
+            this._page.JSInterop.Invocations["zaturnava.save"].Single().Arguments
+        );
+    }
+
+    [Fact]
     public void Render_WhenNoDiceAreRolled_ShowsNone()
     {
         // Arrange - nothing beyond seat 0 to move, with no dice
@@ -324,7 +344,8 @@ public sealed class TableTest : IDisposable
     [Fact]
     public void Render_WhenThingsHaveHappened_ListsThemNewestFirstAndTintsTheLastMove()
     {
-        // Arrange
+        // Arrange - the player chose to see everything
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.log").SetResult("everything");
         this._page.Server.View = FakeGameServer.SeatZeroToMove with { Log = [Rolled, Moved] };
 
         // Act
@@ -334,8 +355,8 @@ public sealed class TableTest : IDisposable
         Assert.Equal(
             ("Yellow's Horse moved.|Yellow rolled 2 (Horse).", "event moved seat-1", false, true, true),
             (
-                string.Join("|", table.FindAll("ol.log li").Select(happened => happened.TextContent)),
-                table.Find("ol.log li").ClassName,
+                string.Join("|", table.FindAll("ol.events li").Select(happened => happened.TextContent)),
+                table.Find("ol.events li").ClassName,
                 Cell(table, 1).ClassList.Contains("last"),
                 Cell(table, 2).ClassList.Contains("last"),
                 Cell(table, 3).ClassList.Contains("last")
@@ -459,7 +480,25 @@ public sealed class TableTest : IDisposable
             { [Rolled, Moved], "moved" },
             { [Rolled, Moved, Captured], "captured" },
             { [new EventDto(4, EventDto.Passed, 1, "Black to play.", null, null)], string.Empty },
+            { [Rolled, Escaped(1)], "rescued" },
+            { [Rolled, Escaped(1), Escaped(0)], "alarm" },
         };
+
+    [Fact]
+    public void Sound_WhenOnlyWatchingAPieceEscape_PlaysAMove()
+    {
+        // Arrange
+        using PageContext page = new(TimeSpan.FromMilliseconds(10));
+        IRenderedComponent<Table> table =
+            page.Render<Table>(parameters => parameters.Add(x => x.Seating, Seating.Watching(FakeGameServer.GameId)));
+
+        // Act
+        page.Server.View = FakeGameServer.SeatZeroToMove with { DecidingSeat = null, Log = [Escaped(0)] };
+
+        // Assert
+        table.WaitForAssertion(() => Assert.Equal("The game is over.", table.Find("p.status").TextContent));
+        Assert.Equal("moved", string.Join(",", Played(page)));
+    }
 
     [Fact]
     public void Sound_WhenTheTurnComesRound_PlaysTheTurnSound()
@@ -1077,6 +1116,10 @@ public sealed class TableTest : IDisposable
         // Assert
         table.WaitForAssertion(() => Assert.Equal((1, 0), (told, table.FindAll("p.notice").Count)));
     }
+
+    /// <summary>A piece of <paramref name="owner"/>'s escaping, let out by Yellow.</summary>
+    private static EventDto Escaped(int owner) =>
+        new(7 + owner, EventDto.Escaped, 1, "A piece escaped.", null, 9, owner);
 
     /// <summary>Yellow, a bot, to move, once Black has lost the dice it rolled.</summary>
     private static GameViewDto Forfeited() =>

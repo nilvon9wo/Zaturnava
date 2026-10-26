@@ -28,7 +28,7 @@ public sealed class WireFormatTest
             ],
             [new ActionDto("pass", ImmutableSortedDictionary.CreateRange([KeyValuePair.Create("actor", "1")]))],
             [new DieDto(5, "Pawn or Raja"), new DieDto(3, "Elephant")],
-            [new EventDto(7, EventDto.Moved, 0, "Black moved their Pawn from a2 to a3.", 8, 16)],
+            [new EventDto(7, EventDto.Escaped, 0, "Black's Pawn escaped, to a2.", null, 8, 0)],
             new OutcomeDto([0, 2], "Black and Green won: only one team has pieces left."),
             true,
             new OfferDto(0, 1, [new PrisonerDto(9, "pawn", "Pawn", 1)], []),

@@ -156,7 +156,7 @@ file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bo
                     + $"{this.Name(shared.Seat)} now."
             ) with
             { SharedFor = shared.Seat },
-            TurnPassed passed => this.Add(number, EventDto.Passed, passed.From, $"{this.Name(passed.To)} to play.")
+            TurnPassed passed => this.Add(number, EventDto.Passed, passed.To, $"{this.Name(passed.To)} to play.")
                 with
             { HasRolled = false, SharedFor = null },
             GameEnded ended => this.Add(
@@ -222,7 +222,8 @@ file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bo
         string text = piece.Owner == escaped.EscapedBy
             ? $"{this.Name(piece.Owner)}'s {kind} escaped, to {cell}."
             : $"{this.Name(escaped.EscapedBy)} let {this.Name(piece.Owner)}'s {kind} escape, to {cell}.";
-        EventDto told = new(number, EventDto.Escaped, escaped.EscapedBy.Value, text, null, escaped.Cell.Value);
+        EventDto told =
+            new(number, EventDto.Escaped, escaped.EscapedBy.Value, text, null, escaped.Cell.Value, piece.Owner.Value);
         return this with { Told = this.Told.Add(told), LastMoved = piece };
     }
 

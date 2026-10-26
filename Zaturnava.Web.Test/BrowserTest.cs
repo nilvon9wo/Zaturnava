@@ -111,6 +111,38 @@ public sealed class BrowserTest : IDisposable
     }
 
     [Theory]
+    [InlineData("everything", false)]
+    [InlineData(null, true)]
+    public async Task IsLogHighlightsOnly_WhenRead_IsUnlessEverythingWasChosen(string? remembered, bool expected)
+    {
+        // Arrange
+        _ = this._context.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.log").SetResult(remembered);
+
+        // Act
+        bool isHighlightsOnly = await this._browser.IsLogHighlightsOnly();
+
+        // Assert
+        Assert.Equal(expected, isHighlightsOnly);
+    }
+
+    [Theory]
+    [InlineData(true, "highlights")]
+    [InlineData(false, "everything")]
+    public async Task SetLogHighlightsOnly_WhenSet_RemembersIt(bool isHighlightsOnly, string expected)
+    {
+        // Arrange - nothing beyond the browser
+
+        // Act
+        await this._browser.SetLogHighlightsOnly(isHighlightsOnly);
+
+        // Assert
+        Assert.Equal(
+            ["zaturnava.log", expected],
+            this._context.JSInterop.Invocations["zaturnava.save"].Single().Arguments
+        );
+    }
+
+    [Theory]
     [InlineData(true, "on")]
     [InlineData(false, "off")]
     public async Task SetSound_WhenSet_RemembersIt(bool isOn, string expected)

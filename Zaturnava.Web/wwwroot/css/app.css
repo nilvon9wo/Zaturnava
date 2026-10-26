@@ -92,21 +92,24 @@ select {
     padding: 4px 8px;
 }
 
+/* The page's own bar, at the foot of the page and in the background: its name, the way back to the
+   lobby, and its settings. */
 .bar {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 8px;
-    padding: 10px 0;
-    border-bottom: 1px solid var(--panel-edge);
-    margin-bottom: 12px;
+    padding: 6px 0 10px;
+    border-top: 1px solid var(--panel-edge);
+    margin-top: 12px;
+    font-size: 0.85rem;
+    color: var(--muted);
 }
 
-.bar .brand {
-    font-weight: 700;
-    font-size: 1.2rem;
-    margin-right: auto;
-    letter-spacing: 0.04em;
-}
+.bar .brand { font-weight: 700; letter-spacing: 0.04em; }
+.bar .settings { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
+.bar button { font-size: 0.85rem; padding: 2px 10px; }
+.table-bar .where, .table-bar .turns { display: flex; align-items: center; gap: 6px; }
 
 .problem { color: var(--problem); }
 
@@ -142,14 +145,6 @@ html { scrollbar-gutter: stable; }
 .games .players, .games .moves { color: var(--muted); margin-right: 8px; }
 
 /* Table */
-.table-bar {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 8px;
-}
-
-.table-bar h1 { font-size: 1.3rem; margin: 0 auto 0 8px; }
 
 /* On a narrow screen, one above another: the teams, the board, the turn, the log. */
 .play {
@@ -302,8 +297,8 @@ html { scrollbar-gutter: stable; }
 .dice li { font-size: 1.1rem; margin: 2px 0; }
 .dice .face { font-size: 1.8rem; vertical-align: middle; margin-right: 6px; }
 
-/* The teams side by side over the table: each its seats' names and its total, large, over its seats'
-   own rows. */
+/* The teams side by side, over the table (under it, on a wider screen): each its seats' names and its
+   total, large, over its seats' own rows. */
 .seats { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; }
 .team {
     flex: 1 1 300px;
@@ -346,18 +341,47 @@ html { scrollbar-gutter: stable; }
 .seat .score { font-variant-numeric: tabular-nums; color: var(--muted); }
 
 .log {
-    list-style: none;
-    margin: 0;
-    padding: 8px 12px;
+    display: flex;
+    flex-direction: column;
     max-height: 260px;
-    overflow-y: auto;
     background: var(--panel);
     border: 1px solid var(--panel-edge);
     border-radius: 10px;
     font-size: 0.92rem;
 }
 
-.log .event { padding: 2px 0; }
+.log-head { display: flex; justify-content: flex-end; padding: 6px 12px 0; }
+.log-filter {
+    font: inherit;
+    font-size: 0.85rem;
+    padding: 2px 10px;
+    color: var(--muted);
+    background: transparent;
+    border: 1px solid var(--panel-edge);
+    border-radius: 999px;
+    cursor: pointer;
+}
+.log-filter[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); }
+
+.log .events { list-style: none; margin: 0; padding: 4px 12px 8px; min-height: 0; overflow-y: auto; }
+
+/* Each line opens with a dot in the colour of the seat it is about, wrapped lines hanging under the text. */
+.log .event { padding: 2px 0 2px 1.1em; text-indent: -1.1em; }
+.log .event::before {
+    content: "";
+    display: inline-block;
+    width: 0.65em;
+    height: 0.65em;
+    margin-right: 0.45em;
+    border-radius: 50%;
+    border: 1px solid var(--piece-edge);
+    vertical-align: 0.05em;
+}
+.log .event.seat-0::before { background: var(--seat-0); }
+.log .event.seat-1::before { background: var(--seat-1); }
+.log .event.seat-2::before { background: var(--seat-2); }
+.log .event.seat-3::before { background: var(--seat-3); }
+.log .event.ended::before { visibility: hidden; }
 .log .event.passed { color: var(--muted); }
 .log .event.captured, .log .event.bonus { font-weight: 700; color: var(--accent); }
 .log .event.rolled-off, .log .event.shared { font-style: italic; }
@@ -365,8 +389,10 @@ html { scrollbar-gutter: stable; }
 .log .event.promoted, .log .event.ransom, .log .event.escaped { font-style: italic; }
 
 /* On a wider screen, the table fills the window under the teams: the board as large as fits, the turn
-   beside it at a size of its own, scrolling rather than growing, and the log under the turn - or, on
-   a wide screen, beside it, taking whatever width is left. Nothing changes size as the game goes on. */
+   to its left at a size of its own, scrolling rather than growing, and the log under the turn - or, on
+   a wide screen, the board in the middle, between the turn and the log at equal widths. The bar under
+   them keeps the buttons that turn the board under the board. Nothing changes size as the game goes
+   on. */
 @media (min-width: 900px) {
     body { padding-bottom: 0; }
     #app { min-height: 100dvh; display: flex; flex-direction: column; }
@@ -378,20 +404,23 @@ html { scrollbar-gutter: stable; }
         display: grid;
         gap: 16px;
         justify-content: center;
-        grid-template-columns: auto 400px;
+        grid-template-columns: 400px auto;
         grid-template-rows: minmax(0, 1fr) 180px;
-        grid-template-areas: "board turn" "board log";
+        grid-template-areas: "turn board" "log board";
     }
     .board { grid-area: board; width: min(100cqh, 100cqw - 416px); }
+    .table-bar { display: grid; grid-template-columns: 400px minmax(0, 1fr) auto; column-gap: 16px; }
+    .table-bar .turns { justify-self: center; }
     .turn { grid-area: turn; min-height: 0; overflow-y: auto; }
     .log { grid-area: log; max-height: none; }
 }
 
 @media (min-width: 1400px) {
     .play {
-        grid-template-columns: auto 420px minmax(260px, 1fr);
+        grid-template-columns: minmax(340px, 1fr) auto minmax(340px, 1fr);
         grid-template-rows: minmax(0, 1fr);
-        grid-template-areas: "board turn log";
+        grid-template-areas: "turn board log";
     }
     .board { width: min(100cqh, 100cqw - 712px); }
+    .table-bar { grid-template-columns: minmax(340px, 1fr) auto minmax(340px, 1fr); }
 }
