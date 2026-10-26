@@ -94,6 +94,8 @@ internal sealed class TinyRules(int length) : IRulesApplying
 
     public string NameOfDie(int value) => $"Die {value}";
 
+    public bool MayUseDie([Required] GameState state, int value) => true;
+
     private static Absence Voted(Absence absence, VoteAwayAction vote)
     {
         AwayVote stop = new(vote.Actor, vote.Absent);

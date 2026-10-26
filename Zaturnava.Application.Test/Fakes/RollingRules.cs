@@ -82,6 +82,8 @@ internal sealed class RollingRules(int length) : IRulesApplying
 
     public string NameOfDie(int value) => $"Die {value}";
 
+    public bool MayUseDie([Required] GameState state, int value) => true;
+
     private GameState Scored(GameState state, DiceAction dice)
     {
         int turn = state.TurnNumber + 1;

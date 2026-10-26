@@ -12,10 +12,13 @@ namespace Net.NowhereAtAll.Zaturnava.Server.Endpoints;
 /// <summary>What has happened in a game, told for people in the ruleset's own names.</summary>
 internal static class GameLog
 {
-    /// <summary>How many of the latest events a view carries.</summary>
+    /// <summary>How many of the latest events a view carries, besides every highlight before them.</summary>
     public const int Length = 40;
 
-    /// <summary>The latest events, each told knowing those before it: a move says if it was rolled for.</summary>
+    /// <summary>
+    /// The latest events, and every highlight before them, each told knowing those before it: a move says if
+    /// it was rolled for.
+    /// </summary>
     public static ImmutableList<EventDto> LatestOf(GameSnapshot snapshot)
     {
         Teller start = new(snapshot.Rules, [], HasRolled: false);
@@ -24,7 +27,11 @@ internal static class GameLog
             .Aggregate(start, (teller, next) => teller.Tell(next.happened, next.number))
             .Told;
         return told.Count > Length
-            ? told.RemoveRange(0, told.Count - Length)
+            ?
+            [
+                .. told.Take(told.Count - Length).Where(happened => EventDto.Highlights.Contains(happened.Kind)),
+                .. told.TakeLast(Length),
+            ]
             : told;
     }
 

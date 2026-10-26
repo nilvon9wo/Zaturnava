@@ -11,10 +11,10 @@ public sealed class TableTest : IDisposable
     private static readonly Seating SeatZero = new(FakeGameServer.GameId, new SeatClaim(0, FakeGameServer.Token));
     private static readonly Seating SeatOne = new(FakeGameServer.GameId, new SeatClaim(1, FakeGameServer.Token));
 
-    private static readonly EventDto Rolled = new(4, EventDto.Rolled, 1, "Yellow rolled 2 (Horse).", null, null);
-    private static readonly EventDto Moved = new(5, EventDto.Moved, 1, "Yellow's Horse moved.", 2, 3);
+    private static readonly EventDto Rolled = new(0, EventDto.Rolled, 1, "Yellow rolled 2 (Horse).", null, null);
+    private static readonly EventDto Moved = new(1, EventDto.Moved, 1, "Yellow's Horse moved.", 2, 3);
     private static readonly EventDto Captured =
-        new(6, EventDto.Captured, 1, "Yellow took Black's Pawn (+1).", null, null);
+        new(2, EventDto.Captured, 1, "Yellow took Black's Pawn (+1).", null, null);
 
     private readonly PageContext _page = new();
 
@@ -307,6 +307,61 @@ public sealed class TableTest : IDisposable
             "⚄ 5: Pawn or Raja|⚁ 2: Horse",
             string.Join("|", table.FindAll("ul.dice li").Select(die => die.TextContent))
         );
+    }
+
+    [Fact]
+    public void Render_WhenADieLetsNothingMove_GreysItOut()
+    {
+        // Arrange
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Dice = [new DieDto(5, "Pawn or Raja"), new DieDto(2, "Horse", IsUsable: false)],
+        };
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Assert
+        Assert.Equal(
+            [("", false), ("unusable", true)],
+            table.FindAll("ul.dice li").Select(die => (die.ClassName ?? "", die.HasAttribute("title")))
+        );
+    }
+
+    [Theory]
+    [InlineData("everything", 3)]
+    [InlineData("highlights", 0)]
+    public void Render_WhenOlderEventsWereLetGo_SaysSoWhereTheyWere(string shown, int expected)
+    {
+        // Arrange - events 3 and 4 were let go; 2, a capture, was kept
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.log").SetResult(shown);
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Log = [Captured, Moved with { Number = 5 }, Captured with { Number = 6 }],
+        };
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Assert
+        Assert.Equal(
+            expected,
+            table.FindAll("ol.events li").Select(item => item.ClassName).ToList().IndexOf("dropped") + 1
+        );
+    }
+
+    [Fact]
+    public void Render_WhenNothingWasLetGo_SaysNothingOfOlderEvents()
+    {
+        // Arrange - from the very first event
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.log").SetResult("everything");
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with { Log = [Rolled, Moved] };
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Assert
+        Assert.Empty(table.FindAll("ol.events li.dropped"));
     }
 
     [Fact]
