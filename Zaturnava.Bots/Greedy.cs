@@ -26,7 +26,7 @@ internal static class Greedy
     internal static ImmutableList<GameAction> Choices(DecisionRequest request)
     {
         ImmutableList<(GameAction Action, int Gain)> gains =
-            [.. request.LegalActions.Select(action => (action, Gain(request, action, After(request, action))))];
+            [.. Playable.Of(request).Select(action => (action, Gain(request, action, After(request, action))))];
         int best = gains.Max(gain => gain.Gain);
         return best > 0
             ? [.. gains.Where(gain => gain.Gain == best).Select(gain => gain.Action)]

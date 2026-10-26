@@ -26,7 +26,7 @@ Everything else here is specified but not yet played by the engine.
 | §3 Pieces & movement | Implemented, captures included. A piece moved for another army moves the way its own army faces; what it may take is §6.4. |
 | §4 Turns & dice | Implemented: the opening plays the die that won the roll-off, then a deliberate move, a pass or two dice, clockwise from the roll-off's winner; an unusable die is forfeit. Doubles let one piece move twice, or a prisoner escape (§7). The dice profile is the weighted d6 one; a d4 profile exists but cannot yet be chosen. |
 | §5 Captures & scoring | Implemented: captures score by piece, with both throne bonuses and the empire, as clarified below. |
-| §6 Throne control | Partly: the expanded pool (§6.1, both triggers) and the forced shared turn (§6.3). Voluntary regency (§6.2) is not yet. |
+| §6 Throne control | Implemented: the expanded pool (§6.1, both triggers), voluntary regency (§6.2, as proposed below) and the forced shared turn (§6.3). |
 | §6.4 Commanded captures | Implemented, with the toggle as a constructor argument. |
 | §7 Escape | Implemented, as clarified below: the escape takes the place of the double move and ends the turn. |
 | §9 Boat triumph | Not yet. |
@@ -248,6 +248,23 @@ This handoff requires the occupied player's consent each time, and is
 of it (e.g. let the ally decide direct-move-vs-dice, or roll it themself and
 hand off only the piece selection, or make the first of two dice-moves
 themself and hand off only the second).
+
+*(Proposed)* How the engine plays it:
+
+- Consent is the occupied player's own choice: "Let Green take over",
+  offered whenever they decide their own turn - before rolling, once rolled,
+  or between two dice-moves. The ally does not have to agree first.
+- The handoff is for the rest of the turn: the regent cannot hand it back.
+  So the occupied player delegates "only part of it" by making their part
+  first, then handing over.
+- The regent may do all the occupied player could with their native army:
+  roll, move, promote, escape, or pass (which ends the turn). What the
+  regent's moves take, the regent holds and scores, as for any piece moved
+  for another army.
+- If an enemy Raja also sits on the occupied player's throne (case (b) with
+  §6.3), the regent takes the occupied player's first move only; the
+  occupier takes the second, as §6.3 says.
+- Bots never hand their turns over.
 
 ### 6.3 Forced shared turn (on the occupied player's own turn, enemy case)
 

@@ -9,7 +9,8 @@ namespace Net.NowhereAtAll.Zaturnava.Variants.Classic;
 /// <summary>
 /// Who commands which armies (rules.md §6): a seat moves its own army, the army of every throne its
 /// Raja sits on (§6.1a), and, while it has a Raja, the army of any ally left without one (§6.1b).
-/// An enemy Raja on a seat's throne shares that seat's turn (§6.3).
+/// An ally may take a seat's turn for it, if the seat lets it (§6.2); an enemy Raja on a seat's throne
+/// shares that seat's turn (§6.3).
 /// </summary>
 internal sealed class ThroneControl(ImmutableDictionary<SeatId, CellId> thrones)
 {
@@ -30,6 +31,16 @@ internal sealed class ThroneControl(ImmutableDictionary<SeatId, CellId> thrones)
     public bool CommandsAnAlly(GameState state, SeatId seat) =>
         RajalessAllies(state, seat).Any()
         || this.ThronesHeldBy(state, seat).Any(throne => state.Teams.AreAllied(throne, seat));
+
+    /// <summary>
+    /// The allies who may take <paramref name="seat"/>'s turn for it, with its consent (rules.md §6.2): an
+    /// ally with a Raja of its own, while that Raja sits on the seat's throne or the seat has none.
+    /// </summary>
+    public IEnumerable<SeatId> RegentsFor(GameState state, SeatId seat) =>
+        state.Seats
+            .Select(ally => ally.Id)
+            .Where(ally => ally != seat && state.Teams.AreAllied(ally, seat) && HasRaja(state, ally))
+            .Where(ally => !HasRaja(state, seat) || IsRajaOf(state.Position.PieceAt(this._thrones[seat]), ally));
 
     /// <summary>The seat whose throne <paramref name="cell"/> is; null if it is no one's.</summary>
     public SeatId? OwnerOf(CellId cell) =>

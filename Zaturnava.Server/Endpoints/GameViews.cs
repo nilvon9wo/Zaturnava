@@ -161,14 +161,15 @@ internal static class GameViews
 
     /// <summary>
     /// What a button says that its kind alone cannot: which Pawn becomes what; which prisoner escapes, and
-    /// where to; that passing once a turn is over means being done offering ransoms; and that passing on a
-    /// promotion due leaves it for later. Null for any other action.
+    /// where to; which ally a turn is handed to; that passing once a turn is over means being done offering
+    /// ransoms; and that passing on a promotion due leaves it for later. Null for any other action.
     /// </summary>
     private static string? LabelOf(GameSnapshot snapshot, GameAction action) =>
         (action, snapshot.State.IsRansomWindow, snapshot.State.PromotionDue) switch
         {
             (PromoteAction promote, _, _) => PromotionOf(snapshot, promote),
             (EscapeAction escape, _, _) => EscapeOf(snapshot, escape),
+            (HandOverAction handOver, _, _) => $"Let {snapshot.Rules.NameOf(handOver.Regent)} take over",
             (PassAction, true, _) => "Done offering",
             (PassAction, _, { }) => "Promote later",
             _ => null,

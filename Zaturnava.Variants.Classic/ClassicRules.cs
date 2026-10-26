@@ -15,10 +15,10 @@ namespace Net.NowhereAtAll.Zaturnava.Variants.Classic;
 /// <summary>
 /// Zaturnava's base rules. So far: a roll-off for who goes first, whose winning die is the opening
 /// move (rules.md §4, §11); then turns of a deliberate move, a pass, or a roll of the dice (§4);
-/// captures scored by piece, with the throne bonuses and the empire (§5); command of other armies through thrones
-/// and Raja-less allies, and turns shared with an enemy Raja on one's throne (§6.1, §6.3); promotion
-/// and ransom (§8); escape on doubles (§7); and the end of the game (§10). Voluntary regency and boat
-/// triumph follow; docs/rules.md lists what is implemented.
+/// captures scored by piece, with the throne bonuses and the empire (§5); command of other armies
+/// through thrones and Raja-less allies, an ally's turn taken with its consent, and turns shared with an
+/// enemy Raja on one's throne (§6); promotion and ransom (§8); escape on doubles (§7); and the end of the
+/// game (§10). Boat triumph follows; docs/rules.md lists what is implemented.
 /// </summary>
 public sealed class ClassicRules : IRulesApplying
 {
@@ -197,8 +197,18 @@ public sealed class ClassicRules : IRulesApplying
                 .. this.MovesOf(state, seat, this.RolledKinds(state).Contains),
                 .. this.PromotionsOf(state, seat),
                 .. this.EscapesOf(state, seat),
+                .. this.HandOversOf(state, seat),
             ],
         };
+
+    /// <summary>
+    /// A seat deciding its own turn may hand the rest of it to an ally who may be its regent (rules.md
+    /// §6.2), at the start or between moves; the regent moves the seat's own army only.
+    /// </summary>
+    private IEnumerable<HandOverAction> HandOversOf(GameState state, SeatId seat) =>
+        state.ActingFor is null
+            ? this._control.RegentsFor(state, seat).Select(regent => new HandOverAction(seat, regent))
+            : [];
 
     /// <summary>
     /// On doubles, not yet used, instead of moving: a captured piece of the kind they show, of an army the
@@ -224,18 +234,20 @@ public sealed class ClassicRules : IRulesApplying
 
     /// <summary>
     /// At the start of a turn: roll, or move any piece, or promote, or pass - but only roll, or promote,
-    /// while an enemy Raja sits on the seat's throne (rules.md §6.3).
+    /// while an enemy Raja sits on the throne of the seat whose turn it is (rules.md §6.3); or hand the turn
+    /// to a regent (§6.2).
     /// </summary>
     private ImmutableList<GameAction> TurnChoicesOf(GameState state, SeatId seat) =>
-        this._control.OccupierOf(state, seat) is null
+        this._control.OccupierOf(state, state.ActingFor ?? seat) is null
             ?
             [
                 new PassAction(seat),
                 new RollAction(seat),
                 .. this.MovesOf(state, seat, _ => true),
                 .. this.PromotionsOf(state, seat),
+                .. this.HandOversOf(state, seat),
             ]
-            : [new RollAction(seat), .. this.PromotionsOf(state, seat)];
+            : [new RollAction(seat), .. this.PromotionsOf(state, seat), .. this.HandOversOf(state, seat)];
 
     /// <summary>
     /// Each Pawn of an army the seat commands that stands on the far edge - with nowhere forward left
@@ -320,6 +332,7 @@ public sealed class ClassicRules : IRulesApplying
             MoveAction move => this.AfterMove(state, move),
             PromoteAction promote => this.Promoted(state, promote),
             EscapeAction escape => this.Escaped(state, escape),
+            HandOverAction handOver => HandedToRegent(state, handOver),
             AcceptAction => this._ransom.Accepted(state),
             PlaceAction place => this._ransom.Placed(state, place),
             DeclineAction => Ransom.Declined(state),
@@ -329,6 +342,13 @@ public sealed class ClassicRules : IRulesApplying
             _ when state.Dice.IsEmpty => this.IdlePass(new Transition(state, [])),
             _ => this.Declined(new Transition(state, [])),
         };
+
+    /// <summary>The regent decides the rest of the turn, for the seat whose turn it is (rules.md §6.2).</summary>
+    private static Transition HandedToRegent(GameState state, HandOverAction handOver) =>
+        new(
+            state with { DecidingSeat = handOver.Regent, ActingFor = handOver.Actor },
+            [new TurnHandedOver(handOver.Actor, handOver.Regent)]
+        );
 
     /// <exception cref="IllegalActionException">The offer may not be made.</exception>
     private static Transition Offered(GameState state, OfferAction offer) =>
@@ -494,16 +514,23 @@ public sealed class ClassicRules : IRulesApplying
             ? this.HandedOver(transition, occupier)
             : PassTurn(transition);
 
-    /// <summary>The enemy on the deciding seat's throne, before it has moved for that seat this turn.</summary>
-    private SeatId? OccupierToHandTo(GameState state) =>
-        state.ActingFor is null
-            ? this._control.OccupierOf(state, state.DecidingSeat!.Value) // a seat decides while dice are left
+    /// <summary>
+    /// The enemy on the throne of the seat whose turn it is, before it has moved for that seat this turn -
+    /// while the seat, or its regent, decides.
+    /// </summary>
+    private SeatId? OccupierToHandTo(GameState state)
+    {
+        SeatId deciding = state.DecidingSeat!.Value; // a seat decides while dice are left
+        SeatId seat = state.ActingFor ?? deciding;
+        return state.Teams.AreAllied(deciding, seat)
+            ? this._control.OccupierOf(state, seat)
             : null;
+    }
 
     private Transition HandedOver(Transition transition, SeatId occupier)
     {
         GameState state = transition.State;
-        SeatId seat = state.DecidingSeat!.Value; // a seat decides while dice are left
+        SeatId seat = (state.ActingFor ?? state.DecidingSeat)!.Value; // a seat decides while dice are left
         GameState shared = state with { DecidingSeat = occupier, ActingFor = seat };
         return this.EndTurnIfStuck(new Transition(shared, transition.Events.Add(new TurnShared(seat, occupier))));
     }

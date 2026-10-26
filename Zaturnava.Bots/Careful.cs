@@ -23,7 +23,7 @@ internal static class Careful
     {
         int allied = Teamwork.ThreatOf(request, request.State);
         ImmutableList<(GameAction Action, int Worth)> worths =
-            [.. request.LegalActions.Select(action => (action, WorthOf(request, action, allied)))];
+            [.. Playable.Of(request).Select(action => (action, WorthOf(request, action, allied)))];
         int best = worths.Max(worth => worth.Worth);
         ImmutableList<GameAction> top = [.. worths.Where(worth => worth.Worth == best).Select(worth => worth.Action)];
         ImmutableList<GameAction> active = [.. top.Where(action => action is not PassAction)];
