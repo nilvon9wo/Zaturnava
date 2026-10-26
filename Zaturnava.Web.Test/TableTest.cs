@@ -1089,11 +1089,25 @@ public sealed class TableTest : IDisposable
         Assert.Empty(table.FindAll(".away-vote"));
     }
 
+    [Fact]
+    public void Render_WhenOnlyWatchingAVoteOnWaiting_ShowsNeitherTheVoteNorANotice()
+    {
+        // Arrange
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with { Away = new AwayDto(0, true, [1], [1]) };
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(Seating.Watching(FakeGameServer.GameId));
+
+        // Assert
+        Assert.Equal((0, 0), (table.FindAll(".away-vote").Count, table.FindAll(".away-notice").Count));
+    }
+
     [Theory]
     [InlineData(2, true, false, "The others are playing on without you: you missed 2 turns in a row.", 1)]
     [InlineData(1, false, true, "The others are playing on without you: you missed 1 turn in a row.", 0)]
     [InlineData(1, false, false, "You are back: the others will wait for you again, unless you miss another turn.", 0)]
     [InlineData(0, false, false, "Yellow would stop waiting for you.", 0)]
+    [InlineData(0, true, true, "Yellow would stop waiting for you.", 0)]
     public void Render_WhenThePlayerIsAway_SaysWhatTheOthersDidAndOffersToRejoin(
         int missed,
         bool mayRejoin,

@@ -85,7 +85,7 @@
                 {
                     <div class="away-notice" role="alert">
                         <p>@awayNotice</p>
-                        @if (view.Seats[absent.Seat] is { MayRejoin: true, TurnsMissed: > 0 })
+                        @if (view.Seats[absent.Seat].MayRejoin && view.Seats[absent.Seat].TurnsMissed > 0)
                         {
                             <button class="rejoin flashing"
                                     @onclick="() => this.Submit(absent, EndProposalDto.RejoinActionOf(absent.Seat))">
@@ -246,7 +246,8 @@
                         <button class="end-game" @onclick="this.AskToEnd">End game</button>
                     </div>
                 }
-                else if (this.Seating.Claim is { } back && view.Seats[back.Seat] is { MayRejoin: true, TurnsMissed: 0 })
+                else if (this.Seating.Claim is { } back && view.Seats[back.Seat].MayRejoin
+                         && view.Seats[back.Seat].TurnsMissed == 0)
                 {
                     <div class="end-area">
                         <button class="rejoin" @onclick="() => this.Submit(back, EndProposalDto.RejoinActionOf(back.Seat))">
