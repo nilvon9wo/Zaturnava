@@ -310,6 +310,23 @@ public sealed class TableTest : IDisposable
     }
 
     [Fact]
+    public void Click_WhenHighlightsOnlyIsChosen_ShowsOnlyWhatScoredUntilChosenAgain()
+    {
+        // Arrange
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with { Log = [Rolled, Moved, Captured] };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Act
+        table.Find("button.log-filter").Click();
+        int highlights = table.FindAll("ol.events li").Count;
+        string pressed = table.Find("button.log-filter").GetAttribute("aria-pressed")!;
+        table.Find("button.log-filter").Click();
+
+        // Assert
+        Assert.Equal((1, "true", 3), (highlights, pressed, table.FindAll("ol.events li").Count));
+    }
+
+    [Fact]
     public void Render_WhenNoDiceAreRolled_ShowsNone()
     {
         // Arrange - nothing beyond seat 0 to move, with no dice
@@ -334,8 +351,8 @@ public sealed class TableTest : IDisposable
         Assert.Equal(
             ("Yellow's Horse moved.|Yellow rolled 2 (Horse).", "event moved seat-1", false, true, true),
             (
-                string.Join("|", table.FindAll("ol.log li").Select(happened => happened.TextContent)),
-                table.Find("ol.log li").ClassName,
+                string.Join("|", table.FindAll("ol.events li").Select(happened => happened.TextContent)),
+                table.Find("ol.events li").ClassName,
                 Cell(table, 1).ClassList.Contains("last"),
                 Cell(table, 2).ClassList.Contains("last"),
                 Cell(table, 3).ClassList.Contains("last")

@@ -156,7 +156,7 @@ file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bo
                     + $"{this.Name(shared.Seat)} now."
             ) with
             { SharedFor = shared.Seat },
-            TurnPassed passed => this.Add(number, EventDto.Passed, passed.From, $"{this.Name(passed.To)} to play.")
+            TurnPassed passed => this.Add(number, EventDto.Passed, passed.To, $"{this.Name(passed.To)} to play.")
                 with
             { HasRolled = false, SharedFor = null },
             GameEnded ended => this.Add(

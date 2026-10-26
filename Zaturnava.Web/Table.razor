@@ -217,12 +217,19 @@
                 }
             </div>
 
-            <ol class="log">
-                @foreach (EventDto happened in view.Log.Reverse())
-                {
-                    <li class="event @happened.Kind seat-@happened.Seat">@this.Named(happened.Text)</li>
-                }
-            </ol>
+            <div class="log">
+                <div class="log-head">
+                    <button class="log-filter" aria-pressed="@(this._isHighlightsOnly ? "true" : "false")" @onclick="this.ToggleHighlights">
+                        @(this._isHighlightsOnly ? "Show everything" : "Highlights only")
+                    </button>
+                </div>
+                <ol class="events">
+                    @foreach (EventDto happened in this.Shown(view))
+                    {
+                        <li class="event @happened.Kind seat-@happened.Seat">@this.Named(happened.Text)</li>
+                    }
+                </ol>
+            </div>
         </div>
     }
 </section>
@@ -230,6 +237,13 @@
 @code {
     private const string BotController = "bot";
     private const string RollKind = "roll";
+
+    /// <summary>
+    /// What the log shows when it shows only the highlights: points scored, pieces brought back, and how the
+    /// game ended.
+    /// </summary>
+    private static readonly ImmutableHashSet<string> Highlights =
+        [EventDto.Captured, EventDto.Bonus, EventDto.Escaped, EventDto.Promoted, EventDto.Ended];
     private static readonly BoardActions NoActions = new([]);
 
     private readonly Timer _poll;
@@ -238,6 +252,7 @@
     private BoardSelection _selection = BoardSelection.None;
     private BoardTurn _boardTurn = BoardTurn.None;
     private ImmutableHashSet<int> _lastMove = [];
+    private bool _isHighlightsOnly;
     private DateTimeOffset? _deadline;
     private int? _receiver;
     private ImmutableHashSet<int> _given = [];
@@ -249,6 +264,12 @@
     private bool _isGone;
 
     public Table() => this._poll = new Timer(this.Tick);
+
+    /// <summary>The log, newest first: all of it, or only its highlights.</summary>
+    private IEnumerable<EventDto> Shown(GameViewDto view) =>
+        view.Log.Reverse().Where(happened => !this._isHighlightsOnly || Highlights.Contains(happened.Kind));
+
+    private void ToggleHighlights() => this._isHighlightsOnly = !this._isHighlightsOnly;
 
     [Parameter, EditorRequired]
     public Seating Seating { get; set; } = null!;
