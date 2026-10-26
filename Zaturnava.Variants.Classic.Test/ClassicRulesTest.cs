@@ -786,6 +786,36 @@ public sealed class ClassicRulesTest
         );
     }
 
+    [Theory]
+    [InlineData(5, true)]
+    [InlineData(1, true)]
+    [InlineData(2, false)]
+    [InlineData(3, false)]
+    public void MayUseDie_WhenAPieceItLetsMoveMayOrNot_SaysSo(int die, bool expected)
+    {
+        // Arrange - Black has a Pawn and a Boat, but no Horse or Elephant
+        GameState state = this.PawnAndBoat() with { Dice = [die] };
+
+        // Act
+        bool mayUse = this._rules.MayUseDie(state, die);
+
+        // Assert
+        Assert.Equal(expected, mayUse);
+    }
+
+    [Fact]
+    public void MayUseDie_WhenNoOneDecides_IsFalse()
+    {
+        // Arrange
+        GameState state = this.PawnAndBoat() with { Dice = [5], DecidingSeat = null };
+
+        // Act
+        bool mayUse = this._rules.MayUseDie(state, 5);
+
+        // Assert
+        Assert.False(mayUse);
+    }
+
     [Fact]
     public void Apply_WhenPassingWithDiceLeft_ForfeitsThemWithoutCountingAnIdlePass()
     {

@@ -208,6 +208,9 @@ public sealed class ClassicRules : IRulesApplying
         return names.IsEmpty ? "Nothing" : string.Join(" or ", names);
     }
 
+    public bool MayUseDie([Required] GameState state, int value) =>
+        state.DecidingSeat is not null && this.MayUse(state, this._dice.KindsOf(value).Contains);
+
     private DiceRequest RollOffDie => new(RollOffDice, this._dice.Sides);
 
     /// <summary>
@@ -644,11 +647,18 @@ public sealed class ClassicRules : IRulesApplying
         return transition with { Events = transition.Events.Add(new DiceForfeited(seat, state.Dice)) };
     }
 
-    private bool HasUsableDie(GameState state)
+    private bool HasUsableDie(GameState state) => this.MayUse(state, this.RolledKinds(state).Contains);
+
+    /// <summary>
+    /// Whether the deciding seat may move a piece of a kind <paramref name="isRolled"/> lets move, promote
+    /// an enemy Pawn with such a die, or let a piece escape.
+    /// </summary>
+    private bool MayUse(GameState state, Func<PieceKindId, bool> isRolled)
     {
         SeatId seat = state.DecidingSeat!.Value; // dice are only rolled and used by the deciding seat
-        return this.MovesOf(state, seat, this.RolledKinds(state).Contains).Any()
-            || this.PromotionsOf(state, seat).Any(promotion => UsesDie(state, promotion))
+        return this.MovesOf(state, seat, isRolled).Any()
+            || (isRolled(ClassicPieces.Pawn)
+                && this.PromotionsOf(state, seat).Any(promotion => UsesDie(state, promotion)))
             || this.EscapesOf(state, seat).Any();
     }
 

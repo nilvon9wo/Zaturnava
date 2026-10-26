@@ -50,7 +50,7 @@ internal static class GameViews
                 .Select(entry => PieceOf(snapshot.Rules, entry.Key, entry.Value))],
             [.. snapshot.State.Seats.Select(seat => SeatOf(snapshot, bots, seat.Id))],
             [.. snapshot.LegalActions.Select(action => ActionOf(snapshot, action))],
-            [.. snapshot.State.Dice.Select(value => new DieDto(value, snapshot.Rules.NameOfDie(value)))],
+            [.. snapshot.State.Dice.Select(value => DieOf(snapshot, value))],
             GameLog.LatestOf(snapshot),
             OutcomeOf(snapshot.Rules, snapshot.State.Outcome),
             snapshot.Rules.MayOffer(snapshot.State),
@@ -64,6 +64,9 @@ internal static class GameViews
             AwayOf(snapshot.Away)
         );
     }
+
+    private static DieDto DieOf(GameSnapshot snapshot, int value) =>
+        new(value, snapshot.Rules.NameOfDie(value), snapshot.Rules.MayUseDie(snapshot.State, value));
 
     private static AwayDto? AwayOf(AwayVoting? away) =>
         away is null

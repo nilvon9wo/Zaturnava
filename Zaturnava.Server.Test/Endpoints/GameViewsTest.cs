@@ -160,6 +160,19 @@ public sealed class GameViewsTest
     }
 
     [Fact]
+    public void ViewOf_WhenADieLetsNothingMove_SaysItIsNotUsable()
+    {
+        // Arrange - at the start, Black's Pawns may move, but its Elephant is hemmed in
+        GameState state = Rules.CreateInitialState() with { RollOff = [], AwaitedDice = null, Dice = [5, 3] };
+
+        // Act
+        GameViewDto view = GameViews.ViewOf(Snapshot(state), Bots);
+
+        // Assert
+        Assert.Equal([true, false], view.Dice.Select(die => die.IsUsable));
+    }
+
+    [Fact]
     public void ViewOf_WhenAPieceMayEscape_LabelsEachEscape()
     {
         // Arrange - Black rolled two 5s; Yellow holds Black's Raja 3, whose square, d1, is free

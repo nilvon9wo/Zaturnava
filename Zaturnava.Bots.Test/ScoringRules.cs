@@ -78,4 +78,6 @@ internal sealed class ScoringRules(ImmutableDictionary<GameAction, int> points) 
     public string NameOf(SeatId seat) => throw new NotSupportedException();
 
     public string NameOfDie(int value) => throw new NotSupportedException();
+
+    public bool MayUseDie([Required] GameState state, int value) => true;
 }

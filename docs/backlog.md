@@ -146,3 +146,6 @@ After playing against Argus (2026-10-25):
   for them, and their turn passes; three such turns in a row and they have given up their turns. The
   absent player is told at once, with a flashing Rejoin game button that gives them their two minutes
   back.
+- A die that nothing can use is greyed out, until a move frees a piece it lets move. The log keeps
+  every highlight for as long as the game lasts, not only those among the latest 40 events; showing
+  everything, it says where older events were let go.

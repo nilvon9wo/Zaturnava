@@ -83,4 +83,10 @@ public interface IRulesApplying
 
     /// <summary>What a die showing <paramref name="value"/> lets its roller do, for people: "Horse".</summary>
     string NameOfDie(int value);
+
+    /// <summary>
+    /// Whether the deciding seat could use a die rolled showing <paramref name="value"/> now: false if
+    /// nothing it may move, promote or bring back is let by it.
+    /// </summary>
+    bool MayUseDie([Required] GameState state, int value);
 }

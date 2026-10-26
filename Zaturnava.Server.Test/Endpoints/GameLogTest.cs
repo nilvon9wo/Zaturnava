@@ -325,6 +325,28 @@ public sealed class GameLogTest
     }
 
     [Fact]
+    public void LatestOf_WhenMoreHappenedThanALogHolds_KeepsEveryHighlightBeforeTheLatest()
+    {
+        // Arrange - an empire created, then 50 turns passed
+        GameSnapshot snapshot = Snapshot(
+            [
+                new TurnPassed(Black, Yellow),
+                new EmpireCreated(Black, 54),
+                .. Enumerable.Repeat<GameEvent>(new TurnPassed(Black, Yellow), 50),
+            ]
+        );
+
+        // Act
+        ImmutableList<EventDto> log = GameLog.LatestOf(snapshot);
+
+        // Assert
+        Assert.Equal(
+            (GameLog.Length + 1, 1, EventDto.Bonus, 12),
+            (log.Count, log[0].Number, log[0].Kind, log[1].Number)
+        );
+    }
+
+    [Fact]
     public void LatestOf_WhenSomethingHappenedThatItCannotTell_ThrowsNotSupportedException()
     {
         // Arrange

@@ -143,7 +143,8 @@
                     <ul class="dice">
                         @foreach (DieDto die in view.Dice)
                         {
-                            <li><span class="face">@DieFaces.FaceOf(die.Value)</span> @die.Value: @this.Named(die.Meaning)</li>
+                            <li class="@(die.IsUsable ? null : "unusable")"
+                                title="@(die.IsUsable ? null : "Nothing it lets move can move now")"><span class="face">@DieFaces.FaceOf(die.Value)</span> @die.Value: @this.Named(die.Meaning)</li>
                         }
                     </ul>
                 }
@@ -264,9 +265,16 @@
                     </button>
                 </div>
                 <ol class="events">
+                    @{
+                        int? keptSince = this._isHighlightsOnly || view.Log.IsEmpty ? null : KeptSince(view.Log);
+                    }
                     @foreach (EventDto happened in this.Shown(view))
                     {
                         <li class="event @happened.Kind seat-@happened.Seat">@this.Named(happened.Text)</li>
+                        @if (happened.Number == keptSince)
+                        {
+                            <li class="dropped">Older events are no longer kept, except for the highlights below.</li>
+                        }
                     }
                 </ol>
             </div>
@@ -342,21 +350,6 @@
     private const string Triumph = "triumph";
     private const string Lament = "lament";
 
-    /// <summary>
-    /// What the log shows when it shows only the highlights: points scored, pieces brought back, and how the
-    /// game ended.
-    /// </summary>
-    private static readonly ImmutableHashSet<string> Highlights =
-        [
-            EventDto.Captured,
-            EventDto.Bonus,
-            EventDto.Escaped,
-            EventDto.Promoted,
-            EventDto.Command,
-            EventDto.Empire,
-            EventDto.Ending,
-            EventDto.Ended,
-        ];
     private static readonly BoardActions NoActions = new([]);
 
     private readonly Timer _poll;
@@ -381,7 +374,17 @@
 
     /// <summary>The log, newest first: all of it, or only its highlights.</summary>
     private IEnumerable<EventDto> Shown(GameViewDto view) =>
-        view.Log.Reverse().Where(happened => !this._isHighlightsOnly || Highlights.Contains(happened.Kind));
+        view.Log.Reverse().Where(happened => !this._isHighlightsOnly || EventDto.Highlights.Contains(happened.Kind));
+
+    /// <summary>
+    /// The oldest event of the unbroken run the log ends with, if events before it were let go (only
+    /// highlights are kept that long); else null.
+    /// </summary>
+    private static int? KeptSince(ImmutableList<EventDto> log)
+    {
+        int offset = log[^1].Number - (log.Count - 1);
+        return offset > 0 ? log.Where((happened, index) => happened.Number - index == offset).First().Number : null;
+    }
 
     private async Task ToggleHighlights()
     {

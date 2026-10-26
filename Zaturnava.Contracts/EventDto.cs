@@ -1,3 +1,5 @@
+using System.Collections.Immutable;
+
 namespace Net.NowhereAtAll.Zaturnava.Contracts;
 
 /// <summary>
@@ -35,4 +37,11 @@ public sealed record EventDto(
     public const string Away = "away";
     public const string Passed = "passed";
     public const string Ended = "ended";
+
+    /// <summary>
+    /// The kinds worth keeping in a short log: points scored, pieces brought back, who controls whose army,
+    /// and how the game ended.
+    /// </summary>
+    public static readonly ImmutableHashSet<string> Highlights =
+        [Captured, Bonus, Escaped, Promoted, Command, Empire, Ending, Ended];
 }

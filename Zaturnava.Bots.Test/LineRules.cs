@@ -122,6 +122,8 @@ internal sealed class LineRules(ImmutableList<GameAction> legalActions) : IRules
 
     public string NameOfDie(int value) => throw new NotSupportedException();
 
+    public bool MayUseDie([Required] GameState state, int value) => true;
+
     private static GameState Moved(GameState state, MoveAction move)
     {
         Piece? taken = state.Position.PieceAt(move.To);
