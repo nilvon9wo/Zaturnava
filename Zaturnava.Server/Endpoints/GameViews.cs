@@ -98,7 +98,7 @@ internal static class GameViews
     private static RulesetDto RulesetOf(IRulesApplying rules) =>
         new(rules.Id, rules.Name, rules.CreateInitialState().Seats.Count);
 
-    private static BotDto BotOf(BotProfile bot) => new(bot.Id, bot.Name, bot.Description, bot.UsesAi);
+    private static BotDto BotOf(BotProfile bot) => new(bot.Id, bot.Name, bot.Description, bot.UsesAi, bot.IsPaid);
 
     private static CellDto CellOf(
         ICellNavigating topology,
@@ -131,7 +131,8 @@ internal static class GameViews
             snapshot.State.Resigned.Contains(seat),
             snapshot.Rules.MayProposeEnd(snapshot.State, seat),
             snapshot.Rules.MayRejoin(snapshot.State, seat),
-            snapshot.State.Absence.MissedBy(seat)
+            snapshot.State.Absence.MissedBy(seat),
+            bots.Any(bot => bot.Id == botId && bot.IsPaid)
         );
     }
 

@@ -258,6 +258,15 @@ html { scrollbar-gutter: stable; }
 }
 .end-game:hover { border-color: var(--danger-ink); }
 
+/* Playing again with a bot that costs tokens: red, so that it is not chosen lightly. */
+.again.paid {
+    background: var(--danger);
+    color: var(--danger-ink);
+    border-color: var(--danger);
+    font-weight: 700;
+}
+.again.paid:hover { border-color: var(--danger-ink); }
+
 /* Taking back the turns given up: green, where the End game button was. */
 .rejoin {
     background: var(--go);

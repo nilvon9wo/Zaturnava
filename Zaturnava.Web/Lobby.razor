@@ -1,6 +1,6 @@
 @* Start a game (each seat a person or a bot, no bot in two seats) and sit at it - or start one at once,
    at a seat chosen at random, the bots shuffled among the others - or join, watch or go back to one
-   already started. *@
+   already started. A bot paid for each use is seated only when chosen: never by default, nor at random. *@
 @inject IGameServing Games
 @inject Browser Browser
 
@@ -83,7 +83,13 @@
 
     private static RulesetDto Ruleset(CatalogDto catalog) => catalog.Rulesets[0];
 
-    private static string Label(BotDto bot) => bot.UsesAi ? $"Bot: {bot.Name} (AI)" : $"Bot: {bot.Name}";
+    private static string Label(BotDto bot) =>
+        (bot.UsesAi, bot.IsPaid) switch
+        {
+            (_, true) => $"Bot: {bot.Name} (AI, costs tokens)",
+            (true, _) => $"Bot: {bot.Name} (AI)",
+            _ => $"Bot: {bot.Name}",
+        };
 
     private static string Moves(GameSummaryDto game) => game.Moves == 1 ? "1 move" : $"{game.Moves} moves";
 
@@ -91,7 +97,7 @@
     {
         CatalogDto catalog = await this.Games.Catalog(CancellationToken.None);
         this._games = await this.Games.List(CancellationToken.None);
-        this._plans = GameStarter.Plans(Ruleset(catalog).SeatCount, 0, catalog.Bots.Select(bot => bot.Id));
+        this._plans = GameStarter.Plans(Ruleset(catalog).SeatCount, 0, GameStarter.Unpaid(catalog));
         this._catalog = catalog;
         foreach (GameSummaryDto game in this._games)
         {

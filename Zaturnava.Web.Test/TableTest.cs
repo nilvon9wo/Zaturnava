@@ -21,6 +21,35 @@ public sealed class TableTest : IDisposable
     public void Dispose() => this._page.Dispose();
 
     [Fact]
+    public void Render_WhenTheGameEndedWithAPaidBot_WarnsThatPlayingAgainCostsTokens()
+    {
+        // Arrange
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            DecidingSeat = null,
+            Outcome = new OutcomeDto([0], "only one team has pieces left"),
+            Seats = FakeGameServer.SeatZeroToMove.Seats.SetItem(
+                1,
+                FakeGameServer.SeatZeroToMove.Seats[1] with { Bot = "Claude", BotId = "claude", IsPaidBot = true }
+            ),
+        };
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        table.Find("button.again.paid").Click();
+
+        // Assert
+        Assert.Equal(
+            ("Play again, with Claude: costs tokens", 0, "claude"),
+            (
+                table.Find("button.again").TextContent.Trim(),
+                table.FindAll("button.again.primary").Count,
+                this._page.Server.Created?.Bots[1]
+            )
+        );
+    }
+
+    [Fact]
     public void Render_WhenItIsThePlayersTurn_ShowsTheBoardAndWhatTheyMayDo()
     {
         // Arrange - nothing beyond seat 0 to move

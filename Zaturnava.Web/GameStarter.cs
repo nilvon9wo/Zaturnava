@@ -21,12 +21,19 @@ internal static class GameStarter
     public static ImmutableList<string?> BotsOf(IEnumerable<string> plans) =>
         [.. plans.Select(plan => plan.Length == 0 ? null : plan)];
 
-    /// <summary>A game at once: the player at a seat chosen at random, the bots shuffled among the others.</summary>
+    /// <summary>The bots that may be seated without anyone choosing them: none that is paid for each use.</summary>
+    public static IEnumerable<string> Unpaid(CatalogDto catalog) =>
+        catalog.Bots.Where(bot => !bot.IsPaid).Select(bot => bot.Id);
+
+    /// <summary>
+    /// A game at once: the player at a seat chosen at random, the bots shuffled among the others - never one
+    /// paid for each use.
+    /// </summary>
     public static Task<Seating> Quick(IGameServing games, CatalogDto catalog)
     {
         RulesetDto ruleset = catalog.Rulesets[0];
         int person = Random.Shared.Next(ruleset.SeatCount);
-        IEnumerable<string> shuffled = catalog.Bots.Select(bot => bot.Id).OrderBy(_ => Random.Shared.Next());
+        IEnumerable<string> shuffled = Unpaid(catalog).OrderBy(_ => Random.Shared.Next());
         return Start(games, ruleset.Id, BotsOf(Plans(ruleset.SeatCount, person, shuffled)), person);
     }
 

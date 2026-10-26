@@ -119,7 +119,19 @@
                 @if (view.Outcome is not null)
                 {
                     <div class="actions">
-                        <button class="action primary again" @onclick="() => this.PlayAgain(view)">Play again</button>
+                        @{
+                            ImmutableList<string> paid = PaidBotsOf(view);
+                        }
+                        @if (!paid.IsEmpty)
+                        {
+                            <button class="action again paid" @onclick="() => this.PlayAgain(view)">
+                                Play again, with @string.Join(" and ", paid): costs tokens
+                            </button>
+                        }
+                        else
+                        {
+                            <button class="action primary again" @onclick="() => this.PlayAgain(view)">Play again</button>
+                        }
                         <button class="action quick" @onclick="this.QuickGame">Quick game</button>
                     </div>
                 }
@@ -576,6 +588,10 @@
         $"held by {(holder.Id == seat ? "you" : holder.Name)}";
 
     private void PutDown() => this._selection = BoardSelection.None;
+
+    /// <summary>The bots in the game paid for each use, by name: playing again would cost tokens again.</summary>
+    private static ImmutableList<string> PaidBotsOf(GameViewDto view) =>
+        [.. view.Seats.Where(seat => seat.IsPaidBot).Select(seat => seat.Bot).OfType<string>()];
 
     /// <summary>The same game again: its ruleset, its bots in the same seats, the player at the same seat.</summary>
     private Task PlayAgain(GameViewDto view) =>
