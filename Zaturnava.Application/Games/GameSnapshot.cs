@@ -22,6 +22,9 @@ public sealed record GameSnapshot(
     /// <summary>How long the deciding seat has left to decide; null if it may take as long as it likes.</summary>
     public TimeSpan? TimeLeft { get; init; }
 
+    /// <summary>Who may vote to stop waiting for the deciding seat, and how they stand; null if no one may.</summary>
+    public AwayVoting? Away { get; init; }
+
     /// <summary>The game <paramref name="record"/> describes, replayed by <paramref name="rules"/>.</summary>
     public static GameSnapshot Of([Required] GameRecord record, [Required] IRulesApplying rules)
     {
@@ -34,7 +37,8 @@ public sealed record GameSnapshot(
 
     /// <summary>
     /// Whether <paramref name="token"/> holds the seat that acts, and it may act now: it is deciding, or it
-    /// proposes ending the game, or rejoins it, which a seat may do whoever decides, if the rules let it.
+    /// proposes ending the game, rejoins it, or votes on waiting for another, which a seat may do whoever
+    /// decides, if the rules let it - voting to stop waiting only once the vote on that seat is open.
     /// </summary>
     public bool MayAct([Required] GameAction action, [Required] string token) =>
         (this.State.DecidingSeat == action.Actor || this.MayActOutOfTurn(action))
@@ -45,6 +49,8 @@ public sealed record GameSnapshot(
         {
             ProposeEndAction => this.Rules.MayProposeEnd(this.State, action.Actor),
             RejoinAction => this.Rules.MayRejoin(this.State, action.Actor),
+            VoteAwayAction { Stops: false } vote => this.Rules.MayVoteAway(this.State, vote.Actor, vote.Absent),
+            VoteAwayAction vote => this.Away is { IsOpen: true } away && away.Absent == vote.Absent,
             _ => false,
         };
 

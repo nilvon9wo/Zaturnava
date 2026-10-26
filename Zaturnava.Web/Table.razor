@@ -81,7 +81,41 @@
                 {
                     <p class="problem" role="alert">@trouble</p>
                 }
+                @if (this.Seating.Claim is { } absent && AwayNoticeOf(view, absent.Seat) is { } awayNotice)
+                {
+                    <div class="away-notice" role="alert">
+                        <p>@awayNotice</p>
+                        @if (view.Seats[absent.Seat].MayRejoin && view.Seats[absent.Seat].TurnsMissed > 0)
+                        {
+                            <button class="rejoin flashing"
+                                    @onclick="() => this.Submit(absent, EndProposalDto.RejoinActionOf(absent.Seat))">
+                                Rejoin game
+                            </button>
+                        }
+                    </div>
+                }
                 <p class="status">@this.Status(view)</p>
+                @if (view.Away is { } away && this.Seating.Claim is { } voter && away.Voters.Contains(voter.Seat)
+                     && (away.IsOpen || away.Stopping.Contains(voter.Seat)))
+                {
+                    bool isStopping = away.Stopping.Contains(voter.Seat);
+                    <div class="away-vote">
+                        <p>@Who(view.Seats[away.Seat]) is taking a long time. Keep waiting for them?</p>
+                        <div class="actions">
+                            <button class="action keep-waiting"
+                                    aria-pressed="@(isStopping ? "false" : "true")"
+                                    @onclick="() => this.Submit(voter, AwayDto.ActionOf(voter.Seat, away.Seat, false))">
+                                Keep waiting
+                            </button>
+                            <button class="action stop-waiting"
+                                    aria-pressed="@(isStopping ? "true" : "false")"
+                                    @onclick="() => this.Submit(voter, AwayDto.ActionOf(voter.Seat, away.Seat, true))">
+                                Stop waiting
+                            </button>
+                        </div>
+                        <p class="hint">@away.Stopping.Count of @away.Voters.Count would stop waiting; all must, for their turn to pass.</p>
+                    </div>
+                }
                 @if (view.Outcome is not null)
                 {
                     <div class="actions">
@@ -212,7 +246,8 @@
                         <button class="end-game" @onclick="this.AskToEnd">End game</button>
                     </div>
                 }
-                else if (this.Seating.Claim is { } back && view.Seats[back.Seat].MayRejoin)
+                else if (this.Seating.Claim is { } back && view.Seats[back.Seat].MayRejoin
+                         && view.Seats[back.Seat].TurnsMissed == 0)
                 {
                     <div class="end-area">
                         <button class="rejoin" @onclick="() => this.Submit(back, EndProposalDto.RejoinActionOf(back.Seat))">
@@ -438,6 +473,27 @@
         view.ThroneHeldBy is not null && action.Kind == RollKind;
 
     /// <summary>Who plays another seat, then the seat: "Argus (Yellow)", or "Black (human)".</summary>
+    /// <summary>
+    /// What a player away should know when they look again: that the others are playing on without them,
+    /// that they are waited for again, having said they are back, or who would stop waiting; null if none of
+    /// it is so.
+    /// </summary>
+    private static string? AwayNoticeOf(GameViewDto view, int seat)
+    {
+        SeatDto mine = view.Seats[seat];
+        ImmutableList<int> stopping = view.Away is { } away && away.Seat == seat ? away.Stopping : [];
+        string turns = mine.TurnsMissed == 1 ? "turn" : "turns";
+        return (mine.TurnsMissed, mine.MayRejoin || mine.HasGivenUp, stopping.IsEmpty) switch
+        {
+            (> 0, true, _) =>
+                $"The others are playing on without you: you missed {mine.TurnsMissed} {turns} in a row.",
+            (> 0, _, _) => "You are back: the others will wait for you again, unless you miss another turn.",
+            (_, _, false) =>
+                $"{string.Join(" and ", stopping.Select(voter => view.Seats[voter].Name))} would stop waiting for you.",
+            _ => null,
+        };
+    }
+
     private static string Who(SeatDto seat) =>
         seat.Bot is { } bot ? $"{bot} ({seat.Name})" : $"{seat.Name} ({seat.Controller})";
 
@@ -617,20 +673,21 @@
     private void Tick(object? state) => _ = this.InvokeAsync(this.Next);
 
     /// <summary>
-    /// Lets a deciding bot take its next step, or the server decide once time is up; else looks for what
-    /// others have done; else, on the player's own timed turn, counts down.
+    /// Lets a deciding bot take its next step, or the server decide once time is up; else, on the player's own
+    /// timed turn, counts down; else looks for what others have done (on the player's own turn, whether
+    /// they would stop waiting for them).
     /// </summary>
     private async Task Next()
     {
         GameViewDto view = this._view!;
         bool isDue = this._isBotDeciding || this._deadline <= this.Clock.GetUtcNow();
-        await ((isDue, this._turn) switch
+        await ((isDue, this._turn, this._deadline) switch
         {
-            (true, _) => this.Request(
+            (true, _, _) => this.Request(
                 () => this.Games.Advance(this.Seating.GameId, view.Version, CancellationToken.None)
             ),
-            (_, null) => this.Refresh(),
-            _ => this.CountDown(view),
+            (_, { }, { }) => this.CountDown(view),
+            _ => this.Refresh(),
         });
         this.StateHasChanged();
     }
@@ -691,9 +748,12 @@
             ? new Turn(claim, new BoardActions(view.LegalActions))
             : null;
         this._isBotDeciding = view.DecidingSeat is { } seat && view.Seats[seat].Controller == BotController;
-        this._selection = this._turn is not null && view.PromotionDue is { } due
-            ? new BoardSelection(due)
-            : BoardSelection.None;
+        this._selection = (isNew, this._turn, view.PromotionDue) switch
+        {
+            (false, { }, _) => this._selection,
+            (_, { }, { } due) => new BoardSelection(due),
+            _ => BoardSelection.None,
+        };
         this._lastMove = view.Log.LastOrDefault(happened => happened.Kind == EventDto.Moved) is { } moved
             ? [moved.From!.Value, moved.To!.Value]
             : [];
@@ -749,15 +809,15 @@
         };
 
     /// <summary>
-    /// How long until the next look at the game: a countdown step while the decision is timed; else never
-    /// while it is the player's turn or the game is over.
+    /// How long until the next look at the game: a countdown step while the decision is timed; never once
+    /// the game is over; the usual interval on the player's own turn, to see who would stop waiting.
     /// </summary>
     private TimeSpan Wait(GameViewDto view) =>
         (view.DecidingSeat, this._deadline, this._turn) switch
         {
             (null, _, _) => Timeout.InfiniteTimeSpan,
             (_, { }, _) => this.Settings.CountdownStep,
-            (_, _, { }) => Timeout.InfiniteTimeSpan,
+            (_, _, { }) => this.Settings.PollInterval,
             _ => this.PaceOfOthers(),
         };
 

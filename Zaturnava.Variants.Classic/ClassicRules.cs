@@ -57,6 +57,9 @@ public sealed class ClassicRules : IRulesApplying
     /// <summary>The timer on a seat offered a ransom; declining is its default.</summary>
     public const string RansomAnswerTimer = "ransom-answer";
 
+    /// <summary>How many turns in a row a seat away may have passed, by default, before it gives them up.</summary>
+    public const int DefaultAwayTurns = 3;
+
     /// <summary>The timer on answering a proposal to end the game.</summary>
     public const string EndAnswerTimer = "end-answer";
 
@@ -66,6 +69,7 @@ public sealed class ClassicRules : IRulesApplying
     private readonly MoveGenerator _moves;
     private readonly DiceProfile _dice;
     private readonly int _idleRounds;
+    private readonly int _awayTurns;
     private readonly CommandedCaptures _commandedCaptures;
     private readonly PawnPromotion _pawnPromotion;
     private readonly ThroneControl _control;
@@ -77,13 +81,19 @@ public sealed class ClassicRules : IRulesApplying
     {
     }
 
+    /// <summary>
+    /// The rules as configured; <paramref name="awayTurns"/> is how many turns in a row a seat away may have
+    /// passed before it gives them up.
+    /// </summary>
     public ClassicRules(
         [Required] DiceProfile dice,
         [Range(1, int.MaxValue)] int idleRounds,
         CommandedCaptures commandedCaptures,
-        PawnPromotion pawnPromotion
+        PawnPromotion pawnPromotion,
+        [Range(1, int.MaxValue)] int awayTurns = DefaultAwayTurns
     )
     {
+        this._awayTurns = awayTurns;
         this._moves = new MoveGenerator(this._grid, ClassicPieces.Kinds);
         this._dice = dice;
         this._idleRounds = idleRounds;
@@ -128,14 +138,19 @@ public sealed class ClassicRules : IRulesApplying
         this._command.Told(
             state,
             this.Unstalled(
-                action switch
-                {
-                    DiceAction dice => this.Rolled(state, dice),
-                    OfferAction offer => Offered(state, offer),
-                    ProposeEndAction propose => this.Proposed(state, propose),
-                    RejoinAction rejoin => this.Rejoined(state, rejoin),
-                    _ => this.Decided(state, action),
-                }
+                Attended(
+                    action,
+                    action switch
+                    {
+                        DiceAction dice => this.Rolled(state, dice),
+                        OfferAction offer => Offered(state, offer),
+                        ProposeEndAction propose => this.Proposed(state, propose),
+                        RejoinAction rejoin => this.Rejoined(state, rejoin),
+                        VoteAwayAction vote => this.Voted(state, vote),
+                        PassAwayAction pass => this.PassedAway(state, pass),
+                        _ => this.Decided(state, action),
+                    }
+                )
             )
         );
 
@@ -144,6 +159,9 @@ public sealed class ClassicRules : IRulesApplying
     public bool MayProposeEnd([Required] GameState state, SeatId seat) => Agreement.MayPropose(state, seat);
 
     public bool MayRejoin([Required] GameState state, SeatId seat) => Agreement.MayRejoin(state, seat);
+
+    public bool MayVoteAway([Required] GameState state, SeatId voter, SeatId absent) =>
+        Away.MayVote(state, voter, absent);
 
     /// <summary>
     /// A seat choosing where a piece goes home, answering an offer, or offering once its turn is over, has
@@ -381,6 +399,29 @@ public sealed class ClassicRules : IRulesApplying
             ? Agreement.Proposed(state, propose)
             : throw new IllegalActionException(propose);
 
+    /// <exception cref="IllegalActionException">The seat may not vote so now.</exception>
+    private Transition Voted(GameState state, VoteAwayAction vote) =>
+        this.MayVoteAway(state, vote.Actor, vote.Absent)
+            ? Away.Voted(state, vote)
+            : throw new IllegalActionException(vote);
+
+    /// <summary>The deciding seat, away, passes, and has missed one more turn.</summary>
+    /// <exception cref="IllegalActionException">The seat does not decide, or its decision is timed.</exception>
+    private Transition PassedAway(GameState state, PassAwayAction pass)
+    {
+        SeatId seat = pass.Actor;
+        bool mayPass = state.DecidingSeat == seat && state.AwaitedDice is null && this.TimerOf(state) is null;
+        Transition missed = mayPass
+            ? Away.Missed(state, seat, this._awayTurns)
+            : throw new IllegalActionException(pass);
+        Transition passed = this.Act(missed.State, new PassAction(seat));
+        return passed with { Events = [.. missed.Events, .. passed.Events] };
+    }
+
+    /// <summary>Whatever a seat plays itself shows it is not away.</summary>
+    private static Transition Attended(GameAction action, Transition transition) =>
+        Away.IsPlaying(action) ? Away.Present(transition, action.Actor) : transition;
+
     /// <exception cref="IllegalActionException">The seat may not rejoin the game now.</exception>
     private Transition Rejoined(GameState state, RejoinAction rejoin) =>
         this.MayRejoin(state, rejoin.Actor)
@@ -389,12 +430,14 @@ public sealed class ClassicRules : IRulesApplying
 
     /// <summary>
     /// A seat that has given up its turns passes on whatever it is left to decide that no timer decides
-    /// for it (rules.md §10): its turn, or its share of another's.
+    /// for it (rules.md §10): its turn, or its share of another's; and on offering ransoms once its turn is
+    /// over, which the clock would only make the others wait for.
     /// </summary>
     private Transition Unstalled(Transition transition)
     {
         GameState state = transition.State;
-        return state.DecidingSeat is { } seat && state.Resigned.Contains(seat) && this.TimerOf(state) is null
+        bool isItsOwn = this.TimerOf(state) is null || state is { IsRansomWindow: true, Offer: null };
+        return state.DecidingSeat is { } seat && state.Resigned.Contains(seat) && isItsOwn
             ? this.Unstalled(Followed(transition, this.Act(state, new PassAction(seat)), new TurnGivenUp(seat)))
             : transition;
     }

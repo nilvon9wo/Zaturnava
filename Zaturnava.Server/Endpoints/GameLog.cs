@@ -183,8 +183,17 @@ file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bo
                 number,
                 EventDto.Ending,
                 rejoined.Seat,
-                $"{this.Name(rejoined.Seat)} rejoined the game, and plays their turns again."
+                $"{this.Name(rejoined.Seat)} is back in the game."
             ),
+            AwayVoted voted => this.Add(
+                number,
+                EventDto.Away,
+                voted.Voter,
+                voted.Stops
+                    ? $"{this.Name(voted.Voter)} would stop waiting for {this.Name(voted.Absent)}."
+                    : $"{this.Name(voted.Voter)} will keep waiting for {this.Name(voted.Absent)}."
+            ),
+            TurnPassedAway missed => this.Add(number, EventDto.Away, missed.Seat, this.Missed(missed)),
             TurnGivenUp givenUp => this.Add(
                 number,
                 EventDto.Passed,
@@ -315,6 +324,22 @@ file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bo
             _ => $"{partial} as {army} has no Raja, they move it on their own turns, and may play {army}'s turns, "
                 + $"if {army} lets them.",
         };
+    }
+
+    /// <summary>
+    /// "Black is away, so passes: 1 of 3 turns missed in a row.", and, at the last, that Black has given up
+    /// their turns.
+    /// </summary>
+    private string Missed(TurnPassedAway missed)
+    {
+        string name = this.Name(missed.Seat);
+        string passed = string.Create(
+            CultureInfo.InvariantCulture,
+            $"{name} is away, so passes: {missed.Missed} of {missed.Limit} turns missed in a row."
+        );
+        return missed.Missed >= missed.Limit
+            ? $"{passed} {name} has given up their turns, until they rejoin."
+            : passed;
     }
 
     private Teller Add(int number, string kind, SeatId seat, string text) =>

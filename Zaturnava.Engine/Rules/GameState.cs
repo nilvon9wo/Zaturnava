@@ -70,6 +70,9 @@ public sealed record GameState(
     /// <summary>The seats that have given up their turns, having proposed ending the game.</summary>
     public ImmutableHashSet<SeatId> Resigned { get; init; } = [];
 
+    /// <summary>Who is away from the game, and who would stop waiting for them.</summary>
+    public Absence Absence { get; init; } = Absence.None;
+
     /// <summary>How the game ended; null while it goes on.</summary>
     public GameOutcome? Outcome { get; init; }
 

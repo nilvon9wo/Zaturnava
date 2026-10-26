@@ -267,6 +267,25 @@ html { scrollbar-gutter: stable; }
 }
 .rejoin:hover { border-color: var(--go-ink); }
 
+/* A player away: what the others did meanwhile, and a button to say they are back that cannot be missed. */
+.away-notice {
+    border: 2px solid var(--go);
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin-bottom: 10px;
+}
+.away-notice p { margin: 0 0 8px; }
+.flashing { animation: flash 1s ease-in-out infinite alternate; }
+@keyframes flash { from { opacity: 1; } to { opacity: 0.45; } }
+@media (prefers-reduced-motion: reduce) {
+    .flashing { animation: none; outline: 3px solid var(--go-ink); }
+}
+
+/* The others' vote on waiting for a player who is taking long. */
+.away-vote { border-top: 1px solid var(--panel-edge); margin-top: 10px; padding-top: 8px; }
+.away-vote p { margin: 0 0 6px; }
+.away-vote [aria-pressed="true"] { border-color: var(--accent); font-weight: 700; }
+
 /* A question the player must answer before anything else, over the whole page. */
 .backdrop {
     position: fixed;

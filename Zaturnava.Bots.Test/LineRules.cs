@@ -80,6 +80,8 @@ internal sealed class LineRules(ImmutableList<GameAction> legalActions) : IRules
 
     public bool MayRejoin([Required] GameState state, SeatId seat) => false;
 
+    public bool MayVoteAway([Required] GameState state, SeatId voter, SeatId absent) => false;
+
     public DecisionTimer TimerOf([Required] GameState state) => throw new NotSupportedException();
 
     public GameAction Parse([Required] ActionDescriptor descriptor) => throw new NotSupportedException();

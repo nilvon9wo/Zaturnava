@@ -60,9 +60,20 @@ internal static class GameViews
             snapshot.State.IsRansomWindow,
             snapshot.State.Returning is { } due ? PrisonerOf(snapshot.Rules, due.Prisoners[0]) : null,
             ThroneHolderOf(snapshot.Rules, snapshot.State),
-            ProposalOf(snapshot.State)
+            ProposalOf(snapshot.State),
+            AwayOf(snapshot.Away)
         );
     }
+
+    private static AwayDto? AwayOf(AwayVoting? away) =>
+        away is null
+            ? null
+            : new AwayDto(
+                away.Absent.Value,
+                away.IsOpen,
+                [.. away.Voters.Select(voter => voter.Value)],
+                [.. away.Voters.Where(away.Stopping.Contains).Select(voter => voter.Value)]
+            );
 
     private static EndProposalDto? ProposalOf(GameState state) =>
         state.Proposal is { } proposal
@@ -116,7 +127,8 @@ internal static class GameViews
             botId,
             snapshot.State.Resigned.Contains(seat),
             snapshot.Rules.MayProposeEnd(snapshot.State, seat),
-            snapshot.Rules.MayRejoin(snapshot.State, seat)
+            snapshot.Rules.MayRejoin(snapshot.State, seat),
+            snapshot.State.Absence.MissedBy(seat)
         );
     }
 

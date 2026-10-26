@@ -41,4 +41,33 @@ public sealed class DecisionClockTest
         // Assert
         Assert.Equal(this._time.Now, since);
     }
+
+    [Fact]
+    public void WaitingSince_WhenWaitingAsBefore_IsWhenItBegan()
+    {
+        // Arrange
+        _ = this._clock.WaitingSince(Game, "turn 3, seat 0");
+        this._time.Pass(Minute);
+        _ = this._clock.Since(Game, 4);
+
+        // Act
+        DateTimeOffset since = this._clock.WaitingSince(Game, "turn 3, seat 0");
+
+        // Assert
+        Assert.Equal(this._time.Now - Minute, since);
+    }
+
+    [Fact]
+    public void WaitingSince_WhenWaitingOnSomethingElse_IsNow()
+    {
+        // Arrange
+        _ = this._clock.WaitingSince(Game, "turn 3, seat 0");
+        this._time.Pass(Minute);
+
+        // Act
+        DateTimeOffset since = this._clock.WaitingSince(Game, "turn 4, seat 1");
+
+        // Assert
+        Assert.Equal(this._time.Now, since);
+    }
 }
