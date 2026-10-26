@@ -4,6 +4,7 @@ using Net.NowhereAtAll.Zaturnava.Engine.Boards;
 using Net.NowhereAtAll.Zaturnava.Engine.Decisions;
 using Net.NowhereAtAll.Zaturnava.Engine.Moves;
 using Net.NowhereAtAll.Zaturnava.Engine.Rules;
+using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 
 namespace Net.NowhereAtAll.Zaturnava.Bots;
 
@@ -12,7 +13,9 @@ namespace Net.NowhereAtAll.Zaturnava.Bots;
 /// gains (as <see cref="Greedy"/> counts it), less the worst its opponents could do to the bot's team
 /// once it is done. That is the most an enemy could win by starting an exchange on a cell where one of
 /// the team's pieces stands, if both sides go on taking while it pays, or, if the bot's throne is
-/// empty, what the enemy leader who could step onto it is worth. The dice and whose turn comes next
+/// empty, what the enemy leader who could step onto it is worth. A piece on the bot's throne does not
+/// keep an enemy leader off it, but only makes it take that piece to get there: such a taking wins the
+/// piece and the throne both. The dice and whose turn comes next
 /// are left aside: any enemy might reply, with any piece. Half of what the action leaves its allies to
 /// win next, or takes from them (<see cref="Teamwork"/>), counts too. Among actions worth the same, it
 /// would rather do something than pass, and picks at random.
@@ -53,13 +56,41 @@ internal static class Careful
         ILookup<CellId, Attack> guards = AttacksBy(request, after, isAllied: true);
         IEnumerable<int> losses = after.Position.Occupants
             .Where(occupant => after.Teams.AreAllied(occupant.Value.Owner, request.Seat))
-            .Select(occupant => Exchange(
+            .Select(occupant => LossOf(
+                request,
                 request.Rules.WorthOf(occupant.Value.Kind),
-                WorthsOf(request, threats[occupant.Key]),
-                WorthsOf(request, guards[occupant.Key])
+                [.. threats[occupant.Key]],
+                WorthsOf(request, guards[occupant.Key]),
+                IsThroneOf(request, occupant.Key)
             ));
         return losses.Append(0).Max() + ThroneThreat(request, after, threats);
     }
+
+    /// <summary>
+    /// What an enemy could win by starting an exchange for a piece worth <paramref name="target"/>; on the
+    /// bot's throne, an enemy leader taking it first also wins the throne, worth as much as that leader (as
+    /// an empty throne's threat counts it).
+    /// </summary>
+    private static int LossOf(
+        DecisionRequest request,
+        int target,
+        ImmutableList<Attack> threats,
+        ImmutableList<int> retakers,
+        bool isOnThrone
+    )
+    {
+        ImmutableList<int> takers = WorthsOf(request, threats);
+        IEnumerable<int> entries = isOnThrone
+            ? threats
+                .Where(attack => request.Rules.IsLeader(attack.Attacker.Kind))
+                .Select(attack => request.Rules.WorthOf(attack.Attacker.Kind))
+                .Select(leader => Math.Max(0, target + leader - Exchange(leader, retakers, takers.Remove(leader))))
+            : [];
+        return entries.Append(Exchange(target, takers, retakers)).Max();
+    }
+
+    private static bool IsThroneOf(DecisionRequest request, CellId cell) =>
+        request.Rules.Thrones.Contains(new KeyValuePair<SeatId, CellId>(request.Seat, cell));
 
     /// <summary>
     /// What the side about to take wins, if it takes <paramref name="target"/> with the cheapest of its

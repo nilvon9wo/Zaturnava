@@ -33,13 +33,13 @@ public sealed class MidasBot(Random random) : IBotPlaying
             : Task.FromResult(
                 Ending.AnswerTo(request)
                     ?? Trading.AnswerTo(request, 0)
-                    ?? BestTrade(request)
-                    ?? Greedy.Choose(request, this._random)
+                    ?? BestTrade(request, false)
+                    ?? Trading.BeforePassing(request, Greedy.Choose(request, this._random), BestTrade)
             );
 
     /// <summary>The offer that gains the most, if any gains anything.</summary>
-    private static OfferAction? BestTrade(DecisionRequest request) =>
-        Trading.TradesOf(request).Where(trade => trade.Gain > 0).MaxBy(trade => trade.Gain)?.Offer;
+    private static OfferAction? BestTrade(DecisionRequest request, bool isPassing) =>
+        Trading.TradesOf(request, isPassing).Where(trade => trade.Gain > 0).MaxBy(trade => trade.Gain)?.Offer;
 
     internal static GameAction Answer(SeatId seat, bool isAccepted) =>
         isAccepted

@@ -17,6 +17,19 @@ public sealed class ArgusBotTest
     private readonly CancellationToken _cancellation = TestContext.Current.CancellationToken;
 
     [Fact]
+    public async Task Decide_WhenItWouldPassItsTurn_GivesItsAllysPieceBackFirst()
+    {
+        // Arrange - passing, it gets no window to offer after
+        DecisionRequest request = Ransoms.Passing();
+
+        // Act
+        GameAction action = await new ArgusBot(new Random(1)).Decide(request, this._cancellation);
+
+        // Assert
+        Assert.Equal(new OfferAction(Ransoms.Black, Ransoms.Green, [new PieceId(30)], []), action);
+    }
+
+    [Fact]
     public async Task Decide_WhenTakingWouldLoseMoreThanItGains_DoesNotTake()
     {
         // Arrange - the Pawn on 2 is guarded by the Pawn on 3, which would take the Horse back
@@ -89,9 +102,9 @@ public sealed class ArgusBotTest
     }
 
     [Fact]
-    public async Task Decide_WhenAnEnemyRajaCouldTakeItsEmptyThrone_BlocksIt()
+    public async Task Decide_WhenAnEnemyRajaCouldTakeAnyPieceOnItsThrone_PutsNoneThereAlone()
     {
-        // Arrange
+        // Arrange - the Raja on 1 would take a Pawn on the throne, and enter it all the same
         DecisionRequest request = LineRules.Request(
             [Pass, LineRules.Move(5, 6), LineRules.Move(5, 0)],
             (1, LineRules.Raja, Theirs),
@@ -102,7 +115,24 @@ public sealed class ArgusBotTest
         ImmutableHashSet<GameAction> chosen = await Choices(request);
 
         // Assert
-        Assert.Equal([LineRules.Move(5, 0)], chosen);
+        Assert.Equal([LineRules.Move(5, 6)], chosen);
+    }
+
+    [Fact]
+    public async Task Decide_WhenAnEnemyRajaCouldTakeItsLonePieceOnItsThrone_SavesThePieceAtLeast()
+    {
+        // Arrange - the Raja on 1 enters the throne either way; on it, the Pawn would be lost too
+        DecisionRequest request = LineRules.Request(
+            [Pass, LineRules.Move(0, 7)],
+            (0, LineRules.Pawn, Mine),
+            (1, LineRules.Raja, Theirs)
+        );
+
+        // Act
+        ImmutableHashSet<GameAction> chosen = await Choices(request);
+
+        // Assert
+        Assert.Equal([LineRules.Move(0, 7)], chosen);
     }
 
     [Fact]

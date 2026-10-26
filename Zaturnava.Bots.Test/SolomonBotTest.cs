@@ -65,6 +65,19 @@ public sealed class SolomonBotTest
     }
 
     [Fact]
+    public async Task Decide_WhenItWouldPassItsTurn_GivesItsAllysPieceBackFirst()
+    {
+        // Arrange - passing, it gets no window to offer after
+        DecisionRequest request = Ransoms.Passing();
+
+        // Act
+        GameAction action = await new SolomonBot(new Random(1)).Decide(request, this._cancellation);
+
+        // Assert
+        Assert.Equal(new OfferAction(Ransoms.Black, Ransoms.Green, [new PieceId(30)], []), action);
+    }
+
+    [Fact]
     public async Task Decide_WhenItsTurnIsOver_GivesItsAllysPieceBackFirst()
     {
         // Arrange

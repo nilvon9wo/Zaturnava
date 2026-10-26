@@ -155,19 +155,22 @@
                     {
                         <div class="promotion">
                             <p class="hint">@this.Named(PromotionHeading(view, this._selection.Selected!.Value))</p>
-                            <div class="promotion-choices">
-                                @foreach (ActionDto action in promotions)
-                                {
-                                    (SeatDto holder, PrisonerDto into) = IntoOf(view, action);
-                                    <button class="choice"
-                                            title="@this.Named(ActionLabels.LabelOf(action))"
-                                            @onclick="() => this.Submit(turn.Claim, action)">
-                                        <PieceIcon Kind="@into.Kind" Name="@into.Name" Owner="into.Owner" Pieces="this.Pieces" />
-                                        <span class="name">@this.Named(Owned(view, into))</span>
-                                        <span class="holder">@HeldBy(holder, turn.Claim.Seat)</span>
-                                    </button>
-                                }
-                            </div>
+                            @foreach (ImmutableList<ActionDto> army in ArmiesOf(view, promotions))
+                            {
+                                <div class="promotion-choices">
+                                    @foreach (ActionDto action in army)
+                                    {
+                                        (SeatDto holder, PrisonerDto into) = IntoOf(view, action);
+                                        <button class="choice"
+                                                title="@this.Named(ActionLabels.LabelOf(action))"
+                                                @onclick="() => this.Submit(turn.Claim, action)">
+                                            <PieceIcon Kind="@into.Kind" Name="@into.Name" Owner="into.Owner" Pieces="this.Pieces" />
+                                            <span class="name">@this.Named(Owned(view, into))</span>
+                                            <span class="holder">@HeldBy(holder, turn.Claim.Seat)</span>
+                                        </button>
+                                    }
+                                </div>
+                            }
                             @if (view.PromotionDue is null)
                             {
                                 <button class="action later" @onclick="this.PutDown">Promote later</button>
@@ -523,11 +526,19 @@
         this._selection.Selected is { } cell ? turn.Actions.At(cell) : [];
 
     /// <summary>
-    /// The promotions, into the player's own pieces first, then their allies', then the rest; each as the
-    /// ruleset orders them otherwise, the most valuable first.
+    /// The promotions, into the player's own pieces first, then their allies', then the rest, army by army
+    /// (so that each may be shown apart); within an army, as the ruleset orders them, the most valuable first.
     /// </summary>
     private static ImmutableList<ActionDto> ByKinship(GameViewDto view, int seat, ImmutableList<ActionDto> promotions) =>
-        [.. promotions.OrderBy(promotion => KinshipOf(view, seat, IntoOf(view, promotion).Prisoner.Owner))];
+        [
+            .. promotions
+                .OrderBy(promotion => KinshipOf(view, seat, IntoOf(view, promotion).Prisoner.Owner))
+                .ThenBy(promotion => IntoOf(view, promotion).Prisoner.Owner),
+        ];
+
+    /// <summary>The promotions, army by army, in order: those into one army's pieces, apart.</summary>
+    private static ImmutableList<ImmutableList<ActionDto>> ArmiesOf(GameViewDto view, ImmutableList<ActionDto> promotions) =>
+        [.. promotions.GroupBy(promotion => IntoOf(view, promotion).Prisoner.Owner).Select(army => army.ToImmutableList())];
 
     /// <summary>0 for the player's own seat, 1 for an ally's, 2 for anyone else's.</summary>
     private static int KinshipOf(GameViewDto view, int seat, int owner) =>
