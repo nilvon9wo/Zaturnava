@@ -69,6 +69,7 @@ public sealed class ClassicRules : IRulesApplying
     private readonly CommandedCaptures _commandedCaptures;
     private readonly PawnPromotion _pawnPromotion;
     private readonly ThroneControl _control;
+    private readonly Command _command;
     private readonly Ransom _ransom;
 
     public ClassicRules()
@@ -90,6 +91,7 @@ public sealed class ClassicRules : IRulesApplying
         this._pawnPromotion = pawnPromotion;
         this.Thrones = ClassicSetup.Thrones(this._grid);
         this._control = new ThroneControl(this.Thrones);
+        this._command = new Command(this._control);
         this._ransom = new Ransom(this._grid, ClassicSetup.InitialPosition(this._grid));
     }
 
@@ -123,15 +125,18 @@ public sealed class ClassicRules : IRulesApplying
             : [];
 
     public Transition Apply([Required] GameState state, [Required] GameAction action) =>
-        this.Unstalled(
-            action switch
-            {
-                DiceAction dice => this.Rolled(state, dice),
-                OfferAction offer => Offered(state, offer),
-                ProposeEndAction propose => this.Proposed(state, propose),
-                RejoinAction rejoin => this.Rejoined(state, rejoin),
-                _ => this.Decided(state, action),
-            }
+        this._command.Told(
+            state,
+            this.Unstalled(
+                action switch
+                {
+                    DiceAction dice => this.Rolled(state, dice),
+                    OfferAction offer => Offered(state, offer),
+                    ProposeEndAction propose => this.Proposed(state, propose),
+                    RejoinAction rejoin => this.Rejoined(state, rejoin),
+                    _ => this.Decided(state, action),
+                }
+            )
         );
 
     public bool MayOffer([Required] GameState state) => Ransom.MayOffer(state);

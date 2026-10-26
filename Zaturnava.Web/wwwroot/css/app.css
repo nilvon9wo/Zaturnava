@@ -442,7 +442,7 @@ html { scrollbar-gutter: stable; }
 .log .event.rolled-off, .log .event.shared { font-style: italic; }
 .log .event.ended { font-weight: 700; }
 .log .event.promoted, .log .event.ransom, .log .event.escaped { font-style: italic; }
-.log .event.ending { font-weight: 700; }
+.log .event.ending, .log .event.command, .log .event.empire { font-weight: 700; }
 
 /* On a wider screen, the table fills the window under the teams: the board as large as fits, the turn
    to its left at a size of its own, scrolling rather than growing, and the log under the turn - or, on

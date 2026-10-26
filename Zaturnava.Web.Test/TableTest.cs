@@ -482,10 +482,14 @@ public sealed class TableTest : IDisposable
             { [new EventDto(4, EventDto.Passed, 1, "Black to play.", null, null)], string.Empty },
             { [Rolled, Escaped(1)], "rescued" },
             { [Rolled, Escaped(1), Escaped(0)], "alarm" },
+            { [Rolled, RajaTaken(0)], "triumph" },
+            { [Rolled, Escaped(1), RajaTaken(0)], "triumph" },
+            { [Escaped(0), RajaTaken(0)], "alarm" },
+            { [Escaped(0), RajaTaken(1)], "lament" },
         };
 
     [Fact]
-    public void Sound_WhenOnlyWatchingAPieceEscape_PlaysAMove()
+    public void Sound_WhenOnlyWatchingAPieceEscapeAndARajaTaken_PlaysACapture()
     {
         // Arrange
         using PageContext page = new(TimeSpan.FromMilliseconds(10));
@@ -493,11 +497,11 @@ public sealed class TableTest : IDisposable
             page.Render<Table>(parameters => parameters.Add(x => x.Seating, Seating.Watching(FakeGameServer.GameId)));
 
         // Act
-        page.Server.View = FakeGameServer.SeatZeroToMove with { DecidingSeat = null, Log = [Escaped(0)] };
+        page.Server.View = FakeGameServer.SeatZeroToMove with { DecidingSeat = null, Log = [Escaped(0), RajaTaken(1)] };
 
         // Assert
         table.WaitForAssertion(() => Assert.Equal("The game is over.", table.Find("p.status").TextContent));
-        Assert.Equal("moved", string.Join(",", Played(page)));
+        Assert.Equal("captured", string.Join(",", Played(page)));
     }
 
     [Fact]
@@ -1308,6 +1312,9 @@ public sealed class TableTest : IDisposable
     }
 
     /// <summary>A piece of <paramref name="owner"/>'s escaping, let out by Yellow.</summary>
+    private static EventDto RajaTaken(int owner) =>
+        new(10 + owner, EventDto.Captured, 1 - owner, "A Raja was taken.", null, null, owner, IsLeader: true);
+
     private static EventDto Escaped(int owner) =>
         new(7 + owner, EventDto.Escaped, 1, "A piece escaped.", null, 9, owner);
 

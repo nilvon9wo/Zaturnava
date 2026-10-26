@@ -92,13 +92,25 @@ file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bo
                     + $"{this.Faces(forfeited.Values)}, so lost {(forfeited.Values.Count == 1 ? "it" : "them")}."
             ),
             PieceMoved moved => this.Moved(number, moved),
-            PieceCaptured captured => this.Add(
+            PieceCaptured captured => this.Captured(number, captured),
+            CommandBegun begun => this.Add(number, EventDto.Command, begun.Commander, this.Begun(begun)),
+            CommandEnded ended => this.Add(
                 number,
-                EventDto.Captured,
-                captured.CapturedBy,
-                $"{this.Name(captured.CapturedBy)} took {this.Whose(captured.Piece.Owner, captured.CapturedBy)} "
-                    + $"{this.Rules.NameOf(captured.Piece.Kind)}{this.With(captured.CapturedBy)} "
-                    + $"({Scored(captured.Points)})."
+                EventDto.Command,
+                ended.Commander,
+                $"{this.Name(ended.Commander)} no longer controls {this.Name(ended.Army)}'s army."
+            ),
+            EmpireBegun empire => this.Add(
+                number,
+                EventDto.Empire,
+                empire.Rulers[0],
+                $"{GameLog.Listed(this.Rules, empire.Rulers)} now rule an empire: no enemy Raja is left on the board."
+            ),
+            EmpireEnded fallen => this.Add(
+                number,
+                EventDto.Empire,
+                fallen.Rulers[0],
+                $"{GameLog.Listed(this.Rules, fallen.Rulers)}'s empire is over."
             ),
             PiecePromoted promoted => this.Promoted(number, promoted),
             RansomWindowOpened window => this.Add(
@@ -263,6 +275,46 @@ file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bo
         EventDto told =
             new(number, EventDto.Escaped, escaped.EscapedBy.Value, text, null, escaped.Cell.Value, piece.Owner.Value);
         return this with { Told = this.Told.Add(told), LastMoved = piece };
+    }
+
+    private Teller Captured(int number, PieceCaptured captured)
+    {
+        Piece piece = captured.Piece;
+        string text = $"{this.Name(captured.CapturedBy)} took {this.Whose(piece.Owner, captured.CapturedBy)} "
+            + $"{this.Rules.NameOf(piece.Kind)}{this.With(captured.CapturedBy)} ({Scored(captured.Points)}).";
+        EventDto told = new(
+            number,
+            EventDto.Captured,
+            captured.CapturedBy.Value,
+            text,
+            null,
+            null,
+            piece.Owner.Value,
+            this.Rules.IsLeader(piece.Kind)
+        );
+        return this with { Told = this.Told.Add(told) };
+    }
+
+    /// <summary>
+    /// "Green now has partial control of Black's army: ..." - complete, while it plays Black's turn as
+    /// regent; partial, while it moves Black's army on its own turns, saying why and what more it may do.
+    /// </summary>
+    private string Begun(CommandBegun begun)
+    {
+        string commander = this.Name(begun.Commander);
+        string army = this.Name(begun.Army);
+        string partial = $"{commander} now has partial control of {army}'s army:";
+        return begun.Basis switch
+        {
+            CommandBasis.Regency =>
+                $"{commander} now has complete control of {army}'s army, for the rest of {army}'s turn.",
+            CommandBasis.AllyThrone => $"{partial} with their Raja on {army}'s throne, they move it on their own "
+                + $"turns, and may play {army}'s turns, if {army} lets them.",
+            CommandBasis.EnemyThrone => $"{partial} with their Raja on {army}'s throne, they move it on their own "
+                + $"turns, and make the second move of {army}'s.",
+            _ => $"{partial} as {army} has no Raja, they move it on their own turns, and may play {army}'s turns, "
+                + $"if {army} lets them.",
+        };
     }
 
     private Teller Add(int number, string kind, SeatId seat, string text) =>

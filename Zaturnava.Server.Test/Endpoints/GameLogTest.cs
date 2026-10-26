@@ -87,6 +87,57 @@ public sealed class GameLogTest
     }
 
     [Fact]
+    public void LatestOf_WhenCommandOfArmiesChanges_TellsWhoControlsWhoseAndHowFar()
+    {
+        // Arrange
+        GameSnapshot snapshot = Snapshot(
+            new CommandBegun(Green, Black, CommandBasis.Regency),
+            new CommandBegun(Green, Black, CommandBasis.AllyThrone),
+            new CommandBegun(Yellow, Black, CommandBasis.EnemyThrone),
+            new CommandBegun(Red, Yellow, CommandBasis.LeaderlessAlly),
+            new CommandEnded(Yellow, Black),
+            new EmpireBegun([Black, Green]),
+            new EmpireEnded([Black, Green])
+        );
+
+        // Act
+        ImmutableList<EventDto> log = GameLog.LatestOf(snapshot);
+
+        // Assert
+        Assert.Equal(
+            [
+                "command 2: Green now has complete control of Black's army, for the rest of Black's turn.",
+                "command 2: Green now has partial control of Black's army: with their Raja on Black's throne, they "
+                    + "move it on their own turns, and may play Black's turns, if Black lets them.",
+                "command 1: Yellow now has partial control of Black's army: with their Raja on Black's throne, they "
+                    + "move it on their own turns, and make the second move of Black's.",
+                "command 3: Red now has partial control of Yellow's army: as Yellow has no Raja, they move it on "
+                    + "their own turns, and may play Yellow's turns, if Yellow lets them.",
+                "command 1: Yellow no longer controls Black's army.",
+                "empire 0: Black and Green now rule an empire: no enemy Raja is left on the board.",
+                "empire 0: Black and Green's empire is over.",
+            ],
+            log.Select(Told)
+        );
+    }
+
+    [Fact]
+    public void LatestOf_WhenAPieceIsCaptured_SaysWhoseItWasAndWhetherItLed()
+    {
+        // Arrange
+        GameSnapshot snapshot = Snapshot(new PieceCaptured(RedRaja, Black, 5), new PieceCaptured(Pawn, Black, 1));
+
+        // Act
+        ImmutableList<EventDto> log = GameLog.LatestOf(snapshot);
+
+        // Assert
+        Assert.Equal(
+            [(3, true), (1, false)],
+            log.Select(captured => (captured.Owner.GetValueOrDefault(), captured.IsLeader))
+        );
+    }
+
+    [Fact]
     public void LatestOf_WhenEndingTheGameIsProposed_TellsOfTheProposalAndEachAnswer()
     {
         // Arrange

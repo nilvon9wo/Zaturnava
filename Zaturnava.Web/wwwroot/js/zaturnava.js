@@ -42,6 +42,17 @@ window.zaturnava = (() => {
         captured: () => { tone(200, 0.2, "sawtooth", 0.12, 0); tone(110, 0.3, "sine", 0.25, 0.04); },
         turn: () => { tone(660, 0.14, "sine", 0.12, 0); tone(880, 0.22, "sine", 0.12, 0.13); },
         alarm: () => siren(520, 880, 3, 1.5, 0.06),
+        // A fanfare for an enemy Raja taken: a rising call, answered by a held major chord.
+        triumph: () => {
+            [392, 523, 659, 784].forEach((frequency, i) => tone(frequency, 0.16, "sawtooth", 0.07, i * 0.12));
+            [523, 659, 784, 1047].forEach(frequency => tone(frequency, 0.9, "triangle", 0.12, 0.5));
+        },
+        // A lament for one of the team's Rajas taken: three slow falling notes, the last held and sinking.
+        lament: () => {
+            [392, 370, 349].forEach((frequency, i) => tone(frequency, 0.4, "sine", 0.16, i * 0.38));
+            tone(330, 1.2, "sine", 0.16, 1.14);
+            tone(165, 1.2, "triangle", 0.08, 1.14);
+        },
         rescued: () => {
             [523, 659, 784].forEach((frequency, i) => tone(frequency, 0.14, "triangle", 0.18, i * 0.11));
             tone(1047, 0.5, "triangle", 0.2, 0.33);

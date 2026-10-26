@@ -1726,9 +1726,10 @@ public sealed class ClassicRulesTest
 
         // Assert
         ImmutableList<GameAction> actions = this._rules.LegalActions(transition.State);
+        Assert.Equal((Green, Black), (transition.State.DecidingSeat, transition.State.ActingFor));
         Assert.Equal(
-            (Green, Black, new TurnHandedOver(Black, Green)),
-            (transition.State.DecidingSeat, transition.State.ActingFor, transition.Events.Single())
+            [new TurnHandedOver(Black, Green), new CommandBegun(Green, Black, CommandBasis.Regency)],
+            transition.Events
         );
         Assert.Equal(
             (true, false),
@@ -1755,8 +1756,9 @@ public sealed class ClassicRulesTest
         Assert.Equal((Green, Black), (once.DecidingSeat, once.ActingFor));
         Assert.Equal(
             (Yellow, null, new TurnPassed(Black, Yellow)),
-            (twice.State.DecidingSeat, twice.State.ActingFor, twice.Events[^1])
+            (twice.State.DecidingSeat, twice.State.ActingFor, twice.Events.OfType<TurnPassed>().Single())
         );
+        Assert.Equal(new CommandBegun(Green, Black, CommandBasis.LeaderlessAlly), twice.Events[^1]);
     }
 
     [Fact]
@@ -1777,7 +1779,7 @@ public sealed class ClassicRulesTest
         // Assert
         Assert.Equal(
             (Yellow, Black, new TurnShared(Black, Yellow)),
-            (transition.State.DecidingSeat, transition.State.ActingFor, transition.Events[^1])
+            (transition.State.DecidingSeat, transition.State.ActingFor, transition.Events.OfType<TurnShared>().Single())
         );
     }
 
@@ -1924,7 +1926,14 @@ public sealed class ClassicRulesTest
 
         // Assert
         Assert.Equal((Green, Black), (transition.State.DecidingSeat, transition.State.ActingFor));
-        Assert.Equal([new TurnPassed(Red, Black), new TurnHandedOver(Black, Green)], transition.Events);
+        Assert.Equal(
+            [
+                new TurnPassed(Red, Black),
+                new TurnHandedOver(Black, Green),
+                new CommandBegun(Green, Black, CommandBasis.Regency),
+            ],
+            transition.Events
+        );
     }
 
     [Fact]
@@ -2074,6 +2083,83 @@ public sealed class ClassicRulesTest
 
         // Assert
         Assert.Contains("is not legal now", exception.Message);
+    }
+
+    [Fact]
+    public void Apply_WhenARajaEntersAndLeavesAnEnemysThrone_TellsOfTheControlItGainsAndLoses()
+    {
+        // Arrange - Black's Raja beside Yellow's throne; every seat has its Raja
+        GameState state = this.Commands(Grid.CellAt(1, 4), Grid.CellAt(6, 2));
+
+        // Act
+        Transition entered = this._rules.Apply(state, new MoveAction(Black, Grid.CellAt(1, 4), YellowThrone));
+        Transition left = this._rules.Apply(
+            entered.State with { DecidingSeat = Black },
+            new MoveAction(Black, YellowThrone, Grid.CellAt(1, 4))
+        );
+
+        // Assert
+        Assert.Equal(new CommandBegun(Black, Yellow, CommandBasis.EnemyThrone), entered.Events[^1]);
+        Assert.Equal(new CommandEnded(Black, Yellow), left.Events[^1]);
+    }
+
+    [Fact]
+    public void Apply_WhenARajaEntersAnAllysThroneWithNoEnemyRajaLeft_TellsOfTheControlAndTheEmpire()
+    {
+        // Arrange - Black's Raja beside Green's throne; Yellow and Red have no Raja
+        GameState state = this.Commands(Grid.CellAt(4, 6), Grid.CellAt(6, 2), hasEnemyRajas: false);
+
+        // Act
+        Transition entered = this._rules.Apply(state, new MoveAction(Black, Grid.CellAt(4, 6), GreenThrone));
+        Transition left = this._rules.Apply(
+            entered.State with { DecidingSeat = Black },
+            new MoveAction(Black, GreenThrone, Grid.CellAt(4, 6))
+        );
+
+        // Assert
+        Assert.Equal(
+            [new CommandBegun(Black, Green, CommandBasis.AllyThrone), new EmpireBegun([Black, Green])],
+            entered.Events.TakeLast(2)
+        );
+        Assert.Equal([new CommandEnded(Black, Green), new EmpireEnded([Black, Green])], left.Events.TakeLast(2));
+    }
+
+    [Fact]
+    public void Apply_WhenTakingTheLastEnemyRajaCreatesTheEmpire_TellsOfItOnlyOnce()
+    {
+        // Arrange - Green has no Raja, so Black commands its army; Black's Raja is beside Yellow's, the last
+        GameState commands = this.Commands(Grid.CellAt(3, 3), greenRaja: null, hasEnemyRajas: false);
+        GameState state = commands with
+        {
+            Position = commands.Position.Place(Grid.CellAt(4, 4), Piece(11, ClassicPieces.Raja, Yellow)),
+        };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new MoveAction(Black, Grid.CellAt(3, 3), Grid.CellAt(4, 4)));
+
+        // Assert
+        Assert.Equal(
+            (1, false),
+            (transition.Events.OfType<EmpireCreated>().Count(), transition.Events.OfType<EmpireBegun>().Any())
+        );
+    }
+
+    [Fact]
+    public void Apply_WhenAnAllyLosesItsRaja_TellsThatTheOtherNowHasPartialControlOfItsArmy()
+    {
+        // Arrange - Yellow's Elephant may take Green's Raja
+        GameState state = this.Commands(Grid.CellAt(3, 3), Grid.CellAt(6, 2)) with { DecidingSeat = Yellow };
+        GameState armed = state with
+        {
+            Position = state.Position.Place(Grid.CellAt(6, 0), Piece(12, ClassicPieces.Elephant, Yellow)),
+            Dice = [3],
+        };
+
+        // Act
+        Transition transition = this._rules.Apply(armed, new MoveAction(Yellow, Grid.CellAt(6, 0), Grid.CellAt(6, 2)));
+
+        // Assert
+        Assert.Contains(new CommandBegun(Black, Green, CommandBasis.LeaderlessAlly), transition.Events);
     }
 
     [Fact]
@@ -2392,6 +2478,30 @@ public sealed class ClassicRulesTest
         {
             Position = greenRaja is { } cell ? black.Place(cell, Piece(19, ClassicPieces.Raja, Green)) : black,
         };
+    }
+
+    /// <summary>
+    /// Black's turn, before rolling, with Black's Raja on <paramref name="blackRaja"/>, and Green's Pawn, and
+    /// its Raja on <paramref name="greenRaja"/> if any; Yellow and Red each have a Pawn, and a Raja if
+    /// <paramref name="hasEnemyRajas"/>.
+    /// </summary>
+    private GameState Commands(CellId blackRaja, CellId? greenRaja, bool hasEnemyRajas = true)
+    {
+        GameState state = this.StateWith(
+            (blackRaja, Piece(3, ClassicPieces.Raja, Black)),
+            (Grid.CellAt(2, 6), Piece(21, ClassicPieces.Pawn, Green)),
+            (Grid.CellAt(5, 5), Piece(13, ClassicPieces.Pawn, Yellow)),
+            (Grid.CellAt(6, 6), Piece(29, ClassicPieces.Pawn, Red))
+        );
+        Position green = greenRaja is { } cell
+            ? state.Position.Place(cell, Piece(19, ClassicPieces.Raja, Green))
+            : state.Position;
+        Position all = hasEnemyRajas
+            ? green
+                .Place(Grid.CellAt(1, 1), Piece(11, ClassicPieces.Raja, Yellow))
+                .Place(Grid.CellAt(7, 7), Piece(27, ClassicPieces.Raja, Red))
+            : green;
+        return state with { Position = all };
     }
 
     private GameState AcceptingRansom() =>
