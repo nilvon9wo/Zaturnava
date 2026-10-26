@@ -511,6 +511,22 @@ public sealed class TableTest : IDisposable
         Assert.Empty(Played(page));
     }
 
+    [Fact]
+    public void Leave_WhenClicked_ReturnsToTheLobby()
+    {
+        // Arrange
+        bool hasLeft = false;
+        IRenderedComponent<Table> table = this._page.Render<Table>(
+            parameters => parameters.Add(x => x.Seating, SeatZero).Add(x => x.OnLeave, () => hasLeft = true)
+        );
+
+        // Act
+        table.Find("button.leave").Click();
+
+        // Assert
+        Assert.True(hasLeft);
+    }
+
     [Theory]
     [InlineData(true, 0)]
     [InlineData(false, null)]

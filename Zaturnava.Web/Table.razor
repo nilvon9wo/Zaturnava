@@ -7,7 +7,9 @@
    decides, it asks for the game again every TableSettings.PollInterval. While a decision is timed, it
    counts down, and advances the game once time is up, for the server to decide for that seat. Once the
    game is over, the player may play it again, the same seats played the same way, or start a quick game.
-   If the server no longer has the game (restarted, say), it says so, stops asking, and offers the lobby. *@
+   If the server no longer has the game (restarted, say), it says so, stops asking, and offers the lobby.
+   Under it all, a quiet bar: the game's name and the way back to the lobby, the buttons that turn the
+   board, and the page's own settings. *@
 @implements IDisposable
 @inject IGameServing Games
 @inject TableSettings Settings
@@ -62,22 +64,13 @@
         </div>
 
         <div class="play">
-            <div class="board-area">
-                <Board View="view"
-                       Actions="this.Actions"
-                       Selection="this._selection"
-                       Turn="this._boardTurn"
-                       LastMove="this._lastMove"
-                       Pieces="this.Pieces"
-                       OnCellClicked="this.Click" />
-                <span class="turns">
-                    <button class="turn-left" title="Turn the board anticlockwise" @onclick="this.TurnLeft">&#x27F2;</button>
-                    <button class="turn-home" title="Your own view of the board" @onclick="() => this.TurnHome(view)">
-                        My view
-                    </button>
-                    <button class="turn-right" title="Turn the board clockwise" @onclick="this.TurnRight">&#x27F3;</button>
-                </span>
-            </div>
+            <Board View="view"
+                   Actions="this.Actions"
+                   Selection="this._selection"
+                   Turn="this._boardTurn"
+                   LastMove="this._lastMove"
+                   Pieces="this.Pieces"
+                   OnCellClicked="this.Click" />
 
             <div class="@(this._turn is null ? "turn" : "turn yours")">
                 @if (this._problem is { } trouble)
@@ -226,6 +219,24 @@
             </div>
         </div>
     }
+
+    <footer class="bar table-bar">
+        <span class="where">
+            <span class="brand">@(this._view?.RulesetName ?? "Zaturnava")</span>
+            <button class="leave" @onclick="this.OnLeave">Lobby</button>
+        </span>
+        @if (this._view is { } shown)
+        {
+            <span class="turns">
+                <button class="turn-left" title="Turn the board anticlockwise" @onclick="this.TurnLeft">&#x27F2;</button>
+                <button class="turn-home" title="Your own view of the board" @onclick="() => this.TurnHome(shown)">
+                    My view
+                </button>
+                <button class="turn-right" title="Turn the board clockwise" @onclick="this.TurnRight">&#x27F3;</button>
+            </span>
+        }
+        @this.PageSettings
+    </footer>
 </section>
 
 @code {
@@ -274,6 +285,10 @@
     /// <summary>How the pieces are drawn and named, the server's names being the traditional ones.</summary>
     [Parameter]
     public PieceSet Pieces { get; set; }
+
+    /// <summary>The page's own settings, for the table's bar.</summary>
+    [Parameter]
+    public RenderFragment? PageSettings { get; set; }
 
     [Parameter]
     public EventCallback OnLeave { get; set; }
