@@ -227,6 +227,27 @@ public sealed class GameViewsTest
     }
 
     [Fact]
+    public void ViewOf_WhenASeatHasGivenUpItsTurns_SaysItMayRejoinButNotProposeAgain()
+    {
+        // Arrange - Green gave up its turns; no proposal waits
+        GameState state = Rules.CreateInitialState() with
+        {
+            RollOff = [],
+            AwaitedDice = null,
+            Resigned = [new SeatId(2)],
+        };
+
+        // Act
+        GameViewDto view = GameViews.ViewOf(Snapshot(state), Bots);
+
+        // Assert
+        Assert.Equal(
+            ("False,False,True,False", "True,True,False,True"),
+            (Flags(view, seat => seat.MayRejoin), Flags(view, seat => seat.MayProposeEnd))
+        );
+    }
+
+    [Fact]
     public void ViewOf_WhenAPromotionIsDue_SaysWhereAndLabelsPassingAsLater()
     {
         // Arrange - Black's Pawn has just come to c8

@@ -129,6 +129,7 @@ public sealed class ClassicRules : IRulesApplying
                 DiceAction dice => this.Rolled(state, dice),
                 OfferAction offer => Offered(state, offer),
                 ProposeEndAction propose => this.Proposed(state, propose),
+                RejoinAction rejoin => this.Rejoined(state, rejoin),
                 _ => this.Decided(state, action),
             }
         );
@@ -136,6 +137,8 @@ public sealed class ClassicRules : IRulesApplying
     public bool MayOffer([Required] GameState state) => Ransom.MayOffer(state);
 
     public bool MayProposeEnd([Required] GameState state, SeatId seat) => Agreement.MayPropose(state, seat);
+
+    public bool MayRejoin([Required] GameState state, SeatId seat) => Agreement.MayRejoin(state, seat);
 
     /// <summary>
     /// A seat choosing where a piece goes home, answering an offer, or offering once its turn is over, has
@@ -372,6 +375,12 @@ public sealed class ClassicRules : IRulesApplying
         this.MayProposeEnd(state, propose.Actor)
             ? Agreement.Proposed(state, propose)
             : throw new IllegalActionException(propose);
+
+    /// <exception cref="IllegalActionException">The seat may not rejoin the game now.</exception>
+    private Transition Rejoined(GameState state, RejoinAction rejoin) =>
+        this.MayRejoin(state, rejoin.Actor)
+            ? Agreement.Rejoined(state, rejoin)
+            : throw new IllegalActionException(rejoin);
 
     /// <summary>
     /// A seat that has given up its turns passes on whatever it is left to decide that no timer decides

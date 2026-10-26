@@ -212,6 +212,14 @@
                         <button class="end-game" @onclick="this.AskToEnd">End game</button>
                     </div>
                 }
+                else if (this.Seating.Claim is { } back && view.Seats[back.Seat].MayRejoin)
+                {
+                    <div class="end-area">
+                        <button class="rejoin" @onclick="() => this.Submit(back, EndProposalDto.RejoinActionOf(back.Seat))">
+                            Rejoin game
+                        </button>
+                    </div>
+                }
             </div>
 
             <div class="log">

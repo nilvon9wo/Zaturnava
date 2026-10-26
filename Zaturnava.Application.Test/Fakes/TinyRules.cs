@@ -63,6 +63,8 @@ internal sealed class TinyRules(int length) : IRulesApplying
 
     public bool MayProposeEnd([Required] GameState state, SeatId seat) => seat.Value == SeatCount - 1;
 
+    public bool MayRejoin([Required] GameState state, SeatId seat) => false;
+
     public DecisionTimer? TimerOf([Required] GameState state) =>
         state.DecidingSeat?.Value == 1
             ? new DecisionTimer(Timer, new PassAction(new SeatId(1)))

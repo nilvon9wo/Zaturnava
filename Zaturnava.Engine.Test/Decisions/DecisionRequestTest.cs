@@ -52,6 +52,8 @@ file sealed class UnplayableRules : IRulesApplying
 
     public bool MayProposeEnd([Required] GameState state, SeatId seat) => throw new NotSupportedException();
 
+    public bool MayRejoin([Required] GameState state, SeatId seat) => throw new NotSupportedException();
+
     public DecisionTimer TimerOf([Required] GameState state) => throw new NotSupportedException();
 
     public GameAction Parse([Required] ActionDescriptor descriptor) => throw new NotSupportedException();

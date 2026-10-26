@@ -7,7 +7,7 @@ namespace Net.NowhereAtAll.Zaturnava.Contracts;
 /// with <see cref="Bot"/> naming the bot for the last, and <see cref="BotId"/> saying which bot it is,
 /// to start another game with it - and the pieces it holds prisoner. <see cref="HasGivenUp"/> says that
 /// it gave up its turns, proposing to end the game; <see cref="MayProposeEnd"/>, that it may propose so
-/// now.
+/// now; <see cref="MayRejoin"/>, that it may take its turns back now.
 /// </summary>
 public sealed record SeatDto(
     int Id,
@@ -19,5 +19,6 @@ public sealed record SeatDto(
     ImmutableList<PrisonerDto> Prisoners,
     string? BotId = null,
     bool HasGivenUp = false,
-    bool MayProposeEnd = false
+    bool MayProposeEnd = false,
+    bool MayRejoin = false
 );

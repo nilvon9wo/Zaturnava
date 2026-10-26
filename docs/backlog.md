@@ -136,4 +136,5 @@ After playing against Argus (2026-10-25):
 - **20, 21, 22, 26** (more) Ending the game by agreement (rules §10): a red End game button, apart
   from the turn's other buttons, proposes it, waiting for the others or passing on all one's turns
   meanwhile. Each other player is asked in turn, against the clock, no answer counting as no; if all
-  agree, points decide, and if one refuses, the game goes on where it was.
+  agree, points decide, and if one refuses, the game goes on where it was. A player who gave up their
+  turns may rejoin the game with a green Rejoin game button, which takes the End game button's place.

@@ -59,6 +59,8 @@ internal sealed class ScoringRules(ImmutableDictionary<GameAction, int> points) 
 
     public bool MayProposeEnd([Required] GameState state, SeatId seat) => false;
 
+    public bool MayRejoin([Required] GameState state, SeatId seat) => false;
+
     public DecisionTimer TimerOf([Required] GameState state) => throw new NotSupportedException();
 
     public GameAction Parse([Required] ActionDescriptor descriptor) => throw new NotSupportedException();

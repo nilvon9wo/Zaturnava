@@ -72,6 +72,7 @@ public sealed class ActionParserTest
         new HandOverAction(new SeatId(1), new SeatId(3)),
         new ProposeEndAction(new SeatId(2), Resigns: true),
         new AnswerEndAction(new SeatId(0), Agrees: false),
+        new RejoinAction(new SeatId(3)),
     ];
 
     [Theory]

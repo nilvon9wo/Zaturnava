@@ -18,4 +18,19 @@ public sealed class EndProposalDtoTest
             (action.Kind, action.Arguments[ActionArguments.Actor], action.Arguments[EndProposalDto.ResignsArgument])
         );
     }
+
+    [Fact]
+    public void RejoinActionOf_WhenRejoining_SaysWhoRejoins()
+    {
+        // Arrange - nothing beyond the seat
+
+        // Act
+        ActionDto action = EndProposalDto.RejoinActionOf(3);
+
+        // Assert
+        Assert.Equal(
+            ("rejoin", "3", 1),
+            (action.Kind, action.Arguments[ActionArguments.Actor], action.Arguments.Count)
+        );
+    }
 }

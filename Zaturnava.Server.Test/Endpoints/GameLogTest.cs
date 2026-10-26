@@ -95,7 +95,8 @@ public sealed class GameLogTest
             new EndAgreed(Yellow),
             new EndRefused(Green),
             new EndProposed(Red, true),
-            new TurnGivenUp(Red)
+            new TurnGivenUp(Red),
+            new Rejoined(Red)
         );
 
         // Act
@@ -109,6 +110,7 @@ public sealed class GameLogTest
                 "ending 2: Green would rather play on, so the game goes on.",
                 "ending 3: Red proposed ending the game, and gave up their turns.",
                 "passed 3: Red has given up their turns, so passes.",
+                "ending 3: Red rejoined the game, and plays their turns again.",
             ],
             log.Select(Told)
         );
