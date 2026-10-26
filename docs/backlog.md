@@ -23,7 +23,9 @@ did them.
 - **21, 22, 26** (rest) Ending the game by agreement; the idle-rounds safety net as a per-game
   setting.
 - **20** Offer to end the game, for the other players to accept.
-- Escape on doubles (§7), boat triumph (§9), the empire bonus (§5).
+- Escape on doubles (§7), the empire bonus (§5): next, with the grand game's
+  [Stage 0](grand/roadmap.md#stage-0--finish-what-the-grand-game-inherits).
+- Boat triumph (§9): a nice-to-have; the condition is so unlikely that no one may miss it.
 - Ransom (§8): the receiving player choosing among equidistant squares; bots that offer during their turn.
 - The commanded-captures toggle (`control.enemyArmyCaptures`) as a per-game setting.
 
