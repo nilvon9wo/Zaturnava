@@ -46,6 +46,12 @@ public interface IRulesApplying
     /// </summary>
     bool MayProposeEnd([Required] GameState state, SeatId seat);
 
+    /// <summary>
+    /// Whether <paramref name="seat"/>, having given up its turns, may take them back now. Like a proposal,
+    /// it may, whoever decides: <see cref="Apply"/> takes a rejoining from a seat this allows.
+    /// </summary>
+    bool MayRejoin([Required] GameState state, SeatId seat);
+
     /// <summary>How the deciding seat's decision is timed; null if it may take as long as it likes.</summary>
     DecisionTimer? TimerOf([Required] GameState state);
 

@@ -17,6 +17,8 @@
     --problem: #ff7b7b;
     --danger: #c62828;
     --danger-ink: #ffffff;
+    --go: #2e7d32;
+    --go-ink: #ffffff;
     --seat-0: #2b2b2b;
     --seat-0-ink: #f4f4f4;
     --seat-1: #e3c21a;
@@ -46,6 +48,8 @@
     --problem: #b00020;
     --danger: #b71c1c;
     --danger-ink: #ffffff;
+    --go: #1b5e20;
+    --go-ink: #ffffff;
     --piece-edge: #ffffff;
     color-scheme: light;
 }
@@ -253,6 +257,15 @@ html { scrollbar-gutter: stable; }
     font-weight: 700;
 }
 .end-game:hover { border-color: var(--danger-ink); }
+
+/* Taking back the turns given up: green, where the End game button was. */
+.rejoin {
+    background: var(--go);
+    color: var(--go-ink);
+    border-color: var(--go);
+    font-weight: 700;
+}
+.rejoin:hover { border-color: var(--go-ink); }
 
 /* A question the player must answer before anything else, over the whole page. */
 .backdrop {

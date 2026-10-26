@@ -115,7 +115,8 @@ internal static class GameViews
                 .Select(prisoner => PrisonerOf(snapshot.Rules, prisoner))],
             botId,
             snapshot.State.Resigned.Contains(seat),
-            snapshot.Rules.MayProposeEnd(snapshot.State, seat)
+            snapshot.Rules.MayProposeEnd(snapshot.State, seat),
+            snapshot.Rules.MayRejoin(snapshot.State, seat)
         );
     }
 

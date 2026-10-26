@@ -167,6 +167,12 @@ file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bo
                 refused.Seat,
                 $"{this.Name(refused.Seat)} would rather play on, so the game goes on."
             ),
+            Rejoined rejoined => this.Add(
+                number,
+                EventDto.Ending,
+                rejoined.Seat,
+                $"{this.Name(rejoined.Seat)} rejoined the game, and plays their turns again."
+            ),
             TurnGivenUp givenUp => this.Add(
                 number,
                 EventDto.Passed,

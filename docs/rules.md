@@ -527,6 +527,9 @@ both the triumphing player and their ally may move each other's Boat.
     player who chose not to wait passes on all their turns from then on,
     unless, and until, their ally may be their regent (§6.2), who then takes
     those turns for them.
+  - *(Stated 2026-10-26)* Once they have given up their turns, the End game
+    button becomes a green **Rejoin game** button, which takes their turns
+    back: they are in the game again, playing their own turns.
   - *(Proposed)* The details:
     - Any player still playing may propose it at any time, on anyone's turn,
       except while the dice are awaited (the roll-off included) or another
@@ -542,6 +545,10 @@ both the triumphing player and their ally may move each other's Boat.
       window to offer ransoms once their turn is over (§8).
     - At the start of their turn, their ally takes it as regent if they may
       (§6.2); otherwise the turn passes.
+    - Rejoining may be done on anyone's turn, but not while a proposal waits
+      for its answers. A turn already handed to the regent stays with them
+      to its end. Having given up their turns, a player cannot propose again
+      until they rejoin.
     - Bots agree only when their team leads on points.
   - **[toggle group: `gameEnd.safetyNet.*`]** — because unattended games
     (bot vs. bot, or an abandoned async game) can't rely on human judgment to

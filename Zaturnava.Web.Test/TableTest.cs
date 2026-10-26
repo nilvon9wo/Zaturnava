@@ -988,6 +988,34 @@ public sealed class TableTest : IDisposable
     }
 
     [Fact]
+    public void Rejoin_WhenTheSeatGaveUpItsTurns_IsOfferedInsteadOfEndingTheGameAndTakesThemBack()
+    {
+        // Arrange
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Seats = FakeGameServer.SeatZeroToMove.Seats.SetItem(
+                0,
+                FakeGameServer.SeatZeroToMove.Seats[0] with { HasGivenUp = true, MayRejoin = true }
+            ),
+        };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        int ending = table.FindAll("button.end-game").Count;
+
+        // Act
+        table.Find("button.rejoin").Click();
+
+        // Assert
+        Assert.Equal(
+            (0, "rejoin", "0"),
+            (
+                ending,
+                this._page.Server.Submitted?.Action.Kind,
+                this._page.Server.Submitted?.Action.Arguments[ActionArguments.Actor]
+            )
+        );
+    }
+
+    [Fact]
     public void EndGame_WhenCancelled_KeepsPlaying()
     {
         // Arrange

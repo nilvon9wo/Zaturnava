@@ -1983,7 +1983,8 @@ public sealed class ClassicRulesTest
     [InlineData("dice awaited")]
     [InlineData("rolling off")]
     [InlineData("no pieces")]
-    public void MayProposeEnd_WhenTheGameCannotPause_IsFalse(string situation)
+    [InlineData("gave up")]
+    public void MayProposeEnd_WhenTheGameCannotPauseOrTheSeatGaveUp_IsFalse(string situation)
     {
         // Arrange - Red has no pieces left in the ransoms' position
         GameState playing = this.Regency(hasBlackRaja: true, Grid.CellAt(6, 2));
@@ -1993,6 +1994,7 @@ public sealed class ClassicRulesTest
             "proposal waiting" => (playing with { Proposal = new EndProposal(Yellow, false, Black, null) }, Black),
             "dice awaited" => (playing with { AwaitedDice = new DiceRequest(2, 6) }, Black),
             "rolling off" => (this._rules.CreateInitialState() with { AwaitedDice = null }, Black),
+            "gave up" => (playing with { Resigned = [Black] }, Black),
             _ => (this.Ransoms(), Red),
         };
 
@@ -2001,6 +2003,61 @@ public sealed class ClassicRulesTest
 
         // Assert
         Assert.False(mayPropose);
+    }
+
+    [Fact]
+    public void Apply_WhenASeatThatGaveUpRejoins_PlaysItsOwnTurnsAgain()
+    {
+        // Arrange - Black's turn; Yellow gave up its turns
+        GameState state = this.Regency(hasBlackRaja: true, Grid.CellAt(6, 2)) with { Resigned = [Yellow] };
+
+        // Act
+        Transition rejoined = this._rules.Apply(state, new RejoinAction(Yellow));
+        Transition passed = this._rules.Apply(rejoined.State, new PassAction(Black));
+
+        // Assert
+        Assert.Equal(
+            (Black, true, new Rejoined(Yellow)),
+            (rejoined.State.DecidingSeat, rejoined.State.Resigned.IsEmpty, rejoined.Events.Single())
+        );
+        Assert.Equal([new TurnPassed(Black, Yellow)], passed.Events);
+    }
+
+    [Theory]
+    [InlineData("playing")]
+    [InlineData("proposal waiting")]
+    [InlineData("game over")]
+    public void MayRejoin_WhenTheSeatPlaysOnOrMayNotYet_IsFalse(string situation)
+    {
+        // Arrange - Black gave up its turns, unless still playing
+        GameState gaveUp = this.Regency(hasBlackRaja: true, Grid.CellAt(6, 2)) with { Resigned = [Black] };
+        GameState state = situation switch
+        {
+            "playing" => gaveUp with { Resigned = [] },
+            "proposal waiting" => gaveUp with { Proposal = new EndProposal(Black, true, Black, null) },
+            _ => gaveUp with { Outcome = new GameOutcome([], "over") },
+        };
+
+        // Act
+        (bool May, bool Before) mayRejoin = (this._rules.MayRejoin(state, Black), this._rules.MayRejoin(gaveUp, Black));
+
+        // Assert
+        Assert.Equal((false, true), mayRejoin);
+    }
+
+    [Fact]
+    public void Apply_WhenASeatMayNotRejoin_ThrowsIllegalActionException()
+    {
+        // Arrange - Yellow never gave up its turns
+        GameState state = this.Later();
+
+        // Act
+        IllegalActionException exception = Assert.Throws<IllegalActionException>(
+            () => this._rules.Apply(state, new RejoinAction(Yellow))
+        );
+
+        // Assert
+        Assert.Contains("is not legal now", exception.Message);
     }
 
     [Fact]

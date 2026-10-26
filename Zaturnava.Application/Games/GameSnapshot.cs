@@ -34,12 +34,19 @@ public sealed record GameSnapshot(
 
     /// <summary>
     /// Whether <paramref name="token"/> holds the seat that acts, and it may act now: it is deciding, or it
-    /// proposes ending the game, which a seat may do whoever decides, if the rules let it.
+    /// proposes ending the game, or rejoins it, which a seat may do whoever decides, if the rules let it.
     /// </summary>
     public bool MayAct([Required] GameAction action, [Required] string token) =>
-        (this.State.DecidingSeat == action.Actor
-            || (action is ProposeEndAction && this.Rules.MayProposeEnd(this.State, action.Actor)))
+        (this.State.DecidingSeat == action.Actor || this.MayActOutOfTurn(action))
         && this.Record.Controllers[action.Actor.Value].IsHeldBy(token);
+
+    private bool MayActOutOfTurn(GameAction action) =>
+        action switch
+        {
+            ProposeEndAction => this.Rules.MayProposeEnd(this.State, action.Actor),
+            RejoinAction => this.Rules.MayRejoin(this.State, action.Actor),
+            _ => false,
+        };
 
     private static Transition Replayed(IRulesApplying rules, Transition sofar, ActionDescriptor descriptor)
     {

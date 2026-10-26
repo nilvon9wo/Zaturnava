@@ -10,7 +10,7 @@ namespace Net.NowhereAtAll.Zaturnava.Variants.Classic;
 /// is, giving up its own turns meanwhile if it likes. The game waits while each other seat still playing
 /// answers, clockwise from the proposer - but for any that has given up its turns, which wants it over
 /// already. Once all have agreed, the game ends, and points decide; once one refuses, it goes on where
-/// it was.
+/// it was. A seat that gave up its turns may take them back, once no proposal waits.
 /// </summary>
 internal static class Agreement
 {
@@ -21,7 +21,14 @@ internal static class Agreement
         && state.Proposal is null
         && state.AwaitedDice is null
         && state.RollOff.IsEmpty
-        && GameEnd.IsPlaying(state, seat);
+        && GameEnd.IsPlaying(state, seat)
+        && !state.Resigned.Contains(seat);
+
+    public static bool MayRejoin(GameState state, SeatId seat) =>
+        state.Outcome is null && state.Proposal is null && state.Resigned.Contains(seat);
+
+    public static Transition Rejoined(GameState state, RejoinAction rejoin) =>
+        new(state with { Resigned = state.Resigned.Remove(rejoin.Actor) }, [new Rejoined(rejoin.Actor)]);
 
     public static Transition Proposed(GameState state, ProposeEndAction propose)
     {

@@ -305,6 +305,21 @@ public sealed class GameServiceTest
     }
 
     [Fact]
+    public async Task Submit_WhenASeatThatMayNotRejoinsOutOfTurn_ThrowsNotYourTurnException()
+    {
+        // Arrange - the first seat decides; the second never gave up its turns
+        GameId id = await this._service.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
+        string token = await this._service.Claim(id, Second, this._cancellation);
+        ActionDescriptor rejoin = new RejoinAction(Second).Describe();
+
+        // Act
+        Task<GameSnapshot> submitting = this._service.Submit(id, token, rejoin, this._cancellation);
+
+        // Assert
+        _ = await Assert.ThrowsAsync<NotYourTurnException>(() => submitting);
+    }
+
+    [Fact]
     public async Task Submit_WhenTheGameIsOver_ThrowsNotYourTurnException()
     {
         // Arrange
