@@ -25,7 +25,7 @@ Everything else here is specified but not yet played by the engine.
 | §2 Board & setup | Implemented: the 8×8 board, the pinwheel setup, teams of opposite seats, thrones. |
 | §3 Pieces & movement | Implemented, captures included. A piece moved for another army moves the way its own army faces; what it may take is §6.4. |
 | §4 Turns & dice | Implemented: the opening plays the die that won the roll-off, then a deliberate move, a pass or two dice, clockwise from the roll-off's winner; an unusable die is forfeit. Doubles let one piece move twice, or a prisoner escape (§7). The dice profile is the weighted d6 one; a d4 profile exists but cannot yet be chosen. |
-| §5 Captures & scoring | Partly: captures score by piece, with both throne bonuses. The empire bonus is not yet. |
+| §5 Captures & scoring | Implemented: captures score by piece, with both throne bonuses and the empire, as clarified below. |
 | §6 Throne control | Partly: the expanded pool (§6.1, both triggers) and the forced shared turn (§6.3). Voluntary regency (§6.2) is not yet. |
 | §6.4 Commanded captures | Implemented, with the toggle as a constructor argument. |
 | §7 Escape | Implemented, as clarified below: the escape takes the place of the double move and ends the turn. |
@@ -177,6 +177,15 @@ Points are never subtracted or returned when a piece is given back.
     the enemy rajas has returned to play and been captured again), and prior
     awards are never clawed back even if a captured raja is later ransomed
     back.
+  - *(Stated 2026-10-26)* The bonus is reckoned only when the last enemy
+    Raja is taken, never later. Every player of the capturing team who then
+    commands an ally's army scores the +1; the +2 (or +4) goes only to the
+    one who took that Raja, if they also command an ally. A player commands
+    an ally's army, for this, whoever's turn it is: their Raja sits on the
+    ally's throne, or the ally has no Raja while they have one (§6.1).
+  - *(Stated 2026-10-26)* The +2 for taking a Raja on its own throne is
+    scored as well as the empire's +4: taking the last enemy Raja on its
+    throne while commanding an ally scores 5 + 2 + 1 + 4.
 
 ## 6. Throne Control
 

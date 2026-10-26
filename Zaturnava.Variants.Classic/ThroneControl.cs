@@ -23,6 +23,14 @@ internal sealed class ThroneControl(ImmutableDictionary<SeatId, CellId> thrones)
             ? [occupied]
             : [seat, .. this.ThronesHeldBy(state, seat), .. RajalessAllies(state, seat)];
 
+    /// <summary>
+    /// Whether <paramref name="seat"/> commands an ally's army, whoever's turn it is: its Raja sits on the
+    /// ally's throne, or the ally has no Raja while it has one.
+    /// </summary>
+    public bool CommandsAnAlly(GameState state, SeatId seat) =>
+        RajalessAllies(state, seat).Any()
+        || this.ThronesHeldBy(state, seat).Any(throne => state.Teams.AreAllied(throne, seat));
+
     /// <summary>The seat whose throne <paramref name="cell"/> is; null if it is no one's.</summary>
     public SeatId? OwnerOf(CellId cell) =>
         this._owners.TryGetValue(cell, out SeatId owner)
