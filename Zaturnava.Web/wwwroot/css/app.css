@@ -92,21 +92,23 @@ select {
     padding: 4px 8px;
 }
 
+/* The page's own bar, at the foot of the page and in the background: its name, the way back to the
+   lobby, and its settings. */
 .bar {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 8px;
-    padding: 10px 0;
-    border-bottom: 1px solid var(--panel-edge);
-    margin-bottom: 12px;
+    padding: 6px 0 10px;
+    border-top: 1px solid var(--panel-edge);
+    margin-top: 12px;
+    font-size: 0.85rem;
+    color: var(--muted);
 }
 
-.bar .brand {
-    font-weight: 700;
-    font-size: 1.2rem;
-    margin-right: auto;
-    letter-spacing: 0.04em;
-}
+.bar .brand { font-weight: 700; letter-spacing: 0.04em; }
+.bar .settings { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
+.bar button { font-size: 0.85rem; padding: 2px 10px; }
 
 .problem { color: var(--problem); }
 
@@ -142,14 +144,10 @@ html { scrollbar-gutter: stable; }
 .games .players, .games .moves { color: var(--muted); margin-right: 8px; }
 
 /* Table */
-.table-bar {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 8px;
-}
-
-.table-bar h1 { font-size: 1.3rem; margin: 0 auto 0 8px; }
+/* The board, with the buttons that turn it just under it. */
+.board-area { display: flex; flex-direction: column; align-items: center; gap: 6px; min-height: 0; }
+.board-area .turns { display: flex; gap: 6px; }
+.board-area .turns button { padding: 2px 10px; }
 
 /* On a narrow screen, one above another: the teams, the board, the turn, the log. */
 .play {
@@ -413,7 +411,8 @@ html { scrollbar-gutter: stable; }
         grid-template-areas: "turn board" "log board";
     }
     .seats { order: 1; }
-    .board { grid-area: board; width: min(100cqh, 100cqw - 416px); }
+    .board-area { grid-area: board; }
+    .board { width: min(100cqh - 40px, 100cqw - 416px); }
     .turn { grid-area: turn; min-height: 0; overflow-y: auto; }
     .log { grid-area: log; max-height: none; }
 }
@@ -424,5 +423,5 @@ html { scrollbar-gutter: stable; }
         grid-template-rows: minmax(0, 1fr);
         grid-template-areas: "turn board log";
     }
-    .board { width: min(100cqh, 100cqw - 712px); }
+    .board { width: min(100cqh - 40px, 100cqw - 712px); }
 }

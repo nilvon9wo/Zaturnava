@@ -16,21 +16,6 @@
 @using System.Globalization
 
 <section class="table">
-    <header class="table-bar">
-        <button class="leave" @onclick="this.OnLeave">Lobby</button>
-        @if (this._view is { } heading)
-        {
-            <h1>@heading.RulesetName</h1>
-            <span class="turns">
-                <button class="turn-left" title="Turn the board anticlockwise" @onclick="this.TurnLeft">&#x27F2;</button>
-                <button class="turn-home" title="Your own view of the board" @onclick="() => this.TurnHome(heading)">
-                    My view
-                </button>
-                <button class="turn-right" title="Turn the board clockwise" @onclick="this.TurnRight">&#x27F3;</button>
-            </span>
-        }
-    </header>
-
     @if (this._problem is { } problem && this._view is null)
     {
         <p class="problem" role="alert">@problem</p>
@@ -77,13 +62,22 @@
         </div>
 
         <div class="play">
-            <Board View="view"
-                   Actions="this.Actions"
-                   Selection="this._selection"
-                   Turn="this._boardTurn"
-                   LastMove="this._lastMove"
-                   Pieces="this.Pieces"
-                   OnCellClicked="this.Click" />
+            <div class="board-area">
+                <Board View="view"
+                       Actions="this.Actions"
+                       Selection="this._selection"
+                       Turn="this._boardTurn"
+                       LastMove="this._lastMove"
+                       Pieces="this.Pieces"
+                       OnCellClicked="this.Click" />
+                <span class="turns">
+                    <button class="turn-left" title="Turn the board anticlockwise" @onclick="this.TurnLeft">&#x27F2;</button>
+                    <button class="turn-home" title="Your own view of the board" @onclick="() => this.TurnHome(view)">
+                        My view
+                    </button>
+                    <button class="turn-right" title="Turn the board clockwise" @onclick="this.TurnRight">&#x27F3;</button>
+                </span>
+            </div>
 
             <div class="@(this._turn is null ? "turn" : "turn yours")">
                 @if (this._problem is { } trouble)
