@@ -1390,6 +1390,43 @@ public sealed class TableTest : IDisposable
     }
 
     [Fact]
+    public void Render_WhenPiecesOfTwoEnemyArmiesMayBePromotedInto_ShowsEachArmyApartTheMostValuableFirst()
+    {
+        // Arrange - Black holds Red's Raja 12 and Horse 13, and Yellow's Horse 9, listed by worth
+        GameViewDto promotions = Promotions();
+        this._page.Server.View = promotions with
+        {
+            PromotionDue = 2,
+            Seats =
+            [
+                promotions.Seats[0] with
+                {
+                    Prisoners =
+                    [
+                        new PrisonerDto(9, "horse", "Horse", 1),
+                        new PrisonerDto(12, "raja", "Raja", 3),
+                        new PrisonerDto(13, "horse", "Horse", 3),
+                    ],
+                },
+                promotions.Seats[1] with { Prisoners = [] },
+                promotions.Seats[2],
+                new SeatDto(3, "Red", promotions.Seats[1].Team, 0, "open", null, []),
+            ],
+            LegalActions = [FakeGameServer.Pass, Promotion(12), Promotion(9), Promotion(13)],
+        };
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Assert
+        Assert.Equal(
+            ["Yellow's Horse", "Red's Raja|Red's Horse"],
+            table.FindAll(".promotion-choices")
+                .Select(army => string.Join('|', army.QuerySelectorAll(".name").Select(name => name.TextContent)))
+        );
+    }
+
+    [Fact]
     public void Render_WhenAPawnMayBePromoted_RingsItWithoutOpeningItsMenu()
     {
         // Arrange
