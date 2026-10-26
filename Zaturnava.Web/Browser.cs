@@ -17,6 +17,8 @@ internal sealed class Browser(IJSRuntime js)
     private const string ThemeKey = "zaturnava.theme";
     private const string SoundKey = "zaturnava.sound";
     private const string PiecesKey = "zaturnava.pieces";
+    private const string LogKey = "zaturnava.log";
+    private const string Everything = "everything";
     private const string ChessPieces = "chess";
     private const string Off = "off";
 
@@ -54,6 +56,12 @@ internal sealed class Browser(IJSRuntime js)
 
     public ValueTask SetPieces(PieceSet pieces) =>
         this.Save(PiecesKey, pieces == PieceSet.Chess ? ChessPieces : "traditional");
+
+    /// <summary>Whether the log shows only its highlights: it does unless the player chose to see everything.</summary>
+    public async ValueTask<bool> IsLogHighlightsOnly() => await this.Load(LogKey) != Everything;
+
+    public ValueTask SetLogHighlightsOnly(bool isHighlightsOnly) =>
+        this.Save(LogKey, isHighlightsOnly ? "highlights" : Everything);
 
     private ValueTask<string?> Load(string key) => this._js.InvokeAsync<string?>("zaturnava.load", key);
 

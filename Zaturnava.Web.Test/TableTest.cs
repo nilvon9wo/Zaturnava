@@ -310,20 +310,23 @@ public sealed class TableTest : IDisposable
     }
 
     [Fact]
-    public void Click_WhenHighlightsOnlyIsChosen_ShowsOnlyWhatScoredUntilChosenAgain()
+    public void Click_WhenOnlyTheHighlightsAreShown_ShowsEverythingAndRemembersIt()
     {
-        // Arrange
+        // Arrange - nothing chosen yet, so only what scored is shown
         this._page.Server.View = FakeGameServer.SeatZeroToMove with { Log = [Rolled, Moved, Captured] };
         IRenderedComponent<Table> table = this.Render(SeatZero);
+        (int, string) highlights =
+            (table.FindAll("ol.events li").Count, table.Find("button.log-filter").GetAttribute("aria-pressed")!);
 
         // Act
         table.Find("button.log-filter").Click();
-        int highlights = table.FindAll("ol.events li").Count;
-        string pressed = table.Find("button.log-filter").GetAttribute("aria-pressed")!;
-        table.Find("button.log-filter").Click();
 
         // Assert
-        Assert.Equal((1, "true", 3), (highlights, pressed, table.FindAll("ol.events li").Count));
+        Assert.Equal(((1, "true"), 3), (highlights, table.FindAll("ol.events li").Count));
+        Assert.Equal(
+            ["zaturnava.log", "everything"],
+            this._page.JSInterop.Invocations["zaturnava.save"].Single().Arguments
+        );
     }
 
     [Fact]
@@ -341,7 +344,8 @@ public sealed class TableTest : IDisposable
     [Fact]
     public void Render_WhenThingsHaveHappened_ListsThemNewestFirstAndTintsTheLastMove()
     {
-        // Arrange
+        // Arrange - the player chose to see everything
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.log").SetResult("everything");
         this._page.Server.View = FakeGameServer.SeatZeroToMove with { Log = [Rolled, Moved] };
 
         // Act

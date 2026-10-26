@@ -257,7 +257,7 @@
     private BoardSelection _selection = BoardSelection.None;
     private BoardTurn _boardTurn = BoardTurn.None;
     private ImmutableHashSet<int> _lastMove = [];
-    private bool _isHighlightsOnly;
+    private bool _isHighlightsOnly = true;
     private DateTimeOffset? _deadline;
     private int? _receiver;
     private ImmutableHashSet<int> _given = [];
@@ -274,7 +274,11 @@
     private IEnumerable<EventDto> Shown(GameViewDto view) =>
         view.Log.Reverse().Where(happened => !this._isHighlightsOnly || Highlights.Contains(happened.Kind));
 
-    private void ToggleHighlights() => this._isHighlightsOnly = !this._isHighlightsOnly;
+    private async Task ToggleHighlights()
+    {
+        this._isHighlightsOnly = !this._isHighlightsOnly;
+        await this.Browser.SetLogHighlightsOnly(this._isHighlightsOnly);
+    }
 
     [Parameter, EditorRequired]
     public Seating Seating { get; set; } = null!;
@@ -301,6 +305,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        this._isHighlightsOnly = await this.Browser.IsLogHighlightsOnly();
         await this.Refresh();
         this._boardTurn = this._view is null ? BoardTurn.None : BoardTurn.HomeOf(this.Seating.Claim?.Seat, this._view);
     }
