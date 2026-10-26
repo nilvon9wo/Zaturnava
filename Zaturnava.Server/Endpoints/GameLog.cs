@@ -101,7 +101,7 @@ file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bo
             PieceMoved moved => this.Moved(number, moved),
             PieceCaptured captured => this.Captured(number, captured),
             CommandBegun begun => this.Add(number, EventDto.Command, begun.Commander, this.Begun(begun)),
-            CommandEnded ended => this.Add(
+            CommandEnded ended => this.Ended(
                 number,
                 EventDto.Command,
                 ended.Commander,
@@ -113,7 +113,7 @@ file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bo
                 empire.Rulers[0],
                 $"{GameLog.Listed(this.Rules, empire.Rulers)} now rule an empire: no enemy Raja is left on the board."
             ),
-            EmpireEnded fallen => this.Add(
+            EmpireEnded fallen => this.Ended(
                 number,
                 EventDto.Empire,
                 fallen.Rulers[0],
@@ -275,7 +275,16 @@ file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bo
         Piece piece = returned.Piece;
         string cell = this.Rules.Topology.NameOf(returned.Cell);
         string text = $"{this.Name(piece.Owner)}'s {this.Rules.NameOf(piece.Kind)} went home, to {cell}.";
-        EventDto told = new(number, EventDto.Ransom, piece.Owner.Value, text, null, returned.Cell.Value);
+        EventDto told = new(
+            number,
+            EventDto.Ransom,
+            piece.Owner.Value,
+            text,
+            null,
+            returned.Cell.Value,
+            piece.Owner.Value,
+            this.Rules.IsLeader(piece.Kind)
+        );
         return this with { Told = this.Told.Add(told) };
     }
 
@@ -288,8 +297,16 @@ file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bo
         string text = piece.Owner == escaped.EscapedBy
             ? $"{this.Name(piece.Owner)}'s {kind} escaped, to {cell}."
             : $"{this.Name(escaped.EscapedBy)} let {this.Name(piece.Owner)}'s {kind} escape, to {cell}.";
-        EventDto told =
-            new(number, EventDto.Escaped, escaped.EscapedBy.Value, text, null, escaped.Cell.Value, piece.Owner.Value);
+        EventDto told = new(
+            number,
+            EventDto.Escaped,
+            escaped.EscapedBy.Value,
+            text,
+            null,
+            escaped.Cell.Value,
+            piece.Owner.Value,
+            this.Rules.IsLeader(piece.Kind)
+        );
         return this with { Told = this.Told.Add(told), LastMoved = piece };
     }
 
@@ -351,6 +368,10 @@ file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bo
 
     private Teller Add(int number, string kind, SeatId seat, string text) =>
         this with { Told = this.Told.Add(new EventDto(number, kind, seat.Value, text, null, null)) };
+
+    /// <summary>A command or an empire over.</summary>
+    private Teller Ended(int number, string kind, SeatId seat, string text) =>
+        this with { Told = this.Told.Add(new EventDto(number, kind, seat.Value, text, null, null, IsOver: true)) };
 
     private string Name(SeatId seat) => this.Rules.NameOf(seat);
 

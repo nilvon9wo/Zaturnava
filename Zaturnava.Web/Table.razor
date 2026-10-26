@@ -352,6 +352,12 @@
     private const string Rescued = "rescued";
     private const string Triumph = "triumph";
     private const string Lament = "lament";
+    private const string Restored = "restored";
+    private const string Dread = "dread";
+    private const string Rally = "rally";
+    private const string Menace = "menace";
+    private const string Glory = "glory";
+    private const string Doom = "doom";
 
     private static readonly BoardActions NoActions = new([]);
 
@@ -771,51 +777,75 @@
         this._lastMove = view.Log.LastOrDefault(happened => happened.Kind == EventDto.Moved) is { } moved
             ? [moved.From!.Value, moved.To!.Value]
             : [];
-        string? sound = this.SoundOf(view, isFirst, wasTheirTurn);
+        ImmutableList<string> sounds = this.SoundsOf(view, isFirst, wasTheirTurn);
         this._notice = this.NoticeOf(view, isFirst, wasTheirTurn);
         this._heard = view.Log.Count > 0 ? view.Log[^1].Number : this._heard;
-        await (sound is not null && this.IsSoundOn ? this.Browser.Play(sound) : ValueTask.CompletedTask);
+        await (!sounds.IsEmpty && this.IsSoundOn ? this.Browser.Play(sounds) : ValueTask.CompletedTask);
         _ = this._poll.Change(this.Wait(view), Timeout.InfiniteTimeSpan);
     }
 
     /// <summary>
-    /// The sound for what happened since the last view: a Raja of the player's team taken, an enemy's piece
-    /// escaping, an enemy Raja taken, or a piece of the player's team escaping; a turn come round, a capture, a
-    /// move, a roll.
+    /// The sounds for what happened since the last view, one after another: what befell a piece (a Raja of the
+    /// player's team taken, an enemy Raja back on the board, an enemy's piece escaping, an enemy Raja taken, a
+    /// Raja of the player's team back, or a piece of it escaping), then how power shifted (an empire, or
+    /// command of an army, begun or ended, for the player's team or against it); else a turn come round, a
+    /// capture, a move, a roll.
     /// </summary>
-    private string? SoundOf(GameViewDto view, bool isFirst, bool wasTheirTurn)
+    private ImmutableList<string> SoundsOf(GameViewDto view, bool isFirst, bool wasTheirTurn)
     {
         ImmutableList<EventDto> fresh = [.. view.Log.Where(happened => happened.Number > this._heard)];
         ImmutableHashSet<int> ours = [.. this.TeamsOf(view).Where(this.IsMine).SelectMany(team => team).Select(seat => seat.Id)];
         ImmutableHashSet<string> kinds =
         [
             .. fresh.Select(happened => happened.Kind),
-            .. fresh.Where(happened => happened.Kind == EventDto.Escaped)
-                .Select(escaped => TeamSoundOf(ours, escaped, (EventDto.Moved, Rescued, Alarm))),
+            .. fresh.Where(happened => happened is { Kind: EventDto.Escaped, IsLeader: false })
+                .Select(escaped => TeamSoundOf(ours, escaped.Owner, (EventDto.Moved, Rescued, Alarm))),
+            .. fresh.Where(happened => happened is { Kind: EventDto.Escaped or EventDto.Ransom, IsLeader: true })
+                .Select(back => TeamSoundOf(ours, back.Owner, (EventDto.Moved, Restored, Dread))),
             .. fresh.Where(happened => happened is { Kind: EventDto.Captured, IsLeader: true })
-                .Select(taken => TeamSoundOf(ours, taken, (EventDto.Captured, Lament, Triumph))),
+                .Select(taken => TeamSoundOf(ours, taken.Owner, (EventDto.Captured, Lament, Triumph))),
+            .. fresh.Where(happened => happened.Kind == EventDto.Command)
+                .Select(command => PowerSoundOf(ours, command, (Rally, Menace))),
+            .. fresh.Where(happened => happened.Kind == EventDto.Empire)
+                .Select(empire => PowerSoundOf(ours, empire, (Glory, Doom))),
         ];
-        string? telling = new[] { Lament, Alarm, Triumph, Rescued }.FirstOrDefault(kinds.Contains);
-        return (isFirst, telling, this._turn is not null && !wasTheirTurn) switch
+        ImmutableList<string> telling =
+        [
+            .. new[] { Lament, Dread, Alarm, Triumph, Restored, Rescued }.Where(kinds.Contains).Take(1),
+            .. new[] { Doom, Menace, Glory, Rally }.Where(kinds.Contains).Take(1),
+        ];
+        return (isFirst, telling.IsEmpty, this._turn is not null && !wasTheirTurn) switch
         {
-            (true, _, _) => null,
-            (_, { } heard, _) => heard,
-            (_, _, true) => "turn",
-            _ => new[] { EventDto.Captured, EventDto.Moved, EventDto.Rolled }.FirstOrDefault(kinds.Contains),
+            (true, _, _) => [],
+            (_, false, _) => telling,
+            (_, _, true) => ["turn"],
+            _ => [.. new[] { EventDto.Captured, EventDto.Moved, EventDto.Rolled }.Where(kinds.Contains).Take(1)],
         };
     }
 
     /// <summary>
-    /// The sound for something that happened to a piece, by whose it is: of the player's own team (a cheer
-    /// for an escape, a lament for a Raja taken), or an enemy's (an alarm, a fanfare); for someone only
-    /// watching, the plain sound.
+    /// The sound for a shift of power: good for the player's team, if the commander or rulers are of it and it
+    /// begins, or are not and it ends; else bad; for someone only watching, none.
+    /// </summary>
+    private static string PowerSoundOf(ImmutableHashSet<int> ours, EventDto happened, (string Good, string Bad) sounds) =>
+        (ours.IsEmpty, ours.Contains(happened.Seat) != happened.IsOver) switch
+        {
+            (true, _) => happened.Kind,
+            (_, true) => sounds.Good,
+            _ => sounds.Bad,
+        };
+
+    /// <summary>
+    /// The sound for something that happened to a piece, by whose it is (its <paramref name="owner"/>): of the
+    /// player's own team (a cheer for an escape, a lament for a Raja taken), or an enemy's (an alarm, a
+    /// fanfare); for someone only watching, the plain sound.
     /// </summary>
     private static string TeamSoundOf(
         ImmutableHashSet<int> ours,
-        EventDto happened,
+        int? owner,
         (string Watched, string Ours, string Theirs) sounds
     ) =>
-        (ours.IsEmpty, ours.Contains(happened.Owner.GetValueOrDefault())) switch
+        (ours.IsEmpty, ours.Contains(owner.GetValueOrDefault())) switch
         {
             (true, _) => sounds.Watched,
             (_, true) => sounds.Ours,

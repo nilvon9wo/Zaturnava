@@ -543,6 +543,17 @@ public sealed class TableTest : IDisposable
             { [Rolled, Escaped(1), RajaTaken(0)], "triumph" },
             { [Escaped(0), RajaTaken(0)], "alarm" },
             { [Escaped(0), RajaTaken(1)], "lament" },
+            { [RajaBack(EventDto.Escaped, 1)], "restored" },
+            { [RajaBack(EventDto.Escaped, 0)], "dread" },
+            { [RajaBack(EventDto.Ransom, 0), RajaTaken(0)], "dread" },
+            { [Power(EventDto.Command, 1, isOver: false)], "rally" },
+            { [Power(EventDto.Command, 0, isOver: false)], "menace" },
+            { [Power(EventDto.Command, 0, isOver: true)], "rally" },
+            { [Power(EventDto.Command, 1, isOver: true)], "menace" },
+            { [Power(EventDto.Empire, 1, isOver: false)], "glory" },
+            { [Power(EventDto.Empire, 0, isOver: false)], "doom" },
+            { [Power(EventDto.Command, 1, isOver: false), Power(EventDto.Empire, 0, isOver: false)], "doom" },
+            { [RajaTaken(0), Power(EventDto.Command, 0, isOver: false)], "triumph,menace" },
         };
 
     [Fact]
@@ -559,6 +570,26 @@ public sealed class TableTest : IDisposable
         // Assert
         table.WaitForAssertion(() => Assert.Equal("The game is over.", table.Find("p.status").TextContent));
         Assert.Equal("captured", string.Join(",", Played(page)));
+    }
+
+    [Fact]
+    public void Sound_WhenOnlyWatchingARajaComeBackAndCommandChange_PlaysAMove()
+    {
+        // Arrange
+        using PageContext page = new(TimeSpan.FromMilliseconds(10));
+        IRenderedComponent<Table> table =
+            page.Render<Table>(parameters => parameters.Add(x => x.Seating, Seating.Watching(FakeGameServer.GameId)));
+
+        // Act
+        page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            DecidingSeat = null,
+            Log = [RajaBack(EventDto.Escaped, 0), Power(EventDto.Command, 0, isOver: false)],
+        };
+
+        // Assert
+        table.WaitForAssertion(() => Assert.Equal("The game is over.", table.Find("p.status").TextContent));
+        Assert.Equal("moved", string.Join(",", Played(page)));
     }
 
     [Fact]
@@ -730,7 +761,7 @@ public sealed class TableTest : IDisposable
         table.Find("svg.board > g").GetAttribute("transform") ?? string.Empty;
 
     private static IEnumerable<string> Played(PageContext page) =>
-        page.JSInterop.Invocations["zaturnava.play"].Select(call => (string)call.Arguments[0]!);
+        page.JSInterop.Invocations["zaturnava.play"].SelectMany(call => call.Arguments.Select(sound => (string)sound!));
 
     private IRenderedComponent<Table> Render(Seating seating) =>
         this._page.Render<Table>(parameters => parameters.Add(x => x.Seating, seating));
@@ -1567,6 +1598,14 @@ public sealed class TableTest : IDisposable
 
     private static EventDto Escaped(int owner) =>
         new(7 + owner, EventDto.Escaped, 1, "A piece escaped.", null, 9, owner);
+
+    /// <summary>A Raja of <paramref name="owner"/>'s back on the board, escaped or ransomed home.</summary>
+    private static EventDto RajaBack(string kind, int owner) =>
+        new(20 + owner, kind, owner, "A Raja is back.", null, 9, owner, IsLeader: true);
+
+    /// <summary>A command, or an empire, of <paramref name="seat"/>'s begun or over.</summary>
+    private static EventDto Power(string kind, int seat, bool isOver) =>
+        new(30 + seat, kind, seat, "Power shifted.", null, null, IsOver: isOver);
 
     /// <summary>Yellow, a bot, to move, once Black has lost the dice it rolled.</summary>
     private static GameViewDto Forfeited() =>

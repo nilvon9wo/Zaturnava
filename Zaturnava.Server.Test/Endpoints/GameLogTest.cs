@@ -119,6 +119,27 @@ public sealed class GameLogTest
             ],
             log.Select(Told)
         );
+        Assert.Equal([false, false, false, false, true, false, true], log.Select(happened => happened.IsOver));
+    }
+
+    [Fact]
+    public void LatestOf_WhenARajaEscapesOrGoesHome_SaysWhoseLeaderItIs()
+    {
+        // Arrange
+        GameSnapshot snapshot = Snapshot(
+            new PieceEscaped(RedRaja, Cell("h4"), Yellow),
+            new PieceReturned(RedRaja, Cell("h4")),
+            new PieceReturned(Pawn, Cell("a7"))
+        );
+
+        // Act
+        ImmutableList<EventDto> log = GameLog.LatestOf(snapshot);
+
+        // Assert
+        Assert.Equal(
+            [(Red.Value, true), (Red.Value, true), (Yellow.Value, false)],
+            log.Select(happened => (happened.Owner.GetValueOrDefault(), happened.IsLeader))
+        );
     }
 
     [Fact]
