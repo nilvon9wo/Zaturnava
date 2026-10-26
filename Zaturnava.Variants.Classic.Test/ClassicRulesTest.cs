@@ -2020,14 +2020,49 @@ public sealed class ClassicRulesTest
         );
     }
 
-    [Fact]
-    public void Apply_WhenATurnEndsWithPrisonersHeldByASeatThatGaveUp_PassesTheTurnWithoutARansomWindow()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Apply_WhenPassingWhileItMayOffer_PassesTheTurnWithoutARansomWindow(bool hasRolled)
     {
-        // Arrange - Black holds prisoners, but gave up its turns while deciding
-        GameState state = this.Ransoms() with { Resigned = [Black] };
+        // Arrange - Black holds prisoners, so could have offered before passing
+        GameState state = this.Ransoms() with { Dice = hasRolled ? [5] : [] };
 
         // Act
         Transition transition = this._rules.Apply(state, new PassAction(Black));
+
+        // Assert
+        Assert.Equal(
+            (Yellow, false, false),
+            (
+                transition.State.DecidingSeat,
+                transition.State.IsRansomWindow,
+                transition.Events.OfType<RansomWindowOpened>().Any()
+            )
+        );
+    }
+
+    [Fact]
+    public void Apply_WhenARollLetsNothingMoveWithPrisonersHeld_OpensTheRansomWindow()
+    {
+        // Arrange - Black, with only its Raja, waits on its dice
+        GameState state = this.Ransoms() with { AwaitedDice = new DiceRequest(2, 6) };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new DiceAction(Black, [2, 3]));
+
+        // Assert
+        Assert.Equal((Black, true), (transition.State.DecidingSeat, transition.State.IsRansomWindow));
+    }
+
+    [Fact]
+    public void Apply_WhenATurnEndsWithPrisonersHeldByASeatThatGaveUp_PassesTheTurnWithoutARansomWindow()
+    {
+        // Arrange - Black holds prisoners, but gave up its turns while deciding; its last die moves its Raja
+        GameState state = this.Ransoms() with { Resigned = [Black], Dice = [5] };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new MoveAction(Black, Grid.CellAt(3, 3), Grid.CellAt(3, 4)));
 
         // Assert
         Assert.Equal((Yellow, false), (transition.State.DecidingSeat, transition.State.IsRansomWindow));
@@ -2416,21 +2451,21 @@ public sealed class ClassicRulesTest
     [Fact]
     public void Apply_WhenATurnEndsWithPrisonersHeld_OpensTheRansomWindowAgainstTheClock()
     {
-        // Arrange
-        GameState state = this.Ransoms();
+        // Arrange - Black's last die moves its Raja, which ends its turn
+        GameState state = this.Ransoms() with { Dice = [5] };
 
         // Act
-        Transition transition = this._rules.Apply(state, new PassAction(Black));
+        Transition transition = this._rules.Apply(state, new MoveAction(Black, Grid.CellAt(3, 3), Grid.CellAt(3, 4)));
 
         // Assert
         Assert.Equal(
-            (Black, true, 1, 2, new RansomWindowOpened(Black)),
+            (Black, true, 0, 2, new RansomWindowOpened(Black)),
             (
                 transition.State.DecidingSeat,
                 transition.State.IsRansomWindow,
                 transition.State.IdlePasses,
                 transition.State.TurnNumber,
-                transition.Events.Single()
+                transition.Events[^1]
             )
         );
         Assert.Equal([new PassAction(Black)], this._rules.LegalActions(transition.State));

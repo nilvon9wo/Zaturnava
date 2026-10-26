@@ -149,3 +149,6 @@ After playing against Argus (2026-10-25):
 - A die that nothing can use is greyed out, until a move frees a piece it lets move. The log keeps
   every highlight for as long as the game lasts, not only those among the latest 40 events; showing
   everything, it says where older events were let go.
+- Passing no longer opens a window to offer ransoms, which the player could have offered before passing;
+  the window is left for a turn that ended on its own. Bots offer as they pass, instead.
+- Argus no longer counts a lone piece on its throne as keeping an enemy Raja off it.

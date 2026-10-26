@@ -34,15 +34,15 @@ public sealed class SolomonBot(Random random) : IBotPlaying
             : Task.FromResult(
                 Ending.AnswerTo(request)
                     ?? AnswerTo(request)
-                    ?? FairTrade(request)
-                    ?? Teamwork.Choose(request, this._random)
+                    ?? FairTrade(request, false)
+                    ?? Trading.BeforePassing(request, Teamwork.Choose(request, this._random), FairTrade)
             );
 
     internal static GameAction? AnswerTo(DecisionRequest request) => Trading.AnswerTo(request, Leeway);
 
     /// <summary>A gift to an ally, if one may be made; else an even trade, the most valuable first.</summary>
-    internal static OfferAction? FairTrade(DecisionRequest request) =>
-        Trading.TradesOf(request)
+    internal static OfferAction? FairTrade(DecisionRequest request, bool isPassing) =>
+        Trading.TradesOf(request, isPassing)
             .Where(trade => trade.IsGift || trade.Gain == 0)
             .OrderByDescending(trade => trade.IsGift)
             .ThenByDescending(trade => request.Rules.WorthOf(PieceOf(request, trade)))

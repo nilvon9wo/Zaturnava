@@ -385,8 +385,8 @@ public sealed class ClassicRules : IRulesApplying
             _ when state.PromotionDue is not null =>
                 this.GoneOn(new Transition(state with { PromotionDue = null }, [])),
             _ when state.IsRansomWindow => this.Handed(new Transition(state, [])),
-            _ when state.Dice.IsEmpty => this.IdlePass(new Transition(state, [])),
-            _ => this.Declined(new Transition(state, [])),
+            _ when state.Dice.IsEmpty => this.IdlePass(new Transition(state, []), Ransom.MayOffer(state)),
+            _ => this.Declined(new Transition(state, []), Ransom.MayOffer(state)),
         };
 
     /// <summary>The regent decides the rest of the turn, for the seat whose turn it is (rules.md §6.2).</summary>
@@ -525,7 +525,7 @@ public sealed class ClassicRules : IRulesApplying
         Transition rolled = new(state with { Dice = dice.Values }, [new DiceRolled(dice.Actor, dice.Values)]);
         return this.HasUsableDie(rolled.State)
             ? rolled
-            : this.Declined(Forfeited(rolled));
+            : this.Declined(Forfeited(rolled), mayHaveOffered: false);
     }
 
     /// <summary>
@@ -606,11 +606,14 @@ public sealed class ClassicRules : IRulesApplying
             ? this.HandedOver(transition, occupier)
             : this.EndTurnIfStuck(transition);
 
-    /// <summary>Dice left unused: the occupier of the seat's throne may use them, if any; else the turn ends.</summary>
-    private Transition Declined(Transition transition) =>
+    /// <summary>
+    /// Dice left unused: the occupier of the seat's throne may use them, if any; else the turn ends - with no
+    /// window to offer ransoms if the seat <paramref name="mayHaveOffered"/> before it passed.
+    /// </summary>
+    private Transition Declined(Transition transition, bool mayHaveOffered) =>
         this.OccupierToHandTo(transition.State) is { } occupier
             ? this.HandedOver(transition, occupier)
-            : this.PassTurn(transition);
+            : this.PassTurn(transition, mayHaveOffered);
 
     /// <summary>
     /// The enemy on the throne of the seat whose turn it is, before it has moved for that seat this turn -
@@ -662,22 +665,26 @@ public sealed class ClassicRules : IRulesApplying
             || this.EscapesOf(state, seat).Any();
     }
 
-    /// <summary>A turn passed without rolling or moving: enough of those in a row end the game.</summary>
-    private Transition IdlePass(Transition transition)
+    /// <summary>
+    /// A turn passed without rolling or moving: enough of those in a row end the game. Having passed it
+    /// when it <paramref name="mayHaveOffered"/>, the seat gets no window to offer ransoms.
+    /// </summary>
+    private Transition IdlePass(Transition transition, bool mayHaveOffered)
     {
         GameState state = transition.State;
         Transition counted = transition with { State = state with { IdlePasses = state.IdlePasses + 1 } };
-        return GameEnd.AfterIdlePass(counted, this._idleRounds) ?? this.Ending(counted);
+        return GameEnd.AfterIdlePass(counted, this._idleRounds) ?? this.Ending(counted, mayHaveOffered);
     }
 
-    private Transition PassTurn(Transition transition) =>
-        this.Ending(transition with { State = transition.State with { IdlePasses = 0 } });
+    private Transition PassTurn(Transition transition, bool mayHaveOffered = false) =>
+        this.Ending(transition with { State = transition.State with { IdlePasses = 0 } }, mayHaveOffered);
 
     /// <summary>
     /// The turn is over. A seat holding prisoners may still offer ransoms (rules.md §8) before it
-    /// passes, unless it has given up its turns; any other seat's turn passes now.
+    /// passes, unless it has given up its turns, or chose to pass when it <paramref name="mayHaveOffered"/>
+    /// instead; any other seat's turn passes now.
     /// </summary>
-    private Transition Ending(Transition transition)
+    private Transition Ending(Transition transition, bool mayHaveOffered = false)
     {
         GameState state = transition.State;
         SeatId seat = (state.ActingFor ?? state.DecidingSeat)!.Value; // someone just took a turn
@@ -689,7 +696,7 @@ public sealed class ClassicRules : IRulesApplying
             Dice = [],
             IsRansomWindow = true,
         };
-        return Ransom.HoldsRansom(state, seat) && !state.Resigned.Contains(seat)
+        return Ransom.HoldsRansom(state, seat) && !state.Resigned.Contains(seat) && !mayHaveOffered
             ? new Transition(window, transition.Events.Add(new RansomWindowOpened(seat)))
             : this.Handed(transition);
     }

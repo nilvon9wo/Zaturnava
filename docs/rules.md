@@ -449,6 +449,9 @@ available (via a future capture, by anyone).
   - Once their turn is over, a player holding any other seat's pieces
     prisoner gets a short window to offer more, which they may end at once
     ("Done"). The turn passes when it ends.
+  - *(Stated 2026-10-26)* The window is only for a turn that ended without
+    the player choosing to end it (the last die used, or none usable): a
+    player who passes, when they could have offered first, gets none.
   - An offer gives back one or more prisoners the offerer holds of the
     receiver's, and asks for any number (none makes it a gift) of the
     prisoners the receiver holds of the offerer's team.
@@ -469,8 +472,8 @@ available (via a future capture, by anyone).
     When the window runs out, it closes; when the answer runs out, the offer
     is declined.
   - The same offer may not be made twice in one turn.
-  - Bots answer at once, and offer only once their turn is over: one offer a
-    turn at most.
+  - Bots answer at once, and offer only once their turn is over, or *(Proposed)*
+    as they pass, since passing they get no window: one offer a turn at most.
 
 ### Raja Return
 

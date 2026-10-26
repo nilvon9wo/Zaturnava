@@ -17,6 +17,19 @@ public sealed class ArgusBotTest
     private readonly CancellationToken _cancellation = TestContext.Current.CancellationToken;
 
     [Fact]
+    public async Task Decide_WhenItWouldPassItsTurn_GivesItsAllysPieceBackFirst()
+    {
+        // Arrange - passing, it gets no window to offer after
+        DecisionRequest request = Ransoms.Passing();
+
+        // Act
+        GameAction action = await new ArgusBot(new Random(1)).Decide(request, this._cancellation);
+
+        // Assert
+        Assert.Equal(new OfferAction(Ransoms.Black, Ransoms.Green, [new PieceId(30)], []), action);
+    }
+
+    [Fact]
     public async Task Decide_WhenTakingWouldLoseMoreThanItGains_DoesNotTake()
     {
         // Arrange - the Pawn on 2 is guarded by the Pawn on 3, which would take the Horse back

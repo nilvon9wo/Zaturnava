@@ -9,7 +9,8 @@ namespace Net.NowhereAtAll.Zaturnava.Bots;
 
 /// <summary>
 /// Ransoms as a bot weighs them, by what the rules say each piece is worth: the offer it is answering,
-/// and the offers it could make once its turn is over - one prisoner it holds for one its team lost to
+/// and the offers it could make once its turn is over, or as it passes (passing, it gets no window to offer
+/// after) - one prisoner it holds for one its team lost to
 /// that prisoner's owner, or, to an ally, one back for nothing. A bot makes one offer a turn at most,
 /// so that an answer is not asked of its opponents over and over. With an enemy, it minds the table
 /// too: it never gives a leader back, nor makes a trade that leaves its team weaker against that
@@ -32,13 +33,26 @@ internal static class Trading
             : null;
 
     /// <summary>
-    /// The offers the bot may make now, each with what it would gain; none during its turn, nor once it
-    /// has made one this turn.
+    /// What the bot chose on the board, unless that is passing while it may still offer: then the offer
+    /// <paramref name="offering"/> would make, if any.
     /// </summary>
-    public static ImmutableList<Trade> TradesOf(DecisionRequest request)
+    public static GameAction BeforePassing(
+        DecisionRequest request,
+        GameAction chosen,
+        Func<DecisionRequest, bool, OfferAction?> offering
+    ) =>
+        chosen is PassAction
+            ? offering(request, true) ?? chosen
+            : chosen;
+
+    /// <summary>
+    /// The offers the bot may make now, each with what it would gain; none during its turn, unless it
+    /// <paramref name="isPassing"/>, nor once it has made one this turn.
+    /// </summary>
+    public static ImmutableList<Trade> TradesOf(DecisionRequest request, bool isPassing = false)
     {
         GameState state = request.State;
-        bool mayOffer = state.IsRansomWindow
+        bool mayOffer = (state.IsRansomWindow || isPassing)
             && state.OffersMade.All(offer => offer.From != request.Seat)
             && request.Rules.MayOffer(state);
         ImmutableList<Prisoner> held =

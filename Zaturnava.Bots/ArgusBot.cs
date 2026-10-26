@@ -31,7 +31,7 @@ public sealed class ArgusBot(Random random) : IBotPlaying
             : Task.FromResult(
                 Ending.AnswerTo(request)
                     ?? SolomonBot.AnswerTo(request)
-                    ?? SolomonBot.FairTrade(request)
-                    ?? Careful.Choose(request, this._random)
+                    ?? SolomonBot.FairTrade(request, false)
+                    ?? Trading.BeforePassing(request, Careful.Choose(request, this._random), SolomonBot.FairTrade)
             );
 }

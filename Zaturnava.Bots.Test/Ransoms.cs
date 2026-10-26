@@ -33,6 +33,9 @@ internal static class Ransoms
         };
     }
 
+    /// <summary>Seat 0's turn, when it may only pass - or offer, as it passes.</summary>
+    public static DecisionRequest Passing() => Request();
+
     /// <summary>Once seat 0's turn is over, when it may offer, having made <paramref name="made"/>.</summary>
     public static DecisionRequest Window(params RansomOffer[] made)
     {

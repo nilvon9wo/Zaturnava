@@ -158,6 +158,19 @@ public sealed class MidasBotTest
     }
 
     [Fact]
+    public async Task Decide_WhenItWouldPassItsTurn_OffersTheTradeThatGainsTheMostFirst()
+    {
+        // Arrange - passing, it gets no window to offer after
+        DecisionRequest request = Ransoms.Passing();
+
+        // Act
+        GameAction action = await new MidasBot(new Random(1)).Decide(request, this._cancellation);
+
+        // Assert
+        Assert.Equal(new OfferAction(Seat, Ransoms.Yellow, [new PieceId(10)], [new PieceId(20)]), action);
+    }
+
+    [Fact]
     public async Task Decide_WhenItsTurnIsOver_OffersTheTradeThatGainsTheMost()
     {
         // Arrange - its Pawn for its own Horse back gains 2
