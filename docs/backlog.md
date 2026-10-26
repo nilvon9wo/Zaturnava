@@ -138,3 +138,7 @@ After playing against Argus (2026-10-25):
   meanwhile. Each other player is asked in turn, against the clock, no answer counting as no; if all
   agree, points decide, and if one refuses, the game goes on where it was. A player who gave up their
   turns may rejoin the game with a green Rejoin game button, which takes the End game button's place.
+- A fanfare when an enemy Raja is taken, and a lament when one of the player's own team's is. The log's
+  highlights tell when a player gains or loses control of another's army, complete (playing that army's
+  turn as regent) or partial (moving it on their own turns, because their Raja holds its throne, or an ally
+  has no Raja), and when a team's empire begins or ends.

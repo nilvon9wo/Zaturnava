@@ -304,13 +304,24 @@
     private const string RollKind = "roll";
     private const string Alarm = "alarm";
     private const string Rescued = "rescued";
+    private const string Triumph = "triumph";
+    private const string Lament = "lament";
 
     /// <summary>
     /// What the log shows when it shows only the highlights: points scored, pieces brought back, and how the
     /// game ended.
     /// </summary>
     private static readonly ImmutableHashSet<string> Highlights =
-        [EventDto.Captured, EventDto.Bonus, EventDto.Escaped, EventDto.Promoted, EventDto.Ending, EventDto.Ended];
+        [
+            EventDto.Captured,
+            EventDto.Bonus,
+            EventDto.Escaped,
+            EventDto.Promoted,
+            EventDto.Command,
+            EventDto.Empire,
+            EventDto.Ending,
+            EventDto.Ended,
+        ];
     private static readonly BoardActions NoActions = new([]);
 
     private readonly Timer _poll;
@@ -694,8 +705,9 @@
     }
 
     /// <summary>
-    /// The sound for what happened since the last view: an enemy's piece escaping, or one of the player's
-    /// team's; a turn come round, a capture, a move, a roll.
+    /// The sound for what happened since the last view: a Raja of the player's team taken, an enemy's piece
+    /// escaping, an enemy Raja taken, or a piece of the player's team escaping; a turn come round, a capture, a
+    /// move, a roll.
     /// </summary>
     private string? SoundOf(GameViewDto view, bool isFirst, bool wasTheirTurn)
     {
@@ -704,10 +716,13 @@
         ImmutableHashSet<string> kinds =
         [
             .. fresh.Select(happened => happened.Kind),
-            .. fresh.Where(happened => happened.Kind == EventDto.Escaped).Select(escaped => EscapeSoundOf(ours, escaped)),
+            .. fresh.Where(happened => happened.Kind == EventDto.Escaped)
+                .Select(escaped => TeamSoundOf(ours, escaped, (EventDto.Moved, Rescued, Alarm))),
+            .. fresh.Where(happened => happened is { Kind: EventDto.Captured, IsLeader: true })
+                .Select(taken => TeamSoundOf(ours, taken, (EventDto.Captured, Lament, Triumph))),
         ];
-        string? escape = new[] { Alarm, Rescued }.FirstOrDefault(kinds.Contains);
-        return (isFirst, escape, this._turn is not null && !wasTheirTurn) switch
+        string? telling = new[] { Lament, Alarm, Triumph, Rescued }.FirstOrDefault(kinds.Contains);
+        return (isFirst, telling, this._turn is not null && !wasTheirTurn) switch
         {
             (true, _, _) => null,
             (_, { } heard, _) => heard,
@@ -717,15 +732,20 @@
     }
 
     /// <summary>
-    /// A cheer for a piece of the player's own team escaping, an alarm for an enemy's; for someone only
-    /// watching, no more than a move.
+    /// The sound for something that happened to a piece, by whose it is: of the player's own team (a cheer
+    /// for an escape, a lament for a Raja taken), or an enemy's (an alarm, a fanfare); for someone only
+    /// watching, the plain sound.
     /// </summary>
-    private static string EscapeSoundOf(ImmutableHashSet<int> ours, EventDto escaped) =>
-        (ours.IsEmpty, ours.Contains(escaped.Owner.GetValueOrDefault())) switch
+    private static string TeamSoundOf(
+        ImmutableHashSet<int> ours,
+        EventDto happened,
+        (string Watched, string Ours, string Theirs) sounds
+    ) =>
+        (ours.IsEmpty, ours.Contains(happened.Owner.GetValueOrDefault())) switch
         {
-            (true, _) => EventDto.Moved,
-            (_, true) => Rescued,
-            _ => Alarm,
+            (true, _) => sounds.Watched,
+            (_, true) => sounds.Ours,
+            _ => sounds.Theirs,
         };
 
     /// <summary>

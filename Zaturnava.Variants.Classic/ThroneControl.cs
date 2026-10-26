@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Net.NowhereAtAll.Zaturnava.Engine.Boards;
+using Net.NowhereAtAll.Zaturnava.Engine.Events;
 using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
 using Net.NowhereAtAll.Zaturnava.Engine.Rules;
 using Net.NowhereAtAll.Zaturnava.Engine.Seats;
@@ -31,6 +32,17 @@ internal sealed class ThroneControl(ImmutableDictionary<SeatId, CellId> thrones)
     public bool CommandsAnAlly(GameState state, SeatId seat) =>
         RajalessAllies(state, seat).Any()
         || this.ThronesHeldBy(state, seat).Any(throne => state.Teams.AreAllied(throne, seat));
+
+    /// <summary>
+    /// The armies <paramref name="seat"/> commands on its own turns, besides its own, and why: each throne its
+    /// Raja sits on first, then each ally left without a Raja.
+    /// </summary>
+    public IEnumerable<(SeatId Army, CommandBasis Basis)> CommandedBy(GameState state, SeatId seat) =>
+        [
+            .. this.ThronesHeldBy(state, seat)
+                .Select(throne => (throne, ThroneBasis(state.Teams.AreAllied(throne, seat)))),
+            .. RajalessAllies(state, seat).Select(ally => (ally, CommandBasis.LeaderlessAlly)),
+        ];
 
     /// <summary>
     /// The allies who may take <paramref name="seat"/>'s turn for it, with its consent (rules.md §6.2): an
@@ -66,6 +78,9 @@ internal sealed class ThroneControl(ImmutableDictionary<SeatId, CellId> thrones)
                 .Select(ally => ally.Id)
                 .Where(ally => ally != seat && state.Teams.AreAllied(ally, seat) && !HasRaja(state, ally))
             : [];
+
+    private static CommandBasis ThroneBasis(bool isAllied) =>
+        isAllied ? CommandBasis.AllyThrone : CommandBasis.EnemyThrone;
 
     private static bool HasRaja(GameState state, SeatId seat) =>
         state.Position.Occupants.Values.Any(piece => piece.Owner == seat && piece.Kind == ClassicPieces.Raja);
