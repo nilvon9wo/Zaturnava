@@ -50,7 +50,7 @@ internal static class Careful
     }
 
     /// <summary>The worst an enemy could do to the bot's team in reply: one exchange, or a throne taken.</summary>
-    private static int Exposure(DecisionRequest request, GameState after)
+    internal static int Exposure(DecisionRequest request, GameState after)
     {
         ILookup<CellId, Attack> threats = AttacksBy(request, after, isAllied: false);
         ILookup<CellId, Attack> guards = AttacksBy(request, after, isAllied: true);
@@ -116,7 +116,7 @@ internal static class Careful
             : 0;
 
     /// <summary>The attacks of the bot's team (<paramref name="isAllied"/>) or of its enemies, by target.</summary>
-    private static ILookup<CellId, Attack> AttacksBy(DecisionRequest request, GameState after, bool isAllied) =>
+    internal static ILookup<CellId, Attack> AttacksBy(DecisionRequest request, GameState after, bool isAllied) =>
         after.Seats
             .Where(seat => after.Teams.AreAllied(seat.Id, request.Seat) == isAllied)
             .SelectMany(seat => request.Rules.AttacksOf(after, seat.Id))

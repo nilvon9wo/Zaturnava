@@ -13,10 +13,10 @@ namespace Net.NowhereAtAll.Zaturnava.Bots.Test;
 
 /// <summary>
 /// Rules on a line of cells, in which every piece attacks the cells either side of it - but a Boat
-/// attacks along the line either way, up to the first piece in its way - and the legal
-/// actions are whichever the test says. A move goes where it says, and scores its actor what it takes
-/// (<see cref="ScoringRules.Worth"/>); passing does nothing. Seats 0 and 2 are allied against 1 and 3;
-/// seat 0's throne is cell 0, and the Raja leads.
+/// attacks along the line either way, up to the first piece in its way - and the legal actions are
+/// whichever the test says, but for moves from a cell left empty. A move goes where it says, and scores
+/// its actor what it takes (<see cref="ScoringRules.Worth"/>); passing does nothing. Seats 0 and 2 are
+/// allied against 1 and 3; seat 0's throne is cell 0, and the Raja leads.
 /// </summary>
 internal sealed class LineRules(ImmutableList<GameAction> legalActions) : IRulesApplying
 {
@@ -67,7 +67,12 @@ internal sealed class LineRules(ImmutableList<GameAction> legalActions) : IRules
 
     public GameState CreateInitialState() => throw new NotSupportedException();
 
-    public ImmutableList<GameAction> LegalActions([Required] GameState state) => this._legalActions;
+    public ImmutableList<GameAction> LegalActions([Required] GameState state) =>
+        [
+            .. this._legalActions.Where(action =>
+                action is not MoveAction move || state.Position.PieceAt(move.From) is not null
+            ),
+        ];
 
     public Transition Apply([Required] GameState state, [Required] GameAction action) =>
         action is MoveAction move

@@ -21,7 +21,7 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
         // Assert
         RulesetDto ruleset = catalog.Rulesets.Single();
         Assert.Equal(
-            (ZaturnavaServer.Chaturaji2027, 4, "Black,Yellow,Green,Red", "argus,midas,random,solomon", false),
+            (ZaturnavaServer.Chaturaji2027, 4, "Black,Yellow,Green,Red", "argus,midas,random,sage,solomon", false),
             (
                 ruleset.Id,
                 ruleset.SeatCount,
