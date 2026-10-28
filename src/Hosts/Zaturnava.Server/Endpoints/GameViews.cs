@@ -21,8 +21,10 @@ internal static class GameViews
     public static CatalogDto CatalogOf(ImmutableList<IRulesApplying> rulesets, ImmutableList<BotProfile> bots) =>
         new([.. rulesets.Select(RulesetOf)], [.. bots.Select(BotOf)]);
 
-    public static GameSummaryDto SummaryOf(GameRecord record) =>
-        new(
+    public static GameSummaryDto SummaryOf(GameSnapshot snapshot)
+    {
+        GameRecord record = snapshot.Record;
+        return new GameSummaryDto(
             record.Id.Value,
             record.RulesetId,
             record.Version,
@@ -31,7 +33,12 @@ internal static class GameViews
                 .Select(entry => entry.seat)],
             [.. record.Controllers.Select(PlayerOf)],
             record.Actions.Count
-        );
+        )
+        {
+            SeatNames = [.. snapshot.State.Seats.Select(seat => snapshot.Rules.NameOf(seat.Id))],
+            IsOver = snapshot.State.Outcome is not null,
+        };
+    }
 
     /// <summary>The game as its seats see it, naming each bot as <paramref name="bots"/> do.</summary>
     public static GameViewDto ViewOf(GameSnapshot snapshot, ImmutableList<BotProfile> bots)
@@ -96,8 +103,14 @@ internal static class GameViews
                 .FirstOrDefault()
             : null;
 
-    private static RulesetDto RulesetOf(IRulesApplying rules) =>
-        new(rules.Id, rules.Name, rules.CreateInitialState().Seats.Count);
+    private static RulesetDto RulesetOf(IRulesApplying rules)
+    {
+        ImmutableList<Seat> seats = rules.CreateInitialState().Seats;
+        return new RulesetDto(rules.Id, rules.Name, seats.Count)
+        {
+            SeatNames = [.. seats.Select(seat => rules.NameOf(seat.Id))],
+        };
+    }
 
     private static BotDto BotOf(BotProfile bot) => new(bot.Id, bot.Name, bot.Description, bot.UsesAi, bot.IsPaid);
 

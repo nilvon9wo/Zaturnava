@@ -46,6 +46,8 @@ internal sealed class FakeGameServer : IGameServing
 
     public GameViewDto View { get; set; } = SeatZeroToMove;
 
+    private static readonly ImmutableList<string> SeatNames = ["Black", "Yellow", "Green", "Red"];
+
     public ImmutableList<GameSummaryDto> Games { get; set; } =
     [
         new(
@@ -55,7 +57,10 @@ internal sealed class FakeGameServer : IGameServing
             [1, 3],
             [GameSummaryDto.Person, GameSummaryDto.Open, "random", GameSummaryDto.Open],
             12
-        ),
+        )
+        {
+            SeatNames = SeatNames,
+        },
     ];
 
     public Exception? Failure { get; set; }
@@ -70,7 +75,7 @@ internal sealed class FakeGameServer : IGameServing
         this.Answer(
             "catalog",
             new CatalogDto(
-                [new RulesetDto("chaturaji-2027", "Chaturaji 2027", 4)],
+                [new RulesetDto("chaturaji-2027", "Chaturaji 2027", 4) { SeatNames = SeatNames }],
                 [
                     new BotDto("random", "Random", "Any move.", UsesAi: false),
                     new BotDto("claude", "Claude", "Asks Claude.", UsesAi: true, IsPaid: true),

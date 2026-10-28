@@ -1,6 +1,8 @@
 @* Start a game (each seat a person or a bot, no bot in two seats) and sit at it - or start one at once,
    at a seat chosen at random, the bots shuffled among the others - or join, watch or go back to one
-   already started. A bot paid for each use is seated only when chosen: never by default, nor at random. *@
+   already started; a game over is only listed, with nothing left to watch. Seats go by the ruleset's names
+   for them (Black, Yellow...), not by number. A bot paid for each use is seated only when chosen: never by
+   default, nor at random. *@
 @inject IGameServing Games
 @inject Browser Browser
 
@@ -19,6 +21,7 @@
                 @foreach (int seat in Enumerable.Range(0, this._plans.Count))
                 {
                     <li>
+                        <span class="seat-name">@SeatName(Ruleset(catalog).SeatNames, seat)</span>
                         <select class="plan" @bind="this._plans[seat]">
                             <option value="">Person</option>
                             @foreach (BotDto bot in catalog.Bots)
@@ -47,21 +50,26 @@
                 {
                     <li>
                         <span class="game">@game.Id[..Math.Min(8, game.Id.Length)]</span>
-                        <span class="players">@string.Join(", ", game.Players)</span>
+                        <span class="players">@Players(game)</span>
                         <span class="moves">@Moves(game)</span>
-                        @if (this._held.GetValueOrDefault(game.Id) is { } claim)
+                        @if (game.IsOver)
                         {
-                            <button class="resume primary" @onclick="() => this.Resume(game.Id, claim)">
-                                Back to seat @(claim.Seat + 1)
+                            <span class="over">Over</span>
+                        }
+                        else
+                        {
+                            @if (this._held.GetValueOrDefault(game.Id) is { } claim)
+                            {
+                                <button class="resume primary" @onclick="() => this.Resume(game.Id, claim)">Back to @SeatName(game.SeatNames, claim.Seat)</button>
+                            }
+                            @foreach (int seat in game.OpenSeats)
+                            {
+                                <button class="join" @onclick="() => this.Join(game.Id, seat)">Join as @SeatName(game.SeatNames, seat)</button>
+                            }
+                            <button class="watch" @onclick="() => this.OnSeated.InvokeAsync(Seating.Watching(game.Id))">
+                                Watch
                             </button>
                         }
-                        @foreach (int seat in game.OpenSeats)
-                        {
-                            <button class="join" @onclick="() => this.Join(game.Id, seat)">Join seat @(seat + 1)</button>
-                        }
-                        <button class="watch" @onclick="() => this.OnSeated.InvokeAsync(Seating.Watching(game.Id))">
-                            Watch
-                        </button>
                     </li>
                 }
             </ul>
@@ -92,6 +100,14 @@
         };
 
     private static string Moves(GameSummaryDto game) => game.Moves == 1 ? "1 move" : $"{game.Moves} moves";
+
+    /// <summary>What the ruleset calls the seat, "Black"; "seat 2" if it names none.</summary>
+    private static string SeatName(ImmutableList<string> names, int seat) =>
+        names.ElementAtOrDefault(seat) ?? $"seat {seat + 1}";
+
+    /// <summary>"Black: person, Yellow: random, ...".</summary>
+    private static string Players(GameSummaryDto game) =>
+        string.Join(", ", game.Players.Select((player, seat) => $"{SeatName(game.SeatNames, seat)}: {player}"));
 
     private async Task Load()
     {
