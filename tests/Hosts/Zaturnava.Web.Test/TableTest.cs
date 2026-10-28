@@ -561,8 +561,8 @@ public sealed class TableTest : IDisposable
         IRenderedComponent<Table> table = page.Render<Table>(parameters => parameters.Add(x => x.Seating, SeatZero));
         FakeGameServer server = page.Server;
 
-        // Act
-        Cell(table, 0).Click();
+        // Act - a poll may redraw the board between finding the cell and clicking it; then click again
+        table.WaitForAssertion(() => Cell(table, 0).Click());
 
         // Assert
         table.WaitForAssertion(() => Assert.True(server.Calls.Count > 2));
