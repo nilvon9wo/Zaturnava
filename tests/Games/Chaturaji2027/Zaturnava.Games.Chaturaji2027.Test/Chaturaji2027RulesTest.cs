@@ -2794,7 +2794,7 @@ public sealed class Chaturaji2027RulesTest
     }
 
     [Fact]
-    public void NameOf_WhenGivenAPieceKind_ReturnsItsTraditionalName()
+    public void NameOf_WhenGivenAPieceKind_ReturnsItsChaturajiName()
     {
         // Arrange - nothing beyond the rules
 

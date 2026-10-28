@@ -51,12 +51,12 @@ internal sealed class Browser(IJSRuntime js)
 
     public ValueTask SetSound(bool isOn) => this.Save(SoundKey, isOn ? "on" : Off);
 
-    /// <summary>The pieces as the player last chose to see them: traditional, unless they chose chess.</summary>
+    /// <summary>The pieces as the player last chose to see them: chaturaji, unless they chose chess.</summary>
     public async ValueTask<PieceSet> Pieces() =>
-        await this.Load(PiecesKey) == ChessPieces ? PieceSet.Chess : PieceSet.Traditional;
+        await this.Load(PiecesKey) == ChessPieces ? PieceSet.Chess : PieceSet.Chaturaji;
 
     public ValueTask SetPieces(PieceSet pieces) =>
-        this.Save(PiecesKey, pieces == PieceSet.Chess ? ChessPieces : "traditional");
+        this.Save(PiecesKey, pieces == PieceSet.Chess ? ChessPieces : "chaturaji");
 
     /// <summary>Whether the log shows only its highlights: it does unless the player chose to see everything.</summary>
     public async ValueTask<bool> IsLogHighlightsOnly() => await this.Load(LogKey) != Everything;

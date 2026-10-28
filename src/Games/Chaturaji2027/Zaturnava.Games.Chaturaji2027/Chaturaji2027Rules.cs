@@ -200,7 +200,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying
 
     public bool IsLeader(PieceKindId kind) => kind == Chaturaji2027Pieces.Raja;
 
-    public string NameOf(PieceKindId kind) => Chaturaji2027Pieces.TraditionalNames[kind];
+    public string NameOf(PieceKindId kind) => Chaturaji2027Pieces.ChaturajiNames[kind];
 
     public string NameOf(SeatId seat) => Chaturaji2027Setup.SeatNames[seat.Value];
 
