@@ -151,6 +151,32 @@ public sealed class TableTest : IDisposable
     }
 
     [Fact]
+    public void Click_WhenThePiecePickedUpCanSwapWithAnother_DashesItsRing()
+    {
+        // Arrange
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Pieces = [.. FakeGameServer.SeatZeroToMove.Pieces, new PieceDto(1, "pawn", "Pawn", 1, 3)],
+            LegalActions =
+            [
+                FakeGameServer.Pass,
+                FakeGameServer.Forward,
+                FakeGameServer.Leap with { Label = "Swap places with Yellow's Pawn" },
+            ],
+        };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Act
+        Cell(table, 0).Click();
+
+        // Assert
+        Assert.Equal(
+            "mark|mark swap",
+            string.Join("|", table.FindAll("circle.mark").Select(mark => mark.GetAttribute("class")))
+        );
+    }
+
+    [Fact]
     public void Click_WhenThePieceIsPutDownWhereItCanGo_SubmitsThatMove()
     {
         // Arrange

@@ -160,6 +160,33 @@ public sealed class GameViewsTest
     }
 
     [Fact]
+    public void ViewOf_WhenAPawnMaySwapBackToBack_LabelsTheSwapButNoOtherMove()
+    {
+        // Arrange - Black's Pawn on d4 faces Green's on d5; Black's Pawn on a2 may take Yellow's on b3
+        GameState start = Rules.CreateInitialState();
+        GameState state = start with
+        {
+            RollOff = [],
+            AwaitedDice = null,
+            Position = start.Position
+                .Place(Rules.Topology.Cells[27], new Piece(new PieceId(4), ClassicPieces.Pawn, new SeatId(0)))
+                .Place(Rules.Topology.Cells[35], new Piece(new PieceId(20), ClassicPieces.Pawn, new SeatId(2)))
+                .Place(Rules.Topology.Cells[17], new Piece(new PieceId(12), ClassicPieces.Pawn, new SeatId(1))),
+        };
+
+        // Act
+        GameViewDto view = GameViews.ViewOf(Snapshot(state), Bots);
+
+        // Assert
+        Assert.Equal(
+            ["Swap places with Green's Pawn"],
+            view.LegalActions.Where(action => action is { Kind: "move", Label: not null })
+                .Select(action => action.Label)
+        );
+        Assert.Contains(view.LegalActions, action => action.Kind == "move" && action.Arguments["to"] == "17");
+    }
+
+    [Fact]
     public void ViewOf_WhenADieLetsNothingMove_SaysItIsNotUsable()
     {
         // Arrange - at the start, Black's Pawns may move, but its Elephant is hemmed in

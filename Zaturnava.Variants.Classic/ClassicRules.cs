@@ -345,14 +345,41 @@ public sealed class ClassicRules : IRulesApplying
             .Select(move => new MoveAction(seat, move.From, move.To));
     }
 
-    /// <summary>A piece moves the way its own army faces.</summary>
+    /// <summary>A piece moves the way its own army faces; a Pawn may also swap with one back to back.</summary>
     private ImmutableList<Move> MovesFrom(GameState state, CellId cell, Piece piece, SeatId mover) =>
         this._moves.MovesFrom(
-            state.Position,
-            cell,
-            state.SeatOf(piece.Owner),
-            target => this.IsCapturable(state, piece, target, mover)
-        );
+                state.Position,
+                cell,
+                state.SeatOf(piece.Owner),
+                target => this.IsCapturable(state, piece, target, mover)
+            )
+            .AddRange(this.SwapsFrom(state, cell, piece));
+
+    /// <summary>
+    /// A Pawn facing an allied Pawn of another army, back to back, may swap places with it: its move
+    /// (rules.md §4).
+    /// </summary>
+    private IEnumerable<Move> SwapsFrom(GameState state, CellId cell, Piece piece) =>
+        this.IsSwap(state, cell, piece, this.Ahead(state, cell, piece))
+            ? [new Move(piece, cell, this.Ahead(state, cell, piece).GetValueOrDefault(), null)]
+            : [];
+
+    /// <summary>The cell a piece faces, if the board goes on that way.</summary>
+    private CellId? Ahead(GameState state, CellId cell, Piece piece) =>
+        this._grid.Step(cell, state.SeatOf(piece.Owner).Forward);
+
+    /// <summary>Whether a Pawn on <paramref name="cell"/> going to <paramref name="target"/> swaps there.</summary>
+    private bool IsSwap(GameState state, CellId cell, Piece piece, CellId? target)
+    {
+        Piece? other = target is { } ahead ? state.Position.PieceAt(ahead) : null;
+        return piece.Kind == ClassicPieces.Pawn
+            && other is { } facing
+            && facing.Kind == ClassicPieces.Pawn
+            && facing.Owner != piece.Owner
+            && state.Teams.AreAllied(facing.Owner, piece.Owner)
+            && this.Ahead(state, target.GetValueOrDefault(), facing) is { } behind
+            && behind == cell;
+    }
 
     /// <summary>
     /// A piece of the mover's team takes the mover's enemies only; a piece of an enemy army it commands
@@ -739,6 +766,21 @@ public sealed class ClassicRules : IRulesApplying
     private Transition Moved(GameState state, MoveAction move)
     {
         Piece mover = state.Position.PieceAt(move.From)!; // the move is legal, so a piece stands there
+        return this.IsSwap(state, move.From, mover, move.To)
+            ? Swapped(state, move, mover)
+            : this.Displaced(state, move, mover);
+    }
+
+    /// <summary>Two Pawns back to back trade places; nothing is taken.</summary>
+    private static Transition Swapped(GameState state, MoveAction move, Piece mover)
+    {
+        Piece other = state.Position.PieceAt(move.To)!; // a swap goes to a Pawn
+        GameState swapped = state with { Position = state.Position.Place(move.From, other).Place(move.To, mover) };
+        return new Transition(swapped, [new PawnsSwapped(mover, other, move.From, move.To, move.Actor)]);
+    }
+
+    private Transition Displaced(GameState state, MoveAction move, Piece mover)
+    {
         Piece? captured = state.Position.PieceAt(move.To);
         GameState relocated = state with { Position = state.Position.Relocate(move.From, move.To) };
         Transition moved = new(relocated, [new PieceMoved(mover, move.From, move.To, move.Actor)]);

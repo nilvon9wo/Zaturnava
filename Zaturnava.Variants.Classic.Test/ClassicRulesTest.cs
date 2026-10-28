@@ -538,6 +538,29 @@ public sealed class ClassicRulesTest
     }
 
     [Fact]
+    public void Apply_WhenTheLastEnemyRajaComesBackAndIsTakenAgain_CreatesTheEmpireAgainAndKeepsTheFirst()
+    {
+        // Arrange - the empire created once; then Yellow's Raja is back on a7, as by a ransom, on Black's next turn
+        GameState state = this.Empire(GreenThrone, hasGreenRaja: true);
+        GameState first = this._rules.Apply(state, new MoveAction(Black, Grid.CellAt(0, 0), Grid.CellAt(0, 5))).State;
+        GameState returned = state with
+        {
+            Position = first.Position.Place(Grid.CellAt(0, 6), Piece(11, ClassicPieces.Raja, Yellow)),
+            Scores = first.Scores,
+        };
+
+        // Act
+        Transition transition = this._rules.Apply(
+            returned,
+            new MoveAction(Black, Grid.CellAt(0, 5), Grid.CellAt(0, 6))
+        );
+
+        // Assert - each time 5 for the Raja and 3 for the empire
+        Assert.Equal([new EmpireCreated(Black, 3)], transition.Events.OfType<EmpireCreated>());
+        Assert.Equal(16, transition.State.Scores[Black]);
+    }
+
+    [Fact]
     public void Apply_WhenTheLastEnemyRajaIsTakenByOneCommandingNoAlly_CreatesNoEmpire()
     {
         // Arrange - Black's Raja holds Red's throne, an enemy's; Green has its Raja
@@ -943,7 +966,7 @@ public sealed class ClassicRulesTest
         GameState state = this.StateWith(
             (YellowThrone, Piece(1, ClassicPieces.Raja, Black)),
             (Grid.CellAt(3, 3), Piece(2, ClassicPieces.Pawn, Yellow)),
-            (Grid.CellAt(4, 3), Piece(3, ClassicPieces.Pawn, Red)),
+            (Grid.CellAt(4, 3), Piece(3, ClassicPieces.Elephant, Red)),
             (Grid.CellAt(4, 4), Piece(4, ClassicPieces.Pawn, Red))
         ) with
         {
@@ -1469,6 +1492,103 @@ public sealed class ClassicRulesTest
         Assert.Equal([new AcceptAction(Yellow), new DeclineAction(Yellow)], this._rules.LegalActions(transition.State));
         DecisionTimer answer = new("ransom-answer", new DeclineAction(Yellow));
         Assert.Equal(answer, this._rules.TimerOf(transition.State));
+    }
+
+    [Theory]
+    [InlineData(new int[0], true)]
+    [InlineData(new[] { 5 }, true)]
+    [InlineData(new[] { 2 }, false)]
+    public void LegalActions_WhenAPawnFacesAnAlliedPawnBackToBack_MaySwapPlacesAsAPawnMove(int[] dice, bool maySwap)
+    {
+        // Arrange - Black faces up, Green down
+        GameState state = this.BackToBack() with { Dice = [.. dice] };
+
+        // Act
+        ImmutableList<GameAction> actions = this._rules.LegalActions(state);
+
+        // Assert
+        Assert.Equal(maySwap, actions.Contains(new MoveAction(Black, Grid.CellAt(3, 3), Grid.CellAt(3, 4))));
+    }
+
+    [Fact]
+    public void Apply_WhenAPawnSwapsOntoTheFarEdge_OffersItsPromotionToTheSwapper()
+    {
+        // Arrange - Black's Pawn on c7, Green's back to back with it on c8; Red holds Green's Elephant 11
+        GameState farEdge = this.FarEdgeAhead();
+        GameState state = farEdge with
+        {
+            Position = farEdge.Position.Place(Grid.CellAt(2, 7), Piece(20, ClassicPieces.Pawn, Green)),
+        };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new MoveAction(Black, Grid.CellAt(2, 6), Grid.CellAt(2, 7)));
+
+        // Assert
+        Assert.Equal(Grid.CellAt(2, 7), transition.State.PromotionDue);
+        Assert.Contains(
+            new PromoteAction(Black, Grid.CellAt(2, 7), new PieceId(11)),
+            this._rules.LegalActions(transition.State)
+        );
+    }
+
+    public static TheoryData<string, Piece, Piece, int> NoSwaps =>
+        new()
+        {
+            { "not a pawn", Piece(1, ClassicPieces.Boat, Black), Piece(2, ClassicPieces.Pawn, Green), 3 },
+            { "facing no pawn", Piece(1, ClassicPieces.Pawn, Black), Piece(2, ClassicPieces.Horse, Green), 3 },
+            { "same army", Piece(1, ClassicPieces.Pawn, Black), Piece(2, ClassicPieces.Pawn, Black), 3 },
+            { "an enemy", Piece(1, ClassicPieces.Pawn, Black), Piece(2, ClassicPieces.Pawn, Yellow), 3 },
+            { "facing away", Piece(1, ClassicPieces.Pawn, Black), Piece(2, ClassicPieces.Pawn, Yellow), 3 },
+            { "facing off the board", Piece(1, ClassicPieces.Pawn, Black), Piece(2, ClassicPieces.Pawn, Yellow), 7 },
+        };
+
+    [Theory]
+    [MemberData(nameof(NoSwaps), DisableDiscoveryEnumeration = true)]
+    public void LegalActions_WhenTheCellAheadHoldsNoAllyBackToBack_OffersNoSwap(
+        string why,
+        Piece piece,
+        Piece ahead,
+        int file
+    )
+    {
+        // Arrange - Yellow, facing right, is Black's ally only where it would face away
+        GameState placed = this.StateWith((Grid.CellAt(file, 3), piece), (Grid.CellAt(file, 4), ahead));
+        GameState state = why.StartsWith("facing ", StringComparison.Ordinal) && ahead.Owner == Yellow
+            ? placed with { Teams = TeamGraph.FromTeams([[Black, Yellow], [Green, Red]]) }
+            : placed;
+
+        // Act
+        ImmutableList<GameAction> actions = this._rules.LegalActions(state);
+
+        // Assert
+        Assert.DoesNotContain(new MoveAction(Black, Grid.CellAt(file, 3), Grid.CellAt(file, 4)), actions);
+    }
+
+    [Fact]
+    public void Apply_WhenAPawnSwapsBackToBack_TradesPlacesAndTakesNothing()
+    {
+        // Arrange
+        GameState state = this.BackToBack();
+        Piece black = state.Position.PieceAt(Grid.CellAt(3, 3))!;
+        Piece green = state.Position.PieceAt(Grid.CellAt(3, 4))!;
+
+        // Act
+        Transition transition = this._rules.Apply(state, new MoveAction(Black, Grid.CellAt(3, 3), Grid.CellAt(3, 4)));
+
+        // Assert
+        Assert.Equal(
+            new PawnsSwapped(black, green, Grid.CellAt(3, 3), Grid.CellAt(3, 4), Black),
+            transition.Events[0]
+        );
+        Assert.Equal(
+            (green, black, 0, 0),
+            (
+                transition.State.Position.PieceAt(Grid.CellAt(3, 3)),
+                transition.State.Position.PieceAt(Grid.CellAt(3, 4)),
+                transition.State.Scores[Black],
+                transition.State.Prisoners.Count
+            )
+        );
     }
 
     public static TheoryData<string, OfferAction> InvalidOffers =>
@@ -2606,6 +2726,14 @@ public sealed class ClassicRulesTest
     /// <summary>The starting position on the second turn, past the roll-off.</summary>
     private GameState Later() =>
         this._rules.CreateInitialState() with { TurnNumber = 2, RollOff = [], AwaitedDice = null };
+
+    /// <summary>Black's pawn and Green's, back to back in mid-board, with a Yellow pawn, on a later turn.</summary>
+    private GameState BackToBack() =>
+        this.StateWith(
+            (Grid.CellAt(3, 3), Piece(1, ClassicPieces.Pawn, Black)),
+            (Grid.CellAt(3, 4), Piece(2, ClassicPieces.Pawn, Green)),
+            (Grid.CellAt(0, 7), Piece(3, ClassicPieces.Pawn, Yellow))
+        );
 
     /// <summary>Black's pawn in mid-board and its boat in the corner, with a Yellow pawn, on a later turn.</summary>
     private GameState PawnAndBoat() =>

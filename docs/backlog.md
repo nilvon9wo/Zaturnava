@@ -54,6 +54,9 @@ did them.
 
 ## Later
 
+- A mechanical bot that likes to roll, rather than always moving without dice (not a priority).
+- Bots should weigh where a ransomed piece lands, not only what it is worth: it may come back between
+  a rook and the piece it guarded or attacked.
 - **3** Variant pieces: two Chinese-chess-like elephants, one confined by two "rivers" that divide
   the board in four, and a dearer one that may cross them; the boat is to be replaced.
 - The grand game, of which the classic game is a part: its [specification](grand/specification.md),
@@ -172,3 +175,5 @@ After playing against Argus (2026-10-25):
   or bad for the player's team) apart from a Raja taken; when both happen, one plays after the other.
 - A bot paid for each use (tokens) is seated only when chosen in the lobby: never by default nor in a
   quick game. The lobby says it costs tokens, and playing again with it is a red button that says so.
+- Two allied Pawns back to back may swap places, as a Pawn's move (rules.md §3); the board marks the
+  swap with a dashed ring, and the log tells it.

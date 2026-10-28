@@ -56,12 +56,13 @@
         @foreach (int target in this.Targets)
         {
             CellDto cell = this._cells[target];
-            bool isCapture = this._occupied.Contains(target);
-            <circle class="@(isCapture ? "mark capture" : "mark")"
+            bool isOccupied = this._occupied.Contains(target);
+            bool isLabelled = this.LabelTo(target) is not null;
+            <circle class="@MarkOf(isOccupied, isLabelled)"
                     pointer-events="none"
                     cx="@Svg.Number(cell.X)"
                     cy="@Svg.Number(BoardFrame.ScreenY(cell.Y))"
-                    r="@(isCapture ? "0.46" : "0.14")" />
+                    r="@(isOccupied ? "0.46" : "0.14")" />
         }
     </g>
 </svg>
@@ -105,6 +106,22 @@
         this._cells = this.View.Cells.ToImmutableDictionary(cell => cell.Id);
         this._occupied = [.. this.View.Pieces.Select(piece => piece.Cell)];
     }
+
+    /// <summary>
+    /// What the move from the picked-up piece to <paramref name="target"/> says of itself, as a swap does;
+    /// a move onto a piece that says nothing takes it. With nothing picked up, nothing goes from -1.
+    /// </summary>
+    private string? LabelTo(int target) =>
+        this.Actions.LabelBetween(this.Selection.Selected.GetValueOrDefault(-1), target);
+
+    /// <summary>A dot for an empty square; a ring for a piece taken; a dashed ring for one moved some other way.</summary>
+    private static string MarkOf(bool isOccupied, bool isLabelled) =>
+        (isOccupied, isLabelled) switch
+        {
+            (false, _) => "mark",
+            (true, false) => "mark capture",
+            (true, true) => "mark swap",
+        };
 
     /// <summary>A shape drawn about the origin, moved to its piece and kept upright.</summary>
     private static string ShapeTransform(BoardTurn turn, double x, double y) =>
