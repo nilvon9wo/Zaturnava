@@ -48,6 +48,9 @@ public sealed class ClassicRules : IRulesApplying
     /// <summary>The points instead of <see cref="EmpireByCaptureBonus"/> when that Raja was on its throne.</summary>
     public const int EmpireByThroneCaptureBonus = 4;
 
+    /// <summary>The points for accepting a ransom, for each prisoner it sends home (rules.md §8).</summary>
+    public const int RansomAcceptedBonus = 1;
+
     /// <summary>The timer on a seat whose turn is over, while it may still offer ransoms.</summary>
     public const string RansomWindowTimer = "ransom-window";
 
@@ -291,8 +294,27 @@ public sealed class ClassicRules : IRulesApplying
                 .. this.MovesOf(state, seat, _ => true),
                 .. this.PromotionsOf(state, seat),
                 .. this.HandOversOf(state, seat),
+                .. RetirementsOf(state, seat),
             ]
-            : [new RollAction(seat), .. this.PromotionsOf(state, seat), .. this.HandOversOf(state, seat)];
+            :
+            [
+                new RollAction(seat),
+                .. this.PromotionsOf(state, seat),
+                .. this.HandOversOf(state, seat),
+                .. RetirementsOf(state, seat),
+            ];
+
+    /// <summary>
+    /// A seat left with only its Raja on the board may, at the start of its own turn, end its part in the
+    /// game (rules.md §10).
+    /// </summary>
+    private static IEnumerable<RetireAction> RetirementsOf(GameState state, SeatId seat)
+    {
+        ImmutableList<Piece> own = [.. state.Position.Occupants.Values.Where(piece => piece.Owner == seat)];
+        return state.ActingFor is null && own.Count == 1 && own[0].Kind == ClassicPieces.Raja
+            ? [new RetireAction(seat)]
+            : [];
+    }
 
     /// <summary>
     /// Each Pawn of an army the seat commands that stands on the far edge - with nowhere forward left
@@ -405,6 +427,12 @@ public sealed class ClassicRules : IRulesApplying
             PromoteAction promote => this.Promoted(state, promote),
             EscapeAction escape => this.Escaped(state, escape),
             HandOverAction handOver => HandedToRegent(state, handOver),
+            RetireAction retire => this.Handed(
+                new Transition(
+                    state with { Retired = state.Retired.Add(retire.Actor) },
+                    [new RajaRetired(retire.Actor)]
+                )
+            ),
             AnswerEndAction answer => Agreement.Answered(state, answer),
             AcceptAction => this._ransom.Accepted(state),
             PlaceAction place => this._ransom.Placed(state, place),
@@ -792,11 +820,12 @@ public sealed class ClassicRules : IRulesApplying
 
     /// <summary>
     /// A capture by <paramref name="captor"/> on <paramref name="cell"/> scores by piece, but taking a piece of
-    /// one's own team scores no one.
+    /// one's own team, or a retired seat's Raja, scores no one (rules.md §10).
     /// </summary>
     private Transition Captured(Transition moved, Piece captured, SeatId captor, CellId cell)
     {
-        bool isEnemy = !moved.State.Teams.AreAllied(captured.Owner, captor);
+        bool isEnemy = !moved.State.Teams.AreAllied(captured.Owner, captor)
+            && !moved.State.Retired.Contains(captured.Owner);
         int points = isEnemy
             ? ClassicPieces.Points[captured.Kind]
             : 0;
@@ -819,17 +848,20 @@ public sealed class ClassicRules : IRulesApplying
 
     /// <summary>
     /// Taking the last Raja of <paramref name="enemy"/>'s team creates the empire (rules.md §5) for every
-    /// seat of the other team that commands an ally's army then: the captor first, then by seat.
+    /// seat of the other team that commands an ally's army then: the captor first, then by seat. A retired
+    /// seat's Raja counts for nothing, and a retired seat creates nothing (§10).
     /// </summary>
     private Transition Empire(Transition taken, SeatId enemy, SeatId captor, bool isOnThrone)
     {
         GameState state = taken.State;
         bool isLastRaja = !state.Position.Occupants.Values
+            .Where(piece => !state.Retired.Contains(piece.Owner))
             .Any(piece => piece.Kind == ClassicPieces.Raja && state.Teams.AreAllied(piece.Owner, enemy));
         IEnumerable<SeatId> creators = isLastRaja
             ? state.Seats
                 .Select(seat => seat.Id)
-                .Where(seat => !state.Teams.AreAllied(seat, enemy) && this._control.CommandsAnAlly(state, seat))
+                .Where(seat => !state.Teams.AreAllied(seat, enemy) && !state.Retired.Contains(seat))
+                .Where(seat => this._control.CommandsAnAlly(state, seat))
                 .OrderBy(seat => seat != captor)
                 .ThenBy(seat => seat.Value)
             : [];

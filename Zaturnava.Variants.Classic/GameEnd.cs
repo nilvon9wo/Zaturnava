@@ -53,8 +53,9 @@ internal static class GameEnd
     public static Transition ByPoints(Transition transition, string reason) =>
         Ended(transition, OutcomeByPoints(transition.State, reason));
 
+    /// <summary>Whether the seat still takes its turns: it has pieces left, and has not retired.</summary>
     public static bool IsPlaying(GameState state, SeatId seat) =>
-        state.Position.Occupants.Values.Any(piece => piece.Owner == seat);
+        !state.Retired.Contains(seat) && state.Position.Occupants.Values.Any(piece => piece.Owner == seat);
 
     private static GameOutcome OutcomeByPoints(GameState state, string reason)
     {
