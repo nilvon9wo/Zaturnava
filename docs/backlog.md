@@ -40,6 +40,12 @@ did them.
     scoring positions by weighted features (material, Raja safety, thrones, command, empires,
     mobility), the weights tuned on recorded games and BotRunner self-play. Free, offline, and the
     fallback for the layers above.
+    - Done: **Sage**, looking through the rest of its own turn, the dice averaged, and weighing points,
+      pieces, leaders, prisoners, thrones, and what each side could take next. With its starting weights
+      it beat Argus 75-22-3 in 100 self-play games (seats swapped halfway).
+    - Next: tune the weights by self-play (BotRunner `--train`), kept as data for each ruleset; then
+      features of the ruleset's own (command, empires, a Pawn's way to the far edge), mobility, and the
+      enemy's reply. The Chaturaji 2027 features serve the grand game too (grand/specification.md §6.1).
   - **Layer 2** (*Proposed*): an advisor on a free AI service (a free tier, in its own adapter
     project), choosing among layer 1's best moves; layer 1 alone when the service is down, slow or
     out of quota. Each service's current terms to be checked before use.
