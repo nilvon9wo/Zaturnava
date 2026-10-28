@@ -114,16 +114,23 @@ public sealed class GameServiceTest
     }
 
     [Fact]
-    public async Task List_WhenAGameWasCreated_IncludesIt()
+    public async Task Snapshots_WhenAGameIsOfARulesetNoLongerOffered_ReplaysOnlyTheOthers()
     {
         // Arrange
-        GameId id = await this._service.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
+        InMemoryGameStore store = new();
+        GameService service = this.Service(GameServiceSettings.Default, store);
+        GameId id = await service.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
+        GameRecord kept = (await store.Find(id, this._cancellation))!;
+        await store.Add(kept with { Id = new GameId("retired"), RulesetId = "retired" }, this._cancellation);
 
         // Act
-        ImmutableList<GameRecord> games = await this._service.List(this._cancellation);
+        ImmutableList<GameSnapshot> snapshots = await service.Snapshots(this._cancellation);
 
         // Assert
-        Assert.Equal([id], games.Select(game => game.Id));
+        Assert.Equal(
+            [(id, TinyRules.RulesetId, First)],
+            snapshots.Select(snapshot => (snapshot.Record.Id, snapshot.Rules.Id, snapshot.State.DecidingSeat!.Value))
+        );
     }
 
     [Fact]
@@ -682,11 +689,11 @@ public sealed class GameServiceTest
         return (id, waiting);
     }
 
-    private GameService Service(GameServiceSettings settings) =>
+    private GameService Service(GameServiceSettings settings, InMemoryGameStore? store = null) =>
         new(
             new RulesetCatalog([new TinyRules(GameLength), new RollingRules(GameLength)]),
             new BotCatalog([new FirstChoiceBot()]),
-            new InMemoryGameStore(),
+            store ?? new InMemoryGameStore(),
             this._notifier,
             new LoadedDice(4),
             new DecisionClock(this._time),

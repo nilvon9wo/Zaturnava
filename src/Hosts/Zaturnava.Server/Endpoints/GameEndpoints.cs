@@ -35,8 +35,8 @@ internal static class GameEndpoints
         CancellationToken cancellationToken
     )
     {
-        ImmutableList<GameRecord> records = await games.List(cancellationToken);
-        return [.. records.Select(GameViews.SummaryOf)];
+        ImmutableList<GameSnapshot> snapshots = await games.Snapshots(cancellationToken);
+        return [.. snapshots.Select(GameViews.SummaryOf)];
     }
 
     private static async Task<Created<GameCreatedDto>> Create(

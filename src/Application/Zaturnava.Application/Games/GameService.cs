@@ -59,8 +59,18 @@ public sealed class GameService(
         return record.Id;
     }
 
-    public Task<ImmutableList<GameRecord>> List(CancellationToken cancellationToken) =>
-        this._store.List(cancellationToken);
+    /// <summary>Every stored game of a ruleset still offered, replayed, as a lobby lists them.</summary>
+    public async Task<ImmutableList<GameSnapshot>> Snapshots(CancellationToken cancellationToken)
+    {
+        ImmutableList<GameRecord> records = await this._store.List(cancellationToken);
+        ImmutableDictionary<string, IRulesApplying> offered = this.Rulesets.ToImmutableDictionary(rules => rules.Id);
+        return
+        [
+            .. records
+                .Where(record => offered.ContainsKey(record.RulesetId))
+                .Select(record => GameSnapshot.Of(record, offered[record.RulesetId])),
+        ];
+    }
 
     /// <exception cref="GameNotFoundException">There is no such game.</exception>
     public async Task<GameSnapshot> Get(GameId id, CancellationToken cancellationToken)

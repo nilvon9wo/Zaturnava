@@ -21,10 +21,11 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
         // Assert
         RulesetDto ruleset = catalog.Rulesets.Single();
         Assert.Equal(
-            (ZaturnavaServer.Chaturaji2027, 4, "argus,midas,random,solomon", false),
+            (ZaturnavaServer.Chaturaji2027, 4, "Black,Yellow,Green,Red", "argus,midas,random,solomon", false),
             (
                 ruleset.Id,
                 ruleset.SeatCount,
+                string.Join(",", ruleset.SeatNames),
                 string.Join(",", catalog.Bots.Select(bot => bot.Id)),
                 catalog.Bots.Any(bot => bot.UsesAi)
             )
@@ -32,7 +33,7 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
     }
 
     [Fact]
-    public async Task List_WhenAGameWasCreated_ShowsItsOpenSeats()
+    public async Task List_WhenAGameWasCreated_ShowsItsOpenSeatsByName()
     {
         // Arrange
         string gameId = await this.CreateGame();
@@ -41,7 +42,24 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
         ImmutableList<GameSummaryDto> games = await this._client.List(this._cancellation);
 
         // Assert
-        Assert.Equal([0], games.Single(game => game.Id == gameId).OpenSeats);
+        GameSummaryDto game = games.Single(listed => listed.Id == gameId);
+        Assert.Equal([0], game.OpenSeats);
+        Assert.Equal(("Black,Yellow,Green,Red", false), (string.Join(",", game.SeatNames), game.IsOver));
+    }
+
+    [Fact]
+    public async Task List_WhenASeatWasClaimed_SaysAPersonPlaysIt()
+    {
+        // Arrange
+        string gameId = await this.CreateGame();
+        _ = await this._client.Claim(gameId, 0, this._cancellation);
+
+        // Act
+        ImmutableList<GameSummaryDto> games = await this._client.List(this._cancellation);
+
+        // Assert
+        GameSummaryDto game = games.Single(listed => listed.Id == gameId);
+        Assert.Equal((GameSummaryDto.Person, 0), (game.Players[0], game.OpenSeats.Count));
     }
 
     [Fact]

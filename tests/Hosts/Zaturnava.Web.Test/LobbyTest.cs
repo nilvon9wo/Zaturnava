@@ -20,10 +20,10 @@ public sealed class LobbyTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ("Chaturaji 2027", 4, "|random|oracle|midas", "Join seat 2", "game-000"),
+            ("Chaturaji 2027", "Black|Yellow|Green|Red", "|random|oracle|midas", "Join as Yellow", "game-000"),
             (
                 lobby.Find("p.rules").TextContent,
-                lobby.FindAll("select.plan").Count,
+                string.Join('|', lobby.FindAll("span.seat-name").Select(name => name.TextContent)),
                 string.Join('|', lobby.FindAll("select.plan").Select(plan => plan.GetAttribute("value"))),
                 lobby.Find("button.join").TextContent,
                 lobby.Find("span.game").TextContent
@@ -180,7 +180,7 @@ public sealed class LobbyTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ("person, open, random, open", expected),
+            ("Black: person, Yellow: open, Green: random, Red: open", expected),
             (lobby.Find("span.players").TextContent, lobby.Find("span.moves").TextContent)
         );
     }
@@ -198,6 +198,54 @@ public sealed class LobbyTest : IDisposable
 
         // Assert
         Assert.Equal(new Seating(FakeGameServer.GameId, new SeatClaim(2, "kept")), this._seated);
+    }
+
+    [Fact]
+    public void Render_WhenThisBrowserHeldASeat_NamesIt()
+    {
+        // Arrange
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.seat." + FakeGameServer.GameId)
+            .SetResult("2 kept");
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Assert
+        Assert.Equal("Back to Green", lobby.Find("button.resume").TextContent);
+    }
+
+    [Fact]
+    public void Render_WhenAGameIsOver_OffersNothingToDoInIt()
+    {
+        // Arrange
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.seat." + FakeGameServer.GameId)
+            .SetResult("2 kept");
+        this._page.Server.Games = [this._page.Server.Games[0] with { IsOver = true }];
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Assert
+        Assert.Equal(
+            ("Over", 0),
+            (
+                lobby.Find("span.over").TextContent,
+                lobby.FindAll("button.watch, button.join, button.resume").Count
+            )
+        );
+    }
+
+    [Fact]
+    public void Render_WhenTheRulesetNamesNoSeats_NumbersThem()
+    {
+        // Arrange
+        this._page.Server.Games = [this._page.Server.Games[0] with { SeatNames = [] }];
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Assert
+        Assert.Equal("Join as seat 2", lobby.Find("button.join").TextContent);
     }
 
     [Fact]
