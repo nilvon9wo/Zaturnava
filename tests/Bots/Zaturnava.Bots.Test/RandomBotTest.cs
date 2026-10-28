@@ -56,6 +56,22 @@ public sealed class RandomBotTest
         Assert.Equal(new PassAction(Seat), action);
     }
 
+    [Theory]
+    [InlineData(3, 2, true)]
+    [InlineData(2, 2, false)]
+    [InlineData(1, 2, false)]
+    public async Task Decide_WhenAskedToEndTheGame_AgreesOnlyIfItsTeamLeads(int ours, int theirs, bool agrees)
+    {
+        // Arrange
+        DecisionRequest asked = Proposals.Asked(ours, theirs);
+
+        // Act
+        GameAction action = await new RandomBot(new Random(Seed)).Decide(asked, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(new AnswerEndAction(Proposals.Black, agrees), action);
+    }
+
     [Fact]
     public async Task Decide_WhenCancelled_ThrowsTaskCanceledException()
     {

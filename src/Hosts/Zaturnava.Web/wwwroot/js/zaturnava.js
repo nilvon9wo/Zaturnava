@@ -1,8 +1,15 @@
 // What the page needs from the browser beyond Blazor: sounds, made on the spot (no files to fetch),
-// a memory that outlives the page (seats held, settings), and the colour theme. Each fails quietly:
-// a browser without sound or storage still plays.
+// a memory that outlives the page (seats held, settings), the colour theme, and word of the page shown
+// again. Each fails quietly: a browser without sound or storage still plays.
 window.zaturnava = (() => {
     let audio = null;
+    // The table told when the page is shown again: a hidden page's timers may wait a minute between looks.
+    let watcher = null;
+    document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible" && watcher) {
+            watcher.invokeMethodAsync("Shown").catch(() => { });
+        }
+    });
 
     const tone = (frequency, seconds, type, volume, delay) => {
         const start = audio.currentTime + delay;
@@ -88,10 +95,12 @@ window.zaturnava = (() => {
             tone(523, 0.16, "triangle", 0.16, 0.18);
             tone(659, 0.55, "triangle", 0.18, 0.36);
         },
-        // An enemy gaining command of an army, or the team losing it: three heavy low beats.
-        menace: () => [0, 0.32, 0.64].forEach(delay => {
-            tone(82, 0.28, "sawtooth", 0.1, delay);
-            tone(55, 0.3, "sine", 0.25, delay);
+        // An enemy gaining command of an army, or the team losing it: three heavy beats, each a semitone lower,
+        // high enough to be heard on small speakers, with a low thud beneath for those that can sound it.
+        menace: () => [196, 185, 175].forEach((frequency, i) => {
+            tone(frequency, 0.3, "sawtooth", 0.1, i * 0.34);
+            tone(frequency * 1.5, 0.3, "triangle", 0.06, i * 0.34);
+            tone(55, 0.32, "sine", 0.22, i * 0.34);
         }),
         // The team's empire begun, or an enemy's over: a cadence, from the fourth to the fifth to home.
         glory: () => [[349, 440, 523], [392, 494, 587], [523, 659, 784, 1047]].forEach((chord, i) =>
@@ -143,6 +152,9 @@ window.zaturnava = (() => {
         },
         theme(name) {
             document.documentElement.dataset.theme = name;
+        },
+        watch(table) {
+            watcher = table;
         },
     };
 })();

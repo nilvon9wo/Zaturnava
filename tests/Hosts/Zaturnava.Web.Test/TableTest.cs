@@ -889,11 +889,72 @@ public sealed class TableTest : IDisposable
     private static string Turn(IRenderedComponent<Table> table) =>
         table.Find("svg.board > g").GetAttribute("transform") ?? string.Empty;
 
+    private static bool IsGet(string call) => call.StartsWith("get", StringComparison.Ordinal);
+
     private static IEnumerable<string> Played(PageContext page) =>
         page.JSInterop.Invocations["zaturnava.play"].SelectMany(call => call.Arguments.Select(sound => (string)sound!));
 
     private IRenderedComponent<Table> Render(Seating seating) =>
         this._page.Render<Table>(parameters => parameters.Add(x => x.Seating, seating));
+
+    [Fact]
+    public void Shown_WhenThePageIsShownAgain_LooksAtTheGameAtOnce()
+    {
+        // Arrange
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Act
+        _ = table.InvokeAsync(table.Instance.Shown);
+
+        // Assert
+        table.WaitForAssertion(() => Assert.Equal(2, this._page.Server.Calls.Count(IsGet)));
+    }
+
+    [Fact]
+    public async Task Shown_WhenTheGameIsOver_LooksNoMore()
+    {
+        // Arrange
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            DecidingSeat = null,
+            Outcome = new OutcomeDto([1], "Yellow won: only one team has pieces left."),
+        };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Act
+        await table.InvokeAsync(table.Instance.Shown);
+        await Task.Delay(TimeSpan.FromMilliseconds(100), Xunit.TestContext.Current.CancellationToken);
+
+        // Assert
+        _ = Assert.Single(this._page.Server.Calls);
+    }
+
+    [Fact]
+    public async Task Shown_WhenTheGameCouldNotBeSeen_WaitsAsBefore()
+    {
+        // Arrange
+        this._page.Server.Failure = new HttpRequestException("The server is asleep.");
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Act
+        await table.InvokeAsync(table.Instance.Shown);
+        await Task.Delay(TimeSpan.FromMilliseconds(100), Xunit.TestContext.Current.CancellationToken);
+
+        // Assert
+        _ = Assert.Single(this._page.Server.Calls);
+    }
+
+    [Fact]
+    public void Render_WhenShown_AsksToBeToldWhenThePageIsShownAgain()
+    {
+        // Arrange - nothing beyond the game
+
+        // Act
+        _ = this.Render(SeatZero);
+
+        // Assert
+        _ = Assert.Single(this._page.JSInterop.Invocations["zaturnava.watch"]);
+    }
 
     [Fact]
     public void Status_WhenTheGameHasEnded_TellsHow()

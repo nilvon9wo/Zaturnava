@@ -7,7 +7,7 @@ namespace Net.NowhereAtAll.Zaturnava.Web;
 
 /// <summary>
 /// What the page asks of the browser itself (wwwroot/js/zaturnava.js): sounds, a memory that outlives
-/// the page (seats held, and settings: sound and pieces), and the colour theme.
+/// the page (seats held, and settings: sound and pieces), the colour theme, and word of the page shown again.
 /// </summary>
 internal sealed class Browser(IJSRuntime js)
 {
@@ -26,6 +26,11 @@ internal sealed class Browser(IJSRuntime js)
     private readonly IJSRuntime _js = js;
 
     public ValueTask Play(ImmutableList<string> sounds) => this._js.InvokeVoidAsync("zaturnava.play", [.. sounds]);
+
+    /// <summary>Has the table told (its <c>Shown</c>) whenever the page is shown again, after being hidden.</summary>
+    public ValueTask Watch<TTable>(DotNetObjectReference<TTable> table)
+        where TTable : class =>
+        this._js.InvokeVoidAsync("zaturnava.watch", table);
 
     /// <summary>Remembers the seat held at a game, so that the player can come back to it.</summary>
     public ValueTask Remember(string gameId, SeatClaim claim) =>
