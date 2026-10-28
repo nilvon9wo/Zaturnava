@@ -25,13 +25,13 @@ Everything else here is specified but not yet played by the engine.
 | §2 Board & setup | Implemented: the 8×8 board, the pinwheel setup, teams of opposite seats, thrones. |
 | §3 Pieces & movement | Implemented, captures included, and the back-to-back Pawn swap. A piece moved for another army moves the way its own army faces; what it may take is §6.4. |
 | §4 Turns & dice | Implemented: the opening plays the die that won the roll-off, then a deliberate move, a pass or two dice, clockwise from the roll-off's winner; an unusable die is forfeit. Doubles let one piece move twice, or a prisoner escape (§7). The dice profile is the weighted d6 one; a d4 profile exists but cannot yet be chosen. |
-| §5 Captures & scoring | Implemented: captures score by piece, with both throne bonuses and the empire, as clarified below. |
+| §5 Captures & scoring | Implemented: captures score by piece, with both throne bonuses and the empire, as clarified below; the ransom's point is in §8. |
 | §6 Throne control | Implemented: the expanded pool (§6.1, both triggers), voluntary regency (§6.2, as stated below) and the forced shared turn (§6.3). |
 | §6.4 Commanded captures | Implemented, with the toggle as a constructor argument. |
 | §7 Escape | Implemented, as clarified below: the escape takes the place of the double move and ends the turn. |
 | §9 Boat triumph | Not yet. |
 | §8 Promotion & ransom | Implemented, as clarified below: promotion into any captured piece (`promotion.pawns` a constructor argument; `promotion.pool` fixed at `unrestricted`), and ransom with its timed protocol, including the receiving player's choice among equidistant squares. |
-| §10 Game end | Partly: elimination (a seat with no pieces is skipped), honourable peace, team elimination, ending by agreement (as stated and proposed below), and a safety net (below). Retirement is not yet. |
+| §10 Game end | Implemented: elimination (a seat with no pieces is skipped), Raja retirement, honourable peace, team elimination, ending by agreement (as stated and proposed below), and a safety net (below). |
 | §11 Setup roll-off | Implemented. |
 | §12 Toggles | None per game yet: `control.enemyArmyCaptures` is a constructor argument; the other defaults are fixed. |
 
@@ -463,6 +463,14 @@ available (via a future capture, by anyone).
 - Releasing a piece via ransom never returns the points already scored for
   capturing it, and if the released piece is captured again by anyone, that
   capture scores again.
+- *(Stated 2026-10-28, from the original score sheet)* The player who
+  **accepts** a ransom scores **+1 for each piece returned**: an incentive to
+  keep games going rather than win by attrition, and a balance to otherwise
+  questionable offers (a rook back for a pawn). The value may be revisited, or
+  made configurable.
+  - *(Proposed)* "Each piece returned" counts every prisoner the deal sends
+    home, on both sides: an offer of 2 back for 1 in return scores the
+    accepting player 3.
 - *(Clarified 2026-10-25)* The turn-timing protocol:
   - A player may offer on their own turn: before rolling, or with dice left,
     but not while moving for another seat (§6.3).
@@ -529,6 +537,19 @@ both the triumphing player and their ally may move each other's Boat.
 - **Voluntary Raja retirement**: a player reduced to only their Raja may
   choose to end their own participation; no points are ever awarded for
   capturing that Raja from then on.
+  - *(Proposed)* How the engine plays it:
+    - "Reduced to only their Raja" means their Raja is their only piece on
+      the board. They may retire at the start of their own turn, before
+      rolling (also when an enemy holds their throne), but not as someone's
+      regent. Retiring ends that turn, and it cannot be undone.
+    - From then on their turns are skipped, as an eliminated player's are.
+      Their Raja stays where it is, and no one may move it: no one commands
+      a retired player's army, through their throne or their having no Raja.
+    - Taking their Raja scores nothing, not even the throne bonus, and it
+      does not count for the empire: the empire is created when the last
+      enemy Raja that has not retired is taken. A retired player creates no
+      empire, and is offered no ransom.
+    - Bots never retire.
 - **Honourable peace**: if only Rajas remain on the board (across all
   players), the game is a draw.
 - **Team elimination win**: if only one team still has any pieces on the

@@ -141,6 +141,13 @@ file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bo
                 accepted.Offer.To,
                 $"{this.Name(accepted.Offer.To)} accepted {this.Name(accepted.Offer.From)}'s offer."
             ),
+            RansomRewarded rewarded => this.Add(
+                number,
+                EventDto.Bonus,
+                rewarded.Seat,
+                $"{this.Name(rewarded.Seat)} scored for accepting: a point for each prisoner going home "
+                    + $"(+{rewarded.Points})."
+            ),
             RansomDeclined declined => this.Add(
                 number,
                 EventDto.Ransom,
@@ -208,6 +215,12 @@ file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bo
                 EventDto.Passed,
                 givenUp.Seat,
                 $"{this.Name(givenUp.Seat)} has given up their turns, so passes."
+            ),
+            RajaRetired retired => this.Add(
+                number,
+                EventDto.Passed,
+                retired.Seat,
+                $"{this.Name(retired.Seat)} retired from the game: their Raja stays, and taking it scores no one."
             ),
             TurnHandedOver handed => this.Add(
                 number,

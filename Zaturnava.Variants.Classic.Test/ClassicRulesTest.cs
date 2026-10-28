@@ -1591,6 +1591,140 @@ public sealed class ClassicRulesTest
         );
     }
 
+    public static TheoryData<string, Position, SeatId, bool> Retirements =>
+        new()
+        {
+            { "only its Raja", Alone(), Black, true },
+            { "its Raja and a Pawn", Alone().Place(Grid.CellAt(5, 1), BlackPawn), Black, false },
+            { "only a Pawn", Alone().Place(Grid.CellAt(3, 3), BlackPawn), Black, false },
+            { "enemy on throne", Alone().Place(BlackThrone, Piece(11, ClassicPieces.Raja, Yellow)), Black, true },
+            { "a regent", new Position(Alone().Occupants.Remove(Grid.CellAt(2, 6))), Green, false },
+        };
+
+    private static readonly Piece BlackPawn = Piece(5, ClassicPieces.Pawn, Black);
+
+    /// <summary>Black's Raja alone in mid-board; a Pawn each of the others, and Green's Raja.</summary>
+    private static Position Alone() =>
+        Position.Empty
+            .Place(Grid.CellAt(3, 3), Piece(3, ClassicPieces.Raja, Black))
+            .Place(Grid.CellAt(0, 6), Piece(12, ClassicPieces.Pawn, Yellow))
+            .Place(Grid.CellAt(2, 6), Piece(21, ClassicPieces.Pawn, Green))
+            .Place(Grid.CellAt(6, 2), Piece(19, ClassicPieces.Raja, Green))
+            .Place(Grid.CellAt(6, 6), Piece(29, ClassicPieces.Pawn, Red));
+
+    [Theory]
+    [MemberData(nameof(Retirements), DisableDiscoveryEnumeration = true)]
+    public void LegalActions_WhenOnlyItsRajaIsLeftOnItsOwnTurn_MayRetire(
+        string why,
+        Position position,
+        SeatId deciding,
+        bool mayRetire
+    )
+    {
+        // Arrange
+        GameState placed = this.Later() with { Position = position };
+        GameState state = why == "a regent"
+            ? placed with { DecidingSeat = Green, ActingFor = Black }
+            : placed;
+
+        // Act
+        ImmutableList<GameAction> actions = this._rules.LegalActions(state);
+
+        // Assert
+        Assert.Equal(mayRetire, actions.Contains(new RetireAction(deciding)));
+    }
+
+    [Fact]
+    public void Apply_WhenASeatRetires_PassesItsTurnsFromThenOn()
+    {
+        // Arrange
+        GameState state = this.Later() with { Position = Alone() };
+
+        // Act
+        Transition retired = this._rules.Apply(state, new RetireAction(Black));
+        Transition round = this._rules.Apply(
+            retired.State with { DecidingSeat = Red },
+            new PassAction(Red)
+        );
+
+        // Assert
+        Assert.Equal([new RajaRetired(Black), new TurnPassed(Black, Yellow)], retired.Events);
+        Assert.Equal([Black], retired.State.Retired);
+        Assert.Equal(Yellow, round.State.DecidingSeat);
+    }
+
+    [Fact]
+    public void Apply_WhenARetiredSeatsRajaIsTaken_ScoresNoOne()
+    {
+        // Arrange - Yellow's Raja on a6 is the last enemy Raja; Black's Raja holds Green's throne
+        GameState empire = this.Empire(GreenThrone, hasGreenRaja: true);
+        GameState state = empire with { Retired = [Yellow] };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new MoveAction(Black, Grid.CellAt(0, 0), Grid.CellAt(0, 5)));
+
+        // Assert
+        Assert.Equal((0, false), (transition.State.Scores[Black], transition.Events.OfType<EmpireCreated>().Any()));
+    }
+
+    [Fact]
+    public void Apply_WhenOnlyARetiredEnemyRajaIsLeft_CreatesTheEmpire()
+    {
+        // Arrange - Red's Raja on h8 has retired
+        GameState empire = this.Empire(GreenThrone, hasGreenRaja: true);
+        GameState state = empire with
+        {
+            Position = empire.Position.Place(Grid.CellAt(7, 7), Piece(27, ClassicPieces.Raja, Red)),
+            Retired = [Red],
+        };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new MoveAction(Black, Grid.CellAt(0, 0), Grid.CellAt(0, 5)));
+
+        // Assert
+        Assert.Equal([new EmpireCreated(Black, 3)], transition.Events.OfType<EmpireCreated>());
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Apply_WhenTheOnlyCommandOfAnAllyIsARetiredSeatsOrOverOne_CreatesNoEmpire(bool isBlackRajaless)
+    {
+        // Arrange - either Black has no Raja, and retired Green has; or Black's Raja holds retired Green's throne
+        GameState held = this.Empire(GreenThrone, hasGreenRaja: true);
+        GameState empire = isBlackRajaless
+            ? held with { Position = new Position(held.Position.Occupants.Remove(GreenThrone)) }
+            : held;
+        GameState state = empire with { Retired = [Green] };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new MoveAction(Black, Grid.CellAt(0, 0), Grid.CellAt(0, 5)));
+
+        // Assert
+        Assert.DoesNotContain(transition.Events, happened => happened is EmpireCreated);
+    }
+
+    [Fact]
+    public void LegalActions_WhenARetiredAllyHasNoRaja_CommandsNoneOfItsArmy()
+    {
+        // Arrange - Green, retired, has lost its Raja; its Pawn is on c7
+        GameState state = this.Later() with
+        {
+            Position = Alone().Place(Grid.CellAt(5, 1), Piece(5, ClassicPieces.Pawn, Black)),
+            Retired = [Green],
+        };
+        GameState rajaless = state with
+        {
+            Position = new Position(state.Position.Occupants.Remove(Grid.CellAt(6, 2))),
+        };
+
+        // Act
+        ImmutableList<GameAction> actions = this._rules.LegalActions(rajaless);
+
+        // Assert
+        Assert.DoesNotContain(actions, action => action is MoveAction move && move.From == Grid.CellAt(2, 6));
+    }
+
     public static TheoryData<string, OfferAction> InvalidOffers =>
         new()
         {
@@ -1601,6 +1735,7 @@ public sealed class ClassicRulesTest
             { "nothing given", new OfferAction(Black, Yellow, [], [new PieceId(1)]) },
             { "not held", new OfferAction(Black, Yellow, [new PieceId(12), new PieceId(99)], []) },
             { "asked for the enemy's", new OfferAction(Black, Yellow, [new PieceId(12)], [new PieceId(14)]) },
+            { "to a retired seat", new OfferAction(Black, Yellow, [new PieceId(12)], []) },
         };
 
     [Theory]
@@ -1613,6 +1748,7 @@ public sealed class ClassicRulesTest
         {
             "game over" => ransoms with { DecidingSeat = null },
             "dice awaited" => ransoms with { AwaitedDice = new DiceRequest(2, 6) },
+            "to a retired seat" => ransoms with { Retired = [Yellow] },
             _ => ransoms,
         };
 
@@ -1660,7 +1796,8 @@ public sealed class ClassicRulesTest
         Transition transition = this._rules.Apply(state, new AcceptAction(Yellow));
 
         // Assert - nearest Yellow's back rank, then nearest its left
-        Assert.Equal([new RansomAccepted(state.Offer!)], transition.Events);
+        Assert.Equal([new RansomAccepted(state.Offer!), new RansomRewarded(Yellow, 2, 2)], transition.Events);
+        Assert.Equal(state.Scores[Yellow] + 2, transition.State.Scores[Yellow]);
         Assert.Equal(
             (Yellow, null, 2, Black, false),
             (

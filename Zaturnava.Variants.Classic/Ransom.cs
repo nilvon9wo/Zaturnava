@@ -58,9 +58,9 @@ internal sealed class Ransom(SquareGridTopology grid, Position start)
         && HoldsRansom(state, seat);
 
     /// <summary>
-    /// The offer may be made: the offerer may offer, gives back at least one prisoner it holds of the
-    /// receiver's, asks only for prisoners the receiver holds of the offerer's team, and has not made
-    /// the same offer this turn.
+    /// The offer may be made: the offerer may offer, to a seat that has not retired, gives back at least one
+    /// prisoner it holds of the receiver's, asks only for prisoners the receiver holds of the offerer's team,
+    /// and has not made the same offer this turn.
     /// </summary>
     public static bool IsValid(GameState state, OfferAction offer)
     {
@@ -71,6 +71,7 @@ internal sealed class Ransom(SquareGridTopology grid, Position start)
             && offer.Actor == seat
             && MayOffer(state)
             && offer.Receiver != offer.Actor
+            && !state.Retired.Contains(offer.Receiver)
             && !given.IsEmpty
             && given.Count == offer.Given.Count
             && asked.Count == offer.Asked.Count
@@ -95,7 +96,10 @@ internal sealed class Ransom(SquareGridTopology grid, Position start)
         return new Transition(answered, [new RansomDeclined(offer)]);
     }
 
-    /// <summary>The prisoners given go home first, then those asked for, each to the nearest free square.</summary>
+    /// <summary>
+    /// The receiver scores for each prisoner going home, either way; the prisoners given go home first, then
+    /// those asked for, each to the nearest free square.
+    /// </summary>
     public Transition Accepted(GameState state)
     {
         RansomOffer offer = state.Offer!; // only a receiver answers, while its offer waits
@@ -103,7 +107,16 @@ internal sealed class Ransom(SquareGridTopology grid, Position start)
         [
             .. offer.Given.Concat(offer.Asked).Select(id => state.Prisoners.First(prisoner => prisoner.Piece.Id == id)),
         ];
-        Transition answered = new(state with { Offer = null }, [new RansomAccepted(offer)]);
+        int points = going.Count * ClassicRules.RansomAcceptedBonus;
+        GameState scored = state with
+        {
+            Offer = null,
+            Scores = state.Scores.SetItem(offer.To, state.Scores[offer.To] + points),
+        };
+        Transition answered = new(
+            scored,
+            [new RansomAccepted(offer), new RansomRewarded(offer.To, going.Count, points)]
+        );
         return this.SentHome(answered, going, offer.From);
     }
 

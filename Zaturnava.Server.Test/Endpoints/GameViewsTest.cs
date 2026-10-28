@@ -187,6 +187,35 @@ public sealed class GameViewsTest
     }
 
     [Fact]
+    public void ViewOf_WhenOnlyItsRajaIsLeft_LabelsRetiring()
+    {
+        // Arrange - Black has only its Raja, on d1
+        GameState start = Rules.CreateInitialState();
+        GameState state = start with
+        {
+            RollOff = [],
+            AwaitedDice = null,
+            Position = new Position(
+                start.Position.Occupants.RemoveRange(
+                    start.Position.Occupants
+                        .Where(occupant => occupant.Value.Owner == new SeatId(0))
+                        .Where(occupant => occupant.Value.Kind != ClassicPieces.Raja)
+                        .Select(occupant => occupant.Key)
+                )
+            ),
+        };
+
+        // Act
+        GameViewDto view = GameViews.ViewOf(Snapshot(state), Bots);
+
+        // Assert
+        Assert.Equal(
+            ["Retire from the game: taking your Raja will score no one"],
+            view.LegalActions.Where(action => action.Kind == "retire").Select(action => action.Label)
+        );
+    }
+
+    [Fact]
     public void ViewOf_WhenADieLetsNothingMove_SaysItIsNotUsable()
     {
         // Arrange - at the start, Black's Pawns may move, but its Elephant is hemmed in

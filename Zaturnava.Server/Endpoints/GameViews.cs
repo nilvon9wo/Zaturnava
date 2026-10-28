@@ -189,7 +189,8 @@ internal static class GameViews
     /// What a button says that its kind alone cannot: which Pawn becomes what; which prisoner escapes, and
     /// where to; which ally a turn is handed to; the answers to a proposal to end the game; that passing once
     /// a turn is over means being done offering ransoms; that passing on a promotion due leaves it for
-    /// later; and that a move onto a piece swaps places with it rather than taking it. Null for any other action.
+    /// later; that a move onto a piece swaps places with it rather than taking it; and what retiring means. Null
+    /// for any other action.
     /// </summary>
     private static string? LabelOf(GameSnapshot snapshot, GameAction action) =>
         (action, snapshot.State.IsRansomWindow, snapshot.State.PromotionDue) switch
@@ -202,6 +203,7 @@ internal static class GameViews
             (PassAction, true, _) => "Done offering",
             (PassAction, _, { }) => "Promote later",
             (MoveAction move, _, _) => SwapOf(snapshot, move),
+            (RetireAction, _, _) => "Retire from the game: taking your Raja will score no one",
             _ => null,
         };
 

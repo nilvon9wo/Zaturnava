@@ -13,6 +13,7 @@ public sealed class ActionParser(ImmutableDictionary<string, Func<ActionDescript
         ImmutableDictionary<string, Func<ActionDescriptor, GameAction>>.Empty
             .Add(MoveAction.Kind, MoveAction.Parse)
             .Add(PassAction.Kind, PassAction.Parse)
+            .Add(RetireAction.Kind, RetireAction.Parse)
             .Add(RollAction.Kind, RollAction.Parse)
             .Add(DiceAction.Kind, DiceAction.Parse)
             .Add(PromoteAction.Kind, PromoteAction.Parse)

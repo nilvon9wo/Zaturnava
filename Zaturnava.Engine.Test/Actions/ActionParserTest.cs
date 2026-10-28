@@ -75,6 +75,7 @@ public sealed class ActionParserTest
         new RejoinAction(new SeatId(3)),
         new VoteAwayAction(new SeatId(1), new SeatId(2), Stops: true),
         new PassAwayAction(new SeatId(2)),
+        new RetireAction(new SeatId(1)),
     ];
 
     [Theory]

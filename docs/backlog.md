@@ -64,6 +64,9 @@ did them.
 
 ## Done
 
+- Accepting a ransom scores a point for each prisoner it sends home (rules.md §8).
+- A player left with only their Raja may retire from the game at the start of their turn; their turns are
+  skipped from then on, and taking their Raja scores no one (rules.md §10).
 - A "How to play" guide opens from the settings bar, in the lobby or at the table: the aim, the pieces,
   turns and dice, points, thrones and command, prisoners and how the game ends.
 - **7** Not a rules bug: only the first turn of the game uses one die. It looked that way because
