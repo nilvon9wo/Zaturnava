@@ -31,7 +31,7 @@ Everything else here is specified but not yet played by the engine.
 | §7 Escape | Implemented, as clarified below: the escape takes the place of the double move and ends the turn. |
 | §9 Boat triumph | Not yet. |
 | §8 Promotion & ransom | Implemented, as clarified below: promotion into any captured piece (`promotion.pawns` a constructor argument; `promotion.pool` fixed at `unrestricted`), and ransom with its timed protocol, including the receiving player's choice among equidistant squares. |
-| §10 Game end | Implemented: elimination (a seat with no pieces is skipped), Raja retirement, honourable peace, team elimination, ending by agreement (as stated and proposed below), and a safety net (below). |
+| §10 Game end | Implemented: elimination (a seat with no pieces is skipped), Raja retirement, honourable peace, team elimination, ending by agreement (as stated and proposed below), a team that has all given up its turns, and a safety net (below). |
 | §11 Setup roll-off | Implemented. |
 | §12 Toggles | None per game yet: `control.enemyArmyCaptures` is a constructor argument; the other defaults are fixed. |
 
@@ -583,6 +583,11 @@ both the triumphing player and their ally may move each other's Boat.
   - *(Stated 2026-10-26)* Once they have given up their turns, the End game
     button becomes a green **Rejoin game** button, which takes their turns
     back: they are in the game again, playing their own turns.
+  - *(Stated 2026-10-28)* Once every player of a team has given up their
+    turns, the game ends at once, as if all had agreed: points decide.
+    - *(Proposed)* "Every player" means every one still playing (§10: with
+      pieces left, not retired); giving up by missing turns while away (below)
+      counts too; a proposal still waiting for answers ends with the game.
   - *(Proposed)* The details:
     - Any player still playing may propose it at any time, on anyone's turn,
       except while the dice are awaited (the roll-off included) or another

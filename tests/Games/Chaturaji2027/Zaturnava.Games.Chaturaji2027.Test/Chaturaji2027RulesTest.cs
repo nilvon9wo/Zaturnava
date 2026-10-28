@@ -2255,6 +2255,41 @@ public sealed class Chaturaji2027RulesTest
     }
 
     [Fact]
+    public void Apply_WhenTheLastOfATeamGivesUpItsTurns_EndsTheGameOnPoints()
+    {
+        // Arrange - Green gave up its turns earlier; Black leads Yellow and Red
+        GameState state = this.Regency(hasBlackRaja: true, Grid.CellAt(6, 2)) with
+        {
+            Resigned = [Green],
+            Scores = this.Later().Scores.SetItem(Black, 9),
+        };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new ProposeEndAction(Black, Resigns: true));
+
+        // Assert
+        GameOutcome outcome = new([Black, Green], "a whole team gave up their turns, so points decide");
+        Assert.Equal(
+            (outcome, null, null),
+            (transition.State.Outcome, transition.State.Proposal, transition.State.DecidingSeat)
+        );
+        Assert.Equal([new EndProposed(Black, true), new GameEnded(outcome)], transition.Events);
+    }
+
+    [Fact]
+    public void Apply_WhenOneOfATeamGivesUpItsTurnsWithAnAllyStillPlaying_AsksTheOthers()
+    {
+        // Arrange - Green, Black's ally, still plays
+        GameState state = this.Regency(hasBlackRaja: true, Grid.CellAt(6, 2));
+
+        // Act
+        Transition transition = this._rules.Apply(state, new ProposeEndAction(Black, Resigns: true));
+
+        // Assert
+        Assert.Equal((null, Yellow), (transition.State.Outcome, transition.State.DecidingSeat));
+    }
+
+    [Fact]
     public void Apply_WhenTheProposerGaveUpItsTurnsAndIsRefused_PassesItsTurn()
     {
         // Arrange - Black, deciding, gives up its turns
@@ -2341,8 +2376,13 @@ public sealed class Chaturaji2027RulesTest
     [Fact]
     public void Apply_WhenASeatThatGaveUpMustAnswerAgainstTheClock_LeavesItToTheClock()
     {
-        // Arrange - Yellow gave up its turns
-        GameState state = this.Ransoms() with { Resigned = [Yellow] };
+        // Arrange - Yellow gave up its turns; Red, its ally, still plays
+        GameState ransoms = this.Ransoms();
+        GameState state = ransoms with
+        {
+            Position = ransoms.Position.Place(Grid.CellAt(7, 7), Piece(27, Chaturaji2027Pieces.Pawn, Red)),
+            Resigned = [Yellow],
+        };
 
         // Act
         Transition transition = this._rules.Apply(state, new OfferAction(Black, Yellow, [new PieceId(12)], []));
