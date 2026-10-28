@@ -153,6 +153,14 @@ They may be added later. The program keeps their keys apart from the grand piece
 **Stated.** Play follows the Chaturaji 2027 rules ([rules.md](../rules.md)), and those still being worked
 on, with what follows in place of the Raja-and-dice parts.
 
+- **Stated (2026-10-28) — what carries over.** Everything Chaturaji 2027 has is in the grand game too:
+  thrones, command, the empire, ransom, escape, and the rest. The grand game only adds to it. The one
+  thing missing is the Boat, and with it the Boat triumph (rules.md §9). So a bot's sense of
+  Chaturaji 2027 (what thrones, command, the empire and ransom are worth) serves both games, and the
+  grand game's bots add their own for the catalogue's pieces and powers.
+- **Open — the back-to-back swap ([Q25](#9-open-questions)).** Which Infantry pieces may swap places
+  back to back, as two Chaturaji 2027 Pawns may (rules.md §3)?
+
 - **Stated — dice.** A die names a **class** of piece (Leader, Cavalry, Heavy, Infantry,
   Artillery), not a kind: the player may move any piece of that class.
   - **Stated.** On the default two six-sided dice, as Chaturaji 2027's faces map: 1 Artillery,
@@ -278,3 +286,5 @@ The numbers stay as they are; answered questions are marked so.
 22. **Q22** *Answered:* the Makruk Pawn promotes to the Courtier; the Private is gone.
 23. **Q23** *Answered:* a palace that does not fit its kingdom (§5).
 24. **Q24** *Answered:* which way a kingdom lies in its corner is a setting (§2).
+25. **Q25** Which Infantry pieces may make the back-to-back swap (§6.1)? Ideas so far (2026-10-28): all of
+    them, to keep it simple; or only those that can otherwise move only forward.
