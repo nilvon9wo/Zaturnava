@@ -8,8 +8,10 @@
    counts down, and advances the game once time is up, for the server to decide for that seat. Once the
    game is over, the player may play it again, the same seats played the same way, or start a quick game.
    If the server no longer has the game (restarted, say), it says so, stops asking, and offers the lobby.
+   Shown again after being hidden (when the browser may have slowed its asking), it asks at once.
    Under it all, a quiet bar: the game's name and the way back to the lobby, the buttons that turn the
    board, and the page's own settings. *@
+@using Microsoft.JSInterop
 @implements IDisposable
 @inject IGameServing Games
 @inject TableSettings Settings
@@ -394,6 +396,7 @@
     private static readonly BoardActions NoActions = new([]);
 
     private readonly Timer _poll;
+    private readonly DotNetObjectReference<Table> _self;
     private GameViewDto? _view;
     private Turn? _turn;
     private BoardSelection _selection = BoardSelection.None;
@@ -411,7 +414,11 @@
     private bool _isBotDeciding;
     private bool _isGone;
 
-    public Table() => this._poll = new Timer(this.Tick);
+    public Table()
+    {
+        this._poll = new Timer(this.Tick);
+        this._self = DotNetObjectReference.Create(this);
+    }
 
     /// <summary>The log, newest first: all of it, or only its highlights.</summary>
     private IEnumerable<EventDto> Shown(GameViewDto view) =>
@@ -463,11 +470,24 @@
     protected override async Task OnInitializedAsync()
     {
         this._isHighlightsOnly = await this.Browser.IsLogHighlightsOnly();
+        await this.Browser.Watch(this._self);
         await this.Refresh();
         this._boardTurn = this._view is null ? BoardTurn.None : BoardTurn.HomeOf(this.Seating.Claim?.Seat, this._view);
     }
 
-    public void Dispose() => this._poll.Dispose();
+    public void Dispose()
+    {
+        this._poll.Dispose();
+        this._self.Dispose();
+    }
+
+    /// <summary>
+    /// The page shown again: a look at the game at once, unless it is over, since a hidden page's timers may
+    /// have waited a minute or more between looks.
+    /// </summary>
+    [JSInvokable]
+    public void Shown() =>
+        _ = this._view is { DecidingSeat: not null } && this._poll.Change(TimeSpan.Zero, Timeout.InfiniteTimeSpan);
 
     private static string Hint(BoardActions actions) =>
         actions.Origins.IsEmpty
