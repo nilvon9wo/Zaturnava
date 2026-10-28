@@ -64,6 +64,8 @@ did them.
 
 ## Done
 
+- A "How to play" guide opens from the settings bar, in the lobby or at the table: the aim, the pieces,
+  turns and dice, points, thrones and command, prisoners and how the game ends.
 - **7** Not a rules bug: only the first turn of the game uses one die. It looked that way because
   no one's roll was shown (5).
 - **24** A game of bots now plays on: the table asks the server for one bot decision at a time

@@ -36,6 +36,21 @@ public sealed class AppTest : IDisposable
     }
 
     [Fact]
+    public void HowToPlay_WhenClicked_OpensTheGuideUntilClosed()
+    {
+        // Arrange
+        IRenderedComponent<App> app = this._page.Render<App>();
+
+        // Act
+        app.Find("button.how-to-play").Click();
+        string title = app.Find(".guide h2").TextContent;
+        app.Find(".guide button.close").Click();
+
+        // Assert
+        Assert.Equal(("How to play", 0), (title, app.FindAll(".guide").Count));
+    }
+
+    [Fact]
     public void Play_WhenThePlayerTakesASeat_RemembersIt()
     {
         // Arrange
