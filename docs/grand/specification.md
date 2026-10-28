@@ -1,7 +1,7 @@
 # The grand game — Specification (v0.8 draft)
 
-The [classic game](../rules.md) is one small part of a larger design, which has no name yet; this
-document calls it **the grand game** until it does. The classic game stays available, unchanged,
+[Chaturaji 2027](../rules.md) is one small part of a larger design, which has no name yet; this
+document calls it **the grand game** until it does. Chaturaji 2027 stays available, unchanged,
 as a variant of its own.
 
 Sources: the designer's notes and answers of 2026-10-25, and the designer's spreadsheet of pieces,
@@ -19,7 +19,7 @@ Every rule below is marked by where it stands:
 **Stated.** One player creates a game, choosing (or leaving to chance) the board and how the armies
 face each other. Each player, on joining, spends a budget of points on an army of their own: which
 pieces, which of their restrictions to buy off, where their palace and throne stand, and where
-every piece starts. Play then follows the classic rules, with dice naming a class of piece rather
+every piece starts. Play then follows the Chaturaji 2027 rules, with dice naming a class of piece rather
 than a piece, and with points won in play to be spent on upgrades and promotions.
 
 ## 2. Creating a game
@@ -29,9 +29,9 @@ than a piece, and with points won in play to be spent on upgrades and promotions
 | Setting | Values | Notes |
 |---|---|---|
 | Board size | width × length | Need not be square. |
-| Kingdom size | width × depth | Set apart from the board's size; one **kingdom** in each corner, as in the classic game (an 8 × 8 board with kingdoms of 4 × 2). |
+| Kingdom size | width × depth | Set apart from the board's size; one **kingdom** in each corner, as in Chaturaji 2027 (an 8 × 8 board with kingdoms of 4 × 2). |
 | Team game | yes / no | No: everyone for themselves. |
-| Allies' kingdoms | same side / opposite corners | Same side: neighbouring corners. Opposite corners: the classic pinwheel. |
+| Allies' kingdoms | same side / opposite corners | Same side: neighbouring corners. Opposite corners: the pinwheel of Chaturaji 2027. |
 | Kingdoms' facing | pinwheel / top and bottom | Pinwheel (the default): each kingdom turned a quarter from the last, so that each army's back rank lies along a different edge. Top and bottom: every back rank along the top or bottom edge. |
 | Rivers | north–south, east–west, both, neither | Drawn on the board where present. |
 | Army points | a number | What each player has to spend on their army. |
@@ -47,7 +47,7 @@ than a piece, and with points won in play to be spent on upgrades and promotions
   12 × 12 kingdoms. **Stated:** the first version allows up to 26 × 26 (cells named a to z, and
   the whole board on one screen); larger boards wait for a page that zooms and scrolls, and for
   playtesting to show what bots and players can manage.
-- **Stated.** Which way the kingdoms lie in their corners is a setting: the classic pinwheel by
+- **Stated.** Which way the kingdoms lie in their corners is a setting: Chaturaji 2027's pinwheel by
   default, or every back rank along the top or bottom edge.
 - **Stated.** A river halves the board, or two rivers quarter it, as the game is set, and the page
   shows them. A river matters only to the pieces whose rules name it: those that may not cross it
@@ -81,14 +81,14 @@ than a piece, and with points won in play to be spent on upgrades and promotions
 - **Stated.** Whether players draft and place in secret and all at once, or in turn and in view of
   each other, is a setting of the game (§2).
 - **Stated.** An infantry piece's **forward** is toward the enemy; with the kingdoms in a pinwheel,
-  its place on the pinwheel sets it, as in the classic game (rules.md §3). That is, forward is away
+  its place on the pinwheel sets it, as in Chaturaji 2027 (rules.md §3). That is, forward is away
   from its kingdom's back rank.
 - **Stated.** Start-row powers make up for the distance to cross, and speed the game. An infantry
   piece placed beyond its army's first two rows has been brought forward already, and has none of
   them: a Western Pawn on row 3 may not step two squares on its first move, nor take *en passant*.
   **Stated:** how many rows count as start rows (2) may be a setting of the game.
   **Stated:** a piece that starts without them never gains them.
-- **Stated.** An army may have no leader, as an army in the classic game may lose its Raja and play
+- **Stated.** An army may have no leader, as an army in Chaturaji 2027 may lose its Raja and play
   on. A player who starts without one plays as one whose leader has been captured, except that
   there is no leader to ransom, to escape, or to promote into.
 - **Stated.** A player may draft any pieces the budget allows: several leaders, and several of one
@@ -115,16 +115,16 @@ move), and perhaps:
 **Stated.** A restriction that the piece's own move imposes (a piece that moves only diagonally
 never leaves its colour) is listed, but cannot be bought off.
 
-**Stated.** The classic pieces do not join the grand catalogue, which already has their moves: the
-Raja moves as the King (without castling), the classic Elephant as the Rook, the classic Horse as
-the Knight, the Boat as the Alfil, the classic Pawn as the Makruk Pawn (without its own promotion).
+**Stated.** The Chaturaji 2027 pieces do not join the grand catalogue, which already has their moves: the
+Raja moves as the King (without castling), its Elephant as the Rook, its Horse as
+the Knight, the Boat as the Alfil, its Pawn as the Makruk Pawn (without its own promotion).
 They may be added later. The program keeps their keys apart from the grand pieces' all the same.
 
 ## 5. Palaces and thrones
 
 - **Stated.** Each army has one palace (3 × 3, inside its kingdom) holding its throne.
 - **Stated.** In the first version a kingdom is at least 3 × 3, so that a palace always fits.
-- **Stated.** Later, a kingdom too small for a palace (the classic 4 × 2) lets the palace stand
+- **Stated.** Later, a kingdom too small for a palace (Chaturaji 2027's 4 × 2) lets the palace stand
   partly outside it, on the open board, if the palace lies along the board's edge and most of it
   is inside (with a 4 × 2 kingdom: 6 cells in, 3 out). Shrinking the palace, or letting it stand off
   the board, were the other choices: the first would break palace lines and confinement, written
@@ -148,23 +148,23 @@ They may be added later. The program keeps their keys apart from the grand piece
 
 ## 6. Play
 
-### 6.1 The classic rules
+### 6.1 The Chaturaji 2027 rules
 
-**Stated.** Play follows the classic rules ([rules.md](../rules.md)), and those still being worked
+**Stated.** Play follows the Chaturaji 2027 rules ([rules.md](../rules.md)), and those still being worked
 on, with what follows in place of the Raja-and-dice parts.
 
 - **Stated — dice.** A die names a **class** of piece (Leader, Cavalry, Heavy, Infantry,
   Artillery), not a kind: the player may move any piece of that class.
-  - **Stated.** On the default two six-sided dice, as the classic faces map: 1 Artillery,
+  - **Stated.** On the default two six-sided dice, as Chaturaji 2027's faces map: 1 Artillery,
     2 Cavalry, 3–4 Heavy, 5–6 Infantry or Leader (the player's choice).
-- **Stated — throne control.** What the classic rules say of a Raja holds of every leader. A
+- **Stated — throne control.** What the Chaturaji 2027 rules say of a Raja holds of every leader. A
   player whose leaders sit on several thrones commands (or is made to share the turn of) each of
   those armies, as in rules.md §6.
 - **Stated — a leaderless army.** A player with no leader left, whose ally has one, is commanded by
   that ally, as in rules.md §6.1.
 - **Stated — promotion at the far edge.** Any Infantry piece that reaches the far edge may be
-  promoted into any captured piece, as a classic Pawn is (rules.md §8).
-- **Stated — the end.** The game ends as the classic game does (rules.md §10). Points decide it,
+  promoted into any captured piece, as a Chaturaji 2027 Pawn is (rules.md §8).
+- **Stated — the end.** The game ends as Chaturaji 2027 does (rules.md §10). Points decide it,
   unless the end itself does: a team with no opposition left wins.
 
 ### 6.2 Points: scoring and spending
@@ -190,9 +190,9 @@ on, with what follows in place of the Raja-and-dice parts.
 - **Stated.** An Infantry piece with a promotion of its own (a Western Pawn) chooses, at the far
   edge, between that promotion and becoming any captured piece.
 
-### 6.3 Other classic scores
+### 6.3 Other Chaturaji 2027 scores
 
-The classic bonuses (entering an enemy throne, taking a leader on its own throne, the empire) were
+The Chaturaji 2027 bonuses (entering an enemy throne, taking a leader on its own throne, the empire) were
 reckoned against pieces worth 1 to 5. **Stated.** Whether they stay as they are, beside captures
 worth up to 75, or scale, is for playtesting to show; so is the leader bonus of 60, which is meant
 to make players guard their leaders even when they are not using them to take thrones.
@@ -260,14 +260,14 @@ The numbers stay as they are; answered questions are marked so.
 4. **Q4** *Answered:* an army may have no leader, and pieces may be drafted more than once (§3).
 5. **Q5** A second palace: may it be bought, and at what price? Left open (§3).
 6. **Q6** *Answered:* forward is away from the kingdom's back rank (§3).
-7. **Q7** *Answered:* the classic pieces do not join the catalogue, for now (§4).
+7. **Q7** *Answered:* the Chaturaji 2027 pieces do not join the catalogue, for now (§4).
 8. **Q8** *Answered:* a step along a palace line (§5).
 9. **Q9** *Answered:* confinement, to the palace the piece is in (§5).
 10. **Q10** *Answered:* which die faces name which class (§6.1).
 11. **Q11** *Answered:* how the game ends, and how it is won (§6.1).
 12. **Q12** *Answered:* the four-throne bonus, once for each set of leaders (§6.2).
 13. **Q13** *Answered:* promotion by a piece's own condition is free, optional and may wait (§6.2).
-14. **Q14** *For playtesting:* the classic bonuses, and the leader bonus of 60 (§6.3).
+14. **Q14** *For playtesting:* the Chaturaji 2027 bonuses, and the leader bonus of 60 (§6.3).
 15. **Q15** *Answered:* the flying-general capture (§6.4).
 16. **Q16** *Answered:* the leader face-off (§6.4).
 17. **Q17** *Answered:* castling, only with a Western Rook (§6.4).

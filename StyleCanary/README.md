@@ -20,7 +20,7 @@ running looks exactly like one that passes; this is what tells them apart.
 The gates that cannot be canaried with a static file are proven by a temporary
 change to the real repository, always undone afterwards:
 
-- **coverage**: an uncovered class is added to `Zaturnava.Contracts/`;
+- **coverage**: an uncovered class is added to `src/Apis/Zaturnava.Contracts/`;
   `Zaturnava.Contracts.Test` must then fail its 100% threshold, with
   every test passing and the class measured (a coverlet that measures nothing
   fails the threshold too, for the wrong reason);

@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    References every project, to check how they reference one another. It measures no one
+    assembly, so it is not measured (Directory.Build.props).
+  -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Hosts\Zaturnava.Server\Zaturnava.Server.csproj" />
+    <ProjectReference Include="..\..\src\Apis\Zaturnava.Client\Zaturnava.Client.csproj" />
+    <ProjectReference Include="..\..\src\Apis\Zaturnava.Presentation\Zaturnava.Presentation.csproj" />
+    <ProjectReference Include="..\..\src\Hosts\Zaturnava.Web\Zaturnava.Web.csproj" />
+    <ProjectReference Include="..\..\src\Apis\Zaturnava.Mcp\Zaturnava.Mcp.csproj" />
+    <ProjectReference Include="..\..\src\Bots\Zaturnava.BotRunner\Zaturnava.BotRunner.csproj" />
+  </ItemGroup>
+
+</Project>

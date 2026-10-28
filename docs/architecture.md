@@ -52,7 +52,7 @@ A piece kind is data: a `PieceKind` holding a list of `MovementRule`s, each
 "travel along these directions between *m* and *n* steps, blocked or leaping,
 onto an empty cell, a capture, or either". `MovementRule.Step`, `Slide` and
 `Leap`, narrowed by `MoveOnly` and `CaptureOnly`, express all five base pieces
-(Variants.Classic `ClassicPieces`); `MoveGenerator` (Engine) turns them into
+(Games.Chaturaji2027 `Chaturaji2027Pieces`); `MoveGenerator` (Engine) turns them into
 moves on any topology. A new piece for a variant is a new entry, not new
 engine code.
 
@@ -182,11 +182,17 @@ adapters implement them; the server is the one composition root that knows
 every concrete choice. The client side shares nothing with the server but the
 contracts.
 
+On disk, each project sits under `src/`, in a folder for its area, and its tests under `tests/`, in
+the same folder: `Engine` (the engine and its topologies), `Games` (one folder per game, such as
+`Games/Chaturaji2027`, and the grand game to come), `Bots`, `Application`, `Apis` (contracts,
+client, MCP, presentation), `Hosts` (server, page, hosting adapters) and `Persistence`.
+`Zaturnava.Architecture.Test` sits at the top of `tests/`.
+
 | Project | Role | May use |
 |---|---|---|
 | Engine | Pure rules primitives: cells, pieces, moves, state, `IRulesApplying`, `IDeciding` | — |
 | Topology.SquareGrid | `ICellNavigating` for rectangular grids | Engine |
-| Variants.Classic | The base ruleset (`ClassicRules`) | Engine, Topology.SquareGrid |
+| Games.Chaturaji2027 | Chaturaji 2027, the base game (`Chaturaji2027Rules`) | Engine, Topology.SquareGrid |
 | Bots | Bot players, each describing itself (`BotProfile`: name, description, whether it uses AI): `RandomBot`; `MidasBot`, greedy for the best immediate score, trading prisoners only at a profit; `SolomonBot`, as greedy on the board, giving allies' prisoners back and trading evenly; `ArgusBot`, trading as Solomon, weighing each action against the worst reply (what the ruleset's `AttacksOf` says the enemy could take, and how the exchange would end). With an enemy, every bot but Random trades only what its team can afford: no leader given back, and no trade that leaves its team weaker on the board | Engine |
 | Application | Use cases (`GameService`), the decision loop, catalogs of rulesets and bots; ports `IGamePersisting`, `IGameNotifying` | Engine |
 | Persistence.InMemory | `IGamePersisting` in memory | Application, Engine |
@@ -198,8 +204,8 @@ contracts.
 | Presentation | Client-side board logic: frame, clickable actions, selection | Contracts |
 | Web | Blazor WebAssembly client | Client, Contracts, Presentation |
 | Mcp | MCP server (stdio) letting an AI play through any server | Client, Contracts |
-| BotRunner | Command-line self-play: bots against bots, games as JSON lines | Application, Bots, Engine, Variants.Classic |
-| Server | ASP.NET Core host; the composition root | Application, Bots, Contracts, Engine, Hosting, Hosting.Itch, Persistence.*, Topology.SquareGrid, Variants.Classic |
+| BotRunner | Command-line self-play: bots against bots, games as JSON lines | Application, Bots, Engine, Games.Chaturaji2027 |
+| Server | ASP.NET Core host; the composition root | Application, Bots, Contracts, Engine, Hosting, Hosting.Itch, Persistence.*, Topology.SquareGrid, Games.Chaturaji2027 |
 
 **Vendors stay in their adapters.** A third-party service — a page host, a
 game host, a database provider — is named only in its own adapter project and
@@ -363,7 +369,7 @@ scoring) are listed in [rules.md §12](rules.md#12-configuration-toggles). The
 - Exact `gameEnd.safetyNet.*` parameters (rules.md §13) — now that bots exist,
   bots advance one step at a time, but the rules-level
   defaults are still open.
-- An SDK for variants: once the classic game works, boards, piece sets,
+- An SDK for variants: once Chaturaji 2027 works, boards, piece sets,
   starting positions, rulesets and bots become things others implement. Their
   extension points should then be gathered into a documented SDK, with
   examples checked by the build (as Stipulate's documentation examples are).

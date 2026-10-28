@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!--
+      Program.cs runs only when an MCP client starts the server over stdio: it is the one file not
+      measured, and holds only the stdio transport around McpServices, which is.
+    -->
+    <ZaturnavaUnmeasuredFile>**/Zaturnava.Mcp/Program.cs</ZaturnavaUnmeasuredFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Apis\Zaturnava.Mcp\Zaturnava.Mcp.csproj" />
+  </ItemGroup>
+
+</Project>

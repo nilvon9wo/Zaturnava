@@ -1,4 +1,4 @@
-# Zaturnava — Rules Specification (v0.1 draft)
+# Chaturaji 2027 — Rules Specification (v0.1 draft)
 
 Canonical, unambiguous ruleset for the base configuration: 4 players, teams of 2
 seated opposite each other, standard 8×8 board, traditional piece set. This is
@@ -17,7 +17,7 @@ not accidents (see inline notes marked *(clarified)*).
 
 ## Implementation status
 
-What the `classic` ruleset (`Zaturnava.Variants.Classic`) enforces so far.
+What the `chaturaji-2027` ruleset (`Zaturnava.Games.Chaturaji2027`) enforces so far.
 Everything else here is specified but not yet played by the engine.
 
 | Section | Status |
@@ -37,7 +37,8 @@ Everything else here is specified but not yet played by the engine.
 
 ## 1. Overview
 
-Zaturnava is a 4-player chaturaji variant. Unlike chess, the objective is not
+Chaturaji 2027 is a modern 4-player chaturaji variant, the first game played on the Zaturnava
+engine. Unlike chess, the objective is not
 to checkmate but to accumulate points by capturing pieces; a raja (king) being
 captured does not end the game, and captured rajas can be returned to play.
 Played in teams of 2, with teammates seated opposite each other on the board.
@@ -612,7 +613,7 @@ both the triumphing player and their ally may move each other's Boat.
     if they had never pressed it.
   - *(Proposed)* The details:
     - The two minutes are a server setting (`Games:AwayGraceSeconds`, 120);
-      the number of turns is a `classic` constructor argument (3), not yet a
+      the number of turns is a `chaturaji-2027` constructor argument (3), not yet a
       per-game toggle.
     - The voters are the human players still playing, other than the absent
       one. Keep waiting may be chosen at any time; Stop waiting only once
@@ -635,7 +636,7 @@ both the triumphing player and their ally may move each other's Boat.
     off by default for human games and are an architecture/engine concern
     (see architecture.md) more than a core rules concern — exact parameters
     are deliberately left open for now.
-  - *(Provisional, 2026-10-25)* The `classic` ruleset has one safety net on,
+  - *(Provisional, 2026-10-25)* The `chaturaji-2027` ruleset has one safety net on,
     for every game: when no one has rolled or moved for **three rounds** (every
     seat still playing has passed its turn three times in a row without
     rolling), the game ends, and the team with more points wins (a draw if

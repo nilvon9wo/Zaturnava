@@ -16,7 +16,7 @@ import subprocess
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-PROJECTS = ["Zaturnava.Server", "Zaturnava.Web"]
+PROJECTS = ["src/Hosts/Zaturnava.Server", "src/Hosts/Zaturnava.Web"]
 PAGE = "http://localhost:5165"
 
 

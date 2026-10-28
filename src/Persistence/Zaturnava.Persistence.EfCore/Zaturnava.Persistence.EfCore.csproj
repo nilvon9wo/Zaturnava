@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Games kept in a relational database through Entity Framework Core. Which database (SQL Server,
+    SQLite, PostgreSQL, ...) is the host's choice of provider, made where the
+    DbContext is registered; nothing here names one.
+  -->
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.13" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Application\Zaturnava.Application\Zaturnava.Application.csproj" />
+  </ItemGroup>
+
+</Project>
