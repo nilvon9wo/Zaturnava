@@ -64,6 +64,8 @@ did them.
 
 ## Done
 
+- When the enemy on a player's throne passes on the move it makes for them, the player may still make it
+  (rules.md §6.3): a rule the engine had lost.
 - Accepting a ransom scores a point for each prisoner it sends home (rules.md §8).
 - A player left with only their Raja may retire from the game at the start of their turn; their turns are
   skipped from then on, and taking their Raja scores no one (rules.md §10).

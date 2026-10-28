@@ -299,6 +299,7 @@ public sealed class GameLogTest
             new RansomAccepted(trade),
             new RansomRewarded(Yellow, 3, 3),
             new RajaRetired(Red),
+            new TurnHandedBack(Black, Yellow),
             new PieceReturned(Pawn, Cell("a7"))
         );
 
@@ -318,6 +319,7 @@ public sealed class GameLogTest
                 "ransom 1: Yellow accepted Black's offer.",
                 "bonus 1: Yellow scored for accepting: a point for each prisoner going home (+3).",
                 "passed 3: Red retired from the game: their Raja stays, and taking it scores no one.",
+                "shared 1: Black left the rest of Yellow's turn to Yellow.",
                 "ransom 1: Yellow's Pawn went home, to a7.",
             ],
             log.Select(Told)
