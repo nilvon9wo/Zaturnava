@@ -223,6 +223,12 @@ file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bo
                 retired.Seat,
                 $"{this.Name(retired.Seat)} retired from the game: their Raja stays, and taking it scores no one."
             ),
+            TurnHandedBack back => this.Add(
+                number,
+                EventDto.Shared,
+                back.Seat,
+                $"{this.Name(back.Occupier)} left the rest of {this.Name(back.Seat)}'s turn to {this.Name(back.Seat)}."
+            ),
             TurnHandedOver handed => this.Add(
                 number,
                 EventDto.Shared,

@@ -662,23 +662,42 @@ public sealed class Chaturaji2027Rules : IRulesApplying
             : this.EndTurnIfStuck(transition);
 
     /// <summary>
-    /// Dice left unused: the occupier of the seat's throne may use them, if any; else the turn ends - with no
-    /// window to offer ransoms if the seat <paramref name="mayHaveOffered"/> before it passed.
+    /// Dice left unused: the occupier of the seat's throne may use them, if any; the occupier leaves those it
+    /// does not use to the seat (rules.md §6.3); else the turn ends - with no window to offer ransoms if the
+    /// seat <paramref name="mayHaveOffered"/> before it passed.
     /// </summary>
-    private Transition Declined(Transition transition, bool mayHaveOffered) =>
-        this.OccupierToHandTo(transition.State) is { } occupier
-            ? this.HandedOver(transition, occupier)
-            : this.PassTurn(transition, mayHaveOffered);
+    private Transition Declined(Transition transition, bool mayHaveOffered)
+    {
+        GameState state = transition.State;
+        SeatId deciding = state.DecidingSeat!.Value; // a seat decides while dice are left
+        bool isOccupier = state.ActingFor is { } seat && !state.Teams.AreAllied(deciding, seat);
+        return (this.OccupierToHandTo(state), isOccupier) switch
+        {
+            ({ } occupier, _) => this.HandedOver(transition, occupier),
+            (_, true) => this.HandedBack(transition),
+            _ => this.PassTurn(transition, mayHaveOffered),
+        };
+    }
+
+    /// <summary>The seat whose turn it is has the dice its occupier left, to use or not, as it will.</summary>
+    private Transition HandedBack(Transition transition)
+    {
+        GameState state = transition.State;
+        SeatId occupier = state.DecidingSeat!.Value; // the occupier decided to leave them
+        SeatId seat = state.ActingFor!.Value; // for the seat it moved for
+        GameState back = state with { DecidingSeat = seat, ActingFor = null, IsHandedBack = true };
+        return this.EndTurnIfStuck(new Transition(back, transition.Events.Add(new TurnHandedBack(occupier, seat))));
+    }
 
     /// <summary>
     /// The enemy on the throne of the seat whose turn it is, before it has moved for that seat this turn -
-    /// while the seat, or its regent, decides.
+    /// while the seat, or its regent, decides - unless it has left the seat the rest.
     /// </summary>
     private SeatId? OccupierToHandTo(GameState state)
     {
         SeatId deciding = state.DecidingSeat!.Value; // a seat decides while dice are left
         SeatId seat = state.ActingFor ?? deciding;
-        return state.Teams.AreAllied(deciding, seat)
+        return state.Teams.AreAllied(deciding, seat) && !state.IsHandedBack
             ? this._control.OccupierOf(state, seat)
             : null;
     }
@@ -778,6 +797,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying
             IsRansomWindow = false,
             OffersMade = [],
             PromotionDue = null,
+            IsHandedBack = false,
         };
         SeatId? regent = passed.Resigned.Contains(next)
             ? this._control.RegentsFor(passed, next).Cast<SeatId?>().FirstOrDefault()

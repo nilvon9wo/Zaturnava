@@ -899,16 +899,42 @@ public sealed class Chaturaji2027RulesTest
     }
 
     [Fact]
-    public void Apply_WhenTheOccupierPassesForTheSeat_PassesThatSeatsTurn()
+    public void Apply_WhenTheOccupierPassesForTheSeat_LeavesTheSeatTheDiceItDidNotUse()
     {
-        // Arrange
-        GameState shared = this._rules.Apply(this.SharedTurn(), new PassAction(Yellow)).State;
+        // Arrange - Yellow moved its Pawn with the 5; Black, on Yellow's throne, has the 2
+        GameState shared = this._rules.Apply(
+            this.SharedTurn(),
+            new MoveAction(Yellow, Grid.CellAt(3, 3), Grid.CellAt(4, 3))
+        ).State;
 
         // Act
         Transition transition = this._rules.Apply(shared, new PassAction(Black));
 
+        // Assert - Yellow may move its Horse with the 2
+        Assert.Equal([new TurnHandedBack(Black, Yellow)], transition.Events);
+        Assert.Equal(
+            (Yellow, null, "2"),
+            (transition.State.DecidingSeat, transition.State.ActingFor, string.Join(',', transition.State.Dice))
+        );
+        Assert.Contains(
+            new MoveAction(Yellow, Grid.CellAt(1, 1), Grid.CellAt(2, 3)),
+            this._rules.LegalActions(transition.State)
+        );
+    }
+
+    [Fact]
+    public void Apply_WhenTheSeatPassesOnWhatItsOccupierLeftIt_PassesItsTurn()
+    {
+        // Arrange - Yellow passed, Black passed, leaving Yellow both dice
+        GameState shared = this._rules.Apply(this.SharedTurn(), new PassAction(Yellow)).State;
+        GameState back = this._rules.Apply(shared, new PassAction(Black)).State;
+
+        // Act
+        Transition transition = this._rules.Apply(back, new PassAction(Yellow));
+
         // Assert
         Assert.Equal([new TurnPassed(Yellow, Green)], transition.Events);
+        Assert.False(transition.State.IsHandedBack);
     }
 
     [Fact]

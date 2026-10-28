@@ -40,6 +40,12 @@ public sealed record GameState(
     /// <summary>How many turns in a row have been passed without rolling or moving.</summary>
     public int IdlePasses { get; init; }
 
+    /// <summary>
+    /// Whether the occupier of the throne of the seat whose turn it is has left that seat the dice it did not
+    /// use, so that it moves for that seat no more this turn.
+    /// </summary>
+    public bool IsHandedBack { get; init; }
+
     /// <summary>The ransom waiting on its receiver, who decides meanwhile; null if none is.</summary>
     public RansomOffer? Offer { get; init; }
 

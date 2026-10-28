@@ -312,6 +312,12 @@ throne:
 3. Otherwise, the occupying enemy then takes the second move, using only the
    occupied player's native army (never their own separate army — that's a
    different turn, covered by §6.1 when it comes around).
+4. *(Stated 2026-10-28)* If the occupying enemy passes on that move, the
+   occupied player may still make it.
+   - *(Proposed)* Every die the occupier leaves unused goes back to the
+     occupied player, who may use it or pass; the occupier moves for them no
+     more that turn. That holds even if the occupied player passed on their
+     own first move, leaving the occupier both.
 
 Aside from the expanded-pool exception in step 2 above, neither side moves
 their own separate army during this shared turn — it is otherwise entirely
