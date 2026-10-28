@@ -595,6 +595,13 @@ both the triumphing player and their ally may move each other's Boat.
       plays on, and the game ends as soon as the team that gave up is behind,
       the other team then winning. Being level is not enough. The team that
       gave up may rejoin, or the others may propose an end, as ever.
+    - *(Stated 2026-10-29)* Both margins are needed: 10 points more scored,
+      and 10 more on the board (an Elephant, a Raja and a Pawn, say). Try 10,
+      and raise it (perhaps to 20) if it proves open to abuse.
+    - *(Stated 2026-10-29)* Agreement still ends the game at any margin: the
+      lead is only needed to force the end. As long as someone on each team
+      wants to keep going, nothing forces an end; a team behind may always
+      concede. The Guide says so.
     - *(Proposed)* "Every player" means every one still playing (§10: with
       pieces left, not retired); giving up by missing turns while away (below)
       counts too; a proposal still waiting for answers ends with the game.
