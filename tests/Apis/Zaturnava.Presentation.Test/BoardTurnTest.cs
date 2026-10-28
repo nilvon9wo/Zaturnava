@@ -97,6 +97,23 @@ public sealed class BoardTurnTest
         Assert.Equal(3, turned.QuarterTurns);
     }
 
+    [Theory]
+    [InlineData(0, 0.1, 1.1)]
+    [InlineData(1, 0.1, 1.9)]
+    [InlineData(2, 0.9, 1.9)]
+    [InlineData(3, 0.9, 1.1)]
+    public void TopLeftOf_WhenTurned_IsTheCornerTopLeftOnScreen(int quarterTurns, double x, double y)
+    {
+        // Arrange
+        BoardTurn turn = new(quarterTurns);
+
+        // Act
+        (double cornerX, double cornerY) = turn.TopLeftOf(0.5, 1.5, 0.1);
+
+        // Assert
+        Assert.Equal((x, y), (Math.Round(cornerX, 6), Math.Round(cornerY, 6)));
+    }
+
     [Fact]
     public void Transform_WhenTurned_TurnsAboutTheBoardsCentre()
     {

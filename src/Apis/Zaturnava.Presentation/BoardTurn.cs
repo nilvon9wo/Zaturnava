@@ -48,6 +48,23 @@ public sealed record BoardTurn(int QuarterTurns)
     public string Upright(double x, double y) =>
         string.Create(CultureInfo.InvariantCulture, $"rotate({-this.Angle} {x} {y})");
 
+    /// <summary>
+    /// Where on the board a label goes, <paramref name="inset"/> in from the corner of the cell centred at
+    /// (<paramref name="x"/>, <paramref name="y"/>) that is top left on screen, whichever way the board is turned.
+    /// </summary>
+    public (double X, double Y) TopLeftOf(double x, double y, double inset)
+    {
+        double near = BoardFrame.HalfCell - inset;
+        (double across, double down) = this.QuarterTurns switch
+        {
+            0 => (-near, -near),
+            1 => (-near, near),
+            2 => (near, near),
+            _ => (near, -near),
+        };
+        return (x + across, y + down);
+    }
+
     private static (double X, double Y)? HomeCell(int seat, GameViewDto view)
     {
         CellDto? throne = view.Cells.FirstOrDefault(cell => cell.Throne == seat);
