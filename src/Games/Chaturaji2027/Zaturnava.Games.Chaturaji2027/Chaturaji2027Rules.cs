@@ -141,18 +141,20 @@ public sealed class Chaturaji2027Rules : IRulesApplying
         this._command.Told(
             state,
             this.Unstalled(
-                Attended(
-                    action,
-                    action switch
-                    {
-                        DiceAction dice => this.Rolled(state, dice),
-                        OfferAction offer => Offered(state, offer),
-                        ProposeEndAction propose => this.Proposed(state, propose),
-                        RejoinAction rejoin => this.Rejoined(state, rejoin),
-                        VoteAwayAction vote => this.Voted(state, vote),
-                        PassAwayAction pass => this.PassedAway(state, pass),
-                        _ => this.Decided(state, action),
-                    }
+                GameEnd.AfterGivingUp(
+                    Attended(
+                        action,
+                        action switch
+                        {
+                            DiceAction dice => this.Rolled(state, dice),
+                            OfferAction offer => Offered(state, offer),
+                            ProposeEndAction propose => this.Proposed(state, propose),
+                            RejoinAction rejoin => this.Rejoined(state, rejoin),
+                            VoteAwayAction vote => this.Voted(state, vote),
+                            PassAwayAction pass => this.PassedAway(state, pass),
+                            _ => this.Decided(state, action),
+                        }
+                    )
                 )
             )
         );

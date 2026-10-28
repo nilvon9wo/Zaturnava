@@ -17,6 +17,7 @@ internal static class GameEnd
 {
     public const string OneTeamLeft = "only one team has pieces left";
     public const string OnlyRajasLeft = "only Rajas are left, an honourable peace";
+    public const string TeamGaveUp = "a whole team gave up their turns, so points decide";
 
     /// <summary>The ended game, if the board leaves nothing to play for; otherwise null.</summary>
     public static Transition? AfterMove(Transition transition)
@@ -47,6 +48,23 @@ internal static class GameEnd
         return state.IdlePasses >= rounds * playing
             ? ByPoints(transition, reason)
             : null;
+    }
+
+    /// <summary>
+    /// The ended game, once every seat of a team still playing has given up its turns (rules.md §10): no one is
+    /// left to play for that team, so points decide, any proposal waiting with them; otherwise the game as it was.
+    /// </summary>
+    public static Transition AfterGivingUp(Transition transition)
+    {
+        GameState state = transition.State;
+        bool hasTeamGivenUp = state.Outcome is null
+            && state.Seats
+                .Where(seat => IsPlaying(state, seat.Id))
+                .GroupBy(seat => state.Teams.TeamOf(seat.Id))
+                .Any(team => team.All(seat => state.Resigned.Contains(seat.Id)));
+        return hasTeamGivenUp
+            ? ByPoints(transition with { State = state with { Proposal = null } }, TeamGaveUp)
+            : transition;
     }
 
     /// <summary>The ended game, the team with more points winning; a draw, if the teams are level.</summary>
