@@ -114,7 +114,8 @@ public sealed class GameLogTest
                 "command 3: Red now has partial control of Yellow's army: as Yellow has no Raja, they move it on "
                     + "their own turns, and may play Yellow's turns, if Yellow lets them.",
                 "command 1: Yellow no longer controls Black's army.",
-                "empire 0: Black and Green now rule an empire: no enemy Raja is left on the board.",
+                "empire 0: Black and Green now rule an empire: no enemy Raja is left on the board. No one scores "
+                    + "for it, as none of them commands an ally's army.",
                 "empire 0: Black and Green's empire is over.",
             ],
             log.Select(Told)
@@ -242,7 +243,7 @@ public sealed class GameLogTest
                 "bonus 3: Red's Raja entered Yellow's throne (+1).",
                 "captured 0: Black took Red's Raja, with Yellow's Pawn, and holds it prisoner (+5).",
                 "bonus 0: Black took that Raja on its own throne (+2 more).",
-                "bonus 0: Black created the empire, with no enemy Raja left on the board (+5).",
+                "empire 0: Black created the empire, with no enemy Raja left on the board (+5).",
                 "forfeited 0: Black could move nothing of Red's with 1 (Boat), so lost it.",
             ],
             log.Select(Told)
@@ -362,7 +363,7 @@ public sealed class GameLogTest
 
         // Assert
         Assert.Equal(
-            (GameLog.Length + 1, 1, EventDto.Bonus, 12),
+            (GameLog.Length + 1, 1, EventDto.Empire, 12),
             (log.Count, log[0].Number, log[0].Kind, log[1].Number)
         );
     }

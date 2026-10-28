@@ -37,7 +37,7 @@
         <div class="seats">
             @foreach (IGrouping<int, SeatDto> team in this.TeamsOf(view))
             {
-                <section class="team @(this.IsMine(team) ? "mine" : null)">
+                <section class="team @(this.IsMine(team) ? "mine" : null) @(HasWon(view, team) ? "won" : null)">
                     <header class="team-head">
                         <span class="team-name">@string.Join(" & ", team.Select(seat => seat.Name))</span>
                         <span class="team-score" title="Team score">@team.Sum(seat => seat.Score)</span>
@@ -116,8 +116,24 @@
                         <p class="hint">@away.Stopping.Count of @away.Voters.Count would stop waiting; all must, for their turn to pass.</p>
                     </div>
                 }
-                @if (view.Outcome is not null)
+                @if (view.Outcome is { } outcome)
                 {
+                    <div class="result @this.ResultOf(outcome)" role="status">
+                        <h2 class="verdict">@this.VerdictOf(view, outcome)</h2>
+                        <ol class="totals">
+                            @foreach (IGrouping<int, SeatDto> team in this.TeamsOf(view))
+                            {
+                                <li class="@(HasWon(view, team) ? "won" : null)">
+                                    <span class="names">@string.Join(" & ", team.Select(seat => seat.Name))</span>
+                                    <span class="points">@team.Sum(seat => seat.Score)</span>
+                                    @if (HasWon(view, team))
+                                    {
+                                        <span class="badge">won</span>
+                                    }
+                                </li>
+                            }
+                        </ol>
+                    </div>
                     <div class="actions">
                         <button class="action primary again" @onclick="() => this.PlayAgain(view)">Play again</button>
                         <button class="action quick" @onclick="this.QuickGame">Quick game</button>
@@ -352,6 +368,9 @@
     private const string Rescued = "rescued";
     private const string Triumph = "triumph";
     private const string Lament = "lament";
+    private const string Lost = "lost";
+    private const string Victory = "victory";
+    private const string Defeat = "defeat";
     private const string Restored = "restored";
     private const string Dread = "dread";
     private const string Rally = "rally";
@@ -804,6 +823,10 @@
                 .Select(back => TeamSoundOf(ours, back.Owner, (EventDto.Moved, Restored, Dread))),
             .. fresh.Where(happened => happened is { Kind: EventDto.Captured, IsLeader: true })
                 .Select(taken => TeamSoundOf(ours, taken.Owner, (EventDto.Captured, Lament, Triumph))),
+            .. fresh.Where(happened => happened is { Kind: EventDto.Captured, IsLeader: false })
+                .Select(taken => TeamSoundOf(ours, taken.Owner, (EventDto.Captured, Lost, EventDto.Captured))),
+            .. fresh.Where(happened => happened.Kind == EventDto.Ended)
+                .Select(_ => this.ResultOf(view.Outcome!)),
             .. fresh.Where(happened => happened.Kind == EventDto.Command)
                 .Select(command => PowerSoundOf(ours, command, (Rally, Menace))),
             .. fresh.Where(happened => happened.Kind == EventDto.Empire)
@@ -811,8 +834,9 @@
         ];
         ImmutableList<string> telling =
         [
-            .. new[] { Lament, Dread, Alarm, Triumph, Restored, Rescued }.Where(kinds.Contains).Take(1),
+            .. new[] { Lament, Dread, Alarm, Triumph, Restored, Rescued, Lost }.Where(kinds.Contains).Take(1),
             .. new[] { Doom, Menace, Glory, Rally }.Where(kinds.Contains).Take(1),
+            .. new[] { Victory, Defeat }.Where(kinds.Contains).Take(1),
         ];
         return (isFirst, telling.IsEmpty, this._turn is not null && !wasTheirTurn) switch
         {
@@ -822,6 +846,33 @@
             _ => [.. new[] { EventDto.Captured, EventDto.Moved, EventDto.Rolled }.Where(kinds.Contains).Take(1)],
         };
     }
+
+    /// <summary>
+    /// How the game ended for whoever looks: <c>victory</c> or <c>defeat</c> for a player, <c>draw</c> for
+    /// anyone, <c>watched</c> for someone only watching a game someone won.
+    /// </summary>
+    private string ResultOf(OutcomeDto outcome) =>
+        (this.Seating.Claim, outcome.Winners.IsEmpty) switch
+        {
+            (_, true) => "draw",
+            (null, _) => "watched",
+            ({ } claim, _) when outcome.Winners.Contains(claim.Seat) => Victory,
+            _ => Defeat,
+        };
+
+    /// <summary>"Victory!", "Defeat" or "A draw"; for someone only watching, "Black & Green won".</summary>
+    private string VerdictOf(GameViewDto view, OutcomeDto outcome) =>
+        this.ResultOf(outcome) switch
+        {
+            Victory => "Victory!",
+            Defeat => "Defeat",
+            "draw" => "A draw",
+            _ => $"{string.Join(" & ", outcome.Winners.Select(seat => view.Seats[seat].Name))} won",
+        };
+
+    /// <summary>Whether the team won the game, now over.</summary>
+    private static bool HasWon(GameViewDto view, IGrouping<int, SeatDto> team) =>
+        view.Outcome is { } outcome && team.Any(seat => outcome.Winners.Contains(seat.Id));
 
     /// <summary>
     /// The sound for a shift of power: good for the player's team, if the commander or rulers are of it and it

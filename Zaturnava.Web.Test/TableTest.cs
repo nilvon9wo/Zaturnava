@@ -554,7 +554,81 @@ public sealed class TableTest : IDisposable
             { [Power(EventDto.Empire, 0, isOver: false)], "doom" },
             { [Power(EventDto.Command, 1, isOver: false), Power(EventDto.Empire, 0, isOver: false)], "doom" },
             { [RajaTaken(0), Power(EventDto.Command, 0, isOver: false)], "triumph,menace" },
+            { [new EventDto(40, EventDto.Captured, 0, "Black took Yellow's Pawn.", null, null, 1)], "lost" },
+            { [new EventDto(40, EventDto.Captured, 0, "Black took Yellow's Pawn.", null, null, 1), Moved], "lost" },
         };
+
+    [Theory]
+    [InlineData(new[] { 1 }, "victory")]
+    [InlineData(new[] { 0 }, "defeat")]
+    [InlineData(new int[0], "")]
+    public void Sound_WhenTheGameEnds_PlaysVictoryOrDefeat(int[] winners, string expected)
+    {
+        // Arrange
+        using PageContext page = new(TimeSpan.FromMilliseconds(10));
+        IRenderedComponent<Table> table = page.Render<Table>(parameters => parameters.Add(x => x.Seating, SeatOne));
+
+        // Act
+        page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            DecidingSeat = null,
+            Outcome = new OutcomeDto([.. winners], "over"),
+            Log = [new EventDto(50, EventDto.Ended, 0, "Over.", null, null)],
+        };
+
+        // Assert
+        table.WaitForAssertion(() => Assert.Equal("over", table.Find("p.status").TextContent));
+        Assert.Equal(expected, string.Join(",", Played(page)));
+    }
+
+    [Theory]
+    [InlineData(1, new[] { 1 }, "victory", "Victory!")]
+    [InlineData(0, new[] { 1 }, "defeat", "Defeat")]
+    [InlineData(0, new int[0], "draw", "A draw")]
+    [InlineData(-1, new[] { 1 }, "watched", "Yellow won")]
+    public void Render_WhenTheGameIsOver_SaysHowItEndedAndMarksTheWinnersPoints(
+        int seat,
+        int[] winners,
+        string result,
+        string verdict
+    )
+    {
+        // Arrange
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            DecidingSeat = null,
+            Outcome = new OutcomeDto([.. winners], "points decide"),
+        };
+        Seating seating = seat < 0
+            ? Seating.Watching(FakeGameServer.GameId)
+            : new Seating(FakeGameServer.GameId, new SeatClaim(seat, FakeGameServer.Token));
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(seating);
+
+        // Assert
+        Assert.Equal(
+            (true, verdict, winners.Length, winners.Length),
+            (
+                table.Find(".result").ClassList.Contains(result),
+                table.Find(".result .verdict").TextContent,
+                table.FindAll(".result .totals li.won .badge").Count,
+                table.FindAll("section.team.won").Count
+            )
+        );
+    }
+
+    [Fact]
+    public void Render_WhilePlaying_ShowsNoResult()
+    {
+        // Arrange - nothing beyond seat 0 to move
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Assert
+        Assert.Equal((0, 0), (table.FindAll(".result").Count, table.FindAll("section.team.won").Count));
+    }
 
     [Fact]
     public void Sound_WhenOnlyWatchingAPieceEscapeAndARajaTaken_PlaysACapture()
