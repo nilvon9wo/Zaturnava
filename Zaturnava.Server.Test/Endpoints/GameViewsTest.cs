@@ -409,6 +409,27 @@ public sealed class GameViewsTest
     }
 
     [Fact]
+    public void ViewOf_WhenASeatIsPlayedByABotPaidForEachUse_SaysSo()
+    {
+        // Arrange
+        ImmutableList<BotProfile> bots = [.. Bots, new("claude", "Claude", "Asks Claude.", UsesAi: true, IsPaid: true)];
+        GameRecord record = new(
+            new GameId("paid"),
+            Rules.Id,
+            [new BotSeat("midas"), new BotSeat("claude"), new OpenSeat(), new OpenSeat()],
+            [],
+            0
+        );
+        GameSnapshot snapshot = new(record, Rules, Rules.CreateInitialState(), [], []);
+
+        // Act
+        GameViewDto view = GameViews.ViewOf(snapshot, bots);
+
+        // Assert
+        Assert.Equal([false, true, false, false], view.Seats.Select(seat => seat.IsPaidBot));
+    }
+
+    [Fact]
     public void ViewOf_WhenDrawingTheBoard_NamesEachCell()
     {
         // Arrange

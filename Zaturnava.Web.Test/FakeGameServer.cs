@@ -73,6 +73,7 @@ internal sealed class FakeGameServer : IGameServing
                 [new RulesetDto("classic", "Zaturnava (classic)", 4)],
                 [
                     new BotDto("random", "Random", "Any move.", UsesAi: false),
+                    new BotDto("claude", "Claude", "Asks Claude.", UsesAi: true, IsPaid: true),
                     new BotDto("oracle", "Oracle", "Asks a model.", UsesAi: true),
                     new BotDto("midas", "Midas", "Greedy.", UsesAi: false),
                     new BotDto("solomon", "Solomon", "Fair.", UsesAi: false),

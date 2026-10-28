@@ -9,6 +9,7 @@ namespace Net.NowhereAtAll.Zaturnava.Contracts;
 /// it gave up its turns, proposing to end the game; <see cref="MayProposeEnd"/>, that it may propose so
 /// now; <see cref="MayRejoin"/>, that it may take its turns back, or say it is back, now; and
 /// <see cref="TurnsMissed"/>, how many of its turns in a row passed while it was away.
+/// <see cref="IsPaidBot"/> says that its bot costs tokens for each use.
 /// </summary>
 public sealed record SeatDto(
     int Id,
@@ -22,5 +23,6 @@ public sealed record SeatDto(
     bool HasGivenUp = false,
     bool MayProposeEnd = false,
     bool MayRejoin = false,
-    int TurnsMissed = 0
+    int TurnsMissed = 0,
+    bool IsPaidBot = false
 );

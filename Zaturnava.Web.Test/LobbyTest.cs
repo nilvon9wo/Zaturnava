@@ -13,7 +13,7 @@ public sealed class LobbyTest : IDisposable
     [Fact]
     public void Render_WhenLoaded_OffersANewGameAndTheGamesToJoin()
     {
-        // Arrange - nothing beyond the server's catalog and games
+        // Arrange - nothing beyond the server's catalog and games; Claude, paid for, is not seated unasked
 
         // Act
         IRenderedComponent<Lobby> lobby = this.Render();
@@ -41,7 +41,8 @@ public sealed class LobbyTest : IDisposable
 
         // Assert
         Assert.Equal(
-            "Bot: Random=Any move.|Bot: Oracle (AI)=Asks a model.|Bot: Midas=Greedy.|Bot: Solomon=Fair.",
+            "Bot: Random=Any move.|Bot: Claude (AI, costs tokens)=Asks Claude.|Bot: Oracle (AI)=Asks a model."
+                + "|Bot: Midas=Greedy.|Bot: Solomon=Fair.",
             string.Join(
                 "|",
                 lobby.FindAll("dl.bots dt").Zip(
@@ -70,6 +71,20 @@ public sealed class LobbyTest : IDisposable
             (this._page.Server.Created?.Bots, this._seated),
             strict: true
         );
+    }
+
+    [Fact]
+    public void Play_WhenAPaidBotIsChosen_SeatsIt()
+    {
+        // Arrange
+        IRenderedComponent<Lobby> lobby = this.Render();
+        lobby.FindAll("select.plan")[3].Change("claude");
+
+        // Act
+        lobby.Find("button.create").Click();
+
+        // Assert
+        Assert.Equal("claude", this._page.Server.Created!.Bots[3]);
     }
 
     [Fact]
@@ -113,14 +128,15 @@ public sealed class LobbyTest : IDisposable
         // Act
         lobby.Find("button.quick").Click();
 
-        // Assert
+        // Assert - never Claude, which is paid for
         ImmutableList<string?> bots = this._page.Server.Created!.Bots;
         Assert.Equal(
-            (3, 3, true),
+            (3, 3, true, false),
             (
                 bots.OfType<string>().Count(),
                 bots.OfType<string>().Distinct(StringComparer.Ordinal).Count(),
-                bots[this._seated!.Claim!.Seat] is null
+                bots[this._seated!.Claim!.Seat] is null,
+                bots.Contains("claude")
             )
         );
     }

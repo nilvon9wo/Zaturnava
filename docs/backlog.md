@@ -20,7 +20,7 @@ did them.
 
 - **21, 22, 26** (rest) The idle-rounds safety net as a per-game setting.
 - Boat triumph (§9): a nice-to-have; the condition is so unlikely that no one may miss it.
-- Ransom (§8): bots that offer during their turn.
+- Ransom (§8): bots that offer during their turn (they offer as they pass, or once it is over).
 - The commanded-captures toggle (`control.enemyArmyCaptures`) as a per-game setting.
 
 ## Players and identity
@@ -31,6 +31,22 @@ did them.
 - **35** Player statistics: games played and won, points scored...
 - The page's preferences (theme, sound, pieces, the log's highlights) kept with the player's identity
   once there is one, not only in the browser.
+
+## Bots
+
+- *(Stated 2026-10-26)* A bot that learns from past games and analyzes the current one, using free
+  services where it can and falling back to plain algorithms when they cannot be reached:
+  - **Layer 1** (*Proposed*, under way): no service at all. It looks ahead through the dice (expectimax),
+    scoring positions by weighted features (material, Raja safety, thrones, command, empires,
+    mobility), the weights tuned on recorded games and BotRunner self-play. Free, offline, and the
+    fallback for the layers above.
+  - **Layer 2** (*Proposed*): an advisor on a free AI service (a free tier, in its own adapter
+    project), choosing among layer 1's best moves; layer 1 alone when the service is down, slow or
+    out of quota. Each service's current terms to be checked before use.
+  - **Layer 3** (*Stated*): a bot using Claude, for testing. It is never seated but by someone choosing
+    it in the lobby: not by default, not in a quick game; playing again with it is a red button that
+    says it costs tokens. On a public server only with a key a player provides (*Proposed*: how that
+    key is handled is to be decided).
 
 ## Talking
 
@@ -154,3 +170,5 @@ After playing against Argus (2026-10-25):
 - Argus no longer counts a lone piece on its throne as keeping an enemy Raja off it.
 - Sounds tell a Raja back on the board (hopeful or ominous) and command or an empire begun or ended (good
   or bad for the player's team) apart from a Raja taken; when both happen, one plays after the other.
+- A bot paid for each use (tokens) is seated only when chosen in the lobby: never by default nor in a
+  quick game. The lobby says it costs tokens, and playing again with it is a red button that says so.
