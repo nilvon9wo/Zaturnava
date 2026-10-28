@@ -546,6 +546,8 @@ both the triumphing player and their ally may move each other's Boat.
     - From then on their turns are skipped, as an eliminated player's are.
       Their Raja stays where it is, and no one may move it: no one commands
       a retired player's army, through their throne or their having no Raja.
+      Nor does it command anything: on a throne, it gives no command and
+      forces no shared turn (§6), and a retired player commands no ally.
     - Taking their Raja scores nothing, not even the throne bonus, and it
       does not count for the empire: the empire is created when the last
       enemy Raja that has not retired is taken. A retired player creates no

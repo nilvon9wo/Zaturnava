@@ -143,8 +143,9 @@ public sealed class GameLogTest
                 "command 3: Red now has partial control of Yellow's army: as Yellow has no Raja, they move it on "
                     + "their own turns, and may play Yellow's turns, if Yellow lets them.",
                 "command 1: Yellow no longer controls Black's army.",
-                "empire 0: Black and Green now rule an empire: no enemy Raja is left on the board. No one scores "
-                    + "for it, as none of them commands an ally's army.",
+                "empire 0: Black and Green now rule an empire: no enemy Raja is left on the board, and one of them "
+                    + "commands an ally's army. It scores only as the last enemy Raja is taken, so no one scores for "
+                    + "it now.",
                 "empire 0: Black and Green's empire is over.",
             ],
             log.Select(Told)

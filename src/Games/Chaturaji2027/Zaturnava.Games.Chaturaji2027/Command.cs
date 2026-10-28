@@ -71,15 +71,15 @@ internal sealed class Command(ThroneControl control)
         new(new SeatId(command.Key.Commander), new SeatId(command.Key.Army), command.Value);
 
     /// <summary>
-    /// The teams ruling an empire: none of their enemies has a Raja on the board, and one of them commands
-    /// an ally's army.
+    /// The teams ruling an empire: none of their enemies has a Raja on the board, but for a retired seat's, and
+    /// one of them commands an ally's army.
     /// </summary>
     private ImmutableSortedSet<int> EmpiresOf(GameState state)
     {
         ImmutableList<int> enemyRajas =
         [
             .. state.Position.Occupants.Values
-                .Where(piece => piece.Kind == Chaturaji2027Pieces.Raja)
+                .Where(piece => piece.Kind == Chaturaji2027Pieces.Raja && !state.Retired.Contains(piece.Owner))
                 .Select(piece => state.Teams.TeamOf(piece.Owner)),
         ];
         return
