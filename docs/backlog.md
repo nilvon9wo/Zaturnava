@@ -172,3 +172,5 @@ After playing against Argus (2026-10-25):
   or bad for the player's team) apart from a Raja taken; when both happen, one plays after the other.
 - A bot paid for each use (tokens) is seated only when chosen in the lobby: never by default nor in a
   quick game. The lobby says it costs tokens, and playing again with it is a red button that says so.
+- Two allied Pawns back to back may swap places, as a Pawn's move (rules.md §3); the board marks the
+  swap with a dashed ring, and the log tells it.

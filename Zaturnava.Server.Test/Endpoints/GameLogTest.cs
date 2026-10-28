@@ -87,6 +87,35 @@ public sealed class GameLogTest
     }
 
     [Fact]
+    public void LatestOf_WhenPawnsSwap_TellsWhoseSwappedWhereAndWhetherRolled()
+    {
+        // Arrange
+        Piece blackPawn = new(new PieceId(10), ClassicPieces.Pawn, Black);
+        Piece greenPawn = new(new PieceId(30), ClassicPieces.Pawn, Green);
+        Piece redPawn = new(new PieceId(40), ClassicPieces.Pawn, Red);
+        GameSnapshot snapshot = Snapshot(
+            new DiceRolled(Black, [5]),
+            new PawnsSwapped(blackPawn, greenPawn, Cell("c4"), Cell("c5"), Black),
+            new TurnPassed(Black, Yellow),
+            new PawnsSwapped(Pawn, redPawn, Cell("h4"), Cell("g4"), Yellow)
+        );
+
+        // Act
+        ImmutableList<EventDto> log = GameLog.LatestOf(snapshot);
+
+        // Assert
+        Assert.Equal(
+            [
+                "rolled 0: Black rolled 5 (Pawn or Raja).",
+                "moved 0: Black swapped their Pawn on c4 with Green's Pawn on c5, back to back. 26-34",
+                "passed 1: Yellow to play.",
+                "moved 1: Yellow swapped their Pawn on h4 with Red's Pawn on g4, back to back, without rolling. 31-30",
+            ],
+            log.Select(Told)
+        );
+    }
+
+    [Fact]
     public void LatestOf_WhenCommandOfArmiesChanges_TellsWhoControlsWhoseAndHowFar()
     {
         // Arrange

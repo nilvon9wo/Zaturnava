@@ -99,6 +99,7 @@ file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bo
                     + $"{this.Faces(forfeited.Values)}, so lost {(forfeited.Values.Count == 1 ? "it" : "them")}."
             ),
             PieceMoved moved => this.Moved(number, moved),
+            PawnsSwapped swapped => this.Swapped(number, swapped),
             PieceCaptured captured => this.Captured(number, captured),
             CommandBegun begun => this.Add(number, EventDto.Command, begun.Commander, this.Begun(begun)),
             CommandEnded ended => this.Ended(
@@ -406,5 +407,29 @@ file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bo
             + $"from {from} to {to}{how}.";
         EventDto told = new(number, EventDto.Moved, moved.MovedBy.Value, text, moved.From.Value, moved.To.Value);
         return this with { Told = this.Told.Add(told), LastMoved = moved.Piece };
+    }
+
+    /// <summary>"Black swapped their Pawn on c4 with Green's Pawn on c5, back to back, without rolling.".</summary>
+    private Teller Swapped(int number, PawnsSwapped swapped)
+    {
+        string whose = this.Whose(swapped.Pawn.Owner, swapped.MovedBy);
+        string how = this.HasRolled
+            ? string.Empty
+            : ", without rolling";
+        string from = this.Rules.Topology.NameOf(swapped.From);
+        string to = this.Rules.Topology.NameOf(swapped.To);
+        string pawn = this.Rules.NameOf(swapped.Pawn.Kind);
+        string other = this.Rules.NameOf(swapped.Other.Kind);
+        string text = $"{this.Name(swapped.MovedBy)} swapped {whose} {pawn} on {from} with "
+            + $"{this.Name(swapped.Other.Owner)}'s {other} on {to}, back to back{how}.";
+        EventDto told = new(
+            number,
+            EventDto.Moved,
+            swapped.MovedBy.Value,
+            text,
+            swapped.From.Value,
+            swapped.To.Value
+        );
+        return this with { Told = this.Told.Add(told), LastMoved = swapped.Pawn };
     }
 }

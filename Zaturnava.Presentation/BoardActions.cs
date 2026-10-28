@@ -50,6 +50,15 @@ public sealed class BoardActions([Required] ImmutableList<ActionDto> legal)
     public ActionDto? Between(int from, int to) =>
         this._moves.Where(move => move.From == from && move.To == to).Select(move => move.Action).FirstOrDefault();
 
+    /// <summary>
+    /// What the action from <paramref name="from"/> to <paramref name="to"/> says of itself, as a swap does; null if
+    /// it says nothing, or there is none.
+    /// </summary>
+    public string? LabelBetween(int from, int to) =>
+        this._moves.Where(move => move.From == from && move.To == to)
+            .Select(move => move.Action.Label)
+            .FirstOrDefault();
+
     private static IEnumerable<(int From, int To, ActionDto Action)> MoveOf(ActionDto action) =>
         CellsOf(action) is { } cells ? [(cells.From, cells.To, action)] : [];
 

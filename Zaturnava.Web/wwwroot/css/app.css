@@ -210,6 +210,7 @@ html { scrollbar-gutter: stable; }
 
 .mark { fill: var(--mark); }
 .mark.capture { fill: none; stroke: var(--mark); stroke-width: 0.08; }
+.mark.swap { fill: none; stroke: var(--mark); stroke-width: 0.08; stroke-dasharray: 0.18 0.12; }
 
 .piece.seat-0 circle { fill: var(--seat-0); }
 .piece.seat-0 text, .piece.seat-0 path { fill: var(--seat-0-ink); }

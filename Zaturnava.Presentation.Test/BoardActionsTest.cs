@@ -101,6 +101,22 @@ public sealed class BoardActionsTest
         Assert.Null(move);
     }
 
+    [Theory]
+    [InlineData(8, 16, "Swap places with Green's Pawn")]
+    [InlineData(8, 24, null)]
+    [InlineData(9, 24, null)]
+    public void LabelBetween_WhenGivenTwoCells_SaysWhatTheMoveJoiningThemSays(int from, int to, string? expected)
+    {
+        // Arrange
+        BoardActions actions = new([Actions.Move(8, 16) with { Label = "Swap places with Green's Pawn" }, Far]);
+
+        // Act
+        string? label = actions.LabelBetween(from, to);
+
+        // Assert
+        Assert.Equal(expected, label);
+    }
+
     [Fact]
     public void Drops_WhenAnActionGoesToACellFromNone_AreThoseCells()
     {

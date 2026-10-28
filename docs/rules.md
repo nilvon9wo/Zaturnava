@@ -23,7 +23,7 @@ Everything else here is specified but not yet played by the engine.
 | Section | Status |
 |---|---|
 | §2 Board & setup | Implemented: the 8×8 board, the pinwheel setup, teams of opposite seats, thrones. |
-| §3 Pieces & movement | Implemented, captures included. A piece moved for another army moves the way its own army faces; what it may take is §6.4. |
+| §3 Pieces & movement | Implemented, captures included, and the back-to-back Pawn swap. A piece moved for another army moves the way its own army faces; what it may take is §6.4. |
 | §4 Turns & dice | Implemented: the opening plays the die that won the roll-off, then a deliberate move, a pass or two dice, clockwise from the roll-off's winner; an unusable die is forfeit. Doubles let one piece move twice, or a prisoner escape (§7). The dice profile is the weighted d6 one; a d4 profile exists but cannot yet be chosen. |
 | §5 Captures & scoring | Implemented: captures score by piece, with both throne bonuses and the empire, as clarified below. |
 | §6 Throne control | Implemented: the expanded pool (§6.1, both triggers), voluntary regency (§6.2, as stated below) and the forced shared turn (§6.3). |
@@ -76,6 +76,23 @@ Played in teams of 2, with teammates seated opposite each other on the board.
 **Forward direction** is not a single global direction — each army's pawns
 move straight toward the board's center, i.e. forward is rotated 90° between
 each adjacent army. (Confirmed from the original document's move diagram.)
+
+### Back-to-back swap
+
+*(Stated 2026-10-28)* Two allied Pawns facing each other, back to back, may
+swap places. The swap uses up a Pawn's move.
+
+- *(Proposed)* So it needs a die that moves a Pawn, which it uses up, or is
+  the turn's deliberate move (§4).
+- *(Proposed)* "Facing each other" means each stands on the square the other
+  moves to: the square straight ahead of each is the other's. With teams of
+  opposite seats, that is any allied Pawn of the other army straight ahead.
+- *(Proposed)* Whoever may move one of the two Pawns may swap it, an army they
+  command included (§6); the other Pawn goes along, whoever controls it.
+- *(Proposed)* Nothing is captured and nothing scores. A Pawn that comes to the
+  far edge by swapping may be promoted, as by any move (§8).
+- *(Proposed)* The board marks a square a picked-up Pawn may swap to with a
+  dashed ring, apart from the solid ring of a capture.
 
 ### Captures
 
