@@ -112,8 +112,9 @@ file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bo
                 number,
                 EventDto.Empire,
                 empire.Rulers[0],
-                $"{GameLog.Listed(this.Rules, empire.Rulers)} now rule an empire: no enemy Raja is left on the board. "
-                    + "No one scores for it, as none of them commands an ally's army."
+                $"{GameLog.Listed(this.Rules, empire.Rulers)} now rule an empire: no enemy Raja is left on the board, "
+                    + "and one of them commands an ally's army. It scores only as the last enemy Raja is taken, "
+                    + "so no one scores for it now."
             ),
             EmpireEnded fallen => this.Ended(
                 number,

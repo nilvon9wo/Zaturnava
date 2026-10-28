@@ -1697,6 +1697,43 @@ public sealed class Chaturaji2027RulesTest
 
         // Assert
         Assert.Equal([new EmpireCreated(Black, 3)], transition.Events.OfType<EmpireCreated>());
+        Assert.DoesNotContain(transition.Events, happened => happened is CommandBegun); // Red, retired, commands none
+    }
+
+    [Fact]
+    public void Apply_WhenARetiredRajaSitsOnAThrone_CommandsNothingThereAndForcesNoRoll()
+    {
+        // Arrange - Yellow, retired, has its Raja on Black's throne; Black's Raja is beside it
+        GameState state = this.Later() with
+        {
+            Position = Alone().Place(BlackThrone, Piece(11, Chaturaji2027Pieces.Raja, Yellow)),
+            Retired = [Yellow],
+        };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new MoveAction(Black, Grid.CellAt(3, 3), Grid.CellAt(3, 4)));
+
+        // Assert
+        Assert.Contains(new PassAction(Black), this._rules.LegalActions(state));
+        Assert.DoesNotContain(transition.Events, happened => happened is CommandBegun or CommandEnded);
+    }
+
+    [Fact]
+    public void Apply_WhenARajaEntersAnAllysThroneWithOnlyARetiredEnemyRajaLeft_TellsOfTheEmpire()
+    {
+        // Arrange - Black's Raja beside Green's throne; Red's Raja, the enemies' only one, has retired
+        GameState commands = this.Commands(Grid.CellAt(4, 6), Grid.CellAt(6, 2), hasEnemyRajas: false);
+        GameState state = commands with
+        {
+            Position = commands.Position.Place(Grid.CellAt(7, 0), Piece(27, Chaturaji2027Pieces.Raja, Red)),
+            Retired = [Red],
+        };
+
+        // Act
+        Transition entered = this._rules.Apply(state, new MoveAction(Black, Grid.CellAt(4, 6), GreenThrone));
+
+        // Assert
+        Assert.Equal(new EmpireBegun([Black, Green]), entered.Events[^1]);
     }
 
     [Theory]

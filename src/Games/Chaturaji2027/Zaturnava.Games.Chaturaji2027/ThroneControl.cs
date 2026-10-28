@@ -66,15 +66,19 @@ internal sealed class ThroneControl(ImmutableDictionary<SeatId, CellId> thrones)
     public SeatId? OccupierOf(GameState state, SeatId seat)
     {
         Piece? occupant = state.Position.PieceAt(this._thrones[seat]);
-        bool isEnemyRaja = occupant?.Kind == Chaturaji2027Pieces.Raja && !state.Teams.AreAllied(occupant.Owner, seat);
+        bool isEnemyRaja = occupant?.Kind == Chaturaji2027Pieces.Raja
+            && !state.Teams.AreAllied(occupant.Owner, seat)
+            && !state.Retired.Contains(occupant.Owner);
         return isEnemyRaja
             ? occupant!.Owner
             : null;
     }
 
-    /// <summary>The allies with no Raja, if the seat has one; a retired ally is commanded by no one.</summary>
+    /// <summary>
+    /// The allies with no Raja, if the seat has one and has not retired; a retired ally is commanded by no one.
+    /// </summary>
     private static IEnumerable<SeatId> RajalessAllies(GameState state, SeatId seat) =>
-        HasRaja(state, seat)
+        HasRaja(state, seat) && !state.Retired.Contains(seat)
             ? state.Seats
                 .Select(ally => ally.Id)
                 .Where(ally => ally != seat && state.Teams.AreAllied(ally, seat) && !HasRaja(state, ally))
@@ -87,12 +91,17 @@ internal sealed class ThroneControl(ImmutableDictionary<SeatId, CellId> thrones)
     private static bool HasRaja(GameState state, SeatId seat) =>
         state.Position.Occupants.Values.Any(piece => piece.Owner == seat && piece.Kind == Chaturaji2027Pieces.Raja);
 
-    /// <summary>The seats whose thrones the seat's Raja holds; a retired seat's throne commands nothing.</summary>
+    /// <summary>
+    /// The seats whose thrones the seat's Raja holds; a retired seat's throne, or a retired seat's Raja, commands
+    /// nothing.
+    /// </summary>
     private IEnumerable<SeatId> ThronesHeldBy(GameState state, SeatId seat) =>
-        this._thrones
-            .Where(throne => throne.Key != seat && !state.Retired.Contains(throne.Key))
-            .Where(throne => IsRajaOf(state.Position.PieceAt(throne.Value), seat))
-            .Select(throne => throne.Key);
+        state.Retired.Contains(seat)
+            ? []
+            : this._thrones
+                .Where(throne => throne.Key != seat && !state.Retired.Contains(throne.Key))
+                .Where(throne => IsRajaOf(state.Position.PieceAt(throne.Value), seat))
+                .Select(throne => throne.Key);
 
     private static bool IsRajaOf(Piece? piece, SeatId seat) =>
         piece?.Kind == Chaturaji2027Pieces.Raja && piece.Owner == seat;
