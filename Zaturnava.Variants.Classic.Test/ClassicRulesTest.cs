@@ -538,6 +538,29 @@ public sealed class ClassicRulesTest
     }
 
     [Fact]
+    public void Apply_WhenTheLastEnemyRajaComesBackAndIsTakenAgain_CreatesTheEmpireAgainAndKeepsTheFirst()
+    {
+        // Arrange - the empire created once; then Yellow's Raja is back on a7, as by a ransom, on Black's next turn
+        GameState state = this.Empire(GreenThrone, hasGreenRaja: true);
+        GameState first = this._rules.Apply(state, new MoveAction(Black, Grid.CellAt(0, 0), Grid.CellAt(0, 5))).State;
+        GameState returned = state with
+        {
+            Position = first.Position.Place(Grid.CellAt(0, 6), Piece(11, ClassicPieces.Raja, Yellow)),
+            Scores = first.Scores,
+        };
+
+        // Act
+        Transition transition = this._rules.Apply(
+            returned,
+            new MoveAction(Black, Grid.CellAt(0, 5), Grid.CellAt(0, 6))
+        );
+
+        // Assert - each time 5 for the Raja and 3 for the empire
+        Assert.Equal([new EmpireCreated(Black, 3)], transition.Events.OfType<EmpireCreated>());
+        Assert.Equal(16, transition.State.Scores[Black]);
+    }
+
+    [Fact]
     public void Apply_WhenTheLastEnemyRajaIsTakenByOneCommandingNoAlly_CreatesNoEmpire()
     {
         // Arrange - Black's Raja holds Red's throne, an enemy's; Green has its Raja
@@ -1485,6 +1508,27 @@ public sealed class ClassicRulesTest
 
         // Assert
         Assert.Equal(maySwap, actions.Contains(new MoveAction(Black, Grid.CellAt(3, 3), Grid.CellAt(3, 4))));
+    }
+
+    [Fact]
+    public void Apply_WhenAPawnSwapsOntoTheFarEdge_OffersItsPromotionToTheSwapper()
+    {
+        // Arrange - Black's Pawn on c7, Green's back to back with it on c8; Red holds Green's Elephant 11
+        GameState farEdge = this.FarEdgeAhead();
+        GameState state = farEdge with
+        {
+            Position = farEdge.Position.Place(Grid.CellAt(2, 7), Piece(20, ClassicPieces.Pawn, Green)),
+        };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new MoveAction(Black, Grid.CellAt(2, 6), Grid.CellAt(2, 7)));
+
+        // Assert
+        Assert.Equal(Grid.CellAt(2, 7), transition.State.PromotionDue);
+        Assert.Contains(
+            new PromoteAction(Black, Grid.CellAt(2, 7), new PieceId(11)),
+            this._rules.LegalActions(transition.State)
+        );
     }
 
     public static TheoryData<string, Piece, Piece, int> NoSwaps =>

@@ -89,8 +89,11 @@ swap places. The swap uses up a Pawn's move.
   opposite seats, that is any allied Pawn of the other army straight ahead.
 - *(Proposed)* Whoever may move one of the two Pawns may swap it, an army they
   command included (§6); the other Pawn goes along, whoever controls it.
-- *(Proposed)* Nothing is captured and nothing scores. A Pawn that comes to the
-  far edge by swapping may be promoted, as by any move (§8).
+- *(Proposed)* Nothing is captured and nothing scores.
+- *(Stated 2026-10-28)* A Pawn that comes to the far edge by swapping may be
+  promoted, as by any move (§8). The player who swapped chooses the promotion
+  only if they take it then; if they leave it for later, whoever controls the
+  Pawn's army at the time chooses, whenever they take it.
 - *(Proposed)* The board marks a square a picked-up Pawn may swap to with a
   dashed ring, apart from the solid ring of a capture.
 
