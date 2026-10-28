@@ -1,0 +1,126 @@
+@* How to play: the game's ideas, aims and scoring, for a player rather than an engine (that is rules.md).
+   Shown over the lobby or the table, from the page's settings, until closed. *@
+
+<div class="guide-backdrop">
+    <section class="guide" role="dialog" aria-modal="true" aria-labelledby="guide-title">
+        <header class="guide-head">
+            <h2 id="guide-title">How to play</h2>
+            <button class="close" @onclick="this.OnClose">Close</button>
+        </header>
+
+        <h3>The aim</h3>
+        <p>
+            Four armies play, in two teams: allies sit opposite each other. Your team wins by scoring more points
+            than the other: by taking pieces, and by a few bonuses below. There is no checkmate. Usually the game
+            ends when everyone agrees it should, and then points decide.
+        </p>
+
+        <h3>Your army</h3>
+        <p>
+            Each army has a Raja (the king), an Elephant, a Horse, a Boat and four Pawns. The square your Raja
+            starts on is your <strong>throne</strong>. Each army's Pawns move toward the middle of the board, so
+            "forward" is different for each seat.
+        </p>
+        <table class="guide-pieces">
+            <thead>
+                <tr><th>Piece</th><th>Moves</th><th>Taking it scores</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Raja</td><td>One square in any direction.</td><td>5</td></tr>
+                <tr><td>Elephant</td><td>Any distance straight along a row or column, like a chess rook.</td><td>4</td></tr>
+                <tr><td>Horse</td><td>Like a chess knight, jumping.</td><td>3</td></tr>
+                <tr><td>Boat</td><td>Exactly two squares diagonally, jumping over the square between.</td><td>2</td></tr>
+                <tr>
+                    <td>Pawn</td>
+                    <td>
+                        One square forward; it takes one square diagonally forward. Two allied Pawns back to back,
+                        each facing the other, may swap places, as a Pawn's move.
+                    </td>
+                    <td>1</td>
+                </tr>
+            </tbody>
+        </table>
+        <p>Every piece but the Pawn takes the way it moves, by landing on an enemy.</p>
+
+        <h3>Your turn</h3>
+        <p>On your turn, you do one of these:</p>
+        <ul>
+            <li><strong>Move</strong> any one of your pieces, without rolling.</li>
+            <li>
+                <strong>Roll</strong> two dice. Each die lets you move one piece of the kind it shows: 1 a Boat,
+                2 a Horse, 3 or 4 an Elephant, 5 or 6 a Pawn or the Raja. Use both, one or neither, in either
+                order. A die nothing can use is lost.
+            </li>
+            <li><strong>Pass</strong>.</li>
+        </ul>
+        <p>
+            Nothing is ever compulsory. The very first turn of the game is the roll-off's winner playing the die
+            that won it.
+        </p>
+        <p>
+            <strong>Doubles</strong> let you make two moves with the kind they show (with one piece or two), or,
+            instead, bring a captured piece of that kind back home: it <strong>escapes</strong>, taking any enemy
+            on its square, and your turn ends.
+        </p>
+
+        <h3>Points</h3>
+        <ul>
+            <li>Taking a piece scores its points, which you keep even if the piece comes back later.</li>
+            <li><strong>+1</strong> each time your Raja enters an enemy's throne.</li>
+            <li><strong>+2</strong> for taking an enemy Raja on its own throne.</li>
+            <li>
+                <strong>The empire:</strong> when the last enemy Raja is taken, each player of the team that took it
+                who commands an ally's army (see below) scores <strong>+1</strong>. If the one who took it commands
+                an ally's army, they score <strong>+2</strong> more, or <strong>+4</strong> if they took it on its
+                throne. It can happen again, if an enemy Raja comes back and is taken again.
+            </li>
+        </ul>
+
+        <h3>Thrones and command</h3>
+        <ul>
+            <li>
+                While your Raja sits on another seat's throne, ally's or enemy's, you may move that army as well as
+                your own on your turns. While your ally has no Raja on the board, you may move their army too.
+                Either way, you command that army.
+            </li>
+            <li>
+                While your ally's Raja sits on your throne, or you have no Raja, your ally may take your turn for
+                you, if you hand it over ("Let ... take over").
+            </li>
+            <li>
+                While an enemy Raja sits on your throne, you must roll. You make the first move; the enemy makes the
+                second, with your army, unless your first move took that Raja.
+            </li>
+            <li>An enemy army you command may take any piece except your own team's.</li>
+        </ul>
+
+        <h3>Prisoners</h3>
+        <ul>
+            <li>
+                The pieces you take are your prisoners. A Pawn reaching the far edge may become any captured piece,
+                now or on a later turn.
+            </li>
+            <li>
+                On your turn you may offer another player a <strong>ransom</strong>: a trade of prisoners, any
+                number for any number. It happens only if they accept. Pieces given back return as near their
+                starting squares as they can, never taking anything.
+            </li>
+        </ul>
+
+        <h3>The end</h3>
+        <ul>
+            <li>
+                Anyone may press <strong>End game</strong> to ask the others to end it. If everyone agrees, points
+                decide; if anyone refuses, play goes on.
+            </li>
+            <li>A team wins outright when the other team has no pieces left. If only Rajas are left, it is a draw.</li>
+            <li>A player who loses every piece is out; their ally plays on alone.</li>
+            <li>If three whole rounds go by with everyone passing, the game ends, and points decide.</li>
+        </ul>
+    </section>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public EventCallback OnClose { get; set; }
+}

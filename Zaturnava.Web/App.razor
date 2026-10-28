@@ -1,6 +1,6 @@
 @* The whole page: the lobby until the player sits at (or watches) a table, over a quiet bar of the
    page's name and its own settings (theme, sound, and how the pieces are shown); at a table, the table
-   shows the settings in its own bar. No URL routing, so the page works from any address it is served
+   shows the settings in its own bar, with a guide to the game over either. No URL routing, so the page works from any address it is served
    at. A seat the player takes is remembered in the browser, so that they can come back to it. *@
 @inject Browser Browser
 
@@ -23,14 +23,21 @@ else
     </footer>
 }
 
+@if (this._isGuideOpen)
+{
+    <Guide OnClose="this.CloseGuide" />
+}
+
 @code {
     private Seating? _seating;
     private string _theme = Browser.Dark;
     private bool _isSoundOn = true;
+    private bool _isGuideOpen;
     private PieceSet _pieces;
 
     private RenderFragment Settings =>
         @<span class="settings">
+            <button class="how-to-play" @onclick="this.OpenGuide">How to play</button>
             <button class="theme" @onclick="this.SwitchTheme">@(this._theme == Browser.Dark ? "Light theme" : "Dark theme")</button>
             <button class="sound" @onclick="this.SwitchSound">@(this._isSoundOn ? "Sound: on" : "Sound: off")</button>
             <button class="pieces" @onclick="this.SwitchPieces">
@@ -53,6 +60,10 @@ else
     }
 
     private void Leave() => this._seating = null;
+
+    private void OpenGuide() => this._isGuideOpen = true;
+
+    private void CloseGuide() => this._isGuideOpen = false;
 
     private async Task SwitchTheme()
     {
