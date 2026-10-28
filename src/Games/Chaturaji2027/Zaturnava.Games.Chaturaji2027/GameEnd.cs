@@ -19,6 +19,9 @@ internal static class GameEnd
     public const string OnlyRajasLeft = "only Rajas are left, an honourable peace";
     public const string TeamGaveUp = "a whole team gave up their turns, so points decide";
 
+    /// <summary>How far ahead, on points and on the board both, a team must be to win by giving up its turns.</summary>
+    public const int ClearLead = 10;
+
     /// <summary>The ended game, if the board leaves nothing to play for; otherwise null.</summary>
     public static Transition? AfterMove(Transition transition)
     {
@@ -51,8 +54,10 @@ internal static class GameEnd
     }
 
     /// <summary>
-    /// The ended game, once every seat of a team still playing has given up its turns (rules.md §10): no one is
-    /// left to play for that team, so points decide, any proposal waiting with them; otherwise the game as it was.
+    /// The ended game, once every seat of a team still playing has given up its turns (rules.md §10), if that
+    /// team trails on points, or leads by a <see cref="ClearLead"/> on points and on the board both: points
+    /// decide, any proposal waiting with them. Otherwise the game as it was, its enemies playing on, so that a
+    /// team cannot win by giving up the moment it leads.
     /// </summary>
     public static Transition AfterGivingUp(Transition transition)
     {
@@ -61,7 +66,7 @@ internal static class GameEnd
             && state.Seats
                 .Where(seat => IsPlaying(state, seat.Id))
                 .GroupBy(seat => state.Teams.TeamOf(seat.Id))
-                .Any(team => team.All(seat => state.Resigned.Contains(seat.Id)));
+                .Any(team => team.All(seat => state.Resigned.Contains(seat.Id)) && MayGiveUp(state, team.Key));
         return hasTeamGivenUp
             ? ByPoints(transition with { State = state with { Proposal = null } }, TeamGaveUp)
             : transition;
@@ -74,6 +79,27 @@ internal static class GameEnd
     /// <summary>Whether the seat still takes its turns: it has pieces left, and has not retired.</summary>
     public static bool IsPlaying(GameState state, SeatId seat) =>
         !state.Retired.Contains(seat) && state.Position.Occupants.Values.Any(piece => piece.Owner == seat);
+
+    /// <summary>Whether giving up its turns ends the game for the team: it trails, or leads by far.</summary>
+    private static bool MayGiveUp(GameState state, int team) =>
+        (PointsLead(state, team), BoardLead(state, team)) switch
+        {
+            ( < 0, _) => true,
+            ( >= ClearLead, >= ClearLead) => true,
+            _ => false,
+        };
+
+    /// <summary>The points of the team, less its enemies'.</summary>
+    private static int PointsLead(GameState state, int team) =>
+        state.Seats.Sum(seat => Side(state, team, seat.Id) * state.Scores[seat.Id]);
+
+    /// <summary>What the pieces of the team on the board would score if taken, less its enemies'.</summary>
+    private static int BoardLead(GameState state, int team) =>
+        state.Position.Occupants.Values
+            .Where(piece => !state.Retired.Contains(piece.Owner))
+            .Sum(piece => Side(state, team, piece.Owner) * Chaturaji2027Pieces.Points[piece.Kind]);
+
+    private static int Side(GameState state, int team, SeatId seat) => state.Teams.TeamOf(seat) == team ? 1 : -1;
 
     private static GameOutcome OutcomeByPoints(GameState state, string reason)
     {

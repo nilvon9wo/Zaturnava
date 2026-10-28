@@ -2257,11 +2257,11 @@ public sealed class Chaturaji2027RulesTest
     [Fact]
     public void Apply_WhenTheLastOfATeamGivesUpItsTurns_EndsTheGameOnPoints()
     {
-        // Arrange - Green gave up its turns earlier; Black leads Yellow and Red
+        // Arrange - Green gave up its turns earlier; Black leads Yellow and Red by ten points, and 15 to 2 on the board
         GameState state = this.Regency(hasBlackRaja: true, Grid.CellAt(6, 2)) with
         {
             Resigned = [Green],
-            Scores = this.Later().Scores.SetItem(Black, 9),
+            Scores = this.Later().Scores.SetItem(Black, 10),
         };
 
         // Act
@@ -2274,6 +2274,54 @@ public sealed class Chaturaji2027RulesTest
             (transition.State.Outcome, transition.State.Proposal, transition.State.DecidingSeat)
         );
         Assert.Equal([new EndProposed(Black, true), new GameEnded(outcome)], transition.Events);
+    }
+
+    [Theory]
+    [InlineData(true, 9, 0, "on")]
+    [InlineData(false, 10, 0, "on")]
+    [InlineData(true, 0, 0, "on")]
+    [InlineData(true, 0, 1, "Yellow")]
+    public void Apply_WhenTheLastOfATeamGivesUpItsTurns_EndsTheGameOnlyIfItTrailsOrLeadsByFar(
+        bool hasBlackRaja,
+        int black,
+        int yellow,
+        string expected
+    )
+    {
+        // Arrange - Green gave up its turns earlier; on the board, Black and Green have 15, or 10 without
+        // Black's Raja, to Yellow and Red's 2
+        GameState state = this.Regency(hasBlackRaja, Grid.CellAt(6, 2)) with
+        {
+            Resigned = [Green],
+            Scores = this.Later().Scores.SetItem(Black, black).SetItem(Yellow, yellow),
+        };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new ProposeEndAction(Black, Resigns: true));
+
+        // Assert
+        Assert.Equal(
+            expected == "Yellow" ? [Yellow, Red] : null,
+            transition.State.Outcome?.Winners
+        );
+    }
+
+    [Fact]
+    public void Apply_WhenTheEnemiesOfATeamThatGaveUpCatchUp_EndsTheGameOnPoints()
+    {
+        // Arrange - Black and Green gave up their turns earlier, a point ahead; Red has since drawn ahead
+        GameState state = this.Regency(hasBlackRaja: true, Grid.CellAt(6, 2)) with
+        {
+            Resigned = [Black, Green],
+            Scores = this.Later().Scores.SetItem(Black, 1).SetItem(Red, 2),
+            DecidingSeat = Yellow,
+        };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new PassAction(Yellow));
+
+        // Assert
+        Assert.Equal([Yellow, Red], transition.State.Outcome?.Winners);
     }
 
     [Fact]

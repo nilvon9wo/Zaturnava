@@ -585,6 +585,16 @@ both the triumphing player and their ally may move each other's Boat.
     back: they are in the game again, playing their own turns.
   - *(Stated 2026-10-28)* Once every player of a team has given up their
     turns, the game ends at once, as if all had agreed: points decide.
+  - *(Stated 2026-10-29)* But a team must not collect wins by giving up its
+    turns the moment it leads: a team ahead that gives up ends the game only
+    with a substantial lead, and an advantage in material, over the other.
+    - *(Proposed)* The game ends when the team giving up is behind on points,
+      or at least **10** ahead both on points and on the board (what each
+      team's pieces left would score if taken, §5; a retired Raja not
+      counted). Otherwise the game goes on: that team passes, the other team
+      plays on, and the game ends as soon as the team that gave up is behind,
+      the other team then winning. Being level is not enough. The team that
+      gave up may rejoin, or the others may propose an end, as ever.
     - *(Proposed)* "Every player" means every one still playing (§10: with
       pieces left, not retired); giving up by missing turns while away (below)
       counts too; a proposal still waiting for answers ends with the game.
