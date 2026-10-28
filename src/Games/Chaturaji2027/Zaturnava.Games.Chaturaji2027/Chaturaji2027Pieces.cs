@@ -4,7 +4,7 @@ using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
 
 namespace Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
 
-/// <summary>The traditional piece set (rules.md §3), its capture values (§5) and its names.</summary>
+/// <summary>The chaturaji piece set (rules.md §3), its capture values (§5) and its names.</summary>
 public static class Chaturaji2027Pieces
 {
     public static readonly PieceKindId Raja = new("raja");
@@ -29,7 +29,7 @@ public static class Chaturaji2027Pieces
             .Add(Elephant, 4)
             .Add(Raja, 5);
 
-    public static readonly ImmutableDictionary<PieceKindId, string> TraditionalNames =
+    public static readonly ImmutableDictionary<PieceKindId, string> ChaturajiNames =
         ImmutableDictionary<PieceKindId, string>.Empty
             .Add(Raja, "Raja")
             .Add(Elephant, "Elephant")

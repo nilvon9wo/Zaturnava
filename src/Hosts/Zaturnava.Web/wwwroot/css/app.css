@@ -147,7 +147,7 @@ select {
 .guide-pieces { border-collapse: collapse; width: 100%; }
 .guide-pieces th, .guide-pieces td { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--panel-edge); }
 .guide-pieces td:last-child, .guide-pieces th:last-child { text-align: right; white-space: nowrap; }
-.table-bar .where, .table-bar .turns { display: flex; align-items: center; gap: 6px; }
+.bar .where, .table-bar .turns { display: flex; align-items: center; gap: 6px; }
 
 .problem { color: var(--problem); }
 

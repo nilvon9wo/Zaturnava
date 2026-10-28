@@ -4,7 +4,7 @@ namespace Net.NowhereAtAll.Zaturnava.Presentation;
 public enum PieceSet
 {
     /// <summary>Raja, Elephant, Horse, Boat and Pawn, each drawn as itself.</summary>
-    Traditional,
+    Chaturaji,
 
     /// <summary>King, Rook, Knight, Boat and Pawn, drawn as chess pieces (chess has no Boat).</summary>
     Chess,

@@ -80,8 +80,8 @@ public sealed class BrowserTest : IDisposable
 
     [Theory]
     [InlineData("chess", PieceSet.Chess)]
-    [InlineData(null, PieceSet.Traditional)]
-    public async Task Pieces_WhenRead_AreTraditionalUnlessChessWasChosen(string? remembered, PieceSet expected)
+    [InlineData(null, PieceSet.Chaturaji)]
+    public async Task Pieces_WhenRead_AreChaturajiUnlessChessWasChosen(string? remembered, PieceSet expected)
     {
         // Arrange
         _ = this._context.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.pieces").SetResult(remembered);
@@ -95,7 +95,7 @@ public sealed class BrowserTest : IDisposable
 
     [Theory]
     [InlineData(PieceSet.Chess, "chess")]
-    [InlineData(PieceSet.Traditional, "traditional")]
+    [InlineData(PieceSet.Chaturaji, "chaturaji")]
     public async Task SetPieces_WhenSet_RemembersThem(PieceSet pieces, string expected)
     {
         // Arrange - nothing beyond the browser

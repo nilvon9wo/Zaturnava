@@ -22,7 +22,7 @@ public sealed class PieceStyleTest
     }
 
     [Theory]
-    [InlineData(PieceSet.Traditional)]
+    [InlineData(PieceSet.Chaturaji)]
     [InlineData(PieceSet.Chess)]
     public void GlyphOf_WhenTheKindIsUnknown_IsTheFirstLetterOfItsName(PieceSet set)
     {
@@ -37,10 +37,10 @@ public sealed class PieceStyleTest
     }
 
     [Theory]
-    [InlineData("raja", PieceSet.Traditional, "M-0.25 0.18")]
-    [InlineData("elephant", PieceSet.Traditional, "M-0.14 0A")]
-    [InlineData("horse", PieceSet.Traditional, "M0.18 0.26")]
-    [InlineData("boat", PieceSet.Traditional, "M-0.27 0.1")]
+    [InlineData("raja", PieceSet.Chaturaji, "M-0.25 0.18")]
+    [InlineData("elephant", PieceSet.Chaturaji, "M-0.14 0A")]
+    [InlineData("horse", PieceSet.Chaturaji, "M0.18 0.26")]
+    [InlineData("boat", PieceSet.Chaturaji, "M-0.27 0.1")]
     [InlineData("boat", PieceSet.Chess, "M-0.27 0.1")]
     public void ShapeOf_WhenTheKindIsDrawnAsAShape_IsItsPath(string kind, PieceSet set, string expected)
     {
@@ -55,7 +55,7 @@ public sealed class PieceStyleTest
 
     [Theory]
     [InlineData("horse", PieceSet.Chess)]
-    [InlineData("pawn", PieceSet.Traditional)]
+    [InlineData("pawn", PieceSet.Chaturaji)]
     public void ShapeOf_WhenTheKindIsDrawnAsAGlyph_IsNull(string kind, PieceSet set)
     {
         // Arrange - nothing beyond the style
@@ -69,7 +69,7 @@ public sealed class PieceStyleTest
 
     [Theory]
     [InlineData(PieceSet.Chess, "Black took Red's Rook; only Kings and Knights left, and a Horseshoe.")]
-    [InlineData(PieceSet.Traditional, "Black took Red's Elephant; only Rajas and Horses left, and a Horseshoe.")]
+    [InlineData(PieceSet.Chaturaji, "Black took Red's Elephant; only Rajas and Horses left, and a Horseshoe.")]
     public void Named_WhenTheTextNamesPieces_NamesThemAsTheSetDoes(PieceSet set, string expected)
     {
         // Arrange

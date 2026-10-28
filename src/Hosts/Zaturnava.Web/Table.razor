@@ -357,6 +357,7 @@
     <footer class="bar table-bar">
         <span class="where">
             <span class="brand">@(this._view?.RulesetName ?? "Zaturnava")</span>
+            @this.HowToPlay
             <button class="leave" @onclick="this.OnLeave">Lobby</button>
         </span>
         @if (this._view is { } shown)
@@ -438,13 +439,17 @@
     [Parameter]
     public bool IsSoundOn { get; set; } = true;
 
-    /// <summary>How the pieces are drawn and named, the server's names being the traditional ones.</summary>
+    /// <summary>How the pieces are drawn and named, the server's names being the chaturaji ones.</summary>
     [Parameter]
     public PieceSet Pieces { get; set; }
 
     /// <summary>The page's own settings, for the table's bar.</summary>
     [Parameter]
     public RenderFragment? PageSettings { get; set; }
+
+    /// <summary>The button opening the guide to the game, beside the game's name.</summary>
+    [Parameter]
+    public RenderFragment? HowToPlay { get; set; }
 
     [Parameter]
     public EventCallback OnLeave { get; set; }

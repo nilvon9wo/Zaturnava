@@ -6,7 +6,7 @@ using Net.NowhereAtAll.Zaturnava.Contracts;
 namespace Net.NowhereAtAll.Zaturnava.Presentation;
 
 /// <summary>
-/// How a piece is drawn and named, as the player has chosen (<see cref="PieceSet"/>). Traditional: as a
+/// How a piece is drawn and named, as the player has chosen (<see cref="PieceSet"/>). Chaturaji: as a
 /// silhouette of what it is (a crown for the Raja, an elephant, a horse's head, a boat), by its own
 /// name. Chess: as the chess piece that moves most like it (the Elephant moves like a Rook), by that
 /// piece's name - but the Boat, which chess lacks, as a boat. Either way a Pawn is a chess pawn, and
@@ -31,7 +31,7 @@ public static partial class PieceStyle
             .Add("horse", "\u265E")
             .Add("pawn", "\u265F");
 
-    private static readonly ImmutableDictionary<string, string> TraditionalSymbols =
+    private static readonly ImmutableDictionary<string, string> ChaturajiSymbols =
         ImmutableDictionary<string, string>.Empty.Add("pawn", "\u265F");
 
     /// <summary>
@@ -39,7 +39,7 @@ public static partial class PieceStyle
     /// fill like a glyph, each part drawn the same way round so that overlaps stay filled: a crown on
     /// its band; an elephant, trunk down, on four legs; a horse's head; a sailing boat.
     /// </summary>
-    private static readonly ImmutableDictionary<string, string> TraditionalShapes =
+    private static readonly ImmutableDictionary<string, string> ChaturajiShapes =
         ImmutableDictionary<string, string>.Empty
             .Add(
                 "raja",
@@ -74,23 +74,23 @@ public static partial class PieceStyle
     public static string GlyphOf([Required] PieceDto piece, PieceSet set) => GlyphOf(piece.Kind, piece.Name, set);
 
     public static string GlyphOf([Required] string kind, [Required] string name, PieceSet set) =>
-        (set == PieceSet.Chess ? ChessSymbols : TraditionalSymbols).TryGetValue(kind, out string? symbol)
+        (set == PieceSet.Chess ? ChessSymbols : ChaturajiSymbols).TryGetValue(kind, out string? symbol)
             ? symbol + TextPresentation
             : name[..1];
 
     /// <summary>The kind's shape, as SVG path data; null for a kind drawn as a glyph.</summary>
     public static string? ShapeOf([Required] string kind, PieceSet set) =>
-        (set == PieceSet.Chess ? ChessShapes : TraditionalShapes).GetValueOrDefault(kind);
+        (set == PieceSet.Chess ? ChessShapes : ChaturajiShapes).GetValueOrDefault(kind);
 
     /// <summary>
     /// The text as the set names the pieces: "Black took Red's Rook (+4)." for the chess set, where the
-    /// server wrote "Elephant"; unchanged for the traditional set.
+    /// server wrote "Elephant"; unchanged for the chaturaji set.
     /// </summary>
     public static string Named([Required] string text, PieceSet set) =>
         set == PieceSet.Chess
-            ? TraditionalNames().Replace(text, match => ChessNames[match.Groups[1].Value] + match.Groups[2].Value)
+            ? ChaturajiNames().Replace(text, match => ChessNames[match.Groups[1].Value] + match.Groups[2].Value)
             : text;
 
     [GeneratedRegex(@"\b(Raja|Elephant|Horse)(s?)\b", RegexOptions.CultureInvariant, 1000)]
-    private static partial Regex TraditionalNames();
+    private static partial Regex ChaturajiNames();
 }

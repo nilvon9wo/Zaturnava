@@ -51,6 +51,25 @@ public sealed class AppTest : IDisposable
     }
 
     [Fact]
+    public void Play_WhenSeated_ShowsHowToPlayBesideTheGamesNameAndTheLooksBeforeTheSound()
+    {
+        // Arrange
+        IRenderedComponent<App> app = this._page.Render<App>();
+
+        // Act
+        app.Find("button.create").Click();
+
+        // Assert
+        Assert.Equal(
+            ("brand,how-to-play,leave", "theme,pieces,sound"),
+            (
+                string.Join(",", app.FindAll(".table-bar .where > *").Select(part => part.ClassName)),
+                string.Join(",", app.FindAll(".table-bar .settings button").Select(button => button.ClassName))
+            )
+        );
+    }
+
+    [Fact]
     public void Play_WhenThePlayerTakesASeat_RemembersIt()
     {
         // Arrange
@@ -129,7 +148,7 @@ public sealed class AppTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ("Pieces: chess", "Pieces: traditional"),
+            ("Pieces: chess", "Pieces: chaturaji"),
             (afterOne, app.Find("button.pieces").TextContent.Trim())
         );
     }
