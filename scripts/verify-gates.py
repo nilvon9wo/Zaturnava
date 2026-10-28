@@ -9,7 +9,7 @@ A gate that silently stops running looks exactly like a gate that passes. So:
   (build, format, layout, inspect) runs against it; every marker must be
   matched by a finding, and every gate must have at least one marker.
 * The coverage gate is proven by adding a throwaway uncovered class to
-  Zaturnava.Contracts/ - its tests must then fail with none of them
+  src/Apis/Zaturnava.Contracts/ - its tests must then fail with none of them
   failing, and the coverage report must show the class was measured: a
   coverlet that measures nothing fails the threshold too, for the wrong reason.
 * The doc-link gate is proven by a temporary page, docs/gate-canary.md, with
@@ -50,7 +50,7 @@ BUILD_ERROR = re.compile(r"(?P<path>[^\s(:]+\.cs)\((?P<line>\d+),\d+\): error (?
 # inspect-code.py print.
 COLON_DIAGNOSTIC = re.compile(r"^(?P<path>[^\s:]+\.cs):(?P<line>\d+): (?P<rule>[\w.-]+):", re.M)
 
-UNCOVERED_PATH = os.path.join("Zaturnava.Contracts", "GateCanaryUncovered.cs")
+UNCOVERED_PATH = os.path.join("src", "Apis", "Zaturnava.Contracts", "GateCanaryUncovered.cs")
 UNCOVERED_CLASS = "GateCanaryUncovered"
 UNCOVERED_SOURCE = """namespace Net.NowhereAtAll.Zaturnava.Contracts;
 
@@ -65,10 +65,10 @@ STALE_DOC_SOURCE = """# Gate canary
 
 Written and removed by scripts/verify-gates.py: a [link to nowhere](gate-canary-missing.md).
 """
-COVERAGE_PROJECT = os.path.join("Zaturnava.Contracts.Test", "Zaturnava.Contracts.Test.csproj")
-UNSTARTABLE_PROJECT = os.path.join("Zaturnava.Bots.Test", "Zaturnava.Bots.Test.csproj")
+COVERAGE_PROJECT = os.path.join("tests", "Apis", "Zaturnava.Contracts.Test", "Zaturnava.Contracts.Test.csproj")
+UNSTARTABLE_PROJECT = os.path.join("tests", "Bots", "Zaturnava.Bots.Test", "Zaturnava.Bots.Test.csproj")
 UNSTARTABLE_APPHOST = os.path.join(
-    "Zaturnava.Bots.Test", "bin", "Debug", "net10.0",
+    "tests", "Bots", "Zaturnava.Bots.Test", "bin", "Debug", "net10.0",
     "Net.NowhereAtAll.Zaturnava.Bots.Test" + (".exe" if os.name == "nt" else ""),
 )
 

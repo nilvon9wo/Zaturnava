@@ -1,7 +1,0 @@
-<Project Sdk="Microsoft.NET.Sdk">
-
-  <ItemGroup>
-    <ProjectReference Include="..\Zaturnava.Hosting.Itch\Zaturnava.Hosting.Itch.csproj" />
-  </ItemGroup>
-
-</Project>

@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <!--
+      Program.cs starts the app in a browser's .NET runtime, which no test can host: it is the one
+      file not measured, and holds only the call into WebServices, which is.
+    -->
+    <ZaturnavaUnmeasuredFile>**/Zaturnava.Web/Program.cs</ZaturnavaUnmeasuredFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="bunit" Version="2.12.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Hosts\Zaturnava.Web\Zaturnava.Web.csproj" />
+  </ItemGroup>
+
+</Project>

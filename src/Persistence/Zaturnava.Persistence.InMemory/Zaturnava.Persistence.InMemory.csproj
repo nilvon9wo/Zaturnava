@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Games kept in memory, for development, tests and self-play: lost when the process stops. -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Application\Zaturnava.Application\Zaturnava.Application.csproj" />
+  </ItemGroup>
+
+</Project>

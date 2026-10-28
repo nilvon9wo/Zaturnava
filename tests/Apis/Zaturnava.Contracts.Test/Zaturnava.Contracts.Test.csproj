@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Apis\Zaturnava.Contracts\Zaturnava.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>

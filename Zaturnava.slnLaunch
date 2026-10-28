@@ -3,12 +3,12 @@
     "Name": "Play",
     "Projects": [
       {
-        "Path": "Zaturnava.Server\\Zaturnava.Server.csproj",
+        "Path": "src\\Hosts\\Zaturnava.Server\\Zaturnava.Server.csproj",
         "Action": "Start",
         "DebugTarget": "Zaturnava.Server"
       },
       {
-        "Path": "Zaturnava.Web\\Zaturnava.Web.csproj",
+        "Path": "src\\Hosts\\Zaturnava.Web\\Zaturnava.Web.csproj",
         "Action": "Start",
         "DebugTarget": "Zaturnava.Web"
       }

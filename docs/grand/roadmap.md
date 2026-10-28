@@ -1,8 +1,8 @@
 # The grand game — Roadmap
 
 How the [grand game](specification.md) is to be built, in stages that can each be played, or at
-least tested, on their own. As with the classic game, it is played locally against bots before it
-is hosted. The classic game stays playable, and its tests passing, at every stage.
+least tested, on their own. As with Chaturaji 2027, it is played locally against bots before it
+is hosted. Chaturaji 2027 stays playable, and its tests passing, at every stage.
 
 The order is agreed (2026-10-26); nothing is scheduled. The design's questions are answered, but
 for a second palace (**Q5**, for later) and what playtesting is to settle (**Q14**)
@@ -10,7 +10,7 @@ for a second palace (**Q5**, for later) and what playtesting is to settle (**Q14
 
 ## Stage 0 — Finish what the grand game inherits
 
-The grand game plays by the classic rules, so the classic rules it inherits come first, built once,
+The grand game plays by the Chaturaji 2027 rules, so the rules it inherits come first, built once,
 and written for a *leader* rather than a Raja, so that they carry over unchanged.
 
 - **Smarter bots**: before moving, a bot weighs what its opponents could take in reply (and how
@@ -20,7 +20,7 @@ and written for a *leader* rather than a Raja, so that they carry over unchanged
 - Escape on doubles (rules.md §7), the empire bonus (§5), voluntary regency (§6.2). *Done*: all three.
 - Ending the game by agreement (§10). *Done*.
 
-Not first, and blocking nothing: boat triumph (classic only, and a near-impossible condition, so a
+Not first, and blocking nothing: boat triumph (Chaturaji 2027 only, and a near-impossible condition, so a
 nice-to-have); games that survive a restart, identities, statistics and chat (part of going
 online, not of either game's rules).
 
@@ -40,7 +40,7 @@ rest, each a few lines of data once the grammar knows how:
 - **Area rules**: palace, river, colour — kept as a piece's restrictions, so that those that may be
   bought off can be.
 
-The piece-information card (§8 of the specification) can come here too, and serve the classic game
+The piece-information card (§8 of the specification) can come here too, and serve Chaturaji 2027
 at once.
 
 Nothing here waits on an open question.
@@ -60,10 +60,10 @@ Nothing here waits on an open question.
 
 - A palace (3 × 3) and its throne, per army; palace lines drawn, and steps along them;
   confinement to a palace.
-- Several leaders in one army: throne control, and everything the classic rules say of "the Raja",
+- Several leaders in one army: throne control, and everything the Chaturaji 2027 rules say of "the Raja",
   said of leaders.
-- Scoring by piece value, with the classic bonuses as they are until playtesting says otherwise
-  (**Q14**); the game ends as the classic game does, and points decide it.
+- Scoring by piece value, with the Chaturaji 2027 bonuses as they are until playtesting says otherwise
+  (**Q14**); the game ends as Chaturaji 2027 does, and points decide it.
 
 ## Playtest — fixed armies
 
@@ -102,7 +102,7 @@ drawn simply, a shape for its class and a letter for its kind.
 ## Stage 7 — Looks
 
 - Every kind its own look, in both piece sets; the class told at a glance (spec §8).
-- Playtest, as the classic game was, and act on what it asks for: among other things, the classic
+- Playtest, as Chaturaji 2027 was, and act on what it asks for: among other things, the Chaturaji 2027
   bonuses and the leader bonus of 60 (**Q14**).
 
 ## Later

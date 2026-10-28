@@ -21,14 +21,14 @@ it instead. More in [running the game](docs/contribute/local-development.md#runn
 ## Status
 
 Playable end to end, with a partial ruleset: create a game in the browser, seat people and bots,
-and play. The `classic` ruleset so far has the board, the pieces' moves and captures, the roll-off
+and play. The `chaturaji-2027` ruleset so far has the board, the pieces' moves and captures, the roll-off
 for who goes first, dice, scoring by piece with the throne bonuses, command of other armies through
 thrones, and the end of the game; voluntary regency, escape, promotion, ransom, boat triumph and the
 empire bonus are still to come ([rules.md, implementation status](docs/rules.md#implementation-status)).
 
 | Part | |
 |---|---|
-| `Zaturnava.Engine`, `.Topology.SquareGrid`, `.Variants.Classic` | The rules engine, a square-grid board, the base ruleset |
+| `Zaturnava.Engine`, `.Topology.SquareGrid`, `.Games.Chaturaji2027` | The rules engine, a square-grid board, Chaturaji 2027 |
 | `Zaturnava.Application`, `.Bots`, `.Persistence.*` | Games, seats and bots; storage in memory, SQLite or SQL Server |
 | `Zaturnava.Server` | The game server: an HTTP API |
 | `Zaturnava.Contracts`, `.Client` | The protocol, and a .NET client for it |

@@ -1,7 +1,0 @@
-<Project Sdk="Microsoft.NET.Sdk">
-
-  <ItemGroup>
-    <ProjectReference Include="..\Zaturnava.Client\Zaturnava.Client.csproj" />
-  </ItemGroup>
-
-</Project>

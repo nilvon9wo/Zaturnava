@@ -1,7 +1,0 @@
-<Project Sdk="Microsoft.NET.Sdk">
-
-  <ItemGroup>
-    <ProjectReference Include="..\Zaturnava.Bots\Zaturnava.Bots.csproj" />
-  </ItemGroup>
-
-</Project>

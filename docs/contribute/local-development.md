@@ -44,15 +44,15 @@ rebuild beneath it (a test run from the same folder, say) leaves the page stuck 
 Restart instead. By hand, that is:
 
 ```shell
-dotnet build Zaturnava.Server && dotnet build Zaturnava.Web
-dotnet run --project Zaturnava.Server --no-build       # http://localhost:5164/api/catalog
-dotnet run --project Zaturnava.Web --no-build          # http://localhost:5165
+dotnet build src/Hosts/Zaturnava.Server && dotnet build src/Hosts/Zaturnava.Web
+dotnet run --project src/Hosts/Zaturnava.Server --no-build # http://localhost:5164/api/catalog
+dotnet run --project src/Hosts/Zaturnava.Web --no-build    # http://localhost:5165
 ```
 
 Build first, then run both with `--no-build`: two builds at once collide on the shared, woven
 assemblies.
 
-- The page finds the server through `Zaturnava.Web/wwwroot/appsettings.json` (`Server:Url`).
+- The page finds the server through `src/Hosts/Zaturnava.Web/wwwroot/appsettings.json` (`Server:Url`).
 - The server admits the page's origin through its page host; `appsettings.Development.json`
   chooses the `Listed` host, with `http://localhost:5165`.
 - Games are kept in memory unless `Storage:Provider` says `Sqlite` or `SqlServer`, with

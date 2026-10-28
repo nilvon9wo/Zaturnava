@@ -7,7 +7,7 @@ One test project per project, each measuring that project at 100% (see
 |---|---|
 | `Zaturnava.Engine.Test` | The movement grammar, move generation, positions, team graphs, action parsing. |
 | `Zaturnava.Topology.SquareGrid.Test` | Stepping, direction families per facing, and layouts on rectangular grids. |
-| `Zaturnava.Variants.Classic.Test` | The base ruleset: the setup, each piece's moves and captures, scoring, turn order. |
+| `Zaturnava.Games.Chaturaji2027.Test` | The base ruleset: the setup, each piece's moves and captures, scoring, turn order. |
 | `Zaturnava.Bots.Test` | `RandomBot` chooses among the legal actions, and honours cancellation. |
 | `Zaturnava.Application.Test` | `GameService` — creating, claiming, acting, refusing — and the decision loop that lets bots reply. |
 | `Zaturnava.Persistence.InMemory.Test` | The in-memory store, its optimistic concurrency included. |

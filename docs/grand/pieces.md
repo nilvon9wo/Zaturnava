@@ -97,7 +97,7 @@ capturing it scores ([specification §6.2](specification.md#62-points-scoring-an
 order; "—" means there is none to buy. A restriction that the piece's own move imposes (a piece
 that moves only diagonally never leaves its colour) cannot be bought off, and has no lift.
 
-The dice name a class, not a piece ([specification §6.1](specification.md#61-the-classic-rules)).
+The dice name a class, not a piece ([specification §6.1](specification.md#61-the-chaturaji-2027-rules)).
 
 ### Leaders
 
@@ -127,7 +127,7 @@ The dice name a class, not a piece ([specification §6.1](specification.md#61-th
 | Advisor (Xiangqi) | One square diagonally | Area: its 3 × 3 palace | — | 2 | — / 5 |
 
 Any Infantry piece that reaches the far edge may also be promoted into any captured piece, as in
-the classic game.
+Chaturaji 2027.
 
 ### Heavy / Slider
 
@@ -209,6 +209,6 @@ None, for now.
 
 ### Names the program keeps apart
 
-The grand **Horse** (blockable) and **Elephants** move differently from the classic Horse (a
+The grand **Horse** (blockable) and **Elephants** move differently from the Chaturaji 2027 Horse (a
 Knight) and Elephant (a Rook), and there are four Pawns. The program gives each its own key
 (`western-pawn`, `xiangqi-elephant`…), whatever the page calls it.
