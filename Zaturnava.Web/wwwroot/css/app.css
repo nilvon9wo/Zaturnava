@@ -398,6 +398,27 @@ html { scrollbar-gutter: stable; }
     font-weight: 700;
 }
 .team.mine .team-head { color: var(--accent); }
+.team.won { border-color: var(--go); box-shadow: 0 0 0 2px var(--go); }
+
+/* How the game ended: a verdict for the player, then each team's points, the winners marked. */
+.result { border: 2px solid var(--panel-edge); border-radius: 10px; padding: 10px 14px; margin: 8px 0 10px; }
+.result.victory { border-color: var(--go); }
+.result.defeat { border-color: var(--danger); }
+.result .verdict { margin: 0 0 6px; font-size: 1.8rem; }
+.result.victory .verdict { color: var(--go); }
+.result.defeat .verdict { color: var(--danger); }
+.result .totals { list-style: none; margin: 0; padding: 0; }
+.result .totals li { display: flex; gap: 10px; align-items: baseline; padding: 2px 0; }
+.result .totals .points { font-size: 1.3rem; font-variant-numeric: tabular-nums; margin-left: auto; }
+.result .totals li.won { font-weight: 700; }
+.result .badge {
+    background: var(--go);
+    color: var(--go-ink);
+    border-radius: 999px;
+    padding: 0 8px;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+}
 .team-score { font-size: 1.5rem; font-variant-numeric: tabular-nums; }
 .team-seats { list-style: none; padding: 0 0 4px; margin: 0; }
 

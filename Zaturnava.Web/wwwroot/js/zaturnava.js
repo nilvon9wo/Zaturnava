@@ -58,6 +58,19 @@ window.zaturnava = (() => {
             tone(1047, 0.5, "triangle", 0.2, 0.33);
             tone(784, 0.5, "sine", 0.1, 0.33);
         },
+        // One of the team's pieces taken: a dull knock, falling.
+        lost: () => { tone(160, 0.25, "triangle", 0.18, 0); tone(95, 0.4, "sine", 0.25, 0.08); },
+        // The game won: a bright call, answered twice, and a long major chord.
+        victory: () => {
+            [523, 659, 784, 659, 784, 1047].forEach((frequency, i) => tone(frequency, 0.16, "triangle", 0.14, i * 0.14));
+            [523, 659, 784, 1047, 1319].forEach(frequency => tone(frequency, 1.6, "sine", 0.07, 0.9));
+        },
+        // The game lost: a slow descent in minor, ending low.
+        defeat: () => {
+            [440, 415, 392, 330].forEach((frequency, i) => tone(frequency, 0.5, "sine", 0.14, i * 0.45));
+            [220, 262, 330].forEach(frequency => tone(frequency, 1.6, "triangle", 0.06, 1.8));
+            tone(110, 1.8, "sine", 0.12, 1.8);
+        },
         // One of the team's Rajas back on the board: a rising arpeggio, ringing out like a bell.
         restored: () => {
             [440, 554, 659, 880].forEach((frequency, i) => tone(frequency, 0.18, "sine", 0.16, i * 0.1));
