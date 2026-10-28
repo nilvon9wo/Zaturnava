@@ -96,11 +96,12 @@ internal sealed class ThroneControl(ImmutableDictionary<SeatId, CellId> thrones)
     /// nothing.
     /// </summary>
     private IEnumerable<SeatId> ThronesHeldBy(GameState state, SeatId seat) =>
-        this._thrones
-            .Where(throne => !state.Retired.Contains(seat))
-            .Where(throne => throne.Key != seat && !state.Retired.Contains(throne.Key))
-            .Where(throne => IsRajaOf(state.Position.PieceAt(throne.Value), seat))
-            .Select(throne => throne.Key);
+        state.Retired.Contains(seat)
+            ? []
+            : this._thrones
+                .Where(throne => throne.Key != seat && !state.Retired.Contains(throne.Key))
+                .Where(throne => IsRajaOf(state.Position.PieceAt(throne.Value), seat))
+                .Select(throne => throne.Key);
 
     private static bool IsRajaOf(Piece? piece, SeatId seat) =>
         piece?.Kind == Chaturaji2027Pieces.Raja && piece.Owner == seat;
