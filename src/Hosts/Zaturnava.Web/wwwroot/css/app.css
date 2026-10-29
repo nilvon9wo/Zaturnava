@@ -303,6 +303,22 @@ html { scrollbar-gutter: stable; }
 }
 .end-game:hover { border-color: var(--danger-ink); }
 
+/* The safety off, so that the player may take their own team's pieces: red, and said at the table too. */
+button.safety.off {
+    background: var(--danger);
+    color: var(--danger-ink);
+    border-color: var(--danger);
+    font-weight: 700;
+}
+.safety-off {
+    margin: 0 0 8px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    background: var(--danger);
+    color: var(--danger-ink);
+    font-weight: 700;
+}
+
 /* Playing again with a bot that costs tokens: red, so that it is not chosen lightly. */
 .again.paid {
     background: var(--danger);

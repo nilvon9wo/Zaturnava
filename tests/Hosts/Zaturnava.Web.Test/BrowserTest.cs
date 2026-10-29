@@ -143,6 +143,38 @@ public sealed class BrowserTest : IDisposable
     }
 
     [Theory]
+    [InlineData("off", false)]
+    [InlineData(null, true)]
+    public async Task IsSafetyOn_WhenRead_IsOnUnlessTurnedOff(string? remembered, bool expected)
+    {
+        // Arrange
+        _ = this._context.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.safety").SetResult(remembered);
+
+        // Act
+        bool isOn = await this._browser.IsSafetyOn();
+
+        // Assert
+        Assert.Equal(expected, isOn);
+    }
+
+    [Theory]
+    [InlineData(true, "on")]
+    [InlineData(false, "off")]
+    public async Task SetSafety_WhenSet_RemembersIt(bool isOn, string expected)
+    {
+        // Arrange - nothing beyond the browser
+
+        // Act
+        await this._browser.SetSafety(isOn);
+
+        // Assert
+        Assert.Equal(
+            ["zaturnava.safety", expected],
+            this._context.JSInterop.Invocations["zaturnava.save"].Single().Arguments
+        );
+    }
+
+    [Theory]
     [InlineData(true, "on")]
     [InlineData(false, "off")]
     public async Task SetSound_WhenSet_RemembersIt(bool isOn, string expected)

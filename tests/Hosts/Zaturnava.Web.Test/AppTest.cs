@@ -76,7 +76,7 @@ public sealed class AppTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ("brand,how-to-play,the-bots,leave", "theme,pieces,sound"),
+            ("brand,how-to-play,the-bots,leave", "safety,theme,pieces,sound"),
             (
                 string.Join(",", app.FindAll(".table-bar .where > *").Select(part => part.ClassName)),
                 string.Join(",", app.FindAll(".table-bar .settings button").Select(button => button.ClassName))
@@ -132,6 +132,24 @@ public sealed class AppTest : IDisposable
                 app.Find("button.theme").TextContent,
                 string.Join(",", this._page.JSInterop.Invocations["zaturnava.theme"].Select(call => call.Arguments[0]))
             )
+        );
+    }
+
+    [Fact]
+    public void SafetyButton_WhenClicked_TurnsTheSafetyOffAndOn()
+    {
+        // Arrange
+        IRenderedComponent<App> app = this._page.Render<App>();
+
+        // Act
+        app.Find("button.safety").Click();
+        string afterOne = $"{app.Find("button.safety").TextContent.Trim()} ({app.Find("button.safety").ClassName})";
+        app.Find("button.safety").Click();
+
+        // Assert
+        Assert.Equal(
+            ("Safety: OFF (safety off)", "Safety: on"),
+            (afterOne, app.Find("button.safety").TextContent.Trim())
         );
     }
 

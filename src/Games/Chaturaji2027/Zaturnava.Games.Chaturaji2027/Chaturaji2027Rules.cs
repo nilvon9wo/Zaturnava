@@ -79,7 +79,6 @@ public sealed class Chaturaji2027Rules : IRulesApplying
     private readonly DiceProfile _dice;
     private readonly int _idleRounds;
     private readonly int _awayTurns;
-    private readonly CommandedCaptures _commandedCaptures;
     private readonly PawnPromotion _pawnPromotion;
     private readonly ThroneControl _control;
     private readonly Command _command;
@@ -88,7 +87,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying
     private readonly Ransom _ransom;
 
     public Chaturaji2027Rules()
-        : this(DiceProfile.WeightedSixSided, DefaultIdleRounds, CommandedCaptures.NotOwnTeam, PawnPromotion.OtherArmies)
+        : this(DiceProfile.WeightedSixSided, DefaultIdleRounds, PawnPromotion.OtherArmies)
     {
     }
 
@@ -99,7 +98,6 @@ public sealed class Chaturaji2027Rules : IRulesApplying
     public Chaturaji2027Rules(
         [Required] DiceProfile dice,
         [Range(1, int.MaxValue)] int idleRounds,
-        CommandedCaptures commandedCaptures,
         PawnPromotion pawnPromotion,
         [Range(1, int.MaxValue)] int awayTurns = DefaultAwayTurns
     )
@@ -108,7 +106,6 @@ public sealed class Chaturaji2027Rules : IRulesApplying
         this._moves = new MoveGenerator(this._grid, Chaturaji2027Pieces.Kinds);
         this._dice = dice;
         this._idleRounds = idleRounds;
-        this._commandedCaptures = commandedCaptures;
         this._pawnPromotion = pawnPromotion;
         this.Thrones = Chaturaji2027Setup.Thrones(this._grid);
         this._control = new ThroneControl(this.Thrones);
@@ -387,7 +384,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying
                 state.Position,
                 cell,
                 state.SeatOf(piece.Owner),
-                target => this.IsCapturable(state, piece, target, mover)
+                target => IsCapturable(state, piece, target, mover)
             )
             .AddRange(this.SwapsFrom(state, cell, piece));
 
@@ -418,12 +415,11 @@ public sealed class Chaturaji2027Rules : IRulesApplying
     }
 
     /// <summary>
-    /// A piece of the mover's team takes the mover's enemies only; a piece of an enemy army it commands
-    /// takes anything, or anything but the mover's team, as the rules are set (rules.md §6).
+    /// A piece of the mover's team takes the mover's enemies only; a piece of an enemy army it commands takes
+    /// anything, the mover's team's pieces too (rules.md §6.4): the page's safety keeps a person from it.
     /// </summary>
-    private bool IsCapturable(GameState state, Piece piece, Piece target, SeatId mover) =>
-        !state.Teams.AreAllied(target.Owner, mover)
-        || (this._commandedCaptures == CommandedCaptures.Anything && !state.Teams.AreAllied(piece.Owner, mover));
+    private static bool IsCapturable(GameState state, Piece piece, Piece target, SeatId mover) =>
+        !state.Teams.AreAllied(target.Owner, mover) || !state.Teams.AreAllied(piece.Owner, mover);
 
     private Transition Decided(GameState state, GameAction action)
     {
