@@ -103,7 +103,8 @@ drawn simply, a shape for its class and a letter for its kind.
 
 - Every kind its own look, in both piece sets; the class told at a glance (spec §8).
 - Playtest, as Chaturaji 2027 was, and act on what it asks for: among other things, the Chaturaji 2027
-  bonuses and the leader bonus of 60 (**Q14**).
+  bonuses, the leader bonus of 60, and the Pawns' promotion premiums
+  ([pieces.md](pieces.md#still-open)) (**Q14**).
 
 ## Later
 
