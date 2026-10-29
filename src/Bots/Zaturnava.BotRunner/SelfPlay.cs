@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
+using Net.NowhereAtAll.Zaturnava.Application.Games;
 using Net.NowhereAtAll.Zaturnava.Application.Running;
 using Net.NowhereAtAll.Zaturnava.Engine.Chance;
 using Net.NowhereAtAll.Zaturnava.Engine.Decisions;
@@ -10,7 +11,9 @@ namespace Net.NowhereAtAll.Zaturnava.BotRunner;
 
 /// <summary>
 /// Plays games of bots against one another, in parallel (a ruleset is a pure function, and bots
-/// share nothing but what they are given), and writes each as one JSON line as soon as it ends.
+/// share nothing but what they are given), and writes each as one JSON line as soon as it ends: its
+/// <see cref="GameHistory"/>, the same shape a server gives a hosted game's in. A game that reached the
+/// step limit has no outcome.
 /// </summary>
 internal sealed class SelfPlay(
     IRulesApplying rules,
@@ -45,14 +48,7 @@ internal sealed class SelfPlay(
             maximumSteps,
             cancellationToken
         );
-        GameLog log = new(
-            this._rules.Id,
-            this._botIds,
-            played.State.DecidingSeat is null,
-            played.State.Scores.ToImmutableSortedDictionary(score => score.Key.Value, score => score.Value),
-            [.. played.State.Outcome?.Winners.Select(seat => seat.Value) ?? []],
-            played.Actions
-        );
-        return JsonSerializer.Serialize(log, Lines);
+        GameHistory history = GameHistory.Of(this._rules, played.State, this._botIds, played.Actions);
+        return JsonSerializer.Serialize(history, Lines);
     }
 }

@@ -17,6 +17,12 @@ public interface IGameServing
 
     Task<GameViewDto> Get([Required] string gameId, CancellationToken cancellationToken);
 
+    /// <summary>The game as data to learn from: every action so far, and how it ended, if it has.</summary>
+    Task<GameHistoryDto> History([Required] string gameId, CancellationToken cancellationToken);
+
+    /// <summary>The history of every finished game the server keeps.</summary>
+    Task<ImmutableList<GameHistoryDto>> Histories(CancellationToken cancellationToken);
+
     /// <summary>
     /// Lets the bot whose turn it is make one decision, if the game is still at <paramref name="version"/>;
     /// otherwise, or when no bot is deciding, changes nothing. Either way, returns the game as it is then.

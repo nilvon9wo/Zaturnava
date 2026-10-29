@@ -22,22 +22,22 @@ public sealed class SelfPlayCommandTest
         string[] lines = this._output.ToString().Split('\n', StringSplitOptions.RemoveEmptyEntries);
         JsonElement first = JsonDocument.Parse(lines[0]).RootElement;
         Assert.Equal(
-            (SelfPlayCommand.Succeeded, 3, "chaturaji-2027", 4, 5, false, 0),
+            (SelfPlayCommand.Succeeded, 3, "chaturaji-2027", 4, "random", 5, JsonValueKind.Null),
             (
                 exitCode,
                 lines.Length,
                 first.GetProperty("rulesetId").GetString(),
-                first.GetProperty("players").GetArrayLength(),
+                first.GetProperty("seats").GetArrayLength(),
+                first.GetProperty("seats")[0].GetProperty("player").GetString(),
                 first.GetProperty("actions").EnumerateArray()
                     .Count(action => action.GetProperty("kind").GetString() != "dice"),
-                first.GetProperty("isFinished").GetBoolean(),
-                first.GetProperty("winners").GetArrayLength()
+                first.GetProperty("outcome").ValueKind
             )
         );
     }
 
     [Fact]
-    public async Task Run_WhenAGameEnds_SaysWhoWonIt()
+    public async Task Run_WhenAGameEnds_SaysWhoWonItAndHow()
     {
         // Arrange - Argus ends its games long before ten thousand steps; a win is a team's, a draw no one's
         string[] args = ["--games", "1", "--max-steps", "10000", "--bots", "argus,argus,argus,argus"];
@@ -47,8 +47,9 @@ public sealed class SelfPlayCommandTest
 
         // Assert
         JsonElement game = JsonDocument.Parse(this._output.ToString()).RootElement;
-        int[] winners = [.. game.GetProperty("winners").EnumerateArray().Select(seat => seat.GetInt32())];
-        Assert.Equal((true, true), (game.GetProperty("isFinished").GetBoolean(), winners.Length is 0 or 2));
+        JsonElement outcome = game.GetProperty("outcome");
+        int winners = outcome.GetProperty("winners").GetArrayLength();
+        Assert.Equal((true, true), (winners is 0 or 2, outcome.GetProperty("ending").GetString()!.Length > 0));
     }
 
     [Fact]

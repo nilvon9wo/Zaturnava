@@ -82,7 +82,11 @@ internal static class Agreement
             .FirstOrDefault();
         return next is { } voter
             ? transition with { State = state with { DecidingSeat = voter, ActingFor = null } }
-            : GameEnd.ByPoints(transition with { State = state with { Proposal = null } }, ByAgreement);
+            : GameEnd.ByPoints(
+                transition with { State = state with { Proposal = null } },
+                Chaturaji2027Endings.Agreement,
+                ByAgreement
+            );
     }
 
     private static Transition Refused(GameState state, SeatId seat)

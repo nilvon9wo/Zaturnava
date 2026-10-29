@@ -59,6 +59,15 @@ public sealed class GameTools(IGameServing games)
     public Task<GameViewDto> GetGame(string gameId, CancellationToken cancellationToken) =>
         Explained(() => this._games.Get(gameId, cancellationToken));
 
+    [McpServerTool(Name = "game_history", ReadOnly = true)]
+    [Description(
+        "A game as data to learn from: each seat (who played it, and its score), every action taken in order "
+        + "(the dice rolled among them), and how it ended (null while it goes on): the winners, the kind of "
+        + "ending, and why."
+    )]
+    public Task<GameHistoryDto> GameHistory(string gameId, CancellationToken cancellationToken) =>
+        Explained(() => this._games.History(gameId, cancellationToken));
+
     [McpServerTool(Name = "advance_game")]
     [Description(
         "Lets the bot whose turn it is make one decision, if the game is still at the version given (from "

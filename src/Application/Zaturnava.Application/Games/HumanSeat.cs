@@ -14,5 +14,7 @@ public sealed record HumanSeat(string TokenHash) : SeatController
 
     public override string Detail => this.TokenHash;
 
+    public override string Player => GameHistory.Person;
+
     public override bool IsHeldBy([Required] string token) => SeatTokens.Hash(token) == this.TokenHash;
 }

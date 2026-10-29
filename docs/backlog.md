@@ -44,6 +44,11 @@ did them.
 - In order (*Stated 2026-10-29*, the user agreeing to the plan):
   1. **Recorded games**: every game kept with its seats (which bot, or a person), its actions, the
      scores and how it ended, downloadable as data; self-play writing the same records.
+     - Done: a game's history (`GET api/games/{id}/history`, the MCP tool `game_history`) and every
+       finished game's (`GET api/history`), in the shape the BotRunner now writes self-play games in;
+       each outcome names its kind of ending as a code (`agreement`, `one-team-left`...).
+     - Games are kept only as long as the server's storage keeps them: in memory unless it is given a
+       database ([local-development.md](contribute/local-development.md#running-the-game)).
   2. **Sage** (under way): it looks ahead through the dice (expectimax), scoring positions by
      weighted features, the weights tuned by BotRunner self-play.
      - Done: looking through the rest of its own turn, the dice averaged, and weighing points,

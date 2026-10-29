@@ -14,6 +14,12 @@ public abstract record SeatController
 
     public abstract string? Detail { get; }
 
+    /// <summary>
+    /// Who plays the seat, as a lobby or a game's history shows it: <c>open</c>, <c>person</c>, or the
+    /// bot's id.
+    /// </summary>
+    public virtual string Player => this.Kind;
+
     public virtual bool IsOpen => false;
 
     public virtual bool IsHeldBy([Required] string token) => false;

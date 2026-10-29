@@ -371,7 +371,8 @@ public sealed class GameLogTest
     {
         // Arrange
         ImmutableList<SeatId> winners = [.. seats.Select(seat => new SeatId(seat))];
-        GameSnapshot snapshot = Snapshot(new GameEnded(new GameOutcome(winners, "only one team has pieces left")));
+        GameOutcome outcome = new(winners, "one-team-left", "only one team has pieces left");
+        GameSnapshot snapshot = Snapshot(new GameEnded(outcome));
 
         // Act
         ImmutableList<EventDto> log = GameLog.LatestOf(snapshot);

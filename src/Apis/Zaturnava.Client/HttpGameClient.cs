@@ -34,6 +34,12 @@ public sealed class HttpGameClient(HttpClient http) : IGameServing
     public Task<GameViewDto> Get([Required] string gameId, CancellationToken cancellationToken) =>
         this.Send<GameViewDto>(HttpMethod.Get, GameRoutes.Game(gameId), null, null, cancellationToken);
 
+    public Task<GameHistoryDto> History([Required] string gameId, CancellationToken cancellationToken) =>
+        this.Send<GameHistoryDto>(HttpMethod.Get, GameRoutes.History(gameId), null, null, cancellationToken);
+
+    public Task<ImmutableList<GameHistoryDto>> Histories(CancellationToken cancellationToken) =>
+        this.Send<ImmutableList<GameHistoryDto>>(HttpMethod.Get, GameRoutes.Histories, null, null, cancellationToken);
+
     public Task<GameViewDto> Advance([Required] string gameId, int version, CancellationToken cancellationToken) =>
         this.Send<GameViewDto>(
             HttpMethod.Post,

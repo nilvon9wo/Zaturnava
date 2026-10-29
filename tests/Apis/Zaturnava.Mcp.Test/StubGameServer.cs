@@ -12,6 +12,7 @@ internal sealed class StubGameServer : IGameServing
 {
     public const string GameId = "g1";
     public const string Token = "secret";
+    private const int GameHistoryFormat = 1;
 
     public static readonly GameViewDto View =
         new(
@@ -60,6 +61,22 @@ internal sealed class StubGameServer : IGameServing
 
     public Task<GameViewDto> Get([Required] string gameId, CancellationToken cancellationToken) =>
         this.Answer(View, gameId);
+
+    public Task<GameHistoryDto> History([Required] string gameId, CancellationToken cancellationToken) =>
+        this.Answer(
+            new GameHistoryDto(
+                GameHistoryFormat,
+                GameId,
+                "chaturaji-2027",
+                [new HistorySeatDto(0, "Black", 0, "random", 3)],
+                [],
+                new HistoryOutcomeDto([0], "agreement", "every player agreed to end it, so points decide")
+            ),
+            gameId
+        );
+
+    public Task<ImmutableList<GameHistoryDto>> Histories(CancellationToken cancellationToken) =>
+        throw new NotSupportedException("The tools offer no histories in bulk.");
 
     public Task<GameViewDto> Advance([Required] string gameId, int version, CancellationToken cancellationToken) =>
         this.Answer(View, (gameId, version));

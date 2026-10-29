@@ -11,6 +11,9 @@ public static class GameRoutes
 {
     public const string Catalog = "api/catalog";
     public const string Games = "api/games";
+
+    /// <summary>The history of every finished game.</summary>
+    public const string Histories = "api/history";
     public const string TokenScheme = "Bearer";
 
     public static string Game([Required] string gameId) => $"{Games}/{Uri.EscapeDataString(gameId)}";
@@ -21,4 +24,6 @@ public static class GameRoutes
     public static string Actions([Required] string gameId) => $"{Game(gameId)}/actions";
 
     public static string Advance([Required] string gameId) => $"{Game(gameId)}/advance";
+
+    public static string History([Required] string gameId) => $"{Game(gameId)}/history";
 }

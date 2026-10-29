@@ -84,7 +84,7 @@ public sealed class SageBotTest
         MoveAction score = LineRules.Move(0, 2);
         ScriptedRules rules = new(
             ImmutableDictionary<GameAction, GameState>.Empty
-                .Add(end, ScriptedRules.State() with { Outcome = new GameOutcome(winners, "over") })
+                .Add(end, ScriptedRules.State() with { Outcome = new GameOutcome(winners, "over", "over") })
                 .Add(score, ScriptedRules.State() with { Scores = ImmutableDictionary<SeatId, int>.Empty.Add(Seat, 5) })
         );
 
