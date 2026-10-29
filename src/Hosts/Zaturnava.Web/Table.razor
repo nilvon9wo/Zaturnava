@@ -247,8 +247,9 @@
                                     <span class="name">To @(receiver.Id == turn.Claim.Seat ? "yourself" : receiver.Name):</span>
                                     @foreach (PrisonerDto prisoner in HeldOf(view, turn.Claim.Seat, receiver.Id))
                                     {
-                                        <button class="prisoner @(this._given.Contains(prisoner.Id) ? "chosen" : null)"
-                                                title="@prisoner.Name"
+                                        <button class="@ClassOf(prisoner, this._given)"
+                                                title="@TitleOf(prisoner)"
+                                                disabled="@(!prisoner.MayGoBack)"
                                                 @onclick="() => this.Give(receiver.Id, [prisoner.Id])">
                                             <PieceIcon Kind="@prisoner.Kind" Name="@prisoner.Name" Owner="prisoner.Owner" Pieces="this.Pieces" />
                                         </button>
@@ -266,13 +267,21 @@
                                 <div class="ransom-ask">
                                     @foreach (PrisonerDto prisoner in askable)
                                     {
-                                        <button class="prisoner @(this._asked.Contains(prisoner.Id) ? "chosen" : null)"
-                                                title="@prisoner.Name"
+                                        <button class="@ClassOf(prisoner, this._asked)"
+                                                title="@TitleOf(prisoner)"
+                                                disabled="@(!prisoner.MayGoBack)"
                                                 @onclick="() => this.Ask(prisoner.Id)">
                                             <PieceIcon Kind="@prisoner.Kind" Name="@prisoner.Name" Owner="prisoner.Owner" Pieces="this.Pieces" />
                                         </button>
                                     }
                                 </div>
+                            }
+                            @if (view.Seats[turn.Claim.Seat].Prisoners.Concat(askable).Any(prisoner => !prisoner.MayGoBack))
+                            {
+                                <p class="hint under-investigation">
+                                    The greyed prisoners' loyalties are under investigation: they may go home once
+                                    every player has had a turn.
+                                </p>
                             }
                             <button class="action offer"
                                     disabled="@this._given.IsEmpty"
@@ -733,26 +742,33 @@
     private static bool IsAhead(GameViewDto view, SeatDto seat) =>
         view.Seats.Sum(other => other.Team == seat.Team ? other.Score : -other.Score) > 0;
 
-    /// <summary>The seats the player holds prisoners of that may go back now, to give them back to: themselves too.</summary>
+    /// <summary>The seats the player holds prisoners of, to give them back to: themselves too.</summary>
     private static IEnumerable<SeatDto> Receivers(GameViewDto view, int seat) =>
-        view.Seats[seat].Prisoners.Where(prisoner => prisoner.MayGoBack).Select(prisoner => prisoner.Owner).Distinct()
-            .Order().Select(owner => view.Seats[owner]);
+        view.Seats[seat].Prisoners.Select(prisoner => prisoner.Owner).Distinct().Order().Select(owner => view.Seats[owner]);
 
     private static IEnumerable<PrisonerDto> HeldOf(GameViewDto view, int seat, int owner) =>
-        view.Seats[seat].Prisoners.Where(prisoner => prisoner.Owner == owner && prisoner.MayGoBack);
+        view.Seats[seat].Prisoners.Where(prisoner => prisoner.Owner == owner);
 
     /// <summary>
-    /// The prisoners the chosen receiver holds of the player's team that may go back now: what the player may ask
-    /// for; none until a receiver is chosen, nor of the player themselves.
+    /// The prisoners the chosen receiver holds of the player's team: what the player may ask for; none until a
+    /// receiver is chosen, nor of the player themselves.
     /// </summary>
     private ImmutableList<PrisonerDto> Askable(GameViewDto view, int seat) =>
         this._receiver is { } receiver && receiver != seat
-            ? [
-                .. view.Seats[receiver].Prisoners.Where(prisoner =>
-                    view.Seats[prisoner.Owner].Team == view.Seats[seat].Team && prisoner.MayGoBack
-                ),
-            ]
+            ? [.. view.Seats[receiver].Prisoners.Where(prisoner => view.Seats[prisoner.Owner].Team == view.Seats[seat].Team)]
             : [];
+
+    /// <summary>A prisoner to choose, chosen, or greyed out while it may not go back yet.</summary>
+    private static string ClassOf(PrisonerDto prisoner, ImmutableHashSet<int> chosen) =>
+        (prisoner.MayGoBack, chosen.Contains(prisoner.Id)) switch
+        {
+            (false, _) => "prisoner waiting",
+            (_, true) => "prisoner chosen",
+            _ => "prisoner",
+        };
+
+    private static string TitleOf(PrisonerDto prisoner) =>
+        prisoner.MayGoBack ? prisoner.Name : $"{prisoner.Name}: loyalty under investigation";
 
     /// <summary>Chooses prisoners to give back, or no longer; choosing another seat's starts afresh.</summary>
     private void Give(int receiver, ImmutableHashSet<int> prisoners)
@@ -765,7 +781,8 @@
 
     private void GiveAll(GameViewDto view, int seat, int receiver)
     {
-        ImmutableHashSet<int> all = [.. HeldOf(view, seat, receiver).Select(prisoner => prisoner.Id)];
+        ImmutableHashSet<int> all =
+            [.. HeldOf(view, seat, receiver).Where(prisoner => prisoner.MayGoBack).Select(prisoner => prisoner.Id)];
         this.Give(receiver, this._receiver == receiver ? all.Except(this._given) : all);
     }
 

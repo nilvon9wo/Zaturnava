@@ -413,6 +413,7 @@ button.safety.off {
     cursor: pointer;
 }
 .ransom .prisoner.chosen { border-color: var(--accent); }
+.ransom .prisoner.waiting { opacity: 0.4; filter: grayscale(1); cursor: not-allowed; }
 .ransom .prisoner .piece-icon { width: 26px; height: 26px; }
 .ransom .all { font-size: 0.85rem; }
 .ransom .action.offer { margin-top: 6px; }

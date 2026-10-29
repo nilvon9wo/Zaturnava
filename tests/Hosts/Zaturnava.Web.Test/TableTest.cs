@@ -1223,7 +1223,7 @@ public sealed class TableTest : IDisposable
     }
 
     [Fact]
-    public void Offer_WhenThePlayerHoldsTheirOwnPieces_ReleasesThoseThatMayGoBackWithNothingToAskFor()
+    public void Offer_WhenThePlayerHoldsTheirOwnPieces_ReleasesAllThatMayGoBackGreyingTheRestWithNothingToAskFor()
     {
         // Arrange - Black holds its own Boat 12, and its own Pawn 13, taken too lately to go back yet
         GameViewDto ransoms = Ransoms();
@@ -1249,18 +1249,24 @@ public sealed class TableTest : IDisposable
         // Act
         string offered =
             $"{mine.QuerySelector(".name")!.TextContent} {mine.QuerySelectorAll("button.prisoner").Length}";
-        mine.QuerySelector("button.prisoner")!.Click();
+        AngleSharp.Dom.IElement waiting = mine.QuerySelector("button.prisoner.waiting")!;
+        string greyed = $"{waiting.GetAttribute("title")} {waiting.HasAttribute("disabled")}";
+        int hints = table.FindAll("p.under-investigation").Count;
+        mine.QuerySelector("button.all")!.Click();
         int askable = table.FindAll(".ransom-ask").Count;
         table.Find("button.offer").Click();
         (string kind, string receiver, string given, _) = Offered(this._page.Server);
 
         // Assert
-        Assert.Equal(("To yourself: 1", 0), (offered, askable));
+        Assert.Equal(
+            ("To yourself: 2", "Pawn: loyalty under investigation True", 1, 0),
+            (offered, greyed, hints, askable)
+        );
         Assert.Equal(("offer", "0", "12"), (kind, receiver, given));
     }
 
     [Fact]
-    public void Offer_WhenOfferingAnAllyItsPieces_MayAskForThoseOfTheirsThatMayGoBack()
+    public void Offer_WhenOfferingAnAllyItsPieces_MayAskForThoseOfTheirsGreyingThoseThatMayNotGoBack()
     {
         // Arrange - Black holds Green's Horse 12; Green holds Black's Boat 13, and its Pawn 14, taken too lately
         GameViewDto ransoms = Ransoms();
@@ -1286,7 +1292,13 @@ public sealed class TableTest : IDisposable
         table.Find(".ransom-to button.prisoner").Click();
 
         // Assert
-        _ = Assert.Single(table.FindAll(".ransom-ask button.prisoner"));
+        Assert.Equal(
+            ("prisoner|prisoner waiting", 1),
+            (
+                string.Join("|", table.FindAll(".ransom-ask button.prisoner").Select(button => button.ClassName)),
+                table.FindAll("p.under-investigation").Count
+            )
+        );
     }
 
     [Fact]
