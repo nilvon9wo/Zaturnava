@@ -474,7 +474,7 @@ html { scrollbar-gutter: stable; }
 .seat-3 .swatch { background: var(--seat-3); }
 .seat .name { min-width: 56px; }
 .seat .player { color: var(--muted); }
-.seat .gave-up { color: var(--muted); font-style: italic; font-size: 0.85rem; }
+.seat .gave-up, .seat .retired { color: var(--muted); font-style: italic; font-size: 0.85rem; }
 /* On one line, however many: the icons shrink rather than the row growing. */
 .seat .prisoners { flex: 1; min-width: 0; display: flex; gap: 1px; overflow: hidden; }
 .seat .prisoners .piece-icon { flex: 0 1 20px; min-width: 6px; }

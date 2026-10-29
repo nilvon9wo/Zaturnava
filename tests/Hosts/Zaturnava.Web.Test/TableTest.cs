@@ -1609,13 +1609,47 @@ public sealed class TableTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ("Yellow proposes ending the game: waiting for Black (human).", 0, "gave up"),
+            ("Yellow proposes ending the game: waiting for Black (human).", 0, "resting on the lead"),
             (
                 table.Find("p.status").TextContent,
                 table.FindAll(".dialog").Count,
                 table.Find(".seat .gave-up").TextContent
             )
         );
+    }
+
+    [Theory]
+    [InlineData(0, "gave up")]
+    [InlineData(5, "resting on the lead")]
+    public void Render_WhenASeatHasGivenUpItsTurns_SaysWhetherItGaveUpOrRestsOnItsLead(int score, string expected)
+    {
+        // Arrange - Yellow gave up its turns, with this score; Black has none
+        this._page.Server.View = Proposed(deciding: 0) with
+        {
+            Seats = Proposed(deciding: 0).Seats.SetItem(1, Proposed(deciding: 0).Seats[1] with { Score = score }),
+        };
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatOne);
+
+        // Assert
+        Assert.Equal(expected, table.Find(".seat .gave-up").TextContent);
+    }
+
+    [Fact]
+    public void Render_WhenASeatHasRetired_SaysSoInsteadOfThatItGaveUp()
+    {
+        // Arrange - Yellow retired, having given up its turns
+        this._page.Server.View = Proposed(deciding: 0) with
+        {
+            Seats = Proposed(deciding: 0).Seats.SetItem(1, Proposed(deciding: 0).Seats[1] with { IsRetired = true }),
+        };
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatOne);
+
+        // Assert
+        Assert.Equal(("retired", 0), (table.Find(".seat .retired").TextContent, table.FindAll(".seat .gave-up").Count));
     }
 
     [Fact]

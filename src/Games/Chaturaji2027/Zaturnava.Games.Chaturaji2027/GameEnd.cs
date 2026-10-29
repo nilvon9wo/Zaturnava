@@ -90,7 +90,7 @@ internal static class GameEnd
         };
 
     /// <summary>The points of the team, less its enemies'.</summary>
-    private static int PointsLead(GameState state, int team) =>
+    public static int PointsLead(GameState state, int team) =>
         state.Seats.Sum(seat => Side(state, team, seat.Id) * state.Scores[seat.Id]);
 
     /// <summary>What the pieces of the team on the board would score if taken, less its enemies'.</summary>

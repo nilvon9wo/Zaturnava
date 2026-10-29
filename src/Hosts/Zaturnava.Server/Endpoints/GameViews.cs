@@ -163,7 +163,8 @@ internal static class GameViews
             snapshot.Rules.MayProposeEnd(snapshot.State, seat),
             snapshot.Rules.MayRejoin(snapshot.State, seat),
             snapshot.State.Absence.MissedBy(seat),
-            bots.Any(bot => bot.Id == botId && bot.IsPaid)
+            bots.Any(bot => bot.Id == botId && bot.IsPaid),
+            snapshot.State.Retired.Contains(seat)
         );
     }
 

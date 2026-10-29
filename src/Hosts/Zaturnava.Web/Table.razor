@@ -51,9 +51,13 @@
                                 <span class="swatch"></span>
                                 <span class="name">@seat.Name</span>
                                 <span class="player">@this.Player(seat)</span>
-                                @if (seat.HasGivenUp)
+                                @if (seat.IsRetired)
                                 {
-                                    <span class="gave-up">gave up</span>
+                                    <span class="retired">retired</span>
+                                }
+                                else if (seat.HasGivenUp)
+                                {
+                                    <span class="gave-up">@(IsAhead(view, seat) ? "resting on the lead" : "gave up")</span>
                                 }
                                 <span class="prisoners" title="Prisoners">
                                     @foreach (PrisonerDto prisoner in seat.Prisoners)
@@ -686,6 +690,10 @@
             _ => this._notice,
         };
     }
+
+    /// <summary>Whether the seat's team leads on points.</summary>
+    private static bool IsAhead(GameViewDto view, SeatDto seat) =>
+        view.Seats.Sum(other => other.Team == seat.Team ? other.Score : -other.Score) > 0;
 
     /// <summary>The seats the player holds prisoners of, to offer them back to.</summary>
     private static IEnumerable<SeatDto> Receivers(GameViewDto view, int seat) =>
