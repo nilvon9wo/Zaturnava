@@ -536,7 +536,12 @@ available (via a future capture, by anyone).
   - One's own pieces go home at once; an ally's go home at once too, unless
     an enemy holds the ally's throne: then the ally must accept, so as to be
     ready for how that may shift the game.
-  - Nothing may be asked in return of one's own team. *(Proposed)*
+  - *(Stated 2026-10-29)* A player may also offer an ally a trade, asking
+    back prisoners of their own the ally holds: a reminder to the ally that
+    they have pieces to release, and a sign that now would be a good time.
+    The ally must accept a trade, whoever holds their throne. Nothing may be
+    asked of oneself. *(Proposed)* A trade within a team scores no one: the
+    ransom's points are for sending an enemy's pieces home.
   - A piece taken by its own team stays prisoner for a whole round: it may
     go home only once every seat has had a turn since it was taken, so that
     it cannot be caught and released in the same turn. An enemy's prisoner

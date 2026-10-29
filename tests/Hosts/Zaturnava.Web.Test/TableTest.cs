@@ -1260,6 +1260,36 @@ public sealed class TableTest : IDisposable
     }
 
     [Fact]
+    public void Offer_WhenOfferingAnAllyItsPieces_MayAskForThoseOfTheirsThatMayGoBack()
+    {
+        // Arrange - Black holds Green's Horse 12; Green holds Black's Boat 13, and its Pawn 14, taken too lately
+        GameViewDto ransoms = Ransoms();
+        this._page.Server.View = ransoms with
+        {
+            Seats = ransoms.Seats
+                .SetItem(0, ransoms.Seats[0] with { Prisoners = [new PrisonerDto(12, "horse", "Horse", 2)] })
+                .SetItem(
+                    2,
+                    ransoms.Seats[2] with
+                    {
+                        Prisoners =
+                        [
+                            new PrisonerDto(13, "boat", "Boat", 0),
+                            new PrisonerDto(14, "pawn", "Pawn", 0) { MayGoBack = false },
+                        ],
+                    }
+                ),
+        };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Act
+        table.Find(".ransom-to button.prisoner").Click();
+
+        // Assert
+        _ = Assert.Single(table.FindAll(".ransom-ask button.prisoner"));
+    }
+
+    [Fact]
     public void Offer_WhenPrisonersAreChosenToGiveAndToAskFor_SubmitsThatOffer()
     {
         // Arrange
