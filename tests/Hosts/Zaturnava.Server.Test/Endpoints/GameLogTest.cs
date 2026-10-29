@@ -321,7 +321,7 @@ public sealed class GameLogTest
                 "declined 1: Yellow declined Black's offer.",
                 "ransom 0: Black offered Yellow 2 prisoners back, for a prisoner in return.",
                 "ransom 1: Yellow accepted Black's offer.",
-                "bonus 1: Yellow scored for accepting: a point for each prisoner going home (+3).",
+                "bonus 1: Yellow scored for accepting: a point for each prisoner they sent home (+3).",
                 "passed 3: Red retired from the game: their Raja stays, and taking it scores no one.",
                 "shared 1: Black left the rest of Yellow's turn to Yellow.",
                 "ransom 1: Yellow's Pawn went home, to a7.",

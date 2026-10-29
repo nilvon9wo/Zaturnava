@@ -500,9 +500,10 @@ available (via a future capture, by anyone).
   keep games going rather than win by attrition, and a balance to otherwise
   questionable offers (a rook back for a pawn). The value may be revisited, or
   made configurable.
-  - *(Proposed)* "Each piece returned" counts every prisoner the deal sends
-    home, on both sides: an offer of 2 back for 1 in return scores the
-    accepting player 3.
+  - *(Stated 2026-10-29)* "Each piece returned" counts only the prisoners the
+    accepting player sends home, not those given back to them: a Rook back
+    for a Horse scores the accepting player 1, and a gift scores them
+    nothing.
 - *(Clarified 2026-10-25)* The turn-timing protocol:
   - A player may offer on their own turn: before rolling, or with dice left,
     but not while moving for another seat (§6.3).
