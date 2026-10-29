@@ -158,6 +158,7 @@ select {
 .guide-head .close { margin-left: auto; }
 .guide h3 { margin: 18px 0 6px; }
 .guide ul { padding-left: 20px; }
+.guide a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
 .guide-pieces { border-collapse: collapse; width: 100%; }
 .guide-pieces th, .guide-pieces td { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--panel-edge); }
 .guide-pieces td:last-child, .guide-pieces th:last-child { text-align: right; white-space: nowrap; }

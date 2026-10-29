@@ -20,7 +20,7 @@ One test project per project, each measuring that project at 100% (see
 | `Zaturnava.Presentation.Test` | Board frames, which cells are clickable, and how clicks become actions. |
 | `Zaturnava.Web.Test` | The Blazor components with bUnit: the lobby, the table, the board. |
 | `Zaturnava.Mcp.Test` | The MCP tools, over in-memory pipes with the SDK's own client, against a stub game server. |
-| `Zaturnava.BotRunner.Test` | Option parsing, self-play, the JSON lines it writes, exit codes, training Sage's weights. |
+| `Zaturnava.BotRunner.Test` | Option parsing, self-play, the JSON lines it writes, bots loaded from an assembly of one's own (its own public bots stand in for one), exit codes, training Sage's weights. |
 | `Zaturnava.Architecture.Test` | Every project uses only what its row of the `MayUse` table allows, and every project in `Zaturnava.slnx` has a row. Not measured. |
 
 ```shell

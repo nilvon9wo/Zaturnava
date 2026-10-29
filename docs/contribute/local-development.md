@@ -59,7 +59,7 @@ assemblies.
   `ConnectionStrings:Games`; for a file that survives restarts:
 
 ```shell
-dotnet run --project Zaturnava.Server --no-build -- --Storage:Provider=Sqlite \
+dotnet run --project src/Hosts/Zaturnava.Server --no-build -- --Storage:Provider=Sqlite \
     "--ConnectionStrings:Games=Data Source=games.db"
 ```
 
@@ -67,14 +67,14 @@ Bots against bots, without a server, each game written as one line of JSON in th
 gives a game's history in (`GET api/games/{id}/history`):
 
 ```shell
-dotnet run --project Zaturnava.BotRunner -- --games 10 --max-steps 200 --out games.jsonl
+dotnet run --project src/Bots/Zaturnava.BotRunner -- --games 10 --max-steps 200 --out games.jsonl
 ```
 
 Sage's weights, tuned by Sage playing itself (here 2 rounds, each nudge tried over 40 games a side; how each
 went is written to standard error). Copy what it writes into `src/Bots/Zaturnava.Bots/Weights/`:
 
 ```shell
-dotnet run --project Zaturnava.BotRunner -- --train 2 --games 40 --out chaturaji-2027.json
+dotnet run --project src/Bots/Zaturnava.BotRunner -- --train 2 --games 40 --out chaturaji-2027.json
 ```
 
 The bots' Elo ratings, from games between every pair of them (here 50 games a pair with each side
@@ -89,19 +89,8 @@ A development server also offers games set up part-way, to start from: see
 [scenarios/README.md](../../scenarios/README.md).
 
 An AI client (Claude Code, Claude Desktop, any MCP client) plays through `Zaturnava.Mcp`, a stdio
-MCP server; `ZATURNAVA_SERVER_URL` names the game server (default `http://localhost:5164/`):
-
-```json
-{
-  "mcpServers": {
-    "zaturnava": {
-      "command": "dotnet",
-      "args": ["run", "--project", "/path/to/Zaturnava/Zaturnava.Mcp", "--no-build"],
-      "env": { "ZATURNAVA_SERVER_URL": "http://localhost:5164/" }
-    }
-  }
-}
-```
+MCP server: see [playing through MCP](../bots/mcp.md). Bots of your own play ours in self-play with
+`--bot-assembly`: see [self-play](../bots/self-play.md).
 
 ---
 

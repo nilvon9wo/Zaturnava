@@ -78,6 +78,12 @@ did them.
      train it: through MCP (already possible, `Zaturnava.Mcp`) and the HTTP API; recorded games to
      download; and a self-play kit (BotRunner, with a bot of one's own). Documented for developers,
      and reachable from the game itself.
+     - Done: [docs/bots/](bots/README.md), for developers: MCP, the HTTP API, game histories, and
+       self-play, the BotRunner seating bots from an assembly of one's own (`--bot-assembly`, also
+       taken by `rate-bots.py`). "How to play" and "The bots" link to it, on GitHub.
+     - Next: a push channel, so that a program need not poll; the engine and the bot interface as
+       packages, so that a bot need not reference the repository's projects; replaying a history
+       without .NET.
 - *(Stated 2026-10-29)* Once the game is online, free AI bots are offered for players to play
   against, subject to whatever policies their hosts require.
 - **A bot using Claude** (*Stated*): for testing. It is never seated but by someone choosing it in

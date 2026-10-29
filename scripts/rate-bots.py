@@ -8,9 +8,11 @@ if level. Ratings are fitted to every result at once
 (Bradley-Terry, which Elo's expected score is), with one draw added between each pair, so that a bot
 that never loses still gets a finite rating, and anchored with random at 1000, so that a new bot does
 not move the others. They are written as JSON, by bot, for src/Bots/Zaturnava.Bots/Ratings/.
+With --bot-assembly, bots of one's own (the BotRunner's option of that name) may be among --bots.
 
 Usage: rate-bots.py RUNNER [--bots argus,midas,random,sage,solomon] [--games 50] [--max-steps 2000]
                            [--ruleset chaturaji-2027] [--out ratings.json] [--jobs N]
+                           [--bot-assembly MyBots.dll]
 """
 
 import argparse
@@ -34,7 +36,7 @@ def play(runner, ruleset, seats, games, max_steps):
         path = out.name
     try:
         subprocess.run(
-            [runner, "--ruleset", ruleset, "--bots", ",".join(seats), "--games", str(games),
+            [*runner, "--ruleset", ruleset, "--bots", ",".join(seats), "--games", str(games),
              "--max-steps", str(max_steps), "--out", path],
             check=True,
         )
@@ -104,14 +106,16 @@ def main():
     parser.add_argument("--ruleset", default="chaturaji-2027")
     parser.add_argument("--out")
     parser.add_argument("--jobs", type=int, default=os.cpu_count())
+    parser.add_argument("--bot-assembly")
     options = parser.parse_args()
+    runner = [options.runner] + (["--bot-assembly", options.bot_assembly] if options.bot_assembly else [])
     bots = options.bots.split(",")
     if ANCHOR not in bots:
         sys.exit(f"The bots must include {ANCHOR}, whose rating anchors the others.")
     pairs = list(itertools.combinations(bots, 2))
     with ThreadPoolExecutor(options.jobs) as pool:
         played = pool.map(
-            lambda pair: results(options.runner, options.ruleset, pair[0], pair[1], options.games, options.max_steps),
+            lambda pair: results(runner, options.ruleset, pair[0], pair[1], options.games, options.max_steps),
             pairs,
         )
         record = dict(zip(pairs, played))

@@ -51,6 +51,22 @@ public sealed class AppTest : IDisposable
     }
 
     [Fact]
+    public void HowToPlay_WhenOpen_LinksToTheFullRulesAndToBringingYourOwnAi()
+    {
+        // Arrange
+        IRenderedComponent<App> app = this._page.Render<App>();
+
+        // Act
+        app.Find("button.how-to-play").Click();
+
+        // Assert
+        Assert.Equal(
+            [DocsLinks.Rules, DocsLinks.Bots],
+            app.FindAll(".guide .more a").Select(link => link.GetAttribute("href"))
+        );
+    }
+
+    [Fact]
     public void TheBots_WhenClicked_OpensTheGuideToTheBotsUntilClosed()
     {
         // Arrange

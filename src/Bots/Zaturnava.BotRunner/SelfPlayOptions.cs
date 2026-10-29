@@ -10,6 +10,8 @@ namespace Net.NowhereAtAll.Zaturnava.BotRunner;
 /// 1000), and <c>--out</c>, the file to write (default standard output). With <c>--train</c>, the number of
 /// rounds, it tunes Sage's weights for the ruleset instead (<see cref="Training"/>), each nudge tried over
 /// <c>--games</c> games with each set of weights on each side, and writes the weights tuned.
+/// <c>--bot-assembly</c> names an assembly of one's own bots (<see cref="BotAssembly"/>), to seat by their
+/// ids beside ours.
 /// </summary>
 internal sealed record SelfPlayOptions(
     string RulesetId,
@@ -17,12 +19,13 @@ internal sealed record SelfPlayOptions(
     int Games,
     int MaximumSteps,
     string? OutputPath,
-    int? TrainingRounds = null
+    int? TrainingRounds = null,
+    string? BotAssemblyPath = null
 )
 {
     public const string Usage =
         "Usage: Zaturnava.BotRunner [--ruleset chaturaji-2027] [--bots random,random,random,random] [--games 100] "
-        + "[--max-steps 1000] [--out games.jsonl] [--train rounds]";
+        + "[--max-steps 1000] [--out games.jsonl] [--train rounds] [--bot-assembly MyBots.dll]";
 
     private static readonly SelfPlayOptions Defaults = new("chaturaji-2027", null, 100, 1000, null);
 
@@ -44,6 +47,7 @@ internal sealed record SelfPlayOptions(
             "--max-steps" => this with { MaximumSteps = Count(name, value) },
             "--out" => this with { OutputPath = value },
             "--train" => this with { TrainingRounds = Count(name, value) },
+            "--bot-assembly" => this with { BotAssemblyPath = value },
             _ => throw new ArgumentException($"There is no {name} option. {Usage}"),
         };
 
