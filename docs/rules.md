@@ -27,7 +27,7 @@ Everything else here is specified but not yet played by the engine.
 | §4 Turns & dice | Implemented: the opening plays the die that won the roll-off, then a deliberate move, a pass or two dice, clockwise from the roll-off's winner; an unusable die is forfeit. Doubles let one piece move twice, or a prisoner escape (§7). The dice profile is the weighted d6 one; a d4 profile exists but cannot yet be chosen. |
 | §5 Captures & scoring | Implemented: captures score by piece, with both throne bonuses, the empire and commanding every piece, as clarified below; the ransom's points are in §8. |
 | §6 Throne control | Implemented: the expanded pool (§6.1, both triggers), voluntary regency (§6.2, as stated below) and the forced shared turn (§6.3). |
-| §6.4 Commanded captures | Implemented, with the toggle as a constructor argument. |
+| §6.4 Taking one's own team's pieces | Implemented: only while an enemy holds that piece's throne; the safety is the page's; bots never do. |
 | §7 Escape | Implemented, as clarified below: the escape takes the place of the double move and ends the turn. |
 | §9 Boat triumph | Not yet. |
 | §8 Promotion & ransom | Implemented, as clarified below: promotion into any captured piece (`promotion.pawns` a constructor argument; `promotion.pool` fixed at `unrestricted`), and ransom with its timed protocol, including the receiving player's choice among equidistant squares. |
@@ -373,23 +373,29 @@ Aside from the expanded-pool exception in step 2 above, neither side moves
 their own separate army during this shared turn — it is otherwise entirely
 about the occupied player's army for that turn.
 
-### 6.4 Captures with a commanded army
+### 6.4 Taking one's own team's pieces
 
-*(Clarified 2026-10-25)* A piece of the commanding player's own team (their
-own army, or a Raja-less ally's) takes only that player's enemies. A piece
-of an **enemy** army the player commands — through a throne their Raja holds
-(§6.1a), or moving for a seat whose throne their Raja holds (§6.3) — may take
-any piece: its own army's, its ally's, or the commanding player's own team's.
+*(Stated 2026-10-29)* Any piece a player moves — of their own army, an
+ally's, or an enemy army they command — takes that player's enemies, and
+may take a piece of the player's **own team** too, but only while an enemy
+holds that piece's throne: then the enemy commands that army, and the player
+may need to protect themselves from it. *(Proposed)* "Holds" as for command
+(§6.1a): an enemy Raja on the throne.
 
-*(Stated 2026-10-29)* Keeping a player from taking their own team's pieces so
-is not a rule of the game but a setting of each player's own page, like its
+*(Stated 2026-10-29)* Keeping a player from taking their own team's pieces is
+not a rule of the game but a setting of each player's own page, like its
 theme or sound: the **safety**, on by default, and shown in red, at the table
-too, while it is off. *(Proposed)* The bots never take their own team's
-pieces. *(History: from 2026-10-25 this was a game toggle,
-`control.enemyArmyCaptures`, defaulting to `notOwnTeam` after a player took
-their own Pawn so, and could never ransom it back from themselves.)*
+too, while it is off.
 
-Taking a piece of one's own team (with `anything`) scores no one: no points
+*(Proposed)* The bots never take their own team's pieces, until a bot weighs
+the enemy's reply, and so can see when giving up a piece saves a better one
+(backlog). *(History: from 2026-10-25 a game toggle,
+`control.enemyArmyCaptures`, let only a commanded enemy army take the
+commanding player's own team's pieces, and by default not even that, after a
+player took their own Pawn so, and could never ransom it back from
+themselves.)*
+
+Taking a piece of one's own team scores no one: no points
 for the piece, and no on-throne bonus. The piece is still taken prisoner, by
 the player who made the move: whoever moves a piece holds what it takes, and
 the log says so when the piece was another army's.

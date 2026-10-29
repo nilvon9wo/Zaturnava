@@ -690,17 +690,13 @@ public sealed class Chaturaji2027RulesTest
     [Fact]
     public void Apply_WhenAFarmersRajaIsTakenByItsOwnTeam_ItLosesWhatItFarmedAndNoOneScores()
     {
-        // Arrange - Green commands Red's Pawn, which takes Black's farming Raja on e7
-        Chaturaji2027Rules rules = new(
-            DiceProfile.WeightedSixSided,
-            Chaturaji2027Rules.DefaultIdleRounds,
-            PawnPromotion.OtherArmies
-        );
+        // Arrange - Green commands Red's Pawn, which takes Black's farming Raja on e7; Yellow's Raja holds Black's
+        // throne
         GameState state = this.StateWith(
             (RedThrone, Piece(19, Chaturaji2027Pieces.Raja, Green)),
             (Grid.CellAt(5, 5), Piece(2, Chaturaji2027Pieces.Pawn, Red)),
             (Grid.CellAt(4, 6), Piece(3, Chaturaji2027Pieces.Raja, Black)),
-            (Grid.CellAt(0, 7), Piece(13, Chaturaji2027Pieces.Pawn, Yellow))
+            (BlackThrone, Piece(11, Chaturaji2027Pieces.Raja, Yellow))
         ) with
         {
             DecidingSeat = Green,
@@ -709,7 +705,7 @@ public sealed class Chaturaji2027RulesTest
         };
 
         // Act
-        Transition transition = rules.Apply(state, new MoveAction(Green, Grid.CellAt(5, 5), Grid.CellAt(4, 6)));
+        Transition transition = this._rules.Apply(state, new MoveAction(Green, Grid.CellAt(5, 5), Grid.CellAt(4, 6)));
 
         // Assert
         Assert.Equal([new FarmedPointsLost(Black, Green, 2, 0)], transition.Events.OfType<FarmedPointsLost>());
@@ -1220,28 +1216,35 @@ public sealed class Chaturaji2027RulesTest
         );
     }
 
-    [Fact]
-    public void LegalActions_WhenAnArmyIsCommanded_TakesAnyone()
+    [Theory]
+    [InlineData(false, new[] { 13, 21 })]
+    [InlineData(true, new[] { 5, 13, 21 })]
+    public void LegalActions_WhenACommandedArmyMeetsItsCommandersTeam_TakesItOnlyWhileAnEnemyHoldsItsThrone(
+        bool isHeld,
+        int[] targets
+    )
     {
-        // Arrange - Black commands Red; Red's pawn faces left, with Red's and Green's pieces ahead of it
-        Chaturaji2027Rules rules = new(
-            DiceProfile.WeightedSixSided,
-            Chaturaji2027Rules.DefaultIdleRounds,
-            PawnPromotion.OtherArmies
-        );
-        GameState state = this.StateWith(
+        // Arrange - Black commands Red; Red's pawn faces left, with Red's and Green's pieces ahead of it, and
+        // Yellow's Raja on Green's throne, if held
+        GameState commanding = this.StateWith(
             (RedThrone, Piece(1, Chaturaji2027Pieces.Raja, Black)),
             (Grid.CellAt(6, 1), Piece(2, Chaturaji2027Pieces.Pawn, Red)),
             (Grid.CellAt(5, 2), Piece(3, Chaturaji2027Pieces.Elephant, Red)),
             (Grid.CellAt(5, 0), Piece(4, Chaturaji2027Pieces.Pawn, Green))
         );
+        GameState state = isHeld
+            ? commanding with
+            {
+                Position = commanding.Position.Place(GreenThrone, Piece(5, Chaturaji2027Pieces.Raja, Yellow)),
+            }
+            : commanding;
 
         // Act
-        ImmutableList<GameAction> actions = rules.LegalActions(state);
+        ImmutableList<GameAction> actions = this._rules.LegalActions(state);
 
         // Assert
         Assert.Equal(
-            [Grid.CellAt(5, 0), Grid.CellAt(5, 1), Grid.CellAt(5, 2)],
+            targets.Select(cell => new CellId(cell)),
             actions
                 .OfType<MoveAction>()
                 .Where(move => move.From == Grid.CellAt(6, 1))
@@ -1250,36 +1253,56 @@ public sealed class Chaturaji2027RulesTest
         );
     }
 
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(true, true)]
+    public void LegalActions_WhenAPieceMeetsAnAllysPiece_TakesItOnlyWhileAnEnemyHoldsTheAllysThrone(
+        bool isHeld,
+        bool isTaken
+    )
+    {
+        // Arrange - Black's pawn on c3 faces up, Green's Horse on d4 ahead of it; Yellow's Raja on Green's throne,
+        // if held
+        GameState meeting = this.StateWith(
+            (Grid.CellAt(2, 2), Piece(1, Chaturaji2027Pieces.Pawn, Black)),
+            (Grid.CellAt(3, 3), Piece(2, Chaturaji2027Pieces.Horse, Green))
+        );
+        GameState state = isHeld
+            ? meeting with
+            {
+                Position = meeting.Position.Place(GreenThrone, Piece(3, Chaturaji2027Pieces.Raja, Yellow)),
+            }
+            : meeting;
+
+        // Act
+        ImmutableList<GameAction> actions = this._rules.LegalActions(state);
+
+        // Assert
+        Assert.Equal(isTaken, actions.Contains(new MoveAction(Black, Grid.CellAt(2, 2), Grid.CellAt(3, 3))));
+    }
+
     [Fact]
     public void Apply_WhenACommandedArmyTakesThePiecesOfItsCommandersTeam_ScoresNoOne()
     {
-        // Arrange - Black commands Red, whose pawn can take Green's Raja on Green's own throne, e8; Yellow has a pawn
-        Chaturaji2027Rules rules = new(
-            DiceProfile.WeightedSixSided,
-            Chaturaji2027Rules.DefaultIdleRounds,
-            PawnPromotion.OtherArmies
-        );
-        Piece raja = Piece(3, Chaturaji2027Pieces.Raja, Green);
+        // Arrange - Black commands Red, whose pawn on f7 can take Green's Horse on e6; Yellow's Raja holds Green's
+        // throne, e8
+        Piece horse = Piece(3, Chaturaji2027Pieces.Horse, Green);
         GameState state = this.StateWith(
             (RedThrone, Piece(1, Chaturaji2027Pieces.Raja, Black)),
             (Grid.CellAt(5, 6), Piece(2, Chaturaji2027Pieces.Pawn, Red)),
-            (Grid.CellAt(4, 7), raja),
-            (Grid.CellAt(0, 7), Piece(13, Chaturaji2027Pieces.Pawn, Yellow))
+            (Grid.CellAt(4, 5), horse),
+            (GreenThrone, Piece(13, Chaturaji2027Pieces.Raja, Yellow))
         );
 
         // Act
-        Transition transition = rules.Apply(state, new MoveAction(Black, Grid.CellAt(5, 6), Grid.CellAt(4, 7)));
+        Transition transition = this._rules.Apply(state, new MoveAction(Black, Grid.CellAt(5, 6), Grid.CellAt(4, 5)));
 
         // Assert
         Assert.Equal(
-            (0, new PieceCaptured(raja, Black, 0), false),
-            (
-                transition.State.Scores[Black],
-                transition.Events[1],
-                transition.Events.OfType<RajaCapturedOnThrone>().Any()
-            )
+            (0, new PieceCaptured(horse, Black, 0)),
+            (transition.State.Scores[Black], transition.Events[1])
         );
-        Assert.Equal([new Prisoner(raja, Black)], transition.State.Prisoners);
+        Assert.Equal([new Prisoner(horse, Black)], transition.State.Prisoners);
     }
 
     [Fact]

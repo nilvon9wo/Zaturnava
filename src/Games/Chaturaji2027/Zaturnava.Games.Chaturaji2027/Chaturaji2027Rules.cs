@@ -384,7 +384,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying
                 state.Position,
                 cell,
                 state.SeatOf(piece.Owner),
-                target => IsCapturable(state, piece, target, mover)
+                target => this.IsCapturable(state, target, mover)
             )
             .AddRange(this.SwapsFrom(state, cell, piece));
 
@@ -415,11 +415,11 @@ public sealed class Chaturaji2027Rules : IRulesApplying
     }
 
     /// <summary>
-    /// A piece of the mover's team takes the mover's enemies only; a piece of an enemy army it commands takes
-    /// anything, the mover's team's pieces too (rules.md §6.4): the page's safety keeps a person from it.
+    /// Any piece the mover moves takes the mover's enemies, and a piece of the mover's own team too, while an
+    /// enemy holds that piece's throne, commanding it (rules.md §6.4): the page's safety keeps a person from it.
     /// </summary>
-    private static bool IsCapturable(GameState state, Piece piece, Piece target, SeatId mover) =>
-        !state.Teams.AreAllied(target.Owner, mover) || !state.Teams.AreAllied(piece.Owner, mover);
+    private bool IsCapturable(GameState state, Piece target, SeatId mover) =>
+        !state.Teams.AreAllied(target.Owner, mover) || this._control.OccupierOf(state, target.Owner) is not null;
 
     private Transition Decided(GameState state, GameAction action)
     {
