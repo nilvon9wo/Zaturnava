@@ -193,7 +193,7 @@ client, MCP, presentation), `Hosts` (server, page, hosting adapters) and `Persis
 | Engine | Pure rules primitives: cells, pieces, moves, state, `IRulesApplying`, `IDeciding` | — |
 | Topology.SquareGrid | `ICellNavigating` for rectangular grids | Engine |
 | Games.Chaturaji2027 | Chaturaji 2027, the base game (`Chaturaji2027Rules`) | Engine, Topology.SquareGrid |
-| Bots | Bot players, each describing itself (`BotProfile`: name, description, whether it uses AI): `RandomBot`, at random but for agreeing to end the game only while its team leads, as every bot does; `MidasBot`, greedy for the best immediate score, trading prisoners only at a profit; `SolomonBot`, as greedy on the board, giving allies' prisoners back and trading evenly; `ArgusBot`, trading as Solomon, weighing each action against the worst reply (what the ruleset's `AttacksOf` says the enemy could take, and how the exchange would end); `SageBot`, trading as Solomon, looking through the rest of its own turn with the dice averaged over every way they could fall (`Foresight`), and weighing where it leads by weighted features any ruleset lets it count (`Appraisal`, `SageWeights`). With an enemy, every bot but Random trades only what its team can afford: no leader given back, and no trade that leaves its team weaker on the board | Engine |
+| Bots | Bot players, each describing itself (`BotProfile`: name, description, whether it uses AI): `RandomBot`, at random but for agreeing to end the game only while its team leads, as every bot does; `MidasBot`, greedy for the best immediate score, trading prisoners only at a profit; `SolomonBot`, as greedy on the board, giving allies' prisoners back and trading evenly; `ArgusBot`, trading as Solomon, weighing each action against the worst reply (what the ruleset's `AttacksOf` says the enemy could take, and how the exchange would end); `SageBot`, trading as Solomon, looking through the rest of its own turn with the dice averaged over every way they could fall (`Foresight`), and weighing where it leads by weighted features any ruleset lets it count (`Appraisal`, `SageWeights`); `PythiaBot`, Sage asking an advisor (`IMoveAdvising`, an AI service) which of the three moves it likes best to make, the game told in words (`Consultation`), and making Sage's own choice when the advisor has no answer in time. With an enemy, every bot but Random trades only what its team can afford: no leader given back, and no trade that leaves its team weaker on the board | Engine |
 | Application | Use cases (`GameService`), the decision loop, catalogs of rulesets and bots; ports `IGamePersisting`, `IGameNotifying` | Engine |
 | Persistence.InMemory | `IGamePersisting` in memory | Application, Engine |
 | Persistence.EfCore | `IGamePersisting` over EF Core (SQLite, SQL Server) | Application, Engine |
@@ -204,8 +204,9 @@ client, MCP, presentation), `Hosts` (server, page, hosting adapters) and `Persis
 | Presentation | Client-side board logic: frame, clickable actions, selection | Contracts |
 | Web | Blazor WebAssembly client | Client, Contracts, Presentation |
 | Mcp | MCP server (stdio) letting an AI play through any server | Client, Contracts |
+| Bots.OpenAiCompatible | An advisor for Pythia on any service speaking the OpenAI chat-completions protocol (`ChatAdvisor`) | Bots, Engine |
 | BotRunner | Command-line self-play: bots against bots, games as JSON lines | Application, Bots, Engine, Games.Chaturaji2027 |
-| Server | ASP.NET Core host; the composition root | Application, Bots, Contracts, Engine, Hosting, Hosting.Itch, Persistence.*, Topology.SquareGrid, Games.Chaturaji2027 |
+| Server | ASP.NET Core host; the composition root | Application, Bots, Bots.OpenAiCompatible, Contracts, Engine, Hosting, Hosting.Itch, Persistence.*, Topology.SquareGrid, Games.Chaturaji2027 |
 
 **Vendors stay in their adapters.** A third-party service — a page host, a
 game host, a database provider — is named only in its own adapter project and

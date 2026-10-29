@@ -36,7 +36,7 @@ internal sealed class LineRules(ImmutableList<GameAction> legalActions) : IRules
 
     public string Name => "Line";
 
-    public ICellNavigating Topology => throw new NotSupportedException();
+    public ICellNavigating Topology { get; } = new LineTopology();
 
     public ImmutableDictionary<SeatId, CellId> Thrones => ImmutableDictionary<SeatId, CellId>.Empty.Add(Seat, Throne);
 
@@ -123,9 +123,9 @@ internal sealed class LineRules(ImmutableList<GameAction> legalActions) : IRules
 
     public bool IsLeader(PieceKindId kind) => kind == Raja;
 
-    public string NameOf(PieceKindId kind) => throw new NotSupportedException();
+    public string NameOf(PieceKindId kind) => kind.Value;
 
-    public string NameOf(SeatId seat) => throw new NotSupportedException();
+    public string NameOf(SeatId seat) => $"Seat{seat.Value}";
 
     public string NameOfDie(int value) => throw new NotSupportedException();
 
@@ -143,4 +143,19 @@ internal sealed class LineRules(ImmutableList<GameAction> legalActions) : IRules
             Scores = state.Scores.SetItem(move.Actor, state.Scores.GetValueOrDefault(move.Actor) + gain),
         };
     }
+}
+
+/// <summary>The line's cells, named for people as c0 to c7; nothing else of a board is asked of it.</summary>
+file sealed class LineTopology : ICellNavigating
+{
+    public ImmutableList<CellId> Cells => throw new NotSupportedException();
+
+    public CellId? Step(CellId from, Direction direction) => throw new NotSupportedException();
+
+    public ImmutableList<Direction> Resolve([Required] DirectionSet set, Direction forward) =>
+        throw new NotSupportedException();
+
+    public CellLayout LayoutOf(CellId cell) => throw new NotSupportedException();
+
+    public string NameOf(CellId cell) => $"c{cell.Value}";
 }

@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    An advisor for the bots on any service speaking the OpenAI chat-completions protocol, as many with a
+    free tier do. Everything the solution knows of that protocol is here, reached only through the Bots
+    project's IMoveAdvising; the server's composition root plugs it in when configuration names a service.
+  -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\Zaturnava.Bots\Zaturnava.Bots.csproj" />
+  </ItemGroup>
+
+</Project>
