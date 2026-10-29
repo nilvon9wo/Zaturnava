@@ -136,6 +136,13 @@ file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bo
                 $"{this.Name(offered.Offer.From)} offered {this.Name(offered.Offer.To)} "
                     + $"{Prisoners(offered.Offer.Given.Count)} back, {Asking(offered.Offer.Asked.Count)}."
             ),
+            PrisonersReleased released => this.Add(
+                number,
+                EventDto.Ransom,
+                released.Offer.From,
+                $"{this.Name(released.Offer.From)} released {Prisoners(released.Offer.Given.Count)} of "
+                    + $"{this.Whose(released.Offer.To, released.Offer.From)} own."
+            ),
             RansomAccepted accepted => this.Add(
                 number,
                 EventDto.Ransom,

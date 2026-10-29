@@ -40,6 +40,9 @@ public interface IRulesApplying
     /// </summary>
     bool MayOffer([Required] GameState state);
 
+    /// <summary>Whether the prisoner may be given back now, in a ransom or released.</summary>
+    bool MayGoBack([Required] GameState state, [Required] Prisoner prisoner);
+
     /// <summary>
     /// Whether <paramref name="seat"/> may propose ending the game now. A proposal may come from any seat,
     /// whoever decides: <see cref="Apply"/> takes one from a seat this allows.

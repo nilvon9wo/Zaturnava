@@ -75,6 +75,8 @@ internal sealed class TinyRules(int length) : IRulesApplying
 
     public bool MayOffer([Required] GameState state) => false;
 
+    public bool MayGoBack([Required] GameState state, [Required] Prisoner prisoner) => true;
+
     public bool MayProposeEnd([Required] GameState state, SeatId seat) => seat.Value == SeatCount - 1;
 
     public bool MayRejoin([Required] GameState state, SeatId seat) => state.Absence.MissedBy(seat) > 0;

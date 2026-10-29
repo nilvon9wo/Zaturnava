@@ -112,7 +112,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying
         this._command = new Command(this._control);
         this._everyPiece = new EveryPiece(this._control);
         this._farming = new Farming(this._control, this._moves);
-        this._ransom = new Ransom(this._grid, Chaturaji2027Setup.InitialPosition(this._grid));
+        this._ransom = new Ransom(this._grid, Chaturaji2027Setup.InitialPosition(this._grid), this.Captured);
     }
 
     public string Id => RulesetId;
@@ -155,7 +155,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying
                             action switch
                             {
                                 DiceAction dice => this.Rolled(state, dice),
-                                OfferAction offer => Offered(state, offer),
+                                OfferAction offer => this.Offered(state, offer),
                                 ProposeEndAction propose => this.Proposed(state, propose),
                                 RejoinAction rejoin => this.Rejoined(state, rejoin),
                                 VoteAwayAction vote => this.Voted(state, vote),
@@ -169,6 +169,9 @@ public sealed class Chaturaji2027Rules : IRulesApplying
         );
 
     public bool MayOffer([Required] GameState state) => Ransom.MayOffer(state);
+
+    public bool MayGoBack([Required] GameState state, [Required] Prisoner prisoner) =>
+        Ransom.MayGoBack(state, prisoner);
 
     public bool MayProposeEnd([Required] GameState state, SeatId seat) => Agreement.MayPropose(state, seat);
 
@@ -513,11 +516,22 @@ public sealed class Chaturaji2027Rules : IRulesApplying
     private static Transition Followed(Transition first, Transition then, GameEvent between) =>
         then with { Events = [.. first.Events, between, .. then.Events] };
 
+    /// <summary>
+    /// The offer waits on its receiver's answer; but prisoners given back to their own team go home at once,
+    /// unless they are an ally's whose throne an enemy holds: that ally is asked first (rules.md §8).
+    /// </summary>
     /// <exception cref="IllegalActionException">The offer may not be made.</exception>
-    private static Transition Offered(GameState state, OfferAction offer) =>
-        Ransom.IsValid(state, offer)
-            ? Ransom.Offered(state, offer)
-            : throw new IllegalActionException(offer);
+    private Transition Offered(GameState state, OfferAction offer) =>
+        (Ransom.IsValid(state, offer), this.IsAsked(state, offer)) switch
+        {
+            (false, _) => throw new IllegalActionException(offer),
+            (_, true) => Ransom.Offered(state, offer),
+            _ => this._ransom.Released(state, offer),
+        };
+
+    private bool IsAsked(GameState state, OfferAction offer) =>
+        !state.Teams.AreAllied(offer.Receiver, offer.Actor)
+        || (offer.Receiver != offer.Actor && this._control.OccupierOf(state, offer.Receiver) is not null);
 
     /// <summary>
     /// The Pawn becomes the captured piece, for that piece's own army - unless that leaves only Rajas on
@@ -871,9 +885,16 @@ public sealed class Chaturaji2027Rules : IRulesApplying
             isEnemy
         );
         GameState state = scored.State;
+        bool isOwnTeam = moved.State.Teams.AreAllied(captured.Owner, captor);
         Transition taken = scored with
         {
-            State = state with { Prisoners = state.Prisoners.Add(new Prisoner(captured, captor)) },
+            State = state with
+            {
+                Prisoners = state.Prisoners.Add(new Prisoner(captured, captor)),
+                TakenByOwnTeam = isOwnTeam
+                    ? state.TakenByOwnTeam.SetItem(captured.Id, state.TurnNumber)
+                    : state.TakenByOwnTeam,
+            },
         };
         RajaCapturedOnThrone bonus = new(captured, captor, RajaOnThroneBonus);
         Transition onThrone = isOnThrone

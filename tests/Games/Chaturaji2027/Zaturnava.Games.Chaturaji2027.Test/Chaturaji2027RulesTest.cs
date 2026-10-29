@@ -1303,6 +1303,7 @@ public sealed class Chaturaji2027RulesTest
             (transition.State.Scores[Black], transition.Events[1])
         );
         Assert.Equal([new Prisoner(horse, Black)], transition.State.Prisoners);
+        Assert.Equal(state.TurnNumber, transition.State.TakenByOwnTeam[horse.Id]);
     }
 
     [Fact]
@@ -1709,8 +1710,8 @@ public sealed class Chaturaji2027RulesTest
     [InlineData("rolling off")]
     [InlineData("game over")]
     [InlineData("promotion due")]
-    [InlineData("own piece")]
-    public void MayOffer_WhenNotOnItsOwnTurnOrHoldingNoOtherSeatsPiece_IsFalse(string why)
+    [InlineData("own piece, taken lately")]
+    public void MayOffer_WhenNotOnItsOwnTurnOrHoldingNothingThatMayGoBack_IsFalse(string why)
     {
         // Arrange
         GameState ransoms = this.Ransoms();
@@ -1722,7 +1723,11 @@ public sealed class Chaturaji2027RulesTest
             "rolling off" => ransoms with { RollOff = [Black, Yellow] },
             "game over" => ransoms with { DecidingSeat = null },
             "promotion due" => ransoms with { PromotionDue = Grid.CellAt(2, 7) },
-            _ => ransoms with { Prisoners = [new Prisoner(Piece(20, Chaturaji2027Pieces.Pawn, Black), Black)] },
+            _ => ransoms with
+            {
+                Prisoners = [new Prisoner(Piece(20, Chaturaji2027Pieces.Pawn, Black), Black)],
+                TakenByOwnTeam = ImmutableDictionary<PieceId, int>.Empty.Add(new PieceId(20), ransoms.TurnNumber),
+            },
         };
 
         // Act
@@ -2036,7 +2041,7 @@ public sealed class Chaturaji2027RulesTest
             { "game over", new OfferAction(Black, Yellow, [new PieceId(12)], []) },
             { "dice awaited", new OfferAction(Black, Yellow, [new PieceId(12)], []) },
             { "not deciding", new OfferAction(Yellow, Black, [new PieceId(1)], []) },
-            { "to oneself", new OfferAction(Black, Black, [new PieceId(12)], []) },
+            { "to oneself, another's prisoner", new OfferAction(Black, Black, [new PieceId(12)], []) },
             { "nothing given", new OfferAction(Black, Yellow, [], [new PieceId(1)]) },
             { "not held", new OfferAction(Black, Yellow, [new PieceId(12), new PieceId(99)], []) },
             { "asked for the enemy's", new OfferAction(Black, Yellow, [new PieceId(12)], [new PieceId(14)]) },
@@ -2062,6 +2067,182 @@ public sealed class Chaturaji2027RulesTest
 
         // Assert
         Assert.Contains("is not allowed now", exception.Message);
+    }
+
+    [Fact]
+    public void Apply_WhenASeatReleasesItsOwnPiece_SendsItHomeAtOnce()
+    {
+        // Arrange - Black holds its own Elephant, taken long ago
+        GameState state = this.Releasing(Piece(2, Chaturaji2027Pieces.Elephant, Black), Black);
+
+        // Act
+        Transition transition = this._rules.Apply(state, new OfferAction(Black, Black, [new PieceId(2)], []));
+
+        // Assert
+        Assert.Equal(
+            (Black, null, true, 0),
+            (
+                transition.State.DecidingSeat,
+                transition.State.Offer,
+                transition.Events[0] is PrisonersReleased,
+                transition.State.Prisoners.Count
+            )
+        );
+        Assert.Equal(Chaturaji2027Pieces.Elephant, transition.State.Position.PieceAt(Grid.CellAt(2, 0))!.Kind);
+    }
+
+    [Theory]
+    [InlineData(3, false)]
+    [InlineData(4, true)]
+    public void Apply_WhenASeatReleasesAPieceItsOwnTeamTook_WaitsUntilEverySeatHasHadATurn(
+        int turnsSince,
+        bool isReleased
+    )
+    {
+        // Arrange - Black took its own Elephant on turn 10
+        GameState state = this.Releasing(Piece(2, Chaturaji2027Pieces.Elephant, Black), Black) with
+        {
+            TurnNumber = 10 + turnsSince,
+            TakenByOwnTeam = ImmutableDictionary<PieceId, int>.Empty.Add(new PieceId(2), 10),
+        };
+        OfferAction release = new(Black, Black, [new PieceId(2)], []);
+
+        // Act
+        bool mayGoBack = this._rules.MayGoBack(state, state.Prisoners[0]);
+        bool mayOffer = this._rules.MayOffer(state);
+        Exception? refused = Record.Exception(() => this._rules.Apply(state, release));
+
+        // Assert
+        Assert.Equal(
+            (isReleased, isReleased, !isReleased),
+            (mayGoBack, mayOffer, refused is IllegalActionException)
+        );
+    }
+
+    [Theory]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    public void Apply_WhenASeatReleasesAnAllysPiece_AsksTheAllyOnlyIfAnEnemyHoldsItsThrone(bool isHeld, bool isAtOnce)
+    {
+        // Arrange - Black holds Green's Horse; Yellow's Raja on Green's throne, if held
+        GameState releasing = this.Releasing(Piece(17, Chaturaji2027Pieces.Horse, Green), Black);
+        GameState state = isHeld
+            ? releasing with
+            {
+                Position = releasing.Position.Place(GreenThrone, Piece(12, Chaturaji2027Pieces.Raja, Yellow)),
+            }
+            : releasing;
+
+        // Act
+        Transition transition = this._rules.Apply(state, new OfferAction(Black, Green, [new PieceId(17)], []));
+
+        // Assert
+        Assert.Equal(
+            (isAtOnce, isAtOnce ? Black : Green, isAtOnce ? 0 : 1),
+            (transition.Events[0] is PrisonersReleased, transition.State.DecidingSeat, transition.State.Prisoners.Count)
+        );
+    }
+
+    [Fact]
+    public void Apply_WhenASeatAsksSomethingOfItsOwnTeam_ThrowsIllegalActionException()
+    {
+        // Arrange - Black holds Green's Horse; Green holds Black's Boat
+        GameState releasing = this.Releasing(Piece(17, Chaturaji2027Pieces.Horse, Green), Black);
+        GameState state = releasing with
+        {
+            Prisoners = releasing.Prisoners.Add(new Prisoner(Piece(0, Chaturaji2027Pieces.Boat, Black), Green)),
+        };
+
+        // Act
+        Exception? refused = Record.Exception(() =>
+            this._rules.Apply(state, new OfferAction(Black, Green, [new PieceId(17)], [new PieceId(0)]))
+        );
+
+        // Assert
+        _ = Assert.IsType<IllegalActionException>(refused);
+    }
+
+    [Fact]
+    public void Apply_WhenAReleasedRajaFindsAnEnemyOnItsThrone_TakesIt()
+    {
+        // Arrange - Black holds its own Raja; Yellow's Pawn on Black's throne
+        Piece pawn = Piece(13, Chaturaji2027Pieces.Pawn, Yellow);
+        GameState releasing = this.Releasing(Piece(3, Chaturaji2027Pieces.Raja, Black), Black);
+        GameState state = releasing with { Position = releasing.Position.Place(BlackThrone, pawn) };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new OfferAction(Black, Black, [new PieceId(3)], []));
+
+        // Assert
+        Assert.Equal(
+            (new PieceCaptured(pawn, Black, 1), Chaturaji2027Pieces.Raja, state.Scores[Black] + 1),
+            (
+                transition.Events.OfType<PieceCaptured>().Single(),
+                transition.State.Position.PieceAt(BlackThrone)!.Kind,
+                transition.State.Scores[Black]
+            )
+        );
+    }
+
+    [Fact]
+    public void Apply_WhenAPieceIsReleasedWhileItsRajaIsOnItsThrone_TakesTheEnemyOnItsSquare()
+    {
+        // Arrange - Black's Raja on its throne; Black holds its own Elephant; Yellow's Pawn on c1, its square
+        Piece pawn = Piece(13, Chaturaji2027Pieces.Pawn, Yellow);
+        GameState releasing = this.Releasing(Piece(2, Chaturaji2027Pieces.Elephant, Black), Black);
+        GameState state = releasing with
+        {
+            Position = releasing.Position
+                .Place(BlackThrone, Piece(3, Chaturaji2027Pieces.Raja, Black))
+                .Place(Grid.CellAt(2, 0), pawn),
+        };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new OfferAction(Black, Black, [new PieceId(2)], []));
+
+        // Assert
+        Assert.Equal(
+            (new PieceCaptured(pawn, Black, 1), Chaturaji2027Pieces.Elephant),
+            (
+                transition.Events.OfType<PieceCaptured>().Single(),
+                transition.State.Position.PieceAt(Grid.CellAt(2, 0))!.Kind
+            )
+        );
+    }
+
+    [Theory]
+    [InlineData("no one on the throne")]
+    [InlineData("a Pawn on the throne")]
+    [InlineData("an enemy Raja on the throne")]
+    [InlineData("an ally on its square")]
+    public void Apply_WhenAPieceIsReleasedButNotStriking_TakesNothing(string why)
+    {
+        // Arrange - Black holds its own Elephant, whose square, c1, someone stands on
+        GameState releasing = this.Releasing(Piece(2, Chaturaji2027Pieces.Elephant, Black), Black);
+        (Piece onThrone, Piece onSquare) = why switch
+        {
+            "a Pawn on the throne" =>
+                (Piece(4, Chaturaji2027Pieces.Pawn, Black), Piece(13, Chaturaji2027Pieces.Pawn, Yellow)),
+            "an enemy Raja on the throne" =>
+                (Piece(12, Chaturaji2027Pieces.Raja, Yellow), Piece(13, Chaturaji2027Pieces.Pawn, Yellow)),
+            "an ally on its square" =>
+                (Piece(3, Chaturaji2027Pieces.Raja, Black), Piece(20, Chaturaji2027Pieces.Pawn, Green)),
+            _ => (Piece(5, Chaturaji2027Pieces.Pawn, Black), Piece(13, Chaturaji2027Pieces.Pawn, Yellow)),
+        };
+        Position position = releasing.Position.Place(Grid.CellAt(2, 0), onSquare);
+        GameState state = releasing with
+        {
+            Position = why == "no one on the throne" ? position : position.Place(BlackThrone, onThrone),
+        };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new OfferAction(Black, Black, [new PieceId(2)], []));
+
+        // Assert
+        Assert.Equal(
+            (0, onSquare),
+            (transition.Events.OfType<PieceCaptured>().Count(), transition.State.Position.PieceAt(Grid.CellAt(2, 0)))
+        );
     }
 
     [Fact]
@@ -3498,6 +3679,20 @@ public sealed class Chaturaji2027RulesTest
             : green;
         return state with { Position = all };
     }
+
+    /// <summary>
+    /// Black's turn, on turn 10, <paramref name="holder"/> holding <paramref name="prisoner"/>; Green's Pawn and
+    /// Yellow's in mid-board, on no one's starting square.
+    /// </summary>
+    private GameState Releasing(Piece prisoner, SeatId holder) =>
+        this.StateWith(
+            (Grid.CellAt(3, 4), Piece(21, Chaturaji2027Pieces.Pawn, Green)),
+            (Grid.CellAt(4, 3), Piece(14, Chaturaji2027Pieces.Pawn, Yellow))
+        ) with
+        {
+            TurnNumber = 10,
+            Prisoners = [new Prisoner(prisoner, holder)],
+        };
 
     private GameState AcceptingRansom() =>
         this.Ransoms() with

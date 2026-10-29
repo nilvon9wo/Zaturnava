@@ -74,6 +74,8 @@ internal sealed class ScriptedRules(ImmutableDictionary<GameAction, GameState> r
 
     public bool MayOffer([Required] GameState state) => false;
 
+    public bool MayGoBack([Required] GameState state, [Required] Prisoner prisoner) => true;
+
     public bool MayProposeEnd([Required] GameState state, SeatId seat) => false;
 
     public bool MayRejoin([Required] GameState state, SeatId seat) => false;

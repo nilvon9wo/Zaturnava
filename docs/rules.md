@@ -30,7 +30,7 @@ Everything else here is specified but not yet played by the engine.
 | §6.4 Taking one's own team's pieces | Implemented: only while an enemy holds that piece's throne; the safety is the page's; bots never do. |
 | §7 Escape | Implemented, as clarified below: the escape takes the place of the double move and ends the turn. |
 | §9 Boat triumph | Not yet. |
-| §8 Promotion & ransom | Implemented, as clarified below: promotion into any captured piece (`promotion.pawns` a constructor argument; `promotion.pool` fixed at `unrestricted`), and ransom with its timed protocol, including the receiving player's choice among equidistant squares. |
+| §8 Promotion & ransom | Implemented, as clarified below: promotion into any captured piece (`promotion.pawns` a constructor argument; `promotion.pool` fixed at `unrestricted`), and ransom with its timed protocol, including the receiving player's choice among equidistant squares, and the release of one's own team's pieces. |
 | §10 Game end | Implemented: elimination (a seat with no pieces is skipped), Raja retirement, honourable peace, team elimination, ending by agreement (as stated and proposed below), a team that has all given up its turns, and a safety net (below). |
 | §11 Setup roll-off | Implemented. |
 | §12 Toggles | None per game yet: the defaults are fixed. |
@@ -530,6 +530,26 @@ available (via a future capture, by anyone).
 - Releasing a piece via ransom never returns the points already scored for
   capturing it, and if the released piece is captured again by anyone, that
   capture scores again.
+- *(Stated 2026-10-29)* **Releasing one's own team's pieces.** Pieces of
+  one's own team, taken while an enemy held their throne (§6.4), are not
+  ransomed but given back, with the same mechanic as a gift:
+  - One's own pieces go home at once; an ally's go home at once too, unless
+    an enemy holds the ally's throne: then the ally must accept, so as to be
+    ready for how that may shift the game.
+  - Nothing may be asked in return of one's own team. *(Proposed)*
+  - A piece taken by its own team stays prisoner for a whole round: it may
+    go home only once every seat has had a turn since it was taken, so that
+    it cannot be caught and released in the same turn. *(Proposed: this
+    applies only to pieces taken by their own team; an enemy's prisoner may
+    be ransomed at once, as before.)*
+  - Going home, such a piece takes nothing, except the enemy on its own
+    starting square, if it is a Raja (going back to its throne), or its
+    army's Raja is on its throne. It takes only an enemy: an ally on that
+    square sends it to the nearest free square instead. The capture is its
+    own army's, and scores as any capture does. *(Proposed: the scoring.)*
+  - Playtesting may show that striking home invites abuse (taking one's own
+    piece far away, to send it home onto an enemy); the round's wait is meant
+    to keep that in check.
 - *(Stated 2026-10-28, from the original score sheet)* The player who
   **accepts** a ransom scores **+1 for each piece returned**: an incentive to
   keep games going rather than win by attrition, and a balance to otherwise

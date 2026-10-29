@@ -169,7 +169,10 @@ internal static class GameViews
             controller.Kind,
             botId is null ? null : BotNameOf(bots, botId),
             [.. snapshot.State.Prisoners.Where(prisoner => prisoner.Holder == seat)
-                .Select(prisoner => PrisonerOf(snapshot.Rules, prisoner))],
+                .Select(prisoner => PrisonerOf(snapshot.Rules, prisoner) with
+                {
+                    MayGoBack = snapshot.Rules.MayGoBack(snapshot.State, prisoner),
+                })],
             botId,
             snapshot.State.Resigned.Contains(seat),
             snapshot.Rules.MayProposeEnd(snapshot.State, seat),

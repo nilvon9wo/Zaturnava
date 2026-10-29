@@ -116,6 +116,27 @@ public sealed class GameViewsTest
         );
     }
 
+    [Theory]
+    [InlineData(3, false)]
+    [InlineData(4, true)]
+    public void ViewOf_WhenASeatHoldsAPieceOfItsOwnTeam_SaysWhetherItMayGoBackYet(int turnsSince, bool mayGoBack)
+    {
+        // Arrange - Black took Green's Pawn on turn 10
+        Piece pawn = new(new PieceId(20), Chaturaji2027Pieces.Pawn, new SeatId(2));
+        GameState state = Rules.CreateInitialState() with
+        {
+            TurnNumber = 10 + turnsSince,
+            Prisoners = [new Prisoner(pawn, new SeatId(0))],
+            TakenByOwnTeam = ImmutableDictionary<PieceId, int>.Empty.Add(pawn.Id, 10),
+        };
+
+        // Act
+        GameViewDto view = GameViews.ViewOf(Snapshot(state), Bots);
+
+        // Assert
+        Assert.Equal(mayGoBack, view.Seats[0].Prisoners[0].MayGoBack);
+    }
+
     [Fact]
     public void ViewOf_WhenTheDecidingSeatHoldsPrisonersOnItsTurn_SaysItMayOffer()
     {

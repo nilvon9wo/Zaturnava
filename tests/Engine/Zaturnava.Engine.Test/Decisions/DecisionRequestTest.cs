@@ -50,6 +50,9 @@ file sealed class UnplayableRules : IRulesApplying
 
     public bool MayOffer([Required] GameState state) => throw new NotSupportedException();
 
+    public bool MayGoBack([Required] GameState state, [Required] Prisoner prisoner) =>
+        throw new NotSupportedException();
+
     public bool MayProposeEnd([Required] GameState state, SeatId seat) => throw new NotSupportedException();
 
     public bool MayRejoin([Required] GameState state, SeatId seat) => throw new NotSupportedException();
