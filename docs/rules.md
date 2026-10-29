@@ -251,10 +251,12 @@ Points are never subtracted or returned when a piece is given back.
     nothing else since; a turn passed or rolled away without moving breaks
     nothing. An escape the player makes stops their farming too. The first
     entry, coming from anything else, is never farmed.
-  - Not yet decided: whether a Raja that stays off the throne for several
-    turns, doing nothing else, is still farming when it steps back on. For
-    now it is (above): staying off may have strategic value, against an
-    escape, but each turn off also risks losing control of the throne.
+  - *(Stated 2026-10-29)* A Raja that stays off the throne for several
+    turns, its player doing nothing else, is still farming when it steps
+    back on. Staying off may have strategic value, against an escape, but
+    each turn off also risks losing control of the throne; weighing the
+    position instead would be hard to explain and to test. To revisit after
+    playtesting.
 
 ## 6. Throne Control
 
