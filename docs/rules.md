@@ -738,5 +738,17 @@ Nothing rules-level is currently blocking. Noted for later attention:
   [architecture.md §2.2](architecture.md#22-piece-catalog-and-movement-grammar)
   — the movement grammar doesn't change either way — but left open since it
   affects every rules doc and UI label once decided.
+- *(Stated 2026-10-29)* Commanding every piece on the board, on one's own
+  turn, should be worth a bonus beyond the empire's and a throne entry's: as
+  when a player's Raja, the only one left, sits on one enemy's throne, the
+  other enemy has no pieces, and their ally has no Raja (§6.1a and b).
+  - Not decided: what it is worth. *(Proposed options)* a one-time bonus on
+    reaching it (say +5, a Raja's worth), edge-triggered and repeatable as
+    the empire is; or a bonus each turn it is held (say +1); or both. Not an
+    outright win: the occupied enemy still takes the first move of its own
+    turn (§6.3), and may free its throne with it.
+  - *(Proposed)* "Every piece" means every piece on the board but a retired
+    Raja; only the player whose pool holds them all scores it. A name:
+    *Chakravartin*, the universal ruler.
 - Hosting is not a rules concern; see
   [architecture.md §8](architecture.md#8-tech-stack--hosting).
