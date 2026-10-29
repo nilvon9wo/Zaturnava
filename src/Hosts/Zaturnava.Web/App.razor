@@ -1,7 +1,7 @@
 @* The whole page: the lobby until the player sits at (or watches) a table, over a quiet bar of the
-   page's name, buttons opening the guide to the game and the guide to the bots, and the page's own settings (how it
-   looks: theme and pieces; then sound); at a table, the table shows the guide's button and the settings in its own
-   bar, and the safety under the player's corner of the board. No URL routing, so the page works from any address it is served at. A seat the player takes is
+   page's name, buttons opening the guide to the game and the guide to the bots, and the page's own settings (the safety, beside
+   the table's view buttons; how it looks: theme and pieces; then sound); at a table, the table shows the guide's button and the settings in its own
+   bar. No URL routing, so the page works from any address it is served at. A seat the player takes is
    remembered in the browser, so that they can come back to it. *@
 @inject Browser Browser
 
@@ -11,7 +11,6 @@
            Seating="seating"
            IsSoundOn="this._isSoundOn"
            IsSafetyOn="this._isSafetyOn"
-           OnSafetySwitched="this.SwitchSafety"
            Pieces="this._pieces"
            PageSettings="this.Settings"
            HowToPlay="this.HowToPlay"
@@ -64,6 +63,11 @@ else
 
     private RenderFragment Settings =>
         @<span class="settings">
+            <button class="@(this._isSafetyOn ? "safety" : "safety off")"
+                    title="While on, you cannot take your own team's pieces, as an enemy army you command could"
+                    @onclick="this.SwitchSafety">
+                @(this._isSafetyOn ? "Safety: on" : "Safety: OFF")
+            </button>
             <button class="theme" @onclick="this.SwitchTheme">@(this._theme == Browser.Dark ? "Light theme" : "Dark theme")</button>
             <button class="pieces" @onclick="this.SwitchPieces">
                 @(this._pieces == PieceSet.Chess ? "Pieces: chess" : "Pieces: chaturaji")

@@ -1,5 +1,5 @@
 @* A game: over it all, the seats by team, each team with its total; under them the board (turned so
-   the player's own corner is bottom left, their safety under that corner), and beside it whose turn it is, the dice and what each lets
+   the player's own corner is bottom left), and beside it whose turn it is, the dice and what each lets
    move, on the player's turn what they may do - prisoners they may offer back among it, and, for a Pawn
    picked up or just come to the far edge, what it may be promoted to - and what has happened. Dice the player lost, unable to use them, are told until they
    dismiss it or their turn comes round again: the turn has passed on by then. While a bot decides, it advances the game every
@@ -74,23 +74,13 @@
         </div>
 
         <div class="play">
-            <div class="board-side">
-                <Board View="view"
-                       Actions="this.Actions"
-                       Selection="this._selection"
-                       Turn="this._boardTurn"
-                       LastMove="this._lastMove"
-                       Pieces="this.Pieces"
-                       OnCellClicked="this.Click" />
-                @if (this.Seating.Claim is not null)
-                {
-                    <button class="@(this.IsSafetyOn ? "safety" : "safety off")"
-                            title="While on, you cannot take your own team's pieces, as an enemy army you command could"
-                            @onclick="this.OnSafetySwitched">
-                        @(this.IsSafetyOn ? "Safety: on" : "Safety: OFF")
-                    </button>
-                }
-            </div>
+            <Board View="view"
+                   Actions="this.Actions"
+                   Selection="this._selection"
+                   Turn="this._boardTurn"
+                   LastMove="this._lastMove"
+                   Pieces="this.Pieces"
+                   OnCellClicked="this.Click" />
 
             <div class="@(this._turn is null ? "turn" : "turn yours")">
                 @if (this._problem is { } trouble)
@@ -479,10 +469,6 @@
     /// <summary>Whether the player is kept from taking their own team's pieces, as an enemy army they command may.</summary>
     [Parameter]
     public bool IsSafetyOn { get; set; } = true;
-
-    /// <summary>The player switched the safety, under their corner of the board.</summary>
-    [Parameter]
-    public EventCallback OnSafetySwitched { get; set; }
 
     /// <summary>How the pieces are drawn and named, the server's names being the chaturaji ones.</summary>
     [Parameter]

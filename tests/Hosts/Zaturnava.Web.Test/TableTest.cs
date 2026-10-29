@@ -164,21 +164,6 @@ public sealed class TableTest : IDisposable
         );
     }
 
-    [Theory]
-    [InlineData(true, 1)]
-    [InlineData(false, 0)]
-    public void Safety_WhenSeatedOrOnlyWatching_ShowsItUnderTheBoardOnlyToAPlayer(bool isSeated, int safeties)
-    {
-        // Arrange
-        Seating seating = isSeated ? SeatZero : Seating.Watching(FakeGameServer.GameId);
-
-        // Act
-        IRenderedComponent<Table> table = this.Render(seating);
-
-        // Assert
-        Assert.Equal(safeties, table.FindAll(".board-side > svg.board + button.safety").Count);
-    }
-
     [Fact]
     public void Click_WhenTheSafetyIsTurnedOffDuringTheTurn_OffersTakingThePiecesOfTheTeam()
     {
