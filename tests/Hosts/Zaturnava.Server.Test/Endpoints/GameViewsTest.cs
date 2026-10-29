@@ -1,4 +1,6 @@
 using System.Collections.Immutable;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using Net.NowhereAtAll.Zaturnava.Application.Games;
 using Net.NowhereAtAll.Zaturnava.Contracts;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
@@ -18,11 +20,37 @@ public sealed class GameViewsTest
     private static readonly Chaturaji2027Rules Rules = new();
     private static readonly ImmutableList<BotProfile> Bots = [new("midas", "Midas", "Greedy.", false)];
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void HistoryOf_WhenSentAsJson_HasTheShapeSelfPlayWritesItIn(bool isOver)
+    {
+        // Arrange
+        GameOutcome outcome = new([new SeatId(0), new SeatId(2)], "agreement", "every player agreed");
+        GameState state = Rules.CreateInitialState() with { Outcome = isOver ? outcome : null };
+        GameHistory history = GameHistory.Of(Rules, state, ["sage", "person", "argus", "open"], [Pass(0)])
+            with
+        {
+            GameId = "g",
+        };
+
+        // Act
+        GameHistoryDto sent = GameViews.HistoryOf(history);
+
+        // Assert
+        Assert.True(
+            JsonNode.DeepEquals(
+                JsonSerializer.SerializeToNode(history, JsonSerializerOptions.Web),
+                JsonSerializer.SerializeToNode(sent, JsonSerializerOptions.Web)
+            )
+        );
+    }
+
     [Fact]
     public void ViewOf_WhenTheGameIsOver_ShowsNoDecidingSeatAndHowItEnded()
     {
         // Arrange
-        GameOutcome outcome = new([new SeatId(0), new SeatId(2)], "only one team has pieces left");
+        GameOutcome outcome = new([new SeatId(0), new SeatId(2)], "one-team-left", "only one team has pieces left");
         GameSnapshot over = Snapshot(Rules.CreateInitialState() with { DecidingSeat = null, Outcome = outcome });
 
         // Act
@@ -39,7 +67,7 @@ public sealed class GameViewsTest
     public void ViewOf_WhenTheGameIsADraw_SaysSo()
     {
         // Arrange
-        GameOutcome outcome = new([], "only Rajas are left, an honourable peace");
+        GameOutcome outcome = new([], "only-rajas-left", "only Rajas are left, an honourable peace");
         GameSnapshot over = Snapshot(Rules.CreateInitialState() with { DecidingSeat = null, Outcome = outcome });
 
         // Act
@@ -556,6 +584,8 @@ public sealed class GameViewsTest
 
     private static string Listed(ImmutableList<PrisonerDto> prisoners) =>
         string.Join(", ", prisoners.Select(prisoner => $"{prisoner.Id} {prisoner.Name} {prisoner.Owner}"));
+
+    private static ActionDescriptor Pass(int seat) => new PassAction(new SeatId(seat)).Describe();
 
     private static GameSnapshot Snapshot(GameState state)
     {

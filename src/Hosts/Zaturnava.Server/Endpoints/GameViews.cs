@@ -47,7 +47,7 @@ internal static class GameViews
             [.. record.Controllers.Select((controller, seat) => (controller, seat))
                 .Where(entry => entry.controller.IsOpen)
                 .Select(entry => entry.seat)],
-            [.. record.Controllers.Select(PlayerOf)],
+            [.. record.Controllers.Select(controller => controller.Player)],
             record.Actions.Count
         )
         {
@@ -55,6 +55,23 @@ internal static class GameViews
             IsOver = snapshot.State.Outcome is not null,
         };
     }
+
+    /// <summary>A game's history, on the wire: the same shape self-play writes it in.</summary>
+    public static GameHistoryDto HistoryOf(GameHistory history) =>
+        new(
+            history.Format,
+            history.GameId,
+            history.RulesetId,
+            [
+                .. history.Seats.Select(seat =>
+                    new HistorySeatDto(seat.Id, seat.Name, seat.Team, seat.Player, seat.Score)
+                ),
+            ],
+            [.. history.Actions.Select(action => new ActionDto(action.Kind, action.Arguments))],
+            history.Outcome is { } outcome
+                ? new HistoryOutcomeDto(outcome.Winners, outcome.Ending, outcome.Reason)
+                : null
+        );
 
     /// <summary>The game as its seats see it, naming each bot as <paramref name="bots"/> do.</summary>
     public static GameViewDto ViewOf(GameSnapshot snapshot, ImmutableList<BotProfile> bots)
@@ -215,15 +232,11 @@ internal static class GameViews
     private static OutcomeDto? OutcomeOf(IRulesApplying rules, GameOutcome? outcome) =>
         outcome is null
             ? null
-            : new OutcomeDto([.. outcome.Winners.Select(seat => seat.Value)], GameLog.Story(rules, outcome));
-
-    private static string PlayerOf(SeatController controller) =>
-        controller switch
-        {
-            BotSeat bot => bot.BotId,
-            HumanSeat => GameSummaryDto.Person,
-            _ => GameSummaryDto.Open,
-        };
+            : new OutcomeDto(
+                [.. outcome.Winners.Select(seat => seat.Value)],
+                outcome.Ending,
+                GameLog.Story(rules, outcome)
+            );
 
     private static ActionDto ActionOf(GameSnapshot snapshot, GameAction action)
     {

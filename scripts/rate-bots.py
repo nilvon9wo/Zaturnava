@@ -29,7 +29,7 @@ SCALE = 400 / math.log(10)
 
 
 def play(runner, ruleset, seats, games, max_steps):
-    """Each game the seats' bots play, as the BotRunner logs it: its winners, and its final scores by seat."""
+    """Each game the seats' bots play, as the BotRunner logs it: its seats with their scores, and its outcome."""
     with tempfile.NamedTemporaryFile(suffix=".jsonl", delete=False) as out:
         path = out.name
     try:
@@ -58,12 +58,13 @@ def results(runner, ruleset, a, b, games, max_steps):
 
 def margin(game, seats):
     """How the seats' team came out, against the other: by who won, if the game ended so; else by points."""
-    if game["winners"]:
-        return (1, 0) if game["winners"][0] in seats else (0, 1)
-    if game["isFinished"]:
+    outcome = game["outcome"]
+    if outcome and outcome["winners"]:
+        return (1, 0) if outcome["winners"][0] in seats else (0, 1)
+    if outcome:
         return 0, 0
-    mine = sum(points for seat, points in game["scores"].items() if int(seat) in seats)
-    theirs = sum(points for seat, points in game["scores"].items() if int(seat) not in seats)
+    mine = sum(seat["score"] for seat in game["seats"] if seat["id"] in seats)
+    theirs = sum(seat["score"] for seat in game["seats"] if seat["id"] not in seats)
     return mine, theirs
 
 

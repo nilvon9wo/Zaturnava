@@ -30,8 +30,8 @@ internal static class GameEnd
         ImmutableList<int> teams = [.. pieces.Select(piece => state.Teams.TeamOf(piece.Owner)).Distinct()];
         GameOutcome? outcome = (teams.Count, pieces.All(piece => piece.Kind == Chaturaji2027Pieces.Raja)) switch
         {
-            (1, _) => new GameOutcome(TeamOf(state, teams[0]), OneTeamLeft),
-            (_, true) => new GameOutcome([], OnlyRajasLeft),
+            (1, _) => new GameOutcome(TeamOf(state, teams[0]), Chaturaji2027Endings.OneTeamLeft, OneTeamLeft),
+            (_, true) => new GameOutcome([], Chaturaji2027Endings.OnlyRajasLeft, OnlyRajasLeft),
             _ => null,
         };
         return outcome is null
@@ -49,7 +49,7 @@ internal static class GameEnd
             $"no one rolled or moved for {rounds} rounds, so points decide"
         );
         return state.IdlePasses >= rounds * playing
-            ? ByPoints(transition, reason)
+            ? ByPoints(transition, Chaturaji2027Endings.Idle, reason)
             : null;
     }
 
@@ -68,13 +68,17 @@ internal static class GameEnd
                 .GroupBy(seat => state.Teams.TeamOf(seat.Id))
                 .Any(team => team.All(seat => state.Resigned.Contains(seat.Id)) && MayGiveUp(state, team.Key));
         return hasTeamGivenUp
-            ? ByPoints(transition with { State = state with { Proposal = null } }, TeamGaveUp)
+            ? ByPoints(
+                transition with { State = state with { Proposal = null } },
+                Chaturaji2027Endings.TeamGaveUp,
+                TeamGaveUp
+            )
             : transition;
     }
 
     /// <summary>The ended game, the team with more points winning; a draw, if the teams are level.</summary>
-    public static Transition ByPoints(Transition transition, string reason) =>
-        Ended(transition, OutcomeByPoints(transition.State, reason));
+    public static Transition ByPoints(Transition transition, string ending, string reason) =>
+        Ended(transition, OutcomeByPoints(transition.State, ending, reason));
 
     /// <summary>Whether the seat still takes its turns: it has pieces left, and has not retired.</summary>
     public static bool IsPlaying(GameState state, SeatId seat) =>
@@ -101,7 +105,7 @@ internal static class GameEnd
 
     private static int Side(GameState state, int team, SeatId seat) => state.Teams.TeamOf(seat) == team ? 1 : -1;
 
-    private static GameOutcome OutcomeByPoints(GameState state, string reason)
+    private static GameOutcome OutcomeByPoints(GameState state, string ending, string reason)
     {
         ImmutableList<(int Team, int Points)> totals =
         [
@@ -111,7 +115,7 @@ internal static class GameEnd
         ];
         int best = totals.Max(total => total.Points);
         ImmutableList<int> leaders = [.. totals.Where(total => total.Points == best).Select(total => total.Team)];
-        return new GameOutcome(leaders.Count == 1 ? TeamOf(state, leaders[0]) : [], reason);
+        return new GameOutcome(leaders.Count == 1 ? TeamOf(state, leaders[0]) : [], ending, reason);
     }
 
     private static ImmutableList<SeatId> TeamOf(GameState state, int team) =>

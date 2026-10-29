@@ -33,9 +33,9 @@ public sealed class SageMatchTest
         );
         GameState ended = end switch
         {
-            "won" => final with { Outcome = new GameOutcome([Black, Green], "over") },
-            "lost" => final with { Outcome = new GameOutcome([Yellow], "over") },
-            "drawn" => final with { Outcome = new GameOutcome([], "over") },
+            "won" => final with { Outcome = new GameOutcome([Black, Green], "over", "over") },
+            "lost" => final with { Outcome = new GameOutcome([Yellow], "over", "over") },
+            "drawn" => final with { Outcome = new GameOutcome([], "over", "over") },
             _ => final,
         };
 

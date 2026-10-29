@@ -27,7 +27,7 @@ public sealed class TableTest : IDisposable
         this._page.Server.View = FakeGameServer.SeatZeroToMove with
         {
             DecidingSeat = null,
-            Outcome = new OutcomeDto([0], "only one team has pieces left"),
+            Outcome = new OutcomeDto([0], "one-team-left", "only one team has pieces left"),
             Seats = FakeGameServer.SeatZeroToMove.Seats.SetItem(
                 1,
                 FakeGameServer.SeatZeroToMove.Seats[1] with { Bot = "Claude", BotId = "claude", IsPaidBot = true }
@@ -681,7 +681,7 @@ public sealed class TableTest : IDisposable
         page.Server.View = FakeGameServer.SeatZeroToMove with
         {
             DecidingSeat = null,
-            Outcome = new OutcomeDto([.. winners], "over"),
+            Outcome = new OutcomeDto([.. winners], "over", "over"),
             Log = [new EventDto(50, EventDto.Ended, 0, "Over.", null, null)],
         };
 
@@ -706,7 +706,7 @@ public sealed class TableTest : IDisposable
         this._page.Server.View = FakeGameServer.SeatZeroToMove with
         {
             DecidingSeat = null,
-            Outcome = new OutcomeDto([.. winners], "points decide"),
+            Outcome = new OutcomeDto([.. winners], "agreement", "points decide"),
         };
         Seating seating = seat < 0
             ? Seating.Watching(FakeGameServer.GameId)
@@ -931,7 +931,7 @@ public sealed class TableTest : IDisposable
         FakeGameServer.SeatZeroToMove with
         {
             DecidingSeat = null,
-            Outcome = new OutcomeDto([1], "Yellow won: only one team has pieces left."),
+            Outcome = new OutcomeDto([1], "one-team-left", "Yellow won: only one team has pieces left."),
         };
 
     private static AngleSharp.Dom.IElement Cell(IRenderedComponent<Table> table, int id) =>
@@ -971,7 +971,7 @@ public sealed class TableTest : IDisposable
         this._page.Server.View = FakeGameServer.SeatZeroToMove with
         {
             DecidingSeat = null,
-            Outcome = new OutcomeDto([1], "Yellow won: only one team has pieces left."),
+            Outcome = new OutcomeDto([1], "one-team-left", "Yellow won: only one team has pieces left."),
         };
         IRenderedComponent<Table> table = this.Render(SeatZero);
 
@@ -1017,7 +1017,7 @@ public sealed class TableTest : IDisposable
         this._page.Server.View = FakeGameServer.SeatZeroToMove with
         {
             DecidingSeat = null,
-            Outcome = new OutcomeDto([1], "Yellow won: only one team has pieces left."),
+            Outcome = new OutcomeDto([1], "one-team-left", "Yellow won: only one team has pieces left."),
         };
 
         // Act

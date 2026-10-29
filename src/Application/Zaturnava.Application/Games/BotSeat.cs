@@ -13,5 +13,7 @@ public sealed record BotSeat(string BotId) : SeatController
 
     public override string Detail => this.BotId;
 
+    public override string Player => this.BotId;
+
     public override IDeciding DeciderFrom([Required] IBotLocating bots) => bots.Find(this.BotId);
 }

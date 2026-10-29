@@ -500,7 +500,7 @@ public sealed class Chaturaji2027RulesTest
         Transition transition = this._rules.Apply(state, new MoveAction(Black, Grid.CellAt(0, 0), Grid.CellAt(0, 5)));
 
         // Assert
-        GameOutcome won = new([Black, Green], "only one team has pieces left");
+        GameOutcome won = new([Black, Green], "one-team-left", "only one team has pieces left");
         Assert.Equal((null, won), (transition.State.DecidingSeat, transition.State.Outcome));
         Assert.Equal(new GameEnded(won), transition.Events[^1]);
         Assert.Empty(this._rules.LegalActions(transition.State));
@@ -2435,7 +2435,7 @@ public sealed class Chaturaji2027RulesTest
         Transition transition = this._rules.Apply(state, new EscapeAction(Black, new PieceId(3), BlackThrone));
 
         // Assert
-        GameOutcome won = new([Black, Green], "only one team has pieces left");
+        GameOutcome won = new([Black, Green], "one-team-left", "only one team has pieces left");
         Assert.Equal((null, won), (transition.State.DecidingSeat, transition.State.Outcome));
     }
 
@@ -2635,7 +2635,7 @@ public sealed class Chaturaji2027RulesTest
         Transition twice = this._rules.Apply(once, new AnswerEndAction(Green, true));
 
         // Assert
-        GameOutcome won = new([Black, Green], "every player agreed to end it, so points decide");
+        GameOutcome won = new([Black, Green], "agreement", "every player agreed to end it, so points decide");
         Assert.Equal((Green, null), (once.DecidingSeat, once.Outcome));
         Assert.Equal(
             (null, null, won),
@@ -2695,7 +2695,7 @@ public sealed class Chaturaji2027RulesTest
         Transition transition = this._rules.Apply(state, new ProposeEndAction(Black, Resigns: true));
 
         // Assert
-        GameOutcome outcome = new([Black, Green], "a whole team gave up their turns, so points decide");
+        GameOutcome outcome = new([Black, Green], "team-gave-up", "a whole team gave up their turns, so points decide");
         Assert.Equal(
             (outcome, null, null),
             (transition.State.Outcome, transition.State.Proposal, transition.State.DecidingSeat)
@@ -2930,7 +2930,7 @@ public sealed class Chaturaji2027RulesTest
         GameState playing = this.Regency(hasBlackRaja: true, Grid.CellAt(6, 2));
         (GameState state, SeatId seat) = situation switch
         {
-            "game over" => (playing with { Outcome = new GameOutcome([], "over") }, Black),
+            "game over" => (playing with { Outcome = new GameOutcome([], "over", "over") }, Black),
             "proposal waiting" => (playing with { Proposal = new EndProposal(Yellow, false, Black, null) }, Black),
             "dice awaited" => (playing with { AwaitedDice = new DiceRequest(2, 6) }, Black),
             "rolling off" => (this._rules.CreateInitialState() with { AwaitedDice = null }, Black),
@@ -2975,7 +2975,7 @@ public sealed class Chaturaji2027RulesTest
         {
             "playing" => gaveUp with { Resigned = [] },
             "proposal waiting" => gaveUp with { Proposal = new EndProposal(Black, true, Black, null) },
-            _ => gaveUp with { Outcome = new GameOutcome([], "over") },
+            _ => gaveUp with { Outcome = new GameOutcome([], "over", "over") },
         };
 
         // Act
@@ -3127,7 +3127,7 @@ public sealed class Chaturaji2027RulesTest
         GameState playing = this.Ransoms();
         (GameState state, SeatId voter, SeatId absent) = why switch
         {
-            "game over" => (playing with { Outcome = new GameOutcome([], "over") }, Yellow, Black),
+            "game over" => (playing with { Outcome = new GameOutcome([], "over", "over") }, Yellow, Black),
             "oneself" => (playing, Black, Black),
             "voter has no pieces" => (playing, Red, Black),
             "voter gave up" => (playing with { Resigned = [Yellow] }, Yellow, Black),
@@ -3215,7 +3215,7 @@ public sealed class Chaturaji2027RulesTest
         // Arrange
         GameState state = why switch
         {
-            "game over" => this.Later() with { DecidingSeat = null, Outcome = new GameOutcome([], "over") },
+            "game over" => this.Later() with { DecidingSeat = null, Outcome = new GameOutcome([], "over", "over") },
             "dice awaited" => this.Later() with { AwaitedDice = new DiceRequest(2, 6) },
             "timed" => this.Ransoms() with { IsRansomWindow = true },
             _ => this.Later(),

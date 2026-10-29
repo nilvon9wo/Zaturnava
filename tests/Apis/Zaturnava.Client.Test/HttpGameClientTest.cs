@@ -6,6 +6,12 @@ namespace Net.NowhereAtAll.Zaturnava.Client.Test;
 
 public sealed class HttpGameClientTest
 {
+    private const string HistoryJson =
+        """
+        {"format":1,"gameId":"g","rulesetId":"chaturaji-2027","seats":[],"actions":[],
+         "outcome":{"winners":[0,2],"ending":"agreement","reason":"every player agreed to end it"}}
+        """;
+
     private const string ViewJson =
         """
         {"id":"g","rulesetId":"chaturaji-2027","rulesetName":"Chaturaji 2027","version":1,"turnNumber":1,
@@ -83,6 +89,35 @@ public sealed class HttpGameClientTest
             ("GET", "/api/games/g", "Chaturaji 2027", null),
             (server.Method, server.Path, view.RulesetName, server.Authorization)
         );
+    }
+
+    [Fact]
+    public async Task History_WhenGivenAGame_GetsItsHistory()
+    {
+        // Arrange
+        StubServer server = new(HttpStatusCode.OK, HistoryJson);
+
+        // Act
+        GameHistoryDto history = await Client(server).History("g", this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            ("GET", "/api/games/g/history", "agreement"),
+            (server.Method, server.Path, history.Outcome?.Ending)
+        );
+    }
+
+    [Fact]
+    public async Task Histories_WhenAsked_GetsEveryFinishedGamesHistory()
+    {
+        // Arrange
+        StubServer server = new(HttpStatusCode.OK, $"[{HistoryJson}]");
+
+        // Act
+        ImmutableList<GameHistoryDto> histories = await Client(server).Histories(this._cancellation);
+
+        // Assert
+        Assert.Equal(("GET", "/api/history", "g"), (server.Method, server.Path, histories.Single().GameId));
     }
 
     [Fact]

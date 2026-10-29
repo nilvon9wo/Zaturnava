@@ -63,7 +63,8 @@ dotnet run --project Zaturnava.Server --no-build -- --Storage:Provider=Sqlite \
     "--ConnectionStrings:Games=Data Source=games.db"
 ```
 
-Bots against bots, without a server:
+Bots against bots, without a server, each game written as one line of JSON in the same shape the server
+gives a game's history in (`GET api/games/{id}/history`):
 
 ```shell
 dotnet run --project Zaturnava.BotRunner -- --games 10 --max-steps 200 --out games.jsonl

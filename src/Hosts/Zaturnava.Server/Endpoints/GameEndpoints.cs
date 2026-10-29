@@ -22,6 +22,8 @@ internal static class GameEndpoints
         _ = routes.MapGet(GameRoutes.Games, List);
         _ = routes.MapPost(GameRoutes.Games, Create);
         _ = routes.MapGet(GameRoute, Get);
+        _ = routes.MapGet(GameRoute + "/history", History);
+        _ = routes.MapGet(GameRoutes.Histories, Histories);
         _ = routes.MapPost(GameRoute + "/seats/{seat:int}", Claim);
         _ = routes.MapPost(GameRoute + "/actions", Submit);
         _ = routes.MapPost(GameRoute + "/advance", Advance);
@@ -55,6 +57,30 @@ internal static class GameEndpoints
     {
         GameSnapshot snapshot = await games.Get(new GameId(gameId), cancellationToken);
         return GameViews.ViewOf(snapshot, games.Bots);
+    }
+
+    private static async Task<GameHistoryDto> History(
+        string gameId,
+        GameService games,
+        CancellationToken cancellationToken
+    )
+    {
+        GameSnapshot snapshot = await games.Get(new GameId(gameId), cancellationToken);
+        return GameViews.HistoryOf(GameHistory.Of(snapshot));
+    }
+
+    private static async Task<ImmutableList<GameHistoryDto>> Histories(
+        GameService games,
+        CancellationToken cancellationToken
+    )
+    {
+        ImmutableList<GameSnapshot> snapshots = await games.Snapshots(cancellationToken);
+        return
+        [
+            .. snapshots
+                .Where(snapshot => snapshot.State.Outcome is not null)
+                .Select(snapshot => GameViews.HistoryOf(GameHistory.Of(snapshot))),
+        ];
     }
 
     private static async Task<GameViewDto> Advance(

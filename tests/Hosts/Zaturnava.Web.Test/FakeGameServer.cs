@@ -108,6 +108,12 @@ internal sealed class FakeGameServer : IGameServing
     public Task<GameViewDto> Get([Required] string gameId, CancellationToken cancellationToken) =>
         this.Answer("get " + gameId, this.View);
 
+    public Task<GameHistoryDto> History([Required] string gameId, CancellationToken cancellationToken) =>
+        throw new NotSupportedException("The page asks for no history.");
+
+    public Task<ImmutableList<GameHistoryDto>> Histories(CancellationToken cancellationToken) =>
+        throw new NotSupportedException("The page asks for no histories.");
+
     public Task<GameViewDto> Advance([Required] string gameId, int version, CancellationToken cancellationToken) =>
         this.Answer($"advance {gameId} {version.ToString(CultureInfo.InvariantCulture)}", this.View);
 

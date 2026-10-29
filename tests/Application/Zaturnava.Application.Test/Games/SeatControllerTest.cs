@@ -34,6 +34,26 @@ public sealed class SeatControllerTest
         Assert.Equal((controller, kind, detail), (restored, restored.Kind, restored.Detail));
     }
 
+    [Theory]
+    [MemberData(nameof(Players), DisableDiscoveryEnumeration = true)]
+    public void Player_WhenRead_SaysWhoPlaysTheSeat(SeatController controller, string expected)
+    {
+        // Arrange - nothing beyond the arguments
+
+        // Act
+        string player = controller.Player;
+
+        // Assert
+        Assert.Equal(expected, player);
+    }
+
+    public static TheoryData<SeatController, string> Players => new()
+    {
+        { new OpenSeat(), "open" },
+        { new HumanSeat("HASH"), "person" },
+        { new BotSeat("first"), "first" },
+    };
+
     [Fact]
     public void From_WhenTheKindIsUnknown_ThrowsArgumentException()
     {

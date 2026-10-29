@@ -29,7 +29,7 @@ public sealed class WireFormatTest
             [new ActionDto("pass", ImmutableSortedDictionary.CreateRange([KeyValuePair.Create("actor", "1")]))],
             [new DieDto(5, "Pawn or Raja"), new DieDto(3, "Elephant")],
             [new EventDto(7, EventDto.Escaped, 0, "Black's Pawn escaped, to a2.", null, 8, 0)],
-            new OutcomeDto([0, 2], "Black and Green won: only one team has pieces left."),
+            new OutcomeDto([0, 2], "one-team-left", "Black and Green won: only one team has pieces left."),
             true,
             new OfferDto(0, 1, [new PrisonerDto(9, "pawn", "Pawn", 1)], []),
             12.5,
@@ -75,6 +75,26 @@ public sealed class WireFormatTest
 
         // Assert
         Assert.Contains("\"decidingSeat\":null", json, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void GameHistory_WhenSentAsJson_ArrivesUnchanged()
+    {
+        // Arrange
+        GameHistoryDto history = new(
+            1,
+            "g",
+            "chaturaji-2027",
+            [new HistorySeatDto(0, "Black", 0, "sage", 12), new HistorySeatDto(1, "Yellow", 1, "person", 4)],
+            [new ActionDto("pass", ImmutableSortedDictionary.CreateRange([KeyValuePair.Create("actor", "1")]))],
+            new HistoryOutcomeDto([0, 2], "agreement", "every player agreed to end it, so points decide")
+        );
+
+        // Act
+        GameHistoryDto? arrived = RoundTrip(history);
+
+        // Assert
+        Assert.Equivalent(history, arrived, strict: true);
     }
 
     [Fact]

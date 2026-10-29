@@ -204,7 +204,7 @@ client, MCP, presentation), `Hosts` (server, page, hosting adapters) and `Persis
 | Presentation | Client-side board logic: frame, clickable actions, selection | Contracts |
 | Web | Blazor WebAssembly client | Client, Contracts, Presentation |
 | Mcp | MCP server (stdio) letting an AI play through any server | Client, Contracts |
-| BotRunner | Command-line self-play: bots against bots, games as JSON lines | Application, Bots, Engine, Games.Chaturaji2027 |
+| BotRunner | Command-line self-play: bots against bots, each game's history as a JSON line | Application, Bots, Engine, Games.Chaturaji2027 |
 | Server | ASP.NET Core host; the composition root | Application, Bots, Contracts, Engine, Hosting, Hosting.Itch, Persistence.*, Topology.SquareGrid, Games.Chaturaji2027 |
 
 **Vendors stay in their adapters.** A third-party service — a page host, a
@@ -242,6 +242,8 @@ base address (`GameRoutes`):
 | Games | `GET api/games` | `GameSummaryDto[]` |
 | Create a game | `POST api/games` with `CreateGameRequest` (a ruleset, and per seat a bot id or null for a person) | 201, `GameCreatedDto` |
 | A game | `GET api/games/{id}` | `GameViewDto`: cells (with names and thrones), pieces, seats (with scores, bot names and prisoners), the dice and what each allows, the latest events, whose decision and for which seat, the legal actions (labelled where the kind alone cannot say), how the game ended, whether the deciding seat may offer a ransom, the offer waiting on its answer, the time left on a timed decision, and the cell of a Pawn whose promotion is due |
+| A game's history | `GET api/games/{id}/history` | `GameHistoryDto`: each seat (its name, team, who played it and its score), every action in order, the dice among them, and how it ended (the winners, the kind of ending as the ruleset's code, and why), or null while it goes on: the shape the BotRunner writes self-play games in |
+| Every finished game's history | `GET api/history` | `GameHistoryDto[]` |
 | Let a bot or a timer decide | `POST api/games/{id}/advance` with `AdvanceRequest` (the version the caller saw) | `GameViewDto` after one bot decision, or the timer's decision once a timed one has run out of time; unchanged if the version is stale or neither is due |
 | Claim an open seat | `POST api/games/{id}/seats/{seat}` | `SeatClaimedDto` with the seat's token |
 | Act | `POST api/games/{id}/actions` with `ActionDto`, `Authorization: Bearer {token}` | `GameViewDto` after the action and any bot replies |
@@ -294,7 +296,7 @@ base address (`GameRoutes`):
   cell layouts it is sent, so a different topology needs no client change.
   `wwwroot/appsettings.json` names the server (`Server:Url`).
 - **MCP** — a stdio MCP server whose tools (`catalog`, `list_games`,
-  `create_game`, `claim_seat`, `get_game`, `submit_action`, `advance_game`) call a game server
+  `create_game`, `claim_seat`, `get_game`, `game_history`, `submit_action`, `advance_game`) call a game server
   through `IGameServing`; an AI plays exactly as a person would, by claiming a
   seat and acting with its token.
 - **BotRunner** — runs bots against bots in-process, for testing rulesets and
