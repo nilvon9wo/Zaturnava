@@ -6,7 +6,7 @@ namespace Net.NowhereAtAll.Zaturnava.Engine.Test.Actions;
 public sealed class IllegalActionExceptionTest
 {
     [Fact]
-    public void Message_WhenCreated_NamesTheAction()
+    public void Message_WhenCreated_NamesTheKindOfAction()
     {
         // Arrange
         PassAction pass = new(new SeatId(2));
@@ -15,6 +15,6 @@ public sealed class IllegalActionExceptionTest
         IllegalActionException exception = new(pass);
 
         // Assert
-        Assert.Equal("PassAction { Actor = SeatId { Value = 2 } } is not legal now.", exception.Message);
+        Assert.Equal("That pass is not allowed now.", exception.Message);
     }
 }

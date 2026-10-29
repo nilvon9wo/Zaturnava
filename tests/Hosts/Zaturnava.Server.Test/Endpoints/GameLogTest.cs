@@ -316,7 +316,7 @@ public sealed class GameLogTest
                 "captured 0: Black took their Horse (no points).",
                 "ransom 0: Black's turn is over, but they may still offer prisoners back.",
                 "ransom 0: Black offered Yellow a prisoner back, as a gift.",
-                "ransom 1: Yellow declined Black's offer.",
+                "declined 1: Yellow declined Black's offer.",
                 "ransom 0: Black offered Yellow 2 prisoners back, for a prisoner in return.",
                 "ransom 1: Yellow accepted Black's offer.",
                 "bonus 1: Yellow scored for accepting: a point for each prisoner going home (+3).",

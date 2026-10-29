@@ -151,7 +151,7 @@ file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bo
             ),
             RansomDeclined declined => this.Add(
                 number,
-                EventDto.Ransom,
+                EventDto.Declined,
                 declined.Offer.To,
                 $"{this.Name(declined.Offer.To)} declined {this.Name(declined.Offer.From)}'s offer."
             ),

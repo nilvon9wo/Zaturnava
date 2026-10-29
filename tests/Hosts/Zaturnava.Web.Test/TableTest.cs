@@ -1201,6 +1201,86 @@ public sealed class TableTest : IDisposable
         Assert.True(table.Find("button.offer").HasAttribute("disabled"));
     }
 
+    [Fact]
+    public void Offer_WhenTheSameOfferIsMadeAgainThisTurn_SaysItWasDeclinedWithoutSendingIt()
+    {
+        // Arrange - the server would refuse anything more it is sent
+        this._page.Server.View = Ransoms();
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        table.FindAll(".ransom-to")[0].QuerySelector("button.prisoner")!.Click();
+        table.Find("button.offer").Click();
+        this._page.Server.Failure = new GameRequestRefusedException(Refusal.Illegal, "Sent again.");
+
+        // Act
+        table.Find("button.offer").Click();
+
+        // Assert
+        Assert.Equal("Yellow declined that offer already!", table.Find("p.problem").TextContent);
+    }
+
+    [Fact]
+    public void Offer_WhenTheServerCannotBeReached_MayBeMadeAgain()
+    {
+        // Arrange
+        this._page.Server.View = Ransoms();
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        table.FindAll(".ransom-to")[0].QuerySelector("button.prisoner")!.Click();
+        this._page.Server.Failure = new HttpRequestException("unreachable");
+        table.Find("button.offer").Click();
+
+        // Act
+        table.Find("button.offer").Click();
+
+        // Assert
+        Assert.Equal(
+            (0, ("offer", "1", "9", string.Empty)),
+            (table.FindAll("p.problem").Count, Offered(this._page.Server))
+        );
+    }
+
+    [Fact]
+    public void Poll_WhenTheOfferIsDeclined_SaysSoAsTheDecisionComesBack()
+    {
+        // Arrange - Black offered; Yellow answers
+        using PageContext page = new(TimeSpan.FromMilliseconds(200));
+        page.Server.View = Ransoms() with { Version = 2, DecidingSeat = 1, MayOffer = false };
+        IRenderedComponent<Table> table = page.Render<Table>(parameters => parameters.Add(x => x.Seating, SeatZero));
+
+        // Act
+        page.Server.View = Ransoms() with
+        {
+            Version = 3,
+            Log = [new EventDto(4, EventDto.Declined, 1, "Yellow declined Black's offer.", null, null)],
+        };
+
+        // Assert
+        table.WaitForAssertion(() =>
+            Assert.Contains("declined", table.Find("p.notice").TextContent, StringComparison.Ordinal)
+        );
+    }
+
+    [Fact]
+    public void Offer_WhenANewTurnHasBegun_MayBeMadeAgain()
+    {
+        // Arrange - an offer made, then a turn passes
+        this._page.Server.View = Ransoms();
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        table.FindAll(".ransom-to")[0].QuerySelector("button.prisoner")!.Click();
+        table.Find("button.offer").Click();
+        this._page.Server.View = Ransoms() with { Version = 9, TurnNumber = Ransoms().TurnNumber + 4 };
+        table.FindAll("button.action").First(button => !button.ClassList.Contains("offer")).Click();
+        table.FindAll(".ransom-to")[0].QuerySelector("button.prisoner")!.Click();
+
+        // Act
+        table.Find("button.offer").Click();
+
+        // Assert
+        Assert.Equal(
+            (0, ("offer", "1", "9", string.Empty)),
+            (table.FindAll("p.problem").Count, Offered(this._page.Server))
+        );
+    }
+
     [Theory]
     [InlineData(false, "Black offers Yellow Yellow's Pawn back, as a gift.")]
     [InlineData(true, "Black offers Yellow Yellow's Pawn back, for Black's Boat.")]

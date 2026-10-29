@@ -408,6 +408,8 @@
     private int? _receiver;
     private ImmutableHashSet<int> _given = [];
     private ImmutableHashSet<int> _asked = [];
+    private ImmutableHashSet<string> _offersMade = [];
+    private int _offersTurn;
     private int _heard = -1;
     private string? _problem;
     private string? _notice;
@@ -660,8 +662,9 @@
     private void Dismiss() => this._notice = null;
 
     /// <summary>
-    /// What to tell the player: that they have just lost dice they could not use; nothing on first sight
-    /// of the game, or once their turn comes round again; else what they were told already.
+    /// What to tell the player: that they have just lost dice they could not use, or, as the decision comes
+    /// back to them, that their offer was declined; nothing on first sight of the game, or once their turn
+    /// comes round again; else what they were told already.
     /// </summary>
     private string? NoticeOf(GameViewDto view, bool isFirst, bool wasTheirTurn)
     {
@@ -670,11 +673,16 @@
             && happened.Kind == EventDto.Forfeited
             && happened.Seat == this.Seating.Claim?.Seat
         );
-        return (isFirst, lost, this._turn is not null && !wasTheirTurn) switch
+        EventDto? declined = view.Log.LastOrDefault(happened =>
+            happened.Number > this._heard && happened.Kind == EventDto.Declined
+        );
+        bool isBack = this._turn is not null && !wasTheirTurn;
+        return (isFirst, lost, declined, isBack) switch
         {
-            (true, _, _) => null,
-            (_, { } forfeited, _) => forfeited.Text,
-            (_, _, true) => null,
+            (true, _, _, _) => null,
+            (_, { } forfeited, _, _) => forfeited.Text,
+            (_, _, { } refusal, true) => refusal.Text,
+            (_, _, _, true) => null,
             _ => this._notice,
         };
     }
@@ -730,8 +738,31 @@
             this.TeamsOf(view).Select(team => $"{string.Join(" & ", team.Select(seat => seat.Name))} {team.Sum(seat => seat.Score)}")
         );
 
-    private Task Offer(SeatClaim claim) =>
-        this.Submit(claim, OfferDto.ActionOf(claim.Seat, this._receiver!.Value, this._given.Order(), this._asked.Order()));
+    /// <summary>
+    /// Makes the offer chosen, unless it was made already this turn: the rules allow an offer only once a turn,
+    /// so the player is told instead.
+    /// </summary>
+    private Task Offer(SeatClaim claim)
+    {
+        int receiver = this._receiver!.Value;
+        ActionDto offer = OfferDto.ActionOf(claim.Seat, receiver, this._given.Order(), this._asked.Order());
+        string made = string.Join('|', offer.Arguments.Values);
+        return this._offersMade.Contains(made)
+            ? this.Refused($"{this._view!.Seats[receiver].Name} declined that offer already!")
+            : this.Made(claim, offer, made);
+    }
+
+    private Task Refused(string problem)
+    {
+        this._problem = problem;
+        return Task.CompletedTask;
+    }
+
+    private async Task Made(SeatClaim claim, ActionDto offer, string made)
+    {
+        await this.Submit(claim, offer);
+        this._offersMade = this._problem is null ? this._offersMade.Add(made) : this._offersMade;
+    }
 
     /// <summary>"12 s left", while the deciding seat's decision is timed.</summary>
     private string? Countdown() =>
@@ -827,6 +858,8 @@
         this._receiver = isNew ? null : this._receiver;
         this._given = isNew ? [] : this._given;
         this._asked = isNew ? [] : this._asked;
+        this._offersMade = view.TurnNumber == this._offersTurn ? this._offersMade : [];
+        this._offersTurn = view.TurnNumber;
         this._turn = view.DecidingSeat is { } deciding && this.Seating.Claim is { } claim && claim.Seat == deciding
             ? new Turn(claim, new BoardActions(view.LegalActions))
             : null;

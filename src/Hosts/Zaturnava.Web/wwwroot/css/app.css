@@ -526,7 +526,7 @@ html { scrollbar-gutter: stable; }
 .log .event.captured, .log .event.bonus { font-weight: 700; color: var(--accent); }
 .log .event.rolled-off, .log .event.shared { font-style: italic; }
 .log .event.ended { font-weight: 700; }
-.log .event.promoted, .log .event.ransom, .log .event.escaped { font-style: italic; }
+.log .event.promoted, .log .event.ransom, .log .event.declined, .log .event.escaped { font-style: italic; }
 .log .event.ending, .log .event.command, .log .event.empire { font-weight: 700; }
 
 /* On a wider screen, the table fills the window under the teams: the board as large as fits, the turn
