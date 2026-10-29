@@ -100,6 +100,10 @@
                         }
                     </div>
                 }
+                @if (!this.IsSafetyOn && this.Seating.Claim is not null)
+                {
+                    <p class="safety-off" role="alert">Safety OFF: you may take your own team's pieces.</p>
+                }
                 <p class="status">@this.Status(view)</p>
                 @if (view.Away is { } away && this.Seating.Claim is { } voter && away.Voters.Contains(voter.Seat)
                      && (away.IsOpen || away.Stopping.Contains(voter.Seat)))
@@ -383,6 +387,7 @@
 @code {
     private const string BotController = "bot";
     private const string RollKind = "roll";
+    private const string MoveKind = "move";
     private const string Alarm = "alarm";
     private const string Rescued = "rescued";
     private const string Triumph = "triumph";
@@ -452,6 +457,10 @@
     [Parameter]
     public bool IsSoundOn { get; set; } = true;
 
+    /// <summary>Whether the player is kept from taking their own team's pieces, as an enemy army they command may.</summary>
+    [Parameter]
+    public bool IsSafetyOn { get; set; } = true;
+
     /// <summary>How the pieces are drawn and named, the server's names being the chaturaji ones.</summary>
     [Parameter]
     public PieceSet Pieces { get; set; }
@@ -472,6 +481,30 @@
     public EventCallback<Seating> OnSeated { get; set; }
 
     private BoardActions Actions => this._turn?.Actions ?? NoActions;
+
+    /// <summary>The safety switched while the player decides changes what they may do at once.</summary>
+    protected override void OnParametersSet() =>
+        this._turn = this._turn is { } turn ? this.TurnOf(turn.Claim, this._view!) : null; // a turn is had in a view
+
+    /// <summary>
+    /// The player's turn: what they may do, but, while the safety is on, take a piece of their own team.
+    /// </summary>
+    private Turn TurnOf(SeatClaim claim, GameViewDto view) =>
+        new(
+            claim,
+            new BoardActions(
+                this.IsSafetyOn
+                    ? [.. view.LegalActions.Where(action => !TakesOwnTeam(view, claim.Seat, action))]
+                    : view.LegalActions
+            )
+        );
+
+    private static bool TakesOwnTeam(GameViewDto view, int seat, ActionDto action) =>
+        action.Kind == MoveKind
+        && view.Pieces.FirstOrDefault(piece =>
+            piece.Cell == int.Parse(action.Arguments[ActionArguments.To], CultureInfo.InvariantCulture)
+        ) is { } taken
+        && view.Seats[taken.Owner].Team == view.Seats[seat].Team;
 
     protected override async Task OnInitializedAsync()
     {
@@ -874,7 +907,7 @@
         this._offersMade = view.TurnNumber == this._offersTurn ? this._offersMade : [];
         this._offersTurn = view.TurnNumber;
         this._turn = view.DecidingSeat is { } deciding && this.Seating.Claim is { } claim && claim.Seat == deciding
-            ? new Turn(claim, new BoardActions(view.LegalActions))
+            ? this.TurnOf(claim, view)
             : null;
         this._isBotDeciding = view.DecidingSeat is { } seat && view.Seats[seat].Controller == BotController;
         this._selection = (isNew, this._turn, view.PromotionDue) switch

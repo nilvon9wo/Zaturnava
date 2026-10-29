@@ -33,7 +33,7 @@ Everything else here is specified but not yet played by the engine.
 | §8 Promotion & ransom | Implemented, as clarified below: promotion into any captured piece (`promotion.pawns` a constructor argument; `promotion.pool` fixed at `unrestricted`), and ransom with its timed protocol, including the receiving player's choice among equidistant squares. |
 | §10 Game end | Implemented: elimination (a seat with no pieces is skipped), Raja retirement, honourable peace, team elimination, ending by agreement (as stated and proposed below), a team that has all given up its turns, and a safety net (below). |
 | §11 Setup roll-off | Implemented. |
-| §12 Toggles | None per game yet: `control.enemyArmyCaptures` is a constructor argument; the other defaults are fixed. |
+| §12 Toggles | None per game yet: the defaults are fixed. |
 
 ## 1. Overview
 
@@ -379,11 +379,15 @@ about the occupied player's army for that turn.
 own army, or a Raja-less ally's) takes only that player's enemies. A piece
 of an **enemy** army the player commands — through a throne their Raja holds
 (§6.1a), or moving for a seat whose throne their Raja holds (§6.3) — may take
-any piece but the commanding player's own team's: its own army's, or its
-ally's. **[toggle: `control.enemyArmyCaptures`]** — Default: `notOwnTeam`;
-`anything` lets it take the commanding player's own team's pieces too.
-*(Changed 2026-10-25: the default was `anything`, until a player took their
-own Pawn so, and could never ransom it back from themselves.)*
+any piece: its own army's, its ally's, or the commanding player's own team's.
+
+*(Stated 2026-10-29)* Keeping a player from taking their own team's pieces so
+is not a rule of the game but a setting of each player's own page, like its
+theme or sound: the **safety**, on by default, and shown in red, at the table
+too, while it is off. *(Proposed)* The bots never take their own team's
+pieces. *(History: from 2026-10-25 this was a game toggle,
+`control.enemyArmyCaptures`, defaulting to `notOwnTeam` after a player took
+their own Pawn so, and could never ransom it back from themselves.)*
 
 Taking a piece of one's own team (with `anything`) scores no one: no points
 for the piece, and no on-throne bonus. The piece is still taken prisoner, by
@@ -751,7 +755,6 @@ configuration this document describes.
 | `dice.profile` | `2d6-weighted` | Dice count/sides and value→piece-category mapping. Alternative: `2d4-uniform`. |
 | `promotion.pool` | `unrestricted` | Whether a promoting Pawn may become any captured piece, or only one that started on the same file/column. |
 | `promotion.pawns` | `otherArmies` | Whether a promoting Pawn may become another army's captured Pawn, or never a Pawn (§8). |
-| `control.enemyArmyCaptures` | `notOwnTeam` | What a piece of an enemy army a player commands may take: `anything`, or `notOwnTeam` (§6.4). |
 | `gameEnd.safetyNet.*` | off | Optional auto-end conditions (move cap, universal-pass, etc.) layered on top of end-by-agreement, mainly for unattended/bot games. |
 | `scoring.points.pawn` | `1` | Points awarded for capturing a Pawn. |
 | `scoring.points.boat` | `2` | Points awarded for capturing a Boat. |

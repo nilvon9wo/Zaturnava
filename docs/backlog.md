@@ -21,7 +21,6 @@ did them.
 - **21, 22, 26** (rest) The idle-rounds safety net as a per-game setting.
 - Boat triumph (§9): a nice-to-have; the condition is so unlikely that no one may miss it.
 - Ransom (§8): bots that offer during their turn (they offer as they pass, or once it is over).
-- The commanded-captures toggle (`control.enemyArmyCaptures`) as a per-game setting.
 
 ## Players and identity
 

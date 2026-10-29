@@ -1,6 +1,6 @@
 @* The whole page: the lobby until the player sits at (or watches) a table, over a quiet bar of the
-   page's name, buttons opening the guide to the game and the guide to the bots, and the page's own settings (how it looks: theme
-   and pieces; then sound); at a table, the table shows the guide's button and the settings in its own
+   page's name, buttons opening the guide to the game and the guide to the bots, and the page's own settings (the safety, beside
+   the table's view buttons; how it looks: theme and pieces; then sound); at a table, the table shows the guide's button and the settings in its own
    bar. No URL routing, so the page works from any address it is served at. A seat the player takes is
    remembered in the browser, so that they can come back to it. *@
 @inject Browser Browser
@@ -10,6 +10,7 @@
     <Table @key="seating.GameId"
            Seating="seating"
            IsSoundOn="this._isSoundOn"
+           IsSafetyOn="this._isSafetyOn"
            Pieces="this._pieces"
            PageSettings="this.Settings"
            HowToPlay="this.HowToPlay"
@@ -42,6 +43,7 @@ else
     private Seating? _seating;
     private string _theme = Browser.Dark;
     private bool _isSoundOn = true;
+    private bool _isSafetyOn = true;
     private bool _isGuideOpen;
     private bool _isBotGuideOpen;
     private PieceSet _pieces;
@@ -61,6 +63,11 @@ else
 
     private RenderFragment Settings =>
         @<span class="settings">
+            <button class="@(this._isSafetyOn ? "safety" : "safety off")"
+                    title="While on, you cannot take your own team's pieces, as an enemy army you command could"
+                    @onclick="this.SwitchSafety">
+                @(this._isSafetyOn ? "Safety: on" : "Safety: OFF")
+            </button>
             <button class="theme" @onclick="this.SwitchTheme">@(this._theme == Browser.Dark ? "Light theme" : "Dark theme")</button>
             <button class="pieces" @onclick="this.SwitchPieces">
                 @(this._pieces == PieceSet.Chess ? "Pieces: chess" : "Pieces: chaturaji")
@@ -72,6 +79,7 @@ else
     {
         this._theme = await this.Browser.Theme();
         this._isSoundOn = await this.Browser.IsSoundOn();
+        this._isSafetyOn = await this.Browser.IsSafetyOn();
         this._pieces = await this.Browser.Pieces();
         await this.Browser.ShowTheme(this._theme);
     }
@@ -102,6 +110,12 @@ else
     {
         this._pieces = this._pieces == PieceSet.Chess ? PieceSet.Chaturaji : PieceSet.Chess;
         await this.Browser.SetPieces(this._pieces);
+    }
+
+    private async Task SwitchSafety()
+    {
+        this._isSafetyOn = !this._isSafetyOn;
+        await this.Browser.SetSafety(this._isSafetyOn);
     }
 
     private async Task SwitchSound()

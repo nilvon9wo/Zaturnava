@@ -1,6 +1,10 @@
 using System.Collections.Immutable;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
+using Net.NowhereAtAll.Zaturnava.Engine.Boards;
 using Net.NowhereAtAll.Zaturnava.Engine.Decisions;
+using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
+using Net.NowhereAtAll.Zaturnava.Engine.Positions;
+using Net.NowhereAtAll.Zaturnava.Engine.Rules;
 using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 
 namespace Net.NowhereAtAll.Zaturnava.Bots.Test;
@@ -39,6 +43,26 @@ public sealed class RandomBotTest
 
         // Assert
         Assert.Equal(new PassAction(Seat), action);
+    }
+
+    [Fact]
+    public async Task Decide_WhenItMayTakeAPieceOfItsOwnTeam_LeavesIt()
+    {
+        // Arrange - its own Pawn on cell 1; cell 2 empty
+        GameState state = ScoringRules.State() with
+        {
+            Position = Position.Empty.Place(new CellId(1), new Piece(new PieceId(1), new PieceKindId("pawn"), Seat)),
+            Teams = TeamGraph.FromTeams([[Seat]]),
+        };
+        MoveAction away = new(Seat, new CellId(0), new CellId(2));
+        DecisionRequest request = new(Rules, state, Seat, [new MoveAction(Seat, new CellId(0), new CellId(1)), away]);
+        RandomBot bot = new(new Random(Seed));
+
+        // Act
+        GameAction action = await bot.Decide(request, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(away, action);
     }
 
     [Fact]

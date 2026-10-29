@@ -130,6 +130,60 @@ public sealed class TableTest : IDisposable
         );
     }
 
+    [Theory]
+    [InlineData(true, false, 0)]
+    [InlineData(false, true, 1)]
+    public void Click_WhenThePiecePickedUpCouldTakeAPieceOfTheTeam_OffersItOnlyWithTheSafetyOff(
+        bool isSafetyOn,
+        bool isOffered,
+        int warnings
+    )
+    {
+        // Arrange - Green's Pawn, Black's ally, on cell 1; Yellow's on cell 3
+        GameViewDto view = FakeGameServer.SeatZeroToMove;
+        this._page.Server.View = view with
+        {
+            Pieces = [.. view.Pieces, new PieceDto(1, "pawn", "Pawn", 2, 1), new PieceDto(2, "pawn", "Pawn", 1, 3)],
+            Seats = [.. view.Seats, new SeatDto(2, "Green", 0, 0, "bot", "Midas", [])],
+        };
+        IRenderedComponent<Table> table = this._page.Render<Table>(parameters =>
+            parameters.Add(x => x.Seating, SeatZero).Add(x => x.IsSafetyOn, isSafetyOn)
+        );
+
+        // Act
+        Cell(table, 0).Click();
+
+        // Assert
+        Assert.Equal(
+            (isOffered, true, warnings),
+            (
+                Cell(table, 1).ClassList.Contains("target"),
+                Cell(table, 3).ClassList.Contains("target"),
+                table.FindAll("p.safety-off").Count
+            )
+        );
+    }
+
+    [Fact]
+    public void Click_WhenTheSafetyIsTurnedOffDuringTheTurn_OffersTakingThePiecesOfTheTeam()
+    {
+        // Arrange - Green's Pawn, Black's ally, on cell 1
+        GameViewDto view = FakeGameServer.SeatZeroToMove;
+        this._page.Server.View = view with
+        {
+            Pieces = [.. view.Pieces, new PieceDto(1, "pawn", "Pawn", 2, 1)],
+            Seats = [.. view.Seats, new SeatDto(2, "Green", 0, 0, "bot", "Midas", [])],
+        };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Act
+        table.Render(parameters => parameters.Add(x => x.IsSafetyOn, false));
+        Cell(table, 0).Click();
+
+        // Assert
+        Assert.True(Cell(table, 1).ClassList.Contains("target"));
+    }
+
     [Fact]
     public void Click_WhenThePiecePickedUpCanTakeAnother_RingsThatOne()
     {

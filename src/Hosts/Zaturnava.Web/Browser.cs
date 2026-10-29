@@ -17,6 +17,7 @@ internal sealed class Browser(IJSRuntime js)
     private const string SeatKey = "zaturnava.seat.";
     private const string ThemeKey = "zaturnava.theme";
     private const string SoundKey = "zaturnava.sound";
+    private const string SafetyKey = "zaturnava.safety";
     private const string PiecesKey = "zaturnava.pieces";
     private const string LogKey = "zaturnava.log";
     private const string Everything = "everything";
@@ -55,6 +56,11 @@ internal sealed class Browser(IJSRuntime js)
     public async ValueTask<bool> IsSoundOn() => await this.Load(SoundKey) != Off;
 
     public ValueTask SetSound(bool isOn) => this.Save(SoundKey, isOn ? "on" : Off);
+
+    /// <summary>Whether the safety keeps the player from taking their own team's pieces: unless turned off.</summary>
+    public async ValueTask<bool> IsSafetyOn() => await this.Load(SafetyKey) != Off;
+
+    public ValueTask SetSafety(bool isOn) => this.Save(SafetyKey, isOn ? "on" : Off);
 
     /// <summary>The pieces as the player last chose to see them: chaturaji, unless they chose chess.</summary>
     public async ValueTask<PieceSet> Pieces() =>

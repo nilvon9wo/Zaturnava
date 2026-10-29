@@ -167,7 +167,6 @@ public sealed class Chaturaji2027RulesTest
         Chaturaji2027Rules rules = new(
             DiceProfile.FourSided,
             Chaturaji2027Rules.DefaultIdleRounds,
-            CommandedCaptures.Anything,
             PawnPromotion.OtherArmies
         );
 
@@ -691,11 +690,10 @@ public sealed class Chaturaji2027RulesTest
     [Fact]
     public void Apply_WhenAFarmersRajaIsTakenByItsOwnTeam_ItLosesWhatItFarmedAndNoOneScores()
     {
-        // Arrange - Green commands Red's Pawn, which may take anything, and takes Black's farming Raja on e7
+        // Arrange - Green commands Red's Pawn, which takes Black's farming Raja on e7
         Chaturaji2027Rules rules = new(
             DiceProfile.WeightedSixSided,
             Chaturaji2027Rules.DefaultIdleRounds,
-            CommandedCaptures.Anything,
             PawnPromotion.OtherArmies
         );
         GameState state = this.StateWith(
@@ -1223,13 +1221,12 @@ public sealed class Chaturaji2027RulesTest
     }
 
     [Fact]
-    public void LegalActions_WhenCommandedArmiesMayNotTakeTheirCommandersTeam_TakesAnyoneElse()
+    public void LegalActions_WhenAnArmyIsCommanded_TakesAnyone()
     {
         // Arrange - Black commands Red; Red's pawn faces left, with Red's and Green's pieces ahead of it
         Chaturaji2027Rules rules = new(
             DiceProfile.WeightedSixSided,
             Chaturaji2027Rules.DefaultIdleRounds,
-            CommandedCaptures.NotOwnTeam,
             PawnPromotion.OtherArmies
         );
         GameState state = this.StateWith(
@@ -1244,7 +1241,7 @@ public sealed class Chaturaji2027RulesTest
 
         // Assert
         Assert.Equal(
-            [Grid.CellAt(5, 1), Grid.CellAt(5, 2)],
+            [Grid.CellAt(5, 0), Grid.CellAt(5, 1), Grid.CellAt(5, 2)],
             actions
                 .OfType<MoveAction>()
                 .Where(move => move.From == Grid.CellAt(6, 1))
@@ -1260,7 +1257,6 @@ public sealed class Chaturaji2027RulesTest
         Chaturaji2027Rules rules = new(
             DiceProfile.WeightedSixSided,
             Chaturaji2027Rules.DefaultIdleRounds,
-            CommandedCaptures.Anything,
             PawnPromotion.OtherArmies
         );
         Piece raja = Piece(3, Chaturaji2027Pieces.Raja, Green);
@@ -1319,7 +1315,6 @@ public sealed class Chaturaji2027RulesTest
         Chaturaji2027Rules rules = new(
             DiceProfile.WeightedSixSided,
             Chaturaji2027Rules.DefaultIdleRounds,
-            CommandedCaptures.Anything,
             PawnPromotion.Never
         );
         GameState state = PromotionPool(this.StateWith(
