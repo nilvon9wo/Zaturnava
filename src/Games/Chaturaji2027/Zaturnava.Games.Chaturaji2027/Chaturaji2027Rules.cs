@@ -560,7 +560,10 @@ public sealed class Chaturaji2027Rules : IRulesApplying
             Prisoners = state.Prisoners.Remove(prisoner),
             Dice = [],
         };
-        Transition transition = new(escaped, [new PieceEscaped(prisoner.Piece, escape.Home, escape.Actor)]);
+        Transition transition = new(
+            escaped,
+            [new PieceEscaped(prisoner.Piece, escape.Home, escape.Actor, captured)]
+        );
         Transition taken = captured is null
             ? transition
             : this.Captured(transition, captured, escape.Actor, escape.Home);

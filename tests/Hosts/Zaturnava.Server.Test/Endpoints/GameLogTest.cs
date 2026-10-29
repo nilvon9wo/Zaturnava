@@ -336,7 +336,7 @@ public sealed class GameLogTest
     {
         // Arrange - Black's own Horse escapes, taking Yellow's Pawn; then Red lets Yellow's Pawn escape
         GameSnapshot snapshot = Snapshot(
-            new PieceEscaped(Horse, Cell("b1"), Black),
+            new PieceEscaped(Horse, Cell("b1"), Black, Pawn),
             new PieceCaptured(Pawn, Black, 1),
             new PieceEscaped(Pawn, Cell("a7"), Red)
         );
@@ -347,7 +347,7 @@ public sealed class GameLogTest
         // Assert
         Assert.Equal(
             [
-                "escaped 0: Black's Horse escaped, to b1.",
+                "escaped 0: Black's Horse escaped, to b1, taking Yellow's Pawn!",
                 "captured 0: Black took Yellow's Pawn (+1).",
                 "escaped 3: Red let Yellow's Pawn escape, to a7.",
             ],

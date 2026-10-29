@@ -292,9 +292,22 @@ public sealed class GameService(
             cancellationToken
         );
 
-    /// <summary>Each seat's bot; null for a seat that is open or held by a person.</summary>
-    private Func<SeatId, IDeciding?> DecidersOf(GameRecord record) =>
-        seat => record.Controllers[seat.Value].DeciderFrom(this._bots);
+    /// <summary>
+    /// Each seat's bot, told which seats people hold; null for a seat that is open or held by a person.
+    /// </summary>
+    private Func<SeatId, IDeciding?> DecidersOf(GameRecord record)
+    {
+        ImmutableHashSet<SeatId> people =
+        [
+            .. record.Controllers
+                .Select((controller, seat) => (controller, seat))
+                .Where(held => held.controller is HumanSeat)
+                .Select(held => new SeatId(held.seat)),
+        ];
+        return seat => record.Controllers[seat.Value].DeciderFrom(this._bots) is { } bot
+            ? new AmongPeople(bot, people)
+            : null;
+    }
 
     private async Task<GameRecord> Load(GameId id, CancellationToken cancellationToken) =>
         await this._store.Find(id, cancellationToken) ?? throw new GameNotFoundException(id);
