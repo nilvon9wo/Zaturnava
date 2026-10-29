@@ -52,6 +52,18 @@ did them.
   - **Layer 2** (*Proposed*): an advisor on a free AI service (a free tier, in its own adapter
     project), choosing among layer 1's best moves; layer 1 alone when the service is down, slow or
     out of quota. Each service's current terms to be checked before use.
+    - Done: **Pythia**, Sage asking an advisor (`IMoveAdvising`) which of the three moves it likes
+      best to make, the game told in words; Sage's own choice when the advisor has no answer within
+      its patience (5 seconds unless configured). The one advisor so far speaks the OpenAI
+      chat-completions protocol (`Zaturnava.Bots.OpenAiCompatible`), which several services offer on
+      a free tier; the server offers Pythia only once its configuration names a service, a model and
+      a key ([local-development.md](contribute/local-development.md#pythia-a-bot-with-an-ai-advisor)).
+      No key is in the repository, and none has been tried yet: which service to use, after
+      checking its terms, is the user's to choose.
+    - *(Proposed)* Pythia may be seated in a quick game like any bot that costs nothing; as it plays
+      as Sage at worst, a service out of quota only slows it.
+    - Next: telling the advisor more (what each move risks, the rules in brief), and measuring
+      whether its advice beats Sage's own choice (BotRunner self-play, once a service is chosen).
   - **Layer 3** (*Stated*): a bot using Claude, for testing. It is never seated but by someone choosing
     it in the lobby: not by default, not in a quick game; playing again with it is a red button that
     says it costs tokens. On a public server only with a key a player provides (*Proposed*: how that
