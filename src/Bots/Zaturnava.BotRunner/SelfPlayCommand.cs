@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json;
 using Net.NowhereAtAll.Zaturnava.Application.Bots;
 using Net.NowhereAtAll.Zaturnava.Application.Games;
 using Net.NowhereAtAll.Zaturnava.Application.Rulesets;
@@ -18,6 +19,8 @@ internal static class SelfPlayCommand
 {
     public const int Succeeded = 0;
     public const int Misused = 2;
+
+    private static readonly JsonSerializerOptions Indented = new(JsonSerializerOptions.Web) { WriteIndented = true };
 
     private static readonly RulesetCatalog Rulesets = new([new Chaturaji2027Rules()]);
 
@@ -39,11 +42,13 @@ internal static class SelfPlayCommand
     )
     {
         SelfPlayOptions options;
+        IRulesApplying rules;
         SelfPlay play;
         try
         {
             options = SelfPlayOptions.Parse(args);
-            play = Prepare(options);
+            rules = Rulesets.Find(options.RulesetId);
+            play = Prepare(options, rules);
         }
         catch (Exception misuse) when (misuse is ArgumentException or GameRequestException)
         {
@@ -52,14 +57,34 @@ internal static class SelfPlayCommand
         }
 
         await using TextWriter output = Output(options.OutputPath, standardOutput);
-        await play.Run(options.Games, options.MaximumSteps, output, cancellationToken);
+        await (options.TrainingRounds is { } rounds
+            ? Train(rules, options, rounds, output, standardError, cancellationToken)
+            : play.Run(options.Games, options.MaximumSteps, output, cancellationToken));
         return Succeeded;
     }
 
-    /// <exception cref="GameRequestException">The ruleset or a bot does not exist.</exception>
-    private static SelfPlay Prepare(SelfPlayOptions options)
+    /// <summary>
+    /// Tunes Sage's weights for the ruleset, from what it has learned so far, telling how each nudge went on
+    /// <paramref name="progress"/>, and writes the weights tuned, as JSON for <c>Zaturnava.Bots/Weights</c>.
+    /// </summary>
+    private static async Task Train(
+        IRulesApplying rules,
+        SelfPlayOptions options,
+        int rounds,
+        TextWriter output,
+        TextWriter progress,
+        CancellationToken cancellationToken
+    )
     {
-        IRulesApplying rules = Rulesets.Find(options.RulesetId);
+        SageMatch match = new(rules, new RandomDice(Random.Shared), options.Games, options.MaximumSteps);
+        SageWeights start = SageWeights.Learned.GetValueOrDefault(rules.Id, SageWeights.Default);
+        SageWeights tuned = await new Training(match.Play, progress).Tune(start, rounds, cancellationToken);
+        await output.WriteLineAsync(JsonSerializer.Serialize(tuned, Indented));
+    }
+
+    /// <exception cref="GameRequestException">The ruleset or a bot does not exist.</exception>
+    private static SelfPlay Prepare(SelfPlayOptions options, IRulesApplying rules)
+    {
         ImmutableList<string> botIds = options.Bots ?? [.. Enumerable.Repeat(RandomBot.BotId, SeatCount(rules))];
         return new SelfPlay(rules, botIds, [.. botIds.Select(Bots.Find)], new RandomDice(Random.Shared));
     }

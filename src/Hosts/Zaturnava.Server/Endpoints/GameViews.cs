@@ -128,7 +128,8 @@ internal static class GameViews
         };
     }
 
-    private static BotDto BotOf(BotProfile bot) => new(bot.Id, bot.Name, bot.Description, bot.UsesAi, bot.IsPaid);
+    private static BotDto BotOf(BotProfile bot) =>
+        new(bot.Id, bot.Name, bot.Description, bot.UsesAi, bot.IsPaid) { Ratings = bot.Ratings };
 
     private static CellDto CellOf(
         ICellNavigating topology,

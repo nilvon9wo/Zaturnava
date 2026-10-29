@@ -51,6 +51,21 @@ public sealed class AppTest : IDisposable
     }
 
     [Fact]
+    public void TheBots_WhenClicked_OpensTheGuideToTheBotsUntilClosed()
+    {
+        // Arrange
+        IRenderedComponent<App> app = this._page.Render<App>();
+
+        // Act
+        app.Find("button.the-bots").Click();
+        string title = app.Find(".bot-guide h2").TextContent;
+        app.Find(".bot-guide button.close").Click();
+
+        // Assert
+        Assert.Equal(("The bots", 0), (title, app.FindAll(".bot-guide").Count));
+    }
+
+    [Fact]
     public void Play_WhenSeated_ShowsHowToPlayBesideTheGamesNameAndTheLooksBeforeTheSound()
     {
         // Arrange
@@ -61,7 +76,7 @@ public sealed class AppTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ("brand,how-to-play,leave", "theme,pieces,sound"),
+            ("brand,how-to-play,the-bots,leave", "theme,pieces,sound"),
             (
                 string.Join(",", app.FindAll(".table-bar .where > *").Select(part => part.ClassName)),
                 string.Join(",", app.FindAll(".table-bar .settings button").Select(button => button.ClassName))

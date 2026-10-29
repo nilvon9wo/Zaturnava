@@ -80,17 +80,21 @@ internal sealed class FakeGameServer : IGameServing
             new CatalogDto(
                 [new RulesetDto("chaturaji-2027", "Chaturaji 2027", 4) { SeatNames = SeatNames }],
                 [
-                    new BotDto("random", "Random", "Any move.", UsesAi: false),
+                    new BotDto("random", "Random", "Any move.", UsesAi: false) { Ratings = Rated(1000) },
                     new BotDto("claude", "Claude", "Asks Claude.", UsesAi: true, IsPaid: true),
-                    new BotDto("oracle", "Oracle", "Asks a model.", UsesAi: true),
-                    new BotDto("midas", "Midas", "Greedy.", UsesAi: false),
-                    new BotDto("solomon", "Solomon", "Fair.", UsesAi: false),
+                    new BotDto("oracle", "Oracle", "Asks a model.", UsesAi: true) { Ratings = Rated(1400) },
+                    new BotDto("midas", "Midas", "Greedy.", UsesAi: false) { Ratings = Rated(1100) },
+                    new BotDto("solomon", "Solomon", "Fair.", UsesAi: false) { Ratings = Rated(1250) },
                 ]
             )
             {
                 Scenarios = this.Scenarios,
             }
         );
+
+    /// <summary>A rating at Chaturaji 2027, the only ruleset this server offers.</summary>
+    private static ImmutableDictionary<string, int> Rated(int rating) =>
+        ImmutableDictionary<string, int>.Empty.Add("chaturaji-2027", rating);
 
     public Task<ImmutableList<GameSummaryDto>> List(CancellationToken cancellationToken) =>
         this.Answer("list", this.Games);

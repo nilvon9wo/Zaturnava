@@ -237,6 +237,55 @@ public sealed class SageBotTest
     }
 
     [Fact]
+    public void Learned_WhenAsked_HasWeightsForChaturaji2027()
+    {
+        // Arrange - nothing beyond what Sage has learned
+
+        // Act
+        ImmutableDictionary<string, SageWeights> learned = SageWeights.Learned;
+
+        // Assert
+        Assert.Equal(SageWeights.Names.Count, learned["chaturaji-2027"].Values.Count);
+    }
+
+    [Fact]
+    public void With_WhenGivenAWeight_ChangesThatOneOnly()
+    {
+        // Arrange
+        SageWeights weights = SageWeights.Default;
+
+        // Act
+        SageWeights changed = weights.With(SageWeights.Names.IndexOf("thrones"), 7);
+
+        // Assert
+        Assert.Equal(weights with { Thrones = 7 }, changed);
+    }
+
+    [Fact]
+    public async Task Decide_WhenItHasLearnedTheRuleset_WeighsAsItLearned()
+    {
+        // Arrange - learned for these rules, Sage weighs only leaders; else only the score
+        MoveAction ours = LineRules.Move(0, 1);
+        MoveAction scoring = LineRules.Move(0, 2);
+        ScriptedRules rules = new(
+            ImmutableDictionary<GameAction, GameState>.Empty
+                .Add(ours, ScriptedRules.State((5, LineRules.Raja, Seat)))
+                .Add(scoring, ScriptedRules.State() with { Scores = Scored(5) })
+        );
+        SageBot bot = new(
+            new Random(Seed),
+            Nothing with { Score = 1 },
+            ImmutableDictionary<string, SageWeights>.Empty.Add(rules.Id, Nothing with { Leaders = 1 })
+        );
+
+        // Act
+        GameAction action = await bot.Decide(rules.Request(), this._cancellation);
+
+        // Assert
+        Assert.Equal(ours, action);
+    }
+
+    [Fact]
     public void Profile_WhenAsked_IsAPlainAlgorithmCalledSage()
     {
         // Arrange
@@ -250,4 +299,7 @@ public sealed class SageBotTest
     }
 
     private static Piece Piece(int id, PieceKindId kind, SeatId owner) => new(new PieceId(id), kind, owner);
+
+    private static ImmutableDictionary<SeatId, int> Scored(int points) =>
+        ImmutableDictionary<SeatId, int>.Empty.Add(Seat, points);
 }

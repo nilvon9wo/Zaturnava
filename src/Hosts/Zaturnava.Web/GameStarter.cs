@@ -26,15 +26,33 @@ internal static class GameStarter
         catalog.Bots.Where(bot => !bot.IsPaid).Select(bot => bot.Id);
 
     /// <summary>
-    /// A game at once: the player at a seat chosen at random, the bots shuffled among the others - never one
-    /// paid for each use.
+    /// The bots a quick game seats, <paramref name="count"/> of them, shuffled: the easiest at the ruleset, by
+    /// their ratings, for an easy game; the hardest, for a hard one; any, for a medium one. Never one paid for
+    /// each use; one not rated counts as easiest.
     /// </summary>
-    public static Task<Seating> Quick(IGameServing games, CatalogDto catalog)
+    public static IEnumerable<string> QuickBots(CatalogDto catalog, string rulesetId, Difficulty difficulty, int count)
+    {
+        ImmutableList<BotDto> unpaid = [.. catalog.Bots.Where(bot => !bot.IsPaid)];
+        ImmutableList<BotDto> easiestFirst = [.. unpaid.OrderBy(bot => bot.Ratings.GetValueOrDefault(rulesetId))];
+        IEnumerable<BotDto> chosen = difficulty switch
+        {
+            Difficulty.Easy => easiestFirst.Take(count),
+            Difficulty.Hard => Enumerable.Reverse(easiestFirst).Take(count),
+            _ => unpaid.OrderBy(_ => Random.Shared.Next()).Take(count),
+        };
+        return chosen.Select(bot => bot.Id).OrderBy(_ => Random.Shared.Next());
+    }
+
+    /// <summary>
+    /// A game at once, as hard as asked (<see cref="QuickBots"/>): the player at a seat chosen at random, the
+    /// bots among the others.
+    /// </summary>
+    public static Task<Seating> Quick(IGameServing games, CatalogDto catalog, Difficulty difficulty)
     {
         RulesetDto ruleset = catalog.Rulesets[0];
         int person = Random.Shared.Next(ruleset.SeatCount);
-        IEnumerable<string> shuffled = Unpaid(catalog).OrderBy(_ => Random.Shared.Next());
-        return Start(games, ruleset.Id, BotsOf(Plans(ruleset.SeatCount, person, shuffled)), person, null);
+        IEnumerable<string> bots = QuickBots(catalog, ruleset.Id, difficulty, ruleset.SeatCount - 1);
+        return Start(games, ruleset.Id, BotsOf(Plans(ruleset.SeatCount, person, bots)), person, null);
     }
 
     /// <summary>

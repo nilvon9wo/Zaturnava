@@ -50,6 +50,7 @@ internal sealed class SelfPlay(
             this._botIds,
             played.State.DecidingSeat is null,
             played.State.Scores.ToImmutableSortedDictionary(score => score.Key.Value, score => score.Value),
+            [.. played.State.Outcome?.Winners.Select(seat => seat.Value) ?? []],
             played.Actions
         );
         return JsonSerializer.Serialize(log, Lines);

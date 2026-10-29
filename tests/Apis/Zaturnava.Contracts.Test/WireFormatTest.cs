@@ -83,7 +83,12 @@ public sealed class WireFormatTest
         // Arrange
         CatalogDto catalog = new(
             [new RulesetDto("chaturaji-2027", "Chaturaji 2027", 4)],
-            [new BotDto("random", "Random", "Any move.", UsesAi: false)]
+            [
+                new BotDto("random", "Random", "Any move.", UsesAi: false)
+                {
+                    Ratings = ImmutableDictionary<string, int>.Empty.Add("chaturaji-2027", 1000),
+                },
+            ]
         )
         {
             Scenarios = [new ScenarioDto("back-to-back", "chaturaji-2027", "Back to back", "Two Pawns.")],

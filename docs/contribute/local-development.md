@@ -69,6 +69,24 @@ Bots against bots, without a server:
 dotnet run --project Zaturnava.BotRunner -- --games 10 --max-steps 200 --out games.jsonl
 ```
 
+Sage's weights, tuned by Sage playing itself (here 2 rounds, each nudge tried over 40 games a side; how each
+went is written to standard error). Copy what it writes into `src/Bots/Zaturnava.Bots/Weights/`:
+
+```shell
+dotnet run --project Zaturnava.BotRunner -- --train 2 --games 40 --out chaturaji-2027.json
+```
+
+The bots' Elo ratings, from games between every pair of them (here 50 games a pair with each side
+first; how each pair did is written to standard error). They go in `src/Bots/Zaturnava.Bots/Ratings/`,
+and "The bots" shows them:
+
+```shell
+python3 scripts/rate-bots.py path/to/Net.NowhereAtAll.Zaturnava.BotRunner --games 50     --out src/Bots/Zaturnava.Bots/Ratings/chaturaji-2027.json
+```
+
+A development server also offers games set up part-way, to start from: see
+[scenarios/README.md](../../scenarios/README.md).
+
 An AI client (Claude Code, Claude Desktop, any MCP client) plays through `Zaturnava.Mcp`, a stdio
 MCP server; `ZATURNAVA_SERVER_URL` names the game server (default `http://localhost:5164/`):
 

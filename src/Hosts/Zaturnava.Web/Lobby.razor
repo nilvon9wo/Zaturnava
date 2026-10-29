@@ -1,5 +1,5 @@
 @* Start a game (each seat a person or a bot, no bot in two seats) and sit at it - or start one at once,
-   at a seat chosen at random, the bots shuffled among the others - or join, watch or go back to one
+   at a seat chosen at random, easy, medium or hard by which bots it seats among the others - or join, watch or go back to one
    already started; a game over is only listed, with nothing left to watch. Seats go by the ruleset's names
    for them (Black, Yellow...), not by number. A bot paid for each use is seated only when chosen: never by
    default, nor at random. A server in development also offers scenarios, games set up part-way, to start
@@ -51,14 +51,16 @@
                 }
             }
             <button class="create primary" @onclick="() => this.Create(catalog)">Play</button>
-            <button class="quick" @onclick="() => this.Quick(catalog)">Quick game: any seat, bots shuffled</button>
-            <dl class="bots">
-                @foreach (BotDto bot in catalog.Bots)
-                {
-                    <dt>@Label(bot)</dt>
-                    <dd>@bot.Description</dd>
-                }
-            </dl>
+            <div class="quick-games">
+                <span class="quick-label">Quick game, at any seat:</span>
+                <button class="quick easy" @onclick="() => this.Quick(catalog, Difficulty.Easy)">Easy</button>
+                <button class="quick medium" @onclick="() => this.Quick(catalog, Difficulty.Medium)">Medium</button>
+                <button class="quick hard" @onclick="() => this.Quick(catalog, Difficulty.Hard)">Hard</button>
+            </div>
+            <p class="quick-hint">
+                Easy seats the three easiest bots; medium, any three; hard, the three hardest. Who they are is under
+                <strong>The bots</strong>, below.
+            </p>
         </div>
 
         <div class="panel">
@@ -153,7 +155,8 @@
             this._scenario.Length == 0 ? null : this._scenario
         ));
 
-    private Task Quick(CatalogDto catalog) => this.Sit(() => GameStarter.Quick(this.Games, catalog));
+    private Task Quick(CatalogDto catalog, Difficulty difficulty) =>
+        this.Sit(() => GameStarter.Quick(this.Games, catalog, difficulty));
 
     private Task Join(string gameId, int seat) => this.Sit(() => GameStarter.Claim(this.Games, gameId, seat));
 
