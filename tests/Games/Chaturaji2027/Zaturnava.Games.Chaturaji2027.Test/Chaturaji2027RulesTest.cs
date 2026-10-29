@@ -386,6 +386,27 @@ public sealed class Chaturaji2027RulesTest
     }
 
     [Fact]
+    public void MeasuresOf_WhenAPawnHasStepped_CountsTheRowsItsArmysPawnsHaveCome()
+    {
+        // Arrange - Black's Pawn on a2 steps to a3, and again to a4
+        GameState state = this.Later();
+        GameState once = this._rules.Apply(state, new MoveAction(Black, Grid.CellAt(0, 1), Grid.CellAt(0, 2))).State;
+        GameState twice = once with
+        {
+            Position = once.Position.Relocate(Grid.CellAt(0, 2), Grid.CellAt(0, 3)),
+        };
+
+        // Act
+        ImmutableList<double> black = this._rules.MeasuresOf(twice, Black);
+
+        // Assert
+        Assert.Equal(
+            ("pawn-progress", 2, 0),
+            (Assert.Single(this._rules.Measures), Assert.Single(black), this._rules.MeasuresOf(twice, Yellow)[0])
+        );
+    }
+
+    [Fact]
     public void Apply_WhenMovingToAnEmptySquare_MovesThePieceAndScoresNothing()
     {
         // Arrange

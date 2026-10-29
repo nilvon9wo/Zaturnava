@@ -20,7 +20,7 @@ namespace Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
 /// shared with an enemy Raja on one's throne (§6); promotion and ransom (§8); escape on doubles (§7); and
 /// the end of the game (§10). Boat triumph follows; docs/rules.md lists what is implemented.
 /// </summary>
-public sealed class Chaturaji2027Rules : IRulesApplying
+public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
 {
     public const string RulesetId = "chaturaji-2027";
 
@@ -75,6 +75,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying
     private const int OpeningTurn = 1;
 
     private readonly SquareGridTopology _grid = new(Chaturaji2027Setup.Side, Chaturaji2027Setup.Side);
+    private readonly Progress _progress;
     private readonly MoveGenerator _moves;
     private readonly DiceProfile _dice;
     private readonly int _idleRounds;
@@ -113,6 +114,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying
         this._everyPiece = new EveryPiece(this._control);
         this._farming = new Farming(this._control, this._moves);
         this._ransom = new Ransom(this._grid, Chaturaji2027Setup.InitialPosition(this._grid));
+        this._progress = new Progress(this._grid);
     }
 
     public string Id => RulesetId;
@@ -213,6 +215,12 @@ public sealed class Chaturaji2027Rules : IRulesApplying
     ];
 
     public bool IsLeader(PieceKindId kind) => kind == Chaturaji2027Pieces.Raja;
+
+    /// <summary>What a bot may weigh beyond what every ruleset has: how far the army's Pawns have come.</summary>
+    public ImmutableList<string> Measures { get; } = [Progress.PawnProgress];
+
+    public ImmutableList<double> MeasuresOf([Required] GameState state, SeatId seat) =>
+        [this._progress.Of(state, seat)];
 
     public string NameOf(PieceKindId kind) => Chaturaji2027Pieces.ChaturajiNames[kind];
 

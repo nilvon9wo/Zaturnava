@@ -29,7 +29,7 @@ public sealed class TrainingTest
 
         // Assert
         Assert.Equal(
-            ImmutableList.Create(1.3, 1.3, 1.4, 0.65, 3.9, 1.3, 0.39),
+            ImmutableList.Create(1.3, 1.3, 1.4, 0.65, 3.9, 1.3, 0.39, 0.3),
             [.. tuned.Values.Select(value => Math.Round(value, 6))]
         );
         Assert.Contains(
@@ -51,7 +51,7 @@ public sealed class TrainingTest
         // Assert
         Assert.Equal(SageWeights.Default, tuned);
         Assert.Equal(
-            (28, "round 1, score 1 to 1.3: won 10, lost 9"),
+            (32, "round 1, score 1 to 1.3: won 10, lost 9"),
             (this.Lines().Length, this.Lines()[0])
         );
     }

@@ -9,8 +9,10 @@ namespace Net.NowhereAtAll.Zaturnava.Bots;
 /// <summary>
 /// What a position is worth to the bot's team, as Sage sees it: a weighted sum (<see cref="SageWeights"/>)
 /// of what any ruleset lets it count - points, pieces, leaders, prisoners and thrones, each the team's less
-/// its enemies' - less the worst an enemy could win next (as <see cref="Careful"/> counts it), and plus the
-/// most the team could. A game over is worth its result, by far more than any of that.
+/// its enemies' - less the worst an enemy could win next (as <see cref="Careful"/> counts it), plus the
+/// most the team could, and how many more cells its pieces attack than its enemies' do; and of the
+/// ruleset's own measures (<see cref="IPositionMeasuring"/>), the team's less its enemies', as far as
+/// the weights weigh them. A game over is worth its result, by far more than any of that.
 /// </summary>
 internal static class Appraisal
 {
@@ -25,7 +27,8 @@ internal static class Appraisal
                 + (weights.Prisoners * Prisoners(request, state))
                 + (weights.Thrones * Thrones(request, state))
                 - (weights.Exposure * Careful.Exposure(request, state))
-                + (weights.Chances * Chances(request, state));
+                + Reach(request, state, weights)
+                + Measured(request, state, weights);
 
     private static double ResultOf(DecisionRequest request, GameOutcome outcome) =>
         (outcome.Winners.IsEmpty, outcome.Winners.Contains(request.Seat)) switch
@@ -66,12 +69,39 @@ internal static class Appraisal
             )
             .Sum(held => Side(request, state, held.Occupant!.Owner));
 
-    /// <summary>The most the team could win next, by starting an exchange where an enemy piece stands.</summary>
-    private static int Chances(DecisionRequest request, GameState state)
+    /// <summary>
+    /// The weighed chances (the most the team could win next, by starting an exchange where an enemy piece
+    /// stands) and mobility (how many more cells its pieces attack than its enemies' do), from one count of
+    /// what each side attacks.
+    /// </summary>
+    private static double Reach(DecisionRequest request, GameState state, SageWeights weights)
     {
         ILookup<CellId, Attack> ours = Careful.AttacksBy(request, state, isAllied: true);
         ILookup<CellId, Attack> theirs = Careful.AttacksBy(request, state, isAllied: false);
-        return state.Position.Occupants
+        return (weights.Chances * Chances(request, state, ours, theirs))
+            + (weights.Mobility * (ours.Count - theirs.Count));
+    }
+
+    /// <summary>The ruleset's own measures, each the team's less its enemies', as the weights weigh them.</summary>
+    private static double Measured(DecisionRequest request, GameState state, SageWeights weights) =>
+        (request.Rules, weights.Measures.IsEmpty) switch
+        {
+            (IPositionMeasuring measuring, false) => state.Seats
+                .Select(seat => (seat.Id, Values: measuring.MeasuresOf(state, seat.Id)))
+                .Sum(measured => Side(request, state, measured.Id) * measuring.Measures
+                    .Select((name, at) => weights.Measures.GetValueOrDefault(name) * measured.Values[at])
+                    .Sum()
+                ),
+            _ => 0,
+        };
+
+    private static int Chances(
+        DecisionRequest request,
+        GameState state,
+        ILookup<CellId, Attack> ours,
+        ILookup<CellId, Attack> theirs
+    ) =>
+        state.Position.Occupants
             .Where(occupant => Side(request, state, occupant.Value.Owner) < 0)
             .Select(occupant => Careful.Exchange(
                 request.Rules.WorthOf(occupant.Value.Kind),
@@ -80,7 +110,6 @@ internal static class Appraisal
             ))
             .Append(0)
             .Max();
-    }
 
     private static int Side(DecisionRequest request, GameState state, SeatId seat) =>
         state.Teams.AreAllied(seat, request.Seat) ? 1 : -1;
