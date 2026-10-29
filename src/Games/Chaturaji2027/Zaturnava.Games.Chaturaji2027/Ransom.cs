@@ -18,23 +18,12 @@ namespace Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
 /// square of its kind's (any of its army's Pawns' for a Pawn); else to the free squares nearest its own.
 /// When it may go to more than one, its owner chooses, and the game waits on that choice. A seat may also give
 /// back prisoners of its own team (§8): its own, at once, or an ally's, at once unless an enemy holds the
-/// ally's throne; but only once every seat has had a turn since they were taken. Such a prisoner going home
-/// takes an enemy on its starting square, by <paramref name="captured"/>, if it is a Raja, or its army's Raja
-/// is on its throne.
+/// ally's throne; but only once every seat has had a turn since they were taken. No piece going home takes
+/// anything.
 /// </summary>
-internal sealed class Ransom(
-    SquareGridTopology grid,
-    Position start,
-    Func<Transition, Piece, SeatId, CellId, Transition> captured
-)
+internal sealed class Ransom(SquareGridTopology grid, Position start)
 {
     private readonly SquareGridTopology _grid = grid;
-    private readonly Func<Transition, Piece, SeatId, CellId, Transition> _captured = captured;
-
-    private readonly ImmutableDictionary<SeatId, CellId> _thrones =
-        start.Occupants
-            .Where(occupant => occupant.Value.Kind == Chaturaji2027Pieces.Raja)
-            .ToImmutableDictionary(occupant => occupant.Value.Owner, occupant => occupant.Key);
 
     private readonly ImmutableDictionary<PieceId, CellId> _homes =
         start.Occupants.ToImmutableDictionary(occupant => occupant.Value.Id, occupant => occupant.Key);
@@ -216,43 +205,16 @@ internal sealed class Ransom(
     private Transition SentHome(Transition transition, ImmutableList<Prisoner> going, SeatId resume)
     {
         GameState state = transition.State;
-        CellId? strike = going.IsEmpty ? null : this.StrikeOf(state, going[0]);
-        ImmutableList<CellId> places = going.IsEmpty || strike is not null ? [] : this.PlacesFor(state, going[0]);
-        return (going.IsEmpty, strike, places.Count) switch
+        ImmutableList<CellId> places = going.IsEmpty ? [] : this.PlacesFor(state, going[0]);
+        return (going.IsEmpty, places.Count) switch
         {
-            (true, _, _) => transition with { State = state with { Returning = null, DecidingSeat = resume } },
-            (_, { } home, _) => this.SentHome(this.Struck(transition, going[0], home), going.RemoveAt(0), resume),
-            (_, _, 1) => this.SentHome(Returned(transition, going[0], places[0]), going.RemoveAt(0), resume),
+            (true, _) => transition with { State = state with { Returning = null, DecidingSeat = resume } },
+            (_, 1) => this.SentHome(Returned(transition, going[0], places[0]), going.RemoveAt(0), resume),
             _ => transition with
             {
                 State = state with { Returning = new ReturnsDue(going, resume), DecidingSeat = going[0].Piece.Owner },
             },
         };
-    }
-
-    /// <summary>
-    /// The starting square of a prisoner its own team gives back, if it takes the enemy there (rules.md §8):
-    /// a Raja, going back to its throne, or any piece whose army's Raja is on its throne; else null.
-    /// </summary>
-    private CellId? StrikeOf(GameState state, Prisoner prisoner)
-    {
-        SeatId owner = prisoner.Piece.Owner;
-        CellId home = this._homes[prisoner.Piece.Id];
-        Piece? there = state.Position.PieceAt(home);
-        Piece? onThrone = state.Position.PieceAt(this._thrones[owner]);
-        bool isStriking = state.Teams.AreAllied(prisoner.Holder, owner)
-            && there is not null
-            && !state.Teams.AreAllied(there.Owner, owner)
-            && (prisoner.Piece.Kind == Chaturaji2027Pieces.Raja
-                || (onThrone?.Kind == Chaturaji2027Pieces.Raja && onThrone.Owner == owner));
-        return isStriking ? home : null;
-    }
-
-    /// <summary>The prisoner goes home, taking the enemy there, for its own army.</summary>
-    private Transition Struck(Transition transition, Prisoner prisoner, CellId home)
-    {
-        Piece taken = transition.State.Position.PieceAt(home)!; // struck only where an enemy stands
-        return this._captured(Returned(transition, prisoner, home), taken, prisoner.Piece.Owner, home);
     }
 
     private static Transition Returned(Transition transition, Prisoner prisoner, CellId cell)
