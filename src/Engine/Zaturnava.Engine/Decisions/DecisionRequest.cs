@@ -14,4 +14,8 @@ public sealed record DecisionRequest(
     GameState State,
     SeatId Seat,
     ImmutableList<GameAction> LegalActions
-);
+)
+{
+    /// <summary>The seats people play, so that a bot may defer to them; empty if none is, or it is not known.</summary>
+    public ImmutableHashSet<SeatId> People { get; init; } = [];
+}

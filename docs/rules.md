@@ -584,6 +584,15 @@ both the triumphing player and their ally may move each other's Boat.
       enemy Raja that has not retired is taken. A retired player creates no
       empire, and is offered no ransom.
     - Bots never retire.
+- *(Stated 2026-10-29)* **How bots end a game.**
+  - A bot follows a resting ally: when an ally has given up their turns with
+    a clear lead (10 on points and on the board both), and no one else in
+    the game is a person, the bot gives up its turns too, so the game ends.
+  - Asked to end the game, a bot agrees if its team leads on points, or if
+    its game is hopeless: behind by a clear lead, with no Raja and no
+    Elephant (a Rook) left to its team, while the other team still has one.
+    Merely trailing by a clear lead is a long shot, not hopeless: such a
+    team can still come back.
 - **Honourable peace**: if only Rajas remain on the board (across all
   players), the game is a draw.
 - **Team elimination win**: if only one team still has any pieces on the

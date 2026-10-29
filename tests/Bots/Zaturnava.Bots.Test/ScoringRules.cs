@@ -25,6 +25,7 @@ internal sealed class ScoringRules(ImmutableDictionary<GameAction, int> points) 
             .Add(new PieceKindId("pawn"), 1)
             .Add(new PieceKindId("horse"), 3)
             .Add(new PieceKindId("boat"), 4)
+            .Add(new PieceKindId("elephant"), 4)
             .Add(new PieceKindId("raja"), 5);
 
     private readonly ImmutableDictionary<GameAction, int> _points = points;
@@ -57,7 +58,10 @@ internal sealed class ScoringRules(ImmutableDictionary<GameAction, int> points) 
 
     public bool MayOffer([Required] GameState state) => true;
 
-    public bool MayProposeEnd([Required] GameState state, SeatId seat) => false;
+    /// <summary>Whether a seat may propose ending the game; no one may, unless set.</summary>
+    public bool MayPropose { get; init; }
+
+    public bool MayProposeEnd([Required] GameState state, SeatId seat) => this.MayPropose;
 
     public bool MayRejoin([Required] GameState state, SeatId seat) => false;
 

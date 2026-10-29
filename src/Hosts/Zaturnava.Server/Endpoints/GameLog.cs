@@ -327,9 +327,12 @@ file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bo
         Piece piece = escaped.Piece;
         string kind = this.Rules.NameOf(piece.Kind);
         string cell = this.Rules.Topology.NameOf(escaped.Cell);
+        string taking = escaped.Took is { } took
+            ? $", taking {this.Name(took.Owner)}'s {this.Rules.NameOf(took.Kind)}!"
+            : ".";
         string text = piece.Owner == escaped.EscapedBy
-            ? $"{this.Name(piece.Owner)}'s {kind} escaped, to {cell}."
-            : $"{this.Name(escaped.EscapedBy)} let {this.Name(piece.Owner)}'s {kind} escape, to {cell}.";
+            ? $"{this.Name(piece.Owner)}'s {kind} escaped, to {cell}{taking}"
+            : $"{this.Name(escaped.EscapedBy)} let {this.Name(piece.Owner)}'s {kind} escape, to {cell}{taking}";
         EventDto told = new(
             number,
             EventDto.Escaped,
