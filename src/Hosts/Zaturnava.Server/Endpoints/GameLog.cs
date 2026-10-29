@@ -188,7 +188,12 @@ file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bo
                 EventDto.Ending,
                 proposed.Proposer,
                 $"{this.Name(proposed.Proposer)} proposed ending the game"
-                    + (proposed.Resigns ? ", and gave up their turns." : ", and waits for the others to agree.")
+                    + (proposed.Resigns, proposed.IsAhead) switch
+                    {
+                        (true, true) => ", and rests on their team's lead, taking no more turns.",
+                        (true, false) => ", and gave up their turns.",
+                        _ => ", and waits for the others to agree.",
+                    }
             ),
             EndAgreed agreed => this.Add(
                 number,
@@ -221,7 +226,7 @@ file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bo
                 number,
                 EventDto.Passed,
                 givenUp.Seat,
-                $"{this.Name(givenUp.Seat)} has given up their turns, so passes."
+                $"{this.Name(givenUp.Seat)} takes no more turns, so passes."
             ),
             RajaRetired retired => this.Add(
                 number,

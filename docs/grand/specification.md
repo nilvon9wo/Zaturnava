@@ -161,9 +161,10 @@ on, with what follows in place of the Raja-and-dice parts.
 - **Stated (2026-10-29) — the back-to-back swap.** All three Pawns (Shogi, Western, Makruk) may swap
   places back to back, as two Chaturaji 2027 Pawns may (rules.md §3): they share its forward-only
   move.
-  - **Open ([Q25](#9-open-questions)).** Whether any other piece may. *(Proposed)* By the same
-    reason, a piece whose normal move is forward only, such as the Lance, and no piece that may
-    move sideways or back.
+  - **Stated (2026-10-29).** By the same reason, so may any other piece whose normal move is
+    forward only, such as the Lance; no piece that may move sideways or back.
+  - **Stated (2026-10-29).** Any two pieces that may swap back to back may swap with each other,
+    whatever their kinds or classes: a Shogi Pawn with a Western Pawn, a Pawn with a Lance.
 
 - **Stated — dice.** A die names a **class** of piece (Leader, Cavalry, Heavy, Infantry,
   Artillery), not a kind: the player may move any piece of that class.
@@ -297,5 +298,5 @@ The numbers stay as they are; answered questions are marked so.
 22. **Q22** *Answered:* the Makruk Pawn promotes to the Courtier; the Private is gone.
 23. **Q23** *Answered:* a palace that does not fit its kingdom (§5).
 24. **Q24** *Answered:* which way a kingdom lies in its corner is a setting (§2).
-25. **Q25** *Partly answered (2026-10-29):* all three Pawns may make the back-to-back swap (§6.1).
-    Still open: whether any other piece may, such as the Lance, which also moves only forward.
+25. **Q25** *Answered (2026-10-29):* every piece whose normal move is forward only may make the
+    back-to-back swap, with any other such piece (§6.1).

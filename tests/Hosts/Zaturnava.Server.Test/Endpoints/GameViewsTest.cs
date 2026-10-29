@@ -338,6 +338,19 @@ public sealed class GameViewsTest
     }
 
     [Fact]
+    public void ViewOf_WhenASeatHasRetired_SaysSo()
+    {
+        // Arrange - Red retired
+        GameState state = Rules.CreateInitialState() with { Retired = [new SeatId(3)] };
+
+        // Act
+        GameViewDto view = GameViews.ViewOf(Snapshot(state), Bots);
+
+        // Assert
+        Assert.Equal("False,False,False,True", Flags(view, seat => seat.IsRetired));
+    }
+
+    [Fact]
     public void ViewOf_WhenAPromotionIsDue_SaysWhereAndLabelsPassingAsLater()
     {
         // Arrange - Black's Pawn has just come to c8

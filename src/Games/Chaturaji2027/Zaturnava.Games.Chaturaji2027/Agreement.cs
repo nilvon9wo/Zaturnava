@@ -56,7 +56,11 @@ internal static class Agreement
             Proposal = new EndProposal(proposer, propose.Resigns, state.DecidingSeat!.Value, state.ActingFor),
             Resigned = propose.Resigns ? state.Resigned.Add(proposer) : state.Resigned,
         };
-        return AskedAfter(new Transition(proposed, [new EndProposed(proposer, propose.Resigns)]), proposer);
+        bool isAhead = GameEnd.PointsLead(state, state.Teams.TeamOf(proposer)) > 0;
+        return AskedAfter(
+            new Transition(proposed, [new EndProposed(proposer, propose.Resigns, isAhead)]),
+            proposer
+        );
     }
 
     public static Transition Answered(GameState state, AnswerEndAction answer) =>

@@ -2337,7 +2337,7 @@ public sealed class Chaturaji2027RulesTest
             (outcome, null, null),
             (transition.State.Outcome, transition.State.Proposal, transition.State.DecidingSeat)
         );
-        Assert.Equal([new EndProposed(Black, true), new GameEnded(outcome)], transition.Events);
+        Assert.Equal([new EndProposed(Black, true, IsAhead: true), new GameEnded(outcome)], transition.Events);
     }
 
     [Theory]
