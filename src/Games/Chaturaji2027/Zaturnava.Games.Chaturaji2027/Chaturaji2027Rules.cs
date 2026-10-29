@@ -15,10 +15,10 @@ namespace Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
 /// <summary>
 /// Zaturnava's base rules. So far: a roll-off for who goes first, whose winning die is the opening
 /// move (rules.md §4, §11); then turns of a deliberate move, a pass, or a roll of the dice (§4);
-/// captures scored by piece, with the throne bonuses and the empire (§5); command of other armies
-/// through thrones and Raja-less allies, an ally's turn taken with its consent, and turns shared with an
-/// enemy Raja on one's throne (§6); promotion and ransom (§8); escape on doubles (§7); and the end of the
-/// game (§10). Boat triumph follows; docs/rules.md lists what is implemented.
+/// captures scored by piece, with the throne bonuses, the empire and commanding every piece (§5); command
+/// of other armies through thrones and Raja-less allies, an ally's turn taken with its consent, and turns
+/// shared with an enemy Raja on one's throne (§6); promotion and ransom (§8); escape on doubles (§7); and
+/// the end of the game (§10). Boat triumph follows; docs/rules.md lists what is implemented.
 /// </summary>
 public sealed class Chaturaji2027Rules : IRulesApplying
 {
@@ -47,6 +47,9 @@ public sealed class Chaturaji2027Rules : IRulesApplying
 
     /// <summary>The points instead of <see cref="EmpireByCaptureBonus"/> when that Raja was on its throne.</summary>
     public const int EmpireByThroneCaptureBonus = 4;
+
+    /// <summary>The points for commanding every piece on the board, on one's own turn (rules.md §5).</summary>
+    public const int EveryPieceBonus = 2;
 
     /// <summary>The points for accepting a ransom, for each prisoner it sends home (rules.md §8).</summary>
     public const int RansomAcceptedBonus = 1;
@@ -77,6 +80,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying
     private readonly PawnPromotion _pawnPromotion;
     private readonly ThroneControl _control;
     private readonly Command _command;
+    private readonly EveryPiece _everyPiece;
     private readonly Ransom _ransom;
 
     public Chaturaji2027Rules()
@@ -105,6 +109,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying
         this.Thrones = Chaturaji2027Setup.Thrones(this._grid);
         this._control = new ThroneControl(this.Thrones);
         this._command = new Command(this._control);
+        this._everyPiece = new EveryPiece(this._control);
         this._ransom = new Ransom(this._grid, Chaturaji2027Setup.InitialPosition(this._grid));
     }
 
@@ -140,20 +145,23 @@ public sealed class Chaturaji2027Rules : IRulesApplying
     public Transition Apply([Required] GameState state, [Required] GameAction action) =>
         this._command.Told(
             state,
-            this.Unstalled(
-                GameEnd.AfterGivingUp(
-                    Attended(
-                        action,
-                        action switch
-                        {
-                            DiceAction dice => this.Rolled(state, dice),
-                            OfferAction offer => Offered(state, offer),
-                            ProposeEndAction propose => this.Proposed(state, propose),
-                            RejoinAction rejoin => this.Rejoined(state, rejoin),
-                            VoteAwayAction vote => this.Voted(state, vote),
-                            PassAwayAction pass => this.PassedAway(state, pass),
-                            _ => this.Decided(state, action),
-                        }
+            this._everyPiece.Scored(
+                state,
+                this.Unstalled(
+                    GameEnd.AfterGivingUp(
+                        Attended(
+                            action,
+                            action switch
+                            {
+                                DiceAction dice => this.Rolled(state, dice),
+                                OfferAction offer => Offered(state, offer),
+                                ProposeEndAction propose => this.Proposed(state, propose),
+                                RejoinAction rejoin => this.Rejoined(state, rejoin),
+                                VoteAwayAction vote => this.Voted(state, vote),
+                                PassAwayAction pass => this.PassedAway(state, pass),
+                                _ => this.Decided(state, action),
+                            }
+                        )
                     )
                 )
             )
@@ -917,7 +925,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying
             : moved;
     }
 
-    private static Transition Scored(Transition transition, SeatId seat, int points, GameEvent happened)
+    internal static Transition Scored(Transition transition, SeatId seat, int points, GameEvent happened)
     {
         GameState state = transition.State;
         GameState scored = state with { Scores = state.Scores.SetItem(seat, state.Scores[seat] + points) };

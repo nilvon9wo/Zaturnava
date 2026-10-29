@@ -25,7 +25,7 @@ Everything else here is specified but not yet played by the engine.
 | §2 Board & setup | Implemented: the 8×8 board, the pinwheel setup, teams of opposite seats, thrones. |
 | §3 Pieces & movement | Implemented, captures included, and the back-to-back Pawn swap. A piece moved for another army moves the way its own army faces; what it may take is §6.4. |
 | §4 Turns & dice | Implemented: the opening plays the die that won the roll-off, then a deliberate move, a pass or two dice, clockwise from the roll-off's winner; an unusable die is forfeit. Doubles let one piece move twice, or a prisoner escape (§7). The dice profile is the weighted d6 one; a d4 profile exists but cannot yet be chosen. |
-| §5 Captures & scoring | Implemented: captures score by piece, with both throne bonuses and the empire, as clarified below; the ransom's point is in §8. |
+| §5 Captures & scoring | Implemented: captures score by piece, with both throne bonuses, the empire and commanding every piece, as clarified below; the ransom's point is in §8. |
 | §6 Throne control | Implemented: the expanded pool (§6.1, both triggers), voluntary regency (§6.2, as stated below) and the forced shared turn (§6.3). |
 | §6.4 Commanded captures | Implemented, with the toggle as a constructor argument. |
 | §7 Escape | Implemented, as clarified below: the escape takes the place of the double move and ends the turn. |
@@ -207,6 +207,22 @@ Points are never subtracted or returned when a piece is given back.
   - *(Stated 2026-10-26)* The +2 for taking a Raja on its own throne is
     scored as well as the empire's +4: taking the last enemy Raja on its
     throne while commanding an ally scores 5 + 2 + 1 + 4.
+- *(Stated 2026-10-29)* **Commanding every piece**: **+2** to a player who,
+  on their own turn, commands every piece on the board: as when their Raja,
+  the only one left, sits on one enemy's throne, the other enemy has no
+  pieces, and their ally has no Raja (§6.1a and b). It is scored once, and
+  can't be scored again unless the game returns to a state where all four
+  players are on the board. It is not an outright win: the occupied enemy
+  still takes the first move of its own turn (§6.3), and may free its throne
+  with it.
+  - *(Proposed)* "Every piece" means every piece on the board but a retired
+    Raja (§10), and a player is "on the board" while they have a piece there
+    other than a retired Raja. While all four are, no one can command every
+    piece, since a Raja holds only one throne. The engine
+    reckons it after every action: the player who acted on their own turn
+    scores it first, else the player whose own turn it now is. A regent
+    playing an ally's turn, or a player answering an offer or a proposal, is
+    not on their own turn. A name: *Chakravartin*, the universal ruler.
 
 ## 6. Throne Control
 
@@ -702,6 +718,7 @@ configuration this document describes.
 | `scoring.bonuses.empireCreated` | `1` | "Creating the empire" base bonus (§5). |
 | `scoring.bonuses.empireCreatedByCapture` | `2` | Additional empire bonus when the player personally captured the triggering Raja (§5). |
 | `scoring.bonuses.empireCreatedByThroneCapture` | `4` | Replaces the previous bonus when that capture happened on the enemy Raja's own throne (§5). |
+| `scoring.bonuses.everyPieceCommanded` | `2` | Commanding every piece on the board, on one's own turn (§5). |
 | `pieceSet.naming` | `traditional` | Display naming only, no movement change: `traditional` (Pawn/Boat/Horse/Elephant/Raja) vs. `modern` (Pawn/Boat/Knight/Rook/King). *(Newly raised — which chess-standard labels map to which traditional piece, and whether "Boat" itself is replaced by something else entirely, is still undecided; see [§13](#13-open-items--deferred).)* |
 
 *(Clarified)* There is deliberately no `ransom.requiresCapturerConsent` (or
@@ -738,17 +755,5 @@ Nothing rules-level is currently blocking. Noted for later attention:
   [architecture.md §2.2](architecture.md#22-piece-catalog-and-movement-grammar)
   — the movement grammar doesn't change either way — but left open since it
   affects every rules doc and UI label once decided.
-- *(Stated 2026-10-29)* Commanding every piece on the board, on one's own
-  turn, should be worth a bonus beyond the empire's and a throne entry's: as
-  when a player's Raja, the only one left, sits on one enemy's throne, the
-  other enemy has no pieces, and their ally has no Raja (§6.1a and b).
-  - Not decided: what it is worth. *(Proposed options)* a one-time bonus on
-    reaching it (say +5, a Raja's worth), edge-triggered and repeatable as
-    the empire is; or a bonus each turn it is held (say +1); or both. Not an
-    outright win: the occupied enemy still takes the first move of its own
-    turn (§6.3), and may free its throne with it.
-  - *(Proposed)* "Every piece" means every piece on the board but a retired
-    Raja; only the player whose pool holds them all scores it. A name:
-    *Chakravartin*, the universal ruler.
 - Hosting is not a rules concern; see
   [architecture.md §8](architecture.md#8-tech-stack--hosting).

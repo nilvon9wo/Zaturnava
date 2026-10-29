@@ -79,6 +79,12 @@ public sealed record GameState(
     /// <summary>The seats that ended their part in the game, left with only their leader.</summary>
     public ImmutableHashSet<SeatId> Retired { get; init; } = [];
 
+    /// <summary>
+    /// Whether a seat has scored for commanding every piece on the board since every seat last had a piece on
+    /// it, so that no one may score for it again until every seat does.
+    /// </summary>
+    public bool IsEveryPieceScored { get; init; }
+
     /// <summary>Who is away from the game, and who would stop waiting for them.</summary>
     public Absence Absence { get; init; } = Absence.None;
 

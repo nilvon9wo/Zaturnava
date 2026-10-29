@@ -527,6 +527,49 @@ public sealed class Chaturaji2027RulesTest
         Assert.Equal(score, transition.State.Scores[Black]);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Apply_WhenARajaTakesTheThroneThatLeavesItCommandingEveryPiece_ScoresTheBonusOnce(bool hasRetiredRed)
+    {
+        // Arrange - Green has no Raja, so Black commands it; Red has nothing, or only its Raja, retired
+        GameState state = this.EveryPiece(hasRetiredRed);
+
+        // Act
+        Transition transition = this._rules.Apply(state, new MoveAction(Black, Grid.CellAt(1, 4), YellowThrone));
+
+        // Assert
+        Assert.Equal([new EveryPieceCommanded(Black, 2)], transition.Events.OfType<EveryPieceCommanded>());
+        Assert.Equal((3, true), (transition.State.Scores[Black], transition.State.IsEveryPieceScored));
+    }
+
+    [Fact]
+    public void Apply_WhenEveryPieceIsCommandedAgainBeforeEverySeatIsBackOnTheBoard_ScoresNothingMore()
+    {
+        // Arrange - the bonus already scored, and not every seat on the board since
+        GameState state = this.EveryPiece(hasRetiredRed: false) with { IsEveryPieceScored = true };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new MoveAction(Black, Grid.CellAt(1, 4), YellowThrone));
+
+        // Assert
+        Assert.Empty(transition.Events.OfType<EveryPieceCommanded>());
+        Assert.Equal((1, true), (transition.State.Scores[Black], transition.State.IsEveryPieceScored));
+    }
+
+    [Fact]
+    public void Apply_WhenEverySeatIsOnTheBoard_LetsTheBonusForCommandingEveryPieceBeScoredAgain()
+    {
+        // Arrange - the bonus scored once, and every seat back on the board
+        GameState state = this.Later() with { IsEveryPieceScored = true };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new PassAction(Black));
+
+        // Assert
+        Assert.False(transition.State.IsEveryPieceScored);
+    }
+
     [Fact]
     public void Apply_WhenTheLastEnemyRajaIsTakenWithBlacksRajaOnGreensThrone_CreatesTheEmpire()
     {
@@ -1047,7 +1090,7 @@ public sealed class Chaturaji2027RulesTest
     [Fact]
     public void Apply_WhenACommandedArmyTakesThePiecesOfItsCommandersTeam_ScoresNoOne()
     {
-        // Arrange - Black commands Red, whose pawn can take Green's Raja on Green's own throne, e8
+        // Arrange - Black commands Red, whose pawn can take Green's Raja on Green's own throne, e8; Yellow has a pawn
         Chaturaji2027Rules rules = new(
             DiceProfile.WeightedSixSided,
             Chaturaji2027Rules.DefaultIdleRounds,
@@ -1058,7 +1101,8 @@ public sealed class Chaturaji2027RulesTest
         GameState state = this.StateWith(
             (RedThrone, Piece(1, Chaturaji2027Pieces.Raja, Black)),
             (Grid.CellAt(5, 6), Piece(2, Chaturaji2027Pieces.Pawn, Red)),
-            (Grid.CellAt(4, 7), raja)
+            (Grid.CellAt(4, 7), raja),
+            (Grid.CellAt(0, 7), Piece(13, Chaturaji2027Pieces.Pawn, Yellow))
         );
 
         // Act
@@ -3149,6 +3193,26 @@ public sealed class Chaturaji2027RulesTest
             ? state with
             {
                 Position = state.Position.Place(Grid.CellAt(6, 2), Piece(19, Chaturaji2027Pieces.Raja, Green)),
+            }
+            : state;
+    }
+
+    /// <summary>
+    /// Black's turn, its Raja beside Yellow's throne; Green's Pawn, with no Raja; Yellow's Pawn; and, if
+    /// <paramref name="hasRetiredRed"/>, Red's Raja, Red retired, else nothing of Red's.
+    /// </summary>
+    private GameState EveryPiece(bool hasRetiredRed)
+    {
+        GameState state = this.StateWith(
+            (Grid.CellAt(1, 4), Piece(3, Chaturaji2027Pieces.Raja, Black)),
+            (Grid.CellAt(2, 6), Piece(21, Chaturaji2027Pieces.Pawn, Green)),
+            (Grid.CellAt(5, 5), Piece(13, Chaturaji2027Pieces.Pawn, Yellow))
+        );
+        return hasRetiredRed
+            ? state with
+            {
+                Position = state.Position.Place(Grid.CellAt(7, 7), Piece(27, Chaturaji2027Pieces.Raja, Red)),
+                Retired = [Red],
             }
             : state;
     }
