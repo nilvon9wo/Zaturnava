@@ -15,7 +15,8 @@ namespace Net.NowhereAtAll.Zaturnava.Contracts;
 /// only offer ransoms, or be done. <see cref="Returning"/> is a piece going home from a ransom, which
 /// waits on the deciding seat, its owner, to choose where it goes (a <c>place</c> action, drawn on the
 /// board as a cell to drop it on). <see cref="ThroneHeldBy"/> is the enemy seat whose leader sits on the
-/// throne of the seat deciding for itself, which may change what that seat may do, and who moves.
+/// throne of the seat whose turn the deciding seat plays (its own, or an ally's it acts for), which may
+/// change what it may do, and who moves.
 /// <see cref="Proposal"/> is a proposal to end the game, waiting on the deciding seat's answer;
 /// <see cref="Away"/>, the vote on whether to stop waiting for the deciding seat, if there is one.
 /// </summary>

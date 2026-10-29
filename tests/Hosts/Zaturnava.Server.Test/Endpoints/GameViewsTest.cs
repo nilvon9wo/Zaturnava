@@ -380,16 +380,22 @@ public sealed class GameViewsTest
     [InlineData("ally's Raja", null)]
     [InlineData("enemy's Pawn", null)]
     [InlineData("empty", null)]
-    [InlineData("acting for another", null)]
+    [InlineData("acting for an ally", null)]
+    [InlineData("acting for an ally whose throne is held", 1)]
+    [InlineData("sharing the turn of the throne held", null)]
+    [InlineData("held by a retired seat", null)]
     [InlineData("game over", null)]
     public void ViewOf_WhenALeaderSitsOnTheDecidingSeatsThrone_SaysWhoseIfAnEnemys(string why, int? expected)
     {
         // Arrange - Black to decide, with Yellow's (an enemy's) or Green's (an ally's) piece on its throne
         GameState start = Rules.CreateInitialState();
         CellId throne = Rules.Thrones[new SeatId(0)];
+        CellId greens = Rules.Thrones[new SeatId(2)];
         Position position = why switch
         {
             "ally's Raja" => start.Position.Place(throne, Holder(Chaturaji2027Pieces.Raja, 2)),
+            "acting for an ally whose throne is held" =>
+                start.Position.Place(greens, Holder(Chaturaji2027Pieces.Raja, 1)),
             "enemy's Pawn" => start.Position.Place(throne, Holder(Chaturaji2027Pieces.Pawn, 1)),
             "empty" => new Position(start.Position.Occupants.Remove(throne)),
             _ => start.Position.Place(throne, Holder(Chaturaji2027Pieces.Raja, 1)),
@@ -398,8 +404,19 @@ public sealed class GameViewsTest
         {
             RollOff = [],
             AwaitedDice = null,
-            DecidingSeat = why == "game over" ? null : new SeatId(0),
-            ActingFor = why == "acting for another" ? new SeatId(2) : null,
+            DecidingSeat = why switch
+            {
+                "game over" => null,
+                "sharing the turn of the throne held" => new SeatId(1),
+                _ => new SeatId(0),
+            },
+            ActingFor = why switch
+            {
+                "acting for an ally" or "acting for an ally whose throne is held" => new SeatId(2),
+                "sharing the turn of the throne held" => new SeatId(0),
+                _ => null,
+            },
+            Retired = why == "held by a retired seat" ? [new SeatId(1)] : [],
             Position = position,
         };
 
