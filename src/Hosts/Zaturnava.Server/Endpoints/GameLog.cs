@@ -170,6 +170,13 @@ file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bo
                 $"{this.Name(empire.Creator)} created the empire, with no enemy Raja left on the board "
                     + $"(+{Text(empire.Points)})."
             ),
+            FarmedPointsLost lost => this.Add(
+                number,
+                EventDto.Bonus,
+                lost.Captor,
+                $"{this.Name(lost.Farmer)}'s Raja was taken while farming a throne: {this.Name(lost.Farmer)} loses "
+                    + $"the {Text(lost.Lost)} it farmed, and {this.Name(lost.Captor)} scores (+{Text(lost.Gained)})."
+            ),
             EveryPieceCommanded commanded => this.Add(
                 number,
                 EventDto.Bonus,

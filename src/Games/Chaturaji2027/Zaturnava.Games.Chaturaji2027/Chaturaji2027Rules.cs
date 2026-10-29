@@ -81,6 +81,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying
     private readonly ThroneControl _control;
     private readonly Command _command;
     private readonly EveryPiece _everyPiece;
+    private readonly Farming _farming;
     private readonly Ransom _ransom;
 
     public Chaturaji2027Rules()
@@ -110,6 +111,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying
         this._control = new ThroneControl(this.Thrones);
         this._command = new Command(this._control);
         this._everyPiece = new EveryPiece(this._control);
+        this._farming = new Farming(this._control, this._moves);
         this._ransom = new Ransom(this._grid, Chaturaji2027Setup.InitialPosition(this._grid));
     }
 
@@ -554,7 +556,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying
     {
         Prisoner prisoner = state.Prisoners.First(held => held.Piece.Id == escape.Piece);
         Piece? captured = state.Position.PieceAt(escape.Home);
-        GameState escaped = state with
+        GameState escaped = Farming.Stopped(state, escape.Actor) with
         {
             Position = state.Position.Place(escape.Home, prisoner.Piece),
             Prisoners = state.Prisoners.Remove(prisoner),
@@ -636,7 +638,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying
     private Transition AfterMove(GameState state, MoveAction move)
     {
         PieceKindId kind = state.Position.PieceAt(move.From)!.Kind; // the move is legal, so a piece stands there
-        Transition moved = this.Moved(state, move);
+        Transition moved = this._farming.Tallied(state, move, this.Moved(state, move));
         Transition used = this.WithoutDieFor(moved, kind);
         bool isDue = this.PromotionsOf(used.State, move.Actor).Any(promotion => promotion.Cell == move.To);
         return (GameEnd.AfterMove(moved), isDue) switch
@@ -863,7 +865,12 @@ public sealed class Chaturaji2027Rules : IRulesApplying
             : 0;
         bool isEnemyRaja = isEnemy && captured.Kind == Chaturaji2027Pieces.Raja;
         bool isOnThrone = isEnemyRaja && this._control.IsThroneOf(cell, captured.Owner);
-        Transition scored = Scored(moved, captor, points, new PieceCaptured(captured, captor, points));
+        Transition scored = Farming.Forfeited(
+            Scored(moved, captor, points, new PieceCaptured(captured, captor, points)),
+            captured,
+            captor,
+            isEnemy
+        );
         GameState state = scored.State;
         Transition taken = scored with
         {

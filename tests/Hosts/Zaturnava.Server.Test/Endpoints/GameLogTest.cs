@@ -261,6 +261,7 @@ public sealed class GameLogTest
             new RajaCapturedOnThrone(RedRaja, Black, 2),
             new EmpireCreated(Black, 5),
             new EveryPieceCommanded(Black, 2),
+            new FarmedPointsLost(Yellow, Black, 3, 6),
             new DiceForfeited(Black, [1])
         );
 
@@ -278,6 +279,8 @@ public sealed class GameLogTest
                 "bonus 0: Black took that Raja on its own throne (+2 more).",
                 "empire 0: Black created the empire, with no enemy Raja left on the board (+5).",
                 "bonus 0: Black commands every piece on the board (+2).",
+                "bonus 0: Yellow's Raja was taken while farming a throne: Yellow loses the 3 it farmed, "
+                    + "and Black scores (+6).",
                 "forfeited 0: Black could move nothing of Red's with 1 (Boat), so lost it.",
             ],
             log.Select(Told)
