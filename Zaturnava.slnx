@@ -16,7 +16,6 @@
   <Folder Name="/src/Bots/">
     <Project Path="src/Bots/Zaturnava.BotRunner/Zaturnava.BotRunner.csproj" />
     <Project Path="src/Bots/Zaturnava.Bots/Zaturnava.Bots.csproj" />
-    <Project Path="src/Bots/Zaturnava.Bots.OpenAiCompatible/Zaturnava.Bots.OpenAiCompatible.csproj" />
   </Folder>
   <Folder Name="/src/Engine/">
     <Project Path="src/Engine/Zaturnava.Engine/Zaturnava.Engine.csproj" />
@@ -50,7 +49,6 @@
   <Folder Name="/tests/Bots/">
     <Project Path="tests/Bots/Zaturnava.BotRunner.Test/Zaturnava.BotRunner.Test.csproj" />
     <Project Path="tests/Bots/Zaturnava.Bots.Test/Zaturnava.Bots.Test.csproj" />
-    <Project Path="tests/Bots/Zaturnava.Bots.OpenAiCompatible.Test/Zaturnava.Bots.OpenAiCompatible.Test.csproj" />
   </Folder>
   <Folder Name="/tests/Engine/">
     <Project Path="tests/Engine/Zaturnava.Engine.Test/Zaturnava.Engine.Test.csproj" />

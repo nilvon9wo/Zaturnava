@@ -25,7 +25,6 @@ public sealed class DependencyRulesTest
             ["Topology.SquareGrid"] = ["Engine"],
             ["Games.Chaturaji2027"] = ["Engine", "Topology.SquareGrid"],
             ["Bots"] = ["Engine"],
-            ["Bots.OpenAiCompatible"] = ["Bots", "Engine"],
 
             // the use cases, and the adapters plugged into their ports
             ["Application"] = ["Engine"],
@@ -49,8 +48,8 @@ public sealed class DependencyRulesTest
             // the composition root: the one project that knows everything
             ["Server"] =
             [
-                "Application", "Bots", "Bots.OpenAiCompatible", "Contracts", "Engine", "Hosting", "Hosting.Itch",
-                "Persistence.EfCore", "Persistence.InMemory", "Topology.SquareGrid", "Games.Chaturaji2027",
+                "Application", "Bots", "Contracts", "Engine", "Hosting", "Hosting.Itch", "Persistence.EfCore",
+                "Persistence.InMemory", "Topology.SquareGrid", "Games.Chaturaji2027",
             ],
         }.ToImmutableDictionary();
 
