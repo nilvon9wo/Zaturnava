@@ -16,11 +16,25 @@ namespace Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
 /// nothing. The game waits on the receiver, who accepts or declines; either way the offerer decides
 /// again. Accepted, each prisoner goes home to its own starting square if free; else to a free starting
 /// square of its kind's (any of its army's Pawns' for a Pawn); else to the free squares nearest its own.
-/// When it may go to more than one, its owner chooses, and the game waits on that choice.
+/// When it may go to more than one, its owner chooses, and the game waits on that choice. A seat may also give
+/// back prisoners of its own team (§8): its own, at once, or an ally's, at once unless an enemy holds the
+/// ally's throne; but only once every seat has had a turn since they were taken. Such a prisoner going home
+/// takes an enemy on its starting square, by <paramref name="captured"/>, if it is a Raja, or its army's Raja
+/// is on its throne.
 /// </summary>
-internal sealed class Ransom(SquareGridTopology grid, Position start)
+internal sealed class Ransom(
+    SquareGridTopology grid,
+    Position start,
+    Func<Transition, Piece, SeatId, CellId, Transition> captured
+)
 {
     private readonly SquareGridTopology _grid = grid;
+    private readonly Func<Transition, Piece, SeatId, CellId, Transition> _captured = captured;
+
+    private readonly ImmutableDictionary<SeatId, CellId> _thrones =
+        start.Occupants
+            .Where(occupant => occupant.Value.Kind == Chaturaji2027Pieces.Raja)
+            .ToImmutableDictionary(occupant => occupant.Value.Owner, occupant => occupant.Key);
 
     private readonly ImmutableDictionary<PieceId, CellId> _homes =
         start.Occupants.ToImmutableDictionary(occupant => occupant.Value.Id, occupant => occupant.Key);
@@ -35,9 +49,18 @@ internal sealed class Ransom(SquareGridTopology grid, Position start)
                 .ToImmutableList()
         );
 
-    /// <summary>Whether <paramref name="seat"/> holds a prisoner it could offer back to its owner.</summary>
+    /// <summary>Whether <paramref name="seat"/> holds a prisoner it could give back now.</summary>
     public static bool HoldsRansom(GameState state, SeatId seat) =>
-        state.Prisoners.Any(prisoner => prisoner.Holder == seat && prisoner.Piece.Owner != seat);
+        state.Prisoners.Any(prisoner => prisoner.Holder == seat && MayGoBack(state, prisoner));
+
+    /// <summary>
+    /// A prisoner may go home at any time, but one its own team took only once every seat has had a turn
+    /// since.
+    /// </summary>
+    public static bool MayGoBack(GameState state, Prisoner prisoner) =>
+        !state.Teams.AreAllied(prisoner.Holder, prisoner.Piece.Owner)
+        || !state.TakenByOwnTeam.TryGetValue(prisoner.Piece.Id, out int taken)
+        || state.TurnNumber >= taken + state.Seats.Count;
 
     /// <summary>
     /// On its own turn, with no dice awaited, no offer waiting and no promotion due, a seat with prisoners
@@ -58,9 +81,10 @@ internal sealed class Ransom(SquareGridTopology grid, Position start)
         && HoldsRansom(state, seat);
 
     /// <summary>
-    /// The offer may be made: the offerer may offer, to a seat that has not retired, gives back at least one
-    /// prisoner it holds of the receiver's, asks only for prisoners the receiver holds of the offerer's team,
-    /// and has not made the same offer this turn.
+    /// The offer may be made: the offerer may offer, to a seat that has not retired, its own self included,
+    /// gives back at least one prisoner it holds of the receiver's, each of which may go home now, asks only
+    /// for prisoners the receiver holds of the offerer's team, and nothing of its own team, and has not made
+    /// the same offer this turn.
     /// </summary>
     public static bool IsValid(GameState state, OfferAction offer)
     {
@@ -70,11 +94,12 @@ internal sealed class Ransom(SquareGridTopology grid, Position start)
         return state.DecidingSeat is { } seat
             && offer.Actor == seat
             && MayOffer(state)
-            && offer.Receiver != offer.Actor
             && !state.Retired.Contains(offer.Receiver)
             && !given.IsEmpty
             && given.Count == offer.Given.Count
+            && given.All(prisoner => MayGoBack(state, prisoner))
             && asked.Count == offer.Asked.Count
+            && (offer.Asked.IsEmpty || !state.Teams.AreAllied(offer.Receiver, offer.Actor))
             && !state.OffersMade.Contains(offer.Offer);
     }
 
@@ -87,6 +112,18 @@ internal sealed class Ransom(SquareGridTopology grid, Position start)
             OffersMade = state.OffersMade.Add(offer.Offer),
         };
         return new Transition(waiting, [new RansomOffered(offer.Offer)]);
+    }
+
+    /// <summary>The prisoners go home at once, given back to their own team; then the offerer decides again.</summary>
+    public Transition Released(GameState state, OfferAction offer)
+    {
+        ImmutableList<Prisoner> going =
+            [.. offer.Given.Select(id => state.Prisoners.First(prisoner => prisoner.Piece.Id == id))];
+        Transition released = new(
+            state with { OffersMade = state.OffersMade.Add(offer.Offer) },
+            [new PrisonersReleased(offer.Offer)]
+        );
+        return this.SentHome(released, going, offer.Actor);
     }
 
     public static Transition Declined(GameState state)
@@ -179,16 +216,43 @@ internal sealed class Ransom(SquareGridTopology grid, Position start)
     private Transition SentHome(Transition transition, ImmutableList<Prisoner> going, SeatId resume)
     {
         GameState state = transition.State;
-        ImmutableList<CellId> places = going.IsEmpty ? [] : this.PlacesFor(state, going[0]);
-        return (going.IsEmpty, places.Count) switch
+        CellId? strike = going.IsEmpty ? null : this.StrikeOf(state, going[0]);
+        ImmutableList<CellId> places = going.IsEmpty || strike is not null ? [] : this.PlacesFor(state, going[0]);
+        return (going.IsEmpty, strike, places.Count) switch
         {
-            (true, _) => transition with { State = state with { Returning = null, DecidingSeat = resume } },
-            (_, 1) => this.SentHome(Returned(transition, going[0], places[0]), going.RemoveAt(0), resume),
+            (true, _, _) => transition with { State = state with { Returning = null, DecidingSeat = resume } },
+            (_, { } home, _) => this.SentHome(this.Struck(transition, going[0], home), going.RemoveAt(0), resume),
+            (_, _, 1) => this.SentHome(Returned(transition, going[0], places[0]), going.RemoveAt(0), resume),
             _ => transition with
             {
                 State = state with { Returning = new ReturnsDue(going, resume), DecidingSeat = going[0].Piece.Owner },
             },
         };
+    }
+
+    /// <summary>
+    /// The starting square of a prisoner its own team gives back, if it takes the enemy there (rules.md §8):
+    /// a Raja, going back to its throne, or any piece whose army's Raja is on its throne; else null.
+    /// </summary>
+    private CellId? StrikeOf(GameState state, Prisoner prisoner)
+    {
+        SeatId owner = prisoner.Piece.Owner;
+        CellId home = this._homes[prisoner.Piece.Id];
+        Piece? there = state.Position.PieceAt(home);
+        Piece? onThrone = state.Position.PieceAt(this._thrones[owner]);
+        bool isStriking = state.Teams.AreAllied(prisoner.Holder, owner)
+            && there is not null
+            && !state.Teams.AreAllied(there.Owner, owner)
+            && (prisoner.Piece.Kind == Chaturaji2027Pieces.Raja
+                || (onThrone?.Kind == Chaturaji2027Pieces.Raja && onThrone.Owner == owner));
+        return isStriking ? home : null;
+    }
+
+    /// <summary>The prisoner goes home, taking the enemy there, for its own army.</summary>
+    private Transition Struck(Transition transition, Prisoner prisoner, CellId home)
+    {
+        Piece taken = transition.State.Position.PieceAt(home)!; // struck only where an enemy stands
+        return this._captured(Returned(transition, prisoner, home), taken, prisoner.Piece.Owner, home);
     }
 
     private static Transition Returned(Transition transition, Prisoner prisoner, CellId cell)
@@ -198,6 +262,7 @@ internal sealed class Ransom(SquareGridTopology grid, Position start)
         {
             Position = state.Position.Place(cell, prisoner.Piece),
             Prisoners = state.Prisoners.Remove(prisoner),
+            TakenByOwnTeam = state.TakenByOwnTeam.Remove(prisoner.Piece.Id),
         };
         return new Transition(returned, transition.Events.Add(new PieceReturned(prisoner.Piece, cell)));
     }

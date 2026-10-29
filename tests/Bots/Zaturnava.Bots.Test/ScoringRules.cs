@@ -58,6 +58,8 @@ internal sealed class ScoringRules(ImmutableDictionary<GameAction, int> points) 
 
     public bool MayOffer([Required] GameState state) => true;
 
+    public bool MayGoBack([Required] GameState state, [Required] Prisoner prisoner) => true;
+
     /// <summary>Whether a seat may propose ending the game; no one may, unless set.</summary>
     public bool MayPropose { get; init; }
 

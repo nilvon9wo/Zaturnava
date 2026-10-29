@@ -1223,6 +1223,43 @@ public sealed class TableTest : IDisposable
     }
 
     [Fact]
+    public void Offer_WhenThePlayerHoldsTheirOwnPieces_ReleasesThoseThatMayGoBackWithNothingToAskFor()
+    {
+        // Arrange - Black holds its own Boat 12, and its own Pawn 13, taken too lately to go back yet
+        GameViewDto ransoms = Ransoms();
+        SeatDto black = ransoms.Seats[0];
+        this._page.Server.View = ransoms with
+        {
+            Seats = ransoms.Seats.SetItem(
+                0,
+                black with
+                {
+                    Prisoners =
+                    [
+                        .. black.Prisoners,
+                        new PrisonerDto(12, "boat", "Boat", 0),
+                        new PrisonerDto(13, "pawn", "Pawn", 0) { MayGoBack = false },
+                    ],
+                }
+            ),
+        };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        AngleSharp.Dom.IElement mine = table.FindAll(".ransom-to")[0];
+
+        // Act
+        string offered =
+            $"{mine.QuerySelector(".name")!.TextContent} {mine.QuerySelectorAll("button.prisoner").Length}";
+        mine.QuerySelector("button.prisoner")!.Click();
+        int askable = table.FindAll(".ransom-ask").Count;
+        table.Find("button.offer").Click();
+        (string kind, string receiver, string given, _) = Offered(this._page.Server);
+
+        // Assert
+        Assert.Equal(("To yourself: 1", 0), (offered, askable));
+        Assert.Equal(("offer", "0", "12"), (kind, receiver, given));
+    }
+
+    [Fact]
     public void Offer_WhenPrisonersAreChosenToGiveAndToAskFor_SubmitsThatOffer()
     {
         // Arrange

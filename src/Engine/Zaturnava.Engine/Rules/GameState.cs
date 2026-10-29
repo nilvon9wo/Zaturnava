@@ -55,6 +55,12 @@ public sealed record GameState(
     /// </summary>
     public bool IsRansomWindow { get; init; }
 
+    /// <summary>
+    /// The turn on which each prisoner taken by its own team was taken: it may go home only once every seat has
+    /// had a turn since.
+    /// </summary>
+    public ImmutableDictionary<PieceId, int> TakenByOwnTeam { get; init; } = [];
+
     /// <summary>The ransoms offered this turn, which may not be offered again until it passes.</summary>
     public ImmutableList<RansomOffer> OffersMade { get; init; } = [];
 
