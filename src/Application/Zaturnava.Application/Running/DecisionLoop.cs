@@ -19,7 +19,8 @@ public static class DecisionLoop
     /// Rolls whatever dice the game waits on, then plays on while <paramref name="deciderFor"/> gives the
     /// deciding seat a decider, the game is not over, and fewer than <paramref name="maximumSteps"/>
     /// decisions have been made. Rolling is not deciding, so it is never held back: with no steps
-    /// left, the dice a person just asked for are still rolled.
+    /// left, the dice a person just asked for are still rolled. It loops rather than recurses, so a long game
+    /// cannot run out of stack.
     /// </summary>
     public static async Task<Played> PlayWhile(
         [Required] IRulesApplying rules,
@@ -30,14 +31,17 @@ public static class DecisionLoop
         CancellationToken cancellationToken
     )
     {
-        bool isChance = played.State.AwaitedDice is not null;
-        IDeciding? decider = isChance || maximumSteps > 0
-            ? DeciderOf(played.State, ChanceFirst(played.State, deciderFor, dice))
-            : null;
-        int stepsLeft = isChance ? maximumSteps : maximumSteps - 1;
-        return decider is null
-            ? played
-            : await PlayOn(rules, played, decider, deciderFor, dice, stepsLeft, cancellationToken);
+        Played current = played;
+        int stepsLeft = maximumSteps;
+        IDeciding? decider = NextDecider(current.State, deciderFor, dice, stepsLeft);
+        while (decider is not null)
+        {
+            stepsLeft = current.State.AwaitedDice is null ? stepsLeft - 1 : stepsLeft;
+            current = await Step(rules, current, decider, cancellationToken);
+            decider = NextDecider(current.State, deciderFor, dice, stepsLeft);
+        }
+
+        return current;
     }
 
     /// <summary>A whole game in which every seat is played by the decider at its index.</summary>
@@ -66,24 +70,23 @@ public static class DecisionLoop
             : _ => roller;
     }
 
+    /// <summary>
+    /// Who decides next: the dice roller, if the game waits on dice; else, if steps are left, the seat's decider.
+    /// </summary>
+    private static IDeciding? NextDecider(
+        GameState state,
+        Func<SeatId, IDeciding?> deciderFor,
+        IDiceRolling dice,
+        int stepsLeft
+    ) =>
+        state.AwaitedDice is not null || stepsLeft > 0
+            ? DeciderOf(state, ChanceFirst(state, deciderFor, dice))
+            : null;
+
     private static IDeciding? DeciderOf(GameState state, Func<SeatId, IDeciding?> deciderFor) =>
         state.DecidingSeat is { } seat
             ? deciderFor(seat)
             : null;
-
-    private static async Task<Played> PlayOn(
-        IRulesApplying rules,
-        Played played,
-        IDeciding decider,
-        Func<SeatId, IDeciding?> deciderFor,
-        IDiceRolling dice,
-        int stepsLeft,
-        CancellationToken cancellationToken
-    )
-    {
-        Played next = await Step(rules, played, decider, cancellationToken);
-        return await PlayWhile(rules, next, deciderFor, dice, stepsLeft, cancellationToken);
-    }
 
     private static async Task<Played> Step(
         IRulesApplying rules,
