@@ -2,7 +2,8 @@
    at a seat chosen at random, the bots shuffled among the others - or join, watch or go back to one
    already started; a game over is only listed, with nothing left to watch. Seats go by the ruleset's names
    for them (Black, Yellow...), not by number. A bot paid for each use is seated only when chosen: never by
-   default, nor at random. *@
+   default, nor at random. A server in development also offers scenarios, games set up part-way, to start
+   from. *@
 @inject IGameServing Games
 @inject Browser Browser
 
@@ -32,6 +33,23 @@
                     </li>
                 }
             </ol>
+            @if (!catalog.Scenarios.IsEmpty)
+            {
+                <label class="scenario">
+                    Start from
+                    <select class="scenario" @bind="this._scenario">
+                        <option value="">The beginning</option>
+                        @foreach (ScenarioDto scenario in catalog.Scenarios)
+                        {
+                            <option value="@scenario.Id">Scenario: @scenario.Name</option>
+                        }
+                    </select>
+                </label>
+                @if (catalog.Scenarios.FirstOrDefault(scenario => scenario.Id == this._scenario) is { } chosen)
+                {
+                    <p class="scenario-description">@chosen.Description</p>
+                }
+            }
             <button class="create primary" @onclick="() => this.Create(catalog)">Play</button>
             <button class="quick" @onclick="() => this.Quick(catalog)">Quick game: any seat, bots shuffled</button>
             <dl class="bots">
@@ -82,6 +100,7 @@
     private ImmutableList<GameSummaryDto> _games = [];
     private ImmutableDictionary<string, SeatClaim> _held = ImmutableDictionary<string, SeatClaim>.Empty;
     private List<string> _plans = [];
+    private string _scenario = string.Empty;
     private string? _problem;
 
     [Parameter]
@@ -130,7 +149,8 @@
             this.Games,
             Ruleset(catalog).Id,
             GameStarter.BotsOf(this._plans),
-            this._plans.IndexOf(string.Empty)
+            this._plans.IndexOf(string.Empty),
+            this._scenario.Length == 0 ? null : this._scenario
         ));
 
     private Task Quick(CatalogDto catalog) => this.Sit(() => GameStarter.Quick(this.Games, catalog));

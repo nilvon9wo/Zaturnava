@@ -5,6 +5,7 @@ using Net.NowhereAtAll.Zaturnava.Application.Bots;
 using Net.NowhereAtAll.Zaturnava.Application.Ports;
 using Net.NowhereAtAll.Zaturnava.Application.Rulesets;
 using Net.NowhereAtAll.Zaturnava.Application.Running;
+using Net.NowhereAtAll.Zaturnava.Application.Scenarios;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Chance;
 using Net.NowhereAtAll.Zaturnava.Engine.Decisions;
@@ -22,6 +23,7 @@ namespace Net.NowhereAtAll.Zaturnava.Application.Games;
 public sealed class GameService(
     IRulesetLocating rulesets,
     IBotLocating bots,
+    IScenarioLocating scenarios,
     IGamePersisting store,
     IGameNotifying notifier,
     IDiceRolling dice,
@@ -31,6 +33,7 @@ public sealed class GameService(
 {
     private readonly IRulesetLocating _rulesets = rulesets;
     private readonly IBotLocating _bots = bots;
+    private readonly IScenarioLocating _scenarios = scenarios;
     private readonly IGamePersisting _store = store;
     private readonly IGameNotifying _notifier = notifier;
     private readonly IDiceRolling _dice = dice;
@@ -41,19 +44,40 @@ public sealed class GameService(
 
     public ImmutableList<BotProfile> Bots => this._bots.Bots;
 
+    public ImmutableList<Scenario> Scenarios => this._scenarios.All;
+
     /// <exception cref="UnknownRulesetException">There is no such ruleset.</exception>
+    /// <exception cref="InvalidGameSetupException">The plan does not give every seat exactly one plan.</exception>
+    /// <exception cref="UnknownBotException">A plan names no known bot.</exception>
+    public Task<GameId> Create(
+        [Required] string rulesetId,
+        [Required] ImmutableList<SeatPlan> seats,
+        CancellationToken cancellationToken
+    ) =>
+        this.Create(rulesetId, seats, null, cancellationToken);
+
+    /// <summary>A new game: from the scenario <paramref name="scenarioId"/> names, if any.</summary>
+    /// <exception cref="UnknownRulesetException">There is no such ruleset.</exception>
+    /// <exception cref="UnknownScenarioException">There is no such scenario.</exception>
+    /// <exception cref="InvalidScenarioException">
+    /// The scenario is for another ruleset, or names what the ruleset lacks.
+    /// </exception>
     /// <exception cref="InvalidGameSetupException">The plan does not give every seat exactly one plan.</exception>
     /// <exception cref="UnknownBotException">A plan names no known bot.</exception>
     public async Task<GameId> Create(
         [Required] string rulesetId,
         [Required] ImmutableList<SeatPlan> seats,
+        string? scenarioId,
         CancellationToken cancellationToken
     )
     {
         IRulesApplying rules = this._rulesets.Find(rulesetId);
-        GameState initial = rules.CreateInitialState();
-        GameRecord created = new(GameId.New(), rules.Id, this.ControllersFor(initial, seats), [], 0);
-        Played played = await this.PlayBots(rules, created, new Played(initial, []), cancellationToken);
+        ImmutableList<ActionDescriptor> start = scenarioId is null
+            ? []
+            : [ScenarioStart.Describe(this.ScenarioFor(rules, scenarioId))];
+        GameState initial = ScenarioStart.StateOf(start, rules);
+        GameRecord created = new(GameId.New(), rules.Id, this.ControllersFor(initial, seats), start, 0);
+        Played played = await this.PlayBots(rules, created, new Played(initial, start), cancellationToken);
         GameRecord record = created with { Actions = played.Actions };
         await this._store.Add(record, cancellationToken);
         return record.Id;
@@ -236,6 +260,16 @@ public sealed class GameService(
     {
         DateTimeOffset deadline = this._clock.Since(record.Id, record.Version) + this._settings.LengthOf(timer.Name);
         return TimeSpan.FromTicks(Math.Max(0, (deadline - this._clock.Now).Ticks));
+    }
+
+    private Scenario ScenarioFor(IRulesApplying rules, string scenarioId)
+    {
+        Scenario scenario = this._scenarios.Find(scenarioId);
+        return scenario.RulesetId == rules.Id
+            ? scenario
+            : throw new InvalidScenarioException(
+                $"The '{scenarioId}' scenario is for the '{scenario.RulesetId}' ruleset, not '{rules.Id}'."
+            );
     }
 
     private ImmutableList<SeatController> ControllersFor(GameState initial, ImmutableList<SeatPlan> seats) =>

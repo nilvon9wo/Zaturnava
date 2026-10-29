@@ -2,6 +2,7 @@ using Net.NowhereAtAll.Zaturnava.Application.Bots;
 using Net.NowhereAtAll.Zaturnava.Application.Games;
 using Net.NowhereAtAll.Zaturnava.Application.Ports;
 using Net.NowhereAtAll.Zaturnava.Application.Rulesets;
+using Net.NowhereAtAll.Zaturnava.Application.Scenarios;
 using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 
 namespace Net.NowhereAtAll.Zaturnava.Application.Test.Games;
@@ -16,6 +17,8 @@ public sealed class GameRequestExceptionTest
         { new InvalidGameSetupException("Bad."), GameRequestFailure.Invalid, "Bad." },
         { new UnknownRulesetException("chess"), GameRequestFailure.Invalid, "There is no 'chess' ruleset." },
         { new UnknownBotException("genius"), GameRequestFailure.Invalid, "There is no 'genius' bot." },
+        { new UnknownScenarioException("odd"), GameRequestFailure.Invalid, "There is no 'odd' scenario." },
+        { new InvalidScenarioException("Odd."), GameRequestFailure.Invalid, "Odd." },
         {
             new NotYourTurnException(Game, new SeatId(1)),
             GameRequestFailure.Forbidden,

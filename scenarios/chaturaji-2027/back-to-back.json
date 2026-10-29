@@ -1,0 +1,17 @@
+{
+  "rulesetId": "chaturaji-2027",
+  "name": "Back to back",
+  "description": "Black's Pawn on d4 and Green's on d5 face each other. Black has rolled a 5, which moves a Pawn: swap them.",
+  "turn": "Black",
+  "dice": [5, 3],
+  "pieces": {
+    "d1": "Black Raja",
+    "d4": "Black Pawn",
+    "d5": "Green Pawn",
+    "e8": "Green Raja",
+    "a5": "Yellow Raja",
+    "c6": "Yellow Pawn",
+    "h4": "Red Raja",
+    "f3": "Red Pawn"
+  }
+}

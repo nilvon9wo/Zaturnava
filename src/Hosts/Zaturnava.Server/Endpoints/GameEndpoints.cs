@@ -28,7 +28,8 @@ internal static class GameEndpoints
         return routes;
     }
 
-    private static CatalogDto Catalog(GameService games) => GameViews.CatalogOf(games.Rulesets, games.Bots);
+    private static CatalogDto Catalog(GameService games) =>
+        GameViews.CatalogOf(games.Rulesets, games.Bots, games.Scenarios);
 
     private static async Task<ImmutableList<GameSummaryDto>> List(
         GameService games,
@@ -46,7 +47,7 @@ internal static class GameEndpoints
     )
     {
         ImmutableList<SeatPlan> seats = [.. request.Bots.Select(bot => new SeatPlan(bot))];
-        GameId id = await games.Create(request.RulesetId, seats, cancellationToken);
+        GameId id = await games.Create(request.RulesetId, seats, request.Scenario, cancellationToken);
         return TypedResults.Created("/" + GameRoutes.Game(id.Value), new GameCreatedDto(id.Value));
     }
 

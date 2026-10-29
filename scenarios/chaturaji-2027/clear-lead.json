@@ -1,0 +1,17 @@
+{
+  "rulesetId": "chaturaji-2027",
+  "name": "A clear lead",
+  "description": "Black and Green lead by 15 points, and by 12 on the board: giving up all their turns ends the game, and they win. Take a piece or two off to see it go on instead.",
+  "turn": "Black",
+  "pieces": {
+    "d1": "Black Raja",
+    "c1": "Black Elephant",
+    "b1": "Black Horse",
+    "a2": "Black Pawn",
+    "e8": "Green Raja",
+    "f8": "Green Elephant",
+    "a5": "Yellow Raja",
+    "h4": "Red Raja"
+  },
+  "scores": { "Black": 12, "Green": 3 }
+}

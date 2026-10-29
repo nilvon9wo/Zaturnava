@@ -1,0 +1,20 @@
+{
+  "rulesetId": "chaturaji-2027",
+  "name": "Escape",
+  "description": "Yellow holds Black's Raja. Black has rolled double 6, which may free it to its throne, d1, instead of moving twice.",
+  "turn": "Black",
+  "dice": [6, 6],
+  "pieces": {
+    "b1": "Black Horse",
+    "b3": "Black Pawn",
+    "e8": "Green Raja",
+    "f7": "Green Pawn",
+    "a5": "Yellow Raja",
+    "c6": "Yellow Pawn",
+    "h4": "Red Raja"
+  },
+  "prisoners": [
+    { "piece": "Black Raja", "holder": "Yellow" }
+  ],
+  "scores": { "Yellow": 5 }
+}

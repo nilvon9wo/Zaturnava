@@ -3,6 +3,7 @@ using Net.NowhereAtAll.Zaturnava.Application.Bots;
 using Net.NowhereAtAll.Zaturnava.Application.Games;
 using Net.NowhereAtAll.Zaturnava.Application.Rulesets;
 using Net.NowhereAtAll.Zaturnava.Application.Running;
+using Net.NowhereAtAll.Zaturnava.Application.Scenarios;
 using Net.NowhereAtAll.Zaturnava.Application.Test.Fakes;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Boards;
@@ -18,6 +19,8 @@ public sealed class GameServiceTest
 {
     private const int GameLength = 6;
     private const int AtOnce = 100;
+    private const string SecondFirst = "second-first";
+    private const string Rolling = "rolling";
     private static readonly SeatId First = new(0);
     private static readonly SeatId Second = new(1);
     private static readonly SeatPlan Bot = new(FirstChoiceBot.BotId);
@@ -72,6 +75,39 @@ public sealed class GameServiceTest
 
         // Assert
         _ = await Assert.ThrowsAsync<UnknownRulesetException>(() => creating);
+    }
+
+    [Fact]
+    public async Task Create_WhenFromAScenario_StartsAndReplaysFromIt()
+    {
+        // Arrange
+        GameId id = await this._paced.Create(
+            TinyRules.RulesetId,
+            [SeatPlan.Open, SeatPlan.Open],
+            SecondFirst,
+            this._cancellation
+        );
+
+        // Act
+        GameSnapshot snapshot = await this._paced.Get(id, this._cancellation);
+
+        // Assert
+        Assert.Equal((ScenarioStart.Kind, Second), (snapshot.Record.Actions[0].Kind, snapshot.State.DecidingSeat));
+        Assert.Equal([Rolling, SecondFirst], this._paced.Scenarios.Select(scenario => scenario.Id));
+    }
+
+    [Fact]
+    public async Task Create_WhenTheScenarioIsForAnotherRuleset_ThrowsInvalidScenarioException()
+    {
+        // Arrange - nothing beyond the service
+
+        // Act
+        Task<GameId> creating =
+            this._service.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], Rolling, this._cancellation);
+
+        // Assert
+        InvalidScenarioException exception = await Assert.ThrowsAsync<InvalidScenarioException>(() => creating);
+        Assert.Equal("The 'rolling' scenario is for the 'rolling' ruleset, not 'tiny'.", exception.Message);
     }
 
     [Fact]
@@ -693,6 +729,16 @@ public sealed class GameServiceTest
         new(
             new RulesetCatalog([new TinyRules(GameLength), new RollingRules(GameLength)]),
             new BotCatalog([new FirstChoiceBot()]),
+            new ScenarioCatalog(
+                [
+                    new Scenario(TinyRules.RulesetId, "Second first", "The second seat starts.")
+                    {
+                        Id = SecondFirst,
+                        Turn = "Seat 1",
+                    },
+                    new Scenario(RollingRules.RulesetId, "Rolling", "Another ruleset's.") { Id = Rolling },
+                ]
+            ),
             store ?? new InMemoryGameStore(),
             this._notifier,
             new LoadedDice(4),

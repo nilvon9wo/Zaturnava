@@ -1,0 +1,16 @@
+{
+  "rulesetId": "chaturaji-2027",
+  "name": "Every Raja on a throne",
+  "description": "Each Raja sits on the throne of the enemy to its left: who commands whom? Black is to roll.",
+  "turn": "Black",
+  "pieces": {
+    "a5": "Black Raja",
+    "b2": "Black Pawn",
+    "e8": "Yellow Raja",
+    "b7": "Yellow Pawn",
+    "h4": "Green Raja",
+    "g7": "Green Pawn",
+    "d1": "Red Raja",
+    "g2": "Red Pawn"
+  }
+}

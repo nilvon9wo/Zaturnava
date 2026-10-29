@@ -102,6 +102,56 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
     }
 
     [Fact]
+    public async Task Create_WhenFromEachScenarioOfTheRepository_StartsThere()
+    {
+        // Arrange - development offers the scenarios of the repository's scenarios folder
+        CatalogDto catalog = await this._client.Catalog(this._cancellation);
+
+        // Act
+        ImmutableList<GameViewDto> started =
+        [
+            .. await Task.WhenAll(catalog.Scenarios.Select(async scenario =>
+            {
+                CreateGameRequest request = new(scenario.RulesetId, ZaturnavaServer.OneOpenSeat)
+                {
+                    Scenario = scenario.Id,
+                };
+                GameCreatedDto created = await this._client.Create(request, this._cancellation);
+                return await this._client.Get(created.GameId, this._cancellation);
+            })),
+        ];
+
+        // Assert
+        GameViewDto backToBack = started[catalog.Scenarios.FindIndex(scenario => scenario.Id == "back-to-back")];
+        int d5 = backToBack.Cells.Single(cell => cell.Name == "d5").Id;
+        Assert.Equal(
+            ("Pawn", 2, 0),
+            (
+                backToBack.Pieces.Single(piece => piece.Cell == d5).Name,
+                backToBack.Pieces.Count(piece => piece.Name == "Pawn" && piece.Owner % 2 == 0),
+                backToBack.DecidingSeat
+            )
+        );
+        Assert.All(started, view => Assert.NotEmpty(view.Pieces));
+    }
+
+    [Fact]
+    public async Task Create_WhenTheScenarioIsUnknown_IsRefusedAsInvalid()
+    {
+        // Arrange
+        CreateGameRequest request = new(ZaturnavaServer.Chaturaji2027, ZaturnavaServer.OneOpenSeat)
+        {
+            Scenario = "nowhere",
+        };
+
+        // Act
+        Task<GameCreatedDto> creating = this._client.Create(request, this._cancellation);
+
+        // Assert
+        await AssertRefused(Refusal.Invalid, creating);
+    }
+
+    [Fact]
     public async Task Create_WhenTheRulesetIsUnknown_IsRefusedAsInvalid()
     {
         // Arrange

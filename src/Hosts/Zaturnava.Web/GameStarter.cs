@@ -34,21 +34,24 @@ internal static class GameStarter
         RulesetDto ruleset = catalog.Rulesets[0];
         int person = Random.Shared.Next(ruleset.SeatCount);
         IEnumerable<string> shuffled = Unpaid(catalog).OrderBy(_ => Random.Shared.Next());
-        return Start(games, ruleset.Id, BotsOf(Plans(ruleset.SeatCount, person, shuffled)), person);
+        return Start(games, ruleset.Id, BotsOf(Plans(ruleset.SeatCount, person, shuffled)), person, null);
     }
 
     /// <summary>
-    /// Starts a game of the ruleset with <paramref name="bots"/> in their seats, and sits the player at
-    /// <paramref name="person"/>; or has them watch, if that is no seat.
+    /// Starts a game of the ruleset with <paramref name="bots"/> in their seats, from the start or the
+    /// <paramref name="scenario"/>, and sits the player at <paramref name="person"/>; or has them watch, if
+    /// that is no seat.
     /// </summary>
     public static async Task<Seating> Start(
         IGameServing games,
         string rulesetId,
         ImmutableList<string?> bots,
-        int person
+        int person,
+        string? scenario
     )
     {
-        GameCreatedDto created = await games.Create(new CreateGameRequest(rulesetId, bots), CancellationToken.None);
+        CreateGameRequest request = new(rulesetId, bots) { Scenario = scenario };
+        GameCreatedDto created = await games.Create(request, CancellationToken.None);
         return person >= 0
             ? await Claim(games, created.GameId, person)
             : Seating.Watching(created.GameId);
