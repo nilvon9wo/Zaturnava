@@ -2162,86 +2162,31 @@ public sealed class Chaturaji2027RulesTest
         _ = Assert.IsType<IllegalActionException>(refused);
     }
 
-    [Fact]
-    public void Apply_WhenAReleasedRajaFindsAnEnemyOnItsThrone_TakesIt()
-    {
-        // Arrange - Black holds its own Raja; Yellow's Pawn on Black's throne
-        Piece pawn = Piece(13, Chaturaji2027Pieces.Pawn, Yellow);
-        GameState releasing = this.Releasing(Piece(3, Chaturaji2027Pieces.Raja, Black), Black);
-        GameState state = releasing with { Position = releasing.Position.Place(BlackThrone, pawn) };
-
-        // Act
-        Transition transition = this._rules.Apply(state, new OfferAction(Black, Black, [new PieceId(3)], []));
-
-        // Assert
-        Assert.Equal(
-            (new PieceCaptured(pawn, Black, 1), Chaturaji2027Pieces.Raja, state.Scores[Black] + 1),
-            (
-                transition.Events.OfType<PieceCaptured>().Single(),
-                transition.State.Position.PieceAt(BlackThrone)!.Kind,
-                transition.State.Scores[Black]
-            )
-        );
-    }
-
-    [Fact]
-    public void Apply_WhenAPieceIsReleasedWhileItsRajaIsOnItsThrone_TakesTheEnemyOnItsSquare()
-    {
-        // Arrange - Black's Raja on its throne; Black holds its own Elephant; Yellow's Pawn on c1, its square
-        Piece pawn = Piece(13, Chaturaji2027Pieces.Pawn, Yellow);
-        GameState releasing = this.Releasing(Piece(2, Chaturaji2027Pieces.Elephant, Black), Black);
-        GameState state = releasing with
-        {
-            Position = releasing.Position
-                .Place(BlackThrone, Piece(3, Chaturaji2027Pieces.Raja, Black))
-                .Place(Grid.CellAt(2, 0), pawn),
-        };
-
-        // Act
-        Transition transition = this._rules.Apply(state, new OfferAction(Black, Black, [new PieceId(2)], []));
-
-        // Assert
-        Assert.Equal(
-            (new PieceCaptured(pawn, Black, 1), Chaturaji2027Pieces.Elephant),
-            (
-                transition.Events.OfType<PieceCaptured>().Single(),
-                transition.State.Position.PieceAt(Grid.CellAt(2, 0))!.Kind
-            )
-        );
-    }
-
     [Theory]
-    [InlineData("no one on the throne")]
-    [InlineData("a Pawn on the throne")]
-    [InlineData("an enemy Raja on the throne")]
-    [InlineData("an ally on its square")]
-    public void Apply_WhenAPieceIsReleasedButNotStriking_TakesNothing(string why)
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Apply_WhenAReleasedPieceFindsAnEnemyOnItsSquare_TakesNothing(bool isRaja)
     {
-        // Arrange - Black holds its own Elephant, whose square, c1, someone stands on
-        GameState releasing = this.Releasing(Piece(2, Chaturaji2027Pieces.Elephant, Black), Black);
-        (Piece onThrone, Piece onSquare) = why switch
-        {
-            "a Pawn on the throne" =>
-                (Piece(4, Chaturaji2027Pieces.Pawn, Black), Piece(13, Chaturaji2027Pieces.Pawn, Yellow)),
-            "an enemy Raja on the throne" =>
-                (Piece(12, Chaturaji2027Pieces.Raja, Yellow), Piece(13, Chaturaji2027Pieces.Pawn, Yellow)),
-            "an ally on its square" =>
-                (Piece(3, Chaturaji2027Pieces.Raja, Black), Piece(20, Chaturaji2027Pieces.Pawn, Green)),
-            _ => (Piece(5, Chaturaji2027Pieces.Pawn, Black), Piece(13, Chaturaji2027Pieces.Pawn, Yellow)),
-        };
-        Position position = releasing.Position.Place(Grid.CellAt(2, 0), onSquare);
+        // Arrange - Black holds its own piece; Yellow's Pawn on that piece's square; Black's Raja on its throne, if
+        // the piece is not the Raja
+        Piece pawn = Piece(13, Chaturaji2027Pieces.Pawn, Yellow);
+        (int id, PieceKindId kind, CellId home) = isRaja
+            ? (3, Chaturaji2027Pieces.Raja, BlackThrone)
+            : (2, Chaturaji2027Pieces.Elephant, Grid.CellAt(2, 0));
+        GameState releasing = this.Releasing(Piece(id, kind, Black), Black);
+        Position position = releasing.Position.Place(home, pawn);
         GameState state = releasing with
         {
-            Position = why == "no one on the throne" ? position : position.Place(BlackThrone, onThrone),
+            Position = isRaja ? position : position.Place(BlackThrone, Piece(3, Chaturaji2027Pieces.Raja, Black)),
         };
 
         // Act
-        Transition transition = this._rules.Apply(state, new OfferAction(Black, Black, [new PieceId(2)], []));
+        Transition transition = this._rules.Apply(state, new OfferAction(Black, Black, [new PieceId(id)], []));
 
         // Assert
         Assert.Equal(
-            (0, onSquare),
-            (transition.Events.OfType<PieceCaptured>().Count(), transition.State.Position.PieceAt(Grid.CellAt(2, 0)))
+            (0, pawn),
+            (transition.Events.OfType<PieceCaptured>().Count(), transition.State.Position.PieceAt(home))
         );
     }
 

@@ -112,7 +112,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying
         this._command = new Command(this._control);
         this._everyPiece = new EveryPiece(this._control);
         this._farming = new Farming(this._control, this._moves);
-        this._ransom = new Ransom(this._grid, Chaturaji2027Setup.InitialPosition(this._grid), this.Captured);
+        this._ransom = new Ransom(this._grid, Chaturaji2027Setup.InitialPosition(this._grid));
     }
 
     public string Id => RulesetId;

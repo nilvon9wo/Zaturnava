@@ -539,17 +539,12 @@ available (via a future capture, by anyone).
   - Nothing may be asked in return of one's own team. *(Proposed)*
   - A piece taken by its own team stays prisoner for a whole round: it may
     go home only once every seat has had a turn since it was taken, so that
-    it cannot be caught and released in the same turn. *(Proposed: this
-    applies only to pieces taken by their own team; an enemy's prisoner may
-    be ransomed at once, as before.)*
-  - Going home, such a piece takes nothing, except the enemy on its own
-    starting square, if it is a Raja (going back to its throne), or its
-    army's Raja is on its throne. It takes only an enemy: an ally on that
-    square sends it to the nearest free square instead. The capture is its
-    own army's, and scores as any capture does. *(Proposed: the scoring.)*
-  - Playtesting may show that striking home invites abuse (taking one's own
-    piece far away, to send it home onto an enemy); the round's wait is meant
-    to keep that in check.
+    it cannot be caught and released in the same turn. An enemy's prisoner
+    may still be ransomed at once.
+  - Going home, a released piece takes nothing, as any piece given back.
+    *(Stated 2026-10-29: taking an enemy on its starting square, under its
+    Raja on its throne, was considered and dropped, as open to abuse: to
+    knock an enemy off a throne, or take a well-placed piece.)*
 - *(Stated 2026-10-28, from the original score sheet)* The player who
   **accepts** a ransom scores **+1 for each piece returned**: an incentive to
   keep games going rather than win by attrition, and a balance to otherwise
