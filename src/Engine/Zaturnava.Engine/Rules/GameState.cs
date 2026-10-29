@@ -85,6 +85,15 @@ public sealed record GameState(
     /// </summary>
     public bool IsEveryPieceScored { get; init; }
 
+    /// <summary>
+    /// The points each seat has farmed by stepping its leader on and off a throne, which it loses should the
+    /// leader be taken before it does anything else; a seat that farmed none is not here.
+    /// </summary>
+    public ImmutableDictionary<SeatId, int> Farmed { get; init; } = [];
+
+    /// <summary>The seats whose leader last stepped off a throne idly, so that stepping back on farms.</summary>
+    public ImmutableHashSet<SeatId> SteppedOff { get; init; } = [];
+
     /// <summary>Who is away from the game, and who would stop waiting for them.</summary>
     public Absence Absence { get; init; } = Absence.None;
 

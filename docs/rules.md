@@ -232,6 +232,29 @@ Points are never subtracted or returned when a piece is given back.
     a proposal, is not on their own turn.
   - *(Proposed)* A name for it: *Chakravartin*, Sanskrit for the universal
     ruler, the king whose wheel rolls everywhere unopposed.
+- *(Stated 2026-10-29)* **Farming a throne** — stepping a Raja on and off an
+  enemy throne over and over, scoring its entry each time — is allowed: it
+  risks the Raja to an escape, or to losing command when another piece
+  escapes. But its points are at risk:
+  - A player is farming while their Raja steps off a throne and back on
+    without their moving anything else, and without the step off attacking
+    or defending any piece. The entry points so scored are farmed.
+  - As soon as the player does anything else — moves another piece, or steps
+    off to attack or defend one — what they farmed is safe. (Farm 3, move a
+    Pawn, farm 2 more: only the 2 are at risk.)
+  - If the Raja is taken while farming, its player loses the points at risk,
+    and the captor scores twice as much, besides the Raja's 5. Taken by its
+    own team, no one scores them.
+  - *(Proposed)* How the engine plays it: a Raja steps off idly when it
+    takes nothing and, from where it lands, attacks or guards no piece. Its
+    next entry onto an enemy throne is farmed, if its player has moved
+    nothing else since; a turn passed or rolled away without moving breaks
+    nothing. An escape the player makes stops their farming too. The first
+    entry, coming from anything else, is never farmed.
+  - Not yet decided: whether a Raja that stays off the throne for several
+    turns, doing nothing else, is still farming when it steps back on. For
+    now it is (above): staying off may have strategic value, against an
+    escape, but each turn off also risks losing control of the throne.
 
 ## 6. Throne Control
 

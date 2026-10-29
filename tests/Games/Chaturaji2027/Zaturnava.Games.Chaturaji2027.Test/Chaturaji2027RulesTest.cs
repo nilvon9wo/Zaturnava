@@ -591,6 +591,152 @@ public sealed class Chaturaji2027RulesTest
     }
 
     [Fact]
+    public void Apply_WhenARajaStepsBackOntoAThroneItLeftIdly_FarmsTheEntrysPoint()
+    {
+        // Arrange - Black's Raja stepped off Yellow's throne to b6, idly, and has done nothing since
+        GameState state = this.Farm(Grid.CellAt(1, 5)) with { SteppedOff = [Black] };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new MoveAction(Black, Grid.CellAt(1, 5), YellowThrone));
+
+        // Assert
+        Assert.Equal(
+            (1, 1, false),
+            (
+                transition.State.Scores[Black],
+                transition.State.Farmed.GetValueOrDefault(Black),
+                transition.State.SteppedOff.Contains(Black)
+            )
+        );
+    }
+
+    [Theory]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    public void Apply_WhenARajaStepsOffAnEnemyThrone_IsIdleOnlyIfItAttacksAndGuardsNothingThere(
+        bool isGuarding,
+        bool isIdle
+    )
+    {
+        // Arrange - Black's Raja on Yellow's throne, with Black's Pawn on c4, beside b5, if guarding
+        GameState farm = this.Farm(YellowThrone) with { Farmed = ImmutableDictionary<SeatId, int>.Empty.Add(Black, 2) };
+        GameState state = isGuarding
+            ? farm with { Position = farm.Position.Place(Grid.CellAt(2, 3), Piece(4, Chaturaji2027Pieces.Pawn, Black)) }
+            : farm;
+
+        // Act
+        Transition transition = this._rules.Apply(state, new MoveAction(Black, YellowThrone, Grid.CellAt(1, 4)));
+
+        // Assert
+        Assert.Equal(
+            (isIdle, isIdle ? 2 : 0),
+            (transition.State.SteppedOff.Contains(Black), transition.State.Farmed.GetValueOrDefault(Black))
+        );
+    }
+
+    [Fact]
+    public void Apply_WhenAFarmerMovesAnythingElse_StopsFarmingAndKeepsWhatItFarmed()
+    {
+        // Arrange - Black farmed 3 points and stepped off; now it moves its Pawn
+        GameState farm = this.Farm(Grid.CellAt(1, 5));
+        GameState state = farm with
+        {
+            Position = farm.Position.Place(Grid.CellAt(6, 1), Piece(4, Chaturaji2027Pieces.Pawn, Black)),
+            Scores = farm.Scores.SetItem(Black, 3),
+            Farmed = ImmutableDictionary<SeatId, int>.Empty.Add(Black, 3),
+            SteppedOff = [Black],
+        };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new MoveAction(Black, Grid.CellAt(6, 1), Grid.CellAt(6, 2)));
+
+        // Assert
+        Assert.Equal(
+            (3, 0, false),
+            (
+                transition.State.Scores[Black],
+                transition.State.Farmed.Count,
+                transition.State.SteppedOff.Contains(Black)
+            )
+        );
+    }
+
+    [Fact]
+    public void Apply_WhenAFarmersRajaIsTaken_ItLosesWhatItFarmedAndItsCaptorScoresTwiceThat()
+    {
+        // Arrange - Black farmed 2 of its 3 points; Yellow's Elephant on c8 takes its Raja on c3
+        GameState farm = this.Farm(Grid.CellAt(2, 2));
+        GameState state = farm with
+        {
+            Position = farm.Position.Place(Grid.CellAt(2, 7), Piece(10, Chaturaji2027Pieces.Elephant, Yellow)),
+            DecidingSeat = Yellow,
+            Scores = farm.Scores.SetItem(Black, 3),
+            Farmed = ImmutableDictionary<SeatId, int>.Empty.Add(Black, 2),
+        };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new MoveAction(Yellow, Grid.CellAt(2, 7), Grid.CellAt(2, 2)));
+
+        // Assert
+        Assert.Equal(
+            [new FarmedPointsLost(Black, Yellow, 2, 4)],
+            transition.Events.OfType<FarmedPointsLost>()
+        );
+        Assert.Equal(
+            (1, 9, 0),
+            (transition.State.Scores[Black], transition.State.Scores[Yellow], transition.State.Farmed.Count)
+        );
+    }
+
+    [Fact]
+    public void Apply_WhenAFarmersRajaIsTakenByItsOwnTeam_ItLosesWhatItFarmedAndNoOneScores()
+    {
+        // Arrange - Green commands Red's Pawn, which may take anything, and takes Black's farming Raja on e7
+        Chaturaji2027Rules rules = new(
+            DiceProfile.WeightedSixSided,
+            Chaturaji2027Rules.DefaultIdleRounds,
+            CommandedCaptures.Anything,
+            PawnPromotion.OtherArmies
+        );
+        GameState state = this.StateWith(
+            (RedThrone, Piece(19, Chaturaji2027Pieces.Raja, Green)),
+            (Grid.CellAt(5, 5), Piece(2, Chaturaji2027Pieces.Pawn, Red)),
+            (Grid.CellAt(4, 6), Piece(3, Chaturaji2027Pieces.Raja, Black)),
+            (Grid.CellAt(0, 7), Piece(13, Chaturaji2027Pieces.Pawn, Yellow))
+        ) with
+        {
+            DecidingSeat = Green,
+            Scores = this.Later().Scores.SetItem(Black, 2),
+            Farmed = ImmutableDictionary<SeatId, int>.Empty.Add(Black, 2),
+        };
+
+        // Act
+        Transition transition = rules.Apply(state, new MoveAction(Green, Grid.CellAt(5, 5), Grid.CellAt(4, 6)));
+
+        // Assert
+        Assert.Equal([new FarmedPointsLost(Black, Green, 2, 0)], transition.Events.OfType<FarmedPointsLost>());
+        Assert.Equal((0, 0), (transition.State.Scores[Black], transition.State.Scores[Green]));
+    }
+
+    [Fact]
+    public void Apply_WhenAFarmerLetsAPieceEscape_StopsFarming()
+    {
+        // Arrange - Black farmed a point
+        GameState state = this.Escapes() with
+        {
+            Dice = [5, 5],
+            Farmed = ImmutableDictionary<SeatId, int>.Empty.Add(Black, 1),
+            SteppedOff = [Black],
+        };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new EscapeAction(Black, new PieceId(3), BlackThrone));
+
+        // Assert
+        Assert.Equal((0, 0), (transition.State.Farmed.Count, transition.State.SteppedOff.Count));
+    }
+
+    [Fact]
     public void Apply_WhenTheLastEnemyRajaIsTakenWithBlacksRajaOnGreensThrone_CreatesTheEmpire()
     {
         // Arrange - Green has its Raja, but Black's sits on Green's throne
@@ -3216,6 +3362,18 @@ public sealed class Chaturaji2027RulesTest
             }
             : state;
     }
+
+    /// <summary>
+    /// Black's turn, its Raja on <paramref name="blackRaja"/>, nothing near it; a Pawn each of Yellow's, Green's
+    /// and Red's far away.
+    /// </summary>
+    private GameState Farm(CellId blackRaja) =>
+        this.StateWith(
+            (blackRaja, Piece(3, Chaturaji2027Pieces.Raja, Black)),
+            (Grid.CellAt(7, 7), Piece(13, Chaturaji2027Pieces.Pawn, Yellow)),
+            (Grid.CellAt(6, 7), Piece(21, Chaturaji2027Pieces.Pawn, Green)),
+            (Grid.CellAt(7, 0), Piece(29, Chaturaji2027Pieces.Pawn, Red))
+        );
 
     /// <summary>
     /// Green's turn, with no Raja of its own but a Pawn; Black's Raja on Yellow's throne; Yellow's Pawn; and, if
