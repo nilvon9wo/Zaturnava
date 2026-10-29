@@ -206,13 +206,14 @@ on, with what follows in place of the Raja-and-dice parts.
 ### 6.3 Other Chaturaji 2027 scores
 
 The Chaturaji 2027 bonuses (entering an enemy throne, taking a leader on its own throne, the empire,
-commanding every piece, a ransom's point for each prisoner) were reckoned against pieces worth 1 to 5.
+commanding every piece, a ransom's point for each prisoner, 2 for a Raja) were reckoned against pieces worth
+1 to 5.
 
 - **Stated (2026-10-29).** In the Grand game every one of them is **multiplied by 10**, so that they
   keep their meaning beside captures worth up to 75: entering an enemy throne scores 10, taking a
   leader on its own throne 20, the empire 10 (plus 20, or 40 on the throne, for its captor),
-  commanding every piece 20, and each prisoner a ransom sends home 10. Piece values stay as they
-  are: dividing them by 10 instead would need fractions.
+  commanding every piece 20, and each prisoner a ransom sends home 10, or 20 for any leader. Piece
+  values stay as they are: dividing them by 10 instead would need fractions.
 - **Stated.** Playtesting may still adjust any bonus on its own; so too the leader bonus of 60,
   which is meant to make players guard their leaders even when they are not using them to take
   thrones.

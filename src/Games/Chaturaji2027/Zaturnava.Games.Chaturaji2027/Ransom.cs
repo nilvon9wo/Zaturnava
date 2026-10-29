@@ -97,8 +97,8 @@ internal sealed class Ransom(SquareGridTopology grid, Position start)
     }
 
     /// <summary>
-    /// The receiver scores for each prisoner it sends home, those asked for, and for none it is given back;
-    /// the prisoners given go home first, then
+    /// The receiver scores for each prisoner it sends home, those asked for, more for a Raja, and for none it
+    /// is given back; the prisoners given go home first, then
     /// those asked for, each to the nearest free square.
     /// </summary>
     public Transition Accepted(GameState state)
@@ -108,7 +108,12 @@ internal sealed class Ransom(SquareGridTopology grid, Position start)
         [
             .. offer.Given.Concat(offer.Asked).Select(id => state.Prisoners.First(prisoner => prisoner.Piece.Id == id)),
         ];
-        int points = offer.Asked.Count * Chaturaji2027Rules.RansomAcceptedBonus;
+        int points = going
+            .Where(prisoner => offer.Asked.Contains(prisoner.Piece.Id))
+            .Sum(prisoner => prisoner.Piece.Kind == Chaturaji2027Pieces.Raja
+                ? Chaturaji2027Rules.RansomRajaBonus
+                : Chaturaji2027Rules.RansomAcceptedBonus
+            );
         GameState scored = state with
         {
             Offer = null,
