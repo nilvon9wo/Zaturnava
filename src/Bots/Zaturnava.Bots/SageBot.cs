@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.ComponentModel.DataAnnotations;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Decisions;
@@ -7,10 +8,14 @@ namespace Net.NowhereAtAll.Zaturnava.Bots;
 /// <summary>
 /// Weighs a position as a whole (<see cref="Appraisal"/>), and looks ahead through the rest of its own turn,
 /// the dice included (<see cref="Foresight"/>): so it rolls when what it expects of the dice beats the best
-/// move it could make without them. Deals in prisoners as Solomon does. Its weights are a starting guess,
-/// for playing itself to tune.
+/// move it could make without them. Deals in prisoners as Solomon does. It weighs a position as it has
+/// learned to for the ruleset, by playing itself, if it has; else as <paramref name="fallback"/> says.
 /// </summary>
-public sealed class SageBot(Random random, SageWeights weights) : IBotPlaying
+public sealed class SageBot(
+    Random random,
+    SageWeights fallback,
+    ImmutableDictionary<string, SageWeights> learned
+) : IBotPlaying
 {
     public const string BotId = "sage";
 
@@ -18,10 +23,18 @@ public sealed class SageBot(Random random, SageWeights weights) : IBotPlaying
     private const int Beam = 3;
 
     private readonly Random _random = random;
-    private readonly Foresight _foresight = new(weights, Depth, Beam);
+    private readonly SageWeights _fallback = fallback;
+    private readonly ImmutableDictionary<string, SageWeights> _learned = learned;
 
+    /// <summary>Sage as it has learned to play each ruleset.</summary>
     public SageBot(Random random)
-        : this(random, SageWeights.Default)
+        : this(random, SageWeights.Default, SageWeights.Learned)
+    {
+    }
+
+    /// <summary>Sage weighing every ruleset as <paramref name="weights"/> says, as one trying them out.</summary>
+    public SageBot(Random random, SageWeights weights)
+        : this(random, weights, [])
     {
     }
 
@@ -44,8 +57,11 @@ public sealed class SageBot(Random random, SageWeights weights) : IBotPlaying
                     ?? SolomonBot.FairTrade(request, false)
                     ?? Trading.BeforePassing(
                         request,
-                        this._foresight.Choose(request, this._random),
+                        this.ForesightFor(request).Choose(request, this._random),
                         SolomonBot.FairTrade
                     )
             );
+
+    private Foresight ForesightFor(DecisionRequest request) =>
+        new(this._learned.GetValueOrDefault(request.Rules.Id, this._fallback), Depth, Beam);
 }

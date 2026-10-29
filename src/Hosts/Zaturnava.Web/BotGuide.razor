@@ -1,0 +1,69 @@
+@* The bots: who each is and how strongly it plays, easiest first, by its Elo rating at the ruleset, for choosing
+   whom to play. Shown over the lobby or the table, from the page's bar, until closed. A bot not rated yet comes
+   last; one paid for each use says so. *@
+@inject IGameServing Games
+
+<div class="guide-backdrop">
+    <section class="guide bot-guide" role="dialog" aria-modal="true" aria-labelledby="bots-title">
+        <header class="guide-head">
+            <h2 id="bots-title">The bots</h2>
+            <button class="close" @onclick="this.OnClose">Close</button>
+        </header>
+
+        @if (this._problem is { } problem)
+        {
+            <p class="problem" role="alert">@problem</p>
+        }
+
+        @if (this._catalog is { } catalog)
+        {
+            RulesetDto ruleset = catalog.Rulesets[0];
+            <p class="about-ratings">
+                Easiest first. Each bot's number is its Elo rating at @ruleset.Name, from games between the bots,
+                with Random at 1000: a bot 400 points stronger wins about ten games in eleven, and 200 stronger,
+                about three in four.
+            </p>
+            <ol class="bots">
+                @foreach (BotDto bot in Ranked(catalog.Bots, ruleset.Id))
+                {
+                    <li>
+                        <h3>
+                            <span class="bot-name">@bot.Name</span>
+                            <span class="rating">@RatingOf(bot, ruleset.Id)</span>
+                        </h3>
+                        @if (bot.IsPaid)
+                        {
+                            <p class="costs">Uses AI, and costs tokens for every move: it plays only when chosen.</p>
+                        }
+                        else if (bot.UsesAi)
+                        {
+                            <p class="ai">Uses AI.</p>
+                        }
+                        <p class="description">@bot.Description</p>
+                    </li>
+                }
+            </ol>
+        }
+    </section>
+</div>
+
+@code {
+    private CatalogDto? _catalog;
+    private string? _problem;
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    protected override async Task OnInitializedAsync() =>
+        this._problem = await Requests.Attempt(async () => this._catalog = await this.Games.Catalog(CancellationToken.None));
+
+    /// <summary>The bots rated at the ruleset, easiest first; then those not rated yet, by name.</summary>
+    private static IEnumerable<BotDto> Ranked(IEnumerable<BotDto> bots, string rulesetId) =>
+        bots
+            .OrderBy(bot => !bot.Ratings.ContainsKey(rulesetId))
+            .ThenBy(bot => bot.Ratings.GetValueOrDefault(rulesetId))
+            .ThenBy(bot => bot.Name, StringComparer.Ordinal);
+
+    private static string RatingOf(BotDto bot, string rulesetId) =>
+        bot.Ratings.TryGetValue(rulesetId, out int rating) ? $"Elo {rating}" : "Not rated yet";
+}

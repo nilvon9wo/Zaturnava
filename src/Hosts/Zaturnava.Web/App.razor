@@ -1,5 +1,5 @@
 @* The whole page: the lobby until the player sits at (or watches) a table, over a quiet bar of the
-   page's name, a button opening the guide to the game, and the page's own settings (how it looks: theme
+   page's name, buttons opening the guide to the game and the guide to the bots, and the page's own settings (how it looks: theme
    and pieces; then sound); at a table, the table shows the guide's button and the settings in its own
    bar. No URL routing, so the page works from any address it is served at. A seat the player takes is
    remembered in the browser, so that they can come back to it. *@
@@ -33,15 +33,31 @@ else
     <Guide OnClose="this.CloseGuide" />
 }
 
+@if (this._isBotGuideOpen)
+{
+    <BotGuide OnClose="this.CloseBotGuide" />
+}
+
 @code {
     private Seating? _seating;
     private string _theme = Browser.Dark;
     private bool _isSoundOn = true;
     private bool _isGuideOpen;
+    private bool _isBotGuideOpen;
     private PieceSet _pieces;
 
     private RenderFragment HowToPlay =>
+        builder =>
+        {
+            builder.AddContent(0, this.HowToPlayButton);
+            builder.AddContent(1, this.BotsButton);
+        };
+
+    private RenderFragment HowToPlayButton =>
         @<button class="how-to-play" @onclick="this.OpenGuide">How to play</button>;
+
+    private RenderFragment BotsButton =>
+        @<button class="the-bots" @onclick="this.OpenBotGuide">The bots</button>;
 
     private RenderFragment Settings =>
         @<span class="settings">
@@ -71,6 +87,10 @@ else
     private void OpenGuide() => this._isGuideOpen = true;
 
     private void CloseGuide() => this._isGuideOpen = false;
+
+    private void OpenBotGuide() => this._isBotGuideOpen = true;
+
+    private void CloseBotGuide() => this._isBotGuideOpen = false;
 
     private async Task SwitchTheme()
     {

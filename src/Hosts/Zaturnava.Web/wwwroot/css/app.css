@@ -174,9 +174,14 @@ html { scrollbar-gutter: stable; }
 .panel h2 { margin-top: 0; }
 .plans { padding-left: 20px; }
 .plans li { margin: 4px 0; }
-.lobby .quick { margin-left: 8px; }
-.bots dt { font-weight: 600; margin-top: 8px; }
-.bots dd { margin-left: 0; color: var(--muted); }
+.quick-games { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; }
+.quick-hint { color: var(--muted); font-size: 0.9em; }
+.bot-guide .bots { padding-left: 20px; }
+.bot-guide .bots h3 { display: flex; gap: 12px; align-items: baseline; margin-bottom: 2px; }
+.bot-guide .rating { color: var(--muted); font-weight: normal; font-size: 0.9em; }
+.bot-guide .bots p { margin: 2px 0; }
+.bot-guide .costs { color: var(--danger, #c0392b); }
+.bot-guide .description, .bot-guide .ai { color: var(--muted); }
 .games { list-style: none; padding: 0; }
 .games li { padding: 6px 0; border-bottom: 1px solid var(--panel-edge); }
 .games .game { font-family: ui-monospace, monospace; margin-right: 8px; }

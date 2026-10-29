@@ -648,7 +648,9 @@
         ));
 
     private Task QuickGame() =>
-        this.SitAgain(async () => await GameStarter.Quick(this.Games, await this.Games.Catalog(CancellationToken.None)));
+        this.SitAgain(async () =>
+            await GameStarter.Quick(this.Games, await this.Games.Catalog(CancellationToken.None), Difficulty.Medium)
+        );
 
     private async Task SitAgain(Func<Task<Seating>> seating) =>
         this._problem = await Requests.Attempt(async () => await this.OnSeated.InvokeAsync(await seating()));

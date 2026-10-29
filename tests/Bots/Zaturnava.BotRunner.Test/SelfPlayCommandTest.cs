@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Net.NowhereAtAll.Zaturnava.Bots;
 
 namespace Net.NowhereAtAll.Zaturnava.BotRunner.Test;
 
@@ -21,7 +22,7 @@ public sealed class SelfPlayCommandTest
         string[] lines = this._output.ToString().Split('\n', StringSplitOptions.RemoveEmptyEntries);
         JsonElement first = JsonDocument.Parse(lines[0]).RootElement;
         Assert.Equal(
-            (SelfPlayCommand.Succeeded, 3, "chaturaji-2027", 4, 5, false),
+            (SelfPlayCommand.Succeeded, 3, "chaturaji-2027", 4, 5, false, 0),
             (
                 exitCode,
                 lines.Length,
@@ -29,9 +30,25 @@ public sealed class SelfPlayCommandTest
                 first.GetProperty("players").GetArrayLength(),
                 first.GetProperty("actions").EnumerateArray()
                     .Count(action => action.GetProperty("kind").GetString() != "dice"),
-                first.GetProperty("isFinished").GetBoolean()
+                first.GetProperty("isFinished").GetBoolean(),
+                first.GetProperty("winners").GetArrayLength()
             )
         );
+    }
+
+    [Fact]
+    public async Task Run_WhenAGameEnds_SaysWhoWonIt()
+    {
+        // Arrange - Argus ends its games long before ten thousand steps; a win is a team's, a draw no one's
+        string[] args = ["--games", "1", "--max-steps", "10000", "--bots", "argus,argus,argus,argus"];
+
+        // Act
+        _ = await SelfPlayCommand.Run(args, this._output, this._errors, this._cancellation);
+
+        // Assert
+        JsonElement game = JsonDocument.Parse(this._output.ToString()).RootElement;
+        int[] winners = [.. game.GetProperty("winners").EnumerateArray().Select(seat => seat.GetInt32())];
+        Assert.Equal((true, true), (game.GetProperty("isFinished").GetBoolean(), winners.Length is 0 or 2));
     }
 
     [Fact]
@@ -48,6 +65,28 @@ public sealed class SelfPlayCommandTest
         string[] lines = await File.ReadAllLinesAsync(file, this._cancellation);
         File.Delete(file);
         Assert.Equal((SelfPlayCommand.Succeeded, 2, string.Empty), (exitCode, lines.Length, this._output.ToString()));
+    }
+
+    [Fact]
+    public async Task Run_WhenTraining_WritesTheTunedWeightsAndHowEachNudgeWent()
+    {
+        // Arrange - one round, a game a side for each nudge, two steps a game, from what Sage has learned
+        string[] args = ["--train", "1", "--games", "1", "--max-steps", "2"];
+
+        // Act
+        int exitCode = await SelfPlayCommand.Run(args, this._output, this._errors, this._cancellation);
+
+        // Assert
+        SageWeights? tuned =
+            JsonSerializer.Deserialize<SageWeights>(this._output.ToString(), JsonSerializerOptions.Web);
+        Assert.Equal(
+            (SelfPlayCommand.Succeeded, true, true),
+            (
+                exitCode,
+                tuned is not null,
+                this._errors.ToString().StartsWith("round 1, score ", StringComparison.Ordinal)
+            )
+        );
     }
 
     [Theory]

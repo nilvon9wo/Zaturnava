@@ -33,28 +33,6 @@ public sealed class LobbyTest : IDisposable
     }
 
     [Fact]
-    public void Render_WhenLoaded_DescribesEachBotAndWhetherItUsesAi()
-    {
-        // Arrange - nothing beyond the server's catalog
-
-        // Act
-        IRenderedComponent<Lobby> lobby = this.Render();
-
-        // Assert
-        Assert.Equal(
-            "Bot: Random=Any move.|Bot: Claude (AI, costs tokens)=Asks Claude.|Bot: Oracle (AI)=Asks a model."
-                + "|Bot: Midas=Greedy.|Bot: Solomon=Fair.",
-            string.Join(
-                "|",
-                lobby.FindAll("dl.bots dt").Zip(
-                    lobby.FindAll("dl.bots dd"),
-                    (name, description) => $"{name.TextContent}={description.TextContent}"
-                )
-            )
-        );
-    }
-
-    [Fact]
     public void Play_WhenTheFirstSeatIsForAPerson_CreatesTheGameAndSitsThere()
     {
         // Arrange
@@ -175,7 +153,7 @@ public sealed class LobbyTest : IDisposable
         IRenderedComponent<Lobby> lobby = this.Render();
 
         // Act
-        lobby.Find("button.quick").Click();
+        lobby.Find("button.quick.medium").Click();
 
         // Assert - never Claude, which is paid for
         ImmutableList<string?> bots = this._page.Server.Created!.Bots;
@@ -187,6 +165,24 @@ public sealed class LobbyTest : IDisposable
                 bots[this._seated!.Claim!.Seat] is null,
                 bots.Contains("claude")
             )
+        );
+    }
+
+    [Theory]
+    [InlineData("easy", "midas,random,solomon")]
+    [InlineData("hard", "midas,oracle,solomon")]
+    public void Quick_WhenEasyOrHard_SeatsTheEasiestOrHardestBots(string difficulty, string expected)
+    {
+        // Arrange - Random is rated easiest, then Midas, Solomon and Oracle; Claude, paid for, is never seated
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Act
+        lobby.Find($"button.quick.{difficulty}").Click();
+
+        // Assert
+        Assert.Equal(
+            expected,
+            string.Join(",", this._page.Server.Created!.Bots.OfType<string>().Order(StringComparer.Ordinal))
         );
     }
 

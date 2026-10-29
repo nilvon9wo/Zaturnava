@@ -299,7 +299,11 @@ base address (`GameRoutes`):
   seat and acting with its token.
 - **BotRunner** — runs bots against bots in-process, for testing rulesets and
   bots, and writes each game as a JSON line (`--ruleset`, `--bots`, `--games`,
-  `--max-steps`, `--out`).
+  `--max-steps`, `--out`). With `--train`, it tunes Sage's weights for the
+  ruleset instead, by Sage playing itself, and writes them as JSON for
+  `Zaturnava.Bots/Weights/{ruleset}.json`, which Sage plays by. Each game it
+  writes says who won, from which `scripts/rate-bots.py` fits the bots' Elo
+  ratings, kept in `Zaturnava.Bots/Ratings/{ruleset}.json`.
 - Android, iPhone, Windows or command-line clients would reuse Contracts and
   Client (or speak the protocol directly); Presentation holds board logic that
   is not Blazor-specific.

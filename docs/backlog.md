@@ -42,9 +42,11 @@ did them.
     fallback for the layers above.
     - Done: **Sage**, looking through the rest of its own turn, the dice averaged, and weighing points,
       pieces, leaders, prisoners, thrones, and what each side could take next. With its starting weights
-      it beat Argus 75-22-3 in 100 self-play games (seats swapped halfway).
-    - Next: tune the weights by self-play (BotRunner `--train`), kept as data for each ruleset; then
-      features of the ruleset's own (command, empires, a Pawn's way to the far edge), mobility, and the
+      it beat Argus 75-22-3 in 100 self-play games (seats swapped halfway). Its weights are tuned by
+      self-play (BotRunner `--train`) and kept as data for each ruleset: two rounds took score down
+      to 0.7, material up to 1.3, prisoners down to 0.35 and exposure up to 1.3, and Sage so tuned beat
+      Sage as it was 124-84 in 208 games.
+    - Next: features of the ruleset's own (command, empires, a Pawn's way to the far edge), mobility, and the
       enemy's reply. The Chaturaji 2027 features serve the grand game too (grand/specification.md §6.1).
   - **Layer 2** (*Proposed*): an advisor on a free AI service (a free tier, in its own adapter
     project), choosing among layer 1's best moves; layer 1 alone when the service is down, slow or
@@ -77,6 +79,10 @@ did them.
   skipped from then on, and taking their Raja scores no one (rules.md §10).
 - A "How to play" guide opens from the settings bar, in the lobby or at the table: the aim, the pieces,
   turns and dice, points, thrones and command, prisoners and how the game ends.
+- "The bots" opens beside it: each bot, easiest first, with its Elo rating at the ruleset, from games
+  between every pair of them (`scripts/rate-bots.py`, Random at 1000). The lobby's quick game is easy
+  (the three easiest bots), medium (any three) or hard (the three hardest).
+- A development server offers scenarios, games set up part-way, to start from (`scenarios/`).
 - **7** Not a rules bug: only the first turn of the game uses one die. It looked that way because
   no one's roll was shown (5).
 - **24** A game of bots now plays on: the table asks the server for one bot decision at a time

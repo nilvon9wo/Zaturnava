@@ -6,6 +6,13 @@
   -->
 
   <ItemGroup>
+    <!-- What Sage has learned for each ruleset (SageWeights.Learned), tuned by BotRunner's training. -->
+    <EmbeddedResource Include="Weights\*.json" LogicalName="Weights/%(Filename)%(Extension)" />
+    <!-- How strongly each bot plays each ruleset (BotRatings.Rated), as scripts/rate-bots.py fits it. -->
+    <EmbeddedResource Include="Ratings\*.json" LogicalName="Ratings/%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\Engine\Zaturnava.Engine\Zaturnava.Engine.csproj" />
   </ItemGroup>
 

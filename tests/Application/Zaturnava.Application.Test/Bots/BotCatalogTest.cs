@@ -45,6 +45,35 @@ public sealed class BotCatalogTest
         // Assert
         Assert.Equal("There is no 'genius' bot.", exception.Message);
     }
+
+    [Fact]
+    public void Bots_WhenRated_SayHowStronglyEachPlaysEachRuleset()
+    {
+        // Arrange - the zebra rated at two rulesets, the aardvark at one
+        BotCatalog catalog = new(
+            [new NamedBot("zebra"), new NamedBot("aardvark")],
+            ImmutableDictionary<string, ImmutableDictionary<string, int>>.Empty
+                .Add("chess", ImmutableDictionary<string, int>.Empty.Add("zebra", 1200).Add("aardvark", 900))
+                .Add("go", ImmutableDictionary<string, int>.Empty.Add("zebra", 1500))
+        );
+
+        // Act
+        ImmutableList<BotProfile> bots = catalog.Bots;
+
+        // Assert
+        Assert.Equal(
+            ("chess=900", "chess=1200,go=1500"),
+            (Ratings(bots[0]), Ratings(bots[1]))
+        );
+    }
+
+    private static string Ratings(BotProfile bot) =>
+        string.Join(
+            ",",
+            bot.Ratings
+                .OrderBy(rating => rating.Key, StringComparer.Ordinal)
+                .Select(rating => $"{rating.Key}={rating.Value}")
+        );
 }
 
 /// <summary>A bot known only by its id; it never decides.</summary>

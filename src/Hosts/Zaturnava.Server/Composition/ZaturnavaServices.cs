@@ -67,7 +67,8 @@ internal static class ZaturnavaServices
                 new MidasBot(Random.Shared),
                 new SolomonBot(Random.Shared),
                 new RandomBot(Random.Shared),
-            ]
+            ],
+            BotRatings.Rated
         );
 
     private static GameServiceSettings Settings(IConfiguration configuration)

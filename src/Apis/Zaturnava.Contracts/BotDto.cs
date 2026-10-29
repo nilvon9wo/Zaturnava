@@ -1,3 +1,5 @@
+using System.Collections.Immutable;
+
 namespace Net.NowhereAtAll.Zaturnava.Contracts;
 
 /// <summary>
@@ -5,4 +7,11 @@ namespace Net.NowhereAtAll.Zaturnava.Contracts;
 /// choosing, whether it uses AI (rather than a plain algorithm), and whether it <see cref="IsPaid"/> for each use
 /// (tokens), and so is seated only when chosen.
 /// </summary>
-public sealed record BotDto(string Id, string Name, string Description, bool UsesAi, bool IsPaid = false);
+public sealed record BotDto(string Id, string Name, string Description, bool UsesAi, bool IsPaid = false)
+{
+    /// <summary>
+    /// Its Elo rating at each ruleset, by the ruleset's id, from games between the bots: 400 more wins about
+    /// ten games in eleven. None for a ruleset it has not been rated at.
+    /// </summary>
+    public ImmutableDictionary<string, int> Ratings { get; init; } = [];
+}
