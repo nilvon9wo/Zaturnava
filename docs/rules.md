@@ -25,7 +25,7 @@ Everything else here is specified but not yet played by the engine.
 | §2 Board & setup | Implemented: the 8×8 board, the pinwheel setup, teams of opposite seats, thrones. |
 | §3 Pieces & movement | Implemented, captures included, and the back-to-back Pawn swap. A piece moved for another army moves the way its own army faces; what it may take is §6.4. |
 | §4 Turns & dice | Implemented: the opening plays the die that won the roll-off, then a deliberate move, a pass or two dice, clockwise from the roll-off's winner; an unusable die is forfeit. Doubles let one piece move twice, or a prisoner escape (§7). The dice profile is the weighted d6 one; a d4 profile exists but cannot yet be chosen. |
-| §5 Captures & scoring | Implemented: captures score by piece, with both throne bonuses, the empire and commanding every piece, as clarified below; the ransom's point is in §8. |
+| §5 Captures & scoring | Implemented: captures score by piece, with both throne bonuses, the empire and commanding every piece, as clarified below; the ransom's points are in §8. |
 | §6 Throne control | Implemented: the expanded pool (§6.1, both triggers), voluntary regency (§6.2, as stated below) and the forced shared turn (§6.3). |
 | §6.4 Commanded captures | Implemented, with the toggle as a constructor argument. |
 | §7 Escape | Implemented, as clarified below: the escape takes the place of the double move and ends the turn. |
@@ -527,6 +527,7 @@ available (via a future capture, by anyone).
     accepting player sends home, not those given back to them: a Rook back
     for a Horse scores the accepting player 1, and a gift scores them
     nothing.
+  - *(Stated 2026-10-29)* Sending home a **Raja** scores **+2** instead of 1.
 - *(Clarified 2026-10-25)* The turn-timing protocol:
   - A player may offer on their own turn: before rolling, or with dice left,
     but not while moving for another seat (§6.3).

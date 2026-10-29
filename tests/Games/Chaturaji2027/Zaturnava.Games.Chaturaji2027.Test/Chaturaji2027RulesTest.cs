@@ -2067,6 +2067,25 @@ public sealed class Chaturaji2027RulesTest
     }
 
     [Fact]
+    public void Apply_WhenARansomSendingARajaHomeIsAccepted_ScoresTheReceiverTwoForIt()
+    {
+        // Arrange - Black gives Yellow's pawn 12 back for its Raja, which Yellow holds
+        GameState ransoms = this.AcceptingRansom();
+        GameState state = ransoms with
+        {
+            Prisoners = ransoms.Prisoners.Add(new Prisoner(Piece(3, Chaturaji2027Pieces.Raja, Black), Yellow)),
+            Offer = new RansomOffer(Black, Yellow, [new PieceId(12)], [new PieceId(3)]),
+        };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new AcceptAction(Yellow));
+
+        // Assert
+        Assert.Equal([new RansomRewarded(Yellow, 1, 2)], transition.Events.OfType<RansomRewarded>());
+        Assert.Equal(state.Scores[Yellow] + 2, transition.State.Scores[Yellow]);
+    }
+
+    [Fact]
     public void Apply_WhenAGiftIsAccepted_ScoresTheReceiverNothing()
     {
         // Arrange - Black gives Yellow's pawn 12 back, asking nothing

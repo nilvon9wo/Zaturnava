@@ -146,7 +146,7 @@ file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bo
                 number,
                 EventDto.Bonus,
                 rewarded.Seat,
-                $"{this.Name(rewarded.Seat)} scored for accepting: a point for each prisoner they sent home "
+                $"{this.Name(rewarded.Seat)} scored for accepting, for the prisoners they sent home "
                     + $"(+{rewarded.Points})."
             ),
             RansomDeclined declined => this.Add(

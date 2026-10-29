@@ -54,6 +54,9 @@ public sealed class Chaturaji2027Rules : IRulesApplying
     /// <summary>The points for accepting a ransom, for each prisoner it sends home (rules.md §8).</summary>
     public const int RansomAcceptedBonus = 1;
 
+    /// <summary>The points instead of <see cref="RansomAcceptedBonus"/> for a Raja sent home (rules.md §8).</summary>
+    public const int RansomRajaBonus = 2;
+
     /// <summary>The timer on a seat whose turn is over, while it may still offer ransoms.</summary>
     public const string RansomWindowTimer = "ransom-window";
 
