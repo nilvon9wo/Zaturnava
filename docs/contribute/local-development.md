@@ -87,25 +87,6 @@ python3 scripts/rate-bots.py path/to/Net.NowhereAtAll.Zaturnava.BotRunner --game
 A development server also offers games set up part-way, to start from: see
 [scenarios/README.md](../../scenarios/README.md).
 
-### Pythia: a bot with an AI advisor
-
-Pythia plays as Sage does, but asks an AI service which of the three moves it likes best to make.
-The server offers it only once the `Advisor` section names a service speaking the OpenAI
-chat-completions protocol (several offer it on a free tier, without a card): its `BaseUrl` (the
-address `chat/completions` is found under), the `Model` to ask, and the `ApiKey`.
-`PatienceSeconds` (5 unless set) is how long Pythia waits for an answer before making Sage's own
-choice. Keep the key out of the repository: give it in the environment, as here, not in
-`appsettings.json`.
-
-```shell
-export Advisor__BaseUrl=https://service.example/v1/
-export Advisor__Model=some-model
-export Advisor__ApiKey=...
-dotnet run --project Zaturnava.Server --no-build
-```
-
-### Playing through MCP
-
 An AI client (Claude Code, Claude Desktop, any MCP client) plays through `Zaturnava.Mcp`, a stdio
 MCP server; `ZATURNAVA_SERVER_URL` names the game server (default `http://localhost:5164/`):
 

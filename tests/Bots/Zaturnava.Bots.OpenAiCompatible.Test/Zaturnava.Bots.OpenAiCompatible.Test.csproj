@@ -1,7 +1,0 @@
-<Project Sdk="Microsoft.NET.Sdk">
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\src\Bots\Zaturnava.Bots.OpenAiCompatible\Zaturnava.Bots.OpenAiCompatible.csproj" />
-  </ItemGroup>
-
-</Project>

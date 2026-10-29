@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Net.Http.Headers;
 using Net.NowhereAtAll.Zaturnava.Application.Bots;
 using Net.NowhereAtAll.Zaturnava.Application.Games;
 using Net.NowhereAtAll.Zaturnava.Application.Ports;
@@ -7,9 +6,7 @@ using Net.NowhereAtAll.Zaturnava.Application.Rulesets;
 using Net.NowhereAtAll.Zaturnava.Application.Running;
 using Net.NowhereAtAll.Zaturnava.Application.Scenarios;
 using Net.NowhereAtAll.Zaturnava.Bots;
-using Net.NowhereAtAll.Zaturnava.Bots.OpenAiCompatible;
 using Net.NowhereAtAll.Zaturnava.Engine.Chance;
-using Net.NowhereAtAll.Zaturnava.Engine.Decisions;
 using Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
 using Net.NowhereAtAll.Zaturnava.Server.Endpoints;
 
@@ -37,23 +34,14 @@ internal static class ZaturnavaServices
     /// </summary>
     public const string TimersKey = "Games:Timers";
 
-    /// <summary>
-    /// The configuration section naming the AI service Pythia asks for advice: its <c>BaseUrl</c>, the
-    /// <c>Model</c> to ask, the <c>ApiKey</c> (kept out of the repository: user secrets or the environment), and
-    /// how many <c>PatienceSeconds</c> Pythia waits for an answer. Pythia is offered only once all three of the
-    /// first are set.
-    /// </summary>
-    public const string AdvisorKey = "Advisor";
-
     private const string DefaultTimerKey = "Default";
-    private const double DefaultPatienceSeconds = 5;
 
     public static IServiceCollection AddZaturnava(this IServiceCollection services, IConfiguration configuration) =>
         services
             .AddGameStorage(configuration)
             .AddPageHosting(configuration)
             .AddSingleton<IRulesetLocating>(new RulesetCatalog([new Chaturaji2027Rules()]))
-            .AddSingleton<IBotLocating>(Bots(configuration))
+            .AddSingleton<IBotLocating>(Bots())
             .AddSingleton(Scenarios(configuration))
             .AddSingleton<IGameNotifying, SilentNotifier>()
             .AddSingleton<IDiceRolling>(new RandomDice(Random.Shared))
@@ -71,7 +59,7 @@ internal static class ZaturnavaServices
     private static string ContentRoot(IConfiguration configuration) =>
         configuration[HostDefaults.ContentRootKey] ?? Environment.CurrentDirectory;
 
-    private static BotCatalog Bots(IConfiguration configuration) =>
+    private static BotCatalog Bots() =>
         new(
             [
                 new SageBot(Random.Shared),
@@ -79,31 +67,9 @@ internal static class ZaturnavaServices
                 new MidasBot(Random.Shared),
                 new SolomonBot(Random.Shared),
                 new RandomBot(Random.Shared),
-                .. Advised(configuration.GetSection(AdvisorKey)),
             ],
             BotRatings.Rated
         );
-
-    /// <summary>Pythia, asking the service the configuration names; no one, if it names none.</summary>
-    private static ImmutableList<IBotPlaying> Advised(IConfigurationSection advisor) =>
-        (advisor["BaseUrl"], advisor["Model"], advisor["ApiKey"]) is
-            ({ Length: > 0 } url, { Length: > 0 } model, { Length: > 0 } key)
-            ?
-            [
-                new PythiaBot(
-                    Random.Shared,
-                    new ChatAdvisor(ClientOf(url, key), model),
-                    TimeSpan.FromSeconds(advisor.GetValue("PatienceSeconds", DefaultPatienceSeconds))
-                ),
-            ]
-            : [];
-
-    private static HttpClient ClientOf(string url, string key) =>
-        new()
-        {
-            BaseAddress = new Uri(url.EndsWith('/') ? url : url + "/"),
-            DefaultRequestHeaders = { Authorization = new AuthenticationHeaderValue("Bearer", key) },
-        };
 
     private static GameServiceSettings Settings(IConfiguration configuration)
     {

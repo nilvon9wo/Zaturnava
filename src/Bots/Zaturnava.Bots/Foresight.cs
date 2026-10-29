@@ -24,10 +24,7 @@ internal sealed class Foresight(SageWeights weights, int depth, int beam)
     private readonly int _depth = depth;
     private readonly int _beam = beam;
 
-    public GameAction Choose(DecisionRequest request, Random random) => this.Ranked(request, random)[0];
-
-    /// <summary>What the bot may do, its choice first, then the rest from the best worth down.</summary>
-    public ImmutableList<GameAction> Ranked(DecisionRequest request, Random random)
+    public GameAction Choose(DecisionRequest request, Random random)
     {
         ImmutableList<(GameAction Action, double Worth)> worths =
         [
@@ -43,15 +40,7 @@ internal sealed class Foresight(SageWeights weights, int depth, int beam)
         ImmutableList<GameAction> choices = active.IsEmpty
             ? top
             : active;
-        GameAction chosen = choices[random.Next(choices.Count)];
-        return
-        [
-            chosen,
-            .. worths
-                .Where(worth => worth.Action != chosen)
-                .OrderByDescending(worth => worth.Worth)
-                .Select(worth => worth.Action),
-        ];
+        return choices[random.Next(choices.Count)];
     }
 
     /// <summary>Each way the dice could fall, its values in order, with how likely it is.</summary>
