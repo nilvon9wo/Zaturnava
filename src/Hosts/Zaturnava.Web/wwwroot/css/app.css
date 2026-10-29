@@ -127,6 +127,11 @@ select {
 .bar .settings { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
 .bar button { font-size: 0.85rem; padding: 2px 10px; }
 
+/* At a table, the safety stays in the bar, but moved along it to under the player's corner of the board
+   (bottom left). A browser without anchor positioning leaves it among the settings. */
+.board { anchor-name: --board; }
+.table-bar button.safety { position: absolute; left: anchor(--board left); }
+
 /* How to play: a scrolling panel over the page, until closed. */
 .guide-backdrop {
     position: fixed;
