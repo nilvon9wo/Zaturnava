@@ -76,12 +76,15 @@ button {
 button:hover { border-color: var(--accent); }
 
 /* A button calling for the player: the only way on, which they might not see at once. */
-button.urged { animation: urged 0.9s ease-in-out infinite; }
+/* A slow swell of glow, no flashing: well under one cycle a second, and no change in brightness. */
+button.urged {
+    box-shadow: 0 0 0 3px rgba(242, 179, 61, 0.5);
+    animation: urged 2.4s ease-in-out infinite;
+}
 @keyframes urged {
     50% {
-        transform: scale(1.12);
-        filter: brightness(1.35);
-        box-shadow: 0 0 0 8px rgba(242, 179, 61, 0.6), 0 0 22px 6px rgba(242, 179, 61, 0.55);
+        transform: scale(1.04);
+        box-shadow: 0 0 0 6px rgba(242, 179, 61, 0.45), 0 0 14px 3px rgba(242, 179, 61, 0.3);
     }
 }
 @media (prefers-reduced-motion: reduce) {
