@@ -8,14 +8,14 @@ namespace Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
 
 /// <summary>
 /// Commanding every piece on the board, on one's own turn, scores a bonus (rules.md §5): once, until every
-/// seat has a piece on the board again. A retired seat's Raja counts for neither (§10). The seat whose turn
-/// it was, before the action, may score for it; failing that, the seat whose turn it is now.
+/// seat has a piece on the board again. A retired seat's Raja counts for neither (§10). It is reckoned as the
+/// seat deciding on its own turn sees what it commands, after each action.
 /// </summary>
 internal sealed class EveryPiece(ThroneControl control)
 {
     private readonly ThroneControl _control = control;
 
-    public Transition Scored(GameState before, Transition after)
+    public Transition Scored(Transition after)
     {
         GameState state = after.State;
         ImmutableList<Piece> pieces =
@@ -23,8 +23,9 @@ internal sealed class EveryPiece(ThroneControl control)
             .. state.Position.Occupants.Values.Where(piece => !state.Retired.Contains(piece.Owner)),
         ];
         bool isEverySeatOnBoard = state.Seats.All(seat => pieces.Any(piece => piece.Owner == seat.Id));
-        SeatId? commander = new[] { OwnTurnOf(before), OwnTurnOf(state) }
-            .FirstOrDefault(seat => seat is { } turn && this.CommandsAll(state, turn, pieces));
+        SeatId? commander = OwnTurnOf(state) is { } turn && this.CommandsAll(state, turn, pieces)
+            ? turn
+            : null;
         return (state.Outcome, isEverySeatOnBoard, state.IsEveryPieceScored, commander) switch
         {
             ({ }, _, _, _) => after,
