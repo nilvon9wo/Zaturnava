@@ -47,6 +47,8 @@ did them.
       Sage as it was 124-84 in 208 games.
     - Next: features of the ruleset's own (command, empires, a Pawn's way to the far edge), mobility, and the
       enemy's reply. The Chaturaji 2027 features serve the grand game too (grand/specification.md §6.1).
+    - *(Stated 2026-10-29)* With the enemy's reply weighed, Sage may take its own team's pieces (rules
+      §6.4), when that saves a better one; until then no bot does.
   - **Layer 2** (*Proposed*): an advisor on a free AI service (a free tier, in its own adapter
     project), choosing among layer 1's best moves; layer 1 alone when the service is down, slow or
     out of quota. Each service's current terms to be checked before use.
