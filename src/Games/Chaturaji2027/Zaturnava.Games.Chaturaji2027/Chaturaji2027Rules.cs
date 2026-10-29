@@ -517,8 +517,8 @@ public sealed class Chaturaji2027Rules : IRulesApplying
         then with { Events = [.. first.Events, between, .. then.Events] };
 
     /// <summary>
-    /// The offer waits on its receiver's answer; but prisoners given back to their own team go home at once,
-    /// unless they are an ally's whose throne an enemy holds: that ally is asked first (rules.md §8).
+    /// The offer waits on its receiver's answer; but prisoners given back to their own team, asking nothing, go
+    /// home at once, unless they are an ally's whose throne an enemy holds: that ally is asked first (rules.md §8).
     /// </summary>
     /// <exception cref="IllegalActionException">The offer may not be made.</exception>
     private Transition Offered(GameState state, OfferAction offer) =>
@@ -531,6 +531,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying
 
     private bool IsAsked(GameState state, OfferAction offer) =>
         !state.Teams.AreAllied(offer.Receiver, offer.Actor)
+        || !offer.Asked.IsEmpty
         || (offer.Receiver != offer.Actor && this._control.OccupierOf(state, offer.Receiver) is not null);
 
     /// <summary>

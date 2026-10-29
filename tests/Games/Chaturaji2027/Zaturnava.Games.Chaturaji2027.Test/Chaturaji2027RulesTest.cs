@@ -2144,9 +2144,9 @@ public sealed class Chaturaji2027RulesTest
     }
 
     [Fact]
-    public void Apply_WhenASeatAsksSomethingOfItsOwnTeam_ThrowsIllegalActionException()
+    public void Apply_WhenASeatOffersItsAllyATrade_WaitsOnTheAllyAndScoresNoOneIfAccepted()
     {
-        // Arrange - Black holds Green's Horse; Green holds Black's Boat
+        // Arrange - Black holds Green's Horse; Green holds Black's Boat; Green's throne is free
         GameState releasing = this.Releasing(Piece(17, Chaturaji2027Pieces.Horse, Green), Black);
         GameState state = releasing with
         {
@@ -2154,9 +2154,44 @@ public sealed class Chaturaji2027RulesTest
         };
 
         // Act
-        Exception? refused = Record.Exception(() =>
-            this._rules.Apply(state, new OfferAction(Black, Green, [new PieceId(17)], [new PieceId(0)]))
+        OfferAction trade = new(Black, Green, [new PieceId(17)], [new PieceId(0)]);
+        Transition offered = this._rules.Apply(state, trade);
+        Transition accepted = this._rules.Apply(offered.State, new AcceptAction(Green));
+
+        // Assert
+        Assert.Equal(
+            (Green, 0, state.Scores[Green], 0),
+            (
+                offered.State.DecidingSeat,
+                accepted.Events.OfType<RansomRewarded>().Count(),
+                accepted.State.Scores[Green],
+                accepted.State.Prisoners.Count
+            )
         );
+    }
+
+    [Theory]
+    [InlineData("asking oneself")]
+    [InlineData("asking for a piece taken lately")]
+    public void Apply_WhenASeatAsksWhatItMayNotOfItsOwnTeam_ThrowsIllegalActionException(string why)
+    {
+        // Arrange - Black holds its own Horse, and Green's; Green holds Black's Boat, taken on this turn, if lately
+        GameState releasing = this.Releasing(Piece(17, Chaturaji2027Pieces.Horse, Green), Black);
+        GameState state = releasing with
+        {
+            Prisoners = releasing.Prisoners
+                .Add(new Prisoner(Piece(1, Chaturaji2027Pieces.Horse, Black), Black))
+                .Add(new Prisoner(Piece(0, Chaturaji2027Pieces.Boat, Black), Green)),
+            TakenByOwnTeam = why == "asking for a piece taken lately"
+                ? ImmutableDictionary<PieceId, int>.Empty.Add(new PieceId(0), releasing.TurnNumber)
+                : [],
+        };
+        OfferAction offer = why == "asking oneself"
+            ? new OfferAction(Black, Black, [new PieceId(1)], [new PieceId(1)])
+            : new OfferAction(Black, Green, [new PieceId(17)], [new PieceId(0)]);
+
+        // Act
+        Exception? refused = Record.Exception(() => this._rules.Apply(state, offer));
 
         // Assert
         _ = Assert.IsType<IllegalActionException>(refused);

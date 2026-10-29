@@ -71,9 +71,9 @@ internal sealed class Ransom(SquareGridTopology grid, Position start)
 
     /// <summary>
     /// The offer may be made: the offerer may offer, to a seat that has not retired, its own self included,
-    /// gives back at least one prisoner it holds of the receiver's, each of which may go home now, asks only
-    /// for prisoners the receiver holds of the offerer's team, and nothing of its own team, and has not made
-    /// the same offer this turn.
+    /// gives back at least one prisoner it holds of the receiver's, asks only for prisoners the receiver holds
+    /// of the offerer's team, and nothing of itself, each of them prisoners that may go home now, and has not
+    /// made the same offer this turn.
     /// </summary>
     public static bool IsValid(GameState state, OfferAction offer)
     {
@@ -88,7 +88,8 @@ internal sealed class Ransom(SquareGridTopology grid, Position start)
             && given.Count == offer.Given.Count
             && given.All(prisoner => MayGoBack(state, prisoner))
             && asked.Count == offer.Asked.Count
-            && (offer.Asked.IsEmpty || !state.Teams.AreAllied(offer.Receiver, offer.Actor))
+            && asked.All(prisoner => MayGoBack(state, prisoner))
+            && (offer.Asked.IsEmpty || offer.Receiver != offer.Actor)
             && !state.OffersMade.Contains(offer.Offer);
     }
 
@@ -124,8 +125,8 @@ internal sealed class Ransom(SquareGridTopology grid, Position start)
 
     /// <summary>
     /// The receiver scores for each prisoner it sends home, those asked for, more for a Raja, and for none it
-    /// is given back; the prisoners given go home first, then
-    /// those asked for, each to the nearest free square.
+    /// is given back, nor in a trade with its own team; the prisoners given go home first, then those asked
+    /// for, each to the nearest free square.
     /// </summary>
     public Transition Accepted(GameState state)
     {
@@ -136,6 +137,7 @@ internal sealed class Ransom(SquareGridTopology grid, Position start)
         ];
         int points = going
             .Where(prisoner => offer.Asked.Contains(prisoner.Piece.Id))
+            .Where(_ => !state.Teams.AreAllied(offer.To, offer.From))
             .Sum(prisoner => prisoner.Piece.Kind == Chaturaji2027Pieces.Raja
                 ? Chaturaji2027Rules.RansomRajaBonus
                 : Chaturaji2027Rules.RansomAcceptedBonus

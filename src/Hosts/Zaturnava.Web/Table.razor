@@ -742,12 +742,16 @@
         view.Seats[seat].Prisoners.Where(prisoner => prisoner.Owner == owner && prisoner.MayGoBack);
 
     /// <summary>
-    /// The prisoners the chosen receiver holds of the player's team: what the player may ask for; none until a
-    /// receiver is chosen, nor of the player's own team, to whom prisoners are only given back.
+    /// The prisoners the chosen receiver holds of the player's team that may go back now: what the player may ask
+    /// for; none until a receiver is chosen, nor of the player themselves.
     /// </summary>
     private ImmutableList<PrisonerDto> Askable(GameViewDto view, int seat) =>
-        this._receiver is { } receiver && view.Seats[receiver].Team != view.Seats[seat].Team
-            ? [.. view.Seats[receiver].Prisoners.Where(prisoner => view.Seats[prisoner.Owner].Team == view.Seats[seat].Team)]
+        this._receiver is { } receiver && receiver != seat
+            ? [
+                .. view.Seats[receiver].Prisoners.Where(prisoner =>
+                    view.Seats[prisoner.Owner].Team == view.Seats[seat].Team && prisoner.MayGoBack
+                ),
+            ]
             : [];
 
     /// <summary>Chooses prisoners to give back, or no longer; choosing another seat's starts afresh.</summary>
