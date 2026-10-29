@@ -53,6 +53,43 @@ public sealed class SelfPlayCommandTest
     }
 
     [Fact]
+    public async Task Run_WhenGivenABotAssembly_SeatsItsBotsBesideOurs()
+    {
+        // Arrange - this assembly, with its own bots
+        string[] args =
+        [
+            "--games", "1", "--max-steps", "20", "--bots", "seeded-own,sage,plain-own,random",
+            "--bot-assembly", typeof(SeededOwnBot).Assembly.Location,
+        ];
+
+        // Act
+        int exitCode = await SelfPlayCommand.Run(args, this._output, this._errors, this._cancellation);
+
+        // Assert
+        JsonElement game = JsonDocument.Parse(this._output.ToString()).RootElement;
+        Assert.Equal(
+            (SelfPlayCommand.Succeeded, "seeded-own,sage,plain-own,random"),
+            (exitCode, string.Join(',', game.GetProperty("seats").EnumerateArray().Select(Player)))
+        );
+    }
+
+    [Fact]
+    public async Task Run_WhenTheBotAssemblyCannotBeLoaded_SaysSoAndExitsAsMisused()
+    {
+        // Arrange
+        string[] args = ["--bot-assembly", Path.Combine(Path.GetTempPath(), $"zaturnava-{Guid.NewGuid():N}.dll")];
+
+        // Act
+        int exitCode = await SelfPlayCommand.Run(args, this._output, this._errors, this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            (SelfPlayCommand.Misused, true),
+            (exitCode, this._errors.ToString().StartsWith("No bots could be loaded", StringComparison.Ordinal))
+        );
+    }
+
+    [Fact]
     public async Task Run_WhenGivenAFile_WritesTheGamesThere()
     {
         // Arrange
@@ -107,4 +144,6 @@ public sealed class SelfPlayCommandTest
             (exitCode, this._errors.ToString().StartsWith(expected, StringComparison.Ordinal))
         );
     }
+
+    private static string? Player(JsonElement seat) => seat.GetProperty("player").GetString();
 }

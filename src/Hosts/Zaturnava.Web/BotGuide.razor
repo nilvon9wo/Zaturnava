@@ -1,6 +1,6 @@
 @* The bots: who each is and how strongly it plays, easiest first, by its Elo rating at the ruleset, for choosing
    whom to play. Shown over the lobby or the table, from the page's bar, until closed. A bot not rated yet comes
-   last; one paid for each use says so. *@
+   last; one paid for each use says so. Then how to bring a bot of one's own, for developers. *@
 @inject IGameServing Games
 
 <div class="guide-backdrop">
@@ -44,6 +44,13 @@
                 }
             </ol>
         }
+
+        <h3>Your own bot</h3>
+        <p class="your-own">
+            Play your own AI here: an AI assistant through MCP, or a program of yours through the game's HTTP API.
+            Download the games played, to learn from, and train it against these bots offline.
+            <a href="@DocsLinks.Bots" target="_blank" rel="noopener">How, for developers</a>.
+        </p>
     </section>
 </div>
 

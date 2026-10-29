@@ -21,14 +21,14 @@ public sealed class SelfPlayOptionsTest
         string[] args =
         [
             "--ruleset", "tiny", "--bots", "random, first", "--games", "7", "--max-steps", "50", "--out", "games.jsonl",
-            "--train", "3",
+            "--train", "3", "--bot-assembly", "MyBots.dll",
         ];
 
         // Act
         SelfPlayOptions options = SelfPlayOptions.Parse(args);
 
         // Assert
-        SelfPlayOptions expected = new("tiny", ["random", "first"], 7, 50, "games.jsonl", 3);
+        SelfPlayOptions expected = new("tiny", ["random", "first"], 7, 50, "games.jsonl", 3, "MyBots.dll");
         Assert.Equivalent(expected, options, strict: true);
     }
 

@@ -34,7 +34,7 @@ empire bonus are still to come ([rules.md, implementation status](docs/rules.md#
 | `Zaturnava.Contracts`, `.Client` | The protocol, and a .NET client for it |
 | `Zaturnava.Web`, `.Presentation` | The browser client (Blazor WebAssembly), meant for itch.io |
 | `Zaturnava.Mcp` | An MCP server, so an AI can take a seat |
-| `Zaturnava.BotRunner` | Bots playing bots, from the command line |
+| `Zaturnava.BotRunner` | Bots playing bots, yours among them, from the command line |
 
 The game server's host is not decided yet; see
 [architecture §8](docs/architecture.md#8-tech-stack--hosting).
@@ -48,6 +48,8 @@ The game server's host is not decided yet; see
   configuration of a general system: board topology, movement grammar, seats and teams, the
   pure-reducer engine, the action log, ports and adapters, the protocol, the clients, and
   hosting.
+- [`docs/bots/`](docs/bots/README.md) — bring your own AI: play it through MCP or the HTTP API,
+  download the games played, and train it against our bots in self-play.
 - [`docs/contribute/`](docs/contribute/README.md) — coding standards, running the game and the
   quality gates locally, tests and coverage, CI.
 

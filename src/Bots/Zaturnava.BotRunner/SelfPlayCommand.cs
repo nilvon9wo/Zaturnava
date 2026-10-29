@@ -6,6 +6,7 @@ using Net.NowhereAtAll.Zaturnava.Application.Games;
 using Net.NowhereAtAll.Zaturnava.Application.Rulesets;
 using Net.NowhereAtAll.Zaturnava.Application.Running;
 using Net.NowhereAtAll.Zaturnava.Bots;
+using Net.NowhereAtAll.Zaturnava.Engine.Decisions;
 using Net.NowhereAtAll.Zaturnava.Engine.Rules;
 using Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
 
@@ -24,15 +25,14 @@ internal static class SelfPlayCommand
 
     private static readonly RulesetCatalog Rulesets = new([new Chaturaji2027Rules()]);
 
-    private static readonly BotCatalog Bots = new(
-        [
-            new SageBot(Random.Shared),
-            new ArgusBot(Random.Shared),
-            new MidasBot(Random.Shared),
-            new SolomonBot(Random.Shared),
-            new RandomBot(Random.Shared),
-        ]
-    );
+    private static readonly ImmutableList<IBotPlaying> Bots =
+    [
+        new SageBot(Random.Shared),
+        new ArgusBot(Random.Shared),
+        new MidasBot(Random.Shared),
+        new SolomonBot(Random.Shared),
+        new RandomBot(Random.Shared),
+    ];
 
     public static async Task<int> Run(
         [Required] IReadOnlyList<string> args,
@@ -83,10 +83,18 @@ internal static class SelfPlayCommand
     }
 
     /// <exception cref="GameRequestException">The ruleset or a bot does not exist.</exception>
+    /// <exception cref="ArgumentException">
+    /// The bot assembly cannot be loaded, or one of its bots has the id of another.
+    /// </exception>
     private static SelfPlay Prepare(SelfPlayOptions options, IRulesApplying rules)
     {
+        BotCatalog bots = new(
+            options.BotAssemblyPath is { } path
+                ? [.. Bots, .. BotAssembly.BotsIn(path, Random.Shared)]
+                : Bots
+        );
         ImmutableList<string> botIds = options.Bots ?? [.. Enumerable.Repeat(RandomBot.BotId, SeatCount(rules))];
-        return new SelfPlay(rules, botIds, [.. botIds.Select(Bots.Find)], new RandomDice(Random.Shared));
+        return new SelfPlay(rules, botIds, [.. botIds.Select(bots.Find)], new RandomDice(Random.Shared));
     }
 
     private static int SeatCount(IRulesApplying rules) => rules.CreateInitialState().Seats.Count;

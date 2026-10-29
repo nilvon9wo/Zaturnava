@@ -48,6 +48,21 @@ public sealed class BotGuideTest : IDisposable
     }
 
     [Fact]
+    public void Render_WhenLoaded_ShowsDevelopersWhereToReadHowToBringTheirOwnBot()
+    {
+        // Arrange - nothing beyond the page
+
+        // Act
+        IRenderedComponent<BotGuide> guide = this._page.Render<BotGuide>();
+
+        // Assert
+        Assert.Equal(
+            ("https://github.com/nilvon9wo/Zaturnava/blob/main/docs/bots/README.md", "_blank"),
+            (guide.Find(".your-own a").GetAttribute("href"), guide.Find(".your-own a").GetAttribute("target"))
+        );
+    }
+
+    [Fact]
     public void Render_WhenTheServerCannotBeReached_SaysWhy()
     {
         // Arrange

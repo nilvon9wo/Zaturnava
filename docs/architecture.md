@@ -204,7 +204,7 @@ client, MCP, presentation), `Hosts` (server, page, hosting adapters) and `Persis
 | Presentation | Client-side board logic: frame, clickable actions, selection | Contracts |
 | Web | Blazor WebAssembly client | Client, Contracts, Presentation |
 | Mcp | MCP server (stdio) letting an AI play through any server | Client, Contracts |
-| BotRunner | Command-line self-play: bots against bots, each game's history as a JSON line | Application, Bots, Engine, Games.Chaturaji2027 |
+| BotRunner | Command-line self-play: bots against bots (one's own among them, from an assembly), each game's history as a JSON line | Application, Bots, Engine, Games.Chaturaji2027 |
 | Server | ASP.NET Core host; the composition root | Application, Bots, Contracts, Engine, Hosting, Hosting.Itch, Persistence.*, Topology.SquareGrid, Games.Chaturaji2027 |
 
 **Vendors stay in their adapters.** A third-party service — a page host, a
@@ -300,8 +300,9 @@ base address (`GameRoutes`):
   through `IGameServing`; an AI plays exactly as a person would, by claiming a
   seat and acting with its token.
 - **BotRunner** — runs bots against bots in-process, for testing rulesets and
-  bots, and writes each game as a JSON line (`--ruleset`, `--bots`, `--games`,
-  `--max-steps`, `--out`). With `--train`, it tunes Sage's weights for the
+  bots, and writes each game's history as a JSON line (`--ruleset`, `--bots`,
+  `--games`, `--max-steps`, `--out`); `--bot-assembly` seats bots of one's own
+  beside ours ([self-play](bots/self-play.md)). With `--train`, it tunes Sage's weights for the
   ruleset instead, by Sage playing itself, and writes them as JSON for
   `Zaturnava.Bots/Weights/{ruleset}.json`, which Sage plays by. Each game it
   writes says who won, from which `scripts/rate-bots.py` fits the bots' Elo
