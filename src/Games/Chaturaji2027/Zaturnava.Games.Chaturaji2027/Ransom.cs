@@ -97,7 +97,8 @@ internal sealed class Ransom(SquareGridTopology grid, Position start)
     }
 
     /// <summary>
-    /// The receiver scores for each prisoner going home, either way; the prisoners given go home first, then
+    /// The receiver scores for each prisoner it sends home, those asked for, and for none it is given back;
+    /// the prisoners given go home first, then
     /// those asked for, each to the nearest free square.
     /// </summary>
     public Transition Accepted(GameState state)
@@ -107,7 +108,7 @@ internal sealed class Ransom(SquareGridTopology grid, Position start)
         [
             .. offer.Given.Concat(offer.Asked).Select(id => state.Prisoners.First(prisoner => prisoner.Piece.Id == id)),
         ];
-        int points = going.Count * Chaturaji2027Rules.RansomAcceptedBonus;
+        int points = offer.Asked.Count * Chaturaji2027Rules.RansomAcceptedBonus;
         GameState scored = state with
         {
             Offer = null,
@@ -115,7 +116,10 @@ internal sealed class Ransom(SquareGridTopology grid, Position start)
         };
         Transition answered = new(
             scored,
-            [new RansomAccepted(offer), new RansomRewarded(offer.To, going.Count, points)]
+            [
+                new RansomAccepted(offer),
+                .. points > 0 ? [new RansomRewarded(offer.To, offer.Asked.Count, points)] : Array.Empty<GameEvent>(),
+            ]
         );
         return this.SentHome(answered, going, offer.From);
     }

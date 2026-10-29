@@ -2067,6 +2067,25 @@ public sealed class Chaturaji2027RulesTest
     }
 
     [Fact]
+    public void Apply_WhenAGiftIsAccepted_ScoresTheReceiverNothing()
+    {
+        // Arrange - Black gives Yellow's pawn 12 back, asking nothing
+        GameState state = this.AcceptingRansom() with
+        {
+            Offer = new RansomOffer(Black, Yellow, [new PieceId(12)], []),
+        };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new AcceptAction(Yellow));
+
+        // Assert
+        Assert.Equal(
+            (0, state.Scores[Yellow]),
+            (transition.Events.OfType<RansomRewarded>().Count(), transition.State.Scores[Yellow])
+        );
+    }
+
+    [Fact]
     public void Apply_WhenAnOfferIsAcceptedAndEverySquareOfAPiecesKindIsTaken_WaitsOnItsOwnerToChooseAmongTheNearest()
     {
         // Arrange - Yellow's pawn 12 starts on b8, where Green's pawn stands; Yellow faces right
@@ -2083,8 +2102,8 @@ public sealed class Chaturaji2027RulesTest
         Transition transition = this._rules.Apply(state, new AcceptAction(Yellow));
 
         // Assert - nearest Yellow's back rank, then nearest its left
-        Assert.Equal([new RansomAccepted(state.Offer!), new RansomRewarded(Yellow, 2, 2)], transition.Events);
-        Assert.Equal(state.Scores[Yellow] + 2, transition.State.Scores[Yellow]);
+        Assert.Equal([new RansomAccepted(state.Offer!), new RansomRewarded(Yellow, 1, 1)], transition.Events);
+        Assert.Equal(state.Scores[Yellow] + 1, transition.State.Scores[Yellow]);
         Assert.Equal(
             (Yellow, null, 2, Black, false),
             (
