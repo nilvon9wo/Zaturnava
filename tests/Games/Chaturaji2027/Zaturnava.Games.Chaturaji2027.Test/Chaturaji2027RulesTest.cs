@@ -530,17 +530,37 @@ public sealed class Chaturaji2027RulesTest
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void Apply_WhenARajaTakesTheThroneThatLeavesItCommandingEveryPiece_ScoresTheBonusOnce(bool hasRetiredRed)
+    public void Apply_WhenTheTurnComesToOneCommandingEveryPiece_ScoresTheBonusOnce(bool hasRetiredRed)
     {
         // Arrange - Green has no Raja, so Black commands it; Red has nothing, or only its Raja, retired
         GameState state = this.EveryPiece(hasRetiredRed);
+
+        // Act
+        Transition transition = this._rules.Apply(state, new PassAction(Green));
+
+        // Assert
+        Assert.Equal([new EveryPieceCommanded(Black, 2)], transition.Events.OfType<EveryPieceCommanded>());
+        Assert.Equal((2, true), (transition.State.Scores[Black], transition.State.IsEveryPieceScored));
+    }
+
+    [Fact]
+    public void Apply_WhenARajaTakesTheThroneThatLeavesItCommandingEveryPieceWithDiceLeft_ScoresTheBonus()
+    {
+        // Arrange - Black's Raja beside Yellow's throne, with a 5 to move it and a 6 still to use
+        GameState every = this.EveryPiece(hasRetiredRed: false);
+        GameState state = every with
+        {
+            DecidingSeat = Black,
+            Position = every.Position.Relocate(YellowThrone, Grid.CellAt(1, 4)),
+            Dice = [5, 6],
+        };
 
         // Act
         Transition transition = this._rules.Apply(state, new MoveAction(Black, Grid.CellAt(1, 4), YellowThrone));
 
         // Assert
         Assert.Equal([new EveryPieceCommanded(Black, 2)], transition.Events.OfType<EveryPieceCommanded>());
-        Assert.Equal((3, true), (transition.State.Scores[Black], transition.State.IsEveryPieceScored));
+        Assert.Equal((3, Black), (transition.State.Scores[Black], transition.State.DecidingSeat));
     }
 
     [Fact]
@@ -550,11 +570,11 @@ public sealed class Chaturaji2027RulesTest
         GameState state = this.EveryPiece(hasRetiredRed: false) with { IsEveryPieceScored = true };
 
         // Act
-        Transition transition = this._rules.Apply(state, new MoveAction(Black, Grid.CellAt(1, 4), YellowThrone));
+        Transition transition = this._rules.Apply(state, new PassAction(Green));
 
         // Assert
         Assert.Empty(transition.Events.OfType<EveryPieceCommanded>());
-        Assert.Equal((1, true), (transition.State.Scores[Black], transition.State.IsEveryPieceScored));
+        Assert.Equal((0, true), (transition.State.Scores[Black], transition.State.IsEveryPieceScored));
     }
 
     [Fact]
@@ -3198,16 +3218,19 @@ public sealed class Chaturaji2027RulesTest
     }
 
     /// <summary>
-    /// Black's turn, its Raja beside Yellow's throne; Green's Pawn, with no Raja; Yellow's Pawn; and, if
+    /// Green's turn, with no Raja of its own but a Pawn; Black's Raja on Yellow's throne; Yellow's Pawn; and, if
     /// <paramref name="hasRetiredRed"/>, Red's Raja, Red retired, else nothing of Red's.
     /// </summary>
     private GameState EveryPiece(bool hasRetiredRed)
     {
         GameState state = this.StateWith(
-            (Grid.CellAt(1, 4), Piece(3, Chaturaji2027Pieces.Raja, Black)),
+            (YellowThrone, Piece(3, Chaturaji2027Pieces.Raja, Black)),
             (Grid.CellAt(2, 6), Piece(21, Chaturaji2027Pieces.Pawn, Green)),
             (Grid.CellAt(5, 5), Piece(13, Chaturaji2027Pieces.Pawn, Yellow))
-        );
+        ) with
+        {
+            DecidingSeat = Green,
+        };
         return hasRetiredRed
             ? state with
             {

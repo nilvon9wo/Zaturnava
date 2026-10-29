@@ -146,7 +146,6 @@ public sealed class Chaturaji2027Rules : IRulesApplying
         this._command.Told(
             state,
             this._everyPiece.Scored(
-                state,
                 this.Unstalled(
                     GameEnd.AfterGivingUp(
                         Attended(

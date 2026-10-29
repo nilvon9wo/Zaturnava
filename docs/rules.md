@@ -215,14 +215,23 @@ Points are never subtracted or returned when a piece is given back.
   players are on the board. It is not an outright win: the occupied enemy
   still takes the first move of its own turn (§6.3), and may free its throne
   with it.
-  - *(Proposed)* "Every piece" means every piece on the board but a retired
-    Raja (§10), and a player is "on the board" while they have a piece there
-    other than a retired Raja. While all four are, no one can command every
-    piece, since a Raja holds only one throne. The engine
-    reckons it after every action: the player who acted on their own turn
-    scores it first, else the player whose own turn it now is. A regent
-    playing an ally's turn, or a player answering an offer or a proposal, is
-    not on their own turn. A name: *Chakravartin*, the universal ruler.
+  - *(Stated 2026-10-29)* A retired Raja (§10) is left out, both of
+    "every piece" and of the players "on the board", but only a Raja whose
+    player has chosen to retire with it as their only piece. A player who
+    still plays on — rolling to escape, ransoming, or otherwise — is not
+    retired, and their Raja must be taken. (This is what retirement already
+    means, §10.) While all four players are on the board, no one can command
+    every piece, since a Raja holds only one throne.
+  - *(Stated 2026-10-29)* It is reckoned as the game sees which pieces a
+    player commands on their own turn: if they may move every piece on the
+    board (bar any blocked by their own pieces or the board's edges), they
+    score it. The engine looks after each action, at the player then deciding
+    on their own turn: so a move that leaves dice to use scores at once, and
+    one that ends the turn scores at the player's next turn, if it still
+    holds. A regent playing an ally's turn, or a player answering an offer or
+    a proposal, is not on their own turn.
+  - *(Proposed)* A name for it: *Chakravartin*, Sanskrit for the universal
+    ruler, the king whose wheel rolls everywhere unopposed.
 
 ## 6. Throne Control
 
