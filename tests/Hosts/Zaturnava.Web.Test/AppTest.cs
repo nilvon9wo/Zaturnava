@@ -76,7 +76,7 @@ public sealed class AppTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ("brand,how-to-play,the-bots,leave", "safety,theme,pieces,sound"),
+            ("brand,how-to-play,the-bots,leave", "theme,pieces,sound"),
             (
                 string.Join(",", app.FindAll(".table-bar .where > *").Select(part => part.ClassName)),
                 string.Join(",", app.FindAll(".table-bar .settings button").Select(button => button.ClassName))
@@ -140,6 +140,7 @@ public sealed class AppTest : IDisposable
     {
         // Arrange
         IRenderedComponent<App> app = this._page.Render<App>();
+        app.Find("button.create").Click();
 
         // Act
         app.Find("button.safety").Click();
@@ -148,8 +149,8 @@ public sealed class AppTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ("Safety: OFF (safety off)", "Safety: on"),
-            (afterOne, app.Find("button.safety").TextContent.Trim())
+            ("Safety: OFF (safety off)", "Safety: on", 0),
+            (afterOne, app.Find("button.safety").TextContent.Trim(), app.FindAll(".settings button.safety").Count)
         );
     }
 

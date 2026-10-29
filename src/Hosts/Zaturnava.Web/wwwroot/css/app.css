@@ -206,6 +206,9 @@ html { scrollbar-gutter: stable; }
     margin-top: 12px;
 }
 
+/* The board, and under the player's corner of it, their safety. */
+.board-side { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+
 .board {
     width: min(92vw, 600px);
     height: auto;
@@ -575,7 +578,8 @@ button.safety.off {
         grid-template-rows: minmax(0, 1fr) 180px;
         grid-template-areas: "turn board" "log board";
     }
-    .board { grid-area: board; width: min(100cqh, 100cqw - 416px); }
+    .board-side { grid-area: board; }
+    .board { width: min(100cqh - 44px, 100cqw - 416px); }
     .table-bar { display: grid; grid-template-columns: 400px minmax(0, 1fr) auto; column-gap: 16px; }
     .table-bar .turns { justify-self: center; }
     .turn { grid-area: turn; min-height: 0; overflow-y: auto; }
@@ -588,7 +592,7 @@ button.safety.off {
         grid-template-rows: minmax(0, 1fr);
         grid-template-areas: "turn board log";
     }
-    .board { width: min(100cqh, 100cqw - 712px); }
+    .board { width: min(100cqh - 44px, 100cqw - 712px); }
     .table-bar { grid-template-columns: minmax(340px, 1fr) auto minmax(340px, 1fr); }
 }
 
