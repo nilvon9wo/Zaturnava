@@ -530,16 +530,21 @@
         };
 
     /// <summary>
-    /// "Yellow's Raja holds your throne: you must roll, then move first; Yellow moves second." - or, once
-    /// rolled, "...: you move first; Yellow moves second."
+    /// "Yellow's Raja holds your throne, so you cannot move before rolling: you must roll, then move first;
+    /// Yellow moves second." - or, once rolled, "...: you move first; Yellow moves second." Playing an ally's
+    /// turn, the throne is the ally's: "Yellow's Raja holds Green's throne...".
     /// </summary>
     private string Held(GameViewDto view, int holder)
     {
-        int throne = view.Cells.First(cell => cell.Throne == view.DecidingSeat).Id;
+        int owner = view.ActingFor ?? view.DecidingSeat!.Value; // held only while someone decides
+        int throne = view.Cells.First(cell => cell.Throne == owner).Id;
         string leader = view.Pieces.First(piece => piece.Cell == throne).Name;
         string holders = view.Seats[holder].Name;
-        string roll = view.LegalActions.Any(action => action.Kind == RollKind) ? "you must roll, then move first" : "you move first";
-        return this.Named($"{holders}'s {leader} holds your throne: {roll}; {holders} moves second.");
+        string whose = view.ActingFor is { } ally ? $"{view.Seats[ally].Name}'s" : "your";
+        string roll = view.LegalActions.Any(action => action.Kind == RollKind)
+            ? ", so you cannot move before rolling: you must roll, then move first"
+            : ": you move first";
+        return this.Named($"{holders}'s {leader} holds {whose} throne{roll}; {holders} moves second.");
     }
 
     /// <summary>Rolling, when the player may do nothing else for an enemy leader on their throne.</summary>

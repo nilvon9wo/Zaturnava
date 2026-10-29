@@ -108,16 +108,28 @@ internal static class GameViews
             : null;
 
     /// <summary>The enemy seat whose leader sits on the throne of the seat deciding for itself; null if none.</summary>
+    /// <summary>
+    /// The enemy whose leader sits on the throne of the seat whose turn the deciding seat plays, its own or an
+    /// ally's; null if none does, or the deciding seat is that enemy, sharing the turn.
+    /// </summary>
     private static int? ThroneHolderOf(IRulesApplying rules, GameState state) =>
-        state.ActingFor is null && state.DecidingSeat is { } seat
-            ? rules.Thrones
-                .Where(throne => throne.Key == seat)
-                .Select(throne => state.Position.PieceAt(throne.Value))
-                .OfType<Piece>()
-                .Where(holder => rules.IsLeader(holder.Kind) && !state.Teams.AreAllied(holder.Owner, seat))
-                .Select(holder => (int?)holder.Owner.Value)
-                .FirstOrDefault()
+        state.DecidingSeat is { } deciding
+            ? HolderOf(rules, state, deciding, state.ActingFor ?? deciding)
             : null;
+
+    private static int? HolderOf(IRulesApplying rules, GameState state, SeatId deciding, SeatId seat) =>
+        rules.Thrones
+            .Where(throne => throne.Key == seat)
+            .Select(throne => state.Position.PieceAt(throne.Value))
+            .OfType<Piece>()
+            .Where(holder =>
+                rules.IsLeader(holder.Kind)
+                && !state.Teams.AreAllied(holder.Owner, seat)
+                && holder.Owner != deciding
+                && !state.Retired.Contains(holder.Owner)
+            )
+            .Select(holder => (int?)holder.Owner.Value)
+            .FirstOrDefault();
 
     private static RulesetDto RulesetOf(IRulesApplying rules)
     {

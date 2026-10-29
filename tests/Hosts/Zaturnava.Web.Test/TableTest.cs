@@ -997,7 +997,12 @@ public sealed class TableTest : IDisposable
     }
 
     [Theory]
-    [InlineData(true, "Yellow's Raja holds your throne: you must roll, then move first; Yellow moves second.", 1)]
+    [InlineData(
+        true,
+        "Yellow's Raja holds your throne, so you cannot move before rolling: you must roll, then move first; "
+            + "Yellow moves second.",
+        1
+    )]
     [InlineData(false, "Yellow's Raja holds your throne: you move first; Yellow moves second.", 0)]
     public void Status_WhenAnEnemyLeaderHoldsTheirThrone_SaysWhoMovesAndUrgesARoll(
         bool mayRoll,
@@ -1023,6 +1028,33 @@ public sealed class TableTest : IDisposable
         Assert.Equal(
             (expected, urged),
             (table.Find("p.status").TextContent, table.FindAll("button.urged").Count)
+        );
+    }
+
+    [Fact]
+    public void Status_WhenAnEnemyLeaderHoldsTheThroneOfTheAllyThePlayerActsFor_SaysWhose()
+    {
+        // Arrange - Black plays Green's turn; Yellow's Raja on cell 2, Green's throne
+        ActionDto roll = new("roll", ImmutableSortedDictionary<string, string>.Empty.Add(ActionArguments.Actor, "0"));
+        GameViewDto view = FakeGameServer.SeatZeroToMove;
+        this._page.Server.View = view with
+        {
+            ActingFor = 2,
+            Cells = view.Cells.SetItem(2, view.Cells[2] with { Throne = 2 }),
+            Pieces = [new PieceDto(0, "raja", "Raja", 1, 2)],
+            Seats = [.. view.Seats, new SeatDto(2, "Green", 0, 0, "bot", "Midas", [])],
+            LegalActions = [roll],
+            ThroneHeldBy = 1,
+        };
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Assert
+        Assert.StartsWith(
+            "Yellow's Raja holds Green's throne",
+            table.Find("p.status").TextContent,
+            StringComparison.Ordinal
         );
     }
 
