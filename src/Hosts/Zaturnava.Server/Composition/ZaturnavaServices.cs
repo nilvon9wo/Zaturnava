@@ -4,6 +4,7 @@ using Net.NowhereAtAll.Zaturnava.Application.Games;
 using Net.NowhereAtAll.Zaturnava.Application.Ports;
 using Net.NowhereAtAll.Zaturnava.Application.Rulesets;
 using Net.NowhereAtAll.Zaturnava.Application.Running;
+using Net.NowhereAtAll.Zaturnava.Application.Scenarios;
 using Net.NowhereAtAll.Zaturnava.Bots;
 using Net.NowhereAtAll.Zaturnava.Engine.Chance;
 using Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
@@ -22,6 +23,12 @@ internal static class ZaturnavaServices
     public const string AwayGraceKey = "Games:AwayGraceSeconds";
 
     /// <summary>
+    /// The configuration key for the folder of scenarios to offer (<see cref="ScenarioFolder"/>), from the
+    /// content root; none are offered if it is not set, as only development sets it.
+    /// </summary>
+    public const string ScenariosKey = "Scenarios:Folder";
+
+    /// <summary>
     /// The configuration section giving, in seconds, how long each timed decision may take, by the
     /// ruleset's name for its timer; <c>Default</c> for any it does not name.
     /// </summary>
@@ -35,6 +42,7 @@ internal static class ZaturnavaServices
             .AddPageHosting(configuration)
             .AddSingleton<IRulesetLocating>(new RulesetCatalog([new Chaturaji2027Rules()]))
             .AddSingleton<IBotLocating>(Bots())
+            .AddSingleton(Scenarios(configuration))
             .AddSingleton<IGameNotifying, SilentNotifier>()
             .AddSingleton<IDiceRolling>(new RandomDice(Random.Shared))
             .AddSingleton(new DecisionClock(TimeProvider.System))
@@ -42,6 +50,14 @@ internal static class ZaturnavaServices
             .AddScoped<GameService>()
             .AddProblemDetails()
             .AddExceptionHandler<RefusalHandler>();
+
+    private static IScenarioLocating Scenarios(IConfiguration configuration) =>
+        configuration[ScenariosKey] is { } folder
+            ? new ScenarioFolder(Path.GetFullPath(folder, ContentRoot(configuration)))
+            : ScenarioCatalog.None;
+
+    private static string ContentRoot(IConfiguration configuration) =>
+        configuration[HostDefaults.ContentRootKey] ?? Environment.CurrentDirectory;
 
     private static BotCatalog Bots() =>
         new(

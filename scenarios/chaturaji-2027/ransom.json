@@ -1,0 +1,19 @@
+{
+  "rulesetId": "chaturaji-2027",
+  "name": "Ransom",
+  "description": "Black holds Yellow's Elephant, and Yellow holds Black's Horse: room for a trade. Black is to roll.",
+  "turn": "Black",
+  "pieces": {
+    "d1": "Black Raja",
+    "a2": "Black Pawn",
+    "e8": "Green Raja",
+    "a5": "Yellow Raja",
+    "b6": "Yellow Pawn",
+    "h4": "Red Raja"
+  },
+  "prisoners": [
+    { "piece": "Yellow Elephant", "holder": "Black" },
+    { "piece": "Black Horse", "holder": "Yellow" }
+  ],
+  "scores": { "Black": 4, "Yellow": 3 }
+}

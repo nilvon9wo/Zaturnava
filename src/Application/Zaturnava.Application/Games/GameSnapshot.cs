@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.ComponentModel.DataAnnotations;
+using Net.NowhereAtAll.Zaturnava.Application.Scenarios;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Events;
 using Net.NowhereAtAll.Zaturnava.Engine.Rules;
@@ -25,13 +26,18 @@ public sealed record GameSnapshot(
     /// <summary>Who may vote to stop waiting for the deciding seat, and how they stand; null if no one may.</summary>
     public AwayVoting? Away { get; init; }
 
-    /// <summary>The game <paramref name="record"/> describes, replayed by <paramref name="rules"/>.</summary>
+    /// <summary>
+    /// The game <paramref name="record"/> describes, replayed by <paramref name="rules"/>: from the scenario it
+    /// started from, if any (<see cref="ScenarioStart"/>), else from a new game.
+    /// </summary>
     public static GameSnapshot Of([Required] GameRecord record, [Required] IRulesApplying rules)
     {
-        Transition replayed = record.Actions.Aggregate(
-            new Transition(rules.CreateInitialState(), []),
-            (sofar, descriptor) => Replayed(rules, sofar, descriptor)
-        );
+        Transition replayed = record.Actions
+            .Where(descriptor => descriptor.Kind != ScenarioStart.Kind)
+            .Aggregate(
+                new Transition(ScenarioStart.StateOf(record.Actions, rules), []),
+                (sofar, descriptor) => Replayed(rules, sofar, descriptor)
+            );
         return new GameSnapshot(record, rules, replayed.State, replayed.Events, rules.LegalActions(replayed.State));
     }
 

@@ -14,7 +14,8 @@ namespace Net.NowhereAtAll.Zaturnava.Application.Test.Fakes;
 /// The smallest ruleset that still ends: two seats take turns passing until <paramref name="length"/>
 /// turns have been played; the second seat has only so long to pass, and may end the game whenever it
 /// likes, by proposing so. Either may vote on waiting for the other while it decides; a seat passed while
-/// away may say it is back. Enough to drive the application without any real game.
+/// away may say it is back. Its board is a row of four cells (<see cref="TinyBoard"/>), where each seat has a
+/// Pawn, and the first a King, that never move. Enough to drive the application without any real game.
 /// </summary>
 internal sealed class TinyRules(int length) : IRulesApplying
 {
@@ -28,13 +29,19 @@ internal sealed class TinyRules(int length) : IRulesApplying
 
     public string Name => "Tiny";
 
-    public ICellNavigating Topology => throw new NotSupportedException("Tiny has no board.");
+    public static readonly PieceKindId Pawn = new("Pawn");
+    public static readonly PieceKindId King = new("King");
+
+    public ICellNavigating Topology { get; } = new TinyBoard();
 
     public ImmutableDictionary<SeatId, CellId> Thrones => [];
 
     public GameState CreateInitialState() =>
         new(
-            Position.Empty,
+            Position.Empty
+                .Place(new CellId(0), new Piece(new PieceId(0), Pawn, new SeatId(0)))
+                .Place(new CellId(1), new Piece(new PieceId(1), King, new SeatId(0)))
+                .Place(new CellId(3), new Piece(new PieceId(2), Pawn, new SeatId(1))),
             [new Seat(new SeatId(0), new Direction(0, 1)), new Seat(new SeatId(1), new Direction(0, -1))],
             TeamGraph.FromTeams([[new SeatId(0)], [new SeatId(1)]]),
             new SeatId(0),

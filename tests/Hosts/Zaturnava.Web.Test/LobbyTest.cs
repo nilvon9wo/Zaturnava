@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Bunit;
+using Net.NowhereAtAll.Zaturnava.Contracts;
 
 namespace Net.NowhereAtAll.Zaturnava.Web.Test;
 
@@ -71,6 +72,54 @@ public sealed class LobbyTest : IDisposable
             (this._page.Server.Created?.Bots, this._seated),
             strict: true
         );
+    }
+
+    [Fact]
+    public void Play_WhenAScenarioIsChosen_StartsFromItAndDescribesIt()
+    {
+        // Arrange
+        this._page.Server.Scenarios =
+        [
+            new ScenarioDto("back-to-back", "chaturaji-2027", "Back to back", "Two Pawns face each other."),
+            new ScenarioDto("escape", "chaturaji-2027", "Escape", "Doubles."),
+        ];
+        IRenderedComponent<Lobby> lobby = this.Render();
+        lobby.Find("select.scenario").Change("back-to-back");
+
+        // Act
+        lobby.Find("button.create").Click();
+
+        // Assert
+        Assert.Equal(
+            ("back-to-back", "Two Pawns face each other."),
+            (this._page.Server.Created?.Scenario, lobby.Find("p.scenario-description").TextContent)
+        );
+    }
+
+    [Fact]
+    public void Play_WhenNoScenarioIsChosen_StartsFromTheBeginning()
+    {
+        // Arrange
+        this._page.Server.Scenarios = [new ScenarioDto("escape", "chaturaji-2027", "Escape", "Doubles.")];
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Act
+        lobby.Find("button.create").Click();
+
+        // Assert
+        Assert.Equal((null, 0), (this._page.Server.Created?.Scenario, lobby.FindAll("p.scenario-description").Count));
+    }
+
+    [Fact]
+    public void Render_WhenTheServerOffersNoScenarios_OffersNoChoiceOfStart()
+    {
+        // Arrange - the fake server offers none
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Assert
+        Assert.Empty(lobby.FindAll("select.scenario"));
     }
 
     [Fact]

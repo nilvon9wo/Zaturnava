@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Net.NowhereAtAll.Zaturnava.Application.Games;
+using Net.NowhereAtAll.Zaturnava.Application.Scenarios;
 using Net.NowhereAtAll.Zaturnava.Contracts;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Boards;
@@ -18,8 +19,23 @@ namespace Net.NowhereAtAll.Zaturnava.Server.Endpoints;
 /// </summary>
 internal static class GameViews
 {
-    public static CatalogDto CatalogOf(ImmutableList<IRulesApplying> rulesets, ImmutableList<BotProfile> bots) =>
-        new([.. rulesets.Select(RulesetOf)], [.. bots.Select(BotOf)]);
+    public static CatalogDto CatalogOf(
+        ImmutableList<IRulesApplying> rulesets,
+        ImmutableList<BotProfile> bots,
+        ImmutableList<Scenario> scenarios
+    ) =>
+        new([.. rulesets.Select(RulesetOf)], [.. bots.Select(BotOf)])
+        {
+            Scenarios =
+            [
+                .. scenarios.Select(scenario => new ScenarioDto(
+                    scenario.Id,
+                    scenario.RulesetId,
+                    scenario.Name,
+                    scenario.Description
+                )),
+            ],
+        };
 
     public static GameSummaryDto SummaryOf(GameSnapshot snapshot)
     {

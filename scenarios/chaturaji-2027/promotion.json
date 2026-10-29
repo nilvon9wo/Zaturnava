@@ -1,0 +1,19 @@
+{
+  "rulesetId": "chaturaji-2027",
+  "name": "Promotion",
+  "description": "Black's Pawn on c7 is a step from the far edge, with a Yellow Elephant and a Red Horse held prisoner to become. Black has rolled a 5, which moves a Pawn.",
+  "turn": "Black",
+  "dice": [5, 1],
+  "pieces": {
+    "d1": "Black Raja",
+    "c7": "Black Pawn",
+    "e8": "Green Raja",
+    "a5": "Yellow Raja",
+    "h4": "Red Raja"
+  },
+  "prisoners": [
+    { "piece": "Yellow Elephant", "holder": "Black" },
+    { "piece": "Red Horse", "holder": "Green" }
+  ],
+  "scores": { "Black": 4, "Green": 3 }
+}

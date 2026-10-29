@@ -84,7 +84,10 @@ public sealed class WireFormatTest
         CatalogDto catalog = new(
             [new RulesetDto("chaturaji-2027", "Chaturaji 2027", 4)],
             [new BotDto("random", "Random", "Any move.", UsesAi: false)]
-        );
+        )
+        {
+            Scenarios = [new ScenarioDto("back-to-back", "chaturaji-2027", "Back to back", "Two Pawns.")],
+        };
 
         // Act
         CatalogDto? arrived = RoundTrip(catalog);
@@ -97,7 +100,7 @@ public sealed class WireFormatTest
     public void CreateGameRequest_WhenSentAsJson_KeepsItsOpenSeats()
     {
         // Arrange
-        CreateGameRequest request = new("chaturaji-2027", [null, "random", null, "random"]);
+        CreateGameRequest request = new("chaturaji-2027", [null, "random", null, "random"]) { Scenario = "s" };
 
         // Act
         CreateGameRequest? arrived = RoundTrip(request);

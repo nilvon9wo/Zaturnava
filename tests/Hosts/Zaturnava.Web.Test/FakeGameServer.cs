@@ -69,6 +69,9 @@ internal sealed class FakeGameServer : IGameServing
 
     public CreateGameRequest? Created { get; private set; }
 
+    /// <summary>The scenarios the catalog offers: none, unless a test sets some.</summary>
+    public ImmutableList<ScenarioDto> Scenarios { get; set; } = [];
+
     public (string GameId, string Token, ActionDto Action)? Submitted { get; private set; }
 
     public Task<CatalogDto> Catalog(CancellationToken cancellationToken) =>
@@ -84,6 +87,9 @@ internal sealed class FakeGameServer : IGameServing
                     new BotDto("solomon", "Solomon", "Fair.", UsesAi: false),
                 ]
             )
+            {
+                Scenarios = this.Scenarios,
+            }
         );
 
     public Task<ImmutableList<GameSummaryDto>> List(CancellationToken cancellationToken) =>
