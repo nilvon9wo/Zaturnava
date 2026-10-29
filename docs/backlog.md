@@ -33,29 +33,52 @@ did them.
 
 ## Bots
 
-- *(Stated 2026-10-26)* A bot that learns from past games and analyzes the current one, using free
-  services where it can and falling back to plain algorithms when they cannot be reached:
-  - **Layer 1** (*Proposed*, under way): no service at all. It looks ahead through the dice (expectimax),
-    scoring positions by weighted features (material, Raja safety, thrones, command, empires,
-    mobility), the weights tuned on recorded games and BotRunner self-play. Free, offline, and the
-    fallback for the layers above.
-    - Done: **Sage**, looking through the rest of its own turn, the dice averaged, and weighing points,
-      pieces, leaders, prisoners, thrones, and what each side could take next. With its starting weights
-      it beat Argus 75-22-3 in 100 self-play games (seats swapped halfway). Its weights are tuned by
-      self-play (BotRunner `--train`) and kept as data for each ruleset: two rounds took score down
-      to 0.7, material up to 1.3, prisoners down to 0.35 and exposure up to 1.3, and Sage so tuned beat
-      Sage as it was 124-84 in 208 games.
-    - Next: features of the ruleset's own (command, empires, a Pawn's way to the far edge), mobility, and the
-      enemy's reply. The Chaturaji 2027 features serve the grand game too (grand/specification.md §6.1).
-    - *(Stated 2026-10-29)* With the enemy's reply weighed, Sage may take its own team's pieces (rules
-      §6.4), when that saves a better one; until then no bot does.
-  - **Layer 2** (*Proposed*): an advisor on a free AI service (a free tier, in its own adapter
-    project), choosing among layer 1's best moves; layer 1 alone when the service is down, slow or
-    out of quota. Each service's current terms to be checked before use.
-  - **Layer 3** (*Stated*): a bot using Claude, for testing. It is never seated but by someone choosing
-    it in the lobby: not by default, not in a quick game; playing again with it is a red button that
-    says it costs tokens. On a public server only with a key a player provides (*Proposed*: how that
-    key is handled is to be decided).
+- *(Stated 2026-10-26)* A bot that learns from past games and analyzes the current one.
+- *(Stated 2026-10-29)* Players can play against an AI, and the claim must mean something: a bot that
+  has learned the game, measured against the hand-tuned ones, not a language model picking among
+  moves it does not understand. The scores and how a game ended (agreement, one team left, a team
+  giving up...) matter to what it learns, not only who won.
+- *(Stated 2026-10-29)* Pythia (Sage asking a free AI service which of its three best moves to make)
+  was removed: it added lag and spent quota without a reason to think it played better. It is kept
+  in the repository's history, at the tag `archive/pythia`.
+- In order (*Stated 2026-10-29*, the user agreeing to the plan):
+  1. **Recorded games**: every game kept with its seats (which bot, or a person), its actions, the
+     scores and how it ended, downloadable as data; self-play writing the same records.
+  2. **Sage** (under way): it looks ahead through the dice (expectimax), scoring positions by
+     weighted features, the weights tuned by BotRunner self-play.
+     - Done: looking through the rest of its own turn, the dice averaged, and weighing points,
+       pieces, leaders, prisoners, thrones, and what each side could take next. With its starting
+       weights it beat Argus 75-22-3 in 100 self-play games (seats swapped halfway). Its weights are
+       tuned by self-play (BotRunner `--train`) and kept as data for each ruleset: two rounds took
+       score down to 0.7, material up to 1.3, prisoners down to 0.35 and exposure up to 1.3, and Sage
+       so tuned beat Sage as it was 124-84 in 208 games.
+     - Next: features of the ruleset's own (command, empires, a Pawn's way to the far edge),
+       mobility, and the enemy's reply. The Chaturaji 2027 features serve the grand game too
+       (grand/specification.md §6.1).
+     - *(Stated 2026-10-29)* With the enemy's reply weighed, Sage may take its own team's pieces
+       (rules §6.4), when that saves a better one; until then no bot does.
+  3. **A learned bot**, the AI to play against: a small neural network, trained by self-play and on
+     recorded games, judging positions inside Sage's look-ahead through the dice. Free, offline, no
+     keys.
+     - *(Proposed)* First as TD-Gammon learned backgammon: the network trained by temporal
+       differences from self-play. As KataGo does for Go, it predicts more than the winner: each
+       team's final score, and how the game will end, so that agreeing to end becomes a move it can
+       judge by how agreed games turned out. AlphaZero's additions (a network suggesting moves, and
+       a tree search guided by it) only if that stops improving; different bots trained different
+       ways if both prove worth playing.
+     - *(Proposed)* Mostly self-play at first, as AlphaZero learned; people's games mixed in as they
+       accumulate, as AlphaGo began, since only they show how people agree to end a game.
+     - Measured before it is offered: against Sage in BotRunner self-play, seats swapped halfway.
+  4. **Bring your own AI** (*Stated 2026-10-29*): players connecting their own AI, to play and to
+     train it: through MCP (already possible, `Zaturnava.Mcp`) and the HTTP API; recorded games to
+     download; and a self-play kit (BotRunner, with a bot of one's own). Documented for developers,
+     and reachable from the game itself.
+- *(Stated 2026-10-29)* Once the game is online, free AI bots are offered for players to play
+  against, subject to whatever policies their hosts require.
+- **A bot using Claude** (*Stated*): for testing. It is never seated but by someone choosing it in
+  the lobby: not by default, not in a quick game; playing again with it is a red button that says it
+  costs tokens. On a public server only with a key a player provides (*Proposed*: how that key is
+  handled is to be decided).
 
 ## Talking
 
