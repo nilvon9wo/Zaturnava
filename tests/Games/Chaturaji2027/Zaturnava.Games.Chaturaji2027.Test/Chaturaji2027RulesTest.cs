@@ -336,7 +336,7 @@ public sealed class Chaturaji2027RulesTest
         );
 
         // Assert
-        Assert.Contains("is not legal now", exception.Message);
+        Assert.Contains("is not allowed now", exception.Message);
     }
 
     [Fact]
@@ -784,7 +784,7 @@ public sealed class Chaturaji2027RulesTest
         );
 
         // Assert
-        Assert.Contains("is not legal now", exception.Message);
+        Assert.Contains("is not allowed now", exception.Message);
     }
 
     [Fact]
@@ -799,7 +799,7 @@ public sealed class Chaturaji2027RulesTest
         );
 
         // Assert
-        Assert.Contains("is not legal now", exception.Message);
+        Assert.Contains("is not allowed now", exception.Message);
     }
 
     public static TheoryData<DiceRequest?, DiceAction> UnawaitedDice =>
@@ -853,7 +853,7 @@ public sealed class Chaturaji2027RulesTest
         );
 
         // Assert
-        Assert.Contains("is not legal now", exception.Message);
+        Assert.Contains("is not allowed now", exception.Message);
     }
 
     [Fact]
@@ -1897,7 +1897,7 @@ public sealed class Chaturaji2027RulesTest
         IllegalActionException exception = Assert.Throws<IllegalActionException>(() => this._rules.Apply(state, offer));
 
         // Assert
-        Assert.Contains("is not legal now", exception.Message);
+        Assert.Contains("is not allowed now", exception.Message);
     }
 
     [Fact]
@@ -2634,7 +2634,7 @@ public sealed class Chaturaji2027RulesTest
         );
 
         // Assert
-        Assert.Contains("is not legal now", exception.Message);
+        Assert.Contains("is not allowed now", exception.Message);
     }
 
     [Fact]
@@ -2650,7 +2650,7 @@ public sealed class Chaturaji2027RulesTest
         );
 
         // Assert
-        Assert.Contains("is not legal now", exception.Message);
+        Assert.Contains("is not allowed now", exception.Message);
     }
 
     [Fact]
@@ -2791,7 +2791,7 @@ public sealed class Chaturaji2027RulesTest
         );
 
         // Assert
-        Assert.Contains("is not legal now", exception.Message);
+        Assert.Contains("is not allowed now", exception.Message);
     }
 
     [Fact]
@@ -2865,7 +2865,7 @@ public sealed class Chaturaji2027RulesTest
         );
 
         // Assert
-        Assert.Contains("is not legal now", exception.Message);
+        Assert.Contains("is not allowed now", exception.Message);
     }
 
     [Fact]

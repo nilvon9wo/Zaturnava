@@ -62,8 +62,8 @@ Nothing here waits on an open question.
   confinement to a palace.
 - Several leaders in one army: throne control, and everything the Chaturaji 2027 rules say of "the Raja",
   said of leaders.
-- Scoring by piece value, with the Chaturaji 2027 bonuses as they are until playtesting says otherwise
-  (**Q14**); the game ends as Chaturaji 2027 does, and points decide it.
+- Scoring by piece value, with the Chaturaji 2027 bonuses multiplied by 10 until playtesting says
+  otherwise (**Q14**); the game ends as Chaturaji 2027 does, and points decide it.
 
 ## Playtest — fixed armies
 

@@ -200,10 +200,17 @@ on, with what follows in place of the Raja-and-dice parts.
 
 ### 6.3 Other Chaturaji 2027 scores
 
-The Chaturaji 2027 bonuses (entering an enemy throne, taking a leader on its own throne, the empire) were
-reckoned against pieces worth 1 to 5. **Stated.** Whether they stay as they are, beside captures
-worth up to 75, or scale, is for playtesting to show; so is the leader bonus of 60, which is meant
-to make players guard their leaders even when they are not using them to take thrones.
+The Chaturaji 2027 bonuses (entering an enemy throne, taking a leader on its own throne, the empire,
+commanding every piece, a ransom's point for each prisoner) were reckoned against pieces worth 1 to 5.
+
+- **Stated (2026-10-29).** In the Grand game every one of them is **multiplied by 10**, so that they
+  keep their meaning beside captures worth up to 75: entering an enemy throne scores 10, taking a
+  leader on its own throne 20, the empire 10 (plus 20, or 40 on the throne, for its captor),
+  commanding every piece 20, and each prisoner a ransom sends home 10. Piece values stay as they
+  are: dividing them by 10 instead would need fractions.
+- **Stated.** Playtesting may still adjust any bonus on its own; so too the leader bonus of 60,
+  which is meant to make players guard their leaders even when they are not using them to take
+  thrones.
 
 ### 6.4 Leaders' powers
 
@@ -275,7 +282,7 @@ The numbers stay as they are; answered questions are marked so.
 11. **Q11** *Answered:* how the game ends, and how it is won (§6.1).
 12. **Q12** *Answered:* the four-throne bonus, once for each set of leaders (§6.2).
 13. **Q13** *Answered:* promotion by a piece's own condition is free, optional and may wait (§6.2).
-14. **Q14** *For playtesting:* the Chaturaji 2027 bonuses, and the leader bonus of 60 (§6.3).
+14. **Q14** *For playtesting:* the Chaturaji 2027 bonuses, ×10 to start with, and the leader bonus of 60 (§6.3).
 15. **Q15** *Answered:* the flying-general capture (§6.4).
 16. **Q16** *Answered:* the leader face-off (§6.4).
 17. **Q17** *Answered:* castling, only with a Western Rook (§6.4).
