@@ -10,6 +10,11 @@ once collide on the shared, woven assemblies.
 Run it again to restart. Don't rebuild these projects while they are running:
 the page server indexes its files once, at startup, and a rebuild beneath it
 leaves the page stuck on "Loading...".
+
+Any arguments are MSBuild properties for both the build and the run, such as
+where to build (scripts/wsl-play.sh builds apart from the tests' build):
+
+    play.py [-p:Name=Value ...]
 """
 import os
 import subprocess
@@ -20,12 +25,12 @@ PROJECTS = ["src/Hosts/Zaturnava.Server", "src/Hosts/Zaturnava.Web"]
 PAGE = "http://localhost:5165"
 
 
-def main() -> int:
+def main(properties: list) -> int:
     for project in PROJECTS:
-        if subprocess.run(["dotnet", "build", project, "-nologo", "-v", "quiet"], cwd=ROOT).returncode != 0:
+        if subprocess.run(["dotnet", "build", project, *properties, "-nologo", "-v", "quiet"], cwd=ROOT).returncode:
             return 1
     running = [
-        subprocess.Popen(["dotnet", "run", "--project", project, "--no-build"], cwd=ROOT)
+        subprocess.Popen(["dotnet", "run", "--project", project, *properties, "--no-build"], cwd=ROOT)
         for project in PROJECTS
     ]
     print(f"Playing at {PAGE} - Ctrl+C stops both.", flush=True)
@@ -43,4 +48,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(main(sys.argv[1:]))

@@ -25,7 +25,7 @@ internal sealed class Training(
     public Task<SageWeights> Tune(SageWeights start, int rounds, CancellationToken cancellationToken) =>
         Enumerable
             .Range(1, rounds)
-            .SelectMany(round => SageWeights.Names.Select((_, index) => (Round: round, Index: index)))
+            .SelectMany(round => start.Names.Select((_, index) => (Round: round, Index: index)))
             .Aggregate(
                 Task.FromResult(start),
                 async (tuned, step) => await this.Nudged(await tuned, step.Round, step.Index, cancellationToken)
@@ -61,7 +61,7 @@ internal sealed class Training(
         await this._progress.WriteLineAsync(
             string.Create(
                 CultureInfo.InvariantCulture,
-                $"round {round}, {SageWeights.Names[index]} {current.Values[index]:0.###} to "
+                $"round {round}, {current.Names[index]} {current.Values[index]:0.###} to "
                     + $"{candidate.Values[index]:0.###}: won {won}, lost {lost}{(isKept ? ", kept" : string.Empty)}"
             )
         );

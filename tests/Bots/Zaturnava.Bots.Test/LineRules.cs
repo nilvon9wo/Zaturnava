@@ -16,9 +16,10 @@ namespace Net.NowhereAtAll.Zaturnava.Bots.Test;
 /// attacks along the line either way, up to the first piece in its way - and the legal actions are
 /// whichever the test says, but for moves from a cell left empty. A move goes where it says, and scores
 /// its actor what it takes (<see cref="ScoringRules.Worth"/>); passing does nothing. Seats 0 and 2 are
-/// allied against 1 and 3; seat 0's throne is cell 0, and the Raja leads.
+/// allied against 1 and 3; seat 0's throne is cell 0, and the Raja leads. Its one measure of its own is how
+/// many Pawns an army has.
 /// </summary>
-internal sealed class LineRules(ImmutableList<GameAction> legalActions) : IRulesApplying
+internal sealed class LineRules(ImmutableList<GameAction> legalActions) : IRulesApplying, IPositionMeasuring
 {
     public static readonly SeatId Seat = new(0);
     public static readonly SeatId Enemy = new(1);
@@ -122,6 +123,11 @@ internal sealed class LineRules(ImmutableList<GameAction> legalActions) : IRules
     }
 
     public bool IsLeader(PieceKindId kind) => kind == Raja;
+
+    public ImmutableList<string> Measures => ["pawns"];
+
+    public ImmutableList<double> MeasuresOf([Required] GameState state, SeatId seat) =>
+        [state.Position.Occupants.Values.Count(piece => piece.Owner == seat && piece.Kind == Pawn)];
 
     public string NameOf(PieceKindId kind) => throw new NotSupportedException();
 

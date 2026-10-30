@@ -77,7 +77,9 @@ internal static class SelfPlayCommand
     )
     {
         SageMatch match = new(rules, new RandomDice(Random.Shared), options.Games, options.MaximumSteps);
-        SageWeights start = SageWeights.Learned.GetValueOrDefault(rules.Id, SageWeights.Default);
+        SageWeights start = SageWeights.Learned
+            .GetValueOrDefault(rules.Id, SageWeights.Default)
+            .WeighingMeasuresOf(rules);
         SageWeights tuned = await new Training(match.Play, progress).Tune(start, rounds, cancellationToken);
         await output.WriteLineAsync(JsonSerializer.Serialize(tuned, Indented));
     }

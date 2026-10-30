@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Text.Json;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Decisions;
 using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
@@ -245,7 +246,7 @@ public sealed class SageBotTest
         ImmutableDictionary<string, SageWeights> learned = SageWeights.Learned;
 
         // Assert
-        Assert.Equal(SageWeights.Names.Count, learned["chaturaji-2027"].Values.Count);
+        Assert.Equal(learned["chaturaji-2027"].Names.Count, learned["chaturaji-2027"].Values.Count);
     }
 
     [Fact]
@@ -255,7 +256,7 @@ public sealed class SageBotTest
         SageWeights weights = SageWeights.Default;
 
         // Act
-        SageWeights changed = weights.With(SageWeights.Names.IndexOf("thrones"), 7);
+        SageWeights changed = weights.With(weights.Names.IndexOf("thrones"), 7);
 
         // Assert
         Assert.Equal(weights with { Thrones = 7 }, changed);
@@ -283,6 +284,158 @@ public sealed class SageBotTest
 
         // Assert
         Assert.Equal(ours, action);
+    }
+
+    [Fact]
+    public async Task Decide_WhenWeighingMobility_LeavesItsPiecesAttackingMoreCells()
+    {
+        // Arrange - a Pawn on the edge attacks one cell; one step in, two
+        MoveAction toEdge = LineRules.Move(4, 7);
+        MoveAction inside = LineRules.Move(4, 5);
+        DecisionRequest request = LineRules.Request([toEdge, inside], (4, LineRules.Pawn, Seat));
+        SageBot bot = new(new Random(Seed), Nothing with { Mobility = 1 }, []);
+
+        // Act
+        GameAction action = await bot.Decide(request, this._cancellation);
+
+        // Assert
+        Assert.Equal(inside, action);
+    }
+
+    [Theory]
+    [InlineData("pawns", 4)]
+    [InlineData("other", 2)]
+    public async Task Decide_WhenWeighingTheRulesetsOwnMeasure_CountsItForEachSide(string measure, int expected)
+    {
+        // Arrange - taking the enemy's Pawn leaves it fewer; with another measure weighed, the pieces' worth decides
+        DecisionRequest request = LineRules.Request(
+            [LineRules.Move(3, 4), LineRules.Move(3, 2)],
+            (3, LineRules.Horse, Seat),
+            (4, LineRules.Pawn, LineRules.Enemy),
+            (2, LineRules.Horse, LineRules.Enemy)
+        );
+        SageWeights weights = Nothing with
+        {
+            Material = measure == "other" ? 1 : 0,
+            Measures = ImmutableSortedDictionary<string, double>.Empty.Add(measure, 1),
+        };
+
+        // Act
+        GameAction action = await new SageBot(new Random(Seed), weights, []).Decide(request, this._cancellation);
+
+        // Assert
+        Assert.Equal(LineRules.Move(3, expected), action);
+    }
+
+    [Fact]
+    public async Task Decide_WhenTheRulesetMeasuresNothing_WeighsWhatElseItWeighs()
+    {
+        // Arrange - the scripted rules measure nothing of their own
+        MoveAction ours = LineRules.Move(0, 1);
+        ScriptedRules rules = new(
+            ImmutableDictionary<GameAction, GameState>.Empty
+                .Add(ours, ScriptedRules.State((5, LineRules.Raja, Seat)))
+                .Add(LineRules.Move(0, 2), ScriptedRules.State())
+        );
+        SageWeights weights = Nothing with
+        {
+            Leaders = 1,
+            Measures = ImmutableSortedDictionary<string, double>.Empty.Add("pawns", 100),
+        };
+
+        // Act
+        GameAction action =
+            await new SageBot(new Random(Seed), weights, []).Decide(rules.Request(), this._cancellation);
+
+        // Assert
+        Assert.Equal(ours, action);
+    }
+
+    [Fact]
+    public void With_WhenGivenAMeasuresWeight_ChangesThatOneOnly()
+    {
+        // Arrange
+        SageWeights weights = SageWeights.Default.Weighing(["pawn-progress", "command"]);
+
+        // Act
+        SageWeights changed = weights.With(weights.Names.IndexOf("pawn-progress"), 0.5);
+
+        // Assert
+        Assert.Equal(
+            (0.5, 0, weights.Material),
+            (changed.Measures["pawn-progress"], changed.Measures["command"], changed.Material)
+        );
+    }
+
+    [Fact]
+    public void Weighing_WhenAMeasureIsWeighedAlready_KeepsItsWeight()
+    {
+        // Arrange
+        SageWeights weights = SageWeights.Default with
+        {
+            Measures = ImmutableSortedDictionary<string, double>.Empty.Add("pawn-progress", 2),
+        };
+
+        // Act
+        SageWeights weighing = weights.Weighing(["pawn-progress", "command"]);
+
+        // Assert
+        Assert.Equal(
+            ["score", "material", "leaders", "prisoners", "thrones", "exposure", "chances", "mobility", "command",
+                "pawn-progress"],
+            weighing.Names
+        );
+        Assert.Equal((0, 2), (weighing.Measures["command"], weighing.Measures["pawn-progress"]));
+    }
+
+    [Fact]
+    public void WeighingMeasuresOf_WhenTheRulesetMeasures_WeighsItsMeasuresAndElseNothingMore()
+    {
+        // Arrange - the line rules measure Pawns; the scripted rules, nothing
+        LineRules line = new([]);
+        ScriptedRules scripted = new([]);
+
+        // Act
+        SageWeights measured = SageWeights.Default.WeighingMeasuresOf(line);
+
+        // Assert
+        Assert.Equal(
+            ("pawns", SageWeights.Default),
+            (Assert.Single(measured.Measures.Keys), SageWeights.Default.WeighingMeasuresOf(scripted))
+        );
+    }
+
+    [Fact]
+    public void Equals_WhenTheMeasuresDiffer_IsFalse()
+    {
+        // Arrange
+        SageWeights weights = SageWeights.Default.Weighing(["pawn-progress"]);
+
+        // Act
+        bool isEqual = weights.Equals(SageWeights.Default.Weighing(["command"]));
+
+        // Assert
+        SageWeights? none = null;
+        Assert.Equal(
+            (false, false, true),
+            (isEqual, weights.Equals(none), weights.Equals(SageWeights.Default.Weighing(["pawn-progress"])))
+        );
+    }
+
+    [Fact]
+    public void Learned_WhenReadAsJson_KeepsMobilityAndTheMeasures()
+    {
+        // Arrange
+        SageWeights weights = SageWeights.Default.Weighing(["pawn-progress"]).With(7, 0.25).With(8, 0.5);
+
+        // Act
+        SageWeights? read = JsonSerializer.Deserialize<SageWeights>(
+            JsonSerializer.Serialize(weights, JsonSerializerOptions.Web),
+            JsonSerializerOptions.Web
+        );
+
+        // Assert
+        Assert.Equal((weights, weights.GetHashCode()), (read, read!.GetHashCode()));
     }
 
     [Fact]

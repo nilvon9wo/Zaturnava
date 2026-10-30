@@ -105,27 +105,21 @@ summary: Passed!" for the modules that did run. That is why `scripts/run-tests.p
 ends such a run with `Test run summary: INCONCLUSIVE - N test module(s) did not run` and exit
 code 3.
 
-Build and test from WSL instead, from a copy of the sources, so that the Linux restore doesn't
-rewrite the `obj/` folders Visual Studio uses:
+Build and test from WSL instead, in the checkout itself, from its root. The build goes to
+`artifacts/wsl/` (git-ignored), apart from the `bin/` and `obj/` folders Visual Studio uses, so the
+Linux restore never rewrites them:
 
 ```shell
-rsync -a --delete --exclude bin --exclude obj --exclude .vs --exclude .git --exclude TestResults \
-    /mnt/e/path/to/Zaturnava/ ~/zaturnava/
-cd ~/zaturnava && python3 scripts/run-tests.py --solution Zaturnava.slnx
+wsl -d Ubuntu -- bash scripts/wsl-test.sh                       # every test project
+wsl -d Ubuntu -- bash scripts/wsl-test.sh Zaturnava.Bots.Test   # or just these
 ```
 
-Play from a second copy, so that a test run in the first never rebuilds the game beneath you
-(WSL forwards the ports, so the page still opens in a Windows browser):
+Play the same way; it builds to `artifacts/wsl-play/`, so that a test run never rebuilds the game
+beneath you (WSL forwards the ports, so the page still opens in a Windows browser):
 
 ```shell
-rsync -a --delete --exclude bin --exclude obj --exclude .vs --exclude .git --exclude TestResults \
-    /mnt/e/path/to/Zaturnava/ ~/zaturnava-play/
-cd ~/zaturnava-play && python3 scripts/play.py
+wsl -d Ubuntu -- bash scripts/wsl-play.sh
 ```
 
 The static gates (`dotnet format`, `check-line-layout.py`, `inspect-code.py`) run no test host
 and work on Windows directly.
-
-`rsync -a` keeps the Windows files' modification times. If you edit a file in the copy and then
-sync over it, MSBuild can see nothing newer and skip rebuilding: delete the copy before a final
-run.
