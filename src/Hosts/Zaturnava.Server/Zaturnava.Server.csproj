@@ -9,6 +9,8 @@
   -->
 
   <ItemGroup>
+    <!-- The API described as OpenAPI, at openapi/v1.json -->
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.13" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.13" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.13" />
     <!-- SqlClient's own dependency (9.0.11) has known vulnerabilities (NU1902, NU1903) -->

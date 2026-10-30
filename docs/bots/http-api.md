@@ -3,7 +3,9 @@
 Everything a client can do, in any language: JSON over HTTP, no account, no key. The browser page
 and the MCP server use these same routes. The server's address below is a local one,
 `http://localhost:5164/` ([running a server](README.md#running-a-server)); the routes are relative to
-it. Names in JSON are camelCase.
+it. Names in JSON are camelCase. The server's own address (and `api`) answers with where to go from there,
+and `openapi/v1.json` describes every route as [OpenAPI](https://www.openapis.org/), for tools that generate
+clients. The live server is at `https://zaturnava.runasp.net/`.
 
 ## Routes
 
