@@ -17,8 +17,10 @@ namespace Net.NowhereAtAll.Zaturnava.BotRunner;
 /// seat (<see cref="PositionEncoder"/>), and taught how the game went for that seat's team: won, drawn or
 /// lost, and by how many points. Games of another ruleset, and games that did not end, are passed over. Every
 /// position is learned from, not only those a turn begins with, as Athena looks through the rest of its turn
-/// and judges positions in the middle of it too. Each round (<c>epoch</c>) goes through every seat's view of
-/// every game once, in an order of its own, and how far off the network was on average is written to
+/// and judges positions in the middle of it too. Each round (<c>epoch</c>) works out what every position is
+/// to be taught, then goes through them once, shuffled across games and seats (a game's positions taught one
+/// after another would pull the network towards how that one game went), and how far off the network was on
+/// average is written to
 /// <paramref name="progress"/>. A network may start from one learned before, or from <see cref="Start"/>:
 /// judging as Sage does, so that what it learns corrects Sage.
 /// </summary>
@@ -60,8 +62,12 @@ internal sealed class Learning(IRulesApplying rules, TextWriter progress)
         {
             cancellationToken.ThrowIfCancellationRequested();
             double error = sequences
+                .SelectMany(sequence => TargetsOf(network, sequence, pace.Lambda)
+                    .Select((target, at) => (Input: sequence.Inputs[at], target.Outcome, target.Margin))
+                )
+                .ToList()
                 .OrderBy(_ => random.Next())
-                .Sum(sequence => Taught(network, sequence, pace));
+                .Sum(sample => Taught(network, sample.Input, sample.Outcome, sample.Margin, pace.Rate));
             await this._progress.WriteLineAsync(
                 string.Create(
                     CultureInfo.InvariantCulture,
@@ -74,20 +80,19 @@ internal sealed class Learning(IRulesApplying rules, TextWriter progress)
     }
 
     /// <summary>
-    /// The network taught one seat's view of a game; how far off it was, squared, all told. Each step is the
-    /// rate shared out over how big the position's numbers are (normalized least mean squares): a position of
-    /// big numbers (a late game's scores and counts) would otherwise move the network past what it is taught,
-    /// further each time, until its numbers are no numbers at all.
+    /// The network taught one position; how far off it was, squared. The step is the rate shared out over how
+    /// big the position's numbers are (normalized least mean squares): a position of big numbers (a late game's
+    /// scores and counts) would otherwise move the network past what it is taught, further each time, until its
+    /// numbers are no numbers at all.
     /// </summary>
-    private static double Taught(ValueNetwork network, Sequence sequence, LearningPace pace) =>
-        TargetsOf(network, sequence, pace.Lambda)
-            .Select((target, at) => network.Learn(
-                sequence.Inputs[at],
-                target.Outcome,
-                target.Margin,
-                pace.Rate / (1 + sequence.Inputs[at].Sum(entry => entry.Value * entry.Value))
-            ))
-            .Sum();
+    private static double Taught(
+        ValueNetwork network,
+        ImmutableList<(int Index, double Value)> input,
+        double outcome,
+        double margin,
+        double rate
+    ) =>
+        network.Learn(input, outcome, margin, rate / (1 + input.Sum(entry => entry.Value * entry.Value)));
 
     /// <summary>
     /// What each position is taught (its λ-return, as temporal-difference learning has it): from the last
