@@ -32,6 +32,22 @@ public sealed class ValueNetworkTest
     }
 
     [Fact]
+    public void Judging_WhenGivenWeights_JudgesAsTheirWeightedSumInScales()
+    {
+        // Arrange - the second input weighs 3, the first nothing; shown 2 of the second and 5 of the first
+        (int Index, double Value)[] shown = [(0, 5d), (1, 2d)];
+
+        // Act
+        ValueNetwork network = ValueNetwork.Judging(Inputs, Hidden, [(1, 3d)], 10, new Random(7));
+
+        // Assert
+        (double outcome, double margin) = network.Evaluate(shown);
+        Assert.Equal((Inputs, Hidden), (network.Inputs, network.Hidden));
+        Assert.Equal(Math.Tanh(0.6), outcome, 1e-12);
+        Assert.Equal(0.6, margin, 1e-12);
+    }
+
+    [Fact]
     public void Learn_WhenTaughtOverAndOver_ComesToJudgeAsTaught()
     {
         // Arrange

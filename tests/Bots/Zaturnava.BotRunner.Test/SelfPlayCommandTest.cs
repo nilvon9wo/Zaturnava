@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Net.NowhereAtAll.Zaturnava.Bots;
 using Net.NowhereAtAll.Zaturnava.Bots.Learning;
+using Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
 
 namespace Net.NowhereAtAll.Zaturnava.BotRunner.Test;
 
@@ -157,6 +158,87 @@ public sealed class SelfPlayCommandTest
         );
     }
 
+    [Fact]
+    public async Task Run_WhenLearningFromANetwork_GoesOnFromIt()
+    {
+        // Arrange - a game Argus finishes, and a network of 3 hidden units to go on from
+        string games = Path.GetTempFileName();
+        string start = Path.GetTempFileName();
+        string[] play = ["--games", "1", "--max-steps", "10000", "--bots", "argus,argus,argus,argus", "--out", games];
+        _ = await SelfPlayCommand.Run(play, this._output, this._errors, this._cancellation);
+        await File.WriteAllTextAsync(start, NetworkJson(Size), this._cancellation);
+        string[] args = ["--learn", games, "--from", start, "--epochs", "1", "--hidden", "4", "--lambda", "0.5"];
+
+        // Act
+        int exitCode = await SelfPlayCommand.Run(args, this._output, this._errors, this._cancellation);
+
+        // Assert
+        File.Delete(games);
+        File.Delete(start);
+        ValueNetworkData? network =
+            JsonSerializer.Deserialize<ValueNetworkData>(this._output.ToString(), JsonSerializerOptions.Web);
+        Assert.Equal((SelfPlayCommand.Succeeded, 3), (exitCode, network?.Hidden));
+    }
+
+    [Fact]
+    public async Task Run_WhenGivenANetwork_AthenaPlaysByIt()
+    {
+        // Arrange
+        string file = Path.GetTempFileName();
+        await File.WriteAllTextAsync(file, NetworkJson(Size), this._cancellation);
+        string[] args = ["--games", "1", "--max-steps", "6", "--bots", "athena,sage,athena,sage", "--network", file];
+
+        // Act
+        int exitCode = await SelfPlayCommand.Run(args, this._output, this._errors, this._cancellation);
+
+        // Assert
+        File.Delete(file);
+        JsonElement game = JsonDocument.Parse(this._output.ToString()).RootElement;
+        Assert.Equal(
+            (SelfPlayCommand.Succeeded, "athena,sage,athena,sage"),
+            (exitCode, string.Join(',', game.GetProperty("seats").EnumerateArray().Select(Player)))
+        );
+    }
+
+    [Theory]
+    [InlineData("not json", "There is no network to read in ")]
+    [InlineData("null", "")]
+    [InlineData("{\"rulesetId\": \"other\"}", "")]
+    [InlineData("small", "")]
+    public async Task Run_WhenTheNetworkIsNotOneForTheRuleset_SaysSoAndExitsAsMisused(string content, string expected)
+    {
+        // Arrange - a network for positions of 2 numbers is no network for Chaturaji 2027's
+        string file = Path.GetTempFileName();
+        await File.WriteAllTextAsync(file, content == "small" ? NetworkJson(2) : content, this._cancellation);
+
+        // Act
+        int exitCode = await SelfPlayCommand.Run(["--network", file], this._output, this._errors, this._cancellation);
+
+        // Assert
+        File.Delete(file);
+        string said = this._errors.ToString();
+        Assert.Equal(
+            (SelfPlayCommand.Misused, true),
+            (exitCode, said.StartsWith(expected.Length > 0 ? expected : file, StringComparison.Ordinal))
+        );
+    }
+
+    [Fact]
+    public async Task Run_WhenTheNetworksFileIsNotThere_SaysSoAndExitsAsMisused()
+    {
+        // Arrange
+        string[] args = ["--from", Path.Combine(Path.GetTempPath(), $"zaturnava-{Guid.NewGuid():N}.json")];
+
+        // Act
+        int exitCode = await SelfPlayCommand.Run(args, this._output, this._errors, this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            (SelfPlayCommand.Misused, true),
+            (exitCode, this._errors.ToString().StartsWith("There is no network to read in ", StringComparison.Ordinal))
+        );
+    }
+
     [Theory]
     [InlineData("--ruleset", "checkers", "There is no 'checkers' ruleset.")]
     [InlineData("--bots", "random,genius,random,random", "There is no 'genius' bot.")]
@@ -176,4 +258,14 @@ public sealed class SelfPlayCommandTest
     }
 
     private static string? Player(JsonElement seat) => seat.GetProperty("player").GetString();
+
+    /// <summary>How many numbers a Chaturaji 2027 position is.</summary>
+    private static int Size => new PositionEncoder(new Chaturaji2027Rules()).Size;
+
+    /// <summary>A Chaturaji 2027 network of 3 hidden units, for positions of so many numbers, as JSON.</summary>
+    private static string NetworkJson(int inputs) =>
+        JsonSerializer.Serialize(
+            ValueNetwork.Untrained(inputs, 3, new Random(7)).ToData("chaturaji-2027"),
+            JsonSerializerOptions.Web
+        );
 }

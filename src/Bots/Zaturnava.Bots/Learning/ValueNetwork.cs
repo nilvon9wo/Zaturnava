@@ -65,6 +65,38 @@ public sealed class ValueNetwork
             new double[inputs * Outputs]
         );
 
+    /// <summary>
+    /// A network that judges as a weighted sum of its inputs does, each weighed as <paramref name="weighing"/>
+    /// says (one not there weighing nothing), in <paramref name="scale"/>s: the outcome expected, the sum's tanh,
+    /// and the margin, the sum itself. Its hidden units have small weights in, at random, but none out yet, so
+    /// they change nothing until it learns: what it learns corrects the sum.
+    /// </summary>
+    public static ValueNetwork Judging(
+        [Range(1, int.MaxValue)] int inputs,
+        [Range(1, int.MaxValue)] int hidden,
+        [Required] IEnumerable<(int Index, double Weight)> weighing,
+        double scale,
+        [Required] Random random
+    )
+    {
+        double[] directWeights = new double[inputs * Outputs];
+        foreach ((int index, double weight) in weighing)
+        {
+            directWeights[index * Outputs] = weight / scale;
+            directWeights[(index * Outputs) + 1] = weight / scale;
+        }
+
+        return new ValueNetwork(
+            inputs,
+            hidden,
+            Small(inputs * hidden, 1 / Math.Sqrt(hidden), random),
+            new double[hidden],
+            new double[Outputs * hidden],
+            new double[Outputs],
+            directWeights
+        );
+    }
+
     /// <summary>The network <paramref name="data"/> keeps.</summary>
     /// <exception cref="ArgumentException">The data does not hold a network of its own size.</exception>
     public static ValueNetwork From([Required] ValueNetworkData data)

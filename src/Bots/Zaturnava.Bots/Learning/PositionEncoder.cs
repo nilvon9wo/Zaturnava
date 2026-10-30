@@ -33,6 +33,7 @@ public sealed class PositionEncoder
     private const double FeatureScale = 10;
 
     private readonly IRulesApplying _rules;
+    private readonly ImmutableList<string> _measures;
     private readonly ImmutableList<PieceKindId> _kinds;
     private readonly int _seats;
     private readonly ImmutableDictionary<Direction, ImmutableDictionary<CellId, int>> _rows;
@@ -41,6 +42,7 @@ public sealed class PositionEncoder
     {
         GameState initial = rules.CreateInitialState();
         this._rules = rules;
+        this._measures = rules is IPositionMeasuring measuring ? measuring.Measures : [];
         this._kinds =
         [
             .. initial.Position.Occupants.Values
@@ -131,6 +133,18 @@ public sealed class PositionEncoder
                 .OrderBy(entry => entry.Key),
         ];
     }
+
+    /// <summary>
+    /// What each of the numbers Sage counts weighs, by its index, as <paramref name="weights"/> weigh them: a
+    /// weighted sum of a position's numbers so weighed is what Sage judges it worth.
+    /// </summary>
+    public ImmutableList<(int Index, double Weight)> Weighing([Required] SageWeights weights) =>
+    [
+        .. weights.Values
+            .Take(this.Features - this._measures.Count)
+            .Concat(this._measures.Select(name => weights.Measures.GetValueOrDefault(name)))
+            .Select((weight, at) => (this.FeaturesAt + at, weight * FeatureScale)),
+    ];
 
     /// <summary>
     /// A piece of <paramref name="owner"/>'s, of the <paramref name="kind"/>th kind, on <paramref name="cell"/>:

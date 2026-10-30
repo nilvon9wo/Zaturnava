@@ -51,6 +51,39 @@ public sealed class PositionEncoderTest
     }
 
     [Fact]
+    public void Weighing_WhenGivenSagesWeights_WeighsWhatSageCountsAsTheyDoForTheScaleTheyAreShownIn()
+    {
+        // Arrange - the line's one measure weighing 4, and one it does not have, 5
+        SageWeights weights = new(1, 2, 3, 4, 5, 6, 7)
+        {
+            Mobility = 8,
+            Measures = ImmutableSortedDictionary<string, double>.Empty.Add("pawns", 4).Add("other", 5),
+        };
+
+        // Act
+        ImmutableList<(int Index, double Weight)> weighing = new PositionEncoder(Rules).Weighing(weights);
+
+        // Assert - each shown as a tenth of itself
+        Assert.Equal(
+            Enumerable.Range(1, 8).Append(4).Select((weight, at) => (Index: FeaturesAt + at, Weight: weight * 10d)),
+            weighing
+        );
+    }
+
+    [Fact]
+    public void Weighing_WhenTheRulesetHasNoMeasuresOfItsOwn_WeighsOnlyWhatSageCountsOfAny()
+    {
+        // Arrange
+        PositionEncoder encoder = new(new ScriptedRules([]));
+
+        // Act
+        ImmutableList<(int Index, double Weight)> weighing = encoder.Weighing(SageWeights.Default);
+
+        // Assert
+        Assert.Equal((8, encoder.Size - 1), (weighing.Count, weighing[^1].Index));
+    }
+
+    [Fact]
     public void Encode_WhenTheGameStarts_CountsEachArmysPiecesAndHowFarTheyHaveComeAndWhoDecides()
     {
         // Arrange - seat 0's Raja and Pawn at cells 0 and 1, seat 1's at 7 and 6; what Sage counts is even
