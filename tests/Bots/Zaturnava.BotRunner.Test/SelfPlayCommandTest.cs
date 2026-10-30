@@ -39,15 +39,17 @@ public sealed class SelfPlayCommandTest
     [Fact]
     public async Task Run_WhenAGameEnds_SaysWhoWonItAndHow()
     {
-        // Arrange - Argus ends its games long before ten thousand steps; a win is a team's, a draw no one's
-        string[] args = ["--games", "1", "--max-steps", "10000", "--bots", "argus,argus,argus,argus"];
+        // Arrange - Argus ends most games long before ten thousand steps; a win is a team's, a draw no one's
+        string[] args = ["--games", "4", "--max-steps", "10000", "--bots", "argus,argus,argus,argus"];
 
         // Act
         _ = await SelfPlayCommand.Run(args, this._output, this._errors, this._cancellation);
 
         // Assert
-        JsonElement game = JsonDocument.Parse(this._output.ToString()).RootElement;
-        JsonElement outcome = game.GetProperty("outcome");
+        JsonElement outcome = this._output.ToString()
+            .Split('\n', StringSplitOptions.RemoveEmptyEntries)
+            .Select(line => JsonDocument.Parse(line).RootElement.GetProperty("outcome"))
+            .First(ended => ended.ValueKind != JsonValueKind.Null);
         int winners = outcome.GetProperty("winners").GetArrayLength();
         Assert.Equal((true, true), (winners is 0 or 2, outcome.GetProperty("ending").GetString()!.Length > 0));
     }
