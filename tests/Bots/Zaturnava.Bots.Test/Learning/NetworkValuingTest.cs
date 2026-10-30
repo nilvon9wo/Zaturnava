@@ -13,9 +13,9 @@ public sealed class NetworkValuingTest
     private static readonly DecisionRequest Request = LineRules.Request([], (0, LineRules.Pawn, LineRules.Seat));
 
     [Theory]
-    [InlineData("won", 1 + (0.1 * 15 / 30))]
+    [InlineData("won", 10 + (0.1 * 15 / 30))]
     [InlineData("drawn", 0.1 * 15 / 30)]
-    [InlineData("lost", -1 + (0.1 * 15 / 30))]
+    [InlineData("lost", -10 + (0.1 * 15 / 30))]
     public void ValueOf_WhenTheGameIsOver_JudgesItByHowItEndedAndALittleByTheLead(string result, double expected)
     {
         // Arrange - seat 0's ally 20 points to the enemy's 5
