@@ -1,0 +1,40 @@
+name: Deploy page (itch.io)
+
+# The web page, published and uploaded to itch.io as the project's HTML game, by butler, itch.io's uploader. Run
+# by hand (Actions, "Run workflow"). The page talks to the server wwwroot/appsettings.json names; the
+# Development settings (localhost) are left out of what is uploaded. Secret: BUTLER_API_KEY, an itch.io API key
+# (itch.io, Settings, API keys).
+on:
+  workflow_dispatch:
+
+env:
+  ITCH_TARGET: nilvon9wo/zaturnava:html
+
+jobs:
+  deploy:
+    name: Publish and upload
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Publish the page
+        run: |
+          dotnet publish src/Hosts/Zaturnava.Web -c Release -o publish
+          rm -f publish/wwwroot/appsettings.Development.json*
+
+      - name: Install butler
+        run: |
+          curl -sSfL -o butler.zip https://broth.itch.zone/butler/linux-amd64/LATEST/archive/default
+          unzip -q butler.zip -d butler
+          chmod +x butler/butler
+          butler/butler -V
+
+      - name: Upload
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+        run: butler/butler push publish/wwwroot "$ITCH_TARGET" --userversion "${GITHUB_SHA::7}"

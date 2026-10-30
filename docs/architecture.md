@@ -294,7 +294,9 @@ base address (`GameRoutes`):
 - **Web** — Blazor WebAssembly, a static site of about 16 MB, meant to be
   uploaded to itch.io as an HTML game. It renders the board as SVG from the
   cell layouts it is sent, so a different topology needs no client change.
-  `wwwroot/appsettings.json` names the server (`Server:Url`).
+  `wwwroot/appsettings.json` names the server (`Server:Url`): the live one;
+  `appsettings.Development.json`, the one on this machine. It is uploaded to itch.io by hand,
+  through `.github/workflows/deploy-itch.yml` (butler, with an itch.io API key in the repository's secrets).
 - **MCP** — a stdio MCP server whose tools (`catalog`, `list_games`,
   `create_game`, `claim_seat`, `get_game`, `game_history`, `submit_action`, `advance_game`) call a game server
   through `IGameServing`; an AI plays exactly as a person would, by claiming a
