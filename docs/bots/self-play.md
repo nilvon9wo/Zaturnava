@@ -94,12 +94,29 @@ dotnet run --project src/Bots/Zaturnava.BotRunner -c Release -- \
 
 `--learn` replays every finished game of the ruleset in the files, takes every position from every seat,
 and trains a small network to predict how the game went for that seat's team: won, drawn or lost, and by
-how many points. It writes the network as JSON; put it in `src/Bots/Zaturnava.Bots/Networks/`, named for
-the ruleset, and Athena plays by it. The positions are given to the network as `PositionEncoder` sums them
-up, which your own learner may use too. What did and did not work is in the [backlog](../backlog.md#bots).
+how many points. With `--lambda` below 1, each position is taught partly what the network judges of the
+positions after it (temporal differences, as TD-Gammon learned). The network starts out judging as Sage
+does, so that what it learns corrects Sage; or from a network learned before (`--from`). It writes the
+network as JSON; put it in `src/Bots/Zaturnava.Bots/Networks/`, named for the ruleset, and Athena plays by
+it, or give it to `--network` to play her by it without building her again. The positions are given to the
+network as `PositionEncoder` sums them up, which your own learner may use too. What did and did not work is
+in the [backlog](../backlog.md#bots).
 
 | Option | |
 |---|---|
 | `--learn` | The files of game histories to learn from, comma-separated |
+| `--from` | A network's file to go on from, instead of starting from Sage's judgement |
 | `--epochs` | How many times to go through every position (default 8) |
-| `--hidden` | How many hidden units the network has (default 32) |
+| `--hidden` | How many hidden units a new network has (default 32) |
+| `--lambda` | How much each position is taught how the game went, rather than what follows it, from 0 to 1 (default 1) |
+| `--rate` | How big a step the network takes towards each position, from 0 to 1, shared out over how big its numbers are (default 0.1) |
+| `--network` | A network's file for Athena to play by, when playing games |
+
+`scripts/athena-rounds.py` runs all of it in rounds, each learning from every game so far, then playing
+Athena against Sage, 200 games with each team moving first, and keeping those games for the next round. Each
+round's network, games and result go to `artifacts/athena/` (`rounds.jsonl`; the best network so far is
+`best.json`). From Windows, through WSL ([local development](../contribute/local-development.md)):
+
+```shell
+wsl -d Ubuntu -- bash scripts/wsl-athena.sh --rounds 6 --seed sage.jsonl,more.jsonl
+```

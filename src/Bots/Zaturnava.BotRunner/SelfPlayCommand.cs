@@ -46,11 +46,13 @@ internal static class SelfPlayCommand
         SelfPlayOptions options;
         IRulesApplying rules;
         SelfPlay play;
+        ValueNetwork? start;
         try
         {
             options = SelfPlayOptions.Parse(args);
             rules = Rulesets.Find(options.RulesetId);
             play = Prepare(options, rules);
+            start = options.StartPath is { } path ? ValueNetwork.From(NetworkIn(path, rules)) : null;
         }
         catch (Exception misuse) when (misuse is ArgumentException or GameRequestException)
         {
@@ -62,7 +64,7 @@ internal static class SelfPlayCommand
         await ((options.TrainingRounds, options.LearningFrom) switch
         {
             ({ } rounds, _) => Train(rules, options, rounds, output, standardError, cancellationToken),
-            (_, { } files) => Learn(rules, options, files, output, standardError, cancellationToken),
+            (_, { } files) => Learn(rules, options, files, start, output, standardError, cancellationToken),
             _ => play.Run(options.Games, options.MaximumSteps, output, cancellationToken),
         });
         return Succeeded;
@@ -90,22 +92,25 @@ internal static class SelfPlayCommand
     }
 
     /// <summary>
-    /// Trains a network to judge the ruleset's positions on the games in <paramref name="files"/>, telling how
-    /// each round went on <paramref name="progress"/>, and writes it, as JSON for <c>Zaturnava.Bots/Networks</c>.
+    /// Trains a network to judge the ruleset's positions on the games in <paramref name="files"/>, from
+    /// <paramref name="start"/> or else from one judging as Sage does, telling how each round went on
+    /// <paramref name="progress"/>, and writes it, as JSON for <c>Zaturnava.Bots/Networks</c>.
     /// </summary>
     private static async Task Learn(
         IRulesApplying rules,
         SelfPlayOptions options,
         ImmutableList<string> files,
+        ValueNetwork? start,
         TextWriter output,
         TextWriter progress,
         CancellationToken cancellationToken
     )
     {
-        ValueNetworkData network = await new Learning(rules, progress).Learn(
+        Learning learning = new(rules, progress);
+        ValueNetworkData network = await learning.Learn(
             files.SelectMany(File.ReadLines),
-            options.Epochs,
-            options.Hidden,
+            start ?? learning.Start(options.Hidden, Random.Shared),
+            options.Pace,
             Random.Shared,
             cancellationToken
         );
@@ -114,17 +119,51 @@ internal static class SelfPlayCommand
 
     /// <exception cref="GameRequestException">The ruleset or a bot does not exist.</exception>
     /// <exception cref="ArgumentException">
-    /// The bot assembly cannot be loaded, or one of its bots has the id of another.
+    /// The bot assembly cannot be loaded, or one of its bots has the id of another; or Athena's network cannot.
     /// </exception>
     private static SelfPlay Prepare(SelfPlayOptions options, IRulesApplying rules)
     {
+        ImmutableList<IBotPlaying> ours = options.NetworkPath is { } network
+            ? WithNetwork(NetworkIn(network, rules), rules)
+            : Bots;
         BotCatalog bots = new(
             options.BotAssemblyPath is { } path
-                ? [.. Bots, .. BotAssembly.BotsIn(path, Random.Shared)]
-                : Bots
+                ? [.. ours, .. BotAssembly.BotsIn(path, Random.Shared)]
+                : ours
         );
         ImmutableList<string> botIds = options.Bots ?? [.. Enumerable.Repeat(RandomBot.BotId, SeatCount(rules))];
         return new SelfPlay(rules, botIds, [.. botIds.Select(bots.Find)], new RandomDice(Random.Shared));
+    }
+
+    /// <summary>Our bots, but Athena playing the ruleset by <paramref name="network"/>.</summary>
+    private static ImmutableList<IBotPlaying> WithNetwork(ValueNetworkData network, IRulesApplying rules)
+    {
+        AthenaBot athena = new(
+            Random.Shared,
+            ImmutableDictionary.Create<string, ValueNetworkData>(StringComparer.Ordinal).Add(rules.Id, network)
+        );
+        return [.. Bots.Select(bot => bot is AthenaBot ? athena : bot)];
+    }
+
+    /// <summary>The network kept in the file at <paramref name="path"/>, for the ruleset's positions.</summary>
+    /// <exception cref="ArgumentException">The file cannot be read, or holds no such network.</exception>
+    private static ValueNetworkData NetworkIn(string path, IRulesApplying rules)
+    {
+        ValueNetworkData? data;
+        try
+        {
+            data = JsonSerializer.Deserialize<ValueNetworkData>(File.ReadAllText(path), JsonSerializerOptions.Web);
+        }
+        catch (Exception unread) when (unread is IOException or JsonException)
+        {
+            throw new ArgumentException($"There is no network to read in {path}: {unread.Message}", unread);
+        }
+
+        return data is { } network
+            && network.RulesetId == rules.Id
+            && network.Inputs == new PositionEncoder(rules).Size
+                ? network
+                : throw new ArgumentException($"{path} holds no network judging {rules.Id}'s positions.");
     }
 
     private static int SeatCount(IRulesApplying rules) => rules.CreateInitialState().Seats.Count;

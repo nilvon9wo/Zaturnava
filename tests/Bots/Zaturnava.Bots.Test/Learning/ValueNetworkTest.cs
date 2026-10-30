@@ -32,6 +32,22 @@ public sealed class ValueNetworkTest
     }
 
     [Fact]
+    public void Judging_WhenGivenWeights_JudgesAsTheirWeightedSumInScales()
+    {
+        // Arrange - the second input weighs 3, the first nothing; shown 2 of the second and 5 of the first
+        (int Index, double Value)[] shown = [(0, 5d), (1, 2d)];
+
+        // Act
+        ValueNetwork network = ValueNetwork.Judging(Inputs, Hidden, [(1, 3d)], 10, new Random(7));
+
+        // Assert
+        (double outcome, double margin) = network.Evaluate(shown);
+        Assert.Equal((Inputs, Hidden), (network.Inputs, network.Hidden));
+        Assert.Equal(Math.Tanh(0.6), outcome, 1e-12);
+        Assert.Equal(0.6, margin, 1e-12);
+    }
+
+    [Fact]
     public void Learn_WhenTaughtOverAndOver_ComesToJudgeAsTaught()
     {
         // Arrange
@@ -78,12 +94,17 @@ public sealed class ValueNetworkTest
     [InlineData("output weights")]
     [InlineData("output biases")]
     [InlineData("direct weights")]
+    [InlineData("no number")]
     public void From_WhenAPartIsNotOfTheSizeItSays_ThrowsArgumentException(string part)
     {
-        // Arrange - 6 input weights, 3 hidden biases, 6 output weights, 2 output biases, 4 direct; one swapped
+        // Arrange - 6 input weights, 3 hidden biases, 6 output weights, 2 output biases, 4 direct; one swapped,
+        // or every weight made no number by being taught no number
         ValueNetworkData data = ValueNetwork.Untrained(Inputs, Hidden, new Random(7)).ToData("line");
+        ValueNetwork lost = ValueNetwork.Untrained(Inputs, Hidden, new Random(7));
+        _ = lost.Learn(Shown, double.NaN, 0, 0.1);
         ValueNetworkData wrong = part switch
         {
+            "no number" => lost.ToData("line"),
             "input weights" => data with { InputWeights = data.HiddenBiases },
             "hidden biases" => data with { HiddenBiases = data.OutputBiases },
             "output weights" => data with { OutputWeights = data.HiddenBiases },

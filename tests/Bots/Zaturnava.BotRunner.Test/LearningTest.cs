@@ -1,6 +1,9 @@
+using System.Collections.Immutable;
 using System.Text.Json;
 using Net.NowhereAtAll.Zaturnava.Application.Games;
+using Net.NowhereAtAll.Zaturnava.Bots;
 using Net.NowhereAtAll.Zaturnava.Bots.Learning;
+using Net.NowhereAtAll.Zaturnava.Engine.Rules;
 using Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
 
 namespace Net.NowhereAtAll.Zaturnava.BotRunner.Test;
@@ -8,6 +11,7 @@ namespace Net.NowhereAtAll.Zaturnava.BotRunner.Test;
 public sealed class LearningTest
 {
     private static readonly Chaturaji2027Rules Rules = new();
+    private static readonly LearningPace Pace = new(1, 1, 0.02);
 
     private readonly StringWriter _progress = new();
     private readonly CancellationToken _cancellation = TestContext.Current.CancellationToken;
@@ -30,8 +34,9 @@ public sealed class LearningTest
         string alone = await this.ProgressOf([finished]);
 
         // Act
-        ValueNetworkData network = await new Learning(Rules, this._progress)
-            .Learn(histories, 1, 4, new Random(7), this._cancellation);
+        Learning learning = new(Rules, this._progress);
+        ValueNetworkData network = await learning
+            .Learn(histories, learning.Start(4, new Random(7)), Pace, new Random(7), this._cancellation);
 
         // Assert
         Assert.Equal(
@@ -55,17 +60,80 @@ public sealed class LearningTest
         await cancelled.CancelAsync();
 
         // Act
-        Task learning = new Learning(Rules, this._progress).Learn([], 1, 4, new Random(7), cancelled.Token);
+        Task learning = new Learning(Rules, this._progress)
+            .Learn([], ValueNetwork.Untrained(1, 1, new Random(7)), Pace, new Random(7), cancelled.Token);
 
         // Assert
         _ = await Assert.ThrowsAsync<OperationCanceledException>(() => learning);
     }
 
+    [Fact]
+    public async Task Start_WhenAsked_JudgesAsSageDoesUntilItLearns()
+    {
+        // Arrange - Sage's learned weights for the ruleset, and a position a few steps in
+        GameState state = (await Positions()).Last();
+        PositionEncoder encoder = new(Rules);
+        ImmutableList<(int Index, double Value)> input = encoder.Encode(state, state.Seats[1].Id);
+        double sum = encoder.Weighing(SageWeights.Learned[Rules.Id])
+            .Join(input, weight => weight.Index, value => value.Index, (weight, value) => weight.Weight * value.Value)
+            .Sum();
+
+        // Act
+        ValueNetwork network = new Learning(Rules, this._progress).Start(4, new Random(7));
+
+        // Assert
+        (double outcome, double margin) = network.Evaluate(input);
+        Assert.Equal(Math.Tanh(sum / ValueNetwork.MarginScale), outcome, 1e-9);
+        Assert.Equal(sum / ValueNetwork.MarginScale, margin, 1e-9);
+        Assert.NotEqual(0, sum);
+    }
+
+    [Fact]
+    public async Task Learn_WhenLambdaIsBelowOne_TeachesWhatTheNetworkJudgesOfWhatFollowsToo()
+    {
+        // Arrange - one game, taught from one start by how it went alone, and with what follows
+        string[] finished = [(await Played(4, 10000)).First(line => !line.Contains("\"outcome\":null"))];
+        Learning learning = new(Rules, this._progress);
+
+        // Act
+        ValueNetworkData alone = await learning.Learn(
+            finished,
+            learning.Start(4, new Random(7)),
+            Pace,
+            new Random(7),
+            this._cancellation
+        );
+        ValueNetworkData mixed = await learning.Learn(
+            finished,
+            learning.Start(4, new Random(7)),
+            Pace with { Lambda = 0.5 },
+            new Random(7),
+            this._cancellation
+        );
+
+        // Assert
+        Assert.NotEqual(alone.DirectWeights, mixed.DirectWeights);
+    }
+
     private async Task<string> ProgressOf(string[] histories)
     {
         StringWriter progress = new();
-        _ = await new Learning(Rules, progress).Learn(histories, 1, 4, new Random(7), this._cancellation);
+        Learning learning = new(Rules, progress);
+        _ = await learning
+            .Learn(histories, learning.Start(4, new Random(7)), Pace, new Random(7), this._cancellation);
         return progress.ToString();
+    }
+
+    /// <summary>Where a game Argus plays itself stands after each of its first few actions.</summary>
+    private static async Task<ImmutableList<GameState>> Positions()
+    {
+        GameHistory history =
+            JsonSerializer.Deserialize<GameHistory>((await Played(1, 12))[0], JsonSerializerOptions.Web)!;
+        GameState start = Rules.CreateInitialState();
+        return history.Actions.Aggregate(
+            ImmutableList.Create(start),
+            (sofar, action) => sofar.Add(Rules.Apply(sofar[^1], Rules.Parse(action)).State)
+        );
     }
 
     /// <summary>

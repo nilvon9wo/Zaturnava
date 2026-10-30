@@ -93,9 +93,13 @@ did them.
        and lost all 100 to Sage, so the board is given summed up, each army's pieces of each kind
        counted, and how far they have come, beside Sage's own counts. Learning only from the positions
        a turn begins with failed too, as Athena judges the positions in the middle of its turn.
-     - Next: many more games, Athena playing itself and Sage round after round and learning from each
-       (as TD-Gammon did); then temporal differences, the kind of ending as a third prediction, and
-       the board square by square once there are hundreds of thousands of games.
+     - Under way *(the plan agreed 2026-10-30)*: the network starts out judging as Sage does (its
+       direct weights Sage's own), so that it learns only corrections to Sage; it learns by temporal
+       differences (λ 0.8); and it learns in rounds, each playing 400 more games against Sage, seats
+       swapped halfway, to learn from in the next (`scripts/athena-rounds.py`). It is called stronger
+       than Sage only at 55% or more of 400 games.
+     - Then: the kind of ending as a third prediction, and the board square by square, turned to each
+       seat's own view, once there are hundreds of thousands of games.
   4. **Bring your own AI** (*Stated 2026-10-29*): players connecting their own AI, to play and to
      train it: through MCP (already possible, `Zaturnava.Mcp`) and the HTTP API; recorded games to
      download; and a self-play kit (BotRunner, with a bot of one's own). Documented for developers,

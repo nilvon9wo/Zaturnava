@@ -128,5 +128,12 @@ takes whatever options `scripts/rate-bots.py` does, but the runner:
 wsl -d Ubuntu -- bash scripts/wsl-rate.sh --bots random,sage,athena --games 50
 ```
 
+Train Athena the same way, in rounds, with whatever options `scripts/athena-rounds.py` takes, but the
+runner ([self-play](../bots/self-play.md#learning)):
+
+```shell
+wsl -d Ubuntu -- bash scripts/wsl-athena.sh --rounds 6
+```
+
 The static gates (`dotnet format`, `check-line-layout.py`, `inspect-code.py`) run no test host
 and work on Windows directly.

@@ -22,16 +22,31 @@ public sealed class SelfPlayOptionsTest
         [
             "--ruleset", "tiny", "--bots", "random, first", "--games", "7", "--max-steps", "50", "--out", "games.jsonl",
             "--train", "3", "--bot-assembly", "MyBots.dll", "--learn", "a.jsonl, b.jsonl", "--epochs", "2",
-            "--hidden", "16",
+            "--hidden", "16", "--network", "athena.json", "--from", "start.json", "--lambda", "0.7", "--rate", "1",
         ];
 
         // Act
         SelfPlayOptions options = SelfPlayOptions.Parse(args);
 
         // Assert
-        SelfPlayOptions expected =
-            new("tiny", ["random", "first"], 7, 50, "games.jsonl", 3, "MyBots.dll", ["a.jsonl", "b.jsonl"], 2, 16);
+        SelfPlayOptions expected = new(
+            "tiny",
+            ["random", "first"],
+            7,
+            50,
+            "games.jsonl",
+            3,
+            "MyBots.dll",
+            ["a.jsonl", "b.jsonl"],
+            2,
+            16,
+            "athena.json",
+            "start.json",
+            0.7,
+            1
+        );
         Assert.Equivalent(expected, options, strict: true);
+        Assert.Equal(new LearningPace(2, 0.7, 1), options.Pace);
     }
 
     [Theory]
@@ -40,6 +55,8 @@ public sealed class SelfPlayOptionsTest
     [InlineData("--max-steps", "many", "--max-steps must be a whole number above 0, not 'many'.")]
     [InlineData("--epochs", "0", "--epochs must be a whole number above 0, not '0'.")]
     [InlineData("--hidden", "-1", "--hidden must be a whole number above 0, not '-1'.")]
+    [InlineData("--lambda", "1.5", "--lambda must be a number from 0 to 1, not '1.5'.")]
+    [InlineData("--rate", "fast", "--rate must be a number from 0 to 1, not 'fast'.")]
     public void Parse_WhenAnOptionIsWrong_SaysWhatIsWrongAndHowToUseIt(string name, string value, string expected)
     {
         // Arrange - nothing beyond the arguments
