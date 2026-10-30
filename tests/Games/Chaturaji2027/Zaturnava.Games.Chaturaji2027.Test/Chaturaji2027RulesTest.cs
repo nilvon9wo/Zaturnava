@@ -1054,6 +1054,20 @@ public sealed class Chaturaji2027RulesTest
     }
 
     [Fact]
+    public void MayUseDie_WhenTheDoublesOnlyLetACapturedPieceEscape_IsFalse()
+    {
+        // Arrange - Boats rolled, and Black has no Boat on the board, but Yellow holds one of Black's
+        GameState state = this.Escapes() with { Dice = [1, 1] };
+
+        // Act
+        bool mayUse = this._rules.MayUseDie(state, 1);
+
+        // Assert
+        Assert.False(mayUse);
+        Assert.Contains(this._rules.LegalActions(state), action => action is EscapeAction);
+    }
+
+    [Fact]
     public void MayUseDie_WhenNoOneDecides_IsFalse()
     {
         // Arrange

@@ -89,7 +89,8 @@ public interface IRulesApplying
 
     /// <summary>
     /// Whether the deciding seat could use a die rolled showing <paramref name="value"/> now: false if
-    /// nothing it may move, promote or bring back is let by it.
+    /// nothing it may move or promote is let by it. What a roll as a whole allows (bringing a captured
+    /// piece back on doubles) is not this die's to tell.
     /// </summary>
     bool MayUseDie([Required] GameState state, int value);
 }

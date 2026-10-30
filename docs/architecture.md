@@ -333,7 +333,8 @@ replaceable.
 - **Game server: MonsterASP.NET free tier** is the leading candidate: no
   card, EU datacenter, ASP.NET Core and SQL Server, 256 MB RAM, 1 GB database,
   WebSockets. Its limits: the site stops when idle and starts on the next
-  request; free HTTPS needs a support ticket; a free site unused for six
+  request; free HTTPS is a Let's Encrypt certificate, turned on in its control panel and renewed by hand
+  every 90 days; a free site unused for six
   months is archived; no backups. Its traffic limits are still to be
   confirmed with their support.
 - **Fallback**: a relay on Cloudflare's free plan behind the same protocol.
