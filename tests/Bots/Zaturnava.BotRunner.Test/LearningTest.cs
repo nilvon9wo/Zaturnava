@@ -70,13 +70,22 @@ public sealed class LearningTest
     [Fact]
     public async Task Start_WhenAsked_JudgesAsSageDoesUntilItLearns()
     {
-        // Arrange - Sage's learned weights for the ruleset, and a position a few steps in
-        GameState state = (await Positions()).Last();
+        // Arrange - Sage's learned weights for the ruleset, and the position of a game's first steps that Sage
+        // judges furthest from even, as one may be even for all a few steps tell
         PositionEncoder encoder = new(Rules);
-        ImmutableList<(int Index, double Value)> input = encoder.Encode(state, state.Seats[1].Id);
-        double sum = encoder.Weighing(SageWeights.Learned[Rules.Id])
-            .Join(input, weight => weight.Index, value => value.Index, (weight, value) => weight.Weight * value.Value)
-            .Sum();
+        ImmutableList<(int Index, double Weight)> weighing = encoder.Weighing(SageWeights.Learned[Rules.Id]);
+        (ImmutableList<(int Index, double Value)> input, double sum) = (await Positions())
+            .Select(state => encoder.Encode(state, state.Seats[1].Id))
+            .Select(encoded => (encoded, weighing
+                .Join(
+                    encoded,
+                    weight => weight.Index,
+                    value => value.Index,
+                    (weight, value) => weight.Weight * value.Value
+                )
+                .Sum()
+            ))
+            .MaxBy(judged => Math.Abs(judged.Item2));
 
         // Act
         ValueNetwork network = new Learning(Rules, this._progress).Start(4, new Random(7));
@@ -128,7 +137,7 @@ public sealed class LearningTest
     private static async Task<ImmutableList<GameState>> Positions()
     {
         GameHistory history =
-            JsonSerializer.Deserialize<GameHistory>((await Played(1, 12))[0], JsonSerializerOptions.Web)!;
+            JsonSerializer.Deserialize<GameHistory>((await Played(1, 60))[0], JsonSerializerOptions.Web)!;
         GameState start = Rules.CreateInitialState();
         return history.Actions.Aggregate(
             ImmutableList.Create(start),
