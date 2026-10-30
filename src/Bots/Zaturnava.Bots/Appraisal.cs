@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Net.NowhereAtAll.Zaturnava.Engine.Boards;
 using Net.NowhereAtAll.Zaturnava.Engine.Decisions;
 using Net.NowhereAtAll.Zaturnava.Engine.Moves;
@@ -29,6 +30,29 @@ internal static class Appraisal
                 - (weights.Exposure * Careful.Exposure(request, state))
                 + Reach(request, state, weights)
                 + Measured(request, state, weights);
+
+    /// <summary>
+    /// What Sage counts in a position, unweighted: the points, pieces, leaders, prisoners and thrones, the
+    /// worst an enemy could win next (as a loss), the most the team could, its mobility, and then each of
+    /// the ruleset's own measures, in its order; each the team's less its enemies'. For a learner to weigh
+    /// as it learns to.
+    /// </summary>
+    public static ImmutableList<double> FeaturesOf(DecisionRequest request, GameState state)
+    {
+        ILookup<CellId, Attack> ours = Careful.AttacksBy(request, state, isAllied: true);
+        ILookup<CellId, Attack> theirs = Careful.AttacksBy(request, state, isAllied: false);
+        ImmutableList<double> measures = request.Rules is IPositionMeasuring measuring
+            ? [.. measuring.Measures.Select((_, at) => state.Seats
+                .Sum(seat => Side(request, state, seat.Id) * measuring.MeasuresOf(state, seat.Id)[at])
+            )]
+            : [];
+        return
+        [
+            Score(request, state), Material(request, state), Leaders(request, state), Prisoners(request, state),
+            Thrones(request, state), -Careful.Exposure(request, state), Chances(request, state, ours, theirs),
+            ours.Count - theirs.Count, .. measures,
+        ];
+    }
 
     private static double ResultOf(DecisionRequest request, GameOutcome outcome) =>
         (outcome.Winners.IsEmpty, outcome.Winners.Contains(request.Seat)) switch

@@ -60,7 +60,7 @@ swapped (`--bots sage,mine,sage,mine`), as moving first is worth something.
 
 | Option | |
 |---|---|
-| `--bots` | One bot id per seat, comma-separated: `random`, `midas`, `solomon`, `argus`, `sage`, or yours |
+| `--bots` | One bot id per seat, comma-separated: `random`, `midas`, `solomon`, `argus`, `sage`, `athena`, or yours |
 | `--games` | How many games (default 100); they play in parallel |
 | `--max-steps` | The most decisions in a game before it is cut off, unfinished (default 1000) |
 | `--out` | The file to write (default the console) |
@@ -82,5 +82,24 @@ python3 scripts/rate-bots.py path/to/Net.NowhereAtAll.Zaturnava.BotRunner \
 
 Self-play makes data as fast as you can use it: play your bot against itself and ours, learn from the
 histories (replaying them to see each position: [game histories](game-histories.md#seeing-every-position)),
-and play again. That is how Sage's weights were tuned (`--train`), and how the
-[learned bot we plan](../backlog.md#bots) will be trained.
+and play again. That is how Sage's weights were tuned (`--train`), and how Athena, our learned bot, was
+trained:
+
+```shell
+dotnet run --project src/Bots/Zaturnava.BotRunner -c Release -- \
+    --games 1000 --bots sage,sage,sage,sage --max-steps 3000 --out sage.jsonl
+dotnet run --project src/Bots/Zaturnava.BotRunner -c Release -- \
+    --learn sage.jsonl,more.jsonl --epochs 10 --hidden 32 --out chaturaji-2027.json
+```
+
+`--learn` replays every finished game of the ruleset in the files, takes every position from every seat,
+and trains a small network to predict how the game went for that seat's team: won, drawn or lost, and by
+how many points. It writes the network as JSON; put it in `src/Bots/Zaturnava.Bots/Networks/`, named for
+the ruleset, and Athena plays by it. The positions are given to the network as `PositionEncoder` sums them
+up, which your own learner may use too. What did and did not work is in the [backlog](../backlog.md#bots).
+
+| Option | |
+|---|---|
+| `--learn` | The files of game histories to learn from, comma-separated |
+| `--epochs` | How many times to go through every position (default 8) |
+| `--hidden` | How many hidden units the network has (default 32) |

@@ -74,6 +74,25 @@ did them.
      - *(Proposed)* Mostly self-play at first, as AlphaZero learned; people's games mixed in as they
        accumulate, as AlphaGo began, since only they show how people agree to end a game.
      - Measured before it is offered: against Sage in BotRunner self-play, seats swapped halfway.
+     - Done, *(Proposed: the name, and each choice below)*: **Athena**, Sage's look-ahead through the
+       dice with each position judged by a network: one hidden layer of 32 units, and direct weights
+       from each input, predicting who will win and by how much. It agrees to end a game when ending
+       it now is worth as much as playing on, as the network judges playing on. BotRunner `--learn`
+       trains it on game histories: every position replayed, seen from every seat, taught how the game
+       went for that seat's team (the final result, not yet temporal differences). It learned from
+       2,000 games: 1,600 of Sage against itself, and against Argus and Midas; and 400 of Athena's own
+       against Sage, so that it saw what its mistakes led to. Against Sage it won 41, lost 58 and drew
+       1 of 100 games, then 46 to 54 in the ratings' 100: nearly as strong, not stronger. Rated 2626,
+       beside Sage's 2689.
+     - Athena's play showed that a bot passing could offer a ransom the rules refuse (a prisoner that
+       may not go home yet, or a gift to a retired ally), which stopped the game; now no bot does.
+     - Learned on the way: a network weighing each square, from so few games, judged moves by chance
+       and lost all 100 to Sage, so the board is given summed up, each army's pieces of each kind
+       counted, and how far they have come, beside Sage's own counts. Learning only from the positions
+       a turn begins with failed too, as Athena judges the positions in the middle of its turn.
+     - Next: many more games, Athena playing itself and Sage round after round and learning from each
+       (as TD-Gammon did); then temporal differences, the kind of ending as a third prediction, and
+       the board square by square once there are hundreds of thousands of games.
   4. **Bring your own AI** (*Stated 2026-10-29*): players connecting their own AI, to play and to
      train it: through MCP (already possible, `Zaturnava.Mcp`) and the HTTP API; recorded games to
      download; and a self-play kit (BotRunner, with a bot of one's own). Documented for developers,

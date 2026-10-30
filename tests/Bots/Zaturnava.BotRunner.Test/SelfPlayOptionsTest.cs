@@ -21,14 +21,16 @@ public sealed class SelfPlayOptionsTest
         string[] args =
         [
             "--ruleset", "tiny", "--bots", "random, first", "--games", "7", "--max-steps", "50", "--out", "games.jsonl",
-            "--train", "3", "--bot-assembly", "MyBots.dll",
+            "--train", "3", "--bot-assembly", "MyBots.dll", "--learn", "a.jsonl, b.jsonl", "--epochs", "2",
+            "--hidden", "16",
         ];
 
         // Act
         SelfPlayOptions options = SelfPlayOptions.Parse(args);
 
         // Assert
-        SelfPlayOptions expected = new("tiny", ["random", "first"], 7, 50, "games.jsonl", 3, "MyBots.dll");
+        SelfPlayOptions expected =
+            new("tiny", ["random", "first"], 7, 50, "games.jsonl", 3, "MyBots.dll", ["a.jsonl", "b.jsonl"], 2, 16);
         Assert.Equivalent(expected, options, strict: true);
     }
 
@@ -36,6 +38,8 @@ public sealed class SelfPlayOptionsTest
     [InlineData("--colour", "red", "There is no --colour option.")]
     [InlineData("--games", "0", "--games must be a whole number above 0, not '0'.")]
     [InlineData("--max-steps", "many", "--max-steps must be a whole number above 0, not 'many'.")]
+    [InlineData("--epochs", "0", "--epochs must be a whole number above 0, not '0'.")]
+    [InlineData("--hidden", "-1", "--hidden must be a whole number above 0, not '-1'.")]
     public void Parse_WhenAnOptionIsWrong_SaysWhatIsWrongAndHowToUseIt(string name, string value, string expected)
     {
         // Arrange - nothing beyond the arguments

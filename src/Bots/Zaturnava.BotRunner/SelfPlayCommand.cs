@@ -6,6 +6,7 @@ using Net.NowhereAtAll.Zaturnava.Application.Games;
 using Net.NowhereAtAll.Zaturnava.Application.Rulesets;
 using Net.NowhereAtAll.Zaturnava.Application.Running;
 using Net.NowhereAtAll.Zaturnava.Bots;
+using Net.NowhereAtAll.Zaturnava.Bots.Learning;
 using Net.NowhereAtAll.Zaturnava.Engine.Decisions;
 using Net.NowhereAtAll.Zaturnava.Engine.Rules;
 using Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
@@ -27,6 +28,7 @@ internal static class SelfPlayCommand
 
     private static readonly ImmutableList<IBotPlaying> Bots =
     [
+        new AthenaBot(Random.Shared),
         new SageBot(Random.Shared),
         new ArgusBot(Random.Shared),
         new MidasBot(Random.Shared),
@@ -57,9 +59,12 @@ internal static class SelfPlayCommand
         }
 
         await using TextWriter output = Output(options.OutputPath, standardOutput);
-        await (options.TrainingRounds is { } rounds
-            ? Train(rules, options, rounds, output, standardError, cancellationToken)
-            : play.Run(options.Games, options.MaximumSteps, output, cancellationToken));
+        await ((options.TrainingRounds, options.LearningFrom) switch
+        {
+            ({ } rounds, _) => Train(rules, options, rounds, output, standardError, cancellationToken),
+            (_, { } files) => Learn(rules, options, files, output, standardError, cancellationToken),
+            _ => play.Run(options.Games, options.MaximumSteps, output, cancellationToken),
+        });
         return Succeeded;
     }
 
@@ -82,6 +87,29 @@ internal static class SelfPlayCommand
             .WeighingMeasuresOf(rules);
         SageWeights tuned = await new Training(match.Play, progress).Tune(start, rounds, cancellationToken);
         await output.WriteLineAsync(JsonSerializer.Serialize(tuned, Indented));
+    }
+
+    /// <summary>
+    /// Trains a network to judge the ruleset's positions on the games in <paramref name="files"/>, telling how
+    /// each round went on <paramref name="progress"/>, and writes it, as JSON for <c>Zaturnava.Bots/Networks</c>.
+    /// </summary>
+    private static async Task Learn(
+        IRulesApplying rules,
+        SelfPlayOptions options,
+        ImmutableList<string> files,
+        TextWriter output,
+        TextWriter progress,
+        CancellationToken cancellationToken
+    )
+    {
+        ValueNetworkData network = await new Learning(rules, progress).Learn(
+            files.SelectMany(File.ReadLines),
+            options.Epochs,
+            options.Hidden,
+            Random.Shared,
+            cancellationToken
+        );
+        await output.WriteLineAsync(JsonSerializer.Serialize(network, Indented));
     }
 
     /// <exception cref="GameRequestException">The ruleset or a bot does not exist.</exception>

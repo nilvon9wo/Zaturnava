@@ -10,6 +10,8 @@
     <EmbeddedResource Include="Weights\*.json" LogicalName="Weights/%(Filename)%(Extension)" />
     <!-- How strongly each bot plays each ruleset (BotRatings.Rated), as scripts/rate-bots.py fits it. -->
     <EmbeddedResource Include="Ratings\*.json" LogicalName="Ratings/%(Filename)%(Extension)" />
+    <!-- The networks Athena judges positions by (ValueNetworks.Learned), as BotRunner's learning trains them. -->
+    <EmbeddedResource Include="Networks\*.json" LogicalName="Networks/%(Filename)%(Extension)" />
   </ItemGroup>
 
   <ItemGroup>

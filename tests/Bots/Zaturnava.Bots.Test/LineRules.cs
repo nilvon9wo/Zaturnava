@@ -16,8 +16,9 @@ namespace Net.NowhereAtAll.Zaturnava.Bots.Test;
 /// attacks along the line either way, up to the first piece in its way - and the legal actions are
 /// whichever the test says, but for moves from a cell left empty. A move goes where it says, and scores
 /// its actor what it takes (<see cref="ScoringRules.Worth"/>); passing does nothing. Seats 0 and 2 are
-/// allied against 1 and 3; seat 0's throne is cell 0, and the Raja leads. Its one measure of its own is how
-/// many Pawns an army has.
+/// allied against 1 and 3, the even seats facing up the line and the odd ones down it; seat 0's throne is cell
+/// 0, and the Raja leads. Its one measure of its own is how many Pawns an army has. A game starts with seat
+/// 0's Raja and Pawn at one end, and seat 1's at the other.
 /// </summary>
 internal sealed class LineRules(ImmutableList<GameAction> legalActions) : IRulesApplying, IPositionMeasuring
 {
@@ -37,7 +38,7 @@ internal sealed class LineRules(ImmutableList<GameAction> legalActions) : IRules
 
     public string Name => "Line";
 
-    public ICellNavigating Topology => throw new NotSupportedException();
+    public ICellNavigating Topology { get; } = new LineTopology();
 
     public ImmutableDictionary<SeatId, CellId> Thrones => ImmutableDictionary<SeatId, CellId>.Empty.Add(Seat, Throne);
 
@@ -49,7 +50,10 @@ internal sealed class LineRules(ImmutableList<GameAction> legalActions) : IRules
     {
         LineRules rules = new(legalActions);
         ImmutableList<Seat> seats =
-            [.. Enumerable.Range(0, 4).Select(index => new Seat(new SeatId(index), new Direction(1, 0)))];
+        [
+            .. Enumerable.Range(0, 4)
+                .Select(index => new Seat(new SeatId(index), new Direction(1 - (index % 2 * 2), 0))),
+        ];
         Position position = pieces
             .Select((piece, index) => (piece, index))
             .Aggregate(
@@ -66,7 +70,14 @@ internal sealed class LineRules(ImmutableList<GameAction> legalActions) : IRules
 
     public static MoveAction Move(int from, int to) => new(Seat, new CellId(from), new CellId(to));
 
-    public GameState CreateInitialState() => throw new NotSupportedException();
+    public GameState CreateInitialState() =>
+        Request(
+            this._legalActions,
+            (0, Raja, Seat),
+            (1, Pawn, Seat),
+            (Length - 2, Pawn, Enemy),
+            (Length - 1, Raja, Enemy)
+        ).State;
 
     public ImmutableList<GameAction> LegalActions([Required] GameState state) =>
         [
@@ -149,4 +160,26 @@ internal sealed class LineRules(ImmutableList<GameAction> legalActions) : IRules
             Scores = state.Scores.SetItem(move.Actor, state.Scores.GetValueOrDefault(move.Actor) + gain),
         };
     }
+}
+
+/// <summary>The cells of a line, 0 up to 7: a step goes along it, and one any other way goes off it.</summary>
+internal sealed class LineTopology : ICellNavigating
+{
+    private const int Length = 8;
+
+    public ImmutableList<CellId> Cells { get; } = [.. Enumerable.Range(0, Length).Select(cell => new CellId(cell))];
+
+    public CellId? Step(CellId from, Direction direction) =>
+        (direction.Second, from.Value + direction.First) switch
+        {
+            (0, >= 0 and < Length) => new CellId(from.Value + direction.First),
+            _ => null,
+        };
+
+    public ImmutableList<Direction> Resolve([Required] DirectionSet set, Direction forward) =>
+        throw new NotSupportedException();
+
+    public CellLayout LayoutOf(CellId cell) => throw new NotSupportedException();
+
+    public string NameOf(CellId cell) => throw new NotSupportedException();
 }

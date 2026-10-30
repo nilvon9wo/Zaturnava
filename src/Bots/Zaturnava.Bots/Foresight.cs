@@ -11,16 +11,16 @@ namespace Net.NowhereAtAll.Zaturnava.Bots;
 /// decisions: each action is worth the best the bot could make of where it leads, and where it waits on the
 /// dice, the average of every way they could fall, each as likely as it is. So a roll is worth what the bot
 /// would expect to make of it, against what a deliberate move makes for certain. Where the turn passes, or
-/// the look ahead ends, the position is worth its <see cref="Appraisal"/>, the enemy's reply weighed only as
-/// that counts it. To keep it quick, only the <paramref name="beam"/> most promising actions at each step
-/// are followed further. Among actions worth the same, it would rather do something than pass, and picks
-/// at random.
+/// the look ahead ends, the position is worth what <paramref name="valuing"/> says (Sage's
+/// <see cref="Appraisal"/>, say), the enemy's reply weighed only as that counts it. To keep it quick, only
+/// the <paramref name="beam"/> most promising actions at each step are followed further. Among actions
+/// worth the same, it would rather do something than pass, and picks at random.
 /// </summary>
-internal sealed class Foresight(SageWeights weights, int depth, int beam)
+internal sealed class Foresight(IPositionValuing valuing, int depth, int beam)
 {
     private const double Tolerance = 1e-9;
 
-    private readonly SageWeights _weights = weights;
+    private readonly IPositionValuing _valuing = valuing;
     private readonly int _depth = depth;
     private readonly int _beam = beam;
 
@@ -63,13 +63,13 @@ internal sealed class Foresight(SageWeights weights, int depth, int beam)
     }
 
     /// <summary>
-    /// What the state is worth to the bot: once its turn has passed (or the game is over), its appraisal;
+    /// What the state is worth to the bot: once its turn has passed (or the game is over), its value;
     /// the average over the dice, if it waits on the bot's; else the best the bot could make of it.
     /// </summary>
     private double WorthOf(DecisionRequest request, GameState state, int stepsLeft) =>
         (state.DecidingSeat == request.Seat, state.AwaitedDice) switch
         {
-            (false, _) => Appraisal.ValueOf(request, state, this._weights),
+            (false, _) => this._valuing.ValueOf(request, state),
             (_, { } dice) => Outcomes(dice).Sum(outcome =>
                 outcome.Chance
                 * this.WorthOf(request, Apply(request, state, new DiceAction(request.Seat, outcome.Values)), stepsLeft)
@@ -79,7 +79,7 @@ internal sealed class Foresight(SageWeights weights, int depth, int beam)
 
     /// <summary>
     /// The best the bot could make of the state, stopping there or taking any of its next actions, each
-    /// worth its appraisal - but the most promising followed further, while steps are left.
+    /// worth its value - but the most promising followed further, while steps are left.
     /// </summary>
     private double BestOf(DecisionRequest request, GameState state, int stepsLeft)
     {
@@ -88,7 +88,7 @@ internal sealed class Foresight(SageWeights weights, int depth, int beam)
         [
             .. Playable.Of(now)
                 .Select(action => Apply(request, state, action))
-                .Select(after => (after, Appraisal.ValueOf(request, after, this._weights)))
+                .Select(after => (after, this._valuing.ValueOf(request, after)))
                 .OrderByDescending(step => step.Item2),
         ];
         IEnumerable<double> further = stepsLeft > 1
@@ -97,7 +97,7 @@ internal sealed class Foresight(SageWeights weights, int depth, int beam)
         return next
             .Select(step => step.Worth)
             .Concat(further)
-            .Append(Appraisal.ValueOf(request, state, this._weights))
+            .Append(this._valuing.ValueOf(request, state))
             .Max();
     }
 

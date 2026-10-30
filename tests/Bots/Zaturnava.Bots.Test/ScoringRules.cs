@@ -58,7 +58,11 @@ internal sealed class ScoringRules(ImmutableDictionary<GameAction, int> points) 
 
     public bool MayOffer([Required] GameState state) => true;
 
-    public bool MayGoBack([Required] GameState state, [Required] Prisoner prisoner) => true;
+    /// <summary>The prisoners that may not go home yet; every other may.</summary>
+    public ImmutableHashSet<PieceId> Waiting { get; init; } = [];
+
+    public bool MayGoBack([Required] GameState state, [Required] Prisoner prisoner) =>
+        !this.Waiting.Contains(prisoner.Piece.Id);
 
     /// <summary>Whether a seat may propose ending the game; no one may, unless set.</summary>
     public bool MayPropose { get; init; }

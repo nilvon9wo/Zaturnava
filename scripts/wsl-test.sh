@@ -6,10 +6,11 @@
 # With no names, every test project runs. WSL starts in the current folder, so run it from the repository's
 # root. The build goes to artifacts/wsl/ (git-ignored), apart from Windows' own bin/ and obj/, so the two never
 # clash. For a machine whose application control blocks the test assemblies a Windows build makes.
-set -u
+set -u -o pipefail
 cd "$(dirname "$0")/.." || exit 1
 artifacts=(-p:UseArtifactsOutput=true "-p:ArtifactsPath=$PWD/artifacts/wsl")
-dotnet build Zaturnava.slnx "${artifacts[@]}" -nologo 2>&1 | grep -E " error |Build succeeded" | sort -u
+# A failed build stops here, rather than testing what an earlier build left.
+dotnet build Zaturnava.slnx "${artifacts[@]}" -nologo 2>&1 | grep -E "error|Build succeeded" | sort -u || exit 1
 projects=("$@")
 if [ ${#projects[@]} -eq 0 ]; then
     mapfile -t projects < <(find tests -name "Zaturnava.*.Test.csproj" -printf "%f\n" | sed 's/\.csproj$//' | sort)

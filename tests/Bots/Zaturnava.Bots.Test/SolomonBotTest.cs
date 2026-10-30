@@ -117,6 +117,46 @@ public sealed class SolomonBotTest
     }
 
     [Fact]
+    public async Task Decide_WhenItsAllysPrisonerMayNotGoHomeYet_OffersAnEvenTradeInstead()
+    {
+        // Arrange - Green's Raja, taken by its own team, waits until every seat has had a turn
+        DecisionRequest request = Ransoms.WindowWaiting([], [30]);
+
+        // Act
+        GameAction action = await new SolomonBot(new Random(1)).Decide(request, this._cancellation);
+
+        // Assert
+        Assert.Equal(new OfferAction(Ransoms.Black, Ransoms.Yellow, [new PieceId(11)], [new PieceId(20)]), action);
+    }
+
+    [Fact]
+    public async Task Decide_WhenThePrisonersItWouldAskForMayNotGoHomeYet_IsDone()
+    {
+        // Arrange - no ally's prisoner to give back, and its team's held by Yellow both wait
+        DecisionRequest request = Ransoms.WindowWaiting([30], [20, 21]);
+
+        // Act
+        GameAction action = await new SolomonBot(new Random(1)).Decide(request, this._cancellation);
+
+        // Assert
+        Assert.Equal(Ransoms.Done, action);
+    }
+
+    [Fact]
+    public async Task Decide_WhenItsAllyHasRetired_GivesItNothingBack()
+    {
+        // Arrange
+        DecisionRequest window = Ransoms.Window();
+        DecisionRequest request = window with { State = window.State with { Retired = [Ransoms.Green] } };
+
+        // Act
+        GameAction action = await new SolomonBot(new Random(1)).Decide(request, this._cancellation);
+
+        // Assert
+        Assert.Equal(new OfferAction(Ransoms.Black, Ransoms.Yellow, [new PieceId(11)], [new PieceId(20)]), action);
+    }
+
+    [Fact]
     public async Task Decide_WhenItHasOfferedThisTurn_IsDone()
     {
         // Arrange

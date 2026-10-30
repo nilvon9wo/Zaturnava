@@ -62,6 +62,7 @@ internal static class ZaturnavaServices
     private static BotCatalog Bots() =>
         new(
             [
+                new AthenaBot(Random.Shared),
                 new SageBot(Random.Shared),
                 new ArgusBot(Random.Shared),
                 new MidasBot(Random.Shared),

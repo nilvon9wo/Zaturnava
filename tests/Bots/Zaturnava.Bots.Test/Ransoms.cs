@@ -33,6 +33,20 @@ internal static class Ransoms
         };
     }
 
+    /// <summary>
+    /// Once seat 0's turn is over, when it may offer, without the prisoners <paramref name="gone"/>; but the
+    /// prisoners <paramref name="waiting"/> may not go home yet.
+    /// </summary>
+    public static DecisionRequest WindowWaiting(ImmutableList<int> gone, ImmutableList<int> waiting)
+    {
+        DecisionRequest request = WindowWithout([.. gone]);
+        ScoringRules rules = new(ImmutableDictionary<GameAction, int>.Empty.Add(Done, 0))
+        {
+            Waiting = [.. waiting.Select(Id)],
+        };
+        return request with { Rules = rules };
+    }
+
     /// <summary>Seat 0's turn, when it may only pass - or offer, as it passes.</summary>
     public static DecisionRequest Passing() => Request();
 
