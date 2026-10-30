@@ -339,6 +339,10 @@ replaceable.
   confirmed with their support.
 - **Fallback**: a relay on Cloudflare's free plan behind the same protocol.
 
+The game server is at `zaturnava.runasp.net`, sent there by hand through
+`.github/workflows/deploy-monsterasp.yml` (Web Deploy, with the site's publishing profile in
+the repository's secrets); another host would be another workflow, not a change to the server.
+
 Nothing in the code depends on the host: the server reads its storage, page
 host and limits from configuration, and the clients read the server's address
 from theirs. The game server's host, once chosen, gets an adapter of its own

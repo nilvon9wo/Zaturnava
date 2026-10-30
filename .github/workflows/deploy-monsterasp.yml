@@ -1,0 +1,54 @@
+name: Deploy server (MonsterASP.NET)
+
+# The game server, published and sent to its host by Web Deploy. Run by hand (Actions, "Run workflow"), so
+# nothing reaches the live site that someone did not mean to send. The host is named only here: the server
+# itself knows nothing of it. Secrets, from the site's publishing profile (.publishSettings):
+#   MONSTERASP_SITE      msdeploySite
+#   MONSTERASP_SERVER    publishUrl (a host name; Web Deploy's port, 8172, is added if it names none)
+#   MONSTERASP_USER      userName
+#   MONSTERASP_PASSWORD  userPWD
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Publish and deploy
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Publish the server
+        run: dotnet publish src/Hosts/Zaturnava.Server -c Release -o publish
+
+      # Web Deploy's client, if the runner does not have it already.
+      - name: Make sure Web Deploy is there
+        shell: pwsh
+        run: |
+          $msdeploy = "C:\Program Files\IIS\Microsoft Web Deploy V3\msdeploy.exe"
+          if (-not (Test-Path $msdeploy)) { choco install webdeploy --no-progress -y }
+          if (-not (Test-Path $msdeploy)) { throw "Web Deploy could not be installed." }
+
+      # The site is taken offline while its files change (app_offline.htm), so a running server lets go of them.
+      - name: Deploy
+        shell: pwsh
+        env:
+          SITE: ${{ secrets.MONSTERASP_SITE }}
+          SERVER: ${{ secrets.MONSTERASP_SERVER }}
+          USER: ${{ secrets.MONSTERASP_USER }}
+          PASSWORD: ${{ secrets.MONSTERASP_PASSWORD }}
+        run: |
+          $hostName = $env:SERVER -replace '^https?://', '' -replace '/.*$', ''
+          if ($hostName -notmatch ':\d+$') { $hostName = "${hostName}:8172" }
+          $source = Join-Path (Get-Location) "publish"
+          & "C:\Program Files\IIS\Microsoft Web Deploy V3\msdeploy.exe" `
+            -verb:sync `
+            "-source:contentPath=$source" `
+            "-dest:contentPath=$env:SITE,computerName=https://$hostName/msdeploy.axd?site=$env:SITE,userName=$env:USER,password=$env:PASSWORD,authType=Basic" `
+            -allowUntrusted `
+            -enableRule:AppOffline
+          if ($LASTEXITCODE -ne 0) { throw "Web Deploy failed with exit code $LASTEXITCODE." }
