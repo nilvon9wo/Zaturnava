@@ -216,6 +216,7 @@ html { scrollbar-gutter: stable; }
     width: min(92vw, 600px);
     height: auto;
     display: block;
+    margin-inline: auto;
     border-radius: 6px;
     box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
 }
@@ -300,7 +301,7 @@ html { scrollbar-gutter: stable; }
 }
 
 /* Ending the game: red, and as far from the turn's usual buttons as the panel allows. */
-.end-area { margin-top: auto; padding-top: 32px; display: flex; justify-content: flex-end; }
+.end-area { margin-top: auto; padding-top: 16px; display: flex; justify-content: flex-end; }
 .end-game {
     background: var(--danger);
     color: var(--danger-ink);
@@ -443,7 +444,8 @@ button.safety.off {
 .promotion .choice .name, .promotion .choice .holder { text-align: left; }
 .promotion .choice { flex-wrap: wrap; column-gap: 4px; row-gap: 0; }
 
-.dice { list-style: none; padding: 0; margin: 4px 0; }
+/* The dice side by side, as many as fit a row: the turn panel stays short. */
+.dice { list-style: none; padding: 0; margin: 4px 0; display: flex; flex-wrap: wrap; column-gap: 20px; }
 .dice li { font-size: 1.1rem; margin: 2px 0; }
 .dice .face { font-size: 1.8rem; vertical-align: middle; margin-right: 6px; }
 
@@ -577,22 +579,21 @@ button.safety.off {
         display: grid;
         gap: 16px;
         justify-content: center;
-        grid-template-columns: 400px auto;
-        grid-template-rows: minmax(0, 1fr) 180px;
+        /* The turn widens into what the board, held to the window's height, leaves over (the board as large
+           as before: it is measured as if the turn were at its narrowest). The turn is as tall as what it
+           holds, dice, prisoners and all, and the log, which scrolls anyway, has the rest, never less than a
+           few lines; only a turn taller than that scrolls. */
+        grid-template-columns: minmax(400px, 32rem) auto;
+        grid-template-rows: auto minmax(6rem, 1fr);
         grid-template-areas: "turn board" "log board";
     }
     .board { grid-area: board; width: min(100cqh, 100cqw - 416px); }
-    .table-bar { display: grid; grid-template-columns: 400px minmax(0, 1fr) auto; column-gap: 16px; }
-    .table-bar .turns { justify-self: center; }
-
-    /* Just after the safety (of a width of its own, on or off), where the browser can: centred in the bar's
-       middle, which runs on past the board to the settings, they would slide left, under the safety;
-       centred under the board, right, over the settings. */
-    @supports (left: anchor(--board left)) {
-        .table-bar button.safety { width: 7rem; }
-        .table-bar .turns { position: absolute; left: calc(anchor(--board left) + 7rem + 6px); }
-    }
-    .turn { grid-area: turn; min-height: 0; overflow-y: auto; }
+    /* The bar's buttons in a row, wrapping if they must, the safety among the settings: with the board on one
+       side, there is no room for the safety under its corner and the buttons that turn it beside, clear of
+       the settings. */
+    .table-bar { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; }
+    .table-bar button.safety { position: static; }
+    .turn { grid-area: turn; overflow-y: auto; }
     .log { grid-area: log; max-height: none; }
 }
 
@@ -603,10 +604,15 @@ button.safety.off {
         grid-template-areas: "turn board log";
     }
     .board { width: min(100cqh, 100cqw - 712px); }
-    .table-bar { grid-template-columns: minmax(340px, 1fr) auto minmax(340px, 1fr); }
-    /* Here the bar's middle is the board's own width, and the buttons are centred in it, clear of the safety:
-       back in their column, so that the settings keep the last. */
-    .table-bar .turns { position: static; }
+    /* Here the bar's middle is the board's own width: the buttons that turn it centred in it, and the safety
+       under the board's corner, clear of them. */
+    .table-bar {
+        display: grid;
+        grid-template-columns: minmax(340px, 1fr) auto minmax(340px, 1fr);
+        column-gap: 16px;
+    }
+    .table-bar .turns { justify-self: center; }
+    .table-bar button.safety { position: absolute; }
 }
 
 /* Where the log's older events were let go. */
