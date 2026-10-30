@@ -57,9 +57,12 @@ did them.
        tuned by self-play (BotRunner `--train`) and kept as data for each ruleset: two rounds took
        score down to 0.7, material up to 1.3, prisoners down to 0.35 and exposure up to 1.3, and Sage
        so tuned beat Sage as it was 124-84 in 208 games.
-     - Next: features of the ruleset's own (command, empires, a Pawn's way to the far edge),
-       mobility, and the enemy's reply. The Chaturaji 2027 features serve the grand game too
-       (grand/specification.md §6.1).
+     - Done: mobility (how many more cells its team attacks than its enemies do), and the ruleset's
+       own measures (`IPositionMeasuring`); for Chaturaji 2027, how far its Pawns have come. Two more
+       rounds of tuning (60 games a side for each nudge) kept material up to 1.69, mobility at 0.3 and
+       chances up to 0.39; the Pawns' progress won no weight.
+     - Next: command and empires (thrones and leaders weigh them only in part), and the enemy's
+       reply. The Chaturaji 2027 features serve the grand game too (grand/specification.md §6.1).
      - *(Stated 2026-10-29)* With the enemy's reply weighed, Sage may take its own team's pieces
        (rules §6.4), when that saves a better one; until then no bot does.
   3. **A learned bot**, the AI to play against: a small neural network, trained by self-play and on
