@@ -57,7 +57,7 @@ internal sealed class Learning(IRulesApplying rules, TextWriter progress)
                 .Where(history => history.RulesetId == this._rules.Id && history.Outcome is not null)
                 .SelectMany(history => this.SequencesOf(encoder, history)),
         ];
-        int positions = sequences.Sum(sequence => sequence.Inputs.Count);
+        int positions = sequences.Sum(sequence => sequence.Inputs.Length);
         for (int epoch = 1; epoch <= pace.Epochs; epoch++)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -87,7 +87,7 @@ internal sealed class Learning(IRulesApplying rules, TextWriter progress)
     /// </summary>
     private static double Taught(
         ValueNetwork network,
-        ImmutableList<(int Index, double Value)> input,
+        (int Index, double Value)[] input,
         double outcome,
         double margin,
         double rate
@@ -102,7 +102,7 @@ internal sealed class Learning(IRulesApplying rules, TextWriter progress)
     /// </summary>
     private static (double Outcome, double Margin)[] TargetsOf(ValueNetwork network, Sequence sequence, double lambda)
     {
-        (double Outcome, double Margin)[] targets = new (double, double)[sequence.Inputs.Count];
+        (double Outcome, double Margin)[] targets = new (double, double)[sequence.Inputs.Length];
         (double Outcome, double Margin) target = (sequence.Outcome, sequence.Margin);
         for (int at = targets.Length - 1; at >= 0; at--)
         {
@@ -122,7 +122,7 @@ internal sealed class Learning(IRulesApplying rules, TextWriter progress)
     {
         ImmutableList<GameState> positions = this.PositionsOf(history);
         return positions.Take(1).SelectMany(start => start.Seats.Select(seat => new Sequence(
-            [.. positions.Select(state => encoder.Encode(state, seat.Id))],
+            [.. positions.Select(state => encoder.Encode(state, seat.Id).ToArray())],
             OutcomeFor(start, history.Outcome!, seat.Id),
             LeadOf(start, history, seat.Id) / ValueNetwork.MarginScale
         )));
@@ -160,9 +160,13 @@ internal sealed class Learning(IRulesApplying rules, TextWriter progress)
     private static bool IsAllied(GameState state, int other, SeatId seat) =>
         state.Teams.AreAllied(new SeatId(other), seat);
 
-    /// <summary>A game as one seat saw it, as a network sees each position, and how it went for that seat.</summary>
+    /// <summary>
+    /// A game as one seat saw it, as a network sees each position, and how it went for that seat. Arrays, not
+    /// immutable lists: every position of every game is held at once, and a list's tree takes several times
+    /// the memory.
+    /// </summary>
     private sealed record Sequence(
-        ImmutableList<ImmutableList<(int Index, double Value)>> Inputs,
+        (int Index, double Value)[][] Inputs,
         double Outcome,
         double Margin
     );
