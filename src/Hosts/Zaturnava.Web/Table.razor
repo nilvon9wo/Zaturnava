@@ -182,7 +182,7 @@
                         @foreach (DieDto die in view.Dice)
                         {
                             <li class="@(die.IsUsable ? null : "unusable")"
-                                title="@(die.IsUsable ? null : "Nothing it lets move can move now")"><span class="face">@DieFaces.FaceOf(die.Value)</span> @die.Value: @this.Named(die.Meaning)</li>
+                                title="@(die.IsUsable ? null : "Nothing it lets move can move now")"><span class="face">@DieFaces.FaceOf(die.Value)</span> @die.Value: @this.Named(die.Meaning)@EscapeNote(view, die)</li>
                         }
                     </ul>
                 }
@@ -397,6 +397,7 @@
     private const string BotController = "bot";
     private const string RollKind = "roll";
     private const string MoveKind = "move";
+    private const string EscapeKind = "escape";
     private const string Alarm = "alarm";
     private const string Rescued = "rescued";
     private const string Triumph = "triumph";
@@ -536,6 +537,16 @@
     [JSInvokable]
     public void Shown() =>
         _ = this._view is { DecidingSeat: not null } && this._poll.Change(TimeSpan.Zero, Timeout.InfiniteTimeSpan);
+
+    /// <summary>
+    /// What a usable die says beyond the kinds it shows, while doubles let a captured piece escape: that one of
+    /// those kinds may come home instead, so that a die is not taken to be usable for pieces the player has none
+    /// of on the board.
+    /// </summary>
+    private static string? EscapeNote(GameViewDto view, DieDto die) =>
+        die.IsUsable && view.LegalActions.Any(action => action.Kind == EscapeKind)
+            ? ", or one captured escapes"
+            : null;
 
     private static string Hint(BoardActions actions) =>
         actions.Origins.IsEmpty

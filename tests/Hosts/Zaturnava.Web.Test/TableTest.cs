@@ -419,6 +419,30 @@ public sealed class TableTest : IDisposable
     }
 
     [Fact]
+    public void Render_WhenDoublesLetACapturedPieceEscape_SaysSoOfEachUsableDie()
+    {
+        // Arrange - double 5, and seat 0's captured Raja may escape home
+        ActionDto escape = new(
+            "escape",
+            ImmutableSortedDictionary<string, string>.Empty.Add("actor", "0").Add("piece", "3").Add("home", "3")
+        );
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Dice = [new DieDto(5, "Pawn or Raja"), new DieDto(5, "Pawn or Raja")],
+            LegalActions = [FakeGameServer.Pass, escape],
+        };
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Assert
+        Assert.Equal(
+            "⚄ 5: Pawn or Raja, or one captured escapes|⚄ 5: Pawn or Raja, or one captured escapes",
+            string.Join("|", table.FindAll("ul.dice li").Select(die => die.TextContent))
+        );
+    }
+
+    [Fact]
     public void Render_WhenADieLetsNothingMove_GreysItOut()
     {
         // Arrange
