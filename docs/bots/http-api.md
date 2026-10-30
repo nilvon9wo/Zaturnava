@@ -5,7 +5,8 @@ and the MCP server use these same routes. The server's address below is a local 
 `http://localhost:5164/` ([running a server](README.md#running-a-server)); the routes are relative to
 it. Names in JSON are camelCase. The server's own address (and `api`) answers with where to go from there,
 and `openapi/v1.json` describes every route as [OpenAPI](https://www.openapis.org/), for tools that generate
-clients. The live server is at `https://zaturnava.runasp.net/`.
+clients. `reference/v1` shows the same as a page, where each route can be tried from the browser. The live
+server is at `https://zaturnava.runasp.net/`.
 
 ## Routes
 

@@ -1,3 +1,4 @@
+using System.Net;
 using System.Text.Json;
 
 namespace Net.NowhereAtAll.Zaturnava.Server.Test;
@@ -44,5 +45,25 @@ public sealed class IndexApiTest(ZaturnavaServer server) : IClassFixture<Zaturna
         // Assert
         JsonElement paths = JsonDocument.Parse(body).RootElement.GetProperty("paths");
         Assert.True(paths.TryGetProperty("/api/catalog", out _), body);
+    }
+
+    [Fact]
+    public async Task Get_WhenAskedForTheReference_ServesAPageToBrowseTheApi()
+    {
+        // Arrange - the page the index points to
+        string body = await this._client.GetStringAsync(new Uri("/api", UriKind.Relative), this._cancellation);
+        string reference = JsonDocument.Parse(body).RootElement.GetProperty("reference").GetString()!;
+
+        // Act
+        using HttpResponseMessage response = await this._client.GetAsync(
+            new Uri("/" + reference, UriKind.Relative),
+            this._cancellation
+        );
+
+        // Assert
+        Assert.Equal(
+            (HttpStatusCode.OK, "text/html"),
+            (response.StatusCode, response.Content.Headers.ContentType?.MediaType)
+        );
     }
 }
