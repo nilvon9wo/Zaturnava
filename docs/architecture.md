@@ -300,7 +300,8 @@ base address (`GameRoutes`):
 - **MCP** — a stdio MCP server whose tools (`catalog`, `list_games`,
   `create_game`, `claim_seat`, `get_game`, `game_history`, `submit_action`, `advance_game`) call a game server
   through `IGameServing`; an AI plays exactly as a person would, by claiming a
-  seat and acting with its token.
+  seat and acting with its token. The Server hosts the same tools over HTTP at `mcp` (stateless), calling
+  its own HTTP API at the address the request came to.
 - **BotRunner** — runs bots against bots in-process, for testing rulesets and
   bots, and writes each game's history as a JSON line (`--ruleset`, `--bots`,
   `--games`, `--max-steps`, `--out`); `--bot-assembly` seats bots of one's own
