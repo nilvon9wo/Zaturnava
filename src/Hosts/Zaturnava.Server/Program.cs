@@ -3,9 +3,12 @@ using Net.NowhereAtAll.Zaturnava.Server.Endpoints;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 _ = builder.Services.AddZaturnava(builder.Configuration);
+_ = builder.Services.AddOpenApi();
 
 WebApplication app = builder.Build();
 _ = app.UseExceptionHandler();
 _ = app.UseCors();
+_ = app.MapOpenApi();
+_ = app.MapIndex();
 _ = app.MapGames();
 app.Run();
