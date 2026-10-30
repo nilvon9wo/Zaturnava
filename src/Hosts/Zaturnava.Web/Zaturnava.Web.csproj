@@ -17,6 +17,15 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!--
+      Published, the page is trimmed of the framework code nothing seems to call. System.Text.Json makes the
+      contracts' immutable collections by reflection, which the trimmer cannot see: trimmed, the page fails on
+      the first reply from the server ("SerializationNotSupportedType, ImmutableList"). Kept whole.
+    -->
+    <TrimmerRootAssembly Include="System.Collections.Immutable" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\Apis\Zaturnava.Client\Zaturnava.Client.csproj" />
     <ProjectReference Include="..\..\Apis\Zaturnava.Presentation\Zaturnava.Presentation.csproj" />
   </ItemGroup>
