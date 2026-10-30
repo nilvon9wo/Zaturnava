@@ -393,7 +393,7 @@ public sealed class SageBotTest
     {
         // Arrange - the line rules measure Pawns; the scripted rules, nothing
         LineRules line = new([]);
-        ScriptedRules scripted = new(ImmutableDictionary<GameAction, GameState>.Empty);
+        ScriptedRules scripted = new([]);
 
         // Act
         SageWeights measured = SageWeights.Default.WeighingMeasuresOf(line);
