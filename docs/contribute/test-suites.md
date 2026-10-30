@@ -8,7 +8,7 @@ One test project per project, each measuring that project at 100% (see
 | `Zaturnava.Engine.Test` | The movement grammar, move generation, positions, team graphs, action parsing. |
 | `Zaturnava.Topology.SquareGrid.Test` | Stepping, direction families per facing, and layouts on rectangular grids. |
 | `Zaturnava.Games.Chaturaji2027.Test` | The base ruleset: the setup, each piece's moves and captures, scoring, turn order. |
-| `Zaturnava.Bots.Test` | `RandomBot` chooses among the legal actions, and honours cancellation. |
+| `Zaturnava.Bots.Test` | `RandomBot` chooses among the legal actions, and honours cancellation; each bot's play; Athena's network: encoding a position, learning, keeping, and judging by it. |
 | `Zaturnava.Application.Test` | `GameService` — creating, claiming, acting, refusing — and the decision loop that lets bots reply. |
 | `Zaturnava.Persistence.InMemory.Test` | The in-memory store, its optimistic concurrency included. |
 | `Zaturnava.Persistence.EfCore.Test` | The EF Core store, against real SQLite, with test data from Xfty providers. |
@@ -20,7 +20,7 @@ One test project per project, each measuring that project at 100% (see
 | `Zaturnava.Presentation.Test` | Board frames, which cells are clickable, and how clicks become actions. |
 | `Zaturnava.Web.Test` | The Blazor components with bUnit: the lobby, the table, the board. |
 | `Zaturnava.Mcp.Test` | The MCP tools, over in-memory pipes with the SDK's own client, against a stub game server. |
-| `Zaturnava.BotRunner.Test` | Option parsing, self-play, the JSON lines it writes, bots loaded from an assembly of one's own (its own public bots stand in for one), exit codes, training Sage's weights. |
+| `Zaturnava.BotRunner.Test` | Option parsing, self-play, the JSON lines it writes, bots loaded from an assembly of one's own (its own public bots stand in for one), exit codes, training Sage's weights, training Athena's network on game histories. |
 | `Zaturnava.Architecture.Test` | Every project uses only what its row of the `MayUse` table allows, and every project in `Zaturnava.slnx` has a row. Not measured. |
 
 ```shell

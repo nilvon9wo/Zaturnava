@@ -14,7 +14,7 @@ public sealed class BotRatingsTest
 
         // Assert
         Assert.Equal(
-            ("argus,midas,random,sage,solomon", 1000),
+            ("argus,athena,midas,random,sage,solomon", 1000),
             (string.Join(",", rated.Keys.Order(StringComparer.Ordinal)), rated[RandomBot.BotId])
         );
     }

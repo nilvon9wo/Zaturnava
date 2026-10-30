@@ -47,7 +47,8 @@ internal static class Trading
 
     /// <summary>
     /// The offers the bot may make now, each with what it would gain; none during its turn, unless it
-    /// <paramref name="isPassing"/>, nor once it has made one this turn.
+    /// <paramref name="isPassing"/>, nor once it has made one this turn. Only prisoners that may go home now
+    /// are traded, and none to a seat that has retired.
     /// </summary>
     public static ImmutableList<Trade> TradesOf(DecisionRequest request, bool isPassing = false)
     {
@@ -58,7 +59,10 @@ internal static class Trading
         ImmutableList<Prisoner> held =
         [
             .. state.Prisoners.Where(prisoner =>
-                prisoner.Holder == request.Seat && prisoner.Piece.Owner != request.Seat
+                prisoner.Holder == request.Seat
+                    && prisoner.Piece.Owner != request.Seat
+                    && !state.Retired.Contains(prisoner.Piece.Owner)
+                    && request.Rules.MayGoBack(state, prisoner)
             ),
         ];
         return mayOffer
@@ -107,7 +111,10 @@ internal static class Trading
         SeatId owner = given.Piece.Owner;
         int worth = request.Rules.WorthOf(given.Piece.Kind);
         IEnumerable<Trade> exchanges = state.Prisoners
-            .Where(asked => asked.Holder == owner && state.Teams.AreAllied(asked.Piece.Owner, request.Seat))
+            .Where(asked => asked.Holder == owner
+                && state.Teams.AreAllied(asked.Piece.Owner, request.Seat)
+                && request.Rules.MayGoBack(state, asked)
+            )
             .Select(asked => new Trade(
                 new OfferAction(request.Seat, owner, [given.Piece.Id], [asked.Piece.Id]),
                 request.Rules.WorthOf(asked.Piece.Kind) - worth

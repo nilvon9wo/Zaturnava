@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Net.NowhereAtAll.Zaturnava.Bots;
+using Net.NowhereAtAll.Zaturnava.Bots.Learning;
 
 namespace Net.NowhereAtAll.Zaturnava.BotRunner.Test;
 
@@ -125,6 +126,33 @@ public sealed class SelfPlayCommandTest
                 exitCode,
                 tuned is not null,
                 this._errors.ToString().StartsWith("round 1, score ", StringComparison.Ordinal)
+            )
+        );
+    }
+
+    [Fact]
+    public async Task Run_WhenLearning_WritesTheNetworkAndHowEachEpochWent()
+    {
+        // Arrange - a game Argus finishes, to learn from in two epochs
+        string file = Path.GetTempFileName();
+        string[] play = ["--games", "1", "--max-steps", "10000", "--bots", "argus,argus,argus,argus", "--out", file];
+        _ = await SelfPlayCommand.Run(play, this._output, this._errors, this._cancellation);
+        string[] args = ["--learn", file, "--epochs", "2", "--hidden", "4"];
+
+        // Act
+        int exitCode = await SelfPlayCommand.Run(args, this._output, this._errors, this._cancellation);
+
+        // Assert
+        File.Delete(file);
+        ValueNetworkData? network =
+            JsonSerializer.Deserialize<ValueNetworkData>(this._output.ToString(), JsonSerializerOptions.Web);
+        Assert.Equal(
+            (SelfPlayCommand.Succeeded, "chaturaji-2027", 4, 2),
+            (
+                exitCode,
+                network?.RulesetId,
+                network?.Hidden,
+                this._errors.ToString().Split('\n').Count(line => line.StartsWith("epoch ", StringComparison.Ordinal))
             )
         );
     }

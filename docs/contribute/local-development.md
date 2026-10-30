@@ -121,5 +121,12 @@ beneath you (WSL forwards the ports, so the page still opens in a Windows browse
 wsl -d Ubuntu -- bash scripts/wsl-play.sh
 ```
 
+Rate the bots the same way, with a Release build of the BotRunner in `artifacts/wsl-release/`; it
+takes whatever options `scripts/rate-bots.py` does, but the runner:
+
+```shell
+wsl -d Ubuntu -- bash scripts/wsl-rate.sh --bots random,sage,athena --games 50
+```
+
 The static gates (`dotnet format`, `check-line-layout.py`, `inspect-code.py`) run no test host
 and work on Windows directly.

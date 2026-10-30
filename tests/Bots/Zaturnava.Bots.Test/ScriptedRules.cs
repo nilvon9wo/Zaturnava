@@ -29,7 +29,7 @@ internal sealed class ScriptedRules(ImmutableDictionary<GameAction, GameState> r
 
     public string Name => "Scripted";
 
-    public ICellNavigating Topology => throw new NotSupportedException();
+    public ICellNavigating Topology { get; } = new LineTopology();
 
     public ImmutableDictionary<SeatId, CellId> Thrones =>
         Enumerable.Range(0, 4).ToImmutableDictionary(seat => new SeatId(seat), seat => new CellId(seat));
@@ -61,7 +61,12 @@ internal sealed class ScriptedRules(ImmutableDictionary<GameAction, GameState> r
         return new DecisionRequest(this, state, Seat, this.LegalActions(state));
     }
 
-    public GameState CreateInitialState() => throw new NotSupportedException();
+    /// <summary>A Raja for seat 0 at one end of a line, and one for seat 1 at the other.</summary>
+    public GameState CreateInitialState() =>
+        State((0, LineRules.Raja, Seat), (7, LineRules.Raja, Enemy)) with
+        {
+            Seats = [.. Enumerable.Range(0, 4).Select(seat => new Seat(new SeatId(seat), new Direction(1, 0)))],
+        };
 
     public ImmutableList<GameAction> LegalActions([Required] GameState state) =>
         state.DecidingSeat == Seat ? [.. this._results.Keys] : [];

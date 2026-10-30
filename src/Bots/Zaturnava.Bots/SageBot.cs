@@ -52,16 +52,31 @@ public sealed class SageBot(
         cancellationToken.IsCancellationRequested
             ? Task.FromCanceled<GameAction>(cancellationToken)
             : Task.FromResult(
-                Ending.AnswerTo(request)
-                    ?? SolomonBot.AnswerTo(request)
-                    ?? SolomonBot.FairTrade(request, false)
-                    ?? Trading.BeforePassing(
-                        request,
-                        this.ForesightFor(request).Choose(request, this._random),
-                        SolomonBot.FairTrade
-                    )
+                Play(
+                    request,
+                    Ending.AnswerTo(request),
+                    new Appraiser(this._learned.GetValueOrDefault(request.Rules.Id, this._fallback)),
+                    this._random
+                )
             );
 
-    private Foresight ForesightFor(DecisionRequest request) =>
-        new(this._learned.GetValueOrDefault(request.Rules.Id, this._fallback), Depth, Beam);
+    /// <summary>
+    /// Sage's play, with positions judged by <paramref name="valuing"/>: <paramref name="ending"/>, if it has
+    /// answered a proposal to end the game; else as Solomon deals in prisoners, if it would; else what it
+    /// would most expect of the rest of its turn, as <see cref="Foresight"/> sees it, trading before it passes.
+    /// </summary>
+    internal static GameAction Play(
+        DecisionRequest request,
+        GameAction? ending,
+        IPositionValuing valuing,
+        Random random
+    ) =>
+        ending
+            ?? SolomonBot.AnswerTo(request)
+            ?? SolomonBot.FairTrade(request, false)
+            ?? Trading.BeforePassing(
+                request,
+                new Foresight(valuing, Depth, Beam).Choose(request, random),
+                SolomonBot.FairTrade
+            );
 }

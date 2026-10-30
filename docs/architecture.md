@@ -204,7 +204,7 @@ client, MCP, presentation), `Hosts` (server, page, hosting adapters) and `Persis
 | Presentation | Client-side board logic: frame, clickable actions, selection | Contracts |
 | Web | Blazor WebAssembly client | Client, Contracts, Presentation |
 | Mcp | MCP server (stdio) letting an AI play through any server | Client, Contracts |
-| BotRunner | Command-line self-play: bots against bots (one's own among them, from an assembly), each game's history as a JSON line | Application, Bots, Engine, Games.Chaturaji2027 |
+| BotRunner | Command-line self-play: bots against bots (one's own among them, from an assembly), each game's history as a JSON line; tuning Sage, and training Athena's network | Application, Bots, Engine, Games.Chaturaji2027 |
 | Server | ASP.NET Core host; the composition root | Application, Bots, Contracts, Engine, Hosting, Hosting.Itch, Persistence.*, Topology.SquareGrid, Games.Chaturaji2027 |
 
 **Vendors stay in their adapters.** A third-party service — a page host, a

@@ -11,7 +11,9 @@ namespace Net.NowhereAtAll.Zaturnava.BotRunner;
 /// rounds, it tunes Sage's weights for the ruleset instead (<see cref="Training"/>), each nudge tried over
 /// <c>--games</c> games with each set of weights on each side, and writes the weights tuned.
 /// <c>--bot-assembly</c> names an assembly of one's own bots (<see cref="BotAssembly"/>), to seat by their
-/// ids beside ours.
+/// ids beside ours. With <c>--learn</c>, the files of game histories to learn from (comma-separated), it trains
+/// a network to judge the ruleset's positions instead (<see cref="Learning"/>), in <c>--epochs</c> rounds
+/// (default 8) with <c>--hidden</c> units (default 32), and writes it.
 /// </summary>
 internal sealed record SelfPlayOptions(
     string RulesetId,
@@ -20,12 +22,16 @@ internal sealed record SelfPlayOptions(
     int MaximumSteps,
     string? OutputPath,
     int? TrainingRounds = null,
-    string? BotAssemblyPath = null
+    string? BotAssemblyPath = null,
+    ImmutableList<string>? LearningFrom = null,
+    int Epochs = 8,
+    int Hidden = 32
 )
 {
     public const string Usage =
         "Usage: Zaturnava.BotRunner [--ruleset chaturaji-2027] [--bots random,random,random,random] [--games 100] "
-        + "[--max-steps 1000] [--out games.jsonl] [--train rounds] [--bot-assembly MyBots.dll]";
+        + "[--max-steps 1000] [--out games.jsonl] [--train rounds] [--bot-assembly MyBots.dll] "
+        + "[--learn games.jsonl,more.jsonl [--epochs 8] [--hidden 32]]";
 
     private static readonly SelfPlayOptions Defaults = new("chaturaji-2027", null, 100, 1000, null);
 
@@ -48,6 +54,9 @@ internal sealed record SelfPlayOptions(
             "--out" => this with { OutputPath = value },
             "--train" => this with { TrainingRounds = Count(name, value) },
             "--bot-assembly" => this with { BotAssemblyPath = value },
+            "--learn" => this with { LearningFrom = [.. value.Split(',', StringSplitOptions.TrimEntries)] },
+            "--epochs" => this with { Epochs = Count(name, value) },
+            "--hidden" => this with { Hidden = Count(name, value) },
             _ => throw new ArgumentException($"There is no {name} option. {Usage}"),
         };
 
