@@ -73,10 +73,20 @@ internal sealed class Learning(IRulesApplying rules, TextWriter progress)
         return network.ToData(this._rules.Id);
     }
 
-    /// <summary>The network taught one seat's view of a game; how far off it was, squared, all told.</summary>
+    /// <summary>
+    /// The network taught one seat's view of a game; how far off it was, squared, all told. Each step is the
+    /// rate shared out over how big the position's numbers are (normalized least mean squares): a position of
+    /// big numbers (a late game's scores and counts) would otherwise move the network past what it is taught,
+    /// further each time, until its numbers are no numbers at all.
+    /// </summary>
     private static double Taught(ValueNetwork network, Sequence sequence, LearningPace pace) =>
         TargetsOf(network, sequence, pace.Lambda)
-            .Select((target, at) => network.Learn(sequence.Inputs[at], target.Outcome, target.Margin, pace.Rate))
+            .Select((target, at) => network.Learn(
+                sequence.Inputs[at],
+                target.Outcome,
+                target.Margin,
+                pace.Rate / (1 + sequence.Inputs[at].Sum(entry => entry.Value * entry.Value))
+            ))
             .Sum();
 
     /// <summary>

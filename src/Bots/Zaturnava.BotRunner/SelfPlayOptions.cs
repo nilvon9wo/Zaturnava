@@ -16,7 +16,8 @@ namespace Net.NowhereAtAll.Zaturnava.BotRunner;
 /// a network to judge the ruleset's positions instead (<see cref="Learning"/>), and writes it: starting from
 /// the network in the file <c>--from</c> names, or else from one judging as Sage does, with <c>--hidden</c>
 /// units (default 32); in <c>--epochs</c> rounds (default 8), each position taught how the game went by
-/// <c>--lambda</c> (default 1) and what follows it by the rest, in steps of <c>--rate</c> (default 0.02).
+/// <c>--lambda</c> (default 1) and what follows it by the rest, in steps of <c>--rate</c> (default 0.1),
+/// shared out over how big each position's numbers are.
 /// </summary>
 internal sealed record SelfPlayOptions(
     string RulesetId,
@@ -32,14 +33,14 @@ internal sealed record SelfPlayOptions(
     string? NetworkPath = null,
     string? StartPath = null,
     double Lambda = 1,
-    double Rate = 0.02
+    double Rate = 0.1
 )
 {
     public const string Usage =
         "Usage: Zaturnava.BotRunner [--ruleset chaturaji-2027] [--bots random,random,random,random] [--games 100] "
         + "[--max-steps 1000] [--out games.jsonl] [--train rounds] [--bot-assembly MyBots.dll] "
         + "[--network athena.json] [--learn games.jsonl,more.jsonl [--from athena.json] [--hidden 32] "
-        + "[--epochs 8] [--lambda 1] [--rate 0.02]]";
+        + "[--epochs 8] [--lambda 1] [--rate 0.1]]";
 
     private static readonly SelfPlayOptions Defaults = new("chaturaji-2027", null, 100, 1000, null);
 

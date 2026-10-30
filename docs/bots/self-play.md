@@ -109,7 +109,7 @@ in the [backlog](../backlog.md#bots).
 | `--epochs` | How many times to go through every position (default 8) |
 | `--hidden` | How many hidden units a new network has (default 32) |
 | `--lambda` | How much each position is taught how the game went, rather than what follows it, from 0 to 1 (default 1) |
-| `--rate` | How big a step the network takes towards each position, from 0 to 1 (default 0.02) |
+| `--rate` | How big a step the network takes towards each position, from 0 to 1, shared out over how big its numbers are (default 0.1) |
 | `--network` | A network's file for Athena to play by, when playing games |
 
 `scripts/athena-rounds.py` runs all of it in rounds, each learning from every game so far, then playing

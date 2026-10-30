@@ -13,7 +13,7 @@ Each round:
    best share so far is copied to best.json. A share of at least 55% over 400 games is the bar for calling
    her stronger than Sage.
 
-Usage: athena-rounds.py RUNNER [--rounds 1] [--games 200] [--epochs 4] [--lambda 0.8] [--rate 0.02]
+Usage: athena-rounds.py RUNNER [--rounds 1] [--games 200] [--epochs 4] [--lambda 0.8] [--rate 0.1]
                                [--hidden 32] [--seed games.jsonl,more.jsonl] [--max-steps 2000] [--jobs N]
                                [--folder artifacts/athena]
 """
@@ -110,7 +110,7 @@ def main():
     parser.add_argument("--games", type=int, default=200)
     parser.add_argument("--epochs", type=int, default=4)
     parser.add_argument("--lambda", dest="lambda_", type=float, default=0.8)
-    parser.add_argument("--rate", type=float, default=0.02)
+    parser.add_argument("--rate", type=float, default=0.1)
     parser.add_argument("--hidden", type=int, default=32)
     parser.add_argument("--seed")
     parser.add_argument("--max-steps", type=int, default=2000)

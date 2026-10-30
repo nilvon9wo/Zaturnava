@@ -98,7 +98,10 @@ public sealed class ValueNetwork
     }
 
     /// <summary>The network <paramref name="data"/> keeps.</summary>
-    /// <exception cref="ArgumentException">The data does not hold a network of its own size.</exception>
+    /// <exception cref="ArgumentException">
+    /// The data does not hold a network of its own size, or holds a weight that is no number (one that learned
+    /// past all bounds).
+    /// </exception>
     public static ValueNetwork From([Required] ValueNetworkData data)
     {
         double[] inputWeights = Unpacked(data.InputWeights);
@@ -106,7 +109,10 @@ public sealed class ValueNetwork
         double[] outputWeights = Unpacked(data.OutputWeights);
         double[] outputBiases = Unpacked(data.OutputBiases);
         double[] directWeights = Unpacked(data.DirectWeights);
-        bool isWhole = inputWeights.Length == data.Inputs * data.Hidden
+        bool isWhole = inputWeights.Concat(hiddenBiases).Concat(outputWeights).Concat(outputBiases)
+                .Concat(directWeights)
+                .All(double.IsFinite)
+            && inputWeights.Length == data.Inputs * data.Hidden
             && hiddenBiases.Length == data.Hidden
             && outputWeights.Length == Outputs * data.Hidden
             && outputBiases.Length == Outputs
