@@ -233,8 +233,12 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         return names.IsEmpty ? "Nothing" : string.Join(" or ", names);
     }
 
+    /// <summary>
+    /// Whether the die moves or promotes anything now. Letting a piece escape does not count: that takes both
+    /// dice of doubles, not either die, so a die that only lets a captured piece escape moves nothing.
+    /// </summary>
     public bool MayUseDie([Required] GameState state, int value) =>
-        state.DecidingSeat is not null && this.MayUse(state, this._dice.KindsOf(value).Contains);
+        state.DecidingSeat is not null && this.MayMove(state, this._dice.KindsOf(value).Contains);
 
     private DiceRequest RollOffDie => new(RollOffDice, this._dice.Sides);
 
@@ -766,13 +770,19 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     /// Whether the deciding seat may move a piece of a kind <paramref name="isRolled"/> lets move, promote
     /// an enemy Pawn with such a die, or let a piece escape.
     /// </summary>
-    private bool MayUse(GameState state, Func<PieceKindId, bool> isRolled)
+    private bool MayUse(GameState state, Func<PieceKindId, bool> isRolled) =>
+        this.MayMove(state, isRolled) || this.EscapesOf(state, state.DecidingSeat!.Value).Any();
+
+    /// <summary>
+    /// Whether the deciding seat may move a piece of a kind <paramref name="isRolled"/> lets move, or promote
+    /// an enemy Pawn with such a die.
+    /// </summary>
+    private bool MayMove(GameState state, Func<PieceKindId, bool> isRolled)
     {
         SeatId seat = state.DecidingSeat!.Value; // dice are only rolled and used by the deciding seat
         return this.MovesOf(state, seat, isRolled).Any()
             || (isRolled(Chaturaji2027Pieces.Pawn)
-                && this.PromotionsOf(state, seat).Any(promotion => UsesDie(state, promotion)))
-            || this.EscapesOf(state, seat).Any();
+                && this.PromotionsOf(state, seat).Any(promotion => UsesDie(state, promotion)));
     }
 
     /// <summary>

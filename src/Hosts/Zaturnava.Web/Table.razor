@@ -182,7 +182,7 @@
                         @foreach (DieDto die in view.Dice)
                         {
                             <li class="@(die.IsUsable ? null : "unusable")"
-                                title="@(die.IsUsable ? null : "Nothing it lets move can move now")"><span class="face">@DieFaces.FaceOf(die.Value)</span> @die.Value: @this.Named(die.Meaning)@EscapeNote(view, die)</li>
+                                title="@UnusableNote(view, die)"><span class="face">@DieFaces.FaceOf(die.Value)</span> @die.Value: @this.Named(die.Meaning)</li>
                         }
                     </ul>
                 }
@@ -539,14 +539,16 @@
         _ = this._view is { DecidingSeat: not null } && this._poll.Change(TimeSpan.Zero, Timeout.InfiniteTimeSpan);
 
     /// <summary>
-    /// What a usable die says beyond the kinds it shows, while doubles let a captured piece escape: that one of
-    /// those kinds may come home instead, so that a die is not taken to be usable for pieces the player has none
-    /// of on the board.
+    /// Why a die is greyed out, none for one that is not: nothing it lets move can move; and, while doubles let a
+    /// captured piece escape, that the two dice together still may do that.
     /// </summary>
-    private static string? EscapeNote(GameViewDto view, DieDto die) =>
-        die.IsUsable && view.LegalActions.Any(action => action.Kind == EscapeKind)
-            ? ", or one captured escapes"
-            : null;
+    private static string? UnusableNote(GameViewDto view, DieDto die) =>
+        (die.IsUsable, view.LegalActions.Any(action => action.Kind == EscapeKind)) switch
+        {
+            (true, _) => null,
+            (_, true) => "Nothing it lets move can move now, but the doubles let a captured piece escape",
+            _ => "Nothing it lets move can move now",
+        };
 
     private static string Hint(BoardActions actions) =>
         actions.Origins.IsEmpty

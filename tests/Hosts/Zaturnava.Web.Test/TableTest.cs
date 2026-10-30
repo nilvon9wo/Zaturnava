@@ -419,16 +419,16 @@ public sealed class TableTest : IDisposable
     }
 
     [Fact]
-    public void Render_WhenDoublesLetACapturedPieceEscape_SaysSoOfEachUsableDie()
+    public void Render_WhenDoublesMoveNothingButLetACapturedPieceEscape_GreysThemOutAndSaysSo()
     {
-        // Arrange - double 5, and seat 0's captured Raja may escape home
+        // Arrange - double 5 moving nothing, and seat 0's captured Raja may escape home
         ActionDto escape = new(
             "escape",
             ImmutableSortedDictionary<string, string>.Empty.Add("actor", "0").Add("piece", "3").Add("home", "3")
         );
         this._page.Server.View = FakeGameServer.SeatZeroToMove with
         {
-            Dice = [new DieDto(5, "Pawn or Raja"), new DieDto(5, "Pawn or Raja")],
+            Dice = [new DieDto(5, "Pawn or Raja", IsUsable: false), new DieDto(5, "Pawn or Raja", IsUsable: false)],
             LegalActions = [FakeGameServer.Pass, escape],
         };
 
@@ -436,9 +436,12 @@ public sealed class TableTest : IDisposable
         IRenderedComponent<Table> table = this.Render(SeatZero);
 
         // Assert
-        Assert.Equal(
-            "⚄ 5: Pawn or Raja, or one captured escapes|⚄ 5: Pawn or Raja, or one captured escapes",
-            string.Join("|", table.FindAll("ul.dice li").Select(die => die.TextContent))
+        Assert.All(
+            table.FindAll("ul.dice li"),
+            die => Assert.Equal(
+                ("unusable", "Nothing it lets move can move now, but the doubles let a captured piece escape"),
+                (die.ClassName, die.GetAttribute("title"))
+            )
         );
     }
 
