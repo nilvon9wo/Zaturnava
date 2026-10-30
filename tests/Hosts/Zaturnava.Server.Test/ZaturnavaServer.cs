@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Net.NowhereAtAll.Zaturnava.Client;
 using Net.NowhereAtAll.Zaturnava.Engine.Chance;
+using Net.NowhereAtAll.Zaturnava.Server.Endpoints;
 
 namespace Net.NowhereAtAll.Zaturnava.Server.Test;
 
@@ -35,8 +36,15 @@ public class ZaturnavaServer : WebApplicationFactory<Program>
     /// <summary>A client of this server, as any .NET client would reach it.</summary>
     public HttpGameClient GameClient() => new(this.CreateClient());
 
+    /// <summary>The dice loaded; and the hosted MCP server's tools calling this server in the test process.</summary>
     protected override void ConfigureWebHost(IWebHostBuilder builder) =>
-        builder.ConfigureTestServices(services => services.AddSingleton<IDiceRolling>(new LoadedDice()));
+        builder.ConfigureTestServices(services =>
+        {
+            _ = services.AddSingleton<IDiceRolling>(new LoadedDice());
+            _ = services
+                .AddHttpClient(McpEndpoints.SelfClient)
+                .ConfigurePrimaryHttpMessageHandler(() => this.Server.CreateHandler());
+        });
 }
 
 /// <summary>

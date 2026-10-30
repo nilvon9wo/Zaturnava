@@ -48,8 +48,8 @@ public sealed class DependencyRulesTest
             // the composition root: the one project that knows everything
             ["Server"] =
             [
-                "Application", "Bots", "Contracts", "Engine", "Hosting", "Hosting.Itch", "Persistence.EfCore",
-                "Persistence.InMemory", "Topology.SquareGrid", "Games.Chaturaji2027",
+                "Application", "Bots", "Client", "Contracts", "Engine", "Hosting", "Hosting.Itch", "Mcp",
+                "Persistence.EfCore", "Persistence.InMemory", "Topology.SquareGrid", "Games.Chaturaji2027",
             ],
         }.ToImmutableDictionary();
 

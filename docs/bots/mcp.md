@@ -1,14 +1,28 @@
 # Playing through MCP
 
 An AI assistant that speaks the [Model Context Protocol](https://modelcontextprotocol.io) (Claude
-Code, Claude Desktop, and many others) can play through `Zaturnava.Mcp`: a small MCP server, run on
-your machine, that turns each of its tools into a call to a game server. Your assistant then plays as
-a person would: it claims a seat, reads the board, and chooses among the legal actions.
+Code, Claude Desktop, and many others) can play through `Zaturnava.Mcp`: a small MCP server that turns
+each of its tools into a call to a game server. Your assistant then plays as a person would: it claims a
+seat, reads the board, and chooses among the legal actions.
 
 Whatever model your assistant uses, it is yours: we never see its keys, and it costs us nothing.
 
-## Setting it up
+## The hosted server
 
+The game server serves the same tools itself, over HTTP, at `mcp`: nothing to build or run. For
+Claude Code:
+
+```shell
+claude mcp add --transport http zaturnava https://zaturnava.runasp.net/mcp
+```
+
+Any client that takes a server's address takes `https://zaturnava.runasp.net/mcp`, or
+`http://localhost:5164/mcp` for [a server of your own](README.md#running-a-server). The tools then play on
+that server.
+
+## Running it yourself
+
+To play through any other server, or without HTTP, run `Zaturnava.Mcp` on your machine, over stdio.
 Build it once, from the repository's folder (you need the .NET SDK named in `global.json`):
 
 ```shell

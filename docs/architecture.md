@@ -205,7 +205,7 @@ client, MCP, presentation), `Hosts` (server, page, hosting adapters) and `Persis
 | Web | Blazor WebAssembly client | Client, Contracts, Presentation |
 | Mcp | MCP server (stdio) letting an AI play through any server | Client, Contracts |
 | BotRunner | Command-line self-play: bots against bots (one's own among them, from an assembly), each game's history as a JSON line; tuning Sage, and training Athena's network | Application, Bots, Engine, Games.Chaturaji2027 |
-| Server | ASP.NET Core host; the composition root | Application, Bots, Contracts, Engine, Hosting, Hosting.Itch, Persistence.*, Topology.SquareGrid, Games.Chaturaji2027 |
+| Server | ASP.NET Core host; the composition root | Application, Bots, Client, Contracts, Engine, Hosting, Hosting.Itch, Mcp, Persistence.*, Topology.SquareGrid, Games.Chaturaji2027 |
 
 **Vendors stay in their adapters.** A third-party service — a page host, a
 game host, a database provider — is named only in its own adapter project and
@@ -300,7 +300,8 @@ base address (`GameRoutes`):
 - **MCP** — a stdio MCP server whose tools (`catalog`, `list_games`,
   `create_game`, `claim_seat`, `get_game`, `game_history`, `submit_action`, `advance_game`) call a game server
   through `IGameServing`; an AI plays exactly as a person would, by claiming a
-  seat and acting with its token.
+  seat and acting with its token. The Server hosts the same tools over HTTP at `mcp` (stateless), calling
+  its own HTTP API at the address the request came to.
 - **BotRunner** — runs bots against bots in-process, for testing rulesets and
   bots, and writes each game's history as a JSON line (`--ruleset`, `--bots`,
   `--games`, `--max-steps`, `--out`); `--bot-assembly` seats bots of one's own
