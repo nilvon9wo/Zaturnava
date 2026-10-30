@@ -6,6 +6,8 @@ machine (scripts/wsl-play.sh), and sets games up through the server's HTTP API: 
 so far before the page watches them. It makes:
 
 - 01-lobby.png .. 05-late.png: screenshots, --width by --height;
+- 06-your-move.png: the player's own turn, dice rolled, in a game set up with prisoners to give back (the
+  development server's "ransom" scenario): the turn panel at its fullest;
 - cover.png: 630 by 500, a game in the middle, taken at twice that and shrunk (ffmpeg);
 - gameplay.mp4: a game of bots watched from its start for --seconds, with its sounds (Playwright records the
   picture alone, as webm; the page's sounds are recorded in it, and ffmpeg puts the two together as mp4).
@@ -33,6 +35,7 @@ import subprocess
 import time
 import urllib.request
 
+from playwright.sync_api import TimeoutError as PlaywrightTimeout
 from playwright.sync_api import sync_playwright
 
 
@@ -165,7 +168,21 @@ def main():
         page.screenshot(path=at("04-how-to-play.png"))
         print("04-how-to-play.png")
 
-        page.reload()
+        page.goto(options.page)
+        if any(scenario["id"] == "ransom" for scenario in catalog.get("scenarios", [])):
+            page.locator("select.scenario").select_option("ransom")
+        page.locator("button.create").click()
+        roll = page.get_by_role("button", name="Roll the dice")
+        try:
+            roll.wait_for(timeout=30000)
+            roll.click()
+        except PlaywrightTimeout:
+            print("no dice to roll: the turn as it came")
+        page.wait_for_timeout(1500)
+        page.screenshot(path=at("06-your-move.png"))
+        print("06-your-move.png")
+
+        page.goto(options.page)
         late = started(options.server, catalog, 400)
         watching(page, options.page, late)
         page.screenshot(path=at("05-late.png"))
