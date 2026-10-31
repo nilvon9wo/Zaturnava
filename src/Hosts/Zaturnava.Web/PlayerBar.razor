@@ -1,0 +1,67 @@
+@* Signing in, which is optional: a button for each service the server is set up for, opening a window of its own
+   to sign in with it; once signed in, the player's name, and a button to sign out. Nothing at all if the server
+   offers no service, or cannot be asked. The player's token is kept in the browser. *@
+@using Microsoft.JSInterop
+@implements IDisposable
+@inject IGameServing Games
+@inject Browser Browser
+@inject ServerAddress Server
+@inject NavigationManager Navigation
+
+@if (this._player is { } player)
+{
+    <span class="player">
+        Signed in as <strong>@player.Name</strong>
+        <button class="sign-out" @onclick="this.SignOut">Sign out</button>
+    </span>
+}
+else if (!this._providers.IsEmpty)
+{
+    <span class="player">
+        @foreach (string provider in this._providers)
+        {
+            <button class="sign-in" @onclick="() => this.SignIn(provider)">Sign in with @provider</button>
+        }
+    </span>
+}
+
+@code {
+    private ImmutableList<string> _providers = [];
+    private PlayerDto? _player;
+    private DotNetObjectReference<PlayerBar>? _listener;
+
+    protected override async Task OnInitializedAsync() => _ = await Requests.Attempt(this.Load);
+
+    /// <summary>The token the sign-in window posted back: remembered, and the player it stands for shown.</summary>
+    [JSInvokable]
+    public async Task SignedIn(string token)
+    {
+        await this.Browser.RememberPlayer(token);
+        _ = await Requests.Attempt(async () => this._player = await this.Games.Me(token, CancellationToken.None));
+        this.StateHasChanged();
+    }
+
+    public void Dispose() => this._listener?.Dispose();
+
+    private async Task Load()
+    {
+        this._providers = await this.Games.SignInProviders(CancellationToken.None);
+        this._player = await this.Browser.PlayerToken() is { } token
+            ? await this.Games.Me(token, CancellationToken.None)
+            : null;
+    }
+
+    /// <summary>Opens the window to sign in with <paramref name="provider"/>, to post back to this page.</summary>
+    private async Task SignIn(string provider)
+    {
+        this._listener ??= DotNetObjectReference.Create(this);
+        string origin = new Uri(this.Navigation.BaseUri).GetLeftPart(UriPartial.Authority);
+        await this.Browser.SignIn(new Uri(this.Server.Value, GameRoutes.SignIn(provider, origin)), this._listener);
+    }
+
+    private async Task SignOut()
+    {
+        await this.Browser.ForgetPlayer();
+        this._player = null;
+    }
+}

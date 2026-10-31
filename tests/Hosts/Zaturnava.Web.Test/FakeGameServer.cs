@@ -177,6 +177,28 @@ internal sealed class FakeGameServer : IGameServing
             }
         );
 
+    /// <summary>The services offered to sign in with: none, unless a test sets some.</summary>
+    public ImmutableList<string> Providers { get; set; } = [];
+
+    /// <summary>Who each player token stands for: no one, unless a test says.</summary>
+    public ImmutableDictionary<string, PlayerDto> Players { get; set; } = [];
+
+    /// <summary>Fails signing in's next request, apart from <see cref="Failure"/>.</summary>
+    public Exception? SignInFailure { get; set; }
+
+    public Task<ImmutableList<string>> SignInProviders(CancellationToken cancellationToken) =>
+        this.SignedIn(() => this.Providers);
+
+    public Task<PlayerDto?> Me([Required] string token, CancellationToken cancellationToken) =>
+        this.SignedIn(() => this.Players.GetValueOrDefault(token));
+
+    private Task<T> SignedIn<T>(Func<T> answer)
+    {
+        Exception? failure = this.SignInFailure;
+        this.SignInFailure = null;
+        return failure is null ? Task.FromResult(answer()) : Task.FromException<T>(failure);
+    }
+
     private Task<T> Talked<T>(string call, Func<T> answer)
     {
         this.Talk.Enqueue(call);

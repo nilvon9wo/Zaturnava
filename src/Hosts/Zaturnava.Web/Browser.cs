@@ -7,7 +7,8 @@ namespace Net.NowhereAtAll.Zaturnava.Web;
 
 /// <summary>
 /// What the page asks of the browser itself (wwwroot/js/zaturnava.js): sounds, a memory that outlives
-/// the page (seats held, and settings: sound and pieces), the colour theme, and word of the page shown again.
+/// the page (seats held, the player signed in, and settings: sound and pieces), the colour theme, word of the page
+/// shown again, and a window to sign in.
 /// </summary>
 internal sealed class Browser(IJSRuntime js)
 {
@@ -21,6 +22,7 @@ internal sealed class Browser(IJSRuntime js)
     private const string PiecesKey = "zaturnava.pieces";
     private const string LogKey = "zaturnava.log";
     private const string ChatOrderKey = "zaturnava.chat-order";
+    private const string PlayerKey = "zaturnava.player";
     private const string Everything = "everything";
     private const string OldestFirst = "oldest";
     private const string ChessPieces = "chess";
@@ -82,6 +84,21 @@ internal sealed class Browser(IJSRuntime js)
 
     public ValueTask SetChatNewestFirst(bool isNewestFirst) =>
         this.Save(ChatOrderKey, isNewestFirst ? "newest" : OldestFirst);
+
+    /// <summary>The token of the player signed in on this browser, if one is.</summary>
+    public async ValueTask<string?> PlayerToken() => await this.Load(PlayerKey) is { Length: > 0 } token ? token : null;
+
+    public ValueTask RememberPlayer(string token) => this.Save(PlayerKey, token);
+
+    public ValueTask ForgetPlayer() => this.Save(PlayerKey, string.Empty);
+
+    /// <summary>
+    /// Opens a window of its own at <paramref name="url"/>, to sign in, and has <paramref name="listener"/> told
+    /// (its <c>SignedIn</c>) the token that window posts back, if it comes from the server's own origin.
+    /// </summary>
+    public ValueTask SignIn<TListener>(Uri url, DotNetObjectReference<TListener> listener)
+        where TListener : class =>
+        this._js.InvokeVoidAsync("zaturnava.signIn", url.AbsoluteUri, listener);
 
     private ValueTask<string?> Load(string key) => this._js.InvokeAsync<string?>("zaturnava.load", key);
 

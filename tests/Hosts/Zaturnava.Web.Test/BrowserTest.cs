@@ -207,6 +207,39 @@ public sealed class BrowserTest : IDisposable
     }
 
     [Theory]
+    [InlineData("secret", "secret")]
+    [InlineData("", null)]
+    [InlineData(null, null)]
+    public async Task PlayerToken_WhenRead_IsTheOneRememberedIfAny(string? remembered, string? expected)
+    {
+        // Arrange
+        _ = this._context.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.player").SetResult(remembered);
+
+        // Act
+        string? token = await this._browser.PlayerToken();
+
+        // Assert
+        Assert.Equal(expected, token);
+    }
+
+    [Theory]
+    [InlineData(true, "token")]
+    [InlineData(false, "")]
+    public async Task RememberPlayer_WhenSignedInOrOut_SavesTheTokenOrNothing(bool isSignedIn, string expected)
+    {
+        // Arrange - nothing beyond the browser
+
+        // Act
+        await (isSignedIn ? this._browser.RememberPlayer("token") : this._browser.ForgetPlayer());
+
+        // Assert
+        Assert.Equal(
+            ["zaturnava.player", expected],
+            this._context.JSInterop.Invocations["zaturnava.save"].Single().Arguments
+        );
+    }
+
+    [Theory]
     [InlineData(true, "on")]
     [InlineData(false, "off")]
     public async Task SetSound_WhenSet_RemembersIt(bool isOn, string expected)

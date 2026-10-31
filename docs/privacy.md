@@ -26,8 +26,9 @@ No cookies are set while you play (only while signing in, below), and nothing tr
 
 ## Signing in
 
-Signing in is optional, and is being built: the server can sign people in with GitHub once that is set up, but the
-game page offers no way to yet. Signing in sets one cookie, only for the few minutes it takes, deleted once you are
+Signing in is optional, and is being built: once the server is set up for GitHub, the game page offers to sign in
+with it, in a window of its own. Your browser then keeps the token you were given, until you sign out (which forgets
+it here, though the server still knows its fingerprint). Signing in sets one cookie, only for the few minutes it takes, deleted once you are
 signed in. It keeps, on the server, your id at the provider, the name it shows you by, and a fingerprint (a SHA-256
 hash) of the token your browser is then given, as for a seat.
 
