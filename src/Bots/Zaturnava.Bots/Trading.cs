@@ -9,15 +9,16 @@ using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 namespace Net.NowhereAtAll.Zaturnava.Bots;
 
 /// <summary>
-/// Ransoms as a bot weighs them, by what the rules say each piece is worth: the offer it is answering,
+/// Ransoms as a bot weighs them, by what the rules say each piece is worth, and the points the receiver scores
+/// for accepting, which count against the one who offers: the offer it is answering,
 /// and the offers it could make once its turn is over, or as it passes (passing, it gets no window to offer
 /// after) - one prisoner it holds for one its team lost to
 /// that prisoner's owner, or, to an ally, one back for nothing. A bot makes one offer a turn at most, and
 /// does not make again one declined, until three rounds have passed, the worth on the board has changed by
 /// a tenth, or the seat that declined has made an offer of its own; so that an answer is not asked of its
 /// opponents over and over. Of an enemy it asks at most three times the worth of what it gives back, an offer
-/// the enemy might take. With an enemy, it minds the table too: it never gives a leader back, nor makes a
-/// trade that leaves its team weaker against that
+/// the enemy might take. With an enemy, it minds the table too: it gives a leader back only for as much as it
+/// gets, and makes no trade that leaves its team weaker against that
 /// enemy's team, counting what each has on the board; so an even trade suits a team that is behind,
 /// and nothing given back revives a team that has nothing left.
 /// </summary>
@@ -28,16 +29,12 @@ internal static class Trading
     private const int MostAskedForEachGiven = 3;
 
     /// <summary>
-    /// The answer to the offer waiting, if one is: accepted if it gives the bot back no less than it
-    /// asks, but for <paramref name="leeway"/>, and minds the table; null if none waits.
+    /// The answer to the offer waiting, if one is: accepted if it gives the bot back, with the points it would
+    /// score, no less than it asks, but for <paramref name="leeway"/>, and minds the table; null if none waits.
     /// </summary>
     public static GameAction? AnswerTo(DecisionRequest request, int leeway) =>
         request.State.Offer is { } offer
-            ? MidasBot.Answer(
-                request.Seat,
-                WorthOf(request, offer.Given) - WorthOf(request, offer.Asked) >= -leeway
-                    && MindsTheTable(request, offer.From, [.. offer.Given, .. offer.Asked])
-            )
+            ? Answered(request, offer, leeway)
             : null;
 
     /// <summary>
@@ -77,20 +74,36 @@ internal static class Trading
             ?
             [
                 .. held.SelectMany(prisoner => TradesFor(request, prisoner))
-                    .Where(trade => MindsTheTable(request, trade.Offer.Receiver, trade.Returning))
+                    .Where(trade => MindsTheTable(request, trade.Offer.Receiver, trade.Returning, trade.Gain))
                     .Where(trade => !IsStillDeclined(request, trade.Offer.Offer))
                     .Where(trade => IsSane(request, trade.Offer)),
             ]
             : [];
     }
 
+    private static GameAction Answered(DecisionRequest request, RansomOffer offer, int leeway)
+    {
+        int gain = WorthOf(request, offer.Given)
+            - WorthOf(request, offer.Asked)
+            + request.Rules.RansomPointsOf(request.State, offer);
+        return MidasBot.Answer(
+            request.Seat,
+            gain >= -leeway && MindsTheTable(request, offer.From, [.. offer.Given, .. offer.Asked], gain)
+        );
+    }
+
     /// <summary>
-    /// Whether a trade with <paramref name="other"/>, sending <paramref name="returning"/> home, is one
-    /// the bot's team can afford: always with an ally; with an enemy, only if no leader of theirs goes
-    /// home, and the bot's team ends no weaker against theirs, as the worth on the board of each
-    /// compares, than it started.
+    /// Whether a trade with <paramref name="other"/>, sending <paramref name="returning"/> home, and gaining the
+    /// bot <paramref name="gain"/>, is one the bot's team can afford: always with an ally; with an enemy, only if
+    /// no leader of theirs goes home but for a gain of none or more, and the bot's team ends no weaker against
+    /// theirs, as the worth on the board of each compares, than it started.
     /// </summary>
-    private static bool MindsTheTable(DecisionRequest request, SeatId other, ImmutableList<PieceId> returning)
+    private static bool MindsTheTable(
+        DecisionRequest request,
+        SeatId other,
+        ImmutableList<PieceId> returning,
+        int gain
+    )
     {
         GameState state = request.State;
         ImmutableList<Piece> pieces = [.. returning.Select(id => PrisonerOf(request, id))];
@@ -100,7 +113,7 @@ internal static class Trading
         ImmutableList<Piece> theirPieces = [.. pieces.Where(piece => state.Teams.AreAllied(piece.Owner, other))];
         int theirGain = theirPieces.Sum(request.WorthOf);
         return state.Teams.AreAllied(other, request.Seat)
-            || (theirPieces.All(piece => !request.Rules.IsLeader(piece.Kind))
+            || ((gain >= 0 || theirPieces.All(piece => !request.Rules.IsLeader(piece.Kind)))
                 && (ours + ourGain) * theirs >= ours * (theirs + theirGain));
     }
 
@@ -150,9 +163,10 @@ internal static class Trading
                 && state.Teams.AreAllied(asked.Piece.Owner, request.Seat)
                 && request.Rules.MayGoBack(state, asked)
             )
-            .Select(asked => new Trade(
-                new OfferAction(request.Seat, owner, [given.Piece.Id], [asked.Piece.Id]),
-                request.Rules.WorthOf(asked.Piece.Kind) - worth
+            .Select(asked => new OfferAction(request.Seat, owner, [given.Piece.Id], [asked.Piece.Id]))
+            .Select(offer => new Trade(
+                offer,
+                WorthOf(request, offer.Asked) - worth - request.Rules.RansomPointsOf(state, offer.Offer)
             ));
         Trade gift = new(new OfferAction(request.Seat, owner, [given.Piece.Id], []), -worth);
         return state.Teams.AreAllied(owner, request.Seat)
@@ -164,7 +178,10 @@ internal static class Trading
         pieces.Sum(id => request.WorthOf(PrisonerOf(request, id)));
 }
 
-/// <summary>An offer a bot could make, and the worth it would gain (less than none, for a gift).</summary>
+/// <summary>
+/// An offer a bot could make, and the worth it would gain, less the points the receiver would score (less than
+/// none, for a gift).
+/// </summary>
 internal sealed record Trade(OfferAction Offer, int Gain)
 {
     public bool IsGift => this.Offer.Asked.IsEmpty;

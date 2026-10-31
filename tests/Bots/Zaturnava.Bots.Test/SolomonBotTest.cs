@@ -43,6 +43,20 @@ public sealed class SolomonBotTest
         Assert.Equal("decline", action.Describe().Kind);
     }
 
+    [Fact]
+    public async Task Decide_WhenAskedForAnEnemyLeaderInAFairTrade_Accepts()
+    {
+        // Arrange - worth 4 back, and a point for sending the Raja home, for the Raja's 5
+        DecisionRequest offered =
+            Ransoms.ScoringRansoms(Ransoms.HoldingYellowsRaja(Ransoms.Offered([20, 21], [12])), 1);
+
+        // Act
+        GameAction action = await new SolomonBot(new Random(1)).Decide(offered, this._cancellation);
+
+        // Assert
+        Assert.Equal("accept", action.Describe().Kind);
+    }
+
     [Theory]
     [InlineData("pawn", "horse", true)]
     [InlineData("horse", "pawn", false)]

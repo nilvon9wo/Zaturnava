@@ -70,6 +70,9 @@ file sealed class UnplayableRules : IRulesApplying
 
     public int WorthOf(PieceKindId kind) => throw new NotSupportedException();
 
+    public int RansomPointsOf([Required] GameState state, [Required] RansomOffer offer) =>
+        throw new NotSupportedException();
+
     public ImmutableList<Attack> AttacksOf([Required] GameState state, SeatId seat) =>
         throw new NotSupportedException();
 

@@ -132,9 +132,22 @@ internal sealed class Ransom(SquareGridTopology grid, Position start)
     }
 
     /// <summary>
-    /// The receiver scores for each prisoner it sends home, those asked for, more for a Raja, and for none it
-    /// is given back, nor in a trade with its own team; the prisoners given go home first, then those asked
-    /// for, each to the nearest free square.
+    /// What the receiver scores for accepting: for each prisoner it sends home, those asked for, more for a Raja,
+    /// and for none it is given back, nor in a trade with its own team.
+    /// </summary>
+    public static int PointsOf(GameState state, RansomOffer offer) =>
+        state.Teams.AreAllied(offer.To, offer.From)
+            ? 0
+            : state.Prisoners
+                .Where(prisoner => offer.Asked.Contains(prisoner.Piece.Id))
+                .Sum(prisoner => prisoner.Piece.Kind == Chaturaji2027Pieces.Raja
+                    ? Chaturaji2027Rules.RansomRajaBonus
+                    : Chaturaji2027Rules.RansomAcceptedBonus
+                );
+
+    /// <summary>
+    /// The receiver scores (<see cref="PointsOf"/>); the prisoners given go home first, then those asked for, each
+    /// to the nearest free square.
     /// </summary>
     public Transition Accepted(GameState state)
     {
@@ -143,13 +156,7 @@ internal sealed class Ransom(SquareGridTopology grid, Position start)
         [
             .. offer.Given.Concat(offer.Asked).Select(id => state.Prisoners.First(prisoner => prisoner.Piece.Id == id)),
         ];
-        int points = going
-            .Where(prisoner => offer.Asked.Contains(prisoner.Piece.Id))
-            .Where(_ => !state.Teams.AreAllied(offer.To, offer.From))
-            .Sum(prisoner => prisoner.Piece.Kind == Chaturaji2027Pieces.Raja
-                ? Chaturaji2027Rules.RansomRajaBonus
-                : Chaturaji2027Rules.RansomAcceptedBonus
-            );
+        int points = PointsOf(state, offer);
         GameState scored = state with
         {
             Offer = null,

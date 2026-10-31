@@ -9,8 +9,7 @@ name: Deploy server (MonsterASP.NET)
 #   MONSTERASP_PASSWORD  userPWD
 # And, so that games outlast a restart, the site's database (left out, games are kept in memory):
 #   MONSTERASP_SQLSERVER_CONNECTION_STRING  the connection string of the site's SQL Server database, from the
-#                                           host's control panel (GAMES_CONNECTION_STRING, its old name, until
-#                                           it is gone)
+#                                           host's control panel
 on:
   workflow_dispatch:
 
@@ -33,7 +32,7 @@ jobs:
       - name: Point the server at its database
         shell: pwsh
         env:
-          DATABASE: ${{ secrets.MONSTERASP_SQLSERVER_CONNECTION_STRING || secrets.GAMES_CONNECTION_STRING }}
+          DATABASE: ${{ secrets.MONSTERASP_SQLSERVER_CONNECTION_STRING }}
         run: |
           if ([string]::IsNullOrWhiteSpace($env:DATABASE)) {
             Write-Host "No MONSTERASP_SQLSERVER_CONNECTION_STRING: games are kept in memory."

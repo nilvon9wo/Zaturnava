@@ -138,6 +138,34 @@ public sealed class MidasBotTest
     }
 
     [Theory]
+    [InlineData(0, "decline")]
+    [InlineData(2, "accept")]
+    public async Task Decide_WhenOfferedARansom_CountsThePointsAcceptingWouldScore(int points, string answer)
+    {
+        // Arrange - Green's Pawn (1) back for Yellow's Horse (3)
+        DecisionRequest offered = Ransoms.ScoringRansoms(Ransoms.Offered([21], [11]), points);
+
+        // Act
+        GameAction action = await new MidasBot(new Random(1)).Decide(offered, this._cancellation);
+
+        // Assert
+        Assert.Equal(answer, action.Describe().Kind);
+    }
+
+    [Fact]
+    public async Task Decide_WhenTheReceiverWouldScoreAllItGains_OffersNothing()
+    {
+        // Arrange - its Pawn (1) for its Horse (3) back gains 2, all of which Yellow would score for accepting
+        DecisionRequest request = Ransoms.ScoringRansoms(Ransoms.Window(), 2);
+
+        // Act
+        GameAction action = await new MidasBot(new Random(1)).Decide(request, this._cancellation);
+
+        // Assert
+        Assert.Equal(Ransoms.Done, action);
+    }
+
+    [Theory]
     [InlineData(false, "decline")]
     [InlineData(true, "accept")]
     public async Task Decide_WhenOfferedAProfitByAnEnemyTeam_AcceptsOnlyIfThatTeamHasAPieceLeft(

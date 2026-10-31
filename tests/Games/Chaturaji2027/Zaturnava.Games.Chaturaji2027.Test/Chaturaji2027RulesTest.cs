@@ -3332,6 +3332,21 @@ public sealed class Chaturaji2027RulesTest
         );
     }
 
+    [Theory]
+    [InlineData(1, 1)]
+    [InlineData(2, 0)]
+    public void RansomPointsOf_WhenAskedForBlacksHorse_IsWhatTheReceiverWouldScore(int receiver, int expected)
+    {
+        // Arrange - an enemy (Yellow) scores for sending a prisoner home; an ally (Green), nothing
+        RansomOffer offer = new(Black, new SeatId(receiver), [new PieceId(12)], [new PieceId(1)]);
+
+        // Act
+        int points = this._rules.RansomPointsOf(this.Ransoms(), offer);
+
+        // Assert
+        Assert.Equal(expected, points);
+    }
+
     [Fact]
     public void Apply_WhenAnOfferIsDeclined_RemembersItForTheRestOfTheGame()
     {
