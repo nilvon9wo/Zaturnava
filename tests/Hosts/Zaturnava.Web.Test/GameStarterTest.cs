@@ -70,7 +70,7 @@ public sealed class GameStarterTest
 
         // Act
         ImmutableList<string?> bots =
-            GameStarter.ByStrength([null, strengths[0], strengths[2], strengths[2]], strengths);
+            GameStarter.ByStrength([new(null), new(strengths[0]), new(strengths[2]), new(strengths[2])], strengths);
 
         // Assert
         Assert.Equal(
@@ -86,10 +86,24 @@ public sealed class GameStarterTest
         ImmutableList<Strength> strengths = GameStarter.Strengths(Catalog(Random, Midas, Solomon, Oracle), Ruleset);
 
         // Act
-        ImmutableList<string?> bots = GameStarter.ByStrength([strengths[0], strengths[0]], strengths);
+        ImmutableList<string?> bots = GameStarter.ByStrength([new(strengths[0]), new(strengths[0])], strengths);
 
         // Assert
         Assert.Equal(["random", "midas"], bots);
+    }
+
+    [Fact]
+    public void ByStrength_WhenABotIsChosenForALaterSeat_SeatsItThereAndNoneOfItsLikeEarlier()
+    {
+        // Arrange
+        ImmutableList<Strength> strengths = GameStarter.Strengths(Catalog(Random, Midas, Solomon, Oracle), Ruleset);
+
+        // Act
+        ImmutableList<string?> bots =
+            GameStarter.ByStrength([new(strengths[2]), new(strengths[2], "solomon")], strengths);
+
+        // Assert
+        Assert.Equal(["oracle", "solomon"], bots);
     }
 
     [Fact]
@@ -99,7 +113,7 @@ public sealed class GameStarterTest
         ImmutableList<Strength> strengths = GameStarter.Strengths(Catalog(Random), Ruleset);
 
         // Act
-        ImmutableList<string?> bots = GameStarter.ByStrength([strengths[0], strengths[0]], strengths);
+        ImmutableList<string?> bots = GameStarter.ByStrength([new(strengths[0]), new(strengths[0])], strengths);
 
         // Assert
         Assert.Equal(["random", null], bots);

@@ -1,6 +1,7 @@
 @* Start a game (each seat a person or a bot, no bot in two seats) and sit at it - set up seat by seat, each bot
    named with its rating, or by strength: the player's colour, then for their ally and each enemy a person or how
-   strong a bot (easy, medium or hard, by the bots' ratings), each bot chosen at random among those - or start one
+   strong a bot (easy, medium or hard, by the bots' ratings), and, if they like, which of those bots; else each is
+   chosen at random among them - or start one
    at once, at a seat chosen at random, easy, medium or hard by which bots it seats among the others - or join,
    watch or go back to one already started; a game over is only listed, with nothing left to watch. Seats go by
    the ruleset's names for them (Black, Yellow...), not by number. A bot paid for each use is seated only when
@@ -50,13 +51,27 @@
                             <span class="seat-name">
                                 @RoleOf(Ruleset(catalog), this._colour, seat), @SeatName(Ruleset(catalog).SeatNames, seat)
                             </span>
-                            <select class="strength" @bind="this._levels[seat]">
+                            <select class="strength"
+                                    @bind="this._levels[seat]"
+                                    @bind:after="() => this._picks[seat] = string.Empty">
                                 <option value="@PersonLevel">Person</option>
                                 @foreach (int level in Enumerable.Range(0, this._strengths.Count))
                                 {
                                     <option value="@level">@this._strengths[level].Label</option>
                                 }
                             </select>
+                            @if (this.StrengthOf(seat) is { Bots.Count: > 1 } strength)
+                            {
+                                <select class="pick" aria-label="Which bot" @bind="this._picks[seat]">
+                                    <option value="">Any of them</option>
+                                    @foreach (BotDto bot in strength.Bots)
+                                    {
+                                        <option value="@bot.Id" disabled="@this.IsPicked(bot.Id, seat)">
+                                            @bot.Name
+                                        </option>
+                                    }
+                                </select>
+                            }
                         </li>
                     }
                 </ol>
@@ -159,6 +174,9 @@
 
     /// <summary>For each seat set up by strength, the index of its strength, or <see cref="PersonLevel"/>.</summary>
     private List<int> _levels = [];
+
+    /// <summary>For each seat set up by strength, the bot chosen for it; empty, for any of its strength.</summary>
+    private List<string> _picks = [];
     private string _scenario = string.Empty;
     private string? _problem;
 
@@ -200,6 +218,7 @@
         this._plans = GameStarter.Plans(Ruleset(catalog).SeatCount, 0, GameStarter.Unpaid(catalog));
         this._strengths = GameStarter.Strengths(catalog, Ruleset(catalog).Id);
         this._levels = [.. Enumerable.Repeat(this._strengths.Count / 2, Ruleset(catalog).SeatCount)];
+        this._picks = [.. Enumerable.Repeat(string.Empty, Ruleset(catalog).SeatCount)];
         this._catalog = catalog;
         foreach (GameSummaryDto game in this._games)
         {
@@ -223,14 +242,24 @@
     /// <summary>The bot for each seat, as set up seat by seat or by strength; none for a person's.</summary>
     private ImmutableList<string?> ChosenBots() =>
         this._isByStrength
-            ? GameStarter.ByStrength(this.StrengthsOfSeats(), this._strengths)
+            ? GameStarter.ByStrength(this.ChoicesOfSeats(), this._strengths)
             : GameStarter.BotsOf(this._plans);
 
-    /// <summary>The strength each seat set up by strength is played at; none for the player's, or a person's.</summary>
-    private IEnumerable<Strength?> StrengthsOfSeats() =>
-        this._levels.Select((level, seat) =>
-            seat == this._colour || level == PersonLevel ? null : this._strengths[level]
+    /// <summary>How each seat set up by strength is played: the player's own, and a person's, by no bot.</summary>
+    private IEnumerable<SeatChoice> ChoicesOfSeats() =>
+        Enumerable.Range(0, this._levels.Count).Select(seat =>
+            seat == this._colour
+                ? new SeatChoice(null)
+                : new SeatChoice(this.StrengthOf(seat), this._picks[seat].Length == 0 ? null : this._picks[seat])
         );
+
+    /// <summary>The strength the seat is played at; none, if by a person.</summary>
+    private Strength? StrengthOf(int seat) =>
+        this._levels[seat] == PersonLevel ? null : this._strengths[this._levels[seat]];
+
+    /// <summary>Whether <paramref name="bot"/> was chosen for a seat other than <paramref name="seat"/>.</summary>
+    private bool IsPicked(string bot, int seat) =>
+        this._picks.Where((_, other) => other != seat && other != this._colour).Contains(bot);
 
     private Task Quick(CatalogDto catalog, Difficulty difficulty) =>
         this.Sit(() => GameStarter.Quick(this.Games, catalog, difficulty));
