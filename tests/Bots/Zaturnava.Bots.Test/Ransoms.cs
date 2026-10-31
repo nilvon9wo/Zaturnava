@@ -123,9 +123,16 @@ internal static class Ransoms
             State = request.State with { Prisoners = request.State.Prisoners.Add(Held(31, "raja", Green, Yellow)) },
         };
 
-    /// <summary>The request, with <paramref name="declined"/> declined earlier in the game.</summary>
-    public static DecisionRequest Declined(DecisionRequest request, RansomOffer declined) =>
-        request with { State = request.State with { OffersDeclined = [declined] } };
+    /// <summary>
+    /// The request, with <paramref name="declined"/> declined on turn <paramref name="turn"/>, with
+    /// <paramref name="board"/> as it stood then.
+    /// </summary>
+    public static DecisionRequest Declined(DecisionRequest request, RansomOffer declined, int turn, Position board) =>
+        request with { State = request.State with { OffersDeclined = [new DeclinedOffer(declined, turn, board)] } };
+
+    /// <summary>A board with a Horse of Yellow's on it, worth 3.</summary>
+    public static Position YellowsHorse() =>
+        Position.Empty.Place(new CellId(0), new Piece(Id(50), new PieceKindId("horse"), Yellow));
 
     public static RansomOffer Offer(SeatId to, ImmutableList<int> given, ImmutableList<int> asked) =>
         new(Black, to, [.. given.Select(Id)], [.. asked.Select(Id)]);

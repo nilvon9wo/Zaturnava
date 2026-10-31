@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Decisions;
 using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
+using Net.NowhereAtAll.Zaturnava.Engine.Positions;
 using Net.NowhereAtAll.Zaturnava.Engine.Rules;
 using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 
@@ -12,14 +13,20 @@ namespace Net.NowhereAtAll.Zaturnava.Bots;
 /// and the offers it could make once its turn is over, or as it passes (passing, it gets no window to offer
 /// after) - one prisoner it holds for one its team lost to
 /// that prisoner's owner, or, to an ally, one back for nothing. A bot makes one offer a turn at most, and
-/// never one already declined, so that an answer is not asked of its opponents over and over. With an
-/// enemy, it minds the table too: it never gives a leader back, nor asks for one, which the enemy would
-/// not give back either, nor makes a trade that leaves its team weaker against that
+/// does not make again one declined, until three rounds have passed, the worth on the board has changed by
+/// a tenth, or the seat that declined has made an offer of its own; so that an answer is not asked of its
+/// opponents over and over. Of an enemy it asks at most three times the worth of what it gives back, an offer
+/// the enemy might take. With an enemy, it minds the table too: it never gives a leader back, nor makes a
+/// trade that leaves its team weaker against that
 /// enemy's team, counting what each has on the board; so an even trade suits a team that is behind,
 /// and nothing given back revives a team that has nothing left.
 /// </summary>
 internal static class Trading
 {
+    private const int TurnsToForget = 12;
+    private const int ChangeToForget = 10;
+    private const int MostAskedForEachGiven = 3;
+
     /// <summary>
     /// The answer to the offer waiting, if one is: accepted if it gives the bot back no less than it
     /// asks, but for <paramref name="leeway"/>, and minds the table; null if none waits.
@@ -71,8 +78,8 @@ internal static class Trading
             [
                 .. held.SelectMany(prisoner => TradesFor(request, prisoner))
                     .Where(trade => MindsTheTable(request, trade.Offer.Receiver, trade.Returning))
-                    .Where(trade => !state.OffersDeclined.Contains(trade.Offer.Offer))
-                    .Where(trade => IsAskable(request, trade.Offer)),
+                    .Where(trade => !IsStillDeclined(request, trade.Offer.Offer))
+                    .Where(trade => IsSane(request, trade.Offer)),
             ]
             : [];
     }
@@ -98,12 +105,29 @@ internal static class Trading
     }
 
     /// <summary>
-    /// Whether the bot may ask for what <paramref name="offer"/> asks: anything of an ally; of an enemy, no
-    /// leader, which it would never give back itself.
+    /// Whether the offer is one the receiver might take: anything to an ally; to an enemy, one asking at most
+    /// three times the worth of what it gives back (a Pawn for a Horse, but not for an Elephant or a Raja).
     /// </summary>
-    private static bool IsAskable(DecisionRequest request, OfferAction offer) =>
+    private static bool IsSane(DecisionRequest request, OfferAction offer) =>
         request.State.Teams.AreAllied(offer.Receiver, request.Seat)
-        || offer.Asked.All(id => !request.Rules.IsLeader(PrisonerOf(request, id).Kind));
+        || WorthOf(request, offer.Asked) <= MostAskedForEachGiven * WorthOf(request, offer.Given);
+
+    /// <summary>
+    /// Whether the receiver declined <paramref name="offer"/> lately: fewer than three rounds of four seats ago,
+    /// with the worth on the board changed by less than a tenth since.
+    /// </summary>
+    private static bool IsStillDeclined(DecisionRequest request, RansomOffer offer)
+    {
+        int now = WorthOf(request, request.State.Position);
+        return request.State.OffersDeclined.Any(declined =>
+            declined.Offer == offer
+            && request.State.TurnNumber - declined.TurnNumber < TurnsToForget
+            && Math.Abs(now - WorthOf(request, declined.Board)) * ChangeToForget <= WorthOf(request, declined.Board)
+        );
+    }
+
+    private static int WorthOf(DecisionRequest request, Position board) =>
+        board.Occupants.Values.Sum(request.WorthOf);
 
     /// <summary>What the pieces on the board of <paramref name="seat"/>'s team are worth.</summary>
     private static int OnTheBoard(DecisionRequest request, SeatId seat) =>

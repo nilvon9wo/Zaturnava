@@ -100,6 +100,9 @@ internal sealed class Ransom(SquareGridTopology grid, Position start)
             Offer = offer.Offer,
             DecidingSeat = offer.Receiver,
             OffersMade = state.OffersMade.Add(offer.Offer),
+            OffersDeclined = state.OffersDeclined.RemoveAll(declined =>
+                declined.Offer.From == offer.Receiver && declined.Offer.To == offer.Actor
+            ),
         };
         return new Transition(waiting, [new RansomOffered(offer.Offer)]);
     }
@@ -123,7 +126,7 @@ internal sealed class Ransom(SquareGridTopology grid, Position start)
         {
             Offer = null,
             DecidingSeat = offer.From,
-            OffersDeclined = state.OffersDeclined.Add(offer),
+            OffersDeclined = state.OffersDeclined.Add(new DeclinedOffer(offer, state.TurnNumber, state.Position)),
         };
         return new Transition(answered, [new RansomDeclined(offer)]);
     }
