@@ -45,6 +45,12 @@ at once.
 
 Nothing here waits on an open question.
 
+*Done (2026-10-31)*: the grammar's leapers, lame leaps, hoppers and riders
+([architecture §2.2](../architecture.md#22-piece-catalog-and-movement-grammar)), and the catalogue in
+`Zaturnava.Games.GrandDraft` (`GrandDraftPieces`), each piece's reach checked against its value. Still
+to come: the area rules (palace, river), which belong with the board (Stage 2) and the palaces
+(Stage 3); and the piece-information card.
+
 ## Stage 2 — The board and the dice
 
 - A board and a kingdom size (at least 3 × 3), set apart; a kingdom in each corner, lying as the

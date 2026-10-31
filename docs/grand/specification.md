@@ -1,8 +1,8 @@
 # The grand game — Specification (v0.8 draft)
 
-[Chaturaji 2027](../rules.md) is one small part of a larger design, which has no name yet; this
-document calls it **the grand game** until it does. Chaturaji 2027 stays available, unchanged,
-as a variant of its own.
+[Chaturaji 2027](../rules.md) is one small part of a larger design, **the grand game**. Its proposed
+name is **The Grand Draft** (the designer, 2026-10-31); the program calls it so already
+(`Zaturnava.Games.GrandDraft`). Chaturaji 2027 stays available, unchanged, as a variant of its own.
 
 Sources: the designer's notes and answers of 2026-10-25, and the designer's spreadsheet of pieces,
 listed in [pieces.md](pieces.md). How the work is to be done, in stages, is in

@@ -24,6 +24,7 @@ public sealed class DependencyRulesTest
             // one board, one variant, one kind of player: each a plug-in to the engine
             ["Topology.SquareGrid"] = ["Engine"],
             ["Games.Chaturaji2027"] = ["Engine", "Topology.SquareGrid"],
+            ["Games.GrandDraft"] = ["Engine"],
             ["Bots"] = ["Engine"],
 
             // the use cases, and the adapters plugged into their ports
