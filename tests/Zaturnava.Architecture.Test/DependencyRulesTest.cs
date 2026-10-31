@@ -44,6 +44,7 @@ public sealed class DependencyRulesTest
             // the services around the game, each vendor in an adapter of its own
             ["Hosting"] = [],
             ["Hosting.Itch"] = ["Hosting"],
+            ["Hosting.GitHub"] = ["Hosting"],
 
             // self-play: the application's decision loop, with the server's rulesets and bots
             ["BotRunner"] = ["Application", "Bots", "Engine", "Games.Chaturaji2027"],
@@ -51,7 +52,8 @@ public sealed class DependencyRulesTest
             // the composition root: the one project that knows everything
             ["Server"] =
             [
-                "Application", "Bots", "Client", "Contracts", "Engine", "Hosting", "Hosting.Itch", "Mcp",
+                "Application", "Bots", "Client", "Contracts", "Engine", "Hosting", "Hosting.GitHub", "Hosting.Itch",
+                "Mcp",
                 "Persistence.EfCore", "Persistence.EfCore.Sqlite", "Persistence.EfCore.SqlServer",
                 "Persistence.InMemory", "Topology.SquareGrid", "Games.Chaturaji2027",
             ],

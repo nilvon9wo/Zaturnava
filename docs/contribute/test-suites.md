@@ -16,9 +16,10 @@ One test project per project, each measuring that project at 100% (see
 | `Zaturnava.Persistence.EfCore.SqlServer.Test` | The SQL Server migrations, without a server: each read both ways, and none missing for the model. |
 | `Zaturnava.Hosting.Test` | The listed page host. |
 | `Zaturnava.Hosting.Itch.Test` | itch.io's origins. |
+| `Zaturnava.Hosting.GitHub.Test` | GitHub's sign-in endpoints, and who someone is from their GitHub profile. |
 | `Zaturnava.Contracts.Test` | Routes, refusal statuses and their exception, and that every DTO survives the trip through JSON. |
 | `Zaturnava.Client.Test` | `HttpGameClient`: each request, and each refusal turned back into its exception. |
-| `Zaturnava.Server.Test` | The whole HTTP API, through `WebApplicationFactory` and the real `HttpGameClient`; raw HTTP for what a client can't send (CORS preflights, forged tokens, malformed bodies); storage and page host selection; that the contract's action argument names are the engine's. |
+| `Zaturnava.Server.Test` | The whole HTTP API, through `WebApplicationFactory` and the real `HttpGameClient`; raw HTTP for what a client can't send (CORS preflights, forged tokens, malformed bodies); storage and page host selection; signing in, with a stand-in for the service's round trip; that the contract's action argument names are the engine's. |
 | `Zaturnava.Presentation.Test` | Board frames, which cells are clickable, and how clicks become actions. |
 | `Zaturnava.Web.Test` | The Blazor components with bUnit: the lobby, the table, the board. |
 | `Zaturnava.Mcp.Test` | The MCP tools, over in-memory pipes with the SDK's own client, against a stub game server. |

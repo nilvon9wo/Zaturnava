@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using Net.NowhereAtAll.Zaturnava.Application.Bots;
 using Net.NowhereAtAll.Zaturnava.Application.Chat;
 using Net.NowhereAtAll.Zaturnava.Application.Games;
+using Net.NowhereAtAll.Zaturnava.Application.Players;
 using Net.NowhereAtAll.Zaturnava.Application.Ports;
 using Net.NowhereAtAll.Zaturnava.Application.Rulesets;
 using Net.NowhereAtAll.Zaturnava.Application.Running;
@@ -48,6 +49,7 @@ internal static class ZaturnavaServices
         services
             .AddGameStorage(configuration)
             .AddPageHosting(configuration)
+            .AddSignIn(configuration)
             .AddSingleton<IRulesetLocating>(new RulesetCatalog([new Chaturaji2027Rules()]))
             .AddSingleton<IBotLocating>(Bots())
             .AddSingleton(Scenarios(configuration))
@@ -57,6 +59,7 @@ internal static class ZaturnavaServices
             .AddSingleton(Settings(configuration))
             .AddScoped<GameService>()
             .AddScoped<ChatService>()
+            .AddScoped<PlayerService>()
             .AddSingleton(ChatSettingsOf(configuration))
             .AddSingleton<ChatTables>()
             .AddHostedService<ChatSweeper>()

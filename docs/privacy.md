@@ -22,12 +22,17 @@ You need no account to play, and today there is none to make. What is kept:
   drawn, the safety that keeps you from taking your own team's pieces, and how the log and the talk are shown.
   Clearing the site's data in your browser deletes all of it.
 
-No cookies are set while you play, and nothing tracks you from one game, or one site, to another.
+No cookies are set while you play (only while signing in, below), and nothing tracks you from one game, or one site, to another.
 
 ## Signing in
 
-Signing in will be optional, and is being built. When it comes, signing in with a provider (itch.io, GitHub,
-Google, Discord, perhaps later Facebook) will keep:
+Signing in is optional, and is being built: the server can sign people in with GitHub once that is set up, but the
+game page offers no way to yet. Signing in sets one cookie, only for the few minutes it takes, deleted once you are
+signed in. It keeps, on the server, your id at the provider, the name it shows you by, and a fingerprint (a SHA-256
+hash) of the token your browser is then given, as for a seat.
+
+When it is finished, signing in with a provider (itch.io, GitHub, Google, Discord, perhaps later Facebook) will
+keep:
 
 - your id at that provider, so the server knows you when you come back;
 - the name you are shown by, which you may change;

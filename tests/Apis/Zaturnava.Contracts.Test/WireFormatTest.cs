@@ -162,6 +162,20 @@ public sealed class WireFormatTest
         Assert.Equal((created, claimed), arrived);
     }
 
+    [Fact]
+    public void Players_WhenSentAsJson_ArriveUnchanged()
+    {
+        // Arrange
+        SignedInDto signedIn = new("token", "Ada");
+        PlayerDto player = new("p", "Ada");
+
+        // Act
+        (SignedInDto?, PlayerDto?) arrived = (RoundTrip(signedIn), RoundTrip(player));
+
+        // Assert
+        Assert.Equal((signedIn, player), arrived);
+    }
+
     private static T? RoundTrip<T>(T value) =>
         JsonSerializer.Deserialize<T>(JsonSerializer.Serialize(value, Wire), Wire);
 }

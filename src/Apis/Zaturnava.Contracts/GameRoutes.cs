@@ -16,6 +16,19 @@ public static class GameRoutes
     public const string Histories = "api/history";
     public const string TokenScheme = "Bearer";
 
+    /// <summary>The names of the services a person may sign in with here; none, if none is set up.</summary>
+    public const string SignInProviders = "api/signin";
+
+    /// <summary>Who the bearer of a player's token (<see cref="SignedInDto"/>) is.</summary>
+    public const string Me = "api/players/me";
+
+    /// <summary>
+    /// Where a page sends a person, in a window of its own, to sign in with a service; once they have, that
+    /// window posts a <see cref="SignedInDto"/> to the page, if its origin is one the server serves, and closes.
+    /// </summary>
+    public static string SignIn([Required] string provider, [Required] string origin) =>
+        $"signin/{Uri.EscapeDataString(provider)}?origin={Uri.EscapeDataString(origin)}";
+
     public static string Game([Required] string gameId) => $"{Games}/{Uri.EscapeDataString(gameId)}";
 
     public static string Seat([Required] string gameId, int seat) =>
