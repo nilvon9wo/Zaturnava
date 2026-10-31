@@ -1,0 +1,70 @@
+using System.ComponentModel.DataAnnotations;
+using Microsoft.EntityFrameworkCore;
+using Net.NowhereAtAll.Zaturnava.Application.Players;
+using Net.NowhereAtAll.Zaturnava.Application.Ports;
+using Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Entities;
+
+namespace Net.NowhereAtAll.Zaturnava.Persistence.EfCore;
+
+/// <summary>The players who have signed in, their logins and their sessions, in a relational database.</summary>
+public sealed class EfPlayerStore(GameDbContext context) : IPlayerPersisting
+{
+    private readonly GameDbContext _context = context;
+
+    public async Task<Player?> ByLogin(Login login, CancellationToken cancellationToken)
+    {
+        PlayerEntity? player = await this._context.Players
+            .Include(entity => entity.Logins)
+            .FirstOrDefaultAsync(
+                entity => entity.Logins.Any(held => held.Provider == login.Provider && held.Key == login.Key),
+                cancellationToken
+            );
+        return ToPlayer(player);
+    }
+
+    public async Task<Player?> BySession([Required] string tokenHash, CancellationToken cancellationToken)
+    {
+        PlayerEntity? player = await this._context.Players
+            .Include(entity => entity.Logins)
+            .FirstOrDefaultAsync(
+                entity => this._context.Sessions.Any(
+                    session => session.TokenHash == tokenHash && session.PlayerId == entity.Id
+                ),
+                cancellationToken
+            );
+        return ToPlayer(player);
+    }
+
+    public async Task Add([Required] Player player, CancellationToken cancellationToken)
+    {
+        _ = this._context.Players.Add(
+            new PlayerEntity
+            {
+                Id = player.Id.Value,
+                Name = player.Name,
+                Logins =
+                [
+                    .. player.Logins.Select(login =>
+                        new LoginEntity { Provider = login.Provider, Key = login.Key, PlayerId = player.Id.Value }
+                    ),
+                ],
+            }
+        );
+        _ = await this._context.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task AddSession(PlayerId player, [Required] string tokenHash, CancellationToken cancellationToken)
+    {
+        _ = this._context.Sessions.Add(new SessionEntity { TokenHash = tokenHash, PlayerId = player.Value });
+        _ = await this._context.SaveChangesAsync(cancellationToken);
+    }
+
+    private static Player? ToPlayer(PlayerEntity? entity) =>
+        entity is null
+            ? null
+            : new Player(
+                new PlayerId(entity.Id),
+                entity.Name,
+                [.. entity.Logins.Select(login => new Login(login.Provider, login.Key))]
+            );
+}
