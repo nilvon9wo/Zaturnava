@@ -19,12 +19,6 @@ public static class GrandLegionsPieces
     private const string OneColour = "One colour of square";
     private const string NeverBack = "Never back";
 
-    /// <summary>
-    /// The least a piece that may promote into a leader is worth: the premium alone undervalues one that may reach
-    /// the zone at once, as a Lance may (docs/grand/pieces.md, Leader floor).
-    /// </summary>
-    private const int LeaderPromotionFloor = 50;
-
     public static readonly PieceKindId DragonKing = new("dragon-king");
     public static readonly PieceKindId FairyGeneral = new("fairy-general");
     public static readonly PieceKindId WesternKing = new("western-king");
@@ -100,7 +94,7 @@ public static class GrandLegionsPieces
             .Promoting(GoldGeneral),
 
         // Infantry
-        Piece(ShogiPawn, "Pawn (Shogi)", Infantry, Shogi, LeaderPromotionFloor, ForwardStep)
+        Piece(ShogiPawn, "Pawn (Shogi)", Infantry, Shogi, 54, ForwardStep)
             .Restricted(Moves(BlockedAhead, 2))
             .Promoting(GoldGeneral),
         Piece(WesternPawn, "Pawn (Western)", Infantry, Western, 7, PawnMovement())
@@ -129,7 +123,7 @@ public static class GrandLegionsPieces
             .Restricted(Area(Palace, 5)),
 
         // Heavy / Slider
-        Piece(Lance, "Lance (Shogi)", Heavy, Shogi, LeaderPromotionFloor, MovementRule.Slide(DirectionSets.Forward))
+        Piece(Lance, "Lance (Shogi)", Heavy, Shogi, 56, MovementRule.Slide(DirectionSets.Forward))
             .Restricted(Moves("Blocked by pieces in its path", 2))
             .Promoting(GoldGeneral),
         Piece(Amazon, "Amazon", Heavy, Fairy, 37, MovementRule.Slide(DirectionSets.Any), KnightLeap),
