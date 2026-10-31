@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Games kept in SQLite, a single file: GameDbContext on that provider, and the migrations that build and
+    change its schema there (Migrations/, added by scripts/wsl-migrate.sh, never by hand).
+  -->
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.13" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.13" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Zaturnava.Persistence.EfCore\Zaturnava.Persistence.EfCore.csproj" />
+  </ItemGroup>
+
+</Project>

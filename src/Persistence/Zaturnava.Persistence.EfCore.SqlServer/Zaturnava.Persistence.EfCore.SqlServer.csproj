@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Games kept in SQL Server: GameDbContext on that provider, and the migrations that build and change its
+    schema there (Migrations/, added by scripts/wsl-migrate.sh, never by hand).
+  -->
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.13" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.13" />
+    <!-- SqlClient's own dependency (9.0.11) has known vulnerabilities (NU1902, NU1903) -->
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Zaturnava.Persistence.EfCore\Zaturnava.Persistence.EfCore.csproj" />
+  </ItemGroup>
+
+</Project>

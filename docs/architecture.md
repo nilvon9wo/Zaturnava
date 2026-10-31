@@ -181,8 +181,12 @@ Adapters, chosen by the server's `Storage:Provider` setting:
 | Provider | Project | Use |
 |---|---|---|
 | `InMemory` (default) | Persistence.InMemory | Development, tests; lost on restart. |
-| `Sqlite` | Persistence.EfCore | A single file; `ConnectionStrings:Games`. |
-| `SqlServer` | Persistence.EfCore | A hosted database; `ConnectionStrings:Games`. |
+| `Sqlite` | Persistence.EfCore.Sqlite | A single file; `ConnectionStrings:Games`. |
+| `SqlServer` | Persistence.EfCore.SqlServer | A hosted database; `ConnectionStrings:Games`. |
+
+Each database project holds its provider's EF Core migrations, and the server applies them as it starts
+(`GameSchema.MigrateGamesAsync`), so a database is never migrated by hand. A database whose tables were made
+before there were migrations is first marked as having had the first one, which makes the same tables.
 
 A periodic snapshot beside the action list is a later optimization, if replay
 ever costs enough to matter.
@@ -210,7 +214,9 @@ client, MCP, presentation), `Hosts` (server, page, hosting adapters) and `Persis
 | Bots | Bot players, each describing itself (`BotProfile`: name, description, whether it uses AI): `RandomBot`, at random but for agreeing to end the game only while its team leads, as every bot does; `MidasBot`, greedy for the best immediate score, trading prisoners only at a profit, counting worth and points; `SolomonBot`, as greedy on the board, giving allies' prisoners back and trading evenly by worth alone; `ArgusBot`, weighing each action against the worst reply (what the ruleset's `AttacksOf` says the enemy could take, and how the exchange would end), and each trade by worth less the exposure it adds; `SageBot`, looking through the rest of its own turn with the dice averaged over every way they could fall (`Foresight`), weighing where it leads by weighted features any ruleset lets it count (`Appraisal`, `SageWeights`), and each trade by the position it leaves. Each bot weighs a ransom its own way (`ITradeJudging`: `ByWorth`, `ByExposure`, `ByPosition`). With an enemy, every bot but Random and Sage trades only what its team can afford: no leader given back but for as much in return; no more asked than three times what is given, and no trade that leaves its team weaker on the board; and no bot makes again an offer declined lately (within three rounds, with the worth on the board changed by less than a tenth, and no offer made since by the seat that declined) | Engine |
 | Application | Use cases (`GameService`), the decision loop, catalogs of rulesets and bots; ports `IGamePersisting`, `IGameNotifying` | Engine |
 | Persistence.InMemory | `IGamePersisting` in memory | Application, Engine |
-| Persistence.EfCore | `IGamePersisting` over EF Core (SQLite, SQL Server) | Application, Engine |
+| Persistence.EfCore | `IGamePersisting` over EF Core, naming no database; bringing the schema up to date (`GameSchema`) | Application, Engine |
+| Persistence.EfCore.Sqlite | The context on SQLite, and its migrations | Persistence.EfCore |
+| Persistence.EfCore.SqlServer | The context on SQL Server, and its migrations | Persistence.EfCore |
 | Hosting | Ports for the services around the game (`IPageHosting`), and `ListedPageHost` | — |
 | Hosting.Itch | `IPageHosting` for a page published on itch.io | Hosting |
 | Contracts | The wire protocol: DTOs, routes, refusals, `IGameServing` | — |

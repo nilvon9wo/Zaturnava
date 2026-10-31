@@ -63,6 +63,19 @@ dotnet run --project src/Hosts/Zaturnava.Server --no-build -- --Storage:Provider
     "--ConnectionStrings:Games=Data Source=games.db"
 ```
 
+The server brings the database's schema up to date as it starts. A change to `GameDbContext`'s model needs
+a migration for each database, named for what it changes, which `dotnet ef` writes (from `dotnet-tools.json`;
+the tests fail while one is missing):
+
+```shell
+dotnet tool restore
+dotnet ef migrations add AddPlayers --project src/Persistence/Zaturnava.Persistence.EfCore.SqlServer --output-dir Migrations
+dotnet ef migrations add AddPlayers --project src/Persistence/Zaturnava.Persistence.EfCore.Sqlite --output-dir Migrations
+```
+
+or, on a machine whose application control blocks the build's own assemblies, the same through WSL:
+`wsl -d Ubuntu -- bash scripts/wsl-migrate.sh AddPlayers`.
+
 Bots against bots, without a server, each game written as one line of JSON in the same shape the server
 gives a game's history in (`GET api/games/{id}/history`):
 

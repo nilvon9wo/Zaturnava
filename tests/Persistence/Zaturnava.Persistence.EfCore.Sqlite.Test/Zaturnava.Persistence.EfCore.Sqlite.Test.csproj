@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Persistence\Zaturnava.Persistence.EfCore.Sqlite\Zaturnava.Persistence.EfCore.Sqlite.csproj" />
+  </ItemGroup>
+
+</Project>

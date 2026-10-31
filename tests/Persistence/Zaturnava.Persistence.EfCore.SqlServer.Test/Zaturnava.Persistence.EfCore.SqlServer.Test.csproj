@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Persistence\Zaturnava.Persistence.EfCore.SqlServer\Zaturnava.Persistence.EfCore.SqlServer.csproj" />
+  </ItemGroup>
+
+</Project>

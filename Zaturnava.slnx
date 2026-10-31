@@ -35,6 +35,8 @@
   </Folder>
   <Folder Name="/src/Persistence/">
     <Project Path="src/Persistence/Zaturnava.Persistence.EfCore/Zaturnava.Persistence.EfCore.csproj" />
+    <Project Path="src/Persistence/Zaturnava.Persistence.EfCore.Sqlite/Zaturnava.Persistence.EfCore.Sqlite.csproj" />
+    <Project Path="src/Persistence/Zaturnava.Persistence.EfCore.SqlServer/Zaturnava.Persistence.EfCore.SqlServer.csproj" />
     <Project Path="src/Persistence/Zaturnava.Persistence.InMemory/Zaturnava.Persistence.InMemory.csproj" />
   </Folder>
   <Folder Name="/tests/">
@@ -71,6 +73,8 @@
   </Folder>
   <Folder Name="/tests/Persistence/">
     <Project Path="tests/Persistence/Zaturnava.Persistence.EfCore.Test/Zaturnava.Persistence.EfCore.Test.csproj" />
+    <Project Path="tests/Persistence/Zaturnava.Persistence.EfCore.Sqlite.Test/Zaturnava.Persistence.EfCore.Sqlite.Test.csproj" />
+    <Project Path="tests/Persistence/Zaturnava.Persistence.EfCore.SqlServer.Test/Zaturnava.Persistence.EfCore.SqlServer.Test.csproj" />
     <Project Path="tests/Persistence/Zaturnava.Persistence.InMemory.Test/Zaturnava.Persistence.InMemory.Test.csproj" />
   </Folder>
 </Solution>
