@@ -56,6 +56,19 @@ onto an empty cell, a capture, or either". `MovementRule.Step`, `Slide` and
 moves on any topology. A new piece for a variant is a new entry, not new
 engine code.
 
+The grammar reaches further, for the Grand Draft's catalogue:
+
+- **Leapers** of any shape: `DirectionSets.Leaper(3, 2)` is the Zebra's eight
+  leaps; `Slide` along one is a rider (the Knightrider).
+- **Lame leaps** (`Lame`): blocked by a piece on any cell the leap passes,
+  which the topology names (`ICellNavigating.WaypointsOf`): straight first,
+  then diagonally, as the Xiangqi Horse and Elephants go.
+- **Hops** (`Hop`): over the first piece on the line, to the cells beyond, up
+  to and taking the next piece (the Cannons), or only just beyond (the
+  Grasshopper); `Shunning` names kinds it may neither hop nor take (a Janggi
+  Cannon's Cannons).
+- **Sideways** and **any** (orthogonal and diagonal) direction sets.
+
 A piece's *identity* (its display name) is kept apart from its *behaviour*:
 `PieceKindId` is a key, and the ruleset's `NameOf` gives the label, so
 "Elephant" against a chess-styled "Rook" is a naming choice, not a code

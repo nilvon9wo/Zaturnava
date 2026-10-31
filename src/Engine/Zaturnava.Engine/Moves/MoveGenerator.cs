@@ -62,14 +62,17 @@ file sealed record MoveSearch(Reach Reach, Piece Mover, Func<Piece, bool> IsCapt
         Piece? occupant = this.Reach.Position.PieceAt(target);
         bool isAllowed = occupant is null
             ? rule.CanMove
-            : rule.CanCapture && this.IsCapturable(occupant);
+            : rule.CanCapture && !rule.Shunned.Contains(occupant.Kind) && this.IsCapturable(occupant);
         return isAllowed
             ? new Move(this.Mover, this.Reach.From, target, occupant)
             : null;
     }
 }
 
-/// <summary>The cells a rule lets a piece reach: far enough, and not past a piece, unless it leaps.</summary>
+/// <summary>
+/// The cells a rule lets a piece reach: far enough, and not past a piece, unless it leaps; not by a lame leap
+/// whose way is blocked; and, for a hop, only those beyond the piece it hops.
+/// </summary>
 file sealed record Reach(ICellNavigating Topology, Position Position, CellId From, Seat OwnerSeat)
 {
     public IEnumerable<CellId> CellsFor(MovementRule rule) =>
@@ -80,12 +83,34 @@ file sealed record Reach(ICellNavigating Topology, Position Position, CellId Fro
     private IEnumerable<CellId> CellsAlong(MovementRule rule, Direction direction)
     {
         ImmutableList<CellId> ray = this.Ray(this.From, direction, rule.MaximumDistance);
-        return ray
-            .Select((cell, index) => new RayStep(cell, index + 1, ray.Take(index)))
+        return rule.IsHopping ? this.Beyond(rule, ray) : this.Along(rule, direction, ray);
+    }
+
+    private IEnumerable<CellId> Along(MovementRule rule, Direction direction, ImmutableList<CellId> ray) =>
+        ray
+            .Select((cell, index) => new RayStep(cell, index + 1, ray.Take(index), [this.From, .. ray.Take(index)]))
             .Where(step => step.Distance >= rule.MinimumDistance)
             .Where(step => rule.IsLeaping || this.IsClear(step.PathBefore))
+            .Where(step => !rule.IsLame || step.LegStarts.All(start => this.IsLegClear(start, direction)))
             .Select(step => step.Cell);
+
+    /// <summary>
+    /// The cells beyond the first piece on the ray, unless the rule shuns it: as many as the rule allows, up to
+    /// and including the next piece.
+    /// </summary>
+    private IEnumerable<CellId> Beyond(MovementRule rule, ImmutableList<CellId> ray)
+    {
+        int screen = ray.FindIndex(cell => this.Position.PieceAt(cell) is not null);
+        bool mayHop = screen >= 0 && !rule.Shunned.Contains(this.Position.PieceAt(ray[screen])!.Kind);
+        ImmutableList<CellId> beyond = mayHop ? [.. ray.Skip(screen + 1).Take(rule.MaximumBeyond)] : [];
+        return beyond.Where((_, index) => this.IsClear(beyond.Take(index)));
     }
+
+    /// <summary>Whether no piece stands on the cells a lame leap from <paramref name="start"/> passes.</summary>
+    private bool IsLegClear(CellId start, Direction direction) =>
+        this.IsClear(
+            this.Topology.WaypointsOf(direction).Select(offset => this.Topology.Step(start, offset)).OfType<CellId>()
+        );
 
     private ImmutableList<CellId> Ray(CellId from, Direction direction, int remaining)
     {
@@ -100,4 +125,5 @@ file sealed record Reach(ICellNavigating Topology, Position Position, CellId Fro
     private bool IsClear(IEnumerable<CellId> path) => path.All(cell => this.Position.PieceAt(cell) is null);
 }
 
-file sealed record RayStep(CellId Cell, int Distance, IEnumerable<CellId> PathBefore);
+/// <summary>A cell on a ray: how far along it is, the cells before it, and where each step to it began.</summary>
+file sealed record RayStep(CellId Cell, int Distance, IEnumerable<CellId> PathBefore, ImmutableList<CellId> LegStarts);

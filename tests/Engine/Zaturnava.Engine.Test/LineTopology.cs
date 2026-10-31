@@ -14,6 +14,9 @@ internal sealed class LineTopology(int length) : ICellNavigating
     public static readonly Direction Right = new(1, 0);
     public static readonly Direction Left = new(-1, 0);
 
+    /// <summary>Two cells at a time, either way: a leap that passes one cell, for lame leaps.</summary>
+    public static readonly DirectionSet Twos = new("twos");
+
     private readonly int _length = length;
 
     public ImmutableList<CellId> Cells => [.. Enumerable.Range(0, this._length).Select(index => new CellId(index))];
@@ -32,8 +35,16 @@ internal sealed class LineTopology(int length) : ICellNavigating
         {
             "orthogonal" => [Right, Left],
             "forward" => [forward],
+            "twos" => [new(2, 0), new(-2, 0)],
             _ => throw new UnsupportedDirectionSetException(set, Name),
         };
+
+    /// <summary>Every cell between, one at a time.</summary>
+    public ImmutableList<Direction> WaypointsOf(Direction leap) =>
+    [
+        .. Enumerable.Range(1, Math.Abs(leap.First) - 1)
+            .Select(step => new Direction(step * Math.Sign(leap.First), 0)),
+    ];
 
     public CellLayout LayoutOf(CellId cell) => new(cell.Value, 0, "square");
 

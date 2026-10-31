@@ -57,11 +57,34 @@ public sealed class SquareGridTopology(
         {
             "orthogonal" => OrthogonalDirections,
             "diagonal" => DiagonalDirections,
+            "any" => [.. OrthogonalDirections, .. DiagonalDirections],
             "knight" => KnightDirections,
             "forward" => [forward],
             "forward-diagonals" => ForwardDiagonals(forward),
+            "sideways" => [Left(forward), Right(forward)],
+            _ when LeaperOf(set.Name) is { } leaper => Leaps(leaper.First, leaper.Second),
             _ => throw new UnsupportedDirectionSetException(set, TopologyName),
         };
+
+    /// <summary>
+    /// Straight along the longer side first, as far as it is longer than the other, then diagonally: the Xiangqi
+    /// Horse's (2, 1) passes (1, 0); the Janggi Elephant's (3, 2) passes (1, 0) and (2, 1).
+    /// </summary>
+    public ImmutableList<Direction> WaypointsOf(Direction leap)
+    {
+        int columns = Math.Abs(leap.First);
+        int rows = Math.Abs(leap.Second);
+        Direction straight = columns >= rows ? new(Math.Sign(leap.First), 0) : new(0, Math.Sign(leap.Second));
+        Direction diagonal = new(Math.Sign(leap.First), Math.Sign(leap.Second));
+        int straightSteps = Math.Abs(columns - rows);
+        ImmutableList<Direction> way =
+        [
+            .. Enumerable.Range(1, straightSteps).Select(step => Times(straight, step)),
+            .. Enumerable.Range(1, Math.Min(columns, rows))
+                .Select(step => Combine(Times(straight, straightSteps), Times(diagonal, step))),
+        ];
+        return [.. way.SkipLast(1)];
+    }
 
     public CellLayout LayoutOf(CellId cell) => new(this.ColumnOf(cell), this.RowOf(cell), CellShape);
 
@@ -83,15 +106,45 @@ public sealed class SquareGridTopology(
             ? $"{(char)('a' + column)}"
             : ColumnName((column / Letters) - 1) + ColumnName(column % Letters);
 
-    private static ImmutableList<Direction> ForwardDiagonals(Direction forward)
-    {
-        Direction left = new(-forward.Second, forward.First);
-        Direction right = new(forward.Second, -forward.First);
-        return [Combine(forward, left), Combine(forward, right)];
-    }
+    private static ImmutableList<Direction> ForwardDiagonals(Direction forward) =>
+        [Combine(forward, Left(forward)), Combine(forward, Right(forward))];
+
+    private static Direction Left(Direction forward) => new(-forward.Second, forward.First);
+
+    private static Direction Right(Direction forward) => new(forward.Second, -forward.First);
 
     private static Direction Combine(Direction first, Direction second) =>
         new(first.First + second.First, first.Second + second.Second);
+
+    private static Direction Times(Direction direction, int times) =>
+        new(direction.First * times, direction.Second * times);
+
+    /// <summary>The two distances a leaper set is named for ("leaper-3-2"); null for any other set.</summary>
+    private static Direction? LeaperOf(string name)
+    {
+        string[] distances = name.StartsWith(DirectionSets.LeaperPrefix, StringComparison.Ordinal)
+            ? name[DirectionSets.LeaperPrefix.Length..].Split('-')
+            : [];
+        return distances.Length == 2
+               && int.TryParse(distances[0], NumberStyles.None, CultureInfo.InvariantCulture, out int first)
+               && int.TryParse(distances[1], NumberStyles.None, CultureInfo.InvariantCulture, out int second)
+            ? new Direction(first, second)
+            : null;
+    }
+
+    /// <summary>Every leap of <paramref name="first"/> one way and <paramref name="second"/> the other, once.</summary>
+    private static ImmutableList<Direction> Leaps(int first, int second) =>
+    [
+        .. new[] { new Direction(first, second), new Direction(second, first) }
+            .SelectMany(leap => new[]
+            {
+                leap,
+                leap with { First = -leap.First },
+                new Direction(-leap.First, -leap.Second),
+                leap with { Second = -leap.Second },
+            })
+            .Distinct(),
+    ];
 
     private bool IsOnBoard(int column, int row) =>
         column >= 0 && column < this._width && row >= 0 && row < this._height;

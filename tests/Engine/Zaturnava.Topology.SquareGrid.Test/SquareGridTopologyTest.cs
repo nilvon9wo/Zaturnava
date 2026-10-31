@@ -83,6 +83,10 @@ public sealed class SquareGridTopologyTest
     [InlineData("diagonal", 4)]
     [InlineData("knight", 8)]
     [InlineData("forward", 1)]
+    [InlineData("any", 8)]
+    [InlineData("leaper-3-2", 8)]
+    [InlineData("leaper-2-2", 4)]
+    [InlineData("leaper-3-0", 4)]
     public void Resolve_WhenTheSetIsSupported_ReturnsItsDirections(string name, int count)
     {
         // Arrange
@@ -120,10 +124,41 @@ public sealed class SquareGridTopologyTest
     }
 
     [Fact]
-    public void Resolve_WhenTheSetIsUnknown_ThrowsUnsupportedDirectionSetException()
+    public void Resolve_WhenSidewaysFacesUp_ReturnsLeftAndRight()
+    {
+        // Arrange - nothing beyond the grid
+
+        // Act
+        ImmutableList<Direction> directions = this._grid.Resolve(DirectionSets.Sideways, Up);
+
+        // Assert
+        Assert.Equal([new Direction(-1, 0), new Direction(1, 0)], directions);
+    }
+
+    [Fact]
+    public void Resolve_WhenALeaperIsNamed_ReturnsEachOfItsLeaps()
+    {
+        // Arrange - nothing beyond the grid
+
+        // Act
+        ImmutableList<Direction> directions = this._grid.Resolve(DirectionSets.Leaper(2, 1), Up);
+
+        // Assert
+        Assert.Equal(
+            this._grid.Resolve(DirectionSets.Knight, Up).OrderBy(Key),
+            directions.OrderBy(Key)
+        );
+    }
+
+    [Theory]
+    [InlineData("hexagonal")]
+    [InlineData("leaper-3")]
+    [InlineData("leaper-x-2")]
+    [InlineData("leaper-3-x")]
+    public void Resolve_WhenTheSetIsUnknown_ThrowsUnsupportedDirectionSetException(string name)
     {
         // Arrange
-        DirectionSet set = new("hexagonal");
+        DirectionSet set = new(name);
 
         // Act
         UnsupportedDirectionSetException exception = Assert.Throws<UnsupportedDirectionSetException>(
@@ -131,7 +166,26 @@ public sealed class SquareGridTopologyTest
         );
 
         // Assert
-        Assert.Equal("The square grid topology has no 'hexagonal' directions.", exception.Message);
+        Assert.Equal($"The square grid topology has no '{name}' directions.", exception.Message);
+    }
+
+    [Theory]
+    [InlineData(1, 0, "")]
+    [InlineData(1, 1, "")]
+    [InlineData(2, 1, "1,0")]
+    [InlineData(-1, -2, "0,-1")]
+    [InlineData(2, 2, "1,1")]
+    [InlineData(3, -2, "1,0 2,-1")]
+    [InlineData(0, 3, "0,1 0,2")]
+    public void WaypointsOf_WhenALeapIsLame_PassesStraightThenDiagonally(int columns, int rows, string expected)
+    {
+        // Arrange - nothing beyond the grid
+
+        // Act
+        ImmutableList<Direction> waypoints = this._grid.WaypointsOf(new Direction(columns, rows));
+
+        // Assert
+        Assert.Equal(expected, string.Join(" ", waypoints.Select(step => $"{step.First},{step.Second}")));
     }
 
     [Fact]
@@ -164,4 +218,6 @@ public sealed class SquareGridTopologyTest
         // Assert
         Assert.Equal(expected, name);
     }
+
+    private static (int, int) Key(Direction direction) => (direction.First, direction.Second);
 }
