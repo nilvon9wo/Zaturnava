@@ -11,4 +11,10 @@ public sealed record CreateGameRequest([Required] string RulesetId, [Required] I
 {
     /// <summary>The scenario to start from (<see cref="CatalogDto.Scenarios"/>); null to start a new game.</summary>
     public string? Scenario { get; init; }
+
+    /// <summary>
+    /// The game this one is played again after, if any: the new game is at the same table, so what was said there
+    /// goes on.
+    /// </summary>
+    public string? Continuing { get; init; }
 }

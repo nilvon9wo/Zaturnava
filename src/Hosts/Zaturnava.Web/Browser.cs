@@ -20,7 +20,9 @@ internal sealed class Browser(IJSRuntime js)
     private const string SafetyKey = "zaturnava.safety";
     private const string PiecesKey = "zaturnava.pieces";
     private const string LogKey = "zaturnava.log";
+    private const string ChatOrderKey = "zaturnava.chat-order";
     private const string Everything = "everything";
+    private const string OldestFirst = "oldest";
     private const string ChessPieces = "chess";
     private const string Off = "off";
 
@@ -74,6 +76,12 @@ internal sealed class Browser(IJSRuntime js)
 
     public ValueTask SetLogHighlightsOnly(bool isHighlightsOnly) =>
         this.Save(LogKey, isHighlightsOnly ? "highlights" : Everything);
+
+    /// <summary>Whether the talk at the table shows its newest message first: unless the player chose oldest.</summary>
+    public async ValueTask<bool> IsChatNewestFirst() => await this.Load(ChatOrderKey) != OldestFirst;
+
+    public ValueTask SetChatNewestFirst(bool isNewestFirst) =>
+        this.Save(ChatOrderKey, isNewestFirst ? "newest" : OldestFirst);
 
     private ValueTask<string?> Load(string key) => this._js.InvokeAsync<string?>("zaturnava.load", key);
 

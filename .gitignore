@@ -481,6 +481,9 @@ $RECYCLE.BIN/
 # Vim temporary swap files
 *.swp
 
+# Claude Code's personal settings for this checkout
+.claude/settings.local.json
+
 # Zaturnava: local game databases and self-play logs (docs/contribute/local-development.md)
 *.db
 *.db-shm

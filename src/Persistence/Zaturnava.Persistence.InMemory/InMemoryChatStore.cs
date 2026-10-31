@@ -14,13 +14,22 @@ public sealed class InMemoryChatStore : IChatPersisting
     public Task<ChatMessage> Add([Required] ChatMessage message, CancellationToken cancellationToken)
     {
         ImmutableList<ChatMessage> said = this._chats.AddOrUpdate(
-            message.Game,
+            message.Table,
             _ => [message with { Number = 1 }],
             (_, before) => before.Add(message with { Number = before.Count + 1 })
         );
         return Task.FromResult(said[^1]);
     }
 
-    public Task<ImmutableList<ChatMessage>> Of([Required] GameId game, CancellationToken cancellationToken) =>
-        Task.FromResult(this._chats.GetValueOrDefault(game, []));
+    public Task<ImmutableList<ChatMessage>> Of([Required] GameId table, CancellationToken cancellationToken) =>
+        Task.FromResult(this._chats.GetValueOrDefault(table, []));
+
+    public Task<ImmutableList<GameId>> Tables(CancellationToken cancellationToken) =>
+        Task.FromResult<ImmutableList<GameId>>([.. this._chats.Keys]);
+
+    public Task Remove([Required] GameId table, CancellationToken cancellationToken)
+    {
+        _ = this._chats.TryRemove(table, out _);
+        return Task.CompletedTask;
+    }
 }

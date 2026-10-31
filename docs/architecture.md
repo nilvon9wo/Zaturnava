@@ -240,7 +240,7 @@ base address (`GameRoutes`):
 |---|---|---|
 | Rulesets and bots on offer, each bot with its name, description and whether it uses AI | `GET api/catalog` | `CatalogDto` |
 | Games | `GET api/games` | `GameSummaryDto[]` |
-| Create a game | `POST api/games` with `CreateGameRequest` (a ruleset, and per seat a bot id or null for a person) | 201, `GameCreatedDto` |
+| Create a game | `POST api/games` with `CreateGameRequest` (a ruleset, per seat a bot id or null for a person, and, for a game played again, the game it continues) | 201, `GameCreatedDto` |
 | A game | `GET api/games/{id}` | `GameViewDto`: cells (with names and thrones), pieces, seats (with scores, bot names and prisoners), the dice and what each allows, the latest events, whose decision and for which seat, the legal actions (labelled where the kind alone cannot say), how the game ended, whether the deciding seat may offer a ransom, the offer waiting on its answer, the time left on a timed decision, and the cell of a Pawn whose promotion is due |
 | A game's history | `GET api/games/{id}/history` | `GameHistoryDto`: each seat (its name, team, who played it and its score), every action in order, the dice among them, and how it ended (the winners, the kind of ending as the ruleset's code, and why), or null while it goes on: the shape the BotRunner writes self-play games in |
 | Every finished game's history | `GET api/history` | `GameHistoryDto[]` |
@@ -248,8 +248,16 @@ base address (`GameRoutes`):
 | Claim an open seat | `POST api/games/{id}/seats/{seat}` | `SeatClaimedDto` with the seat's token |
 | Act | `POST api/games/{id}/actions` with `ActionDto`, `Authorization: Bearer {token}` | `GameViewDto` after the action and any bot replies |
 | What was said at the table | `GET api/games/{id}/chat?after={n}`, the token optional | `ChatMessageDto[]` after message `n`: what was said to the table, and to the token holder's team |
-| Say something | `POST api/games/{id}/chat` with `SayRequest` (`table` or `team`, and the words), `Authorization: Bearer {token}` | `ChatMessageDto`, numbered within its game |
+| Say something | `POST api/games/{id}/chat` with `SayRequest` (`table` or `team`, and the words), `Authorization: Bearer {token}` | `ChatMessageDto`, numbered within its table |
 
+- **Talk** is kept per table (`ChatTables`): a table is known by its first
+  game, and a game played again after another (`CreateGameRequest.Continuing`)
+  sits at the same one. Once no player has read or said anything there for
+  `Chat:LeftAfterSeconds` (default 120), the players have left, and the
+  `ChatSweeper`, looking every `Chat:SweepSeconds` (default 30), lets the
+  table's talk go. Which game sits at which table, and when it was last heard
+  from, are kept in memory: after a restart, every table counts as heard from
+  when the server began.
 - **Seat tokens** are the only credential. One is issued when a seat is
   claimed, shown once, and stored only as a hash; no accounts, no personal
   data.

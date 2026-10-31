@@ -712,7 +712,8 @@
             view.RulesetId,
             [.. view.Seats.Select(seat => seat.BotId)],
             this.Seating.Claim is { } claim ? claim.Seat : -1,
-            null
+            null,
+            view.Id
         ));
 
     private Task QuickGame() =>

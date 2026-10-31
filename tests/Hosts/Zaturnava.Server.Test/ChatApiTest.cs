@@ -82,6 +82,22 @@ public sealed class ChatApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
     }
 
     [Fact]
+    public async Task Create_WhenPlayedAgainAfterAnotherGame_GoesOnWithItsTablesTalk()
+    {
+        // Arrange
+        (string before, _, _) = await this.TalkedGame();
+        CreateGameRequest request =
+            new(ZaturnavaServer.Chaturaji2027, ZaturnavaServer.OneOpenSeat) { Continuing = before };
+
+        // Act
+        GameCreatedDto again = await this._client.Create(request, this._cancellation);
+
+        // Assert
+        ImmutableList<ChatMessageDto> read = await this._client.Chat(again.GameId, null, 0, this._cancellation);
+        Assert.Equal("Hello", Texts(read));
+    }
+
+    [Fact]
     public async Task Say_WhenTheChannelIsUnknown_IsRefusedAsInvalid()
     {
         // Arrange

@@ -10,8 +10,8 @@ using Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Entities;
 namespace Net.NowhereAtAll.Zaturnava.Persistence.EfCore;
 
 /// <summary>
-/// What is said at each game's table, in a relational database. Each game's messages are numbered in order, and
-/// the number is unique within the game, so two said at once cannot both take it.
+/// What is said at each table, in a relational database. Each table's messages are numbered in order, and the
+/// number is unique within the table, so two said at once cannot both take it.
 /// </summary>
 public sealed class EfChatStore(GameDbContext context) : IChatPersisting
 {
@@ -21,7 +21,7 @@ public sealed class EfChatStore(GameDbContext context) : IChatPersisting
     public async Task<ChatMessage> Add([Required] ChatMessage message, CancellationToken cancellationToken)
     {
         int last = await this._context.Chats
-            .Where(chat => chat.GameId == message.Game.Value)
+            .Where(chat => chat.TableId == message.Table.Value)
             .MaxAsync(chat => (int?)chat.Number, cancellationToken) ?? 0;
         ChatMessage numbered = message with { Number = last + 1 };
         _ = this._context.Chats.Add(ToEntity(numbered));
@@ -32,26 +32,38 @@ public sealed class EfChatStore(GameDbContext context) : IChatPersisting
         catch (DbUpdateException exception)
         {
             this._context.ChangeTracker.Clear();
-            throw new ConcurrencyConflictException(message.Game, exception);
+            throw new ConcurrencyConflictException(message.Table, exception);
         }
 
         return numbered;
     }
 
-    public async Task<ImmutableList<ChatMessage>> Of([Required] GameId game, CancellationToken cancellationToken)
+    public async Task<ImmutableList<ChatMessage>> Of([Required] GameId table, CancellationToken cancellationToken)
     {
         List<ChatEntity> entities = await this._context.Chats
-            .Where(chat => chat.GameId == game.Value)
+            .Where(chat => chat.TableId == table.Value)
             .OrderBy(chat => chat.Number)
             .ToListAsync(cancellationToken);
         return [.. entities.Select(ToMessage)];
     }
 
+    public async Task<ImmutableList<GameId>> Tables(CancellationToken cancellationToken)
+    {
+        List<string> tables = await this._context.Chats
+            .Select(chat => chat.TableId)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+        return [.. tables.Select(table => new GameId(table))];
+    }
+
+    public Task Remove([Required] GameId table, CancellationToken cancellationToken) =>
+        this._context.Chats.Where(chat => chat.TableId == table.Value).ExecuteDeleteAsync(cancellationToken);
+
     private static ChatEntity ToEntity(ChatMessage message) =>
         new()
         {
             Id = Guid.NewGuid().ToString("N"),
-            GameId = message.Game.Value,
+            TableId = message.Table.Value,
             Number = message.Number,
             Seat = message.From.Value,
             Channel = message.Channel.ToString(),
@@ -61,7 +73,7 @@ public sealed class EfChatStore(GameDbContext context) : IChatPersisting
 
     private static ChatMessage ToMessage(ChatEntity entity) =>
         new(
-            new GameId(entity.GameId),
+            new GameId(entity.TableId),
             entity.Number,
             new SeatId(entity.Seat),
             Enum.Parse<ChatChannel>(entity.Channel),

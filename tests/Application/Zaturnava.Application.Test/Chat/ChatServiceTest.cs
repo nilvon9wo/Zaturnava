@@ -18,6 +18,7 @@ public sealed class ChatServiceTest
     private static readonly SeatId Second = new(1);
 
     private readonly SteppedTime _time = new();
+    private readonly InMemoryChatStore _store = new();
     private readonly GameService _games;
     private readonly ChatService _chat;
     private readonly CancellationToken _cancellation = TestContext.Current.CancellationToken;
@@ -34,7 +35,96 @@ public sealed class ChatServiceTest
             new DecisionClock(this._time),
             GameServiceSettings.Default
         );
-        this._chat = new ChatService(this._games, new InMemoryChatStore(), new DecisionClock(this._time));
+        DecisionClock clock = new(this._time);
+        this._chat = new ChatService(
+            this._games,
+            this._store,
+            new ChatTables(clock, ChatSettings.Default),
+            clock
+        );
+    }
+
+    [Fact]
+    public async Task Read_WhenTheGameIsPlayedAgainAfterAnother_GoesOnWithItsTablesTalk()
+    {
+        // Arrange
+        (GameId before, string first, _) = await this.Talked();
+        (GameId again, string firstAgain, _) = await this.Seated();
+        this._chat.Continue(again, before);
+        _ = await this._chat.Say(again, firstAgain, ChatChannel.Table, "Again?", this._cancellation);
+
+        // Act
+        ImmutableList<ChatMessage> read = await this._chat.Read(again, firstAgain, 0, this._cancellation);
+        ImmutableList<ChatMessage> readBefore = await this._chat.Read(before, first, 4, this._cancellation);
+
+        // Assert
+        Assert.Equal(("1,2,3,5", "5"), (Numbers(read), Numbers(readBefore)));
+    }
+
+    [Fact]
+    public async Task Purge_WhenNoPlayerWasHeardFromForLong_LetsGoOfTheTablesTalk()
+    {
+        // Arrange
+        (GameId id, _, _) = await this.Talked();
+        this._time.Pass(ChatSettings.DefaultLeftAfter);
+        _ = await this._chat.Read(id, null, 0, this._cancellation); // a watcher is not at the table
+
+        // Act
+        ImmutableList<GameId> purged = await this._chat.Purge(this._cancellation);
+
+        // Assert
+        Assert.Equal((id, 0), (purged.Single(), (await this._store.Of(id, this._cancellation)).Count));
+    }
+
+    [Fact]
+    public async Task Purge_WhenAPlayerWasHeardFromLately_KeepsTheTablesTalk()
+    {
+        // Arrange
+        (GameId id, string first, _) = await this.Talked();
+        this._time.Pass(ChatSettings.DefaultLeftAfter);
+        _ = await this._chat.Read(id, first, 0, this._cancellation);
+
+        // Act
+        ImmutableList<GameId> purged = await this._chat.Purge(this._cancellation);
+
+        // Assert
+        Assert.Equal((0, 4), (purged.Count, (await this._store.Of(id, this._cancellation)).Count));
+    }
+
+    [Fact]
+    public async Task Purge_WhenATableOfTwoGamesIsLetGo_StartsTheLaterGameAtATableOfItsOwn()
+    {
+        // Arrange
+        (GameId before, _, _) = await this.Talked();
+        (GameId again, string firstAgain, _) = await this.Seated();
+        this._chat.Continue(again, before);
+        this._time.Pass(ChatSettings.DefaultLeftAfter);
+        _ = await this._chat.Purge(this._cancellation);
+
+        // Act
+        ChatMessage said = await this._chat.Say(again, firstAgain, ChatChannel.Table, "Anyone?", this._cancellation);
+
+        // Assert
+        Assert.Equal((again, 1), (said.Table, said.Number));
+    }
+
+    [Fact]
+    public async Task Purge_WhenAnotherTableIsLetGo_KeepsTheGamesPlayedAgainAtThisOne()
+    {
+        // Arrange
+        (GameId before, _, _) = await this.Talked();
+        (GameId again, string firstAgain, _) = await this.Seated();
+        this._chat.Continue(again, before);
+        (GameId other, _, _) = await this.Talked();
+        this._time.Pass(ChatSettings.DefaultLeftAfter);
+        _ = await this._chat.Read(again, firstAgain, 0, this._cancellation);
+        ImmutableList<GameId> purged = await this._chat.Purge(this._cancellation);
+
+        // Act
+        ChatMessage said = await this._chat.Say(again, firstAgain, ChatChannel.Table, "Still here", this._cancellation);
+
+        // Assert
+        Assert.Equal((other, before, 5), (purged.Single(), said.Table, said.Number));
     }
 
     [Fact]

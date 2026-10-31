@@ -11,15 +11,17 @@ namespace Net.NowhereAtAll.Zaturnava.Application.Chat;
 /// <summary>
 /// Talk at a game's table. A player, by the token that holds their seat, speaks to the whole table or to their
 /// team alone. Anyone reads what is said to the table, watchers too; what is said to a team, only its players.
-/// Bots say nothing.
+/// Bots say nothing. A game played again after another is at the same table (<see cref="ChatTables"/>), so the
+/// talk goes on; once every player has left a table, what was said there is let go (<see cref="Purge"/>).
 /// </summary>
-public sealed class ChatService(GameService games, IChatPersisting store, DecisionClock clock)
+public sealed class ChatService(GameService games, IChatPersisting store, ChatTables tables, DecisionClock clock)
 {
     /// <summary>The most a message may say, in characters.</summary>
     public const int MaximumLength = 500;
 
     private readonly GameService _games = games;
     private readonly IChatPersisting _store = store;
+    private readonly ChatTables _tables = tables;
     private readonly DecisionClock _clock = clock;
 
     /// <summary>The message, kept and numbered; its words without the spaces around them.</summary>
@@ -38,15 +40,21 @@ public sealed class ChatService(GameService games, IChatPersisting store, Decisi
         GameSnapshot snapshot = await this._games.Get(id, cancellationToken);
         SeatId seat = SeatOf(snapshot.Record, token) ?? throw new NotSeatedException(id);
         string said = text.Trim();
+        GameId table = this._tables.TableOf(id);
+        this._tables.Heard(table);
         return said.Length > MaximumLength
             ? throw new InvalidChatException()
-            : await this._store.Add(new ChatMessage(id, 0, seat, channel, said, this._clock.Now), cancellationToken);
+            : await this._store.Add(
+                new ChatMessage(table, 0, seat, channel, said, this._clock.Now),
+                cancellationToken
+            );
     }
 
     /// <summary>
-    /// What was said at the table after message number <paramref name="after"/> that the holder of
+    /// What was said at the game's table after message number <paramref name="after"/> that the holder of
     /// <paramref name="token"/> may read: all that was said to the table, and what was said to their own team.
-    /// Without a token, or with one that holds no seat, only what was said to the table.
+    /// Without a token, or with one that holds no seat, only what was said to the table. A player reading is
+    /// heard from: they are still at the table.
     /// </summary>
     /// <exception cref="GameNotFoundException">There is no such game.</exception>
     public async Task<ImmutableList<ChatMessage>> Read(
@@ -58,8 +66,31 @@ public sealed class ChatService(GameService games, IChatPersisting store, Decisi
     {
         GameSnapshot snapshot = await this._games.Get(id, cancellationToken);
         SeatId? reader = token is null ? null : SeatOf(snapshot.Record, token);
-        ImmutableList<ChatMessage> said = await this._store.Of(id, cancellationToken);
+        GameId table = this._tables.TableOf(id);
+        if (reader is not null)
+        {
+            this._tables.Heard(table);
+        }
+
+        ImmutableList<ChatMessage> said = await this._store.Of(table, cancellationToken);
         return [.. said.Where(message => message.Number > after && MayRead(snapshot.State, reader, message))];
+    }
+
+    /// <summary>Has <paramref name="game"/>, played again after <paramref name="after"/>, at the same table.</summary>
+    public void Continue([Required] GameId game, [Required] GameId after) => this._tables.Continue(game, after);
+
+    /// <summary>Lets go of what was said at every table all its players have left; those tables.</summary>
+    public async Task<ImmutableList<GameId>> Purge(CancellationToken cancellationToken)
+    {
+        ImmutableList<GameId> kept = await this._store.Tables(cancellationToken);
+        ImmutableList<GameId> left = [.. kept.Where(this._tables.IsLeft)];
+        foreach (GameId table in left)
+        {
+            await this._store.Remove(table, cancellationToken);
+            this._tables.Forget(table);
+        }
+
+        return left;
     }
 
     private static bool MayRead(GameState state, SeatId? reader, ChatMessage message) =>

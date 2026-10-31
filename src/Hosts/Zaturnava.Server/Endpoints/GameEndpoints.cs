@@ -48,11 +48,17 @@ internal static class GameEndpoints
     private static async Task<Created<GameCreatedDto>> Create(
         CreateGameRequest request,
         GameService games,
+        ChatService chat,
         CancellationToken cancellationToken
     )
     {
         ImmutableList<SeatPlan> seats = [.. request.Bots.Select(bot => new SeatPlan(bot))];
         GameId id = await games.Create(request.RulesetId, seats, request.Scenario, cancellationToken);
+        if (request.Continuing is { } previous)
+        {
+            chat.Continue(id, new GameId(previous));
+        }
+
         return TypedResults.Created("/" + GameRoutes.Game(id.Value), new GameCreatedDto(id.Value));
     }
 

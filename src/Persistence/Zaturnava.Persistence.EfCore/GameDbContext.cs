@@ -9,7 +9,7 @@ public sealed class GameDbContext(DbContextOptions<GameDbContext> options) : DbC
     // seats and actions are reached only through their game
     public DbSet<GameEntity> Games => this.Set<GameEntity>();
 
-    // what is said at a game's table: kept apart from the game, as talk changes nothing in play
+    // what is said at each table: kept apart from the games, as talk changes nothing in play
     public DbSet<ChatEntity> Chats => this.Set<ChatEntity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -43,6 +43,6 @@ public sealed class GameDbContext(DbContextOptions<GameDbContext> options) : DbC
     private static void MapChat(EntityTypeBuilder<ChatEntity> chat)
     {
         _ = chat.HasKey(entity => entity.Id);
-        _ = chat.HasIndex(entity => new { entity.GameId, entity.Number }).IsUnique();
+        _ = chat.HasIndex(entity => new { entity.TableId, entity.Number }).IsUnique();
     }
 }

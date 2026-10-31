@@ -40,11 +40,12 @@ public sealed class TableTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ("Play again, with Claude: costs tokens", 0, "claude"),
+            ("Play again, with Claude: costs tokens", 0, "claude", FakeGameServer.GameId),
             (
                 table.Find("button.again").TextContent.Trim(),
                 table.FindAll("button.again.primary").Count,
-                this._page.Server.Created?.Bots[1]
+                this._page.Server.Created?.Bots[1],
+                this._page.Server.Created?.Continuing
             )
         );
     }
