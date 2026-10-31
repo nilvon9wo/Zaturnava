@@ -1,6 +1,7 @@
 # The HTTP API
 
-Everything a client can do, in any language: JSON over HTTP, no account, no key. The browser page
+Everything a client can do, in any language: JSON over HTTP, no account, no key. To play on the live server,
+start with [the live server](live-server.md). The browser page
 and the MCP server use these same routes. The server's address below is a local one,
 `http://localhost:5164/` ([running a server](README.md#running-a-server)); the routes are relative to
 it. Names in JSON are camelCase. The server's own address (and `api`) answers with where to go from there,
@@ -193,6 +194,7 @@ A request the server will not do is answered with a [problem](https://www.rfc-ed
 | 404 | `NotFound` | There is no such game |
 | 409 | `Conflict` | The seat is taken, or the game changed meanwhile |
 | 422 | `Illegal` | The rules do not allow the action now |
+| 429 | `TooBusy` | Too many requests from the same address of late (600 a minute, 60 new games an hour): wait, and ask again |
 
 ## From .NET
 

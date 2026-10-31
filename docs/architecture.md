@@ -375,14 +375,15 @@ base address (`GameRoutes`):
 | AI access | ModelContextProtocol SDK |
 | Tests | xUnit v3 on Microsoft Testing Platform, bUnit, Xfty test data; 100% line and branch coverage per project |
 
-### Hosting — status: **leading option, not decided**
+### Hosting — status: **live**
 
 Constraints (2026-10-24): free, **with no credit card on file anywhere**, so
 that neither popularity nor abuse can produce a bill; every provider
 replaceable.
 
-- **Front door: itch.io** (agreed), hosting the Web client as an HTML game.
-- **Game server: MonsterASP.NET free tier** is the leading candidate: no
+- **Front door: itch.io** (agreed), hosting the Web client as an HTML game, at
+  <https://nilvon9wo.itch.io/zaturnava>.
+- **Game server: MonsterASP.NET free tier**, live: no
   card, EU datacenter, ASP.NET Core and SQL Server, 256 MB RAM, 1 GB database,
   WebSockets. Its limits: the site stops when idle and starts on the next
   request; free HTTPS is a Let's Encrypt certificate, turned on in its control panel, which renews it; a
@@ -396,12 +397,20 @@ The game server is at `zaturnava.runasp.net`, sent there by hand through
 the repository's secrets); another host would be another workflow, not a change to the server.
 With a `MONSTERASP_SQLSERVER_CONNECTION_STRING` secret (the site's SQL Server database, from its control panel), the
 workflow writes it into the published `appsettings.Production.json`, with `Storage:Provider` set to
-`SqlServer`, so that games outlast a restart; without one, games are kept in memory.
+`SqlServer`, so that games outlast a restart; without one, games are kept in memory. The workflow also
+sets `AllowedHosts` to the site's host, so the server answers for its own name alone, and `Mcp:SelfAddress`
+to its address, so the hosted MCP server calls the API there, never at a host a request names.
 
 Nothing in the code depends on the host: the server reads its storage, page
 host and limits from configuration, and the clients read the server's address
-from theirs. The game server's host, once chosen, gets an adapter of its own
-for whatever it needs that is specific to it.
+from theirs. The game server's host gets an adapter of its own for whatever it
+needs that is specific to it.
+
+Request limits (Proposed), per client address, refused with `429` (`TooBusy`):
+`Limits:RequestsPerMinute` (600 by default) over every route, and `Limits:GamesPerHour` (60) for creating
+games. The hosted MCP server's calls to the API carry a per-process pass, so they count against the
+assistant's address, not the server's own. What this protects, for those who play on the live server, is in
+[the live server](bots/live-server.md#what-is-protected-and-how).
 
 The table-top platforms that could have hosted the game outright were ruled
 out: Game Courier's four-handed chaturanga does not enforce rules, Board Game
@@ -426,10 +435,8 @@ scoring) are listed in [rules.md §12](rules.md#12-configuration-toggles). The
 
 ## 10. Open Questions / Deferred
 
-- Hosting waits until the game is playable on one machine against simple
-  bots. Then, the game server's host (§8): confirm MonsterASP.NET's traffic limits and
-  archiving rules, and its site address for the Web client's production
-  settings.
+- The game server's host (§8): confirm MonsterASP.NET's traffic limits and
+  archiving rules.
 - A push channel to replace polling (§6).
 - The turn phase machine (§2.5), controlled armies
   (§2.4) and rule modules (§2.6), as the remaining rules are implemented.
