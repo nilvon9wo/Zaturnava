@@ -369,7 +369,7 @@ replaceable.
 The game server is at `zaturnava.runasp.net`, sent there by hand through
 `.github/workflows/deploy-monsterasp.yml` (Web Deploy, with the site's publishing profile in
 the repository's secrets); another host would be another workflow, not a change to the server.
-With a `GAMES_CONNECTION_STRING` secret (the site's SQL Server database, from its control panel), the
+With a `MONSTERASP_SQLSERVER_CONNECTION_STRING` secret (the site's SQL Server database, from its control panel), the
 workflow writes it into the published `appsettings.Production.json`, with `Storage:Provider` set to
 `SqlServer`, so that games outlast a restart; without one, games are kept in memory.
 
