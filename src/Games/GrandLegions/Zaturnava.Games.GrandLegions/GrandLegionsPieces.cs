@@ -19,6 +19,12 @@ public static class GrandLegionsPieces
     private const string OneColour = "One colour of square";
     private const string NeverBack = "Never back";
 
+    /// <summary>
+    /// The least a piece that may promote into a leader is worth: the premium alone undervalues one that may reach
+    /// the zone at once, as a Lance may (docs/grand/pieces.md, Leader floor).
+    /// </summary>
+    private const int LeaderPromotionFloor = 50;
+
     public static readonly PieceKindId DragonKing = new("dragon-king");
     public static readonly PieceKindId FairyGeneral = new("fairy-general");
     public static readonly PieceKindId WesternKing = new("western-king");
@@ -94,7 +100,7 @@ public static class GrandLegionsPieces
             .Promoting(GoldGeneral),
 
         // Infantry
-        Piece(ShogiPawn, "Pawn (Shogi)", Infantry, Shogi, 17, ForwardStep)
+        Piece(ShogiPawn, "Pawn (Shogi)", Infantry, Shogi, LeaderPromotionFloor, ForwardStep)
             .Restricted(Moves(BlockedAhead, 2))
             .Promoting(GoldGeneral),
         Piece(WesternPawn, "Pawn (Western)", Infantry, Western, 7, PawnMovement())
@@ -123,15 +129,15 @@ public static class GrandLegionsPieces
             .Restricted(Area(Palace, 5)),
 
         // Heavy / Slider
+        Piece(Lance, "Lance (Shogi)", Heavy, Shogi, LeaderPromotionFloor, MovementRule.Slide(DirectionSets.Forward))
+            .Restricted(Moves("Blocked by pieces in its path", 2))
+            .Promoting(GoldGeneral),
         Piece(Amazon, "Amazon", Heavy, Fairy, 37, MovementRule.Slide(DirectionSets.Any), KnightLeap),
         Piece(Queen, "Queen (Western)", Heavy, Western, 27, MovementRule.Slide(DirectionSets.Any)),
         Piece(Chancellor, "Chancellor", Heavy, Fairy, 22, OrthogonalSlide, KnightLeap),
         Piece(Archbishop, "Archbishop", Heavy, Fairy, 21, DiagonalSlide, KnightLeap),
         Piece(DragonBishop, "Dragon Bishop", Heavy, Fairy, 21, DiagonalSlide, KnightLeap),
         Piece(DragonHorse, "Dragon Horse (Shogi)", Heavy, Shogi, 17, DiagonalSlide, OrthogonalStep),
-        Piece(Lance, "Lance (Shogi)", Heavy, Shogi, 16, MovementRule.Slide(DirectionSets.Forward))
-            .Restricted(Moves("Blocked by pieces in its path", 2))
-            .Promoting(GoldGeneral),
         Piece(Rook, "Rook (Western)", Heavy, Western, 14, OrthogonalSlide),
         Piece(Bishop, "Bishop (Western)", Heavy, Western, 12, DiagonalSlide)
             .Restricted(Bound(OneColour)),
