@@ -138,7 +138,7 @@ public sealed class WireFormatTest
     public void GameSummary_WhenSentAsJson_ArrivesUnchanged()
     {
         // Arrange
-        ImmutableList<string> players = [GameSummaryDto.Person, GameSummaryDto.Open, "midas"];
+        ImmutableList<string> players = [GameSummaryDto.Guest, GameSummaryDto.Open, "midas"];
         GameSummaryDto summary = new("g", "chaturaji-2027", 4, [1, 3], players, 9);
 
         // Act

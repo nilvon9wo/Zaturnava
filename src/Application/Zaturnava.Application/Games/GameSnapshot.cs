@@ -38,16 +38,19 @@ public sealed record GameSnapshot(
                 new Transition(ScenarioStart.StateOf(record.Actions, rules), []),
                 (sofar, descriptor) => Replayed(rules, sofar, descriptor)
             );
-        return new GameSnapshot(record, rules, replayed.State, replayed.Events, rules.LegalActions(replayed.State));
+        ImmutableList<GameAction> legal = record.IsWaiting ? [] : rules.LegalActions(replayed.State);
+        return new GameSnapshot(record, rules, replayed.State, replayed.Events, legal);
     }
 
     /// <summary>
-    /// Whether <paramref name="token"/> holds the seat that acts, and it may act now: it is deciding, or it
-    /// proposes ending the game, rejoins it, or votes on waiting for another, which a seat may do whoever
-    /// decides, if the rules let it - voting to stop waiting only once the vote on that seat is open.
+    /// Whether <paramref name="token"/> holds the seat that acts, and it may act now: the game is not waiting for
+    /// its seats to be taken, and the seat is deciding, or it proposes ending the game, rejoins it, or votes on
+    /// waiting for another, which a seat may do whoever decides, if the rules let it - voting to stop waiting only
+    /// once the vote on that seat is open.
     /// </summary>
     public bool MayAct([Required] GameAction action, [Required] string token) =>
-        (this.State.DecidingSeat == action.Actor || this.MayActOutOfTurn(action))
+        !this.Record.IsWaiting
+        && (this.State.DecidingSeat == action.Actor || this.MayActOutOfTurn(action))
         && this.Record.Controllers[action.Actor.Value].IsHeldBy(token);
 
     private bool MayActOutOfTurn(GameAction action) =>

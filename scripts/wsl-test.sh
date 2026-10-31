@@ -19,5 +19,5 @@ for project in "${projects[@]}"; do
     echo "== $project"
     path=$(dirname "$(find tests -name "$project.csproj" | head -1)")
     python3 scripts/run-tests.py --project "$path" "${artifacts[@]}" --no-build 2>&1 \
-        | grep -E "^failed|Assert\.|Expected:|Actual:|Exception|summary|total:|[Tt]hreshold|below|\| " | head -30
+        | grep -E "failed|[Ee]xit code|[Ee]rror|Assert\.|Expected:|Actual:|Exception|summary|total:|[Tt]hreshold|below|\| " | head -30
 done

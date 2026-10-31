@@ -50,8 +50,19 @@ public sealed class HttpGameClient(HttpClient http) : IGameServing
             cancellationToken
         );
 
-    public Task<SeatClaimedDto> Claim([Required] string gameId, int seat, CancellationToken cancellationToken) =>
-        this.Send<SeatClaimedDto>(HttpMethod.Post, GameRoutes.Seat(gameId, seat), null, null, cancellationToken);
+    public Task<SeatClaimedDto> Claim(
+        [Required] string gameId,
+        int seat,
+        string? playerToken,
+        CancellationToken cancellationToken
+    ) =>
+        this.Send<SeatClaimedDto>(
+            HttpMethod.Post,
+            GameRoutes.Seat(gameId, seat),
+            null,
+            playerToken,
+            cancellationToken
+        );
 
     public Task<GameViewDto> Submit(
         [Required] string gameId,

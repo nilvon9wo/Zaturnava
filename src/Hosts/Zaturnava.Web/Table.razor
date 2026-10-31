@@ -397,6 +397,7 @@
 
 @code {
     private const string BotController = "bot";
+    private const string OpenController = "open";
     private const string RollKind = "roll";
     private const string MoveKind = "move";
     private const string EscapeKind = "escape";
@@ -567,6 +568,8 @@
         (view.Outcome, view.DecidingSeat, this._turn, view.Offer, view.IsTurnOver) switch
         {
             ({ } outcome, _, _, _, _) => outcome.Text,
+            _ when OpenSeatsOf(view) is { } open =>
+                $"Waiting for {open} to join: the game begins once every seat is taken.",
             (_, { } seat, null, _, _) when view.Proposal is { } proposal =>
                 $"{view.Seats[proposal.Proposer].Name} proposes ending the game: waiting for {Who(view.Seats[seat])}.",
             (_, { }, _, _, _) when view.Proposal is { } proposal =>
@@ -631,7 +634,13 @@
     }
 
     private static string Who(SeatDto seat) =>
-        seat.Bot is { } bot ? $"{bot} ({seat.Name})" : $"{seat.Name} ({seat.Controller})";
+        seat.Bot is { } bot ? $"{bot} ({seat.Name})" : $"{seat.Name} ({seat.Player ?? seat.Controller})";
+
+    /// <summary>"Yellow and Red": the seats no one has taken yet, for which the game waits; null if none.</summary>
+    private static string? OpenSeatsOf(GameViewDto view) =>
+        Listed([.. view.Seats.Where(seat => seat.Controller == OpenController).Select(seat => seat.Name)]);
+
+    private static string? Listed(ImmutableList<string> names) => names.IsEmpty ? null : string.Join(" and ", names);
 
     private static string ForWhom(GameViewDto view) =>
         view.ActingFor is { } seat ? $", for {view.Seats[seat].Name}" : string.Empty;
@@ -707,18 +716,24 @@
 
     /// <summary>The same game again: its ruleset, its bots in the same seats, the player at the same seat.</summary>
     private Task PlayAgain(GameViewDto view) =>
-        this.SitAgain(() => GameStarter.Start(
+        this.SitAgain(async () => await GameStarter.Start(
             this.Games,
             view.RulesetId,
             [.. view.Seats.Select(seat => seat.BotId)],
             this.Seating.Claim is { } claim ? claim.Seat : -1,
             null,
+            await this.Browser.PlayerToken(),
             view.Id
         ));
 
     private Task QuickGame() =>
         this.SitAgain(async () =>
-            await GameStarter.Quick(this.Games, await this.Games.Catalog(CancellationToken.None), Difficulty.Medium)
+            await GameStarter.Quick(
+                this.Games,
+                await this.Games.Catalog(CancellationToken.None),
+                Difficulty.Medium,
+                await this.Browser.PlayerToken()
+            )
         );
 
     private async Task SitAgain(Func<Task<Seating>> seating) =>
@@ -859,7 +874,9 @@
 
     private bool IsMine(IGrouping<int, SeatDto> team) => team.Any(seat => seat.Id == this.Seating.Claim?.Seat);
 
-    private string Player(SeatDto seat) => seat.Id == this.Seating.Claim?.Seat ? "you" : seat.Bot ?? seat.Controller;
+    /// <summary>Who plays the seat: you, the bot, the player by name (or a guest), or no one yet ("open").</summary>
+    private string Player(SeatDto seat) =>
+        seat.Id == this.Seating.Claim?.Seat ? "you" : seat.Bot ?? seat.Player ?? seat.Controller;
 
     private void TurnLeft() => this._boardTurn = this._boardTurn.Anticlockwise();
 
@@ -946,7 +963,10 @@
         this._turn = view.DecidingSeat is { } deciding && this.Seating.Claim is { } claim && claim.Seat == deciding
             ? this.TurnOf(claim, view)
             : null;
-        this._isBotDeciding = view.DecidingSeat is { } seat && view.Seats[seat].Controller == BotController;
+        // a bot plays only once every seat is taken
+        this._isBotDeciding = view.DecidingSeat is { } seat
+            && view.Seats[seat].Controller == BotController
+            && OpenSeatsOf(view) is null;
         this._selection = (isNew, this._turn, view.PromotionDue) switch
         {
             (false, { }, _) => this._selection,

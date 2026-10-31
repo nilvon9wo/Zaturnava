@@ -47,7 +47,7 @@ public sealed class GameTools(IGameServing games)
         [Description("The seat's number, from 0.")] int seat,
         CancellationToken cancellationToken
     ) =>
-        Explained(() => this._games.Claim(gameId, seat, cancellationToken));
+        Explained(() => this._games.Claim(gameId, seat, null, cancellationToken));
 
     [McpServerTool(Name = "get_game", ReadOnly = true)]
     [Description(

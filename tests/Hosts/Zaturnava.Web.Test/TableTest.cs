@@ -271,6 +271,55 @@ public sealed class TableTest : IDisposable
     }
 
     [Fact]
+    public void Render_WhenWatchingAPlayerWhoSignedIn_CallsThemByName()
+    {
+        // Arrange
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Seats = FakeGameServer.SeatZeroToMove.Seats.SetItem(
+                0,
+                FakeGameServer.SeatZeroToMove.Seats[0] with { Player = "Ada" }
+            ),
+        };
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(Seating.Watching(FakeGameServer.GameId));
+
+        // Assert
+        Assert.Equal(
+            ("Black (Ada) to move.", "Black Ada 0"),
+            (table.Find("p.status").TextContent, Text(table.FindAll("li.seat")[0]))
+        );
+    }
+
+    [Fact]
+    public void Render_WhenSeatsAreStillOpen_WaitsForThemToBeTaken()
+    {
+        // Arrange
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Seats =
+            [
+                .. FakeGameServer.SeatZeroToMove.Seats.SetItem(
+                    1,
+                    FakeGameServer.SeatZeroToMove.Seats[1] with { Controller = "open", Bot = null, BotId = null }
+                ),
+                new SeatDto(2, "Green", 0, 0, "open", null, []),
+            ],
+            LegalActions = [],
+        };
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Assert
+        Assert.Equal(
+            "Waiting for Yellow and Green to join: the game begins once every seat is taken.",
+            table.Find("p.status").TextContent
+        );
+    }
+
+    [Fact]
     public void ActionButton_WhenClicked_SubmitsTheAction()
     {
         // Arrange

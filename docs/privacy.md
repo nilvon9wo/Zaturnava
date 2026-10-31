@@ -11,7 +11,7 @@ no analytics and nothing sold to anyone.
 You need no account to play, and today there is none to make. What is kept:
 
 - **On the server, for each game:** the ruleset; which seats are played by people and which by which bots; and
-  every action taken in it, in order. Nothing in a game says who a person is. Finished games are kept, and their
+  every action taken in it, in order. Nothing in a game says who a person is, unless they signed in (below). Finished games are kept, and their
   histories are public (at `api/history`), so that anyone, bots' authors included, can study them.
 - **On the server, for each seat a person holds:** a fingerprint (a SHA-256 hash) of the seat's secret token, so the
   server can tell the token when your browser shows it, without keeping the token itself.
@@ -30,7 +30,9 @@ No cookies are set while you play (only while signing in, below), and nothing tr
 Signing in is optional, and is being built: the game page offers to sign in with GitHub, in a window of its own.
 Your browser then keeps the token you were given until you sign out, when the server lets it go too, and it stands
 for no one any more. Signing in sets one cookie, only for the few minutes it takes, deleted once you are signed in. It keeps, on the server, your id at the provider, the name it shows you by, and a fingerprint (a SHA-256
-hash) of the token your browser is then given, as for a seat.
+hash) of the token your browser is then given, as for a seat. A seat you take while signed in also keeps your
+player id, so that the others at the table, and anyone watching or listing the games, see your name there; a seat
+taken without signing in shows "guest".
 
 When it is finished, signing in with a provider (itch.io, GitHub, Google, Discord, perhaps later Facebook) will
 keep:
@@ -60,4 +62,5 @@ the same player, and only if you choose to.
 - **With an account:** while signed in, press **Delete account** at the top right of the lobby, and confirm. The server
   then forgets you at once: your name, your id at each provider and every sign-in of yours. No one has to do
   anything by hand, and you need no other account to ask. The games you played stay, so that other players' records
-  and ratings stay true, but nothing in them says who you were: they show a deleted player in your seat.
+  and ratings stay true, but nothing in them says who you were: they show "deleted player" in your seat. (Your
+  player id, a random value that no longer leads to anyone, stays beside the seat.)

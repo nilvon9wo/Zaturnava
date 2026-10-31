@@ -21,6 +21,18 @@ public sealed class InMemoryPlayerStore : IPlayerPersisting
                 : null
         );
 
+    public Task<ImmutableDictionary<PlayerId, string>> Names(
+        [Required] ImmutableList<PlayerId> players,
+        CancellationToken cancellationToken
+    ) =>
+        Task.FromResult(
+            players
+                .Distinct()
+                .Select(this._players.GetValueOrDefault)
+                .OfType<Player>()
+                .ToImmutableDictionary(player => player.Id, player => player.Name)
+        );
+
     public Task Add([Required] Player player, CancellationToken cancellationToken)
     {
         this._players[player.Id] = player;

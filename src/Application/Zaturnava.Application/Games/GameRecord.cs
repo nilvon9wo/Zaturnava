@@ -16,5 +16,11 @@ public sealed record GameRecord(
     int Version
 )
 {
+    /// <summary>
+    /// Whether the game waits for people to take its open seats: until every seat is held, nothing is played,
+    /// by a person or a bot, and no decision is timed.
+    /// </summary>
+    public bool IsWaiting => this.Controllers.Any(controller => controller.IsOpen);
+
     public GameRecord Next() => this with { Version = this.Version + 1 };
 }

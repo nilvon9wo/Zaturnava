@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Net.NowhereAtAll.Zaturnava.Application.Chat;
 using Net.NowhereAtAll.Zaturnava.Application.Games;
+using Net.NowhereAtAll.Zaturnava.Application.Players;
 using Net.NowhereAtAll.Zaturnava.Contracts;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Seats;
@@ -38,12 +39,30 @@ internal static class GameEndpoints
 
     private static async Task<ImmutableList<GameSummaryDto>> List(
         GameService games,
+        PlayerService players,
         CancellationToken cancellationToken
     )
     {
         ImmutableList<GameSnapshot> snapshots = await games.Snapshots(cancellationToken);
-        return [.. snapshots.Select(GameViews.SummaryOf)];
+        ImmutableDictionary<HumanSeat, string> names = await players.NamesOf(
+            snapshots.SelectMany(snapshot => snapshot.Record.Controllers),
+            cancellationToken
+        );
+        return [.. snapshots.Select(snapshot => GameViews.SummaryOf(snapshot, names))];
     }
+
+    /// <summary>The game as its seats see it, naming the bots and whoever holds each person's seat.</summary>
+    private static async Task<GameViewDto> ViewOf(
+        GameSnapshot snapshot,
+        GameService games,
+        PlayerService players,
+        CancellationToken cancellationToken
+    ) =>
+        GameViews.ViewOf(
+            snapshot,
+            games.Bots,
+            await players.NamesOf(snapshot.Record.Controllers, cancellationToken)
+        );
 
     private static async Task<Created<GameCreatedDto>> Create(
         CreateGameRequest request,
@@ -62,10 +81,15 @@ internal static class GameEndpoints
         return TypedResults.Created("/" + GameRoutes.Game(id.Value), new GameCreatedDto(id.Value));
     }
 
-    private static async Task<GameViewDto> Get(string gameId, GameService games, CancellationToken cancellationToken)
+    private static async Task<GameViewDto> Get(
+        string gameId,
+        GameService games,
+        PlayerService players,
+        CancellationToken cancellationToken
+    )
     {
         GameSnapshot snapshot = await games.Get(new GameId(gameId), cancellationToken);
-        return GameViews.ViewOf(snapshot, games.Bots);
+        return await ViewOf(snapshot, games, players, cancellationToken);
     }
 
     private static async Task<GameHistoryDto> History(
@@ -96,21 +120,28 @@ internal static class GameEndpoints
         string gameId,
         AdvanceRequest request,
         GameService games,
+        PlayerService players,
         CancellationToken cancellationToken
     )
     {
         GameSnapshot snapshot = await games.Advance(new GameId(gameId), request.Version, cancellationToken);
-        return GameViews.ViewOf(snapshot, games.Bots);
+        return await ViewOf(snapshot, games, players, cancellationToken);
     }
 
+    /// <summary>Claims the seat: for the player the request's token stands for, if any; else for a guest.</summary>
     private static async Task<SeatClaimedDto> Claim(
         string gameId,
         int seat,
+        HttpRequest request,
         GameService games,
+        PlayerService players,
         CancellationToken cancellationToken
     )
     {
-        string token = await games.Claim(new GameId(gameId), new SeatId(seat), cancellationToken);
+        Player? player = SeatToken.OrNull(request) is { } playerToken
+            ? await players.Find(playerToken, cancellationToken)
+            : null;
+        string token = await games.Claim(new GameId(gameId), new SeatId(seat), player?.Id, cancellationToken);
         return new SeatClaimedDto(token);
     }
 
@@ -119,6 +150,7 @@ internal static class GameEndpoints
         ActionDto action,
         HttpRequest request,
         GameService games,
+        PlayerService players,
         CancellationToken cancellationToken
     )
     {
@@ -126,7 +158,7 @@ internal static class GameEndpoints
         ActionDescriptor descriptor = new(action.Kind, action.Arguments);
         string token = SeatToken.From(request, id);
         GameSnapshot snapshot = await games.Submit(id, token, descriptor, cancellationToken);
-        return GameViews.ViewOf(snapshot, games.Bots);
+        return await ViewOf(snapshot, games, players, cancellationToken);
     }
 
     private static async Task<ImmutableList<ChatMessageDto>> Chat(

@@ -50,7 +50,7 @@ public sealed class ChatPurgeTest(QuickPurgeServer server) : IClassFixture<Quick
     {
         CreateGameRequest request = new(ZaturnavaServer.Chaturaji2027, ZaturnavaServer.OneOpenSeat);
         GameCreatedDto created = await this._client.Create(request, this._cancellation);
-        SeatClaimedDto claimed = await this._client.Claim(created.GameId, 0, this._cancellation);
+        SeatClaimedDto claimed = await this._client.Claim(created.GameId, 0, null, this._cancellation);
         return (created.GameId, claimed.Token);
     }
 }

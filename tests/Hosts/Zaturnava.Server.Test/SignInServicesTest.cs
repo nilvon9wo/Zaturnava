@@ -4,6 +4,7 @@ using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OAuth;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
@@ -67,6 +68,25 @@ public sealed class SignInServicesTest
                 string.Join(",", options.Scope),
                 options.SignInScheme
             )
+        );
+    }
+
+    [Fact]
+    public void AddSignIn_WhenAsked_HoldsWhoeverComesBackInALaxCookieForTenMinutes()
+    {
+        // Arrange
+        IConfiguration configuration = Configuration("client", "secret");
+
+        // Act
+        using ServiceProvider services = Services(configuration);
+
+        // Assert
+        CookieAuthenticationOptions options = services
+            .GetRequiredService<IOptionsMonitor<CookieAuthenticationOptions>>()
+            .Get(SignInServices.ExternalScheme);
+        Assert.Equal(
+            ("Zaturnava.External", SameSiteMode.Lax, TimeSpan.FromMinutes(10)),
+            (options.Cookie.Name, options.Cookie.SameSite, options.ExpireTimeSpan)
         );
     }
 

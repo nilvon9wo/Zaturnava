@@ -157,8 +157,8 @@ public sealed class ChatApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
         CreateGameRequest request =
             new(ZaturnavaServer.Chaturaji2027, [null, null, ZaturnavaServer.Random, ZaturnavaServer.Random]);
         GameCreatedDto created = await this._client.Create(request, this._cancellation);
-        SeatClaimedDto black = await this._client.Claim(created.GameId, 0, this._cancellation);
-        SeatClaimedDto yellow = await this._client.Claim(created.GameId, 1, this._cancellation);
+        SeatClaimedDto black = await this._client.Claim(created.GameId, 0, null, this._cancellation);
+        SeatClaimedDto yellow = await this._client.Claim(created.GameId, 1, null, this._cancellation);
         return (created.GameId, black.Token, yellow.Token);
     }
 

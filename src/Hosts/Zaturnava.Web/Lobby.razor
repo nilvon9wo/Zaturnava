@@ -277,12 +277,13 @@
         this._plans.Where((_, other) => other != seat).Contains(bot);
 
     private Task Create(CatalogDto catalog) =>
-        this.Sit(() => GameStarter.Start(
+        this.Sit(async () => await GameStarter.Start(
             this.Games,
             Ruleset(catalog).Id,
             this.ChosenBots(),
             this._mode == SetupMode.ByStrength ? this._colour : this._plans.IndexOf(string.Empty),
-            this._scenario.Length == 0 ? null : this._scenario
+            this._scenario.Length == 0 ? null : this._scenario,
+            await this.Browser.PlayerToken()
         ));
 
     /// <summary>The bot for each seat, as set up seat by seat or by strength; none for a person's.</summary>
@@ -317,9 +318,12 @@
     }
 
     private Task Quick(CatalogDto catalog, Difficulty difficulty) =>
-        this.Sit(() => GameStarter.Quick(this.Games, catalog, difficulty));
+        this.Sit(async () =>
+            await GameStarter.Quick(this.Games, catalog, difficulty, await this.Browser.PlayerToken())
+        );
 
-    private Task Join(string gameId, int seat) => this.Sit(() => GameStarter.Claim(this.Games, gameId, seat));
+    private Task Join(string gameId, int seat) =>
+        this.Sit(async () => await GameStarter.Claim(this.Games, gameId, seat, await this.Browser.PlayerToken()));
 
     private Task Resume(string gameId, SeatClaim claim) => this.OnSeated.InvokeAsync(new Seating(gameId, claim));
 

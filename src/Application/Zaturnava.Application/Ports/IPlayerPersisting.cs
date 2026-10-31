@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.ComponentModel.DataAnnotations;
 using Net.NowhereAtAll.Zaturnava.Application.Players;
 
@@ -14,6 +15,12 @@ public interface IPlayerPersisting
 
     /// <summary>The player whose session the token's hash is, if any.</summary>
     Task<Player?> BySession([Required] string tokenHash, CancellationToken cancellationToken);
+
+    /// <summary>The name of each of <paramref name="players"/> still known; one forgotten is left out.</summary>
+    Task<ImmutableDictionary<PlayerId, string>> Names(
+        [Required] ImmutableList<PlayerId> players,
+        CancellationToken cancellationToken
+    );
 
     /// <summary>Keeps a new player, with their logins.</summary>
     Task Add([Required] Player player, CancellationToken cancellationToken);

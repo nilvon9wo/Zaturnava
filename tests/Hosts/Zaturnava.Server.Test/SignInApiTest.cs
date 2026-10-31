@@ -4,6 +4,8 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Net.NowhereAtAll.Zaturnava.Application.Players;
+using Net.NowhereAtAll.Zaturnava.Client;
 using Net.NowhereAtAll.Zaturnava.Contracts;
 
 namespace Net.NowhereAtAll.Zaturnava.Server.Test;
@@ -166,6 +168,30 @@ public sealed partial class SignInApiTest(SigningInServer server) : IClassFixtur
         // Assert
         PlayerDto? after = await this.Me(TokenOf(await this.Done("GitHub|6|Ada", SigningInServer.Page)));
         Assert.Equal((HttpStatusCode.NoContent, false), (response.StatusCode, before?.Id == after?.Id));
+    }
+
+    [Fact]
+    public async Task Claim_WhenAPlayerSignedInTakesASeat_ShowsTheirNameThereUntilTheyAreDeleted()
+    {
+        // Arrange
+        string token = TokenOf(await this.Done("GitHub|7|Ada", SigningInServer.Page));
+        HttpGameClient client = server.GameClient();
+        GameCreatedDto created = await client.Create(
+            new CreateGameRequest(ZaturnavaServer.Chaturaji2027, ZaturnavaServer.OneOpenSeat),
+            this._cancellation
+        );
+
+        // Act
+        _ = await client.Claim(created.GameId, 0, token, this._cancellation);
+
+        // Assert
+        string? named = (await client.Get(created.GameId, this._cancellation)).Seats[0].Player;
+        using HttpResponseMessage deleted = await this.Send(HttpMethod.Delete, GameRoutes.Me, token);
+        ImmutableList<GameSummaryDto> games = await client.List(this._cancellation);
+        Assert.Equal(
+            ("Ada", PlayerService.Deleted),
+            (named, games.Single(game => game.Id == created.GameId).Players[0])
+        );
     }
 
     [Theory]

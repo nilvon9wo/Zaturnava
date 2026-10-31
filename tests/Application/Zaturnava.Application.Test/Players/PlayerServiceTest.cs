@@ -1,3 +1,5 @@
+using System.Collections.Immutable;
+using Net.NowhereAtAll.Zaturnava.Application.Games;
 using Net.NowhereAtAll.Zaturnava.Application.Players;
 using Net.NowhereAtAll.Zaturnava.Persistence.InMemory;
 
@@ -137,6 +139,31 @@ public sealed class PlayerServiceTest
         Assert.Equal(
             (false, signedIn.Player.Id),
             (isDeleted, (await this._service.Find(signedIn.Token, this._cancellation))?.Id)
+        );
+    }
+
+    [Fact]
+    public async Task NamesOf_WhenSeatsAreHeld_NamesEachPersonsByWhoClaimedIt()
+    {
+        // Arrange - Ada signed in; a guest; a player since deleted; a bot's seat and an open one, named by none
+        SignedIn ada = await this._service.SignIn(Login, "Ada", this._cancellation);
+        SignedIn gone = await this._service.SignIn(new Login("GitHub", "5678"), "Gone", this._cancellation);
+        _ = await this._service.Delete(gone.Token, this._cancellation);
+        HumanSeat adas = new("A", ada.Player.Id);
+        HumanSeat guests = new("B");
+        HumanSeat deleted = new("C", gone.Player.Id);
+        SeatController[] seats = [adas, guests, deleted, new BotSeat("first"), new OpenSeat(), adas];
+
+        // Act
+        ImmutableDictionary<HumanSeat, string> names = await this._service.NamesOf(seats, this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            "A Ada|B guest|C deleted player",
+            string.Join(
+                '|',
+                names.OrderBy(name => name.Key.TokenHash).Select(name => $"{name.Key.TokenHash} {name.Value}")
+            )
         );
     }
 

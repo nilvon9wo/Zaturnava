@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.EntityFrameworkCore;
 using Net.NowhereAtAll.Zaturnava.Application.Players;
@@ -33,6 +34,18 @@ public sealed class EfPlayerStore(GameDbContext context) : IPlayerPersisting
                 cancellationToken
             );
         return ToPlayer(player);
+    }
+
+    public async Task<ImmutableDictionary<PlayerId, string>> Names(
+        [Required] ImmutableList<PlayerId> players,
+        CancellationToken cancellationToken
+    )
+    {
+        List<string> ids = [.. players.Select(player => player.Value).Distinct(StringComparer.Ordinal)];
+        List<PlayerEntity> known = await this._context.Players
+            .Where(entity => ids.Contains(entity.Id))
+            .ToListAsync(cancellationToken);
+        return known.ToImmutableDictionary(entity => new PlayerId(entity.Id), entity => entity.Name);
     }
 
     public async Task Add([Required] Player player, CancellationToken cancellationToken)

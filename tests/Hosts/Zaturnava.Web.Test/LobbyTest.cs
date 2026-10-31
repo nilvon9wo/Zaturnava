@@ -53,6 +53,22 @@ public sealed class LobbyTest : IDisposable
         );
     }
 
+    [Theory]
+    [InlineData("player-token", "player-token")]
+    [InlineData(null, null)]
+    public void Play_WhenSignedInOrNot_ClaimsTheSeatAsThePlayerIfAny(string? remembered, string? expected)
+    {
+        // Arrange
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.player").SetResult(remembered);
+        IRenderedComponent<Lobby> lobby = this.SeatBySeat();
+
+        // Act
+        lobby.Find("button.create").Click();
+
+        // Assert
+        Assert.Equal(expected, this._page.Server.ClaimedAs);
+    }
+
     [Fact]
     public void Play_WhenAScenarioIsChosen_StartsFromItAndDescribesIt()
     {
@@ -522,7 +538,7 @@ public sealed class LobbyTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ("Black: person, Yellow: open, Green: random, Red: open", expected),
+            ("Black: Ada, Yellow: open, Green: random, Red: open", expected),
             (lobby.Find("span.players").TextContent, lobby.Find("span.moves").TextContent)
         );
     }
