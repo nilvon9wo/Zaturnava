@@ -130,6 +130,22 @@ did them.
   the board in four, and a dearer one that may cross them; the boat is to be replaced.
 - The grand game, of which Chaturaji 2027 is a part: its [specification](grand/specification.md),
   [pieces](grand/pieces.md) and [roadmap](grand/roadmap.md).
+- *(Stated 2026-10-31, low priority, an idea)* **Games made by others, as data alone.** Anyone may describe a
+  game of their own (its board, pieces, how each moves, the dice, the setup, how it is scored and ends) in JSON
+  or XML, and play it on the live server, the one the itch.io page plays on. No one may send code: every
+  structure, movement and rule a description names must already exist in the engine, so a description can only
+  combine what is there. *(Proposed)* What it would take, roughly:
+  - a published schema for a description, versioned, checked on upload, with a clear refusal naming what is
+    unknown or out of bounds;
+  - the engine's building blocks (topologies, movement patterns, dice faces, promotions, captures, scoring and
+    endings) named and parameterised, so a description refers to them by name, the way Grand Legions' pieces
+    already combine rider, leaper and hopper parts ([pieces](grand/pieces.md));
+  - limits on size (cells, pieces, seats) and on the work a turn's legal moves may take, so that no description
+    can slow the server for everyone else;
+  - an upload tied to a signed-in player, and a listing of others' games apart from the house ones, which the
+    house may take down;
+  - the dumb bots (Random, Midas) able to play any described game, as they play any ruleset through its legal
+    actions.
 
 ## Done
 
