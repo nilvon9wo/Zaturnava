@@ -12,7 +12,7 @@
     <ProjectReference Include="..\..\src\Hosts\Zaturnava.Web\Zaturnava.Web.csproj" />
     <ProjectReference Include="..\..\src\Apis\Zaturnava.Mcp\Zaturnava.Mcp.csproj" />
     <ProjectReference Include="..\..\src\Bots\Zaturnava.BotRunner\Zaturnava.BotRunner.csproj" />
-    <ProjectReference Include="..\..\src\Games\GrandDraft\Zaturnava.Games.GrandDraft\Zaturnava.Games.GrandDraft.csproj" />
+    <ProjectReference Include="..\..\src\Games\GrandLegions\Zaturnava.Games.GrandLegions\Zaturnava.Games.GrandLegions.csproj" />
   </ItemGroup>
 
 </Project>

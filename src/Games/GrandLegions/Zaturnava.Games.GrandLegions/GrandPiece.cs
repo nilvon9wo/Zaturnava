@@ -1,7 +1,7 @@
 using System.Collections.Immutable;
 using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
 
-namespace Net.NowhereAtAll.Zaturnava.Games.GrandDraft;
+namespace Net.NowhereAtAll.Zaturnava.Games.GrandLegions;
 
 /// <summary>
 /// A piece of the catalogue (pieces.md): its key, its name for people, its class and tradition, its value (its

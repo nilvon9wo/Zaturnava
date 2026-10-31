@@ -1,4 +1,4 @@
-namespace Net.NowhereAtAll.Zaturnava.Games.GrandDraft;
+namespace Net.NowhereAtAll.Zaturnava.Games.GrandLegions;
 
 /// <summary>
 /// The game a piece comes from: Western chess, Xiangqi, Janggi, Shogi or Makruk; or none of them, a fairy

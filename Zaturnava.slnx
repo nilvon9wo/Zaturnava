@@ -24,8 +24,8 @@
   <Folder Name="/src/Games/Chaturaji2027/">
     <Project Path="src/Games/Chaturaji2027/Zaturnava.Games.Chaturaji2027/Zaturnava.Games.Chaturaji2027.csproj" />
   </Folder>
-  <Folder Name="/src/Games/GrandDraft/">
-    <Project Path="src/Games/GrandDraft/Zaturnava.Games.GrandDraft/Zaturnava.Games.GrandDraft.csproj" />
+  <Folder Name="/src/Games/GrandLegions/">
+    <Project Path="src/Games/GrandLegions/Zaturnava.Games.GrandLegions/Zaturnava.Games.GrandLegions.csproj" />
   </Folder>
   <Folder Name="/src/Hosts/">
     <Project Path="src/Hosts/Zaturnava.Hosting.Itch/Zaturnava.Hosting.Itch.csproj" />
@@ -60,8 +60,8 @@
   <Folder Name="/tests/Games/Chaturaji2027/">
     <Project Path="tests/Games/Chaturaji2027/Zaturnava.Games.Chaturaji2027.Test/Zaturnava.Games.Chaturaji2027.Test.csproj" />
   </Folder>
-  <Folder Name="/tests/Games/GrandDraft/">
-    <Project Path="tests/Games/GrandDraft/Zaturnava.Games.GrandDraft.Test/Zaturnava.Games.GrandDraft.Test.csproj" />
+  <Folder Name="/tests/Games/GrandLegions/">
+    <Project Path="tests/Games/GrandLegions/Zaturnava.Games.GrandLegions.Test/Zaturnava.Games.GrandLegions.Test.csproj" />
   </Folder>
   <Folder Name="/tests/Hosts/">
     <Project Path="tests/Hosts/Zaturnava.Hosting.Itch.Test/Zaturnava.Hosting.Itch.Test.csproj" />
