@@ -5,7 +5,8 @@ least tested, on their own. As with Chaturaji 2027, it is played locally against
 is hosted. Chaturaji 2027 stays playable, and its tests passing, at every stage.
 
 The order is agreed (2026-10-26); nothing is scheduled. The design's questions are answered, but
-for a second palace (**Q5**, for later) and what playtesting is to settle (**Q14**)
+for a second palace (**Q5**, for later), versions of saved settings (**Q26**, for later) and what
+playtesting is to settle (**Q14**)
 ([specification §9](specification.md#9-open-questions)).
 
 ## Stage 0 — Finish what the grand game inherits
@@ -55,18 +56,24 @@ to come: the area rules (palace, river), which belong with the board (Stage 2) a
 
 - A board and a kingdom size (at least 3 × 3), set apart; a kingdom in each corner, lying as the
   game is set (pinwheel, or top and bottom); rivers drawn on the board.
-- Same-side and opposite-corner arrangements, with forward away from each kingdom's back rank.
-- Rivers, and what they mean to the pieces that care.
-- A team game or everyone for themselves (`TeamGraph` already allows both).
+- Forward away from each kingdom's back rank.
+- Rivers between or through the middle cells, through or around kingdoms, and what they mean to the
+  pieces that care.
+- A team game, with any two seats allied, picked on a picture of the four seats; or everyone for
+  themselves.
 - Dice that name a class: 1 Artillery, 2 Cavalry, 3–4 Heavy, 5–6 Infantry or Leader.
 - The lobby's game-creation form, with "at random" for every setting; boards up to 26 × 26.
 - To be playable before the draft exists: each army a fixed one, set by the program.
 
 *Begun (2026-10-31)*: the board as a game is set (`GrandBoard`): its kingdoms in their corners, by
 pinwheel or top and bottom, each with its forward; whether the setting fits (sides up to 26, kingdoms
-at least 3 × 3, none overlapping); and which cells are across a river from a kingdom. The dice
-(`ClassDice`). Still to come: the allies' arrangement and teams, what rivers mean to the pieces, the
-lobby's form, fixed armies, and the ruleset that plays them.
+at least 3 × 3, none overlapping); which cells a river cuts, and which are across it from a kingdom,
+with the river through or around kingdoms. The dice (`ClassDice`); teams (`Alliances`). Still to come:
+what rivers mean to the pieces, the lobby's form (with the allies' picture), fixed armies, and the
+ruleset that plays them.
+
+Saved settings ([specification §2.1](specification.md#21-saved-settings)), named, shared, and copied
+to edit, wait for players to sign in and for storage that lasts.
 
 ## Stage 3 — Palaces, thrones and leaders
 
