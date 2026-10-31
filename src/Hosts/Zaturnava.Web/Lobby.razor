@@ -1,8 +1,8 @@
-@* Start a game (each seat a person or a bot, no bot in two seats) and sit at it - set up by strength, as offered
-   first: the player's colour, then for their ally and each enemy a person or how strong a bot (easy, medium or
+@* Start a game (each seat a person or a bot, no bot in two seats) and sit at it, set up as the player last chose
+   (remembered in the browser), else quick - set up by strength: the player's colour, then for their ally and each enemy a person or how strong a bot (easy, medium or
    hard, by the bots' ratings; a strength whose bots all have seats is offered to no other), and, if they like,
    which of those bots, each named with its rating; else each is chosen at random among them - or seat by seat,
-   each bot named with its rating - or start one
+   each bot named with its rating - or quick: start one
    at once, at a seat chosen at random, easy, medium or hard by which bots it seats among the others - or join,
    watch or go back to one already started; a game over is only listed, with nothing left to watch. Seats go by
    the ruleset's names for them (Black, Yellow...), not by number. A bot paid for each use is seated only when
@@ -23,18 +23,36 @@
             <h2>New game</h2>
             <p class="rules">@Ruleset(catalog).Name</p>
             <div class="setup-modes">
+                <button class="mode quick-game"
+                        aria-pressed="@this.IsPressed(SetupMode.Quick)"
+                        @onclick="() => this.SetUp(SetupMode.Quick)">
+                    Quick game
+                </button>
                 <button class="mode by-strength"
-                        aria-pressed="@(this._isByStrength ? "true" : "false")"
-                        @onclick="() => this._isByStrength = true">
+                        aria-pressed="@this.IsPressed(SetupMode.ByStrength)"
+                        @onclick="() => this.SetUp(SetupMode.ByStrength)">
                     By strength
                 </button>
                 <button class="mode seat-by-seat"
-                        aria-pressed="@(this._isByStrength ? "false" : "true")"
-                        @onclick="() => this._isByStrength = false">
+                        aria-pressed="@this.IsPressed(SetupMode.SeatBySeat)"
+                        @onclick="() => this.SetUp(SetupMode.SeatBySeat)">
                     Seat by seat
                 </button>
             </div>
-            @if (this._isByStrength)
+            @if (this._mode == SetupMode.Quick)
+            {
+                <div class="quick-games">
+                    <span class="quick-label">At any seat, against bots:</span>
+                    <button class="quick easy primary" @onclick="() => this.Quick(catalog, Difficulty.Easy)">Easy</button>
+                    <button class="quick medium primary" @onclick="() => this.Quick(catalog, Difficulty.Medium)">Medium</button>
+                    <button class="quick hard primary" @onclick="() => this.Quick(catalog, Difficulty.Hard)">Hard</button>
+                </div>
+                <p class="quick-hint">
+                    Easy seats the three easiest bots; medium, any three; hard, the three hardest. Who they are is under
+                    <strong>The bots</strong>, below.
+                </p>
+            }
+            else if (this._mode == SetupMode.ByStrength)
             {
                 <ol class="plans strengths">
                     <li>
@@ -99,7 +117,7 @@
                     }
                 </ol>
             }
-            @if (!catalog.Scenarios.IsEmpty)
+            @if (this._mode != SetupMode.Quick && !catalog.Scenarios.IsEmpty)
             {
                 <label class="scenario">
                     Start from
@@ -116,17 +134,10 @@
                     <p class="scenario-description">@chosen.Description</p>
                 }
             }
-            <button class="create primary" @onclick="() => this.Create(catalog)">Play</button>
-            <div class="quick-games">
-                <span class="quick-label">Quick game, at any seat:</span>
-                <button class="quick easy" @onclick="() => this.Quick(catalog, Difficulty.Easy)">Easy</button>
-                <button class="quick medium" @onclick="() => this.Quick(catalog, Difficulty.Medium)">Medium</button>
-                <button class="quick hard" @onclick="() => this.Quick(catalog, Difficulty.Hard)">Hard</button>
-            </div>
-            <p class="quick-hint">
-                Easy seats the three easiest bots; medium, any three; hard, the three hardest. Who they are is under
-                <strong>The bots</strong>, below.
-            </p>
+            @if (this._mode != SetupMode.Quick)
+            {
+                <button class="create primary" @onclick="() => this.Create(catalog)">Play</button>
+            }
         </div>
 
         <div class="panel">
@@ -170,7 +181,7 @@
     private const int PersonLevel = GameStarter.PersonLevel;
 
     private List<string> _plans = [];
-    private bool _isByStrength = true;
+    private SetupMode _mode;
     private int _colour;
     private ImmutableList<Strength> _strengths = [];
 
@@ -227,6 +238,7 @@
         }
 
         this._picks = [.. Enumerable.Repeat(string.Empty, Ruleset(catalog).SeatCount)];
+        this._mode = await this.Browser.Setup();
         this._catalog = catalog;
         foreach (GameSummaryDto game in this._games)
         {
@@ -269,13 +281,13 @@
             this.Games,
             Ruleset(catalog).Id,
             this.ChosenBots(),
-            this._isByStrength ? this._colour : this._plans.IndexOf(string.Empty),
+            this._mode == SetupMode.ByStrength ? this._colour : this._plans.IndexOf(string.Empty),
             this._scenario.Length == 0 ? null : this._scenario
         ));
 
     /// <summary>The bot for each seat, as set up seat by seat or by strength; none for a person's.</summary>
     private ImmutableList<string?> ChosenBots() =>
-        this._isByStrength
+        this._mode == SetupMode.ByStrength
             ? GameStarter.ByStrength(this.ChoicesOfSeats(), this._strengths)
             : GameStarter.BotsOf(this._plans);
 
@@ -294,6 +306,15 @@
     /// <summary>Whether <paramref name="bot"/> was chosen for a seat other than <paramref name="seat"/>.</summary>
     private bool IsPicked(string bot, int seat) =>
         this._picks.Where((_, other) => other != seat && other != this._colour).Contains(bot);
+
+    private string IsPressed(SetupMode mode) => this._mode == mode ? "true" : "false";
+
+    /// <summary>Sets up new games as <paramref name="mode"/> does, here and whenever the lobby is shown again.</summary>
+    private async Task SetUp(SetupMode mode)
+    {
+        this._mode = mode;
+        await this.Browser.SetSetup(mode);
+    }
 
     private Task Quick(CatalogDto catalog, Difficulty difficulty) =>
         this.Sit(() => GameStarter.Quick(this.Games, catalog, difficulty));

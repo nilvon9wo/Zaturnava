@@ -7,7 +7,8 @@ namespace Net.NowhereAtAll.Zaturnava.Web;
 
 /// <summary>
 /// What the page asks of the browser itself (wwwroot/js/zaturnava.js): sounds, a memory that outlives
-/// the page (seats held, the player signed in, and settings: sound and pieces), the colour theme, word of the page
+/// the page (seats held, the player signed in, and settings: sound, pieces, how a game is set up), the colour theme,
+/// word of the page
 /// shown again, and a window to sign in.
 /// </summary>
 internal sealed class Browser(IJSRuntime js)
@@ -23,6 +24,9 @@ internal sealed class Browser(IJSRuntime js)
     private const string LogKey = "zaturnava.log";
     private const string ChatOrderKey = "zaturnava.chat-order";
     private const string PlayerKey = "zaturnava.player";
+    private const string SetupKey = "zaturnava.setup";
+    private const string ByStrength = "strength";
+    private const string SeatBySeat = "seats";
     private const string Everything = "everything";
     private const string OldestFirst = "oldest";
     private const string ChessPieces = "chess";
@@ -84,6 +88,26 @@ internal sealed class Browser(IJSRuntime js)
 
     public ValueTask SetChatNewestFirst(bool isNewestFirst) =>
         this.Save(ChatOrderKey, isNewestFirst ? "newest" : OldestFirst);
+
+    /// <summary>How the lobby last set up a new game: a quick game, unless the player chose otherwise.</summary>
+    public async ValueTask<SetupMode> Setup() =>
+        await this.Load(SetupKey) switch
+        {
+            ByStrength => SetupMode.ByStrength,
+            SeatBySeat => SetupMode.SeatBySeat,
+            _ => SetupMode.Quick,
+        };
+
+    public ValueTask SetSetup(SetupMode mode) =>
+        this.Save(
+            SetupKey,
+            mode switch
+            {
+                SetupMode.ByStrength => ByStrength,
+                SetupMode.SeatBySeat => SeatBySeat,
+                _ => "quick",
+            }
+        );
 
     /// <summary>The token of the player signed in on this browser, if one is.</summary>
     public async ValueTask<string?> PlayerToken() => await this.Load(PlayerKey) is { Length: > 0 } token ? token : null;

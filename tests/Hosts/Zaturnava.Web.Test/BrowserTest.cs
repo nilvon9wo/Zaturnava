@@ -111,6 +111,41 @@ public sealed class BrowserTest : IDisposable
     }
 
     [Theory]
+    [InlineData("strength", nameof(SetupMode.ByStrength))]
+    [InlineData("seats", nameof(SetupMode.SeatBySeat))]
+    [InlineData("quick", nameof(SetupMode.Quick))]
+    [InlineData(null, nameof(SetupMode.Quick))]
+    public async Task Setup_WhenRead_IsTheOneLastChosenElseQuick(string? remembered, string expected)
+    {
+        // Arrange
+        _ = this._context.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.setup").SetResult(remembered);
+
+        // Act
+        SetupMode mode = await this._browser.Setup();
+
+        // Assert
+        Assert.Equal(expected, mode.ToString());
+    }
+
+    [Theory]
+    [InlineData(nameof(SetupMode.ByStrength), "strength")]
+    [InlineData(nameof(SetupMode.SeatBySeat), "seats")]
+    [InlineData(nameof(SetupMode.Quick), "quick")]
+    public async Task SetSetup_WhenSet_RemembersIt(string mode, string expected)
+    {
+        // Arrange - nothing beyond the browser
+
+        // Act
+        await this._browser.SetSetup(Enum.Parse<SetupMode>(mode));
+
+        // Assert
+        Assert.Equal(
+            ["zaturnava.setup", expected],
+            this._context.JSInterop.Invocations["zaturnava.save"].Single().Arguments
+        );
+    }
+
+    [Theory]
     [InlineData("everything", false)]
     [InlineData(null, true)]
     public async Task IsLogHighlightsOnly_WhenRead_IsUnlessEverythingWasChosen(string? remembered, bool expected)

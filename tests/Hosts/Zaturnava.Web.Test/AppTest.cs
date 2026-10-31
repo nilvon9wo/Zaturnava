@@ -15,7 +15,7 @@ public sealed class AppTest : IDisposable
         IRenderedComponent<App> app = this._page.Render<App>();
 
         // Act
-        app.Find("button.create").Click();
+        Play(app);
 
         // Assert
         Assert.Equal((1, 0), (app.FindAll("section.table").Count, app.FindAll("section.lobby").Count));
@@ -26,7 +26,7 @@ public sealed class AppTest : IDisposable
     {
         // Arrange
         IRenderedComponent<App> app = this._page.Render<App>();
-        app.Find("button.create").Click();
+        Play(app);
 
         // Act
         app.Find("button.leave").Click();
@@ -88,7 +88,7 @@ public sealed class AppTest : IDisposable
         IRenderedComponent<App> app = this._page.Render<App>();
 
         // Act
-        app.Find("button.create").Click();
+        Play(app);
 
         // Assert
         Assert.Equal(
@@ -107,7 +107,7 @@ public sealed class AppTest : IDisposable
         IRenderedComponent<App> app = this._page.Render<App>();
 
         // Act
-        app.Find("button.create").Click();
+        Play(app);
 
         // Assert
         Assert.Equal(
@@ -200,6 +200,13 @@ public sealed class AppTest : IDisposable
             ("Pieces: chess", "Pieces: chaturaji"),
             (afterOne, app.Find("button.pieces").TextContent.Trim())
         );
+    }
+
+    /// <summary>Plays a game set up by strength, at the first seat, as the lobby offers it.</summary>
+    private static void Play(IRenderedComponent<App> app)
+    {
+        app.Find("button.by-strength").Click();
+        app.Find("button.create").Click();
     }
 
     private IEnumerable<JSRuntimeInvocation> SeatsRemembered() =>
