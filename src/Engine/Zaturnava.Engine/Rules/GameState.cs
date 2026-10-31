@@ -65,6 +65,11 @@ public sealed record GameState(
     public ImmutableList<RansomOffer> OffersMade { get; init; } = [];
 
     /// <summary>
+    /// The ransoms declined so far this game, kept so that a player (a bot, say) need not ask the same again.
+    /// </summary>
+    public ImmutableList<RansomOffer> OffersDeclined { get; init; } = [];
+
+    /// <summary>
     /// The cell of a Pawn just come to the far edge, which the deciding seat may promote at once, before
     /// the turn goes on, or leave for later; null if none.
     /// </summary>

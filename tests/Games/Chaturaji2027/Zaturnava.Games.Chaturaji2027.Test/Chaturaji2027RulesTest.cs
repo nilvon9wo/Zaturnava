@@ -3333,6 +3333,20 @@ public sealed class Chaturaji2027RulesTest
     }
 
     [Fact]
+    public void Apply_WhenAnOfferIsDeclined_RemembersItForTheRestOfTheGame()
+    {
+        // Arrange
+        RansomOffer offer = new(Black, Yellow, [new PieceId(12)], []);
+        GameState state = this.Ransoms() with { DecidingSeat = Yellow, Offer = offer };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new DeclineAction(Yellow));
+
+        // Assert
+        Assert.Equal([offer], transition.State.OffersDeclined);
+    }
+
+    [Fact]
     public void Apply_WhenATurnEndsWithPrisonersHeld_OpensTheRansomWindowAgainstTheClock()
     {
         // Arrange - Black's last die moves its Raja, which ends its turn

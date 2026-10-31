@@ -116,6 +116,17 @@ internal static class Ransoms
             State = request.State with { Prisoners = request.State.Prisoners.Add(Held(12, "raja", Yellow, Black)) },
         };
 
+    /// <summary>The request, with Yellow also holding Green's Raja 31.</summary>
+    public static DecisionRequest YellowHoldingGreensRaja(DecisionRequest request) =>
+        request with
+        {
+            State = request.State with { Prisoners = request.State.Prisoners.Add(Held(31, "raja", Green, Yellow)) },
+        };
+
+    /// <summary>The request, with <paramref name="declined"/> declined earlier in the game.</summary>
+    public static DecisionRequest Declined(DecisionRequest request, RansomOffer declined) =>
+        request with { State = request.State with { OffersDeclined = [declined] } };
+
     public static RansomOffer Offer(SeatId to, ImmutableList<int> given, ImmutableList<int> asked) =>
         new(Black, to, [.. given.Select(Id)], [.. asked.Select(Id)]);
 

@@ -119,7 +119,12 @@ internal sealed class Ransom(SquareGridTopology grid, Position start)
     public static Transition Declined(GameState state)
     {
         RansomOffer offer = state.Offer!; // only a receiver answers, while its offer waits
-        GameState answered = state with { Offer = null, DecidingSeat = offer.From };
+        GameState answered = state with
+        {
+            Offer = null,
+            DecidingSeat = offer.From,
+            OffersDeclined = state.OffersDeclined.Add(offer),
+        };
         return new Transition(answered, [new RansomDeclined(offer)]);
     }
 

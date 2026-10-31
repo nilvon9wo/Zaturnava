@@ -197,6 +197,32 @@ public sealed class MidasBotTest
     }
 
     [Fact]
+    public async Task Decide_WhenItsBestTradeWasDeclinedBefore_DoesNotOfferItAgain()
+    {
+        // Arrange - no other trade gains anything
+        DecisionRequest request = Ransoms.Declined(Ransoms.Window(), Ransoms.Offer(Ransoms.Yellow, [10], [20]));
+
+        // Act
+        GameAction action = await new MidasBot(new Random(1)).Decide(request, this._cancellation);
+
+        // Assert
+        Assert.Equal(Ransoms.Done, action);
+    }
+
+    [Fact]
+    public async Task Decide_WhenAnEnemyHoldsALeaderOfItsTeam_DoesNotAskForIt()
+    {
+        // Arrange - a Pawn for Green's Raja would gain the most, but the enemy would never give it back
+        DecisionRequest request = Ransoms.YellowHoldingGreensRaja(Ransoms.Window());
+
+        // Act
+        GameAction action = await new MidasBot(new Random(1)).Decide(request, this._cancellation);
+
+        // Assert
+        Assert.Equal(new OfferAction(Seat, Ransoms.Yellow, [new PieceId(10)], [new PieceId(20)]), action);
+    }
+
+    [Fact]
     public async Task Decide_WhenItHasOfferedThisTurn_IsDone()
     {
         // Arrange
