@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.ComponentModel.DataAnnotations;
+using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -82,7 +83,31 @@ public sealed class HttpGameClient(HttpClient http) : IGameServing
     ) =>
         this.Send<ChatMessageDto>(HttpMethod.Post, GameRoutes.Chat(gameId), request, token, cancellationToken);
 
+    public Task<ImmutableList<string>> SignInProviders(CancellationToken cancellationToken) =>
+        this.Send<ImmutableList<string>>(HttpMethod.Get, GameRoutes.SignInProviders, null, null, cancellationToken);
+
+    public async Task<PlayerDto?> Me([Required] string token, CancellationToken cancellationToken)
+    {
+        using HttpResponseMessage response =
+            await this.Exchange(HttpMethod.Get, GameRoutes.Me, null, token, cancellationToken);
+        return response.StatusCode == HttpStatusCode.Unauthorized
+            ? null
+            : await Outcome<PlayerDto>(response, cancellationToken);
+    }
+
     private async Task<T> Send<T>(
+        HttpMethod method,
+        string route,
+        object? body,
+        string? token,
+        CancellationToken cancellationToken
+    )
+    {
+        using HttpResponseMessage response = await this.Exchange(method, route, body, token, cancellationToken);
+        return await Outcome<T>(response, cancellationToken);
+    }
+
+    private async Task<HttpResponseMessage> Exchange(
         HttpMethod method,
         string route,
         object? body,
@@ -95,11 +120,13 @@ public sealed class HttpGameClient(HttpClient http) : IGameServing
         request.Headers.Authorization = token is null
             ? null
             : new AuthenticationHeaderValue(GameRoutes.TokenScheme, token);
-        using HttpResponseMessage response = await this._http.SendAsync(request, cancellationToken);
-        return response.IsSuccessStatusCode
+        return await this._http.SendAsync(request, cancellationToken);
+    }
+
+    private static async Task<T> Outcome<T>(HttpResponseMessage response, CancellationToken cancellationToken) =>
+        response.IsSuccessStatusCode
             ? await Read<T>(response, cancellationToken)
             : throw await Refused(response, cancellationToken);
-    }
 
     private static async Task<T> Read<T>(HttpResponseMessage response, CancellationToken cancellationToken) =>
         await response.Content.ReadFromJsonAsync<T>(Wire, cancellationToken)

@@ -224,6 +224,48 @@ public sealed class HttpGameClientTest
     }
 
     [Fact]
+    public async Task SignInProviders_WhenAsked_GetsTheirNames()
+    {
+        // Arrange
+        StubServer server = new(HttpStatusCode.OK, """["GitHub"]""");
+
+        // Act
+        ImmutableList<string> providers = await Client(server).SignInProviders(this._cancellation);
+
+        // Assert
+        Assert.Equal(("GET", "/api/signin", "GitHub"), (server.Method, server.Path, providers.Single()));
+    }
+
+    [Fact]
+    public async Task Me_WhenTheTokenStandsForAPlayer_GetsThemWithIt()
+    {
+        // Arrange
+        StubServer server = new(HttpStatusCode.OK, """{"id":"p","name":"Ada"}""");
+
+        // Act
+        PlayerDto? player = await Client(server).Me("secret", this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            ("GET", "/api/players/me", "Bearer secret", new PlayerDto("p", "Ada")),
+            (server.Method, server.Path, server.Authorization, player)
+        );
+    }
+
+    [Fact]
+    public async Task Me_WhenTheTokenStandsForNoOne_IsNoOne()
+    {
+        // Arrange
+        StubServer server = new(HttpStatusCode.Unauthorized, string.Empty);
+
+        // Act
+        PlayerDto? player = await Client(server).Me("forgotten", this._cancellation);
+
+        // Assert
+        Assert.Null(player);
+    }
+
+    [Fact]
     public async Task Send_WhenTheServerRefusesWithAProblem_ThrowsItsRefusalAndDetail()
     {
         // Arrange

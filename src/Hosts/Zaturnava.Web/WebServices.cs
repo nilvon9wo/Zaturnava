@@ -23,8 +23,16 @@ internal static class WebServices
         IConfiguration configuration,
         string pageAddress
     ) =>
+        services.AddZaturnavaWeb(configuration, new Uri(configuration[ServerUrlKey] ?? pageAddress));
+
+    private static IServiceCollection AddZaturnavaWeb(
+        this IServiceCollection services,
+        IConfiguration configuration,
+        Uri server
+    ) =>
         services
-            .AddSingleton(new HttpClient { BaseAddress = new Uri(configuration[ServerUrlKey] ?? pageAddress) })
+            .AddSingleton(new ServerAddress(server))
+            .AddSingleton(new HttpClient { BaseAddress = server })
             .AddSingleton<IGameServing, HttpGameClient>()
             .AddSingleton<Browser>()
             .AddSingleton(TimeProvider.System)

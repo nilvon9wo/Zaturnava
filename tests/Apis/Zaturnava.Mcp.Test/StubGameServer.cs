@@ -103,6 +103,12 @@ internal sealed class StubGameServer : IGameServing
     ) =>
         this.Answer(ImmutableList.Create(Said), (gameId, token, after));
 
+    public Task<ImmutableList<string>> SignInProviders(CancellationToken cancellationToken) =>
+        throw new NotSupportedException("The tools sign no one in.");
+
+    public Task<PlayerDto?> Me([Required] string token, CancellationToken cancellationToken) =>
+        throw new NotSupportedException("The tools sign no one in.");
+
     public Task<ChatMessageDto> Say(
         [Required] string gameId,
         [Required] string token,

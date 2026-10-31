@@ -166,7 +166,8 @@ opens, with a service the server is set up for (Proposed):
 | Who a player's token stands for | `GET api/players/me`, with the player's token | `{"id": "...", "name": "..."}`, or `401` |
 
 The page's origin must be one the server serves its page from; for any other, it answers `400`, and posts
-nothing. As with a seat's, the server keeps only a player token's hash. Coming back with the same account
+nothing. The game page does this from its bar, beside its settings, and keeps the token in the browser. As
+with a seat's, the server keeps only a player token's hash. Coming back with the same account
 signs in the same player, with a new token. Seats are not yet tied to players.
 
 ## Refusals

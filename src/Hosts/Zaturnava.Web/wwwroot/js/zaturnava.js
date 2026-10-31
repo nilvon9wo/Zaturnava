@@ -1,6 +1,7 @@
 // What the page needs from the browser beyond Blazor: sounds, made on the spot (no files to fetch),
-// a memory that outlives the page (seats held, settings), the colour theme, and word of the page shown
-// again. Each fails quietly: a browser without sound or storage still plays.
+// a memory that outlives the page (seats held, the player signed in, settings), the colour theme, word of
+// the page shown again, and a window to sign in. Each fails quietly: a browser without sound or storage
+// still plays.
 window.zaturnava = (() => {
     let audio = null;
     // The table told when the page is shown again: a hidden page's timers may wait a minute between looks.
@@ -155,6 +156,19 @@ window.zaturnava = (() => {
         },
         watch(table) {
             watcher = table;
+        },
+        // A window of its own to sign in at url; what it posts back is heard only from the server's own origin,
+        // and only the first time.
+        signIn(url, listener) {
+            const server = new URL(url).origin;
+            const heard = event => {
+                if (event.origin === server && typeof event.data?.token === "string") {
+                    window.removeEventListener("message", heard);
+                    listener.invokeMethodAsync("SignedIn", event.data.token).catch(() => { });
+                }
+            };
+            window.addEventListener("message", heard);
+            window.open(url, "zaturnava-sign-in", "popup,width=520,height=720");
         },
     };
 })();

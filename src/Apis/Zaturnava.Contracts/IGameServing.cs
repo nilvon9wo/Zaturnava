@@ -52,6 +52,12 @@ public interface IGameServing
         CancellationToken cancellationToken
     );
 
+    /// <summary>The names of the services a person may sign in with; none, if none is set up.</summary>
+    Task<ImmutableList<string>> SignInProviders(CancellationToken cancellationToken);
+
+    /// <summary>The player a player's <paramref name="token"/> stands for; none, if it stands for no one.</summary>
+    Task<PlayerDto?> Me([Required] string token, CancellationToken cancellationToken);
+
     /// <summary>Says something at the game's table, as the seat <paramref name="token"/> holds.</summary>
     Task<ChatMessageDto> Say(
         [Required] string gameId,
