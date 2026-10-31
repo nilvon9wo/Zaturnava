@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Net.NowhereAtAll.Zaturnava.Application.Bots;
+using Net.NowhereAtAll.Zaturnava.Application.Chat;
 using Net.NowhereAtAll.Zaturnava.Application.Games;
 using Net.NowhereAtAll.Zaturnava.Application.Ports;
 using Net.NowhereAtAll.Zaturnava.Application.Rulesets;
@@ -48,6 +49,7 @@ internal static class ZaturnavaServices
             .AddSingleton(new DecisionClock(TimeProvider.System))
             .AddSingleton(Settings(configuration))
             .AddScoped<GameService>()
+            .AddScoped<ChatService>()
             .AddProblemDetails()
             .AddExceptionHandler<RefusalHandler>();
 

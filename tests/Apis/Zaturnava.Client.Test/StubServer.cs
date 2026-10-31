@@ -15,6 +15,8 @@ internal sealed class StubServer(HttpStatusCode status, string body) : HttpMessa
 
     public string? Path { get; private set; }
 
+    public string? Query { get; private set; }
+
     public string? Authorization { get; private set; }
 
     public string? Body { get; private set; }
@@ -28,6 +30,7 @@ internal sealed class StubServer(HttpStatusCode status, string body) : HttpMessa
     {
         this.Method = request.Method.Method;
         this.Path = request.RequestUri?.AbsolutePath;
+        this.Query = request.RequestUri?.Query;
         this.Authorization = request.Headers.Authorization?.ToString();
         this.Body = request.Content is null ? null : await request.Content.ReadAsStringAsync(cancellationToken);
         return new HttpResponseMessage(status)

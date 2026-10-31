@@ -64,6 +64,8 @@ claude mcp add zaturnava --env ZATURNAVA_SERVER_URL=http://localhost:5164/ \
 | `submit_action` | Take one of the legal actions, with the seat's token |
 | `advance_game` | Let the bot whose turn it is make one decision |
 | `game_history` | The game as data: every action, the scores, and how it ended |
+| `read_chat` | What was said at the table, and, with the seat's token, by its team |
+| `say` | Say something to the table or to the team, with the seat's token |
 
 Each is one route of [the HTTP API](http-api.md), which explains what they take and return. A
 refused request becomes the tool's error, with the server's reason, so the assistant can correct

@@ -26,7 +26,7 @@ public sealed class GameToolsTest : IAsyncLifetime
         Assert.Equal(
             [
                 "advance_game", "catalog", "claim_seat", "create_game", "game_history", "get_game", "list_games",
-                "submit_action",
+                "read_chat", "say", "submit_action",
             ],
             tools.Select(tool => tool.Name).Order(StringComparer.Ordinal)
         );
@@ -144,6 +144,49 @@ public sealed class GameToolsTest : IAsyncLifetime
 
         // Assert
         Assert.Equal((StubGameServer.GameId, 3), this._session.Server.Received);
+    }
+
+    [Fact]
+    public async Task ReadChat_WhenGivenAToken_ReadsWhatItsHolderMay()
+    {
+        // Arrange
+        Dictionary<string, object?> arguments = new()
+        {
+            ["gameId"] = StubGameServer.GameId,
+            ["token"] = StubGameServer.Token,
+            ["after"] = 4,
+        };
+
+        // Act
+        (string text, _) = await this._session.Call("read_chat", arguments, this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            (true, (StubGameServer.GameId, (string?)StubGameServer.Token, 4)),
+            (text.Contains(StubGameServer.Said.Text, StringComparison.Ordinal), this._session.Server.Received)
+        );
+    }
+
+    [Fact]
+    public async Task Say_WhenGivenWords_SaysThemWithTheToken()
+    {
+        // Arrange
+        Dictionary<string, object?> arguments = new()
+        {
+            ["gameId"] = StubGameServer.GameId,
+            ["token"] = StubGameServer.Token,
+            ["channel"] = ChatChannels.Team,
+            ["text"] = "Hold the left.",
+        };
+
+        // Act
+        _ = await this._session.Call("say", arguments, this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            (StubGameServer.GameId, StubGameServer.Token, new SayRequest(ChatChannels.Team, "Hold the left.")),
+            this._session.Server.Received
+        );
     }
 
     [Fact]

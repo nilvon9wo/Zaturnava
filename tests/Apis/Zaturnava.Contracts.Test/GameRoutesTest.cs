@@ -61,4 +61,28 @@ public sealed class GameRoutesTest
         // Assert
         Assert.Equal("api/games/g/advance", route);
     }
+
+    [Fact]
+    public void Chat_WhenGivenAGame_RoutesUnderIt()
+    {
+        // Arrange - nothing beyond the id
+
+        // Act
+        string route = GameRoutes.Chat("g");
+
+        // Assert
+        Assert.Equal("api/games/g/chat", route);
+    }
+
+    [Fact]
+    public void Chat_WhenGivenAMessageToReadAfter_AsksForWhatCameLater()
+    {
+        // Arrange - nothing beyond the arguments
+
+        // Act
+        string route = GameRoutes.Chat("g", 12);
+
+        // Assert
+        Assert.Equal("api/games/g/chat?after=12", route);
+    }
 }
