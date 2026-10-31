@@ -21,6 +21,10 @@ internal sealed record Strength(string Name, string RulesetId, ImmutableList<Bot
 
     public int RatingOf(BotDto bot) => bot.Ratings.GetValueOrDefault(this.RulesetId);
 
+    /// <summary>How one of its bots is offered: "Argus (Elo 2341)"; its name alone, if it is not rated.</summary>
+    public string LabelOf(BotDto bot) =>
+        bot.Ratings.TryGetValue(this.RulesetId, out int rating) ? $"{bot.Name} (Elo {rating})" : bot.Name;
+
     /// <summary>How far the bot's rating is from the middle of this strength's.</summary>
     public int DistanceTo(BotDto bot) => Math.Abs((2 * this.RatingOf(bot)) - this.Lowest - this.Highest);
 }

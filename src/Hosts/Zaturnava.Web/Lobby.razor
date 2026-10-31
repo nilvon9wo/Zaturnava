@@ -1,7 +1,8 @@
-@* Start a game (each seat a person or a bot, no bot in two seats) and sit at it - set up seat by seat, each bot
-   named with its rating, or by strength: the player's colour, then for their ally and each enemy a person or how
-   strong a bot (easy, medium or hard, by the bots' ratings), and, if they like, which of those bots; else each is
-   chosen at random among them - or start one
+@* Start a game (each seat a person or a bot, no bot in two seats) and sit at it - set up by strength, as offered
+   first: the player's colour, then for their ally and each enemy a person or how strong a bot (easy, medium or
+   hard, by the bots' ratings; a strength whose bots all have seats is offered to no other), and, if they like,
+   which of those bots, each named with its rating; else each is chosen at random among them - or seat by seat,
+   each bot named with its rating - or start one
    at once, at a seat chosen at random, easy, medium or hard by which bots it seats among the others - or join,
    watch or go back to one already started; a game over is only listed, with nothing left to watch. Seats go by
    the ruleset's names for them (Black, Yellow...), not by number. A bot paid for each use is seated only when
@@ -22,15 +23,15 @@
             <h2>New game</h2>
             <p class="rules">@Ruleset(catalog).Name</p>
             <div class="setup-modes">
-                <button class="mode seat-by-seat"
-                        aria-pressed="@(this._isByStrength ? "false" : "true")"
-                        @onclick="() => this._isByStrength = false">
-                    Seat by seat
-                </button>
                 <button class="mode by-strength"
                         aria-pressed="@(this._isByStrength ? "true" : "false")"
                         @onclick="() => this._isByStrength = true">
                     By strength
+                </button>
+                <button class="mode seat-by-seat"
+                        aria-pressed="@(this._isByStrength ? "false" : "true")"
+                        @onclick="() => this._isByStrength = false">
+                    Seat by seat
                 </button>
             </div>
             @if (this._isByStrength)
@@ -38,7 +39,7 @@
                 <ol class="plans strengths">
                     <li>
                         <span class="seat-name">You play</span>
-                        <select class="colour" @bind="this._colour">
+                        <select class="colour" @bind="this.Colour">
                             @foreach (int seat in Enumerable.Range(0, Ruleset(catalog).SeatCount))
                             {
                                 <option value="@seat">@SeatName(Ruleset(catalog).SeatNames, seat)</option>
@@ -57,7 +58,9 @@
                                 <option value="@PersonLevel">Person</option>
                                 @foreach (int level in Enumerable.Range(0, this._strengths.Count))
                                 {
-                                    <option value="@level">@this._strengths[level].Label</option>
+                                    <option value="@level" disabled="@(!this.HasRoom(level, seat))">
+                                        @this._strengths[level].Label
+                                    </option>
                                 }
                             </select>
                             @if (this.StrengthOf(seat) is { Bots.Count: > 1 } strength)
@@ -67,7 +70,7 @@
                                     @foreach (BotDto bot in strength.Bots)
                                     {
                                         <option value="@bot.Id" disabled="@this.IsPicked(bot.Id, seat)">
-                                            @bot.Name
+                                            @strength.LabelOf(bot)
                                         </option>
                                     }
                                 </select>
@@ -164,11 +167,10 @@
     private CatalogDto? _catalog;
     private ImmutableList<GameSummaryDto> _games = [];
     private ImmutableDictionary<string, SeatClaim> _held = ImmutableDictionary<string, SeatClaim>.Empty;
-    /// <summary>A seat's level, played by a person rather than a bot of some strength.</summary>
-    private const int PersonLevel = -1;
+    private const int PersonLevel = GameStarter.PersonLevel;
 
     private List<string> _plans = [];
-    private bool _isByStrength;
+    private bool _isByStrength = true;
     private int _colour;
     private ImmutableList<Strength> _strengths = [];
 
@@ -217,7 +219,13 @@
         this._games = await this.Games.List(CancellationToken.None);
         this._plans = GameStarter.Plans(Ruleset(catalog).SeatCount, 0, GameStarter.Unpaid(catalog));
         this._strengths = GameStarter.Strengths(catalog, Ruleset(catalog).Id);
-        this._levels = [.. Enumerable.Repeat(this._strengths.Count / 2, Ruleset(catalog).SeatCount)];
+        this._levels = [.. Enumerable.Repeat(PersonLevel, Ruleset(catalog).SeatCount)];
+        foreach (int seat in OthersOf(Ruleset(catalog), this._colour).Append(this._colour))
+        {
+            this._levels[seat] =
+                GameStarter.LevelWithRoom(this._strengths, this.TakenBesides(seat), this._strengths.Count / 2);
+        }
+
         this._picks = [.. Enumerable.Repeat(string.Empty, Ruleset(catalog).SeatCount)];
         this._catalog = catalog;
         foreach (GameSummaryDto game in this._games)
@@ -225,6 +233,32 @@
             this._held = await this.Browser.Recall(game.Id) is { } claim ? this._held.SetItem(game.Id, claim) : this._held;
         }
     }
+
+    /// <summary>
+    /// The player's colour. A seat they take keeps no bot chosen for it, which another seat might have chosen
+    /// since; the seat they leave is played as it was, unless its strength's bots all have seats by now, when it
+    /// is played at the nearest strength with a bot left (or by a person, if none has).
+    /// </summary>
+    private int Colour
+    {
+        get => this._colour;
+        set
+        {
+            int left = this._colour;
+            this._colour = value;
+            this._picks[value] = string.Empty;
+            this._levels[left] = this._levels[left] == PersonLevel || this.HasRoom(this._levels[left], left)
+                ? this._levels[left]
+                : GameStarter.LevelWithRoom(this._strengths, this.TakenBesides(left), this._levels[left]);
+        }
+    }
+
+    /// <summary>The strengths of the seats played by bots, but for <paramref name="seat"/> and the player's.</summary>
+    private IEnumerable<int> TakenBesides(int seat) =>
+        this._levels.Where((level, other) => other != seat && other != this._colour && level != PersonLevel);
+
+    /// <summary>Whether the strength at <paramref name="level"/> has a bot left for <paramref name="seat"/>.</summary>
+    private bool HasRoom(int level, int seat) => GameStarter.HasRoom(this._strengths, this.TakenBesides(seat), level);
 
     /// <summary>Whether <paramref name="bot"/> plays a seat other than <paramref name="seat"/>.</summary>
     private bool IsTaken(string bot, int seat) =>
