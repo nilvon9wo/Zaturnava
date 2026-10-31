@@ -6,9 +6,10 @@ using Net.NowhereAtAll.Zaturnava.Persistence.InMemory;
 namespace Net.NowhereAtAll.Zaturnava.Server.Composition;
 
 /// <summary>
-/// Where games are kept, chosen by configuration: <c>InMemory</c> (the default; lost on restart),
-/// <c>Sqlite</c>, or <c>SqlServer</c>. The database ones take the
-/// <c>Games</c> connection string, and create their tables on start if there are none.
+/// Where games, and what is said at their tables, are kept, chosen by configuration: <c>InMemory</c> (the
+/// default; lost on restart), <c>Sqlite</c>, or <c>SqlServer</c>. The database ones take the
+/// <c>Games</c> connection string, and create their tables on start if there are none (a database made before
+/// the chat has no table for it, and must be made again).
 /// </summary>
 internal static class GameStorage
 {
@@ -31,7 +32,9 @@ internal static class GameStorage
     ) =>
         provider switch
         {
-            InMemory => services.AddSingleton<IGamePersisting, InMemoryGameStore>(),
+            InMemory => services
+                .AddSingleton<IGamePersisting, InMemoryGameStore>()
+                .AddSingleton<IChatPersisting, InMemoryChatStore>(),
             Sqlite => AddDatabase(services, options => options.UseSqlite(Connection(configuration))),
             SqlServer => AddDatabase(services, options => options.UseSqlServer(Connection(configuration))),
             _ => throw new InvalidOperationException(
@@ -43,6 +46,7 @@ internal static class GameStorage
         services
             .AddDbContext<GameDbContext>(use)
             .AddScoped<IGamePersisting, EfGameStore>()
+            .AddScoped<IChatPersisting, EfChatStore>()
             .AddHostedService<SchemaCreator>();
 
     private static string Connection(IConfiguration configuration) =>

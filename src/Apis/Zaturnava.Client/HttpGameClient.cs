@@ -60,6 +60,28 @@ public sealed class HttpGameClient(HttpClient http) : IGameServing
     ) =>
         this.Send<GameViewDto>(HttpMethod.Post, GameRoutes.Actions(gameId), action, token, cancellationToken);
 
+    public Task<ImmutableList<ChatMessageDto>> Chat(
+        [Required] string gameId,
+        string? token,
+        int after,
+        CancellationToken cancellationToken
+    ) =>
+        this.Send<ImmutableList<ChatMessageDto>>(
+            HttpMethod.Get,
+            GameRoutes.Chat(gameId, after),
+            null,
+            token,
+            cancellationToken
+        );
+
+    public Task<ChatMessageDto> Say(
+        [Required] string gameId,
+        [Required] string token,
+        [Required] SayRequest request,
+        CancellationToken cancellationToken
+    ) =>
+        this.Send<ChatMessageDto>(HttpMethod.Post, GameRoutes.Chat(gameId), request, token, cancellationToken);
+
     private async Task<T> Send<T>(
         HttpMethod method,
         string route,

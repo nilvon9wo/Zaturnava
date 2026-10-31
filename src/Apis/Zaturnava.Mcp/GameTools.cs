@@ -101,6 +101,34 @@ public sealed class GameTools(IGameServing games)
             )
         );
 
+    [McpServerTool(Name = "read_chat", ReadOnly = true)]
+    [Description(
+        "What was said at a game's table after message number 'after' (0 for everything): what was said to the "
+        + "whole table, and, with your token, what your team said to itself."
+    )]
+    public Task<ImmutableList<ChatMessageDto>> ReadChat(
+        string gameId,
+        [Description("The token claim_seat returned, or null to read only what was said to the table.")]
+            string? token,
+        [Description("The number of the last message already read; 0 for everything.")] int after,
+        CancellationToken cancellationToken
+    ) =>
+        Explained(() => this._games.Chat(gameId, token, after, cancellationToken));
+
+    [McpServerTool(Name = "say")]
+    [Description(
+        "Says something at a game's table, as the seat your token holds: to the whole table, or to your team "
+        + "alone. At most 500 characters."
+    )]
+    public Task<ChatMessageDto> Say(
+        string gameId,
+        [Description("The token claim_seat returned.")] string token,
+        [Description("Whom to say it to: \"table\" or \"team\".")] string channel,
+        [Description("What to say.")] string text,
+        CancellationToken cancellationToken
+    ) =>
+        Explained(() => this._games.Say(gameId, token, new SayRequest(channel, text), cancellationToken));
+
     private static async Task<T> Explained<T>(Func<Task<T>> request)
     {
         try

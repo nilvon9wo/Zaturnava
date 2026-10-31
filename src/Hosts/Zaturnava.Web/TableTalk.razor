@@ -1,0 +1,174 @@
+@* The panel under the turn: what has happened (the log, given as ChildContent, with its own tools in LogTools),
+   what is said to the whole table, and, for a player, what their team says to itself - one at a time, by tabs,
+   each talk's tab counting what was said there, by others, since it was last open. Watchers read the table
+   but say nothing. It asks for what was said every TableSettings.PollInterval, the game over or not, and at
+   once after the player says something. *@
+@implements IDisposable
+@inject IGameServing Games
+@inject TableSettings Settings
+@using System.Globalization
+
+<div class="log">
+    <div class="log-head">
+        <span class="tabs" role="tablist">
+            @foreach (Tab tab in this.Tabs)
+            {
+                <button class="tab @tab.Name-tab"
+                        role="tab"
+                        aria-selected="@(tab == this._shown ? "true" : "false")"
+                        @onclick="() => this.Open(tab)">
+                    @tab.Title
+                    @{ int unread = this.Unread(tab); }
+                    @if (unread > 0)
+                    {
+                        <span class="unread" title="New messages">@unread</span>
+                    }
+                </button>
+            }
+        </span>
+        @if (this._shown == LogTab)
+        {
+            @this.LogTools
+        }
+    </div>
+    @if (this._shown == LogTab)
+    {
+        @this.ChildContent
+    }
+    else
+    {
+        @if (this.Seating.Claim is not null)
+        {
+            <form class="say" @onsubmit="this.Say">
+                <input class="draft"
+                       maxlength="@MaximumLength"
+                       placeholder="@this._shown.Prompt"
+                       aria-label="@this._shown.Prompt"
+                       @bind="this._draft" />
+                <button class="send" type="submit" disabled="@string.IsNullOrWhiteSpace(this._draft)">Send</button>
+            </form>
+        }
+        else
+        {
+            <p class="hint watching">Only the players may speak here.</p>
+        }
+        @if (this._problem is { } problem)
+        {
+            <p class="problem" role="alert">@problem</p>
+        }
+        <ol class="chat">
+            @foreach (ChatMessageDto message in this.Of(this._shown).Reverse())
+            {
+                <li class="said seat-@message.Seat"
+                    title="@message.At.ToLocalTime().ToString("t", CultureInfo.CurrentCulture)">
+                    <span class="who">@this.Who(message.Seat):</span> @message.Text
+                </li>
+            }
+        </ol>
+    }
+</div>
+
+@code {
+    /// <summary>The most a message may say, as the server allows.</summary>
+    private const int MaximumLength = 500;
+
+    private static readonly Tab LogTab = new("log", "Log", string.Empty);
+    private static readonly Tab TableTab = new(ChatChannels.Table, "Table", "Say to the table");
+    private static readonly Tab TeamTab = new(ChatChannels.Team, "Team", "Say to your team");
+
+    private readonly Timer _poll;
+    private ImmutableList<ChatMessageDto> _said = [];
+    private ImmutableDictionary<Tab, int> _seen = ImmutableDictionary<Tab, int>.Empty;
+    private Tab _shown = LogTab;
+    private string? _draft;
+    private string? _problem;
+
+    public TableTalk() => this._poll = new Timer(this.Tick);
+
+    /// <summary>A tab: the log, or a talk, named as its channel is.</summary>
+    private sealed record Tab(string Name, string Title, string Prompt);
+
+    [Parameter, EditorRequired]
+    public Seating Seating { get; set; } = null!;
+
+    /// <summary>The game's seats, for who said what.</summary>
+    [Parameter, EditorRequired]
+    public ImmutableList<SeatDto> Seats { get; set; } = [];
+
+    /// <summary>The log.</summary>
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>The log's tools, beside the tabs while it is shown.</summary>
+    [Parameter]
+    public RenderFragment? LogTools { get; set; }
+
+    /// <summary>The log and the table's talk; the team's too, for a player.</summary>
+    private ImmutableList<Tab> Tabs =>
+        this.Seating.Claim is null ? [LogTab, TableTab] : [LogTab, TableTab, TeamTab];
+
+    private int Last => this._said.IsEmpty ? 0 : this._said[^1].Number;
+
+    protected override async Task OnInitializedAsync() => this._problem = await this.Hear();
+
+    public void Dispose() => this._poll.Dispose();
+
+    private IEnumerable<ChatMessageDto> Of(Tab tab) => this._said.Where(message => message.Channel == tab.Name);
+
+    /// <summary>What others said in a talk since its tab was last open; nothing for the log, or the tab open.</summary>
+    private int Unread(Tab tab) =>
+        tab == this._shown
+            ? 0
+            : this.Of(tab).Count(message =>
+                message.Number > this._seen.GetValueOrDefault(tab) && message.Seat != this.Seating.Claim?.Seat
+            );
+
+    private void Open(Tab tab)
+    {
+        this._seen = this._seen.SetItem(this._shown, this.Last);
+        this._shown = tab;
+    }
+
+    /// <summary>"You", or the seat's name.</summary>
+    private string Who(int seat) => seat == this.Seating.Claim?.Seat ? "You" : this.Seats[seat].Name;
+
+    /// <summary>Says the draft, and hears what was said since; the draft is kept if it could not be said.</summary>
+    private async Task Say()
+    {
+        SeatClaim claim = this.Seating.Claim!; // only a player has the form
+        SayRequest request = new(this._shown.Name, this._draft!); // the button is disabled without a draft
+        string? refused = await Requests.Attempt(
+            () => this.Games.Say(this.Seating.GameId, claim.Token, request, CancellationToken.None)
+        );
+        this._draft = refused is null ? null : this._draft;
+        this._problem = refused ?? await this.Hear();
+    }
+
+    private void Tick(object? state) => _ = this.InvokeAsync(this.Heard);
+
+    private async Task Heard()
+    {
+        this._problem = await this.Hear();
+        this.StateHasChanged();
+    }
+
+    /// <summary>
+    /// Hears what was said since last asked, and asks again after the usual interval, whether this failed or not;
+    /// what to tell the player if it did.
+    /// </summary>
+    private async Task<string?> Hear()
+    {
+        string? problem = await Requests.Attempt(async () =>
+            this._said = this._said.AddRange(
+                await this.Games.Chat(
+                    this.Seating.GameId,
+                    this.Seating.Claim?.Token,
+                    this.Last,
+                    CancellationToken.None
+                )
+            )
+        );
+        _ = this._poll.Change(this.Settings.PollInterval, Timeout.InfiniteTimeSpan);
+        return problem;
+    }
+}

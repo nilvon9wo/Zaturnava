@@ -131,6 +131,54 @@ internal sealed class FakeGameServer : IGameServing
         return this.Answer("submit", this.View);
     }
 
+    /// <summary>What was said at the table: what a test sets, and what the page says, as seat 0.</summary>
+    public ImmutableList<ChatMessageDto> Said { get; set; } = [];
+
+    /// <summary>
+    /// The talk's requests, apart from <see cref="Calls"/>, as a table makes them besides its game's; each
+    /// "chat {after}" (with " watching" for no token) or "say {channel} {text}".
+    /// </summary>
+    public ConcurrentQueue<string> Talk { get; } = new();
+
+    /// <summary>Fails the talk's next request, apart from <see cref="Failure"/>.</summary>
+    public Exception? TalkFailure { get; set; }
+
+    public Task<ImmutableList<ChatMessageDto>> Chat(
+        [Required] string gameId,
+        string? token,
+        int after,
+        CancellationToken cancellationToken
+    ) =>
+        this.Talked<ImmutableList<ChatMessageDto>>(
+            $"chat {after.ToString(CultureInfo.InvariantCulture)}{(token is null ? " watching" : string.Empty)}",
+            () => [.. this.Said.Where(message => message.Number > after)]
+        );
+
+    public Task<ChatMessageDto> Say(
+        [Required] string gameId,
+        [Required] string token,
+        [Required] SayRequest request,
+        CancellationToken cancellationToken
+    ) =>
+        this.Talked(
+            $"say {request.Channel} {request.Text}",
+            () =>
+            {
+                ChatMessageDto said =
+                    new(this.Said.Count + 1, 0, request.Channel, request.Text, DateTimeOffset.UnixEpoch);
+                this.Said = this.Said.Add(said);
+                return said;
+            }
+        );
+
+    private Task<T> Talked<T>(string call, Func<T> answer)
+    {
+        this.Talk.Enqueue(call);
+        Exception? failure = this.TalkFailure;
+        this.TalkFailure = null;
+        return failure is null ? Task.FromResult(answer()) : Task.FromException<T>(failure);
+    }
+
     private static ActionDto Action(string kind, params (string Name, int Cell)[] cells) =>
         new(
             kind,

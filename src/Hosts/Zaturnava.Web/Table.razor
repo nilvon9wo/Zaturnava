@@ -10,7 +10,7 @@
    If the server no longer has the game (restarted, say), it says so, stops asking, and offers the lobby.
    Shown again after being hidden (when the browser may have slowed its asking), it asks at once.
    Under it all, a quiet bar: the game's name and the way back to the lobby, the buttons that turn the
-   board, and the page's own settings. *@
+   board, and the page's own settings. Beside the log, by tabs, the players' talk (TableTalk). *@
 @using Microsoft.JSInterop
 @implements IDisposable
 @inject IGameServing Games
@@ -308,26 +308,28 @@
                 }
             </div>
 
-            <div class="log">
-                <div class="log-head">
+            <TableTalk Seating="this.Seating" Seats="view.Seats">
+                <LogTools>
                     <button class="log-filter" aria-pressed="@(this._isHighlightsOnly ? "true" : "false")" @onclick="this.ToggleHighlights">
                         @(this._isHighlightsOnly ? "Show everything" : "Highlights only")
                     </button>
-                </div>
-                <ol class="events">
-                    @{
-                        int? keptSince = this._isHighlightsOnly || view.Log.IsEmpty ? null : KeptSince(view.Log);
-                    }
-                    @foreach (EventDto happened in this.Shown(view))
-                    {
-                        <li class="event @happened.Kind seat-@happened.Seat">@this.Named(happened.Text)</li>
-                        @if (happened.Number == keptSince)
-                        {
-                            <li class="dropped">Older events are no longer kept, except for the highlights below.</li>
+                </LogTools>
+                <ChildContent>
+                    <ol class="events">
+                        @{
+                            int? keptSince = this._isHighlightsOnly || view.Log.IsEmpty ? null : KeptSince(view.Log);
                         }
-                    }
-                </ol>
-            </div>
+                        @foreach (EventDto happened in this.Shown(view))
+                        {
+                            <li class="event @happened.Kind seat-@happened.Seat">@this.Named(happened.Text)</li>
+                            @if (happened.Number == keptSince)
+                            {
+                                <li class="dropped">Older events are no longer kept, except for the highlights below.</li>
+                            }
+                        }
+                    </ol>
+                </ChildContent>
+            </TableTalk>
         </div>
     }
 

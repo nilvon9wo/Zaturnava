@@ -39,4 +39,24 @@ public interface IGameServing
         [Required] ActionDto action,
         CancellationToken cancellationToken
     );
+
+    /// <summary>
+    /// What was said at the game's table after message number <paramref name="after"/> (0 for everything) that
+    /// the holder of <paramref name="token"/> may read: what was said to the table, and to their own team.
+    /// Without a token, what was said to the table.
+    /// </summary>
+    Task<ImmutableList<ChatMessageDto>> Chat(
+        [Required] string gameId,
+        string? token,
+        int after,
+        CancellationToken cancellationToken
+    );
+
+    /// <summary>Says something at the game's table, as the seat <paramref name="token"/> holds.</summary>
+    Task<ChatMessageDto> Say(
+        [Required] string gameId,
+        [Required] string token,
+        [Required] SayRequest request,
+        CancellationToken cancellationToken
+    );
 }

@@ -21,6 +21,8 @@ server is at `https://zaturnava.runasp.net/`.
 | Let a bot (or a timer) decide | `POST api/games/{id}/advance` | The game after one decision |
 | A game's history | `GET api/games/{id}/history` | [Game histories](game-histories.md) |
 | Every finished game's history | `GET api/history` | A list of them |
+| What was said at the table | `GET api/games/{id}/chat?after={n}`, with a seat's token or none | [The talk](#talk-at-the-table) since message `n` |
+| Say something | `POST api/games/{id}/chat`, with the seat's token | The message, numbered |
 
 A game is created with its ruleset and, for each seat in order, the id of the bot that plays it, or
 `null` to leave the seat open:
@@ -131,6 +133,21 @@ The rules refuse any of these that may not be made, as they refuse any illegal a
 
 The full description of every field is in the contracts, `src/Apis/Zaturnava.Contracts`: each is a
 record, documented where it is declared (`GameViewDto.cs`, `SeatDto.cs`, and so on).
+
+## Talk at the table
+
+The players may talk: to the whole table (`"channel": "table"`), or to their own team alone (`"team"`).
+Saying something takes the seat's token, and at most 500 characters:
+
+```json
+{ "channel": "team", "text": "Hold the left; I'll take their Boat." }
+```
+
+Each message is numbered in its game, from 1, and comes back as
+`{"number", "seat", "channel", "text", "at"}`. Reading takes the number of the last message you have
+(`after=0` for everything) and gives what came since that you may read: everything said to the table,
+and, with your token, what your team said to itself. Without a token, as a watcher, only the table. Talk is
+not pushed: ask again now and then, as the page does every few seconds. Bots say nothing.
 
 ## Refusals
 

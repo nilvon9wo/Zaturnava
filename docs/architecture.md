@@ -247,6 +247,8 @@ base address (`GameRoutes`):
 | Let a bot or a timer decide | `POST api/games/{id}/advance` with `AdvanceRequest` (the version the caller saw) | `GameViewDto` after one bot decision, or the timer's decision once a timed one has run out of time; unchanged if the version is stale or neither is due |
 | Claim an open seat | `POST api/games/{id}/seats/{seat}` | `SeatClaimedDto` with the seat's token |
 | Act | `POST api/games/{id}/actions` with `ActionDto`, `Authorization: Bearer {token}` | `GameViewDto` after the action and any bot replies |
+| What was said at the table | `GET api/games/{id}/chat?after={n}`, the token optional | `ChatMessageDto[]` after message `n`: what was said to the table, and to the token holder's team |
+| Say something | `POST api/games/{id}/chat` with `SayRequest` (`table` or `team`, and the words), `Authorization: Bearer {token}` | `ChatMessageDto`, numbered within its game |
 
 - **Seat tokens** are the only credential. One is issued when a seat is
   claimed, shown once, and stored only as a hash; no accounts, no personal

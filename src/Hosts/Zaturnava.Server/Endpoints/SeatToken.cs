@@ -9,9 +9,12 @@ internal static class SeatToken
 {
     /// <exception cref="MissingSeatTokenException">The request carries no token.</exception>
     public static string From(HttpRequest request, GameId game) =>
+        OrNull(request) ?? throw new MissingSeatTokenException(game);
+
+    /// <summary>The token, if the request carries one: a watcher's carries none.</summary>
+    public static string? OrNull(HttpRequest request) =>
         AuthenticationHeaderValue.TryParse(request.Headers.Authorization, out AuthenticationHeaderValue? header)
         && string.Equals(header.Scheme, GameRoutes.TokenScheme, StringComparison.OrdinalIgnoreCase)
-        && header.Parameter is { } token
-            ? token
-            : throw new MissingSeatTokenException(game);
+            ? header.Parameter
+            : null;
 }

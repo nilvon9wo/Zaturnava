@@ -37,6 +37,9 @@ internal sealed class StubGameServer : IGameServing
             false
         );
 
+    public static readonly ChatMessageDto Said =
+        new(1, 0, ChatChannels.Team, "Hold the left.", DateTimeOffset.UnixEpoch);
+
     public Exception? Failure { get; set; }
 
     public object? Received { get; private set; }
@@ -91,6 +94,22 @@ internal sealed class StubGameServer : IGameServing
         CancellationToken cancellationToken
     ) =>
         this.Answer(View, (gameId, token, action));
+
+    public Task<ImmutableList<ChatMessageDto>> Chat(
+        [Required] string gameId,
+        string? token,
+        int after,
+        CancellationToken cancellationToken
+    ) =>
+        this.Answer(ImmutableList.Create(Said), (gameId, token, after));
+
+    public Task<ChatMessageDto> Say(
+        [Required] string gameId,
+        [Required] string token,
+        [Required] SayRequest request,
+        CancellationToken cancellationToken
+    ) =>
+        this.Answer(Said, (gameId, token, request));
 
     private Task<T> Answer<T>(T answer, object? received = null)
     {

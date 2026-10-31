@@ -26,4 +26,11 @@ public static class GameRoutes
     public static string Advance([Required] string gameId) => $"{Game(gameId)}/advance";
 
     public static string History([Required] string gameId) => $"{Game(gameId)}/history";
+
+    /// <summary>Where to say something at a game's table.</summary>
+    public static string Chat([Required] string gameId) => $"{Game(gameId)}/chat";
+
+    /// <summary>What was said at a game's table after message number <paramref name="after"/>.</summary>
+    public static string Chat([Required] string gameId, int after) =>
+        $"{Chat(gameId)}?after={after.ToString(CultureInfo.InvariantCulture)}";
 }

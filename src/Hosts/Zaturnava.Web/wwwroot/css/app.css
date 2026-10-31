@@ -524,7 +524,61 @@ button.safety.off {
     font-size: 0.92rem;
 }
 
-.log-head { display: flex; justify-content: flex-end; padding: 6px 12px 0; }
+.log-head {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 12px 0;
+}
+
+/* The tabs: the log, the table's talk, the team's; a talk's count of what others said there unread. */
+.log .tabs { display: flex; gap: 4px; }
+.log .tab {
+    font: inherit;
+    font-size: 0.85rem;
+    padding: 2px 10px;
+    color: var(--muted);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    cursor: pointer;
+}
+.log .tab[aria-selected="true"] { color: var(--ink); border-color: var(--panel-edge); font-weight: 700; }
+.log .unread {
+    display: inline-block;
+    min-width: 1.4em;
+    margin-left: 4px;
+    padding: 0 5px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--accent-ink);
+    background: var(--accent);
+    border-radius: 999px;
+}
+
+.log .say { display: flex; gap: 6px; padding: 6px 12px 0; }
+.log .draft {
+    flex: 1;
+    min-width: 0;
+    font: inherit;
+    padding: 3px 8px;
+    color: var(--ink);
+    background: var(--page);
+    border: 1px solid var(--panel-edge);
+    border-radius: 6px;
+}
+.log .send { font: inherit; font-size: 0.85rem; padding: 2px 12px; cursor: pointer; }
+.log .watching, .log .problem { margin: 6px 12px 0; }
+
+.log .chat { list-style: none; margin: 0; padding: 4px 12px 8px; min-height: 0; overflow-y: auto; }
+.log .said { padding: 2px 0; overflow-wrap: anywhere; }
+.log .said .who { font-weight: 700; }
+.log .said.seat-0 .who { color: var(--seat-0); }
+.log .said.seat-1 .who { color: var(--seat-1); }
+.log .said.seat-2 .who { color: var(--seat-2); }
+.log .said.seat-3 .who { color: var(--seat-3); }
 .log-filter {
     font: inherit;
     font-size: 0.85rem;

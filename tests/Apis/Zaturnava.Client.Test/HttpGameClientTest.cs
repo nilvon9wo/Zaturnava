@@ -167,6 +167,58 @@ public sealed class HttpGameClientTest
     }
 
     [Fact]
+    public async Task Chat_WhenGivenAToken_GetsWhatCameLaterWithIt()
+    {
+        // Arrange
+        StubServer server = new(
+            HttpStatusCode.OK,
+            """[{"number":4,"seat":1,"channel":"team","text":"Hold","at":"2026-10-31T12:00:00+00:00"}]"""
+        );
+
+        // Act
+        ImmutableList<ChatMessageDto> said = await Client(server).Chat("g", "secret", 3, this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            ("GET", "/api/games/g/chat", "?after=3", "Bearer secret", "Hold"),
+            (server.Method, server.Path, server.Query, server.Authorization, said.Single().Text)
+        );
+    }
+
+    [Fact]
+    public async Task Chat_WhenWatching_GetsWithoutAToken()
+    {
+        // Arrange
+        StubServer server = new(HttpStatusCode.OK, "[]");
+
+        // Act
+        _ = await Client(server).Chat("g", null, 0, this._cancellation);
+
+        // Assert
+        Assert.Null(server.Authorization);
+    }
+
+    [Fact]
+    public async Task Say_WhenGivenWords_PostsThemWithTheSeatsToken()
+    {
+        // Arrange
+        StubServer server = new(
+            HttpStatusCode.OK,
+            """{"number":1,"seat":0,"channel":"table","text":"Hi","at":"2026-10-31T12:00:00+00:00"}"""
+        );
+
+        // Act
+        ChatMessageDto said =
+            await Client(server).Say("g", "secret", new SayRequest(ChatChannels.Table, "Hi"), this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            ("POST", "/api/games/g/chat", "Bearer secret", """{"channel":"table","text":"Hi"}""", 1),
+            (server.Method, server.Path, server.Authorization, server.Body, said.Number)
+        );
+    }
+
+    [Fact]
     public async Task Send_WhenTheServerRefusesWithAProblem_ThrowsItsRefusalAndDetail()
     {
         // Arrange

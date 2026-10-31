@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Net.NowhereAtAll.Zaturnava.Application.Chat;
 using Net.NowhereAtAll.Zaturnava.Application.Games;
 using Net.NowhereAtAll.Zaturnava.Contracts;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
@@ -27,6 +28,8 @@ internal static class GameEndpoints
         _ = routes.MapPost(GameRoute + "/seats/{seat:int}", Claim);
         _ = routes.MapPost(GameRoute + "/actions", Submit);
         _ = routes.MapPost(GameRoute + "/advance", Advance);
+        _ = routes.MapGet(GameRoute + "/chat", Chat);
+        _ = routes.MapPost(GameRoute + "/chat", Say);
         return routes;
     }
 
@@ -118,5 +121,33 @@ internal static class GameEndpoints
         string token = SeatToken.From(request, id);
         GameSnapshot snapshot = await games.Submit(id, token, descriptor, cancellationToken);
         return GameViews.ViewOf(snapshot, games.Bots);
+    }
+
+    private static async Task<ImmutableList<ChatMessageDto>> Chat(
+        string gameId,
+        int? after,
+        HttpRequest request,
+        ChatService chat,
+        CancellationToken cancellationToken
+    )
+    {
+        ImmutableList<ChatMessage> said =
+            await chat.Read(new GameId(gameId), SeatToken.OrNull(request), after ?? 0, cancellationToken);
+        return [.. said.Select(ChatViews.MessageOf)];
+    }
+
+    private static async Task<ChatMessageDto> Say(
+        string gameId,
+        SayRequest say,
+        HttpRequest request,
+        ChatService chat,
+        CancellationToken cancellationToken
+    )
+    {
+        GameId id = new(gameId);
+        string token = SeatToken.From(request, id);
+        ChatMessage message =
+            await chat.Say(id, token, ChatViews.ChannelOf(say.Channel), say.Text, cancellationToken);
+        return ChatViews.MessageOf(message);
     }
 }
