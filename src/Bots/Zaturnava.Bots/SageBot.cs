@@ -8,7 +8,7 @@ namespace Net.NowhereAtAll.Zaturnava.Bots;
 /// <summary>
 /// Weighs a position as a whole (<see cref="Appraisal"/>), and looks ahead through the rest of its own turn,
 /// the dice included (<see cref="Foresight"/>): so it rolls when what it expects of the dice beats the best
-/// move it could make without them. Deals in prisoners as Solomon does. It weighs a position as it has
+/// move it could make without them. Deals in prisoners by the same measure. It weighs a position as it has
 /// learned to for the ruleset, by playing itself, if it has; else as <paramref name="fallback"/> says.
 /// </summary>
 public sealed class SageBot(
@@ -43,8 +43,8 @@ public sealed class SageBot(
         "Sage",
         "Thoughtful: weighs the whole board (points, pieces, Rajas, prisoners, thrones, and what each side "
             + "could take next) and thinks through the rest of its turn, rolling only when it expects more of the "
-            + "dice than of the best move it could make without them. Trades prisoners as Solomon does. "
-            + "A plain algorithm: no AI.",
+            + "dice than of the best move it could make without them. Trades prisoners when the board would be "
+            + "better for it. A plain algorithm: no AI.",
         UsesAi: false
     );
 
@@ -62,21 +62,35 @@ public sealed class SageBot(
 
     /// <summary>
     /// Sage's play, with positions judged by <paramref name="valuing"/>: <paramref name="ending"/>, if it has
-    /// answered a proposal to end the game; else as Solomon deals in prisoners, if it would; else what it
-    /// would most expect of the rest of its turn, as <see cref="Foresight"/> sees it, trading before it passes.
+    /// answered a proposal to end the game; else its answer to an offer, or an offer of its own, if it would
+    /// make one; else what it would most expect of the rest of its turn, as <see cref="Foresight"/> sees it,
+    /// trading before it passes. It weighs a ransom by the whole position once it is done
+    /// (<see cref="ByPosition"/>): it accepts an offer that leaves it no worse off, and offers its allies' pieces
+    /// back, then the trade that would leave it best off, if any leaves it better.
     /// </summary>
     internal static GameAction Play(
         DecisionRequest request,
         GameAction? ending,
         IPositionValuing valuing,
         Random random
-    ) =>
-        ending
-            ?? SolomonBot.AnswerTo(request)
-            ?? SolomonBot.FairTrade(request, false)
+    )
+    {
+        ByPosition judge = new(valuing);
+        return ending
+            ?? Trading.AnswerTo(request, 0, judge)
+            ?? BestTrade(request, false, judge)
             ?? Trading.BeforePassing(
                 request,
                 new Foresight(valuing, Depth, Beam).Choose(request, random),
-                SolomonBot.FairTrade
+                (passing, isPassing) => BestTrade(passing, isPassing, judge)
             );
+    }
+
+    /// <summary>A gift to an ally, if one may be made; else the trade that gains the most, if any gains.</summary>
+    private static OfferAction? BestTrade(DecisionRequest request, bool isPassing, ByPosition judge) =>
+        Trading.TradesOf(request, isPassing, judge)
+            .Where(trade => trade.IsGift || trade.Gain > 0)
+            .OrderByDescending(trade => trade.IsGift)
+            .ThenByDescending(trade => trade.Gain)
+            .FirstOrDefault()?.Offer;
 }

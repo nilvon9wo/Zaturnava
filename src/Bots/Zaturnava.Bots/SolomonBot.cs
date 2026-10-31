@@ -9,7 +9,8 @@ namespace Net.NowhereAtAll.Zaturnava.Bots;
 /// though keeping out of its allies' way (<see cref="Teamwork"/>), and deals in prisoners to see armies
 /// whole again. Once its turn is over, it gives its allies' pieces
 /// back for nothing, then offers even trades - a prisoner for one of its team's of the same worth. It
-/// accepts any offer within a point of even.
+/// accepts any offer within a point of even. It weighs a trade by worth alone (<see cref="ByWorth.Alone"/>):
+/// a Pawn for a Pawn is fair, whatever either scores.
 /// </summary>
 public sealed class SolomonBot(Random random) : IBotPlaying
 {
@@ -33,16 +34,14 @@ public sealed class SolomonBot(Random random) : IBotPlaying
             ? Task.FromCanceled<GameAction>(cancellationToken)
             : Task.FromResult(
                 Ending.AnswerTo(request)
-                    ?? AnswerTo(request)
+                    ?? Trading.AnswerTo(request, Leeway, ByWorth.Alone)
                     ?? FairTrade(request, false)
                     ?? Trading.BeforePassing(request, Teamwork.Choose(request, this._random), FairTrade)
             );
 
-    internal static GameAction? AnswerTo(DecisionRequest request) => Trading.AnswerTo(request, Leeway);
-
     /// <summary>A gift to an ally, if one may be made; else an even trade, the most valuable first.</summary>
-    internal static OfferAction? FairTrade(DecisionRequest request, bool isPassing) =>
-        Trading.TradesOf(request, isPassing)
+    private static OfferAction? FairTrade(DecisionRequest request, bool isPassing) =>
+        Trading.TradesOf(request, isPassing, ByWorth.Alone)
             .Where(trade => trade.IsGift || trade.Gain == 0)
             .OrderByDescending(trade => trade.IsGift)
             .ThenByDescending(trade => request.Rules.WorthOf(PieceOf(request, trade)))

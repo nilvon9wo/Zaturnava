@@ -152,6 +152,22 @@ public sealed class MidasBotTest
         Assert.Equal(answer, action.Describe().Kind);
     }
 
+    [Theory]
+    [InlineData(0, "decline")]
+    [InlineData(1, "accept")]
+    public async Task Decide_WhenAskedForAnEnemyLeader_AcceptsOnlyIfThePointsMakeItEven(int points, string answer)
+    {
+        // Arrange - worth 4 back, and the points for sending the Raja home, for the Raja's 5
+        DecisionRequest offered =
+            Ransoms.ScoringRansoms(Ransoms.HoldingYellowsRaja(Ransoms.Offered([20, 21], [12])), points);
+
+        // Act
+        GameAction action = await new MidasBot(new Random(1)).Decide(offered, this._cancellation);
+
+        // Assert
+        Assert.Equal(answer, action.Describe().Kind);
+    }
+
     [Fact]
     public async Task Decide_WhenTheReceiverWouldScoreAllItGains_OffersNothing()
     {

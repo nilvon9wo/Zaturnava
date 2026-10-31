@@ -182,7 +182,7 @@ public sealed class SageBotTest
     }
 
     [Fact]
-    public async Task Decide_WhenOfferedARansom_AnswersAsSolomonDoes()
+    public async Task Decide_WhenOfferedAProfit_Accepts()
     {
         // Arrange - worth 3 for 1
         DecisionRequest offered = Ransoms.Offered([20], [10]);
@@ -192,6 +192,39 @@ public sealed class SageBotTest
 
         // Assert
         Assert.Equal("accept", action.Describe().Kind);
+    }
+
+    [Theory]
+    [InlineData(0, "accept")]
+    [InlineData(2, "decline")]
+    public async Task Decide_WhenOfferedARansom_WeighsThePositionItWouldLeave(double exposure, string answer)
+    {
+        // Arrange - its Horse back, worth 3 on the board, but where a Pawn may take it
+        DecisionRequest offered = Ransoms.Exposing(Ransoms.Offered([20], [11]), Ransoms.Black);
+        SageWeights weights = Nothing with { Material = 1, Exposure = exposure };
+
+        // Act
+        GameAction action = await new SageBot(new Random(Seed), weights).Decide(offered, this._cancellation);
+
+        // Assert
+        Assert.Equal(answer, action.Describe().Kind);
+    }
+
+    [Theory]
+    [InlineData(0, true)]
+    [InlineData(2, false)]
+    public async Task Decide_WhenNoGiftIsLeft_OffersATradeOnlyIfItLeavesItBetterOff(double exposure, bool offers)
+    {
+        // Arrange - its Horse back, worth 3 on the board, but where a Pawn may take it
+        DecisionRequest request = Ransoms.Exposing(Ransoms.WindowWithout(30), Ransoms.Yellow);
+        SageWeights weights = Nothing with { Material = 1, Exposure = exposure };
+        OfferAction first = new(Ransoms.Black, Ransoms.Yellow, [new PieceId(10)], [new PieceId(20)]);
+
+        // Act
+        GameAction action = await new SageBot(new Random(Seed), weights).Decide(request, this._cancellation);
+
+        // Assert
+        Assert.Equal(offers ? first : Ransoms.Done, action);
     }
 
     [Fact]

@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Boards;
 using Net.NowhereAtAll.Zaturnava.Engine.Decisions;
+using Net.NowhereAtAll.Zaturnava.Engine.Moves;
 using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
 using Net.NowhereAtAll.Zaturnava.Engine.Positions;
 using Net.NowhereAtAll.Zaturnava.Engine.Rules;
@@ -125,6 +126,28 @@ internal static class Ransoms
         {
             Rules = new ScoringRules(ImmutableDictionary<GameAction, int>.Empty.Add(Done, 0)) { RansomPoints = points },
         };
+
+    /// <summary>
+    /// The request, under rules where <paramref name="accepter"/> accepting a ransom puts seat 0's Horse 20 back
+    /// on cell 5, where a Pawn of Yellow's on cell 6 may take it.
+    /// </summary>
+    public static DecisionRequest Exposing(DecisionRequest request, SeatId accepter)
+    {
+        GameState after = request.State with
+        {
+            Seats = [.. Enumerable.Range(0, 4).Select(seat => new Seat(new SeatId(seat), new Direction(1, 0)))],
+            Position = Position.Empty.Place(new CellId(5), new Piece(Id(20), new PieceKindId("horse"), Black)),
+        };
+        Attack attack = new(new Piece(Id(60), new PieceKindId("pawn"), Yellow), new CellId(6), new CellId(5));
+        return request with
+        {
+            Rules = new ScoringRules(ImmutableDictionary<GameAction, int>.Empty.Add(Done, 0))
+            {
+                Results = ImmutableDictionary<GameAction, GameState>.Empty.Add(new AcceptAction(accepter), after),
+                Attacks = [attack],
+            },
+        };
+    }
 
     /// <summary>The request, with Yellow also holding Green's Raja 31.</summary>
     public static DecisionRequest YellowHoldingGreensRaja(DecisionRequest request) =>

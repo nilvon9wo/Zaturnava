@@ -9,9 +9,10 @@ namespace Net.NowhereAtAll.Zaturnava.Bots;
 /// Greedy and short-sighted, like the king whose wish turned even his bread to gold: takes whichever
 /// legal action scores the most at once, choosing at random among equals. When nothing scores, it moves
 /// or rolls at random, passing only when it can do nothing else. It never looks past its own action, so
-/// it walks into every trap. In ransom it counts worth: it accepts an offer that gives it back at least
-/// as much as it asks, and, once its turn is over, offers the trade that gains it the most, if any
-/// gains it anything, was not declined lately, and asks no more than an enemy might give. It never gives anything away.
+/// it walks into every trap. In ransom it counts worth and points alike (<see cref="ByWorth.AndPoints"/>): it
+/// accepts an offer that gives it back at least as much as it costs, and, once its turn is over, offers the
+/// trade that gains it the most, if any gains it anything, was not declined lately, and asks no more than an
+/// enemy might give. It never gives anything away.
 /// </summary>
 public sealed class MidasBot(Random random) : IBotPlaying
 {
@@ -32,14 +33,16 @@ public sealed class MidasBot(Random random) : IBotPlaying
             ? Task.FromCanceled<GameAction>(cancellationToken)
             : Task.FromResult(
                 Ending.AnswerTo(request)
-                    ?? Trading.AnswerTo(request, 0)
+                    ?? Trading.AnswerTo(request, 0, ByWorth.AndPoints)
                     ?? BestTrade(request, false)
                     ?? Trading.BeforePassing(request, Greedy.Choose(request, this._random), BestTrade)
             );
 
-    /// <summary>The offer that gains the most, if any gains anything.</summary>
+    /// <summary>The offer that gains the most, worth and points together, if any gains anything.</summary>
     private static OfferAction? BestTrade(DecisionRequest request, bool isPassing) =>
-        Trading.TradesOf(request, isPassing).Where(trade => trade.Gain > 0).MaxBy(trade => trade.Gain)?.Offer;
+        Trading.TradesOf(request, isPassing, ByWorth.AndPoints)
+            .Where(trade => trade.Gain > 0)
+            .MaxBy(trade => trade.Gain)?.Offer;
 
     internal static GameAction Answer(SeatId seat, bool isAccepted) =>
         isAccepted

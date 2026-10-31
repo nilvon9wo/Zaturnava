@@ -44,7 +44,7 @@ public sealed class SolomonBotTest
     }
 
     [Fact]
-    public async Task Decide_WhenAskedForAnEnemyLeaderInAFairTrade_Accepts()
+    public async Task Decide_WhenAnEnemyLeadersTradeIsEvenOnlyWithPoints_DeclinesForItWeighsWorthAlone()
     {
         // Arrange - worth 4 back, and a point for sending the Raja home, for the Raja's 5
         DecisionRequest offered =
@@ -54,7 +54,7 @@ public sealed class SolomonBotTest
         GameAction action = await new SolomonBot(new Random(1)).Decide(offered, this._cancellation);
 
         // Assert
-        Assert.Equal("accept", action.Describe().Kind);
+        Assert.Equal("decline", action.Describe().Kind);
     }
 
     [Theory]

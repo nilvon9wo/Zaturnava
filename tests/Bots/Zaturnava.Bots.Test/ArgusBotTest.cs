@@ -184,7 +184,7 @@ public sealed class ArgusBotTest
     [Theory]
     [InlineData(new[] { 20 }, new[] { 10 }, "accept")]
     [InlineData(new[] { 21 }, new[] { 11 }, "decline")]
-    public async Task Decide_WhenOfferedARansom_AnswersAsSolomonDoes(int[] given, int[] asked, string answer)
+    public async Task Decide_WhenOfferedARansom_AcceptsIfItIsWithinAPointOfEven(int[] given, int[] asked, string answer)
     {
         // Arrange - worth 3 for 1; 1 for 3
         DecisionRequest offered = Ransoms.Offered([.. given], [.. asked]);
@@ -194,6 +194,46 @@ public sealed class ArgusBotTest
 
         // Assert
         Assert.Equal(answer, action.Describe().Kind);
+    }
+
+    [Theory]
+    [InlineData(false, "accept")]
+    [InlineData(true, "decline")]
+    public async Task Decide_WhenOfferedAPieceBackWhereItWouldBeTaken_Declines(bool isExposed, string answer)
+    {
+        // Arrange - its Horse back for Yellow's: even, unless the Horse comes back where a Pawn may take it
+        DecisionRequest offered = Ransoms.Offered([20], [11]);
+        DecisionRequest request = isExposed
+            ? Ransoms.Exposing(offered, Ransoms.Black)
+            : offered;
+
+        // Act
+        GameAction action = await new ArgusBot(new Random(1)).Decide(request, this._cancellation);
+
+        // Assert
+        Assert.Equal(answer, action.Describe().Kind);
+    }
+
+    [Theory]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    public async Task Decide_WhenNoGiftIsLeft_OffersTheBestTradeUnlessItLeavesAPieceToBeTaken(
+        bool isExposed,
+        bool offers
+    )
+    {
+        // Arrange - its Pawn for its Horse back gains 2, unless the Horse comes back where a Pawn may take it
+        DecisionRequest window = Ransoms.WindowWithout(30);
+        DecisionRequest request = isExposed
+            ? Ransoms.Exposing(window, Ransoms.Yellow)
+            : window;
+        OfferAction best = new(Ransoms.Black, Ransoms.Yellow, [new PieceId(10)], [new PieceId(20)]);
+
+        // Act
+        GameAction action = await new ArgusBot(new Random(1)).Decide(request, this._cancellation);
+
+        // Assert
+        Assert.Equal(offers ? best : Ransoms.Done, action);
     }
 
     [Fact]
