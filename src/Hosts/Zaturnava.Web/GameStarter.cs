@@ -6,6 +6,8 @@ namespace Net.NowhereAtAll.Zaturnava.Web;
 /// <summary>How a page starts a game and sits the player at it: as planned, or at once, at random.</summary>
 internal static class GameStarter
 {
+    private static readonly string[] StrengthNames = ["Easy", "Medium", "Hard"];
+
     /// <summary>
     /// The player at <paramref name="person"/>, and the bots, in the order given, in the other seats -
     /// each at most once; a seat with no bot left is for a person (an empty plan).
@@ -41,6 +43,60 @@ internal static class GameStarter
             _ => unpaid.OrderBy(_ => Random.Shared.Next()).Take(count),
         };
         return chosen.Select(bot => bot.Id).OrderBy(_ => Random.Shared.Next());
+    }
+
+    /// <summary>
+    /// How a bot is offered in a list: its name, then whether it uses AI, its rating at the ruleset, and whether
+    /// it costs tokens - "Bot: Sage (Elo 2689)", "Bot: Claude (AI, costs tokens)".
+    /// </summary>
+    public static string LabelOf(BotDto bot, string rulesetId)
+    {
+        string?[] notes =
+        [
+            bot.UsesAi ? "AI" : null,
+            bot.Ratings.TryGetValue(rulesetId, out int rating) ? $"Elo {rating}" : null,
+            bot.IsPaid ? "costs tokens" : null,
+        ];
+        string noted = string.Join(", ", notes.OfType<string>());
+        return noted.Length == 0 ? $"Bot: {bot.Name}" : $"Bot: {bot.Name} ({noted})";
+    }
+
+    /// <summary>
+    /// The bots at the ruleset, never one paid for each use, in three strengths - easy, medium and hard - of
+    /// as nearly as may be the same number of bots, easiest first; fewer, if there are fewer than three bots.
+    /// </summary>
+    public static ImmutableList<Strength> Strengths(CatalogDto catalog, string rulesetId)
+    {
+        ImmutableList<BotDto> easiestFirst =
+            [.. catalog.Bots.Where(bot => !bot.IsPaid).OrderBy(bot => bot.Ratings.GetValueOrDefault(rulesetId))];
+        int count = easiestFirst.Count;
+        int bands = StrengthNames.Length;
+        return
+        [
+            .. StrengthNames
+                .Select((name, band) => new Strength(name, rulesetId, BandOf(band)))
+                .Where(strength => !strength.Bots.IsEmpty),
+        ];
+
+        ImmutableList<BotDto> BandOf(int band) =>
+            [.. easiestFirst.Take((band * count / bands)..((band + 1) * count / bands))];
+    }
+
+    /// <summary>
+    /// A bot for each seat played at a strength; none for each seat without one, left to a person. Each bot is
+    /// one of its strength's, at random, never one already seated; failing that, the one rated nearest it of
+    /// those left; failing that, none.
+    /// </summary>
+    public static ImmutableList<string?> ByStrength(IEnumerable<Strength?> seats, ImmutableList<Strength> strengths)
+    {
+        ImmutableList<BotDto> all = [.. strengths.SelectMany(strength => strength.Bots)];
+        ImmutableList<string?> bots = [];
+        foreach (Strength? strength in seats)
+        {
+            bots = bots.Add(strength is null ? null : Pick(strength, all, bots));
+        }
+
+        return bots;
     }
 
     /// <summary>
@@ -81,4 +137,11 @@ internal static class GameStarter
         SeatClaimedDto claimed = await games.Claim(gameId, seat, CancellationToken.None);
         return new Seating(gameId, new SeatClaim(seat, claimed.Token));
     }
+
+    private static string? Pick(Strength strength, ImmutableList<BotDto> all, ImmutableList<string?> seated) =>
+        strength.Bots
+            .OrderBy(_ => Random.Shared.Next())
+            .Concat(all.OrderBy(strength.DistanceTo))
+            .Select(bot => bot.Id)
+            .FirstOrDefault(bot => !seated.Contains(bot));
 }

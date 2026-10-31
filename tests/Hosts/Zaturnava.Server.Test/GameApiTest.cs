@@ -25,6 +25,7 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
                 ZaturnavaServer.Chaturaji2027,
                 4,
                 "Black,Yellow,Green,Red",
+                "0,1,0,1",
                 "argus,athena,midas,random,sage,solomon",
                 true
             ),
@@ -32,6 +33,7 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
                 ruleset.Id,
                 ruleset.SeatCount,
                 string.Join(",", ruleset.SeatNames),
+                string.Join(",", ruleset.SeatTeams),
                 string.Join(",", catalog.Bots.Select(bot => bot.Id)),
                 catalog.Bots.Any(bot => bot.UsesAi)
             )

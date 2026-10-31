@@ -187,8 +187,28 @@ html { scrollbar-gutter: stable; }
 }
 
 .panel h2 { margin-top: 0; }
+/* Seat by seat, or by strength: the way chosen filled in, as the log's tabs are. */
+.setup-modes { display: flex; gap: 6px; margin-bottom: 4px; }
+.setup-modes .mode {
+    font: inherit;
+    font-size: 0.85rem;
+    padding: 2px 10px;
+    color: var(--ink);
+    background: transparent;
+    border: 1px solid var(--panel-edge);
+    border-radius: 999px;
+    cursor: pointer;
+}
+.setup-modes .mode[aria-pressed="true"] {
+    color: var(--accent-ink);
+    background: var(--accent);
+    border-color: var(--accent);
+    font-weight: 700;
+}
 .plans { padding-left: 20px; }
 .plans li { margin: 4px 0; }
+.plans.strengths { list-style: none; padding-left: 0; }
+.plans.strengths .seat-name { display: inline-block; min-width: 9.5em; }
 .quick-games { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; }
 .quick-hint { color: var(--muted); font-size: 0.9em; }
 .bot-guide .bots { padding-left: 20px; }

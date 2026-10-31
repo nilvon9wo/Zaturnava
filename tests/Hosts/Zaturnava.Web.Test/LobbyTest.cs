@@ -187,6 +187,100 @@ public sealed class LobbyTest : IDisposable
     }
 
     [Fact]
+    public void Render_WhenSetUpSeatBySeat_NamesEachBotWithItsRating()
+    {
+        // Arrange - nothing beyond the server's catalog
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Assert
+        Assert.Equal(
+            ("Bot: Random (Elo 1000)", "Bot: Claude (AI, costs tokens)"),
+            (
+                lobby.Find("select.plan option[value=random]").TextContent.Trim(),
+                lobby.Find("select.plan option[value=claude]").TextContent.Trim()
+            )
+        );
+    }
+
+    [Fact]
+    public void ByStrength_WhenChosen_OffersTheColourThenTheAllyAndEnemiesAtMediumStrength()
+    {
+        // Arrange
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Act
+        lobby.Find("button.by-strength").Click();
+
+        // Assert
+        Assert.Equal(
+            (
+                "You play|Your ally, Green|Enemy, Yellow|Enemy, Red",
+                "1|1|1",
+                "Person|Easy bot (Elo 1000)|Medium bot (Elo 1100)|Hard bot (Elo 1250–1400)",
+                0
+            ),
+            (
+                SeatNames(lobby),
+                string.Join('|', lobby.FindAll("select.strength").Select(strength => strength.GetAttribute("value"))),
+                string.Join('|', lobby.Find("select.strength").Children.Select(option => option.TextContent)),
+                lobby.FindAll("select.plan").Count
+            )
+        );
+    }
+
+    [Fact]
+    public void ByStrength_WhenAnotherColourIsChosen_PutsItsAllyFirstThenItsEnemiesInTurn()
+    {
+        // Arrange
+        IRenderedComponent<Lobby> lobby = this.Render();
+        lobby.Find("button.by-strength").Click();
+
+        // Act
+        lobby.Find("select.colour").Change("1");
+
+        // Assert
+        Assert.Equal("You play|Your ally, Red|Enemy, Green|Enemy, Black", SeatNames(lobby));
+    }
+
+    [Fact]
+    public void Play_WhenSetUpByStrength_SitsAtTheColourWithBotsAsStrongAsChosen()
+    {
+        // Arrange - Green's ally is Black, a person; Yellow is easy (Random), Red hard (Solomon or Oracle)
+        IRenderedComponent<Lobby> lobby = this.Render();
+        lobby.Find("button.by-strength").Click();
+        lobby.Find("select.colour").Change("2");
+        lobby.FindAll("select.strength")[0].Change("-1");
+        lobby.FindAll("select.strength")[1].Change("2");
+        lobby.FindAll("select.strength")[2].Change("0");
+
+        // Act
+        lobby.Find("button.create").Click();
+
+        // Assert
+        ImmutableList<string?> bots = this._page.Server.Created!.Bots;
+        Assert.Equal(
+            ("random", true, 2),
+            (bots[1], (bots[0], bots[2], bots[3]) is (null, null, "solomon" or "oracle"), this._seated!.Claim!.Seat)
+        );
+    }
+
+    [Fact]
+    public void SeatBySeat_WhenChosenAgain_OffersEachSeatsPlan()
+    {
+        // Arrange
+        IRenderedComponent<Lobby> lobby = this.Render();
+        lobby.Find("button.by-strength").Click();
+
+        // Act
+        lobby.Find("button.seat-by-seat").Click();
+
+        // Assert
+        Assert.Equal((4, 0), (lobby.FindAll("select.plan").Count, lobby.FindAll("select.strength").Count));
+    }
+
+    [Fact]
     public void Join_WhenClicked_ClaimsThatSeat()
     {
         // Arrange
@@ -320,6 +414,9 @@ public sealed class LobbyTest : IDisposable
             (lobby.Find("p.problem").TextContent, lobby.FindAll("button").Count)
         );
     }
+
+    private static string SeatNames(IRenderedComponent<Lobby> lobby) =>
+        string.Join('|', lobby.FindAll("span.seat-name").Select(name => name.TextContent.Trim()));
 
     private IRenderedComponent<Lobby> Render() =>
         this._page.Render<Lobby>(parameters => parameters.Add(x => x.OnSeated, seating => this._seated = seating));

@@ -150,10 +150,11 @@ internal static class GameViews
 
     private static RulesetDto RulesetOf(IRulesApplying rules)
     {
-        ImmutableList<Seat> seats = rules.CreateInitialState().Seats;
-        return new RulesetDto(rules.Id, rules.Name, seats.Count)
+        GameState state = rules.CreateInitialState();
+        return new RulesetDto(rules.Id, rules.Name, state.Seats.Count)
         {
-            SeatNames = [.. seats.Select(seat => rules.NameOf(seat.Id))],
+            SeatNames = [.. state.Seats.Select(seat => rules.NameOf(seat.Id))],
+            SeatTeams = [.. state.Seats.Select(seat => state.Teams.TeamOf(seat.Id))],
         };
     }
 
