@@ -44,17 +44,23 @@ internal sealed class ScoringRules(ImmutableDictionary<GameAction, int> points) 
 
     public ImmutableList<GameAction> LegalActions([Required] GameState state) => [.. this._points.Keys];
 
-    public Transition Apply([Required] GameState state, [Required] GameAction action) =>
-        new(
-            state with
+    /// <summary>The state each action named leads to, its points added; any other leaves it as it was.</summary>
+    public ImmutableDictionary<GameAction, GameState> Results { get; init; } = [];
+
+    public Transition Apply([Required] GameState state, [Required] GameAction action)
+    {
+        GameState result = this.Results.GetValueOrDefault(action, state);
+        return new(
+            result with
             {
-                Scores = state.Scores.SetItem(
+                Scores = result.Scores.SetItem(
                     action.Actor,
-                    state.Scores.GetValueOrDefault(action.Actor) + this._points.GetValueOrDefault(action)
+                    result.Scores.GetValueOrDefault(action.Actor) + this._points.GetValueOrDefault(action)
                 ),
             },
             []
         );
+    }
 
     public bool MayOffer([Required] GameState state) => true;
 
@@ -85,7 +91,13 @@ internal sealed class ScoringRules(ImmutableDictionary<GameAction, int> points) 
     public int RansomPointsOf([Required] GameState state, [Required] RansomOffer offer) =>
         this.RansomPoints * offer.Asked.Count;
 
-    public ImmutableList<Attack> AttacksOf([Required] GameState state, SeatId seat) => [];
+    /// <summary>Seat 1's attacks, whatever the state; none, unless set. No other seat attacks.</summary>
+    public ImmutableList<Attack> Attacks { get; init; } = [];
+
+    public ImmutableList<Attack> AttacksOf([Required] GameState state, SeatId seat) =>
+        seat == new SeatId(1)
+            ? this.Attacks
+            : [];
 
     public bool IsLeader(PieceKindId kind) => kind == new PieceKindId("raja");
 

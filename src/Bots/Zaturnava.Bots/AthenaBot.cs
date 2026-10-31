@@ -12,7 +12,8 @@ namespace Net.NowhereAtAll.Zaturnava.Bots;
 /// Sage's look ahead through the rest of its turn and the dice (<see cref="Foresight"/>), but with each position
 /// judged by a neural network trained on games played (<see cref="NetworkValuing"/>): how the game will end for
 /// its team, and by how much. Asked to end the game, it agrees when ending it now, points deciding, is worth as
-/// much as playing on, as the network judges playing on. Deals in prisoners as Solomon does. For a ruleset it
+/// much as playing on, as the network judges playing on. Deals in prisoners as Sage does, by the position a
+/// trade leaves, as the network judges it (<see cref="ByPosition"/>). For a ruleset it
 /// has no network for (or one of another size than the ruleset's positions), it plays as Sage does.
 /// </summary>
 public sealed class AthenaBot(Random random, ImmutableDictionary<string, ValueNetworkData> networks) : IBotPlaying
@@ -34,8 +35,9 @@ public sealed class AthenaBot(Random random, ImmutableDictionary<string, ValueNe
         "Athena",
         "Learned: a small neural network, trained on two thousand games of bots playing each other, judges "
             + "each position (who will win, and by how much), and it thinks through the rest of its turn as Sage "
-            + "does. It agrees to end a game when ending it now is worth as much as playing on. Trades prisoners as "
-            + "Solomon does. Uses AI of its own, run on the server at no cost to anyone: no AI service.",
+            + "does. It agrees to end a game when ending it now is worth as much as playing on. Trades prisoners when "
+            + "the board would be better for it. Uses AI of its own, run on the server at no cost to anyone: "
+            + "no AI service.",
         UsesAi: true
     );
 
