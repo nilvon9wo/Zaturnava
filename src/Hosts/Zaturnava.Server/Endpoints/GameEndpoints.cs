@@ -128,10 +128,14 @@ internal static class GameEndpoints
         return await ViewOf(snapshot, games, players, cancellationToken);
     }
 
-    /// <summary>Claims the seat: for the player the request's token stands for, if any; else for a guest.</summary>
+    /// <summary>
+    /// Claims the seat: for the player the request's token stands for, if any; else for a guest, by the nickname
+    /// the body gives, if it gives one.
+    /// </summary>
     private static async Task<SeatClaimedDto> Claim(
         string gameId,
         int seat,
+        ClaimSeatRequest? claim,
         HttpRequest request,
         GameService games,
         PlayerService players,
@@ -141,7 +145,13 @@ internal static class GameEndpoints
         Player? player = SeatToken.OrNull(request) is { } playerToken
             ? await players.Find(playerToken, cancellationToken)
             : null;
-        string token = await games.Claim(new GameId(gameId), new SeatId(seat), player?.Id, cancellationToken);
+        string token = await games.Claim(
+            new GameId(gameId),
+            new SeatId(seat),
+            player?.Id,
+            claim?.Nickname,
+            cancellationToken
+        );
         return new SeatClaimedDto(token);
     }
 

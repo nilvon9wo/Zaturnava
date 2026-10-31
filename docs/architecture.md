@@ -296,8 +296,10 @@ base address (`GameRoutes`):
   for the login, through a cookie that lives only until the player is signed
   in. A seat claimed with a player token keeps the player's id beside the
   token's hash (`HumanSeat.Claimant`), and the views name it by the player's
-  name, `guest` or `deleted player`. A game begins only once every seat is
-  taken (`GameRecord.IsWaiting`).
+  name, `deleted player`, or, for a guest, `guest` or the nickname they gave
+  (`HumanSeat.Nickname`, kept beside the hash) as `Nickname (guest)`. Only a
+  seat claimed signed in may speak at the table (`SeatController.IsGuest`).
+  A game begins only once every seat is taken (`GameRecord.IsWaiting`).
 - **Bots** decide one step per `advance`, so that a client can show their
   turns at a pace people can follow (`Table:BotPaceSeconds`, default 0.9).
   Dice a bot awaits are always rolled and do not count as a step. The server

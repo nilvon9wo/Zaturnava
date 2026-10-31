@@ -165,11 +165,31 @@ public sealed class GameServiceTest
         PlayerId player = new("ada");
 
         // Act
-        _ = await this._service.Claim(id, First, player, this._cancellation);
+        _ = await this._service.Claim(id, First, player, "Impostor", this._cancellation);
 
         // Assert
         GameSnapshot snapshot = await this._service.Get(id, this._cancellation);
-        Assert.Equal(player, ((HumanSeat)snapshot.Record.Controllers[0]).Claimant);
+        HumanSeat seat = (HumanSeat)snapshot.Record.Controllers[0];
+        Assert.Equal<(PlayerId?, string?)>((player, null), (seat.Claimant, seat.Nickname));
+    }
+
+    [Theory]
+    [InlineData("  Ada  ", "Ada")]
+    [InlineData("A nickname far too long to keep", "A nickname far too l")]
+    [InlineData("Ad\u0007a", "Ada")]
+    [InlineData("   ", null)]
+    [InlineData(null, null)]
+    public async Task Claim_WhenAGuestGivesANickname_KeepsItCleanedAndCut(string? given, string? kept)
+    {
+        // Arrange
+        GameId id = await this._service.Create(TinyRules.RulesetId, [SeatPlan.Open, Bot], this._cancellation);
+
+        // Act
+        _ = await this._service.Claim(id, First, null, given, this._cancellation);
+
+        // Assert
+        GameSnapshot snapshot = await this._service.Get(id, this._cancellation);
+        Assert.Equal(kept, ((HumanSeat)snapshot.Record.Controllers[0]).Nickname);
     }
 
     [Fact]

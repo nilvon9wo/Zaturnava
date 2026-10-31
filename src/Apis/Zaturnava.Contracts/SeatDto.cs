@@ -11,8 +11,10 @@ namespace Net.NowhereAtAll.Zaturnava.Contracts;
 /// <see cref="TurnsMissed"/>, how many of its turns in a row passed while it was away.
 /// <see cref="IsPaidBot"/> says that its bot costs tokens for each use; <see cref="IsRetired"/>, that it
 /// retired, ending its part in the game. <see cref="Player"/> says who holds a person's seat: the name of the player
-/// who claimed it signed in, <c>guest</c> for someone who did not sign in, <c>deleted player</c> for one who has
-/// since deleted their account; null for an open seat or a bot's.
+/// who claimed it signed in, <c>deleted player</c> for one who has since deleted their account; for someone who did
+/// not sign in, <c>guest</c>, or their nickname as <c>Nickname (guest)</c>; null for an open seat or a bot's.
+/// <see cref="IsGuest"/> says that a person holds it without having signed in, and so may read the table's talk but
+/// not speak.
 /// </summary>
 public sealed record SeatDto(
     int Id,
@@ -29,5 +31,6 @@ public sealed record SeatDto(
     int TurnsMissed = 0,
     bool IsPaidBot = false,
     bool IsRetired = false,
-    string? Player = null
+    string? Player = null,
+    bool IsGuest = false
 );

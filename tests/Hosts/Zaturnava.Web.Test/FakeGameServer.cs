@@ -77,6 +77,9 @@ internal sealed class FakeGameServer : IGameServing
     /// <summary>The player token the last seat was claimed with; null, if a guest's.</summary>
     public string? ClaimedAs { get; private set; }
 
+    /// <summary>The nickname the last seat was claimed by; null, if none was given.</summary>
+    public string? ClaimedBy { get; private set; }
+
     public Task<CatalogDto> Catalog(CancellationToken cancellationToken) =>
         this.Answer(
             "catalog",
@@ -130,10 +133,12 @@ internal sealed class FakeGameServer : IGameServing
         [Required] string gameId,
         int seat,
         string? playerToken,
+        string? nickname,
         CancellationToken cancellationToken
     )
     {
         this.ClaimedAs = playerToken;
+        this.ClaimedBy = nickname;
         return this.Answer($"claim {gameId} {seat.ToString(CultureInfo.InvariantCulture)}", new SeatClaimedDto(Token));
     }
 

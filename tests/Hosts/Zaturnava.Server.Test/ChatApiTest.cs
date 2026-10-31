@@ -7,9 +7,9 @@ namespace Net.NowhereAtAll.Zaturnava.Server.Test;
 
 /// <summary>
 /// Talk at a table, as a client sees it: a game whose first two seats (Black and Yellow, of opposing teams)
-/// are people, and whose others are bots.
+/// are players signed in, and whose others are bots.
 /// </summary>
-public sealed class ChatApiTest(ZaturnavaServer server) : IClassFixture<ZaturnavaServer>
+public sealed class ChatApiTest(SigningInServer server) : IClassFixture<SigningInServer>
 {
     private readonly HttpGameClient _client = server.GameClient();
     private readonly HttpClient _http = server.CreateClient();
@@ -151,14 +151,45 @@ public sealed class ChatApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
         Assert.Equal(expected, refused.Refusal);
     }
 
-    /// <summary>A game with people at Black and Yellow, and their tokens.</summary>
+    [Fact]
+    public async Task Say_WhenTheSeatIsAGuests_IsRefusedAsForbiddenThoughTheGuestMayRead()
+    {
+        // Arrange
+        CreateGameRequest request = new(ZaturnavaServer.Chaturaji2027, ZaturnavaServer.OneOpenSeat);
+        GameCreatedDto created = await this._client.Create(request, this._cancellation);
+        SeatClaimedDto guest = await this._client.Claim(created.GameId, 0, null, "Ada", this._cancellation);
+
+        // Act
+        Task<ChatMessageDto> saying = this._client.Say(
+            created.GameId,
+            guest.Token,
+            new SayRequest(ChatChannels.Table, "Hi"),
+            this._cancellation
+        );
+
+        // Assert
+        await AssertRefused(Refusal.Forbidden, saying);
+        GameViewDto view = await this._client.Get(created.GameId, this._cancellation);
+        Assert.Equal(
+            ("Ada (guest)", true, 0),
+            (
+                view.Seats[0].Player,
+                view.Seats[0].IsGuest,
+                (await this._client.Chat(created.GameId, guest.Token, 0, this._cancellation)).Count
+            )
+        );
+    }
+
+    /// <summary>A game with players signed in at Black and Yellow, and their seats' tokens.</summary>
     private async Task<(string GameId, string Black, string Yellow)> SeatedGame()
     {
         CreateGameRequest request =
             new(ZaturnavaServer.Chaturaji2027, [null, null, ZaturnavaServer.Random, ZaturnavaServer.Random]);
         GameCreatedDto created = await this._client.Create(request, this._cancellation);
-        SeatClaimedDto black = await this._client.Claim(created.GameId, 0, null, this._cancellation);
-        SeatClaimedDto yellow = await this._client.Claim(created.GameId, 1, null, this._cancellation);
+        string ada = await server.PlayerToken("GitHub|chat-ada|Ada", this._cancellation);
+        string bea = await server.PlayerToken("GitHub|chat-bea|Bea", this._cancellation);
+        SeatClaimedDto black = await this._client.Claim(created.GameId, 0, ada, null, this._cancellation);
+        SeatClaimedDto yellow = await this._client.Claim(created.GameId, 1, bea, null, this._cancellation);
         return (created.GameId, black.Token, yellow.Token);
     }
 

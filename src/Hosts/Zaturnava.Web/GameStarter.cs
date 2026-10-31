@@ -130,21 +130,21 @@ internal static class GameStarter
 
     /// <summary>
     /// A game at once, as hard as asked (<see cref="QuickBots"/>): the player at a seat chosen at random, the
-    /// bots among the others. The seat is the signed-in <paramref name="player"/>'s, if one is.
+    /// bots among the others. The seat is the <paramref name="claimant"/>'s.
     /// </summary>
-    public static Task<Seating> Quick(IGameServing games, CatalogDto catalog, Difficulty difficulty, string? player)
+    public static Task<Seating> Quick(IGameServing games, CatalogDto catalog, Difficulty difficulty, Claimant claimant)
     {
         RulesetDto ruleset = catalog.Rulesets[0];
         int person = Random.Shared.Next(ruleset.SeatCount);
         IEnumerable<string> bots = QuickBots(catalog, ruleset.Id, difficulty, ruleset.SeatCount - 1);
-        return Start(games, ruleset.Id, BotsOf(Plans(ruleset.SeatCount, person, bots)), person, null, player);
+        return Start(games, ruleset.Id, BotsOf(Plans(ruleset.SeatCount, person, bots)), person, null, claimant);
     }
 
     /// <summary>
     /// Starts a game of the ruleset with <paramref name="bots"/> in their seats, from the start or the
-    /// <paramref name="scenario"/>, and sits the player at <paramref name="person"/> (as the signed-in
-    /// <paramref name="player"/>, if one is); or has them watch, if that is no seat. A game played again after
-    /// another (<paramref name="continuing"/>) is at its table.
+    /// <paramref name="scenario"/>, and sits the <paramref name="claimant"/> at <paramref name="person"/>; or has
+    /// them watch, if that is no seat. A game played again after another (<paramref name="continuing"/>) is at its
+    /// table.
     /// </summary>
     public static async Task<Seating> Start(
         IGameServing games,
@@ -152,21 +152,25 @@ internal static class GameStarter
         ImmutableList<string?> bots,
         int person,
         string? scenario,
-        string? player,
+        Claimant claimant,
         string? continuing = null
     )
     {
         CreateGameRequest request = new(rulesetId, bots) { Scenario = scenario, Continuing = continuing };
         GameCreatedDto created = await games.Create(request, CancellationToken.None);
         return person >= 0
-            ? await Claim(games, created.GameId, person, player)
+            ? await Claim(games, created.GameId, person, claimant)
             : Seating.Watching(created.GameId);
     }
 
-    /// <summary>Claims the seat: as the signed-in <paramref name="player"/>, by their token, if one is.</summary>
-    public static async Task<Seating> Claim(IGameServing games, string gameId, int seat, string? player)
+    /// <summary>
+    /// Claims the seat: as the player signed in, by their token, if one is; else as a guest, by their nickname, if
+    /// they gave one.
+    /// </summary>
+    public static async Task<Seating> Claim(IGameServing games, string gameId, int seat, Claimant claimant)
     {
-        SeatClaimedDto claimed = await games.Claim(gameId, seat, player, CancellationToken.None);
+        SeatClaimedDto claimed =
+            await games.Claim(gameId, seat, claimant.PlayerToken, claimant.Nickname, CancellationToken.None);
         return new Seating(gameId, new SeatClaim(seat, claimed.Token));
     }
 

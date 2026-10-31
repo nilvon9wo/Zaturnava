@@ -13,9 +13,9 @@ server is at `https://zaturnava.runasp.net/`.
 | | Request | Reply |
 |---|---|---|
 | What the server hosts | `GET api/catalog` | The rulesets (with their seats' names) and the bots, by id |
-| The games | `GET api/games` | Each game: its id, its open seats, who plays each seat (`open`, a bot's id, or for a person, the name they signed in with, `guest`, or `deleted player`), whether it is over |
+| The games | `GET api/games` | Each game: its id, its open seats, who plays each seat (`open`, a bot's id, or for a person, the name they signed in with, `deleted player`, `guest` or `Nickname (guest)`), whether it is over |
 | Create a game | `POST api/games` | `201`, `{"gameId": "..."}` |
-| Claim a seat | `POST api/games/{id}/seats/{seat}` | `{"token": "..."}` |
+| Claim a seat | `POST api/games/{id}/seats/{seat}`, with a player token or none, and a guest's nickname or none | `{"token": "..."}` |
 | A game | `GET api/games/{id}` | The game as it stands ([the view](#the-view)) |
 | Act | `POST api/games/{id}/actions`, with the seat's token | The game after it |
 | Let a bot (or a timer) decide | `POST api/games/{id}/advance` | The game after one decision |
@@ -35,7 +35,9 @@ Claiming an open seat returns its **token**, once: the server keeps only its has
 can act for the seat. Send it with every action, as `Authorization: Bearer {token}`. A seat is the
 whole of what a token holds. A player who has [signed in](#signing-in) may send their player token with the
 claim, as `Authorization: Bearer {player token}`: the seat then shows their name to everyone at the table.
-Without one, the seat is a `guest`'s.
+Without one, the seat is a guest's, shown as `guest`; or, if the claim's body gives a nickname (at most 20
+characters, `{"nickname": "Ada"}`), as `Ada (guest)`, so that no guest passes for a player who signed in. The
+body may be left out. A guest may read the table's talk, and their team's, but not speak.
 
 ## Playing
 
@@ -129,7 +131,7 @@ The rules refuse any of these that may not be made, as they refuse any illegal a
 | `legalActions` | What the deciding seat may do now |
 | `cells` | The board: each cell's id, where to draw it, its shape and name, and whose throne it is |
 | `pieces` | Each piece: its id, kind, owner and cell |
-| `seats` | Each seat: its name, team, score, who plays it (`controller`: `open`, `human` or `bot`; `bot`, the bot's name; `player`, a person's name, `guest` or `deleted player`), and the prisoners it holds |
+| `seats` | Each seat: its name, team, score, who plays it (`controller`: `open`, `human` or `bot`; `bot`, the bot's name; `player`, a person's name, `deleted player`, `guest` or `Nickname (guest)`; `isGuest`, whether a person holds it without having signed in), and the prisoners it holds |
 | `dice` | The dice rolled this turn and not used yet, with what each lets move |
 | `log` | The latest events, told for people ("Black rolled 2 (Horse) and 5 (Pawn or Raja).") |
 | `outcome` | Once over: the winners, the kind of ending, and the story |
@@ -142,7 +144,8 @@ record, documented where it is declared (`GameViewDto.cs`, `SeatDto.cs`, and so 
 ## Talk at the table
 
 The players may talk: to the whole table (`"channel": "table"`), or to their own team alone (`"team"`).
-Saying something takes the seat's token, and at most 500 characters:
+Only a player who signed in before claiming their seat may speak; a guest's seat is refused (`403`), though
+it reads as any player does. Saying something takes the seat's token, and at most 500 characters:
 
 ```json
 { "channel": "team", "text": "Hold the left; I'll take their Boat." }
@@ -186,7 +189,7 @@ A request the server will not do is answered with a [problem](https://www.rfc-ed
 | Status | Refusal | |
 |---|---|---|
 | 400 | `Invalid` | The request makes no sense: an unknown ruleset or bot, a malformed action |
-| 403 | `Forbidden` | The token does not hold the seat that must decide |
+| 403 | `Forbidden` | The token does not hold the seat that must decide; or, to speak, holds a guest's seat |
 | 404 | `NotFound` | There is no such game |
 | 409 | `Conflict` | The seat is taken, or the game changed meanwhile |
 | 422 | `Illegal` | The rules do not allow the action now |

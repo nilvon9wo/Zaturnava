@@ -722,7 +722,7 @@
             [.. view.Seats.Select(seat => seat.BotId)],
             this.Seating.Claim is { } claim ? claim.Seat : -1,
             null,
-            await this.Browser.PlayerToken(),
+            await this.Browser.Claimant(),
             view.Id
         ));
 
@@ -732,7 +732,7 @@
                 this.Games,
                 await this.Games.Catalog(CancellationToken.None),
                 Difficulty.Medium,
-                await this.Browser.PlayerToken()
+                await this.Browser.Claimant()
             )
         );
 

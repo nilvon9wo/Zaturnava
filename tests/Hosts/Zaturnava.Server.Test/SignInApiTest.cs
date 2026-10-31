@@ -182,7 +182,7 @@ public sealed partial class SignInApiTest(SigningInServer server) : IClassFixtur
         );
 
         // Act
-        _ = await client.Claim(created.GameId, 0, token, this._cancellation);
+        _ = await client.Claim(created.GameId, 0, token, "Impostor", this._cancellation);
 
         // Assert
         string? named = (await client.Get(created.GameId, this._cancellation)).Seats[0].Player;

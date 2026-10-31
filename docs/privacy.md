@@ -14,11 +14,12 @@ You need no account to play, and today there is none to make. What is kept:
   every action taken in it, in order. Nothing in a game says who a person is, unless they signed in (below). Finished games are kept, and their
   histories are public (at `api/history`), so that anyone, bots' authors included, can study them.
 - **On the server, for each seat a person holds:** a fingerprint (a SHA-256 hash) of the seat's secret token, so the
-  server can tell the token when your browser shows it, without keeping the token itself.
+  server can tell the token when your browser shows it, without keeping the token itself; and the nickname you play
+  by, if you gave one, shown to everyone as "Nickname (guest)" and kept with the game.
 - **On the server, what is said at a table:** each message, the seat that said it, and when. It is deleted once
-  every player has left the table.
+  every player has left the table. Only players who signed in may speak; a guest reads.
 - **In your browser** (its local storage, never sent anywhere but back to this game's server): the token of each
-  seat you hold, so that you can come back to it, and your settings: the colour theme, sound, how the pieces are
+  seat you hold, so that you can come back to it, the nickname you play by, if you gave one, and your settings: the colour theme, sound, how the pieces are
   drawn, the safety that keeps you from taking your own team's pieces, how the log and the talk are shown, and how
   you last set up a new game.
   Clearing the site's data in your browser deletes all of it.

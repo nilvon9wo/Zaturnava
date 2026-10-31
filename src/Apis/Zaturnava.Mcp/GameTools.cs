@@ -45,9 +45,11 @@ public sealed class GameTools(IGameServing games)
     public Task<SeatClaimedDto> ClaimSeat(
         string gameId,
         [Description("The seat's number, from 0.")] int seat,
+        [Description("A nickname to be shown by at the table, as \"Nickname (guest)\"; at most 20 characters.")]
+        string? nickname,
         CancellationToken cancellationToken
     ) =>
-        Explained(() => this._games.Claim(gameId, seat, null, cancellationToken));
+        Explained(() => this._games.Claim(gameId, seat, null, nickname, cancellationToken));
 
     [McpServerTool(Name = "get_game", ReadOnly = true)]
     [Description(

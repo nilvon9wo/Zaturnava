@@ -124,22 +124,29 @@ public sealed class GameService(
     /// <exception cref="GameNotFoundException">There is no such game.</exception>
     /// <exception cref="SeatUnavailableException">The seat does not exist, or is not open.</exception>
     public Task<string> Claim(GameId id, SeatId seat, CancellationToken cancellationToken) =>
-        this.Claim(id, seat, null, cancellationToken);
+        this.Claim(id, seat, null, null, cancellationToken);
 
     /// <summary>
     /// Claims an open seat for whoever holds the returned token: <paramref name="claimant"/>, if a player signed in
-    /// claims it. The last open seat taken, the game begins, and the bots due to play first play.
+    /// claims it; else a guest, by <paramref name="nickname"/>, if they give one (<see cref="Nicknames.Of"/>). The
+    /// last open seat taken, the game begins, and the bots due to play first play.
     /// </summary>
     /// <exception cref="GameNotFoundException">There is no such game.</exception>
     /// <exception cref="SeatUnavailableException">The seat does not exist, or is not open.</exception>
-    public async Task<string> Claim(GameId id, SeatId seat, PlayerId? claimant, CancellationToken cancellationToken)
+    public async Task<string> Claim(
+        GameId id,
+        SeatId seat,
+        PlayerId? claimant,
+        string? nickname,
+        CancellationToken cancellationToken
+    )
     {
         GameRecord record = await this.Load(id, cancellationToken);
         bool isOpen = record.Controllers.ElementAtOrDefault(seat.Value)?.IsOpen == true;
         string token = isOpen
             ? SeatTokens.Issue()
             : throw new SeatUnavailableException(id, seat);
-        HumanSeat claimed = new(SeatTokens.Hash(token), claimant);
+        HumanSeat claimed = new(SeatTokens.Hash(token), claimant, claimant is null ? Nicknames.Of(nickname) : null);
         GameRecord seated = record.Next() with { Controllers = record.Controllers.SetItem(seat.Value, claimed) };
         GameSnapshot snapshot = GameSnapshot.Of(seated, this._rulesets.Find(seated.RulesetId));
         Played played = await this.PlayBots(

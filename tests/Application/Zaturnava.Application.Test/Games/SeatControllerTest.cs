@@ -16,6 +16,7 @@ public sealed class SeatControllerTest
         { new OpenSeat(), "open", null },
         { new HumanSeat("HASH"), "human", "HASH" },
         { new HumanSeat("HASH", new PlayerId("ada")), "human", "HASH ada" },
+        { new HumanSeat("HASH", Nickname: "Ada ~ Lovelace"), "human", "HASH ~Ada ~ Lovelace" },
         { new BotSeat("first"), "bot", "first" },
     };
 
@@ -54,6 +55,28 @@ public sealed class SeatControllerTest
         { new OpenSeat(), "open" },
         { new HumanSeat("HASH"), "person" },
         { new BotSeat("first"), "first" },
+    };
+
+    [Theory]
+    [MemberData(nameof(Guests), DisableDiscoveryEnumeration = true)]
+    public void IsGuest_WhenRead_IsTrueOfAPersonNotSignedInAlone(SeatController controller, bool expected)
+    {
+        // Arrange - nothing beyond the arguments
+
+        // Act
+        bool isGuest = controller.IsGuest;
+
+        // Assert
+        Assert.Equal(expected, isGuest);
+    }
+
+    public static TheoryData<SeatController, bool> Guests => new()
+    {
+        { new OpenSeat(), false },
+        { new HumanSeat("HASH"), true },
+        { new HumanSeat("HASH", Nickname: "Ada"), true },
+        { new HumanSeat("HASH", new PlayerId("ada")), false },
+        { new BotSeat("first"), false },
     };
 
     [Fact]

@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -12,9 +13,23 @@ namespace Net.NowhereAtAll.Zaturnava.Server.Test;
 /// The server with GitHub set up to sign in with, but no round trip to it: whoever a request's
 /// <see cref="VouchedHandler.Header"/> names, as <c>issuer|key|name</c>, is taken as having come back from it.
 /// </summary>
-public sealed class SigningInServer : ZaturnavaServer
+public partial class SigningInServer : ZaturnavaServer
 {
     public const string Page = "http://localhost:5165";
+
+    /// <summary>Signs in whoever <paramref name="vouched"/> names (<c>issuer|key|name</c>): their token.</summary>
+    public async Task<string> PlayerToken(string vouched, CancellationToken cancellationToken)
+    {
+        using HttpClient http = this.CreateClient();
+        using HttpRequestMessage request = new(HttpMethod.Get, "signin/done?origin=" + Uri.EscapeDataString(Page));
+        _ = request.Headers.TryAddWithoutValidation(VouchedHandler.Header, vouched);
+        using HttpResponseMessage response = await http.SendAsync(request, cancellationToken);
+        string page = await response.Content.ReadAsStringAsync(cancellationToken);
+        return PostedToken().Match(page).Groups[1].Value;
+    }
+
+    [GeneratedRegex("\"token\":\"([^\"]+)\"")]
+    private static partial Regex PostedToken();
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {

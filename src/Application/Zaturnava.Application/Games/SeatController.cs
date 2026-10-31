@@ -22,6 +22,9 @@ public abstract record SeatController
 
     public virtual bool IsOpen => false;
 
+    /// <summary>Whether a person holds the seat without having signed in, and so may only read the talk.</summary>
+    public virtual bool IsGuest => false;
+
     public virtual bool IsHeldBy([Required] string token) => false;
 
     /// <summary>What the server should ask to decide for this seat, if anything.</summary>

@@ -216,7 +216,8 @@ internal static class GameViews
             snapshot.State.Absence.MissedBy(seat),
             bots.Any(bot => bot.Id == botId && bot.IsPaid),
             snapshot.State.Retired.Contains(seat),
-            PersonOf(controller, names)
+            PersonOf(controller, names),
+            controller.IsGuest
         );
     }
 
