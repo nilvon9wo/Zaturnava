@@ -12,12 +12,13 @@ public sealed class LobbyTest : IDisposable
     public void Dispose() => this._page.Dispose();
 
     [Fact]
-    public void Render_WhenLoaded_OffersANewGameAndTheGamesToJoin()
+    public void SeatBySeat_WhenChosen_OffersANewGameAndTheGamesToJoin()
     {
         // Arrange - nothing beyond the server's catalog and games; Claude, paid for, is not seated unasked
+        IRenderedComponent<Lobby> lobby = this.Render();
 
         // Act
-        IRenderedComponent<Lobby> lobby = this.Render();
+        lobby.Find("button.seat-by-seat").Click();
 
         // Assert
         Assert.Equal(
@@ -36,7 +37,7 @@ public sealed class LobbyTest : IDisposable
     public void Play_WhenTheFirstSeatIsForAPerson_CreatesTheGameAndSitsThere()
     {
         // Arrange
-        IRenderedComponent<Lobby> lobby = this.Render();
+        IRenderedComponent<Lobby> lobby = this.SeatBySeat();
 
         // Act
         lobby.Find("button.create").Click();
@@ -104,7 +105,7 @@ public sealed class LobbyTest : IDisposable
     public void Play_WhenAPaidBotIsChosen_SeatsIt()
     {
         // Arrange
-        IRenderedComponent<Lobby> lobby = this.Render();
+        IRenderedComponent<Lobby> lobby = this.SeatBySeat();
         lobby.FindAll("select.plan")[3].Change("claude");
 
         // Act
@@ -118,7 +119,7 @@ public sealed class LobbyTest : IDisposable
     public void Play_WhenEverySeatIsABot_WatchesTheGame()
     {
         // Arrange
-        IRenderedComponent<Lobby> lobby = this.Render();
+        IRenderedComponent<Lobby> lobby = this.SeatBySeat();
         lobby.FindAll("select.plan")[0].Change("solomon");
 
         // Act
@@ -129,12 +130,12 @@ public sealed class LobbyTest : IDisposable
     }
 
     [Fact]
-    public void Render_WhenABotPlaysOneSeat_CannotBeChosenForAnother()
+    public void SeatBySeat_WhenABotPlaysOneSeat_CannotBeChosenForAnother()
     {
         // Arrange - nothing beyond the server's catalog
 
         // Act
-        IRenderedComponent<Lobby> lobby = this.Render();
+        IRenderedComponent<Lobby> lobby = this.SeatBySeat();
 
         // Assert - Random plays seat 2, so seat 1 cannot have it; seat 2 can
         Assert.Equal(
@@ -187,12 +188,12 @@ public sealed class LobbyTest : IDisposable
     }
 
     [Fact]
-    public void Render_WhenSetUpSeatBySeat_NamesEachBotWithItsRating()
+    public void SeatBySeat_WhenChosen_NamesEachBotWithItsRating()
     {
         // Arrange - nothing beyond the server's catalog
 
         // Act
-        IRenderedComponent<Lobby> lobby = this.Render();
+        IRenderedComponent<Lobby> lobby = this.SeatBySeat();
 
         // Assert
         Assert.Equal(
@@ -205,29 +206,99 @@ public sealed class LobbyTest : IDisposable
     }
 
     [Fact]
-    public void ByStrength_WhenChosen_OffersTheColourThenTheAllyAndEnemiesAtMediumStrength()
+    public void Render_WhenLoaded_OffersByStrengthTheColourThenTheAllyAndEnemiesNearestMediumWithABotLeft()
     {
-        // Arrange
-        IRenderedComponent<Lobby> lobby = this.Render();
+        // Arrange - Easy is Random alone, Medium Midas alone, Hard Solomon and Oracle; the ally gets Medium, an
+        // enemy the easier of the two strengths as near, the other the one left
 
         // Act
-        lobby.Find("button.by-strength").Click();
+        IRenderedComponent<Lobby> lobby = this.Render();
 
         // Assert
         Assert.Equal(
             (
                 "You play|Your ally, Green|Enemy, Yellow|Enemy, Red",
-                "1|1|1",
+                "1|0|2",
                 "Person|Easy bot (Elo 1000)|Medium bot (Elo 1100)|Hard bot (Elo 1250–1400)",
                 0
             ),
             (
                 SeatNames(lobby),
                 string.Join('|', lobby.FindAll("select.strength").Select(strength => strength.GetAttribute("value"))),
-                string.Join('|', lobby.Find("select.strength").Children.Select(option => option.TextContent)),
+                string.Join('|', lobby.Find("select.strength").Children.Select(option => option.TextContent.Trim())),
                 lobby.FindAll("select.plan").Count
             )
         );
+    }
+
+    [Fact]
+    public void ByStrength_WhenAStrengthsBotsAllHaveSeats_OffersItToNoOtherSeat()
+    {
+        // Arrange - Green is Medium, Midas alone; Yellow Easy, Random alone; Red Hard, of two
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Act
+        lobby.FindAll("select.strength")[1].Change("2");
+
+        // Assert - Hard's two bots seat Yellow and Red, Medium's one Green; Easy's is free again
+        Assert.Equal(
+            ("hard", "medium", "medium"),
+            (
+                DisabledLevels(lobby, 0),
+                DisabledLevels(lobby, 1),
+                DisabledLevels(lobby, 2)
+            )
+        );
+    }
+
+    [Fact]
+    public void ByStrength_WhenTheColourLeftHasNoBotLeftAtItsStrength_PlaysItAtTheNearestWithOne()
+    {
+        // Arrange - Black, the player's, would be Hard; Yellow and Red take both Hard bots
+        IRenderedComponent<Lobby> lobby = this.Render();
+        lobby.FindAll("select.strength")[1].Change("2");
+
+        // Act - Green, Medium, becomes the player's, and Black is left
+        lobby.Find("select.colour").Change("2");
+
+        // Assert - seats in turn after Green: Black, its ally, then Yellow and Red
+        Assert.Equal(
+            "1|2|2",
+            string.Join('|', lobby.FindAll("select.strength").Select(strength => strength.GetAttribute("value")))
+        );
+    }
+
+    [Fact]
+    public void ByStrength_WhenTheColourLeftWasForAPerson_KeepsItForAPerson()
+    {
+        // Arrange - Yellow is left to a person, then played, then left again
+        IRenderedComponent<Lobby> lobby = this.Render();
+        lobby.FindAll("select.strength")[1].Change("-1");
+        lobby.Find("select.colour").Change("1");
+
+        // Act
+        lobby.Find("select.colour").Change("0");
+
+        // Assert
+        Assert.Equal("-1", lobby.FindAll("select.strength")[1].GetAttribute("value"));
+    }
+
+    [Fact]
+    public void Play_WhenABotWasChosenForTheColourTakenSinceAndForAnotherSeat_SeatsItOnce()
+    {
+        // Arrange - Oracle chosen for Red; Red taken, so Black, left, may choose it; then Green taken instead
+        IRenderedComponent<Lobby> lobby = this.Render();
+        lobby.FindAll("select.pick")[0].Change("oracle");
+        lobby.Find("select.colour").Change("3");
+        lobby.FindAll("select.pick")[0].Change("oracle");
+        lobby.Find("select.colour").Change("2");
+
+        // Act
+        lobby.Find("button.create").Click();
+
+        // Assert
+        ImmutableList<string> bots = [.. this._page.Server.Created!.Bots.OfType<string>()];
+        Assert.Equal(bots.Count, bots.Distinct(StringComparer.Ordinal).Count());
     }
 
     [Fact]
@@ -278,7 +349,7 @@ public sealed class LobbyTest : IDisposable
 
         // Assert
         Assert.Equal(
-            (1, "Any of them|Solomon|Oracle"),
+            (1, "Any of them|Solomon (Elo 1250)|Oracle (Elo 1400)"),
             (
                 lobby.FindAll("select.pick").Count,
                 string.Join('|', lobby.Find("select.pick").Children.Select(option => option.TextContent.Trim()))
@@ -334,7 +405,7 @@ public sealed class LobbyTest : IDisposable
         lobby.Find("select.pick").Change("oracle");
 
         // Act
-        lobby.FindAll("select.strength")[2].Change("0");
+        lobby.FindAll("select.strength")[2].Change("-1");
         lobby.FindAll("select.strength")[2].Change("2");
 
         // Assert
@@ -342,17 +413,16 @@ public sealed class LobbyTest : IDisposable
     }
 
     [Fact]
-    public void SeatBySeat_WhenChosenAgain_OffersEachSeatsPlan()
+    public void ByStrength_WhenChosenAgain_OffersEachSeatsStrength()
     {
         // Arrange
-        IRenderedComponent<Lobby> lobby = this.Render();
-        lobby.Find("button.by-strength").Click();
+        IRenderedComponent<Lobby> lobby = this.SeatBySeat();
 
         // Act
-        lobby.Find("button.seat-by-seat").Click();
+        lobby.Find("button.by-strength").Click();
 
         // Assert
-        Assert.Equal((4, 0), (lobby.FindAll("select.plan").Count, lobby.FindAll("select.strength").Count));
+        Assert.Equal((0, 3), (lobby.FindAll("select.plan").Count, lobby.FindAll("select.strength").Count));
     }
 
     [Fact]
@@ -492,6 +562,21 @@ public sealed class LobbyTest : IDisposable
 
     private static string SeatNames(IRenderedComponent<Lobby> lobby) =>
         string.Join('|', lobby.FindAll("span.seat-name").Select(name => name.TextContent.Trim()));
+
+    /// <summary>"easy,medium": the strengths the seat's choice offers but may not be chosen.</summary>
+    private static string DisabledLevels(IRenderedComponent<Lobby> lobby, int seat) =>
+        string.Join(
+            ',',
+            lobby.FindAll("select.strength")[seat].QuerySelectorAll("option[disabled]")
+                .Select(option => option.TextContent.Trim().Split(' ')[0].ToLowerInvariant())
+        );
+
+    private IRenderedComponent<Lobby> SeatBySeat()
+    {
+        IRenderedComponent<Lobby> lobby = this.Render();
+        lobby.Find("button.seat-by-seat").Click();
+        return lobby;
+    }
 
     private IRenderedComponent<Lobby> Render() =>
         this._page.Render<Lobby>(parameters => parameters.Add(x => x.OnSeated, seating => this._seated = seating));

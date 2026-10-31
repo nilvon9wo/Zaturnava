@@ -6,7 +6,32 @@ namespace Net.NowhereAtAll.Zaturnava.Web;
 /// <summary>How a page starts a game and sits the player at it: as planned, or at once, at random.</summary>
 internal static class GameStarter
 {
+    /// <summary>A seat's level, played by a person rather than a bot of some strength.</summary>
+    public const int PersonLevel = -1;
+
     private static readonly string[] StrengthNames = ["Easy", "Medium", "Hard"];
+
+    /// <summary>
+    /// Whether the strength at <paramref name="level"/> has a bot left for one more seat, beside the strengths
+    /// <paramref name="taken"/> by the other seats played by bots.
+    /// </summary>
+    public static bool HasRoom(ImmutableList<Strength> strengths, IEnumerable<int> taken, int level) =>
+        taken.Count(other => other == level) < strengths[level].Bots.Count;
+
+    /// <summary>
+    /// The strength nearest <paramref name="wanted"/> (the easier, of two as near) with a bot left beside those
+    /// <paramref name="taken"/>; <see cref="PersonLevel"/>, if none has.
+    /// </summary>
+    public static int LevelWithRoom(ImmutableList<Strength> strengths, IEnumerable<int> taken, int wanted)
+    {
+        ImmutableList<int> others = [.. taken];
+        return Enumerable.Range(0, strengths.Count)
+            .Where(level => HasRoom(strengths, others, level))
+            .OrderBy(level => Math.Abs(level - wanted))
+            .ThenBy(level => level)
+            .DefaultIfEmpty(PersonLevel)
+            .First();
+    }
 
     /// <summary>
     /// The player at <paramref name="person"/>, and the bots, in the order given, in the other seats -

@@ -119,6 +119,42 @@ public sealed class GameStarterTest
         Assert.Equal(["random", null], bots);
     }
 
+    [Theory]
+    [InlineData(true, "solomon (Elo 1250)")]
+    [InlineData(false, "solomon")]
+    public void LabelOf_WhenABotOfAStrengthIsOffered_NamesItWithItsRatingIfItHasOne(bool isRated, string expected)
+    {
+        // Arrange
+        Strength strength = GameStarter.Strengths(Catalog(Random, Midas, Solomon), Ruleset)[2];
+        BotDto bot = isRated ? Solomon : Solomon with { Ratings = [] };
+
+        // Act
+        string label = strength.LabelOf(bot);
+
+        // Assert
+        Assert.Equal(expected, label);
+    }
+
+    [Theory]
+    [InlineData(new[] { 1 }, 1, 0)]
+    [InlineData(new[] { 0, 1 }, 1, 2)]
+    [InlineData(new[] { 0, 1, 2 }, 1, GameStarter.PersonLevel)]
+    public void LevelWithRoom_WhenOtherSeatsHaveBots_IsTheNearestWithOneLeftTheEasierOnATie(
+        int[] taken,
+        int wanted,
+        int expected
+    )
+    {
+        // Arrange - a bot of each strength: Random easy, Midas medium, Solomon hard
+        ImmutableList<Strength> strengths = GameStarter.Strengths(Catalog(Random, Midas, Solomon), Ruleset);
+
+        // Act
+        int level = GameStarter.LevelWithRoom(strengths, taken, wanted);
+
+        // Assert
+        Assert.Equal(expected, level);
+    }
+
     private static BotDto Bot(string id, int rating) =>
         new(id, id, "Plays.", UsesAi: false) { Ratings = Rated(rating) };
 
