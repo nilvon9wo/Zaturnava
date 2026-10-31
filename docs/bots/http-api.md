@@ -13,7 +13,7 @@ server is at `https://zaturnava.runasp.net/`.
 | | Request | Reply |
 |---|---|---|
 | What the server hosts | `GET api/catalog` | The rulesets (with their seats' names) and the bots, by id |
-| The games | `GET api/games` | Each game: its id, its open seats, who plays each seat (`open`, `person` or a bot's id), whether it is over |
+| The games | `GET api/games` | Each game: its id, its open seats, who plays each seat (`open`, a bot's id, or for a person, the name they signed in with, `guest`, or `deleted player`), whether it is over |
 | Create a game | `POST api/games` | `201`, `{"gameId": "..."}` |
 | Claim a seat | `POST api/games/{id}/seats/{seat}` | `{"token": "..."}` |
 | A game | `GET api/games/{id}` | The game as it stands ([the view](#the-view)) |
@@ -33,9 +33,14 @@ A game is created with its ruleset and, for each seat in order, the id of the bo
 
 Claiming an open seat returns its **token**, once: the server keeps only its hash, and nothing else
 can act for the seat. Send it with every action, as `Authorization: Bearer {token}`. A seat is the
-whole of what a token holds: there are no accounts.
+whole of what a token holds. A player who has [signed in](#signing-in) may send their player token with the
+claim, as `Authorization: Bearer {player token}`: the seat then shows their name to everyone at the table.
+Without one, the seat is a `guest`'s.
 
 ## Playing
+
+A game begins once every seat is taken: until the last open seat is claimed, nothing may be played, no bot
+moves, and `legalActions` is empty. The claim that takes the last seat begins it.
 
 The server never acts by itself; a client moves the game along. A game waits on its **deciding
 seat** (`decidingSeat` in the view; `null` once the game is over):
@@ -124,7 +129,7 @@ The rules refuse any of these that may not be made, as they refuse any illegal a
 | `legalActions` | What the deciding seat may do now |
 | `cells` | The board: each cell's id, where to draw it, its shape and name, and whose throne it is |
 | `pieces` | Each piece: its id, kind, owner and cell |
-| `seats` | Each seat: its name, team, score, who plays it, and the prisoners it holds |
+| `seats` | Each seat: its name, team, score, who plays it (`controller`: `open`, `human` or `bot`; `bot`, the bot's name; `player`, a person's name, `guest` or `deleted player`), and the prisoners it holds |
 | `dice` | The dice rolled this turn and not used yet, with what each lets move |
 | `log` | The latest events, told for people ("Black rolled 2 (Horse) and 5 (Pawn or Raja).") |
 | `outcome` | Once over: the winners, the kind of ending, and the story |
@@ -170,7 +175,8 @@ opens, with a service the server is set up for (Proposed):
 The page's origin must be one the server serves its page from; for any other, it answers `400`, and posts
 nothing. The game page does this from the top right of its lobby, and keeps the token in the browser. As
 with a seat's, the server keeps only a player token's hash. Coming back with the same account
-signs in the same player, with a new token. Seats are not yet tied to players.
+signs in the same player, with a new token. A seat claimed with the player token remembers the player, and
+shows their name; once the account is deleted, it shows `deleted player`.
 
 ## Refusals
 

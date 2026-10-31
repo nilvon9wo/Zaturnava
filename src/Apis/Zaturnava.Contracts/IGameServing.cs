@@ -29,8 +29,16 @@ public interface IGameServing
     /// </summary>
     Task<GameViewDto> Advance([Required] string gameId, int version, CancellationToken cancellationToken);
 
-    /// <summary>Claims an open seat; the token returned is the only way to act for it.</summary>
-    Task<SeatClaimedDto> Claim([Required] string gameId, int seat, CancellationToken cancellationToken);
+    /// <summary>
+    /// Claims an open seat; the token returned is the only way to act for it. With a signed-in player's token
+    /// (<paramref name="playerToken"/>), the seat is theirs, and shows their name; without one, a guest's.
+    /// </summary>
+    Task<SeatClaimedDto> Claim(
+        [Required] string gameId,
+        int seat,
+        string? playerToken,
+        CancellationToken cancellationToken
+    );
 
     /// <summary>Takes <paramref name="action"/> for the seat <paramref name="token"/> holds.</summary>
     Task<GameViewDto> Submit(

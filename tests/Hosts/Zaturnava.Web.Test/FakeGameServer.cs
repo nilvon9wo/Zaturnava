@@ -55,7 +55,7 @@ internal sealed class FakeGameServer : IGameServing
             "chaturaji-2027",
             1,
             [1, 3],
-            [GameSummaryDto.Person, GameSummaryDto.Open, "random", GameSummaryDto.Open],
+            ["Ada", GameSummaryDto.Open, "random", GameSummaryDto.Open],
             12
         )
         {
@@ -73,6 +73,9 @@ internal sealed class FakeGameServer : IGameServing
     public ImmutableList<ScenarioDto> Scenarios { get; set; } = [];
 
     public (string GameId, string Token, ActionDto Action)? Submitted { get; private set; }
+
+    /// <summary>The player token the last seat was claimed with; null, if a guest's.</summary>
+    public string? ClaimedAs { get; private set; }
 
     public Task<CatalogDto> Catalog(CancellationToken cancellationToken) =>
         this.Answer(
@@ -123,8 +126,16 @@ internal sealed class FakeGameServer : IGameServing
     public Task<GameViewDto> Advance([Required] string gameId, int version, CancellationToken cancellationToken) =>
         this.Answer($"advance {gameId} {version.ToString(CultureInfo.InvariantCulture)}", this.View);
 
-    public Task<SeatClaimedDto> Claim([Required] string gameId, int seat, CancellationToken cancellationToken) =>
-        this.Answer($"claim {gameId} {seat.ToString(CultureInfo.InvariantCulture)}", new SeatClaimedDto(Token));
+    public Task<SeatClaimedDto> Claim(
+        [Required] string gameId,
+        int seat,
+        string? playerToken,
+        CancellationToken cancellationToken
+    )
+    {
+        this.ClaimedAs = playerToken;
+        return this.Answer($"claim {gameId} {seat.ToString(CultureInfo.InvariantCulture)}", new SeatClaimedDto(Token));
+    }
 
     public Task<GameViewDto> Submit(
         [Required] string gameId,

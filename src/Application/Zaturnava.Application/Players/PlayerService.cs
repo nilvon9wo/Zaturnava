@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.ComponentModel.DataAnnotations;
 using Net.NowhereAtAll.Zaturnava.Application.Games;
 using Net.NowhereAtAll.Zaturnava.Application.Ports;
@@ -17,6 +18,12 @@ public sealed class PlayerService(IPlayerPersisting store)
     /// <summary>A new player's name, when the provider gives none.</summary>
     public const string Unnamed = "Player";
 
+    /// <summary>Whoever holds a person's seat without having signed in.</summary>
+    public const string Guest = "guest";
+
+    /// <summary>Whoever held a person's seat as a player who has since deleted their account.</summary>
+    public const string Deleted = "deleted player";
+
     private readonly IPlayerPersisting _store = store;
 
     /// <summary>
@@ -35,6 +42,25 @@ public sealed class PlayerService(IPlayerPersisting store)
     /// <summary>The player the token stands for, if it stands for one.</summary>
     public Task<Player?> Find([Required] string token, CancellationToken cancellationToken) =>
         this._store.BySession(SeatTokens.Hash(token), cancellationToken);
+
+    /// <summary>
+    /// What to call whoever holds each person's seat: their name, if they were signed in when they claimed it;
+    /// <see cref="Guest"/> if not; <see cref="Deleted"/> if they have since deleted their account. Bots' and open
+    /// seats are left out.
+    /// </summary>
+    public async Task<ImmutableDictionary<HumanSeat, string>> NamesOf(
+        [Required] IEnumerable<SeatController> seats,
+        CancellationToken cancellationToken
+    )
+    {
+        ImmutableList<HumanSeat> people = [.. seats.OfType<HumanSeat>().Distinct()];
+        ImmutableDictionary<PlayerId, string> names =
+            await this._store.Names([.. people.Select(seat => seat.Claimant).OfType<PlayerId>()], cancellationToken);
+        return people.ToImmutableDictionary(
+            seat => seat,
+            seat => seat.Claimant is { } claimant ? names.GetValueOrDefault(claimant, Deleted) : Guest
+        );
+    }
 
     /// <summary>Signs out: the token stands for no one from now on.</summary>
     public Task SignOut([Required] string token, CancellationToken cancellationToken) =>

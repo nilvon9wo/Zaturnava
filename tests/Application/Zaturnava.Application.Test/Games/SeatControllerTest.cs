@@ -1,5 +1,6 @@
 using Net.NowhereAtAll.Zaturnava.Application.Bots;
 using Net.NowhereAtAll.Zaturnava.Application.Games;
+using Net.NowhereAtAll.Zaturnava.Application.Players;
 using Net.NowhereAtAll.Zaturnava.Application.Test.Fakes;
 using Net.NowhereAtAll.Zaturnava.Engine.Decisions;
 
@@ -14,6 +15,7 @@ public sealed class SeatControllerTest
     {
         { new OpenSeat(), "open", null },
         { new HumanSeat("HASH"), "human", "HASH" },
+        { new HumanSeat("HASH", new PlayerId("ada")), "human", "HASH ada" },
         { new BotSeat("first"), "bot", "first" },
     };
 

@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Net.NowhereAtAll.Zaturnava.Application.Players;
 
 namespace Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Test;
@@ -35,6 +36,20 @@ public sealed class EfPlayerStoreTest : IDisposable
 
         // Assert
         Assert.Equal(isFound ? Described(Ada) : null, Described(found));
+    }
+
+    [Fact]
+    public async Task Names_WhenAskedOfKnownAndUnknownPlayers_ReadsBackTheKnownOnesNames()
+    {
+        // Arrange
+        await this._store.Add(Ada, this._cancellation);
+
+        // Act
+        ImmutableDictionary<PlayerId, string> names = await new EfPlayerStore(this._database.NewContext())
+            .Names([Ada.Id, new PlayerId("gone"), Ada.Id], this._cancellation);
+
+        // Assert
+        Assert.Equal([KeyValuePair.Create(Ada.Id, "Ada")], names);
     }
 
     [Theory]

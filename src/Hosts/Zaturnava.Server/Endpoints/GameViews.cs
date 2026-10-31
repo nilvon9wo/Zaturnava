@@ -37,7 +37,13 @@ internal static class GameViews
             ],
         };
 
-    public static GameSummaryDto SummaryOf(GameSnapshot snapshot)
+    /// <summary>
+    /// The game as a lobby lists it, each person's seat by what <paramref name="names"/> call whoever holds it.
+    /// </summary>
+    public static GameSummaryDto SummaryOf(
+        GameSnapshot snapshot,
+        ImmutableDictionary<HumanSeat, string>? names = null
+    )
     {
         GameRecord record = snapshot.Record;
         return new GameSummaryDto(
@@ -47,7 +53,7 @@ internal static class GameViews
             [.. record.Controllers.Select((controller, seat) => (controller, seat))
                 .Where(entry => entry.controller.IsOpen)
                 .Select(entry => entry.seat)],
-            [.. record.Controllers.Select(controller => controller.Player)],
+            [.. record.Controllers.Select(controller => PersonOf(controller, names) ?? controller.Player)],
             record.Actions.Count
         )
         {
@@ -73,8 +79,15 @@ internal static class GameViews
                 : null
         );
 
-    /// <summary>The game as its seats see it, naming each bot as <paramref name="bots"/> do.</summary>
-    public static GameViewDto ViewOf(GameSnapshot snapshot, ImmutableList<BotProfile> bots)
+    /// <summary>
+    /// The game as its seats see it, naming each bot as <paramref name="bots"/> do, and whoever holds each person's
+    /// seat as <paramref name="names"/> do.
+    /// </summary>
+    public static GameViewDto ViewOf(
+        GameSnapshot snapshot,
+        ImmutableList<BotProfile> bots,
+        ImmutableDictionary<HumanSeat, string>? names = null
+    )
     {
         ImmutableDictionary<CellId, SeatId> thrones =
             snapshot.Rules.Thrones.ToImmutableDictionary(throne => throne.Value, throne => throne.Key);
@@ -89,7 +102,7 @@ internal static class GameViews
             [.. snapshot.Rules.Topology.Cells.Select(cell => CellOf(snapshot.Rules.Topology, thrones, cell))],
             [.. snapshot.State.Position.Occupants.OrderBy(entry => entry.Key.Value)
                 .Select(entry => PieceOf(snapshot.Rules, entry.Key, entry.Value))],
-            [.. snapshot.State.Seats.Select(seat => SeatOf(snapshot, bots, seat.Id))],
+            [.. snapshot.State.Seats.Select(seat => SeatOf(snapshot, bots, seat.Id, names))],
             [.. snapshot.LegalActions.Select(action => ActionOf(snapshot, action))],
             [.. snapshot.State.Dice.Select(value => DieOf(snapshot, value))],
             GameLog.LatestOf(snapshot),
@@ -175,7 +188,12 @@ internal static class GameViews
     private static PieceDto PieceOf(IRulesApplying rules, CellId cell, Piece piece) =>
         new(piece.Id.Value, piece.Kind.Value, rules.NameOf(piece.Kind), piece.Owner.Value, cell.Value);
 
-    private static SeatDto SeatOf(GameSnapshot snapshot, ImmutableList<BotProfile> bots, SeatId seat)
+    private static SeatDto SeatOf(
+        GameSnapshot snapshot,
+        ImmutableList<BotProfile> bots,
+        SeatId seat,
+        ImmutableDictionary<HumanSeat, string>? names
+    )
     {
         SeatController controller = snapshot.Record.Controllers[seat.Value];
         string? botId = controller is BotSeat botSeat ? botSeat.BotId : null;
@@ -197,9 +215,19 @@ internal static class GameViews
             snapshot.Rules.MayRejoin(snapshot.State, seat),
             snapshot.State.Absence.MissedBy(seat),
             bots.Any(bot => bot.Id == botId && bot.IsPaid),
-            snapshot.State.Retired.Contains(seat)
+            snapshot.State.Retired.Contains(seat),
+            PersonOf(controller, names)
         );
     }
+
+    /// <summary>
+    /// What to call whoever holds a person's seat, as <paramref name="names"/> do; <c>guest</c>, if they say
+    /// nothing of it. Null for a seat no person holds.
+    /// </summary>
+    private static string? PersonOf(SeatController controller, ImmutableDictionary<HumanSeat, string>? names) =>
+        controller is HumanSeat person
+            ? (names ?? []).GetValueOrDefault(person, GameSummaryDto.Guest)
+            : null;
 
     /// <summary>The bot's name; its id, should it no longer be on offer.</summary>
     private static string BotNameOf(ImmutableList<BotProfile> bots, string id) =>

@@ -84,7 +84,12 @@ internal sealed class StubGameServer : IGameServing
     public Task<GameViewDto> Advance([Required] string gameId, int version, CancellationToken cancellationToken) =>
         this.Answer(View, (gameId, version));
 
-    public Task<SeatClaimedDto> Claim([Required] string gameId, int seat, CancellationToken cancellationToken) =>
+    public Task<SeatClaimedDto> Claim(
+        [Required] string gameId,
+        int seat,
+        string? playerToken,
+        CancellationToken cancellationToken
+    ) =>
         this.Answer(new SeatClaimedDto(Token), (gameId, seat));
 
     public Task<GameViewDto> Submit(

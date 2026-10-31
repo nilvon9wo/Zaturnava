@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using Net.NowhereAtAll.Zaturnava.Application.Bots;
+using Net.NowhereAtAll.Zaturnava.Application.Players;
 using Net.NowhereAtAll.Zaturnava.Application.Ports;
 using Net.NowhereAtAll.Zaturnava.Application.Rulesets;
 using Net.NowhereAtAll.Zaturnava.Application.Running;
@@ -122,16 +123,32 @@ public sealed class GameService(
     /// <summary>Claims an open seat for whoever holds the returned token.</summary>
     /// <exception cref="GameNotFoundException">There is no such game.</exception>
     /// <exception cref="SeatUnavailableException">The seat does not exist, or is not open.</exception>
-    public async Task<string> Claim(GameId id, SeatId seat, CancellationToken cancellationToken)
+    public Task<string> Claim(GameId id, SeatId seat, CancellationToken cancellationToken) =>
+        this.Claim(id, seat, null, cancellationToken);
+
+    /// <summary>
+    /// Claims an open seat for whoever holds the returned token: <paramref name="claimant"/>, if a player signed in
+    /// claims it. The last open seat taken, the game begins, and the bots due to play first play.
+    /// </summary>
+    /// <exception cref="GameNotFoundException">There is no such game.</exception>
+    /// <exception cref="SeatUnavailableException">The seat does not exist, or is not open.</exception>
+    public async Task<string> Claim(GameId id, SeatId seat, PlayerId? claimant, CancellationToken cancellationToken)
     {
         GameRecord record = await this.Load(id, cancellationToken);
         bool isOpen = record.Controllers.ElementAtOrDefault(seat.Value)?.IsOpen == true;
         string token = isOpen
             ? SeatTokens.Issue()
             : throw new SeatUnavailableException(id, seat);
-        HumanSeat claimed = new(SeatTokens.Hash(token));
-        GameRecord updated = record.Next() with { Controllers = record.Controllers.SetItem(seat.Value, claimed) };
-        await this.Save(updated, cancellationToken);
+        HumanSeat claimed = new(SeatTokens.Hash(token), claimant);
+        GameRecord seated = record.Next() with { Controllers = record.Controllers.SetItem(seat.Value, claimed) };
+        GameSnapshot snapshot = GameSnapshot.Of(seated, this._rulesets.Find(seated.RulesetId));
+        Played played = await this.PlayBots(
+            snapshot.Rules,
+            seated,
+            new Played(snapshot.State, seated.Actions),
+            cancellationToken
+        );
+        await this.Save(seated with { Actions = played.Actions }, cancellationToken);
         return token;
     }
 
@@ -210,6 +227,11 @@ public sealed class GameService(
     /// </summary>
     private GameSnapshot Timed(GameSnapshot snapshot)
     {
+        if (snapshot.Record.IsWaiting)
+        {
+            return snapshot;
+        }
+
         DecisionTimer? timer = snapshot.Rules.TimerOf(snapshot.State);
         AwayVoting? away = timer is null ? this.AwayVotingOf(snapshot) : null;
         return (timer, away) switch
@@ -293,10 +315,16 @@ public sealed class GameService(
         );
 
     /// <summary>
-    /// Each seat's bot, told which seats people hold; null for a seat that is open or held by a person.
+    /// Each seat's bot, told which seats people hold; null for a seat that is open or held by a person, and for
+    /// every seat while the game waits for its seats to be taken.
     /// </summary>
     private Func<SeatId, IDeciding?> DecidersOf(GameRecord record)
     {
+        if (record.IsWaiting)
+        {
+            return _ => null;
+        }
+
         ImmutableHashSet<SeatId> people =
         [
             .. record.Controllers

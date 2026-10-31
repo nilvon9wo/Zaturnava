@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Net.NowhereAtAll.Zaturnava.Application.Bots;
 using Net.NowhereAtAll.Zaturnava.Application.Games;
+using Net.NowhereAtAll.Zaturnava.Application.Players;
 using Net.NowhereAtAll.Zaturnava.Application.Rulesets;
 using Net.NowhereAtAll.Zaturnava.Application.Running;
 using Net.NowhereAtAll.Zaturnava.Application.Scenarios;
@@ -124,16 +125,65 @@ public sealed class GameServiceTest
     }
 
     [Fact]
-    public async Task Create_WhenTheFirstSeatIsABot_LetsItPlayUntilAPersonMustDecide()
+    public async Task Create_WhenASeatIsOpen_WaitsForItWithNothingPlayed()
     {
-        // Arrange
+        // Arrange - the bot would play first
         GameId id = await this._service.Create(TinyRules.RulesetId, [Bot, SeatPlan.Open], this._cancellation);
 
         // Act
         GameSnapshot snapshot = await this._service.Get(id, this._cancellation);
 
         // Assert
-        Assert.Equal((1, Second), (snapshot.Record.Actions.Count, snapshot.State.DecidingSeat));
+        Assert.Equal(
+            (true, 0, 0, null),
+            (snapshot.Record.IsWaiting, snapshot.Record.Actions.Count, snapshot.LegalActions.Count, snapshot.Away)
+        );
+    }
+
+    [Fact]
+    public async Task Claim_WhenTheLastOpenSeatIsTaken_BeginsTheGameLettingTheBotsPlayUntilAPersonMustDecide()
+    {
+        // Arrange
+        GameId id = await this._service.Create(TinyRules.RulesetId, [Bot, SeatPlan.Open], this._cancellation);
+
+        // Act
+        _ = await this._service.Claim(id, Second, this._cancellation);
+
+        // Assert
+        GameSnapshot snapshot = await this._service.Get(id, this._cancellation);
+        Assert.Equal(
+            (false, 1, Second),
+            (snapshot.Record.IsWaiting, snapshot.Record.Actions.Count, snapshot.State.DecidingSeat)
+        );
+    }
+
+    [Fact]
+    public async Task Claim_WhenAPlayerSignedInClaims_RemembersThemAtTheSeat()
+    {
+        // Arrange
+        GameId id = await this._service.Create(TinyRules.RulesetId, [SeatPlan.Open, Bot], this._cancellation);
+        PlayerId player = new("ada");
+
+        // Act
+        _ = await this._service.Claim(id, First, player, this._cancellation);
+
+        // Assert
+        GameSnapshot snapshot = await this._service.Get(id, this._cancellation);
+        Assert.Equal(player, ((HumanSeat)snapshot.Record.Controllers[0]).Claimant);
+    }
+
+    [Fact]
+    public async Task Submit_WhileASeatIsStillOpen_ThrowsNotYourTurnException()
+    {
+        // Arrange
+        GameId id = await this._service.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
+        string token = await this._service.Claim(id, First, this._cancellation);
+
+        // Act
+        Task<GameSnapshot> submitting = this._service.Submit(id, token, Pass(First), this._cancellation);
+
+        // Assert
+        _ = await Assert.ThrowsAsync<NotYourTurnException>(() => submitting);
     }
 
     [Fact]
@@ -188,7 +238,7 @@ public sealed class GameServiceTest
         GameId id = await this._service.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
 
         // Act
-        string token = await this._service.Claim(id, First, this._cancellation);
+        string token = await Sit(this._service, id, First, this._cancellation);
 
         // Assert
         GameSnapshot snapshot = await this._service.Get(id, this._cancellation);
@@ -239,7 +289,7 @@ public sealed class GameServiceTest
     {
         // Arrange
         GameId id = await this._service.Create(TinyRules.RulesetId, [SeatPlan.Open, Bot], this._cancellation);
-        string token = await this._service.Claim(id, First, this._cancellation);
+        string token = await Sit(this._service, id, First, this._cancellation);
 
         // Act
         GameSnapshot snapshot = await this._service.Submit(id, token, Pass(First), this._cancellation);
@@ -257,7 +307,7 @@ public sealed class GameServiceTest
         // Arrange
         GameId id =
             await this._service.Create(RollingRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
-        string token = await this._service.Claim(id, First, this._cancellation);
+        string token = await Sit(this._service, id, First, this._cancellation);
         ActionDescriptor roll = new RollAction(First).Describe();
 
         // Act
@@ -279,7 +329,7 @@ public sealed class GameServiceTest
     {
         // Arrange
         GameId id = await this._service.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
-        string token = await this._service.Claim(id, First, this._cancellation);
+        string token = await Sit(this._service, id, First, this._cancellation);
         ActionDescriptor sixes = new DiceAction(First, [6, 6]).Describe();
 
         // Act
@@ -308,7 +358,7 @@ public sealed class GameServiceTest
     {
         // Arrange
         GameId id = await this._service.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
-        string token = await this._service.Claim(id, Second, this._cancellation);
+        string token = await Sit(this._service, id, Second, this._cancellation);
 
         // Act
         Task<GameSnapshot> submitting = this._service.Submit(id, token, Pass(Second), this._cancellation);
@@ -322,7 +372,7 @@ public sealed class GameServiceTest
     {
         // Arrange - the first seat decides, but the second may propose ending the game
         GameId id = await this._service.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
-        string token = await this._service.Claim(id, Second, this._cancellation);
+        string token = await Sit(this._service, id, Second, this._cancellation);
         ActionDescriptor proposal = new ProposeEndAction(Second, Resigns: false).Describe();
 
         // Act
@@ -337,7 +387,7 @@ public sealed class GameServiceTest
     {
         // Arrange - the first seat has passed, so the second decides; the first may not propose
         GameId id = await this._service.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
-        string token = await this._service.Claim(id, First, this._cancellation);
+        string token = await Sit(this._service, id, First, this._cancellation);
         _ = await this._service.Submit(id, token, Pass(First), this._cancellation);
         ActionDescriptor proposal = new ProposeEndAction(First, Resigns: true).Describe();
 
@@ -353,7 +403,7 @@ public sealed class GameServiceTest
     {
         // Arrange - the first seat decides; the second never gave up its turns
         GameId id = await this._service.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
-        string token = await this._service.Claim(id, Second, this._cancellation);
+        string token = await Sit(this._service, id, Second, this._cancellation);
         ActionDescriptor rejoin = new RejoinAction(Second).Describe();
 
         // Act
@@ -368,7 +418,7 @@ public sealed class GameServiceTest
     {
         // Arrange
         GameId id = await this._service.Create(TinyRules.RulesetId, [SeatPlan.Open, Bot], this._cancellation);
-        string token = await this._service.Claim(id, First, this._cancellation);
+        string token = await Sit(this._service, id, First, this._cancellation);
         _ = await this._service.Submit(id, token, Pass(First), this._cancellation);
         _ = await this._service.Submit(id, token, Pass(First), this._cancellation);
         _ = await this._service.Submit(id, token, Pass(First), this._cancellation);
@@ -385,7 +435,7 @@ public sealed class GameServiceTest
     {
         // Arrange
         GameId id = await this._service.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
-        string token = await this._service.Claim(id, First, this._cancellation);
+        string token = await Sit(this._service, id, First, this._cancellation);
         ActionDescriptor move = new MoveAction(First, new CellId(0), new CellId(1)).Describe();
 
         // Act
@@ -475,7 +525,8 @@ public sealed class GameServiceTest
         };
         GameService service = this.Service(settings);
         GameId id = await service.Create(TinyRules.RulesetId, [Bot, SeatPlan.Open], this._cancellation);
-        GameSnapshot started = await service.Advance(id, 0, this._cancellation);
+        _ = await service.Claim(id, Second, this._cancellation);
+        GameSnapshot started = await service.Advance(id, 1, this._cancellation);
 
         // Act
         GameSnapshot snapshot = await service.Get(id, this._cancellation);
@@ -523,8 +574,8 @@ public sealed class GameServiceTest
     [Fact]
     public async Task Get_WhenAPersonTakesLongOverWhatNoTimerLimits_OpensTheVoteOnWaitingOnlyAfterTheGrace()
     {
-        // Arrange - the first seat, no one's yet, decides; a person plays the second
-        (GameId id, _) = await this.FirstSeatAway();
+        // Arrange - the first seat, whose player is away, decides; a person plays the second
+        (GameId id, _, _) = await this.FirstSeatAway();
         GameSnapshot before = await this._paced.Get(id, this._cancellation);
         this._time.Pass(Grace);
 
@@ -543,7 +594,7 @@ public sealed class GameServiceTest
     public async Task Advance_WhenEveryoneHasStoppedWaitingForASeatAway_PassesForIt()
     {
         // Arrange
-        (GameId id, string voter) = await this.FirstSeatAway();
+        (GameId id, string voter, _) = await this.FirstSeatAway();
         this._time.Pass(Grace);
         GameSnapshot voted = await this._paced.Submit(id, voter, StopWaitingFor(First), this._cancellation);
 
@@ -561,7 +612,7 @@ public sealed class GameServiceTest
     public async Task Get_WhenTheSeatAwayMissedItsLastTurn_PassesItAtOnceAsTheVotesStand()
     {
         // Arrange - the first seat was passed while away; the second has passed back to it
-        (GameId id, string voter) = await this.FirstSeatPassedAway();
+        (GameId id, string voter, _) = await this.FirstSeatPassedAway();
 
         // Act
         GameSnapshot snapshot = await this._paced.Get(id, this._cancellation);
@@ -578,8 +629,7 @@ public sealed class GameServiceTest
     public async Task Get_WhenTheSeatAwaySaysItIsBack_GivesItItsGraceAgain()
     {
         // Arrange
-        (GameId id, _) = await this.FirstSeatPassedAway();
-        string token = await this._paced.Claim(id, First, this._cancellation);
+        (GameId id, _, string token) = await this.FirstSeatPassedAway();
         ActionDescriptor back = new RejoinAction(First).Describe();
 
         // Act
@@ -593,7 +643,7 @@ public sealed class GameServiceTest
     public async Task Submit_WhenVotingToKeepWaitingBeforeTheVoteIsOpen_TakesIt()
     {
         // Arrange
-        (GameId id, string voter) = await this.FirstSeatAway();
+        (GameId id, string voter, _) = await this.FirstSeatAway();
         ActionDescriptor wait = new VoteAwayAction(Second, First, Stops: false).Describe();
 
         // Act
@@ -611,9 +661,8 @@ public sealed class GameServiceTest
     public async Task Submit_WhenAVoteOnWaitingMayNotBeCast_ThrowsNotYourTurnException(string when)
     {
         // Arrange
-        (GameId id, string voter) = await this.FirstSeatAway();
+        (GameId id, string voter, string first) = await this.FirstSeatAway();
         this._time.Pass(when == "before the grace" ? TimeSpan.Zero : Grace);
-        string first = await this._paced.Claim(id, First, this._cancellation);
         _ = when == "while no one may vote"
             ? await this._paced.Submit(id, first, Pass(First), this._cancellation)
             : null;
@@ -636,8 +685,7 @@ public sealed class GameServiceTest
     public async Task Submit_WhenAPlayerPassesAsIfAway_ThrowsIllegalActionException()
     {
         // Arrange
-        (GameId id, _) = await this.FirstSeatAway();
-        string token = await this._paced.Claim(id, First, this._cancellation);
+        (GameId id, _, string token) = await this.FirstSeatAway();
         ActionDescriptor pass = new PassAwayAction(First).Describe();
 
         // Act
@@ -673,7 +721,7 @@ public sealed class GameServiceTest
         // Arrange
         GameId id =
             await this._paced.Create(RollingRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
-        string token = await this._paced.Claim(id, First, this._cancellation);
+        string token = await Sit(this._paced, id, First, this._cancellation);
         _ = await this._paced.Submit(id, token, new RollAction(First).Describe(), this._cancellation);
 
         // Act
@@ -685,34 +733,63 @@ public sealed class GameServiceTest
 
     private static ActionDescriptor Pass(SeatId seat) => new PassAction(seat).Describe();
 
+    /// <summary>
+    /// Claims <paramref name="seat"/>, then every seat still open, for no one in particular, so that the game
+    /// begins; the token holding <paramref name="seat"/>.
+    /// </summary>
+    private static async Task<string> Sit(
+        GameService service,
+        GameId id,
+        SeatId seat,
+        CancellationToken cancellationToken
+    )
+    {
+        string token = await service.Claim(id, seat, cancellationToken);
+        GameSnapshot snapshot = await service.Get(id, cancellationToken);
+        ImmutableList<SeatId> open =
+        [
+            .. snapshot.Record.Controllers
+                .Select((controller, other) => (controller, other))
+                .Where(held => held.controller.IsOpen)
+                .Select(held => new SeatId(held.other)),
+        ];
+        foreach (SeatId other in open)
+        {
+            _ = await service.Claim(id, other, cancellationToken);
+        }
+
+        return token;
+    }
+
     private static ActionDescriptor StopWaitingFor(SeatId absent, SeatId? voter = null) =>
         new VoteAwayAction(voter ?? Second, absent, Stops: true).Describe();
 
     /// <summary>
-    /// A paced game in which the first seat, no one's yet, decides; a person plays the second, and has seen
-    /// the game, so the first seat's grace has begun.
+    /// A paced game of two people in which the first seat, whose player is away, decides; the second player has
+    /// seen the game, so the first seat's grace has begun. The tokens of both: the voter's and the one away.
     /// </summary>
-    private async Task<(GameId Id, string Voter)> FirstSeatAway()
+    private async Task<(GameId Id, string Voter, string Away)> FirstSeatAway()
     {
         GameId id =
             await this._paced.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
+        string away = await this._paced.Claim(id, First, this._cancellation);
         string voter = await this._paced.Claim(id, Second, this._cancellation);
         _ = await this._paced.Get(id, this._cancellation);
-        return (id, voter);
+        return (id, voter, away);
     }
 
     /// <summary>
     /// As <see cref="FirstSeatAway"/>, once the second seat stopped waiting for the first, which passed, and
     /// the second passed back to it.
     /// </summary>
-    private async Task<(GameId Id, string Voter)> FirstSeatPassedAway()
+    private async Task<(GameId Id, string Voter, string Away)> FirstSeatPassedAway()
     {
-        (GameId id, string voter) = await this.FirstSeatAway();
+        (GameId id, string voter, string away) = await this.FirstSeatAway();
         this._time.Pass(Grace);
         GameSnapshot voted = await this._paced.Submit(id, voter, StopWaitingFor(First), this._cancellation);
         _ = await this._paced.Advance(id, voted.Record.Version, this._cancellation);
         _ = await this._paced.Submit(id, voter, Pass(Second), this._cancellation);
-        return (id, voter);
+        return (id, voter, away);
     }
 
     /// <summary>A paced game of two people in which the first has passed: the second has 30 seconds to.</summary>
@@ -720,7 +797,7 @@ public sealed class GameServiceTest
     {
         GameId id =
             await this._paced.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
-        string token = await this._paced.Claim(id, First, this._cancellation);
+        string token = await Sit(this._paced, id, First, this._cancellation);
         GameSnapshot waiting = await this._paced.Submit(id, token, Pass(First), this._cancellation);
         return (id, waiting);
     }

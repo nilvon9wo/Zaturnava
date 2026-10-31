@@ -565,6 +565,35 @@ public sealed class GameViewsTest
     }
 
     [Fact]
+    public void ViewOf_WhenPeopleHoldSeats_NamesThemAsToldAndAnyoneUntoldAGuest()
+    {
+        // Arrange
+        HumanSeat ada = new("A");
+        GameRecord record = new(
+            new GameId("people"),
+            Rules.Id,
+            [ada, new HumanSeat("B"), new BotSeat("midas"), new OpenSeat()],
+            [],
+            0
+        );
+        GameSnapshot snapshot = new(record, Rules, Rules.CreateInitialState(), [], []);
+        ImmutableDictionary<HumanSeat, string> names = ImmutableDictionary<HumanSeat, string>.Empty.Add(ada, "Ada");
+
+        // Act
+        (GameViewDto told, GameViewDto untold) =
+            (GameViews.ViewOf(snapshot, Bots, names), GameViews.ViewOf(snapshot, Bots));
+
+        // Assert
+        Assert.Equal(
+            ("Ada|guest||", "guest|guest||"),
+            (
+                string.Join("|", told.Seats.Select(seat => seat.Player)),
+                string.Join("|", untold.Seats.Select(seat => seat.Player))
+            )
+        );
+    }
+
+    [Fact]
     public void ViewOf_WhenDrawingTheBoard_NamesEachCell()
     {
         // Arrange

@@ -148,7 +148,7 @@ public sealed class HttpGameClientTest
         StubServer server = new(HttpStatusCode.OK, """{"token":"secret"}""");
 
         // Act
-        SeatClaimedDto claimed = await Client(server).Claim("g", 2, this._cancellation);
+        SeatClaimedDto claimed = await Client(server).Claim("g", 2, null, this._cancellation);
 
         // Assert
         Assert.Equal(("POST", "/api/games/g/seats/2", "secret"), (server.Method, server.Path, claimed.Token));
@@ -319,7 +319,7 @@ public sealed class HttpGameClientTest
         StubServer server = new(HttpStatusCode.Conflict, """{"title":"Conflict","detail":"Seat 2 is taken."}""");
 
         // Act
-        Task<SeatClaimedDto> claiming = Client(server).Claim("g", 2, this._cancellation);
+        Task<SeatClaimedDto> claiming = Client(server).Claim("g", 2, null, this._cancellation);
         GameRequestRefusedException refused = await Assert.ThrowsAsync<GameRequestRefusedException>(() => claiming);
 
         // Assert

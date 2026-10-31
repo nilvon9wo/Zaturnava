@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Net.NowhereAtAll.Zaturnava.Application.Players;
 
 namespace Net.NowhereAtAll.Zaturnava.Persistence.InMemory.Test;
@@ -24,6 +25,20 @@ public sealed class InMemoryPlayerStoreTest
 
         // Assert
         Assert.Equal(isFound, found == Ada);
+    }
+
+    [Fact]
+    public async Task Names_WhenAskedOfKnownAndUnknownPlayers_NamesTheKnownOnes()
+    {
+        // Arrange
+        await this._store.Add(Ada, this._cancellation);
+
+        // Act
+        ImmutableDictionary<PlayerId, string> names =
+            await this._store.Names([Ada.Id, new PlayerId("gone"), Ada.Id], this._cancellation);
+
+        // Assert
+        Assert.Equal([KeyValuePair.Create(Ada.Id, "Ada")], names);
     }
 
     [Theory]

@@ -60,18 +60,18 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
     {
         // Arrange
         string gameId = await this.CreateGame();
-        _ = await this._client.Claim(gameId, 0, this._cancellation);
+        _ = await this._client.Claim(gameId, 0, null, this._cancellation);
 
         // Act
         ImmutableList<GameSummaryDto> games = await this._client.List(this._cancellation);
 
         // Assert
         GameSummaryDto game = games.Single(listed => listed.Id == gameId);
-        Assert.Equal((GameSummaryDto.Person, 0), (game.Players[0], game.OpenSeats.Count));
+        Assert.Equal((GameSummaryDto.Guest, 0), (game.Players[0], game.OpenSeats.Count));
     }
 
     [Fact]
-    public async Task Get_WhenTheGameIsNew_ShowsTheOpeningPositionAndTheRollOff()
+    public async Task Get_WhenTheGameIsNew_ShowsTheOpeningPositionAndTheRollOffWithNothingToPlayUntilTheSeatIsTaken()
     {
         // Arrange
         string gameId = await this.CreateGame();
@@ -81,7 +81,7 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
 
         // Assert
         Assert.Equal(
-            (64, 4, 32, 0, 7, "open", "bot", "Random", "6"),
+            (64, 4, 32, 0, 0, "open", "bot", "Random", "6"),
             (
                 view.Cells.Count,
                 view.Cells.Count(cell => cell.Throne is not null),
@@ -95,6 +95,18 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
             )
         );
         Assert.Equal("Black goes first, with the 6 (Pawn or Raja) they rolled.", view.Log[^1].Text);
+    }
+
+    [Fact]
+    public async Task Get_WhenTheLastSeatWasTaken_OffersItsPlayerTheOpeningDie()
+    {
+        // Arrange - nothing beyond a claimed game
+
+        // Act
+        (_, _, GameViewDto view) = await this.ClaimedGame();
+
+        // Assert
+        Assert.Equal((0, 7, GameSummaryDto.Guest), (view.DecidingSeat, view.LegalActions.Count, view.Seats[0].Player));
     }
 
     [Fact]
@@ -177,10 +189,10 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
     {
         // Arrange
         string gameId = await this.CreateGame();
-        _ = await this._client.Claim(gameId, 0, this._cancellation);
+        _ = await this._client.Claim(gameId, 0, null, this._cancellation);
 
         // Act
-        Task<SeatClaimedDto> claiming = this._client.Claim(gameId, 0, this._cancellation);
+        Task<SeatClaimedDto> claiming = this._client.Claim(gameId, 0, null, this._cancellation);
 
         // Assert
         await AssertRefused(Refusal.Conflict, claiming);
@@ -281,7 +293,7 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
     private async Task<(string GameId, string Token, GameViewDto View)> ClaimedGame()
     {
         string gameId = await this.CreateGame();
-        SeatClaimedDto claimed = await this._client.Claim(gameId, 0, this._cancellation);
+        SeatClaimedDto claimed = await this._client.Claim(gameId, 0, null, this._cancellation);
         GameViewDto view = await this._client.Get(gameId, this._cancellation);
         return (gameId, claimed.Token, view);
     }
