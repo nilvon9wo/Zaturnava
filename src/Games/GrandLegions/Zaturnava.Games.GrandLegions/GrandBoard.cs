@@ -8,8 +8,10 @@ namespace Net.NowhereAtAll.Zaturnava.Games.GrandLegions;
 /// The board as a game is set (specification §2): its size, its kingdoms' size and facing, and its rivers.
 /// The four seats go clockwise from the bottom-left corner, as in Chaturaji 2027: bottom-left, top-left,
 /// top-right, bottom-right. A kingdom is <paramref name="KingdomWidth"/> along its back rank and
-/// <paramref name="KingdomDepth"/> from its back rank forward. A river lies along the line before column
-/// (or row) half the side, rounded down, so on an odd side the eastern (or northern) part is a column larger.
+/// <paramref name="KingdomDepth"/> from its back rank forward. A river halves the board: on an even side it runs
+/// between the two middle columns (or rows) of cells; on an odd side, through the middle one, whose cells it
+/// cuts in half. Where a kingdom reaches past the middle, <paramref name="Course"/> says whether the river runs
+/// through it or around it.
 /// </summary>
 public sealed record GrandBoard(
     int Width,
@@ -17,7 +19,8 @@ public sealed record GrandBoard(
     int KingdomWidth,
     int KingdomDepth,
     Facing Facing = Facing.Pinwheel,
-    Rivers Rivers = Rivers.None
+    Rivers Rivers = Rivers.None,
+    RiverCourse Course = RiverCourse.ThroughKingdoms
 )
 {
     public const int MaximumSide = 26;
@@ -47,11 +50,20 @@ public sealed record GrandBoard(
 
     /// <summary>
     /// Whether (<paramref name="column"/>, <paramref name="row"/>) is across a river from
-    /// <paramref name="kingdom"/>'s corner; across either, where there are two.
+    /// <paramref name="kingdom"/>'s corner; across either, where there are two. A cell the river cuts is not
+    /// across it. With the river around the kingdoms, every cell of a kingdom lies on its own corner's side.
     /// </summary>
     public bool IsAcrossRiver(Kingdom kingdom, int column, int row) =>
-        (this.Rivers.HasFlag(Rivers.NorthSouth) && this.IsWestHalf(column) != kingdom.IsWest)
-        || (this.Rivers.HasFlag(Rivers.EastWest) && this.IsSouthHalf(row) != kingdom.IsSouth);
+        (this.Rivers.HasFlag(Rivers.NorthSouth) && this.WestEastOf(column, row) == -SideOf(kingdom.IsWest))
+        || (this.Rivers.HasFlag(Rivers.EastWest) && this.SouthNorthOf(column, row) == -SideOf(kingdom.IsSouth));
+
+    /// <summary>
+    /// Whether a river cuts (<paramref name="column"/>, <paramref name="row"/>) in half: only on an odd side, and
+    /// never in a kingdom the river goes around. A piece that may not cross a river may not enter such a cell.
+    /// </summary>
+    public bool IsInRiver(int column, int row) =>
+        (this.Rivers.HasFlag(Rivers.NorthSouth) && this.WestEastOf(column, row) == 0)
+        || (this.Rivers.HasFlag(Rivers.EastWest) && this.SouthNorthOf(column, row) == 0);
 
     private ImmutableList<Kingdom> Pinwheel() =>
     [
@@ -98,7 +110,22 @@ public sealed record GrandBoard(
     /// </summary>
     private static bool IsOnBoard(Kingdom kingdom) => Math.Min(kingdom.Column, kingdom.Row) >= 0;
 
-    private bool IsWestHalf(int column) => column < this.Width / 2;
+    /// <summary>-1 for a side's first half (west or south), 1 for its second, 0 for an odd side's middle.</summary>
+    private static int HalfOf(int index, int side) => Math.Sign((2 * index) + 1 - side);
 
-    private bool IsSouthHalf(int row) => row < this.Length / 2;
+    private static int SideOf(bool isFirstHalf) => isFirstHalf ? -1 : 1;
+
+    private int WestEastOf(int column, int row) =>
+        this.KingdomAround(column, row) is { } kingdom
+            ? SideOf(kingdom.IsWest)
+            : HalfOf(column, this.Width);
+
+    private int SouthNorthOf(int column, int row) =>
+        this.KingdomAround(column, row) is { } kingdom
+            ? SideOf(kingdom.IsSouth)
+            : HalfOf(row, this.Length);
+
+    private Kingdom? KingdomAround(int column, int row) => this.Course == RiverCourse.AroundKingdoms
+        ? this.Kingdoms.FirstOrDefault(kingdom => kingdom.Contains(column, row))
+        : null;
 }

@@ -112,4 +112,74 @@ public sealed class GrandBoardTest
         // Assert
         Assert.Equal(expected, isAcross);
     }
+
+    [Theory]
+    [InlineData(RiverCourse.ThroughKingdoms, Rivers.NorthSouth, 0, 4, 0, true)]
+    [InlineData(RiverCourse.AroundKingdoms, Rivers.NorthSouth, 0, 4, 0, false)]
+    [InlineData(RiverCourse.ThroughKingdoms, Rivers.NorthSouth, 3, 4, 0, false)]
+    [InlineData(RiverCourse.AroundKingdoms, Rivers.NorthSouth, 3, 4, 0, true)]
+    [InlineData(RiverCourse.AroundKingdoms, Rivers.NorthSouth, 3, 3, 4, true)]
+    [InlineData(RiverCourse.ThroughKingdoms, Rivers.EastWest, 1, 0, 3, true)]
+    [InlineData(RiverCourse.AroundKingdoms, Rivers.EastWest, 1, 0, 3, false)]
+    public void IsAcrossRiver_WhenAKingdomReachesPastTheMiddle_DependsOnTheRiversCourse(
+        RiverCourse course,
+        Rivers rivers,
+        int seat,
+        int column,
+        int row,
+        bool expected
+    )
+    {
+        // Arrange
+        GrandBoard board = new(8, 8, 5, 3, Rivers: rivers, Course: course);
+        Kingdom kingdom = board.Kingdoms[seat];
+
+        // Act
+        bool isAcross = board.IsAcrossRiver(kingdom, column, row);
+
+        // Assert
+        Assert.Equal(expected, isAcross);
+    }
+
+    [Theory]
+    [InlineData(Rivers.None, 4, 4, false)]
+    [InlineData(Rivers.NorthSouth, 4, 6, true)]
+    [InlineData(Rivers.NorthSouth, 6, 4, false)]
+    [InlineData(Rivers.EastWest, 6, 4, true)]
+    [InlineData(Rivers.Both, 3, 3, false)]
+    [InlineData(Rivers.Both, 4, 4, true)]
+    public void IsInRiver_WhenTheBoardsSidesAreOdd_IsTrueOfTheMiddleCellsTheRiverCuts(
+        Rivers rivers,
+        int column,
+        int row,
+        bool expected
+    )
+    {
+        // Arrange
+        GrandBoard board = new(9, 9, 3, 3, Rivers: rivers);
+
+        // Act
+        bool isInRiver = board.IsInRiver(column, row);
+
+        // Assert
+        Assert.Equal(expected, isInRiver);
+    }
+
+    [Theory]
+    [InlineData(0, false)]
+    [InlineData(4, true)]
+    public void IsInRiver_WhenTheRiverIsAroundAKingdomAcrossTheMiddle_IsFalseOfTheKingdomsCells(
+        int row,
+        bool expected
+    )
+    {
+        // Arrange
+        GrandBoard board = new(9, 9, 5, 3, Rivers: Rivers.NorthSouth, Course: RiverCourse.AroundKingdoms);
+
+        // Act
+        bool isInRiver = board.IsInRiver(4, row);
+
+        // Assert
+        Assert.Equal(expected, isInRiver);
+    }
 }

@@ -32,9 +32,10 @@ than a piece, and with points won in play to be spent on upgrades and promotions
 | Board size | width × length | Need not be square. |
 | Kingdom size | width × depth | Set apart from the board's size; one **kingdom** in each corner, as in Chaturaji 2027 (an 8 × 8 board with kingdoms of 4 × 2). |
 | Team game | yes / no | No: everyone for themselves. |
-| Allies' kingdoms | same side / opposite corners | Same side: neighbouring corners. Opposite corners: the pinwheel of Chaturaji 2027. |
+| Allies | any two of the four seats | In a team game, the creator picks two seats as allies; the other two are allies by implication. |
 | Kingdoms' facing | pinwheel / top and bottom | Pinwheel (the default): each kingdom turned a quarter from the last, so that each army's back rank lies along a different edge. Top and bottom: every back rank along the top or bottom edge. |
-| Rivers | north–south, east–west, both, neither | Drawn on the board where present. |
+| Rivers | none, halving the board vertically or horizontally, or both | Drawn on the board where present. Later, perhaps: a path of the creator's own, or a random one. |
+| River's course | through kingdoms / around kingdoms | Only for a kingdom reaching past the middle of the board (§2). |
 | Army points | a number | What each player has to spend on their army. |
 | Drafting | in secret, all at once / in turn, in view | How players build and place their armies (§3). |
 
@@ -51,14 +52,24 @@ than a piece, and with points won in play to be spent on upgrades and promotions
 - **Stated.** Which way the kingdoms lie in their corners is a setting: Chaturaji 2027's pinwheel by
   default, or every back rank along the top or bottom edge.
 - **Stated.** A river halves the board, or two rivers quarter it, as the game is set, and the page
-  shows them. A river matters only to the pieces whose rules name it: those that may not cross it
-  (the Xiangqi Elephant), or that change when they have crossed it (the Xiangqi Soldier). Later, a
-  river might wind.
-- **Stated.** A river runs along a midline, between two rows of cells, so no cell is on it.
-  - **Proposed.** On a side with an odd number of cells, the river runs before the middle cell, so
-    the east (or north) part is a row larger. The program does so for now.
-  - **Proposed.** A cell is across a river from a kingdom when the river lies between it and the
-    kingdom's corner. A kingdom wider than half the board would then straddle the river.
+  shows them with blue lines, wherever they run. A river matters only to the pieces whose rules name
+  it: those that may not cross it (the Xiangqi Elephant), or that change when they have crossed it
+  (the Xiangqi Soldier). Later, a river might wind, along a path the creator draws or one drawn at
+  random.
+- **Stated (2026-10-31).** On a side with an even number of cells, a river runs between the two
+  middle rows of cells, so no cell is on it. On an odd side, it runs through the middle row, cutting
+  its cells in half: a piece that may not cross the river may not enter those cells.
+- **Stated (2026-10-31).** Where a kingdom reaches past the middle of the board, the creator chooses
+  whether the river runs through the kingdom, or follows its outline, so that no move within the
+  kingdom crosses it.
+  - **Proposed.** A cell is across a river from a kingdom when the river lies between the cell and
+    the kingdom's corner. A cell the river cuts in half is not yet across. The program does so for
+    now.
+- **Stated (2026-10-31).** Later, perhaps: bridges, and pieces that build them; wide rivers, which
+  some pieces cannot cross in a single move.
+- **Stated (2026-10-31).** The creator picks the allies on a picture: four coloured squares arranged
+  as the seats are, of which they choose two; the other two are allied by implication. Naming them
+  "same side" or "top and bottom" would confuse, since the board effectively spins.
 - **Stated.** With two rivers, a kingdom in a corner has a river on two sides. A piece
   that may not cross *the* river may cross *neither*: the Xiangqi Elephant keeps to its own quarter.
   A piece changed by crossing it is changed by crossing *either*: the Xiangqi Soldier steps sideways
@@ -66,6 +77,14 @@ than a piece, and with points won in play to be spent on upgrades and promotions
   apply to: the Elephant goes anywhere, and the Soldier never steps sideways.
 - **Stated.** Random values range over: board 8 × 8 to 16 × 16; kingdom 3 × 3 to half
   the board; army points 120 to 240, so that a leader is always within reach, and two sometimes.
+
+### 2.1 Saved settings
+
+- **Stated (2026-10-31).** With this many settings, setting them all every time is tedious. A player
+  may name a set of settings, save it, pick it to start a game, and edit it before playing.
+- **Stated (2026-10-31).** Other players may search and browse the saved settings. They may not
+  edit someone else's set, but they may copy it, and edit the copy.
+- **Q26** Do saved settings need versions, or a check for duplicates?
 
 ## 3. Joining: building an army
 
@@ -306,3 +325,4 @@ The numbers stay as they are; answered questions are marked so.
 24. **Q24** *Answered:* which way a kingdom lies in its corner is a setting (§2).
 25. **Q25** *Answered (2026-10-29):* every piece whose normal move is forward only may make the
     back-to-back swap, with any other such piece (§6.1).
+26. **Q26** Saved settings: versions, or a check for duplicates? Left open (§2.1).
