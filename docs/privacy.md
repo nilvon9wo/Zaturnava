@@ -19,7 +19,8 @@ You need no account to play, and today there is none to make. What is kept:
   every player has left the table.
 - **In your browser** (its local storage, never sent anywhere but back to this game's server): the token of each
   seat you hold, so that you can come back to it, and your settings: the colour theme, sound, how the pieces are
-  drawn, the safety that keeps you from taking your own team's pieces, and how the log and the talk are shown.
+  drawn, the safety that keeps you from taking your own team's pieces, how the log and the talk are shown, and how
+  you last set up a new game.
   Clearing the site's data in your browser deletes all of it.
 
 No cookies are set while you play (only while signing in, below), and nothing tracks you from one game, or one site, to another.

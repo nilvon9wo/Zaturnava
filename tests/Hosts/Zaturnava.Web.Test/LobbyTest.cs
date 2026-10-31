@@ -62,7 +62,7 @@ public sealed class LobbyTest : IDisposable
             new ScenarioDto("back-to-back", "chaturaji-2027", "Back to back", "Two Pawns face each other."),
             new ScenarioDto("escape", "chaturaji-2027", "Escape", "Doubles."),
         ];
-        IRenderedComponent<Lobby> lobby = this.Render();
+        IRenderedComponent<Lobby> lobby = this.SeatBySeat();
         lobby.Find("select.scenario").Change("back-to-back");
 
         // Act
@@ -80,7 +80,7 @@ public sealed class LobbyTest : IDisposable
     {
         // Arrange
         this._page.Server.Scenarios = [new ScenarioDto("escape", "chaturaji-2027", "Escape", "Doubles.")];
-        IRenderedComponent<Lobby> lobby = this.Render();
+        IRenderedComponent<Lobby> lobby = this.SeatBySeat();
 
         // Act
         lobby.Find("button.create").Click();
@@ -95,10 +95,74 @@ public sealed class LobbyTest : IDisposable
         // Arrange - the fake server offers none
 
         // Act
-        IRenderedComponent<Lobby> lobby = this.Render();
+        IRenderedComponent<Lobby> lobby = this.SeatBySeat();
 
         // Assert
         Assert.Empty(lobby.FindAll("select.scenario"));
+    }
+
+    [Fact]
+    public void Render_WhenNeverSetUpBefore_OffersAQuickGameAlone()
+    {
+        // Arrange
+        this._page.Server.Scenarios = [new ScenarioDto("escape", "chaturaji-2027", "Escape", "Doubles.")];
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Assert - no Play, no plans and no scenario: each difficulty starts a game at once
+        Assert.Equal(
+            ("true", "Easy|Medium|Hard", 0),
+            (
+                lobby.Find("button.quick-game").GetAttribute("aria-pressed"),
+                string.Join('|', lobby.FindAll("button.quick").Select(quick => quick.TextContent)),
+                lobby.FindAll("button.create, select.strength, select.plan, select.scenario").Count
+            )
+        );
+    }
+
+    [Theory]
+    [InlineData("strength", "button.by-strength", "select.strength")]
+    [InlineData("seats", "button.seat-by-seat", "select.plan")]
+    public void Render_WhenSetUpBefore_SetsUpAsLastChosen(string remembered, string mode, string plan)
+    {
+        // Arrange
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.setup").SetResult(remembered);
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Assert
+        Assert.Equal(
+            ("true", true, 0),
+            (
+                lobby.Find(mode).GetAttribute("aria-pressed"),
+                lobby.FindAll(plan).Count > 0,
+                lobby.FindAll("button.quick").Count
+            )
+        );
+    }
+
+    [Fact]
+    public void SetUp_WhenAModeIsChosen_RemembersIt()
+    {
+        // Arrange
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Act
+        lobby.Find("button.seat-by-seat").Click();
+        lobby.Find("button.quick-game").Click();
+
+        // Assert
+        Assert.Equal(
+            "seats|quick",
+            string.Join(
+                '|',
+                this._page.JSInterop.Invocations["zaturnava.save"]
+                    .Where(save => save.Arguments[0] is "zaturnava.setup")
+                    .Select(save => save.Arguments[1])
+            )
+        );
     }
 
     [Fact]
@@ -212,7 +276,7 @@ public sealed class LobbyTest : IDisposable
         // enemy the easier of the two strengths as near, the other the one left
 
         // Act
-        IRenderedComponent<Lobby> lobby = this.Render();
+        IRenderedComponent<Lobby> lobby = this.ByStrength();
 
         // Assert
         Assert.Equal(
@@ -235,7 +299,7 @@ public sealed class LobbyTest : IDisposable
     public void ByStrength_WhenAStrengthsBotsAllHaveSeats_OffersItToNoOtherSeat()
     {
         // Arrange - Green is Medium, Midas alone; Yellow Easy, Random alone; Red Hard, of two
-        IRenderedComponent<Lobby> lobby = this.Render();
+        IRenderedComponent<Lobby> lobby = this.ByStrength();
 
         // Act
         lobby.FindAll("select.strength")[1].Change("2");
@@ -255,7 +319,7 @@ public sealed class LobbyTest : IDisposable
     public void ByStrength_WhenTheColourLeftHasNoBotLeftAtItsStrength_PlaysItAtTheNearestWithOne()
     {
         // Arrange - Black, the player's, would be Hard; Yellow and Red take both Hard bots
-        IRenderedComponent<Lobby> lobby = this.Render();
+        IRenderedComponent<Lobby> lobby = this.ByStrength();
         lobby.FindAll("select.strength")[1].Change("2");
 
         // Act - Green, Medium, becomes the player's, and Black is left
@@ -272,7 +336,7 @@ public sealed class LobbyTest : IDisposable
     public void ByStrength_WhenTheColourLeftWasForAPerson_KeepsItForAPerson()
     {
         // Arrange - Yellow is left to a person, then played, then left again
-        IRenderedComponent<Lobby> lobby = this.Render();
+        IRenderedComponent<Lobby> lobby = this.ByStrength();
         lobby.FindAll("select.strength")[1].Change("-1");
         lobby.Find("select.colour").Change("1");
 
@@ -287,7 +351,7 @@ public sealed class LobbyTest : IDisposable
     public void Play_WhenABotWasChosenForTheColourTakenSinceAndForAnotherSeat_SeatsItOnce()
     {
         // Arrange - Oracle chosen for Red; Red taken, so Black, left, may choose it; then Green taken instead
-        IRenderedComponent<Lobby> lobby = this.Render();
+        IRenderedComponent<Lobby> lobby = this.ByStrength();
         lobby.FindAll("select.pick")[0].Change("oracle");
         lobby.Find("select.colour").Change("3");
         lobby.FindAll("select.pick")[0].Change("oracle");
@@ -305,8 +369,7 @@ public sealed class LobbyTest : IDisposable
     public void ByStrength_WhenAnotherColourIsChosen_PutsItsAllyFirstThenItsEnemiesInTurn()
     {
         // Arrange
-        IRenderedComponent<Lobby> lobby = this.Render();
-        lobby.Find("button.by-strength").Click();
+        IRenderedComponent<Lobby> lobby = this.ByStrength();
 
         // Act
         lobby.Find("select.colour").Change("1");
@@ -319,8 +382,7 @@ public sealed class LobbyTest : IDisposable
     public void Play_WhenSetUpByStrength_SitsAtTheColourWithBotsAsStrongAsChosen()
     {
         // Arrange - Green's ally is Black, a person; Yellow is easy (Random), Red hard (Solomon or Oracle)
-        IRenderedComponent<Lobby> lobby = this.Render();
-        lobby.Find("button.by-strength").Click();
+        IRenderedComponent<Lobby> lobby = this.ByStrength();
         lobby.Find("select.colour").Change("2");
         lobby.FindAll("select.strength")[0].Change("-1");
         lobby.FindAll("select.strength")[1].Change("2");
@@ -341,8 +403,7 @@ public sealed class LobbyTest : IDisposable
     public void ByStrength_WhenAStrengthHasSeveralBots_OffersAChoiceOfThemOrAny()
     {
         // Arrange - Black plays; the seats go Green, Yellow, Red; medium is Midas alone, hard Solomon and Oracle
-        IRenderedComponent<Lobby> lobby = this.Render();
-        lobby.Find("button.by-strength").Click();
+        IRenderedComponent<Lobby> lobby = this.ByStrength();
 
         // Act
         lobby.FindAll("select.strength")[2].Change("2");
@@ -361,8 +422,7 @@ public sealed class LobbyTest : IDisposable
     public void Play_WhenABotOfTheStrengthIsChosen_SeatsThatOne()
     {
         // Arrange
-        IRenderedComponent<Lobby> lobby = this.Render();
-        lobby.Find("button.by-strength").Click();
+        IRenderedComponent<Lobby> lobby = this.ByStrength();
         lobby.FindAll("select.strength")[2].Change("2");
         lobby.Find("select.pick").Change("oracle");
 
@@ -377,8 +437,7 @@ public sealed class LobbyTest : IDisposable
     public void ByStrength_WhenABotIsChosenForOneSeat_CannotBeChosenForAnother()
     {
         // Arrange
-        IRenderedComponent<Lobby> lobby = this.Render();
-        lobby.Find("button.by-strength").Click();
+        IRenderedComponent<Lobby> lobby = this.ByStrength();
         lobby.FindAll("select.strength")[1].Change("2");
         lobby.FindAll("select.strength")[2].Change("2");
 
@@ -399,8 +458,7 @@ public sealed class LobbyTest : IDisposable
     public void ByStrength_WhenTheStrengthChanges_ForgetsTheBotChosen()
     {
         // Arrange
-        IRenderedComponent<Lobby> lobby = this.Render();
-        lobby.Find("button.by-strength").Click();
+        IRenderedComponent<Lobby> lobby = this.ByStrength();
         lobby.FindAll("select.strength")[2].Change("2");
         lobby.Find("select.pick").Change("oracle");
 
@@ -570,6 +628,13 @@ public sealed class LobbyTest : IDisposable
             lobby.FindAll("select.strength")[seat].QuerySelectorAll("option[disabled]")
                 .Select(option => option.TextContent.Trim().Split(' ')[0].ToLowerInvariant())
         );
+
+    private IRenderedComponent<Lobby> ByStrength()
+    {
+        IRenderedComponent<Lobby> lobby = this.Render();
+        lobby.Find("button.by-strength").Click();
+        return lobby;
+    }
 
     private IRenderedComponent<Lobby> SeatBySeat()
     {
