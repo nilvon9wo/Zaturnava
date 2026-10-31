@@ -14,6 +14,10 @@ name: Deploy server (MonsterASP.NET)
 # callback URL is the site's address followed by /signin-github:
 #   GH_CLIENT_ID      its Client ID
 #   GH_CLIENT_SECRET  a client secret made for it
+# Likewise with Google (an OAuth client of the Web application type; its redirect URI, the site's address followed
+# by /signin-google) and Discord (an application's OAuth2 client; its redirect, followed by /signin-discord):
+#   GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
+#   DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET
 # The site's own address is no secret: the server answers requests for its host alone (AllowedHosts), and its
 # hosted MCP server calls the API there (Mcp:SelfAddress), never at a host a request names.
 on:
@@ -45,6 +49,10 @@ jobs:
           DATABASE: ${{ secrets.MONSTERASP_SQLSERVER_CONNECTION_STRING }}
           GH_CLIENT_ID: ${{ secrets.GH_CLIENT_ID }}
           GH_CLIENT_SECRET: ${{ secrets.GH_CLIENT_SECRET }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          DISCORD_CLIENT_ID: ${{ secrets.DISCORD_CLIENT_ID }}
+          DISCORD_CLIENT_SECRET: ${{ secrets.DISCORD_CLIENT_SECRET }}
         run: |
           $settings = @{
             AllowedHosts = $env:SITE_HOST
@@ -56,13 +64,22 @@ jobs:
             $settings.Storage = @{ Provider = "SqlServer" }
             $settings.ConnectionStrings = @{ Games = $env:DATABASE }
           }
-          if ([string]::IsNullOrWhiteSpace($env:GH_CLIENT_ID) -or [string]::IsNullOrWhiteSpace($env:GH_CLIENT_SECRET)) {
-            Write-Host "No GH_CLIENT_ID and GH_CLIENT_SECRET: no one can sign in with GitHub."
-          } else {
-            $settings.SignIn = @{
-              Providers = @{ GitHub = @{ ClientId = $env:GH_CLIENT_ID; ClientSecret = $env:GH_CLIENT_SECRET } }
+          $providers = @{}
+          foreach ($provider in @(
+            @{ Name = "GitHub"; Prefix = "GH" },
+            @{ Name = "Google"; Prefix = "GOOGLE" },
+            @{ Name = "Discord"; Prefix = "DISCORD" }
+          )) {
+            $keys = "$($provider.Prefix)_CLIENT_ID", "$($provider.Prefix)_CLIENT_SECRET"
+            $id = [Environment]::GetEnvironmentVariable($keys[0])
+            $secret = [Environment]::GetEnvironmentVariable($keys[1])
+            if ([string]::IsNullOrWhiteSpace($id) -or [string]::IsNullOrWhiteSpace($secret)) {
+              Write-Host "No $($keys[0]) and $($keys[1]): no one can sign in with $($provider.Name)."
+            } else {
+              $providers[$provider.Name] = @{ ClientId = $id; ClientSecret = $secret }
             }
           }
+          if ($providers.Count -gt 0) { $settings.SignIn = @{ Providers = $providers } }
           $settings | ConvertTo-Json -Depth 5 | Set-Content -Path publish/appsettings.Production.json -Encoding utf8
 
       # Web Deploy's client, if the runner does not have it already.

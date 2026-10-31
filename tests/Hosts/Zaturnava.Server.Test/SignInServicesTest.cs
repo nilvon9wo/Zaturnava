@@ -22,6 +22,8 @@ public sealed class SignInServicesTest
     [Theory]
     [InlineData(null, null)]
     [InlineData("client", null)]
+    [InlineData("", "secret")]
+    [InlineData("client", "")]
     public void AddSignIn_WhenTheClientIsNotWhollySetUp_OffersNoService(string? id, string? secret)
     {
         // Arrange

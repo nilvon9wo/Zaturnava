@@ -75,7 +75,12 @@ dotnet user-secrets --project src/Hosts/Zaturnava.Server set "SignIn:Providers:G
 dotnet user-secrets --project src/Hosts/Zaturnava.Server set "SignIn:Providers:GitHub:ClientSecret" "<its secret>"
 ```
 
-Without them, the page offers no sign-in, and everything else works as before.
+Google and Discord are set up the same way, each under its own name (`SignIn:Providers:Google:...`,
+`SignIn:Providers:Discord:...`): for Google, an OAuth client of the Web application type (Google Cloud console, APIs
+and services, Credentials), with the redirect URI `http://localhost:5164/signin-google`; for Discord, an application
+(Discord Developer Portal, OAuth2) with the redirect `http://localhost:5164/signin-discord`.
+
+Without any, the page offers no sign-in, and everything else works as before.
 
 The server brings the database's schema up to date as it starts. A change to `GameDbContext`'s model needs
 a migration for each database, named for what it changes, which `dotnet ef` writes (from `dotnet-tools.json`;
