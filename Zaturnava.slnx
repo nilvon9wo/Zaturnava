@@ -28,7 +28,9 @@
     <Project Path="src/Games/GrandLegions/Zaturnava.Games.GrandLegions/Zaturnava.Games.GrandLegions.csproj" />
   </Folder>
   <Folder Name="/src/Hosts/">
+    <Project Path="src/Hosts/Zaturnava.Hosting.Discord/Zaturnava.Hosting.Discord.csproj" />
     <Project Path="src/Hosts/Zaturnava.Hosting.GitHub/Zaturnava.Hosting.GitHub.csproj" />
+    <Project Path="src/Hosts/Zaturnava.Hosting.Google/Zaturnava.Hosting.Google.csproj" />
     <Project Path="src/Hosts/Zaturnava.Hosting.Itch/Zaturnava.Hosting.Itch.csproj" />
     <Project Path="src/Hosts/Zaturnava.Hosting/Zaturnava.Hosting.csproj" />
     <Project Path="src/Hosts/Zaturnava.Server/Zaturnava.Server.csproj" />
@@ -67,7 +69,9 @@
     <Project Path="tests/Games/GrandLegions/Zaturnava.Games.GrandLegions.Test/Zaturnava.Games.GrandLegions.Test.csproj" />
   </Folder>
   <Folder Name="/tests/Hosts/">
+    <Project Path="tests/Hosts/Zaturnava.Hosting.Discord.Test/Zaturnava.Hosting.Discord.Test.csproj" />
     <Project Path="tests/Hosts/Zaturnava.Hosting.GitHub.Test/Zaturnava.Hosting.GitHub.Test.csproj" />
+    <Project Path="tests/Hosts/Zaturnava.Hosting.Google.Test/Zaturnava.Hosting.Google.Test.csproj" />
     <Project Path="tests/Hosts/Zaturnava.Hosting.Itch.Test/Zaturnava.Hosting.Itch.Test.csproj" />
     <Project Path="tests/Hosts/Zaturnava.Hosting.Test/Zaturnava.Hosting.Test.csproj" />
     <Project Path="tests/Hosts/Zaturnava.Server.Test/Zaturnava.Server.Test.csproj" />

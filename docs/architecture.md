@@ -225,13 +225,15 @@ client, MCP, presentation), `Hosts` (server, page, hosting adapters) and `Persis
 | Hosting | Ports for the services around the game (`IPageHosting`, `ISignInProviding`), and `ListedPageHost` | — |
 | Hosting.Itch | `IPageHosting` for a page published on itch.io | Hosting |
 | Hosting.GitHub | `ISignInProviding` for signing in with a GitHub account | Hosting |
+| Hosting.Google | `ISignInProviding` for signing in with a Google account | Hosting |
+| Hosting.Discord | `ISignInProviding` for signing in with a Discord account | Hosting |
 | Contracts | The wire protocol: DTOs, routes, refusals, `IGameServing` | — |
 | Client | `IGameServing` over HTTP (`HttpGameClient`) | Contracts |
 | Presentation | Client-side board logic: frame, clickable actions, selection | Contracts |
 | Web | Blazor WebAssembly client | Client, Contracts, Presentation |
 | Mcp | MCP server (stdio) letting an AI play through any server | Client, Contracts |
 | BotRunner | Command-line self-play: bots against bots (one's own among them, from an assembly), each game's history as a JSON line; tuning Sage, and training Athena's network | Application, Bots, Engine, Games.Chaturaji2027 |
-| Server | ASP.NET Core host; the composition root | Application, Bots, Client, Contracts, Engine, Hosting, Hosting.GitHub, Hosting.Itch, Mcp, Persistence.*, Topology.SquareGrid, Games.Chaturaji2027 |
+| Server | ASP.NET Core host; the composition root | Application, Bots, Client, Contracts, Engine, Hosting, Hosting.*, Mcp, Persistence.*, Topology.SquareGrid, Games.Chaturaji2027 |
 
 **Vendors stay in their adapters.** A third-party service — a page host, a
 game host, a database provider — is named only in its own adapter project and

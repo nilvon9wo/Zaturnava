@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Hosts\Zaturnava.Hosting.Google\Zaturnava.Hosting.Google.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -170,7 +170,7 @@ opens, with a service the server is set up for (Proposed):
 
 | | Request | Reply |
 |---|---|---|
-| The services to sign in with | `GET api/signin` | Their names, such as `["GitHub"]`; none, if none is set up |
+| The services to sign in with | `GET api/signin` | Their names, such as `["GitHub", "Google", "Discord"]`; none, if none is set up |
 | Sign in, in a window of its own | `GET signin/{service}?origin={the page's origin}` | The service's own page; then, once the person agrees, a page that posts `{"token": "...", "name": "..."}` to the page that opened it, and closes |
 | Who a player's token stands for | `GET api/players/me`, with the player's token | `{"id": "...", "name": "..."}`, or `401` |
 | Sign out | `DELETE api/players/me/session`, with the player's token | `204`; the token stands for no one any more |

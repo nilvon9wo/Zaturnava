@@ -6,13 +6,16 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OAuth;
 using Microsoft.AspNetCore.Authentication.OAuth.Claims;
 using Net.NowhereAtAll.Zaturnava.Hosting;
+using Net.NowhereAtAll.Zaturnava.Hosting.Discord;
 using Net.NowhereAtAll.Zaturnava.Hosting.GitHub;
+using Net.NowhereAtAll.Zaturnava.Hosting.Google;
 
 namespace Net.NowhereAtAll.Zaturnava.Server.Composition;
 
 /// <summary>
 /// The services a person may sign in with: each one known here whose client is set up in configuration, under
-/// <c>SignIn:Providers:{name}</c> with its <c>ClientId</c> and <c>ClientSecret</c>; none, if none is. Whoever comes
+/// <c>SignIn:Providers:{name}</c> with its <c>ClientId</c> and <c>ClientSecret</c>, neither empty; none, if none
+/// is. Whoever comes
 /// back from one is held in a short-lived cookie (<see cref="ExternalScheme"/>), only until they are signed in as a
 /// player. The claims they come back with are issued by the service's name.
 /// </summary>
@@ -23,9 +26,11 @@ internal static class SignInServices
     public const string ClientSecretKey = "ClientSecret";
     public const string ExternalScheme = "External";
 
-    private static readonly TimeSpan ExternalLifetime = TimeSpan.FromMinutes(10);
+    /// <summary>Every service the server knows how to sign in with.</summary>
+    public static readonly ImmutableList<ISignInProviding> Known =
+        [new GitHubSignIn(), new GoogleSignIn(), new DiscordSignIn()];
 
-    private static readonly ImmutableList<ISignInProviding> Known = [new GitHubSignIn()];
+    private static readonly TimeSpan ExternalLifetime = TimeSpan.FromMinutes(10);
 
     public static IServiceCollection AddSignIn(this IServiceCollection services, IConfiguration configuration) =>
         services.AddSignIn(configuration, Known);
@@ -65,7 +70,7 @@ internal static class SignInServices
     private static SignInClient? ClientOf(IConfiguration configuration, ISignInProviding provider)
     {
         IConfigurationSection section = configuration.GetSection($"{ProvidersKey}:{provider.Name}");
-        return section[ClientIdKey] is { } id && section[ClientSecretKey] is { } secret
+        return section[ClientIdKey] is { Length: > 0 } id && section[ClientSecretKey] is { Length: > 0 } secret
             ? new SignInClient(provider, id, secret)
             : null;
     }

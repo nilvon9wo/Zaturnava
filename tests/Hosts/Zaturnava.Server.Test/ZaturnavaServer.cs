@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Net.NowhereAtAll.Zaturnava.Client;
 using Net.NowhereAtAll.Zaturnava.Engine.Chance;
+using Net.NowhereAtAll.Zaturnava.Server.Composition;
 using Net.NowhereAtAll.Zaturnava.Server.Endpoints;
 
 namespace Net.NowhereAtAll.Zaturnava.Server.Test;
@@ -36,15 +37,27 @@ public class ZaturnavaServer : WebApplicationFactory<Program>
     /// <summary>A client of this server, as any .NET client would reach it.</summary>
     public HttpGameClient GameClient() => new(this.CreateClient());
 
-    /// <summary>The dice loaded; and the hosted MCP server's tools calling this server in the test process.</summary>
+    /// <summary>
+    /// The dice loaded; the hosted MCP server's tools calling this server in the test process; and no service to
+    /// sign in with, whatever this machine's user secrets set up, so that a test sees only what it sets up itself.
+    /// </summary>
     protected override void ConfigureWebHost(IWebHostBuilder builder) =>
-        builder.ConfigureTestServices(services =>
-        {
-            _ = services.AddSingleton<IDiceRolling>(new LoadedDice());
-            _ = services
-                .AddHttpClient(McpEndpoints.SelfClient)
-                .ConfigurePrimaryHttpMessageHandler(() => this.Server.CreateHandler());
-        });
+        SignInServices.Known
+            .Aggregate(
+                builder,
+                (configured, provider) =>
+                    configured.UseSetting(
+                        $"{SignInServices.ProvidersKey}:{provider.Name}:{SignInServices.ClientIdKey}",
+                        string.Empty
+                    )
+            )
+            .ConfigureTestServices(services =>
+            {
+                _ = services.AddSingleton<IDiceRolling>(new LoadedDice());
+                _ = services
+                    .AddHttpClient(McpEndpoints.SelfClient)
+                    .ConfigurePrimaryHttpMessageHandler(() => this.Server.CreateHandler());
+            });
 }
 
 /// <summary>
