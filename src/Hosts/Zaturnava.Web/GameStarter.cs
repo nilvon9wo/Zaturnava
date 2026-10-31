@@ -58,17 +58,18 @@ internal static class GameStarter
     /// <summary>
     /// Starts a game of the ruleset with <paramref name="bots"/> in their seats, from the start or the
     /// <paramref name="scenario"/>, and sits the player at <paramref name="person"/>; or has them watch, if
-    /// that is no seat.
+    /// that is no seat. A game played again after another (<paramref name="continuing"/>) is at its table.
     /// </summary>
     public static async Task<Seating> Start(
         IGameServing games,
         string rulesetId,
         ImmutableList<string?> bots,
         int person,
-        string? scenario
+        string? scenario,
+        string? continuing = null
     )
     {
-        CreateGameRequest request = new(rulesetId, bots) { Scenario = scenario };
+        CreateGameRequest request = new(rulesetId, bots) { Scenario = scenario, Continuing = continuing };
         GameCreatedDto created = await games.Create(request, CancellationToken.None);
         return person >= 0
             ? await Claim(games, created.GameId, person)

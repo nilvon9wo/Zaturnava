@@ -53,6 +53,27 @@ public sealed class InMemoryChatStoreTest
         Assert.Empty(said);
     }
 
+    [Fact]
+    public async Task Remove_WhenATableIsLetGo_KeepsOnlyTheOthers()
+    {
+        // Arrange
+        GameId other = new("other");
+        _ = await this._store.Add(Message(Game, "first"), this._cancellation);
+        _ = await this._store.Add(Message(other, "elsewhere"), this._cancellation);
+
+        // Act
+        await this._store.Remove(Game, this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            (other, 0),
+            (
+                (await this._store.Tables(this._cancellation)).Single(),
+                (await this._store.Of(Game, this._cancellation)).Count
+            )
+        );
+    }
+
     private static ChatMessage Message(GameId game, string text) =>
         new(game, 0, new SeatId(1), ChatChannel.Team, text, DateTimeOffset.UnixEpoch);
 }

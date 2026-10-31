@@ -143,11 +143,16 @@ Saying something takes the seat's token, and at most 500 characters:
 { "channel": "team", "text": "Hold the left; I'll take their Boat." }
 ```
 
-Each message is numbered in its game, from 1, and comes back as
+Each message is numbered at its table, from 1, and comes back as
 `{"number", "seat", "channel", "text", "at"}`. Reading takes the number of the last message you have
 (`after=0` for everything) and gives what came since that you may read: everything said to the table,
 and, with your token, what your team said to itself. Without a token, as a watcher, only the table. Talk is
 not pushed: ask again now and then, as the page does every few seconds. Bots say nothing.
+
+A game played again after another, created with `"continuing": "{the earlier game's id}"`, is at the same
+table: its talk goes on from the earlier game's, numbered on. The talk is let go once the players have left
+the table: when, for about two minutes, no player has read it or said anything (a watcher reading it does
+not count). After that, it is as if nothing had been said.
 
 ## Refusals
 

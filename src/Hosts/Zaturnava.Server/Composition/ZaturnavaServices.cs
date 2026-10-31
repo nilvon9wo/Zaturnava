@@ -35,6 +35,13 @@ internal static class ZaturnavaServices
     /// </summary>
     public const string TimersKey = "Games:Timers";
 
+    /// <summary>
+    /// The configuration keys for how long, in seconds, no player at a table may be heard from before what was
+    /// said there is let go, and how often that is looked for (<see cref="ChatSettings"/>).
+    /// </summary>
+    public const string ChatLeftAfterKey = "Chat:LeftAfterSeconds";
+    public const string ChatSweepKey = "Chat:SweepSeconds";
+
     private const string DefaultTimerKey = "Default";
 
     public static IServiceCollection AddZaturnava(this IServiceCollection services, IConfiguration configuration) =>
@@ -50,6 +57,9 @@ internal static class ZaturnavaServices
             .AddSingleton(Settings(configuration))
             .AddScoped<GameService>()
             .AddScoped<ChatService>()
+            .AddSingleton(ChatSettingsOf(configuration))
+            .AddSingleton<ChatTables>()
+            .AddHostedService<ChatSweeper>()
             .AddProblemDetails()
             .AddExceptionHandler<RefusalHandler>();
 
@@ -72,6 +82,14 @@ internal static class ZaturnavaServices
                 new RandomBot(Random.Shared),
             ],
             BotRatings.Rated
+        );
+
+    private static ChatSettings ChatSettingsOf(IConfiguration configuration) =>
+        new(
+            TimeSpan.FromSeconds(
+                configuration.GetValue(ChatLeftAfterKey, ChatSettings.DefaultLeftAfter.TotalSeconds)
+            ),
+            TimeSpan.FromSeconds(configuration.GetValue(ChatSweepKey, ChatSettings.DefaultSweepInterval.TotalSeconds))
         );
 
     private static GameServiceSettings Settings(IConfiguration configuration)

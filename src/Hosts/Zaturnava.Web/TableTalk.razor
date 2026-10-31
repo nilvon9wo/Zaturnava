@@ -1,11 +1,13 @@
 @* The panel under the turn: what has happened (the log, given as ChildContent, with its own tools in LogTools),
    what is said to the whole table, and, for a player, what their team says to itself - one at a time, by tabs,
    each talk's tab counting what was said there, by others, since it was last open. Watchers read the table
-   but say nothing. It asks for what was said every TableSettings.PollInterval, the game over or not, and at
-   once after the player says something. *@
+   but say nothing. Each message shows when it was said, in the player's own time; the talk is newest first, or
+   oldest first if the player prefers (remembered by the browser). It asks for what was said every
+   TableSettings.PollInterval, the game over or not, and at once after the player says something. *@
 @implements IDisposable
 @inject IGameServing Games
 @inject TableSettings Settings
+@inject Browser Browser
 @using System.Globalization
 
 <div class="log">
@@ -29,6 +31,12 @@
         @if (this._shown == LogTab)
         {
             @this.LogTools
+        }
+        else
+        {
+            <button class="chat-order" @onclick="this.ToggleOrder">
+                @(this._isNewestFirst ? "Show oldest first" : "Show newest first")
+            </button>
         }
     </div>
     @if (this._shown == LogTab)
@@ -57,11 +65,14 @@
             <p class="problem" role="alert">@problem</p>
         }
         <ol class="chat">
-            @foreach (ChatMessageDto message in this.Of(this._shown).Reverse())
+            @foreach (ChatMessageDto message in this.InOrder(this.Of(this._shown)))
             {
-                <li class="said seat-@message.Seat"
-                    title="@message.At.ToLocalTime().ToString("t", CultureInfo.CurrentCulture)">
-                    <span class="who">@this.Who(message.Seat):</span> @message.Text
+                <li class="said seat-@message.Seat">
+                    <time class="at" datetime="@message.At.ToString("O", CultureInfo.InvariantCulture)">
+                        @message.At.ToLocalTime().ToString("t", CultureInfo.CurrentCulture)
+                    </time>
+                    <span class="who">@this.Who(message.Seat)</span>
+                    <span class="words">@message.Text</span>
                 </li>
             }
         </ol>
@@ -82,6 +93,7 @@
     private Tab _shown = LogTab;
     private string? _draft;
     private string? _problem;
+    private bool _isNewestFirst = true;
 
     public TableTalk() => this._poll = new Timer(this.Tick);
 
@@ -109,11 +121,26 @@
 
     private int Last => this._said.IsEmpty ? 0 : this._said[^1].Number;
 
-    protected override async Task OnInitializedAsync() => this._problem = await this.Hear();
+    protected override async Task OnInitializedAsync()
+    {
+        this._isNewestFirst = await this.Browser.IsChatNewestFirst();
+        this._problem = await this.Hear();
+    }
 
     public void Dispose() => this._poll.Dispose();
 
     private IEnumerable<ChatMessageDto> Of(Tab tab) => this._said.Where(message => message.Channel == tab.Name);
+
+    /// <summary>The messages, newest or oldest first, as the player prefers.</summary>
+    private IEnumerable<ChatMessageDto> InOrder(IEnumerable<ChatMessageDto> said) =>
+        this._isNewestFirst ? said.Reverse() : said;
+
+    /// <summary>Shows the talk the other way round, and remembers that the player prefers it so.</summary>
+    private async Task ToggleOrder()
+    {
+        this._isNewestFirst = !this._isNewestFirst;
+        await this.Browser.SetChatNewestFirst(this._isNewestFirst);
+    }
 
     /// <summary>What others said in a talk since its tab was last open; nothing for the log, or the tab open.</summary>
     private int Unread(Tab tab) =>

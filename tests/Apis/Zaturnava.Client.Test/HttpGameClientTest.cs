@@ -70,7 +70,12 @@ public sealed class HttpGameClientTest
 
         // Assert
         Assert.Equal(
-            ("POST", "/api/games", """{"rulesetId":"chaturaji-2027","bots":[null,"random"],"scenario":null}""", "g"),
+            (
+                "POST",
+                "/api/games",
+                """{"rulesetId":"chaturaji-2027","bots":[null,"random"],"scenario":null,"continuing":null}""",
+                "g"
+            ),
             (server.Method, server.Path, server.Body, created.GameId)
         );
     }

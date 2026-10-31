@@ -143,6 +143,38 @@ public sealed class BrowserTest : IDisposable
     }
 
     [Theory]
+    [InlineData("oldest", false)]
+    [InlineData(null, true)]
+    public async Task IsChatNewestFirst_WhenRead_IsUnlessOldestFirstWasChosen(string? remembered, bool expected)
+    {
+        // Arrange
+        _ = this._context.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.chat-order").SetResult(remembered);
+
+        // Act
+        bool isNewestFirst = await this._browser.IsChatNewestFirst();
+
+        // Assert
+        Assert.Equal(expected, isNewestFirst);
+    }
+
+    [Theory]
+    [InlineData(true, "newest")]
+    [InlineData(false, "oldest")]
+    public async Task SetChatNewestFirst_WhenSet_RemembersIt(bool isNewestFirst, string expected)
+    {
+        // Arrange - nothing beyond the browser
+
+        // Act
+        await this._browser.SetChatNewestFirst(isNewestFirst);
+
+        // Assert
+        Assert.Equal(
+            ["zaturnava.chat-order", expected],
+            this._context.JSInterop.Invocations["zaturnava.save"].Single().Arguments
+        );
+    }
+
+    [Theory]
     [InlineData("off", false)]
     [InlineData(null, true)]
     public async Task IsSafetyOn_WhenRead_IsOnUnlessTurnedOff(string? remembered, bool expected)

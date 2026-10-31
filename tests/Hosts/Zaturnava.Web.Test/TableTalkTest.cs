@@ -1,3 +1,4 @@
+using System.Globalization;
 using Bunit;
 using Net.NowhereAtAll.Zaturnava.Contracts;
 
@@ -44,13 +45,13 @@ public sealed class TableTalkTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ("Log|Table", "Only the players may speak here.", 0, 0, "Yellow: Hello", "chat 0 watching"),
+            ("Log|Table", "Only the players may speak here.", 0, 0, "Yellow Hello", "chat 0 watching"),
             (
                 Tabs(talk),
                 talk.Find("p.watching").TextContent,
                 talk.FindAll("form.say").Count,
                 talk.FindAll("button.tool").Count,
-                talk.Find("li.said.seat-1").TextContent.Trim(),
+                Shown(talk),
                 this._page.Server.Talk.Single()
             )
         );
@@ -83,11 +84,68 @@ public sealed class TableTalkTest : IDisposable
 
         // Act
         talk.Find("button.table-tab").Click();
-        string shown = string.Join("|", talk.FindAll("li.said").Select(said => said.TextContent.Trim()));
+        string shown = Shown(talk);
         talk.Find("button.log-tab").Click();
 
         // Assert
-        Assert.Equal(("You: Hi|Yellow: Hello", 0), (shown, talk.FindAll(".unread").Count));
+        Assert.Equal(("You Hi|Yellow Hello", 0), (shown, talk.FindAll(".unread").Count));
+    }
+
+    [Fact]
+    public void Open_WhenATalkIsOpened_ShowsWhenEachMessageWasSaid()
+    {
+        // Arrange
+        DateTimeOffset at = new(2026, 10, 31, 18, 5, 0, TimeSpan.Zero);
+        this._page.Server.Said = [new ChatMessageDto(1, 1, ChatChannels.Table, "Hello", at)];
+        IRenderedComponent<TableTalk> talk = this.Render(SeatZero);
+
+        // Act
+        talk.Find("button.table-tab").Click();
+
+        // Assert
+        Assert.Equal(
+            ("2026-10-31T18:05:00.0000000+00:00", at.ToLocalTime().ToString("t", CultureInfo.CurrentCulture)),
+            (talk.Find("time.at").GetAttribute("datetime"), talk.Find("time.at").TextContent.Trim())
+        );
+    }
+
+    [Fact]
+    public void Open_WhenThePlayerPrefersOldestFirst_ShowsTheTalkSo()
+    {
+        // Arrange
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.chat-order").SetResult("oldest");
+        this._page.Server.Said = [Said(1, 1, ChatChannels.Table, "Hello"), Said(2, 0, ChatChannels.Table, "Hi")];
+        IRenderedComponent<TableTalk> talk = this.Render(SeatZero);
+
+        // Act
+        talk.Find("button.table-tab").Click();
+
+        // Assert
+        Assert.Equal(
+            ("Yellow Hello|You Hi", "Show newest first"),
+            (Shown(talk), talk.Find("button.chat-order").TextContent.Trim())
+        );
+    }
+
+    [Fact]
+    public void ToggleOrder_WhenNewestWasFirst_ShowsOldestFirstAndRemembersIt()
+    {
+        // Arrange
+        this._page.Server.Said = [Said(1, 1, ChatChannels.Table, "Hello"), Said(2, 0, ChatChannels.Table, "Hi")];
+        IRenderedComponent<TableTalk> talk = this.Render(SeatZero);
+        talk.Find("button.table-tab").Click();
+
+        // Act
+        talk.Find("button.chat-order").Click();
+
+        // Assert
+        Assert.Equal(
+            ("Yellow Hello|You Hi", "zaturnava.chat-order oldest"),
+            (
+                Shown(talk),
+                string.Join(" ", this._page.JSInterop.Invocations["zaturnava.save"].Single().Arguments)
+            )
+        );
     }
 
     [Fact]
@@ -103,10 +161,10 @@ public sealed class TableTalkTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ("chat 0|say team Hold the left|chat 0", "You: Hold the left", string.Empty, true),
+            ("chat 0|say team Hold the left|chat 0", "You Hold the left", string.Empty, true),
             (
                 string.Join("|", this._page.Server.Talk),
-                talk.Find("li.said").TextContent.Trim(),
+                Shown(talk),
                 talk.Find("input.draft").GetAttribute("value") ?? string.Empty,
                 talk.Find("button.send").HasAttribute("disabled")
             )
@@ -165,6 +223,15 @@ public sealed class TableTalkTest : IDisposable
 
     private static ChatMessageDto Said(int number, int seat, string channel, string text) =>
         new(number, seat, channel, text, DateTimeOffset.UnixEpoch);
+
+    /// <summary>Who said what in the talk shown, in the order shown, without when.</summary>
+    private static string Shown(IRenderedComponent<TableTalk> talk) =>
+        string.Join(
+            "|",
+            talk.FindAll("li.said").Select(said =>
+                $"{said.QuerySelector(".who")!.TextContent} {said.QuerySelector(".words")!.TextContent}"
+            )
+        );
 
     private static string Tabs(IRenderedComponent<TableTalk> talk) =>
         string.Join("|", talk.FindAll("button.tab").Select(tab => tab.TextContent.Trim()));

@@ -68,7 +68,7 @@ public sealed class EfChatStoreTest : IDisposable
             new ChatEntity
             {
                 Id = "meanwhile",
-                GameId = Game.Value,
+                TableId = Game.Value,
                 Number = 2,
                 Seat = 0,
                 Channel = nameof(ChatChannel.Table),
@@ -82,6 +82,29 @@ public sealed class EfChatStoreTest : IDisposable
 
         // Assert
         _ = await Assert.ThrowsAsync<ConcurrencyConflictException>(() => adding);
+    }
+
+    [Fact]
+    public async Task Remove_WhenATableIsLetGo_KeepsOnlyTheOthers()
+    {
+        // Arrange
+        GameId other = new("other");
+        _ = await this._store.Add(Message(Game, "first"), this._cancellation);
+        _ = await this._store.Add(Message(Game, "second"), this._cancellation);
+        _ = await this._store.Add(Message(other, "elsewhere"), this._cancellation);
+
+        // Act
+        await new EfChatStore(this._database.NewContext()).Remove(Game, this._cancellation);
+
+        // Assert
+        EfChatStore reader = new(this._database.NewContext());
+        Assert.Equal(
+            (other, 0),
+            (
+                (await reader.Tables(this._cancellation)).Single(),
+                (await reader.Of(Game, this._cancellation)).Count
+            )
+        );
     }
 
     private static ChatMessage Message(GameId game, string text) =>
