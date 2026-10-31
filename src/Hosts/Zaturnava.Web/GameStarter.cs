@@ -83,17 +83,21 @@ internal static class GameStarter
     }
 
     /// <summary>
-    /// A bot for each seat played at a strength; none for each seat without one, left to a person. Each bot is
-    /// one of its strength's, at random, never one already seated; failing that, the one rated nearest it of
-    /// those left; failing that, none.
+    /// A bot for each seat: the one the player chose for it, if they chose one; else, for a seat played at a
+    /// strength, one of its strength's, at random, never one already seated or chosen; failing that, the one
+    /// rated nearest it of those left; failing that, and for a seat without a strength, none, for a person.
     /// </summary>
-    public static ImmutableList<string?> ByStrength(IEnumerable<Strength?> seats, ImmutableList<Strength> strengths)
+    public static ImmutableList<string?> ByStrength(IEnumerable<SeatChoice> seats, ImmutableList<Strength> strengths)
     {
+        ImmutableList<SeatChoice> choices = [.. seats];
         ImmutableList<BotDto> all = [.. strengths.SelectMany(strength => strength.Bots)];
-        ImmutableList<string?> bots = [];
-        foreach (Strength? strength in seats)
+        ImmutableList<string?> bots = [.. choices.Select(choice => choice.Bot)];
+        foreach (int seat in Enumerable.Range(0, choices.Count))
         {
-            bots = bots.Add(strength is null ? null : Pick(strength, all, bots));
+            SeatChoice choice = choices[seat];
+            bots = choice.Bot is null && choice.Strength is { } strength
+                ? bots.SetItem(seat, Pick(strength, all, bots))
+                : bots;
         }
 
         return bots;

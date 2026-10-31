@@ -267,6 +267,81 @@ public sealed class LobbyTest : IDisposable
     }
 
     [Fact]
+    public void ByStrength_WhenAStrengthHasSeveralBots_OffersAChoiceOfThemOrAny()
+    {
+        // Arrange - Black plays; the seats go Green, Yellow, Red; medium is Midas alone, hard Solomon and Oracle
+        IRenderedComponent<Lobby> lobby = this.Render();
+        lobby.Find("button.by-strength").Click();
+
+        // Act
+        lobby.FindAll("select.strength")[2].Change("2");
+
+        // Assert
+        Assert.Equal(
+            (1, "Any of them|Solomon|Oracle"),
+            (
+                lobby.FindAll("select.pick").Count,
+                string.Join('|', lobby.Find("select.pick").Children.Select(option => option.TextContent.Trim()))
+            )
+        );
+    }
+
+    [Fact]
+    public void Play_WhenABotOfTheStrengthIsChosen_SeatsThatOne()
+    {
+        // Arrange
+        IRenderedComponent<Lobby> lobby = this.Render();
+        lobby.Find("button.by-strength").Click();
+        lobby.FindAll("select.strength")[2].Change("2");
+        lobby.Find("select.pick").Change("oracle");
+
+        // Act
+        lobby.Find("button.create").Click();
+
+        // Assert
+        Assert.Equal("oracle", this._page.Server.Created!.Bots[3]);
+    }
+
+    [Fact]
+    public void ByStrength_WhenABotIsChosenForOneSeat_CannotBeChosenForAnother()
+    {
+        // Arrange
+        IRenderedComponent<Lobby> lobby = this.Render();
+        lobby.Find("button.by-strength").Click();
+        lobby.FindAll("select.strength")[1].Change("2");
+        lobby.FindAll("select.strength")[2].Change("2");
+
+        // Act
+        lobby.FindAll("select.pick")[1].Change("oracle");
+
+        // Assert
+        Assert.Equal(
+            (true, false),
+            (
+                lobby.FindAll("select.pick")[0].QuerySelector("option[value=oracle]")!.HasAttribute("disabled"),
+                lobby.FindAll("select.pick")[1].QuerySelector("option[value=oracle]")!.HasAttribute("disabled")
+            )
+        );
+    }
+
+    [Fact]
+    public void ByStrength_WhenTheStrengthChanges_ForgetsTheBotChosen()
+    {
+        // Arrange
+        IRenderedComponent<Lobby> lobby = this.Render();
+        lobby.Find("button.by-strength").Click();
+        lobby.FindAll("select.strength")[2].Change("2");
+        lobby.Find("select.pick").Change("oracle");
+
+        // Act
+        lobby.FindAll("select.strength")[2].Change("0");
+        lobby.FindAll("select.strength")[2].Change("2");
+
+        // Assert
+        Assert.Equal(string.Empty, lobby.Find("select.pick").GetAttribute("value"));
+    }
+
+    [Fact]
     public void SeatBySeat_WhenChosenAgain_OffersEachSeatsPlan()
     {
         // Arrange
