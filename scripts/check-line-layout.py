@@ -38,8 +38,9 @@ WRAP_RPAR_RULE = "wrap-rpar"
 WRAP_RPAR_MESSAGE = (
     "wrapped call/declaration must close with ')' on its own line"
 )
+# Migrations/ holds EF Core migrations, written by `dotnet ef`, never by hand.
 EXCLUDED_DIR_NAMES = frozenset(
-    {"bin", "obj", ".git", ".vs", ".idea", "StyleCanary"}
+    {"bin", "obj", ".git", ".vs", ".idea", "StyleCanary", "Migrations"}
 )
 CONTROL_KEYWORDS = frozenset(
     {

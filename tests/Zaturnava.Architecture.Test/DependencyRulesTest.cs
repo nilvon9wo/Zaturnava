@@ -31,6 +31,8 @@ public sealed class DependencyRulesTest
             ["Application"] = ["Engine"],
             ["Persistence.InMemory"] = ["Application", "Engine"],
             ["Persistence.EfCore"] = ["Application", "Engine"],
+            ["Persistence.EfCore.Sqlite"] = ["Persistence.EfCore"],
+            ["Persistence.EfCore.SqlServer"] = ["Persistence.EfCore"],
 
             // the wire protocol, and what a client needs of it: nothing of the server
             ["Contracts"] = [],
@@ -50,7 +52,8 @@ public sealed class DependencyRulesTest
             ["Server"] =
             [
                 "Application", "Bots", "Client", "Contracts", "Engine", "Hosting", "Hosting.Itch", "Mcp",
-                "Persistence.EfCore", "Persistence.InMemory", "Topology.SquareGrid", "Games.Chaturaji2027",
+                "Persistence.EfCore", "Persistence.EfCore.Sqlite", "Persistence.EfCore.SqlServer",
+                "Persistence.InMemory", "Topology.SquareGrid", "Games.Chaturaji2027",
             ],
         }.ToImmutableDictionary();
 

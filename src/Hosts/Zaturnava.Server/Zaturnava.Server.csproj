@@ -11,14 +11,10 @@
   <ItemGroup>
     <!-- The API described as OpenAPI, at openapi/v1.json -->
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.13" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.13" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.13" />
     <!-- Zaturnava.Mcp's tools served over HTTP, at mcp -->
     <PackageReference Include="ModelContextProtocol.AspNetCore" Version="2.2.0" />
     <!-- The OpenAPI description as a page to browse and try, at reference/v1 -->
     <PackageReference Include="Scalar.AspNetCore" Version="2.18.6" />
-    <!-- SqlClient's own dependency (9.0.11) has known vulnerabilities (NU1902, NU1903) -->
-    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
   </ItemGroup>
 
   <ItemGroup>
@@ -33,6 +29,8 @@
     <ProjectReference Include="..\Zaturnava.Hosting\Zaturnava.Hosting.csproj" />
     <ProjectReference Include="..\Zaturnava.Hosting.Itch\Zaturnava.Hosting.Itch.csproj" />
     <ProjectReference Include="..\..\Persistence\Zaturnava.Persistence.EfCore\Zaturnava.Persistence.EfCore.csproj" />
+    <ProjectReference Include="..\..\Persistence\Zaturnava.Persistence.EfCore.Sqlite\Zaturnava.Persistence.EfCore.Sqlite.csproj" />
+    <ProjectReference Include="..\..\Persistence\Zaturnava.Persistence.EfCore.SqlServer\Zaturnava.Persistence.EfCore.SqlServer.csproj" />
     <ProjectReference Include="..\..\Persistence\Zaturnava.Persistence.InMemory\Zaturnava.Persistence.InMemory.csproj" />
     <ProjectReference Include="..\..\Games\Chaturaji2027\Zaturnava.Games.Chaturaji2027\Zaturnava.Games.Chaturaji2027.csproj" />
   </ItemGroup>

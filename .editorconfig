@@ -372,3 +372,11 @@ resharper_parameter_only_used_for_precondition_check_local_highlighting = none
 # A record used as a value-equal key (Statement) declares its positional
 # properties for equality and ToString, not to be read one by one.
 resharper_not_accessed_positional_property_global_highlighting = none
+
+
+#### Generated code ####
+
+# EF Core migrations are written by `dotnet ef` (scripts/wsl-migrate.sh), never
+# by hand, in the tool's own style: no analyzer or inspection holds them to ours.
+[**/Migrations/*.cs]
+generated_code = true
