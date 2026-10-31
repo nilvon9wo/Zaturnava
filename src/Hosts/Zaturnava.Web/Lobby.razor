@@ -283,7 +283,7 @@
             this.ChosenBots(),
             this._mode == SetupMode.ByStrength ? this._colour : this._plans.IndexOf(string.Empty),
             this._scenario.Length == 0 ? null : this._scenario,
-            await this.Browser.PlayerToken()
+            await this.Browser.Claimant()
         ));
 
     /// <summary>The bot for each seat, as set up seat by seat or by strength; none for a person's.</summary>
@@ -319,11 +319,11 @@
 
     private Task Quick(CatalogDto catalog, Difficulty difficulty) =>
         this.Sit(async () =>
-            await GameStarter.Quick(this.Games, catalog, difficulty, await this.Browser.PlayerToken())
+            await GameStarter.Quick(this.Games, catalog, difficulty, await this.Browser.Claimant())
         );
 
     private Task Join(string gameId, int seat) =>
-        this.Sit(async () => await GameStarter.Claim(this.Games, gameId, seat, await this.Browser.PlayerToken()));
+        this.Sit(async () => await GameStarter.Claim(this.Games, gameId, seat, await this.Browser.Claimant()));
 
     private Task Resume(string gameId, SeatClaim claim) => this.OnSeated.InvokeAsync(new Seating(gameId, claim));
 

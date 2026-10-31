@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Globalization;
 using Bunit;
 using Net.NowhereAtAll.Zaturnava.Contracts;
@@ -202,6 +203,26 @@ public sealed class TableTalkTest : IDisposable
 
         // Assert
         Assert.Equal("The server is asleep.", talk.Find("p.problem").TextContent);
+    }
+
+    [Fact]
+    public void Render_WhenThePlayerIsAGuest_OffersTheTeamsTalkToReadButNoWayToSpeak()
+    {
+        // Arrange
+        ImmutableList<SeatDto> seats = FakeGameServer.SeatZeroToMove.Seats;
+        IRenderedComponent<TableTalk> talk = this._page.Render<TableTalk>(parameters => parameters
+            .Add(x => x.Seating, SeatZero)
+            .Add(x => x.Seats, seats.SetItem(0, seats[0] with { IsGuest = true }))
+        );
+
+        // Act
+        talk.Find("button.team-tab").Click();
+
+        // Assert
+        Assert.Equal(
+            (0, "Sign in, then take a seat, to speak here: guests may read what is said."),
+            (talk.FindAll("form.say").Count, talk.Find("p.hint.guest").TextContent)
+        );
     }
 
     [Fact]

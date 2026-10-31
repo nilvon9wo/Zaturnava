@@ -1,7 +1,7 @@
 @* The panel under the turn: what has happened (the log, given as ChildContent, with its own tools in LogTools),
    what is said to the whole table, and, for a player, what their team says to itself - one at a time, by tabs,
    each talk's tab counting what was said there, by others, since it was last open. Watchers read the table
-   but say nothing. Each message shows when it was said, in the player's own time; the talk is newest first, or
+   but say nothing; so do guests, players who did not sign in before taking their seat. Each message shows when it was said, in the player's own time; the talk is newest first, or
    oldest first if the player prefers (remembered by the browser). It asks for what was said every
    TableSettings.PollInterval, the game over or not, and at once after the player says something. *@
 @implements IDisposable
@@ -45,7 +45,11 @@
     }
     else
     {
-        @if (this.Seating.Claim is not null)
+        @if (this.IsGuest)
+        {
+            <p class="hint guest">Sign in, then take a seat, to speak here: guests may read what is said.</p>
+        }
+        else if (this.Seating.Claim is not null)
         {
             <form class="say" @onsubmit="this.Say">
                 <input class="draft"
@@ -120,6 +124,9 @@
         this.Seating.Claim is null ? [LogTab, TableTab] : [LogTab, TableTab, TeamTab];
 
     private int Last => this._said.IsEmpty ? 0 : this._said[^1].Number;
+
+    /// <summary>Whether the player holds their seat as a guest, not signed in, and so may only read.</summary>
+    private bool IsGuest => this.Seating.Claim is { } claim && this.Seats[claim.Seat].IsGuest;
 
     protected override async Task OnInitializedAsync()
     {

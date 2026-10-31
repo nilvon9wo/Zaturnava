@@ -10,9 +10,10 @@ namespace Net.NowhereAtAll.Zaturnava.Application.Chat;
 
 /// <summary>
 /// Talk at a game's table. A player, by the token that holds their seat, speaks to the whole table or to their
-/// team alone. Anyone reads what is said to the table, watchers too; what is said to a team, only its players.
-/// Bots say nothing. A game played again after another is at the same table (<see cref="ChatTables"/>), so the
-/// talk goes on; once every player has left a table, what was said there is let go (<see cref="Purge"/>).
+/// team alone, if they were signed in when they took the seat; a guest only reads. Anyone reads what is said to
+/// the table, watchers too; what is said to a team, only its players. Bots say nothing. A game played again after
+/// another is at the same table (<see cref="ChatTables"/>), so the talk goes on; once every player has left a
+/// table, what was said there is let go (<see cref="Purge"/>).
 /// </summary>
 public sealed class ChatService(GameService games, IChatPersisting store, ChatTables tables, DecisionClock clock)
 {
@@ -27,6 +28,7 @@ public sealed class ChatService(GameService games, IChatPersisting store, ChatTa
     /// <summary>The message, kept and numbered; its words without the spaces around them.</summary>
     /// <exception cref="GameNotFoundException">There is no such game.</exception>
     /// <exception cref="NotSeatedException">The token holds no seat of the game.</exception>
+    /// <exception cref="GuestSilencedException">The seat is a guest's, taken without signing in.</exception>
     /// <exception cref="ArgumentException">The message says nothing.</exception>
     /// <exception cref="InvalidChatException">The message says too much.</exception>
     public async Task<ChatMessage> Say(
@@ -39,6 +41,11 @@ public sealed class ChatService(GameService games, IChatPersisting store, ChatTa
     {
         GameSnapshot snapshot = await this._games.Get(id, cancellationToken);
         SeatId seat = SeatOf(snapshot.Record, token) ?? throw new NotSeatedException(id);
+        if (snapshot.Record.Controllers[seat.Value].IsGuest)
+        {
+            throw new GuestSilencedException(id);
+        }
+
         string said = text.Trim();
         GameId table = this._tables.TableOf(id);
         this._tables.Heard(table);

@@ -1,8 +1,9 @@
-@* Signing in, which is optional: a button for each service the server is set up for, opening a window of its own
-   to sign in with it; once signed in, the player's name, a button to sign out (the server lets the token go), and
+@* Signing in, which is optional: until then, a nickname to play by as a guest (shown as "Nickname (guest)", and
+   kept in the browser for every table until cleared), and a button for each service the server is set up for,
+   opening a window of its own to sign in with it; once signed in, the player's name, a button to sign out (the server lets the token go), and
    one to delete the account, which asks first, here in the page, and once confirmed has the server forget the
-   player altogether. Nothing at all if the server offers no service, or cannot be asked. The player's token is
-   kept in the browser. *@
+   player altogether. No button to sign in if the server offers no service, or cannot be asked. The player's token
+   is kept in the browser. *@
 @using Microsoft.JSInterop
 @implements IDisposable
 @inject IGameServing Games
@@ -27,9 +28,18 @@
         </span>
     }
 }
-else if (!this._providers.IsEmpty)
+else
 {
     <span class="player">
+        <label class="nickname">
+            Play as
+            <input class="nickname"
+                   maxlength="@ClaimSeatRequest.MaximumNicknameLength"
+                   placeholder="a nickname"
+                   value="@this._nickname"
+                   @onchange="this.SetNickname" />
+            (guest)
+        </label>
         @foreach (string provider in this._providers)
         {
             <button class="sign-in" @onclick="() => this.SignIn(provider)">Sign in with @provider</button>
@@ -45,6 +55,7 @@ else if (!this._providers.IsEmpty)
     public const string Deleted = "Your account is deleted.";
 
     private ImmutableList<string> _providers = [];
+    private string? _nickname;
 
     /// <summary>The player signed in, and their token; none, if no one is.</summary>
     private (PlayerDto Player, string Token)? _signedIn;
@@ -52,7 +63,11 @@ else if (!this._providers.IsEmpty)
     private string? _notice;
     private DotNetObjectReference<PlayerBar>? _listener;
 
-    protected override async Task OnInitializedAsync() => _ = await Requests.Attempt(this.Load);
+    protected override async Task OnInitializedAsync()
+    {
+        this._nickname = await this.Browser.Nickname();
+        _ = await Requests.Attempt(this.Load);
+    }
 
     /// <summary>The token the sign-in window posted back: remembered, and the player it stands for shown.</summary>
     [JSInvokable]
@@ -102,6 +117,14 @@ else if (!this._providers.IsEmpty)
             await this.Forget();
             this._notice = Deleted;
         }
+    }
+
+    /// <summary>Keeps the nickname to play by as a guest, at every table from now on; an empty one clears it.</summary>
+    private async Task SetNickname(ChangeEventArgs change)
+    {
+        string nickname = $"{change.Value}";
+        await this.Browser.SetNickname(nickname);
+        this._nickname = nickname.Trim();
     }
 
     private async Task Forget()

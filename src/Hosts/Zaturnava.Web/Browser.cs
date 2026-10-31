@@ -7,9 +7,8 @@ namespace Net.NowhereAtAll.Zaturnava.Web;
 
 /// <summary>
 /// What the page asks of the browser itself (wwwroot/js/zaturnava.js): sounds, a memory that outlives
-/// the page (seats held, the player signed in, and settings: sound, pieces, how a game is set up), the colour theme,
-/// word of the page
-/// shown again, and a window to sign in.
+/// the page (seats held, the player signed in or a guest's nickname, and settings: sound, pieces, how a game is
+/// set up), the colour theme, word of the page shown again, and a window to sign in.
 /// </summary>
 internal sealed class Browser(IJSRuntime js)
 {
@@ -24,6 +23,7 @@ internal sealed class Browser(IJSRuntime js)
     private const string LogKey = "zaturnava.log";
     private const string ChatOrderKey = "zaturnava.chat-order";
     private const string PlayerKey = "zaturnava.player";
+    private const string NicknameKey = "zaturnava.nickname";
     private const string SetupKey = "zaturnava.setup";
     private const string ByStrength = "strength";
     private const string SeatBySeat = "seats";
@@ -115,6 +115,16 @@ internal sealed class Browser(IJSRuntime js)
     public ValueTask RememberPlayer(string token) => this.Save(PlayerKey, token);
 
     public ValueTask ForgetPlayer() => this.Save(PlayerKey, string.Empty);
+
+    /// <summary>The nickname this browser plays by as a guest, at every table, until cleared; none, if none.</summary>
+    public async ValueTask<string?> Nickname() =>
+        await this.Load(NicknameKey) is { Length: > 0 } nickname ? nickname : null;
+
+    /// <summary>Who takes a seat from this browser: the player signed in, if one is, and a guest's nickname.</summary>
+    public async ValueTask<Claimant> Claimant() => new(await this.PlayerToken(), await this.Nickname());
+
+    /// <summary>Keeps the nickname to play by as a guest; an empty one clears it.</summary>
+    public ValueTask SetNickname(string nickname) => this.Save(NicknameKey, nickname.Trim());
 
     /// <summary>
     /// Opens a window of its own at <paramref name="url"/>, to sign in, and has <paramref name="listener"/> told

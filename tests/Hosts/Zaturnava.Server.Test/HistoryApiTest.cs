@@ -29,7 +29,7 @@ public sealed class HistoryApiTest(ZaturnavaServer server) : IClassFixture<Zatur
             new CreateGameRequest(ZaturnavaServer.Chaturaji2027, ZaturnavaServer.OneOpenSeat),
             this._cancellation
         );
-        _ = await this._client.Claim(created.GameId, 0, null, this._cancellation);
+        _ = await this._client.Claim(created.GameId, 0, null, null, this._cancellation);
 
         // Act
         GameHistoryDto history = await this._client.History(created.GameId, this._cancellation);

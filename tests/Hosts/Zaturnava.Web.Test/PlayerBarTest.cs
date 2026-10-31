@@ -6,6 +6,7 @@ namespace Net.NowhereAtAll.Zaturnava.Web.Test;
 public sealed class PlayerBarTest : IDisposable
 {
     private const string PlayerKey = "zaturnava.player";
+    private const string NicknameKey = "zaturnava.nickname";
 
     private static readonly PlayerDto Ada = new("p", "Ada");
 
@@ -14,7 +15,7 @@ public sealed class PlayerBarTest : IDisposable
     public void Dispose() => this._page.Dispose();
 
     [Fact]
-    public void Render_WhenTheServerOffersNoServiceToSignInWith_ShowsNothing()
+    public void Render_WhenTheServerOffersNoServiceToSignInWith_OffersOnlyANickname()
     {
         // Arrange - nothing beyond a server offering none
 
@@ -22,11 +23,11 @@ public sealed class PlayerBarTest : IDisposable
         IRenderedComponent<PlayerBar> bar = this._page.Render<PlayerBar>();
 
         // Assert
-        Assert.Empty(bar.Markup.Trim());
+        Assert.Equal((1, 0), (bar.FindAll("input.nickname").Count, bar.FindAll("button").Count));
     }
 
     [Fact]
-    public void Render_WhenTheServerCannotBeAsked_ShowsNothing()
+    public void Render_WhenTheServerCannotBeAsked_OffersOnlyANickname()
     {
         // Arrange
         this._page.Server.Providers = ["GitHub"];
@@ -36,7 +37,36 @@ public sealed class PlayerBarTest : IDisposable
         IRenderedComponent<PlayerBar> bar = this._page.Render<PlayerBar>();
 
         // Assert
-        Assert.Empty(bar.Markup.Trim());
+        Assert.Equal((1, 0), (bar.FindAll("input.nickname").Count, bar.FindAll("button").Count));
+    }
+
+    [Fact]
+    public void Render_WhenTheBrowserRemembersANickname_ShowsItToPlayBy()
+    {
+        // Arrange
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", NicknameKey).SetResult("Bea");
+
+        // Act
+        IRenderedComponent<PlayerBar> bar = this._page.Render<PlayerBar>();
+
+        // Assert
+        Assert.Equal("Bea", bar.Find("input.nickname").GetAttribute("value"));
+    }
+
+    [Fact]
+    public void Nickname_WhenChanged_IsRememberedWithoutTheSpacesAround()
+    {
+        // Arrange
+        IRenderedComponent<PlayerBar> bar = this._page.Render<PlayerBar>();
+
+        // Act
+        bar.Find("input.nickname").Change("  Bea  ");
+
+        // Assert
+        Assert.Equal(
+            ($"{NicknameKey} Bea", "Bea"),
+            (string.Join(' ', this.Saved()), bar.Find("input.nickname").GetAttribute("value"))
+        );
     }
 
     [Fact]

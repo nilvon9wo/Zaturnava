@@ -45,18 +45,21 @@ public sealed class ChatPurgeTest(QuickPurgeServer server) : IClassFixture<Quick
     private Task<ImmutableList<ChatMessageDto>> Watched(string gameId) =>
         this._client.Chat(gameId, null, 0, this._cancellation);
 
-    /// <summary>A game with a person at Black.</summary>
+    /// <summary>A game with a player signed in at Black.</summary>
     private async Task<(string GameId, string Token)> SeatedGame()
     {
         CreateGameRequest request = new(ZaturnavaServer.Chaturaji2027, ZaturnavaServer.OneOpenSeat);
         GameCreatedDto created = await this._client.Create(request, this._cancellation);
-        SeatClaimedDto claimed = await this._client.Claim(created.GameId, 0, null, this._cancellation);
+        string player = await server.PlayerToken("GitHub|purge|Ada", this._cancellation);
+        SeatClaimedDto claimed = await this._client.Claim(created.GameId, 0, player, null, this._cancellation);
         return (created.GameId, claimed.Token);
     }
 }
 
-/// <summary>The server, counting a table left as soon as no player is heard from, and looking often.</summary>
-public sealed class QuickPurgeServer : ZaturnavaServer
+/// <summary>
+/// The server, players signing in to it, counting a table left as soon as no player is heard from, and looking often.
+/// </summary>
+public sealed class QuickPurgeServer : SigningInServer
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {

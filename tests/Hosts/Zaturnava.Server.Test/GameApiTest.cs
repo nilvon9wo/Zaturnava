@@ -60,7 +60,7 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
     {
         // Arrange
         string gameId = await this.CreateGame();
-        _ = await this._client.Claim(gameId, 0, null, this._cancellation);
+        _ = await this._client.Claim(gameId, 0, null, null, this._cancellation);
 
         // Act
         ImmutableList<GameSummaryDto> games = await this._client.List(this._cancellation);
@@ -189,10 +189,10 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
     {
         // Arrange
         string gameId = await this.CreateGame();
-        _ = await this._client.Claim(gameId, 0, null, this._cancellation);
+        _ = await this._client.Claim(gameId, 0, null, null, this._cancellation);
 
         // Act
-        Task<SeatClaimedDto> claiming = this._client.Claim(gameId, 0, null, this._cancellation);
+        Task<SeatClaimedDto> claiming = this._client.Claim(gameId, 0, null, null, this._cancellation);
 
         // Assert
         await AssertRefused(Refusal.Conflict, claiming);
@@ -293,7 +293,7 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
     private async Task<(string GameId, string Token, GameViewDto View)> ClaimedGame()
     {
         string gameId = await this.CreateGame();
-        SeatClaimedDto claimed = await this._client.Claim(gameId, 0, null, this._cancellation);
+        SeatClaimedDto claimed = await this._client.Claim(gameId, 0, null, null, this._cancellation);
         GameViewDto view = await this._client.Get(gameId, this._cancellation);
         return (gameId, claimed.Token, view);
     }

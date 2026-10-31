@@ -45,8 +45,8 @@ public sealed class PlayerService(IPlayerPersisting store)
 
     /// <summary>
     /// What to call whoever holds each person's seat: their name, if they were signed in when they claimed it;
-    /// <see cref="Guest"/> if not; <see cref="Deleted"/> if they have since deleted their account. Bots' and open
-    /// seats are left out.
+    /// <see cref="Deleted"/> if they have since deleted their account; if not signed in, their nickname as a guest
+    /// (<see cref="Nicknames.Shown"/>). Bots' and open seats are left out.
     /// </summary>
     public async Task<ImmutableDictionary<HumanSeat, string>> NamesOf(
         [Required] IEnumerable<SeatController> seats,
@@ -58,7 +58,9 @@ public sealed class PlayerService(IPlayerPersisting store)
             await this._store.Names([.. people.Select(seat => seat.Claimant).OfType<PlayerId>()], cancellationToken);
         return people.ToImmutableDictionary(
             seat => seat,
-            seat => seat.Claimant is { } claimant ? names.GetValueOrDefault(claimant, Deleted) : Guest
+            seat => seat.Claimant is { } claimant
+                ? names.GetValueOrDefault(claimant, Deleted)
+                : Nicknames.Shown(seat.Nickname)
         );
     }
 

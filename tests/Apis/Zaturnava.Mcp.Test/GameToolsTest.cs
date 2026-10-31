@@ -86,17 +86,22 @@ public sealed class GameToolsTest : IAsyncLifetime
     }
 
     [Fact]
-    public async Task ClaimSeat_WhenGivenASeat_ReturnsItsToken()
+    public async Task ClaimSeat_WhenGivenASeatAndANickname_ClaimsItAsTheGuestSoNamedAndReturnsItsToken()
     {
         // Arrange
-        Dictionary<string, object?> arguments = new() { ["gameId"] = StubGameServer.GameId, ["seat"] = 2 };
+        Dictionary<string, object?> arguments = new()
+        {
+            ["gameId"] = StubGameServer.GameId,
+            ["seat"] = 2,
+            ["nickname"] = "Hal",
+        };
 
         // Act
         (string text, _) = await this._session.Call("claim_seat", arguments, this._cancellation);
 
         // Assert
         Assert.Equal(
-            (true, (StubGameServer.GameId, 2)),
+            (true, (StubGameServer.GameId, 2, "Hal")),
             (text.Contains(StubGameServer.Token, StringComparison.Ordinal), this._session.Server.Received)
         );
     }

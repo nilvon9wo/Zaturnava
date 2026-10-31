@@ -88,9 +88,10 @@ internal sealed class StubGameServer : IGameServing
         [Required] string gameId,
         int seat,
         string? playerToken,
+        string? nickname,
         CancellationToken cancellationToken
     ) =>
-        this.Answer(new SeatClaimedDto(Token), (gameId, seat));
+        this.Answer(new SeatClaimedDto(Token), (gameId, seat, nickname));
 
     public Task<GameViewDto> Submit(
         [Required] string gameId,

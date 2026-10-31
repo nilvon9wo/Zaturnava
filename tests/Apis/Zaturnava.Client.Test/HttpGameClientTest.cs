@@ -148,10 +148,26 @@ public sealed class HttpGameClientTest
         StubServer server = new(HttpStatusCode.OK, """{"token":"secret"}""");
 
         // Act
-        SeatClaimedDto claimed = await Client(server).Claim("g", 2, null, this._cancellation);
+        SeatClaimedDto claimed = await Client(server).Claim("g", 2, null, null, this._cancellation);
 
         // Assert
         Assert.Equal(("POST", "/api/games/g/seats/2", "secret"), (server.Method, server.Path, claimed.Token));
+    }
+
+    [Fact]
+    public async Task Claim_WhenAPlayerOrANicknameIsGiven_SendsThePlayersTokenAndTheNickname()
+    {
+        // Arrange
+        StubServer server = new(HttpStatusCode.OK, """{"token":"secret"}""");
+
+        // Act
+        _ = await Client(server).Claim("g", 2, "player", "Ada", this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            ("Bearer player", """{"nickname":"Ada"}"""),
+            (server.Authorization, server.Body)
+        );
     }
 
     [Fact]
@@ -319,7 +335,7 @@ public sealed class HttpGameClientTest
         StubServer server = new(HttpStatusCode.Conflict, """{"title":"Conflict","detail":"Seat 2 is taken."}""");
 
         // Act
-        Task<SeatClaimedDto> claiming = Client(server).Claim("g", 2, null, this._cancellation);
+        Task<SeatClaimedDto> claiming = Client(server).Claim("g", 2, null, null, this._cancellation);
         GameRequestRefusedException refused = await Assert.ThrowsAsync<GameRequestRefusedException>(() => claiming);
 
         // Assert

@@ -59,7 +59,7 @@ claude mcp add zaturnava --env ZATURNAVA_SERVER_URL=http://localhost:5164/ \
 | `catalog` | The rulesets and the bots that can take a seat |
 | `list_games` | The games, with their open seats |
 | `create_game` | A game, each seat given a bot's id or left open |
-| `claim_seat` | Claim an open seat; returns the token every action for it needs |
+| `claim_seat` | Claim an open seat, as a guest, by a nickname if given (shown as "Nickname (guest)"); returns the token every action for it needs |
 | `get_game` | The game as it stands: the board, the seats and scores, whose decision it is, and its legal actions |
 | `submit_action` | Take one of the legal actions, with the seat's token |
 | `advance_game` | Let the bot whose turn it is make one decision |
@@ -69,7 +69,8 @@ claude mcp add zaturnava --env ZATURNAVA_SERVER_URL=http://localhost:5164/ \
 
 Each is one route of [the HTTP API](http-api.md), which explains what they take and return. A
 refused request becomes the tool's error, with the server's reason, so the assistant can correct
-itself.
+itself. An assistant does not sign in, so it holds its seat as a guest: it may read the talk, but `say` is
+refused, as it is for any guest.
 
 ## Asking it to play
 

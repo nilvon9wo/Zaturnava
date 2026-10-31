@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using Net.NowhereAtAll.Zaturnava.Application.Bots;
 using Net.NowhereAtAll.Zaturnava.Application.Chat;
 using Net.NowhereAtAll.Zaturnava.Application.Games;
+using Net.NowhereAtAll.Zaturnava.Application.Players;
 using Net.NowhereAtAll.Zaturnava.Application.Rulesets;
 using Net.NowhereAtAll.Zaturnava.Application.Running;
 using Net.NowhereAtAll.Zaturnava.Application.Scenarios;
@@ -59,6 +60,21 @@ public sealed class ChatServiceTest
 
         // Assert
         Assert.Equal(("1,2,3,5", "5"), (Numbers(read), Numbers(readBefore)));
+    }
+
+    [Fact]
+    public async Task Say_WhenTheSeatIsAGuests_ThrowsGuestSilencedException()
+    {
+        // Arrange
+        GameId id = await this._games.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
+        string guest = await this._games.Claim(id, First, null, "Ada", this._cancellation);
+
+        // Act
+        Task saying = this._chat.Say(id, guest, ChatChannel.Table, "Hello", this._cancellation);
+
+        // Assert
+        GuestSilencedException exception = await Assert.ThrowsAsync<GuestSilencedException>(() => saying);
+        Assert.Equal(GameRequestFailure.Forbidden, exception.Failure);
     }
 
     [Fact]
@@ -227,7 +243,7 @@ public sealed class ChatServiceTest
     private static string Numbers(ImmutableList<ChatMessage> said) =>
         string.Join(",", said.Select(message => message.Number));
 
-    /// <summary>A game with a person at each seat, and their tokens.</summary>
+    /// <summary>A game with a player signed in at each seat, and their tokens.</summary>
     private async Task<(GameId Id, string First, string Second)> Seated()
     {
         GameId id = await this._games.Create(
@@ -235,8 +251,8 @@ public sealed class ChatServiceTest
             [SeatPlan.Open, SeatPlan.Open],
             this._cancellation
         );
-        string first = await this._games.Claim(id, First, this._cancellation);
-        string second = await this._games.Claim(id, Second, this._cancellation);
+        string first = await this._games.Claim(id, First, new PlayerId("ada"), null, this._cancellation);
+        string second = await this._games.Claim(id, Second, new PlayerId("bea"), null, this._cancellation);
         return (id, first, second);
     }
 
