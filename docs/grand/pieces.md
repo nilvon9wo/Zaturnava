@@ -217,4 +217,7 @@ Together, **Q20** of the [specification](specification.md#9-open-questions).
 
 The grand **Horse** (blockable) and **Elephants** move differently from the Chaturaji 2027 Horse (a
 Knight) and Elephant (a Rook), and there are four Pawns. The program gives each its own key
-(`western-pawn`, `xiangqi-elephant`…), whatever the page calls it.
+(`western-pawn`, `xiangqi-elephant`…), whatever the page calls it: `GrandDraftPieces`, in
+`Zaturnava.Games.GrandDraft`, holds the whole catalogue, each piece with its class, its tradition
+(Western, Xiangqi, Janggi, Shogi, Makruk, or fairy), its value, its moves, its restrictions and their
+lifts, and its promotions.

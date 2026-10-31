@@ -197,7 +197,7 @@ contracts.
 
 On disk, each project sits under `src/`, in a folder for its area, and its tests under `tests/`, in
 the same folder: `Engine` (the engine and its topologies), `Games` (one folder per game, such as
-`Games/Chaturaji2027`, and the grand game to come), `Bots`, `Application`, `Apis` (contracts,
+`Games/Chaturaji2027` and `Games/GrandDraft`), `Bots`, `Application`, `Apis` (contracts,
 client, MCP, presentation), `Hosts` (server, page, hosting adapters) and `Persistence`.
 `Zaturnava.Architecture.Test` sits at the top of `tests/`.
 
@@ -206,6 +206,7 @@ client, MCP, presentation), `Hosts` (server, page, hosting adapters) and `Persis
 | Engine | Pure rules primitives: cells, pieces, moves, state, `IRulesApplying`, `IDeciding` | — |
 | Topology.SquareGrid | `ICellNavigating` for rectangular grids | Engine |
 | Games.Chaturaji2027 | Chaturaji 2027, the base game (`Chaturaji2027Rules`) | Engine, Topology.SquareGrid |
+| Games.GrandDraft | The Grand Draft (the grand game), so far its catalogue of pieces as data (`GrandDraftPieces`): each piece's class, tradition, value, movement, restrictions and promotions | Engine |
 | Bots | Bot players, each describing itself (`BotProfile`: name, description, whether it uses AI): `RandomBot`, at random but for agreeing to end the game only while its team leads, as every bot does; `MidasBot`, greedy for the best immediate score, trading prisoners only at a profit; `SolomonBot`, as greedy on the board, giving allies' prisoners back and trading evenly; `ArgusBot`, trading as Solomon, weighing each action against the worst reply (what the ruleset's `AttacksOf` says the enemy could take, and how the exchange would end); `SageBot`, trading as Solomon, looking through the rest of its own turn with the dice averaged over every way they could fall (`Foresight`), and weighing where it leads by weighted features any ruleset lets it count (`Appraisal`, `SageWeights`). With an enemy, every bot but Random trades only what its team can afford: no leader given back, and no trade that leaves its team weaker on the board | Engine |
 | Application | Use cases (`GameService`), the decision loop, catalogs of rulesets and bots; ports `IGamePersisting`, `IGameNotifying` | Engine |
 | Persistence.InMemory | `IGamePersisting` in memory | Application, Engine |
