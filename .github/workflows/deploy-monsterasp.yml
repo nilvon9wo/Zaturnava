@@ -7,6 +7,8 @@ name: Deploy server (MonsterASP.NET)
 #   MONSTERASP_SERVER    publishUrl (a host name; Web Deploy's port, 8172, is added if it names none)
 #   MONSTERASP_USER      userName
 #   MONSTERASP_PASSWORD  userPWD
+# And, so that games outlast a restart, the site's database (left out, games are kept in memory):
+#   GAMES_CONNECTION_STRING  the SQL Server connection string the host's control panel gives
 on:
   workflow_dispatch:
 
@@ -24,6 +26,20 @@ jobs:
 
       - name: Publish the server
         run: dotnet publish src/Hosts/Zaturnava.Server -c Release -o publish
+
+      # The database, named only in the published settings, never in the repository.
+      - name: Point the server at its database
+        shell: pwsh
+        env:
+          GAMES: ${{ secrets.GAMES_CONNECTION_STRING }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:GAMES)) {
+            Write-Host "No GAMES_CONNECTION_STRING: games are kept in memory."
+            exit 0
+          }
+          @{ Storage = @{ Provider = "SqlServer" }; ConnectionStrings = @{ Games = $env:GAMES } } |
+            ConvertTo-Json -Depth 3 |
+            Set-Content -Path publish/appsettings.Production.json -Encoding utf8
 
       # Web Deploy's client, if the runner does not have it already.
       - name: Make sure Web Deploy is there
