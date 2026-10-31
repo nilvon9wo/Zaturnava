@@ -20,4 +20,10 @@ public interface IPlayerPersisting
 
     /// <summary>Keeps a session for <paramref name="player"/>, known by its token's hash.</summary>
     Task AddSession(PlayerId player, [Required] string tokenHash, CancellationToken cancellationToken);
+
+    /// <summary>Lets the session go: its token stands for no one any more. None to let go is no matter.</summary>
+    Task RemoveSession([Required] string tokenHash, CancellationToken cancellationToken);
+
+    /// <summary>Forgets the player altogether: their name, their logins and every session of theirs.</summary>
+    Task Remove(PlayerId player, CancellationToken cancellationToken);
 }

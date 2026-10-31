@@ -266,6 +266,53 @@ public sealed class HttpGameClientTest
     }
 
     [Fact]
+    public async Task SignOut_WhenGivenAToken_DeletesItsSession()
+    {
+        // Arrange
+        StubServer server = new(HttpStatusCode.NoContent, string.Empty);
+
+        // Act
+        await Client(server).SignOut("secret", this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            ("DELETE", "/api/players/me/session", "Bearer secret"),
+            (server.Method, server.Path, server.Authorization)
+        );
+    }
+
+    [Theory]
+    [InlineData(HttpStatusCode.NoContent, true)]
+    [InlineData(HttpStatusCode.Unauthorized, false)]
+    public async Task DeleteMe_WhenAnswered_SaysWhetherThereWasAnAccountToDelete(HttpStatusCode status, bool expected)
+    {
+        // Arrange
+        StubServer server = new(status, string.Empty);
+
+        // Act
+        bool isDeleted = await Client(server).DeleteMe("secret", this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            ("DELETE", "/api/players/me", "Bearer secret", expected),
+            (server.Method, server.Path, server.Authorization, isDeleted)
+        );
+    }
+
+    [Fact]
+    public async Task DeleteMe_WhenTheServerFails_ThrowsHttpRequestException()
+    {
+        // Arrange
+        StubServer server = new(HttpStatusCode.BadGateway, "<html>down</html>");
+
+        // Act
+        Task<bool> deleting = Client(server).DeleteMe("secret", this._cancellation);
+
+        // Assert
+        _ = await Assert.ThrowsAsync<HttpRequestException>(() => deleting);
+    }
+
+    [Fact]
     public async Task Send_WhenTheServerRefusesWithAProblem_ThrowsItsRefusalAndDetail()
     {
         // Arrange

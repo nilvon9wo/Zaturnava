@@ -279,6 +279,8 @@ base address (`GameRoutes`):
 | The services to sign in with | `GET api/signin` | their names |
 | Sign in, in a window the page opens | `GET signin/{provider}?origin={the page's origin}` | the service's page; then, from `signin/done`, a page posting a `SignedInDto` to the opener at that origin, which must be the page host's |
 | Who a player's token stands for | `GET api/players/me`, `Authorization: Bearer {token}` | `PlayerDto`, or 401 |
+| Sign out | `DELETE api/players/me/session`, `Authorization: Bearer {token}` | 204, the session let go |
+| Delete the account | `DELETE api/players/me`, `Authorization: Bearer {token}` | 204, the player, their logins and sessions forgotten; or 401 |
 
 - **Talk** is kept per table (`ChatTables`): a table is known by its first
   game, and a game played again after another (`CreateGameRequest.Continuing`)

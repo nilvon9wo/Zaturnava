@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Collections.Immutable;
 using System.ComponentModel.DataAnnotations;
 using Net.NowhereAtAll.Zaturnava.Application.Players;
 using Net.NowhereAtAll.Zaturnava.Application.Ports;
@@ -29,6 +30,21 @@ public sealed class InMemoryPlayerStore : IPlayerPersisting
     public Task AddSession(PlayerId player, [Required] string tokenHash, CancellationToken cancellationToken)
     {
         this._sessions[tokenHash] = player;
+        return Task.CompletedTask;
+    }
+
+    public Task RemoveSession([Required] string tokenHash, CancellationToken cancellationToken)
+    {
+        _ = this._sessions.TryRemove(tokenHash, out _);
+        return Task.CompletedTask;
+    }
+
+    public Task Remove(PlayerId player, CancellationToken cancellationToken)
+    {
+        _ = this._players.TryRemove(player, out _);
+        ImmutableList<string> sessions =
+            [.. this._sessions.Where(session => session.Value == player).Select(session => session.Key)];
+        sessions.ForEach(session => _ = this._sessions.TryRemove(session, out _));
         return Task.CompletedTask;
     }
 }

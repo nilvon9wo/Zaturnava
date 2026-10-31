@@ -1,6 +1,8 @@
 @* Signing in, which is optional: a button for each service the server is set up for, opening a window of its own
-   to sign in with it; once signed in, the player's name, and a button to sign out. Nothing at all if the server
-   offers no service, or cannot be asked. The player's token is kept in the browser. *@
+   to sign in with it; once signed in, the player's name, a button to sign out (the server lets the token go), and
+   one to delete the account, which asks first, here in the page, and once confirmed has the server forget the
+   player altogether. Nothing at all if the server offers no service, or cannot be asked. The player's token is
+   kept in the browser. *@
 @using Microsoft.JSInterop
 @implements IDisposable
 @inject IGameServing Games
@@ -8,12 +10,22 @@
 @inject ServerAddress Server
 @inject NavigationManager Navigation
 
-@if (this._player is { } player)
+@if (this._signedIn is var (player, token))
 {
     <span class="player">
         Signed in as <strong>@player.Name</strong>
-        <button class="sign-out" @onclick="this.SignOut">Sign out</button>
+        <button class="sign-out" @onclick="() => this.SignOut(token)">Sign out</button>
+        <button class="delete-account" @onclick="() => this._isConfirming = true">Delete account</button>
     </span>
+    @if (this._isConfirming)
+    {
+        <span class="confirm-deletion" role="alertdialog" aria-label="Delete your account?">
+            Delete your account? Your name and how you sign in are erased for good; games you played stay, without
+            your name. This cannot be undone.
+            <button class="delete-confirmed" @onclick="() => this.Delete(token)">Delete it</button>
+            <button class="delete-cancelled" @onclick="() => this._isConfirming = false">Keep it</button>
+        </span>
+    }
 }
 else if (!this._providers.IsEmpty)
 {
@@ -24,10 +36,20 @@ else if (!this._providers.IsEmpty)
         }
     </span>
 }
+@if (this._notice is { } notice)
+{
+    <span class="notice" role="status">@notice</span>
+}
 
 @code {
+    public const string Deleted = "Your account is deleted.";
+
     private ImmutableList<string> _providers = [];
-    private PlayerDto? _player;
+
+    /// <summary>The player signed in, and their token; none, if no one is.</summary>
+    private (PlayerDto Player, string Token)? _signedIn;
+    private bool _isConfirming;
+    private string? _notice;
     private DotNetObjectReference<PlayerBar>? _listener;
 
     protected override async Task OnInitializedAsync() => _ = await Requests.Attempt(this.Load);
@@ -37,7 +59,8 @@ else if (!this._providers.IsEmpty)
     public async Task SignedIn(string token)
     {
         await this.Browser.RememberPlayer(token);
-        _ = await Requests.Attempt(async () => this._player = await this.Games.Me(token, CancellationToken.None));
+        this._notice = null;
+        _ = await Requests.Attempt(async () => await this.Show(token));
         this.StateHasChanged();
     }
 
@@ -46,10 +69,14 @@ else if (!this._providers.IsEmpty)
     private async Task Load()
     {
         this._providers = await this.Games.SignInProviders(CancellationToken.None);
-        this._player = await this.Browser.PlayerToken() is { } token
-            ? await this.Games.Me(token, CancellationToken.None)
-            : null;
+        if (await this.Browser.PlayerToken() is { } token)
+        {
+            await this.Show(token);
+        }
     }
+
+    private async Task Show(string token) =>
+        this._signedIn = await this.Games.Me(token, CancellationToken.None) is { } player ? (player, token) : null;
 
     /// <summary>Opens the window to sign in with <paramref name="provider"/>, to post back to this page.</summary>
     private async Task SignIn(string provider)
@@ -59,9 +86,28 @@ else if (!this._providers.IsEmpty)
         await this.Browser.SignIn(new Uri(this.Server.Value, GameRoutes.SignIn(provider, origin)), this._listener);
     }
 
-    private async Task SignOut()
+    /// <summary>Has the server let the token go, and forgets it here, even if the server cannot be reached.</summary>
+    private async Task SignOut(string token)
+    {
+        _ = await Requests.Attempt(() => this.Games.SignOut(token, CancellationToken.None));
+        await this.Forget();
+    }
+
+    /// <summary>Has the server forget the player; told why not, if it cannot.</summary>
+    private async Task Delete(string token)
+    {
+        this._notice = await Requests.Attempt(async () => _ = await this.Games.DeleteMe(token, CancellationToken.None));
+        if (this._notice is null)
+        {
+            await this.Forget();
+            this._notice = Deleted;
+        }
+    }
+
+    private async Task Forget()
     {
         await this.Browser.ForgetPlayer();
-        this._player = null;
+        this._signedIn = null;
+        this._isConfirming = false;
     }
 }

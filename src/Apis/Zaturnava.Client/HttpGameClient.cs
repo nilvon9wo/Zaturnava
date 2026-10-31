@@ -95,6 +95,32 @@ public sealed class HttpGameClient(HttpClient http) : IGameServing
             : await Outcome<PlayerDto>(response, cancellationToken);
     }
 
+    public async Task SignOut([Required] string token, CancellationToken cancellationToken)
+    {
+        using HttpResponseMessage response =
+            await this.Exchange(HttpMethod.Delete, GameRoutes.Session, null, token, cancellationToken);
+        _ = await StoodForSomeone(response, cancellationToken);
+    }
+
+    public async Task<bool> DeleteMe([Required] string token, CancellationToken cancellationToken)
+    {
+        using HttpResponseMessage response =
+            await this.Exchange(HttpMethod.Delete, GameRoutes.Me, null, token, cancellationToken);
+        return await StoodForSomeone(response, cancellationToken);
+    }
+
+    /// <summary>For a request sent with a player's token: true on success, false if it stood for no one.</summary>
+    private static async Task<bool> StoodForSomeone(
+        HttpResponseMessage response,
+        CancellationToken cancellationToken
+    ) =>
+        response.StatusCode switch
+        {
+            HttpStatusCode.Unauthorized => false,
+            _ when response.IsSuccessStatusCode => true,
+            _ => throw await Refused(response, cancellationToken),
+        };
+
     private async Task<T> Send<T>(
         HttpMethod method,
         string route,

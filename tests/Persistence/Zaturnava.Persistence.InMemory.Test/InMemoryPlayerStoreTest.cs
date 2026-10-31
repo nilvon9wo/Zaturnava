@@ -41,4 +41,60 @@ public sealed class InMemoryPlayerStoreTest
         // Assert
         Assert.Equal(isFound, found == Ada);
     }
+
+    [Fact]
+    public async Task RemoveSession_WhenOneOfTwo_LetsThatOneGo()
+    {
+        // Arrange
+        await this._store.Add(Ada, this._cancellation);
+        await this._store.AddSession(Ada.Id, "here", this._cancellation);
+        await this._store.AddSession(Ada.Id, "there", this._cancellation);
+
+        // Act
+        await this._store.RemoveSession("here", this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            (null, Ada),
+            (await this._store.BySession("here", this._cancellation),
+                await this._store.BySession("there", this._cancellation))
+        );
+    }
+
+    [Fact]
+    public async Task Remove_WhenThePlayerHasNoSession_ForgetsThemStill()
+    {
+        // Arrange
+        await this._store.Add(Ada, this._cancellation);
+
+        // Act
+        await this._store.Remove(Ada.Id, this._cancellation);
+
+        // Assert
+        Assert.Null(await this._store.ByLogin(GitHub, this._cancellation));
+    }
+
+    [Fact]
+    public async Task Remove_WhenAPlayerHasSessions_ForgetsThemAndTheirsAlone()
+    {
+        // Arrange
+        Player bea = new(new PlayerId("bea"), "Bea", [new Login("GitHub", "5678")]);
+        await this._store.Add(Ada, this._cancellation);
+        await this._store.Add(bea, this._cancellation);
+        await this._store.AddSession(Ada.Id, "ada", this._cancellation);
+        await this._store.AddSession(bea.Id, "bea", this._cancellation);
+
+        // Act
+        await this._store.Remove(Ada.Id, this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            (null, null, bea),
+            (
+                await this._store.ByLogin(GitHub, this._cancellation),
+                await this._store.BySession("ada", this._cancellation),
+                await this._store.BySession("bea", this._cancellation)
+            )
+        );
+    }
 }

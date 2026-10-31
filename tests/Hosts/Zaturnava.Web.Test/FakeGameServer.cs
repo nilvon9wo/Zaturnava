@@ -192,6 +192,26 @@ internal sealed class FakeGameServer : IGameServing
     public Task<PlayerDto?> Me([Required] string token, CancellationToken cancellationToken) =>
         this.SignedIn(() => this.Players.GetValueOrDefault(token));
 
+    /// <summary>Each player token signed out or deleted, in order: "out {token}", "delete {token}".</summary>
+    public ConcurrentQueue<string> LetGo { get; } = new();
+
+    public Task SignOut([Required] string token, CancellationToken cancellationToken) =>
+        this.SignedIn(() =>
+        {
+            this.LetGo.Enqueue("out " + token);
+            this.Players = this.Players.Remove(token);
+            return true;
+        });
+
+    public Task<bool> DeleteMe([Required] string token, CancellationToken cancellationToken) =>
+        this.SignedIn(() =>
+        {
+            this.LetGo.Enqueue("delete " + token);
+            bool isKnown = this.Players.ContainsKey(token);
+            this.Players = this.Players.Remove(token);
+            return isKnown;
+        });
+
     private Task<T> SignedIn<T>(Func<T> answer)
     {
         Exception? failure = this.SignInFailure;

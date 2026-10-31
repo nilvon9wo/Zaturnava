@@ -36,6 +36,25 @@ public sealed class PlayerService(IPlayerPersisting store)
     public Task<Player?> Find([Required] string token, CancellationToken cancellationToken) =>
         this._store.BySession(SeatTokens.Hash(token), cancellationToken);
 
+    /// <summary>Signs out: the token stands for no one from now on.</summary>
+    public Task SignOut([Required] string token, CancellationToken cancellationToken) =>
+        this._store.RemoveSession(SeatTokens.Hash(token), cancellationToken);
+
+    /// <summary>
+    /// Forgets the player the token stands for: their name, logins and sessions, so that nothing left says who
+    /// they were. Whether there was one to forget.
+    /// </summary>
+    public async Task<bool> Delete([Required] string token, CancellationToken cancellationToken)
+    {
+        if (await this.Find(token, cancellationToken) is not { } player)
+        {
+            return false;
+        }
+
+        await this._store.Remove(player.Id, cancellationToken);
+        return true;
+    }
+
     /// <summary>The name, without the spaces around it, cut to the longest allowed; or <see cref="Unnamed"/>.</summary>
     private static string NameOf(string? name) =>
         name?.Trim() is { Length: > 0 } trimmed

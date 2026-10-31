@@ -19,8 +19,13 @@ public static class GameRoutes
     /// <summary>The names of the services a person may sign in with here; none, if none is set up.</summary>
     public const string SignInProviders = "api/signin";
 
-    /// <summary>Who the bearer of a player's token (<see cref="SignedInDto"/>) is.</summary>
+    /// <summary>
+    /// Who the bearer of a player's token (<see cref="SignedInDto"/>) is; deleted, their account is forgotten.
+    /// </summary>
     public const string Me = "api/players/me";
+
+    /// <summary>The session a player's token is; deleted, the player is signed out, and the token is no more.</summary>
+    public const string Session = Me + "/session";
 
     /// <summary>
     /// Where a page sends a person, in a window of its own, to sign in with a service; once they have, that

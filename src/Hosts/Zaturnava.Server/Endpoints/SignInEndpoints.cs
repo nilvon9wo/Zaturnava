@@ -26,6 +26,8 @@ internal static class SignInEndpoints
         _ = routes.MapGet("signin/{provider}", Challenge);
         _ = routes.MapGet(Done, Finish);
         _ = routes.MapGet(GameRoutes.Me, Me);
+        _ = routes.MapDelete(GameRoutes.Me, Delete);
+        _ = routes.MapDelete(GameRoutes.Session, SignOut);
         return routes;
     }
 
@@ -86,6 +88,32 @@ internal static class SignInEndpoints
         SeatToken.OrNull(request) is { } token && await players.Find(token, cancellationToken) is { } player
             ? TypedResults.Ok(new PlayerDto(player.Id.Value, player.Name))
             : TypedResults.Unauthorized();
+
+    /// <summary>Forgets the player the token stands for, and everything that says who they were.</summary>
+    private static async Task<Results<NoContent, UnauthorizedHttpResult>> Delete(
+        HttpRequest request,
+        PlayerService players,
+        CancellationToken cancellationToken
+    ) =>
+        SeatToken.OrNull(request) is { } token && await players.Delete(token, cancellationToken)
+            ? TypedResults.NoContent()
+            : TypedResults.Unauthorized();
+
+    /// <summary>Lets the token's session go, whether or not it still stood for anyone.</summary>
+    private static async Task<Results<NoContent, UnauthorizedHttpResult>> SignOut(
+        HttpRequest request,
+        PlayerService players,
+        CancellationToken cancellationToken
+    )
+    {
+        if (SeatToken.OrNull(request) is not { } token)
+        {
+            return TypedResults.Unauthorized();
+        }
+
+        await players.SignOut(token, cancellationToken);
+        return TypedResults.NoContent();
+    }
 
     /// <summary>
     /// A page that posts <paramref name="signedIn"/> to the window that opened it, if that window's page is at
