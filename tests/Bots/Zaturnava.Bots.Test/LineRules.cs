@@ -179,6 +179,8 @@ internal sealed class LineTopology : ICellNavigating
     public ImmutableList<Direction> Resolve([Required] DirectionSet set, Direction forward) =>
         throw new NotSupportedException();
 
+    public ImmutableList<Direction> WaypointsOf(Direction leap) => [];
+
     public CellLayout LayoutOf(CellId cell) => throw new NotSupportedException();
 
     public string NameOf(CellId cell) => throw new NotSupportedException();

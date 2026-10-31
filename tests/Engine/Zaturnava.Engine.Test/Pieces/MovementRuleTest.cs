@@ -82,4 +82,60 @@ public sealed class MovementRuleTest
         // Assert
         Assert.Equal(step with { CanMove = false }, rule);
     }
+
+    [Fact]
+    public void Hop_WhenCalled_SlidesHoppingAndLandsNoFurtherThanAllowed()
+    {
+        // Arrange - nothing beyond the arguments
+
+        // Act
+        MovementRule rule = MovementRule.Hop(DirectionSets.Any, 1);
+
+        // Assert
+        Assert.Equal(
+            (true, 1, int.MaxValue, true, true),
+            (rule.IsHopping, rule.MaximumBeyond, rule.MaximumDistance, rule.CanMove, rule.CanCapture)
+        );
+    }
+
+    [Theory]
+    [InlineData(0)]
+    public void Hop_WhenNothingBeyondIsAllowed_ThrowsArgumentException(int beyond)
+    {
+        // Arrange - nothing beyond the arguments
+
+        // Act
+        ArgumentException exception = Assert.Throws<ArgumentException>(
+            () => MovementRule.Hop(DirectionSets.Orthogonal, beyond)
+        );
+
+        // Assert
+        Assert.Equal("beyond", exception.ParamName);
+    }
+
+    [Fact]
+    public void Lame_WhenCalled_IsBlockedOnTheWay()
+    {
+        // Arrange
+        MovementRule leap = MovementRule.Leap(DirectionSets.Knight, 1);
+
+        // Act
+        MovementRule rule = leap.Lame();
+
+        // Assert
+        Assert.Equal((false, true), (leap.IsLame, rule.IsLame));
+    }
+
+    [Fact]
+    public void Shunning_WhenGivenKinds_ShunsThem()
+    {
+        // Arrange
+        PieceKindId cannon = new("cannon");
+
+        // Act
+        MovementRule rule = MovementRule.Hop(DirectionSets.Orthogonal, int.MaxValue).Shunning([cannon]);
+
+        // Assert
+        Assert.Equal([cannon], rule.Shunned);
+    }
 }

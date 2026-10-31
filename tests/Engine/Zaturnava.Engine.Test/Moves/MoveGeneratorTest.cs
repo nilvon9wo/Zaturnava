@@ -19,10 +19,18 @@ public sealed class MoveGeneratorTest
     private static readonly PieceKindId Walker = new("walker");
     private static readonly PieceKindId Striker = new("striker");
     private static readonly PieceKindId Wanderer = new("wanderer");
+    private static readonly PieceKindId Horse = new("horse");
+    private static readonly PieceKindId Cannon = new("cannon");
+    private static readonly PieceKindId Grasshopper = new("grasshopper");
+    private static readonly PieceKindId Wary = new("wary");
 
     private readonly MoveGenerator _generator = new(
         new LineTopology(BoardLength),
         ImmutableDictionary<PieceKindId, PieceKind>.Empty
+            .Add(Horse, Kind(Horse, MovementRule.Leap(LineTopology.Twos, 1).Lame()))
+            .Add(Cannon, Kind(Cannon, MovementRule.Hop(DirectionSets.Orthogonal, int.MaxValue)))
+            .Add(Grasshopper, Kind(Grasshopper, MovementRule.Hop(DirectionSets.Orthogonal, 1)))
+            .Add(Wary, Kind(Wary, MovementRule.Hop(DirectionSets.Orthogonal, int.MaxValue).Shunning([Cannon])))
             .Add(Stepper, Kind(Stepper, MovementRule.Step(DirectionSets.Orthogonal)))
             .Add(Slider, Kind(Slider, MovementRule.Slide(DirectionSets.Orthogonal)))
             .Add(Leaper, Kind(Leaper, MovementRule.Leap(DirectionSets.Orthogonal, 2)))
@@ -173,6 +181,96 @@ public sealed class MoveGeneratorTest
 
         // Assert
         Assert.Equal("The line topology has no 'diagonal' directions.", exception.Message);
+    }
+
+    [Fact]
+    public void MovesFrom_WhenALameLeapsWayIsBlocked_LeapsOnlyTheOtherWay()
+    {
+        // Arrange
+        Position position = Position.Empty
+            .Place(new CellId(2), Friend(Horse))
+            .Place(new CellId(3), Friend(Stepper));
+
+        // Act
+        ImmutableList<Move> moves = this._generator.MovesFrom(position, new CellId(2), MySeat, IsEnemy);
+
+        // Assert
+        Assert.Equal([0], Targets(moves));
+    }
+
+    [Fact]
+    public void MovesFrom_WhenAHopperHasAPieceToHop_ReachesEveryCellBeyondItUpToAndTakingTheNext()
+    {
+        // Arrange
+        Position position = Position.Empty
+            .Place(new CellId(0), Friend(Cannon))
+            .Place(new CellId(1), Friend(Stepper))
+            .Place(new CellId(4), Enemy(Stepper));
+
+        // Act
+        ImmutableList<Move> moves = this._generator.MovesFrom(position, new CellId(0), MySeat, IsEnemy);
+
+        // Assert
+        Assert.Equal([2, 3, 4], Targets(moves));
+    }
+
+    [Fact]
+    public void MovesFrom_WhenAHopperHasNothingToHop_CannotMove()
+    {
+        // Arrange
+        Position position = Position.Empty.Place(new CellId(2), Friend(Cannon));
+
+        // Act
+        ImmutableList<Move> moves = this._generator.MovesFrom(position, new CellId(2), MySeat, IsEnemy);
+
+        // Assert
+        Assert.Empty(moves);
+    }
+
+    [Fact]
+    public void MovesFrom_WhenAHopperMayLandOnlyJustBeyond_GoesNoFurther()
+    {
+        // Arrange
+        Position position = Position.Empty
+            .Place(new CellId(0), Friend(Grasshopper))
+            .Place(new CellId(2), Enemy(Stepper));
+
+        // Act
+        ImmutableList<Move> moves = this._generator.MovesFrom(position, new CellId(0), MySeat, IsEnemy);
+
+        // Assert
+        Assert.Equal([3], Targets(moves));
+    }
+
+    [Fact]
+    public void MovesFrom_WhenTheOnlyPieceToHopIsShunned_CannotMove()
+    {
+        // Arrange
+        Position position = Position.Empty
+            .Place(new CellId(0), Friend(Wary))
+            .Place(new CellId(1), Friend(Cannon));
+
+        // Act
+        ImmutableList<Move> moves = this._generator.MovesFrom(position, new CellId(0), MySeat, IsEnemy);
+
+        // Assert
+        Assert.Empty(moves);
+    }
+
+    [Fact]
+    public void MovesFrom_WhenTheEnemyBeyondIsShunned_StopsShortOfIt()
+    {
+        // Arrange
+        Position position = Position.Empty
+            .Place(new CellId(0), Friend(Wary))
+            .Place(new CellId(1), Friend(Stepper))
+            .Place(new CellId(3), Enemy(Cannon));
+
+        // Act
+        ImmutableList<Move> moves = this._generator.MovesFrom(position, new CellId(0), MySeat, IsEnemy);
+
+        // Assert
+        Assert.Equal([2], Targets(moves));
     }
 
     [Fact]

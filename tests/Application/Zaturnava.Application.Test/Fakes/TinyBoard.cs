@@ -13,6 +13,8 @@ internal sealed class TinyBoard : ICellNavigating
 
     public ImmutableList<Direction> Resolve([Required] DirectionSet set, Direction forward) => [];
 
+    public ImmutableList<Direction> WaypointsOf(Direction leap) => [];
+
     public CellLayout LayoutOf(CellId cell) => new(cell.Value, 0, "square");
 
     public string NameOf(CellId cell) => $"{(char)('a' + cell.Value)}1";
