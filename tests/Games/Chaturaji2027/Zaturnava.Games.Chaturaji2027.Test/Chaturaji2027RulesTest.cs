@@ -3343,7 +3343,25 @@ public sealed class Chaturaji2027RulesTest
         Transition transition = this._rules.Apply(state, new DeclineAction(Yellow));
 
         // Assert
-        Assert.Equal([offer], transition.State.OffersDeclined);
+        Assert.Equal(
+            [new DeclinedOffer(offer, state.TurnNumber, state.Position)],
+            transition.State.OffersDeclined
+        );
+    }
+
+    [Fact]
+    public void Apply_WhenASeatOffersOneWhoseOfferItDeclined_ForgetsThatDecline()
+    {
+        // Arrange - Black declined offers of Yellow's and of Red's; now Black offers Yellow
+        DeclinedOffer yellows = new(new RansomOffer(Yellow, Black, [new PieceId(98)], []), 0, Position.Empty);
+        DeclinedOffer reds = new(new RansomOffer(Red, Black, [new PieceId(99)], []), 0, Position.Empty);
+        GameState state = this.Ransoms() with { OffersDeclined = [yellows, reds] };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new OfferAction(Black, Yellow, [new PieceId(12)], []));
+
+        // Assert
+        Assert.Equal([reds], transition.State.OffersDeclined);
     }
 
     [Fact]

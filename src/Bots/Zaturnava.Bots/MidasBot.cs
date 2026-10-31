@@ -11,7 +11,7 @@ namespace Net.NowhereAtAll.Zaturnava.Bots;
 /// or rolls at random, passing only when it can do nothing else. It never looks past its own action, so
 /// it walks into every trap. In ransom it counts worth: it accepts an offer that gives it back at least
 /// as much as it asks, and, once its turn is over, offers the trade that gains it the most, if any
-/// gains it anything and was not declined before. It never gives anything away.
+/// gains it anything, was not declined lately, and asks no more than an enemy might give. It never gives anything away.
 /// </summary>
 public sealed class MidasBot(Random random) : IBotPlaying
 {

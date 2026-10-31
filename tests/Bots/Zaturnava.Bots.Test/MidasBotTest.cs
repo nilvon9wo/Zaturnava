@@ -3,6 +3,7 @@ using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Boards;
 using Net.NowhereAtAll.Zaturnava.Engine.Decisions;
 using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
+using Net.NowhereAtAll.Zaturnava.Engine.Positions;
 using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 
 namespace Net.NowhereAtAll.Zaturnava.Bots.Test;
@@ -197,10 +198,11 @@ public sealed class MidasBotTest
     }
 
     [Fact]
-    public async Task Decide_WhenItsBestTradeWasDeclinedBefore_DoesNotOfferItAgain()
+    public async Task Decide_WhenItsBestTradeWasDeclinedLately_DoesNotOfferItAgain()
     {
-        // Arrange - no other trade gains anything
-        DecisionRequest request = Ransoms.Declined(Ransoms.Window(), Ransoms.Offer(Ransoms.Yellow, [10], [20]));
+        // Arrange - declined this turn, on the same board; no other trade gains anything
+        DecisionRequest request =
+            Ransoms.Declined(Ransoms.Window(), Ransoms.Offer(Ransoms.Yellow, [10], [20]), 1, Position.Empty);
 
         // Act
         GameAction action = await new MidasBot(new Random(1)).Decide(request, this._cancellation);
@@ -209,10 +211,30 @@ public sealed class MidasBotTest
         Assert.Equal(Ransoms.Done, action);
     }
 
-    [Fact]
-    public async Task Decide_WhenAnEnemyHoldsALeaderOfItsTeam_DoesNotAskForIt()
+    [Theory]
+    [InlineData(-11, false)]
+    [InlineData(1, true)]
+    public async Task Decide_WhenItsBestTradeWasDeclinedLongAgoOrOnAnotherBoard_OffersItAgain(
+        int turn,
+        bool isBoardChanged
+    )
     {
-        // Arrange - a Pawn for Green's Raja would gain the most, but the enemy would never give it back
+        // Arrange - twelve turns ago, or with a Horse on the board since taken
+        Position board = isBoardChanged ? Ransoms.YellowsHorse() : Position.Empty;
+        DecisionRequest request =
+            Ransoms.Declined(Ransoms.Window(), Ransoms.Offer(Ransoms.Yellow, [10], [20]), turn, board);
+
+        // Act
+        GameAction action = await new MidasBot(new Random(1)).Decide(request, this._cancellation);
+
+        // Assert
+        Assert.Equal(new OfferAction(Seat, Ransoms.Yellow, [new PieceId(10)], [new PieceId(20)]), action);
+    }
+
+    [Fact]
+    public async Task Decide_WhenATradeAsksMoreThanThreeTimesWhatItGives_DoesNotOfferIt()
+    {
+        // Arrange - a Pawn (1) for Green's Raja (5) would gain the most, but no enemy would take it
         DecisionRequest request = Ransoms.YellowHoldingGreensRaja(Ransoms.Window());
 
         // Act
