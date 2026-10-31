@@ -297,11 +297,11 @@ commanding every piece, a ransom's point for each prisoner, 2 for a Raja) were r
 - **Stated.** Every kind of piece looks different from every other, even if only slightly.
 - **Stated.** A player may click any piece, their own or anyone's, to see what it is and what it can
   do.
-- **Proposed.** The reminder is a card built from the catalogue: name, class, how it moves and
+- **Stated 2026-10-31, subject to playtesting.** The reminder is a card built from the catalogue: name, class, how it moves and
   captures, restrictions still on it (and bought off), powers, what it may promote to, and its
   value; with the cells it could reach marked on the board, as the page does now for the player's
   own pieces.
-- **Proposed.** Each class gets its own outline, and each kind its own mark inside it, so that a
+- **Stated 2026-10-31, subject to playtesting.** Each class gets its own outline, and each kind its own mark inside it, so that a
   piece's class can be told at a glance (and with it, which die moves it) and its kind on a closer
   look. The two piece sets (traditional, chess) carry over.
 
