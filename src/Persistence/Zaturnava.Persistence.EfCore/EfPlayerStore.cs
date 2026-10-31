@@ -59,6 +59,24 @@ public sealed class EfPlayerStore(GameDbContext context) : IPlayerPersisting
         _ = await this._context.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task RemoveSession([Required] string tokenHash, CancellationToken cancellationToken) =>
+        _ = await this._context.Sessions
+            .Where(session => session.TokenHash == tokenHash)
+            .ExecuteDeleteAsync(cancellationToken);
+
+    public async Task Remove(PlayerId player, CancellationToken cancellationToken)
+    {
+        _ = await this._context.Sessions
+            .Where(session => session.PlayerId == player.Value)
+            .ExecuteDeleteAsync(cancellationToken);
+        _ = await this._context.Set<LoginEntity>()
+            .Where(login => login.PlayerId == player.Value)
+            .ExecuteDeleteAsync(cancellationToken);
+        _ = await this._context.Players
+            .Where(entity => entity.Id == player.Value)
+            .ExecuteDeleteAsync(cancellationToken);
+    }
+
     private static Player? ToPlayer(PlayerEntity? entity) =>
         entity is null
             ? null

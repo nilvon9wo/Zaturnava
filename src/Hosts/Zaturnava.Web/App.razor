@@ -1,6 +1,6 @@
-@* The whole page: the lobby until the player sits at (or watches) a table, over a quiet bar of the
-   page's name, buttons opening the guide to the game and the guide to the bots, signing in (if the server offers
-   it), and the page's own settings (the safety, beside
+@* The whole page: the lobby until the player sits at (or watches) a table, under signing in (at the top right, if
+   the server offers it) and over a quiet bar of the page's name, buttons opening the guide to the game and the
+   guide to the bots, and the page's own settings (the safety, beside
    the table's view buttons; how it looks: theme and pieces; then sound); at a table, the table shows the guide's button and the settings in its own
    bar. No URL routing, so the page works from any address it is served at. A seat the player takes is
    remembered in the browser, so that they can come back to it. *@
@@ -20,13 +20,15 @@
 }
 else
 {
+    <header class="account">
+        <PlayerBar />
+    </header>
     <Lobby OnSeated="this.Sit" />
     <footer class="bar">
         <span class="where">
             <span class="brand">Zaturnava</span>
             @this.HowToPlay
         </span>
-        <PlayerBar />
         @this.Settings
     </footer>
 }

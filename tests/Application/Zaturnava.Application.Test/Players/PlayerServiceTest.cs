@@ -83,6 +83,64 @@ public sealed class PlayerServiceTest
     }
 
     [Fact]
+    public async Task SignOut_WhenTheTokenWasIssued_LetsItGoAloneLeavingThePlayersOtherSessions()
+    {
+        // Arrange
+        SignedIn here = await this._service.SignIn(Login, "Ada", this._cancellation);
+        SignedIn elsewhere = await this._service.SignIn(Login, "Ada", this._cancellation);
+
+        // Act
+        await this._service.SignOut(here.Token, this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            (null, here.Player.Id),
+            (
+                await this._service.Find(here.Token, this._cancellation),
+                (await this._service.Find(elsewhere.Token, this._cancellation))?.Id
+            )
+        );
+    }
+
+    [Fact]
+    public async Task Delete_WhenTheTokenStandsForAPlayer_ForgetsThemAndEverySessionAndLogin()
+    {
+        // Arrange
+        SignedIn here = await this._service.SignIn(Login, "Ada", this._cancellation);
+        SignedIn elsewhere = await this._service.SignIn(Login, "Ada", this._cancellation);
+
+        // Act
+        bool isDeleted = await this._service.Delete(here.Token, this._cancellation);
+
+        // Assert
+        SignedIn again = await this._service.SignIn(Login, "Ada", this._cancellation);
+        Assert.Equal(
+            (true, null, false),
+            (
+                isDeleted,
+                await this._service.Find(elsewhere.Token, this._cancellation),
+                again.Player.Id == here.Player.Id
+            )
+        );
+    }
+
+    [Fact]
+    public async Task Delete_WhenTheTokenStandsForNoOne_DeletesNothing()
+    {
+        // Arrange
+        SignedIn signedIn = await this._service.SignIn(Login, "Ada", this._cancellation);
+
+        // Act
+        bool isDeleted = await this._service.Delete("not a token", this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            (false, signedIn.Player.Id),
+            (isDeleted, (await this._service.Find(signedIn.Token, this._cancellation))?.Id)
+        );
+    }
+
+    [Fact]
     public void New_WhenTwoAreMade_AreDifferent()
     {
         // Arrange - nothing

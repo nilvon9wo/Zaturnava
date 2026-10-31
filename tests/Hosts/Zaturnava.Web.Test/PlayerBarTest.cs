@@ -108,23 +108,106 @@ public sealed class PlayerBarTest : IDisposable
         );
     }
 
-    [Fact]
-    public void SignOut_WhenClicked_ForgetsThePlayerAndOffersTheServicesAgain()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void SignOut_WhenClicked_HasTheServerLetTheTokenGoAndForgetsItEvenIfTheServerCannot(bool isServerDown)
     {
         // Arrange
-        this._page.Server.Providers = ["GitHub"];
-        this._page.Server.Players = this._page.Server.Players.Add("known", Ada);
-        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", PlayerKey).SetResult("known");
-        IRenderedComponent<PlayerBar> bar = this._page.Render<PlayerBar>();
+        IRenderedComponent<PlayerBar> bar = this.SignedInAsAda();
+        this._page.Server.SignInFailure = isServerDown ? new HttpRequestException("asleep") : null;
 
         // Act
         bar.Find("button.sign-out").Click();
 
         // Assert
         Assert.Equal(
-            ($"{PlayerKey} ", 1),
-            (string.Join(' ', this.Saved()), bar.FindAll("button.sign-in").Count)
+            ($"{PlayerKey} ", 1, isServerDown ? string.Empty : "out known"),
+            (
+                string.Join(' ', this.Saved()),
+                bar.FindAll("button.sign-in").Count,
+                string.Join('|', this._page.Server.LetGo)
+            )
         );
+    }
+
+    [Fact]
+    public void DeleteAccount_WhenClicked_AsksFirstAndDeletesNothingYet()
+    {
+        // Arrange
+        IRenderedComponent<PlayerBar> bar = this.SignedInAsAda();
+
+        // Act
+        bar.Find("button.delete-account").Click();
+
+        // Assert
+        Assert.Equal(
+            (1, 0),
+            (bar.FindAll("[role=alertdialog] button.delete-confirmed").Count, this._page.Server.LetGo.Count)
+        );
+    }
+
+    [Fact]
+    public void DeleteAccount_WhenKept_AsksNoMoreAndStaysSignedIn()
+    {
+        // Arrange
+        IRenderedComponent<PlayerBar> bar = this.SignedInAsAda();
+        bar.Find("button.delete-account").Click();
+
+        // Act
+        bar.Find("button.delete-cancelled").Click();
+
+        // Assert
+        Assert.Equal(
+            (0, "Ada", 0),
+            (bar.FindAll("[role=alertdialog]").Count, bar.Find("strong").TextContent, this._page.Server.LetGo.Count)
+        );
+    }
+
+    [Fact]
+    public void DeleteAccount_WhenConfirmed_HasTheServerForgetThePlayerAndSaysSo()
+    {
+        // Arrange
+        IRenderedComponent<PlayerBar> bar = this.SignedInAsAda();
+        bar.Find("button.delete-account").Click();
+
+        // Act
+        bar.Find("button.delete-confirmed").Click();
+
+        // Assert
+        Assert.Equal(
+            ("delete known", $"{PlayerKey} ", PlayerBar.Deleted, 1),
+            (
+                string.Join('|', this._page.Server.LetGo),
+                string.Join(' ', this.Saved()),
+                bar.Find("[role=status]").TextContent,
+                bar.FindAll("button.sign-in").Count
+            )
+        );
+    }
+
+    [Fact]
+    public void DeleteAccount_WhenTheServerCannotBeReached_SaysWhyAndStaysSignedIn()
+    {
+        // Arrange
+        IRenderedComponent<PlayerBar> bar = this.SignedInAsAda();
+        bar.Find("button.delete-account").Click();
+        this._page.Server.SignInFailure = new HttpRequestException("asleep");
+
+        // Act
+        bar.Find("button.delete-confirmed").Click();
+
+        // Assert
+        Assert.Equal(("asleep", "Ada"), (bar.Find("[role=status]").TextContent, bar.Find("strong").TextContent));
+    }
+
+    /// <summary>The bar, with Ada signed in on this browser by the token "known".</summary>
+    private IRenderedComponent<PlayerBar> SignedInAsAda()
+    {
+        this._page.Server.Providers = ["GitHub"];
+        this._page.Server.Players = this._page.Server.Players.Add("known", Ada);
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", PlayerKey).SetResult("known");
+        return this._page.Render<PlayerBar>();
     }
 
     /// <summary>What the page last asked the browser to remember.</summary>

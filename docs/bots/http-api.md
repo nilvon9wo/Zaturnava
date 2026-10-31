@@ -164,9 +164,11 @@ opens, with a service the server is set up for (Proposed):
 | The services to sign in with | `GET api/signin` | Their names, such as `["GitHub"]`; none, if none is set up |
 | Sign in, in a window of its own | `GET signin/{service}?origin={the page's origin}` | The service's own page; then, once the person agrees, a page that posts `{"token": "...", "name": "..."}` to the page that opened it, and closes |
 | Who a player's token stands for | `GET api/players/me`, with the player's token | `{"id": "...", "name": "..."}`, or `401` |
+| Sign out | `DELETE api/players/me/session`, with the player's token | `204`; the token stands for no one any more |
+| Delete the account | `DELETE api/players/me`, with the player's token | `204`, the player forgotten: name, sign-ins, sessions; or `401` |
 
 The page's origin must be one the server serves its page from; for any other, it answers `400`, and posts
-nothing. The game page does this from its bar, beside its settings, and keeps the token in the browser. As
+nothing. The game page does this from the top right of its lobby, and keeps the token in the browser. As
 with a seat's, the server keeps only a player token's hash. Coming back with the same account
 signs in the same player, with a new token. Seats are not yet tied to players.
 

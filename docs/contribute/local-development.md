@@ -63,6 +63,20 @@ dotnet run --project src/Hosts/Zaturnava.Server --no-build -- --Storage:Provider
     "--ConnectionStrings:Games=Data Source=games.db"
 ```
 
+Signing in works on this machine as it does live, with each service the server is given a client for. A
+service's OAuth app sends people back to one address only, so this machine needs apps of its own, beside the live
+site's: for GitHub, an OAuth app (GitHub, Settings, Developer settings, OAuth Apps) with the homepage
+`http://localhost:5165` and the callback `http://localhost:5164/signin-github`. Its id and a secret made for it go in
+the server's user secrets, never in the repository (in WSL too, with `wsl -d Ubuntu --` before each, if the game runs
+there):
+
+```shell
+dotnet user-secrets --project src/Hosts/Zaturnava.Server set "SignIn:Providers:GitHub:ClientId" "<its Client ID>"
+dotnet user-secrets --project src/Hosts/Zaturnava.Server set "SignIn:Providers:GitHub:ClientSecret" "<its secret>"
+```
+
+Without them, the page offers no sign-in, and everything else works as before.
+
 The server brings the database's schema up to date as it starts. A change to `GameDbContext`'s model needs
 a migration for each database, named for what it changes, which `dotnet ef` writes (from `dotnet-tools.json`;
 the tests fail while one is missing):

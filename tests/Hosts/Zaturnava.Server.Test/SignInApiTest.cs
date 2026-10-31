@@ -139,6 +139,58 @@ public sealed partial class SignInApiTest(SigningInServer server) : IClassFixtur
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
+    [Fact]
+    public async Task SignOut_WhenTheTokenStandsForAPlayer_LetsItGoForGood()
+    {
+        // Arrange
+        string token = TokenOf(await this.Done("GitHub|5|Ada", SigningInServer.Page));
+
+        // Act
+        using HttpResponseMessage response = await this.Send(HttpMethod.Delete, GameRoutes.Session, token);
+
+        // Assert
+        using HttpResponseMessage me = await this.Send(HttpMethod.Get, GameRoutes.Me, token);
+        Assert.Equal((HttpStatusCode.NoContent, HttpStatusCode.Unauthorized), (response.StatusCode, me.StatusCode));
+    }
+
+    [Fact]
+    public async Task Delete_WhenTheTokenStandsForAPlayer_ForgetsThemSoTheirLoginMakesANewOne()
+    {
+        // Arrange
+        string token = TokenOf(await this.Done("GitHub|6|Ada", SigningInServer.Page));
+        PlayerDto? before = await this.Me(token);
+
+        // Act
+        using HttpResponseMessage response = await this.Send(HttpMethod.Delete, GameRoutes.Me, token);
+
+        // Assert
+        PlayerDto? after = await this.Me(TokenOf(await this.Done("GitHub|6|Ada", SigningInServer.Page)));
+        Assert.Equal((HttpStatusCode.NoContent, false), (response.StatusCode, before?.Id == after?.Id));
+    }
+
+    [Theory]
+    [InlineData("api/players/me", null)]
+    [InlineData("api/players/me", "not-a-token")]
+    [InlineData("api/players/me/session", null)]
+    public async Task Delete_WhenTheTokenIsMissingOrStandsForNoOne_IsUnauthorized(string route, string? token)
+    {
+        // Arrange - nothing beyond the server
+
+        // Act
+        using HttpResponseMessage response = await this.Send(HttpMethod.Delete, route, token);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    private async Task<HttpResponseMessage> Send(HttpMethod method, string route, string? token)
+    {
+        using HttpRequestMessage request = new(method, route);
+        request.Headers.Authorization =
+            token is null ? null : new AuthenticationHeaderValue(GameRoutes.TokenScheme, token);
+        return await this._http.SendAsync(request, this._cancellation);
+    }
+
     private static HttpRequestMessage DoneRequest(string? vouched, string origin)
     {
         HttpRequestMessage request = new(HttpMethod.Get, "signin/done?origin=" + Uri.EscapeDataString(origin));

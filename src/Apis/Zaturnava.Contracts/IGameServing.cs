@@ -58,6 +58,15 @@ public interface IGameServing
     /// <summary>The player a player's <paramref name="token"/> stands for; none, if it stands for no one.</summary>
     Task<PlayerDto?> Me([Required] string token, CancellationToken cancellationToken);
 
+    /// <summary>Signs out: the player's <paramref name="token"/> stands for no one from now on.</summary>
+    Task SignOut([Required] string token, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Deletes the account the player's <paramref name="token"/> stands for: their name, sign-ins and sessions.
+    /// Whether there was one to delete.
+    /// </summary>
+    Task<bool> DeleteMe([Required] string token, CancellationToken cancellationToken);
+
     /// <summary>Says something at the game's table, as the seat <paramref name="token"/> holds.</summary>
     Task<ChatMessageDto> Say(
         [Required] string gameId,

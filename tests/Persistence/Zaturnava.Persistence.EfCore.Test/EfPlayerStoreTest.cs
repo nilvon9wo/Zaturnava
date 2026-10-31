@@ -53,6 +53,53 @@ public sealed class EfPlayerStoreTest : IDisposable
         Assert.Equal(isFound ? Described(Ada) : null, Described(found));
     }
 
+    [Fact]
+    public async Task RemoveSession_WhenOneOfTwo_LetsThatOneGo()
+    {
+        // Arrange
+        await this._store.Add(Ada, this._cancellation);
+        await this._store.AddSession(Ada.Id, "here", this._cancellation);
+        await this._store.AddSession(Ada.Id, "there", this._cancellation);
+
+        // Act
+        await this._store.RemoveSession("here", this._cancellation);
+
+        // Assert
+        EfPlayerStore reader = new(this._database.NewContext());
+        Assert.Equal(
+            (null, Described(Ada)),
+            (
+                Described(await reader.BySession("here", this._cancellation)),
+                Described(await reader.BySession("there", this._cancellation))
+            )
+        );
+    }
+
+    [Fact]
+    public async Task Remove_WhenAPlayerHasSessions_ForgetsThemTheirLoginsAndSessionsAndNoOneElse()
+    {
+        // Arrange
+        Player bea = new(new PlayerId("bea"), "Bea", [new Login("GitHub", "5678")]);
+        await this._store.Add(Ada, this._cancellation);
+        await this._store.Add(bea, this._cancellation);
+        await this._store.AddSession(Ada.Id, "ada", this._cancellation);
+        await this._store.AddSession(bea.Id, "bea", this._cancellation);
+
+        // Act
+        await this._store.Remove(Ada.Id, this._cancellation);
+
+        // Assert
+        EfPlayerStore reader = new(this._database.NewContext());
+        Assert.Equal(
+            (null, null, Described(bea)),
+            (
+                Described(await reader.ByLogin(GitHub, this._cancellation)),
+                Described(await reader.BySession("ada", this._cancellation)),
+                Described(await reader.BySession("bea", this._cancellation))
+            )
+        );
+    }
+
     /// <summary>"ada Ada GitHub:1234 Google:abcd": the player, their logins in order of provider.</summary>
     private static string? Described(Player? player) =>
         player is null
