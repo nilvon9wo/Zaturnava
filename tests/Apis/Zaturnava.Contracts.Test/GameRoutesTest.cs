@@ -85,4 +85,16 @@ public sealed class GameRoutesTest
         // Assert
         Assert.Equal("api/games/g/chat?after=12", route);
     }
+
+    [Fact]
+    public void SignIn_WhenGivenAServiceAndThePagesOrigin_EscapesBoth()
+    {
+        // Arrange - nothing beyond the arguments
+
+        // Act
+        string route = GameRoutes.SignIn("Git Hub", "https://html.itch.zone");
+
+        // Assert
+        Assert.Equal("signin/Git%20Hub?origin=https%3A%2F%2Fhtml.itch.zone", route);
+    }
 }

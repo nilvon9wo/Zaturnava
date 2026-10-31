@@ -222,15 +222,16 @@ client, MCP, presentation), `Hosts` (server, page, hosting adapters) and `Persis
 | Persistence.EfCore | `IGamePersisting` and `IPlayerPersisting` over EF Core, naming no database; bringing the schema up to date (`GameSchema`) | Application, Engine |
 | Persistence.EfCore.Sqlite | The context on SQLite, and its migrations | Persistence.EfCore |
 | Persistence.EfCore.SqlServer | The context on SQL Server, and its migrations | Persistence.EfCore |
-| Hosting | Ports for the services around the game (`IPageHosting`), and `ListedPageHost` | — |
+| Hosting | Ports for the services around the game (`IPageHosting`, `ISignInProviding`), and `ListedPageHost` | — |
 | Hosting.Itch | `IPageHosting` for a page published on itch.io | Hosting |
+| Hosting.GitHub | `ISignInProviding` for signing in with a GitHub account | Hosting |
 | Contracts | The wire protocol: DTOs, routes, refusals, `IGameServing` | — |
 | Client | `IGameServing` over HTTP (`HttpGameClient`) | Contracts |
 | Presentation | Client-side board logic: frame, clickable actions, selection | Contracts |
 | Web | Blazor WebAssembly client | Client, Contracts, Presentation |
 | Mcp | MCP server (stdio) letting an AI play through any server | Client, Contracts |
 | BotRunner | Command-line self-play: bots against bots (one's own among them, from an assembly), each game's history as a JSON line; tuning Sage, and training Athena's network | Application, Bots, Engine, Games.Chaturaji2027 |
-| Server | ASP.NET Core host; the composition root | Application, Bots, Client, Contracts, Engine, Hosting, Hosting.Itch, Mcp, Persistence.*, Topology.SquareGrid, Games.Chaturaji2027 |
+| Server | ASP.NET Core host; the composition root | Application, Bots, Client, Contracts, Engine, Hosting, Hosting.GitHub, Hosting.Itch, Mcp, Persistence.*, Topology.SquareGrid, Games.Chaturaji2027 |
 
 **Vendors stay in their adapters.** A third-party service — a page host, a
 game host, a database provider — is named only in its own adapter project and
@@ -252,6 +253,7 @@ What each replaceable part is swapped through:
 | Bot | `IDeciding` | the bot catalog in the same places |
 | Storage | `IGamePersisting`, `IPlayerPersisting` | Server `GameStorage`, chosen by `Storage:Provider` |
 | Where the page is served from | `IPageHosting` | Server `PageHosting`, chosen by `PageHosting:Provider` |
+| A service to sign in with | `ISignInProviding` | Server `SignInServices`, offered when `SignIn:Providers:{name}` holds its client's `ClientId` and `ClientSecret` |
 | Notification / push | `IGameNotifying` (now `SilentNotifier`: clients poll) | Server `ZaturnavaServices` |
 | Server, for a client | `IGameServing` | the client's composition (`Server:Url`, `ZATURNAVA_SERVER_URL`) |
 | Client | anything speaking §6 | — |
@@ -274,6 +276,9 @@ base address (`GameRoutes`):
 | Act | `POST api/games/{id}/actions` with `ActionDto`, `Authorization: Bearer {token}` | `GameViewDto` after the action and any bot replies |
 | What was said at the table | `GET api/games/{id}/chat?after={n}`, the token optional | `ChatMessageDto[]` after message `n`: what was said to the table, and to the token holder's team |
 | Say something | `POST api/games/{id}/chat` with `SayRequest` (`table` or `team`, and the words), `Authorization: Bearer {token}` | `ChatMessageDto`, numbered within its table |
+| The services to sign in with | `GET api/signin` | their names |
+| Sign in, in a window the page opens | `GET signin/{provider}?origin={the page's origin}` | the service's page; then, from `signin/done`, a page posting a `SignedInDto` to the opener at that origin, which must be the page host's |
+| Who a player's token stands for | `GET api/players/me`, `Authorization: Bearer {token}` | `PlayerDto`, or 401 |
 
 - **Talk** is kept per table (`ChatTables`): a table is known by its first
   game, and a game played again after another (`CreateGameRequest.Continuing`)
@@ -283,9 +288,11 @@ base address (`GameRoutes`):
   table's talk go. Which game sits at which table, and when it was last heard
   from, are kept in memory: after a restart, every table counts as heard from
   when the server began.
-- **Seat tokens** are the only credential. One is issued when a seat is
-  claimed, shown once, and stored only as a hash; no accounts, no personal
-  data.
+- **Seat tokens** are what a seat is played by. One is issued when a seat is
+  claimed, shown once, and stored only as a hash. **Player tokens**, issued on
+  signing in (optional, Proposed), are kept the same way; the provider vouches
+  for the login, through a cookie that lives only until the player is signed
+  in. Seats are not yet tied to players.
 - **Bots** decide one step per `advance`, so that a client can show their
   turns at a pace people can follow (`Table:BotPaceSeconds`, default 0.9).
   Dice a bot awaits are always rolled and do not count as a step. The server

@@ -10,6 +10,10 @@ name: Deploy server (MonsterASP.NET)
 # And, so that games outlast a restart, the site's database (left out, games are kept in memory):
 #   MONSTERASP_SQLSERVER_CONNECTION_STRING  the connection string of the site's SQL Server database, from the
 #                                           host's control panel
+# And, so that people may sign in with GitHub (left out, they cannot), a GitHub OAuth app's client, whose
+# callback URL is the site's address followed by /signin-github:
+#   GH_CLIENT_ID      its Client ID
+#   GH_CLIENT_SECRET  a client secret made for it
 on:
   workflow_dispatch:
 
@@ -28,19 +32,31 @@ jobs:
       - name: Publish the server
         run: dotnet publish src/Hosts/Zaturnava.Server -c Release -o publish
 
-      # The database, named only in the published settings, never in the repository.
-      - name: Point the server at its database
+      # The database and the sign-in clients, named only in the published settings, never in the repository.
+      - name: Give the server its secrets
         shell: pwsh
         env:
           DATABASE: ${{ secrets.MONSTERASP_SQLSERVER_CONNECTION_STRING }}
+          GH_CLIENT_ID: ${{ secrets.GH_CLIENT_ID }}
+          GH_CLIENT_SECRET: ${{ secrets.GH_CLIENT_SECRET }}
         run: |
+          $settings = @{}
           if ([string]::IsNullOrWhiteSpace($env:DATABASE)) {
             Write-Host "No MONSTERASP_SQLSERVER_CONNECTION_STRING: games are kept in memory."
-            exit 0
+          } else {
+            $settings.Storage = @{ Provider = "SqlServer" }
+            $settings.ConnectionStrings = @{ Games = $env:DATABASE }
           }
-          @{ Storage = @{ Provider = "SqlServer" }; ConnectionStrings = @{ Games = $env:DATABASE } } |
-            ConvertTo-Json -Depth 3 |
-            Set-Content -Path publish/appsettings.Production.json -Encoding utf8
+          if ([string]::IsNullOrWhiteSpace($env:GH_CLIENT_ID) -or [string]::IsNullOrWhiteSpace($env:GH_CLIENT_SECRET)) {
+            Write-Host "No GH_CLIENT_ID and GH_CLIENT_SECRET: no one can sign in with GitHub."
+          } else {
+            $settings.SignIn = @{
+              Providers = @{ GitHub = @{ ClientId = $env:GH_CLIENT_ID; ClientSecret = $env:GH_CLIENT_SECRET } }
+            }
+          }
+          if ($settings.Count -gt 0) {
+            $settings | ConvertTo-Json -Depth 5 | Set-Content -Path publish/appsettings.Production.json -Encoding utf8
+          }
 
       # Web Deploy's client, if the runner does not have it already.
       - name: Make sure Web Deploy is there

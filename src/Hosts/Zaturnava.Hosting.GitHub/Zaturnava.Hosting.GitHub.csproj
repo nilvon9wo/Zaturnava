@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Signing in with a GitHub account. Everything the solution knows about GitHub as a sign-in
+    service is here, reached only through the Zaturnava.Hosting ports; the server's composition
+    root chooses it by name, when its configuration holds the client's id and secret.
+  -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\Zaturnava.Hosting\Zaturnava.Hosting.csproj" />
+  </ItemGroup>
+
+</Project>

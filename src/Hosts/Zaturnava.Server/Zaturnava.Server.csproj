@@ -27,6 +27,7 @@
     <ProjectReference Include="..\..\Apis\Zaturnava.Contracts\Zaturnava.Contracts.csproj" />
     <ProjectReference Include="..\..\Apis\Zaturnava.Mcp\Zaturnava.Mcp.csproj" />
     <ProjectReference Include="..\Zaturnava.Hosting\Zaturnava.Hosting.csproj" />
+    <ProjectReference Include="..\Zaturnava.Hosting.GitHub\Zaturnava.Hosting.GitHub.csproj" />
     <ProjectReference Include="..\Zaturnava.Hosting.Itch\Zaturnava.Hosting.Itch.csproj" />
     <ProjectReference Include="..\..\Persistence\Zaturnava.Persistence.EfCore\Zaturnava.Persistence.EfCore.csproj" />
     <ProjectReference Include="..\..\Persistence\Zaturnava.Persistence.EfCore.Sqlite\Zaturnava.Persistence.EfCore.Sqlite.csproj" />

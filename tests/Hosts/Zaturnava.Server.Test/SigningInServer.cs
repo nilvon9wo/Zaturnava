@@ -1,0 +1,71 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.DependencyInjection;
+using Net.NowhereAtAll.Zaturnava.Server.Composition;
+
+namespace Net.NowhereAtAll.Zaturnava.Server.Test;
+
+/// <summary>
+/// The server with GitHub set up to sign in with, but no round trip to it: whoever a request's
+/// <see cref="VouchedHandler.Header"/> names, as <c>issuer|key|name</c>, is taken as having come back from it.
+/// </summary>
+public sealed class SigningInServer : ZaturnavaServer
+{
+    public const string Page = "http://localhost:5165";
+
+    protected override void ConfigureWebHost(IWebHostBuilder builder)
+    {
+        base.ConfigureWebHost(builder);
+        _ = builder
+            .UseSetting($"{SignInServices.ProvidersKey}:GitHub:{SignInServices.ClientIdKey}", "client")
+            .UseSetting($"{SignInServices.ProvidersKey}:GitHub:{SignInServices.ClientSecretKey}", "secret")
+            .ConfigureTestServices(services => services.Configure<AuthenticationOptions>(options =>
+                options.SchemeMap[SignInServices.ExternalScheme].HandlerType = typeof(VouchedHandler)
+            ));
+    }
+}
+
+/// <summary>
+/// Who has come back from a service, as a request's <see cref="Header"/> says: <c>issuer|key|name</c>, the name
+/// left out if they gave none; a value with no key, someone whose service said nothing of who they are.
+/// </summary>
+internal sealed class VouchedHandler : IAuthenticationSignOutHandler
+{
+    public const string Header = "X-Vouched";
+
+    private HttpContext? _context;
+
+    public Task InitializeAsync(AuthenticationScheme scheme, HttpContext context)
+    {
+        this._context = context;
+        return Task.CompletedTask;
+    }
+
+    public Task<AuthenticateResult> AuthenticateAsync() =>
+        Task.FromResult(
+            this._context?.Request.Headers[Header].ToString() is { Length: > 0 } vouched
+                ? AuthenticateResult.Success(Ticket(vouched.Split('|')))
+                : AuthenticateResult.NoResult()
+        );
+
+    public Task ChallengeAsync(AuthenticationProperties? properties) => Task.CompletedTask;
+
+    public Task ForbidAsync(AuthenticationProperties? properties) => Task.CompletedTask;
+
+    public Task SignOutAsync(AuthenticationProperties? properties) => Task.CompletedTask;
+
+    private static AuthenticationTicket Ticket(string[] parts)
+    {
+        ClaimsIdentity identity = new(SignInServices.ExternalScheme);
+        identity.AddClaims(
+            [
+                .. parts.Skip(1).Take(1).Select(key => new Claim(ClaimTypes.NameIdentifier, key, null, parts[0])),
+                .. parts.Skip(2).Select(name => new Claim(ClaimTypes.Name, name, null, parts[0])),
+            ]
+        );
+        return new AuthenticationTicket(new ClaimsPrincipal(identity), SignInServices.ExternalScheme);
+    }
+}

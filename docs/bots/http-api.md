@@ -154,6 +154,21 @@ table: its talk goes on from the earlier game's, numbered on. The talk is let go
 the table: when, for about two minutes, no player has read it or said anything (a watcher reading it does
 not count). After that, it is as if nothing had been said.
 
+## Signing in
+
+Signing in is optional, and nothing above needs it. A person signs in from a page, in a window the page
+opens, with a service the server is set up for (Proposed):
+
+| | Request | Reply |
+|---|---|---|
+| The services to sign in with | `GET api/signin` | Their names, such as `["GitHub"]`; none, if none is set up |
+| Sign in, in a window of its own | `GET signin/{service}?origin={the page's origin}` | The service's own page; then, once the person agrees, a page that posts `{"token": "...", "name": "..."}` to the page that opened it, and closes |
+| Who a player's token stands for | `GET api/players/me`, with the player's token | `{"id": "...", "name": "..."}`, or `401` |
+
+The page's origin must be one the server serves its page from; for any other, it answers `400`, and posts
+nothing. As with a seat's, the server keeps only a player token's hash. Coming back with the same account
+signs in the same player, with a new token. Seats are not yet tied to players.
+
 ## Refusals
 
 A request the server will not do is answered with a [problem](https://www.rfc-editor.org/rfc/rfc9457)
