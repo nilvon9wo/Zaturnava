@@ -10,7 +10,7 @@ A piece's value is the sum of the sheet's columns (`=O+P+Q+R+S`):
 
 | Part | What it counts |
 |---|---|
-| Leader bonus | 60 for a leader, else 0 |
+| Leader bonus | 60 for a leader; 50 for a piece that may promote into one ([below](#leader-promotion-bonus)); else 0 |
 | Reach | the cells it could move to or capture on from d4, on an empty 8 × 8 board |
 | Promotion premium | what the chance of promoting is worth ([below](#promotion-premium)) |
 | Special-power bonus | what its powers are worth, where reach does not count them |
@@ -48,25 +48,27 @@ and has no such premium.
 
 | Piece | Promotes to | Premium | Value |
 |---|---|---|---|
-| Pawn (Shogi) | Gold General, 66 over 4 rows | 17 | 50, by the [leader floor](#leader-floor) |
-| Lance (Shogi) | Gold General, 63 over 5 rows | 13 | 50, by the [leader floor](#leader-floor) |
+| Lance (Shogi) | Gold General, 13 over 5 rows | 3 | 56 |
+| Pawn (Shogi) | Gold General, 16 over 4 rows | 4 | 54 |
 | Pawn (Western) | Queen, 24 over 6 rows | 4 | 7 |
 | Silver General (Shogi) | Gold General, 1 over 5 rows | 0 | 65 |
 | Pawn (Makruk) | Courtier, 3 over 4 rows; the far edge pays more | 2 | 4 |
 | Other Infantry, not confined | the far edge (Rook, 14), over 6 rows | 2 | +2 |
 
-The sheet keeps the three settings apart, to be tuned by playtesting: `PremiumFactor` (1),
-`FarEdgeTarget` (the Rook) and `FarEdgeDistance` (6).
+The sheet keeps the four settings apart, to be tuned by playtesting: `PremiumFactor` (1),
+`FarEdgeTarget` (the Rook), `FarEdgeDistance` (6) and `LeaderPromotionBonus` (50).
 
-### Leader floor
+### Leader promotion bonus
 
-A piece that may promote into a leader is worth at least **50** (Stated 2026-10-31). The premium
-assumes the piece has the whole distance to cross, but how far that is depends on how its owner
-arranges the kingdom: a Lance with an open file may slide into the far three ranks on its first
-move and promote into a Gold General at once, a leader, for 16. The floor raises the Shogi Pawn and
-the Lance to 50; the Silver General, a leader already, is worth more. The floor is the value
-captured too, so taking such a piece before it promotes scores as much. The sheet's value column
-needs it as well (`=MAX(50, O+P+Q+R+S)` on those rows).
+A piece that is not a leader but may promote into one starts from a leader bonus of **50**, as a
+leader starts from 60 (Stated 2026-10-31); its reach, premium, powers and limitations count on top,
+as for any piece, so two such pieces need not be worth the same. The premium alone undervalued
+them: it assumes the piece has the whole distance to cross, but how far that is depends on how its
+owner arranges the kingdom, and a Lance with an open file may slide into the far three ranks on its
+first move and promote into a Gold General, a leader, at once. With the bonus, promotion gains less,
+so the premium shrinks: the Lance is worth 56 (50 + reach 4 + premium 3 − 1), the Shogi Pawn 54
+(50 + 1 + 4 − 1). The Silver General is a leader already. The value is what capturing the piece
+scores too.
 
 ### Prices for each game (proposed)
 
@@ -125,7 +127,7 @@ The dice name a class, not a piece ([specification §6.1](specification.md#61-th
 
 | Piece | Moves | Restrictions | Powers / promotion | Value | Lifts |
 |---|---|---|---|---|---|
-| Pawn (Shogi) | One square forward | Move: blocked straight ahead | → Gold General in the far three ranks | 50 | 2 / — |
+| Pawn (Shogi) | One square forward | Move: blocked straight ahead | → Gold General in the far three ranks | 54 | 2 / — |
 | Pawn (Western) | One square forward; captures one square diagonally forward | Move: blocked straight ahead | First move two squares; *en passant*; → Queen, Rook, Bishop or Knight on the last rank | 7 | 2 / — |
 | Guard (Janggi) | One square orthogonally, or diagonally along palace lines | Area: its 3 × 3 palace | Palace lines | 7 | — / 5 |
 | Noble (Makruk) | One square diagonally, or straight forward | — | — | 7 | — / — |
@@ -143,7 +145,7 @@ Chaturaji 2027.
 
 | Piece | Moves | Restrictions | Powers / promotion | Value | Lifts |
 |---|---|---|---|---|---|
-| Lance (Shogi) | Any distance straight forward | Move: blocked by pieces in its path | → Gold General in the far three ranks | 50 | 2 / — |
+| Lance (Shogi) | Any distance straight forward | Move: blocked by pieces in its path | → Gold General in the far three ranks | 56 | 2 / — |
 | Amazon | Any distance in any direction, or leaps 2+1 | — | — | 37 | — / — |
 | Queen (Western) | Any distance in any direction | — | — | 27 | — / — |
 | Chancellor | Any distance orthogonally, or leaps 2+1 | — | — | 22 | — / — |
@@ -217,7 +219,7 @@ Together, **Q20** of the [specification](specification.md#9-open-questions).
 
 - **For playtesting (Stated 2026-10-29): the Pawns' promotion premiums may be out of balance.** The
   Shogi Pawn was priced at 17 against the Western Pawn's 7, yet it is the weaker piece; the
-  [leader floor](#leader-floor) now prices it at 50, widening the gap. It
+  [leader promotion bonus](#leader-promotion-bonus) now prices it at 54, widening the gap. It
   captures on one square to the Western Pawn's two. It has no powers to the Western Pawn's two
   (the double first step and *en passant*). It promotes into one piece, if a powerful one (the
   Gold General, a leader), to the Western Pawn's four, the Queen among them. And it is likelier to
