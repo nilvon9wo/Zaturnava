@@ -55,7 +55,8 @@ to come: the area rules (palace, river), which belong with the board (Stage 2) a
 ## Stage 2 — The board and the dice
 
 - A board and a kingdom size (at least 3 × 3), set apart; a kingdom in each corner, lying as the
-  game is set (pinwheel, or top and bottom); rivers drawn on the board.
+  game is set (pinwheel, or top and bottom); rivers drawn on the board in blue, from the first
+  version with rivers in it.
 - Forward away from each kingdom's back rank.
 - Rivers between or through the middle cells, through or around kingdoms, and what they mean to the
   pieces that care.

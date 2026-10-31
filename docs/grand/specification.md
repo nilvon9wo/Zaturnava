@@ -56,20 +56,24 @@ than a piece, and with points won in play to be spent on upgrades and promotions
   it: those that may not cross it (the Xiangqi Elephant), or that change when they have crossed it
   (the Xiangqi Soldier). Later, a river might wind, along a path the creator draws or one drawn at
   random.
+- **Stated (2026-10-31).** The blue lines come with the rivers, from the first version that has
+  rivers: players should never have to remember, or guess, where a river is.
 - **Stated (2026-10-31).** On a side with an even number of cells, a river runs between the two
   middle rows of cells, so no cell is on it. On an odd side, it runs through the middle row, cutting
   its cells in half: a piece that may not cross the river may not enter those cells.
 - **Stated (2026-10-31).** Where a kingdom reaches past the middle of the board, the creator chooses
   whether the river runs through the kingdom, or follows its outline, so that no move within the
   kingdom crosses it.
-  - **Proposed.** A cell is across a river from a kingdom when the river lies between the cell and
-    the kingdom's corner. A cell the river cuts in half is not yet across. The program does so for
-    now.
+  - **Stated (2026-10-31).** A cell is across a river from a kingdom when the river lies between the
+    cell and the kingdom's corner. Across means fully clear of the river: a cell the river cuts in
+    half is not yet across.
 - **Stated (2026-10-31).** Later, perhaps: bridges, and pieces that build them; wide rivers, which
   some pieces cannot cross in a single move.
 - **Stated (2026-10-31).** The creator picks the allies on a picture: four coloured squares arranged
   as the seats are, of which they choose two; the other two are allied by implication. Naming them
   "same side" or "top and bottom" would confuse, since the board effectively spins.
+  - **Stated (2026-10-31).** Later, perhaps: one player with an ally while the others have none;
+    alliances made and broken during play; and games with other numbers of players, two the easiest.
 - **Stated.** With two rivers, a kingdom in a corner has a river on two sides. A piece
   that may not cross *the* river may cross *neither*: the Xiangqi Elephant keeps to its own quarter.
   A piece changed by crossing it is changed by crossing *either*: the Xiangqi Soldier steps sideways
@@ -84,7 +88,15 @@ than a piece, and with points won in play to be spent on upgrades and promotions
   may name a set of settings, save it, pick it to start a game, and edit it before playing.
 - **Stated (2026-10-31).** Other players may search and browse the saved settings. They may not
   edit someone else's set, but they may copy it, and edit the copy.
-- **Q26** Do saved settings need versions, or a check for duplicates?
+- **Q26** Do saved settings need versions, or a check for duplicates? Not important yet. The
+  designer's thoughts (2026-10-31), for when it is:
+  - A player who picks a set its owner has since edited may be frustrated to find it changed; but
+    no one should have to remember version numbers, or dig through the details to see what changed.
+    Perhaps a player may keep a set they played and liked in their own list, so it stays as they
+    played it.
+  - Duplicate sets, and sets never played, take up storage. Sets (or versions of them) not played
+    for a while, a month say (a setting of the server), might be purged. Keeping them longer might
+    one day be a premium offer, but for now nobody pays anybody for anything.
 
 ## 3. Joining: building an army
 
@@ -325,4 +337,5 @@ The numbers stay as they are; answered questions are marked so.
 24. **Q24** *Answered:* which way a kingdom lies in its corner is a setting (§2).
 25. **Q25** *Answered (2026-10-29):* every piece whose normal move is forward only may make the
     back-to-back swap, with any other such piece (§6.1).
-26. **Q26** Saved settings: versions, or a check for duplicates? Left open (§2.1).
+26. **Q26** Saved settings: versions, or a check for duplicates? Not important yet; the designer's
+    thoughts are noted (§2.1).
