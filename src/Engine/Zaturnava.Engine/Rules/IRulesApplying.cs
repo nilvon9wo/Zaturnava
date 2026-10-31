@@ -72,6 +72,12 @@ public interface IRulesApplying
     int WorthOf(PieceKindId kind);
 
     /// <summary>
+    /// The points <paramref name="offer"/>'s receiver would score for accepting it, to one weighing the trade:
+    /// worth and points alike count toward winning.
+    /// </summary>
+    int RansomPointsOf([Required] GameState state, [Required] RansomOffer offer);
+
+    /// <summary>
     /// The cells the pieces of <paramref name="seat"/>'s own army could capture on, whatever stands on
     /// them, the dice and whose turn it is aside: for one weighing what a move leaves open.
     /// </summary>

@@ -79,6 +79,12 @@ internal sealed class ScoringRules(ImmutableDictionary<GameAction, int> points) 
 
     public int WorthOf(PieceKindId kind) => Worth[kind];
 
+    /// <summary>What accepting a ransom scores its receiver, for each prisoner asked for; none, unless set.</summary>
+    public int RansomPoints { get; init; }
+
+    public int RansomPointsOf([Required] GameState state, [Required] RansomOffer offer) =>
+        this.RansomPoints * offer.Asked.Count;
+
     public ImmutableList<Attack> AttacksOf([Required] GameState state, SeatId seat) => [];
 
     public bool IsLeader(PieceKindId kind) => kind == new PieceKindId("raja");

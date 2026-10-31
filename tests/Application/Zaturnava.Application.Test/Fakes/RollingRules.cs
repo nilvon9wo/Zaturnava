@@ -78,6 +78,8 @@ internal sealed class RollingRules(int length) : IRulesApplying
 
     public int WorthOf(PieceKindId kind) => 1;
 
+    public int RansomPointsOf([Required] GameState state, [Required] RansomOffer offer) => 0;
+
     public ImmutableList<Attack> AttacksOf([Required] GameState state, SeatId seat) => [];
 
     public bool IsLeader(PieceKindId kind) => false;

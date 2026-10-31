@@ -207,6 +207,9 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     /// <summary>A piece is worth what taking it scores (rules.md §5).</summary>
     public int WorthOf(PieceKindId kind) => Chaturaji2027Pieces.Points[kind];
 
+    public int RansomPointsOf([Required] GameState state, [Required] RansomOffer offer) =>
+        Ransom.PointsOf(state, offer);
+
     public ImmutableList<Attack> AttacksOf([Required] GameState state, SeatId seat) =>
     [
         .. state.Position.Occupants

@@ -107,6 +107,8 @@ internal sealed class LineRules(ImmutableList<GameAction> legalActions) : IRules
 
     public int WorthOf(PieceKindId kind) => ScoringRules.Worth[kind];
 
+    public int RansomPointsOf([Required] GameState state, [Required] RansomOffer offer) => 0;
+
     public ImmutableList<Attack> AttacksOf([Required] GameState state, SeatId seat) =>
     [
         .. state.Position.Occupants
