@@ -5,7 +5,7 @@ namespace Net.NowhereAtAll.Zaturnava.Server.Endpoints;
 /// <summary>
 /// What someone finds at the server's own address, or at <c>api</c>: what it is, and where to go from there - the
 /// catalog, the games, every finished game's history, the API described as OpenAPI and as a page to browse and
-/// try it on, the MCP server for AIs, and how to use it.
+/// try it on, the MCP server for AIs, how to use it, and what is kept about the people who play.
 /// </summary>
 internal static class IndexEndpoints
 {
@@ -18,6 +18,11 @@ internal static class IndexEndpoints
     public const string Documentation =
         "https://github.com/nilvon9wo/Zaturnava/blob/main/docs/bots/http-api.md";
 
+    /// <summary>What is kept about the people who play: the server sends them on to the statement.</summary>
+    public const string Privacy = "privacy";
+
+    public const string PrivacyStatement = "https://github.com/nilvon9wo/Zaturnava/blob/main/docs/privacy.md";
+
     private static readonly ServerIndex Index = new(
         "Zaturnava",
         "A game server for Chaturaji 2027, a four-player game of chaturaji: JSON over HTTP, for people and bots.",
@@ -27,13 +32,15 @@ internal static class IndexEndpoints
         OpenApiDocument,
         Reference,
         McpEndpoints.Route,
-        Documentation
+        Documentation,
+        Privacy
     );
 
     public static IEndpointRouteBuilder MapIndex(this IEndpointRouteBuilder routes)
     {
         _ = routes.MapGet("/", () => Index);
         _ = routes.MapGet("api", () => Index);
+        _ = routes.MapGet(Privacy, () => Results.Redirect(PrivacyStatement));
         return routes;
     }
 }
@@ -48,5 +55,6 @@ internal sealed record ServerIndex(
     string OpenApi,
     string Reference,
     string Mcp,
-    string Documentation
+    string Documentation,
+    string Privacy
 );

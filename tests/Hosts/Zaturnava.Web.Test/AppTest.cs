@@ -51,7 +51,7 @@ public sealed class AppTest : IDisposable
     }
 
     [Fact]
-    public void HowToPlay_WhenOpen_LinksToTheFullRulesAndToBringingYourOwnAi()
+    public void HowToPlay_WhenOpen_LinksToTheFullRulesToBringingYourOwnAiAndToPrivacy()
     {
         // Arrange
         IRenderedComponent<App> app = this._page.Render<App>();
@@ -61,7 +61,7 @@ public sealed class AppTest : IDisposable
 
         // Assert
         Assert.Equal(
-            [DocsLinks.Rules, DocsLinks.Bots],
+            [DocsLinks.Rules, DocsLinks.Bots, DocsLinks.Privacy],
             app.FindAll(".guide .more a").Select(link => link.GetAttribute("href"))
         );
     }

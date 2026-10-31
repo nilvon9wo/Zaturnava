@@ -53,6 +53,8 @@ The game server's host is not decided yet; see
   download the games played, and train it against our bots in self-play.
 - [`docs/contribute/`](docs/contribute/README.md) — coding standards, running the game and the
   quality gates locally, tests and coverage, CI.
+- [`docs/privacy.md`](docs/privacy.md) — what is kept about the people who play, and how to have
+  it deleted.
 
 ## Source material
 

@@ -10,4 +10,7 @@ public static class DocsLinks
 
     /// <summary>For developers: playing with an AI of one's own, and training it.</summary>
     public const string Bots = Docs + "bots/README.md";
+
+    /// <summary>What is kept about the people who play, and how to have it deleted.</summary>
+    public const string Privacy = Docs + "privacy.md";
 }

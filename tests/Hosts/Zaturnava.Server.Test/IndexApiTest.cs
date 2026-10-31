@@ -32,6 +32,25 @@ public sealed class IndexApiTest(ZaturnavaServer server) : IClassFixture<Zaturna
     }
 
     [Fact]
+    public async Task Get_WhenAskedForPrivacy_SendsThemToThePrivacyStatement()
+    {
+        // Arrange - the address the index points to, followed by hand
+        string body = await this._client.GetStringAsync(new Uri("/api", UriKind.Relative), this._cancellation);
+        string privacy = JsonDocument.Parse(body).RootElement.GetProperty("privacy").GetString()!;
+        using HttpClient client = server.CreateClient(new() { AllowAutoRedirect = false });
+
+        // Act
+        using HttpResponseMessage response =
+            await client.GetAsync(new Uri("/" + privacy, UriKind.Relative), this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            (HttpStatusCode.Redirect, "https://github.com/nilvon9wo/Zaturnava/blob/main/docs/privacy.md"),
+            (response.StatusCode, response.Headers.Location?.ToString())
+        );
+    }
+
+    [Fact]
     public async Task Get_WhenAskedForTheOpenApiDocument_DescribesTheRoutes()
     {
         // Arrange - nothing beyond the server
