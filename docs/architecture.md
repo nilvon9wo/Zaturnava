@@ -238,7 +238,7 @@ base address (`GameRoutes`):
 
 | Request | Route | Answer |
 |---|---|---|
-| Rulesets and bots on offer, each bot with its name, description and whether it uses AI | `GET api/catalog` | `CatalogDto` |
+| Rulesets and bots on offer: each ruleset with its seats' names and teams, each bot with its name, description, whether it uses AI, and its rating at each ruleset | `GET api/catalog` | `CatalogDto` |
 | Games | `GET api/games` | `GameSummaryDto[]` |
 | Create a game | `POST api/games` with `CreateGameRequest` (a ruleset, per seat a bot id or null for a person, and, for a game played again, the game it continues) | 201, `GameCreatedDto` |
 | A game | `GET api/games/{id}` | `GameViewDto`: cells (with names and thrones), pieces, seats (with scores, bot names and prisoners), the dice and what each allows, the latest events, whose decision and for which seat, the legal actions (labelled where the kind alone cannot say), how the game ended, whether the deciding seat may offer a ransom, the offer waiting on its answer, the time left on a timed decision, and the cell of a Pawn whose promotion is due |

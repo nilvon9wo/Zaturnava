@@ -78,7 +78,13 @@ internal sealed class FakeGameServer : IGameServing
         this.Answer(
             "catalog",
             new CatalogDto(
-                [new RulesetDto("chaturaji-2027", "Chaturaji 2027", 4) { SeatNames = SeatNames }],
+                [
+                    new RulesetDto("chaturaji-2027", "Chaturaji 2027", 4)
+                    {
+                        SeatNames = SeatNames,
+                        SeatTeams = [0, 1, 0, 1],
+                    },
+                ],
                 [
                     new BotDto("random", "Random", "Any move.", UsesAi: false) { Ratings = Rated(1000) },
                     new BotDto("claude", "Claude", "Asks Claude.", UsesAi: true, IsPaid: true),
