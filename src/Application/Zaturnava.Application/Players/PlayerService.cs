@@ -1,0 +1,50 @@
+using System.ComponentModel.DataAnnotations;
+using Net.NowhereAtAll.Zaturnava.Application.Games;
+using Net.NowhereAtAll.Zaturnava.Application.Ports;
+
+namespace Net.NowhereAtAll.Zaturnava.Application.Players;
+
+/// <summary>
+/// Signing in, which is optional: a provider vouches for a login, and the player whose login it is (made the first
+/// time, named as the provider names them) gets a token, as a seat's is made (<see cref="SeatTokens"/>), to show
+/// from then on. Only its hash is kept.
+/// </summary>
+public sealed class PlayerService(IPlayerPersisting store)
+{
+    /// <summary>The longest a player's name may be, in characters; a longer one is cut.</summary>
+    public const int MaximumNameLength = 40;
+
+    /// <summary>A new player's name, when the provider gives none.</summary>
+    public const string Unnamed = "Player";
+
+    private readonly IPlayerPersisting _store = store;
+
+    /// <summary>
+    /// Signs in the player whose login it is: the one already known, else a new one, named
+    /// <paramref name="name"/>; either way with a new token.
+    /// </summary>
+    public async Task<SignedIn> SignIn(Login login, string? name, CancellationToken cancellationToken)
+    {
+        Player player = await this._store.ByLogin(login, cancellationToken)
+            ?? await this.Add(new Player(PlayerId.New(), NameOf(name), [login]), cancellationToken);
+        string token = SeatTokens.Issue();
+        await this._store.AddSession(player.Id, SeatTokens.Hash(token), cancellationToken);
+        return new SignedIn(player, token);
+    }
+
+    /// <summary>The player the token stands for, if it stands for one.</summary>
+    public Task<Player?> Find([Required] string token, CancellationToken cancellationToken) =>
+        this._store.BySession(SeatTokens.Hash(token), cancellationToken);
+
+    /// <summary>The name, without the spaces around it, cut to the longest allowed; or <see cref="Unnamed"/>.</summary>
+    private static string NameOf(string? name) =>
+        name?.Trim() is { Length: > 0 } trimmed
+            ? trimmed[..Math.Min(trimmed.Length, MaximumNameLength)].TrimEnd()
+            : Unnamed;
+
+    private async Task<Player> Add(Player player, CancellationToken cancellationToken)
+    {
+        await this._store.Add(player, cancellationToken);
+        return player;
+    }
+}

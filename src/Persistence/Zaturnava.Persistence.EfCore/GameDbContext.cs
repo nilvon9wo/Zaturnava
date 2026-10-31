@@ -1,16 +1,28 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Net.NowhereAtAll.Zaturnava.Application.Players;
 using Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Entities;
 
 namespace Net.NowhereAtAll.Zaturnava.Persistence.EfCore;
 
 public sealed class GameDbContext(DbContextOptions<GameDbContext> options) : DbContext(options)
 {
+    // a player's id is a GUID's 32 hex digits; a token's hash, SHA-256's 64
+    private const int IdLength = 32;
+    private const int TokenHashLength = 64;
+    private const int ProviderLength = 40;
+    private const int LoginKeyLength = 200;
+
     // seats and actions are reached only through their game
     public DbSet<GameEntity> Games => this.Set<GameEntity>();
 
     // what is said at each table: kept apart from the games, as talk changes nothing in play
     public DbSet<ChatEntity> Chats => this.Set<ChatEntity>();
+
+    // the players who have signed in; their logins are reached only through them
+    public DbSet<PlayerEntity> Players => this.Set<PlayerEntity>();
+
+    public DbSet<SessionEntity> Sessions => this.Set<SessionEntity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -18,6 +30,31 @@ public sealed class GameDbContext(DbContextOptions<GameDbContext> options) : DbC
         _ = modelBuilder.Entity<SeatEntity>(MapSeat);
         _ = modelBuilder.Entity<ActionEntity>(MapAction);
         _ = modelBuilder.Entity<ChatEntity>(MapChat);
+        _ = modelBuilder.Entity<PlayerEntity>(MapPlayer);
+        _ = modelBuilder.Entity<LoginEntity>(MapLogin);
+        _ = modelBuilder.Entity<SessionEntity>(MapSession);
+    }
+
+    private static void MapPlayer(EntityTypeBuilder<PlayerEntity> player)
+    {
+        _ = player.HasKey(entity => entity.Id);
+        _ = player.Property(entity => entity.Id).HasMaxLength(IdLength);
+        _ = player.Property(entity => entity.Name).HasMaxLength(PlayerService.MaximumNameLength);
+        _ = player.HasMany(entity => entity.Logins).WithOne().HasForeignKey(login => login.PlayerId);
+    }
+
+    private static void MapLogin(EntityTypeBuilder<LoginEntity> login)
+    {
+        _ = login.HasKey(entity => new { entity.Provider, entity.Key });
+        _ = login.Property(entity => entity.Provider).HasMaxLength(ProviderLength);
+        _ = login.Property(entity => entity.Key).HasMaxLength(LoginKeyLength);
+    }
+
+    private static void MapSession(EntityTypeBuilder<SessionEntity> session)
+    {
+        _ = session.HasKey(entity => entity.TokenHash);
+        _ = session.Property(entity => entity.TokenHash).HasMaxLength(TokenHashLength);
+        _ = session.HasOne<PlayerEntity>().WithMany().HasForeignKey(entity => entity.PlayerId);
     }
 
     private static void MapGame(EntityTypeBuilder<GameEntity> game)

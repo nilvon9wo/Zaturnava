@@ -9,9 +9,9 @@ One test project per project, each measuring that project at 100% (see
 | `Zaturnava.Topology.SquareGrid.Test` | Stepping, direction families per facing, and layouts on rectangular grids. |
 | `Zaturnava.Games.Chaturaji2027.Test` | The base ruleset: the setup, each piece's moves and captures, scoring, turn order. |
 | `Zaturnava.Bots.Test` | `RandomBot` chooses among the legal actions, and honours cancellation; each bot's play; Athena's network: encoding a position, learning, keeping, and judging by it. |
-| `Zaturnava.Application.Test` | `GameService` — creating, claiming, acting, refusing — and the decision loop that lets bots reply. |
-| `Zaturnava.Persistence.InMemory.Test` | The in-memory store, its optimistic concurrency included. |
-| `Zaturnava.Persistence.EfCore.Test` | The EF Core store, against real SQLite built by its migrations, with test data from Xfty providers; bringing a schema up to date, one made before migrations included. |
+| `Zaturnava.Application.Test` | `GameService` — creating, claiming, acting, refusing — and the decision loop that lets bots reply; `PlayerService` signing players in and finding them by token. |
+| `Zaturnava.Persistence.InMemory.Test` | The in-memory stores, games' optimistic concurrency included, and players. |
+| `Zaturnava.Persistence.EfCore.Test` | The EF Core stores of games and players, against real SQLite built by its migrations, with test data from Xfty providers; bringing a schema up to date, one made before migrations included. |
 | `Zaturnava.Persistence.EfCore.Sqlite.Test` | The SQLite migrations: applied to a real database, each read both ways, and none missing for the model. |
 | `Zaturnava.Persistence.EfCore.SqlServer.Test` | The SQL Server migrations, without a server: each read both ways, and none missing for the model. |
 | `Zaturnava.Hosting.Test` | The listed page host. |

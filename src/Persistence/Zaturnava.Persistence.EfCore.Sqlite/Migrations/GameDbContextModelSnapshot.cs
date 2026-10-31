@@ -97,6 +97,43 @@ namespace Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Sqlite.Migrations
                     b.ToTable("Games");
                 });
 
+            modelBuilder.Entity("Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Entities.LoginEntity", b =>
+                {
+                    b.Property<string>("Provider")
+                        .HasMaxLength(40)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Key")
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PlayerId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Provider", "Key");
+
+                    b.HasIndex("PlayerId");
+
+                    b.ToTable("LoginEntity");
+                });
+
+            modelBuilder.Entity("Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Entities.PlayerEntity", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(32)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Players");
+                });
+
             modelBuilder.Entity("Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Entities.SeatEntity", b =>
                 {
                     b.Property<string>("Id")
@@ -124,11 +161,37 @@ namespace Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Sqlite.Migrations
                     b.ToTable("SeatEntity");
                 });
 
+            modelBuilder.Entity("Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Entities.SessionEntity", b =>
+                {
+                    b.Property<string>("TokenHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PlayerId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("TokenHash");
+
+                    b.HasIndex("PlayerId");
+
+                    b.ToTable("Sessions");
+                });
+
             modelBuilder.Entity("Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Entities.ActionEntity", b =>
                 {
                     b.HasOne("Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Entities.GameEntity", null)
                         .WithMany("Actions")
                         .HasForeignKey("GameId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Entities.LoginEntity", b =>
+                {
+                    b.HasOne("Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Entities.PlayerEntity", null)
+                        .WithMany("Logins")
+                        .HasForeignKey("PlayerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
@@ -142,11 +205,25 @@ namespace Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Sqlite.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Entities.SessionEntity", b =>
+                {
+                    b.HasOne("Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Entities.PlayerEntity", null)
+                        .WithMany()
+                        .HasForeignKey("PlayerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Entities.GameEntity", b =>
                 {
                     b.Navigation("Actions");
 
                     b.Navigation("Seats");
+                });
+
+            modelBuilder.Entity("Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Entities.PlayerEntity", b =>
+                {
+                    b.Navigation("Logins");
                 });
 #pragma warning restore 612, 618
         }

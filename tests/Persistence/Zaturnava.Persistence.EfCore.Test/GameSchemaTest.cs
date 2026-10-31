@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Entities;
 using Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Sqlite;
 
@@ -25,9 +27,12 @@ public sealed class GameSchemaTest : IDisposable
     [Fact]
     public async Task MigrateGamesAsync_WhenItsTablesWereMadeBeforeAnyMigration_KeepsThemAndRecordsEveryMigration()
     {
-        // Arrange - the tables made all at once, as the server once made them, with a game in them
+        // Arrange - the tables the server once made all at once (those of the first migration, with no record of
+        // it), with a game in them
         DbContext context = this._database.Context;
-        _ = await context.Database.EnsureCreatedAsync(this._cancellation);
+        await context.GetService<IMigrator>()
+            .MigrateAsync(context.Database.GetMigrations().First(), cancellationToken: this._cancellation);
+        _ = await context.Database.ExecuteSqlRawAsync("DROP TABLE __EFMigrationsHistory", this._cancellation);
         _ = await context.Database.ExecuteSqlRawAsync(
             "INSERT INTO Games (Id, RulesetId, Version) VALUES ('kept', 'chaturaji-2027', 1)",
             this._cancellation
