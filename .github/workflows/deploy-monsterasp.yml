@@ -14,8 +14,13 @@ name: Deploy server (MonsterASP.NET)
 # callback URL is the site's address followed by /signin-github:
 #   GH_CLIENT_ID      its Client ID
 #   GH_CLIENT_SECRET  a client secret made for it
+# The site's own address is no secret: the server answers requests for its host alone (AllowedHosts), and its
+# hosted MCP server calls the API there (Mcp:SelfAddress), never at a host a request names.
 on:
   workflow_dispatch:
+
+env:
+  SITE_HOST: zaturnava.runasp.net
 
 jobs:
   deploy:
@@ -32,7 +37,8 @@ jobs:
       - name: Publish the server
         run: dotnet publish src/Hosts/Zaturnava.Server -c Release -o publish
 
-      # The database and the sign-in clients, named only in the published settings, never in the repository.
+      # The site's host, then the database and the sign-in clients, named only in the published settings, never in
+      # the repository.
       - name: Give the server its secrets
         shell: pwsh
         env:
@@ -40,7 +46,10 @@ jobs:
           GH_CLIENT_ID: ${{ secrets.GH_CLIENT_ID }}
           GH_CLIENT_SECRET: ${{ secrets.GH_CLIENT_SECRET }}
         run: |
-          $settings = @{}
+          $settings = @{
+            AllowedHosts = $env:SITE_HOST
+            Mcp = @{ SelfAddress = "https://$($env:SITE_HOST)/" }
+          }
           if ([string]::IsNullOrWhiteSpace($env:DATABASE)) {
             Write-Host "No MONSTERASP_SQLSERVER_CONNECTION_STRING: games are kept in memory."
           } else {
@@ -54,9 +63,7 @@ jobs:
               Providers = @{ GitHub = @{ ClientId = $env:GH_CLIENT_ID; ClientSecret = $env:GH_CLIENT_SECRET } }
             }
           }
-          if ($settings.Count -gt 0) {
-            $settings | ConvertTo-Json -Depth 5 | Set-Content -Path publish/appsettings.Production.json -Encoding utf8
-          }
+          $settings | ConvertTo-Json -Depth 5 | Set-Content -Path publish/appsettings.Production.json -Encoding utf8
 
       # Web Deploy's client, if the runner does not have it already.
       - name: Make sure Web Deploy is there

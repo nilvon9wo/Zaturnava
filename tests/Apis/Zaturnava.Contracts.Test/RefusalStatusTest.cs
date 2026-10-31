@@ -8,6 +8,7 @@ public sealed class RefusalStatusTest
     [InlineData(Refusal.Forbidden, 403)]
     [InlineData(Refusal.Conflict, 409)]
     [InlineData(Refusal.Illegal, 422)]
+    [InlineData(Refusal.TooBusy, 429)]
     public void CodeOf_WhenGivenARefusal_ReturnsItsStatus(Refusal refusal, int expected)
     {
         // Arrange - nothing beyond the arguments
@@ -25,6 +26,7 @@ public sealed class RefusalStatusTest
     [InlineData(Refusal.Forbidden)]
     [InlineData(Refusal.Conflict)]
     [InlineData(Refusal.Illegal)]
+    [InlineData(Refusal.TooBusy)]
     public void RefusalOf_WhenGivenARefusalsStatus_ReturnsTheRefusal(Refusal refusal)
     {
         // Arrange

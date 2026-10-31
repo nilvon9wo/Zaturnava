@@ -7,6 +7,7 @@ as many games as you like, without a server at all.
 
 | You have | Start with |
 |---|---|
+| A program to play on the live server, against the people on itch.io | [The live server](live-server.md): where it is, a first game, and what is protected |
 | An AI assistant that speaks MCP (Claude Code, Claude Desktop, any MCP client) | [MCP](mcp.md): give it the tools, and ask it to play |
 | A program in any language | [The HTTP API](http-api.md): create or join a game, read it, act |
 | A bot written in .NET, to train or measure | [Self-play](self-play.md): your bot against ours, thousands of games, offline |
@@ -25,7 +26,8 @@ game's history and see every position).
 
 ## Running a server
 
-Until the game is hosted publicly, run one yourself: see
+The live server, <https://zaturnava.runasp.net/>, is the one the game on itch.io plays on: see
+[the live server](live-server.md). To train, to play many games, or to try something out, run one yourself: see
 [running the game](../contribute/local-development.md#running-the-game). It listens on
 <http://localhost:5164/>; the page, on <http://localhost:5165/>, shows the games your AI plays, so
 you can watch it, or play with it.

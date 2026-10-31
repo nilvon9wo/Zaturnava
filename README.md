@@ -20,11 +20,13 @@ it instead. More in [running the game](docs/contribute/local-development.md#runn
 
 ## Status
 
-Playable end to end, with a partial ruleset: create a game in the browser, seat people and bots,
-and play. The `chaturaji-2027` ruleset so far has the board, the pieces' moves and captures, the roll-off
-for who goes first, dice, scoring by piece with the throne bonuses, command of other armies through
-thrones, and the end of the game; voluntary regency, escape, promotion, ransom, boat triumph and the
-empire bonus are still to come ([rules.md, implementation status](docs/rules.md#implementation-status)).
+Playable end to end, online: <https://nilvon9wo.itch.io/zaturnava> is the page, and
+<https://zaturnava.runasp.net/> the game server it plays on. Create a game, seat people and bots, sign in (or
+play as a guest), talk at the table, and play. The `chaturaji-2027` ruleset has nearly all of the rules: the
+board, the pieces' moves and captures, the roll-off, dice, scoring with the throne bonuses and the empire,
+command of other armies through thrones, regency, escape, promotion, ransom and the end of the game; the boat
+triumph and the per-game toggles are still to come
+([rules.md, implementation status](docs/rules.md#implementation-status)).
 
 | Part | |
 |---|---|
@@ -37,8 +39,9 @@ empire bonus are still to come ([rules.md, implementation status](docs/rules.md#
 | `Zaturnava.Mcp` | An MCP server, so an AI can take a seat |
 | `Zaturnava.BotRunner` | Bots playing bots, yours among them, from the command line |
 
-The game server's host is not decided yet; see
-[architecture §8](docs/architecture.md#8-tech-stack--hosting).
+Where it is hosted, and how it is deployed, is in
+[architecture §8](docs/architecture.md#8-tech-stack--hosting). A program of yours may play on the live server
+too: see [the live server](docs/bots/live-server.md).
 
 ## Documents
 
@@ -55,6 +58,7 @@ The game server's host is not decided yet; see
   quality gates locally, tests and coverage, CI.
 - [`docs/privacy.md`](docs/privacy.md) — what is kept about the people who play, and how to have
   it deleted.
+- [`SECURITY.md`](SECURITY.md) — how to report a weakness privately, and what the server protects.
 
 ## Source material
 

@@ -6,6 +6,7 @@ using Net.NowhereAtAll.Zaturnava.Application.Players;
 using Net.NowhereAtAll.Zaturnava.Contracts;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Seats;
+using Net.NowhereAtAll.Zaturnava.Server.Composition;
 
 namespace Net.NowhereAtAll.Zaturnava.Server.Endpoints;
 
@@ -22,7 +23,7 @@ internal static class GameEndpoints
     {
         _ = routes.MapGet(GameRoutes.Catalog, Catalog);
         _ = routes.MapGet(GameRoutes.Games, List);
-        _ = routes.MapPost(GameRoutes.Games, Create);
+        _ = routes.MapPost(GameRoutes.Games, Create).RequireRateLimiting(RequestLimits.NewGames);
         _ = routes.MapGet(GameRoute, Get);
         _ = routes.MapGet(GameRoute + "/history", History);
         _ = routes.MapGet(GameRoutes.Histories, Histories);

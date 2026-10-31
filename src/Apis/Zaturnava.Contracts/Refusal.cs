@@ -17,4 +17,7 @@ public enum Refusal
 
     /// <summary>The rules do not allow the action now.</summary>
     Illegal,
+
+    /// <summary>Too many requests from the same address of late: wait, and ask again.</summary>
+    TooBusy,
 }

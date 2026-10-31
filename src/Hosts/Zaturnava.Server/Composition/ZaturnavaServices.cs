@@ -50,6 +50,7 @@ internal static class ZaturnavaServices
             .AddGameStorage(configuration)
             .AddPageHosting(configuration)
             .AddSignIn(configuration)
+            .AddRequestLimits(configuration)
             .AddSingleton<IRulesetLocating>(new RulesetCatalog([new Chaturaji2027Rules()]))
             .AddSingleton<IBotLocating>(Bots())
             .AddSingleton(Scenarios(configuration))

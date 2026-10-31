@@ -10,6 +10,7 @@ _ = builder.Services.AddHostedMcp();
 WebApplication app = builder.Build();
 _ = app.UseExceptionHandler();
 _ = app.UseCors();
+_ = app.UseRateLimiter();
 _ = app.UseAuthentication();
 _ = app.MapOpenApi();
 _ = app.MapScalarApiReference(IndexEndpoints.ReferencePrefix);
