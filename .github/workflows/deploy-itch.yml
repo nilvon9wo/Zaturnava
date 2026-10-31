@@ -2,8 +2,9 @@ name: Deploy page (itch.io)
 
 # The web page, published and uploaded to itch.io as the project's HTML game, by butler, itch.io's uploader. Run
 # by hand (Actions, "Run workflow"). The page talks to the server wwwroot/appsettings.json names; the
-# Development settings (localhost) are left out of what is uploaded. Secret: BUTLER_API_KEY, an itch.io API key
-# (itch.io, Settings, API keys).
+# Development settings (localhost) are left out of what is uploaded. Secret: ITCH_BUTLER_API_KEY, an itch.io API
+# key (itch.io, Settings, API keys), for butler (BUTLER_API_KEY, its old name, until it is gone). Butler itself
+# reads it from BUTLER_API_KEY, a name it chooses.
 on:
   workflow_dispatch:
 
@@ -36,5 +37,5 @@ jobs:
 
       - name: Upload
         env:
-          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+          BUTLER_API_KEY: ${{ secrets.ITCH_BUTLER_API_KEY || secrets.BUTLER_API_KEY }}
         run: butler/butler push publish/wwwroot "$ITCH_TARGET" --userversion "${GITHUB_SHA::7}"
