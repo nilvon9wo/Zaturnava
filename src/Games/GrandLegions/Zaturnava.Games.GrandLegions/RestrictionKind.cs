@@ -1,4 +1,4 @@
-namespace Net.NowhereAtAll.Zaturnava.Games.GrandDraft;
+namespace Net.NowhereAtAll.Zaturnava.Games.GrandLegions;
 
 /// <summary>
 /// What a restriction limits (pieces.md): how the piece moves, or where it may go; or, a binding, the share of

@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\src\Games\GrandDraft\Zaturnava.Games.GrandDraft\Zaturnava.Games.GrandDraft.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Games\GrandLegions\Zaturnava.Games.GrandLegions\Zaturnava.Games.GrandLegions.csproj" />
     <ProjectReference Include="..\..\..\..\src\Engine\Zaturnava.Topology.SquareGrid\Zaturnava.Topology.SquareGrid.csproj" />
   </ItemGroup>
 

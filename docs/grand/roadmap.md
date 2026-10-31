@@ -47,7 +47,7 @@ Nothing here waits on an open question.
 
 *Done (2026-10-31)*: the grammar's leapers, lame leaps, hoppers and riders
 ([architecture §2.2](../architecture.md#22-piece-catalog-and-movement-grammar)), and the catalogue in
-`Zaturnava.Games.GrandDraft` (`GrandDraftPieces`), each piece's reach checked against its value. Still
+`Zaturnava.Games.GrandLegions` (`GrandLegionsPieces`), each piece's reach checked against its value. Still
 to come: the area rules (palace, river), which belong with the board (Stage 2) and the palaces
 (Stage 3); and the piece-information card.
 
@@ -61,6 +61,12 @@ to come: the area rules (palace, river), which belong with the board (Stage 2) a
 - Dice that name a class: 1 Artillery, 2 Cavalry, 3–4 Heavy, 5–6 Infantry or Leader.
 - The lobby's game-creation form, with "at random" for every setting; boards up to 26 × 26.
 - To be playable before the draft exists: each army a fixed one, set by the program.
+
+*Begun (2026-10-31)*: the board as a game is set (`GrandBoard`): its kingdoms in their corners, by
+pinwheel or top and bottom, each with its forward; whether the setting fits (sides up to 26, kingdoms
+at least 3 × 3, none overlapping); and which cells are across a river from a kingdom. The dice
+(`ClassDice`). Still to come: the allies' arrangement and teams, what rivers mean to the pieces, the
+lobby's form, fixed armies, and the ruleset that plays them.
 
 ## Stage 3 — Palaces, thrones and leaders
 

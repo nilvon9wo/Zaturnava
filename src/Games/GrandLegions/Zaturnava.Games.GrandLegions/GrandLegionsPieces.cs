@@ -1,10 +1,10 @@
 using System.Collections.Immutable;
 using Net.NowhereAtAll.Zaturnava.Engine.Boards;
 using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
-using static Net.NowhereAtAll.Zaturnava.Games.GrandDraft.PieceClass;
-using static Net.NowhereAtAll.Zaturnava.Games.GrandDraft.Tradition;
+using static Net.NowhereAtAll.Zaturnava.Games.GrandLegions.PieceClass;
+using static Net.NowhereAtAll.Zaturnava.Games.GrandLegions.Tradition;
 
-namespace Net.NowhereAtAll.Zaturnava.Games.GrandDraft;
+namespace Net.NowhereAtAll.Zaturnava.Games.GrandLegions;
 
 /// <summary>
 /// The catalogue of pieces (docs/grand/pieces.md), most valuable first within each class. Each moves as its
@@ -12,7 +12,7 @@ namespace Net.NowhereAtAll.Zaturnava.Games.GrandDraft;
 /// add is the ruleset's, still to come. Keys are kept apart from Chaturaji 2027's, whose Horse and Elephant
 /// move otherwise.
 /// </summary>
-public static class GrandDraftPieces
+public static class GrandLegionsPieces
 {
     private const string Palace = "Only its 3 × 3 palace";
     private const string BlockedAhead = "Blocked straight ahead";

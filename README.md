@@ -29,7 +29,7 @@ empire bonus are still to come ([rules.md, implementation status](docs/rules.md#
 | Part | |
 |---|---|
 | `Zaturnava.Engine`, `.Topology.SquareGrid`, `.Games.Chaturaji2027` | The rules engine, a square-grid board, Chaturaji 2027 |
-| `Zaturnava.Games.GrandDraft` | The Grand Draft, the grand game: so far its catalogue of pieces |
+| `Zaturnava.Games.GrandLegions` | Grand Legions, the grand game: so far its catalogue of pieces, its board and its dice |
 | `Zaturnava.Application`, `.Bots`, `.Persistence.*` | Games, seats and bots; storage in memory, SQLite or SQL Server |
 | `Zaturnava.Server` | The game server: an HTTP API |
 | `Zaturnava.Contracts`, `.Client` | The protocol, and a .NET client for it |

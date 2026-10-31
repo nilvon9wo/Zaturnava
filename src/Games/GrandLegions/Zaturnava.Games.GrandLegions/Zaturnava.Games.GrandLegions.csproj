@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Grand Legions (docs/grand/specification.md): Chaturaji 2027's rules on a board of any size, with armies
+    drafted from a catalogue of pieces from many chess traditions. So far the catalogue, as data; the board's
+    kingdoms and rivers; and the dice.
+  -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Engine\Zaturnava.Engine\Zaturnava.Engine.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,8 +1,9 @@
 # The grand game — Specification (v0.8 draft)
 
 [Chaturaji 2027](../rules.md) is one small part of a larger design, **the grand game**. Its proposed
-name is **The Grand Draft** (the designer, 2026-10-31); the program calls it so already
-(`Zaturnava.Games.GrandDraft`). Chaturaji 2027 stays available, unchanged, as a variant of its own.
+name is **Grand Legions** (the designer, 2026-10-31, in place of "The Grand Draft", which put the
+drafting before the play); the program calls it so already (`Zaturnava.Games.GrandLegions`). Chaturaji
+2027 stays available, unchanged, as a variant of its own.
 
 Sources: the designer's notes and answers of 2026-10-25, and the designer's spreadsheet of pieces,
 listed in [pieces.md](pieces.md). How the work is to be done, in stages, is in
@@ -54,6 +55,10 @@ than a piece, and with points won in play to be spent on upgrades and promotions
   (the Xiangqi Elephant), or that change when they have crossed it (the Xiangqi Soldier). Later, a
   river might wind.
 - **Stated.** A river runs along a midline, between two rows of cells, so no cell is on it.
+  - **Proposed.** On a side with an odd number of cells, the river runs before the middle cell, so
+    the east (or north) part is a row larger. The program does so for now.
+  - **Proposed.** A cell is across a river from a kingdom when the river lies between it and the
+    kingdom's corner. A kingdom wider than half the board would then straddle the river.
 - **Stated.** With two rivers, a kingdom in a corner has a river on two sides. A piece
   that may not cross *the* river may cross *neither*: the Xiangqi Elephant keeps to its own quarter.
   A piece changed by crossing it is changed by crossing *either*: the Xiangqi Soldier steps sideways
