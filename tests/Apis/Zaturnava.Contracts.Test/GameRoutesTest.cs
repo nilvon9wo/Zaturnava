@@ -109,4 +109,28 @@ public sealed class GameRoutesTest
         // Assert
         Assert.Equal("signin/Git%20Hub?origin=https%3A%2F%2Fhtml.itch.zone", route);
     }
+
+    [Fact]
+    public void SignIn_WhenGivenACodeToLinkWith_AddsIt()
+    {
+        // Arrange - nothing beyond the arguments
+
+        // Act
+        string route = GameRoutes.SignIn("GitHub", "https://a.b", "c 0");
+
+        // Assert
+        Assert.Equal("signin/GitHub?origin=https%3A%2F%2Fa.b&link=c%200", route);
+    }
+
+    [Fact]
+    public void Login_WhenGivenAService_RoutesUnderThePlayersLogins()
+    {
+        // Arrange - nothing beyond the service
+
+        // Act
+        string route = GameRoutes.Login("Git Hub");
+
+        // Assert
+        Assert.Equal("api/players/me/logins/Git%20Hub", route);
+    }
 }

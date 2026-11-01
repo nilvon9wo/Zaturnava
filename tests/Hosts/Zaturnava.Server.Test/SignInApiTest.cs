@@ -101,7 +101,10 @@ public sealed partial class SignInApiTest(SigningInServer server) : IClassFixtur
         PlayerDto? again = await this.Me(TokenOf(await this.Done("GitHub|3|Ada", SigningInServer.Page)));
 
         // Assert
-        Assert.Equal(first, again);
+        Assert.Equal(
+            (first?.Id, first?.Name, "GitHub"),
+            (again?.Id, again?.Name, string.Join(',', again?.Services ?? []))
+        );
     }
 
     [Theory]
@@ -283,32 +286,137 @@ public sealed partial class SignInApiTest(SigningInServer server) : IClassFixtur
     }
 
     [Theory]
-    [InlineData("api/players/me", null)]
-    [InlineData("api/players/me", "not-a-token")]
-    [InlineData("api/players/me/session", null)]
-    public async Task Delete_WhenTheTokenIsMissingOrStandsForNoOne_IsUnauthorized(string route, string? token)
+    [InlineData("DELETE", "api/players/me", null)]
+    [InlineData("DELETE", "api/players/me", "not-a-token")]
+    [InlineData("DELETE", "api/players/me/session", null)]
+    [InlineData("DELETE", "api/players/me/logins/GitHub", null)]
+    [InlineData("DELETE", "api/players/me/logins/GitHub", "not-a-token")]
+    [InlineData("POST", "api/players/me/link-code", null)]
+    [InlineData("POST", "api/players/me/link-code", "not-a-token")]
+    [InlineData("PUT", "api/players/me", null)]
+    [InlineData("PUT", "api/players/me", "not-a-token")]
+    public async Task Request_WhenTheTokenIsMissingOrStandsForNoOne_IsUnauthorized(
+        string method,
+        string route,
+        string? token
+    )
     {
         // Arrange - nothing beyond the server
 
         // Act
-        using HttpResponseMessage response = await this.Send(HttpMethod.Delete, route, token);
+        using HttpResponseMessage response =
+            await this.Send(new HttpMethod(method), route, token, new RenameRequest("Ada"));
 
         // Assert
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
-    private async Task<HttpResponseMessage> Send(HttpMethod method, string route, string? token)
+    [Fact]
+    public async Task Rename_WhenTheTokenStandsForAPlayer_NamesThemAnew()
+    {
+        // Arrange
+        string token = TokenOf(await this.Done("GitHub|9|Ada", SigningInServer.Page));
+
+        // Act
+        PlayerDto? renamed = await server.GameClient().Rename(token, "Countess", this._cancellation);
+
+        // Assert
+        Assert.Equal(("Countess", "Countess"), (renamed?.Name, (await this.Me(token))?.Name));
+    }
+
+    [Fact]
+    public async Task SignIn_WhenGivenACodeToLinkWith_SendsThePersonToTheServiceStill()
+    {
+        // Arrange - nothing beyond the server
+
+        // Act
+        using HttpResponseMessage response = await this._http.GetAsync(
+            GameRoutes.SignIn("GitHub", SigningInServer.Page, "c0de"),
+            this._cancellation
+        );
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Done_WhenGivenACodeToLinkWith_LinksTheLoginToThePlayerWhoAskedForIt()
+    {
+        // Arrange
+        HttpGameClient client = server.GameClient();
+        string token = TokenOf(await this.Done("GitHub|10|Ada", SigningInServer.Page));
+        string? code = await client.LinkCode(token, this._cancellation);
+
+        // Act
+        string page = await this.Done("Google|10|Ada G", SigningInServer.Page, code);
+
+        // Assert
+        PlayerDto? linked = await this.Me(TokenOf(page));
+        PlayerDto? again = await this.Me(TokenOf(await this.Done("Google|10|Someone", SigningInServer.Page)));
+        Assert.Equal(
+            ("GitHub,Google", (await this.Me(token))?.Id, linked?.Id),
+            (string.Join(',', linked?.Services ?? []), linked?.Id, again?.Id)
+        );
+    }
+
+    [Fact]
+    public async Task Done_WhenTheLoginToLinkIsAnotherPlayers_SaysSoAndSignsNoOneIn()
+    {
+        // Arrange
+        HttpGameClient client = server.GameClient();
+        _ = await this.Done("Google|11|Bea", SigningInServer.Page);
+        string token = TokenOf(await this.Done("GitHub|11|Ada", SigningInServer.Page));
+        string? code = await client.LinkCode(token, this._cancellation);
+
+        // Act
+        string page = await this.Done("Google|11|Bea", SigningInServer.Page, code);
+
+        // Assert
+        Assert.Equal(
+            (true, string.Empty),
+            (page.Contains("That Google account is already another player&#39;s here.", StringComparison.Ordinal),
+                TokenOf(page))
+        );
+    }
+
+    [Fact]
+    public async Task Unlink_WhenThePlayerHasAnotherService_LetsItGoButNotTheLast()
+    {
+        // Arrange
+        HttpGameClient client = server.GameClient();
+        string token = TokenOf(await this.Done("GitHub|12|Ada", SigningInServer.Page));
+        string? code = await client.LinkCode(token, this._cancellation);
+        _ = await this.Done("Google|12|Ada", SigningInServer.Page, code);
+
+        // Act
+        PlayerDto? unlinked = await client.Unlink(token, "Google", this._cancellation);
+
+        // Assert
+        GameRequestRefusedException refused = await Assert.ThrowsAsync<GameRequestRefusedException>(() =>
+            client.Unlink(token, "GitHub", this._cancellation)
+        );
+        Assert.Equal(("GitHub", Refusal.Conflict), (string.Join(',', unlinked?.Services ?? []), refused.Refusal));
+    }
+
+    private async Task<HttpResponseMessage> Send(
+        HttpMethod method,
+        string route,
+        string? token,
+        object? body = null
+    )
     {
         using HttpRequestMessage request = new(method, route);
+        request.Content = body is null ? null : JsonContent.Create(body);
         request.Headers.Authorization =
             token is null ? null : new AuthenticationHeaderValue(GameRoutes.TokenScheme, token);
         return await this._http.SendAsync(request, this._cancellation);
     }
 
-    private static HttpRequestMessage DoneRequest(string? vouched, string origin)
+    private static HttpRequestMessage DoneRequest(string? vouched, string origin, string? link = null)
     {
         HttpRequestMessage request = new(HttpMethod.Get, "signin/done?origin=" + Uri.EscapeDataString(origin));
         _ = request.Headers.TryAddWithoutValidation(VouchedHandler.Header, vouched);
+        _ = request.Headers.TryAddWithoutValidation(VouchedHandler.LinkHeader, link);
         return request;
     }
 
@@ -317,9 +425,9 @@ public sealed partial class SignInApiTest(SigningInServer server) : IClassFixtur
     [GeneratedRegex("\"token\":\"([^\"]+)\"")]
     private static partial Regex PostedToken();
 
-    private async Task<string> Done(string vouched, string origin)
+    private async Task<string> Done(string vouched, string origin, string? link = null)
     {
-        using HttpRequestMessage request = DoneRequest(vouched, origin);
+        using HttpRequestMessage request = DoneRequest(vouched, origin, link);
         using HttpResponseMessage response = await this._http.SendAsync(request, this._cancellation);
         return await response.Content.ReadAsStringAsync(this._cancellation);
     }

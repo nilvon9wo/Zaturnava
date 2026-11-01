@@ -76,6 +76,50 @@ public sealed class InMemoryPlayerStoreTest
         );
     }
 
+    [Theory]
+    [InlineData("ada", true)]
+    [InlineData("gone", false)]
+    public async Task ById_WhenAPlayerWasAdded_FindsThemByTheirIdOnly(string id, bool isFound)
+    {
+        // Arrange
+        await this._store.Add(Ada, this._cancellation);
+
+        // Act
+        Player? found = await this._store.ById(new PlayerId(id), this._cancellation);
+
+        // Assert
+        Assert.Equal(isFound, found == Ada);
+    }
+
+    [Fact]
+    public async Task Changes_WhenThePlayerIsKnown_RenameAndLinkAndUnlinkThem()
+    {
+        // Arrange
+        Login google = new("Google", "abcd");
+        await this._store.Add(Ada, this._cancellation);
+
+        // Act
+        await this._store.Rename(Ada.Id, "Countess", this._cancellation);
+        await this._store.AddLogin(Ada.Id, google, this._cancellation);
+        await this._store.RemoveLogin(Ada.Id, GitHub, this._cancellation);
+
+        // Assert
+        Player? found = await this._store.ById(Ada.Id, this._cancellation);
+        Assert.Equal(("Countess", google), (found?.Name, found?.Logins.Single()));
+    }
+
+    [Fact]
+    public async Task Rename_WhenThePlayerIsUnknown_ChangesNothing()
+    {
+        // Arrange - nothing beyond the empty store
+
+        // Act
+        await this._store.Rename(Ada.Id, "Countess", this._cancellation);
+
+        // Assert
+        Assert.Null(await this._store.ById(Ada.Id, this._cancellation));
+    }
+
     [Fact]
     public async Task Remove_WhenThePlayerHasNoSession_ForgetsThemStill()
     {

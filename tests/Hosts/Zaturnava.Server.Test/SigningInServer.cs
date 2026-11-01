@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Net.NowhereAtAll.Zaturnava.Server.Composition;
+using Net.NowhereAtAll.Zaturnava.Server.Endpoints;
 
 namespace Net.NowhereAtAll.Zaturnava.Server.Test;
 
@@ -51,6 +52,9 @@ internal sealed class VouchedHandler : IAuthenticationSignOutHandler
 {
     public const string Header = "X-Vouched";
 
+    /// <summary>The code to link with, that the sign-in carried through the service, if any.</summary>
+    public const string LinkHeader = "X-Link";
+
     private HttpContext? _context;
 
     public Task InitializeAsync(AuthenticationScheme scheme, HttpContext context)
@@ -62,7 +66,7 @@ internal sealed class VouchedHandler : IAuthenticationSignOutHandler
     public Task<AuthenticateResult> AuthenticateAsync() =>
         Task.FromResult(
             this._context?.Request.Headers[Header].ToString() is { Length: > 0 } vouched
-                ? AuthenticateResult.Success(Ticket(vouched.Split('|')))
+                ? AuthenticateResult.Success(Ticket(vouched.Split('|'), this.Carried()))
                 : AuthenticateResult.NoResult()
         );
 
@@ -72,7 +76,15 @@ internal sealed class VouchedHandler : IAuthenticationSignOutHandler
 
     public Task SignOutAsync(AuthenticationProperties? properties) => Task.CompletedTask;
 
-    private static AuthenticationTicket Ticket(string[] parts)
+    private AuthenticationProperties Carried()
+    {
+        string? link = this._context?.Request.Headers[LinkHeader].ToString();
+        return new AuthenticationProperties(
+            new Dictionary<string, string?> { [SignInEndpoints.LinkItem] = string.IsNullOrEmpty(link) ? null : link }
+        );
+    }
+
+    private static AuthenticationTicket Ticket(string[] parts, AuthenticationProperties properties)
     {
         ClaimsIdentity identity = new(SignInServices.ExternalScheme);
         identity.AddClaims(
@@ -81,6 +93,6 @@ internal sealed class VouchedHandler : IAuthenticationSignOutHandler
                 .. parts.Skip(2).Select(name => new Claim(ClaimTypes.Name, name, null, parts[0])),
             ]
         );
-        return new AuthenticationTicket(new ClaimsPrincipal(identity), SignInServices.ExternalScheme);
+        return new AuthenticationTicket(new ClaimsPrincipal(identity), properties, SignInServices.ExternalScheme);
     }
 }

@@ -115,9 +115,84 @@ public sealed class TokenSignInApiTest(ItchSigningInServer server) : IClassFixtu
         );
     }
 
+    [Fact]
+    public async Task SignIn_WhenGivenACodeToLinkWith_KeepsItWithTheState()
+    {
+        // Arrange - nothing beyond the server
+
+        // Act
+        using HttpResponseMessage response = await this._http.GetAsync(
+            GameRoutes.SignIn("Itch", SigningInServer.Page, "c0de"),
+            this._cancellation
+        );
+
+        // Assert
+        Assert.EndsWith(
+            Uri.EscapeDataString($" {SigningInServer.Page} c0de"),
+            CookieOf(response),
+            StringComparison.Ordinal
+        );
+    }
+
+    [Fact]
+    public async Task SignIn_WhenTheCodeToLinkWithHasASpace_Refuses()
+    {
+        // Arrange - nothing beyond the server
+
+        // Act
+        using HttpResponseMessage response = await this._http.GetAsync(
+            GameRoutes.SignIn("Itch", SigningInServer.Page, "c0 de"),
+            this._cancellation
+        );
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Finish_WhenLinkingTheLoginToItsOwnPlayer_SignsThemIn()
+    {
+        // Arrange
+        (string state, string cookie) = await this.Begin();
+        using HttpResponseMessage first = await this.Finish(cookie, state, ItchSigningInServer.Accepted);
+        SignedIn? leaf = await first.Content.ReadFromJsonAsync<SignedIn>(this._cancellation);
+        HttpGameClient client = new(this._http);
+        string? code = await client.LinkCode($"{leaf?.Token}", this._cancellation);
+        string kept = Uri.EscapeDataString($"{state} {SigningInServer.Page} {code}");
+
+        // Act
+        using HttpResponseMessage response = await this.Finish(kept, state, ItchSigningInServer.Accepted);
+
+        // Assert
+        SignedIn? linked = await response.Content.ReadFromJsonAsync<SignedIn>(this._cancellation);
+        PlayerDto? me = await client.Me($"{linked?.Token}", this._cancellation);
+        Assert.Equal(
+            ((await client.Me($"{leaf?.Token}", this._cancellation))?.Id, "Itch"),
+            (me?.Id, string.Join(',', me?.Services ?? []))
+        );
+    }
+
+    [Fact]
+    public async Task Finish_WhenTheCodeToLinkWithIsNoGood_RefusesSayingWhy()
+    {
+        // Arrange
+        string kept = Uri.EscapeDataString($"state {SigningInServer.Page} bogus");
+
+        // Act
+        using HttpResponseMessage response = await this.Finish(kept, "state", ItchSigningInServer.Accepted);
+
+        // Assert
+        string body = await response.Content.ReadAsStringAsync(this._cancellation);
+        Assert.Equal(
+            (HttpStatusCode.Forbidden, true),
+            (response.StatusCode, body.Contains("That link has run out", StringComparison.Ordinal))
+        );
+    }
+
     [Theory]
     [InlineData(null, "state", ItchSigningInServer.Accepted)]
     [InlineData("state", "state", ItchSigningInServer.Accepted)]
+    [InlineData("state " + SigningInServer.Page + " a b", "state", ItchSigningInServer.Accepted)]
     [InlineData("state " + SigningInServer.Page, "other", ItchSigningInServer.Accepted)]
     [InlineData("state https://elsewhere.example", "state", ItchSigningInServer.Accepted)]
     [InlineData("state " + SigningInServer.Page, "state", "refused")]

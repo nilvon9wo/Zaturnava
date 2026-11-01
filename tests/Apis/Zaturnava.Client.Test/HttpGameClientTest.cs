@@ -329,6 +329,60 @@ public sealed class HttpGameClientTest
     }
 
     [Fact]
+    public async Task Rename_WhenGivenAName_PutsItWithTheToken()
+    {
+        // Arrange
+        StubServer server = new(HttpStatusCode.OK, """{"id":"p","name":"Countess","services":["GitHub"]}""");
+
+        // Act
+        PlayerDto? player = await Client(server).Rename("secret", "Countess", this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            ("PUT", "/api/players/me", "Bearer secret", """{"name":"Countess"}""", "Countess", "GitHub"),
+            (server.Method, server.Path, server.Authorization, server.Body, player?.Name, player?.Services?.Single())
+        );
+    }
+
+    [Theory]
+    [InlineData(HttpStatusCode.OK, """{"code":"c0de"}""", "c0de")]
+    [InlineData(HttpStatusCode.Unauthorized, "", null)]
+    public async Task LinkCode_WhenAnswered_IsTheCodeIfTheTokenStandsForSomeone(
+        HttpStatusCode status,
+        string body,
+        string? expected
+    )
+    {
+        // Arrange
+        StubServer server = new(status, body);
+
+        // Act
+        string? code = await Client(server).LinkCode("secret", this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            ("POST", "/api/players/me/link-code", "Bearer secret", expected),
+            (server.Method, server.Path, server.Authorization, code)
+        );
+    }
+
+    [Fact]
+    public async Task Unlink_WhenGivenAService_DeletesItsLogin()
+    {
+        // Arrange
+        StubServer server = new(HttpStatusCode.OK, """{"id":"p","name":"Ada","services":["Google"]}""");
+
+        // Act
+        PlayerDto? player = await Client(server).Unlink("secret", "Git Hub", this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            ("DELETE", "/api/players/me/logins/Git%20Hub", "Bearer secret", "Google"),
+            (server.Method, server.Path, server.Authorization, player?.Services?.Single())
+        );
+    }
+
+    [Fact]
     public async Task SignOut_WhenGivenAToken_DeletesItsSession()
     {
         // Arrange

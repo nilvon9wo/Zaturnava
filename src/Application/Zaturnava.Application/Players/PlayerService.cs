@@ -8,9 +8,10 @@ namespace Net.NowhereAtAll.Zaturnava.Application.Players;
 /// <summary>
 /// Signing in, which is optional: a provider vouches for a login, and the player whose login it is (made the first
 /// time, named as the provider names them) gets a token, as a seat's is made (<see cref="SeatTokens"/>), to show
-/// from then on. Only its hash is kept.
+/// from then on. Only its hash is kept. A player may sign in with several services (<see cref="Link"/>), and name
+/// themselves as they please (<see cref="Rename"/>).
 /// </summary>
-public sealed class PlayerService(IPlayerPersisting store)
+public sealed class PlayerService(IPlayerPersisting store, LinkCodes links)
 {
     /// <summary>The longest a player's name may be, in characters; a longer one is cut.</summary>
     public const int MaximumNameLength = 40;
@@ -25,6 +26,7 @@ public sealed class PlayerService(IPlayerPersisting store)
     public const string Deleted = "deleted player";
 
     private readonly IPlayerPersisting _store = store;
+    private readonly LinkCodes _links = links;
 
     /// <summary>
     /// Signs in the player whose login it is: the one already known, else a new one, named
@@ -33,10 +35,92 @@ public sealed class PlayerService(IPlayerPersisting store)
     public async Task<SignedIn> SignIn(Login login, string? name, CancellationToken cancellationToken)
     {
         Player player = await this._store.ByLogin(login, cancellationToken)
-            ?? await this.Add(new Player(PlayerId.New(), NameOf(name), [login]), cancellationToken);
-        string token = SeatTokens.Issue();
-        await this._store.AddSession(player.Id, SeatTokens.Hash(token), cancellationToken);
-        return new SignedIn(player, token);
+            ?? await this.Add(new Player(PlayerId.New(), NameOf(name) ?? Unnamed, [login]), cancellationToken);
+        return await this.Session(player, cancellationToken);
+    }
+
+    /// <summary>
+    /// A one-time code (<see cref="LinkCodes"/>) for the player the token stands for to link another login with
+    /// (<see cref="Link"/>); none, if it stands for no one.
+    /// </summary>
+    public async Task<string?> LinkCode([Required] string token, CancellationToken cancellationToken) =>
+        await this.Find(token, cancellationToken) is { } player ? this._links.Issue(player.Id) : null;
+
+    /// <summary>
+    /// Makes <paramref name="login"/> the login of the player <paramref name="code"/> was issued to, and signs them
+    /// in, with a new token; from then on, they may sign in with either.
+    /// </summary>
+    /// <exception cref="LinkExpiredException">The code is spent or was never issued, or its player is gone.</exception>
+    /// <exception cref="LoginTakenException">The login is another player's.</exception>
+    public async Task<SignedIn> Link([Required] string code, Login login, CancellationToken cancellationToken)
+    {
+        Player player =
+            this._links.Redeem(code) is { } id && await this._store.ById(id, cancellationToken) is { } known
+                ? known
+                : throw new LinkExpiredException();
+        Player? holder = await this._store.ByLogin(login, cancellationToken);
+        if (holder is null)
+        {
+            await this._store.AddLogin(player.Id, login, cancellationToken);
+            player = player with { Logins = player.Logins.Add(login) };
+        }
+        else if (holder.Id != player.Id)
+        {
+            throw new LoginTakenException(login.Provider);
+        }
+
+        return await this.Session(player, cancellationToken);
+    }
+
+    /// <summary>
+    /// Lets go the login, with the service <paramref name="provider"/>, of the player the token stands for (none,
+    /// if it stands for no one); having none with that service is no matter.
+    /// </summary>
+    /// <exception cref="LastLoginException">It is the only login the player has.</exception>
+    public async Task<Player?> Unlink(
+        [Required] string token,
+        [Required] string provider,
+        CancellationToken cancellationToken
+    )
+    {
+        if (await this.Find(token, cancellationToken) is not { } player)
+        {
+            return null;
+        }
+
+        ImmutableList<Login> kept = player.Logins.RemoveAll(login => login.Provider == provider);
+        if (kept.IsEmpty)
+        {
+            throw new LastLoginException(provider);
+        }
+
+        foreach (Login login in player.Logins.Except(kept))
+        {
+            await this._store.RemoveLogin(player.Id, login, cancellationToken);
+        }
+
+        return player with { Logins = kept };
+    }
+
+    /// <summary>
+    /// Names the player the token stands for (none, if it stands for no one) <paramref name="name"/>, without
+    /// control characters or the spaces around it, cut to <see cref="MaximumNameLength"/>; a name with nothing left
+    /// leaves theirs as it was.
+    /// </summary>
+    public async Task<Player?> Rename([Required] string token, string? name, CancellationToken cancellationToken)
+    {
+        if (await this.Find(token, cancellationToken) is not { } player)
+        {
+            return null;
+        }
+
+        if (NameOf(name) is not { } named)
+        {
+            return player;
+        }
+
+        await this._store.Rename(player.Id, named, cancellationToken);
+        return player with { Name = named };
     }
 
     /// <summary>The player the token stands for, if it stands for one.</summary>
@@ -84,15 +168,27 @@ public sealed class PlayerService(IPlayerPersisting store)
         return true;
     }
 
-    /// <summary>The name, without the spaces around it, cut to the longest allowed; or <see cref="Unnamed"/>.</summary>
-    private static string NameOf(string? name) =>
-        name?.Trim() is { Length: > 0 } trimmed
-            ? trimmed[..Math.Min(trimmed.Length, MaximumNameLength)].TrimEnd()
-            : Unnamed;
+    /// <summary>
+    /// The name, without control characters or the spaces around it, cut to the longest allowed; none, if nothing is
+    /// left.
+    /// </summary>
+    private static string? NameOf(string? name) =>
+        Cut(new string([.. (name ?? string.Empty).Where(letter => !char.IsControl(letter))]).Trim());
+
+    private static string? Cut(string name) =>
+        name.Length == 0 ? null : name[..Math.Min(name.Length, MaximumNameLength)].TrimEnd();
 
     private async Task<Player> Add(Player player, CancellationToken cancellationToken)
     {
         await this._store.Add(player, cancellationToken);
         return player;
+    }
+
+    /// <summary>The player signed in, with a new token.</summary>
+    private async Task<SignedIn> Session(Player player, CancellationToken cancellationToken)
+    {
+        string token = SeatTokens.Issue();
+        await this._store.AddSession(player.Id, SeatTokens.Hash(token), cancellationToken);
+        return new SignedIn(player, token);
     }
 }

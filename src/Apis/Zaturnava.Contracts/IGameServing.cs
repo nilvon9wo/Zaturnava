@@ -91,6 +91,24 @@ public interface IGameServing
     /// <summary>The player a player's <paramref name="token"/> stands for; none, if it stands for no one.</summary>
     Task<PlayerDto?> Me([Required] string token, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Names the player <paramref name="token"/> stands for anew (<see cref="RenameRequest"/>); none, if it stands for
+    /// no one.
+    /// </summary>
+    Task<PlayerDto?> Rename([Required] string token, [Required] string name, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// A one-time code for the player <paramref name="token"/> stands for to link another service with
+    /// (<see cref="LinkCodeDto"/>); none, if it stands for no one.
+    /// </summary>
+    Task<string?> LinkCode([Required] string token, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Lets the player <paramref name="token"/> stands for sign in with <paramref name="provider"/> no more; none, if
+    /// it stands for no one. Refused, if it is the only service they may sign in with.
+    /// </summary>
+    Task<PlayerDto?> Unlink([Required] string token, [Required] string provider, CancellationToken cancellationToken);
+
     /// <summary>Signs out: the player's <paramref name="token"/> stands for no one from now on.</summary>
     Task SignOut([Required] string token, CancellationToken cancellationToken);
 

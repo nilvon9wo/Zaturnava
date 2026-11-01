@@ -3,7 +3,8 @@
    in the browser for every table until cleared); or signed in, with any service the server is set up for, each in a
    window of its own. Once signed in, the player's name, a button to sign out (the server lets the token go), and
    one to delete the account, which asks first, here in the page, and once confirmed has the server forget the
-   player altogether. The player's token is kept in the browser. *@
+   player altogether; and their profile, where they may change the name others see them by, and link other services
+   to sign in with (or unlink any but the last). The player's token is kept in the browser. *@
 @using Microsoft.JSInterop
 @implements IDisposable
 @inject IGameServing Games
@@ -15,6 +16,7 @@
 {
     <span class="player">
         Signed in as <strong>@player.Name</strong>
+        <button class="open-profile" @onclick="() => this.OpenProfile(token)">Profile</button>
         <button class="sign-out" @onclick="() => this.SignOut(token)">Sign out</button>
         <button class="delete-account" @onclick="() => this._isConfirming = true">Delete account</button>
     </span>
@@ -26,6 +28,49 @@
             <button class="delete-confirmed" @onclick="() => this.Delete(token)">Delete it</button>
             <button class="delete-cancelled" @onclick="() => this._isConfirming = false">Keep it</button>
         </span>
+    }
+    @if (this._isEditing)
+    {
+        ImmutableList<string> services = player.Services ?? [];
+        ImmutableList<string> others = [.. this._providers.Except(services)];
+        <div class="backdrop">
+            <div class="dialog profile-dialog" role="dialog" aria-modal="true" aria-labelledby="profile-title">
+                <h2 id="profile-title">Your profile</h2>
+                <label class="name">
+                    The name others see
+                    <input class="name"
+                           maxlength="@RenameRequest.MaximumNameLength"
+                           value="@player.Name"
+                           @onchange="change => this.Rename(token, change)" />
+                </label>
+                <p>You sign in with:</p>
+                <ul class="services">
+                    @foreach (string service in services)
+                    {
+                        <li>
+                            @service
+                            @if (services.Count > 1)
+                            {
+                                <button class="unlink" @onclick="() => this.Unlink(token, service)">Unlink</button>
+                            }
+                        </li>
+                    }
+                </ul>
+                @if (!others.IsEmpty && this._linkCode is { } code)
+                {
+                    <p>Link another, to sign in as yourself with it too:</p>
+                    <div class="actions">
+                        @foreach (string provider in others)
+                        {
+                            <button class="link" @onclick="() => this.Link(provider, code)">Link @provider</button>
+                        }
+                    </div>
+                }
+                <div class="actions">
+                    <button class="close-profile" @onclick="() => this._isEditing = false">Done</button>
+                </div>
+            </div>
+        </div>
     }
 }
 else
@@ -87,6 +132,13 @@ else
     private (PlayerDto Player, string Token)? _signedIn;
     private bool _isConfirming;
     private bool _isChoosing;
+    private bool _isEditing;
+
+    /// <summary>
+    /// A code to link another service with, asked for as the profile opens, so that a window can be opened the moment
+    /// the player chooses one (a browser lets a page open one only then); spent once used.
+    /// </summary>
+    private string? _linkCode;
     private string? _notice;
     private DotNetObjectReference<PlayerBar>? _listener;
 
@@ -104,6 +156,11 @@ else
         this._notice = null;
         this._isChoosing = false;
         _ = await Requests.Attempt(async () => await this.Show(token));
+        if (this._isEditing)
+        {
+            await this.AskLinkCode(token);
+        }
+
         this.StateHasChanged();
     }
 
@@ -121,13 +178,50 @@ else
     private async Task Show(string token) =>
         this._signedIn = await this.Games.Me(token, CancellationToken.None) is { } player ? (player, token) : null;
 
-    /// <summary>Opens the window to sign in with <paramref name="provider"/>, to post back to this page.</summary>
-    private async Task SignIn(string provider)
+    /// <summary>
+    /// Opens the window to sign in with <paramref name="provider"/>, to post back to this page; with a
+    /// <paramref name="link"/> code, to link it to the player signed in.
+    /// </summary>
+    private async Task SignIn(string provider, string? link = null)
     {
         this._listener ??= DotNetObjectReference.Create(this);
         string origin = new Uri(this.Navigation.BaseUri).GetLeftPart(UriPartial.Authority);
-        await this.Browser.SignIn(new Uri(this.Server.Value, GameRoutes.SignIn(provider, origin)), this._listener);
+        Uri url = new(this.Server.Value, GameRoutes.SignIn(provider, origin, link));
+        await this.Browser.SignIn(url, this._listener);
     }
+
+    private async Task OpenProfile(string token)
+    {
+        this._isEditing = true;
+        await this.AskLinkCode(token);
+    }
+
+    private async Task AskLinkCode(string token) =>
+        this._notice = await Requests.Attempt(async () =>
+            this._linkCode = await this.Games.LinkCode(token, CancellationToken.None)
+        );
+
+    /// <summary>Links <paramref name="provider"/>, in a window of its own, with the code, which is then spent.</summary>
+    private async Task Link(string provider, string code)
+    {
+        this._linkCode = null;
+        await this.SignIn(provider, code);
+    }
+
+    /// <summary>Names the player anew; told why not, if the server cannot.</summary>
+    private async Task Rename(string token, ChangeEventArgs change) =>
+        this._notice = await Requests.Attempt(async () =>
+            await this.Showing(token, this.Games.Rename(token, $"{change.Value}", CancellationToken.None))
+        );
+
+    private async Task Unlink(string token, string provider) =>
+        this._notice = await Requests.Attempt(async () =>
+            await this.Showing(token, this.Games.Unlink(token, provider, CancellationToken.None))
+        );
+
+    /// <summary>Shows the player the server answered with; or, if the token stood for no one, no one.</summary>
+    private async Task Showing(string token, Task<PlayerDto?> answer) =>
+        this._signedIn = await answer is { } player ? (player, token) : null;
 
     /// <summary>Has the server let the token go, and forgets it here, even if the server cannot be reached.</summary>
     private async Task SignOut(string token)
@@ -160,5 +254,6 @@ else
         await this.Browser.ForgetPlayer();
         this._signedIn = null;
         this._isConfirming = false;
+        this._isEditing = false;
     }
 }

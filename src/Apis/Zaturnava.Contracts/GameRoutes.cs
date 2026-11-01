@@ -27,12 +27,24 @@ public static class GameRoutes
     /// <summary>The session a player's token is; deleted, the player is signed out, and the token is no more.</summary>
     public const string Session = Me + "/session";
 
+    /// <summary>Where a player asks for a code to link another service with (<see cref="LinkCodeDto"/>).</summary>
+    public const string LinkCode = Me + "/link-code";
+
+    /// <summary>The services a player may sign in with (<see cref="Login"/>).</summary>
+    public const string Logins = Me + "/logins";
+
+    /// <summary>A player's login with a service; deleted, they may no longer sign in with it.</summary>
+    public static string Login([Required] string provider) => $"{Logins}/{Uri.EscapeDataString(provider)}";
+
     /// <summary>
     /// Where a page sends a person, in a window of its own, to sign in with a service; once they have, that
     /// window posts a <see cref="SignedInDto"/> to the page, if its origin is one the server serves, and closes.
+    /// With a <paramref name="link"/> code (<see cref="LinkCodeDto"/>), the service is linked to the player who asked
+    /// for the code, who is signed in.
     /// </summary>
-    public static string SignIn([Required] string provider, [Required] string origin) =>
-        $"signin/{Uri.EscapeDataString(provider)}?origin={Uri.EscapeDataString(origin)}";
+    public static string SignIn([Required] string provider, [Required] string origin, string? link = null) =>
+        $"signin/{Uri.EscapeDataString(provider)}?origin={Uri.EscapeDataString(origin)}"
+            + (link is null ? string.Empty : $"&link={Uri.EscapeDataString(link)}");
 
     public static string Game([Required] string gameId) => $"{Games}/{Uri.EscapeDataString(gameId)}";
 
