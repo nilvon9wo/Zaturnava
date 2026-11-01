@@ -93,6 +93,15 @@ internal sealed class StubGameServer : IGameServing
     ) =>
         this.Answer(new SeatClaimedDto(Token), (gameId, seat, playerToken, claim));
 
+    public Task Identify(
+        [Required] string gameId,
+        int seat,
+        string? playerToken,
+        [Required] IdentifySeatRequest request,
+        CancellationToken cancellationToken
+    ) =>
+        throw new NotSupportedException("The tools say who holds a seat only as they claim it.");
+
     public Task<GameViewDto> Submit(
         [Required] string gameId,
         [Required] string token,

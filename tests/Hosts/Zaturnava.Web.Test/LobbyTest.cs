@@ -565,6 +565,42 @@ public sealed class LobbyTest : IDisposable
     }
 
     [Fact]
+    public void Resume_WhenThePlayerSignedInOrChoseANicknameSince_SaysSoAtTheSeat()
+    {
+        // Arrange
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.seat." + FakeGameServer.GameId)
+            .SetResult("2 kept");
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.player").SetResult("player");
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.nickname").SetResult("Ada");
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Act
+        lobby.Find("button.resume").Click();
+
+        // Assert
+        Assert.Equal([$"{FakeGameServer.GameId} 2 kept player Ada"], this._page.Server.Identified);
+    }
+
+    [Fact]
+    public void Resume_WhenTheSeatCannotBeSaidToBeHeldAnew_GoesBackToItAsItWas()
+    {
+        // Arrange
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.seat." + FakeGameServer.GameId)
+            .SetResult("2 kept");
+        IRenderedComponent<Lobby> lobby = this.Render();
+        this._page.Server.Failure = new GameRequestRefusedException(Refusal.Forbidden, "Signed out.");
+
+        // Act
+        lobby.Find("button.resume").Click();
+
+        // Assert
+        Assert.Equal(
+            (new Seating(FakeGameServer.GameId, new SeatClaim(2, "kept")), (string?)null),
+            (this._seated, lobby.FindAll("p.problem").Count == 0 ? null : "a problem shown")
+        );
+    }
+
+    [Fact]
     public void Render_WhenThisBrowserHeldASeat_NamesIt()
     {
         // Arrange

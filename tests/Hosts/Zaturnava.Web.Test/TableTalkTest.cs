@@ -46,7 +46,7 @@ public sealed class TableTalkTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ("Log|Table", "Only the players may speak here.", 0, 0, "Yellow Hello", "chat 0 watching"),
+            ("Log|Table", "Only the players may speak here.", 0, 0, "Random (Yellow) Hello", "chat 0 watching"),
             (
                 Tabs(talk),
                 talk.Find("p.watching").TextContent,
@@ -89,7 +89,7 @@ public sealed class TableTalkTest : IDisposable
         talk.Find("button.log-tab").Click();
 
         // Assert
-        Assert.Equal(("You Hi|Yellow Hello", 0), (shown, talk.FindAll(".unread").Count));
+        Assert.Equal(("You Hi|Random (Yellow) Hello", 0), (shown, talk.FindAll(".unread").Count));
     }
 
     [Fact]
@@ -123,7 +123,7 @@ public sealed class TableTalkTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ("Yellow Hello|You Hi", "Show newest first"),
+            ("Random (Yellow) Hello|You Hi", "Show newest first"),
             (Shown(talk), talk.Find("button.chat-order").TextContent.Trim())
         );
     }
@@ -141,7 +141,7 @@ public sealed class TableTalkTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ("Yellow Hello|You Hi", "zaturnava.chat-order oldest"),
+            ("Random (Yellow) Hello|You Hi", "zaturnava.chat-order oldest"),
             (
                 Shown(talk),
                 string.Join(" ", this._page.JSInterop.Invocations["zaturnava.save"].Single().Arguments)
@@ -178,7 +178,11 @@ public sealed class TableTalkTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ("You Hi|Yellow (AI) Beep", "You Hi", "zaturnava.ai-talk hidden|zaturnava.ai-talk shown"),
+            (
+                "You Hi|Hal (AI guest) (Yellow) Beep",
+                "You Hi",
+                "zaturnava.ai-talk hidden|zaturnava.ai-talk shown"
+            ),
             (
                 before,
                 hidden,
@@ -329,9 +333,10 @@ public sealed class TableTalkTest : IDisposable
         _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.ai-talk")
             .SetResult(isHidden ? "hidden" : null);
         ImmutableList<SeatDto> seats = FakeGameServer.SeatZeroToMove.Seats;
+        SeatDto ai = seats[1] with { Controller = "human", Bot = null, Player = "Hal (AI guest)", IsAi = true };
         return this._page.Render<TableTalk>(parameters => parameters
             .Add(x => x.Seating, SeatZero)
-            .Add(x => x.Seats, seats.SetItem(1, seats[1] with { IsAi = true }))
+            .Add(x => x.Seats, seats.SetItem(1, ai))
         );
     }
 }
