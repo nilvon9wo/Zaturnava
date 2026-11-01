@@ -133,12 +133,12 @@ internal sealed class FakeGameServer : IGameServing
         [Required] string gameId,
         int seat,
         string? playerToken,
-        string? nickname,
+        ClaimSeatRequest? claim,
         CancellationToken cancellationToken
     )
     {
         this.ClaimedAs = playerToken;
-        this.ClaimedBy = nickname;
+        this.ClaimedBy = claim?.Nickname;
         return this.Answer($"claim {gameId} {seat.ToString(CultureInfo.InvariantCulture)}", new SeatClaimedDto(Token));
     }
 

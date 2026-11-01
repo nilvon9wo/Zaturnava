@@ -157,7 +157,8 @@ public sealed class ChatApiTest(SigningInServer server) : IClassFixture<SigningI
         // Arrange
         CreateGameRequest request = new(ZaturnavaServer.Chaturaji2027, ZaturnavaServer.OneOpenSeat);
         GameCreatedDto created = await this._client.Create(request, this._cancellation);
-        SeatClaimedDto guest = await this._client.Claim(created.GameId, 0, null, "Ada", this._cancellation);
+        SeatClaimedDto guest =
+            await this._client.Claim(created.GameId, 0, null, new ClaimSeatRequest("Ada"), this._cancellation);
 
         // Act
         Task<ChatMessageDto> saying = this._client.Say(

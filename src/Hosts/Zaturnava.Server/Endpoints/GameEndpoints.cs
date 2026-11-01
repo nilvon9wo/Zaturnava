@@ -151,6 +151,7 @@ internal static class GameEndpoints
             new SeatId(seat),
             claimant,
             claim?.Nickname,
+            claim?.IsAi == true,
             cancellationToken
         );
         return new SeatClaimedDto(token);

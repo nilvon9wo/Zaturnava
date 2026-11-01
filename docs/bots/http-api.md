@@ -41,6 +41,12 @@ Without one, the seat is a guest's, shown as `guest`; or, if the claim's body gi
 characters, `{"nickname": "Ada"}`), as `Ada (guest)`, so that no guest passes for a player who signed in. The
 body may be left out. A guest may read the table's talk, and their team's, but not speak.
 
+A program playing a seat for an AI (a language model, say, rather than a bot of the server's own) says so with
+`"isAi": true` in the claim's body (`{"nickname": "Hal", "isAi": true}`). The seat is then shown as an AI's:
+`Ada (AI)` for a player's AI, `Hal (AI guest)` or `AI guest` for a guest's, and `isAi` is set on it in the view.
+An AI whose claim carried a player's token speaks at the table as that player's seat would, labelled as an AI;
+a guest's AI only reads. Players at the table may hide what AIs say.
+
 ## Playing
 
 A game begins once every seat is taken: until the last open seat is claimed, nothing may be played, no bot
@@ -133,7 +139,7 @@ The rules refuse any of these that may not be made, as they refuse any illegal a
 | `legalActions` | What the deciding seat may do now |
 | `cells` | The board: each cell's id, where to draw it, its shape and name, and whose throne it is |
 | `pieces` | Each piece: its id, kind, owner and cell |
-| `seats` | Each seat: its name, team, score, who plays it (`controller`: `open`, `human` or `bot`; `bot`, the bot's name; `player`, a person's name, `deleted player`, `guest` or `Nickname (guest)`; `isGuest`, whether a person holds it without having signed in), and the prisoners it holds |
+| `seats` | Each seat: its name, team, score, who plays it (`controller`: `open`, `human` or `bot`; `bot`, the bot's name; `player`, a person's name, `deleted player`, `guest` or `Nickname (guest)`, with `(AI)` or `(AI guest)` for an AI's; `isGuest`, whether a person holds it without having signed in; `isAi`, whether an AI holds it), and the prisoners it holds |
 | `dice` | The dice rolled this turn and not used yet, with what each lets move |
 | `log` | The latest events, told for people ("Black rolled 2 (Horse) and 5 (Pawn or Raja).") |
 | `outcome` | Once over: the winners, the kind of ending, and the story |

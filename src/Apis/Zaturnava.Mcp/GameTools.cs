@@ -39,17 +39,23 @@ public sealed class GameTools(IGameServing games)
 
     [McpServerTool(Name = "claim_seat")]
     [Description(
-        "Claims an open seat. Returns the token that holds it: keep it, as every action for the seat needs it, "
-        + "and the server cannot show it again."
+        "Claims an open seat, for you, an AI: the seat is shown as one an AI plays. Returns the token that holds "
+        + "it: keep it, as every action for the seat needs it, and the server cannot show it again. Played for a "
+        + "person who signed in (their player token), the seat shows their name, as \"Name (AI)\", and you may "
+        + "speak at the table; as a guest, you may only read what is said."
     )]
     public Task<SeatClaimedDto> ClaimSeat(
         string gameId,
         [Description("The seat's number, from 0.")] int seat,
-        [Description("A nickname to be shown by at the table, as \"Nickname (guest)\"; at most 20 characters.")]
+        [Description("A nickname to be shown by at the table, as \"Nickname (AI guest)\"; at most 20 characters.")]
         string? nickname,
+        [Description("The player token of the person you play for, if they gave you one; else leave it out.")]
+        string? playerToken,
         CancellationToken cancellationToken
     ) =>
-        Explained(() => this._games.Claim(gameId, seat, null, nickname, cancellationToken));
+        Explained(() =>
+            this._games.Claim(gameId, seat, playerToken, new ClaimSeatRequest(nickname, IsAi: true), cancellationToken)
+        );
 
     [McpServerTool(Name = "get_game", ReadOnly = true)]
     [Description(

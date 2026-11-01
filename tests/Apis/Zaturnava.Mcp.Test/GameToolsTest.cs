@@ -85,8 +85,12 @@ public sealed class GameToolsTest : IAsyncLifetime
         );
     }
 
-    [Fact]
-    public async Task ClaimSeat_WhenGivenASeatAndANickname_ClaimsItAsTheGuestSoNamedAndReturnsItsToken()
+    [Theory]
+    [InlineData(null)]
+    [InlineData("player")]
+    public async Task ClaimSeat_WhenGivenASeatAndANickname_ClaimsItForAnAiAsTheGuestOrPlayerAndReturnsItsToken(
+        string? playerToken
+    )
     {
         // Arrange
         Dictionary<string, object?> arguments = new()
@@ -94,6 +98,7 @@ public sealed class GameToolsTest : IAsyncLifetime
             ["gameId"] = StubGameServer.GameId,
             ["seat"] = 2,
             ["nickname"] = "Hal",
+            ["playerToken"] = playerToken,
         };
 
         // Act
@@ -101,7 +106,7 @@ public sealed class GameToolsTest : IAsyncLifetime
 
         // Assert
         Assert.Equal(
-            (true, (StubGameServer.GameId, 2, "Hal")),
+            (true, (StubGameServer.GameId, 2, playerToken, new ClaimSeatRequest("Hal", IsAi: true))),
             (text.Contains(StubGameServer.Token, StringComparison.Ordinal), this._session.Server.Received)
         );
     }

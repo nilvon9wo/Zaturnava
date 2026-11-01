@@ -2,7 +2,8 @@
    what is said to the whole table, and, for a player, what their team says to itself - one at a time, by tabs,
    each talk's tab counting what was said there, by others, since it was last open. Watchers read the table
    but say nothing; so do guests, players who did not sign in before taking their seat. Each message shows when it was said, in the player's own time; the talk is newest first, or
-   oldest first if the player prefers (remembered by the browser). It asks for what was said every
+   oldest first if the player prefers (remembered by the browser). At a table where an AI plays a seat, the player may
+   hide what AIs say (remembered too). It asks for what was said every
    TableSettings.PollInterval, the game over or not, and at once after the player says something. *@
 @implements IDisposable
 @inject IGameServing Games
@@ -37,6 +38,13 @@
             <button class="chat-order" @onclick="this.ToggleOrder">
                 @(this._isNewestFirst ? "Show oldest first" : "Show newest first")
             </button>
+            @if (this.Seats.Any(seat => seat.IsAi))
+            {
+                <button class="ai-talk" aria-pressed="@(this._isAiHidden ? "true" : "false")"
+                        @onclick="this.ToggleAi">
+                    Hide AI talk
+                </button>
+            }
         }
     </div>
     @if (this._shown == LogTab)
@@ -98,6 +106,7 @@
     private string? _draft;
     private string? _problem;
     private bool _isNewestFirst = true;
+    private bool _isAiHidden;
 
     public TableTalk() => this._poll = new Timer(this.Tick);
 
@@ -131,12 +140,24 @@
     protected override async Task OnInitializedAsync()
     {
         this._isNewestFirst = await this.Browser.IsChatNewestFirst();
+        this._isAiHidden = await this.Browser.IsAiTalkHidden();
         this._problem = await this.Hear();
     }
 
     public void Dispose() => this._poll.Dispose();
 
-    private IEnumerable<ChatMessageDto> Of(Tab tab) => this._said.Where(message => message.Channel == tab.Name);
+    /// <summary>What was said in the tab's talk; without what AIs said, if the player hides it.</summary>
+    private IEnumerable<ChatMessageDto> Of(Tab tab) =>
+        this._said.Where(message =>
+            message.Channel == tab.Name && !(this._isAiHidden && this.Seats[message.Seat].IsAi)
+        );
+
+    /// <summary>Hides what AIs say, or shows it again, and remembers that the player prefers it so.</summary>
+    private async Task ToggleAi()
+    {
+        this._isAiHidden = !this._isAiHidden;
+        await this.Browser.SetAiTalkHidden(this._isAiHidden);
+    }
 
     /// <summary>The messages, newest or oldest first, as the player prefers.</summary>
     private IEnumerable<ChatMessageDto> InOrder(IEnumerable<ChatMessageDto> said) =>
@@ -163,8 +184,10 @@
         this._shown = tab;
     }
 
-    /// <summary>"You", or the seat's name.</summary>
-    private string Who(int seat) => seat == this.Seating.Claim?.Seat ? "You" : this.Seats[seat].Name;
+    /// <summary>"You", or the seat's name; with "(AI)", for a seat an AI plays.</summary>
+    private string Who(int seat) => seat == this.Seating.Claim?.Seat ? "You" : Named(this.Seats[seat]);
+
+    private static string Named(SeatDto seat) => seat.IsAi ? $"{seat.Name} (AI)" : seat.Name;
 
     /// <summary>Says the draft, and hears what was said since; the draft is kept if it could not be said.</summary>
     private async Task Say()
