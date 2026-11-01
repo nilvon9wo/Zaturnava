@@ -319,6 +319,65 @@ public sealed class TableTest : IDisposable
         );
     }
 
+    [Theory]
+    [InlineData(0, 0.0, 60.0, 1, "")]
+    [InlineData(0, 44.2, 104.2, 0, "If no one comes, you may fill the open seats with bots in 45 s.")]
+    [InlineData(2, 0.0, 60.0, 0, "If no one comes, you may fill the open seats with bots in 60 s.")]
+    [InlineData(2, 0.0, 0.0, 1, "")]
+    public void Render_WhenSeatsAreStillOpen_OffersToFillThemWithBotsOnceThePlayerMay(
+        int firstArrival,
+        double untilFirst,
+        double untilAnyone,
+        int buttons,
+        string hint
+    )
+    {
+        // Arrange
+        this._page.Server.View = WaitingForYellow() with
+        {
+            Vacancy = new VacancyDto(firstArrival, untilFirst, untilAnyone),
+        };
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Assert
+        Assert.Equal(
+            (buttons, hint),
+            (
+                table.FindAll("button.fill").Count,
+                string.Concat(table.FindAll("p.fill-wait").Select(wait => wait.TextContent))
+            )
+        );
+    }
+
+    [Fact]
+    public void Fill_WhenClicked_HasBotsTakeTheOpenSeats()
+    {
+        // Arrange
+        this._page.Server.View = WaitingForYellow() with { Vacancy = new VacancyDto(0, 0, 60) };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Act
+        table.Find("button.fill").Click();
+
+        // Assert
+        Assert.Contains($"fill {FakeGameServer.GameId} {FakeGameServer.Token}", this._page.Server.Calls);
+    }
+
+    [Fact]
+    public void Render_WhenWatchingAGameWaitingForItsSeats_OffersNoWayToFillThem()
+    {
+        // Arrange
+        this._page.Server.View = WaitingForYellow() with { Vacancy = new VacancyDto(0, 0, 0) };
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(Seating.Watching(FakeGameServer.GameId));
+
+        // Assert
+        Assert.Equal((0, 0), (table.FindAll("button.fill").Count, table.FindAll("p.fill-wait").Count));
+    }
+
     [Fact]
     public void ActionButton_WhenClicked_SubmitsTheAction()
     {
@@ -2213,6 +2272,17 @@ public sealed class TableTest : IDisposable
                 .Add(ActionArguments.Cell, "2")
                 .Add(ActionArguments.Into, into.ToString(CultureInfo.InvariantCulture))
         );
+
+    /// <summary>The game waiting for someone to take Yellow's seat, open, before it begins.</summary>
+    private static GameViewDto WaitingForYellow() =>
+        FakeGameServer.SeatZeroToMove with
+        {
+            Seats = FakeGameServer.SeatZeroToMove.Seats.SetItem(
+                1,
+                FakeGameServer.SeatZeroToMove.Seats[1] with { Controller = "open", Bot = null, BotId = null }
+            ),
+            LegalActions = [],
+        };
 
     /// <summary>
     /// Black's turn, holding Yellow's Pawn 9 and Horse 10 and Red's Pawn 11; Yellow holds Black's Boat 7

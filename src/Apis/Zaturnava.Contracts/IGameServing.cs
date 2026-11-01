@@ -55,6 +55,16 @@ public interface IGameServing
         CancellationToken cancellationToken
     );
 
+    /// <summary>
+    /// Has bots take the open seats of a game waiting for people, for the player whose seat <paramref name="token"/>
+    /// holds, once they may (<see cref="VacancyDto"/>); the game begins, if no seat is left open.
+    /// </summary>
+    Task<GameViewDto> FillOpenSeats(
+        [Required] string gameId,
+        [Required] string token,
+        CancellationToken cancellationToken
+    );
+
     /// <summary>Takes <paramref name="action"/> for the seat <paramref name="token"/> holds.</summary>
     Task<GameViewDto> Submit(
         [Required] string gameId,

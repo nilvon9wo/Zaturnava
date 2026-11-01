@@ -43,6 +43,9 @@ public static class GameRoutes
 
     public static string Advance([Required] string gameId) => $"{Game(gameId)}/advance";
 
+    /// <summary>Where a player waiting for others to take a game's open seats has bots take them instead.</summary>
+    public static string Fill([Required] string gameId) => $"{Game(gameId)}/fill";
+
     public static string History([Required] string gameId) => $"{Game(gameId)}/history";
 
     /// <summary>Where to say something at a game's table.</summary>

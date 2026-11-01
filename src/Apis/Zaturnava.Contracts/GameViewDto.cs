@@ -19,6 +19,8 @@ namespace Net.NowhereAtAll.Zaturnava.Contracts;
 /// change what it may do, and who moves.
 /// <see cref="Proposal"/> is a proposal to end the game, waiting on the deciding seat's answer;
 /// <see cref="Away"/>, the vote on whether to stop waiting for the deciding seat, if there is one.
+/// <see cref="Vacancy"/> says, while the game waits for its open seats to be taken, who may fill them with bots, and
+/// when.
 /// </summary>
 public sealed record GameViewDto(
     string Id,
@@ -43,5 +45,6 @@ public sealed record GameViewDto(
     PrisonerDto? Returning = null,
     int? ThroneHeldBy = null,
     EndProposalDto? Proposal = null,
-    AwayDto? Away = null
+    AwayDto? Away = null,
+    VacancyDto? Vacancy = null
 );

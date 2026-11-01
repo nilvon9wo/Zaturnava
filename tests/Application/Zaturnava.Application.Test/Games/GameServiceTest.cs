@@ -216,6 +216,114 @@ public sealed class GameServiceTest
     }
 
     [Fact]
+    public async Task Get_WhenAGameWaitsForItsSeats_SaysTheFirstToArriveMayFillThemAfterTheWait()
+    {
+        // Arrange
+        GameId id = await this.CreateOpen();
+        _ = await this._service.Claim(id, Second, this._cancellation);
+        _ = await this._service.Get(id, this._cancellation);
+        this._time.Pass(FiveSeconds);
+
+        // Act
+        GameSnapshot snapshot = await this._service.Get(id, this._cancellation);
+
+        // Assert
+        TimeSpan wait = GameServiceSettings.DefaultFillWait;
+        Assert.Equal(new Vacancy(Second, wait - FiveSeconds, (wait * 2) - FiveSeconds), snapshot.Vacancy);
+    }
+
+    [Fact]
+    public async Task Get_WhenNoOneHasTakenASeat_NamesNoOneToFillThemFirst()
+    {
+        // Arrange
+        GameId id = await this.CreateOpen();
+
+        // Act
+        GameSnapshot snapshot = await this._service.Get(id, this._cancellation);
+
+        // Assert
+        Assert.Null(snapshot.Vacancy?.FirstArrival);
+    }
+
+    [Fact]
+    public async Task FillOpenSeats_WhenTheFirstToArriveHasWaited_SeatsABotAndTheGameBegins()
+    {
+        // Arrange
+        GameId id = await this.CreateOpen();
+        string token = await this._service.Claim(id, First, this._cancellation);
+        _ = await this._service.Get(id, this._cancellation);
+        this._time.Pass(GameServiceSettings.DefaultFillWait);
+
+        // Act
+        GameSnapshot filled = await this._service.FillOpenSeats(id, token, this._cancellation);
+
+        // Assert
+        Assert.Equal<(SeatController, bool, Vacancy?)>(
+            (new BotSeat(FirstChoiceBot.BotId), false, null),
+            (filled.Record.Controllers[1], filled.Record.IsWaiting, filled.Vacancy)
+        );
+    }
+
+    [Fact]
+    public async Task FillOpenSeats_WhenNoBotIsLeftToSeat_LeavesTheSeatOpen()
+    {
+        // Arrange
+        GameService service = this.Service(GameServiceSettings.Default, bots: []);
+        GameId id = await service.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
+        string token = await service.Claim(id, First, this._cancellation);
+        _ = await service.Get(id, this._cancellation);
+        this._time.Pass(GameServiceSettings.DefaultFillWait);
+
+        // Act
+        GameSnapshot filled = await service.FillOpenSeats(id, token, this._cancellation);
+
+        // Assert
+        Assert.True(filled.Record.Controllers[1].IsOpen);
+    }
+
+    [Fact]
+    public async Task FillOpenSeats_WhenTooSoon_Refuses()
+    {
+        // Arrange
+        GameId id = await this.CreateOpen();
+        string token = await this._service.Claim(id, First, this._cancellation);
+
+        // Act
+        Task<GameSnapshot> filling = this._service.FillOpenSeats(id, token, this._cancellation);
+
+        // Assert
+        _ = await Assert.ThrowsAsync<TooSoonToFillException>(() => filling);
+    }
+
+    [Fact]
+    public async Task FillOpenSeats_WhenTheTokenHoldsNoSeat_Refuses()
+    {
+        // Arrange
+        GameId id = await this.CreateOpen();
+
+        // Act
+        Task<GameSnapshot> filling = this._service.FillOpenSeats(id, "no-ones", this._cancellation);
+
+        // Assert
+        _ = await Assert.ThrowsAsync<NotAPlayerException>(() => filling);
+    }
+
+    [Fact]
+    public async Task FillOpenSeats_WhenNoSeatIsOpen_LeavesTheGameAsItIs()
+    {
+        // Arrange
+        GameId id = await this._service.Create(TinyRules.RulesetId, [SeatPlan.Open, Bot], this._cancellation);
+        string token = await this._service.Claim(id, First, this._cancellation);
+        GameSnapshot before = await this._service.Get(id, this._cancellation);
+
+        // Act
+        GameSnapshot after = await this._service.FillOpenSeats(id, token, this._cancellation);
+
+        // Assert
+        Assert.Equal(before.Record.Version, after.Record.Version);
+    }
+
+    [Fact]
     public async Task Identify_WhenTheTokenDoesNotHoldTheSeat_Refuses()
     {
         // Arrange
@@ -266,7 +374,7 @@ public sealed class GameServiceTest
     public async Task Submit_WhileASeatIsStillOpen_ThrowsNotYourTurnException()
     {
         // Arrange
-        GameId id = await this._service.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
+        GameId id = await this.CreateOpen();
         string token = await this._service.Claim(id, First, this._cancellation);
 
         // Act
@@ -325,7 +433,7 @@ public sealed class GameServiceTest
     public async Task Claim_WhenTheSeatIsOpen_ReturnsATokenThatHoldsIt()
     {
         // Arrange
-        GameId id = await this._service.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
+        GameId id = await this.CreateOpen();
 
         // Act
         string token = await Sit(this._service, id, First, this._cancellation);
@@ -339,7 +447,7 @@ public sealed class GameServiceTest
     public async Task Claim_WhenClaimed_NotifiesTheChange()
     {
         // Arrange
-        GameId id = await this._service.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
+        GameId id = await this.CreateOpen();
 
         // Act
         _ = await this._service.Claim(id, First, this._cancellation);
@@ -365,7 +473,7 @@ public sealed class GameServiceTest
     public async Task Claim_WhenTheSeatDoesNotExist_ThrowsSeatUnavailableException()
     {
         // Arrange
-        GameId id = await this._service.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
+        GameId id = await this.CreateOpen();
 
         // Act
         Task<string> claiming = this._service.Claim(id, new SeatId(5), this._cancellation);
@@ -418,7 +526,7 @@ public sealed class GameServiceTest
     public async Task Submit_WhenTheActionIsHowDiceCameUp_ThrowsIllegalActionException()
     {
         // Arrange
-        GameId id = await this._service.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
+        GameId id = await this.CreateOpen();
         string token = await Sit(this._service, id, First, this._cancellation);
         ActionDescriptor sixes = new DiceAction(First, [6, 6]).Describe();
 
@@ -433,7 +541,7 @@ public sealed class GameServiceTest
     public async Task Submit_WhenTheTokenDoesNotHoldTheSeat_ThrowsNotYourTurnException()
     {
         // Arrange
-        GameId id = await this._service.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
+        GameId id = await this.CreateOpen();
         _ = await this._service.Claim(id, First, this._cancellation);
 
         // Act
@@ -447,7 +555,7 @@ public sealed class GameServiceTest
     public async Task Submit_WhenAnotherSeatMustDecide_ThrowsNotYourTurnException()
     {
         // Arrange
-        GameId id = await this._service.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
+        GameId id = await this.CreateOpen();
         string token = await Sit(this._service, id, Second, this._cancellation);
 
         // Act
@@ -461,7 +569,7 @@ public sealed class GameServiceTest
     public async Task Submit_WhenAProposalToEndComesOutOfTurnFromASeatThatMay_TakesIt()
     {
         // Arrange - the first seat decides, but the second may propose ending the game
-        GameId id = await this._service.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
+        GameId id = await this.CreateOpen();
         string token = await Sit(this._service, id, Second, this._cancellation);
         ActionDescriptor proposal = new ProposeEndAction(Second, Resigns: false).Describe();
 
@@ -476,7 +584,7 @@ public sealed class GameServiceTest
     public async Task Submit_WhenAProposalToEndComesFromASeatThatMayNot_ThrowsNotYourTurnException()
     {
         // Arrange - the first seat has passed, so the second decides; the first may not propose
-        GameId id = await this._service.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
+        GameId id = await this.CreateOpen();
         string token = await Sit(this._service, id, First, this._cancellation);
         _ = await this._service.Submit(id, token, Pass(First), this._cancellation);
         ActionDescriptor proposal = new ProposeEndAction(First, Resigns: true).Describe();
@@ -492,7 +600,7 @@ public sealed class GameServiceTest
     public async Task Submit_WhenASeatThatMayNotRejoinsOutOfTurn_ThrowsNotYourTurnException()
     {
         // Arrange - the first seat decides; the second never gave up its turns
-        GameId id = await this._service.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
+        GameId id = await this.CreateOpen();
         string token = await Sit(this._service, id, Second, this._cancellation);
         ActionDescriptor rejoin = new RejoinAction(Second).Describe();
 
@@ -524,7 +632,7 @@ public sealed class GameServiceTest
     public async Task Submit_WhenTheRulesForbidTheAction_ThrowsIllegalActionException()
     {
         // Arrange
-        GameId id = await this._service.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
+        GameId id = await this.CreateOpen();
         string token = await Sit(this._service, id, First, this._cancellation);
         ActionDescriptor move = new MoveAction(First, new CellId(0), new CellId(1)).Describe();
 
@@ -892,10 +1000,18 @@ public sealed class GameServiceTest
         return (id, waiting);
     }
 
-    private GameService Service(GameServiceSettings settings, InMemoryGameStore? store = null) =>
+    /// <summary>A game of Tiny, its every seat open.</summary>
+    private Task<GameId> CreateOpen() =>
+        this._service.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
+
+    private GameService Service(
+        GameServiceSettings settings,
+        InMemoryGameStore? store = null,
+        ImmutableList<IBotPlaying>? bots = null
+    ) =>
         new(
             new RulesetCatalog([new TinyRules(GameLength), new RollingRules(GameLength)]),
-            new BotCatalog([new FirstChoiceBot()]),
+            new BotCatalog(bots ?? [new FirstChoiceBot()]),
             new ScenarioCatalog(
                 [
                     new Scenario(TinyRules.RulesetId, "Second first", "The second seat starts.")

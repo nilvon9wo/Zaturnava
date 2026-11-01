@@ -31,6 +31,7 @@ internal static class GameEndpoints
         _ = routes.MapPut(GameRoute + "/seats/{seat:int}", Identify);
         _ = routes.MapPost(GameRoute + "/actions", Submit);
         _ = routes.MapPost(GameRoute + "/advance", Advance);
+        _ = routes.MapPost(GameRoute + "/fill", Fill);
         _ = routes.MapGet(GameRoute + "/chat", Chat);
         _ = routes.MapPost(GameRoute + "/chat", Say);
         return routes;
@@ -127,6 +128,20 @@ internal static class GameEndpoints
     )
     {
         GameSnapshot snapshot = await games.Advance(new GameId(gameId), request.Version, cancellationToken);
+        return await ViewOf(snapshot, games, players, cancellationToken);
+    }
+
+    /// <summary>Has bots take the open seats, for whoever holds the request token's seat, when they may.</summary>
+    private static async Task<GameViewDto> Fill(
+        string gameId,
+        HttpRequest request,
+        GameService games,
+        PlayerService players,
+        CancellationToken cancellationToken
+    )
+    {
+        GameId id = new(gameId);
+        GameSnapshot snapshot = await games.FillOpenSeats(id, SeatToken.From(request, id), cancellationToken);
         return await ViewOf(snapshot, games, players, cancellationToken);
     }
 

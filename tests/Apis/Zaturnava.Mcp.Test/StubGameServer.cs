@@ -93,6 +93,13 @@ internal sealed class StubGameServer : IGameServing
     ) =>
         this.Answer(new SeatClaimedDto(Token), (gameId, seat, playerToken, claim));
 
+    public Task<GameViewDto> FillOpenSeats(
+        [Required] string gameId,
+        [Required] string token,
+        CancellationToken cancellationToken
+    ) =>
+        throw new NotSupportedException("The tools leave open seats to people, or to whoever created the game.");
+
     public Task Identify(
         [Required] string gameId,
         int seat,
