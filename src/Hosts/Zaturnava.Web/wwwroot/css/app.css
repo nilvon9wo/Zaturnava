@@ -562,6 +562,17 @@ button.safety.off {
 .seat-3 .swatch { background: var(--seat-3); }
 .seat .name { min-width: 56px; }
 .seat .player { color: var(--muted); }
+/* A signed-in player's name opens their profile: a link, not a button, to look at. */
+.seat button.player.profile {
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    text-decoration: underline dotted;
+    cursor: pointer;
+}
+.public-profile .links { padding-left: 1.2em; overflow-wrap: anywhere; }
+.account .links textarea { width: 100%; box-sizing: border-box; }
 .seat .gave-up, .seat .retired { color: var(--muted); font-style: italic; font-size: 0.85rem; }
 /* On one line, however many: the icons shrink rather than the row growing. */
 .seat .prisoners { flex: 1; min-width: 0; display: flex; gap: 1px; overflow: hidden; }

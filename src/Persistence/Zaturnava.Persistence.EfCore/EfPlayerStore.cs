@@ -10,6 +10,8 @@ namespace Net.NowhereAtAll.Zaturnava.Persistence.EfCore;
 /// <summary>The players who have signed in, their logins and their sessions, in a relational database.</summary>
 public sealed class EfPlayerStore(GameDbContext context) : IPlayerPersisting
 {
+    private const char LinkSeparator = '\n';
+
     private readonly GameDbContext _context = context;
 
     public async Task<Player?> ByLogin(Login login, CancellationToken cancellationToken)
@@ -62,6 +64,7 @@ public sealed class EfPlayerStore(GameDbContext context) : IPlayerPersisting
             {
                 Id = player.Id.Value,
                 Name = player.Name,
+                Links = Joined(player.Links),
                 Logins =
                 [
                     .. player.Logins.Select(login =>
@@ -77,6 +80,18 @@ public sealed class EfPlayerStore(GameDbContext context) : IPlayerPersisting
         _ = await this._context.Players
             .Where(entity => entity.Id == player.Value)
             .ExecuteUpdateAsync(setters => setters.SetProperty(entity => entity.Name, name), cancellationToken);
+
+    public async Task SetLinks(
+        PlayerId player,
+        [Required] ImmutableList<string> links,
+        CancellationToken cancellationToken
+    )
+    {
+        string? joined = Joined(links);
+        _ = await this._context.Players
+            .Where(entity => entity.Id == player.Value)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(entity => entity.Links, joined), cancellationToken);
+    }
 
     public async Task AddLogin(PlayerId player, Login login, CancellationToken cancellationToken)
     {
@@ -121,5 +136,12 @@ public sealed class EfPlayerStore(GameDbContext context) : IPlayerPersisting
                 new PlayerId(entity.Id),
                 entity.Name,
                 [.. entity.Logins.Select(login => new Login(login.Provider, login.Key))]
-            );
+            )
+            {
+                Links = entity.Links is { } links ? [.. links.Split(LinkSeparator)] : [],
+            };
+
+    /// <summary>The links, one to a line; null for none.</summary>
+    private static string? Joined(ImmutableList<string> links) =>
+        links.IsEmpty ? null : string.Join(LinkSeparator, links);
 }

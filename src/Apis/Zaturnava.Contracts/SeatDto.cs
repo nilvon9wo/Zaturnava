@@ -15,6 +15,8 @@ namespace Net.NowhereAtAll.Zaturnava.Contracts;
 /// not sign in, <c>guest</c>, or their nickname as <c>Nickname (guest)</c>; null for an open seat or a bot's.
 /// <see cref="IsGuest"/> says that a person holds it without having signed in, and so may read the table's talk but
 /// not speak; <see cref="IsAi"/>, that an AI, or another program, plays it, as whoever claimed it said.
+/// <see cref="PlayerId"/> is the id of the player who claimed it signed in, whose profile anyone may see
+/// (<see cref="GameRoutes.Profile"/>); null for anyone else.
 /// </summary>
 public sealed record SeatDto(
     int Id,
@@ -33,5 +35,6 @@ public sealed record SeatDto(
     bool IsRetired = false,
     string? Player = null,
     bool IsGuest = false,
-    bool IsAi = false
+    bool IsAi = false,
+    string? PlayerId = null
 );

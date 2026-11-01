@@ -35,12 +35,22 @@ internal static class SignInEndpoints
         _ = routes.MapDelete(GameRoutes.Session, SignOut);
         _ = routes.MapPost(GameRoutes.LinkCode, LinkCode);
         _ = routes.MapDelete(GameRoutes.Logins + "/{provider}", Unlink);
+        _ = routes.MapPut(GameRoutes.Links, SetLinks);
+        _ = routes.MapPost(GameRoutes.AiToken, AiToken);
+        _ = routes.MapGet(GameRoutes.Players + "/{playerId}", Profile);
         return routes;
     }
 
-    /// <summary>The player as the API shows them: the services they may sign in with in the order linked.</summary>
+    /// <summary>
+    /// The player as the API shows them: the services they may sign in with in the order linked, and their links.
+    /// </summary>
     public static PlayerDto ToDto(Player player) =>
-        new(player.Id.Value, player.Name, [.. player.Logins.Select(login => login.Provider).Distinct()]);
+        new(
+            player.Id.Value,
+            player.Name,
+            [.. player.Logins.Select(login => login.Provider).Distinct()],
+            player.Links
+        );
 
     /// <summary>
     /// The player whose login it is signed in; or, with a <paramref name="link"/> code, the login linked to the
@@ -156,6 +166,36 @@ internal static class SignInEndpoints
         && await players.Unlink(token, provider, cancellationToken) is { } player
             ? TypedResults.Ok(ToDto(player))
             : TypedResults.Unauthorized();
+
+    private static async Task<Results<Ok<PlayerDto>, UnauthorizedHttpResult>> SetLinks(
+        LinksRequest links,
+        HttpRequest request,
+        PlayerService players,
+        CancellationToken cancellationToken
+    ) =>
+        SeatToken.OrNull(request) is { } token
+        && await players.SetLinks(token, links.Links, cancellationToken) is { } player
+            ? TypedResults.Ok(ToDto(player))
+            : TypedResults.Unauthorized();
+
+    private static async Task<Results<Ok<AiTokenDto>, UnauthorizedHttpResult>> AiToken(
+        HttpRequest request,
+        PlayerService players,
+        CancellationToken cancellationToken
+    ) =>
+        SeatToken.OrNull(request) is { } token && await players.AiToken(token, cancellationToken) is { } issued
+            ? TypedResults.Ok(new AiTokenDto(issued))
+            : TypedResults.Unauthorized();
+
+    /// <summary>The player as anyone may see them: their name and links.</summary>
+    private static async Task<Results<Ok<ProfileDto>, NotFound>> Profile(
+        string playerId,
+        PlayerService players,
+        CancellationToken cancellationToken
+    ) =>
+        await players.Profile(new PlayerId(playerId), cancellationToken) is { } player
+            ? TypedResults.Ok(new ProfileDto(player.Id.Value, player.Name, player.Links))
+            : TypedResults.NotFound();
 
     /// <summary>Forgets the player the token stands for, and everything that says who they were.</summary>
     private static async Task<Results<NoContent, UnauthorizedHttpResult>> Delete(

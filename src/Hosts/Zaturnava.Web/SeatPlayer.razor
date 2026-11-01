@@ -1,0 +1,70 @@
+@* Who holds a seat, as the table shows them. A player who claimed it signed in may be looked at: their name opens a
+   dialog with their profile, as anyone may see it, their name and links (each opened in a tab of its own, and
+   followed by no search engine). *@
+@inject IGameServing Games
+
+@if (this.PlayerId is { } playerId)
+{
+    <button class="player profile" title="See their profile" @onclick="() => this.Open(playerId)">@this.Text</button>
+}
+else
+{
+    <span class="player">@this.Text</span>
+}
+@if (this._isOpen)
+{
+    <div class="backdrop">
+        <div class="dialog public-profile" role="dialog" aria-modal="true" aria-labelledby="public-profile-title">
+            @if (this._profile is { } profile)
+            {
+                <h2 id="public-profile-title">@profile.Name</h2>
+                @if (profile.Links.IsEmpty)
+                {
+                    <p class="no-links">No links.</p>
+                }
+                else
+                {
+                    <ul class="links">
+                        @foreach (string link in profile.Links)
+                        {
+                            <li><a href="@link" target="_blank" rel="noopener noreferrer nofollow">@link</a></li>
+                        }
+                    </ul>
+                }
+            }
+            else
+            {
+                <h2 id="public-profile-title">@this.Text</h2>
+                <p class="problem" role="alert">@(this._problem ?? Gone)</p>
+            }
+            <div class="actions">
+                <button class="close-public-profile" @onclick="() => this._isOpen = false">Close</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    public const string Gone = "This player's profile is gone.";
+
+    /// <summary>What the table calls whoever holds the seat.</summary>
+    [Parameter, EditorRequired]
+    public string Text { get; set; } = string.Empty;
+
+    /// <summary>The id of the player who claimed the seat signed in; null for anyone else.</summary>
+    [Parameter]
+    public string? PlayerId { get; set; }
+
+    private bool _isOpen;
+    private ProfileDto? _profile;
+    private string? _problem;
+
+    private async Task Open(string playerId)
+    {
+        this._isOpen = true;
+        this._profile = null;
+        this._problem = await Requests.Attempt(async () =>
+            this._profile = await this.Games.Profile(playerId, CancellationToken.None)
+        );
+    }
+}

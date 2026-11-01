@@ -199,6 +199,9 @@ opens, with a service the server is set up for (Proposed):
 | A code to link another service with | `POST api/players/me/link-code`, with the player's token | `{"code": "..."}`, or `401` |
 | Link another service | `GET signin/{service}?origin={the page's origin}&link={code}` | As signing in, but the service's account is added to the player the code was given to |
 | Stop signing in with a service | `DELETE api/players/me/logins/{service}`, with the player's token | The player, without it; `409` if it is their only one; or `401` |
+| Show links on the profile | `PUT api/players/me/links`, with the player's token, and `{"links": ["https://..."]}` | The player, with `"links"`; `400` if one is not an http or https address; or `401` |
+| A token for an AI to play with | `POST api/players/me/ai-token`, with the player's token | `{"token": "ai-..."}`, or `401` |
+| A player's profile, as anyone sees it | `GET api/players/{id}` | `{"id": "...", "name": "...", "links": [...]}`, or `404` |
 | Sign out | `DELETE api/players/me/session`, with the player's token | `204`; the token stands for no one any more |
 | Delete the account | `DELETE api/players/me`, with the player's token | `204`, the player forgotten: name, sign-ins, sessions; or `401` |
 
@@ -216,6 +219,16 @@ theirs too, and either signs them in. An account that is already another player'
 so. A player may stop signing in with any service but the last; to be rid of that one, they delete the account.
 The game page offers all of this under **Profile**.
 
+A profile may show up to five links, each an http or https address of at most 200 characters (Proposed). Anyone
+may see a player's profile, their name and links: a seat a signed-in player holds gives the player's id, as
+`"playerId"`, and the game page opens the profile from the seat's name. The page opens the links in a new tab,
+with `rel="noopener noreferrer nofollow"`.
+
+A player may also have an AI play for them with a token of its own (Proposed). It begins `ai-`, and stands for the
+player, so a seat it claims is theirs, and is always shown as played by an AI. It may claim seats, play and talk,
+but changing the account (renaming, links, link codes, unlinking, deleting, more AI tokens) answers `403`. Signing
+out with it lets it go; deleting the account lets every one go. The page shows a new one only once.
+
 ## Refusals
 
 A request the server will not do is answered with a [problem](https://www.rfc-editor.org/rfc/rfc9457)
@@ -224,7 +237,7 @@ A request the server will not do is answered with a [problem](https://www.rfc-ed
 | Status | Refusal | |
 |---|---|---|
 | 400 | `Invalid` | The request makes no sense: an unknown ruleset or bot, a malformed action |
-| 403 | `Forbidden` | The token does not hold the seat that must decide; or, to speak, holds a guest's seat |
+| 403 | `Forbidden` | The token does not hold the seat that must decide; or, to speak, holds a guest's seat; or is an AI's, asked to change its player's account |
 | 404 | `NotFound` | There is no such game |
 | 409 | `Conflict` | The seat is taken, or the game changed meanwhile |
 | 422 | `Illegal` | The rules do not allow the action now |

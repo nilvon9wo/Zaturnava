@@ -129,6 +129,10 @@ namespace Net.NowhereAtAll.Zaturnava.Persistence.EfCore.SqlServer.Migrations
                         .HasMaxLength(32)
                         .HasColumnType("nvarchar(32)");
 
+                    b.Property<string>("Links")
+                        .HasMaxLength(1005)
+                        .HasColumnType("nvarchar(1005)");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(40)

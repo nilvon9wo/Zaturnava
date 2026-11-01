@@ -40,6 +40,8 @@ public sealed class GameDbContext(DbContextOptions<GameDbContext> options) : DbC
         _ = player.HasKey(entity => entity.Id);
         _ = player.Property(entity => entity.Id).HasMaxLength(IdLength);
         _ = player.Property(entity => entity.Name).HasMaxLength(PlayerService.MaximumNameLength);
+        _ = player.Property(entity => entity.Links)
+            .HasMaxLength(PlayerService.MaximumLinks * (PlayerService.MaximumLinkLength + 1));
         _ = player.HasMany(entity => entity.Logins).WithOne().HasForeignKey(login => login.PlayerId);
     }
 

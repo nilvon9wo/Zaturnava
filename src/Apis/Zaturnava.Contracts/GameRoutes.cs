@@ -33,6 +33,18 @@ public static class GameRoutes
     /// <summary>The services a player may sign in with (<see cref="Login"/>).</summary>
     public const string Logins = Me + "/logins";
 
+    /// <summary>The links on a player's profile (<see cref="LinksRequest"/>); put, they replace those before.</summary>
+    public const string Links = Me + "/links";
+
+    /// <summary>Where a player asks for a token an AI may play for them with (<see cref="AiTokenDto"/>).</summary>
+    public const string AiToken = Me + "/ai-token";
+
+    /// <summary>The players by id: each one's profile, as anyone may see it.</summary>
+    public const string Players = "api/players";
+
+    /// <summary>A player's profile, as anyone may see it (<see cref="ProfileDto"/>).</summary>
+    public static string Profile([Required] string playerId) => $"{Players}/{Uri.EscapeDataString(playerId)}";
+
     /// <summary>A player's login with a service; deleted, they may no longer sign in with it.</summary>
     public static string Login([Required] string provider) => $"{Logins}/{Uri.EscapeDataString(provider)}";
 

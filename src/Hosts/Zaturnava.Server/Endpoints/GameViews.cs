@@ -228,7 +228,8 @@ internal static class GameViews
             snapshot.State.Retired.Contains(seat),
             PersonOf(controller, names),
             controller.IsGuest,
-            controller is HumanSeat { IsAi: true }
+            controller is HumanSeat { IsAi: true },
+            controller is HumanSeat { Claimant: { } claimant } ? claimant.Value : null
         );
     }
 
