@@ -89,7 +89,10 @@ beside Chaturaji 2027, each at easy, medium or hard:
   piece the rest of the budget buys, a piece not yet in the army first; then, while the kingdom has
   room, the best affordable pieces but no second leader. Pieces an area holds (palace, river) are left
   out until palaces come. The leader takes the back rank's inner corner, as the Raja does; heavy,
-  artillery and cavalry the rest of the back ranks; infantry the front.
+  artillery and cavalry the rest of the back ranks; infantry the front. Where the kingdoms touch, with no
+  neutral ground between them (the small game: two kingdoms of 3 fill a side of 6), the leader takes the
+  far corner instead, so that it is likely to outlive the first moves (*Stated 2026-11-01*). An army the
+  program lays out for a custom game will follow the same rule.
 - The quick games are played by Chaturaji 2027's own rules, generalised (`Chaturaji2027Variant`):
   each leader is what they call a Raja and its start its throne; the Western, Makruk and Shogi Pawns are
   their Pawns, promoted at the far edge into a captured piece; a die moves any piece of the class it
