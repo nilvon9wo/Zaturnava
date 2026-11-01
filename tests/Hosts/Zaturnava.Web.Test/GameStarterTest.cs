@@ -13,26 +13,6 @@ public sealed class GameStarterTest
     private static readonly BotDto Oracle = Bot("oracle", 1400);
     private static readonly BotDto Claude = new("claude", "Claude", "Asks Claude.", UsesAi: true, IsPaid: true);
 
-    [Theory]
-    [InlineData(false, false, false, "Bot: Plain")]
-    [InlineData(false, true, false, "Bot: Plain (Elo 1300)")]
-    [InlineData(true, true, false, "Bot: Plain (AI, Elo 1300)")]
-    [InlineData(true, false, true, "Bot: Plain (AI, costs tokens)")]
-    public void LabelOf_WhenABotIsOffered_NamesItWithWhatItIs(bool usesAi, bool isRated, bool isPaid, string expected)
-    {
-        // Arrange
-        BotDto bot = new("plain", "Plain", "Plays.", usesAi, isPaid)
-        {
-            Ratings = isRated ? Rated(1300) : [],
-        };
-
-        // Act
-        string label = GameStarter.LabelOf(bot, Ruleset);
-
-        // Assert
-        Assert.Equal(expected, label);
-    }
-
     [Fact]
     public void Strengths_WhenThereAreEnoughBots_SplitsThemEasiestFirstLeavingOutThosePaidFor()
     {

@@ -6,27 +6,33 @@ namespace Net.NowhereAtAll.Zaturnava.Web.Test;
 
 public sealed class LobbyTest : IDisposable
 {
+    private static readonly ImmutableList<RulesetDto> GrandSizes =
+    [
+        new("grand-legions-small", "Grand Legions (small)", 4),
+        new("grand-legions-large", "Grand Legions (large)", 4),
+    ];
+
     private readonly PageContext _page = new();
     private Seating? _seated;
 
     public void Dispose() => this._page.Dispose();
 
     [Fact]
-    public void SeatBySeat_WhenChosen_OffersANewGameAndTheGamesToJoin()
+    public void Custom_WhenChosen_OffersANewGameOfOneSizeAndTheGamesToJoin()
     {
-        // Arrange - nothing beyond the server's catalog and games; Claude, paid for, is not seated unasked
+        // Arrange - nothing beyond the server's catalog and games
         IRenderedComponent<Lobby> lobby = this.Render();
 
         // Act
-        lobby.Find("button.seat-by-seat").Click();
+        lobby.Find("button.custom").Click();
 
         // Assert
         Assert.Equal(
-            ("Chaturaji 2027", "Black|Yellow|Green|Red", "|random|oracle|midas", "Join as Yellow", "game-000"),
+            ("Chaturaji 2027", 0, 3, "Join as Yellow", "game-000"),
             (
                 lobby.Find("p.rules").TextContent,
-                string.Join('|', lobby.FindAll("span.seat-name").Select(name => name.TextContent)),
-                string.Join('|', lobby.FindAll("select.plan").Select(plan => plan.GetAttribute("value"))),
+                lobby.FindAll("select.size, button.seat-by-seat").Count,
+                lobby.FindAll("select.strength").Count,
                 lobby.Find("button.join").TextContent,
                 lobby.Find("span.game").TextContent
             )
@@ -34,23 +40,45 @@ public sealed class LobbyTest : IDisposable
     }
 
     [Fact]
-    public void Play_WhenTheFirstSeatIsForAPerson_CreatesTheGameAndSitsThere()
+    public void Game_WhenOnePlayedAtSeveralSizesIsChosen_OffersItsSizesApart()
     {
         // Arrange
-        IRenderedComponent<Lobby> lobby = this.SeatBySeat();
+        this._page.Server.MoreRulesets = GrandSizes;
+        IRenderedComponent<Lobby> lobby = this.Render();
 
         // Act
-        lobby.Find("button.create").Click();
+        lobby.Find("select.game").Change("Grand Legions");
 
         // Assert
-        Assert.Equivalent(
+        Assert.Equal(
+            ("Chaturaji 2027|Grand Legions", "small|large", "grand-legions-small"),
             (
-                new[] { null, "random", "oracle", "midas" },
-                new Seating(FakeGameServer.GameId, new SeatClaim(0, "secret"))
-            ),
-            (this._page.Server.Created?.Bots, this._seated),
-            strict: true
+                string.Join('|', lobby.FindAll("select.game option").Select(option => option.TextContent)),
+                string.Join('|', lobby.FindAll("select.size option").Select(option => option.TextContent)),
+                lobby.Find("select.size").GetAttribute("value")
+            )
         );
+    }
+
+    [Fact]
+    public void Game_WhenChosenBackAndForth_KeepsTheSizeChosen()
+    {
+        // Arrange
+        this._page.Server.MoreRulesets =
+        [
+            .. GrandSizes,
+            new RulesetDto("other-small", "Other (small)", 4),
+            new RulesetDto("other-large", "Other (large)", 4),
+        ];
+        IRenderedComponent<Lobby> lobby = this.Render();
+        lobby.Find("select.game").Change("Grand Legions");
+        lobby.Find("select.size").Change("grand-legions-large");
+
+        // Act
+        lobby.Find("select.game").Change("Other");
+
+        // Assert
+        Assert.Equal("other-large", lobby.Find("select.size").GetAttribute("value"));
     }
 
     [Theory]
@@ -66,7 +94,7 @@ public sealed class LobbyTest : IDisposable
         // Arrange
         _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.player").SetResult(player);
         _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.nickname").SetResult(nickname);
-        IRenderedComponent<Lobby> lobby = this.SeatBySeat();
+        IRenderedComponent<Lobby> lobby = this.ByStrength();
 
         // Act
         lobby.Find("button.create").Click();
@@ -84,7 +112,7 @@ public sealed class LobbyTest : IDisposable
             new ScenarioDto("back-to-back", "chaturaji-2027", "Back to back", "Two Pawns face each other."),
             new ScenarioDto("escape", "chaturaji-2027", "Escape", "Doubles."),
         ];
-        IRenderedComponent<Lobby> lobby = this.SeatBySeat();
+        IRenderedComponent<Lobby> lobby = this.ByStrength();
         lobby.Find("select.scenario").Change("back-to-back");
 
         // Act
@@ -102,7 +130,7 @@ public sealed class LobbyTest : IDisposable
     {
         // Arrange
         this._page.Server.Scenarios = [new ScenarioDto("escape", "chaturaji-2027", "Escape", "Doubles.")];
-        IRenderedComponent<Lobby> lobby = this.SeatBySeat();
+        IRenderedComponent<Lobby> lobby = this.ByStrength();
 
         // Act
         lobby.Find("button.create").Click();
@@ -117,31 +145,26 @@ public sealed class LobbyTest : IDisposable
         // Arrange - the fake server offers none
 
         // Act
-        IRenderedComponent<Lobby> lobby = this.SeatBySeat();
+        IRenderedComponent<Lobby> lobby = this.ByStrength();
 
         // Assert
         Assert.Empty(lobby.FindAll("select.scenario"));
     }
 
     [Fact]
-    public void Quick_WhenAnotherGameIsChosen_StartsOneOfThatGame()
+    public void Quick_WhenAnotherGameAndSizeAreChosen_StartsOneOfThatGameAtThatSize()
     {
         // Arrange
-        this._page.Server.MoreRulesets = [new RulesetDto("grand-legions-small", "Grand Legions (small)", 4)];
+        this._page.Server.MoreRulesets = GrandSizes;
         IRenderedComponent<Lobby> lobby = this.Render();
 
         // Act
-        lobby.Find("select.ruleset").Change("grand-legions-small");
+        lobby.Find("select.game").Change("Grand Legions");
+        lobby.Find("select.size").Change("grand-legions-large");
         lobby.Find("button.quick.medium").Click();
 
         // Assert
-        Assert.Equal(
-            ("Chaturaji 2027|Grand Legions (small)", "grand-legions-small"),
-            (
-                string.Join('|', lobby.FindAll("select.ruleset option").Select(option => option.TextContent)),
-                this._page.Server.Created?.RulesetId
-            )
-        );
+        Assert.Equal("grand-legions-large", this._page.Server.Created?.RulesetId);
     }
 
     [Fact]
@@ -164,13 +187,11 @@ public sealed class LobbyTest : IDisposable
         );
     }
 
-    [Theory]
-    [InlineData("strength", "button.by-strength", "select.strength")]
-    [InlineData("seats", "button.seat-by-seat", "select.plan")]
-    public void Render_WhenSetUpBefore_SetsUpAsLastChosen(string remembered, string mode, string plan)
+    [Fact]
+    public void Render_WhenSetUpBefore_SetsUpAsLastChosen()
     {
         // Arrange
-        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.setup").SetResult(remembered);
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.setup").SetResult("strength");
 
         // Act
         IRenderedComponent<Lobby> lobby = this.Render();
@@ -179,8 +200,8 @@ public sealed class LobbyTest : IDisposable
         Assert.Equal(
             ("true", true, 0),
             (
-                lobby.Find(mode).GetAttribute("aria-pressed"),
-                lobby.FindAll(plan).Count > 0,
+                lobby.Find("button.custom").GetAttribute("aria-pressed"),
+                lobby.FindAll("select.strength").Count > 0,
                 lobby.FindAll("button.quick").Count
             )
         );
@@ -193,63 +214,17 @@ public sealed class LobbyTest : IDisposable
         IRenderedComponent<Lobby> lobby = this.Render();
 
         // Act
-        lobby.Find("button.seat-by-seat").Click();
+        lobby.Find("button.custom").Click();
         lobby.Find("button.quick-game").Click();
 
         // Assert
         Assert.Equal(
-            "seats|quick",
+            "strength|quick",
             string.Join(
                 '|',
                 this._page.JSInterop.Invocations["zaturnava.save"]
                     .Where(save => save.Arguments[0] is "zaturnava.setup")
                     .Select(save => save.Arguments[1])
-            )
-        );
-    }
-
-    [Fact]
-    public void Play_WhenAPaidBotIsChosen_SeatsIt()
-    {
-        // Arrange
-        IRenderedComponent<Lobby> lobby = this.SeatBySeat();
-        lobby.FindAll("select.plan")[3].Change("claude");
-
-        // Act
-        lobby.Find("button.create").Click();
-
-        // Assert
-        Assert.Equal("claude", this._page.Server.Created!.Bots[3]);
-    }
-
-    [Fact]
-    public void Play_WhenEverySeatIsABot_WatchesTheGame()
-    {
-        // Arrange
-        IRenderedComponent<Lobby> lobby = this.SeatBySeat();
-        lobby.FindAll("select.plan")[0].Change("solomon");
-
-        // Act
-        lobby.Find("button.create").Click();
-
-        // Assert
-        Assert.Equal(Seating.Watching(FakeGameServer.GameId), this._seated);
-    }
-
-    [Fact]
-    public void SeatBySeat_WhenABotPlaysOneSeat_CannotBeChosenForAnother()
-    {
-        // Arrange - nothing beyond the server's catalog
-
-        // Act
-        IRenderedComponent<Lobby> lobby = this.SeatBySeat();
-
-        // Assert - Random plays seat 2, so seat 1 cannot have it; seat 2 can
-        Assert.Equal(
-            (true, false),
-            (
-                lobby.FindAll("select.plan")[0].QuerySelector("option[value=random]")!.HasAttribute("disabled"),
-                lobby.FindAll("select.plan")[1].QuerySelector("option[value=random]")!.HasAttribute("disabled")
             )
         );
     }
@@ -291,24 +266,6 @@ public sealed class LobbyTest : IDisposable
         Assert.Equal(
             expected,
             string.Join(",", this._page.Server.Created!.Bots.OfType<string>().Order(StringComparer.Ordinal))
-        );
-    }
-
-    [Fact]
-    public void SeatBySeat_WhenChosen_NamesEachBotWithItsRating()
-    {
-        // Arrange - nothing beyond the server's catalog
-
-        // Act
-        IRenderedComponent<Lobby> lobby = this.SeatBySeat();
-
-        // Assert
-        Assert.Equal(
-            ("Bot: Random (Elo 1000)", "Bot: Claude (AI, costs tokens)"),
-            (
-                lobby.Find("select.plan option[value=random]").TextContent.Trim(),
-                lobby.Find("select.plan option[value=claude]").TextContent.Trim()
-            )
         );
     }
 
@@ -514,16 +471,16 @@ public sealed class LobbyTest : IDisposable
     }
 
     [Fact]
-    public void ByStrength_WhenChosenAgain_OffersEachSeatsStrength()
+    public void Custom_WhenChosenAfterQuick_OffersEachSeatsStrengthInsteadOfQuickGames()
     {
         // Arrange
-        IRenderedComponent<Lobby> lobby = this.SeatBySeat();
+        IRenderedComponent<Lobby> lobby = this.Render();
 
         // Act
-        lobby.Find("button.by-strength").Click();
+        lobby.Find("button.custom").Click();
 
         // Assert
-        Assert.Equal((0, 3), (lobby.FindAll("select.plan").Count, lobby.FindAll("select.strength").Count));
+        Assert.Equal((0, 3), (lobby.FindAll("button.quick").Count, lobby.FindAll("select.strength").Count));
     }
 
     [Fact]
@@ -711,14 +668,7 @@ public sealed class LobbyTest : IDisposable
     private IRenderedComponent<Lobby> ByStrength()
     {
         IRenderedComponent<Lobby> lobby = this.Render();
-        lobby.Find("button.by-strength").Click();
-        return lobby;
-    }
-
-    private IRenderedComponent<Lobby> SeatBySeat()
-    {
-        IRenderedComponent<Lobby> lobby = this.Render();
-        lobby.Find("button.seat-by-seat").Click();
+        lobby.Find("button.custom").Click();
         return lobby;
     }
 

@@ -80,7 +80,7 @@ beside Chaturaji 2027, each at easy, medium or hard:
 |---|---|---|---|---|
 | Small | 6 × 6 | 3 × 3 | 110 | 1 leader, 1 heavy, 1 cavalry, 3 infantry |
 | Medium | 8 × 8 | 4 × 2 | 125 | 1 leader, 1 heavy, 1 cavalry, 1 artillery, 4 infantry |
-| Large | 12 × 12 | 4 × 4 | 200 | 1 leader, 3 heavy, 2 cavalry, 2 artillery, 8 infantry |
+| Large | 12 × 12 | 6 × 3 (6 along the edge, 3 deep, a pinwheel as in Chaturaji) | 200 | 1 leader, 3 heavy, 2 cavalry, 2 artillery, 8 infantry |
 
 *Proposed*, for the author to confirm or change:
 
