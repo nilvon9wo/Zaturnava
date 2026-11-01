@@ -418,6 +418,24 @@ public sealed class GameServiceTest
     }
 
     [Fact]
+    public async Task Snapshots_WhenAGameNoLongerReplays_ListsOnlyTheOthers()
+    {
+        // Arrange - a game whose actions its rules no longer allow, as after the rules change
+        InMemoryGameStore store = new();
+        GameService service = this.Service(GameServiceSettings.Default, store);
+        GameId id = await service.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
+        GameRecord kept = (await store.Find(id, this._cancellation))!;
+        ActionDescriptor move = new MoveAction(First, new CellId(0), new CellId(1)).Describe();
+        await store.Add(kept with { Id = new GameId("broken"), Actions = [move] }, this._cancellation);
+
+        // Act
+        ImmutableList<GameSnapshot> snapshots = await service.Snapshots(this._cancellation);
+
+        // Assert
+        Assert.Equal([id], snapshots.Select(snapshot => snapshot.Record.Id));
+    }
+
+    [Fact]
     public async Task Get_WhenTheGameIsUnknown_ThrowsGameNotFoundException()
     {
         // Arrange - nothing beyond the service
