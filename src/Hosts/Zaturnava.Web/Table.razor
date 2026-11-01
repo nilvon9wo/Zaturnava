@@ -105,6 +105,19 @@
                     <p class="safety-off" role="alert">Safety OFF: you may take your own team's pieces.</p>
                 }
                 <p class="status">@this.Status(view)</p>
+                @if (view.Vacancy is { } vacancy && this.Seating.Claim is { } host)
+                {
+                    @if (MayFill(vacancy, host.Seat))
+                    {
+                        <button class="action primary fill" @onclick="() => this.Fill(host)">
+                            Fill the open seats with bots
+                        </button>
+                    }
+                    else
+                    {
+                        <p class="hint fill-wait">@FillWait(vacancy, host.Seat)</p>
+                    }
+                }
                 @if (view.Away is { } away && this.Seating.Claim is { } voter && away.Voters.Contains(voter.Seat)
                      && (away.IsOpen || away.Stopping.Contains(voter.Seat)))
                 {
@@ -919,6 +932,22 @@
         this._selection = next;
         return this._turn is { } turn && chosen is { } action ? this.Submit(turn.Claim, action) : Task.CompletedTask;
     }
+
+    /// <summary>Whether the player may fill the open seats with bots now: first to arrive, or after twice the wait.</summary>
+    private static bool MayFill(VacancyDto vacancy, int seat) => SecondsUntilFill(vacancy, seat) <= 0;
+
+    private static double SecondsUntilFill(VacancyDto vacancy, int seat) =>
+        seat == vacancy.FirstArrival ? vacancy.SecondsUntilFirst : vacancy.SecondsUntilAnyone;
+
+    /// <summary>"If no one comes, you may fill the open seats with bots in 45 s."</summary>
+    private static string FillWait(VacancyDto vacancy, int seat)
+    {
+        int seconds = (int)Math.Ceiling(SecondsUntilFill(vacancy, seat));
+        return $"If no one comes, you may fill the open seats with bots in {seconds} s.";
+    }
+
+    private Task Fill(SeatClaim claim) =>
+        this.Request(() => this.Games.FillOpenSeats(this.Seating.GameId, claim.Token, CancellationToken.None));
 
     private Task Submit(SeatClaim claim, ActionDto action) =>
         this.Request(() => this.Games.Submit(this.Seating.GameId, claim.Token, action, CancellationToken.None));

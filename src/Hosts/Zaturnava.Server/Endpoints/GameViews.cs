@@ -115,9 +115,19 @@ internal static class GameViews
             snapshot.State.Returning is { } due ? PrisonerOf(snapshot.Rules, due.Prisoners[0]) : null,
             ThroneHolderOf(snapshot.Rules, snapshot.State),
             ProposalOf(snapshot.State),
-            AwayOf(snapshot.Away)
+            AwayOf(snapshot.Away),
+            VacancyOf(snapshot.Vacancy)
         );
     }
+
+    private static VacancyDto? VacancyOf(Vacancy? vacancy) =>
+        vacancy is null
+            ? null
+            : new VacancyDto(
+                vacancy.FirstArrival?.Value,
+                vacancy.UntilFirst.TotalSeconds,
+                vacancy.UntilAnyone.TotalSeconds
+            );
 
     private static DieDto DieOf(GameSnapshot snapshot, int value) =>
         new(value, snapshot.Rules.NameOfDie(value), snapshot.Rules.MayUseDie(snapshot.State, value));

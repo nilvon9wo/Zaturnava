@@ -126,6 +126,22 @@ public sealed class HttpGameClientTest
     }
 
     [Fact]
+    public async Task FillOpenSeats_WhenAsked_PostsWithTheSeatsToken()
+    {
+        // Arrange
+        StubServer server = new(HttpStatusCode.OK, ViewJson);
+
+        // Act
+        _ = await Client(server).FillOpenSeats("g", "secret", this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            ("POST", "/api/games/g/fill", "Bearer secret"),
+            (server.Method, server.Path, server.Authorization)
+        );
+    }
+
+    [Fact]
     public async Task Advance_WhenGivenAVersion_PostsIt()
     {
         // Arrange

@@ -26,6 +26,9 @@ public sealed record GameSnapshot(
     /// <summary>Who may vote to stop waiting for the deciding seat, and how they stand; null if no one may.</summary>
     public AwayVoting? Away { get; init; }
 
+    /// <summary>While the game waits for its open seats to be taken, who may fill them with bots, and when.</summary>
+    public Vacancy? Vacancy { get; init; }
+
     /// <summary>
     /// The game <paramref name="record"/> describes, replayed by <paramref name="rules"/>: from the scenario it
     /// started from, if any (<see cref="ScenarioStart"/>), else from a new game.

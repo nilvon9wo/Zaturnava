@@ -25,6 +25,12 @@ internal static class ZaturnavaServices
     public const string AwayGraceKey = "Games:AwayGraceSeconds";
 
     /// <summary>
+    /// The configuration key for how long, in seconds, a game waits for people to take its open seats before the
+    /// first of those seated may fill them with bots.
+    /// </summary>
+    public const string FillWaitKey = "Games:FillWaitSeconds";
+
+    /// <summary>
     /// The configuration key for the folder of scenarios to offer (<see cref="ScenarioFolder"/>), from the
     /// content root; none are offered if it is not set, as only development sets it.
     /// </summary>
@@ -111,6 +117,9 @@ internal static class ZaturnavaServices
         {
             AwayGrace = TimeSpan.FromSeconds(
                 configuration.GetValue(AwayGraceKey, GameServiceSettings.DefaultAwayGrace.TotalSeconds)
+            ),
+            FillWait = TimeSpan.FromSeconds(
+                configuration.GetValue(FillWaitKey, GameServiceSettings.DefaultFillWait.TotalSeconds)
             ),
         };
     }

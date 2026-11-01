@@ -21,6 +21,7 @@ server is at `https://zaturnava.runasp.net/`.
 | A game | `GET api/games/{id}` | The game as it stands ([the view](#the-view)) |
 | Act | `POST api/games/{id}/actions`, with the seat's token | The game after it |
 | Let a bot (or a timer) decide | `POST api/games/{id}/advance` | The game after one decision |
+| Fill the open seats with bots | `POST api/games/{id}/fill`, with a seat's token | The game, begun if a bot was free for each seat |
 | A game's history | `GET api/games/{id}/history` | [Game histories](game-histories.md) |
 | Every finished game's history | `GET api/history` | A list of them |
 | What was said at the table | `GET api/games/{id}/chat?after={n}`, with a seat's token or none | [The talk](#talk-at-the-table) since message `n` |
@@ -57,6 +58,13 @@ a guest's AI only reads. Players at the table may hide what AIs say.
 
 A game begins once every seat is taken: until the last open seat is claimed, nothing may be played, no bot
 moves, and `legalActions` is empty. The claim that takes the last seat begins it.
+
+If no one comes, those already seated need not wait for ever (Proposed). Once a minute has passed since the game
+last changed, the first person to have taken a seat may fill the open seats with bots: `POST api/games/{id}/fill`,
+with their seat's token. Once twice that has passed, anyone seated may. Each open seat gets a bot not already at
+the table, chosen at random; a seat for which none is left stays open. While seats wait, `vacancy` in the view
+says who may fill them and when (`firstArrival`, the first to arrive's seat; `secondsUntilFirst` and
+`secondsUntilAnyone`). Filling too soon is refused (`409`), and by someone not seated (`403`).
 
 The server never acts by itself; a client moves the game along. A game waits on its **deciding
 seat** (`decidingSeat` in the view; `null` once the game is over):
@@ -150,6 +158,7 @@ The rules refuse any of these that may not be made, as they refuse any illegal a
 | `log` | The latest events, told for people ("Black rolled 2 (Horse) and 5 (Pawn or Raja).") |
 | `outcome` | Once over: the winners, the kind of ending, and the story |
 | `secondsLeft` | If the decision is timed, the time left; once it runs out, anyone may `advance` the game to decide for it |
+| `vacancy` | While seats wait to be claimed, who may [fill them with bots](#playing), and when |
 | `promotionDue`, `returning`, `offer`, `proposal`, `away` | What the deciding seat must deal with now, if anything |
 
 The full description of every field is in the contracts, `src/Apis/Zaturnava.Contracts`: each is a

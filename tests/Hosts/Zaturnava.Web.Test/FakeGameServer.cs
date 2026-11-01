@@ -142,6 +142,13 @@ internal sealed class FakeGameServer : IGameServing
         return this.Answer($"claim {gameId} {seat.ToString(CultureInfo.InvariantCulture)}", new SeatClaimedDto(Token));
     }
 
+    public Task<GameViewDto> FillOpenSeats(
+        [Required] string gameId,
+        [Required] string token,
+        CancellationToken cancellationToken
+    ) =>
+        this.Answer($"fill {gameId} {token}", this.View);
+
     /// <summary>Each seat said anew to be held, in order: "{game} {seat} {token} {player token} {nickname}".</summary>
     public ConcurrentQueue<string> Identified { get; } = new();
 

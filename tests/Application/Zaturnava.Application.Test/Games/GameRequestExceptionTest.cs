@@ -36,6 +36,16 @@ public sealed class GameRequestExceptionTest
             "The token does not hold seat 3 of game 'g'."
         },
         {
+            new NotAPlayerException(Game),
+            GameRequestFailure.Forbidden,
+            "Only a player of game 'g' may fill its open seats."
+        },
+        {
+            new TooSoonToFillException(Game),
+            GameRequestFailure.Conflict,
+            "Game 'g' still waits for people to take its open seats: wait a little longer."
+        },
+        {
             new ConcurrencyConflictException(Game),
             GameRequestFailure.Conflict,
             "Game 'g' changed meanwhile; read it again."
