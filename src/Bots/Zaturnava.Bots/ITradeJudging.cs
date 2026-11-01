@@ -4,15 +4,12 @@ using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
 
 namespace Net.NowhereAtAll.Zaturnava.Bots;
 
-/// <summary>How a bot weighs a ransom, whether it makes the offer or answers it: each bot in its own way.</summary>
+/// <summary>
+/// How a bot weighs a ransom, whether it makes the offer or answers it: each bot in its own way; and, whatever
+/// its way, only a trade its team can afford (<see cref="Trading"/>).
+/// </summary>
 internal interface ITradeJudging
 {
-    /// <summary>
-    /// Whether the bot also minds the table (<see cref="Trading"/>): weighs, by worth on the board, whether its
-    /// team can afford the trade; a bot that weighs whole positions has no need.
-    /// </summary>
-    bool MindsTheTable { get; }
-
     /// <summary>What <paramref name="offer"/>, accepted, gains the bot deciding <paramref name="request"/>.</summary>
     double GainOf([Required] DecisionRequest request, [Required] RansomOffer offer);
 }
@@ -31,8 +28,6 @@ internal sealed class ByWorth(bool countsPoints) : ITradeJudging
     public static ByWorth AndPoints { get; } = new(true);
 
     private readonly bool _countsPoints = countsPoints;
-
-    public bool MindsTheTable => true;
 
     public double GainOf([Required] DecisionRequest request, [Required] RansomOffer offer) =>
         WorthGainOf(request, offer) + this.PointsOf(request, offer);
@@ -67,8 +62,6 @@ internal sealed class ByExposure : ITradeJudging
 {
     public static ByExposure Instance { get; } = new();
 
-    public bool MindsTheTable => true;
-
     public double GainOf([Required] DecisionRequest request, [Required] RansomOffer offer) =>
         ByWorth.WorthGainOf(request, offer)
         - Careful.Exposure(request, Trading.After(request, offer))
@@ -77,14 +70,14 @@ internal sealed class ByExposure : ITradeJudging
 
 /// <summary>
 /// Sage's way: by the whole position, as <paramref name="valuing"/> weighs it, once the trade is done, against as
-/// it stands: points, pieces, prisoners, thrones, exposure and the rest.
+/// it stands: pieces, prisoners, thrones, exposure and the rest; but not the points accepting scores, which only
+/// Midas cares for.
 /// </summary>
 internal sealed class ByPosition(IPositionValuing valuing) : ITradeJudging
 {
     private readonly IPositionValuing _valuing = valuing;
 
-    public bool MindsTheTable => false;
-
     public double GainOf([Required] DecisionRequest request, [Required] RansomOffer offer) =>
-        this._valuing.ValueOf(request, Trading.After(request, offer)) - this._valuing.ValueOf(request, request.State);
+        this._valuing.ValueOf(request, Trading.After(request, offer) with { Scores = request.State.Scores })
+        - this._valuing.ValueOf(request, request.State);
 }

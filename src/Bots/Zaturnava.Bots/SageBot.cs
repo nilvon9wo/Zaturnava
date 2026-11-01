@@ -65,7 +65,8 @@ public sealed class SageBot(
     /// answered a proposal to end the game; else its answer to an offer, or an offer of its own, if it would
     /// make one; else what it would most expect of the rest of its turn, as <see cref="Foresight"/> sees it,
     /// trading before it passes. It weighs a ransom by the whole position once it is done
-    /// (<see cref="ByPosition"/>): it accepts an offer that leaves it no worse off, and offers its allies' pieces
+    /// (<see cref="ByPosition"/>), the points accepting scores left out, and only if its team can afford it
+    /// (<see cref="Trading"/>): it accepts an offer that leaves it no worse off, and offers its allies' pieces
     /// back, then the trade that would leave it best off, if any leaves it better.
     /// </summary>
     internal static GameAction Play(

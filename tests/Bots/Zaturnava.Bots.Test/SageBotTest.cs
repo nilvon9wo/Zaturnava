@@ -211,6 +211,56 @@ public sealed class SageBotTest
     }
 
     [Theory]
+    [InlineData(0)]
+    [InlineData(9)]
+    public async Task Decide_WhenOfferedARansom_PaysNoHeedToThePointsAcceptingScores(int points)
+    {
+        // Arrange - its Horse back, but where a Pawn may take it, which no points make up for
+        DecisionRequest offered = Ransoms.Exposing(Ransoms.Offered([20], [11]), Ransoms.Black, points);
+        SageWeights weights = Nothing with { Score = 1, Material = 1, Exposure = 2 };
+
+        // Act
+        GameAction action = await new SageBot(new Random(Seed), weights).Decide(offered, this._cancellation);
+
+        // Assert
+        Assert.Equal("decline", action.Describe().Kind);
+    }
+
+    [Theory]
+    [InlineData(12, 0, "accept")]
+    [InlineData(12, 5, "decline")]
+    [InlineData(11, 0, "accept")]
+    [InlineData(11, 5, "decline")]
+    public async Task Decide_WhenItsTeamLeadsOnPoints_SendsNoEnemyLeaderNorMoreWorthHome(
+        int asked,
+        int ours,
+        string answer
+    )
+    {
+        // Arrange - Green's Pawn back, for Yellow's Raja or Horse, a position no worse as Sage weighs it
+        DecisionRequest offered = Ransoms.Leading(Ransoms.HoldingYellowsRaja(Ransoms.Offered([21], [asked])), ours);
+
+        // Act
+        GameAction action = await new SageBot(new Random(Seed), Nothing).Decide(offered, this._cancellation);
+
+        // Assert
+        Assert.Equal(answer, action.Describe().Kind);
+    }
+
+    [Fact]
+    public async Task Decide_WhenItsTeamLeadsOnPoints_StillTakesAnEvenTrade()
+    {
+        // Arrange - its Horse back for Yellow's Horse
+        DecisionRequest offered = Ransoms.Leading(Ransoms.Offered([20], [11]), 5);
+
+        // Act
+        GameAction action = await new SageBot(new Random(Seed), Nothing).Decide(offered, this._cancellation);
+
+        // Assert
+        Assert.Equal("accept", action.Describe().Kind);
+    }
+
+    [Theory]
     [InlineData(0, true)]
     [InlineData(2, false)]
     public async Task Decide_WhenNoGiftIsLeft_OffersATradeOnlyIfItLeavesItBetterOff(double exposure, bool offers)
