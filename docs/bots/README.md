@@ -10,6 +10,7 @@ as many games as you like, without a server at all.
 | A program to play on the live server, against the people on itch.io | [The live server](live-server.md): where it is, a first game, and what is protected |
 | An AI assistant that speaks MCP (Claude Code, Claude Desktop, any MCP client) | [MCP](mcp.md): give it the tools, and ask it to play |
 | A program in any language | [The HTTP API](http-api.md): create or join a game, read it, act |
+| Nothing yet, and want a working bot to start from | [The sample bot](../../samples/SampleBot/README.md): a complete C# bot, mechanical, ready for your mind |
 | A bot written in .NET, to train or measure | [Self-play](self-play.md): your bot against ours, thousands of games, offline |
 | A learner that wants data | [Game histories](game-histories.md): every action of every game, with the scores and how it ended |
 
