@@ -161,11 +161,11 @@ public sealed class HttpGameClientTest
         StubServer server = new(HttpStatusCode.OK, """{"token":"secret"}""");
 
         // Act
-        _ = await Client(server).Claim("g", 2, "player", "Ada", this._cancellation);
+        _ = await Client(server).Claim("g", 2, "player", new ClaimSeatRequest("Ada", true), this._cancellation);
 
         // Assert
         Assert.Equal(
-            ("Bearer player", """{"nickname":"Ada"}"""),
+            ("Bearer player", """{"nickname":"Ada","isAi":true}"""),
             (server.Authorization, server.Body)
         );
     }

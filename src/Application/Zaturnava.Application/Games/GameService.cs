@@ -126,10 +126,23 @@ public sealed class GameService(
     public Task<string> Claim(GameId id, SeatId seat, CancellationToken cancellationToken) =>
         this.Claim(id, seat, null, null, cancellationToken);
 
+    /// <summary>Claims an open seat, for a person, as the other overload does.</summary>
+    /// <exception cref="GameNotFoundException">There is no such game.</exception>
+    /// <exception cref="SeatUnavailableException">The seat does not exist, or is not open.</exception>
+    public Task<string> Claim(
+        GameId id,
+        SeatId seat,
+        PlayerId? claimant,
+        string? nickname,
+        CancellationToken cancellationToken
+    ) =>
+        this.Claim(id, seat, claimant, nickname, false, cancellationToken);
+
     /// <summary>
     /// Claims an open seat for whoever holds the returned token: <paramref name="claimant"/>, if a player signed in
-    /// claims it; else a guest, by <paramref name="nickname"/>, if they give one (<see cref="Nicknames.Of"/>). The
-    /// last open seat taken, the game begins, and the bots due to play first play.
+    /// claims it; else a guest, by <paramref name="nickname"/>, if they give one (<see cref="Nicknames.Of"/>);
+    /// played by an AI, if <paramref name="isAi"/>. The last open seat taken, the game begins, and the bots due to
+    /// play first play.
     /// </summary>
     /// <exception cref="GameNotFoundException">There is no such game.</exception>
     /// <exception cref="SeatUnavailableException">The seat does not exist, or is not open.</exception>
@@ -138,6 +151,7 @@ public sealed class GameService(
         SeatId seat,
         PlayerId? claimant,
         string? nickname,
+        bool isAi,
         CancellationToken cancellationToken
     )
     {
@@ -146,7 +160,8 @@ public sealed class GameService(
         string token = isOpen
             ? SeatTokens.Issue()
             : throw new SeatUnavailableException(id, seat);
-        HumanSeat claimed = new(SeatTokens.Hash(token), claimant, claimant is null ? Nicknames.Of(nickname) : null);
+        HumanSeat claimed =
+            new(SeatTokens.Hash(token), claimant, claimant is null ? Nicknames.Of(nickname) : null, isAi);
         GameRecord seated = record.Next() with { Controllers = record.Controllers.SetItem(seat.Value, claimed) };
         GameSnapshot snapshot = GameSnapshot.Of(seated, this._rulesets.Find(seated.RulesetId));
         Played played = await this.PlayBots(

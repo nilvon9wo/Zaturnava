@@ -32,13 +32,14 @@ public interface IGameServing
     /// <summary>
     /// Claims an open seat; the token returned is the only way to act for it. With a signed-in player's token
     /// (<paramref name="playerToken"/>), the seat is theirs, and shows their name; without one, a guest's, shown by
-    /// <paramref name="nickname"/>, if one is given, as "Nickname (guest)".
+    /// the <paramref name="claim"/>'s nickname, if one is given, as "Nickname (guest)". A claim that says an AI plays
+    /// the seat has it shown so.
     /// </summary>
     Task<SeatClaimedDto> Claim(
         [Required] string gameId,
         int seat,
         string? playerToken,
-        string? nickname,
+        ClaimSeatRequest? claim,
         CancellationToken cancellationToken
     );
 

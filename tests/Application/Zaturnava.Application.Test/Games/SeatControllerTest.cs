@@ -17,6 +17,9 @@ public sealed class SeatControllerTest
         { new HumanSeat("HASH"), "human", "HASH" },
         { new HumanSeat("HASH", new PlayerId("ada")), "human", "HASH ada" },
         { new HumanSeat("HASH", Nickname: "Ada ~ Lovelace"), "human", "HASH ~Ada ~ Lovelace" },
+        { new HumanSeat("HASH", IsAi: true), "human", "HASH *" },
+        { new HumanSeat("HASH", new PlayerId("ada"), IsAi: true), "human", "HASH *ada" },
+        { new HumanSeat("HASH", Nickname: "Hal", IsAi: true), "human", "HASH *~Hal" },
         { new BotSeat("first"), "bot", "first" },
     };
 

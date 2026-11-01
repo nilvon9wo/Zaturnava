@@ -22,6 +22,8 @@ internal sealed class Browser(IJSRuntime js)
     private const string PiecesKey = "zaturnava.pieces";
     private const string LogKey = "zaturnava.log";
     private const string ChatOrderKey = "zaturnava.chat-order";
+    private const string AiTalkKey = "zaturnava.ai-talk";
+    private const string Hidden = "hidden";
     private const string PlayerKey = "zaturnava.player";
     private const string NicknameKey = "zaturnava.nickname";
     private const string SetupKey = "zaturnava.setup";
@@ -88,6 +90,11 @@ internal sealed class Browser(IJSRuntime js)
 
     public ValueTask SetChatNewestFirst(bool isNewestFirst) =>
         this.Save(ChatOrderKey, isNewestFirst ? "newest" : OldestFirst);
+
+    /// <summary>Whether the talk at the table leaves out what AIs say: only if the player chose so.</summary>
+    public async ValueTask<bool> IsAiTalkHidden() => await this.Load(AiTalkKey) == Hidden;
+
+    public ValueTask SetAiTalkHidden(bool isHidden) => this.Save(AiTalkKey, isHidden ? Hidden : "shown");
 
     /// <summary>How the lobby last set up a new game: a quick game, unless the player chose otherwise.</summary>
     public async ValueTask<SetupMode> Setup() =>

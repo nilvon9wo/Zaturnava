@@ -217,7 +217,8 @@ internal static class GameViews
             bots.Any(bot => bot.Id == botId && bot.IsPaid),
             snapshot.State.Retired.Contains(seat),
             PersonOf(controller, names),
-            controller.IsGuest
+            controller.IsGuest,
+            controller is HumanSeat { IsAi: true }
         );
     }
 

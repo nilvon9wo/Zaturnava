@@ -150,6 +150,64 @@ public sealed class TableTalkTest : IDisposable
     }
 
     [Fact]
+    public void Open_WhenNoAiPlays_OffersNoWayToHideAiTalk()
+    {
+        // Arrange
+        IRenderedComponent<TableTalk> talk = this.Render(SeatZero);
+
+        // Act
+        talk.Find("button.table-tab").Click();
+
+        // Assert
+        Assert.Empty(talk.FindAll("button.ai-talk"));
+    }
+
+    [Fact]
+    public void ToggleAi_WhenAnAiSpoke_HidesWhatItSaidAndShowsItAgainRememberingEach()
+    {
+        // Arrange
+        this._page.Server.Said = [Said(1, 1, ChatChannels.Table, "Beep"), Said(2, 0, ChatChannels.Table, "Hi")];
+        IRenderedComponent<TableTalk> talk = this.RenderWithAiAtYellow(isHidden: false);
+        talk.Find("button.table-tab").Click();
+        string before = Shown(talk);
+
+        // Act
+        talk.Find("button.ai-talk").Click();
+        string hidden = Shown(talk);
+        talk.Find("button.ai-talk").Click();
+
+        // Assert
+        Assert.Equal(
+            ("You Hi|Yellow (AI) Beep", "You Hi", "zaturnava.ai-talk hidden|zaturnava.ai-talk shown"),
+            (
+                before,
+                hidden,
+                string.Join(
+                    "|",
+                    this._page.JSInterop.Invocations["zaturnava.save"].Select(call => string.Join(" ", call.Arguments))
+                )
+            )
+        );
+    }
+
+    [Fact]
+    public void Open_WhenThePlayerHidesAiTalk_LeavesItOut()
+    {
+        // Arrange
+        this._page.Server.Said = [Said(1, 1, ChatChannels.Table, "Beep"), Said(2, 0, ChatChannels.Table, "Hi")];
+        IRenderedComponent<TableTalk> talk = this.RenderWithAiAtYellow(isHidden: true);
+
+        // Act
+        talk.Find("button.table-tab").Click();
+
+        // Assert
+        Assert.Equal(
+            ("You Hi", "true"),
+            (Shown(talk), talk.Find("button.ai-talk").GetAttribute("aria-pressed"))
+        );
+    }
+
+    [Fact]
     public void Say_WhenThePlayerSpeaksToTheirTeam_SaysItThereAndShowsIt()
     {
         // Arrange
@@ -264,4 +322,16 @@ public sealed class TableTalkTest : IDisposable
             .Add(x => x.LogTools, "<button class=\"tool\">Tool</button>")
             .AddChildContent("<p class=\"log-body\">What happened</p>")
         );
+
+    /// <summary>The talk, Black's player at it, an AI playing Yellow, and what the browser says of AI talk.</summary>
+    private IRenderedComponent<TableTalk> RenderWithAiAtYellow(bool isHidden)
+    {
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.ai-talk")
+            .SetResult(isHidden ? "hidden" : null);
+        ImmutableList<SeatDto> seats = FakeGameServer.SeatZeroToMove.Seats;
+        return this._page.Render<TableTalk>(parameters => parameters
+            .Add(x => x.Seating, SeatZero)
+            .Add(x => x.Seats, seats.SetItem(1, seats[1] with { IsAi = true }))
+        );
+    }
 }

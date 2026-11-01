@@ -170,7 +170,13 @@ internal static class GameStarter
     public static async Task<Seating> Claim(IGameServing games, string gameId, int seat, Claimant claimant)
     {
         SeatClaimedDto claimed =
-            await games.Claim(gameId, seat, claimant.PlayerToken, claimant.Nickname, CancellationToken.None);
+            await games.Claim(
+                gameId,
+                seat,
+                claimant.PlayerToken,
+                new ClaimSeatRequest(claimant.Nickname),
+                CancellationToken.None
+            );
         return new Seating(gameId, new SeatClaim(seat, claimed.Token));
     }
 

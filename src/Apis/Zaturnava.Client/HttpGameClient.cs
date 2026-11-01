@@ -54,13 +54,13 @@ public sealed class HttpGameClient(HttpClient http) : IGameServing
         [Required] string gameId,
         int seat,
         string? playerToken,
-        string? nickname,
+        ClaimSeatRequest? claim,
         CancellationToken cancellationToken
     ) =>
         this.Send<SeatClaimedDto>(
             HttpMethod.Post,
             GameRoutes.Seat(gameId, seat),
-            nickname is null ? null : new ClaimSeatRequest(nickname),
+            claim,
             playerToken,
             cancellationToken
         );

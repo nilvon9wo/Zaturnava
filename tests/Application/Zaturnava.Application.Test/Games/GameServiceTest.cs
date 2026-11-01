@@ -170,7 +170,22 @@ public sealed class GameServiceTest
         // Assert
         GameSnapshot snapshot = await this._service.Get(id, this._cancellation);
         HumanSeat seat = (HumanSeat)snapshot.Record.Controllers[0];
-        Assert.Equal<(PlayerId?, string?)>((player, null), (seat.Claimant, seat.Nickname));
+        Assert.Equal<(PlayerId?, string?, bool)>((player, null, false), (seat.Claimant, seat.Nickname, seat.IsAi));
+    }
+
+    [Fact]
+    public async Task Claim_WhenAnAiClaims_MarksTheSeatAsAnAis()
+    {
+        // Arrange
+        GameId id = await this._service.Create(TinyRules.RulesetId, [SeatPlan.Open, Bot], this._cancellation);
+
+        // Act
+        _ = await this._service.Claim(id, First, null, "Hal", true, this._cancellation);
+
+        // Assert
+        GameSnapshot snapshot = await this._service.Get(id, this._cancellation);
+        HumanSeat seat = (HumanSeat)snapshot.Record.Controllers[0];
+        Assert.Equal(("Hal", true), (seat.Nickname, seat.IsAi));
     }
 
     [Theory]

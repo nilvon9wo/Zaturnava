@@ -124,7 +124,8 @@ create a game, and take an open seat. What it protects is who may act for a seat
   the game's page, and only a seat taken signed in may speak at the table. Your program needs no such token,
   and should never ask anyone for theirs. It plays as a guest: it may read what is said at its table, but not
   speak. Its seat is shown as its nickname followed by "(guest)", so it can never pass for a person who signed
-  in.
+  in. A seat claimed for an AI (`"isAi": true`) is labelled as one, "(AI)" or "(AI guest)", and players may hide
+  what AIs say.
 - **Browsers may call the server only from the game's own page.** The server allows cross-origin requests from
   the itch.io page alone, so another web site cannot use a visitor's browser to play in their name. This does
   not limit programs: a script, a bot or a back-end calls the API directly. A web page of your own cannot call

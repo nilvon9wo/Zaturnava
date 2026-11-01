@@ -16,9 +16,18 @@ public static class Nicknames
     public static string? Of(string? nickname) =>
         Cut(new string([.. (nickname ?? string.Empty).Where(letter => !char.IsControl(letter))]).Trim());
 
-    /// <summary>"Ada (guest)"; or, without a nickname, "guest".</summary>
-    public static string Shown(string? nickname) =>
-        nickname is null ? PlayerService.Guest : $"{nickname} ({PlayerService.Guest})";
+    /// <summary>What marks a seat an AI plays.</summary>
+    public const string Ai = "AI";
+
+    /// <summary>"Ada (guest)"; or, without a nickname, "guest". For an AI: "Ada (AI guest)", "AI guest".</summary>
+    public static string Shown(string? nickname, bool isAi = false)
+    {
+        string guest = isAi ? $"{Ai} {PlayerService.Guest}" : PlayerService.Guest;
+        return nickname is null ? guest : $"{nickname} ({guest})";
+    }
+
+    /// <summary>A signed-in player's name; for an AI playing on their behalf, "Ada (AI)".</summary>
+    public static string Labelled(string name, bool isAi) => isAi ? $"{name} ({Ai})" : name;
 
     private static string? Cut(string nickname) =>
         nickname.Length == 0 ? null : nickname[..Math.Min(nickname.Length, MaximumLength)].TrimEnd();

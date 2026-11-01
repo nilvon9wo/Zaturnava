@@ -153,14 +153,20 @@ public sealed class PlayerServiceTest
         HumanSeat guests = new("B");
         HumanSeat deleted = new("C", gone.Player.Id);
         HumanSeat nicknamed = new("D", Nickname: "Bea");
-        SeatController[] seats = [adas, guests, deleted, nicknamed, new BotSeat("first"), new OpenSeat(), adas];
+        HumanSeat adasAi = new("E", ada.Player.Id, IsAi: true);
+        HumanSeat aiGuest = new("F", IsAi: true);
+        HumanSeat namedAi = new("G", Nickname: "Hal", IsAi: true);
+        SeatController[] seats =
+        [
+            adas, guests, deleted, nicknamed, adasAi, aiGuest, namedAi, new BotSeat("first"), new OpenSeat(), adas,
+        ];
 
         // Act
         ImmutableDictionary<HumanSeat, string> names = await this._service.NamesOf(seats, this._cancellation);
 
         // Assert
         Assert.Equal(
-            "A Ada|B guest|C deleted player|D Bea (guest)",
+            "A Ada|B guest|C deleted player|D Bea (guest)|E Ada (AI)|F AI guest|G Hal (AI guest)",
             string.Join(
                 '|',
                 names.OrderBy(name => name.Key.TokenHash).Select(name => $"{name.Key.TokenHash} {name.Value}")
