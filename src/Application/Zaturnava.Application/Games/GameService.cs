@@ -93,7 +93,8 @@ public sealed class GameService(
         [
             .. records
                 .Where(record => offered.ContainsKey(record.RulesetId))
-                .Select(record => GameSnapshot.Of(record, offered[record.RulesetId])),
+                .Select(record => Replayable(record, offered[record.RulesetId]))
+                .OfType<GameSnapshot>(),
         ];
     }
 
@@ -255,6 +256,22 @@ public sealed class GameService(
         Played played = await this.PlayBots(snapshot.Rules, snapshot.Record, acted, cancellationToken);
         GameRecord updated = snapshot.Record.Next() with { Actions = played.Actions };
         return await this.Saved(updated, snapshot.Rules, cancellationToken);
+    }
+
+    /// <summary>
+    /// The game replayed; none, if its rules have changed since so that its actions no longer replay, so that one such
+    /// game does not keep every other from being listed.
+    /// </summary>
+    private static GameSnapshot? Replayable(GameRecord record, IRulesApplying rules)
+    {
+        try
+        {
+            return GameSnapshot.Of(record, rules);
+        }
+        catch (IllegalActionException)
+        {
+            return null;
+        }
     }
 
     /// <exception cref="IllegalActionException">

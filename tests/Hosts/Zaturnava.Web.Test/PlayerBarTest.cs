@@ -137,9 +137,13 @@ public sealed class PlayerBarTest : IDisposable
     }
 
     [Theory]
-    [InlineData("known", "Ada")]
-    [InlineData("forgotten", null)]
-    public void Render_WhenTheBrowserRemembersAToken_ShowsWhoItStandsFor(string token, string? name)
+    [InlineData("known", "Ada", 0)]
+    [InlineData("forgotten", null, 1)]
+    public void Render_WhenTheBrowserRemembersAToken_ShowsWhoItStandsForOrForgetsIt(
+        string token,
+        string? name,
+        int forgets
+    )
     {
         // Arrange
         this._page.Server.Providers = ["GitHub"];
@@ -150,7 +154,14 @@ public sealed class PlayerBarTest : IDisposable
         IRenderedComponent<PlayerBar> bar = this._page.Render<PlayerBar>();
 
         // Assert
-        Assert.Equal(name, bar.FindAll("span.player strong").SingleOrDefault()?.TextContent);
+        Assert.Equal(
+            (name, forgets),
+            (
+                bar.FindAll("span.player strong").SingleOrDefault()?.TextContent,
+                this._page.JSInterop.Invocations["zaturnava.save"]
+                    .Count(call => $"{call.Arguments[0]} {call.Arguments[1]}" == PlayerKey + " ")
+            )
+        );
     }
 
     [Fact]

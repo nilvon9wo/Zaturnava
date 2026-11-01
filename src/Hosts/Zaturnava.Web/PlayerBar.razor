@@ -195,6 +195,7 @@ else
         if (await this.Browser.PlayerToken() is { } token)
         {
             await this.Show(token);
+            await (this._signedIn is null ? this.Browser.ForgetPlayer() : ValueTask.CompletedTask);
         }
     }
 
