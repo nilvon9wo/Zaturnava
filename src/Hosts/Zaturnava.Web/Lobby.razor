@@ -23,24 +23,24 @@
         <div class="panel">
             <h2>New game</h2>
             @{
-                ImmutableList<string> games = [.. catalog.Rulesets.Select(GameOf).Distinct(StringComparer.Ordinal)];
-                ImmutableList<RulesetDto> sizes = this.SizesOf(catalog);
+                ImmutableList<RulesetDto> games = GamesOf(catalog);
+                ImmutableList<RulesetDto> sizes = SizesOf(catalog, this.Ruleset(catalog).Game);
             }
             @if (games.Count > 1)
             {
                 <label class="rules">
                     Game
                     <select class="game" @bind="this.Game">
-                        @foreach (string game in games)
+                        @foreach (RulesetDto game in games)
                         {
-                            <option value="@game">@game</option>
+                            <option value="@game.Game">@game.GameName</option>
                         }
                     </select>
                 </label>
             }
             else
             {
-                <p class="rules">@GameOf(this.Ruleset(catalog))</p>
+                <p class="rules">@this.Ruleset(catalog).GameName</p>
             }
             <div class="setup-modes">
                 <button class="mode quick-game"
@@ -61,7 +61,7 @@
                     <select class="size" @bind="this.RulesetId">
                         @foreach (RulesetDto ruleset in sizes)
                         {
-                            <option value="@ruleset.Id">@SizeOf(ruleset)</option>
+                            <option value="@ruleset.Id">@ruleset.Size</option>
                         }
                     </select>
                 </label>
@@ -161,21 +161,37 @@
             <div class="game-filters">
                 <label>
                     Game
-                    <select class="filter-ruleset" value="@this._filter.Ruleset" @onchange="this.FilterRuleset">
+                    <select class="filter-game" value="@this._filter.Game" @onchange="this.FilterGame">
                         <option value="">Any</option>
-                        @foreach (RulesetDto ruleset in catalog.Rulesets)
+                        @foreach (RulesetDto game in GamesOf(catalog))
                         {
-                            <option value="@ruleset.Id">@ruleset.Name</option>
+                            <option value="@game.Game">@game.GameName</option>
                         }
                     </select>
                 </label>
+                @{
+                    ImmutableList<RulesetDto> filteredSizes =
+                        this._filter.Game is { } filtered ? SizesOf(catalog, filtered) : [];
+                }
+                @if (filteredSizes.Count > 1)
+                {
+                    <label>
+                        Size
+                        <select class="filter-size" value="@this._filter.Ruleset" @onchange="this.FilterSize">
+                            <option value="">Any</option>
+                            @foreach (RulesetDto ruleset in filteredSizes)
+                            {
+                                <option value="@ruleset.Id">@ruleset.Size</option>
+                            }
+                        </select>
+                    </label>
+                }
                 <label>
                     Show
                     <select class="filter-state" value="@StateOf(this._filter)" @onchange="this.FilterState">
-                        <option value="@Playing">Not over</option>
-                        <option value="@Joinable">With a seat open</option>
-                        <option value="@Finished">Over</option>
-                        <option value="@Every">All</option>
+                        <option value="@NotOver">Any not over</option>
+                        <option value="@Waiting">Waiting for players</option>
+                        <option value="@InProgress">In progress</option>
                     </select>
                 </label>
                 <label class="people-only">
@@ -195,6 +211,7 @@
                 {
                     <li>
                         <span class="game">@game.Id[..Math.Min(8, game.Id.Length)]</span>
+                        <span class="ruleset">@NameOf(catalog, game.RulesetId)</span>
                         <span class="players">@Players(game)</span>
                         <span class="moves">@Moves(game)</span>
                         @if (game.IsOver)
@@ -237,10 +254,9 @@
 @code {
     private CatalogDto? _catalog;
     private string _rulesetId = string.Empty;
-    private const string Playing = "playing";
-    private const string Joinable = "joinable";
-    private const string Finished = "finished";
-    private const string Every = "every";
+    private const string NotOver = "not-over";
+    private const string Waiting = "waiting";
+    private const string InProgress = "in-progress";
 
     private ImmutableList<GameSummaryDto> _games = [];
 
@@ -291,28 +307,26 @@
     /// </summary>
     private string Game
     {
-        get => GameOf(this.Ruleset(this._catalog!));
+        get => this.Ruleset(this._catalog!).Game;
         set
         {
-            ImmutableList<RulesetDto> sizes = [.. this._catalog!.Rulesets.Where(ruleset => GameOf(ruleset) == value)];
-            string? size = SizeOf(this.Ruleset(this._catalog));
-            this.RulesetId = (sizes.FirstOrDefault(ruleset => SizeOf(ruleset) == size) ?? sizes[0]).Id;
+            ImmutableList<RulesetDto> sizes = SizesOf(this._catalog!, value);
+            string? size = this.Ruleset(this._catalog!).Size;
+            this.RulesetId = (sizes.FirstOrDefault(ruleset => ruleset.Size == size) ?? sizes[0]).Id;
         }
     }
 
-    /// <summary>"Grand Legions" for "Grand Legions (small)": the game, whatever its size (Proposed).</summary>
-    private static string GameOf(RulesetDto ruleset) => ruleset.Name.Split(" (")[0];
+    /// <summary>Each game the server offers, by its first ruleset, whatever the sizes it is played at.</summary>
+    private static ImmutableList<RulesetDto> GamesOf(CatalogDto catalog) =>
+        [.. catalog.Rulesets.DistinctBy(ruleset => ruleset.Game, StringComparer.Ordinal)];
 
-    /// <summary>"small" for "Grand Legions (small)"; none, for a game of one size.</summary>
-    private static string? SizeOf(RulesetDto ruleset)
-    {
-        int open = ruleset.Name.IndexOf(" (", StringComparison.Ordinal);
-        return open < 0 ? null : ruleset.Name[(open + 2)..].TrimEnd(')');
-    }
+    /// <summary>The sizes <paramref name="game"/> is played at, each its ruleset: one, unless it has several.</summary>
+    private static ImmutableList<RulesetDto> SizesOf(CatalogDto catalog, string game) =>
+        [.. catalog.Rulesets.Where(ruleset => ruleset.Game == game)];
 
-    /// <summary>The sizes the chosen game is played at: one, unless it has several.</summary>
-    private ImmutableList<RulesetDto> SizesOf(CatalogDto catalog) =>
-        [.. catalog.Rulesets.Where(ruleset => GameOf(ruleset) == GameOf(this.Ruleset(catalog)))];
+    /// <summary>What the catalog calls a game's ruleset, "Grand Legions (small)"; its id, if one no longer offered.</summary>
+    private static string NameOf(CatalogDto catalog, string rulesetId) =>
+        catalog.Rulesets.FirstOrDefault(ruleset => ruleset.Id == rulesetId)?.Name ?? rulesetId;
 
     /// <summary>
     /// The seats other than <paramref name="you"/>, in the order they play after it: allies first, then enemies.
@@ -368,20 +382,28 @@
         this._problem = await Requests.Attempt(this.ListGames);
     }
 
-    private Task FilterRuleset(ChangeEventArgs change)
+    /// <summary>The list of one game, at any size, or of any game.</summary>
+    private Task FilterGame(ChangeEventArgs change) =>
+        this.Filter(this._filter with { Game = Chosen(change), Ruleset = null });
+
+    /// <summary>The list of the chosen game at one size, or at any.</summary>
+    private Task FilterSize(ChangeEventArgs change) => this.Filter(this._filter with { Ruleset = Chosen(change) });
+
+    /// <summary>What was chosen; none, for "Any".</summary>
+    private static string? Chosen(ChangeEventArgs change)
     {
         string chosen = $"{change.Value}";
-        return this.Filter(this._filter with { Ruleset = chosen.Length > 0 ? chosen : null });
+        return chosen.Length > 0 ? chosen : null;
     }
 
+    /// <summary>The games waiting for players to take their open seats, those under way, or either.</summary>
     private Task FilterState(ChangeEventArgs change) =>
         this.Filter(
             $"{change.Value}" switch
             {
-                Joinable => this._filter with { Open = true, Over = false },
-                Finished => this._filter with { Open = null, Over = true },
-                Every => this._filter with { Open = null, Over = null },
-                _ => this._filter with { Open = null, Over = false },
+                Waiting => this._filter with { Open = true },
+                InProgress => this._filter with { Open = false },
+                _ => this._filter with { Open = null },
             }
         );
 
@@ -400,15 +422,10 @@
     {
         if (true.Equals(filter.Open))
         {
-            return Joinable;
+            return Waiting;
         }
 
-        if (true.Equals(filter.Over))
-        {
-            return Finished;
-        }
-
-        return filter.Over is null ? Every : Playing;
+        return false.Equals(filter.Open) ? InProgress : NotOver;
     }
 
     /// <summary>

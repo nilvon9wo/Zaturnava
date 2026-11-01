@@ -21,6 +21,18 @@ public interface IRulesApplying
 
     string Name { get; }
 
+    /// <summary>
+    /// The game the ruleset plays, by id: one game may be played at several sizes, each its own ruleset. A ruleset
+    /// that is the only one of its game is its own.
+    /// </summary>
+    string GameId => this.Id;
+
+    /// <summary>What the game is called, whatever its size.</summary>
+    string GameName => this.Name;
+
+    /// <summary>The size the game is played at ("small"); none, for a game played at one size only.</summary>
+    string? Size => null;
+
     ICellNavigating Topology { get; }
 
     /// <summary>Each seat's throne, if the ruleset has thrones; empty if it has none.</summary>

@@ -42,6 +42,11 @@ public sealed record Chaturaji2027Variant(
         Heavies = [Chaturaji2027Pieces.Elephant],
     };
 
+    /// <summary>
+    /// The game this is one size of, if it is played at several; none, for a game of one size, which is its own.
+    /// </summary>
+    public GameSize? Game { get; init; }
+
     /// <summary>The kinds, leaders apart, most dangerous to let loose, as a Rook is: none, unless set.</summary>
     public ImmutableHashSet<PieceKindId> Heavies { get; init; } = [];
 

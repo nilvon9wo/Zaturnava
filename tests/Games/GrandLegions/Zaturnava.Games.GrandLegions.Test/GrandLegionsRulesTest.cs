@@ -17,19 +17,19 @@ public sealed class GrandLegionsRulesTest
         // Arrange - nothing beyond the rules
 
         // Act
-        ImmutableList<(string Id, string Name, int Cells)> games =
+        ImmutableList<(string Id, string Name, string Game, string GameName, string? Size, int Cells)> games =
         [
             .. GrandLegionsRules.Quick.Select(rules =>
-                (rules.Id, rules.Name, rules.Topology.Cells.Count)
+                (rules.Id, rules.Name, rules.GameId, rules.GameName, rules.Size, rules.Topology.Cells.Count)
             ),
         ];
 
         // Assert
         Assert.Equal(
             [
-                ("grand-legions-small", "Grand Legions (small)", 36),
-                ("grand-legions-medium", "Grand Legions (medium)", 64),
-                ("grand-legions-large", "Grand Legions (large)", 144),
+                ("grand-legions-small", "Grand Legions (small)", "grand-legions", "Grand Legions", "small", 36),
+                ("grand-legions-medium", "Grand Legions (medium)", "grand-legions", "Grand Legions", "medium", 64),
+                ("grand-legions-large", "Grand Legions (large)", "grand-legions", "Grand Legions", "large", 144),
             ],
             games
         );

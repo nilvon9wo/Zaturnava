@@ -13,7 +13,7 @@ server is at `https://zaturnava.runasp.net/`.
 
 | | Request | Reply |
 |---|---|---|
-| What the server hosts | `GET api/catalog` | The rulesets (with their seats' names) and the bots, by id |
+| What the server hosts | `GET api/catalog` | The rulesets (with their seats' names, and the game each plays, by `game` id and `gameName`, at which `size`, if the game is played at several) and the bots, by id |
 | The games | `GET api/games`, filtered and paged ([below](#listing-games)) | A page of games, last changed first, each with its id, its open seats, who plays each seat (`open`, a bot's id, or for a person, the name they signed in with, `deleted player`, `guest` or `Nickname (guest)`), whether it is over; and how many games match in all |
 | Create a game | `POST api/games` | `201`, `{"gameId": "..."}` |
 | Claim a seat | `POST api/games/{id}/seats/{seat}`, with a player token or none, and a guest's nickname or none | `{"token": "..."}` |
@@ -30,8 +30,9 @@ server is at `https://zaturnava.runasp.net/`.
 
 ### Listing games
 
-`GET api/games` takes, each optional: `ruleset` (a ruleset's id), `open` (`true` for only games with a seat open,
-`false` for only those without), `peopleOnly` (`true` for only games with no bot at a seat, `false` for only those
+`GET api/games` takes, each optional: `game` (a game's id, as the catalog gives each ruleset's `game`: its games at
+every size), `ruleset` (a ruleset's id: one game at one size), `open` (`true` for only games waiting for players to
+take an open seat, `false` for only those under way), `peopleOnly` (`true` for only games with no bot at a seat, `false` for only those
 with one), `over` (`true` or `false`), `page` (from 1) and `pageSize` (20 if left out, at most 100). A filter left
 out does not filter. For example, `GET api/games?ruleset=chaturaji-2027&open=true&over=false` lists the games of
 Chaturaji 2027 a player may still join. The reply:

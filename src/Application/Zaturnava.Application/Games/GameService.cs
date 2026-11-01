@@ -90,13 +90,18 @@ public sealed class GameService(
     }
 
     /// <summary>
-    /// The page of games <paramref name="query"/> asks for, of the rulesets still offered, as stored: none is
-    /// replayed, however many there are.
+    /// The page of games <paramref name="query"/> asks for, of the rulesets still offered (of its game and ruleset, if
+    /// it names them), as stored: none is replayed, however many there are.
     /// </summary>
     public Task<GamePage> Page([Required] GameQuery query, CancellationToken cancellationToken)
     {
-        ImmutableHashSet<string> offered = [.. this.Rulesets.Select(rules => rules.Id)];
-        ImmutableHashSet<string> asked = query.RulesetId is { } id ? offered.Intersect([id]) : offered;
+        ImmutableHashSet<string> asked =
+        [
+            .. this.Rulesets
+                .Where(rules => query.GameId is null || rules.GameId == query.GameId)
+                .Where(rules => query.RulesetId is null || rules.Id == query.RulesetId)
+                .Select(rules => rules.Id),
+        ];
         return this._store.Page(query.Bounded(), asked, cancellationToken);
     }
 

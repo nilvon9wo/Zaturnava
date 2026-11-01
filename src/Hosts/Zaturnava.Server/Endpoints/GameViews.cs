@@ -177,6 +177,9 @@ internal static class GameViews
         GameState state = rules.CreateInitialState();
         return new RulesetDto(rules.Id, rules.Name, state.Seats.Count)
         {
+            Game = rules.GameId,
+            GameName = rules.GameName,
+            Size = rules.Size,
             SeatNames = [.. state.Seats.Select(seat => rules.NameOf(seat.Id))],
             SeatTeams = [.. state.Seats.Select(seat => state.Teams.TeamOf(seat.Id))],
         };

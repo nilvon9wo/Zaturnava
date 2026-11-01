@@ -471,6 +471,21 @@ public sealed class GameServiceTest
     }
 
     [Fact]
+    public async Task Page_WhenAskedForOneGame_ListsItsGamesAtAnySize()
+    {
+        // Arrange
+        _ = await this.CreateOpen();
+        GameId rolling =
+            await this._service.Create(RollingRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
+
+        // Act
+        GamePage page = await this._service.Page(new GameQuery(GameId: RollingRules.RulesetId), this._cancellation);
+
+        // Assert
+        Assert.Equal(rolling, Assert.Single(page.Games).Id);
+    }
+
+    [Fact]
     public async Task Page_WhenAskedForTooBigAPage_ListsAPageOfTheMost()
     {
         // Arrange

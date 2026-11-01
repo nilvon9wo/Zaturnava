@@ -69,8 +69,9 @@ public sealed class GameToolsTest : IAsyncLifetime
         // Arrange
         Dictionary<string, object?> arguments = new()
         {
-            ["ruleset"] = "chaturaji-2027",
-            ["open"] = true,
+            ["game"] = "grand-legions",
+            ["ruleset"] = "grand-legions-small",
+            ["open"] = false,
             ["page"] = 2,
         };
 
@@ -78,7 +79,10 @@ public sealed class GameToolsTest : IAsyncLifetime
         _ = await this._session.Call("list_games", arguments, this._cancellation);
 
         // Assert
-        Assert.Equal(new GameListQuery("chaturaji-2027", Open: true, Page: 2), this._session.Server.Received);
+        Assert.Equal(
+            new GameListQuery("grand-legions-small", Open: false, Page: 2, Game: "grand-legions"),
+            this._session.Server.Received
+        );
     }
 
     [Fact]

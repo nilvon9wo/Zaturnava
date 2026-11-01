@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
 using static Net.NowhereAtAll.Zaturnava.Games.GrandLegions.PieceClass;
 
 namespace Net.NowhereAtAll.Zaturnava.Games.GrandLegions;
@@ -11,7 +12,7 @@ namespace Net.NowhereAtAll.Zaturnava.Games.GrandLegions;
 /// </summary>
 public sealed record QuickGame(
     string Id,
-    string Name,
+    string Size,
     int Side,
     int KingdomWidth,
     int KingdomDepth,
@@ -19,9 +20,12 @@ public sealed record QuickGame(
     ImmutableDictionary<PieceClass, int> Minimums
 )
 {
+    public const string GameId = "grand-legions";
+    public const string GameName = "Grand Legions";
+
     public static QuickGame Small { get; } = new(
         "grand-legions-small",
-        "Grand Legions (small)",
+        "small",
         6,
         3,
         3,
@@ -31,7 +35,7 @@ public sealed record QuickGame(
 
     public static QuickGame Medium { get; } = new(
         "grand-legions-medium",
-        "Grand Legions (medium)",
+        "medium",
         8,
         4,
         2,
@@ -41,7 +45,7 @@ public sealed record QuickGame(
 
     public static QuickGame Large { get; } = new(
         "grand-legions-large",
-        "Grand Legions (large)",
+        "large",
         12,
         6,
         3,
@@ -50,6 +54,12 @@ public sealed record QuickGame(
     );
 
     public static ImmutableList<QuickGame> All { get; } = [Small, Medium, Large];
+
+    /// <summary>The game and its size, as the rules tell them.</summary>
+    public GameSize Game => new(GameId, GameName, this.Size);
+
+    /// <summary>What a game of this size is called: "Grand Legions (small)".</summary>
+    public string Name => $"{GameName} ({this.Size})";
 
     /// <summary>How many cells each kingdom has, for an army to start on.</summary>
     public int Cells => this.KingdomWidth * this.KingdomDepth;

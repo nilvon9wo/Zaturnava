@@ -56,6 +56,7 @@ public static class GrandLegionsRules
             Pinwheel.Armies(game.Side, QuickArmy.Layout(game, QuickArmy.Pick(game)))
         )
         {
+            Game = game.Game,
             Heavies = Heavies,
             DieNames = dice.Classes.ToImmutableDictionary(face => face.Key, face => NameOf(face.Value)),
             MayMove = RiverCrossing.On(new GrandBoard(game.Side, game.Side, game.KingdomWidth, game.KingdomDepth)),
