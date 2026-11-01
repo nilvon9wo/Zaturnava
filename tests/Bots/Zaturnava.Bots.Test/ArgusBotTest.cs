@@ -222,12 +222,13 @@ public sealed class ArgusBotTest
         bool offers
     )
     {
-        // Arrange - its Pawn for its Horse back gains 2, unless the Horse comes back where a Pawn may take it
+        // Arrange - a Horse for its Horse back, the most even trade, loses nothing, unless the Horse comes back
+        // where a Pawn may take it
         DecisionRequest window = Ransoms.WindowWithout(30);
         DecisionRequest request = isExposed
             ? Ransoms.Exposing(window, Ransoms.Yellow)
             : window;
-        OfferAction best = new(Ransoms.Black, Ransoms.Yellow, [new PieceId(10)], [new PieceId(20)]);
+        OfferAction best = new(Ransoms.Black, Ransoms.Yellow, [new PieceId(11)], [new PieceId(20)]);
 
         // Act
         GameAction action = await new ArgusBot(new Random(1)).Decide(request, this._cancellation);
