@@ -112,10 +112,11 @@ did them.
        without .NET.
 - *(Stated 2026-10-29)* Once the game is online, free AI bots are offered for players to play
   against, subject to whatever policies their hosts require.
-- **A bot using Claude** (*Stated*): for testing. It is never seated but by someone choosing it in
-  the lobby: not by default, not in a quick game; playing again with it is a red button that says it
-  costs tokens. On a public server only with a key a player provides (*Proposed*: how that key is
-  handled is to be decided).
+- **A bot using Claude**: shelved (*Stated 2026-11-01*). No one will pay for its tokens: not the owner, and
+  players are unlikely to give their own key. Without a trained instance to call, it would be an expensive, slow
+  random player. The plumbing for a bot paid for each use (`BotProfile.IsPaid`) stays, unused. An AI of a
+  player's own joins instead: in a custom game, a seat may be left for "Your own AI", which takes it by MCP or
+  the HTTP API with an AI token, and the table shows the game's id while seats are open.
 
 ## Talking
 

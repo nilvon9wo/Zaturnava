@@ -9,6 +9,12 @@ internal static class GameStarter
     /// <summary>A seat's level, played by a person rather than a bot of some strength.</summary>
     public const int PersonLevel = -1;
 
+    /// <summary>
+    /// A seat's level, left open for an AI of the player's own to take, by MCP or the HTTP API (Proposed); as a
+    /// person's, no bot of ours is seated there.
+    /// </summary>
+    public const int OwnAiLevel = -2;
+
     private static readonly string[] StrengthNames = ["Easy", "Medium", "Hard"];
 
     /// <summary>
