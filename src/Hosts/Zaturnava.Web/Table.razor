@@ -145,6 +145,16 @@
                             </button>
                         </div>
                         <p class="hint">@away.Stopping.Count of @away.Voters.Count would stop waiting; all must, for their turn to pass.</p>
+                        @if (away.MayReplace(voter.Seat))
+                        {
+                            <button class="action replace" @onclick="() => this.Replace(voter)">
+                                Have a bot play for them
+                            </button>
+                        }
+                        else if (away.IsOpen)
+                        {
+                            <p class="hint replace-wait">@ReplaceWait(away)</p>
+                        }
                     </div>
                 }
                 @if (view.Outcome is { } outcome)
@@ -962,6 +972,17 @@
 
     private Task Fill(SeatClaim claim) =>
         this.Request(() => this.Games.FillOpenSeats(this.Seating.GameId, claim.Token, CancellationToken.None));
+
+    /// <summary>"If they do not come back, you may have a bot play for them in 4 min 30 s."</summary>
+    private static string ReplaceWait(AwayDto away)
+    {
+        TimeSpan left = TimeSpan.FromSeconds(Math.Ceiling(away.SecondsUntilAnyoneReplaces));
+        string minutes = left.Minutes > 0 ? $"{left.Minutes} min " : string.Empty;
+        return $"If they do not come back, you may have a bot play for them in {minutes}{left.Seconds} s.";
+    }
+
+    private Task Replace(SeatClaim claim) =>
+        this.Request(() => this.Games.ReplaceAway(this.Seating.GameId, claim.Token, CancellationToken.None));
 
     private Task Submit(SeatClaim claim, ActionDto action) =>
         this.Request(() => this.Games.Submit(this.Seating.GameId, claim.Token, action, CancellationToken.None));

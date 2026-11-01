@@ -234,6 +234,39 @@ public sealed class GameService(
         };
     }
 
+    /// <summary>
+    /// Has a bot take the seat of the person the game waits for, away, for the rest of the game, for the person whose
+    /// seat <paramref name="token"/> holds, if they may now (<see cref="AwayVoting.MayReplace"/>): a bot not already
+    /// seated, at random, never one paid for each use. The bot then plays at once. With no bot left to seat, the game
+    /// is left as it is.
+    /// </summary>
+    /// <exception cref="GameNotFoundException">There is no such game.</exception>
+    /// <exception cref="NotAPlayerException">The token holds no seat at the game.</exception>
+    /// <exception cref="TooSoonToReplaceException">The seat holder may not replace anyone now.</exception>
+    public async Task<GameSnapshot> ReplaceAway(
+        GameId id,
+        [Required] string token,
+        CancellationToken cancellationToken
+    )
+    {
+        GameSnapshot snapshot = await this.Get(id, cancellationToken);
+        GameRecord record = snapshot.Record;
+        int held = record.Controllers.FindIndex(controller => controller.IsHeldBy(token));
+        Queue<string> free = this.FreeBots(record);
+        return (held, snapshot.Away) switch
+        {
+            (-1, _) => throw new NotAPlayerException(id),
+            (_, { } away) when away.MayReplace(new SeatId(held)) && free.TryDequeue(out string? bot) =>
+                await this.Reseated(
+                    snapshot,
+                    record.Controllers.SetItem(away.Absent.Value, new BotSeat(bot)),
+                    cancellationToken
+                ),
+            (_, { } away) when away.MayReplace(new SeatId(held)) => snapshot,
+            _ => throw new TooSoonToReplaceException(id),
+        };
+    }
+
     /// <exception cref="GameNotFoundException">There is no such game.</exception>
     /// <exception cref="MalformedActionException">The descriptor describes no action.</exception>
     /// <exception cref="NotYourTurnException">The token does not hold the seat that must decide.</exception>
@@ -373,8 +406,41 @@ public sealed class GameService(
             && !voters.IsEmpty;
         return isWaited
             ? new AwayVoting(absent, voters, absence.StoppingFor(absent), left)
+            {
+                FirstArrival = FirstArrivalOf(record),
+                UntilAnyoneReplaces = this.Left(
+                    this._clock.AbsentSince(record.Id, AbsenceOf(record, absent))
+                        + this._settings.AwayGrace
+                        + this._settings.ReplaceWait
+                ),
+            }
             : null;
     }
+
+    /// <summary>
+    /// The seat away, and the last of the game's actions it took itself (not the host passing for it): the same until
+    /// it acts again, however many turns pass meanwhile.
+    /// </summary>
+    private static string AbsenceOf(GameRecord record, SeatId absent)
+    {
+        string actor = absent.Value.ToString(CultureInfo.InvariantCulture);
+        int last = record.Actions.FindLastIndex(action =>
+            action.Kind != PassAwayAction.Kind
+            && action.Arguments.GetValueOrDefault(ActionDescriptor.ActorArgument) == actor
+        );
+        return string.Create(CultureInfo.InvariantCulture, $"{absent.Value}/{last}");
+    }
+
+    /// <summary>
+    /// The first of the people seated to arrive (the lowest seat, of those arrived together); none, if no one is.
+    /// </summary>
+    private static SeatId? FirstArrivalOf(GameRecord record) =>
+        record.Controllers
+            .Select((controller, seat) => (controller, seat))
+            .Where(held => held.controller is HumanSeat)
+            .OrderBy(held => ((HumanSeat)held.controller).Arrival)
+            .Select(held => (SeatId?)new SeatId(held.seat))
+            .FirstOrDefault();
 
     /// <summary>
     /// Who may fill the open seats of a game waiting for them, and when: the first of the people seated to
@@ -384,39 +450,52 @@ public sealed class GameService(
     /// </summary>
     private Vacancy VacancyOf(GameRecord record)
     {
-        SeatId? first = record.Controllers
-            .Select((controller, seat) => (controller, seat))
-            .Where(held => held.controller is HumanSeat)
-            .OrderBy(held => ((HumanSeat)held.controller).Arrival)
-            .Select(held => (SeatId?)new SeatId(held.seat))
-            .FirstOrDefault();
         DateTimeOffset firstMay = this._clock.Since(record.Id, record.Version) + this._settings.FillWait;
-        return new Vacancy(first, this.Left(firstMay), this.Left(firstMay + this._settings.FillWait));
+        return new Vacancy(FirstArrivalOf(record), this.Left(firstMay), this.Left(firstMay + this._settings.FillWait));
     }
 
     /// <summary>
     /// The game with its open seats filled with bots not yet seated, at random, never one paid for each use.
     /// </summary>
-    private async Task<GameSnapshot> Filled(GameSnapshot snapshot, CancellationToken cancellationToken)
+    private Task<GameSnapshot> Filled(GameSnapshot snapshot, CancellationToken cancellationToken)
     {
-        GameRecord record = snapshot.Record;
-        Queue<string> free = new(
+        Queue<string> free = this.FreeBots(snapshot.Record);
+        return this.Reseated(
+            snapshot,
+            [
+                .. snapshot.Record.Controllers.Select(controller =>
+                    controller.IsOpen && free.TryDequeue(out string? bot) ? new BotSeat(bot) : controller
+                ),
+            ],
+            cancellationToken
+        );
+    }
+
+    /// <summary>The bots not yet seated at the game, at random, never one paid for each use.</summary>
+    private Queue<string> FreeBots(GameRecord record) =>
+        new(
             this._bots.Bots
                 .Where(bot => !bot.IsPaid)
                 .Select(bot => bot.Id)
                 .Except(record.Controllers.OfType<BotSeat>().Select(seated => seated.BotId))
                 .OrderBy(_ => Random.Shared.Next())
         );
-        ImmutableList<SeatController> controllers =
-        [
-            .. record.Controllers.Select(controller =>
-                controller.IsOpen && free.TryDequeue(out string? bot) ? new BotSeat(bot) : controller
-            ),
-        ];
-        GameRecord filled = record.Next() with { Controllers = controllers };
-        Played played =
-            await this.PlayBots(snapshot.Rules, filled, new Played(snapshot.State, filled.Actions), cancellationToken);
-        return await this.Saved(filled with { Actions = played.Actions }, snapshot.Rules, cancellationToken);
+
+    /// <summary>The game with its seats played by <paramref name="controllers"/>, and the bots due played.</summary>
+    private async Task<GameSnapshot> Reseated(
+        GameSnapshot snapshot,
+        ImmutableList<SeatController> controllers,
+        CancellationToken cancellationToken
+    )
+    {
+        GameRecord reseated = snapshot.Record.Next() with { Controllers = controllers };
+        Played played = await this.PlayBots(
+            snapshot.Rules,
+            reseated,
+            new Played(snapshot.State, reseated.Actions),
+            cancellationToken
+        );
+        return await this.Saved(reseated with { Actions = played.Actions }, snapshot.Rules, cancellationToken);
     }
 
     /// <summary>How long from now until <paramref name="end"/>; none, once it has come.</summary>

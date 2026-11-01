@@ -142,6 +142,22 @@ public sealed class HttpGameClientTest
     }
 
     [Fact]
+    public async Task ReplaceAway_WhenAsked_PostsWithTheSeatsToken()
+    {
+        // Arrange
+        StubServer server = new(HttpStatusCode.OK, ViewJson);
+
+        // Act
+        _ = await Client(server).ReplaceAway("g", "secret", this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            ("POST", "/api/games/g/replace", "Bearer secret"),
+            (server.Method, server.Path, server.Authorization)
+        );
+    }
+
+    [Fact]
     public async Task Advance_WhenGivenAVersion_PostsIt()
     {
         // Arrange

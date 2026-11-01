@@ -153,6 +153,13 @@ internal sealed class FakeGameServer : IGameServing
     ) =>
         this.Answer($"fill {gameId} {token}", this.View);
 
+    public Task<GameViewDto> ReplaceAway(
+        [Required] string gameId,
+        [Required] string token,
+        CancellationToken cancellationToken
+    ) =>
+        this.Answer($"replace {gameId} {token}", this.View);
+
     /// <summary>Each seat said anew to be held, in order: "{game} {seat} {token} {player token} {nickname}".</summary>
     public ConcurrentQueue<string> Identified { get; } = new();
 

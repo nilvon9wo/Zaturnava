@@ -23,4 +23,27 @@ public sealed class AwayDtoTest
             )
         );
     }
+
+    [Theory]
+    [InlineData(1, true, 0, true)]
+    [InlineData(1, false, 0, false)]
+    [InlineData(0, true, 0, false)]
+    [InlineData(2, true, 30, false)]
+    [InlineData(2, true, 0, true)]
+    public void MayReplace_WhenAsked_AllowsAVoterOnceOpenFirstOrAfterTheWait(
+        int asking,
+        bool isOpen,
+        double secondsToWait,
+        bool mayReplace
+    )
+    {
+        // Arrange
+        AwayDto away = new(0, isOpen, [1, 2], [], FirstArrival: 1, SecondsUntilAnyoneReplaces: secondsToWait);
+
+        // Act
+        bool allowed = away.MayReplace(asking);
+
+        // Assert
+        Assert.Equal(mayReplace, allowed);
+    }
 }

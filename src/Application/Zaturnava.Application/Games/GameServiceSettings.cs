@@ -12,7 +12,8 @@ namespace Net.NowhereAtAll.Zaturnava.Application.Games;
 /// <see cref="DefaultTimer"/>, any it does not name. <see cref="AwayGrace"/> is how long a person may take
 /// over a decision no timer limits before the others may vote to stop waiting for them. <see cref="FillWait"/> is how
 /// long a game waits for people to take its open seats before the first of those seated may fill them with bots
-/// (anyone seated may, after twice as long).
+/// (anyone seated may, after twice as long). <see cref="ReplaceWait"/> is how long, once a person away may be voted
+/// on, before anyone at the game, not only the first to have arrived, may have a bot take their seat.
 /// </summary>
 public sealed record GameServiceSettings(
     int MaximumBotSteps,
@@ -28,11 +29,15 @@ public sealed record GameServiceSettings(
 
     public static readonly TimeSpan DefaultFillWait = TimeSpan.FromMinutes(1);
 
+    public static readonly TimeSpan DefaultReplaceWait = TimeSpan.FromMinutes(5);
+
     public static readonly GameServiceSettings Default = new(DefaultMaximumBotSteps, DefaultTimerLength, []);
 
     public TimeSpan AwayGrace { get; init; } = DefaultAwayGrace;
 
     public TimeSpan FillWait { get; init; } = DefaultFillWait;
+
+    public TimeSpan ReplaceWait { get; init; } = DefaultReplaceWait;
 
     /// <summary>How long the decision timed by <paramref name="timer"/> may take.</summary>
     public TimeSpan LengthOf([Required] string timer) => this.Timers.GetValueOrDefault(timer, this.DefaultTimer);

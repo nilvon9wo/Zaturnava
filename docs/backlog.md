@@ -28,6 +28,13 @@ did them.
   allows it, without pretending to be several people.
 - **34** Games survive a server restart (storage that persists, and identities to go with it).
 - **35** Player statistics: games played and won, points scored...
+- Players' Elo ratings (*Stated 2026-11-01*); only bots are rated so far, offline. A game counts toward a
+  player's rating only if no seat changed hands during it (no bot played for someone away, and no person took
+  over from a bot), and no seat was a guest's.
+- A signed-in player setting up a game may bar guests from it (*Stated 2026-11-01*).
+- A person may take a seat over from a bot, where the game allows it (*Stated 2026-11-01*, low priority).
+- A custom game's board size chosen freely, within limits, rather than only small, medium or large
+  (*Stated 2026-11-01*); likely to come with the game setup rework.
 - The page's preferences (theme, sound, pieces, the log's highlights) kept with the player's identity
   once there is one, not only in the browser.
 

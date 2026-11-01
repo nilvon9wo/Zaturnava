@@ -75,6 +75,18 @@ public sealed class GameRoutesTest
     }
 
     [Fact]
+    public void Replace_WhenGivenAGame_RoutesUnderIt()
+    {
+        // Arrange - nothing beyond the id
+
+        // Act
+        string route = GameRoutes.Replace("g");
+
+        // Assert
+        Assert.Equal("api/games/g/replace", route);
+    }
+
+    [Fact]
     public void Chat_WhenGivenAGame_RoutesUnderIt()
     {
         // Arrange - nothing beyond the id

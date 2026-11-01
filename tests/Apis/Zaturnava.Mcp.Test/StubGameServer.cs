@@ -100,6 +100,13 @@ internal sealed class StubGameServer : IGameServing
     ) =>
         throw new NotSupportedException("The tools leave open seats to people, or to whoever created the game.");
 
+    public Task<GameViewDto> ReplaceAway(
+        [Required] string gameId,
+        [Required] string token,
+        CancellationToken cancellationToken
+    ) =>
+        throw new NotSupportedException("The tools leave replacing a player to the people at the table.");
+
     public Task Identify(
         [Required] string gameId,
         int seat,

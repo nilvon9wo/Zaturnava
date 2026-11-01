@@ -911,6 +911,111 @@ public sealed class GameServiceTest
         _ = await Assert.ThrowsAsync<IllegalActionException>(() => submitting);
     }
 
+    [Fact]
+    public async Task ReplaceAway_WhenTheFirstToArriveWaitsOnAnotherPastTheGrace_SeatsABotThereAtOnce()
+    {
+        // Arrange - the second seat arrived first; the first, deciding, is away
+        GameId id =
+            await this._paced.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
+        string first = await this._paced.Claim(id, Second, this._cancellation);
+        _ = await this._paced.Claim(id, First, this._cancellation);
+        _ = await this._paced.Get(id, this._cancellation);
+        this._time.Pass(Grace);
+
+        // Act
+        GameSnapshot replaced = await this._paced.ReplaceAway(id, first, this._cancellation);
+
+        // Assert
+        Assert.Equal<(SeatController, AwayVoting?)>(
+            (new BotSeat(FirstChoiceBot.BotId), null),
+            (replaced.Record.Controllers[0], replaced.Away)
+        );
+    }
+
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(true, true)]
+    public async Task ReplaceAway_WhenAnotherThanTheFirstToArriveAsks_SeatsABotOnlyOnceTheyHaveWaitedLonger(
+        bool hasWaited,
+        bool replaces
+    )
+    {
+        // Arrange - the first seat, away, arrived first, and missed a turn: its vote is open
+        (GameId id, string voter, _) = await this.FirstSeatPassedAway();
+        this._time.Pass(hasWaited ? GameServiceSettings.DefaultReplaceWait : TimeSpan.Zero);
+
+        // Act
+        Exception? refused = await Record.ExceptionAsync(() => this._paced.ReplaceAway(id, voter, this._cancellation));
+        GameSnapshot after = await this._paced.Get(id, this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            (replaces, !replaces),
+            (after.Record.Controllers[0] is BotSeat, refused is TooSoonToReplaceException)
+        );
+    }
+
+    [Fact]
+    public async Task ReplaceAway_WhenTheGraceIsNotOver_Refuses()
+    {
+        // Arrange - the second seat arrived first, but the first has had no time yet
+        GameId id =
+            await this._paced.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
+        string first = await this._paced.Claim(id, Second, this._cancellation);
+        _ = await this._paced.Claim(id, First, this._cancellation);
+
+        // Act
+        Task<GameSnapshot> replacing = this._paced.ReplaceAway(id, first, this._cancellation);
+
+        // Assert
+        _ = await Assert.ThrowsAsync<TooSoonToReplaceException>(() => replacing);
+    }
+
+    [Fact]
+    public async Task ReplaceAway_WhenABotDecides_Refuses()
+    {
+        // Arrange
+        GameId id = await this._paced.Create(TinyRules.RulesetId, [Bot, SeatPlan.Open], this._cancellation);
+        string token = await this._paced.Claim(id, Second, this._cancellation);
+
+        // Act
+        Task<GameSnapshot> replacing = this._paced.ReplaceAway(id, token, this._cancellation);
+
+        // Assert
+        _ = await Assert.ThrowsAsync<TooSoonToReplaceException>(() => replacing);
+    }
+
+    [Fact]
+    public async Task ReplaceAway_WhenTheTokenHoldsNoSeat_Refuses()
+    {
+        // Arrange
+        (GameId id, _, _) = await this.FirstSeatAway();
+
+        // Act
+        Task<GameSnapshot> replacing = this._paced.ReplaceAway(id, "no-ones", this._cancellation);
+
+        // Assert
+        _ = await Assert.ThrowsAsync<NotAPlayerException>(() => replacing);
+    }
+
+    [Fact]
+    public async Task ReplaceAway_WhenNoBotIsLeftToSeat_LeavesTheGameAsItIs()
+    {
+        // Arrange - the second seat arrived first; the first, deciding, is away
+        GameService service = this.Service(GameServiceSettings.Default, bots: []);
+        GameId id = await service.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
+        string first = await service.Claim(id, Second, this._cancellation);
+        _ = await service.Claim(id, First, this._cancellation);
+        GameSnapshot before = await service.Get(id, this._cancellation);
+        this._time.Pass(Grace);
+
+        // Act
+        GameSnapshot after = await service.ReplaceAway(id, first, this._cancellation);
+
+        // Assert
+        Assert.Equal(before.Record.Version, after.Record.Version);
+    }
+
     [Theory]
     [InlineData(true)]
     [InlineData(false)]

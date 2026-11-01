@@ -65,6 +65,16 @@ public interface IGameServing
         CancellationToken cancellationToken
     );
 
+    /// <summary>
+    /// Has a bot take the seat of the person the game waits for, away, for the rest of the game, for the player whose
+    /// seat <paramref name="token"/> holds, once they may (<see cref="AwayDto.MayReplace"/>).
+    /// </summary>
+    Task<GameViewDto> ReplaceAway(
+        [Required] string gameId,
+        [Required] string token,
+        CancellationToken cancellationToken
+    );
+
     /// <summary>Takes <paramref name="action"/> for the seat <paramref name="token"/> holds.</summary>
     Task<GameViewDto> Submit(
         [Required] string gameId,

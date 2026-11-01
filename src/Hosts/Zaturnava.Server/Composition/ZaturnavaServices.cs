@@ -32,6 +32,12 @@ internal static class ZaturnavaServices
     public const string FillWaitKey = "Games:FillWaitSeconds";
 
     /// <summary>
+    /// The configuration key for how long, in seconds, after the first to arrive may have a bot play for a player
+    /// away, any other player may.
+    /// </summary>
+    public const string ReplaceWaitKey = "Games:ReplaceWaitSeconds";
+
+    /// <summary>
     /// The configuration key for the folder of scenarios to offer (<see cref="ScenarioFolder"/>), from the
     /// content root; none are offered if it is not set, as only development sets it.
     /// </summary>
@@ -124,6 +130,9 @@ internal static class ZaturnavaServices
             ),
             FillWait = TimeSpan.FromSeconds(
                 configuration.GetValue(FillWaitKey, GameServiceSettings.DefaultFillWait.TotalSeconds)
+            ),
+            ReplaceWait = TimeSpan.FromSeconds(
+                configuration.GetValue(ReplaceWaitKey, GameServiceSettings.DefaultReplaceWait.TotalSeconds)
             ),
         };
     }

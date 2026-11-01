@@ -14,6 +14,7 @@ public sealed class DecisionClock(TimeProvider time)
     private readonly TimeProvider _time = time;
     private readonly ConcurrentDictionary<GameId, (int Version, DateTimeOffset Since)> _seen = new();
     private readonly ConcurrentDictionary<GameId, (string Wait, DateTimeOffset Since)> _waits = new();
+    private readonly ConcurrentDictionary<GameId, (string Absence, DateTimeOffset Since)> _absences = new();
 
     public DateTimeOffset Now => this._time.GetUtcNow();
 
@@ -38,5 +39,19 @@ public sealed class DecisionClock(TimeProvider time)
             (_, seen) => seen.Wait == wait
                 ? seen
                 : (wait, this.Now)
+        ).Since;
+
+    /// <summary>
+    /// When the game was first seen with a seat away as <paramref name="absence"/> describes (who, since acting
+    /// last when): now, if it has not been. Unlike <see cref="WaitingSince"/>, the turns going round meanwhile do
+    /// not restart it; only the seat acting again does, which changes the description.
+    /// </summary>
+    public DateTimeOffset AbsentSince([Required] GameId game, [Required] string absence) =>
+        this._absences.AddOrUpdate(
+            game,
+            _ => (absence, this.Now),
+            (_, seen) => seen.Absence == absence
+                ? seen
+                : (absence, this.Now)
         ).Since;
 }

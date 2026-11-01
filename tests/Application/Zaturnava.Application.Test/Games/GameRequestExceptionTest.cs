@@ -46,6 +46,11 @@ public sealed class GameRequestExceptionTest
             "Game 'g' still waits for people to take its open seats: wait a little longer."
         },
         {
+            new TooSoonToReplaceException(Game),
+            GameRequestFailure.Conflict,
+            "No one at game 'g' may be replaced by a bot yet, at least not by you: wait a little longer."
+        },
+        {
             new ConcurrencyConflictException(Game),
             GameRequestFailure.Conflict,
             "Game 'g' changed meanwhile; read it again."

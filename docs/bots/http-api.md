@@ -22,6 +22,7 @@ server is at `https://zaturnava.runasp.net/`.
 | Act | `POST api/games/{id}/actions`, with the seat's token | The game after it |
 | Let a bot (or a timer) decide | `POST api/games/{id}/advance` | The game after one decision |
 | Fill the open seats with bots | `POST api/games/{id}/fill`, with a seat's token | The game, begun if a bot was free for each seat |
+| Have a bot play for someone away | `POST api/games/{id}/replace`, with a seat's token | The game, the seat a bot's if one was free |
 | A game's history | `GET api/games/{id}/history` | [Game histories](game-histories.md) |
 | Every finished game's history | `GET api/history` | A list of them |
 | What was said at the table | `GET api/games/{id}/chat?after={n}`, with a seat's token or none | [The talk](#talk-at-the-table) since message `n` |
@@ -65,6 +66,15 @@ with their seat's token. Once twice that has passed, anyone seated may. Each ope
 the table, chosen at random; a seat for which none is left stays open. While seats wait, `vacancy` in the view
 says who may fill them and when (`firstArrival`, the first to arrive's seat; `secondsUntilFirst` and
 `secondsUntilAnyone`). Filling too soon is refused (`409`), and by someone not seated (`403`).
+
+A player may also leave in the middle of a game. Once the vote on waiting for them is open (see `away` in
+[the view](#the-view)), a voter may have a bot play their seat for the rest of the game (Proposed):
+`POST api/games/{id}/replace`, with the voter's seat token. The first person to have taken a seat
+(`away.firstArrival`, most often whoever set the game up) may do so at once. In case they have gone too, any other
+voter may once `away.secondsUntilAnyoneReplaces` have run out (five minutes after the vote opened, by default). The
+seat gets a bot not already at the table, chosen at random; if none is left, the game stays as it is. Asking too
+soon, or while no one is away, is refused (`409`), and so is asking without a seat (`403`). The player replaced may
+not take the seat back.
 
 The server never acts by itself; a client moves the game along. A game waits on its **deciding
 seat** (`decidingSeat` in the view; `null` once the game is over):
@@ -138,7 +148,8 @@ forms to list: build them yourself when the view says you may.
   it holds, by id; offer some for others.
 - **Ending the game**: a seat whose `mayProposeEnd` is true may propose ending it; one whose `mayRejoin`
   is true may take its turns back.
-- **Waiting for someone away**: `away` in the view says who may vote, once the vote is open.
+- **Waiting for someone away**: `away` in the view says who may vote, once the vote is open, and who may
+  [have a bot play for them](#playing), and when.
 
 The rules refuse any of these that may not be made, as they refuse any illegal action.
 
