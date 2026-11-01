@@ -17,6 +17,7 @@ server is at `https://zaturnava.runasp.net/`.
 | The games | `GET api/games` | Each game: its id, its open seats, who plays each seat (`open`, a bot's id, or for a person, the name they signed in with, `deleted player`, `guest` or `Nickname (guest)`), whether it is over |
 | Create a game | `POST api/games` | `201`, `{"gameId": "..."}` |
 | Claim a seat | `POST api/games/{id}/seats/{seat}`, with a player token or none, and a guest's nickname or none | `{"token": "..."}` |
+| Say anew who holds a seat | `PUT api/games/{id}/seats/{seat}`, with a player token or none, and the seat's token and a guest's nickname or none | `204` |
 | A game | `GET api/games/{id}` | The game as it stands ([the view](#the-view)) |
 | Act | `POST api/games/{id}/actions`, with the seat's token | The game after it |
 | Let a bot (or a timer) decide | `POST api/games/{id}/advance` | The game after one decision |
@@ -40,6 +41,11 @@ token that stands for no one (signed out, or the account deleted) is refused (`4
 Without one, the seat is a guest's, shown as `guest`; or, if the claim's body gives a nickname (at most 20
 characters, `{"nickname": "Ada"}`), as `Ada (guest)`, so that no guest passes for a player who signed in. The
 body may be left out. A guest may read the table's talk, and their team's, but not speak.
+
+Whoever signs in, or chooses a nickname, after taking a seat may say so there: `PUT` to the seat, with the player
+token as above, or none, and the seat's token in the body (`{"token": "...", "nickname": "Ada"}`). The seat is then
+shown as a claim made so would show it; a token that does not hold the seat is refused (`403`). Whether an AI plays
+the seat stays as claimed.
 
 A program playing a seat for an AI (a language model, say, rather than a bot of the server's own) says so with
 `"isAi": true` in the claim's body (`{"nickname": "Hal", "isAi": true}`). The seat is then shown as an AI's:

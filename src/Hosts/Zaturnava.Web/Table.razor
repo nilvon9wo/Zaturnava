@@ -244,7 +244,7 @@
                             @foreach (SeatDto receiver in Receivers(view, turn.Claim.Seat))
                             {
                                 <div class="ransom-to">
-                                    <span class="name">To @(receiver.Id == turn.Claim.Seat ? "yourself" : receiver.Name):</span>
+                                    <span class="name">To @(receiver.Id == turn.Claim.Seat ? "yourself" : Who(receiver)):</span>
                                     @foreach (PrisonerDto prisoner in HeldOf(view, turn.Claim.Seat, receiver.Id))
                                     {
                                         <button class="@ClassOf(prisoner, this._given)"
@@ -353,7 +353,7 @@
     {
         <div class="backdrop">
             <div class="dialog voting" role="alertdialog" aria-modal="true" aria-labelledby="voting-title">
-                <h2 id="voting-title">@this._view.Seats[proposal.Proposer].Name proposes ending the game</h2>
+                <h2 id="voting-title">@Who(this._view.Seats[proposal.Proposer]) proposes ending the game</h2>
                 @if (proposal.Resigns)
                 {
                     <p>They have given up their remaining turns.</p>
@@ -571,17 +571,17 @@
             _ when OpenSeatsOf(view) is { } open =>
                 $"Waiting for {open} to join: the game begins once every seat is taken.",
             (_, { } seat, null, _, _) when view.Proposal is { } proposal =>
-                $"{view.Seats[proposal.Proposer].Name} proposes ending the game: waiting for {Who(view.Seats[seat])}.",
+                $"{Who(view.Seats[proposal.Proposer])} proposes ending the game: waiting for {Who(view.Seats[seat])}.",
             (_, { }, _, _, _) when view.Proposal is { } proposal =>
-                $"{view.Seats[proposal.Proposer].Name} proposes ending the game: do you agree?",
+                $"{Who(view.Seats[proposal.Proposer])} proposes ending the game: do you agree?",
             (_, { } seat, null, _, _) when view.Returning is { } piece =>
                 $"{Who(view.Seats[seat])} is choosing where their {piece.Name} goes home.",
             (_, { }, _, _, _) when view.Returning is { } piece =>
                 $"Your {piece.Name} is going home: choose a marked square for it.",
             (_, { } seat, null, { } offer, _) =>
-                $"{Who(view.Seats[seat])} is answering {view.Seats[offer.From].Name}'s offer.",
-            (_, { }, _, { } offer, _) => $"Answer {view.Seats[offer.From].Name}'s offer.",
-            (_, { } seat, null, _, true) => $"{view.Seats[seat].Name}'s turn is over: they may still offer prisoners back.",
+                $"{Who(view.Seats[seat])} is answering {Who(view.Seats[offer.From])}'s offer.",
+            (_, { }, _, { } offer, _) => $"Answer {Who(view.Seats[offer.From])}'s offer.",
+            (_, { } seat, null, _, true) => $"{Who(view.Seats[seat])}'s turn is over: they may still offer prisoners back.",
             (_, { }, _, _, true) => "Your turn is over: offer prisoners back, or be done.",
             (_, { } seat, null, _, _) => $"{Who(view.Seats[seat])} to move{ForWhom(view)}.",
             (_, { }, _, _, _) when view.ThroneHeldBy is { } holder => this.Held(view, holder),
@@ -611,7 +611,6 @@
     private static bool IsUrged(GameViewDto view, ActionDto action) =>
         view.ThroneHeldBy is not null && action.Kind == RollKind;
 
-    /// <summary>Who plays another seat, then the seat: "Argus (Yellow)", or "Black (human)".</summary>
     /// <summary>
     /// What a player away should know when they look again: that the others are playing on without them,
     /// that they are waited for again, having said they are back, or who would stop waiting; null if none of
@@ -628,13 +627,13 @@
                 $"The others are playing on without you: you missed {mine.TurnsMissed} {turns} in a row.",
             (> 0, _, _) => "You are back: the others will wait for you again, unless you miss another turn.",
             (_, _, false) =>
-                $"{string.Join(" and ", stopping.Select(voter => view.Seats[voter].Name))} would stop waiting for you.",
+                $"{string.Join(" and ", stopping.Select(voter => Who(view.Seats[voter])))} would stop waiting for you.",
             _ => null,
         };
     }
 
-    private static string Who(SeatDto seat) =>
-        seat.Bot is { } bot ? $"{bot} ({seat.Name})" : $"{seat.Name} ({seat.Player ?? seat.Controller})";
+    /// <summary>Who plays another seat, then the seat: "Argus (Yellow)", "Ada (Black)".</summary>
+    private static string Who(SeatDto seat) => SeatLabels.Of(seat);
 
     /// <summary>"Yellow and Red": the seats no one has taken yet, for which the game waits; null if none.</summary>
     private static string? OpenSeatsOf(GameViewDto view) =>
@@ -650,7 +649,7 @@
     {
         string asking = offer.Asked.IsEmpty ? "as a gift" : $"for {Listed(view, offer.Asked)}";
         string given = Listed(view, offer.Given);
-        return $"{view.Seats[offer.From].Name} offers {view.Seats[offer.To].Name} {given} back, {asking}.";
+        return $"{Who(view.Seats[offer.From])} offers {Who(view.Seats[offer.To])} {given} back, {asking}.";
     }
 
     private static string Listed(GameViewDto view, ImmutableList<PrisonerDto> prisoners) =>
@@ -706,7 +705,7 @@
 
     /// <summary>"held by Red", or "held by you" if the player's own <paramref name="seat"/> holds it.</summary>
     private static string HeldBy(SeatDto holder, int seat) =>
-        $"held by {(holder.Id == seat ? "you" : holder.Name)}";
+        $"held by {(holder.Id == seat ? "you" : Who(holder))}";
 
     private void PutDown() => this._selection = BoardSelection.None;
 
@@ -846,7 +845,7 @@
         ActionDto offer = OfferDto.ActionOf(claim.Seat, receiver, this._given.Order(), this._asked.Order());
         string made = string.Join('|', offer.Arguments.Values);
         return this._offersMade.Contains(made)
-            ? this.Refused($"{this._view!.Seats[receiver].Name} declined that offer already!")
+            ? this.Refused($"{Who(this._view!.Seats[receiver])} declined that offer already!")
             : this.Made(claim, offer, made);
     }
 
@@ -874,9 +873,9 @@
 
     private bool IsMine(IGrouping<int, SeatDto> team) => team.Any(seat => seat.Id == this.Seating.Claim?.Seat);
 
-    /// <summary>Who plays the seat: you, the bot, the player by name (or a guest), or no one yet ("open").</summary>
+    /// <summary>Who plays the seat: you, by name; the bot; the player by name (or a guest); or no one yet ("open").</summary>
     private string Player(SeatDto seat) =>
-        seat.Id == this.Seating.Claim?.Seat ? "you" : seat.Bot ?? seat.Player ?? seat.Controller;
+        seat.Id == this.Seating.Claim?.Seat ? SeatLabels.Mine(seat) : SeatLabels.Person(seat);
 
     private void TurnLeft() => this._boardTurn = this._boardTurn.Anticlockwise();
 

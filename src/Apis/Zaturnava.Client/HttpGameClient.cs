@@ -65,6 +65,22 @@ public sealed class HttpGameClient(HttpClient http) : IGameServing
             cancellationToken
         );
 
+    public async Task Identify(
+        [Required] string gameId,
+        int seat,
+        string? playerToken,
+        [Required] IdentifySeatRequest request,
+        CancellationToken cancellationToken
+    )
+    {
+        using HttpResponseMessage response =
+            await this.Exchange(HttpMethod.Put, GameRoutes.Seat(gameId, seat), request, playerToken, cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            throw await Refused(response, cancellationToken);
+        }
+    }
+
     public Task<GameViewDto> Submit(
         [Required] string gameId,
         [Required] string token,

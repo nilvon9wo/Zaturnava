@@ -184,10 +184,12 @@
         this._shown = tab;
     }
 
-    /// <summary>"You", or the seat's name; with "(AI)", for a seat an AI plays.</summary>
-    private string Who(int seat) => seat == this.Seating.Claim?.Seat ? "You" : Named(this.Seats[seat]);
-
-    private static string Named(SeatDto seat) => seat.IsAi ? $"{seat.Name} (AI)" : seat.Name;
+    /// <summary>
+    /// The player themselves, by name ("Ada · you"); else who plays the seat, then the seat ("Hal (AI guest) (Red)"),
+    /// the server's name for whoever plays it saying whether an AI does.
+    /// </summary>
+    private string Who(int seat) =>
+        seat == this.Seating.Claim?.Seat ? SeatLabels.Mine(this.Seats[seat]) : SeatLabels.Of(this.Seats[seat]);
 
     /// <summary>Says the draft, and hears what was said since; the draft is kept if it could not be said.</summary>
     private async Task Say()

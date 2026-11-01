@@ -31,6 +31,11 @@ public sealed class GameRequestExceptionTest
             "Seat 2 of game 'g' is not open."
         },
         {
+            new NotYourSeatException(Game, new SeatId(3)),
+            GameRequestFailure.Forbidden,
+            "The token does not hold seat 3 of game 'g'."
+        },
+        {
             new ConcurrencyConflictException(Game),
             GameRequestFailure.Conflict,
             "Game 'g' changed meanwhile; read it again."

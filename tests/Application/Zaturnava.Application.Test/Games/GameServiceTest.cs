@@ -189,6 +189,61 @@ public sealed class GameServiceTest
     }
 
     [Theory]
+    [InlineData("ada", "Impostor", "ada", null)]
+    [InlineData(null, "  Hal  ", null, "Hal")]
+    public async Task Identify_WhenTheSeatsHolderSaysWhoTheyAreNow_KnowsThemSoAndKeepsTheRest(
+        string? player,
+        string? nickname,
+        string? claimant,
+        string? kept
+    )
+    {
+        // Arrange
+        GameId id = await this._service.Create(TinyRules.RulesetId, [SeatPlan.Open, Bot], this._cancellation);
+        string token = await this._service.Claim(id, First, null, null, true, this._cancellation);
+        PlayerId? who = player is null ? null : new PlayerId(player);
+
+        // Act
+        await this._service.Identify(id, First, token, who, nickname, this._cancellation);
+
+        // Assert
+        GameSnapshot snapshot = await this._service.Get(id, this._cancellation);
+        HumanSeat seat = (HumanSeat)snapshot.Record.Controllers[0];
+        Assert.Equal(
+            (claimant, kept, true, true),
+            (seat.Claimant?.Value, seat.Nickname, seat.IsAi, seat.IsHeldBy(token))
+        );
+    }
+
+    [Fact]
+    public async Task Identify_WhenTheTokenDoesNotHoldTheSeat_Refuses()
+    {
+        // Arrange
+        GameId id = await this._service.Create(TinyRules.RulesetId, [SeatPlan.Open, Bot], this._cancellation);
+        _ = await this._service.Claim(id, First, this._cancellation);
+
+        // Act
+        Task identifying = this._service.Identify(id, Second, "not-a-seat", null, "Hal", this._cancellation);
+
+        // Assert
+        _ = await Assert.ThrowsAsync<NotYourSeatException>(() => identifying);
+    }
+
+    [Fact]
+    public async Task Identify_WhenTheTokenHoldsAnotherSeat_Refuses()
+    {
+        // Arrange
+        GameId id = await this._service.Create(TinyRules.RulesetId, [SeatPlan.Open, Bot], this._cancellation);
+        _ = await this._service.Claim(id, First, this._cancellation);
+
+        // Act
+        Task identifying = this._service.Identify(id, First, "not-its-token", null, "Hal", this._cancellation);
+
+        // Assert
+        _ = await Assert.ThrowsAsync<NotYourSeatException>(() => identifying);
+    }
+
+    [Theory]
     [InlineData("  Ada  ", "Ada")]
     [InlineData("A nickname far too long to keep", "A nickname far too l")]
     [InlineData("Ad\u0007a", "Ada")]

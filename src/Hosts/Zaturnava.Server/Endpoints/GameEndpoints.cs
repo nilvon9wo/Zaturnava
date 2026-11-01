@@ -28,6 +28,7 @@ internal static class GameEndpoints
         _ = routes.MapGet(GameRoute + "/history", History);
         _ = routes.MapGet(GameRoutes.Histories, Histories);
         _ = routes.MapPost(GameRoute + "/seats/{seat:int}", Claim);
+        _ = routes.MapPut(GameRoute + "/seats/{seat:int}", Identify);
         _ = routes.MapPost(GameRoute + "/actions", Submit);
         _ = routes.MapPost(GameRoute + "/advance", Advance);
         _ = routes.MapGet(GameRoute + "/chat", Chat);
@@ -143,9 +144,7 @@ internal static class GameEndpoints
         CancellationToken cancellationToken
     )
     {
-        PlayerId? claimant = SeatToken.OrNull(request) is { } playerToken
-            ? (await players.Find(playerToken, cancellationToken) ?? throw new UnknownPlayerException()).Id
-            : null;
+        PlayerId? claimant = await ClaimantOf(request, players, cancellationToken);
         string token = await games.Claim(
             new GameId(gameId),
             new SeatId(seat),
@@ -156,6 +155,42 @@ internal static class GameEndpoints
         );
         return new SeatClaimedDto(token);
     }
+
+    /// <summary>
+    /// Says anew who holds the seat the body's token holds: the player the request's token stands for, if it carries
+    /// one (refused, if it stands for no one); else a guest, by the nickname the body gives, if it gives one.
+    /// </summary>
+    private static async Task<NoContent> Identify(
+        string gameId,
+        int seat,
+        IdentifySeatRequest identify,
+        HttpRequest request,
+        GameService games,
+        PlayerService players,
+        CancellationToken cancellationToken
+    )
+    {
+        PlayerId? claimant = await ClaimantOf(request, players, cancellationToken);
+        await games.Identify(
+            new GameId(gameId),
+            new SeatId(seat),
+            identify.Token,
+            claimant,
+            identify.Nickname,
+            cancellationToken
+        );
+        return TypedResults.NoContent();
+    }
+
+    /// <summary>The player the request's token stands for, if it carries one; refused, if it is no one's.</summary>
+    private static async Task<PlayerId?> ClaimantOf(
+        HttpRequest request,
+        PlayerService players,
+        CancellationToken cancellationToken
+    ) =>
+        SeatToken.OrNull(request) is { } playerToken
+            ? (await players.Find(playerToken, cancellationToken) ?? throw new UnknownPlayerException()).Id
+            : null;
 
     private static async Task<GameViewDto> Submit(
         string gameId,

@@ -325,7 +325,9 @@
     private Task Join(string gameId, int seat) =>
         this.Sit(async () => await GameStarter.Claim(this.Games, gameId, seat, await this.Browser.Claimant()));
 
-    private Task Resume(string gameId, SeatClaim claim) => this.OnSeated.InvokeAsync(new Seating(gameId, claim));
+    /// <summary>Back to a seat held, known there as the player is now: signed in, or by their nickname.</summary>
+    private Task Resume(string gameId, SeatClaim claim) =>
+        this.Sit(async () => await GameStarter.Resume(this.Games, gameId, claim, await this.Browser.Claimant()));
 
     private async Task Sit(Func<Task<Seating>> seating) =>
         this._problem = await Requests.Attempt(async () => await this.OnSeated.InvokeAsync(await seating()));

@@ -174,6 +174,37 @@ public sealed class GameService(
         return token;
     }
 
+    /// <summary>
+    /// Says anew who holds the seat <paramref name="token"/> holds: <paramref name="claimant"/>, if a player signed in
+    /// since taking it, else a guest by <paramref name="nickname"/>, as a claim does; whether an AI plays it stays as
+    /// claimed. So a player who signs in, or chooses a nickname, after taking a seat is known by it there too.
+    /// </summary>
+    /// <exception cref="GameNotFoundException">There is no such game.</exception>
+    /// <exception cref="NotYourSeatException">The token does not hold the seat.</exception>
+    public async Task Identify(
+        GameId id,
+        SeatId seat,
+        [Required] string token,
+        PlayerId? claimant,
+        string? nickname,
+        CancellationToken cancellationToken
+    )
+    {
+        GameRecord record = await this.Load(id, cancellationToken);
+        HumanSeat held = record.Controllers.ElementAtOrDefault(seat.Value) is HumanSeat person && person.IsHeldBy(token)
+            ? person
+            : throw new NotYourSeatException(id, seat);
+        HumanSeat identified = held with
+        {
+            Claimant = claimant,
+            Nickname = claimant is null ? Nicknames.Of(nickname) : null,
+        };
+        await this.Save(
+            record.Next() with { Controllers = record.Controllers.SetItem(seat.Value, identified) },
+            cancellationToken
+        );
+    }
+
     /// <exception cref="GameNotFoundException">There is no such game.</exception>
     /// <exception cref="MalformedActionException">The descriptor describes no action.</exception>
     /// <exception cref="NotYourTurnException">The token does not hold the seat that must decide.</exception>

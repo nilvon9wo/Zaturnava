@@ -142,6 +142,22 @@ internal sealed class FakeGameServer : IGameServing
         return this.Answer($"claim {gameId} {seat.ToString(CultureInfo.InvariantCulture)}", new SeatClaimedDto(Token));
     }
 
+    /// <summary>Each seat said anew to be held, in order: "{game} {seat} {token} {player token} {nickname}".</summary>
+    public ConcurrentQueue<string> Identified { get; } = new();
+
+    public Task Identify(
+        [Required] string gameId,
+        int seat,
+        string? playerToken,
+        [Required] IdentifySeatRequest request,
+        CancellationToken cancellationToken
+    )
+    {
+        string held = $"{gameId} {seat.ToString(CultureInfo.InvariantCulture)} {request.Token}";
+        this.Identified.Enqueue($"{held} {playerToken} {request.Nickname}");
+        return this.Answer("identify", true);
+    }
+
     public Task<GameViewDto> Submit(
         [Required] string gameId,
         [Required] string token,

@@ -43,6 +43,18 @@ public interface IGameServing
         CancellationToken cancellationToken
     );
 
+    /// <summary>
+    /// Says anew who holds a seat already taken (<see cref="IdentifySeatRequest"/>): the player whose token
+    /// <paramref name="playerToken"/> is, if one is given; else a guest, by the request's nickname, if it gives one.
+    /// </summary>
+    Task Identify(
+        [Required] string gameId,
+        int seat,
+        string? playerToken,
+        [Required] IdentifySeatRequest request,
+        CancellationToken cancellationToken
+    );
+
     /// <summary>Takes <paramref name="action"/> for the seat <paramref name="token"/> holds.</summary>
     Task<GameViewDto> Submit(
         [Required] string gameId,

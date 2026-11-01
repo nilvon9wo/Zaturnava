@@ -218,6 +218,70 @@ public sealed partial class SignInApiTest(SigningInServer server) : IClassFixtur
         static bool IsOpen(SeatDto seat) => seat.Controller == "open";
     }
 
+    [Fact]
+    public async Task Identify_WhenAGuestSignsInAfterTakingASeat_ShowsTheirNameThere()
+    {
+        // Arrange
+        HttpGameClient client = server.GameClient();
+        GameCreatedDto created = await client.Create(
+            new CreateGameRequest(ZaturnavaServer.Chaturaji2027, ZaturnavaServer.OneOpenSeat),
+            this._cancellation
+        );
+        SeatClaimedDto seat = await client.Claim(created.GameId, 0, null, null, this._cancellation);
+        string token = TokenOf(await this.Done("GitHub|8|Ada", SigningInServer.Page));
+
+        // Act
+        await client.Identify(created.GameId, 0, token, new IdentifySeatRequest(seat.Token), this._cancellation);
+
+        // Assert
+        SeatDto shown = (await client.Get(created.GameId, this._cancellation)).Seats[0];
+        Assert.Equal(("Ada", false), (shown.Player, shown.IsGuest));
+    }
+
+    [Fact]
+    public async Task Identify_WhenAGuestChoosesANicknameAfterTakingASeat_ShowsItThere()
+    {
+        // Arrange
+        HttpGameClient client = server.GameClient();
+        GameCreatedDto created = await client.Create(
+            new CreateGameRequest(ZaturnavaServer.Chaturaji2027, ZaturnavaServer.OneOpenSeat),
+            this._cancellation
+        );
+        SeatClaimedDto seat = await client.Claim(created.GameId, 0, null, null, this._cancellation);
+
+        // Act
+        await client.Identify(
+            created.GameId,
+            0,
+            null,
+            new IdentifySeatRequest(seat.Token, "Hal"),
+            this._cancellation
+        );
+
+        // Assert
+        Assert.Equal("Hal (guest)", (await client.Get(created.GameId, this._cancellation)).Seats[0].Player);
+    }
+
+    [Fact]
+    public async Task Identify_WhenTheTokenDoesNotHoldTheSeat_IsRefused()
+    {
+        // Arrange
+        HttpGameClient client = server.GameClient();
+        GameCreatedDto created = await client.Create(
+            new CreateGameRequest(ZaturnavaServer.Chaturaji2027, ZaturnavaServer.OneOpenSeat),
+            this._cancellation
+        );
+        _ = await client.Claim(created.GameId, 0, null, null, this._cancellation);
+
+        // Act
+        GameRequestRefusedException refused = await Assert.ThrowsAsync<GameRequestRefusedException>(() =>
+            client.Identify(created.GameId, 0, null, new IdentifySeatRequest("not-its-token"), this._cancellation)
+        );
+
+        // Assert
+        Assert.Equal(Refusal.Forbidden, refused.Refusal);
+    }
+
     [Theory]
     [InlineData("api/players/me", null)]
     [InlineData("api/players/me", "not-a-token")]

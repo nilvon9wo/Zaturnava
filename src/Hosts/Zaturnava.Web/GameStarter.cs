@@ -180,6 +180,20 @@ internal static class GameStarter
         return new Seating(gameId, new SeatClaim(seat, claimed.Token));
     }
 
+    /// <summary>
+    /// Goes back to a seat held: first saying anew who holds it, the <paramref name="claimant"/> as they are now (the
+    /// player signed in since, say, or the nickname chosen since). Should that fail (the player's token no longer
+    /// standing for anyone, say), the seat is still held, as it was.
+    /// </summary>
+    public static async Task<Seating> Resume(IGameServing games, string gameId, SeatClaim claim, Claimant claimant)
+    {
+        IdentifySeatRequest request = new(claim.Token, claimant.Nickname);
+        _ = await Requests.Attempt(
+            () => games.Identify(gameId, claim.Seat, claimant.PlayerToken, request, CancellationToken.None)
+        );
+        return new Seating(gameId, claim);
+    }
+
     private static string? Pick(Strength strength, ImmutableList<BotDto> all, ImmutableList<string?> seated) =>
         strength.Bots
             .OrderBy(_ => Random.Shared.Next())

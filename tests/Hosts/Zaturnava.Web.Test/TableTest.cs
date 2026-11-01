@@ -60,7 +60,7 @@ public sealed class TableTest : IDisposable
 
         // Assert
         Assert.Equal(
-            (4, "Raja", "Your move.", "Black you 0", "Pass", "turn yours", true),
+            (4, "Raja", "Your move.", "Black You 0", "Pass", "turn yours", true),
             (
                 table.FindAll("rect.cell").Count,
                 table.Find("svg.board .piece title").TextContent,
@@ -259,7 +259,7 @@ public sealed class TableTest : IDisposable
 
         // Assert
         Assert.Equal(
-            (null, "Black (human) to move.", "Black human 0", "Yellow Random Boat 5", "turn"),
+            (null, "Black to move.", "Black human 0", "Yellow Random Boat 5", "turn"),
             (
                 this._page.Server.Submitted,
                 table.Find("p.status").TextContent,
@@ -287,7 +287,7 @@ public sealed class TableTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ("Black (Ada) to move.", "Black Ada 0"),
+            ("Ada (Black) to move.", "Black Ada 0"),
             (table.Find("p.status").TextContent, Text(table.FindAll("li.seat")[0]))
         );
     }
@@ -356,7 +356,7 @@ public sealed class TableTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ("Black (human) to move.", 0, false),
+            ("Black to move.", 0, false),
             (
                 table.Find("p.status").TextContent,
                 table.FindAll("button.action").Count,
@@ -1105,10 +1105,10 @@ public sealed class TableTest : IDisposable
     }
 
     [Theory]
-    [InlineData(0, false, "Answer Yellow's offer.")]
+    [InlineData(0, false, "Answer Random (Yellow)'s offer.")]
     [InlineData(1, false, "Random (Yellow) is answering Black's offer.")]
     [InlineData(0, true, "Your turn is over: offer prisoners back, or be done.")]
-    [InlineData(1, true, "Yellow's turn is over: they may still offer prisoners back.")]
+    [InlineData(1, true, "Random (Yellow)'s turn is over: they may still offer prisoners back.")]
     public void Status_WhenOnlyRansomsAreBeingDealtWith_SaysSo(int deciding, bool isTurnOver, string expected)
     {
         // Arrange
@@ -1457,7 +1457,7 @@ public sealed class TableTest : IDisposable
         table.Find("button.offer").Click();
 
         // Assert
-        Assert.Equal("Yellow declined that offer already!", table.Find("p.problem").TextContent);
+        Assert.Equal("Random (Yellow) declined that offer already!", table.Find("p.problem").TextContent);
     }
 
     [Fact]
@@ -1524,8 +1524,8 @@ public sealed class TableTest : IDisposable
     }
 
     [Theory]
-    [InlineData(false, "Black offers Yellow Yellow's Pawn back, as a gift.")]
-    [InlineData(true, "Black offers Yellow Yellow's Pawn back, for Black's Boat.")]
+    [InlineData(false, "Black offers Random (Yellow) Yellow's Pawn back, as a gift.")]
+    [InlineData(true, "Black offers Random (Yellow) Yellow's Pawn back, for Black's Boat.")]
     public void Render_WhenAnOfferWaitsOnItsAnswer_SaysWhatIsOfferedAndHowLongIsLeft(bool isAsking, string expected)
     {
         // Arrange
@@ -1637,7 +1637,7 @@ public sealed class TableTest : IDisposable
         // Assert
         Assert.Equal(
             (
-                "Black (human) is taking a long time. Keep waiting for them?",
+                "Black is taking a long time. Keep waiting for them?",
                 "true",
                 "0 of 1 would stop waiting; all must, for their turn to pass."
             ),
@@ -1704,8 +1704,8 @@ public sealed class TableTest : IDisposable
     [InlineData(2, true, false, "The others are playing on without you: you missed 2 turns in a row.", 1)]
     [InlineData(1, false, true, "The others are playing on without you: you missed 1 turn in a row.", 0)]
     [InlineData(1, false, false, "You are back: the others will wait for you again, unless you miss another turn.", 0)]
-    [InlineData(0, false, false, "Yellow would stop waiting for you.", 0)]
-    [InlineData(0, true, true, "Yellow would stop waiting for you.", 0)]
+    [InlineData(0, false, false, "Random (Yellow) would stop waiting for you.", 0)]
+    [InlineData(0, true, true, "Random (Yellow) would stop waiting for you.", 0)]
     public void Render_WhenThePlayerIsAway_SaysWhatTheOthersDidAndOffersToRejoin(
         int missed,
         bool mayRejoin,
@@ -1803,10 +1803,10 @@ public sealed class TableTest : IDisposable
         // Assert
         Assert.Equal(
             (
-                "Yellow proposes ending the game",
+                "Random (Yellow) proposes ending the game",
                 "They have given up their remaining turns.",
                 "60 s left; no answer keeps the game going.",
-                "Yellow proposes ending the game: do you agree?"
+                "Random (Yellow) proposes ending the game: do you agree?"
             ),
             (
                 table.Find(".dialog h2").TextContent,
@@ -1851,7 +1851,7 @@ public sealed class TableTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ("Yellow proposes ending the game: waiting for Black (human).", 0, "resting on the lead"),
+            ("Random (Yellow) proposes ending the game: waiting for Black.", 0, "resting on the lead"),
             (
                 table.Find("p.status").TextContent,
                 table.FindAll(".dialog").Count,
@@ -1955,7 +1955,7 @@ public sealed class TableTest : IDisposable
         Assert.Equal(
             (
                 "Promote Black's Pawn on c2 to:",
-                "Black's Boat held by you|Green's Elephant held by Yellow|Yellow's Horse held by you",
+                "Black's Boat held by you|Green's Elephant held by Random (Yellow)|Yellow's Horse held by you",
                 "Promote later"
             ),
             (

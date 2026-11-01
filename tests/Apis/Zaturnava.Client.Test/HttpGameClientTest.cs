@@ -171,6 +171,37 @@ public sealed class HttpGameClientTest
     }
 
     [Fact]
+    public async Task Identify_WhenGivenASeatHeld_PutsWhoHoldsItToTheSeat()
+    {
+        // Arrange
+        StubServer server = new(HttpStatusCode.NoContent, string.Empty);
+
+        // Act
+        await Client(server).Identify("g", 2, "player", new IdentifySeatRequest("secret", "Ada"), this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            ("PUT", "/api/games/g/seats/2", "Bearer player", """{"token":"secret","nickname":"Ada"}"""),
+            (server.Method, server.Path, server.Authorization, server.Body)
+        );
+    }
+
+    [Fact]
+    public async Task Identify_WhenRefused_ThrowsWithTheReason()
+    {
+        // Arrange
+        StubServer server = new(HttpStatusCode.Forbidden, """{"detail":"Not your seat."}""");
+
+        // Act
+        GameRequestRefusedException refused = await Assert.ThrowsAsync<GameRequestRefusedException>(() =>
+            Client(server).Identify("g", 2, null, new IdentifySeatRequest("secret"), this._cancellation)
+        );
+
+        // Assert
+        Assert.Equal((Refusal.Forbidden, "Not your seat."), (refused.Refusal, refused.Message));
+    }
+
+    [Fact]
     public async Task Submit_WhenGivenAnAction_PostsItWithTheSeatsToken()
     {
         // Arrange
