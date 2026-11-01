@@ -39,6 +39,36 @@ public sealed class Chaturaji2027VariantTest
         Assert.Equal(("fenced", "Fenced"), identity);
     }
 
+    [Fact]
+    public void Game_WhenTheVariantIsOneSizeOfAGame_IsThatGameAtThatSize()
+    {
+        // Arrange
+        Chaturaji2027Rules rules = new(
+            DiceProfile.WeightedSixSided,
+            Chaturaji2027Rules.DefaultIdleRounds,
+            PawnPromotion.OtherArmies,
+            variant: Fenced with { Game = new GameSize("fences", "Fences", "small") }
+        );
+
+        // Act
+        (string Id, string Name, string? Size) game = (rules.GameId, rules.GameName, rules.Size);
+
+        // Assert
+        Assert.Equal(("fences", "Fences", "small"), game);
+    }
+
+    [Fact]
+    public void Game_WhenTheVariantIsAGameOfOneSize_IsItsOwnAtNoSize()
+    {
+        // Arrange - nothing beyond the rules
+
+        // Act
+        (string Id, string Name, string? Size) game = (this._rules.GameId, this._rules.GameName, this._rules.Size);
+
+        // Assert
+        Assert.Equal(("fenced", "Fenced", null), game);
+    }
+
     [Theory]
     [InlineData(1, "Ships")]
     [InlineData(2, "Horse")]

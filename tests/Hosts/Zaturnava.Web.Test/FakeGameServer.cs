@@ -96,6 +96,8 @@ internal sealed class FakeGameServer : IGameServing
                 [
                     new RulesetDto("chaturaji-2027", "Chaturaji 2027", 4)
                     {
+                        Game = "chaturaji-2027",
+                        GameName = "Chaturaji 2027",
                         SeatNames = SeatNames,
                         SeatTeams = [0, 1, 0, 1],
                     },

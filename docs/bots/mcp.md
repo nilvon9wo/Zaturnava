@@ -57,7 +57,7 @@ claude mcp add zaturnava --env ZATURNAVA_SERVER_URL=http://localhost:5164/ \
 | Tool | |
 |---|---|
 | `catalog` | The rulesets and the bots that can take a seat |
-| `list_games` | A page of the games, last changed first, with their open seats; of one ruleset, or only those with a seat open (or none), if asked |
+| `list_games` | A page of the games, last changed first, with their open seats; of one game at any size, or of one ruleset (one game at one size), or only those waiting for players (or under way), if asked |
 | `create_game` | A game, each seat given a bot's id or left open |
 | `claim_seat` | Claim an open seat for the AI, by a nickname if given (shown as "Nickname (AI guest)"), or for a player whose token is given (shown as "Name (AI)"); returns the token every action for it needs |
 | `get_game` | The game as it stands: the board, the seats and scores, whose decision it is, and its legal actions |

@@ -23,16 +23,21 @@ public sealed class GameTools(IGameServing games)
     [McpServerTool(Name = "list_games", ReadOnly = true)]
     [Description(
         "A page of the games on the server, newest first, with the seats still open for a player to claim, and how "
-        + "many games match in all."
+        + "many games match in all. A game may be played at several sizes, each its own ruleset (see catalog)."
     )]
     public Task<GamePageDto> ListGames(
-        [Description("Only games of this ruleset id; any, if left out.")] string? ruleset = null,
-        [Description("true for only games with a seat open to claim; false for none; any, if left out.")]
+        [Description("Only games of this game, at any size, by its id (a ruleset's game in catalog); else any.")]
+        string? game = null,
+        [Description("Only games of this ruleset id, which is one game at one size; any, if left out.")]
+        string? ruleset = null,
+        [Description("true for only games waiting for players to take a seat; false for only those under way.")]
         bool? open = null,
         [Description("The page, from 1; the first, if left out. A page holds 20 games.")] int? page = null,
         CancellationToken cancellationToken = default
     ) =>
-        Explained(() => this._games.List(new GameListQuery(ruleset, open, Page: page), cancellationToken));
+        Explained(
+            () => this._games.List(new GameListQuery(ruleset, open, Page: page, Game: game), cancellationToken)
+        );
 
     [McpServerTool(Name = "create_game")]
     [Description(

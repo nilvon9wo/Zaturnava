@@ -8,8 +8,8 @@ public sealed class LobbyTest : IDisposable
 {
     private static readonly ImmutableList<RulesetDto> GrandSizes =
     [
-        new("grand-legions-small", "Grand Legions (small)", 4),
-        new("grand-legions-large", "Grand Legions (large)", 4),
+        Sized("grand-legions", "Grand Legions", "small"),
+        Sized("grand-legions", "Grand Legions", "large"),
     ];
 
     private readonly PageContext _page = new();
@@ -47,7 +47,7 @@ public sealed class LobbyTest : IDisposable
         IRenderedComponent<Lobby> lobby = this.Render();
 
         // Act
-        lobby.Find("select.game").Change("Grand Legions");
+        lobby.Find("select.game").Change("grand-legions");
 
         // Assert
         Assert.Equal(
@@ -67,15 +67,15 @@ public sealed class LobbyTest : IDisposable
         this._page.Server.MoreRulesets =
         [
             .. GrandSizes,
-            new RulesetDto("other-small", "Other (small)", 4),
-            new RulesetDto("other-large", "Other (large)", 4),
+            Sized("other", "Other", "small"),
+            Sized("other", "Other", "large"),
         ];
         IRenderedComponent<Lobby> lobby = this.Render();
-        lobby.Find("select.game").Change("Grand Legions");
+        lobby.Find("select.game").Change("grand-legions");
         lobby.Find("select.size").Change("grand-legions-large");
 
         // Act
-        lobby.Find("select.game").Change("Other");
+        lobby.Find("select.game").Change("other");
 
         // Assert
         Assert.Equal("other-large", lobby.Find("select.size").GetAttribute("value"));
@@ -159,7 +159,7 @@ public sealed class LobbyTest : IDisposable
         IRenderedComponent<Lobby> lobby = this.Render();
 
         // Act
-        lobby.Find("select.game").Change("Grand Legions");
+        lobby.Find("select.game").Change("grand-legions");
         lobby.Find("select.size").Change("grand-legions-large");
         lobby.Find("button.quick.medium").Click();
 
@@ -694,17 +694,16 @@ public sealed class LobbyTest : IDisposable
 
         // Assert
         Assert.Equal(
-            (new GameListQuery(Over: false), "playing", 0),
+            (new GameListQuery(Over: false), "not-over", 0),
             (this._page.Server.Listed, lobby.Find("select.filter-state").GetAttribute("value"), Pages(lobby))
         );
     }
 
     [Theory]
-    [InlineData("joinable", true, false)]
-    [InlineData("finished", null, true)]
-    [InlineData("every", null, null)]
-    [InlineData("playing", null, false)]
-    public void FilterState_WhenChosen_ListsTheGamesInThatState(string state, bool? open, bool? over)
+    [InlineData("waiting", true)]
+    [InlineData("in-progress", false)]
+    [InlineData("not-over", null)]
+    public void FilterState_WhenChosen_ListsTheGamesWaitingForPlayersOrUnderWayOrEither(string state, bool? open)
     {
         // Arrange
         IRenderedComponent<Lobby> lobby = this.Render();
@@ -714,24 +713,128 @@ public sealed class LobbyTest : IDisposable
 
         // Assert
         Assert.Equal(
-            (new GameListQuery(Open: open, Over: over), state),
+            (new GameListQuery(Open: open, Over: false), state),
             (this._page.Server.Listed, lobby.Find("select.filter-state").GetAttribute("value"))
         );
     }
 
-    [Theory]
-    [InlineData("chaturaji-2027", "chaturaji-2027")]
-    [InlineData("", null)]
-    public void FilterRuleset_WhenChosen_ListsOnlyThatGamesOrAny(string chosen, string? expected)
+    [Fact]
+    public void FilterState_WhenRendered_OffersNoGamesOver()
+    {
+        // Arrange - nothing beyond the server
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Assert
+        Assert.Equal(
+            "Any not over|Waiting for players|In progress",
+            string.Join('|', lobby.FindAll("select.filter-state option").Select(option => option.TextContent))
+        );
+    }
+
+    [Fact]
+    public void FilterGame_WhenRendered_OffersEachGameOnceWhateverItsSizes()
     {
         // Arrange
+        this._page.Server.MoreRulesets = GrandSizes;
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Assert
+        Assert.Equal(
+            ("Any|Chaturaji 2027|Grand Legions", 0),
+            (
+                string.Join('|', lobby.FindAll("select.filter-game option").Select(option => option.TextContent)),
+                lobby.FindAll("select.filter-size").Count
+            )
+        );
+    }
+
+    [Fact]
+    public void FilterGame_WhenAGamePlayedAtSeveralSizesIsChosen_ListsItAtAnySizeAndOffersItsSizes()
+    {
+        // Arrange
+        this._page.Server.MoreRulesets = GrandSizes;
         IRenderedComponent<Lobby> lobby = this.Render();
 
         // Act
-        lobby.Find("select.filter-ruleset").Change(chosen);
+        lobby.Find("select.filter-game").Change("grand-legions");
 
         // Assert
-        Assert.Equal(new GameListQuery(expected, Over: false), this._page.Server.Listed);
+        Assert.Equal(
+            (new GameListQuery(Over: false, Game: "grand-legions"), "Any|small|large"),
+            (
+                this._page.Server.Listed,
+                string.Join('|', lobby.FindAll("select.filter-size option").Select(option => option.TextContent))
+            )
+        );
+    }
+
+    [Theory]
+    [InlineData("grand-legions-large", "grand-legions-large")]
+    [InlineData("", null)]
+    public void FilterSize_WhenChosen_ListsTheGameAtThatSizeOrAny(string chosen, string? expected)
+    {
+        // Arrange
+        this._page.Server.MoreRulesets = GrandSizes;
+        IRenderedComponent<Lobby> lobby = this.Render();
+        lobby.Find("select.filter-game").Change("grand-legions");
+
+        // Act
+        lobby.Find("select.filter-size").Change(chosen);
+
+        // Assert
+        Assert.Equal(new GameListQuery(expected, Over: false, Game: "grand-legions"), this._page.Server.Listed);
+    }
+
+    [Fact]
+    public void FilterGame_WhenAGameOfOneSizeIsChosen_ListsItAndOffersNoSize()
+    {
+        // Arrange
+        this._page.Server.MoreRulesets = GrandSizes;
+        IRenderedComponent<Lobby> lobby = this.Render();
+        lobby.Find("select.filter-game").Change("grand-legions");
+        lobby.Find("select.filter-size").Change("grand-legions-large");
+
+        // Act
+        lobby.Find("select.filter-game").Change("chaturaji-2027");
+
+        // Assert
+        Assert.Equal(
+            (new GameListQuery(Over: false, Game: "chaturaji-2027"), 0),
+            (this._page.Server.Listed, lobby.FindAll("select.filter-size").Count)
+        );
+    }
+
+    [Fact]
+    public void FilterGame_WhenAnyIsChosen_ListsEveryGame()
+    {
+        // Arrange
+        IRenderedComponent<Lobby> lobby = this.Render();
+        lobby.Find("select.filter-game").Change("chaturaji-2027");
+
+        // Act
+        lobby.Find("select.filter-game").Change(string.Empty);
+
+        // Assert
+        Assert.Equal(new GameListQuery(Over: false), this._page.Server.Listed);
+    }
+
+    [Theory]
+    [InlineData("chaturaji-2027", "Chaturaji 2027")]
+    [InlineData("retired", "retired")]
+    public void Render_WhenGamesAreListed_NamesEachOnesGameAndSize(string rulesetId, string expected)
+    {
+        // Arrange
+        this._page.Server.Games = [this._page.Server.Games[0] with { RulesetId = rulesetId }];
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Assert
+        Assert.Equal(expected, lobby.Find("span.ruleset").TextContent);
     }
 
     [Theory]
@@ -812,7 +915,7 @@ public sealed class LobbyTest : IDisposable
         // Act
         lobby.Find("button.previous").Click();
         GameListQuery? turned = this._page.Server.Listed;
-        lobby.Find("select.filter-state").Change("every");
+        lobby.Find("select.filter-state").Change("in-progress");
 
         // Assert
         Assert.Equal(
@@ -829,13 +932,17 @@ public sealed class LobbyTest : IDisposable
         this._page.Server.Failure = new HttpRequestException("The server is asleep.");
 
         // Act
-        lobby.Find("select.filter-state").Change("every");
+        lobby.Find("select.filter-state").Change("in-progress");
 
         // Assert
         Assert.Equal("The server is asleep.", lobby.Find("p.problem").TextContent);
     }
 
     private static int Pages(IRenderedComponent<Lobby> lobby) => lobby.FindAll("div.pages").Count;
+
+    /// <summary>A ruleset that is one size of a game played at several: "Grand Legions (small)".</summary>
+    private static RulesetDto Sized(string game, string gameName, string size) =>
+        new($"{game}-{size}", $"{gameName} ({size})", 4) { Game = game, GameName = gameName, Size = size };
 
     private static string SeatNames(IRenderedComponent<Lobby> lobby) =>
         string.Join('|', lobby.FindAll("span.seat-name").Select(name => name.TextContent.Trim()));

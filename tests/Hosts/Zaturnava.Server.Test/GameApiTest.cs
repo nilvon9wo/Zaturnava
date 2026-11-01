@@ -47,6 +47,45 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
     }
 
     [Fact]
+    public async Task Catalog_WhenAsked_TellsEachRulesetsGameAndSize()
+    {
+        // Arrange - nothing beyond the server
+
+        // Act
+        CatalogDto catalog = await this._client.Catalog(this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            "chaturaji-2027/Chaturaji 2027/,grand-legions/Grand Legions/small,grand-legions/Grand Legions/medium,"
+            + "grand-legions/Grand Legions/large",
+            string.Join(",", catalog.Rulesets.Select(offered => $"{offered.Game}/{offered.GameName}/{offered.Size}"))
+        );
+    }
+
+    [Fact]
+    public async Task List_WhenAskedForOneGame_ListsItsGamesAtEverySizeAndNoOther()
+    {
+        // Arrange
+        string chaturaji = await this.CreateGame();
+        GameCreatedDto grand = await this._client.Create(
+            new CreateGameRequest("grand-legions-small", [null, "random", "random", "random"]),
+            this._cancellation
+        );
+
+        // Act
+        GamePageDto page = await this._client.List(
+            new GameListQuery(PageSize: GameQueryMax, Game: "grand-legions"),
+            this._cancellation
+        );
+
+        // Assert
+        Assert.Equal(
+            (false, true),
+            (page.Games.Any(game => game.Id == chaturaji), page.Games.Any(game => game.Id == grand.GameId))
+        );
+    }
+
+    [Fact]
     public async Task List_WhenAGameWasCreated_ShowsItsOpenSeatsByName()
     {
         // Arrange

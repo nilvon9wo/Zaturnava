@@ -19,12 +19,15 @@ public sealed class GameListQueryTest
     public void QueryString_WhenItAsksEverything_NamesEachFilterAndThePage()
     {
         // Arrange
-        GameListQuery query = new("a&b", Open: true, PeopleOnly: false, Over: true, Page: 3, PageSize: 50);
+        GameListQuery query = new("a&b", true, false, true, 3, 50, "grand legions");
 
         // Act
         string asked = query.QueryString();
 
         // Assert
-        Assert.Equal("?ruleset=a%26b&open=true&peopleOnly=false&over=true&page=3&pageSize=50", asked);
+        Assert.Equal(
+            "?game=grand%20legions&ruleset=a%26b&open=true&peopleOnly=false&over=true&page=3&pageSize=50",
+            asked
+        );
     }
 }

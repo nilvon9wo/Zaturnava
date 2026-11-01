@@ -126,6 +126,12 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
 
     public string Name => this._variant.Name;
 
+    public string GameId => this._variant.Game?.Id ?? this.Id;
+
+    public string GameName => this._variant.Game?.Name ?? this.Name;
+
+    public string? Size => this._variant.Game?.Size;
+
     public ICellNavigating Topology => this._grid;
 
     public ImmutableDictionary<SeatId, CellId> Thrones { get; }

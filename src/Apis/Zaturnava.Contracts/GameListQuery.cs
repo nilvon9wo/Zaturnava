@@ -3,9 +3,10 @@ using System.Globalization;
 namespace Net.NowhereAtAll.Zaturnava.Contracts;
 
 /// <summary>
-/// Which games to list, and which page (Proposed): of one ruleset; with open seats or without; with no seat played
-/// by a bot (<see cref="PeopleOnly"/>); over or not. A filter left null does not filter. Pages count from 1; a page
-/// holds at most 100 games, 20 unless asked otherwise.
+/// Which games to list, and which page (Proposed): of one game, at any size (<see cref="Game"/>, as
+/// <see cref="RulesetDto.Game"/>), or of one ruleset, which is one game at one size; with open seats or without; with
+/// no seat played by a bot (<see cref="PeopleOnly"/>); over or not. A filter left null does not filter. Pages count
+/// from 1; a page holds at most 100 games, 20 unless asked otherwise.
 /// </summary>
 public sealed record GameListQuery(
     string? Ruleset = null,
@@ -13,7 +14,8 @@ public sealed record GameListQuery(
     bool? PeopleOnly = null,
     bool? Over = null,
     int? Page = null,
-    int? PageSize = null
+    int? PageSize = null,
+    string? Game = null
 )
 {
     /// <summary>The query as an address's query string, from its "?"; empty, if it asks nothing.</summary>
@@ -21,7 +23,8 @@ public sealed record GameListQuery(
     {
         IEnumerable<string> parts = new (string Name, string? Value)[]
             {
-                ("ruleset", this.Ruleset is { } ruleset ? Uri.EscapeDataString(ruleset) : null),
+                ("game", Escaped(this.Game)),
+                ("ruleset", Escaped(this.Ruleset)),
                 ("open", Flag(this.Open)),
                 ("peopleOnly", Flag(this.PeopleOnly)),
                 ("over", Flag(this.Over)),
@@ -33,6 +36,8 @@ public sealed record GameListQuery(
         string query = string.Join('&', parts);
         return query.Length == 0 ? string.Empty : "?" + query;
     }
+
+    private static string? Escaped(string? text) => text is null ? null : Uri.EscapeDataString(text);
 
     private static string? Flag(bool? flag) => flag?.ToString().ToLowerInvariant();
 
