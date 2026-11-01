@@ -29,6 +29,13 @@ jobs:
       - name: Verify code style, naming, and formatting (dotnet format)
         run: dotnet format Zaturnava.slnx --verify-no-changes --severity info
 
+      # The sample bot stands apart from the solution, as it would in a repository
+      # of its own; it is built here so that it never rots.
+      - name: Build and verify the sample bot
+        run: |
+          dotnet build samples/SampleBot/SampleBot.slnx
+          dotnet format samples/SampleBot/SampleBot.slnx --verify-no-changes --severity info
+
       # IDE0005 (unnecessary using) never fails `dotnet build`, even with
       # EnforceCodeStyleInBuild. ReSharper's inspectcode catches it and more;
       # every finding fails.

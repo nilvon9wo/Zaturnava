@@ -107,9 +107,12 @@ did them.
      - Done: [docs/bots/](bots/README.md), for developers: MCP, the HTTP API, game histories, and
        self-play, the BotRunner seating bots from an assembly of one's own (`--bot-assembly`, also
        taken by `rate-bots.py`). "How to play" and "The bots" link to it, on GitHub.
+     - Done: [a sample bot](../samples/SampleBot/README.md), standing alone, mechanical, playing the live server
+       through the HTTP API, with notes on putting an AI in it.
      - Next: a push channel, so that a program need not poll; the engine and the bot interface as
-       packages, so that a bot need not reference the repository's projects; replaying a history
-       without .NET.
+       packages, so that a bot need not reference the repository's projects (*Proposed*: Athena's value
+       network among them, so that the sample bot, moved to a repository of its own, may play by it);
+       replaying a history without .NET.
 - *(Stated 2026-10-29)* Once the game is online, free AI bots are offered for players to play
   against, subject to whatever policies their hosts require.
 - **A bot using Claude**: shelved (*Stated 2026-11-01*). No one will pay for its tokens: not the owner, and
