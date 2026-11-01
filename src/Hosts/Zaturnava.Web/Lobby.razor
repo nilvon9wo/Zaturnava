@@ -1,6 +1,7 @@
 @* Start a game (each seat a person or a bot, no bot in two seats) and sit at it: the game, and, for one played at
    several sizes, its size; set up as the player last chose (remembered in the browser), else quick - custom: the
-   player's colour, then for their ally and each enemy a person or how strong a bot (easy, medium or
+   player's colour, then for their ally and each enemy a person, an AI of the player's own (the seat left open
+   for it), or how strong a bot (easy, medium or
    hard, by the bots' ratings; a strength whose bots all have seats is offered to no other), and, if they like,
    which of those bots, each named with its rating; else each is chosen at random among them - or quick: start one
    at once, at a seat chosen at random, easy, medium or hard by which bots it seats among the others - or join,
@@ -100,6 +101,7 @@
                                     @bind="this._levels[seat]"
                                     @bind:after="() => this._picks[seat] = string.Empty">
                                 <option value="@PersonLevel">Person</option>
+                                <option value="@OwnAiLevel">Your own AI</option>
                                 @foreach (int level in Enumerable.Range(0, this._strengths.Count))
                                 {
                                     <option value="@level" disabled="@(!this.HasRoom(level, seat))">
@@ -122,6 +124,14 @@
                         </li>
                     }
                 </ol>
+                @if (this._levels.Contains(OwnAiLevel))
+                {
+                    <p class="hint own-ai">
+                        A seat for your own AI stays open until it takes it: by MCP or the HTTP API, with this game's
+                        id, shown at the table, and an AI token from your profile.
+                        <a href="@DocsLinks.Bots" target="_blank" rel="noopener noreferrer">How to connect it</a>
+                    </p>
+                }
             }
             @if (this._mode != SetupMode.Quick && !catalog.Scenarios.IsEmpty)
             {
@@ -186,6 +196,7 @@
     private ImmutableList<GameSummaryDto> _games = [];
     private ImmutableDictionary<string, SeatClaim> _held = ImmutableDictionary<string, SeatClaim>.Empty;
     private const int PersonLevel = GameStarter.PersonLevel;
+    private const int OwnAiLevel = GameStarter.OwnAiLevel;
 
     private SetupMode _mode;
     private int _colour;
@@ -316,7 +327,7 @@
             int left = this._colour;
             this._colour = value;
             this._picks[value] = string.Empty;
-            this._levels[left] = this._levels[left] == PersonLevel || this.HasRoom(this._levels[left], left)
+            this._levels[left] = this._levels[left] < 0 || this.HasRoom(this._levels[left], left)
                 ? this._levels[left]
                 : GameStarter.LevelWithRoom(this._strengths, this.TakenBesides(left), this._levels[left]);
         }
@@ -324,7 +335,7 @@
 
     /// <summary>The strengths of the seats played by bots, but for <paramref name="seat"/> and the player's.</summary>
     private IEnumerable<int> TakenBesides(int seat) =>
-        this._levels.Where((level, other) => other != seat && other != this._colour && level != PersonLevel);
+        this._levels.Where((level, other) => other != seat && other != this._colour && level >= 0);
 
     /// <summary>Whether the strength at <paramref name="level"/> has a bot left for <paramref name="seat"/>.</summary>
     private bool HasRoom(int level, int seat) => GameStarter.HasRoom(this._strengths, this.TakenBesides(seat), level);
@@ -347,9 +358,9 @@
                 : new SeatChoice(this.StrengthOf(seat), this._picks[seat].Length == 0 ? null : this._picks[seat])
         );
 
-    /// <summary>The strength the seat is played at; none, if by a person.</summary>
+    /// <summary>The strength the seat is played at; none, if by a person or the player's own AI.</summary>
     private Strength? StrengthOf(int seat) =>
-        this._levels[seat] == PersonLevel ? null : this._strengths[this._levels[seat]];
+        this._levels[seat] < 0 ? null : this._strengths[this._levels[seat]];
 
     /// <summary>Whether <paramref name="bot"/> was chosen for a seat other than <paramref name="seat"/>.</summary>
     private bool IsPicked(string bot, int seat) =>

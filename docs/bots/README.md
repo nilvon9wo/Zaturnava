@@ -13,6 +13,10 @@ as many games as you like, without a server at all.
 | A bot written in .NET, to train or measure | [Self-play](self-play.md): your bot against ours, thousands of games, offline |
 | A learner that wants data | [Game histories](game-histories.md): every action of every game, with the scores and how it ended |
 
+To seat your AI in a game you set up yourself, choose **Custom** in the lobby and, for its seat, **Your own
+AI**: the seat stays open, and while any seat is open the table shows the game's id. Your AI takes the seat
+with that id and an AI token, made under **New AI token** in your profile (see [the HTTP API](http-api.md)).
+
 Whichever way you connect, your AI sees exactly what a person sees and may do exactly what a person
 may: the server tells it which actions are legal, and refuses any other. Nothing it does needs a key
 of ours, and whatever AI service it uses is between you and that service: its keys stay with you.

@@ -283,7 +283,7 @@ public sealed class LobbyTest : IDisposable
             (
                 "You play|Your ally, Green|Enemy, Yellow|Enemy, Red",
                 "1|0|2",
-                "Person|Easy bot (Elo 1000)|Medium bot (Elo 1100)|Hard bot (Elo 1250–1400)",
+                "Person|Your own AI|Easy bot (Elo 1000)|Medium bot (Elo 1100)|Hard bot (Elo 1250–1400)",
                 0
             ),
             (
@@ -345,6 +345,36 @@ public sealed class LobbyTest : IDisposable
 
         // Assert
         Assert.Equal("-1", lobby.FindAll("select.strength")[1].GetAttribute("value"));
+    }
+
+    [Fact]
+    public void Play_WhenASeatIsForTheirOwnAi_LeavesItOpenHavingSaidHowToConnectIt()
+    {
+        // Arrange - Yellow is left for the player's own AI
+        IRenderedComponent<Lobby> lobby = this.ByStrength();
+        lobby.FindAll("select.strength")[1].Change("-2");
+        string hint = lobby.Find("p.own-ai a").GetAttribute("href")!;
+
+        // Act
+        lobby.Find("button.create").Click();
+
+        // Assert - the player's seat and Yellow open; bots in the other two
+        Assert.Equal(
+            (DocsLinks.Bots, (string?)null, 2),
+            (hint, this._page.Server.Created!.Bots[1], this._page.Server.Created.Bots.OfType<string>().Count())
+        );
+    }
+
+    [Fact]
+    public void ByStrength_WhenNoSeatIsForTheirOwnAi_SaysNothingOfConnectingOne()
+    {
+        // Arrange - nothing beyond the seats set up by strength
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.ByStrength();
+
+        // Assert
+        Assert.Empty(lobby.FindAll("p.own-ai"));
     }
 
     [Fact]

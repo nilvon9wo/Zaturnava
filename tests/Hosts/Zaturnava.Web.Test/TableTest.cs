@@ -314,8 +314,16 @@ public sealed class TableTest : IDisposable
 
         // Assert
         Assert.Equal(
-            "Waiting for Yellow and Green to join: the game begins once every seat is taken.",
-            table.Find("p.status").TextContent
+            (
+                "Waiting for Yellow and Green to join: the game begins once every seat is taken.",
+                SeatZero.GameId,
+                DocsLinks.Bots
+            ),
+            (
+                table.Find("p.status").TextContent,
+                table.Find("p.ai-join code.game-id").TextContent,
+                table.Find("p.ai-join a").GetAttribute("href")
+            )
         );
     }
 

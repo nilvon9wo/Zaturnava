@@ -105,6 +105,14 @@
                     <p class="safety-off" role="alert">Safety OFF: you may take your own team's pieces.</p>
                 }
                 <p class="status">@this.Status(view)</p>
+                @if (view.Outcome is null && OpenSeatsOf(view) is not null)
+                {
+                    <p class="hint ai-join">
+                        An AI of your own may take an open seat: give it this game's id,
+                        <code class="game-id">@this.Seating.GameId</code>, and an AI token from your profile.
+                        <a href="@DocsLinks.Bots" target="_blank" rel="noopener noreferrer">How to connect it</a>
+                    </p>
+                }
                 @if (view.Vacancy is { } vacancy && this.Seating.Claim is { } host)
                 {
                     @if (MayFill(vacancy, host.Seat))
