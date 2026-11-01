@@ -127,11 +127,21 @@ internal static class Ransoms
             Rules = new ScoringRules(ImmutableDictionary<GameAction, int>.Empty.Add(Done, 0)) { RansomPoints = points },
         };
 
+    /// <summary>The request, with seat 0's team ahead on points, <paramref name="ours"/> to Yellow's 1.</summary>
+    public static DecisionRequest Leading(DecisionRequest request, int ours) =>
+        request with
+        {
+            State = request.State with
+            {
+                Scores = ImmutableDictionary<SeatId, int>.Empty.Add(Black, ours).Add(Yellow, 1),
+            },
+        };
+
     /// <summary>
     /// The request, under rules where <paramref name="accepter"/> accepting a ransom puts seat 0's Horse 20 back
-    /// on cell 5, where a Pawn of Yellow's on cell 6 may take it.
+    /// on cell 5, where a Pawn of Yellow's on cell 6 may take it, and scores <paramref name="points"/>.
     /// </summary>
-    public static DecisionRequest Exposing(DecisionRequest request, SeatId accepter)
+    public static DecisionRequest Exposing(DecisionRequest request, SeatId accepter, int points = 0)
     {
         GameState after = request.State with
         {
@@ -139,9 +149,12 @@ internal static class Ransoms
             Position = Position.Empty.Place(new CellId(5), new Piece(Id(20), new PieceKindId("horse"), Black)),
         };
         Attack attack = new(new Piece(Id(60), new PieceKindId("pawn"), Yellow), new CellId(6), new CellId(5));
+        ImmutableDictionary<GameAction, int> scoring = points == 0
+            ? ImmutableDictionary<GameAction, int>.Empty.Add(Done, 0)
+            : ImmutableDictionary<GameAction, int>.Empty.Add(Done, 0).Add(new AcceptAction(accepter), points);
         return request with
         {
-            Rules = new ScoringRules(ImmutableDictionary<GameAction, int>.Empty.Add(Done, 0))
+            Rules = new ScoringRules(scoring)
             {
                 Results = ImmutableDictionary<GameAction, GameState>.Empty.Add(new AcceptAction(accepter), after),
                 Attacks = [attack],
