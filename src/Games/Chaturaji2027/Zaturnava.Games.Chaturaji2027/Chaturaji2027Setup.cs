@@ -15,64 +15,32 @@ namespace Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
 public static class Chaturaji2027Setup
 {
     public const int Side = 8;
-    public const int SeatCount = 4;
+    public const int SeatCount = Pinwheel.SeatCount;
     private const int BackRow = 0;
     private const int PawnRow = 1;
 
     public static readonly ImmutableList<string> SeatNames = ["Black", "Yellow", "Green", "Red"];
 
-    private static readonly Direction SeatZeroForward = new(0, 1);
     private static readonly ImmutableList<PieceKindId> BackRank =
         [Chaturaji2027Pieces.Boat, Chaturaji2027Pieces.Horse, Chaturaji2027Pieces.Elephant, Chaturaji2027Pieces.Raja];
 
-    public static ImmutableList<Seat> Seats() => [.. Enumerable.Range(0, SeatCount).Select(SeatAt)];
+    /// <summary>Every seat's pieces where they start, seat by seat, each army's back rank first.</summary>
+    public static ImmutableList<Placement> Start { get; } = Pinwheel.Armies(
+        Side,
+        [
+            .. BackRank.Select((kind, column) => new ArmyPiece(kind, column, BackRow)),
+            .. BackRank.Select((_, column) => new ArmyPiece(Chaturaji2027Pieces.Pawn, column, PawnRow)),
+        ]
+    );
+
+    public static ImmutableList<Seat> Seats() => Pinwheel.Seats();
 
     /// <summary>Opposite seats are allies.</summary>
-    public static TeamGraph Teams()
-    {
-        ImmutableList<SeatId> blackAndGreen = [new(0), new(2)];
-        ImmutableList<SeatId> yellowAndRed = [new(1), new(3)];
-        return TeamGraph.FromTeams([blackAndGreen, yellowAndRed]);
-    }
+    public static TeamGraph Teams() => Pinwheel.Teams();
 
     /// <summary>Each seat's throne: the square its Raja starts on.</summary>
     public static ImmutableDictionary<SeatId, CellId> Thrones(SquareGridTopology grid) =>
-        StartingSquares(grid)
-            .Where(start => start.Kind == Chaturaji2027Pieces.Raja)
-            .ToImmutableDictionary(start => start.Owner, start => start.Cell);
+        Chaturaji2027Variant.Standard.Thrones(grid);
 
-    public static Position InitialPosition(SquareGridTopology grid) =>
-        StartingSquares(grid)
-            .Select((start, index) => start.Placed(new PieceId(index)))
-            .Aggregate(Position.Empty, (position, placed) => position.Place(placed.Cell, placed.Piece));
-
-    private static Seat SeatAt(int index) => new(new SeatId(index), Turned(SeatZeroForward, index));
-
-    private static IEnumerable<StartingSquare> StartingSquares(SquareGridTopology grid) =>
-        Enumerable.Range(0, SeatCount).SelectMany(seat => Army(grid, seat));
-
-    private static IEnumerable<StartingSquare> Army(SquareGridTopology grid, int seat)
-    {
-        IEnumerable<StartingSquare> backRank =
-            BackRank.Select((kind, column) => Square(grid, seat, kind, column, BackRow));
-        IEnumerable<StartingSquare> pawns =
-            BackRank.Select((_, column) => Square(grid, seat, Chaturaji2027Pieces.Pawn, column, PawnRow));
-        return backRank.Concat(pawns);
-    }
-
-    private static StartingSquare Square(SquareGridTopology grid, int seat, PieceKindId kind, int column, int row)
-    {
-        (int turnedColumn, int turnedRow) = Enumerable
-            .Range(0, seat)
-            .Aggregate((column, row), (square, _) => TurnedSquare(square));
-        return new StartingSquare(new SeatId(seat), kind, grid.CellAt(turnedColumn, turnedRow));
-    }
-
-    private static (int Column, int Row) TurnedSquare((int Column, int Row) square) =>
-        (square.Row, Side - 1 - square.Column);
-
-    private static Direction Turned(Direction direction, int quarterTurns) =>
-        Enumerable
-            .Range(0, quarterTurns)
-            .Aggregate(direction, (turned, _) => new Direction(turned.Second, -turned.First));
+    public static Position InitialPosition(SquareGridTopology grid) => Pinwheel.PositionOf(grid, Start);
 }

@@ -74,7 +74,8 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
 
     private const int OpeningTurn = 1;
 
-    private readonly SquareGridTopology _grid = new(Chaturaji2027Setup.Side, Chaturaji2027Setup.Side);
+    private readonly Chaturaji2027Variant _variant;
+    private readonly SquareGridTopology _grid;
     private readonly Progress _progress;
     private readonly MoveGenerator _moves;
     private readonly DiceProfile _dice;
@@ -94,32 +95,36 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
 
     /// <summary>
     /// The rules as configured; <paramref name="awayTurns"/> is how many turns in a row a seat away may have
-    /// passed before it gives them up.
+    /// passed before it gives them up; <paramref name="variant"/> what the game is played with, Chaturaji 2027's
+    /// own if none.
     /// </summary>
     public Chaturaji2027Rules(
         [Required] DiceProfile dice,
         [Range(1, int.MaxValue)] int idleRounds,
         PawnPromotion pawnPromotion,
-        [Range(1, int.MaxValue)] int awayTurns = DefaultAwayTurns
+        [Range(1, int.MaxValue)] int awayTurns = DefaultAwayTurns,
+        Chaturaji2027Variant? variant = null
     )
     {
+        this._variant = variant ?? Chaturaji2027Variant.Standard;
+        this._grid = new SquareGridTopology(this._variant.Side, this._variant.Side);
         this._awayTurns = awayTurns;
-        this._moves = new MoveGenerator(this._grid, Chaturaji2027Pieces.Kinds);
+        this._moves = new MoveGenerator(this._grid, this._variant.Kinds);
         this._dice = dice;
         this._idleRounds = idleRounds;
         this._pawnPromotion = pawnPromotion;
-        this.Thrones = Chaturaji2027Setup.Thrones(this._grid);
-        this._control = new ThroneControl(this.Thrones);
+        this.Thrones = this._variant.Thrones(this._grid);
+        this._control = new ThroneControl(this.Thrones, this._variant.Leaders);
         this._command = new Command(this._control);
         this._everyPiece = new EveryPiece(this._control);
         this._farming = new Farming(this._control, this._moves);
-        this._ransom = new Ransom(this._grid, Chaturaji2027Setup.InitialPosition(this._grid));
-        this._progress = new Progress(this._grid);
+        this._ransom = new Ransom(this._grid, this._variant.InitialPosition(this._grid), this._variant.Leaders);
+        this._progress = new Progress(this._grid, this._variant.Pawns);
     }
 
-    public string Id => RulesetId;
+    public string Id => this._variant.Id;
 
-    public string Name => "Chaturaji 2027";
+    public string Name => this._variant.Name;
 
     public ICellNavigating Topology => this._grid;
 
@@ -130,7 +135,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     {
         ImmutableList<Seat> seats = Chaturaji2027Setup.Seats();
         GameState state = new(
-            Chaturaji2027Setup.InitialPosition(this._grid),
+            this._variant.InitialPosition(this._grid),
             seats,
             Chaturaji2027Setup.Teams(),
             seats[0].Id,
@@ -164,7 +169,8 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
                                 PassAwayAction pass => this.PassedAway(state, pass),
                                 _ => this.Decided(state, action),
                             }
-                        )
+                        ),
+                        this._variant
                     )
                 )
             )
@@ -205,19 +211,20 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         };
 
     /// <summary>A piece is worth what taking it scores (rules.md §5).</summary>
-    public int WorthOf(PieceKindId kind) => Chaturaji2027Pieces.Points[kind];
+    public int WorthOf(PieceKindId kind) => this._variant.Points[kind];
 
     public int RansomPointsOf([Required] GameState state, [Required] RansomOffer offer) =>
-        Ransom.PointsOf(state, offer);
+        this._ransom.PointsOf(state, offer);
 
     public ImmutableList<Attack> AttacksOf([Required] GameState state, SeatId seat) =>
     [
         .. state.Position.Occupants
             .Where(occupant => occupant.Value.Owner == seat)
-            .SelectMany(occupant => this._moves.AttacksFrom(state.Position, occupant.Key, state.SeatOf(seat))),
+            .SelectMany(occupant => this._moves.AttacksFrom(state.Position, occupant.Key, state.SeatOf(seat)))
+            .Where(attack => this.MayGo(new Move(attack.Attacker, attack.From, attack.Target, null))),
     ];
 
-    public bool IsLeader(PieceKindId kind) => kind == Chaturaji2027Pieces.Raja;
+    public bool IsLeader(PieceKindId kind) => this._control.IsLeader(kind);
 
     /// <summary>What a bot may weigh beyond what every ruleset has: how far the army's Pawns have come.</summary>
     public ImmutableList<string> Measures { get; } = [Progress.PawnProgress];
@@ -225,7 +232,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     public ImmutableList<double> MeasuresOf([Required] GameState state, SeatId seat) =>
         [this._progress.Of(state, seat)];
 
-    public string NameOf(PieceKindId kind) => Chaturaji2027Pieces.ChaturajiNames[kind];
+    public string NameOf(PieceKindId kind) => this._variant.Names[kind];
 
     public string NameOf(SeatId seat) => Chaturaji2027Setup.SeatNames[seat.Value];
 
@@ -233,7 +240,12 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     public string NameOfDie(int value)
     {
         ImmutableList<string> names = [.. this._dice.KindsOf(value).Select(this.NameOf).Order(StringComparer.Ordinal)];
-        return names.IsEmpty ? "Nothing" : string.Join(" or ", names);
+        return (this._variant.DieNames.TryGetValue(value, out string? name), names.IsEmpty) switch
+        {
+            (true, _) => name!,
+            (_, true) => "Nothing",
+            _ => string.Join(" or ", names),
+        };
     }
 
     /// <summary>
@@ -301,7 +313,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         return state.Prisoners
             .Where(prisoner => armies.Contains(prisoner.Piece.Owner) && kinds.Contains(prisoner.Piece.Kind))
             .DistinctBy(prisoner => (prisoner.Piece.Owner, prisoner.Piece.Kind, prisoner.Holder))
-            .OrderByDescending(prisoner => Chaturaji2027Pieces.Points[prisoner.Piece.Kind])
+            .OrderByDescending(prisoner => this._variant.Points[prisoner.Piece.Kind])
             .ThenBy(prisoner => prisoner.Piece.Owner.Value)
             .ThenBy(prisoner => prisoner.Holder.Value)
             .SelectMany(prisoner => this._ransom.EscapesFor(state, prisoner)
@@ -323,24 +335,24 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
                 .. this.MovesOf(state, seat, _ => true),
                 .. this.PromotionsOf(state, seat),
                 .. this.HandOversOf(state, seat),
-                .. RetirementsOf(state, seat),
+                .. this.RetirementsOf(state, seat),
             ]
             :
             [
                 new RollAction(seat),
                 .. this.PromotionsOf(state, seat),
                 .. this.HandOversOf(state, seat),
-                .. RetirementsOf(state, seat),
+                .. this.RetirementsOf(state, seat),
             ];
 
     /// <summary>
     /// A seat left with only its Raja on the board may, at the start of its own turn, end its part in the
     /// game (rules.md §10).
     /// </summary>
-    private static IEnumerable<RetireAction> RetirementsOf(GameState state, SeatId seat)
+    private IEnumerable<RetireAction> RetirementsOf(GameState state, SeatId seat)
     {
         ImmutableList<Piece> own = [.. state.Position.Occupants.Values.Where(piece => piece.Owner == seat)];
-        return state.ActingFor is null && own.Count == 1 && own[0].Kind == Chaturaji2027Pieces.Raja
+        return state.ActingFor is null && own.Count == 1 && this.IsLeader(own[0].Kind)
             ? [new RetireAction(seat)]
             : [];
     }
@@ -355,19 +367,21 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     private IEnumerable<PromoteAction> PromotionsOf(GameState state, SeatId seat)
     {
         ImmutableHashSet<SeatId> armies = this._control.ArmiesOf(state, seat);
-        bool mayMoveAPawn = this.RolledKinds(state).Contains(Chaturaji2027Pieces.Pawn);
+        ImmutableHashSet<PieceKindId> rolled = this.RolledKinds(state);
         ImmutableList<Piece> pool =
         [
             .. state.Prisoners
                 .DistinctBy(prisoner => (prisoner.Piece.Owner, prisoner.Piece.Kind, prisoner.Holder))
-                .OrderByDescending(prisoner => Chaturaji2027Pieces.Points[prisoner.Piece.Kind])
+                .OrderByDescending(prisoner => this._variant.Points[prisoner.Piece.Kind])
                 .ThenBy(prisoner => prisoner.Piece.Owner.Value)
                 .ThenBy(prisoner => prisoner.Holder.Value)
                 .Select(prisoner => prisoner.Piece),
         ];
         return state.Position.Occupants
-            .Where(occupant => occupant.Value.Kind == Chaturaji2027Pieces.Pawn && armies.Contains(occupant.Value.Owner))
-            .Where(occupant => mayMoveAPawn || state.Teams.AreAllied(occupant.Value.Owner, seat))
+            .Where(occupant => this.IsPawn(occupant.Value) && armies.Contains(occupant.Value.Owner))
+            .Where(occupant =>
+                rolled.Contains(occupant.Value.Kind) || state.Teams.AreAllied(occupant.Value.Owner, seat)
+            )
             .Where(occupant => this._grid.Step(occupant.Key, state.SeatOf(occupant.Value.Owner).Forward) is null)
             .SelectMany(occupant => pool
                 .Where(piece => this.MayBecome(occupant.Value, piece))
@@ -377,8 +391,9 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
 
     /// <summary>Into any piece but a Pawn of its own army; into another army's Pawn, as the rules are set.</summary>
     private bool MayBecome(Piece pawn, Piece piece) =>
-        piece.Kind != Chaturaji2027Pieces.Pawn
-        || (this._pawnPromotion == PawnPromotion.OtherArmies && piece.Owner != pawn.Owner);
+        !this.IsPawn(piece) || (this._pawnPromotion == PawnPromotion.OtherArmies && piece.Owner != pawn.Owner);
+
+    private bool IsPawn(Piece piece) => this._variant.Pawns.Contains(piece.Kind);
 
     /// <summary>Promoting a Pawn of an enemy army takes a die that moves a Pawn; one's own team's, none.</summary>
     private static bool UsesDie(GameState state, PromoteAction promotion) =>
@@ -396,15 +411,22 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             .Select(move => new MoveAction(seat, move.From, move.To));
     }
 
-    /// <summary>A piece moves the way its own army faces; a Pawn may also swap with one back to back.</summary>
-    private ImmutableList<Move> MovesFrom(GameState state, CellId cell, Piece piece, SeatId mover) =>
+    /// <summary>
+    /// A piece moves the way its own army faces, as the board lets it; a Pawn may also swap with one back to
+    /// back.
+    /// </summary>
+    private IEnumerable<Move> MovesFrom(GameState state, CellId cell, Piece piece, SeatId mover) =>
         this._moves.MovesFrom(
                 state.Position,
                 cell,
                 state.SeatOf(piece.Owner),
                 target => this.IsCapturable(state, target, mover)
             )
-            .AddRange(this.SwapsFrom(state, cell, piece));
+            .Where(this.MayGo)
+            .Concat(this.SwapsFrom(state, cell, piece));
+
+    /// <summary>Whether the board lets a piece make the move its kind allows.</summary>
+    private bool MayGo(Move move) => this._variant.MayMove?.Invoke(this._grid, move) ?? true;
 
     /// <summary>
     /// A Pawn facing an allied Pawn of another army, back to back, may swap places with it: its move
@@ -423,9 +445,9 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     private bool IsSwap(GameState state, CellId cell, Piece piece, CellId? target)
     {
         Piece? other = target is { } ahead ? state.Position.PieceAt(ahead) : null;
-        return piece.Kind == Chaturaji2027Pieces.Pawn
+        return this.IsPawn(piece)
             && other is { } facing
-            && facing.Kind == Chaturaji2027Pieces.Pawn
+            && this.IsPawn(facing)
             && facing.Owner != piece.Owner
             && state.Teams.AreAllied(facing.Owner, piece.Owner)
             && this.Ahead(state, target.GetValueOrDefault(), facing) is { } behind
@@ -567,9 +589,9 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         Transition transition = new(promoted, [new PiecePromoted(pawn, prisoner.Piece, promote.Cell, promote.Actor)]);
         bool usesDie = UsesDie(state, promote);
         Transition used = usesDie
-            ? this.WithoutDieFor(transition, Chaturaji2027Pieces.Pawn)
+            ? this.WithoutDieFor(transition, pawn.Kind)
             : transition;
-        return (GameEnd.AfterMove(transition), usesDie || state.PromotionDue is not null) switch
+        return (GameEnd.AfterMove(transition, this._variant), usesDie || state.PromotionDue is not null) switch
         {
             ({ } over, _) => over,
             (_, true) => this.GoneOn(used),
@@ -598,7 +620,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         Transition taken = captured is null
             ? transition
             : this.Captured(transition, captured, escape.Actor, escape.Home);
-        return GameEnd.AfterMove(taken) ?? this.GoneOn(taken);
+        return GameEnd.AfterMove(taken, this._variant) ?? this.GoneOn(taken);
     }
 
     /// <exception cref="IllegalActionException">The game is not waiting on these dice.</exception>
@@ -670,7 +692,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         Transition moved = this._farming.Tallied(state, move, this.Moved(state, move));
         Transition used = this.WithoutDieFor(moved, kind);
         bool isDue = this.PromotionsOf(used.State, move.Actor).Any(promotion => promotion.Cell == move.To);
-        return (GameEnd.AfterMove(moved), isDue) switch
+        return (GameEnd.AfterMove(moved, this._variant), isDue) switch
         {
             ({ } over, _) => over,
             (_, true) => used with { State = used.State with { PromotionDue = move.To } },
@@ -784,8 +806,10 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     {
         SeatId seat = state.DecidingSeat!.Value; // dice are only rolled and used by the deciding seat
         return this.MovesOf(state, seat, isRolled).Any()
-            || (isRolled(Chaturaji2027Pieces.Pawn)
-                && this.PromotionsOf(state, seat).Any(promotion => UsesDie(state, promotion)));
+            || this.PromotionsOf(state, seat)
+                .Any(promotion =>
+                    UsesDie(state, promotion) && isRolled(state.Position.PieceAt(promotion.Cell)!.Kind)
+                );
     }
 
     /// <summary>
@@ -896,11 +920,11 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         bool isEnemy = !moved.State.Teams.AreAllied(captured.Owner, captor)
             && !moved.State.Retired.Contains(captured.Owner);
         int points = isEnemy
-            ? Chaturaji2027Pieces.Points[captured.Kind]
+            ? this._variant.Points[captured.Kind]
             : 0;
-        bool isEnemyRaja = isEnemy && captured.Kind == Chaturaji2027Pieces.Raja;
+        bool isEnemyRaja = isEnemy && this.IsLeader(captured.Kind);
         bool isOnThrone = isEnemyRaja && this._control.IsThroneOf(cell, captured.Owner);
-        Transition scored = Farming.Forfeited(
+        Transition scored = this._farming.Forfeited(
             Scored(moved, captor, points, new PieceCaptured(captured, captor, points)),
             captured,
             captor,
@@ -937,7 +961,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         GameState state = taken.State;
         bool isLastRaja = !state.Position.Occupants.Values
             .Where(piece => !state.Retired.Contains(piece.Owner))
-            .Any(piece => piece.Kind == Chaturaji2027Pieces.Raja && state.Teams.AreAllied(piece.Owner, enemy));
+            .Any(piece => this.IsLeader(piece.Kind) && state.Teams.AreAllied(piece.Owner, enemy));
         IEnumerable<SeatId> creators = isLastRaja
             ? state.Seats
                 .Select(seat => seat.Id)
@@ -968,7 +992,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     /// <summary>A Raja entering an enemy's throne scores its owner a bonus (rules.md §5).</summary>
     private Transition EnteredThrone(Transition moved, Piece mover, CellId cell)
     {
-        SeatId? throne = mover.Kind == Chaturaji2027Pieces.Raja
+        SeatId? throne = this.IsLeader(mover.Kind)
             ? this._control.OwnerOf(cell)
             : null;
         return throne is { } enemy && !moved.State.Teams.AreAllied(enemy, mover.Owner)

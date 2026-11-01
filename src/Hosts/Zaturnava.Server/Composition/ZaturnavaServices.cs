@@ -10,6 +10,7 @@ using Net.NowhereAtAll.Zaturnava.Application.Scenarios;
 using Net.NowhereAtAll.Zaturnava.Bots;
 using Net.NowhereAtAll.Zaturnava.Engine.Chance;
 using Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
+using Net.NowhereAtAll.Zaturnava.Games.GrandLegions;
 using Net.NowhereAtAll.Zaturnava.Server.Endpoints;
 
 namespace Net.NowhereAtAll.Zaturnava.Server.Composition;
@@ -57,7 +58,9 @@ internal static class ZaturnavaServices
             .AddPageHosting(configuration)
             .AddSignIn(configuration)
             .AddRequestLimits(configuration)
-            .AddSingleton<IRulesetLocating>(new RulesetCatalog([new Chaturaji2027Rules()]))
+            .AddSingleton<IRulesetLocating>(
+                new RulesetCatalog([new Chaturaji2027Rules(), .. GrandLegionsRules.Quick])
+            )
             .AddSingleton<IBotLocating>(Bots())
             .AddSingleton(Scenarios(configuration))
             .AddSingleton<IGameNotifying, SilentNotifier>()

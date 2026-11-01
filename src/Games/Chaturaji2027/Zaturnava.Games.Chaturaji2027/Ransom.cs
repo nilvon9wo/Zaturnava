@@ -21,9 +21,10 @@ namespace Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
 /// ally's throne; but only once every seat has had a turn since they were taken. No piece going home takes
 /// anything.
 /// </summary>
-internal sealed class Ransom(SquareGridTopology grid, Position start)
+internal sealed class Ransom(SquareGridTopology grid, Position start, ImmutableHashSet<PieceKindId> leaders)
 {
     private readonly SquareGridTopology _grid = grid;
+    private readonly ImmutableHashSet<PieceKindId> _leaders = leaders;
 
     private readonly ImmutableDictionary<PieceId, CellId> _homes =
         start.Occupants.ToImmutableDictionary(occupant => occupant.Value.Id, occupant => occupant.Key);
@@ -135,12 +136,12 @@ internal sealed class Ransom(SquareGridTopology grid, Position start)
     /// What the receiver scores for accepting: for each prisoner it sends home, those asked for, more for a Raja,
     /// and for none it is given back, nor in a trade with its own team.
     /// </summary>
-    public static int PointsOf(GameState state, RansomOffer offer) =>
+    public int PointsOf(GameState state, RansomOffer offer) =>
         state.Teams.AreAllied(offer.To, offer.From)
             ? 0
             : state.Prisoners
                 .Where(prisoner => offer.Asked.Contains(prisoner.Piece.Id))
-                .Sum(prisoner => prisoner.Piece.Kind == Chaturaji2027Pieces.Raja
+                .Sum(prisoner => this._leaders.Contains(prisoner.Piece.Kind)
                     ? Chaturaji2027Rules.RansomRajaBonus
                     : Chaturaji2027Rules.RansomAcceptedBonus
                 );
@@ -156,7 +157,7 @@ internal sealed class Ransom(SquareGridTopology grid, Position start)
         [
             .. offer.Given.Concat(offer.Asked).Select(id => state.Prisoners.First(prisoner => prisoner.Piece.Id == id)),
         ];
-        int points = PointsOf(state, offer);
+        int points = this.PointsOf(state, offer);
         GameState scored = state with
         {
             Offer = null,

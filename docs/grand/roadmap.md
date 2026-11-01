@@ -73,6 +73,36 @@ with the river through or around kingdoms. The dice (`ClassDice`); teams (`Allia
 what rivers mean to the pieces, the lobby's form (with the allies' picture), fixed armies, and the
 ruleset that plays them.
 
+*Playable (2026-11-01)*: quick games, as the game's author set them, offered in the lobby's Game list
+beside Chaturaji 2027, each at easy, medium or hard:
+
+| Size | Board | Kingdom | Budget | At least |
+|---|---|---|---|---|
+| Small | 6 × 6 | 3 × 3 | 110 | 1 leader, 1 heavy, 1 cavalry, 3 infantry |
+| Medium | 8 × 8 | 4 × 2 | 125 | 1 leader, 1 heavy, 1 cavalry, 1 artillery, 4 infantry |
+| Large | 12 × 12 | 4 × 4 | 200 | 1 leader, 3 heavy, 2 cavalry, 2 artillery, 8 infantry |
+
+*Proposed*, for the author to confirm or change:
+
+- The program picks each army (`QuickArmy`), the same for all four seats: the cheapest pieces that meet
+  the minimums, then class by class (heavy, cavalry, artillery, infantry, the leader last) the best
+  piece the rest of the budget buys, a piece not yet in the army first; then, while the kingdom has
+  room, the best affordable pieces but no second leader. Pieces an area holds (palace, river) are left
+  out until palaces come. The leader takes the back rank's inner corner, as the Raja does; heavy,
+  artillery and cavalry the rest of the back ranks; infantry the front.
+- The quick games are played by Chaturaji 2027's own rules, generalised (`Chaturaji2027Variant`):
+  each leader is what they call a Raja and its start its throne; the Western, Makruk and Shogi Pawns are
+  their Pawns, promoted at the far edge into a captured piece; a die moves any piece of the class it
+  names; taking a piece scores its value, with the Chaturaji 2027 bonuses as they are (not yet × 10).
+- The board has no river in a quick game; a river keeps a Xiangqi Elephant on its own side
+  (`RiverCrossing`). The Xiangqi Soldier's sideways step once across is still to come.
+- The Medium kingdom, 4 × 2, is below the 3 × 3 a palace needs; quick games have no palace, so it
+  plays, but a Medium game with palaces will need the palace to stand partly outside the kingdom
+  (specification §5), or none.
+- Pieces with no symbol of their own show the first letter of their name.
+- Still to come: choosing a quick setup for one's own kingdom in a game set up by hand, which waits for
+  the draft (Stage 4).
+
 Saved settings ([specification §2.1](specification.md#21-saved-settings)), named, shared, and copied
 to edit, wait for players to sign in and for storage that lasts.
 

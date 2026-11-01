@@ -1,4 +1,6 @@
+using System.Collections.Immutable;
 using Net.NowhereAtAll.Zaturnava.Engine.Boards;
+using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
 using Net.NowhereAtAll.Zaturnava.Engine.Rules;
 using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 
@@ -8,18 +10,19 @@ namespace Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
 /// How far an army's Pawns have come towards the far edge, where a Pawn may be promoted (rules.md §8): for
 /// each, the rows it has moved forward from the row one in from its own army's edge, where Pawns start.
 /// </summary>
-internal sealed class Progress(ICellNavigating grid)
+internal sealed class Progress(ICellNavigating grid, ImmutableHashSet<PieceKindId> pawns)
 {
     public const string PawnProgress = "pawn-progress";
 
     private readonly ICellNavigating _grid = grid;
+    private readonly ImmutableHashSet<PieceKindId> _pawns = pawns;
 
     public int Of(GameState state, SeatId seat)
     {
         Direction forward = state.SeatOf(seat).Forward;
         Direction back = new(-forward.First, -forward.Second);
         return state.Position.Occupants
-            .Where(occupant => occupant.Value.Owner == seat && occupant.Value.Kind == Chaturaji2027Pieces.Pawn)
+            .Where(occupant => occupant.Value.Owner == seat && this._pawns.Contains(occupant.Value.Kind))
             .Sum(occupant => this.StepsFrom(occupant.Key, back) - 1);
     }
 

@@ -41,6 +41,7 @@
     <ProjectReference Include="..\..\Persistence\Zaturnava.Persistence.EfCore.SqlServer\Zaturnava.Persistence.EfCore.SqlServer.csproj" />
     <ProjectReference Include="..\..\Persistence\Zaturnava.Persistence.InMemory\Zaturnava.Persistence.InMemory.csproj" />
     <ProjectReference Include="..\..\Games\Chaturaji2027\Zaturnava.Games.Chaturaji2027\Zaturnava.Games.Chaturaji2027.csproj" />
+    <ProjectReference Include="..\..\Games\GrandLegions\Zaturnava.Games.GrandLegions\Zaturnava.Games.GrandLegions.csproj" />
   </ItemGroup>
 
 </Project>

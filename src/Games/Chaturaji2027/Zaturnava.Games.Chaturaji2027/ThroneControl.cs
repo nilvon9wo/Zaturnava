@@ -13,9 +13,10 @@ namespace Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
 /// An ally may take a seat's turn for it, if the seat lets it (§6.2); an enemy Raja on a seat's throne
 /// shares that seat's turn (§6.3).
 /// </summary>
-internal sealed class ThroneControl(ImmutableDictionary<SeatId, CellId> thrones)
+internal sealed class ThroneControl(ImmutableDictionary<SeatId, CellId> thrones, ImmutableHashSet<PieceKindId> leaders)
 {
     private readonly ImmutableDictionary<SeatId, CellId> _thrones = thrones;
+    private readonly ImmutableHashSet<PieceKindId> _leaders = leaders;
     private readonly ImmutableDictionary<CellId, SeatId> _owners =
         thrones.ToImmutableDictionary(throne => throne.Value, throne => throne.Key);
 
@@ -23,14 +24,17 @@ internal sealed class ThroneControl(ImmutableDictionary<SeatId, CellId> thrones)
     public ImmutableHashSet<SeatId> ArmiesOf(GameState state, SeatId seat) =>
         state.ActingFor is { } occupied
             ? [occupied]
-            : [seat, .. this.ThronesHeldBy(state, seat), .. RajalessAllies(state, seat)];
+            : [seat, .. this.ThronesHeldBy(state, seat), .. this.RajalessAllies(state, seat)];
+
+    /// <summary>Whether the kind leads an army: what Chaturaji 2027 calls a Raja.</summary>
+    public bool IsLeader(PieceKindId kind) => this._leaders.Contains(kind);
 
     /// <summary>
     /// Whether <paramref name="seat"/> commands an ally's army, whoever's turn it is: its Raja sits on the
     /// ally's throne, or the ally has no Raja while it has one.
     /// </summary>
     public bool CommandsAnAlly(GameState state, SeatId seat) =>
-        RajalessAllies(state, seat).Any()
+        this.RajalessAllies(state, seat).Any()
         || this.ThronesHeldBy(state, seat).Any(throne => state.Teams.AreAllied(throne, seat));
 
     /// <summary>
@@ -41,7 +45,7 @@ internal sealed class ThroneControl(ImmutableDictionary<SeatId, CellId> thrones)
         [
             .. this.ThronesHeldBy(state, seat)
                 .Select(throne => (throne, ThroneBasis(state.Teams.AreAllied(throne, seat)))),
-            .. RajalessAllies(state, seat).Select(ally => (ally, CommandBasis.LeaderlessAlly)),
+            .. this.RajalessAllies(state, seat).Select(ally => (ally, CommandBasis.LeaderlessAlly)),
         ];
 
     /// <summary>
@@ -51,8 +55,10 @@ internal sealed class ThroneControl(ImmutableDictionary<SeatId, CellId> thrones)
     public IEnumerable<SeatId> RegentsFor(GameState state, SeatId seat) =>
         state.Seats
             .Select(ally => ally.Id)
-            .Where(ally => ally != seat && state.Teams.AreAllied(ally, seat) && HasRaja(state, ally))
-            .Where(ally => !HasRaja(state, seat) || IsRajaOf(state.Position.PieceAt(this._thrones[seat]), ally));
+            .Where(ally => ally != seat && state.Teams.AreAllied(ally, seat) && this.HasRaja(state, ally))
+            .Where(ally =>
+                !this.HasRaja(state, seat) || this.IsRajaOf(state.Position.PieceAt(this._thrones[seat]), ally)
+            );
 
     /// <summary>The seat whose throne <paramref name="cell"/> is; null if it is no one's.</summary>
     public SeatId? OwnerOf(CellId cell) =>
@@ -66,7 +72,8 @@ internal sealed class ThroneControl(ImmutableDictionary<SeatId, CellId> thrones)
     public SeatId? OccupierOf(GameState state, SeatId seat)
     {
         Piece? occupant = state.Position.PieceAt(this._thrones[seat]);
-        bool isEnemyRaja = occupant?.Kind == Chaturaji2027Pieces.Raja
+        bool isEnemyRaja = occupant is { } piece
+            && this.IsLeader(piece.Kind)
             && !state.Teams.AreAllied(occupant.Owner, seat)
             && !state.Retired.Contains(occupant.Owner);
         return isEnemyRaja
@@ -77,19 +84,19 @@ internal sealed class ThroneControl(ImmutableDictionary<SeatId, CellId> thrones)
     /// <summary>
     /// The allies with no Raja, if the seat has one and has not retired; a retired ally is commanded by no one.
     /// </summary>
-    private static IEnumerable<SeatId> RajalessAllies(GameState state, SeatId seat) =>
-        HasRaja(state, seat) && !state.Retired.Contains(seat)
+    private IEnumerable<SeatId> RajalessAllies(GameState state, SeatId seat) =>
+        this.HasRaja(state, seat) && !state.Retired.Contains(seat)
             ? state.Seats
                 .Select(ally => ally.Id)
-                .Where(ally => ally != seat && state.Teams.AreAllied(ally, seat) && !HasRaja(state, ally))
+                .Where(ally => ally != seat && state.Teams.AreAllied(ally, seat) && !this.HasRaja(state, ally))
                 .Where(ally => !state.Retired.Contains(ally))
             : [];
 
     private static CommandBasis ThroneBasis(bool isAllied) =>
         isAllied ? CommandBasis.AllyThrone : CommandBasis.EnemyThrone;
 
-    private static bool HasRaja(GameState state, SeatId seat) =>
-        state.Position.Occupants.Values.Any(piece => piece.Owner == seat && piece.Kind == Chaturaji2027Pieces.Raja);
+    private bool HasRaja(GameState state, SeatId seat) =>
+        state.Position.Occupants.Values.Any(piece => piece.Owner == seat && this.IsLeader(piece.Kind));
 
     /// <summary>
     /// The seats whose thrones the seat's Raja holds; a retired seat's throne, or a retired seat's Raja, commands
@@ -100,9 +107,9 @@ internal sealed class ThroneControl(ImmutableDictionary<SeatId, CellId> thrones)
             ? []
             : this._thrones
                 .Where(throne => throne.Key != seat && !state.Retired.Contains(throne.Key))
-                .Where(throne => IsRajaOf(state.Position.PieceAt(throne.Value), seat))
+                .Where(throne => this.IsRajaOf(state.Position.PieceAt(throne.Value), seat))
                 .Select(throne => throne.Key);
 
-    private static bool IsRajaOf(Piece? piece, SeatId seat) =>
-        piece?.Kind == Chaturaji2027Pieces.Raja && piece.Owner == seat;
+    private bool IsRajaOf(Piece? piece, SeatId seat) =>
+        piece is { } leader && this.IsLeader(leader.Kind) && leader.Owner == seat;
 }

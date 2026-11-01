@@ -26,7 +26,7 @@ internal sealed class Farming(ThroneControl control, MoveGenerator moves)
         SeatId farmer = move.Actor;
         Piece mover = before.Position.PieceAt(move.From)!; // the move is legal, so a piece stands there
         bool isOwnRaja = mover.Owner == farmer
-            && mover.Kind == Chaturaji2027Pieces.Raja
+            && this._control.IsLeader(mover.Kind)
             && before.Position.PieceAt(move.To) is null;
         bool isEntry = moved.Events.OfType<ThroneEntered>().Any();
         bool isIdlyOff = this.IsEnemyThrone(state, move.From, farmer) && this.IsIdle(state, move.To, farmer);
@@ -54,11 +54,11 @@ internal sealed class Farming(ThroneControl control, MoveGenerator moves)
     /// A Raja taken while its player farmed: its player loses the farmed points, and its captor, if an enemy,
     /// scores twice as much.
     /// </summary>
-    public static Transition Forfeited(Transition taken, Piece captured, SeatId captor, bool isEnemy)
+    public Transition Forfeited(Transition taken, Piece captured, SeatId captor, bool isEnemy)
     {
         GameState state = taken.State;
         SeatId farmer = captured.Owner;
-        int farmed = captured.Kind == Chaturaji2027Pieces.Raja ? state.Farmed.GetValueOrDefault(farmer) : 0;
+        int farmed = this._control.IsLeader(captured.Kind) ? state.Farmed.GetValueOrDefault(farmer) : 0;
         int gained = isEnemy ? 2 * farmed : 0;
         GameState settled = Stopped(state, farmer) with
         {

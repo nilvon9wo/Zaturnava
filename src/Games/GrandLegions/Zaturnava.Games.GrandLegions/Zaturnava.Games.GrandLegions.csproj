@@ -3,11 +3,14 @@
   <!--
     Grand Legions (docs/grand/specification.md): Chaturaji 2027's rules on a board of any size, with armies
     drafted from a catalogue of pieces from many chess traditions. So far the catalogue, as data; the board's
-    kingdoms and rivers; and the dice.
+    kingdoms and rivers; the dice; and quick games, small, medium and large, with armies the program picks,
+    played by Chaturaji 2027's rules.
   -->
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\Engine\Zaturnava.Engine\Zaturnava.Engine.csproj" />
+    <ProjectReference Include="..\..\..\Engine\Zaturnava.Topology.SquareGrid\Zaturnava.Topology.SquareGrid.csproj" />
+    <ProjectReference Include="..\..\Chaturaji2027\Zaturnava.Games.Chaturaji2027\Zaturnava.Games.Chaturaji2027.csproj" />
   </ItemGroup>
 
 </Project>

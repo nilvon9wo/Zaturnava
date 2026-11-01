@@ -11,7 +11,7 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
     private readonly CancellationToken _cancellation = TestContext.Current.CancellationToken;
 
     [Fact]
-    public async Task Catalog_WhenAsked_OffersTheChaturaji2027RulesetAndItsBots()
+    public async Task Catalog_WhenAsked_OffersChaturaji2027FirstThenGrandLegionsQuickGamesAndTheBots()
     {
         // Arrange - nothing beyond the server
 
@@ -19,7 +19,11 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
         CatalogDto catalog = await this._client.Catalog(this._cancellation);
 
         // Assert
-        RulesetDto ruleset = catalog.Rulesets.Single();
+        RulesetDto ruleset = catalog.Rulesets[0];
+        Assert.Equal(
+            "chaturaji-2027,grand-legions-small,grand-legions-medium,grand-legions-large",
+            string.Join(",", catalog.Rulesets.Select(offered => offered.Id))
+        );
         Assert.Equal(
             (
                 ZaturnavaServer.Chaturaji2027,

@@ -171,7 +171,7 @@
                         {
                             <button class="action primary again" @onclick="() => this.PlayAgain(view)">Play again</button>
                         }
-                        <button class="action quick" @onclick="this.QuickGame">Quick game</button>
+                        <button class="action quick" @onclick="() => this.QuickGame(view)">Quick game</button>
                     </div>
                 }
                 @if (this._notice is { } notice)
@@ -738,15 +738,21 @@
             view.Id
         ));
 
-    private Task QuickGame() =>
+    /// <summary>A quick game, medium, of the same game as this: the server's first, should it offer this no more.</summary>
+    private Task QuickGame(GameViewDto view) =>
         this.SitAgain(async () =>
-            await GameStarter.Quick(
+        {
+            CatalogDto catalog = await this.Games.Catalog(CancellationToken.None);
+            RulesetDto ruleset =
+                catalog.Rulesets.FirstOrDefault(offered => offered.Id == view.RulesetId) ?? catalog.Rulesets[0];
+            return await GameStarter.Quick(
                 this.Games,
-                await this.Games.Catalog(CancellationToken.None),
+                catalog,
+                ruleset,
                 Difficulty.Medium,
                 await this.Browser.Claimant()
-            )
-        );
+            );
+        });
 
     private async Task SitAgain(Func<Task<Seating>> seating) =>
         this._problem = await Requests.Attempt(async () => await this.OnSeated.InvokeAsync(await seating()));
