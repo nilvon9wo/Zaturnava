@@ -14,6 +14,9 @@ public sealed class InMemoryPlayerStore : IPlayerPersisting
     public Task<Player?> ByLogin(Login login, CancellationToken cancellationToken) =>
         Task.FromResult(this._players.Values.FirstOrDefault(player => player.Logins.Contains(login)));
 
+    public Task<Player?> ById(PlayerId player, CancellationToken cancellationToken) =>
+        Task.FromResult(this._players.GetValueOrDefault(player));
+
     public Task<Player?> BySession([Required] string tokenHash, CancellationToken cancellationToken) =>
         Task.FromResult(
             this._sessions.TryGetValue(tokenHash, out PlayerId player)
@@ -39,6 +42,15 @@ public sealed class InMemoryPlayerStore : IPlayerPersisting
         return Task.CompletedTask;
     }
 
+    public Task Rename(PlayerId player, [Required] string name, CancellationToken cancellationToken) =>
+        this.Change(player, known => known with { Name = name });
+
+    public Task AddLogin(PlayerId player, Login login, CancellationToken cancellationToken) =>
+        this.Change(player, known => known with { Logins = known.Logins.Add(login) });
+
+    public Task RemoveLogin(PlayerId player, Login login, CancellationToken cancellationToken) =>
+        this.Change(player, known => known with { Logins = known.Logins.Remove(login) });
+
     public Task AddSession(PlayerId player, [Required] string tokenHash, CancellationToken cancellationToken)
     {
         this._sessions[tokenHash] = player;
@@ -57,6 +69,17 @@ public sealed class InMemoryPlayerStore : IPlayerPersisting
         ImmutableList<string> sessions =
             [.. this._sessions.Where(session => session.Value == player).Select(session => session.Key)];
         sessions.ForEach(session => _ = this._sessions.TryRemove(session, out _));
+        return Task.CompletedTask;
+    }
+
+    /// <summary>Changes the player, if still known.</summary>
+    private Task Change(PlayerId player, Func<Player, Player> change)
+    {
+        if (this._players.TryGetValue(player, out Player? known))
+        {
+            this._players[player] = change(known);
+        }
+
         return Task.CompletedTask;
     }
 }

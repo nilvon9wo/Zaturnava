@@ -121,14 +121,26 @@ public sealed class HttpGameClient(HttpClient http) : IGameServing
     public Task<ImmutableList<string>> SignInProviders(CancellationToken cancellationToken) =>
         this.Send<ImmutableList<string>>(HttpMethod.Get, GameRoutes.SignInProviders, null, null, cancellationToken);
 
-    public async Task<PlayerDto?> Me([Required] string token, CancellationToken cancellationToken)
-    {
-        using HttpResponseMessage response =
-            await this.Exchange(HttpMethod.Get, GameRoutes.Me, null, token, cancellationToken);
-        return response.StatusCode == HttpStatusCode.Unauthorized
-            ? null
-            : await Outcome<PlayerDto>(response, cancellationToken);
-    }
+    public Task<PlayerDto?> Me([Required] string token, CancellationToken cancellationToken) =>
+        this.IfSomeone<PlayerDto>(HttpMethod.Get, GameRoutes.Me, null, token, cancellationToken);
+
+    public Task<PlayerDto?> Rename(
+        [Required] string token,
+        [Required] string name,
+        CancellationToken cancellationToken
+    ) =>
+        this.IfSomeone<PlayerDto>(HttpMethod.Put, GameRoutes.Me, new RenameRequest(name), token, cancellationToken);
+
+    public async Task<string?> LinkCode([Required] string token, CancellationToken cancellationToken) =>
+        (await this.IfSomeone<LinkCodeDto>(HttpMethod.Post, GameRoutes.LinkCode, null, token, cancellationToken))
+            ?.Code;
+
+    public Task<PlayerDto?> Unlink(
+        [Required] string token,
+        [Required] string provider,
+        CancellationToken cancellationToken
+    ) =>
+        this.IfSomeone<PlayerDto>(HttpMethod.Delete, GameRoutes.Login(provider), null, token, cancellationToken);
 
     public async Task SignOut([Required] string token, CancellationToken cancellationToken)
     {
@@ -155,6 +167,22 @@ public sealed class HttpGameClient(HttpClient http) : IGameServing
             _ when response.IsSuccessStatusCode => true,
             _ => throw await Refused(response, cancellationToken),
         };
+
+    /// <summary>For a request sent with a player's token: its answer; none, if the token stood for no one.</summary>
+    private async Task<T?> IfSomeone<T>(
+        HttpMethod method,
+        string route,
+        object? body,
+        string token,
+        CancellationToken cancellationToken
+    )
+        where T : class
+    {
+        using HttpResponseMessage response = await this.Exchange(method, route, body, token, cancellationToken);
+        return response.StatusCode == HttpStatusCode.Unauthorized
+            ? null
+            : await Outcome<T>(response, cancellationToken);
+    }
 
     private async Task<T> Send<T>(
         HttpMethod method,

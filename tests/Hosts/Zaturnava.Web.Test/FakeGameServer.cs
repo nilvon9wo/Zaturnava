@@ -231,6 +231,25 @@ internal sealed class FakeGameServer : IGameServing
     public Task<PlayerDto?> Me([Required] string token, CancellationToken cancellationToken) =>
         this.SignedIn(() => this.Players.GetValueOrDefault(token));
 
+    public Task<PlayerDto?> Rename(
+        [Required] string token,
+        [Required] string name,
+        CancellationToken cancellationToken
+    ) =>
+        this.SignedIn(() => this.Changed(token, player => player with { Name = name }));
+
+    public Task<string?> LinkCode([Required] string token, CancellationToken cancellationToken) =>
+        this.SignedIn(() => this.Players.ContainsKey(token) ? "code-" + token : null);
+
+    public Task<PlayerDto?> Unlink(
+        [Required] string token,
+        [Required] string provider,
+        CancellationToken cancellationToken
+    ) =>
+        this.SignedIn(() =>
+            this.Changed(token, player => player with { Services = player.Services?.Remove(provider) })
+        );
+
     /// <summary>Each player token signed out or deleted, in order: "out {token}", "delete {token}".</summary>
     public ConcurrentQueue<string> LetGo { get; } = new();
 
@@ -250,6 +269,19 @@ internal sealed class FakeGameServer : IGameServing
             this.Players = this.Players.Remove(token);
             return isKnown;
         });
+
+    /// <summary>The player the token stands for, changed, and kept so; none, if it stands for no one.</summary>
+    private PlayerDto? Changed(string token, Func<PlayerDto, PlayerDto> change)
+    {
+        if (this.Players.GetValueOrDefault(token) is not { } player)
+        {
+            return null;
+        }
+
+        PlayerDto changed = change(player);
+        this.Players = this.Players.SetItem(token, changed);
+        return changed;
+    }
 
     private Task<T> SignedIn<T>(Func<T> answer)
     {

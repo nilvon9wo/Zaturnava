@@ -23,6 +23,13 @@ public sealed class EfPlayerStore(GameDbContext context) : IPlayerPersisting
         return ToPlayer(player);
     }
 
+    public async Task<Player?> ById(PlayerId player, CancellationToken cancellationToken) =>
+        ToPlayer(
+            await this._context.Players
+                .Include(entity => entity.Logins)
+                .FirstOrDefaultAsync(entity => entity.Id == player.Value, cancellationToken)
+        );
+
     public async Task<Player?> BySession([Required] string tokenHash, CancellationToken cancellationToken)
     {
         PlayerEntity? player = await this._context.Players
@@ -65,6 +72,23 @@ public sealed class EfPlayerStore(GameDbContext context) : IPlayerPersisting
         );
         _ = await this._context.SaveChangesAsync(cancellationToken);
     }
+
+    public async Task Rename(PlayerId player, [Required] string name, CancellationToken cancellationToken) =>
+        _ = await this._context.Players
+            .Where(entity => entity.Id == player.Value)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(entity => entity.Name, name), cancellationToken);
+
+    public async Task AddLogin(PlayerId player, Login login, CancellationToken cancellationToken)
+    {
+        _ = this._context.Set<LoginEntity>()
+            .Add(new LoginEntity { Provider = login.Provider, Key = login.Key, PlayerId = player.Value });
+        _ = await this._context.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task RemoveLogin(PlayerId player, Login login, CancellationToken cancellationToken) =>
+        _ = await this._context.Set<LoginEntity>()
+            .Where(held => held.PlayerId == player.Value && held.Provider == login.Provider && held.Key == login.Key)
+            .ExecuteDeleteAsync(cancellationToken);
 
     public async Task AddSession(PlayerId player, [Required] string tokenHash, CancellationToken cancellationToken)
     {

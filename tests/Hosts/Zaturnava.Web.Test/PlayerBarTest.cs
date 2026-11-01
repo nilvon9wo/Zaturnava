@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Bunit;
 using Microsoft.AspNetCore.Components.Web;
 using Net.NowhereAtAll.Zaturnava.Contracts;
@@ -283,11 +284,156 @@ public sealed class PlayerBarTest : IDisposable
         Assert.Equal(("asleep", "Ada"), (bar.Find("[role=status]").TextContent, bar.Find("strong").TextContent));
     }
 
-    /// <summary>The bar, with Ada signed in on this browser by the token "known".</summary>
-    private IRenderedComponent<PlayerBar> SignedInAsAda()
+    [Fact]
+    public void Profile_WhenOpened_ShowsTheNameAndServicesAndOffersToLinkTheOthers()
     {
-        this._page.Server.Providers = ["GitHub"];
-        this._page.Server.Players = this._page.Server.Players.Add("known", Ada);
+        // Arrange
+        IRenderedComponent<PlayerBar> bar = this.SignedInAsAda(["GitHub"]);
+
+        // Act
+        bar.Find("button.open-profile").Click();
+
+        // Assert
+        Assert.Equal(
+            ("Ada", "GitHub", 0, "Link Discord"),
+            (
+                bar.Find("[role=dialog] input.name").GetAttribute("value"),
+                bar.Find("ul.services li").TextContent.Trim(),
+                bar.FindAll("button.unlink").Count,
+                string.Join('|', bar.FindAll("button.link").Select(button => button.TextContent))
+            )
+        );
+    }
+
+    [Fact]
+    public void Profile_WhenNoCodeCanBeHad_SaysWhyAndOffersNoLink()
+    {
+        // Arrange
+        IRenderedComponent<PlayerBar> bar = this.SignedInAsAda(["GitHub"]);
+        this._page.Server.SignInFailure = new HttpRequestException("asleep");
+
+        // Act
+        bar.Find("button.open-profile").Click();
+
+        // Assert
+        Assert.Equal(("asleep", 0), (bar.Find("[role=status]").TextContent, bar.FindAll("button.link").Count));
+    }
+
+    [Fact]
+    public void Link_WhenClicked_OpensTheWindowWithTheCodeWhichIsThenSpent()
+    {
+        // Arrange
+        IRenderedComponent<PlayerBar> bar = this.SignedInAsAda(["GitHub"]);
+        bar.Find("button.open-profile").Click();
+
+        // Act
+        bar.Find("button.link").Click();
+
+        // Assert
+        Assert.Equal(
+            ("https://games.example/signin/Discord?origin=http%3A%2F%2Flocalhost&link=code-known", 0),
+            (
+                this._page.JSInterop.Invocations["zaturnava.signIn"].Single().Arguments[0],
+                bar.FindAll("button.link").Count
+            )
+        );
+    }
+
+    [Fact]
+    public async Task SignedIn_WhenLinkedWithTheProfileOpen_ShowsTheServiceAndAsksANewCode()
+    {
+        // Arrange
+        IRenderedComponent<PlayerBar> bar = this.SignedInAsAda(["GitHub"]);
+        await bar.Find("button.open-profile").ClickAsync(new MouseEventArgs());
+        await bar.Find("button.link").ClickAsync(new MouseEventArgs());
+        PlayerDto linked = Ada with { Services = ["GitHub", "Discord"] };
+        this._page.Server.Players = this._page.Server.Players.Add("linked", linked);
+
+        // Act
+        await bar.InvokeAsync(() => bar.Instance.SignedIn("linked"));
+
+        // Assert
+        Assert.Equal(
+            ("GitHub|Discord", 2, 0),
+            (
+                string.Join('|', bar.FindAll("ul.services li").Select(item => item.FirstChild?.TextContent.Trim())),
+                bar.FindAll("button.unlink").Count,
+                bar.FindAll("button.link").Count
+            )
+        );
+    }
+
+    [Fact]
+    public void Rename_WhenTheNameIsChanged_ShowsTheNewOne()
+    {
+        // Arrange
+        IRenderedComponent<PlayerBar> bar = this.SignedInAsAda(["GitHub"]);
+        bar.Find("button.open-profile").Click();
+
+        // Act
+        bar.Find("input.name").Change("Countess");
+
+        // Assert
+        Assert.Equal("Countess", bar.Find("span.player strong").TextContent);
+    }
+
+    [Fact]
+    public void Rename_WhenTheTokenNoLongerStandsForAnyone_ShowsNoOneSignedIn()
+    {
+        // Arrange
+        IRenderedComponent<PlayerBar> bar = this.SignedInAsAda(["GitHub"]);
+        bar.Find("button.open-profile").Click();
+        this._page.Server.Players = this._page.Server.Players.Remove("known");
+
+        // Act
+        bar.Find("input.name").Change("Countess");
+
+        // Assert
+        _ = Assert.Single(bar.FindAll("button.open-sign-in"));
+    }
+
+    [Fact]
+    public void Unlink_WhenClicked_ShowsTheServicesLeft()
+    {
+        // Arrange
+        IRenderedComponent<PlayerBar> bar = this.SignedInAsAda(["GitHub", "Discord"]);
+        bar.Find("button.open-profile").Click();
+
+        // Act
+        bar.Find("button.unlink").Click();
+
+        // Assert
+        Assert.Equal(
+            ("Discord", "Link GitHub"),
+            (
+                bar.Find("ul.services li").TextContent.Trim(),
+                string.Join('|', bar.FindAll("button.link").Select(button => button.TextContent))
+            )
+        );
+    }
+
+    [Fact]
+    public void Profile_WhenDone_Closes()
+    {
+        // Arrange
+        IRenderedComponent<PlayerBar> bar = this.SignedInAsAda();
+        bar.Find("button.open-profile").Click();
+
+        // Act
+        bar.Find("button.close-profile").Click();
+
+        // Assert
+        Assert.Empty(bar.FindAll("[role=dialog]"));
+    }
+
+    /// <summary>
+    /// The bar, with Ada signed in on this browser by the token "known", signing in with
+    /// <paramref name="services"/>; GitHub and Discord are offered.
+    /// </summary>
+    private IRenderedComponent<PlayerBar> SignedInAsAda(ImmutableList<string>? services = null)
+    {
+        this._page.Server.Providers = ["GitHub", "Discord"];
+        this._page.Server.Players = this._page.Server.Players.Add("known", Ada with { Services = services });
         _ = this._page.JSInterop.Setup<string?>("zaturnava.load", PlayerKey).SetResult("known");
         return this._page.Render<PlayerBar>();
     }

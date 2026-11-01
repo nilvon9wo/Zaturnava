@@ -131,6 +131,23 @@ internal sealed class StubGameServer : IGameServing
     public Task<PlayerDto?> Me([Required] string token, CancellationToken cancellationToken) =>
         throw new NotSupportedException("The tools sign no one in.");
 
+    public Task<PlayerDto?> Rename(
+        [Required] string token,
+        [Required] string name,
+        CancellationToken cancellationToken
+    ) =>
+        throw new NotSupportedException("The tools sign no one in.");
+
+    public Task<string?> LinkCode([Required] string token, CancellationToken cancellationToken) =>
+        throw new NotSupportedException("The tools sign no one in.");
+
+    public Task<PlayerDto?> Unlink(
+        [Required] string token,
+        [Required] string provider,
+        CancellationToken cancellationToken
+    ) =>
+        throw new NotSupportedException("The tools sign no one in.");
+
     public Task SignOut([Required] string token, CancellationToken cancellationToken) =>
         throw new NotSupportedException("The tools sign no one in.");
 

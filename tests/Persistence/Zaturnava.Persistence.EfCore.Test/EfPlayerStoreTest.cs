@@ -115,6 +115,64 @@ public sealed class EfPlayerStoreTest : IDisposable
         );
     }
 
+    [Theory]
+    [InlineData("ada", "ada Ada GitHub:1234 Google:abcd")]
+    [InlineData("gone", null)]
+    public async Task ById_WhenAPlayerWasAdded_ReadsThemBackByTheirIdOnly(string id, string? expected)
+    {
+        // Arrange
+        await this._store.Add(Ada, this._cancellation);
+
+        // Act
+        Player? found = await new EfPlayerStore(this._database.NewContext()).ById(new PlayerId(id), this._cancellation);
+
+        // Assert
+        Assert.Equal(expected, Described(found));
+    }
+
+    [Fact]
+    public async Task Rename_WhenThePlayerIsKnown_NamesThemAnew()
+    {
+        // Arrange
+        await this._store.Add(Ada, this._cancellation);
+
+        // Act
+        await this._store.Rename(Ada.Id, "Countess", this._cancellation);
+
+        // Assert
+        Player? found = await new EfPlayerStore(this._database.NewContext()).ById(Ada.Id, this._cancellation);
+        Assert.Equal("Countess", found?.Name);
+    }
+
+    [Fact]
+    public async Task AddLogin_WhenTheLoginIsNoOnes_MakesItThePlayersToo()
+    {
+        // Arrange
+        Login discord = new("Discord", "99");
+        await this._store.Add(Ada, this._cancellation);
+
+        // Act
+        await this._store.AddLogin(Ada.Id, discord, this._cancellation);
+
+        // Assert
+        Player? found = await new EfPlayerStore(this._database.NewContext()).ByLogin(discord, this._cancellation);
+        Assert.Equal("ada Ada Discord:99 GitHub:1234 Google:abcd", Described(found));
+    }
+
+    [Fact]
+    public async Task RemoveLogin_WhenThePlayerHasIt_LetsItGoAlone()
+    {
+        // Arrange
+        await this._store.Add(Ada, this._cancellation);
+
+        // Act
+        await this._store.RemoveLogin(Ada.Id, Google, this._cancellation);
+
+        // Assert
+        Player? found = await new EfPlayerStore(this._database.NewContext()).ById(Ada.Id, this._cancellation);
+        Assert.Equal("ada Ada GitHub:1234", Described(found));
+    }
+
     /// <summary>"ada Ada GitHub:1234 Google:abcd": the player, their logins in order of provider.</summary>
     private static string? Described(Player? player) =>
         player is null

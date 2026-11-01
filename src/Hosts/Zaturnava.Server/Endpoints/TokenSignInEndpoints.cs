@@ -29,7 +29,8 @@ internal static class TokenSignInEndpoints
             string callback = SignInServices.CallbackPath(client.Provider.Name);
             _ = routes.MapGet(
                 $"signin/{client.Provider.Name}",
-                (string origin, HttpContext context, IPageHosting page) => Begin(client, origin, context, page)
+                (string origin, string? link, HttpContext context, IPageHosting page) =>
+                    Begin(client, origin, link, context, page)
             );
             _ = routes.MapGet(callback, () => TypedResults.Content(Receiving, "text/html"));
             _ = routes.MapPost(
@@ -54,11 +55,12 @@ internal static class TokenSignInEndpoints
     private static Results<RedirectHttpResult, BadRequest> Begin(
         TokenSignInClient client,
         string origin,
+        string? link,
         HttpContext context,
         IPageHosting page
     )
     {
-        if (!page.Origins.Contains(origin))
+        if (!page.Origins.Contains(origin) || link?.Contains(' ', StringComparison.Ordinal) == true)
         {
             return TypedResults.BadRequest();
         }
@@ -68,7 +70,7 @@ internal static class TokenSignInEndpoints
         string callback = SignInServices.CallbackPath(client.Provider.Name);
         context.Response.Cookies.Append(
             CookieOf(client.Provider),
-            $"{state} {origin}",
+            link is null ? $"{state} {origin}" : $"{state} {origin} {link}",
             new CookieOptions
             {
                 HttpOnly = true,
@@ -100,15 +102,19 @@ internal static class TokenSignInEndpoints
     )
     {
         string cookie = CookieOf(client.Provider);
-        if (context.Request.Cookies[cookie]?.Split(' ') is not [{ } state, { } origin]
+        // the state, the page's origin, and the code to link with, if any
+        string[] kept = context.Request.Cookies[cookie]?.Split(' ') ?? [];
+        if (kept.Length is < 2 or > 3
             || !CryptographicOperations.FixedTimeEquals(
-                Encoding.UTF8.GetBytes(state),
+                Encoding.UTF8.GetBytes(kept[0]),
                 Encoding.UTF8.GetBytes(signingIn.State)
             )
-            || !page.Origins.Contains(origin))
+            || !page.Origins.Contains(kept[1]))
         {
             return TypedResults.Unauthorized();
         }
+
+        string origin = kept[1];
 
         context.Response.Cookies.Delete(cookie);
         using HttpRequestMessage asking = new(HttpMethod.Get, client.Provider.UserInformation);
@@ -123,7 +129,13 @@ internal static class TokenSignInEndpoints
 
         (string key, string? name) =
             client.Provider.IdentityOf(await answer.Content.ReadFromJsonAsync<JsonElement>(cancellationToken));
-        SignedIn signedIn = await players.SignIn(new Login(client.Provider.Name, key), name, cancellationToken);
+        SignedIn signedIn = await SignInEndpoints.SignInOrLink(
+            players,
+            new Login(client.Provider.Name, key),
+            name,
+            kept.ElementAtOrDefault(2),
+            cancellationToken
+        );
         return TypedResults.Ok(new TokenSignedIn(signedIn.Token, signedIn.Player.Name, origin));
     }
 
@@ -149,14 +161,15 @@ internal static class TokenSignInEndpoints
                 state: fragment.get("state") ?? ""
             })
         })
-            .then(response => response.ok ? response.json() : Promise.reject(response.status))
+            .then(async response => response.ok ? response.json() : Promise.reject(await response.json()))
             .then(done => {
                 window.opener?.postMessage({ token: done.token, name: done.name }, done.origin);
                 window.close();
             })
-            .catch(() => {
-                document.getElementById("said").textContent =
-                    "Signing in did not work: close this window, and try again.";
+            .catch(problem => {
+                document.getElementById("said").textContent = problem?.detail
+                    ? `${problem.detail} Close this window to go back.`
+                    : "Signing in did not work: close this window, and try again.";
             });
         </script>
         </html>

@@ -194,7 +194,11 @@ opens, with a service the server is set up for (Proposed):
 |---|---|---|
 | The services to sign in with | `GET api/signin` | Their names, such as `["GitHub", "Google", "Discord", "Itch"]`; none, if none is set up |
 | Sign in, in a window of its own | `GET signin/{service}?origin={the page's origin}` | The service's own page; then, once the person agrees, a page that posts `{"token": "...", "name": "..."}` to the page that opened it, and closes |
-| Who a player's token stands for | `GET api/players/me`, with the player's token | `{"id": "...", "name": "..."}`, or `401` |
+| Who a player's token stands for | `GET api/players/me`, with the player's token | `{"id": "...", "name": "...", "services": ["GitHub"]}`, or `401` |
+| Change the name others see | `PUT api/players/me`, with the player's token, and `{"name": "..."}` | The player, renamed; or `401` |
+| A code to link another service with | `POST api/players/me/link-code`, with the player's token | `{"code": "..."}`, or `401` |
+| Link another service | `GET signin/{service}?origin={the page's origin}&link={code}` | As signing in, but the service's account is added to the player the code was given to |
+| Stop signing in with a service | `DELETE api/players/me/logins/{service}`, with the player's token | The player, without it; `409` if it is their only one; or `401` |
 | Sign out | `DELETE api/players/me/session`, with the player's token | `204`; the token stands for no one any more |
 | Delete the account | `DELETE api/players/me`, with the player's token | `204`, the player forgotten: name, sign-ins, sessions; or `401` |
 
@@ -203,6 +207,14 @@ nothing. The game page does this from the top right of its lobby, and keeps the 
 with a seat's, the server keeps only a player token's hash. Coming back with the same account
 signs in the same player, with a new token. A seat claimed with the player token remembers the player, and
 shows their name; once the account is deleted, it shows `deleted player`.
+
+A player starts out named as the service names them, and may choose another name (at most 40 characters; one of
+only spaces changes nothing). Every seat they hold shows the new name. A player may also sign in with several
+services, as one player (Proposed). They ask for a code, and open the sign-in window with it. The code is used once
+and lasts five minutes, so the player token itself never goes into an address. That service's account is then
+theirs too, and either signs them in. An account that is already another player's is not moved; the window says
+so. A player may stop signing in with any service but the last; to be rid of that one, they delete the account.
+The game page offers all of this under **Profile**.
 
 ## Refusals
 
