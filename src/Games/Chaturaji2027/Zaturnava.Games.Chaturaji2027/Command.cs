@@ -79,7 +79,7 @@ internal sealed class Command(ThroneControl control)
         ImmutableList<int> enemyRajas =
         [
             .. state.Position.Occupants.Values
-                .Where(piece => piece.Kind == Chaturaji2027Pieces.Raja && !state.Retired.Contains(piece.Owner))
+                .Where(piece => this._control.IsLeader(piece.Kind) && !state.Retired.Contains(piece.Owner))
                 .Select(piece => state.Teams.TeamOf(piece.Owner)),
         ];
         return

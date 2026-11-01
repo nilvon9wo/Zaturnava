@@ -129,12 +129,17 @@ internal static class GameStarter
     }
 
     /// <summary>
-    /// A game at once, as hard as asked (<see cref="QuickBots"/>): the player at a seat chosen at random, the
-    /// bots among the others. The seat is the <paramref name="claimant"/>'s.
+    /// A game of the <paramref name="ruleset"/> at once, as hard as asked (<see cref="QuickBots"/>): the player at a
+    /// seat chosen at random, the bots among the others. The seat is the <paramref name="claimant"/>'s.
     /// </summary>
-    public static Task<Seating> Quick(IGameServing games, CatalogDto catalog, Difficulty difficulty, Claimant claimant)
+    public static Task<Seating> Quick(
+        IGameServing games,
+        CatalogDto catalog,
+        RulesetDto ruleset,
+        Difficulty difficulty,
+        Claimant claimant
+    )
     {
-        RulesetDto ruleset = catalog.Rulesets[0];
         int person = Random.Shared.Next(ruleset.SeatCount);
         IEnumerable<string> bots = QuickBots(catalog, ruleset.Id, difficulty, ruleset.SeatCount - 1);
         return Start(games, ruleset.Id, BotsOf(Plans(ruleset.SeatCount, person, bots)), person, null, claimant);

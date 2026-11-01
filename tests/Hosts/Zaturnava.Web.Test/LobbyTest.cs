@@ -124,6 +124,27 @@ public sealed class LobbyTest : IDisposable
     }
 
     [Fact]
+    public void Quick_WhenAnotherGameIsChosen_StartsOneOfThatGame()
+    {
+        // Arrange
+        this._page.Server.MoreRulesets = [new RulesetDto("grand-legions-small", "Grand Legions (small)", 4)];
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Act
+        lobby.Find("select.ruleset").Change("grand-legions-small");
+        lobby.Find("button.quick.medium").Click();
+
+        // Assert
+        Assert.Equal(
+            ("Chaturaji 2027|Grand Legions (small)", "grand-legions-small"),
+            (
+                string.Join('|', lobby.FindAll("select.ruleset option").Select(option => option.TextContent)),
+                this._page.Server.Created?.RulesetId
+            )
+        );
+    }
+
+    [Fact]
     public void Render_WhenNeverSetUpBefore_OffersAQuickGameAlone()
     {
         // Arrange

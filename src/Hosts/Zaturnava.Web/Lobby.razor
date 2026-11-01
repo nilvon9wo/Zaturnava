@@ -21,7 +21,22 @@
     {
         <div class="panel">
             <h2>New game</h2>
-            <p class="rules">@Ruleset(catalog).Name</p>
+            @if (catalog.Rulesets.Count > 1)
+            {
+                <label class="rules">
+                    Game
+                    <select class="ruleset" @bind="this.RulesetId">
+                        @foreach (RulesetDto ruleset in catalog.Rulesets)
+                        {
+                            <option value="@ruleset.Id">@ruleset.Name</option>
+                        }
+                    </select>
+                </label>
+            }
+            else
+            {
+                <p class="rules">@this.Ruleset(catalog).Name</p>
+            }
             <div class="setup-modes">
                 <button class="mode quick-game"
                         aria-pressed="@this.IsPressed(SetupMode.Quick)"
@@ -58,17 +73,17 @@
                     <li>
                         <span class="seat-name">You play</span>
                         <select class="colour" @bind="this.Colour">
-                            @foreach (int seat in Enumerable.Range(0, Ruleset(catalog).SeatCount))
+                            @foreach (int seat in Enumerable.Range(0, this.Ruleset(catalog).SeatCount))
                             {
-                                <option value="@seat">@SeatName(Ruleset(catalog).SeatNames, seat)</option>
+                                <option value="@seat">@SeatName(this.Ruleset(catalog).SeatNames, seat)</option>
                             }
                         </select>
                     </li>
-                    @foreach (int seat in OthersOf(Ruleset(catalog), this._colour))
+                    @foreach (int seat in OthersOf(this.Ruleset(catalog), this._colour))
                     {
                         <li>
                             <span class="seat-name">
-                                @RoleOf(Ruleset(catalog), this._colour, seat), @SeatName(Ruleset(catalog).SeatNames, seat)
+                                @RoleOf(this.Ruleset(catalog), this._colour, seat), @SeatName(this.Ruleset(catalog).SeatNames, seat)
                             </span>
                             <select class="strength"
                                     @bind="this._levels[seat]"
@@ -103,13 +118,13 @@
                     @foreach (int seat in Enumerable.Range(0, this._plans.Count))
                     {
                         <li>
-                            <span class="seat-name">@SeatName(Ruleset(catalog).SeatNames, seat)</span>
+                            <span class="seat-name">@SeatName(this.Ruleset(catalog).SeatNames, seat)</span>
                             <select class="plan" @bind="this._plans[seat]">
                                 <option value="">Person</option>
                                 @foreach (BotDto bot in catalog.Bots)
                                 {
                                     <option value="@bot.Id" disabled="@this.IsTaken(bot.Id, seat)">
-                                        @GameStarter.LabelOf(bot, Ruleset(catalog).Id)
+                                        @GameStarter.LabelOf(bot, this.Ruleset(catalog).Id)
                                     </option>
                                 }
                             </select>
@@ -176,6 +191,7 @@
 
 @code {
     private CatalogDto? _catalog;
+    private string _rulesetId = string.Empty;
     private ImmutableList<GameSummaryDto> _games = [];
     private ImmutableDictionary<string, SeatClaim> _held = ImmutableDictionary<string, SeatClaim>.Empty;
     private const int PersonLevel = GameStarter.PersonLevel;
@@ -198,7 +214,20 @@
 
     protected override async Task OnInitializedAsync() => this._problem = await Requests.Attempt(this.Load);
 
-    private static RulesetDto Ruleset(CatalogDto catalog) => catalog.Rulesets[0];
+    /// <summary>The game chosen to set up: the first the server offers, until another is.</summary>
+    private RulesetDto Ruleset(CatalogDto catalog) =>
+        catalog.Rulesets.FirstOrDefault(ruleset => ruleset.Id == this._rulesetId) ?? catalog.Rulesets[0];
+
+    /// <summary>The game to set up; choosing another sets its seats up afresh.</summary>
+    private string RulesetId
+    {
+        get => this._rulesetId;
+        set
+        {
+            this._rulesetId = value;
+            this.Prepare(this._catalog!);
+        }
+    }
 
     /// <summary>
     /// The seats other than <paramref name="you"/>, in the order they play after it: allies first, then enemies.
@@ -228,22 +257,32 @@
     {
         CatalogDto catalog = await this.Games.Catalog(CancellationToken.None);
         this._games = await this.Games.List(CancellationToken.None);
-        this._plans = GameStarter.Plans(Ruleset(catalog).SeatCount, 0, GameStarter.Unpaid(catalog));
-        this._strengths = GameStarter.Strengths(catalog, Ruleset(catalog).Id);
-        this._levels = [.. Enumerable.Repeat(PersonLevel, Ruleset(catalog).SeatCount)];
-        foreach (int seat in OthersOf(Ruleset(catalog), this._colour).Append(this._colour))
-        {
-            this._levels[seat] =
-                GameStarter.LevelWithRoom(this._strengths, this.TakenBesides(seat), this._strengths.Count / 2);
-        }
-
-        this._picks = [.. Enumerable.Repeat(string.Empty, Ruleset(catalog).SeatCount)];
+        this.Prepare(catalog);
         this._mode = await this.Browser.Setup();
         this._catalog = catalog;
         foreach (GameSummaryDto game in this._games)
         {
             this._held = await this.Browser.Recall(game.Id) is { } claim ? this._held.SetItem(game.Id, claim) : this._held;
         }
+    }
+
+    /// <summary>
+    /// The chosen game's seats set up afresh: seat by seat, the free bots in turn; by strength, the player's ally and
+    /// enemies each at the middle strength with a bot left.
+    /// </summary>
+    private void Prepare(CatalogDto catalog)
+    {
+        this._colour = 0;
+        this._plans = GameStarter.Plans(this.Ruleset(catalog).SeatCount, 0, GameStarter.Unpaid(catalog));
+        this._strengths = GameStarter.Strengths(catalog, this.Ruleset(catalog).Id);
+        this._levels = [.. Enumerable.Repeat(PersonLevel, this.Ruleset(catalog).SeatCount)];
+        foreach (int seat in OthersOf(this.Ruleset(catalog), this._colour).Append(this._colour))
+        {
+            this._levels[seat] =
+                GameStarter.LevelWithRoom(this._strengths, this.TakenBesides(seat), this._strengths.Count / 2);
+        }
+
+        this._picks = [.. Enumerable.Repeat(string.Empty, this.Ruleset(catalog).SeatCount)];
     }
 
     /// <summary>
@@ -279,7 +318,7 @@
     private Task Create(CatalogDto catalog) =>
         this.Sit(async () => await GameStarter.Start(
             this.Games,
-            Ruleset(catalog).Id,
+            this.Ruleset(catalog).Id,
             this.ChosenBots(),
             this._mode == SetupMode.ByStrength ? this._colour : this._plans.IndexOf(string.Empty),
             this._scenario.Length == 0 ? null : this._scenario,
@@ -319,7 +358,13 @@
 
     private Task Quick(CatalogDto catalog, Difficulty difficulty) =>
         this.Sit(async () =>
-            await GameStarter.Quick(this.Games, catalog, difficulty, await this.Browser.Claimant())
+            await GameStarter.Quick(
+                this.Games,
+                catalog,
+                this.Ruleset(catalog),
+                difficulty,
+                await this.Browser.Claimant()
+            )
         );
 
     private Task Join(string gameId, int seat) =>

@@ -24,7 +24,7 @@ public sealed class DependencyRulesTest
             // one board, one variant, one kind of player: each a plug-in to the engine
             ["Topology.SquareGrid"] = ["Engine"],
             ["Games.Chaturaji2027"] = ["Engine", "Topology.SquareGrid"],
-            ["Games.GrandLegions"] = ["Engine"],
+            ["Games.GrandLegions"] = ["Engine", "Topology.SquareGrid", "Games.Chaturaji2027"],
             ["Bots"] = ["Engine"],
 
             // the use cases, and the adapters plugged into their ports
@@ -57,7 +57,7 @@ public sealed class DependencyRulesTest
                 "Application", "Bots", "Client", "Contracts", "Engine", "Hosting", "Hosting.Discord",
                 "Hosting.GitHub", "Hosting.Google", "Hosting.Itch", "Mcp",
                 "Persistence.EfCore", "Persistence.EfCore.Sqlite", "Persistence.EfCore.SqlServer",
-                "Persistence.InMemory", "Topology.SquareGrid", "Games.Chaturaji2027",
+                "Persistence.InMemory", "Topology.SquareGrid", "Games.Chaturaji2027", "Games.GrandLegions",
             ],
         }.ToImmutableDictionary();
 

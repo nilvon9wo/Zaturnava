@@ -69,6 +69,9 @@ internal sealed class FakeGameServer : IGameServing
 
     public CreateGameRequest? Created { get; private set; }
 
+    /// <summary>The rulesets the catalog offers after Chaturaji 2027: none, unless a test sets some.</summary>
+    public ImmutableList<RulesetDto> MoreRulesets { get; set; } = [];
+
     /// <summary>The scenarios the catalog offers: none, unless a test sets some.</summary>
     public ImmutableList<ScenarioDto> Scenarios { get; set; } = [];
 
@@ -90,6 +93,7 @@ internal sealed class FakeGameServer : IGameServing
                         SeatNames = SeatNames,
                         SeatTeams = [0, 1, 0, 1],
                     },
+                    .. this.MoreRulesets,
                 ],
                 [
                     new BotDto("random", "Random", "Any move.", UsesAi: false) { Ratings = Rated(1000) },
