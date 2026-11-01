@@ -90,4 +90,22 @@ public sealed class QuickArmyTest
             laid
         );
     }
+
+    [Theory]
+    [MemberData(nameof(Games))]
+    public void Layout_ForEachQuickGame_PutsTheLeaderInTheFarCornerOnlyWhereTheKingdomsTouch(string id)
+    {
+        // Arrange - only the small game's kingdoms touch: 3 + 3 cells fill its side of 6
+        QuickGame game = QuickGame.All.Single(quick => quick.Id == id);
+
+        // Act
+        ArmyPiece leader = QuickArmy.Layout(game, QuickArmy.Pick(game))
+            .Single(piece => GrandLegionsRules.Leaders.Contains(piece.Kind));
+
+        // Assert
+        Assert.Equal(
+            (game == QuickGame.Small, game.HasNeutralZone ? game.KingdomWidth - 1 : 0, 0),
+            (!game.HasNeutralZone, leader.Column, leader.Row)
+        );
+    }
 }

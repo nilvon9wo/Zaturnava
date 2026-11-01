@@ -11,7 +11,9 @@ namespace Net.NowhereAtAll.Zaturnava.Games.GrandLegions;
 /// spends what is left of the budget on better pieces of the same class, a piece not yet in the army before one
 /// that is, the most valuable first; then, while the kingdom has room, adds the best pieces still affordable,
 /// never another leader. Pieces an area holds (a palace, a river) are left out. The leader takes the back rank's
-/// inner corner, the other classes the rest of the back ranks, infantry the front ones.
+/// inner corner, the other classes the rest of the back ranks, infantry the front ones. Where the kingdoms touch,
+/// with no neutral ground between them, the leader takes the far corner instead, as far as can be from the
+/// neighbours, so that it is likely to outlive the first moves.
 /// </summary>
 public static class QuickArmy
 {
@@ -43,10 +45,12 @@ public static class QuickArmy
     /// <summary>The army, as seat 0 lays it out in its kingdom, from the bottom-left corner.</summary>
     public static ImmutableList<ArmyPiece> Layout([Required] QuickGame game, [Required] ImmutableList<GrandPiece> army)
     {
+        IEnumerable<int> outward = Enumerable.Range(0, game.KingdomWidth).Reverse();
+        IEnumerable<int> columns = game.HasNeutralZone ? outward : Enumerable.Range(0, game.KingdomWidth);
         ImmutableList<(int Column, int Row)> backToFront =
         [
             .. Enumerable.Range(0, game.KingdomDepth)
-                .SelectMany(row => Enumerable.Range(0, game.KingdomWidth).Reverse().Select(column => (column, row))),
+                .SelectMany(row => columns.Select(column => (column, row))),
         ];
         IEnumerable<GrandPiece> rear =
             RearOrder.SelectMany(pieceClass => army.Where(piece => piece.Class == pieceClass));

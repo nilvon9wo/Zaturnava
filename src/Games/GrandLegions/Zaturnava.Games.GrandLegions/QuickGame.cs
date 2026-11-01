@@ -54,6 +54,12 @@ public sealed record QuickGame(
     /// <summary>How many cells each kingdom has, for an army to start on.</summary>
     public int Cells => this.KingdomWidth * this.KingdomDepth;
 
+    /// <summary>
+    /// Whether neutral ground lies between neighbouring kingdoms: as the kingdoms turn about the board, one's back
+    /// rank and its neighbour's depth together fall short of the side. Where they do not, the kingdoms touch.
+    /// </summary>
+    public bool HasNeutralZone => this.KingdomWidth + this.KingdomDepth < this.Side;
+
     private static ImmutableDictionary<PieceClass, int> Counts(params (PieceClass Class, int Count)[] counts) =>
         counts.ToImmutableDictionary(count => count.Class, count => count.Count);
 }
