@@ -1,14 +1,19 @@
 #!/usr/bin/env bash
 # Build the solution and run test projects under Linux, from Windows through WSL, in this checkout itself:
 #
-#     wsl -d Ubuntu -- bash scripts/wsl-test.sh [Zaturnava.X.Test ...]
+#     wsl -d Ubuntu -- bash scripts/wsl-test.sh [--release] [Zaturnava.X.Test ...]
 #
-# With no names, every test project runs. WSL starts in the current folder, so run it from the repository's
+# With no names, every test project runs. With --release, the Release build is tested, as CI does too: optimized IL
+# branches differently, so full coverage in Debug does not imply it in Release. WSL starts in the current folder, so run it from the repository's
 # root. The build goes to artifacts/wsl/ (git-ignored), apart from Windows' own bin/ and obj/, so the two never
 # clash. For a machine whose application control blocks the test assemblies a Windows build makes.
 set -u -o pipefail
 cd "$(dirname "$0")/.." || exit 1
 artifacts=(-p:UseArtifactsOutput=true "-p:ArtifactsPath=$PWD/artifacts/wsl")
+if [ "${1:-}" = "--release" ]; then
+    artifacts+=(-c Release)
+    shift
+fi
 # A failed build stops here, rather than testing what an earlier build left.
 dotnet build Zaturnava.slnx "${artifacts[@]}" -nologo 2>&1 | grep -E "error|Build succeeded" | sort -u || exit 1
 projects=("$@")

@@ -104,6 +104,21 @@ public sealed class PlayerBarTest : IDisposable
     }
 
     [Fact]
+    public void Nickname_WhenCleared_IsNoLongerShownToPlayBy()
+    {
+        // Arrange
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", NicknameKey).SetResult("Bea");
+        IRenderedComponent<PlayerBar> bar = this._page.Render<PlayerBar>();
+        bar.Find("button.open-sign-in").Click();
+
+        // Act
+        bar.Find("input.nickname").Change("   ");
+
+        // Assert
+        Assert.Empty(bar.FindAll(".guest-name"));
+    }
+
+    [Fact]
     public void Nickname_WhenChanged_IsRememberedWithoutTheSpacesAround()
     {
         // Arrange
