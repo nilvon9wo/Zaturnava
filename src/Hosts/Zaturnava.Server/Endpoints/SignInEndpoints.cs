@@ -54,7 +54,8 @@ internal static class SignInEndpoints
 
     /// <summary>
     /// The player whose login it is signed in; or, with a <paramref name="link"/> code, the login linked to the
-    /// player the code was issued to, who is signed in.
+    /// player the code was issued to, who is signed in. A sign-in carried through a service's cookie brings back an
+    /// empty code, not none, if it was given none.
     /// </summary>
     public static Task<SignedIn> SignInOrLink(
         PlayerService players,
@@ -63,7 +64,7 @@ internal static class SignInEndpoints
         string? link,
         CancellationToken cancellationToken
     ) =>
-        link is null
+        string.IsNullOrEmpty(link)
             ? players.SignIn(login, name, cancellationToken)
             : players.Link(link, login, cancellationToken);
 

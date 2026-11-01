@@ -52,7 +52,10 @@ internal sealed class VouchedHandler : IAuthenticationSignOutHandler
 {
     public const string Header = "X-Vouched";
 
-    /// <summary>The code to link with, that the sign-in carried through the service, if any.</summary>
+    /// <summary>
+    /// The code to link with, that the sign-in carried through the service, if any: empty, if none, as a sign-in
+    /// carried through a real service's cookie brings back no code.
+    /// </summary>
     public const string LinkHeader = "X-Link";
 
     private HttpContext? _context;
@@ -76,13 +79,13 @@ internal sealed class VouchedHandler : IAuthenticationSignOutHandler
 
     public Task SignOutAsync(AuthenticationProperties? properties) => Task.CompletedTask;
 
-    private AuthenticationProperties Carried()
-    {
-        string? link = this._context?.Request.Headers[LinkHeader].ToString();
-        return new AuthenticationProperties(
-            new Dictionary<string, string?> { [SignInEndpoints.LinkItem] = string.IsNullOrEmpty(link) ? null : link }
+    private AuthenticationProperties Carried() =>
+        new(
+            new Dictionary<string, string?>
+            {
+                [SignInEndpoints.LinkItem] = this._context?.Request.Headers[LinkHeader].ToString(),
+            }
         );
-    }
 
     private static AuthenticationTicket Ticket(string[] parts, AuthenticationProperties properties)
     {
