@@ -63,6 +63,12 @@ internal sealed class FakeGameServer : IGameServing
         },
     ];
 
+    /// <summary>How many games match in all, whatever the page; as many as <see cref="Games"/>, if unset.</summary>
+    public int? Total { get; set; }
+
+    /// <summary>What the games were last listed by; null, if by nothing.</summary>
+    public GameListQuery? Listed { get; private set; }
+
     public Exception? Failure { get; set; }
 
     public ConcurrentQueue<string> Calls { get; } = new();
@@ -112,8 +118,14 @@ internal sealed class FakeGameServer : IGameServing
     private static ImmutableDictionary<string, int> Rated(int rating) =>
         ImmutableDictionary<string, int>.Empty.Add("chaturaji-2027", rating);
 
-    public Task<ImmutableList<GameSummaryDto>> List(CancellationToken cancellationToken) =>
-        this.Answer("list", this.Games);
+    public Task<GamePageDto> List(GameListQuery? query, CancellationToken cancellationToken)
+    {
+        this.Listed = query;
+        return this.Answer(
+            "list",
+            new GamePageDto(this.Games, this.Total ?? this.Games.Count, query?.Page ?? 1, query?.PageSize ?? 20)
+        );
+    }
 
     public Task<GameCreatedDto> Create([Required] CreateGameRequest request, CancellationToken cancellationToken)
     {

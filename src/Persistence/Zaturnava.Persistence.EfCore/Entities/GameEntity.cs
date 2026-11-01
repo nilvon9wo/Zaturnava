@@ -14,6 +14,15 @@ public sealed class GameEntity
 
     public int Version { get; set; }
 
+    /// <summary>Whether the game is over, as last saved; null for a game saved before this was kept.</summary>
+    public bool? IsOver { get; set; }
+
+    /// <summary>
+    /// When the game was last saved, in UTC; null for a game saved before this was kept. A date and time, not one
+    /// with an offset, as SQLite can order only those.
+    /// </summary>
+    public DateTime? LastChanged { get; set; }
+
     public List<SeatEntity> Seats { get; set; } = [];
 
     public List<ActionEntity> Actions { get; set; } = [];

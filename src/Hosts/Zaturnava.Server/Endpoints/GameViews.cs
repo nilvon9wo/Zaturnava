@@ -38,29 +38,28 @@ internal static class GameViews
         };
 
     /// <summary>
-    /// The game as a lobby lists it, each person's seat by what <paramref name="names"/> call whoever holds it.
+    /// The game as a lobby lists it, as stored: its seats named by its rules, and each person's seat by what
+    /// <paramref name="names"/> call whoever holds it.
     /// </summary>
     public static GameSummaryDto SummaryOf(
-        GameSnapshot snapshot,
+        GameListing game,
+        IRulesApplying rules,
         ImmutableDictionary<HumanSeat, string>? names = null
-    )
-    {
-        GameRecord record = snapshot.Record;
-        return new GameSummaryDto(
-            record.Id.Value,
-            record.RulesetId,
-            record.Version,
-            [.. record.Controllers.Select((controller, seat) => (controller, seat))
+    ) =>
+        new(
+            game.Id.Value,
+            game.RulesetId,
+            game.Version,
+            [.. game.Controllers.Select((controller, seat) => (controller, seat))
                 .Where(entry => entry.controller.IsOpen)
                 .Select(entry => entry.seat)],
-            [.. record.Controllers.Select(controller => PersonOf(controller, names) ?? controller.Player)],
-            record.Actions.Count
+            [.. game.Controllers.Select(controller => PersonOf(controller, names) ?? controller.Player)],
+            game.Moves
         )
         {
-            SeatNames = [.. snapshot.State.Seats.Select(seat => snapshot.Rules.NameOf(seat.Id))],
-            IsOver = snapshot.State.Outcome is not null,
+            SeatNames = [.. game.Controllers.Select((_, seat) => rules.NameOf(new SeatId(seat)))],
+            IsOver = game.IsOver,
         };
-    }
 
     /// <summary>A game's history, on the wire: the same shape self-play writes it in.</summary>
     public static GameHistoryDto HistoryOf(GameHistory history) =>

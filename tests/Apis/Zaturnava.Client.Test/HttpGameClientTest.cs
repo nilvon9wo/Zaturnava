@@ -12,6 +12,12 @@ public sealed class HttpGameClientTest
          "outcome":{"winners":[0,2],"ending":"agreement","reason":"every player agreed to end it"}}
         """;
 
+    private const string PageJson =
+        """
+        {"games":[{"id":"g","rulesetId":"chaturaji-2027","version":2,"openSeats":[1]}],"total":1,"page":1,
+         "pageSize":20}
+        """;
+
     private const string ViewJson =
         """
         {"id":"g","rulesetId":"chaturaji-2027","rulesetName":"Chaturaji 2027","version":1,"turnNumber":1,
@@ -46,16 +52,29 @@ public sealed class HttpGameClientTest
     public async Task List_WhenAsked_GetsTheGames()
     {
         // Arrange
-        StubServer server = new(
-            HttpStatusCode.OK,
-            """[{"id":"g","rulesetId":"chaturaji-2027","version":2,"openSeats":[1]}]"""
-        );
+        StubServer server = new(HttpStatusCode.OK, PageJson);
 
         // Act
-        ImmutableList<GameSummaryDto> games = await Client(server).List(this._cancellation);
+        GamePageDto page = await Client(server).List(null, this._cancellation);
 
         // Assert
-        Assert.Equal(("GET", "/api/games", "g"), (server.Method, server.Path, games.Single().Id));
+        Assert.Equal(
+            ("GET", "/api/games", string.Empty, "g", 1),
+            (server.Method, server.Path, server.Query, page.Games.Single().Id, page.Total)
+        );
+    }
+
+    [Fact]
+    public async Task List_WhenGivenAQuery_AsksByIt()
+    {
+        // Arrange
+        StubServer server = new(HttpStatusCode.OK, PageJson);
+
+        // Act
+        _ = await Client(server).List(new GameListQuery("grand legions", Open: true, Page: 2), this._cancellation);
+
+        // Assert
+        Assert.Equal("?ruleset=grand%20legions&open=true&page=2", server.Query);
     }
 
     [Fact]

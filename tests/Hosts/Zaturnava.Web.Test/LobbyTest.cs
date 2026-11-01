@@ -684,6 +684,159 @@ public sealed class LobbyTest : IDisposable
         );
     }
 
+    [Fact]
+    public void Render_WhenLoaded_ListsTheFirstPageOfTheGamesNotOver()
+    {
+        // Arrange - nothing beyond the server
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Assert
+        Assert.Equal(
+            (new GameListQuery(Over: false), "playing", 0),
+            (this._page.Server.Listed, lobby.Find("select.filter-state").GetAttribute("value"), Pages(lobby))
+        );
+    }
+
+    [Theory]
+    [InlineData("joinable", true, false)]
+    [InlineData("finished", null, true)]
+    [InlineData("every", null, null)]
+    [InlineData("playing", null, false)]
+    public void FilterState_WhenChosen_ListsTheGamesInThatState(string state, bool? open, bool? over)
+    {
+        // Arrange
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Act
+        lobby.Find("select.filter-state").Change(state);
+
+        // Assert
+        Assert.Equal(
+            (new GameListQuery(Open: open, Over: over), state),
+            (this._page.Server.Listed, lobby.Find("select.filter-state").GetAttribute("value"))
+        );
+    }
+
+    [Theory]
+    [InlineData("chaturaji-2027", "chaturaji-2027")]
+    [InlineData("", null)]
+    public void FilterRuleset_WhenChosen_ListsOnlyThatGamesOrAny(string chosen, string? expected)
+    {
+        // Arrange
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Act
+        lobby.Find("select.filter-ruleset").Change(chosen);
+
+        // Assert
+        Assert.Equal(new GameListQuery(expected, Over: false), this._page.Server.Listed);
+    }
+
+    [Theory]
+    [InlineData(true, true)]
+    [InlineData(false, null)]
+    public void FilterPeople_WhenTicked_ListsOnlyGamesWithNoBotsOrAny(bool ticked, bool? expected)
+    {
+        // Arrange
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Act
+        lobby.Find("input.filter-people").Change(ticked);
+
+        // Assert
+        Assert.Equal(new GameListQuery(PeopleOnly: expected, Over: false), this._page.Server.Listed);
+    }
+
+    [Fact]
+    public void Render_WhenNoGameMatches_SaysSo()
+    {
+        // Arrange
+        this._page.Server.Games = [];
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Assert
+        Assert.Equal("No games like that.", lobby.Find("p.no-games").TextContent);
+    }
+
+    [Fact]
+    public void Render_WhenMoreGamesMatchThanAPageHolds_OffersOnlyTheNextPage()
+    {
+        // Arrange
+        this._page.Server.Total = 45;
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Assert
+        Assert.Equal(
+            ("Page 1 of 3 (45 games)", true, false),
+            (
+                lobby.Find("span.page-number").TextContent,
+                lobby.Find("button.previous").HasAttribute("disabled"),
+                lobby.Find("button.next").HasAttribute("disabled")
+            )
+        );
+    }
+
+    [Fact]
+    public void Next_WhenClicked_ListsTheNextPage()
+    {
+        // Arrange
+        this._page.Server.Total = 45;
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Act
+        lobby.Find("button.next").Click();
+
+        // Assert
+        Assert.Equal(
+            (new GameListQuery(Over: false, Page: 2), "Page 2 of 3 (45 games)"),
+            (this._page.Server.Listed, lobby.Find("span.page-number").TextContent)
+        );
+    }
+
+    [Fact]
+    public void Previous_WhenClickedOnTheLastPage_ListsThePageBeforeAndAFilterListsTheFirstAgain()
+    {
+        // Arrange
+        this._page.Server.Total = 45;
+        IRenderedComponent<Lobby> lobby = this.Render();
+        lobby.Find("button.next").Click();
+        lobby.Find("button.next").Click();
+        bool isLast = lobby.Find("button.next").HasAttribute("disabled");
+
+        // Act
+        lobby.Find("button.previous").Click();
+        GameListQuery? turned = this._page.Server.Listed;
+        lobby.Find("select.filter-state").Change("every");
+
+        // Assert
+        Assert.Equal(
+            (true, 2, null),
+            (isLast, turned?.Page, this._page.Server.Listed?.Page)
+        );
+    }
+
+    [Fact]
+    public void Filter_WhenTheServerCannotBeReached_SaysWhy()
+    {
+        // Arrange
+        IRenderedComponent<Lobby> lobby = this.Render();
+        this._page.Server.Failure = new HttpRequestException("The server is asleep.");
+
+        // Act
+        lobby.Find("select.filter-state").Change("every");
+
+        // Assert
+        Assert.Equal("The server is asleep.", lobby.Find("p.problem").TextContent);
+    }
+
+    private static int Pages(IRenderedComponent<Lobby> lobby) => lobby.FindAll("div.pages").Count;
+
     private static string SeatNames(IRenderedComponent<Lobby> lobby) =>
         string.Join('|', lobby.FindAll("span.seat-name").Select(name => name.TextContent.Trim()));
 

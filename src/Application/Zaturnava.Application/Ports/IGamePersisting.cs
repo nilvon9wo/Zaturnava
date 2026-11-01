@@ -11,6 +11,22 @@ public interface IGamePersisting
 
     Task<ImmutableList<GameRecord>> List(CancellationToken cancellationToken);
 
+    /// <summary>
+    /// The page of games <paramref name="query"/> asks for, of the <paramref name="rulesets"/> given, newest change
+    /// first (games never changed since this was kept last), read as stored: no game is replayed.
+    /// </summary>
+    Task<GamePage> Page(
+        [Required] GameQuery query,
+        [Required] IReadOnlySet<string> rulesets,
+        CancellationToken cancellationToken
+    );
+
+    /// <summary>The games saved before whether each is over was kept.</summary>
+    Task<ImmutableList<GameRecord>> Unsummarized(CancellationToken cancellationToken);
+
+    /// <summary>Keeps whether the game is over, as worked out, leaving its version as it is.</summary>
+    Task MarkOver(GameId id, bool isOver, CancellationToken cancellationToken);
+
     Task Add([Required] GameRecord record, CancellationToken cancellationToken);
 
     /// <summary>Stores <paramref name="record"/> over the one whose version is one less.</summary>

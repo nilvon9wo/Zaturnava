@@ -190,10 +190,10 @@ public sealed partial class SignInApiTest(SigningInServer server) : IClassFixtur
         // Assert
         string? named = (await client.Get(created.GameId, this._cancellation)).Seats[0].Player;
         using HttpResponseMessage deleted = await this.Send(HttpMethod.Delete, GameRoutes.Me, token);
-        ImmutableList<GameSummaryDto> games = await client.List(this._cancellation);
+        GamePageDto page = await client.List(null, this._cancellation);
         Assert.Equal(
             ("Ada", PlayerService.Deleted),
-            (named, games.Single(game => game.Id == created.GameId).Players[0])
+            (named, page.Games.Single(game => game.Id == created.GameId).Players[0])
         );
     }
 

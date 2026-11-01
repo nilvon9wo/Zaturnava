@@ -63,6 +63,8 @@ public sealed class GameDbContext(DbContextOptions<GameDbContext> options) : DbC
     {
         _ = game.HasKey(entity => entity.Id);
         _ = game.Property(entity => entity.Version).IsConcurrencyToken();
+        // a lobby lists the games newest change first
+        _ = game.HasIndex(entity => entity.LastChanged);
         _ = game.HasMany(entity => entity.Seats).WithOne().HasForeignKey(seat => seat.GameId);
         _ = game.HasMany(entity => entity.Actions).WithOne().HasForeignKey(action => action.GameId);
     }

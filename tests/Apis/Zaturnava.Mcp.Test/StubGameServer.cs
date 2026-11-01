@@ -52,11 +52,15 @@ internal sealed class StubGameServer : IGameServing
             )
         );
 
-    public Task<ImmutableList<GameSummaryDto>> List(CancellationToken cancellationToken) =>
+    public Task<GamePageDto> List(GameListQuery? query, CancellationToken cancellationToken) =>
         this.Answer(
-            ImmutableList.Create(
-                new GameSummaryDto(GameId, "chaturaji-2027", 1, [0], [GameSummaryDto.Open, "random"], 0)
-            )
+            new GamePageDto(
+                [new GameSummaryDto(GameId, "chaturaji-2027", 1, [0], [GameSummaryDto.Open, "random"], 0)],
+                1,
+                1,
+                20
+            ),
+            query
         );
 
     public Task<GameCreatedDto> Create([Required] CreateGameRequest request, CancellationToken cancellationToken) =>
