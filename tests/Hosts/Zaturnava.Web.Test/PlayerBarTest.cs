@@ -331,7 +331,7 @@ public sealed class PlayerBarTest : IDisposable
     }
 
     [Fact]
-    public void Link_WhenClicked_OpensTheWindowWithTheCodeWhichIsThenSpent()
+    public void Link_WhenClicked_OpensTheWindowWithTheCodeAndAsksAnotherSoTheLinksStayOffered()
     {
         // Arrange
         IRenderedComponent<PlayerBar> bar = this.SignedInAsAda(["GitHub"]);
@@ -342,7 +342,7 @@ public sealed class PlayerBarTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ("https://games.example/signin/Discord?origin=http%3A%2F%2Flocalhost&link=code-known", 0),
+            ("https://games.example/signin/Discord?origin=http%3A%2F%2Flocalhost&link=code-known", 1),
             (
                 this._page.JSInterop.Invocations["zaturnava.signIn"].Single().Arguments[0],
                 bar.FindAll("button.link").Count
