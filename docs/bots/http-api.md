@@ -35,7 +35,8 @@ A game is created with its ruleset and, for each seat in order, the id of the bo
 Claiming an open seat returns its **token**, once: the server keeps only its hash, and nothing else
 can act for the seat. Send it with every action, as `Authorization: Bearer {token}`. A seat is the
 whole of what a token holds. A player who has [signed in](#signing-in) may send their player token with the
-claim, as `Authorization: Bearer {player token}`: the seat then shows their name to everyone at the table.
+claim, as `Authorization: Bearer {player token}`: the seat then shows their name to everyone at the table. A player
+token that stands for no one (signed out, or the account deleted) is refused (`403`), rather than taken as a guest's.
 Without one, the seat is a guest's, shown as `guest`; or, if the claim's body gives a nickname (at most 20
 characters, `{"nickname": "Ada"}`), as `Ada (guest)`, so that no guest passes for a player who signed in. The
 body may be left out. A guest may read the table's talk, and their team's, but not speak.
@@ -170,7 +171,7 @@ opens, with a service the server is set up for (Proposed):
 
 | | Request | Reply |
 |---|---|---|
-| The services to sign in with | `GET api/signin` | Their names, such as `["GitHub", "Google", "Discord"]`; none, if none is set up |
+| The services to sign in with | `GET api/signin` | Their names, such as `["GitHub", "Google", "Discord", "Itch"]`; none, if none is set up |
 | Sign in, in a window of its own | `GET signin/{service}?origin={the page's origin}` | The service's own page; then, once the person agrees, a page that posts `{"token": "...", "name": "..."}` to the page that opened it, and closes |
 | Who a player's token stands for | `GET api/players/me`, with the player's token | `{"id": "...", "name": "..."}`, or `401` |
 | Sign out | `DELETE api/players/me/session`, with the player's token | `204`; the token stands for no one any more |

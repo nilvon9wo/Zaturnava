@@ -9,6 +9,7 @@ using Net.NowhereAtAll.Zaturnava.Hosting;
 using Net.NowhereAtAll.Zaturnava.Hosting.Discord;
 using Net.NowhereAtAll.Zaturnava.Hosting.GitHub;
 using Net.NowhereAtAll.Zaturnava.Hosting.Google;
+using Net.NowhereAtAll.Zaturnava.Hosting.Itch;
 
 namespace Net.NowhereAtAll.Zaturnava.Server.Composition;
 
@@ -26,33 +27,51 @@ internal static class SignInServices
     public const string ClientSecretKey = "ClientSecret";
     public const string ExternalScheme = "External";
 
-    /// <summary>Every service the server knows how to sign in with.</summary>
+    /// <summary>Every service the server knows how to sign in with, by OAuth's code grant.</summary>
     public static readonly ImmutableList<ISignInProviding> Known =
         [new GitHubSignIn(), new GoogleSignIn(), new DiscordSignIn()];
+
+    /// <summary>
+    /// Every service the server knows how to sign in with by OAuth's implicit grant: set up by its <c>ClientId</c>
+    /// alone, as it has no secret.
+    /// </summary>
+    public static readonly ImmutableList<ITokenSignInProviding> KnownByToken = [new ItchSignIn()];
 
     private static readonly TimeSpan ExternalLifetime = TimeSpan.FromMinutes(10);
 
     public static IServiceCollection AddSignIn(this IServiceCollection services, IConfiguration configuration) =>
-        services.AddSignIn(configuration, Known);
+        services.AddSignIn(configuration, Known, KnownByToken);
 
     public static IServiceCollection AddSignIn(
         this IServiceCollection services,
         IConfiguration configuration,
-        ImmutableList<ISignInProviding> known
+        ImmutableList<ISignInProviding> known,
+        ImmutableList<ITokenSignInProviding> knownByToken
     )
     {
         ImmutableList<SignInClient> clients = [.. known.Select(provider => ClientOf(configuration, provider))
             .OfType<SignInClient>()];
+        ImmutableList<TokenSignInClient> byToken = [.. knownByToken
+            .Select(provider => TokenClientOf(configuration, provider))
+            .OfType<TokenSignInClient>()];
         _ = clients.Aggregate(
             services.AddAuthentication().AddCookie(ExternalScheme, External),
             (added, client) => added.AddOAuth(client.Provider.Name, options => Configure(options, client))
         );
-        return services.AddSingleton(new SignInProviders([.. clients.Select(client => client.Provider.Name)]));
+        _ = services.AddHttpClient(TokenSignInClients.Backchannel);
+        return services
+            .AddSingleton(new TokenSignInClients(byToken))
+            .AddSingleton(new SignInProviders([
+                .. clients.Select(client => client.Provider.Name),
+                .. byToken.Select(client => client.Provider.Name),
+            ]));
     }
 
     /// <summary>Where the service sends someone back to, once they have agreed: <c>/signin-{name}</c>.</summary>
-    public static string CallbackPath(ISignInProviding provider) =>
-        "/signin-" + provider.Name.ToLowerInvariant();
+    public static string CallbackPath(ISignInProviding provider) => CallbackPath(provider.Name);
+
+    /// <summary>Where the service sends someone back to, once they have agreed: <c>/signin-{name}</c>.</summary>
+    public static string CallbackPath(string provider) => "/signin-" + provider.ToLowerInvariant();
 
     /// <summary>Asks the service who someone is, with the token just given for them, and takes their claims.</summary>
     public static async Task Identify(OAuthCreatingTicketContext context)
@@ -74,6 +93,11 @@ internal static class SignInServices
             ? new SignInClient(provider, id, secret)
             : null;
     }
+
+    private static TokenSignInClient? TokenClientOf(IConfiguration configuration, ITokenSignInProviding provider) =>
+        configuration[$"{ProvidersKey}:{provider.Name}:{ClientIdKey}"] is { Length: > 0 } id
+            ? new TokenSignInClient(provider, id)
+            : null;
 
     private static void External(CookieAuthenticationOptions options)
     {
@@ -106,6 +130,16 @@ internal static class SignInServices
 
 /// <summary>The names of the services a person may sign in with here.</summary>
 internal sealed record SignInProviders(ImmutableList<string> Names);
+
+/// <summary>A service to sign in with by OAuth's implicit grant, and this server's client there.</summary>
+internal sealed record TokenSignInClient(ITokenSignInProviding Provider, string Id);
+
+/// <summary>The services set up here to sign in with by OAuth's implicit grant.</summary>
+internal sealed record TokenSignInClients(ImmutableList<TokenSignInClient> Clients)
+{
+    /// <summary>The HTTP client by which the server asks such a service who someone is.</summary>
+    public const string Backchannel = "token-sign-in";
+}
 
 /// <summary>
 /// Who someone is, as the service says (<see cref="ISignInProviding.IdentityOf"/>): the key it knows them by, and

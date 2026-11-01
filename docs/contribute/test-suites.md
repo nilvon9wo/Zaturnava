@@ -15,7 +15,7 @@ One test project per project, each measuring that project at 100% (see
 | `Zaturnava.Persistence.EfCore.Sqlite.Test` | The SQLite migrations: applied to a real database, each read both ways, and none missing for the model. |
 | `Zaturnava.Persistence.EfCore.SqlServer.Test` | The SQL Server migrations, without a server: each read both ways, and none missing for the model. |
 | `Zaturnava.Hosting.Test` | The listed page host. |
-| `Zaturnava.Hosting.Itch.Test` | itch.io's origins. |
+| `Zaturnava.Hosting.Itch.Test` | itch.io's origins; its sign-in endpoints and scope, and who someone is from their itch.io profile. |
 | `Zaturnava.Hosting.GitHub.Test` | GitHub's sign-in endpoints, and who someone is from their GitHub profile. |
 | `Zaturnava.Hosting.Google.Test` | Google's sign-in endpoints and scopes, and who someone is from what Google says of them. |
 | `Zaturnava.Hosting.Discord.Test` | Discord's sign-in endpoints and scope, and who someone is from their Discord user. |

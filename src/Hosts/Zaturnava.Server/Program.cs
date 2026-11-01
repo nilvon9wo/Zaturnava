@@ -17,5 +17,6 @@ _ = app.MapScalarApiReference(IndexEndpoints.ReferencePrefix);
 _ = app.MapIndex();
 _ = app.MapGames();
 _ = app.MapSignIn();
+_ = app.MapTokenSignIn();
 _ = app.MapHostedMcp();
 app.Run();
