@@ -48,10 +48,6 @@ internal static class GameStarter
     public static ImmutableList<string?> BotsOf(IEnumerable<string> plans) =>
         [.. plans.Select(plan => plan.Length == 0 ? null : plan)];
 
-    /// <summary>The bots that may be seated without anyone choosing them: none that is paid for each use.</summary>
-    public static IEnumerable<string> Unpaid(CatalogDto catalog) =>
-        catalog.Bots.Where(bot => !bot.IsPaid).Select(bot => bot.Id);
-
     /// <summary>
     /// The bots a quick game seats, <paramref name="count"/> of them, shuffled: the easiest at the ruleset, by
     /// their ratings, for an easy game; the hardest, for a hard one; any, for a medium one. Never one paid for
@@ -68,22 +64,6 @@ internal static class GameStarter
             _ => unpaid.OrderBy(_ => Random.Shared.Next()).Take(count),
         };
         return chosen.Select(bot => bot.Id).OrderBy(_ => Random.Shared.Next());
-    }
-
-    /// <summary>
-    /// How a bot is offered in a list: its name, then whether it uses AI, its rating at the ruleset, and whether
-    /// it costs tokens - "Bot: Sage (Elo 2689)", "Bot: Claude (AI, costs tokens)".
-    /// </summary>
-    public static string LabelOf(BotDto bot, string rulesetId)
-    {
-        string?[] notes =
-        [
-            bot.UsesAi ? "AI" : null,
-            bot.Ratings.TryGetValue(rulesetId, out int rating) ? $"Elo {rating}" : null,
-            bot.IsPaid ? "costs tokens" : null,
-        ];
-        string noted = string.Join(", ", notes.OfType<string>());
-        return noted.Length == 0 ? $"Bot: {bot.Name}" : $"Bot: {bot.Name} ({noted})";
     }
 
     /// <summary>

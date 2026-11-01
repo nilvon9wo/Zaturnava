@@ -27,7 +27,7 @@ internal sealed class Browser(IJSRuntime js)
     private const string PlayerKey = "zaturnava.player";
     private const string NicknameKey = "zaturnava.nickname";
     private const string SetupKey = "zaturnava.setup";
-    private const string ByStrength = "strength";
+    private const string Custom = "strength";
     private const string SeatBySeat = "seats";
     private const string Everything = "everything";
     private const string OldestFirst = "oldest";
@@ -97,24 +97,11 @@ internal sealed class Browser(IJSRuntime js)
     public ValueTask SetAiTalkHidden(bool isHidden) => this.Save(AiTalkKey, isHidden ? Hidden : "shown");
 
     /// <summary>How the lobby last set up a new game: a quick game, unless the player chose otherwise.</summary>
+    /// <remarks>Seat by seat, no longer offered, is set up as the player chooses too.</remarks>
     public async ValueTask<SetupMode> Setup() =>
-        await this.Load(SetupKey) switch
-        {
-            ByStrength => SetupMode.ByStrength,
-            SeatBySeat => SetupMode.SeatBySeat,
-            _ => SetupMode.Quick,
-        };
+        await this.Load(SetupKey) is Custom or SeatBySeat ? SetupMode.Custom : SetupMode.Quick;
 
-    public ValueTask SetSetup(SetupMode mode) =>
-        this.Save(
-            SetupKey,
-            mode switch
-            {
-                SetupMode.ByStrength => ByStrength,
-                SetupMode.SeatBySeat => SeatBySeat,
-                _ => "quick",
-            }
-        );
+    public ValueTask SetSetup(SetupMode mode) => this.Save(SetupKey, mode == SetupMode.Custom ? Custom : "quick");
 
     /// <summary>The token of the player signed in on this browser, if one is.</summary>
     public async ValueTask<string?> PlayerToken() => await this.Load(PlayerKey) is { Length: > 0 } token ? token : null;

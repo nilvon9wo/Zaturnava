@@ -111,8 +111,8 @@ public sealed class BrowserTest : IDisposable
     }
 
     [Theory]
-    [InlineData("strength", nameof(SetupMode.ByStrength))]
-    [InlineData("seats", nameof(SetupMode.SeatBySeat))]
+    [InlineData("strength", nameof(SetupMode.Custom))]
+    [InlineData("seats", nameof(SetupMode.Custom))]
     [InlineData("quick", nameof(SetupMode.Quick))]
     [InlineData(null, nameof(SetupMode.Quick))]
     public async Task Setup_WhenRead_IsTheOneLastChosenElseQuick(string? remembered, string expected)
@@ -128,8 +128,7 @@ public sealed class BrowserTest : IDisposable
     }
 
     [Theory]
-    [InlineData(nameof(SetupMode.ByStrength), "strength")]
-    [InlineData(nameof(SetupMode.SeatBySeat), "seats")]
+    [InlineData(nameof(SetupMode.Custom), "strength")]
     [InlineData(nameof(SetupMode.Quick), "quick")]
     public async Task SetSetup_WhenSet_RemembersIt(string mode, string expected)
     {

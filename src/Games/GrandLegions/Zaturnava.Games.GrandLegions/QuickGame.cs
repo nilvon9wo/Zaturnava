@@ -43,8 +43,8 @@ public sealed record QuickGame(
         "grand-legions-large",
         "Grand Legions (large)",
         12,
-        4,
-        4,
+        6,
+        3,
         200,
         Counts((Leader, 1), (Heavy, 3), (Cavalry, 2), (Artillery, 2), (Infantry, 8))
     );
