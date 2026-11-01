@@ -383,6 +383,68 @@ public sealed class HttpGameClientTest
     }
 
     [Fact]
+    public async Task SetLinks_WhenGivenLinks_PutsThemWithTheToken()
+    {
+        // Arrange
+        StubServer server = new(HttpStatusCode.OK, """{"id":"p","name":"Ada","links":["https://a.example"]}""");
+
+        // Act
+        PlayerDto? player = await Client(server).SetLinks("secret", ["https://a.example"], this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            (
+                "PUT",
+                "/api/players/me/links",
+                "Bearer secret",
+                """{"links":["https://a.example"]}""",
+                "https://a.example"
+            ),
+            (server.Method, server.Path, server.Authorization, server.Body, player?.Links?.Single())
+        );
+    }
+
+    [Theory]
+    [InlineData(HttpStatusCode.OK, """{"token":"ai-1"}""", "ai-1")]
+    [InlineData(HttpStatusCode.Unauthorized, "", null)]
+    public async Task AiToken_WhenAnswered_IsTheTokenIfTheTokenStandsForSomeone(
+        HttpStatusCode status,
+        string body,
+        string? expected
+    )
+    {
+        // Arrange
+        StubServer server = new(status, body);
+
+        // Act
+        string? token = await Client(server).AiToken("secret", this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            ("POST", "/api/players/me/ai-token", "Bearer secret", expected),
+            (server.Method, server.Path, server.Authorization, token)
+        );
+    }
+
+    [Theory]
+    [InlineData(HttpStatusCode.OK, """{"id":"p 1","name":"Ada","links":[]}""", "Ada")]
+    [InlineData(HttpStatusCode.NotFound, "", null)]
+    public async Task Profile_WhenAnswered_IsThePlayerIfKnown(HttpStatusCode status, string body, string? expected)
+    {
+        // Arrange
+        StubServer server = new(status, body);
+
+        // Act
+        ProfileDto? profile = await Client(server).Profile("p 1", this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            ("GET", "/api/players/p%201", null, expected),
+            (server.Method, server.Path, server.Authorization, profile?.Name)
+        );
+    }
+
+    [Fact]
     public async Task SignOut_WhenGivenAToken_DeletesItsSession()
     {
         // Arrange

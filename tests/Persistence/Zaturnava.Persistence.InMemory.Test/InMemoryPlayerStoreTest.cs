@@ -109,6 +109,20 @@ public sealed class InMemoryPlayerStoreTest
     }
 
     [Fact]
+    public async Task SetLinks_WhenThePlayerIsKnown_ShowsThoseInstead()
+    {
+        // Arrange
+        await this._store.Add(Ada with { Links = ["https://old.example"] }, this._cancellation);
+
+        // Act
+        await this._store.SetLinks(Ada.Id, ["https://new.example"], this._cancellation);
+
+        // Assert
+        Player? found = await this._store.ById(Ada.Id, this._cancellation);
+        Assert.Equal(["https://new.example"], found?.Links ?? []);
+    }
+
+    [Fact]
     public async Task Rename_WhenThePlayerIsUnknown_ChangesNothing()
     {
         // Arrange - nothing beyond the empty store

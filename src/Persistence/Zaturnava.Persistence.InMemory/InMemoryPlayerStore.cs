@@ -45,6 +45,13 @@ public sealed class InMemoryPlayerStore : IPlayerPersisting
     public Task Rename(PlayerId player, [Required] string name, CancellationToken cancellationToken) =>
         this.Change(player, known => known with { Name = name });
 
+    public Task SetLinks(
+        PlayerId player,
+        [Required] ImmutableList<string> links,
+        CancellationToken cancellationToken
+    ) =>
+        this.Change(player, known => known with { Links = links });
+
     public Task AddLogin(PlayerId player, Login login, CancellationToken cancellationToken) =>
         this.Change(player, known => known with { Logins = known.Logins.Add(login) });
 

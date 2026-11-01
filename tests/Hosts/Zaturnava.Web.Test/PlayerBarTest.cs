@@ -426,6 +426,58 @@ public sealed class PlayerBarTest : IDisposable
         Assert.Empty(bar.FindAll("[role=dialog]"));
     }
 
+    [Fact]
+    public void Links_WhenChanged_ShowsThoseTheServerKeptOneALine()
+    {
+        // Arrange
+        IRenderedComponent<PlayerBar> bar = this.SignedInAsAda(["GitHub"]);
+        bar.Find("button.open-profile").Click();
+
+        // Act
+        bar.Find("textarea.links").Change("https://a.example\r\n https://b.example ");
+
+        // Assert
+        Assert.Equal(
+            ("https://a.example\nhttps://b.example", "https://a.example|https://b.example"),
+            (
+                bar.Find("textarea.links").GetAttribute("value"),
+                string.Join('|', this._page.Server.Players["known"].Links ?? [])
+            )
+        );
+    }
+
+    [Fact]
+    public void Links_WhenTheServerRefusesThem_SaysWhy()
+    {
+        // Arrange
+        IRenderedComponent<PlayerBar> bar = this.SignedInAsAda(["GitHub"]);
+        bar.Find("button.open-profile").Click();
+        this._page.Server.SignInFailure = new GameRequestRefusedException(Refusal.Invalid, "not a web address");
+
+        // Act
+        bar.Find("textarea.links").Change("ftp://a.example");
+
+        // Assert
+        Assert.Equal("not a web address", bar.Find("[role=status]").TextContent);
+    }
+
+    [Fact]
+    public void AiToken_WhenAsked_ShowsItUntilTheProfileCloses()
+    {
+        // Arrange
+        IRenderedComponent<PlayerBar> bar = this.SignedInAsAda(["GitHub"]);
+        bar.Find("button.open-profile").Click();
+
+        // Act
+        bar.Find("button.ai-token").Click();
+
+        // Assert
+        string shown = bar.Find("p.ai-token code").TextContent;
+        bar.Find("button.close-profile").Click();
+        bar.Find("button.open-profile").Click();
+        Assert.Equal(("ai-known", 0), (shown, bar.FindAll("p.ai-token").Count));
+    }
+
     /// <summary>
     /// The bar, with Ada signed in on this browser by the token "known", signing in with
     /// <paramref name="services"/>; GitHub and Discord are offered.

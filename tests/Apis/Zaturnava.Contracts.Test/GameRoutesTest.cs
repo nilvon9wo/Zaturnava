@@ -133,4 +133,16 @@ public sealed class GameRoutesTest
         // Assert
         Assert.Equal("api/players/me/logins/Git%20Hub", route);
     }
+
+    [Fact]
+    public void Profile_WhenGivenAPlayersId_RoutesUnderThePlayers()
+    {
+        // Arrange - nothing beyond the id
+
+        // Act
+        string route = GameRoutes.Profile("p/1");
+
+        // Assert
+        Assert.Equal("api/players/p%2F1", route);
+    }
 }

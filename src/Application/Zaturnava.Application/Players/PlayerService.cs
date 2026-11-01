@@ -8,13 +8,23 @@ namespace Net.NowhereAtAll.Zaturnava.Application.Players;
 /// <summary>
 /// Signing in, which is optional: a provider vouches for a login, and the player whose login it is (made the first
 /// time, named as the provider names them) gets a token, as a seat's is made (<see cref="SeatTokens"/>), to show
-/// from then on. Only its hash is kept. A player may sign in with several services (<see cref="Link"/>), and name
-/// themselves as they please (<see cref="Rename"/>).
+/// from then on. Only its hash is kept. A player may sign in with several services (<see cref="Link"/>), name
+/// themselves as they please (<see cref="Rename"/>), show others links on their profile (<see cref="SetLinks"/>),
+/// and give an AI a token of its own to play for them (<see cref="AiToken"/>), which may do nothing to their account.
 /// </summary>
 public sealed class PlayerService(IPlayerPersisting store, LinkCodes links)
 {
     /// <summary>The longest a player's name may be, in characters; a longer one is cut.</summary>
     public const int MaximumNameLength = 40;
+
+    /// <summary>The most links a profile may show; any more are let go.</summary>
+    public const int MaximumLinks = 5;
+
+    /// <summary>The longest a link may be, in characters.</summary>
+    public const int MaximumLinkLength = 200;
+
+    /// <summary>How an AI's token begins: it is part of what is hashed, so it cannot be taken off.</summary>
+    public const string AiTokenPrefix = "ai-";
 
     /// <summary>A new player's name, when the provider gives none.</summary>
     public const string Unnamed = "Player";
@@ -43,8 +53,66 @@ public sealed class PlayerService(IPlayerPersisting store, LinkCodes links)
     /// A one-time code (<see cref="LinkCodes"/>) for the player the token stands for to link another login with
     /// (<see cref="Link"/>); none, if it stands for no one.
     /// </summary>
+    /// <exception cref="AiTokenRefusedException">The token is an AI's.</exception>
     public async Task<string?> LinkCode([Required] string token, CancellationToken cancellationToken) =>
-        await this.Find(token, cancellationToken) is { } player ? this._links.Issue(player.Id) : null;
+        await this.Owner(token, cancellationToken) is { } player ? this._links.Issue(player.Id) : null;
+
+    /// <summary>Whether the token is an AI's (<see cref="AiToken"/>), whether or not it stands for anyone.</summary>
+    public static bool IsAiToken(string? token) =>
+        token?.StartsWith(AiTokenPrefix, StringComparison.Ordinal) == true;
+
+    /// <summary>
+    /// A new token for an AI to play for the player the token stands for (none, if it stands for no one): what it
+    /// claims, it claims as an AI, and it may not change their account, nor make more such tokens. Signing out with
+    /// it lets it go; deleting the account, every one.
+    /// </summary>
+    /// <exception cref="AiTokenRefusedException">The token is an AI's.</exception>
+    public async Task<string?> AiToken([Required] string token, CancellationToken cancellationToken)
+    {
+        if (await this.Owner(token, cancellationToken) is not { } player)
+        {
+            return null;
+        }
+
+        string issued = AiTokenPrefix + SeatTokens.Issue();
+        await this._store.AddSession(player.Id, SeatTokens.Hash(issued), cancellationToken);
+        return issued;
+    }
+
+    /// <summary>
+    /// Shows <paramref name="links"/> on the profile of the player the token stands for (none, if it stands for no
+    /// one), in place of any shown before: each without the spaces around it, blanks and repeats left out, the first
+    /// <see cref="MaximumLinks"/> kept.
+    /// </summary>
+    /// <exception cref="BadLinkException">A link is not an http or https address, or is too long.</exception>
+    /// <exception cref="AiTokenRefusedException">The token is an AI's.</exception>
+    public async Task<Player?> SetLinks(
+        [Required] string token,
+        [Required] IEnumerable<string?> links,
+        CancellationToken cancellationToken
+    )
+    {
+        ImmutableList<string> kept =
+        [
+            .. links
+                .Select(link => (link ?? string.Empty).Trim())
+                .Where(link => link.Length > 0)
+                .Distinct(StringComparer.Ordinal)
+                .Take(MaximumLinks)
+                .Select(Checked),
+        ];
+        if (await this.Owner(token, cancellationToken) is not { } player)
+        {
+            return null;
+        }
+
+        await this._store.SetLinks(player.Id, kept, cancellationToken);
+        return player with { Links = kept };
+    }
+
+    /// <summary>The player as anyone may see them: their name and links; none, if no such player is known.</summary>
+    public Task<Player?> Profile(PlayerId id, CancellationToken cancellationToken) =>
+        this._store.ById(id, cancellationToken);
 
     /// <summary>
     /// Makes <paramref name="login"/> the login of the player <paramref name="code"/> was issued to, and signs them
@@ -77,13 +145,14 @@ public sealed class PlayerService(IPlayerPersisting store, LinkCodes links)
     /// if it stands for no one); having none with that service is no matter.
     /// </summary>
     /// <exception cref="LastLoginException">It is the only login the player has.</exception>
+    /// <exception cref="AiTokenRefusedException">The token is an AI's.</exception>
     public async Task<Player?> Unlink(
         [Required] string token,
         [Required] string provider,
         CancellationToken cancellationToken
     )
     {
-        if (await this.Find(token, cancellationToken) is not { } player)
+        if (await this.Owner(token, cancellationToken) is not { } player)
         {
             return null;
         }
@@ -107,9 +176,10 @@ public sealed class PlayerService(IPlayerPersisting store, LinkCodes links)
     /// control characters or the spaces around it, cut to <see cref="MaximumNameLength"/>; a name with nothing left
     /// leaves theirs as it was.
     /// </summary>
+    /// <exception cref="AiTokenRefusedException">The token is an AI's.</exception>
     public async Task<Player?> Rename([Required] string token, string? name, CancellationToken cancellationToken)
     {
-        if (await this.Find(token, cancellationToken) is not { } player)
+        if (await this.Owner(token, cancellationToken) is not { } player)
         {
             return null;
         }
@@ -157,9 +227,10 @@ public sealed class PlayerService(IPlayerPersisting store, LinkCodes links)
     /// Forgets the player the token stands for: their name, logins and sessions, so that nothing left says who
     /// they were. Whether there was one to forget.
     /// </summary>
+    /// <exception cref="AiTokenRefusedException">The token is an AI's.</exception>
     public async Task<bool> Delete([Required] string token, CancellationToken cancellationToken)
     {
-        if (await this.Find(token, cancellationToken) is not { } player)
+        if (await this.Owner(token, cancellationToken) is not { } player)
         {
             return false;
         }
@@ -177,6 +248,20 @@ public sealed class PlayerService(IPlayerPersisting store, LinkCodes links)
 
     private static string? Cut(string name) =>
         name.Length == 0 ? null : name[..Math.Min(name.Length, MaximumNameLength)].TrimEnd();
+
+    /// <summary>The link, if it is an http or https address, short enough.</summary>
+    /// <exception cref="BadLinkException">It is not.</exception>
+    private static string Checked(string link) =>
+        link.Length <= MaximumLinkLength
+        && Uri.TryCreate(link, UriKind.Absolute, out Uri? uri)
+        && (uri.Scheme == Uri.UriSchemeHttps || uri.Scheme == Uri.UriSchemeHttp)
+            ? link
+            : throw new BadLinkException(link);
+
+    /// <summary>The player the token stands for, if it may change their account.</summary>
+    /// <exception cref="AiTokenRefusedException">The token is an AI's.</exception>
+    private Task<Player?> Owner(string token, CancellationToken cancellationToken) =>
+        IsAiToken(token) ? throw new AiTokenRefusedException() : this.Find(token, cancellationToken);
 
     private async Task<Player> Add(Player player, CancellationToken cancellationToken)
     {

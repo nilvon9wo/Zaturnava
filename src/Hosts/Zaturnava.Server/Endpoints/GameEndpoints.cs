@@ -147,7 +147,8 @@ internal static class GameEndpoints
 
     /// <summary>
     /// Claims the seat: for the player the request's token stands for, if it carries one (refused, if it stands
-    /// for no one); else for a guest, by the nickname the body gives, if it gives one.
+    /// for no one); else for a guest, by the nickname the body gives, if it gives one. An AI's token claims it as an
+    /// AI's, whatever the body says.
     /// </summary>
     private static async Task<SeatClaimedDto> Claim(
         string gameId,
@@ -165,7 +166,7 @@ internal static class GameEndpoints
             new SeatId(seat),
             claimant,
             claim?.Nickname,
-            claim?.IsAi == true,
+            claim?.IsAi == true || PlayerService.IsAiToken(SeatToken.OrNull(request)),
             cancellationToken
         );
         return new SeatClaimedDto(token);

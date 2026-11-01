@@ -31,6 +31,9 @@ public interface IPlayerPersisting
     /// <summary>Names the player anew.</summary>
     Task Rename(PlayerId player, [Required] string name, CancellationToken cancellationToken);
 
+    /// <summary>Shows <paramref name="links"/> on the player's profile, in place of any shown before.</summary>
+    Task SetLinks(PlayerId player, [Required] ImmutableList<string> links, CancellationToken cancellationToken);
+
     /// <summary>Makes <paramref name="login"/>, which is no one's, the player's too.</summary>
     Task AddLogin(PlayerId player, Login login, CancellationToken cancellationToken);
 

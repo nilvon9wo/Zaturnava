@@ -394,6 +394,164 @@ public sealed class PlayerServiceTest
     }
 
     [Fact]
+    public async Task SetLinks_WhenTheyAreWebAddresses_ShowsThemTrimmedWithoutBlanksOrRepeatsAtMostFive()
+    {
+        // Arrange
+        SignedIn ada = await this._service.SignIn(Login, "Ada", this._cancellation);
+        string?[] links =
+        [
+            " https://a.example ", null, "  ", "https://a.example", "http://b.example", "https://c.example",
+            "https://d.example", "https://e.example", "https://f.example",
+        ];
+
+        // Act
+        Player? shown = await this._service.SetLinks(ada.Token, links, this._cancellation);
+
+        // Assert
+        const string expected =
+            "https://a.example http://b.example https://c.example https://d.example https://e.example";
+        Assert.Equal(
+            (expected, expected),
+            (
+                string.Join(' ', shown?.Links ?? []),
+                string.Join(' ', (await this._service.Profile(ada.Player.Id, this._cancellation))?.Links ?? [])
+            )
+        );
+    }
+
+    [Theory]
+    [InlineData("ftp://a.example")]
+    [InlineData("javascript:alert(1)")]
+    [InlineData("a.example")]
+    public async Task SetLinks_WhenOneIsNoWebAddress_IsRefusedAsInvalid(string link)
+    {
+        // Arrange
+        SignedIn ada = await this._service.SignIn(Login, "Ada", this._cancellation);
+
+        // Act
+        BadLinkException refused = await Assert.ThrowsAsync<BadLinkException>(() =>
+            this._service.SetLinks(ada.Token, [link], this._cancellation)
+        );
+
+        // Assert
+        Assert.Equal(
+            (GameRequestFailure.Invalid, true),
+            (refused.Failure, refused.Message.StartsWith($"'{link}' is not a web address", StringComparison.Ordinal))
+        );
+    }
+
+    [Fact]
+    public async Task SetLinks_WhenOneIsTooLong_IsRefused()
+    {
+        // Arrange
+        SignedIn ada = await this._service.SignIn(Login, "Ada", this._cancellation);
+        string link = "https://a.example/" + new string('a', PlayerService.MaximumLinkLength);
+
+        // Act
+        Task<Player?> setting = this._service.SetLinks(ada.Token, [link], this._cancellation);
+
+        // Assert
+        _ = await Assert.ThrowsAsync<BadLinkException>(() => setting);
+    }
+
+    [Fact]
+    public async Task SetLinks_WhenTheTokenStandsForNoOne_IsNoOne()
+    {
+        // Arrange - nothing beyond the empty store
+
+        // Act
+        Player? shown = await this._service.SetLinks("not a token", ["https://a.example"], this._cancellation);
+
+        // Assert
+        Assert.Null(shown);
+    }
+
+    [Fact]
+    public async Task Profile_WhenThePlayerIsUnknown_IsNoOne()
+    {
+        // Arrange - nothing beyond the empty store
+
+        // Act
+        Player? profile = await this._service.Profile(PlayerId.New(), this._cancellation);
+
+        // Assert
+        Assert.Null(profile);
+    }
+
+    [Fact]
+    public async Task AiToken_WhenTheTokenStandsForAPlayer_IsAnAisTokenStandingForThem()
+    {
+        // Arrange
+        SignedIn ada = await this._service.SignIn(Login, "Ada", this._cancellation);
+
+        // Act
+        string? issued = await this._service.AiToken(ada.Token, this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            (true, ada.Player.Id),
+            (PlayerService.IsAiToken(issued), (await this._service.Find($"{issued}", this._cancellation))?.Id)
+        );
+    }
+
+    [Fact]
+    public async Task AiToken_WhenTheTokenStandsForNoOne_IsNone()
+    {
+        // Arrange - nothing beyond the empty store
+
+        // Act
+        string? issued = await this._service.AiToken("not a token", this._cancellation);
+
+        // Assert
+        Assert.Null(issued);
+    }
+
+    [Theory]
+    [InlineData("ai token")]
+    [InlineData("link code")]
+    [InlineData("links")]
+    [InlineData("unlink")]
+    [InlineData("rename")]
+    [InlineData("delete")]
+    public async Task Changing_WhenTheTokenIsAnAis_IsForbidden(string change)
+    {
+        // Arrange
+        SignedIn ada = await this._service.SignIn(Login, "Ada", this._cancellation);
+        string ai = await this._service.AiToken(ada.Token, this._cancellation) ?? throw new InvalidOperationException();
+
+        // Act
+        AiTokenRefusedException refused = await Assert.ThrowsAsync<AiTokenRefusedException>(() =>
+            change switch
+            {
+                "ai token" => this._service.AiToken(ai, this._cancellation),
+                "link code" => this._service.LinkCode(ai, this._cancellation),
+                "links" => this._service.SetLinks(ai, [], this._cancellation),
+                "unlink" => this._service.Unlink(ai, Login.Provider, this._cancellation),
+                "rename" => this._service.Rename(ai, "Bot", this._cancellation),
+                _ => this._service.Delete(ai, this._cancellation),
+            }
+        );
+
+        // Assert
+        Assert.Equal(GameRequestFailure.Forbidden, refused.Failure);
+    }
+
+    [Theory]
+    [InlineData(null, false)]
+    [InlineData("seat-token", false)]
+    [InlineData("ai-anything", true)]
+    public void IsAiToken_WhenGivenAToken_SaysWhetherItBeginsAsAnAisDoes(string? token, bool expected)
+    {
+        // Arrange - nothing
+
+        // Act
+        bool isAi = PlayerService.IsAiToken(token);
+
+        // Assert
+        Assert.Equal(expected, isAi);
+    }
+
+    [Fact]
     public void New_WhenTwoAreMade_AreDifferent()
     {
         // Arrange - nothing

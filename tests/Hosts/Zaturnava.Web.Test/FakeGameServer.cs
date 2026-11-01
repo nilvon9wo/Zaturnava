@@ -254,6 +254,22 @@ internal sealed class FakeGameServer : IGameServing
             this.Changed(token, player => player with { Services = player.Services?.Remove(provider) })
         );
 
+    public Task<PlayerDto?> SetLinks(
+        [Required] string token,
+        [Required] ImmutableList<string> links,
+        CancellationToken cancellationToken
+    ) =>
+        this.SignedIn(() => this.Changed(token, player => player with { Links = links }));
+
+    public Task<string?> AiToken([Required] string token, CancellationToken cancellationToken) =>
+        this.SignedIn(() => this.Players.ContainsKey(token) ? "ai-" + token : null);
+
+    /// <summary>The profiles anyone may see, by player id: none, unless a test sets some.</summary>
+    public ImmutableDictionary<string, ProfileDto> Profiles { get; set; } = [];
+
+    public Task<ProfileDto?> Profile([Required] string playerId, CancellationToken cancellationToken) =>
+        this.SignedIn(() => this.Profiles.GetValueOrDefault(playerId));
+
     /// <summary>Each player token signed out or deleted, in order: "out {token}", "delete {token}".</summary>
     public ConcurrentQueue<string> LetGo { get; } = new();
 

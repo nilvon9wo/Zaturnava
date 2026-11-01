@@ -145,6 +145,34 @@ public sealed class EfPlayerStoreTest : IDisposable
     }
 
     [Fact]
+    public async Task SetLinks_WhenThePlayerIsKnown_ReadsThemBackInOrder()
+    {
+        // Arrange
+        await this._store.Add(Ada with { Links = ["https://old.example"] }, this._cancellation);
+
+        // Act
+        await this._store.SetLinks(Ada.Id, ["https://b.example", "https://a.example"], this._cancellation);
+
+        // Assert
+        Player? found = await new EfPlayerStore(this._database.NewContext()).ById(Ada.Id, this._cancellation);
+        Assert.Equal(["https://b.example", "https://a.example"], found?.Links ?? []);
+    }
+
+    [Fact]
+    public async Task SetLinks_WhenNone_LeavesThePlayerWithoutLinks()
+    {
+        // Arrange
+        await this._store.Add(Ada with { Links = ["https://old.example"] }, this._cancellation);
+
+        // Act
+        await this._store.SetLinks(Ada.Id, [], this._cancellation);
+
+        // Assert
+        Player? found = await new EfPlayerStore(this._database.NewContext()).ById(Ada.Id, this._cancellation);
+        Assert.Equal((true, true), (found is not null, found?.Links.IsEmpty));
+    }
+
+    [Fact]
     public async Task AddLogin_WhenTheLoginIsNoOnes_MakesItThePlayersToo()
     {
         // Arrange

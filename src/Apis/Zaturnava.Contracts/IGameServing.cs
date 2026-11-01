@@ -109,6 +109,25 @@ public interface IGameServing
     /// </summary>
     Task<PlayerDto?> Unlink([Required] string token, [Required] string provider, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Shows <paramref name="links"/> on the profile of the player <paramref name="token"/> stands for, in place of
+    /// those before; none, if it stands for no one. Refused, if one is not a web address.
+    /// </summary>
+    Task<PlayerDto?> SetLinks(
+        [Required] string token,
+        [Required] ImmutableList<string> links,
+        CancellationToken cancellationToken
+    );
+
+    /// <summary>
+    /// A new token for an AI to play for the player <paramref name="token"/> stands for (<see cref="AiTokenDto"/>);
+    /// none, if it stands for no one.
+    /// </summary>
+    Task<string?> AiToken([Required] string token, CancellationToken cancellationToken);
+
+    /// <summary>The player's profile, as anyone may see it; none, if no such player is known.</summary>
+    Task<ProfileDto?> Profile([Required] string playerId, CancellationToken cancellationToken);
+
     /// <summary>Signs out: the player's <paramref name="token"/> stands for no one from now on.</summary>
     Task SignOut([Required] string token, CancellationToken cancellationToken);
 

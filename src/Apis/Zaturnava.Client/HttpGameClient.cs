@@ -142,6 +142,26 @@ public sealed class HttpGameClient(HttpClient http) : IGameServing
     ) =>
         this.IfSomeone<PlayerDto>(HttpMethod.Delete, GameRoutes.Login(provider), null, token, cancellationToken);
 
+    public Task<PlayerDto?> SetLinks(
+        [Required] string token,
+        [Required] ImmutableList<string> links,
+        CancellationToken cancellationToken
+    ) =>
+        this.IfSomeone<PlayerDto>(HttpMethod.Put, GameRoutes.Links, new LinksRequest(links), token, cancellationToken);
+
+    public async Task<string?> AiToken([Required] string token, CancellationToken cancellationToken) =>
+        (await this.IfSomeone<AiTokenDto>(HttpMethod.Post, GameRoutes.AiToken, null, token, cancellationToken))
+            ?.Token;
+
+    public async Task<ProfileDto?> Profile([Required] string playerId, CancellationToken cancellationToken)
+    {
+        using HttpResponseMessage response =
+            await this.Exchange(HttpMethod.Get, GameRoutes.Profile(playerId), null, null, cancellationToken);
+        return response.StatusCode == HttpStatusCode.NotFound
+            ? null
+            : await Outcome<ProfileDto>(response, cancellationToken);
+    }
+
     public async Task SignOut([Required] string token, CancellationToken cancellationToken)
     {
         using HttpResponseMessage response =

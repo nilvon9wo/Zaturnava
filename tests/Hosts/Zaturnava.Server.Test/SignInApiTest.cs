@@ -295,6 +295,8 @@ public sealed partial class SignInApiTest(SigningInServer server) : IClassFixtur
     [InlineData("POST", "api/players/me/link-code", "not-a-token")]
     [InlineData("PUT", "api/players/me", null)]
     [InlineData("PUT", "api/players/me", "not-a-token")]
+    [InlineData("POST", "api/players/me/ai-token", null)]
+    [InlineData("POST", "api/players/me/ai-token", "not-a-token")]
     public async Task Request_WhenTheTokenIsMissingOrStandsForNoOne_IsUnauthorized(
         string method,
         string route,
@@ -396,6 +398,137 @@ public sealed partial class SignInApiTest(SigningInServer server) : IClassFixtur
             client.Unlink(token, "GitHub", this._cancellation)
         );
         Assert.Equal(("GitHub", Refusal.Conflict), (string.Join(',', unlinked?.Services ?? []), refused.Refusal));
+    }
+
+    [Fact]
+    public async Task SetLinks_WhenTheyAreWebAddresses_ShowsThemOnTheProfileAnyoneMaySee()
+    {
+        // Arrange
+        HttpGameClient client = server.GameClient();
+        string token = TokenOf(await this.Done("GitHub|13|Ada", SigningInServer.Page));
+
+        // Act
+        PlayerDto? shown = await client.SetLinks(token, [" https://ada.example "], this._cancellation);
+
+        // Assert
+        ProfileDto? profile = await client.Profile($"{shown?.Id}", this._cancellation);
+        Assert.Equal(
+            ("Ada", "https://ada.example", "https://ada.example"),
+            (profile?.Name, string.Join(',', shown?.Links ?? []), string.Join(',', profile?.Links ?? []))
+        );
+    }
+
+    [Fact]
+    public async Task SetLinks_WhenOneIsNoWebAddress_IsRefusedAsInvalid()
+    {
+        // Arrange
+        HttpGameClient client = server.GameClient();
+        string token = TokenOf(await this.Done("GitHub|14|Ada", SigningInServer.Page));
+
+        // Act
+        GameRequestRefusedException refused = await Assert.ThrowsAsync<GameRequestRefusedException>(() =>
+            client.SetLinks(token, ["javascript:alert(1)"], this._cancellation)
+        );
+
+        // Assert
+        Assert.Equal(Refusal.Invalid, refused.Refusal);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("not-a-token")]
+    public async Task SetLinks_WhenTheTokenIsMissingOrStandsForNoOne_IsUnauthorized(string? token)
+    {
+        // Arrange - nothing beyond the server
+
+        // Act
+        using HttpResponseMessage response =
+            await this.Send(HttpMethod.Put, "api/players/me/links", token, new LinksRequest([]));
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public void LinksRequest_WhenComparedWithThePlayers_HasTheSameLimits()
+    {
+        // Arrange - nothing
+
+        // Act
+        (int, int) contract = (LinksRequest.MaximumLinks, LinksRequest.MaximumLinkLength);
+
+        // Assert
+        Assert.Equal((PlayerService.MaximumLinks, PlayerService.MaximumLinkLength), contract);
+    }
+
+    [Fact]
+    public async Task Profile_WhenNoSuchPlayerIsKnown_IsNone()
+    {
+        // Arrange - nothing beyond the server
+
+        // Act
+        ProfileDto? profile = await server.GameClient().Profile("nobody", this._cancellation);
+
+        // Assert
+        Assert.Null(profile);
+    }
+
+    [Fact]
+    public async Task AiToken_WhenItClaimsASeat_TheSeatIsTheirsShownAsPlayedByAnAi()
+    {
+        // Arrange
+        HttpGameClient client = server.GameClient();
+        string token = TokenOf(await this.Done("GitHub|15|Ada", SigningInServer.Page));
+        string ai = await client.AiToken(token, this._cancellation) ?? throw new InvalidOperationException();
+        GameCreatedDto created = await client.Create(
+            new CreateGameRequest(ZaturnavaServer.Chaturaji2027, ZaturnavaServer.OneOpenSeat),
+            this._cancellation
+        );
+
+        // Act
+        _ = await client.Claim(created.GameId, 0, ai, null, this._cancellation);
+
+        // Assert
+        SeatDto seat = (await client.Get(created.GameId, this._cancellation)).Seats[0];
+        Assert.Equal(
+            (true, (await this.Me(token))?.Id),
+            (seat.IsAi, seat.PlayerId)
+        );
+    }
+
+    [Fact]
+    public async Task Claim_WhenTheClaimSaysAnAiPlaysWithoutSigningIn_ShowsTheSeatAsAnAiGuests()
+    {
+        // Arrange
+        HttpGameClient client = server.GameClient();
+        GameCreatedDto created = await client.Create(
+            new CreateGameRequest(ZaturnavaServer.Chaturaji2027, ZaturnavaServer.OneOpenSeat),
+            this._cancellation
+        );
+
+        // Act
+        _ = await client.Claim(created.GameId, 0, null, new ClaimSeatRequest("Hal", IsAi: true), this._cancellation);
+
+        // Assert
+        SeatDto seat = (await client.Get(created.GameId, this._cancellation)).Seats[0];
+        Assert.Equal((true, null), (seat.IsAi, seat.PlayerId));
+    }
+
+    [Fact]
+    public async Task AiToken_WhenAskedToChangeTheAccount_IsForbidden()
+    {
+        // Arrange
+        HttpGameClient client = server.GameClient();
+        string token = TokenOf(await this.Done("GitHub|16|Ada", SigningInServer.Page));
+        string ai = await client.AiToken(token, this._cancellation) ?? throw new InvalidOperationException();
+
+        // Act
+        GameRequestRefusedException refused = await Assert.ThrowsAsync<GameRequestRefusedException>(() =>
+            client.Rename(ai, "Bot", this._cancellation)
+        );
+
+        // Assert
+        Assert.Equal(Refusal.Forbidden, refused.Refusal);
     }
 
     private async Task<HttpResponseMessage> Send(
