@@ -344,8 +344,10 @@ public sealed class GameViewsTest
         Assert.Equal(["Agree to end the game", "Keep playing"], view.LegalActions.Select(action => action.Label));
     }
 
-    [Fact]
-    public void ViewOf_WhenOthersVoteOnWaitingForASeatAway_ShowsTheVoteAndTheTurnsItMissed()
+    [Theory]
+    [InlineData(null)]
+    [InlineData(3)]
+    public void ViewOf_WhenOthersVoteOnWaitingForASeatAway_ShowsTheVoteAndTheTurnsItMissed(int? firstArrival)
     {
         // Arrange - Black missed a turn; Yellow and Red may vote, and Red would stop waiting
         GameState state = Rules.CreateInitialState() with
@@ -354,13 +356,26 @@ public sealed class GameViewsTest
             AwaitedDice = null,
             Absence = Absence.None with { Missed = Absence.None.Missed.Add(new SeatId(0), 1) },
         };
-        AwayVoting away = new(new SeatId(0), [new SeatId(1), new SeatId(3)], [new SeatId(3)], TimeSpan.Zero);
+        AwayVoting away = new(new SeatId(0), [new SeatId(1), new SeatId(3)], [new SeatId(3)], TimeSpan.Zero)
+        {
+            FirstArrival = firstArrival is { } seat ? new SeatId(seat) : null,
+            UntilAnyoneReplaces = TimeSpan.FromSeconds(90),
+        };
 
         // Act
         GameViewDto view = GameViews.ViewOf(Snapshot(state) with { Away = away }, Bots);
 
         // Assert
-        Assert.Equal((0, true, 1), (view.Away!.Seat, view.Away.IsOpen, view.Seats[0].TurnsMissed));
+        Assert.Equal(
+            (0, true, 1, firstArrival, 90d),
+            (
+                view.Away!.Seat,
+                view.Away.IsOpen,
+                view.Seats[0].TurnsMissed,
+                view.Away.FirstArrival,
+                view.Away.SecondsUntilAnyoneReplaces
+            )
+        );
         Assert.Equal([1, 3], view.Away.Voters);
         Assert.Equal([3], view.Away.Stopping);
     }

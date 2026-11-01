@@ -32,6 +32,7 @@ internal static class GameEndpoints
         _ = routes.MapPost(GameRoute + "/actions", Submit);
         _ = routes.MapPost(GameRoute + "/advance", Advance);
         _ = routes.MapPost(GameRoute + "/fill", Fill);
+        _ = routes.MapPost(GameRoute + "/replace", Replace);
         _ = routes.MapGet(GameRoute + "/chat", Chat);
         _ = routes.MapPost(GameRoute + "/chat", Say);
         return routes;
@@ -142,6 +143,20 @@ internal static class GameEndpoints
     {
         GameId id = new(gameId);
         GameSnapshot snapshot = await games.FillOpenSeats(id, SeatToken.From(request, id), cancellationToken);
+        return await ViewOf(snapshot, games, players, cancellationToken);
+    }
+
+    /// <summary>Has a bot take the seat of one away, for whoever holds the request token's seat, if they may.</summary>
+    private static async Task<GameViewDto> Replace(
+        string gameId,
+        HttpRequest request,
+        GameService games,
+        PlayerService players,
+        CancellationToken cancellationToken
+    )
+    {
+        GameId id = new(gameId);
+        GameSnapshot snapshot = await games.ReplaceAway(id, SeatToken.From(request, id), cancellationToken);
         return await ViewOf(snapshot, games, players, cancellationToken);
     }
 

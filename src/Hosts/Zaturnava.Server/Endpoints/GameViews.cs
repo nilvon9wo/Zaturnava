@@ -139,7 +139,9 @@ internal static class GameViews
                 away.Absent.Value,
                 away.IsOpen,
                 [.. away.Voters.Select(voter => voter.Value)],
-                [.. away.Voters.Where(away.Stopping.Contains).Select(voter => voter.Value)]
+                [.. away.Voters.Where(away.Stopping.Contains).Select(voter => voter.Value)],
+                away.FirstArrival?.Value,
+                away.UntilAnyoneReplaces.TotalSeconds
             );
 
     private static EndProposalDto? ProposalOf(GameState state) =>

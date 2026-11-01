@@ -1741,6 +1741,51 @@ public sealed class TableTest : IDisposable
         Assert.Equal(expected, table.FindAll(".away-vote").Count);
     }
 
+    [Theory]
+    [InlineData(true, 1, 0, 1, "")]
+    [InlineData(true, 0, 0, 1, "")]
+    [InlineData(true, 0, 270.2, 0, "If they do not come back, you may have a bot play for them in 4 min 31 s.")]
+    [InlineData(true, 0, 30, 0, "If they do not come back, you may have a bot play for them in 30 s.")]
+    [InlineData(false, 1, 0, 0, "")]
+    public void Render_WhenAPlayerIsAway_OffersABotForThemToTheFirstAtOnceAndToOthersAfterAWait(
+        bool isOpen,
+        int firstArrival,
+        double secondsToWait,
+        int buttons,
+        string hint
+    )
+    {
+        // Arrange
+        AwayDto away = new(0, isOpen, [1], [1], firstArrival, secondsToWait);
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with { Away = away };
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatOne);
+
+        // Assert
+        Assert.Equal(
+            (buttons, hint),
+            (
+                table.FindAll("button.replace").Count,
+                string.Concat(table.FindAll("p.replace-wait").Select(wait => wait.TextContent))
+            )
+        );
+    }
+
+    [Fact]
+    public void Replace_WhenClicked_HasABotPlayForThePlayerAway()
+    {
+        // Arrange
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with { Away = new AwayDto(0, true, [1], [], 1) };
+        IRenderedComponent<Table> table = this.Render(SeatOne);
+
+        // Act
+        table.Find("button.replace").Click();
+
+        // Assert
+        Assert.Contains($"replace {FakeGameServer.GameId} {FakeGameServer.Token}", this._page.Server.Calls);
+    }
+
     [Fact]
     public void Render_WhenThePlayerIsNotAmongTheVoters_ShowsNoVote()
     {

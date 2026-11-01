@@ -88,6 +88,13 @@ public sealed class HttpGameClient(HttpClient http) : IGameServing
     ) =>
         this.Send<GameViewDto>(HttpMethod.Post, GameRoutes.Fill(gameId), null, token, cancellationToken);
 
+    public Task<GameViewDto> ReplaceAway(
+        [Required] string gameId,
+        [Required] string token,
+        CancellationToken cancellationToken
+    ) =>
+        this.Send<GameViewDto>(HttpMethod.Post, GameRoutes.Replace(gameId), null, token, cancellationToken);
+
     public Task<GameViewDto> Submit(
         [Required] string gameId,
         [Required] string token,

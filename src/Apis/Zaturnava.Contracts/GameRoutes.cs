@@ -70,6 +70,9 @@ public static class GameRoutes
     /// <summary>Where a player waiting for others to take a game's open seats has bots take them instead.</summary>
     public static string Fill([Required] string gameId) => $"{Game(gameId)}/fill";
 
+    /// <summary>Where a player has a bot take the seat of one away, for the rest of the game.</summary>
+    public static string Replace([Required] string gameId) => $"{Game(gameId)}/replace";
+
     public static string History([Required] string gameId) => $"{Game(gameId)}/history";
 
     /// <summary>Where to say something at a game's table.</summary>
