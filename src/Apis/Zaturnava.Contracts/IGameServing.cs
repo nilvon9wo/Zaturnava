@@ -11,7 +11,8 @@ public interface IGameServing
 {
     Task<CatalogDto> Catalog(CancellationToken cancellationToken);
 
-    Task<ImmutableList<GameSummaryDto>> List(CancellationToken cancellationToken);
+    /// <summary>A page of the games <paramref name="query"/> asks for; the newest 20, if it asks nothing.</summary>
+    Task<GamePageDto> List(GameListQuery? query, CancellationToken cancellationToken);
 
     Task<GameCreatedDto> Create([Required] CreateGameRequest request, CancellationToken cancellationToken);
 

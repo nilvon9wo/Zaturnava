@@ -436,6 +436,110 @@ public sealed class GameServiceTest
     }
 
     [Fact]
+    public async Task Page_WhenGamesChanged_ListsTheOfferedOnesLastChangedFirst()
+    {
+        // Arrange
+        InMemoryGameStore store = new();
+        GameService service = this.Service(GameServiceSettings.Default, store);
+        GameId older = await service.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
+        this._time.Pass(FiveSeconds);
+        GameId newer = await service.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
+        this._time.Pass(FiveSeconds);
+        _ = await Sit(service, older, First, this._cancellation);
+        GameRecord kept = (await store.Find(newer, this._cancellation))!;
+        await store.Add(kept with { Id = new GameId("retired"), RulesetId = "retired" }, this._cancellation);
+
+        // Act
+        GamePage page = await service.Page(new GameQuery(), this._cancellation);
+
+        // Assert
+        Assert.Equal([older, newer], page.Games.Select(game => game.Id));
+    }
+
+    [Fact]
+    public async Task Page_WhenAskedForOneRuleset_ListsOnlyItsGames()
+    {
+        // Arrange
+        GameId tiny = await this.CreateOpen();
+        _ = await this._service.Create(RollingRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
+
+        // Act
+        GamePage page = await this._service.Page(new GameQuery(TinyRules.RulesetId), this._cancellation);
+
+        // Assert
+        Assert.Equal(tiny, Assert.Single(page.Games).Id);
+    }
+
+    [Fact]
+    public async Task Page_WhenAskedForTooBigAPage_ListsAPageOfTheMost()
+    {
+        // Arrange
+        _ = await this.CreateOpen();
+
+        // Act
+        GamePage page = await this._service.Page(new GameQuery(Page: 0, PageSize: 1000), this._cancellation);
+
+        // Assert
+        Assert.Equal(1, page.Total);
+    }
+
+    [Fact]
+    public async Task Submit_WhenItEndsTheGame_SavesItAsOverAndWhen()
+    {
+        // Arrange
+        InMemoryGameStore store = new();
+        GameService service = this.Service(GameServiceSettings.Default, store);
+        GameId id = await service.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
+        string token = await Sit(service, id, Second, this._cancellation);
+        bool? wasOver = (await store.Find(id, this._cancellation))?.IsOver;
+        this._time.Pass(FiveSeconds);
+
+        // Act
+        _ = await service.Submit(id, token, new ProposeEndAction(Second, false).Describe(), this._cancellation);
+
+        // Assert
+        GameRecord? saved = await store.Find(id, this._cancellation);
+        Assert.Equal((false, true, this._time.Now), (wasOver, saved?.IsOver, saved?.LastChanged));
+    }
+
+    [Fact]
+    public async Task Summarize_WhenGamesWereSavedBeforeItWasKeptWhetherTheyAreOver_WorksItOut()
+    {
+        // Arrange
+        InMemoryGameStore store = new();
+        GameService service = this.Service(GameServiceSettings.Default, store);
+        GameId going = await service.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
+        GameId over = await service.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
+        string token = await Sit(service, over, Second, this._cancellation);
+        _ = await service.Submit(over, token, new ProposeEndAction(Second, false).Describe(), this._cancellation);
+        GameRecord kept = (await store.Find(going, this._cancellation))!;
+        ActionDescriptor move = new MoveAction(First, new CellId(0), new CellId(1)).Describe();
+        GameRecord[] unsummarized =
+        [
+            kept with { Id = new GameId("going"), IsOver = null },
+            (await store.Find(over, this._cancellation))! with { Id = new GameId("over"), IsOver = null },
+            kept with { Id = new GameId("retired"), RulesetId = "retired", IsOver = null },
+            kept with { Id = new GameId("broken"), Actions = [move], IsOver = null },
+        ];
+        foreach (GameRecord record in unsummarized)
+        {
+            await store.Add(record, this._cancellation);
+        }
+
+        // Act
+        await service.Summarize(this._cancellation);
+
+        // Assert
+        bool?[] summaries =
+        [
+            .. await Task.WhenAll(
+                unsummarized.Select(async record => (await store.Find(record.Id, this._cancellation))?.IsOver)
+            ),
+        ];
+        Assert.Equal([false, true, true, true], summaries);
+    }
+
+    [Fact]
     public async Task Get_WhenTheGameIsUnknown_ThrowsGameNotFoundException()
     {
         // Arrange - nothing beyond the service

@@ -7,6 +7,8 @@ namespace Net.NowhereAtAll.Zaturnava.Server.Test;
 /// <summary>The server's API as a client sees it: every call through <see cref="HttpGameClient"/>.</summary>
 public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<ZaturnavaServer>
 {
+    private const int GameQueryMax = 100;
+
     private readonly HttpGameClient _client = server.GameClient();
     private readonly CancellationToken _cancellation = TestContext.Current.CancellationToken;
 
@@ -51,12 +53,50 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
         string gameId = await this.CreateGame();
 
         // Act
-        ImmutableList<GameSummaryDto> games = await this._client.List(this._cancellation);
+        GamePageDto page = await this._client.List(null, this._cancellation);
 
         // Assert
-        GameSummaryDto game = games.Single(listed => listed.Id == gameId);
+        GameSummaryDto game = page.Games.Single(listed => listed.Id == gameId);
         Assert.Equal([0], game.OpenSeats);
         Assert.Equal(("Black,Yellow,Green,Red", false), (string.Join(",", game.SeatNames), game.IsOver));
+    }
+
+    [Fact]
+    public async Task List_WhenAskedByFilters_ListsOnlyTheGamesThatMatch()
+    {
+        // Arrange
+        string open = await this.CreateGame();
+        string claimed = await this.CreateGame();
+        _ = await this._client.Claim(claimed, 0, null, null, this._cancellation);
+
+        // Act
+        GamePageDto page = await this._client.List(
+            new GameListQuery(ZaturnavaServer.Chaturaji2027, Open: false, Over: false, PageSize: GameQueryMax),
+            this._cancellation
+        );
+
+        // Assert
+        Assert.Equal(
+            (false, true, 1, GameQueryMax),
+            (
+                page.Games.Any(game => game.Id == open),
+                page.Games.Any(game => game.Id == claimed),
+                page.Page,
+                page.PageSize
+            )
+        );
+    }
+
+    [Fact]
+    public async Task List_WhenAskedForTooBigAPage_ListsAtMostTheMost()
+    {
+        // Arrange - nothing beyond the server
+
+        // Act
+        GamePageDto page = await this._client.List(new GameListQuery(PageSize: 1000), this._cancellation);
+
+        // Assert
+        Assert.Equal(GameQueryMax, page.PageSize);
     }
 
     [Fact]
@@ -67,10 +107,10 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
         _ = await this._client.Claim(gameId, 0, null, null, this._cancellation);
 
         // Act
-        ImmutableList<GameSummaryDto> games = await this._client.List(this._cancellation);
+        GamePageDto page = await this._client.List(null, this._cancellation);
 
         // Assert
-        GameSummaryDto game = games.Single(listed => listed.Id == gameId);
+        GameSummaryDto game = page.Games.Single(listed => listed.Id == gameId);
         Assert.Equal((GameSummaryDto.Guest, 0), (game.Players[0], game.OpenSeats.Count));
     }
 

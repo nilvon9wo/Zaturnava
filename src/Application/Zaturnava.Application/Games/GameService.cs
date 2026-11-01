@@ -79,9 +79,42 @@ public sealed class GameService(
         GameState initial = ScenarioStart.StateOf(start, rules);
         GameRecord created = new(GameId.New(), rules.Id, this.ControllersFor(initial, seats), start, 0);
         Played played = await this.PlayBots(rules, created, new Played(initial, start), cancellationToken);
-        GameRecord record = created with { Actions = played.Actions };
+        GameRecord record = created with
+        {
+            Actions = played.Actions,
+            IsOver = played.State.Outcome is not null,
+            LastChanged = this._clock.Now,
+        };
         await this._store.Add(record, cancellationToken);
         return record.Id;
+    }
+
+    /// <summary>
+    /// The page of games <paramref name="query"/> asks for, of the rulesets still offered, as stored: none is
+    /// replayed, however many there are.
+    /// </summary>
+    public Task<GamePage> Page([Required] GameQuery query, CancellationToken cancellationToken)
+    {
+        ImmutableHashSet<string> offered = [.. this.Rulesets.Select(rules => rules.Id)];
+        ImmutableHashSet<string> asked = query.RulesetId is { } id ? offered.Intersect([id]) : offered;
+        return this._store.Page(query.Bounded(), asked, cancellationToken);
+    }
+
+    /// <summary>
+    /// Works out, once, whether each game saved before that was kept is over, by replaying it; a game of a ruleset
+    /// no longer offered, or one its rules no longer replay, can no longer be played, so counts as over.
+    /// </summary>
+    public async Task Summarize(CancellationToken cancellationToken)
+    {
+        ImmutableDictionary<string, IRulesApplying> offered = this.Rulesets.ToImmutableDictionary(rules => rules.Id);
+        foreach (GameRecord record in await this._store.Unsummarized(cancellationToken))
+        {
+            GameSnapshot? snapshot = offered.TryGetValue(record.RulesetId, out IRulesApplying? rules)
+                ? Replayable(record, rules)
+                : null;
+            bool isOver = snapshot is null || snapshot.State.Outcome is not null;
+            await this._store.MarkOver(record.Id, isOver, cancellationToken);
+        }
     }
 
     /// <summary>Every stored game of a ruleset still offered, replayed, as a lobby lists them.</summary>
@@ -172,7 +205,10 @@ public sealed class GameService(
             new Played(snapshot.State, seated.Actions),
             cancellationToken
         );
-        await this.Save(seated with { Actions = played.Actions }, cancellationToken);
+        await this.Save(
+            seated with { Actions = played.Actions, IsOver = played.State.Outcome is not null },
+            cancellationToken
+        );
         return token;
     }
 
@@ -348,8 +384,10 @@ public sealed class GameService(
 
     private async Task<GameSnapshot> Saved(GameRecord record, IRulesApplying rules, CancellationToken cancellationToken)
     {
-        await this.Save(record, cancellationToken);
-        return this.Timed(GameSnapshot.Of(record, rules));
+        GameSnapshot snapshot = GameSnapshot.Of(record, rules);
+        GameRecord summarized = record with { IsOver = snapshot.State.Outcome is not null };
+        await this.Save(summarized, cancellationToken);
+        return this.Timed(snapshot with { Record = summarized });
     }
 
     /// <summary>
@@ -565,7 +603,7 @@ public sealed class GameService(
 
     private async Task Save(GameRecord record, CancellationToken cancellationToken)
     {
-        await this._store.Replace(record, cancellationToken);
+        await this._store.Replace(record with { LastChanged = this._clock.Now }, cancellationToken);
         await this._notifier.GameChanged(record.Id, record.Version, cancellationToken);
     }
 }

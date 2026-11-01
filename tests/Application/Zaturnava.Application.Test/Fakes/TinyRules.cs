@@ -12,10 +12,11 @@ namespace Net.NowhereAtAll.Zaturnava.Application.Test.Fakes;
 
 /// <summary>
 /// The smallest ruleset that still ends: two seats take turns passing until <paramref name="length"/>
-/// turns have been played; the second seat has only so long to pass, and may end the game whenever it
-/// likes, by proposing so. Either may vote on waiting for the other while it decides; a seat passed while
-/// away may say it is back. Its board is a row of four cells (<see cref="TinyBoard"/>), where each seat has a
-/// Pawn, and the first a King, that never move. Enough to drive the application without any real game.
+/// turns have been played, with no outcome; the second seat has only so long to pass, and may end the game
+/// whenever it likes, by proposing so, as its winner. Either may vote on waiting for the other while it
+/// decides; a seat passed while away may say it is back. Its board is a row of four cells
+/// (<see cref="TinyBoard"/>), where each seat has a Pawn, and the first a King, that never move.
+/// Enough to drive the application without any real game.
 /// </summary>
 internal sealed class TinyRules(int length) : IRulesApplying
 {
@@ -60,7 +61,11 @@ internal sealed class TinyRules(int length) : IRulesApplying
         bool isLegal = this.LegalActions(state).Contains(action);
         GameState next = (action, isLegal) switch
         {
-            (ProposeEndAction, _) => state with { DecidingSeat = null },
+            (ProposeEndAction end, _) => state with
+            {
+                DecidingSeat = null,
+                Outcome = new GameOutcome([end.Actor], "agreement", "the second seat ended it"),
+            },
             (VoteAwayAction vote, _) => state with { Absence = Voted(state.Absence, vote) },
             (PassAwayAction pass, _) => this.After(state) with { Absence = Missing(state.Absence, pass.Actor) },
             (RejoinAction rejoin, _) => state with

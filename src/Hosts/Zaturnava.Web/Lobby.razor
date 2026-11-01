@@ -158,6 +158,38 @@
 
         <div class="panel">
             <h2>Games</h2>
+            <div class="game-filters">
+                <label>
+                    Game
+                    <select class="filter-ruleset" value="@this._filter.Ruleset" @onchange="this.FilterRuleset">
+                        <option value="">Any</option>
+                        @foreach (RulesetDto ruleset in catalog.Rulesets)
+                        {
+                            <option value="@ruleset.Id">@ruleset.Name</option>
+                        }
+                    </select>
+                </label>
+                <label>
+                    Show
+                    <select class="filter-state" value="@StateOf(this._filter)" @onchange="this.FilterState">
+                        <option value="@Playing">Not over</option>
+                        <option value="@Joinable">With a seat open</option>
+                        <option value="@Finished">Over</option>
+                        <option value="@Every">All</option>
+                    </select>
+                </label>
+                <label class="people-only">
+                    <input type="checkbox"
+                           class="filter-people"
+                           checked="@(this._filter.PeopleOnly == true)"
+                           @onchange="this.FilterPeople" />
+                    No bots
+                </label>
+            </div>
+            @if (this._games.IsEmpty)
+            {
+                <p class="no-games">No games like that.</p>
+            }
             <ul class="games">
                 @foreach (GameSummaryDto game in this._games)
                 {
@@ -186,6 +218,18 @@
                     </li>
                 }
             </ul>
+            @if (this._pages > 1)
+            {
+                <div class="pages">
+                    <button class="previous" disabled="@(this._pageNumber <= 1)" @onclick="() => this.Turn(-1)">
+                        Previous
+                    </button>
+                    <span class="page-number">Page @this._pageNumber of @this._pages (@this._total games)</span>
+                    <button class="next" disabled="@(this._pageNumber >= this._pages)" @onclick="() => this.Turn(1)">
+                        Next
+                    </button>
+                </div>
+            }
         </div>
     }
 </section>
@@ -193,7 +237,18 @@
 @code {
     private CatalogDto? _catalog;
     private string _rulesetId = string.Empty;
+    private const string Playing = "playing";
+    private const string Joinable = "joinable";
+    private const string Finished = "finished";
+    private const string Every = "every";
+
     private ImmutableList<GameSummaryDto> _games = [];
+
+    /// <summary>Which games the list shows (Proposed): only those not over, until the player asks otherwise.</summary>
+    private GameListQuery _filter = new(Over: false);
+    private int _pageNumber = 1;
+    private int _pages = 1;
+    private int _total;
     private ImmutableDictionary<string, SeatClaim> _held = ImmutableDictionary<string, SeatClaim>.Empty;
     private const int PersonLevel = GameStarter.PersonLevel;
     private const int OwnAiLevel = GameStarter.OwnAiLevel;
@@ -286,14 +341,74 @@
     private async Task Load()
     {
         CatalogDto catalog = await this.Games.Catalog(CancellationToken.None);
-        this._games = await this.Games.List(CancellationToken.None);
+        await this.ListGames();
         this.Prepare(catalog);
         this._mode = await this.Browser.Setup();
         this._catalog = catalog;
+    }
+
+    /// <summary>The page of games the filter asks for, and the seats this browser holds at them.</summary>
+    private async Task ListGames()
+    {
+        GamePageDto page = await this.Games.List(this._filter, CancellationToken.None);
+        this._games = page.Games;
+        this._total = page.Total;
+        this._pageNumber = page.Page;
+        this._pages = Math.Max(1, (page.Total + page.PageSize - 1) / page.PageSize);
         foreach (GameSummaryDto game in this._games)
         {
             this._held = await this.Browser.Recall(game.Id) is { } claim ? this._held.SetItem(game.Id, claim) : this._held;
         }
+    }
+
+    /// <summary>The list filtered anew, from its first page; told why not, if the server cannot.</summary>
+    private async Task Filter(GameListQuery filter)
+    {
+        this._filter = filter with { Page = null };
+        this._problem = await Requests.Attempt(this.ListGames);
+    }
+
+    private Task FilterRuleset(ChangeEventArgs change)
+    {
+        string chosen = $"{change.Value}";
+        return this.Filter(this._filter with { Ruleset = chosen.Length > 0 ? chosen : null });
+    }
+
+    private Task FilterState(ChangeEventArgs change) =>
+        this.Filter(
+            $"{change.Value}" switch
+            {
+                Joinable => this._filter with { Open = true, Over = false },
+                Finished => this._filter with { Open = null, Over = true },
+                Every => this._filter with { Open = null, Over = null },
+                _ => this._filter with { Open = null, Over = false },
+            }
+        );
+
+    private Task FilterPeople(ChangeEventArgs change) =>
+        this.Filter(this._filter with { PeopleOnly = true.Equals(change.Value) ? true : null });
+
+    /// <summary>The page <paramref name="by"/> pages on (or back).</summary>
+    private async Task Turn(int by)
+    {
+        this._filter = this._filter with { Page = this._pageNumber + by };
+        this._problem = await Requests.Attempt(this.ListGames);
+    }
+
+    /// <summary>What the list shows, as the Show choice names it.</summary>
+    private static string StateOf(GameListQuery filter)
+    {
+        if (true.Equals(filter.Open))
+        {
+            return Joinable;
+        }
+
+        if (true.Equals(filter.Over))
+        {
+            return Finished;
+        }
+
+        return filter.Over is null ? Every : Playing;
     }
 
     /// <summary>

@@ -64,6 +64,24 @@ public sealed class GameToolsTest : IAsyncLifetime
     }
 
     [Fact]
+    public async Task ListGames_WhenGivenFilters_ListsByThem()
+    {
+        // Arrange
+        Dictionary<string, object?> arguments = new()
+        {
+            ["ruleset"] = "chaturaji-2027",
+            ["open"] = true,
+            ["page"] = 2,
+        };
+
+        // Act
+        _ = await this._session.Call("list_games", arguments, this._cancellation);
+
+        // Assert
+        Assert.Equal(new GameListQuery("chaturaji-2027", Open: true, Page: 2), this._session.Server.Received);
+    }
+
+    [Fact]
     public async Task CreateGame_WhenGivenSeats_CreatesTheGameWithThem()
     {
         // Arrange

@@ -89,6 +89,12 @@ namespace Net.NowhereAtAll.Zaturnava.Persistence.EfCore.SqlServer.Migrations
                     b.Property<string>("Id")
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<bool?>("IsOver")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LastChanged")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("RulesetId")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -98,6 +104,8 @@ namespace Net.NowhereAtAll.Zaturnava.Persistence.EfCore.SqlServer.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("LastChanged");
 
                     b.ToTable("Games");
                 });

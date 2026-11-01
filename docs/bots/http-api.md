@@ -14,7 +14,7 @@ server is at `https://zaturnava.runasp.net/`.
 | | Request | Reply |
 |---|---|---|
 | What the server hosts | `GET api/catalog` | The rulesets (with their seats' names) and the bots, by id |
-| The games | `GET api/games` | Each game: its id, its open seats, who plays each seat (`open`, a bot's id, or for a person, the name they signed in with, `deleted player`, `guest` or `Nickname (guest)`), whether it is over |
+| The games | `GET api/games`, filtered and paged ([below](#listing-games)) | A page of games, last changed first, each with its id, its open seats, who plays each seat (`open`, a bot's id, or for a person, the name they signed in with, `deleted player`, `guest` or `Nickname (guest)`), whether it is over; and how many games match in all |
 | Create a game | `POST api/games` | `201`, `{"gameId": "..."}` |
 | Claim a seat | `POST api/games/{id}/seats/{seat}`, with a player token or none, and a guest's nickname or none | `{"token": "..."}` |
 | Say anew who holds a seat | `PUT api/games/{id}/seats/{seat}`, with a player token or none, and the seat's token and a guest's nickname or none | `204` |
@@ -27,6 +27,21 @@ server is at `https://zaturnava.runasp.net/`.
 | Every finished game's history | `GET api/history` | A list of them |
 | What was said at the table | `GET api/games/{id}/chat?after={n}`, with a seat's token or none | [The talk](#talk-at-the-table) since message `n` |
 | Say something | `POST api/games/{id}/chat`, with the seat's token | The message, numbered |
+
+### Listing games
+
+`GET api/games` takes, each optional: `ruleset` (a ruleset's id), `open` (`true` for only games with a seat open,
+`false` for only those without), `peopleOnly` (`true` for only games with no bot at a seat, `false` for only those
+with one), `over` (`true` or `false`), `page` (from 1) and `pageSize` (20 if left out, at most 100). A filter left
+out does not filter. For example, `GET api/games?ruleset=chaturaji-2027&open=true&over=false` lists the games of
+Chaturaji 2027 a player may still join. The reply:
+
+```json
+{ "games": [ { "id": "...", "rulesetId": "chaturaji-2027", "openSeats": [2], "isOver": false } ],
+  "total": 31, "page": 1, "pageSize": 20 }
+```
+
+Each game is listed as last saved, so listing is quick however many games there are.
 
 A game is created with its ruleset and, for each seat in order, the id of the bot that plays it, or
 `null` to leave the seat open:

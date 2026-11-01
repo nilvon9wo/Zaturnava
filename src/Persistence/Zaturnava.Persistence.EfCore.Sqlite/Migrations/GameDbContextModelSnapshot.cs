@@ -84,6 +84,12 @@ namespace Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Sqlite.Migrations
                     b.Property<string>("Id")
                         .HasColumnType("TEXT");
 
+                    b.Property<bool?>("IsOver")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("LastChanged")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("RulesetId")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -93,6 +99,8 @@ namespace Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Sqlite.Migrations
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("LastChanged");
 
                     b.ToTable("Games");
                 });

@@ -21,9 +21,18 @@ public sealed class GameTools(IGameServing games)
         Explained(() => this._games.Catalog(cancellationToken));
 
     [McpServerTool(Name = "list_games", ReadOnly = true)]
-    [Description("The games on the server, with the seats still open for a player to claim.")]
-    public Task<ImmutableList<GameSummaryDto>> ListGames(CancellationToken cancellationToken) =>
-        Explained(() => this._games.List(cancellationToken));
+    [Description(
+        "A page of the games on the server, newest first, with the seats still open for a player to claim, and how "
+        + "many games match in all."
+    )]
+    public Task<GamePageDto> ListGames(
+        [Description("Only games of this ruleset id; any, if left out.")] string? ruleset = null,
+        [Description("true for only games with a seat open to claim; false for none; any, if left out.")]
+        bool? open = null,
+        [Description("The page, from 1; the first, if left out. A page holds 20 games.")] int? page = null,
+        CancellationToken cancellationToken = default
+    ) =>
+        Explained(() => this._games.List(new GameListQuery(ruleset, open, Page: page), cancellationToken));
 
     [McpServerTool(Name = "create_game")]
     [Description(

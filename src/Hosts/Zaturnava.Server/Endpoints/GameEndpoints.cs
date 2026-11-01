@@ -5,6 +5,7 @@ using Net.NowhereAtAll.Zaturnava.Application.Games;
 using Net.NowhereAtAll.Zaturnava.Application.Players;
 using Net.NowhereAtAll.Zaturnava.Contracts;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
+using Net.NowhereAtAll.Zaturnava.Engine.Rules;
 using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 using Net.NowhereAtAll.Zaturnava.Server.Composition;
 
@@ -41,18 +42,34 @@ internal static class GameEndpoints
     private static CatalogDto Catalog(GameService games) =>
         GameViews.CatalogOf(games.Rulesets, games.Bots, games.Scenarios);
 
-    private static async Task<ImmutableList<GameSummaryDto>> List(
+    /// <summary>A page of the games asked for, read as stored: none is replayed.</summary>
+    private static async Task<GamePageDto> List(
+        [AsParameters] GameListQuery asked,
         GameService games,
         PlayerService players,
         CancellationToken cancellationToken
     )
     {
-        ImmutableList<GameSnapshot> snapshots = await games.Snapshots(cancellationToken);
+        GameQuery query = new GameQuery(
+            asked.Ruleset,
+            asked.Open,
+            asked.PeopleOnly,
+            asked.Over,
+            asked.Page ?? 1,
+            asked.PageSize ?? GameQuery.DefaultPageSize
+        ).Bounded();
+        GamePage page = await games.Page(query, cancellationToken);
         ImmutableDictionary<HumanSeat, string> names = await players.NamesOf(
-            snapshots.SelectMany(snapshot => snapshot.Record.Controllers),
+            page.Games.SelectMany(game => game.Controllers),
             cancellationToken
         );
-        return [.. snapshots.Select(snapshot => GameViews.SummaryOf(snapshot, names))];
+        ImmutableDictionary<string, IRulesApplying> rulesets = games.Rulesets.ToImmutableDictionary(rules => rules.Id);
+        return new GamePageDto(
+            [.. page.Games.Select(game => GameViews.SummaryOf(game, rulesets[game.RulesetId], names))],
+            page.Total,
+            query.Page,
+            query.PageSize
+        );
     }
 
     /// <summary>The game as its seats see it, naming the bots and whoever holds each person's seat.</summary>
