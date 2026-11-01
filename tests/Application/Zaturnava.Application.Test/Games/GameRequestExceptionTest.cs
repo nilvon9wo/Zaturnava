@@ -1,5 +1,6 @@
 using Net.NowhereAtAll.Zaturnava.Application.Bots;
 using Net.NowhereAtAll.Zaturnava.Application.Games;
+using Net.NowhereAtAll.Zaturnava.Application.Players;
 using Net.NowhereAtAll.Zaturnava.Application.Ports;
 using Net.NowhereAtAll.Zaturnava.Application.Rulesets;
 using Net.NowhereAtAll.Zaturnava.Application.Scenarios;
@@ -33,6 +34,11 @@ public sealed class GameRequestExceptionTest
             new ConcurrencyConflictException(Game),
             GameRequestFailure.Conflict,
             "Game 'g' changed meanwhile; read it again."
+        },
+        {
+            new UnknownPlayerException(),
+            GameRequestFailure.Forbidden,
+            "That player token stands for no one, now: sign in again, or play as a guest."
         },
     };
 

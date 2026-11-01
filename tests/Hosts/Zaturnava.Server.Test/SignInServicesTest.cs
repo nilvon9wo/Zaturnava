@@ -143,7 +143,7 @@ public sealed class SignInServicesTest
     private static ServiceProvider Services(IConfiguration configuration) =>
         new ServiceCollection()
             .AddLogging()
-            .AddSignIn(configuration, [new FakeSignIn()])
+            .AddSignIn(configuration, [new FakeSignIn()], [])
             .BuildServiceProvider();
 }
 

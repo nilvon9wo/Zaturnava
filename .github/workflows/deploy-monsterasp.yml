@@ -18,6 +18,8 @@ name: Deploy server (MonsterASP.NET)
 # by /signin-google) and Discord (an application's OAuth2 client; its redirect, followed by /signin-discord):
 #   GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
 #   DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET
+# And itch.io (an OAuth application, which has no secret; its redirect URI, followed by /signin-itch):
+#   ITCH_CLIENT_ID
 # The site's own address is no secret: the server answers requests for its host alone (AllowedHosts), and its
 # hosted MCP server calls the API there (Mcp:SelfAddress), never at a host a request names.
 on:
@@ -53,6 +55,7 @@ jobs:
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
           DISCORD_CLIENT_ID: ${{ secrets.DISCORD_CLIENT_ID }}
           DISCORD_CLIENT_SECRET: ${{ secrets.DISCORD_CLIENT_SECRET }}
+          ITCH_CLIENT_ID: ${{ secrets.ITCH_CLIENT_ID }}
         run: |
           $settings = @{
             AllowedHosts = $env:SITE_HOST
@@ -78,6 +81,11 @@ jobs:
             } else {
               $providers[$provider.Name] = @{ ClientId = $id; ClientSecret = $secret }
             }
+          }
+          if ([string]::IsNullOrWhiteSpace($env:ITCH_CLIENT_ID)) {
+            Write-Host "No ITCH_CLIENT_ID: no one can sign in with itch.io."
+          } else {
+            $providers.Itch = @{ ClientId = $env:ITCH_CLIENT_ID }
           }
           if ($providers.Count -gt 0) { $settings.SignIn = @{ Providers = $providers } }
           $settings | ConvertTo-Json -Depth 5 | Set-Content -Path publish/appsettings.Production.json -Encoding utf8

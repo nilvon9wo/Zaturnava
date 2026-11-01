@@ -78,7 +78,10 @@ dotnet user-secrets --project src/Hosts/Zaturnava.Server set "SignIn:Providers:G
 Google and Discord are set up the same way, each under its own name (`SignIn:Providers:Google:...`,
 `SignIn:Providers:Discord:...`): for Google, an OAuth client of the Web application type (Google Cloud console, APIs
 and services, Credentials), with the redirect URI `http://localhost:5164/signin-google`; for Discord, an application
-(Discord Developer Portal, OAuth2) with the redirect `http://localhost:5164/signin-discord`.
+(Discord Developer Portal, OAuth2) with the redirect `http://localhost:5164/signin-discord`. itch.io's OAuth
+applications (itch.io, Settings, API keys, OAuth applications) have no secret: only `SignIn:Providers:Itch:ClientId`
+is set, and the redirect URI is `http://localhost:5164/signin-itch`. itch.io hands the token back to the browser, and
+the server asks itch.io, with it, who the person is.
 
 Without any, the page offers no sign-in, and everything else works as before.
 

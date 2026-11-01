@@ -28,7 +28,7 @@ No cookies are set while you play (only while signing in, below), and nothing tr
 
 ## Signing in
 
-Signing in is optional, and is being built: the game page offers to sign in with GitHub, Google or Discord
+Signing in is optional, and is being built: the game page offers to sign in with GitHub, Google, Discord or itch.io
 (whichever the server is set up for), in a window of its own. Each is asked only who you are: your id there and the
 name you show there, never your e-mail address, your contacts or your servers.
 Your browser then keeps the token you were given until you sign out, when the server lets it go too, and it stands

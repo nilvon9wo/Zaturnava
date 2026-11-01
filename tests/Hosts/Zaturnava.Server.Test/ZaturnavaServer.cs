@@ -43,11 +43,13 @@ public class ZaturnavaServer : WebApplicationFactory<Program>
     /// </summary>
     protected override void ConfigureWebHost(IWebHostBuilder builder) =>
         SignInServices.Known
+            .Select(provider => provider.Name)
+            .Concat(SignInServices.KnownByToken.Select(provider => provider.Name))
             .Aggregate(
                 builder,
                 (configured, provider) =>
                     configured.UseSetting(
-                        $"{SignInServices.ProvidersKey}:{provider.Name}:{SignInServices.ClientIdKey}",
+                        $"{SignInServices.ProvidersKey}:{provider}:{SignInServices.ClientIdKey}",
                         string.Empty
                     )
             )

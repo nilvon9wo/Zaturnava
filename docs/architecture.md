@@ -222,8 +222,8 @@ client, MCP, presentation), `Hosts` (server, page, hosting adapters) and `Persis
 | Persistence.EfCore | `IGamePersisting` and `IPlayerPersisting` over EF Core, naming no database; bringing the schema up to date (`GameSchema`) | Application, Engine |
 | Persistence.EfCore.Sqlite | The context on SQLite, and its migrations | Persistence.EfCore |
 | Persistence.EfCore.SqlServer | The context on SQL Server, and its migrations | Persistence.EfCore |
-| Hosting | Ports for the services around the game (`IPageHosting`, `ISignInProviding`), and `ListedPageHost` | — |
-| Hosting.Itch | `IPageHosting` for a page published on itch.io | Hosting |
+| Hosting | Ports for the services around the game (`IPageHosting`, `ISignInProviding` and, for services that hand the token back to the browser, `ITokenSignInProviding`), and `ListedPageHost` | — |
+| Hosting.Itch | `IPageHosting` for a page published on itch.io; `ITokenSignInProviding` for signing in with an itch.io account | Hosting |
 | Hosting.GitHub | `ISignInProviding` for signing in with a GitHub account | Hosting |
 | Hosting.Google | `ISignInProviding` for signing in with a Google account | Hosting |
 | Hosting.Discord | `ISignInProviding` for signing in with a Discord account | Hosting |

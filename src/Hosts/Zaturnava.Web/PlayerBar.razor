@@ -1,9 +1,9 @@
-@* Signing in, which is optional: until then, a nickname to play by as a guest (shown as "Nickname (guest)", and
-   kept in the browser for every table until cleared), and a button for each service the server is set up for,
-   opening a window of its own to sign in with it; once signed in, the player's name, a button to sign out (the server lets the token go), and
+@* Signing in, which is optional. Until then, the nickname played by as a guest, if any, and one button, Sign in,
+   opening a dialog that offers both ways to play: as a guest, by a nickname (shown as "Nickname (guest)", and kept
+   in the browser for every table until cleared); or signed in, with any service the server is set up for, each in a
+   window of its own. Once signed in, the player's name, a button to sign out (the server lets the token go), and
    one to delete the account, which asks first, here in the page, and once confirmed has the server forget the
-   player altogether. No button to sign in if the server offers no service, or cannot be asked. The player's token
-   is kept in the browser. *@
+   player altogether. The player's token is kept in the browser. *@
 @using Microsoft.JSInterop
 @implements IDisposable
 @inject IGameServing Games
@@ -31,20 +31,46 @@
 else
 {
     <span class="player">
-        <label class="nickname">
-            Play as
-            <input class="nickname"
-                   maxlength="@ClaimSeatRequest.MaximumNicknameLength"
-                   placeholder="a nickname"
-                   value="@this._nickname"
-                   @onchange="this.SetNickname" />
-            (guest)
-        </label>
-        @foreach (string provider in this._providers)
+        @if (this._nickname is { Length: > 0 } nickname)
         {
-            <button class="sign-in" @onclick="() => this.SignIn(provider)">Sign in with @provider</button>
+            <span class="guest-name">Playing as <strong>@nickname</strong> (guest)</span>
         }
+        <button class="open-sign-in" @onclick="() => this._isChoosing = true">Sign in</button>
     </span>
+    @if (this._isChoosing)
+    {
+        <div class="backdrop">
+            <div class="dialog sign-in-dialog" role="dialog" aria-modal="true" aria-labelledby="sign-in-title">
+                <h2 id="sign-in-title">Sign in</h2>
+                <p>Play as a guest, by a nickname, shown to the others as "Nickname (guest)". A guest may play, and read
+                    what is said at the table.</p>
+                <label class="nickname">
+                    Nickname
+                    <input class="nickname"
+                           maxlength="@ClaimSeatRequest.MaximumNicknameLength"
+                           placeholder="none: just guest"
+                           value="@this._nickname"
+                           @onchange="this.SetNickname" />
+                </label>
+                <div class="actions">
+                    <button class="as-guest" @onclick="() => this._isChoosing = false">Play as a guest</button>
+                </div>
+                @if (!this._providers.IsEmpty)
+                {
+                    <p>Or sign in, to be known by your name, and to speak at the table:</p>
+                    <div class="actions">
+                        @foreach (string provider in this._providers)
+                        {
+                            <button class="sign-in" @onclick="() => this.SignIn(provider)">Sign in with @provider</button>
+                        }
+                    </div>
+                }
+                <div class="actions">
+                    <button class="cancel" @onclick="() => this._isChoosing = false">Cancel</button>
+                </div>
+            </div>
+        </div>
+    }
 }
 @if (this._notice is { } notice)
 {
@@ -60,6 +86,7 @@ else
     /// <summary>The player signed in, and their token; none, if no one is.</summary>
     private (PlayerDto Player, string Token)? _signedIn;
     private bool _isConfirming;
+    private bool _isChoosing;
     private string? _notice;
     private DotNetObjectReference<PlayerBar>? _listener;
 
@@ -75,6 +102,7 @@ else
     {
         await this.Browser.RememberPlayer(token);
         this._notice = null;
+        this._isChoosing = false;
         _ = await Requests.Attempt(async () => await this.Show(token));
         this.StateHasChanged();
     }

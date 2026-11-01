@@ -194,6 +194,30 @@ public sealed partial class SignInApiTest(SigningInServer server) : IClassFixtur
         );
     }
 
+    [Fact]
+    public async Task Claim_WhenThePlayerTokenStandsForNoOne_IsRefusedRatherThanSeatingAGuest()
+    {
+        // Arrange
+        HttpGameClient client = server.GameClient();
+        GameCreatedDto created = await client.Create(
+            new CreateGameRequest(ZaturnavaServer.Chaturaji2027, ZaturnavaServer.OneOpenSeat),
+            this._cancellation
+        );
+
+        // Act
+        GameRequestRefusedException refused = await Assert.ThrowsAsync<GameRequestRefusedException>(() =>
+            client.Claim(created.GameId, 0, "signed-out", null, this._cancellation)
+        );
+
+        // Assert
+        Assert.Equal(
+            (Refusal.Forbidden, 1),
+            (refused.Refusal, (await client.Get(created.GameId, this._cancellation)).Seats.Count(IsOpen))
+        );
+
+        static bool IsOpen(SeatDto seat) => seat.Controller == "open";
+    }
+
     [Theory]
     [InlineData("api/players/me", null)]
     [InlineData("api/players/me", "not-a-token")]

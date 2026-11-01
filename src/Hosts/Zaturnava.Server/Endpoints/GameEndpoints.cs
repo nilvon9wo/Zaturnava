@@ -130,8 +130,8 @@ internal static class GameEndpoints
     }
 
     /// <summary>
-    /// Claims the seat: for the player the request's token stands for, if any; else for a guest, by the nickname
-    /// the body gives, if it gives one.
+    /// Claims the seat: for the player the request's token stands for, if it carries one (refused, if it stands
+    /// for no one); else for a guest, by the nickname the body gives, if it gives one.
     /// </summary>
     private static async Task<SeatClaimedDto> Claim(
         string gameId,
@@ -143,13 +143,13 @@ internal static class GameEndpoints
         CancellationToken cancellationToken
     )
     {
-        Player? player = SeatToken.OrNull(request) is { } playerToken
-            ? await players.Find(playerToken, cancellationToken)
+        PlayerId? claimant = SeatToken.OrNull(request) is { } playerToken
+            ? (await players.Find(playerToken, cancellationToken) ?? throw new UnknownPlayerException()).Id
             : null;
         string token = await games.Claim(
             new GameId(gameId),
             new SeatId(seat),
-            player?.Id,
+            claimant,
             claim?.Nickname,
             cancellationToken
         );
