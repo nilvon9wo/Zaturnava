@@ -137,6 +137,8 @@ internal sealed class LineRules(ImmutableList<GameAction> legalActions) : IRules
 
     public bool IsLeader(PieceKindId kind) => kind == Raja;
 
+    public bool IsHeavy(PieceKindId kind) => false;
+
     public ImmutableList<string> Measures => ["pawns"];
 
     public ImmutableList<double> MeasuresOf([Required] GameState state, SeatId seat) =>

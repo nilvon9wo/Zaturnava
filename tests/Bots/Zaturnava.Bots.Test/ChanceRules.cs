@@ -89,6 +89,8 @@ internal sealed class ChanceRules(int deliberate) : IRulesApplying
 
     public bool IsLeader(PieceKindId kind) => false;
 
+    public bool IsHeavy(PieceKindId kind) => false;
+
     public string NameOf(PieceKindId kind) => throw new NotSupportedException();
 
     public string NameOf(SeatId seat) => throw new NotSupportedException();

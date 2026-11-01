@@ -229,16 +229,21 @@ public sealed class SageBotTest
     [Theory]
     [InlineData(12, 0, "accept")]
     [InlineData(12, 5, "decline")]
+    [InlineData(14, 0, "accept")]
+    [InlineData(14, 5, "decline")]
     [InlineData(11, 0, "accept")]
     [InlineData(11, 5, "decline")]
-    public async Task Decide_WhenItsTeamLeadsOnPoints_SendsNoEnemyLeaderNorMoreWorthHome(
+    public async Task Decide_WhenItsTeamLeadsOnPoints_SendsNoEnemyLeaderNorHeavyPieceNorMoreWorthHome(
         int asked,
         int ours,
         string answer
     )
     {
-        // Arrange - Green's Pawn back, for Yellow's Raja or Horse, a position no worse as Sage weighs it
-        DecisionRequest offered = Ransoms.Leading(Ransoms.HoldingYellowsRaja(Ransoms.Offered([21], [asked])), ours);
+        // Arrange - Green's Pawn back, for Yellow's Raja, Horse or Elephant, a position no worse as Sage weighs it
+        DecisionRequest offered = Ransoms.Leading(
+            Ransoms.HoldingYellowsElephant(Ransoms.HoldingYellowsRaja(Ransoms.Offered([21], [asked]))),
+            ours
+        );
 
         // Act
         GameAction action = await new SageBot(new Random(Seed), Nothing).Decide(offered, this._cancellation);

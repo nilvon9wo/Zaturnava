@@ -99,6 +99,8 @@ internal sealed class ScriptedRules(ImmutableDictionary<GameAction, GameState> r
 
     public bool IsLeader(PieceKindId kind) => kind == LineRules.Raja;
 
+    public bool IsHeavy(PieceKindId kind) => false;
+
     public string NameOf(PieceKindId kind) => throw new NotSupportedException();
 
     public string NameOf(SeatId seat) => throw new NotSupportedException();

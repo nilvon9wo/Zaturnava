@@ -117,6 +117,16 @@ internal static class Ransoms
             State = request.State with { Prisoners = request.State.Prisoners.Add(Held(12, "raja", Yellow, Black)) },
         };
 
+    /// <summary>The request, with seat 0 also holding Yellow's Elephant 14, a heavy piece.</summary>
+    public static DecisionRequest HoldingYellowsElephant(DecisionRequest request) =>
+        request with
+        {
+            State = request.State with
+            {
+                Prisoners = request.State.Prisoners.Add(Held(14, "elephant", Yellow, Black)),
+            },
+        };
+
     /// <summary>
     /// The request, under rules where accepting a ransom scores its receiver <paramref name="points"/> for each
     /// prisoner asked for.

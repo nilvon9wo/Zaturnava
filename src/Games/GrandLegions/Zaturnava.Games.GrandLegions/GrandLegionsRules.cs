@@ -23,6 +23,13 @@ public static class GrandLegionsRules
             .Select(piece => piece.Id),
     ];
 
+    public static ImmutableHashSet<PieceKindId> Heavies { get; } =
+    [
+        .. GrandLegionsPieces.Catalogue
+            .Where(piece => piece.Class == PieceClass.Heavy)
+            .Select(piece => piece.Id),
+    ];
+
     /// <summary>The rules of each quick game, small, medium and large.</summary>
     public static ImmutableList<Chaturaji2027Rules> Quick { get; } = [.. QuickGame.All.Select(RulesOf)];
 
@@ -49,6 +56,7 @@ public static class GrandLegionsRules
             Pinwheel.Armies(game.Side, QuickArmy.Layout(game, QuickArmy.Pick(game)))
         )
         {
+            Heavies = Heavies,
             DieNames = dice.Classes.ToImmutableDictionary(face => face.Key, face => NameOf(face.Value)),
             MayMove = RiverCrossing.On(new GrandBoard(game.Side, game.Side, game.KingdomWidth, game.KingdomDepth)),
         };
