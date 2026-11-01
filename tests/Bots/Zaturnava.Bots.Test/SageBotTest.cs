@@ -215,10 +215,11 @@ public sealed class SageBotTest
     [InlineData(2, false)]
     public async Task Decide_WhenNoGiftIsLeft_OffersATradeOnlyIfItLeavesItBetterOff(double exposure, bool offers)
     {
-        // Arrange - its Horse back, worth 3 on the board, but where a Pawn may take it
+        // Arrange - its Horse back, worth 3 on the board, but where a Pawn may take it, for a Horse, the most
+        // even trade
         DecisionRequest request = Ransoms.Exposing(Ransoms.WindowWithout(30), Ransoms.Yellow);
         SageWeights weights = Nothing with { Material = 1, Exposure = exposure };
-        OfferAction first = new(Ransoms.Black, Ransoms.Yellow, [new PieceId(10)], [new PieceId(20)]);
+        OfferAction first = new(Ransoms.Black, Ransoms.Yellow, [new PieceId(11)], [new PieceId(20)]);
 
         // Act
         GameAction action = await new SageBot(new Random(Seed), weights).Decide(request, this._cancellation);

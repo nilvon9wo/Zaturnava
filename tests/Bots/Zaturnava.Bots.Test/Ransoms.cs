@@ -12,7 +12,7 @@ namespace Net.NowhereAtAll.Zaturnava.Bots.Test;
 
 /// <summary>
 /// Prisoners to trade, with seats 0 and 2 allied against 1 and 3: seat 0 holds Yellow's (seat 1's)
-/// Pawn 10 and Horse 11, and Green's (its ally's) Raja 30; Yellow holds seat 0's Horse 20 and Green's
+/// Minister 10 (worth 2) and Horse 11, and Green's (its ally's) Raja 30; Yellow holds seat 0's Horse 20 and Green's
 /// Pawn 21.
 /// </summary>
 internal static class Ransoms
@@ -149,6 +149,13 @@ internal static class Ransoms
         };
     }
 
+    /// <summary>The request, with seat 0 also holding Yellow's Pawn 13.</summary>
+    public static DecisionRequest HoldingYellowsPawn(DecisionRequest request) =>
+        request with
+        {
+            State = request.State with { Prisoners = request.State.Prisoners.Add(Held(13, "pawn", Yellow, Black)) },
+        };
+
     /// <summary>The request, with Yellow also holding Green's Raja 31.</summary>
     public static DecisionRequest YellowHoldingGreensRaja(DecisionRequest request) =>
         request with
@@ -178,7 +185,7 @@ internal static class Ransoms
             Teams = TeamGraph.FromTeams([[Black, Green], [Yellow, new SeatId(3)]]),
             Prisoners =
             [
-                Held(10, "pawn", Yellow, Black),
+                Held(10, "minister", Yellow, Black),
                 Held(11, "horse", Yellow, Black),
                 Held(30, "raja", Green, Black),
                 Held(20, "horse", Black, Yellow),

@@ -86,11 +86,15 @@ public sealed class SageBot(
             );
     }
 
-    /// <summary>A gift to an ally, if one may be made; else the trade that gains the most, if any gains.</summary>
+    /// <summary>
+    /// A gift to an ally, if one may be made; else, of the trades that gain anything, the most even, then the one
+    /// that gains the most.
+    /// </summary>
     private static OfferAction? BestTrade(DecisionRequest request, bool isPassing, ByPosition judge) =>
         Trading.TradesOf(request, isPassing, judge)
             .Where(trade => trade.IsGift || trade.Gain > 0)
             .OrderByDescending(trade => trade.IsGift)
+            .ThenBy(trade => trade.Imbalance)
             .ThenByDescending(trade => trade.Gain)
             .FirstOrDefault()?.Offer;
 }

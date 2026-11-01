@@ -276,9 +276,36 @@ public sealed class MidasBotTest
     }
 
     [Fact]
+    public async Task Decide_WhenATradeAskingTheSameBackWasDeclinedLately_DoesNotOfferItForOtherChange()
+    {
+        // Arrange - the Horse 11 for its Horse 20 was declined: the Minister 10 for it is no better an offer
+        DecisionRequest request =
+            Ransoms.Declined(Ransoms.Window(), Ransoms.Offer(Ransoms.Yellow, [11], [20]), 1, Position.Empty);
+
+        // Act
+        GameAction action = await new MidasBot(new Random(1)).Decide(request, this._cancellation);
+
+        // Assert
+        Assert.Equal(Ransoms.Done, action);
+    }
+
+    [Fact]
+    public async Task Decide_WhenATradeAsksMoreThanHalfAgainWhatItGives_DoesNotOfferIt()
+    {
+        // Arrange - a Pawn (1) for its Horse (3) would gain the most, but a person would not take it
+        DecisionRequest request = Ransoms.HoldingYellowsPawn(Ransoms.WindowWithout(10, 11));
+
+        // Act
+        GameAction action = await new MidasBot(new Random(1)).Decide(request, this._cancellation);
+
+        // Assert
+        Assert.Equal(Ransoms.Done, action);
+    }
+
+    [Fact]
     public async Task Decide_WhenATradeAsksMoreThanThreeTimesWhatItGives_DoesNotOfferIt()
     {
-        // Arrange - a Pawn (1) for Green's Raja (5) would gain the most, but no enemy would take it
+        // Arrange - the Minister (2) for Green's Raja (5) would gain the most, but no enemy would take it
         DecisionRequest request = Ransoms.YellowHoldingGreensRaja(Ransoms.Window());
 
         // Act
