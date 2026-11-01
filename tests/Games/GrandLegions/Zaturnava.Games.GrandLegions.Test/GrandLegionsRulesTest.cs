@@ -36,6 +36,22 @@ public sealed class GrandLegionsRulesTest
     }
 
     [Fact]
+    public void IsHeavy_ForEachPiece_IsTrueOnlyForTheHeavyClass()
+    {
+        // Arrange
+        Chaturaji2027Rules rules = GrandLegionsRules.RulesOf(QuickGame.Medium);
+
+        // Act
+        ImmutableList<bool> heavy = [.. GrandLegionsPieces.Catalogue.Select(piece => rules.IsHeavy(piece.Id))];
+
+        // Assert
+        Assert.Equal(
+            [.. GrandLegionsPieces.Catalogue.Select(piece => piece.Class == PieceClass.Heavy)],
+            heavy
+        );
+    }
+
+    [Fact]
     public void CreateInitialState_ForTheMediumGame_SetsFourArmiesEachLeaderOnItsThrone()
     {
         // Arrange

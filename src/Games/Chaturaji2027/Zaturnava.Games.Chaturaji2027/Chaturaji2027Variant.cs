@@ -37,7 +37,13 @@ public sealed record Chaturaji2027Variant(
         [Chaturaji2027Pieces.Raja],
         [Chaturaji2027Pieces.Pawn],
         Chaturaji2027Setup.Start
-    );
+    )
+    {
+        Heavies = [Chaturaji2027Pieces.Elephant],
+    };
+
+    /// <summary>The kinds, leaders apart, most dangerous to let loose, as a Rook is: none, unless set.</summary>
+    public ImmutableHashSet<PieceKindId> Heavies { get; init; } = [];
 
     /// <summary>What a die showing each value is called, where not by the kinds it lets move: none.</summary>
     public ImmutableDictionary<int, string> DieNames { get; init; } = [];

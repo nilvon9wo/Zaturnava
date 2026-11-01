@@ -17,10 +17,10 @@ namespace Net.NowhereAtAll.Zaturnava.Bots;
 /// on the board has changed by a tenth, or the seat that declined has made an offer of its own; so that an answer
 /// is not asked of its opponents over and over. Of an enemy it asks at most half again the worth of what it gives
 /// back, an offer the enemy might take. With an enemy, a bot weighs whether its team can afford the trade: it
-/// gives a leader back only for as much as it gains, and makes no trade that leaves its team weaker against that
-/// enemy's team, counting what each has on the board; so an even trade suits a team that is behind, and nothing
-/// given back revives a team that has nothing left. A team ahead on points gives no leader back at all, nor more
-/// worth than it gets back.
+/// gives a leader or a heavy piece (a Rook, say) back only for as much as it gains, and makes no trade that leaves
+/// its team weaker against that enemy's team, counting what each has on the board; so an even trade suits a team
+/// that is behind, and nothing given back revives a team that has nothing left. A team ahead on points gives no
+/// leader nor heavy piece back at all, nor more worth than it gets back.
 /// </summary>
 internal static class Trading
 {
@@ -121,10 +121,10 @@ internal static class Trading
     /// <summary>
     /// Whether a trade with <paramref name="other"/>, sending <paramref name="returning"/> home, and gaining the
     /// bot <paramref name="gain"/>, is one the bot's team can afford: always with an ally; with an enemy, only if
-    /// no leader of theirs goes home but for a gain of none or more, and the bot's team ends no weaker against
-    /// theirs, as the worth on the board of each compares, than it started. A team ahead on points needs no
-    /// bonus, and gives a team behind no way back: it sends no leader of theirs home, nor more worth to them
-    /// than comes back to it.
+    /// no leader nor heavy piece of theirs goes home but for a gain of none or more, and the bot's team ends no
+    /// weaker against theirs, as the worth on the board of each compares, than it started. A team ahead on points
+    /// needs no bonus, and gives a team behind no way back: it sends no leader nor heavy piece of theirs home, nor
+    /// more worth to them than comes back to it.
     /// </summary>
     private static bool MindsTheTable(
         DecisionRequest request,
@@ -140,10 +140,12 @@ internal static class Trading
         int ourGain = pieces.Where(piece => state.Teams.AreAllied(piece.Owner, request.Seat)).Sum(request.WorthOf);
         ImmutableList<Piece> theirPieces = [.. pieces.Where(piece => state.Teams.AreAllied(piece.Owner, other))];
         int theirGain = theirPieces.Sum(request.WorthOf);
-        bool returnsLeader = theirPieces.Any(piece => request.Rules.IsLeader(piece.Kind));
+        bool returnsDanger = theirPieces.Any(piece =>
+            request.Rules.IsLeader(piece.Kind) || request.Rules.IsHeavy(piece.Kind)
+        );
         bool leads = PointsOf(state, request.Seat) > PointsOf(state, other);
         return state.Teams.AreAllied(other, request.Seat)
-            || ((!returnsLeader || (gain >= 0 && !leads))
+            || ((!returnsDanger || (gain >= 0 && !leads))
                 && (!leads || ourGain >= theirGain)
                 && (ours + ourGain) * theirs >= ours * (theirs + theirGain));
     }

@@ -86,6 +86,12 @@ public interface IRulesApplying
     /// <summary>Whether a piece of <paramref name="kind"/> leads its army, as a Chaturaji 2027 Raja does.</summary>
     bool IsLeader(PieceKindId kind);
 
+    /// <summary>
+    /// Whether a piece of <paramref name="kind"/>, not leading, is among the most dangerous to let loose, as a
+    /// Rook is: for one weighing whether to send it home.
+    /// </summary>
+    bool IsHeavy(PieceKindId kind);
+
     string NameOf(PieceKindId kind);
 
     string NameOf(SeatId seat);

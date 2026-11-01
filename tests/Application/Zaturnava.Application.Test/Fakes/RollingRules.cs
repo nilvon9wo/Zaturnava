@@ -84,6 +84,8 @@ internal sealed class RollingRules(int length) : IRulesApplying
 
     public bool IsLeader(PieceKindId kind) => false;
 
+    public bool IsHeavy(PieceKindId kind) => false;
+
     public string NameOfDie(int value) => $"Die {value}";
 
     public bool MayUseDie([Required] GameState state, int value) => true;

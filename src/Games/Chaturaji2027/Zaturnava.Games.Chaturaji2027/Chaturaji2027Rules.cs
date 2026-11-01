@@ -226,6 +226,8 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
 
     public bool IsLeader(PieceKindId kind) => this._control.IsLeader(kind);
 
+    public bool IsHeavy(PieceKindId kind) => this._variant.Heavies.Contains(kind);
+
     /// <summary>What a bot may weigh beyond what every ruleset has: how far the army's Pawns have come.</summary>
     public ImmutableList<string> Measures { get; } = [Progress.PawnProgress];
 

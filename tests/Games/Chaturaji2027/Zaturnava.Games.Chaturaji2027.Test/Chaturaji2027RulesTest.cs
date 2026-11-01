@@ -1700,6 +1700,21 @@ public sealed class Chaturaji2027RulesTest
     }
 
     [Theory]
+    [InlineData(Chaturaji2027PiecesKind.Elephant, true)]
+    [InlineData(Chaturaji2027PiecesKind.Raja, false)]
+    [InlineData(Chaturaji2027PiecesKind.Horse, false)]
+    public void IsHeavy_WhenGivenAKind_IsTrueOnlyForTheElephant(Chaturaji2027PiecesKind kind, bool expected)
+    {
+        // Arrange - nothing beyond the rules
+
+        // Act
+        bool isHeavy = this._rules.IsHeavy(KindOf(kind));
+
+        // Assert
+        Assert.Equal(expected, isHeavy);
+    }
+
+    [Theory]
     [InlineData(Chaturaji2027PiecesKind.Raja, true)]
     [InlineData(Chaturaji2027PiecesKind.Pawn, false)]
     public void IsLeader_WhenGivenAKind_IsTrueOnlyForTheRaja(Chaturaji2027PiecesKind kind, bool expected)
@@ -3520,7 +3535,13 @@ public sealed class Chaturaji2027RulesTest
     private static Piece Piece(int id, PieceKindId kind, SeatId owner) => new(new PieceId(id), kind, owner);
 
     private static PieceKindId KindOf(Chaturaji2027PiecesKind kind) =>
-        kind == Chaturaji2027PiecesKind.Raja ? Chaturaji2027Pieces.Raja : Chaturaji2027Pieces.Pawn;
+        kind switch
+        {
+            Chaturaji2027PiecesKind.Raja => Chaturaji2027Pieces.Raja,
+            Chaturaji2027PiecesKind.Elephant => Chaturaji2027Pieces.Elephant,
+            Chaturaji2027PiecesKind.Horse => Chaturaji2027Pieces.Horse,
+            _ => Chaturaji2027Pieces.Pawn,
+        };
 
     /// <summary>Each seat in turn rolls one value, in the order the roll-off asks for them.</summary>
     private Transition RollOff(GameState state, params int[] values) =>
@@ -3775,4 +3796,6 @@ public enum Chaturaji2027PiecesKind
 {
     Raja,
     Pawn,
+    Elephant,
+    Horse,
 }

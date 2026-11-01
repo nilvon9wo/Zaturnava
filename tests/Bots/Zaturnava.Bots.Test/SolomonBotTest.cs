@@ -20,7 +20,7 @@ public sealed class SolomonBotTest
         string answer
     )
     {
-        // Arrange - worth 3 for 1; 4 for 5; 1 for 3
+        // Arrange - worth 3 for 2; 4 for 5; 1 for 3
         DecisionRequest offered = Ransoms.Offered([.. given], [.. asked]);
 
         // Act
@@ -35,6 +35,19 @@ public sealed class SolomonBotTest
     {
         // Arrange - its Horse and Green's Pawn back, worth 4, for Yellow's Raja, worth 5
         DecisionRequest offered = Ransoms.HoldingYellowsRaja(Ransoms.Offered([20, 21], [12]));
+
+        // Act
+        GameAction action = await new SolomonBot(new Random(1)).Decide(offered, this._cancellation);
+
+        // Assert
+        Assert.Equal("decline", action.Describe().Kind);
+    }
+
+    [Fact]
+    public async Task Decide_WhenAskedForAnEnemyHeavyPiece_DeclinesEvenWithinAPoint()
+    {
+        // Arrange - its Horse back, worth 3, for Yellow's Elephant, as dangerous as a Rook, worth 4
+        DecisionRequest offered = Ransoms.HoldingYellowsElephant(Ransoms.Offered([20], [14]));
 
         // Act
         GameAction action = await new SolomonBot(new Random(1)).Decide(offered, this._cancellation);

@@ -78,6 +78,8 @@ file sealed class UnplayableRules : IRulesApplying
 
     public bool IsLeader(PieceKindId kind) => throw new NotSupportedException();
 
+    public bool IsHeavy(PieceKindId kind) => throw new NotSupportedException();
+
     public string NameOfDie(int value) => throw new NotSupportedException();
 
     public bool MayUseDie([Required] GameState state, int value) => throw new NotSupportedException();

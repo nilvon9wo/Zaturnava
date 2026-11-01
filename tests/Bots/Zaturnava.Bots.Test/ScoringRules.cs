@@ -102,6 +102,8 @@ internal sealed class ScoringRules(ImmutableDictionary<GameAction, int> points) 
 
     public bool IsLeader(PieceKindId kind) => kind == new PieceKindId("raja");
 
+    public bool IsHeavy(PieceKindId kind) => kind == new PieceKindId("elephant");
+
     public string NameOf(PieceKindId kind) => throw new NotSupportedException();
 
     public string NameOf(SeatId seat) => throw new NotSupportedException();
