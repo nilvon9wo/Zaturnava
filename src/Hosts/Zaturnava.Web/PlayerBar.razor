@@ -82,7 +82,7 @@
                     <div class="actions">
                         @foreach (string provider in others)
                         {
-                            <button class="link" @onclick="() => this.Link(provider, code)">Link @provider</button>
+                            <button class="link" @onclick="() => this.Link(token, provider, code)">Link @provider</button>
                         }
                     </div>
                 }
@@ -225,11 +225,15 @@ else
             this._linkCode = await this.Games.LinkCode(token, CancellationToken.None)
         );
 
-    /// <summary>Links <paramref name="provider"/>, in a window of its own, with the code, which is then spent.</summary>
-    private async Task Link(string provider, string code)
+    /// <summary>
+    /// Links <paramref name="provider"/>, in a window of its own, with the code, which is then spent; and asks another
+    /// at once, so that the player may try again, or link another, whether or not that window links it.
+    /// </summary>
+    private async Task Link(string token, string provider, string code)
     {
         this._linkCode = null;
         await this.SignIn(provider, code);
+        await this.AskLinkCode(token);
     }
 
     /// <summary>Names the player anew; told why not, if the server cannot.</summary>
