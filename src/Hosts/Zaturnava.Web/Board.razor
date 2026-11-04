@@ -39,7 +39,21 @@
             <g class="@this.PieceClass(piece)" pointer-events="none">
                 <title>@PieceStyle.Named(piece.Name, this.Pieces)</title>
                 <circle cx="@Svg.Number(x)" cy="@Svg.Number(y)" r="0.4" />
-                @if (PieceStyle.ShapeOf(piece.Kind, this.Pieces) is { } shape)
+                @if (piece.Mark is { } mark)
+                {
+                    @if (PieceStyle.EmblemOf(mark.Emblem) is { } emblem)
+                    {
+                        <path d="@emblem" transform="@EmblemTransform(this.Turn, x, y)" />
+                    }
+                    <g>
+                        <text class="letters"
+                              x="@Svg.Number(x)"
+                              y="@Svg.Number(y + PieceStyle.LettersDrop)"
+                              transform="@this.Turn.Upright(x, y)"
+                            >@mark.Letters</text>
+                    </g>
+                }
+                else if (PieceStyle.ShapeOf(piece.Kind, this.Pieces) is { } shape)
                 {
                     <path d="@shape" transform="@ShapeTransform(this.Turn, x, y)" />
                 }
@@ -130,6 +144,10 @@
     /// <summary>A shape drawn about the origin, moved to its piece and kept upright.</summary>
     private static string ShapeTransform(BoardTurn turn, double x, double y) =>
         $"{turn.Upright(x, y)} translate({Svg.Number(x)} {Svg.Number(y)})";
+
+    /// <summary>A class's emblem, drawn as a shape is, but small and above its piece's letters.</summary>
+    private static string EmblemTransform(BoardTurn turn, double x, double y) =>
+        $"{ShapeTransform(turn, x, y)} {PieceStyle.EmblemPlacement}";
 
     private string CellClass(CellDto cell) =>
         string.Join(

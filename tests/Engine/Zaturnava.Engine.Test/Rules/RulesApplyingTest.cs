@@ -24,6 +24,23 @@ public sealed class RulesApplyingTest
         Assert.Equal(("solo", "Solo", null, false), game);
     }
 
+    [Fact]
+    public void MarkOf_WhenTheRulesetSaysNoOther_IsNone()
+    {
+        // Arrange
+        OneSizeRules rules = new();
+
+        // Act
+        PieceMark? mark = MarkOf(rules, new PieceKindId("pawn"));
+
+        // Assert
+        Assert.Null(mark);
+    }
+
+    private static PieceMark? MarkOf<TRules>(TRules rules, PieceKindId kind)
+        where TRules : IRulesApplying =>
+        rules.MarkOf(kind);
+
     /// <summary>The game any rules play, as the interface tells it.</summary>
     private static (string Id, string Name, string? Size, bool IsPreview) GameOf<TRules>(TRules rules)
         where TRules : IRulesApplying =>

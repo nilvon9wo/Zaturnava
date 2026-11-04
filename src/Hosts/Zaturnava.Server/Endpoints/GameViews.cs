@@ -203,7 +203,13 @@ internal static class GameViews
     }
 
     private static PieceDto PieceOf(IRulesApplying rules, CellId cell, Piece piece) =>
-        new(piece.Id.Value, piece.Kind.Value, rules.NameOf(piece.Kind), piece.Owner.Value, cell.Value);
+        new(piece.Id.Value, piece.Kind.Value, rules.NameOf(piece.Kind), piece.Owner.Value, cell.Value)
+        {
+            Mark = MarkOf(rules, piece.Kind),
+        };
+
+    private static PieceMarkDto? MarkOf(IRulesApplying rules, PieceKindId kind) =>
+        rules.MarkOf(kind) is { } mark ? new PieceMarkDto(mark.Emblem, mark.Letters) : null;
 
     private static SeatDto SeatOf(
         GameSnapshot snapshot,
@@ -259,7 +265,10 @@ internal static class GameViews
             prisoner.Piece.Kind.Value,
             rules.NameOf(prisoner.Piece.Kind),
             prisoner.Piece.Owner.Value
-        );
+        )
+        {
+            Mark = MarkOf(rules, prisoner.Piece.Kind),
+        };
 
     /// <summary>The ransom waiting on its answer, naming its prisoners, who are held until it is answered.</summary>
     private static OfferDto? OfferOf(GameSnapshot snapshot) =>

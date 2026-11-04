@@ -7,4 +7,7 @@ namespace Net.NowhereAtAll.Zaturnava.Contracts;
 public sealed record PrisonerDto(int Id, string Kind, string Name, int Owner)
 {
     public bool MayGoBack { get; init; } = true;
+
+    /// <summary>How it is marked, if by an emblem and letters; none, for a kind drawn as itself.</summary>
+    public PieceMarkDto? Mark { get; init; }
 }

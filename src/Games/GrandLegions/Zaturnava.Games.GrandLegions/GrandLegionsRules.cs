@@ -58,6 +58,7 @@ public static class GrandLegionsRules
         {
             Game = game.Game,
             Heavies = Heavies,
+            Marks = GrandLegionsPieces.Marks,
             DieNames = dice.Classes.ToImmutableDictionary(face => face.Key, face => NameOf(face.Value)),
             MayMove = RiverCrossing.On(new GrandBoard(game.Side, game.Side, game.KingdomWidth, game.KingdomDepth)),
         };

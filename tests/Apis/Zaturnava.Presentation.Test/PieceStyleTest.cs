@@ -22,6 +22,41 @@ public sealed class PieceStyleTest
     }
 
     [Theory]
+    [InlineData("leader", "raja")]
+    [InlineData("cavalry", "horse")]
+    public void EmblemOf_WhenTheClassLeadsOrRides_IsTheChaturajiRajaOrHorse(string emblem, string kind)
+    {
+        // Act
+        string? shape = PieceStyle.EmblemOf(emblem);
+
+        // Assert
+        Assert.Equal(PieceStyle.ShapeOf(kind, PieceSet.Chaturaji), shape);
+    }
+
+    [Fact]
+    public void EmblemOf_ForEachClass_IsAShapeOfItsOwn()
+    {
+        // Arrange
+        string[] classes = ["leader", "infantry", "heavy", "cavalry", "artillery"];
+
+        // Act
+        string?[] shapes = [.. classes.Select(PieceStyle.EmblemOf)];
+
+        // Assert
+        Assert.Equal(classes.Length, shapes.OfType<string>().Distinct(StringComparer.Ordinal).Count());
+    }
+
+    [Fact]
+    public void EmblemOf_WhenTheClassIsNotKnownHere_IsNone()
+    {
+        // Act
+        string? shape = PieceStyle.EmblemOf("wizard");
+
+        // Assert
+        Assert.Null(shape);
+    }
+
+    [Theory]
     [InlineData("raja", "\u265A\uFE0E")]
     [InlineData("elephant", "\u265C\uFE0E")]
     [InlineData("horse", "\u265E\uFE0E")]

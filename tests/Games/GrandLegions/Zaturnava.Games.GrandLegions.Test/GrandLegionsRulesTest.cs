@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
+using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
 using Net.NowhereAtAll.Zaturnava.Engine.Rules;
 using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 using Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
@@ -137,6 +138,19 @@ public sealed class GrandLegionsRulesTest
 
         // Assert
         Assert.Equal((78, "Dragon King (Shogi)"), worth);
+    }
+
+    [Fact]
+    public void MarkOf_WhenAsked_IsThePiecesClassEmblemAndLetters()
+    {
+        // Arrange
+        Chaturaji2027Rules rules = GrandLegionsRules.RulesOf(QuickGame.Small);
+
+        // Act
+        PieceMark? mark = rules.MarkOf(GrandLegionsPieces.MakrukPawn);
+
+        // Assert
+        Assert.Equal(new PieceMark("infantry", "M"), mark);
     }
 
     [Theory]
