@@ -260,8 +260,8 @@
 
     private ImmutableList<GameSummaryDto> _games = [];
 
-    /// <summary>Which games the list shows (Proposed): only those not over, until the player asks otherwise.</summary>
-    private GameListQuery _filter = new(Over: false);
+    /// <summary>Which games the list shows: those waiting for players, until the player asks otherwise.</summary>
+    private GameListQuery _filter = new(Open: true, Over: false);
     private int _pageNumber = 1;
     private int _pages = 1;
     private int _total;
