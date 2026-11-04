@@ -81,12 +81,13 @@ public sealed class GameService(
         GameState initial = ScenarioStart.StateOf(start, rules);
         GameRecord created = new(GameId.New(), rules.Id, this.ControllersFor(initial, seats), start, 0);
         Played played = await this.PlayBots(rules, created, new Played(initial, start), cancellationToken);
+        DateTimeOffset now = this._clock.Now;
         GameRecord record = created with
         {
             Actions = played.Actions,
             IsOver = played.State.Outcome is not null,
-            Created = this._clock.Now,
-            LastChanged = this._clock.Now,
+            Created = now,
+            LastChanged = now,
         };
         await this._store.Add(record, cancellationToken);
         return record.Id;
