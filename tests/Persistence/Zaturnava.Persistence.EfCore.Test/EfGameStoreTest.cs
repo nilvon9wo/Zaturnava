@@ -249,6 +249,48 @@ public sealed class EfGameStoreTest : IDisposable
         _ = await Assert.ThrowsAsync<ConcurrencyConflictException>(() => replacing);
     }
 
+    [Fact]
+    public async Task Idle_WhenGamesChangedBeforeAndAfter_ReturnsThoseNotOverUnchangedSince()
+    {
+        // Arrange - c is over, d changed later, and e from before when it changed was kept
+        await this.AddListed();
+        await this._store.Add(Record("e"), this._cancellation);
+
+        // Act
+        ImmutableList<GameRecord> idle =
+            await this._store.Idle(DateTimeOffset.UnixEpoch.AddHours(2.5), this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            ("a,b", "HASH"),
+            (
+                string.Join(",", idle.Select(game => game.Id.Value).Order(StringComparer.Ordinal)),
+                ((HumanSeat)idle.Single(game => game.Id.Value == "b").Controllers[0]).TokenHash
+            )
+        );
+    }
+
+    [Fact]
+    public async Task Remove_WhenGamesAreNamed_LetsGoOfThemWithTheirSeatsAndActions()
+    {
+        // Arrange
+        await this.AddListed();
+
+        // Act
+        await this._store.Remove([new GameId("a"), new GameId("c"), new GameId("missing")], this._cancellation);
+
+        // Assert
+        await using GameDbContext context = this._database.NewContext();
+        Assert.Equal(
+            ("b,d", 3, 1),
+            (
+                string.Join(",", context.Games.OrderBy(game => game.Id).Select(game => game.Id)),
+                context.Set<SeatEntity>().Count(),
+                context.Set<ActionEntity>().Count()
+            )
+        );
+    }
+
     private static GameRecord Record(string id) =>
         new(
             new GameId(id),

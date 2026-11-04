@@ -515,6 +515,32 @@ public sealed class GameServiceTest
     }
 
     [Fact]
+    public async Task PurgeAbandoned_WhenAGuestsGameWasLeftLongEnough_LetsGoOfItAlone()
+    {
+        // Arrange - a guest's game, a signed-in player's and nobody's, left long enough; and a guest's game since
+        InMemoryGameStore store = new();
+        GameService service = this.Service(GameServiceSettings.Default, store);
+        GameId guest = await service.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
+        _ = await service.Claim(guest, First, this._cancellation);
+        GameId player = await service.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
+        _ = await service.Claim(player, First, new PlayerId("ada"), null, this._cancellation);
+        GameId nobody = await service.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
+        this._time.Pass(GameServiceSettings.DefaultGuestGamesKept + FiveSeconds);
+        GameId recent = await service.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
+        _ = await service.Claim(recent, First, this._cancellation);
+
+        // Act
+        int purged = await service.PurgeAbandoned(this._cancellation);
+
+        // Assert
+        ImmutableList<GameRecord> kept = await store.List(this._cancellation);
+        Assert.Equal(
+            (1, string.Join(",", new[] { player, nobody, recent }.Select(id => id.Value).Order(StringComparer.Ordinal))),
+            (purged, string.Join(",", kept.Select(game => game.Id.Value)))
+        );
+    }
+
+    [Fact]
     public async Task Create_WhenCalled_SavesWhenTheGameWasCreated()
     {
         // Arrange

@@ -27,6 +27,15 @@ public interface IGamePersisting
     /// <summary>Keeps whether the game is over, as worked out, leaving its version as it is.</summary>
     Task MarkOver(GameId id, bool isOver, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// The games not over, as last saved, that have not changed since <paramref name="since"/>; none from before when
+    /// a game last changed was kept.
+    /// </summary>
+    Task<ImmutableList<GameRecord>> Idle(DateTimeOffset since, CancellationToken cancellationToken);
+
+    /// <summary>Lets go of the games, with everything kept of them.</summary>
+    Task Remove([Required] ImmutableList<GameId> ids, CancellationToken cancellationToken);
+
     Task Add([Required] GameRecord record, CancellationToken cancellationToken);
 
     /// <summary>Stores <paramref name="record"/> over the one whose version is one less.</summary>

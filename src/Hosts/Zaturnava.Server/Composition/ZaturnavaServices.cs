@@ -56,6 +56,13 @@ internal static class ZaturnavaServices
     public const string ChatLeftAfterKey = "Chat:LeftAfterSeconds";
     public const string ChatSweepKey = "Chat:SweepSeconds";
 
+    /// <summary>
+    /// The configuration keys for how long, in seconds, a game not over with a guest at it is kept once nothing more
+    /// happens, and how often such games are looked for (<see cref="GameSweeper"/>).
+    /// </summary>
+    public const string GuestGamesKeptKey = "Games:GuestGamesKeptSeconds";
+    public const string GameSweepKey = "Games:SweepSeconds";
+
     private const string DefaultTimerKey = "Default";
 
     public static IServiceCollection AddZaturnava(this IServiceCollection services, IConfiguration configuration) =>
@@ -80,6 +87,14 @@ internal static class ZaturnavaServices
             .AddSingleton(ChatSettingsOf(configuration))
             .AddSingleton<ChatTables>()
             .AddHostedService<ChatSweeper>()
+            .AddSingleton(
+                new GameSweeper.Interval(
+                    TimeSpan.FromSeconds(
+                        configuration.GetValue(GameSweepKey, GameSweeper.Interval.Default.TotalSeconds)
+                    )
+                )
+            )
+            .AddHostedService<GameSweeper>()
             .AddProblemDetails()
             .AddExceptionHandler<RefusalHandler>();
 
@@ -133,6 +148,9 @@ internal static class ZaturnavaServices
             ),
             ReplaceWait = TimeSpan.FromSeconds(
                 configuration.GetValue(ReplaceWaitKey, GameServiceSettings.DefaultReplaceWait.TotalSeconds)
+            ),
+            GuestGamesKept = TimeSpan.FromSeconds(
+                configuration.GetValue(GuestGamesKeptKey, GameServiceSettings.DefaultGuestGamesKept.TotalSeconds)
             ),
         };
     }

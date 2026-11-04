@@ -21,7 +21,9 @@ first.
     for the player who went away: the lobby says when each game was created and last changed, and whether it
     waits for players or has not started. Who is away is not yet known to the server.
   - **N20** Abandoned games are purged: any game with a guest in it and no activity for 24 hours, and any game
-    waiting for a signed-in player who has not signed in for 31 days.
+    waiting for a signed-in player who has not signed in for 31 days. *Done for guests* (games not over only:
+    *Proposed*, as a finished game's history is public and rates its players). Signed-in players: not yet, as
+    when each last signed in is not yet kept.
   - **N20** On signing in, a player is reminded of every game waiting for their move, oldest first, and
     encouraged to end those they no longer play and resume the oldest of the rest.
 - **N24** Athena takes Pawns with its Raja and Rook (Elephant) when that only loses them: not a real sacrifice.

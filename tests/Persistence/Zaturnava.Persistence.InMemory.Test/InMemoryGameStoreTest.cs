@@ -177,6 +177,35 @@ public sealed class InMemoryGameStoreTest
     private static readonly ImmutableSortedDictionary<string, string> Arguments =
         ImmutableSortedDictionary<string, string>.Empty;
 
+    [Fact]
+    public async Task Idle_WhenGamesChangedBeforeAndAfter_ReturnsThoseNotOverUnchangedSince()
+    {
+        // Arrange - c is over, d changed later, and e from before when it changed was kept
+        await this.AddListed();
+        await this._store.Add(Record("e"), this._cancellation);
+
+        // Act
+        ImmutableList<GameRecord> idle =
+            await this._store.Idle(DateTimeOffset.UnixEpoch.AddHours(2.5), this._cancellation);
+
+        // Assert
+        Assert.Equal("a,b", string.Join(",", idle.Select(game => game.Id.Value).Order(StringComparer.Ordinal)));
+    }
+
+    [Fact]
+    public async Task Remove_WhenGamesAreNamed_LetsGoOfThemAlone()
+    {
+        // Arrange
+        await this.AddListed();
+
+        // Act
+        await this._store.Remove([new GameId("a"), new GameId("c"), new GameId("missing")], this._cancellation);
+
+        // Assert
+        ImmutableList<GameRecord> kept = await this._store.List(this._cancellation);
+        Assert.Equal("b,d", string.Join(",", kept.Select(game => game.Id.Value)));
+    }
+
     private static GameRecord Record(string id) => new(new GameId(id), "tiny", [new OpenSeat()], [], 0);
 
     /// <summary>

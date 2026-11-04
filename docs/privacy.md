@@ -11,8 +11,10 @@ no analytics and nothing sold to anyone.
 You need no account to play, and today there is none to make. What is kept:
 
 - **On the server, for each game:** the ruleset; which seats are played by people and which by which bots; and
-  every action taken in it, in order. Nothing in a game says who a person is, unless they signed in (below). Finished games are kept, and their
-  histories are public (at `api/history`), so that anyone, bots' authors included, can study them.
+  every action taken in it, in order; and when it was created and last changed. Nothing in a game says who a person
+  is, unless they signed in (below). Finished games are kept, and their histories are public (at `api/history`), so
+  that anyone, bots' authors included, can study them. A game not finished, with a guest (someone not signed in) at
+  it, is deleted once nothing has happened in it for 24 hours.
 - **On the server, for each seat a person holds:** a fingerprint (a SHA-256 hash) of the seat's secret token, so the
   server can tell the token when your browser shows it, without keeping the token itself; and the nickname you play
   by, if you gave one, shown to everyone as "Nickname (guest)" and kept with the game.

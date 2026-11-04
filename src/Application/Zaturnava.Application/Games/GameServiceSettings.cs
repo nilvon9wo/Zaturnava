@@ -14,6 +14,7 @@ namespace Net.NowhereAtAll.Zaturnava.Application.Games;
 /// long a game waits for people to take its open seats before the first of those seated may fill them with bots
 /// (anyone seated may, after twice as long). <see cref="ReplaceWait"/> is how long, once a person away may be voted
 /// on, before anyone at the game, not only the first to have arrived, may have a bot take their seat.
+/// <see cref="GuestGamesKept"/> is how long a game not over with a guest at it is kept once nothing more happens.
 /// </summary>
 public sealed record GameServiceSettings(
     int MaximumBotSteps,
@@ -31,7 +32,11 @@ public sealed record GameServiceSettings(
 
     public static readonly TimeSpan DefaultReplaceWait = TimeSpan.FromMinutes(5);
 
+    public static readonly TimeSpan DefaultGuestGamesKept = TimeSpan.FromHours(24);
+
     public static readonly GameServiceSettings Default = new(DefaultMaximumBotSteps, DefaultTimerLength, []);
+
+    public TimeSpan GuestGamesKept { get; init; } = DefaultGuestGamesKept;
 
     public TimeSpan AwayGrace { get; init; } = DefaultAwayGrace;
 

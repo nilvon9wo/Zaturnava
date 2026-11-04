@@ -124,6 +124,23 @@ public sealed class GameService(
         }
     }
 
+    /// <summary>
+    /// Lets go of the games abandoned with a guest at them: not over, with a person at a seat who never signed in,
+    /// and nothing done for <see cref="GameServiceSettings.GuestGamesKept"/>. How many there were.
+    /// </summary>
+    public async Task<int> PurgeAbandoned(CancellationToken cancellationToken)
+    {
+        DateTimeOffset since = this._clock.Now - this._settings.GuestGamesKept;
+        ImmutableList<GameId> abandoned =
+        [
+            .. (await this._store.Idle(since, cancellationToken))
+                .Where(game => game.Controllers.Any(controller => controller.IsGuest))
+                .Select(game => game.Id),
+        ];
+        await this._store.Remove(abandoned, cancellationToken);
+        return abandoned.Count;
+    }
+
     /// <summary>Every stored game of a ruleset still offered, replayed, as a lobby lists them.</summary>
     public async Task<ImmutableList<GameSnapshot>> Snapshots(CancellationToken cancellationToken)
     {
