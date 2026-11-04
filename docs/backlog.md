@@ -9,10 +9,6 @@ did them.
 Numbered **N1**, **N2**... after that playtest's own notes. In the order planned (*Proposed*), most pressing
 first.
 
-- Rules: these change who wins, so they come first.
-  - **N12** Escaping names each prisoner once ("Escape Black's Boat, held by Yellow"). Choosing it marks the
-    squares it may go to (a ring where it would take a piece), and a click on one frees it there; clicking
-    anything else leaves it a prisoner.
 - **N2** The database stays as it is through every change, by migrations; never wiped (*Stated*).
 - **N3** A leaderboard, for players to compete for; with each player's Elo and their **experience**: each time
   a player is on the winning team, they gain their own points plus their team's (*Stated*). Each player's
@@ -196,6 +192,9 @@ first.
 
 ## Done
 
+- **N12** Escaping names each prisoner once ("Escape Black's Boat, held by Yellow"). Choosing it marks the
+  squares it may go to (a ring where it would take a piece), and a click on one frees it there; clicking
+  anything else leaves it a prisoner.
 - **N4, N5** Games not ready for the public (Grand Legions now) are *preview* games: named so ("Grand Legions
   (preview)"), and neither offered nor listed in the lobby unless the player ticks "Show preview games", which the
   browser remembers. A game says so itself, in its rules: no feature flags.

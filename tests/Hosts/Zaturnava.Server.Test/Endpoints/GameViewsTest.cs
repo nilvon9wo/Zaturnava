@@ -278,7 +278,7 @@ public sealed class GameViewsTest
     }
 
     [Fact]
-    public void ViewOf_WhenAPieceMayEscape_LabelsEachEscape()
+    public void ViewOf_WhenAPieceMayEscape_LabelsEachEscapeAndChoosesItByThePrisoner()
     {
         // Arrange - Black rolled two 5s; Yellow holds Black's Raja 3, whose square, d1, is free
         Piece raja = new(new PieceId(3), Chaturaji2027Pieces.Raja, new SeatId(0));
@@ -297,8 +297,8 @@ public sealed class GameViewsTest
 
         // Assert
         Assert.Equal(
-            ["Escape Black's Raja, held by Yellow, to d1"],
-            view.LegalActions.Where(action => action.Kind == "escape").Select(action => action.Label)
+            [("Escape Black's Raja, held by Yellow, to d1", "Escape Black's Raja, held by Yellow")],
+            view.LegalActions.Where(action => action.Kind == "escape").Select(action => (action.Label, action.Choice))
         );
     }
 

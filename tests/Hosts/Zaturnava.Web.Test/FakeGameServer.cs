@@ -336,6 +336,14 @@ internal sealed class FakeGameServer : IGameServing
         return failure is null ? Task.FromResult(answer()) : Task.FromException<T>(failure);
     }
 
+    /// <summary>Black's Boat, held by Yellow, escaping to <paramref name="home"/>.</summary>
+    public static ActionDto Escape(int home) =>
+        Action("escape", (ActionArguments.Home, home)) with
+        {
+            Label = $"Escape Black's Boat, held by Yellow, to {home}",
+            Choice = "Escape Black's Boat, held by Yellow",
+        };
+
     private static ActionDto Action(string kind, params (string Name, int Cell)[] cells) =>
         new(
             kind,

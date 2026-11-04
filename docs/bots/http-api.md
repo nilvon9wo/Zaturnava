@@ -140,7 +140,9 @@ Choose from `legalActions` and send the one you chose back unchanged: you need n
 action to take it, and a client that only ever echoes a legal action can never be refused for
 breaking the rules. Cells and pieces are named by their ids (`cells` and `pieces` in the view); a
 cell's `name` ("e4") is for people. A legal action may carry a `label` for its button; the server
-ignores it on the way back.
+ignores it on the way back. An escape also carries a `choice`, the same for every square the same prisoner may go
+to ("Escape Black's Boat, held by Yellow"), so that a page offers each prisoner once and then marks its squares,
+by `home`; the server ignores that too.
 
 | Kind | Arguments (besides `actor`) | What it does |
 |---|---|---|

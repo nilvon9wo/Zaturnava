@@ -288,7 +288,11 @@ internal static class GameViews
     private static ActionDto ActionOf(GameSnapshot snapshot, GameAction action)
     {
         ActionDescriptor descriptor = action.Describe();
-        return new ActionDto(descriptor.Kind, descriptor.Arguments) { Label = LabelOf(snapshot, action) };
+        return new ActionDto(descriptor.Kind, descriptor.Arguments)
+        {
+            Label = LabelOf(snapshot, action),
+            Choice = action is EscapeAction escape ? PrisonerOf(snapshot, escape) : null,
+        };
     }
 
     /// <summary>
@@ -321,12 +325,16 @@ internal static class GameViews
             : null;
 
     /// <summary>"Escape Green's Raja, held by Red, to h4".</summary>
-    private static string EscapeOf(GameSnapshot snapshot, EscapeAction escape)
+    private static string EscapeOf(GameSnapshot snapshot, EscapeAction escape) =>
+        $"{PrisonerOf(snapshot, escape)}, to {snapshot.Rules.Topology.NameOf(escape.Home)}";
+
+    /// <summary>"Escape Green's Raja, held by Red": the escape, wherever to.</summary>
+    private static string PrisonerOf(GameSnapshot snapshot, EscapeAction escape)
     {
         IRulesApplying rules = snapshot.Rules;
         Prisoner prisoner = snapshot.State.Prisoners.First(held => held.Piece.Id == escape.Piece);
         return $"Escape {rules.NameOf(prisoner.Piece.Owner)}'s {rules.NameOf(prisoner.Piece.Kind)}, "
-            + $"held by {rules.NameOf(prisoner.Holder)}, to {rules.Topology.NameOf(escape.Home)}";
+            + $"held by {rules.NameOf(prisoner.Holder)}";
     }
 
     /// <summary>"Promote the Pawn on c8 to Green's Elephant, held by Red".</summary>

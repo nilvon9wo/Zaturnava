@@ -8,8 +8,9 @@ namespace Net.NowhereAtAll.Zaturnava.Presentation;
 /// <summary>
 /// A game's legal actions, sorted for a player: those drawn on the board (they go from one cell to
 /// another, see <see cref="ActionArguments"/>, or only to one, as a piece put on the board is); those
-/// taken at a cell, offered once its piece is picked up; and the rest, offered as buttons. Nothing here
-/// knows what any kind of action means.
+/// taken at a cell, offered once its piece is picked up; those chosen first by a button, then by a cell, as an
+/// escape is (<see cref="ActionDto.Choice"/>); and the rest, offered as buttons. Nothing here knows what any kind
+/// of action means.
 /// </summary>
 public sealed class BoardActions([Required] ImmutableList<ActionDto> legal)
 {
@@ -17,13 +18,33 @@ public sealed class BoardActions([Required] ImmutableList<ActionDto> legal)
     private readonly ImmutableList<(int Cell, ActionDto Action)> _atCells = [.. legal.SelectMany(AtCellOf)];
     private readonly ImmutableList<(int Cell, ActionDto Action)> _drops = [.. legal.SelectMany(DropOf)];
 
-    /// <summary>The actions that are neither drawn on the board nor taken at a cell.</summary>
+    private readonly ImmutableList<(string Choice, int Cell, ActionDto Action)> _placements =
+        [.. legal.SelectMany(PlacementOf)];
+
+    /// <summary>The actions that are neither drawn on the board, nor taken at a cell, nor chosen by one.</summary>
     public ImmutableList<ActionDto> OffBoard { get; } =
         [
             .. legal.Where(action =>
-                CellsOf(action) is null && CellOf(action, ActionArguments.Cell) is null && !DropOf(action).Any()
+                CellsOf(action) is null
+                && CellOf(action, ActionArguments.Cell) is null
+                && !DropOf(action).Any()
+                && !PlacementOf(action).Any()
             ),
         ];
+
+    /// <summary>What the actions chosen by a button, then by a cell, are chosen by, each once, in order.</summary>
+    public ImmutableList<string> Choices =>
+        [.. this._placements.Select(placement => placement.Choice).Distinct(StringComparer.Ordinal)];
+
+    /// <summary>The cells <paramref name="choice"/> may then be placed on.</summary>
+    public ImmutableHashSet<int> PlacesOf(string choice) =>
+        [.. this._placements.Where(placement => placement.Choice == choice).Select(placement => placement.Cell)];
+
+    /// <summary>The action placing <paramref name="choice"/> on <paramref name="cell"/>, if there is one.</summary>
+    public ActionDto? PlacementAt(string choice, int cell) =>
+        this._placements.Where(placement => placement.Choice == choice && placement.Cell == cell)
+            .Select(placement => placement.Action)
+            .FirstOrDefault();
 
     /// <summary>The cells something may be put on, with nothing picked up: a piece coming onto the board.</summary>
     public ImmutableHashSet<int> Drops => [.. this._drops.Select(drop => drop.Cell)];
@@ -66,6 +87,9 @@ public sealed class BoardActions([Required] ImmutableList<ActionDto> legal)
         !action.Arguments.ContainsKey(ActionArguments.From) && CellOf(action, ActionArguments.To) is { } cell
             ? [(cell, action)]
             : [];
+
+    private static IEnumerable<(string Choice, int Cell, ActionDto Action)> PlacementOf(ActionDto action) =>
+        action.Choice is { } choice && CellOf(action, ActionArguments.Home) is { } cell ? [(choice, cell, action)] : [];
 
     private static IEnumerable<(int Cell, ActionDto Action)> AtCellOf(ActionDto action) =>
         CellOf(action, ActionArguments.Cell) is { } cell ? [(cell, action)] : [];
