@@ -114,6 +114,7 @@ def started(server, catalog, decisions):
 def watching(page, url, game):
     """The page, watching the game from the lobby."""
     page.goto(url)
+    page.locator("select.filter-state").select_option("in-progress")
     page.locator(f"li:has(span.game:text-is('{game[:8]}')) button.watch").click()
     page.locator("svg.board").wait_for()
     page.wait_for_timeout(1500)
@@ -146,6 +147,7 @@ def main():
 
         page = browser.new_page(viewport=size)
         page.goto(options.page)
+        page.locator("button.custom").click()
         page.locator("button.create").wait_for()
         page.screenshot(path=at("01-lobby.png"))
         print("01-lobby.png")

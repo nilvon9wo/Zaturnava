@@ -1,5 +1,6 @@
-@* Start a game (each seat a person or a bot, no bot in two seats) and sit at it: the game, and, for one played at
-   several sizes, its size; set up as the player last chose (remembered in the browser), else quick - custom: the
+@* Start a game (each seat a person or a bot, no bot in two seats) and sit at it: the game (the one last started),
+   and, for one played at several sizes, its size (the middle one); each game set up as the player last started it,
+   and quick or custom as last chosen (both remembered in the browser), else quick - custom: the
    player's colour, then for their ally and each enemy a person, an AI of the player's own (the seat left open
    for it), or how strong a bot (easy, medium or
    hard, by the bots' ratings; a strength whose bots all have seats is offered to no other), and, if they like,
@@ -26,22 +27,6 @@
                 ImmutableList<RulesetDto> games = GamesOf(catalog);
                 ImmutableList<RulesetDto> sizes = SizesOf(catalog, this.Ruleset(catalog).Game);
             }
-            @if (games.Count > 1)
-            {
-                <label class="rules">
-                    Game
-                    <select class="game" @bind="this.Game">
-                        @foreach (RulesetDto game in games)
-                        {
-                            <option value="@game.Game">@game.GameName</option>
-                        }
-                    </select>
-                </label>
-            }
-            else
-            {
-                <p class="rules">@this.Ruleset(catalog).GameName</p>
-            }
             <div class="setup-modes">
                 <button class="mode quick-game"
                         aria-pressed="@this.IsPressed(SetupMode.Quick)"
@@ -54,18 +39,36 @@
                     Custom
                 </button>
             </div>
-            @if (sizes.Count > 1)
-            {
-                <label class="size">
-                    Size
-                    <select class="size" @bind="this.RulesetId">
-                        @foreach (RulesetDto ruleset in sizes)
-                        {
-                            <option value="@ruleset.Id">@ruleset.Size</option>
-                        }
-                    </select>
-                </label>
-            }
+            <div class="choices">
+                @if (games.Count > 1)
+                {
+                    <label class="rules">
+                        <span class="choice-name">Game</span>
+                        <select class="game" @bind="this.Game">
+                            @foreach (RulesetDto game in games)
+                            {
+                                <option value="@game.Game">@game.GameName</option>
+                            }
+                        </select>
+                    </label>
+                }
+                else
+                {
+                    <p class="rules">@this.Ruleset(catalog).GameName</p>
+                }
+                @if (sizes.Count > 1)
+                {
+                    <label class="size">
+                        <span class="choice-name">Size</span>
+                        <select class="size" @bind="this.RulesetId">
+                            @foreach (RulesetDto ruleset in sizes)
+                            {
+                                <option value="@ruleset.Id">@ruleset.Size</option>
+                            }
+                        </select>
+                    </label>
+                }
+            </div>
             @if (this._mode == SetupMode.Quick)
             {
                 <div class="quick-games">
@@ -136,7 +139,7 @@
             @if (this._mode != SetupMode.Quick && !catalog.Scenarios.IsEmpty)
             {
                 <label class="scenario">
-                    Start from
+                    <span class="choice-name">Start from</span>
                     <select class="scenario" @bind="this._scenario">
                         <option value="">The beginning</option>
                         @foreach (ScenarioDto scenario in catalog.Scenarios)
@@ -152,7 +155,9 @@
             }
             @if (this._mode != SetupMode.Quick)
             {
-                <button class="create primary" @onclick="() => this.Create(catalog)">Play</button>
+                <div class="start">
+                    <button class="create primary" @onclick="() => this.Create(catalog)">Play</button>
+                </div>
             }
         </div>
 
@@ -281,14 +286,17 @@
     private string _scenario = string.Empty;
     private string? _problem;
 
+    /// <summary>How the player last started each game, by the game, as the browser remembers.</summary>
+    private ImmutableDictionary<string, GameSetup> _setups = ImmutableDictionary<string, GameSetup>.Empty;
+
     [Parameter]
     public EventCallback<Seating> OnSeated { get; set; }
 
     protected override async Task OnInitializedAsync() => this._problem = await Requests.Attempt(this.Load);
 
-    /// <summary>The game chosen to set up: the first the server offers, until another is.</summary>
+    /// <summary>The game chosen to set up, at its size (<see cref="Choose"/> chose one before anything asks).</summary>
     private RulesetDto Ruleset(CatalogDto catalog) =>
-        catalog.Rulesets.FirstOrDefault(ruleset => ruleset.Id == this._rulesetId) ?? catalog.Rulesets[0];
+        catalog.Rulesets.First(ruleset => ruleset.Id == this._rulesetId);
 
     /// <summary>The game, of the size, to set up; choosing another sets its seats up afresh.</summary>
     private string RulesetId
@@ -302,18 +310,83 @@
     }
 
     /// <summary>
-    /// The game to set up, whatever its size; choosing another sets it up at the same size, if it has one, else at
-    /// its first.
+    /// The game to set up, whatever its size; choosing another keeps this one's setup for coming back to it, and sets
+    /// the other up as <see cref="Choose"/> does.
     /// </summary>
     private string Game
     {
         get => this.Ruleset(this._catalog!).Game;
         set
         {
-            ImmutableList<RulesetDto> sizes = SizesOf(this._catalog!, value);
-            string? size = this.Ruleset(this._catalog!).Size;
-            this.RulesetId = (sizes.FirstOrDefault(ruleset => ruleset.Size == size) ?? sizes[0]).Id;
+            this._setups = this._setups.SetItem(this.Game, this.SetupNow(this._catalog!));
+            this.Choose(this._catalog!, value);
         }
+    }
+
+    /// <summary>The game as it is set up now.</summary>
+    private GameSetup SetupNow(CatalogDto catalog) =>
+        new(this.Ruleset(catalog).Id, this._colour, [.. this._levels], [.. this._picks]);
+
+    /// <summary>
+    /// <paramref name="game"/> set up as the player last started it, if they have, and it still can be; else
+    /// afresh, at its middle size (Proposed: of small, medium and large, medium).
+    /// </summary>
+    private void Choose(CatalogDto catalog, string game)
+    {
+        ImmutableList<RulesetDto> sizes = SizesOf(catalog, game);
+        GameSetup? setup = this._setups.GetValueOrDefault(game);
+        RulesetDto? remembered = sizes.FirstOrDefault(size => size.Id == setup?.RulesetId);
+        this._rulesetId = (remembered ?? sizes[(sizes.Count - 1) / 2]).Id;
+        this.Prepare(catalog);
+        if (remembered is not null && this.Fits(setup!))
+        {
+            this.Restore(setup!);
+        }
+    }
+
+    /// <summary>
+    /// Whether <paramref name="setup"/> still fits the game: a colour it has, a strength it offers (or a person, or
+    /// the player's own AI) for each of its seats, and room among each strength's bots for the seats given it.
+    /// </summary>
+    private bool Fits(GameSetup setup)
+    {
+        int seats = this._levels.Count;
+        bool isWhole = setup.Colour >= 0
+            && setup.Colour < seats
+            && setup.Levels.Count == seats
+            && setup.Picks.Count == seats
+            && setup.Levels.All(level => level >= OwnAiLevel && level < this._strengths.Count);
+        return isWhole
+            && Enumerable.Range(0, seats).All(seat =>
+                seat == setup.Colour
+                || setup.Levels[seat] < 0
+                || GameStarter.HasRoom(
+                    this._strengths,
+                    setup.Levels.Where((level, other) => other != seat && other != setup.Colour && level >= 0),
+                    setup.Levels[seat]
+                )
+            );
+    }
+
+    /// <summary>The seats as <paramref name="setup"/> has them; a bot it chose that is no longer offered, any.</summary>
+    private void Restore(GameSetup setup)
+    {
+        this._colour = setup.Colour;
+        this._levels = [.. setup.Levels];
+        this._picks =
+        [
+            .. setup.Picks.Select((pick, seat) =>
+                this.StrengthOf(seat)?.Bots.Any(bot => bot.Id == pick) == true ? pick : string.Empty
+            ),
+        ];
+    }
+
+    /// <summary>Remembers the game the player starts, as they set it up, to set it up so again.</summary>
+    private async Task Remember(CatalogDto catalog)
+    {
+        GameSetup setup = this.SetupNow(catalog);
+        this._setups = this._setups.SetItem(this.Ruleset(catalog).Game, setup);
+        await this.Browser.RememberSetup(this.Ruleset(catalog).Game, setup);
     }
 
     /// <summary>Each game the server offers, by its first ruleset, whatever the sizes it is played at.</summary>
@@ -356,7 +429,16 @@
     {
         CatalogDto catalog = await this.Games.Catalog(CancellationToken.None);
         await this.ListGames();
-        this.Prepare(catalog);
+        foreach (RulesetDto game in GamesOf(catalog))
+        {
+            this._setups = await this.Browser.SetupOf(game.Game) is { } setup
+                ? this._setups.SetItem(game.Game, setup)
+                : this._setups;
+        }
+
+        string? last = await this.Browser.LastGame();
+        RulesetDto first = GamesOf(catalog).FirstOrDefault(game => game.Game == last) ?? catalog.Rulesets[0];
+        this.Choose(catalog, first.Game);
         this._mode = await this.Browser.Setup();
         this._catalog = catalog;
     }
@@ -472,8 +554,10 @@
     /// <summary>Whether the strength at <paramref name="level"/> has a bot left for <paramref name="seat"/>.</summary>
     private bool HasRoom(int level, int seat) => GameStarter.HasRoom(this._strengths, this.TakenBesides(seat), level);
 
-    private Task Create(CatalogDto catalog) =>
-        this.Sit(async () => await GameStarter.Start(
+    private async Task Create(CatalogDto catalog)
+    {
+        await this.Remember(catalog);
+        await this.Sit(async () => await GameStarter.Start(
             this.Games,
             this.Ruleset(catalog).Id,
             GameStarter.ByStrength(this.ChoicesOfSeats(), this._strengths),
@@ -481,6 +565,7 @@
             this._scenario.Length == 0 ? null : this._scenario,
             await this.Browser.Claimant()
         ));
+    }
 
     /// <summary>How each seat set up by strength is played: the player's own, and a person's, by no bot.</summary>
     private IEnumerable<SeatChoice> ChoicesOfSeats() =>
@@ -507,8 +592,10 @@
         await this.Browser.SetSetup(mode);
     }
 
-    private Task Quick(CatalogDto catalog, Difficulty difficulty) =>
-        this.Sit(async () =>
+    private async Task Quick(CatalogDto catalog, Difficulty difficulty)
+    {
+        await this.Remember(catalog);
+        await this.Sit(async () =>
             await GameStarter.Quick(
                 this.Games,
                 catalog,
@@ -517,6 +604,7 @@
                 await this.Browser.Claimant()
             )
         );
+    }
 
     private Task Join(string gameId, int seat) =>
         this.Sit(async () => await GameStarter.Claim(this.Games, gameId, seat, await this.Browser.Claimant()));

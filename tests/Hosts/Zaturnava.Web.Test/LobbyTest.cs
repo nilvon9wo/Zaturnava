@@ -61,7 +61,7 @@ public sealed class LobbyTest : IDisposable
     }
 
     [Fact]
-    public void Game_WhenChosenBackAndForth_KeepsTheSizeChosen()
+    public void Game_WhenChosenBackAndForth_KeepsEachGamesSizeChosen()
     {
         // Arrange
         this._page.Server.MoreRulesets =
@@ -76,9 +76,141 @@ public sealed class LobbyTest : IDisposable
 
         // Act
         lobby.Find("select.game").Change("other");
+        string? other = lobby.Find("select.size").GetAttribute("value");
+        lobby.Find("select.game").Change("grand-legions");
 
         // Assert
-        Assert.Equal("other-large", lobby.Find("select.size").GetAttribute("value"));
+        Assert.Equal(("other-small", "grand-legions-large"), (other, lobby.Find("select.size").GetAttribute("value")));
+    }
+
+    [Fact]
+    public void Game_WhenPlayedAtThreeSizes_IsSetUpAtTheMiddleOne()
+    {
+        // Arrange
+        this._page.Server.MoreRulesets =
+        [
+            Sized("grand-legions", "Grand Legions", "small"),
+            Sized("grand-legions", "Grand Legions", "medium"),
+            Sized("grand-legions", "Grand Legions", "large"),
+        ];
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Act
+        lobby.Find("select.game").Change("grand-legions");
+
+        // Assert
+        Assert.Equal("grand-legions-medium", lobby.Find("select.size").GetAttribute("value"));
+    }
+
+    [Theory]
+    [InlineData("grand-legions", "grand-legions")]
+    [InlineData("gone", "chaturaji-2027")]
+    [InlineData(null, "chaturaji-2027")]
+    public void Render_WhenAGameWasStartedBefore_SetsThatGameUpIfStillOffered(string? last, string expected)
+    {
+        // Arrange
+        this._page.Server.MoreRulesets = GrandSizes;
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.last-game").SetResult(last);
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Assert
+        Assert.Equal(expected, lobby.Find("select.game").GetAttribute("value"));
+    }
+
+    [Fact]
+    public void Render_WhenTheGameWasSetUpBefore_SetsItUpAsLastStarted()
+    {
+        // Arrange - Green played; Black medium (Midas), Yellow the player's own AI, Red hard, Oracle chosen
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.setup").SetResult("strength");
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.setup-of.chaturaji-2027")
+            .SetResult("chaturaji-2027;2;1,-2,-1,2;,,,oracle");
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Assert
+        Assert.Equal(
+            ("2", "Your ally, Black|Enemy, Red|Enemy, Yellow", "1|2|-2", "oracle"),
+            (
+                lobby.Find("select.colour").GetAttribute("value"),
+                string.Join('|', SeatNames(lobby).Split('|').Skip(1)),
+                string.Join('|', lobby.FindAll("select.strength").Select(strength => strength.GetAttribute("value"))),
+                lobby.Find("select.pick").GetAttribute("value")
+            )
+        );
+    }
+
+    [Theory]
+    [InlineData("chaturaji-2027;4;1,0,-1,2;,,,")]
+    [InlineData("chaturaji-2027;-1;1,0,-1,2;,,,")]
+    [InlineData("chaturaji-2027;0;1,0,2;,,,")]
+    [InlineData("chaturaji-2027;0;-1,0,1,2;,,")]
+    [InlineData("chaturaji-2027;0;-1,3,0,2;,,,")]
+    [InlineData("chaturaji-2027;0;-1,-3,0,2;,,,")]
+    [InlineData("chaturaji-2027;0;-1,1,1,2;,,,")]
+    [InlineData("gone;0;-1,0,1,2;,,,")]
+    [InlineData("chaturaji-2027;0")]
+    public void Render_WhenTheSetupRememberedNoLongerFits_SetsTheGameUpAfresh(string remembered)
+    {
+        // Arrange - a colour, a strength or a bot count the game no longer has; medium (Midas alone) twice
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.setup").SetResult("strength");
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.setup-of.chaturaji-2027")
+            .SetResult(remembered);
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Assert
+        Assert.Equal(
+            ("0", "1|0|2"),
+            (
+                lobby.Find("select.colour").GetAttribute("value"),
+                string.Join('|', lobby.FindAll("select.strength").Select(strength => strength.GetAttribute("value")))
+            )
+        );
+    }
+
+    [Fact]
+    public void Render_WhenTheBotRememberedIsNoLongerOffered_ChoosesAnyOfItsStrength()
+    {
+        // Arrange - Red hard, with a bot no longer offered
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.setup").SetResult("strength");
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.setup-of.chaturaji-2027")
+            .SetResult("chaturaji-2027;0;-1,0,1,2;,,,gone");
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Assert
+        Assert.Equal(string.Empty, lobby.Find("select.pick").GetAttribute("value"));
+    }
+
+    [Theory]
+    [InlineData("button.create")]
+    [InlineData("button.quick.medium")]
+    public void Start_WhenClicked_RemembersTheGameAndHowItWasSetUp(string start)
+    {
+        // Arrange
+        IRenderedComponent<Lobby> lobby = this.ByStrength();
+        lobby.Find("select.colour").Change("2");
+        lobby.Find(start == "button.create" ? "button.custom" : "button.quick-game").Click();
+
+        // Act
+        lobby.Find(start).Click();
+
+        // Assert
+        ImmutableDictionary<string, string> saved = this._page.JSInterop.Invocations["zaturnava.save"]
+            .GroupBy(save => $"{save.Arguments[0]}", StringComparer.Ordinal)
+            .ToImmutableDictionary(group => group.Key, group => $"{group.Last().Arguments[1]}", StringComparer.Ordinal);
+        Assert.Equal(
+            ("chaturaji-2027", true),
+            (
+                saved["zaturnava.last-game"],
+                saved["zaturnava.setup-of.chaturaji-2027"].StartsWith("chaturaji-2027;2;", StringComparison.Ordinal)
+            )
+        );
     }
 
     [Theory]
