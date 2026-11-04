@@ -17,6 +17,9 @@ public sealed class GameEntity
     /// <summary>Whether the game is over, as last saved; null for a game saved before this was kept.</summary>
     public bool? IsOver { get; set; }
 
+    /// <summary>When the game was created, in UTC; null for a game created before this was kept.</summary>
+    public DateTime? Created { get; set; }
+
     /// <summary>
     /// When the game was last saved, in UTC; null for a game saved before this was kept. A date and time, not one
     /// with an offset, as SQLite can order only those.

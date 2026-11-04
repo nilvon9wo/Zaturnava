@@ -70,5 +70,9 @@ public sealed class InMemoryGameStore : IGamePersisting
     private static bool IsBot(SeatController controller) => controller is BotSeat;
 
     private static GameListing ListingOf(GameRecord game) =>
-        new(game.Id, game.RulesetId, game.Version, game.Controllers, game.Actions.Count, game.IsOver ?? false);
+        new(game.Id, game.RulesetId, game.Version, game.Controllers, game.Actions.Count, game.IsOver ?? false)
+        {
+            Created = game.Created,
+            LastChanged = game.LastChanged,
+        };
 }

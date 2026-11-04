@@ -121,7 +121,7 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
     }
 
     [Fact]
-    public async Task List_WhenAGameWasCreated_ShowsItsOpenSeatsByName()
+    public async Task List_WhenAGameWasCreated_ShowsItsOpenSeatsByNameAndWhenItWasCreated()
     {
         // Arrange
         string gameId = await this.CreateGame();
@@ -133,6 +133,7 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
         GameSummaryDto game = page.Games.Single(listed => listed.Id == gameId);
         Assert.Equal([0], game.OpenSeats);
         Assert.Equal(("Black,Yellow,Green,Red", false), (string.Join(",", game.SeatNames), game.IsOver));
+        Assert.Equal((true, game.Created), (game.Created is not null, game.LastChanged));
     }
 
     [Fact]

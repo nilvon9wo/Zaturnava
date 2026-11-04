@@ -83,6 +83,7 @@ public sealed class GameService(
         {
             Actions = played.Actions,
             IsOver = played.State.Outcome is not null,
+            Created = this._clock.Now,
             LastChanged = this._clock.Now,
         };
         await this._store.Add(record, cancellationToken);

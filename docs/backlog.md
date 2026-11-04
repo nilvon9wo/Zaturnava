@@ -17,7 +17,9 @@ first.
   - **N20, N21** Filter by players or bots (wildcards allowed, any seat), several at once ("Bob and Joe, and a
     seat open").
   - **N20** Each game says when it was created, whether it has started, when its last move was made, and
-    whether it waits for someone to take an open seat or for a player who went away to come back.
+    whether it waits for someone to take an open seat or for a player who went away to come back. *Done*, but
+    for the player who went away: the lobby says when each game was created and last changed, and whether it
+    waits for players or has not started. Who is away is not yet known to the server.
   - **N20** Abandoned games are purged: any game with a guest in it and no activity for 24 hours, and any game
     waiting for a signed-in player who has not signed in for 31 days.
   - **N20** On signing in, a player is reminded of every game waiting for their move, oldest first, and

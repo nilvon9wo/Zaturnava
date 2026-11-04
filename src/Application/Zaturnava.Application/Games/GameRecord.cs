@@ -7,7 +7,7 @@ namespace Net.NowhereAtAll.Zaturnava.Application.Games;
 /// A game as stored: its ruleset, who controls each seat (by seat number), and every action taken,
 /// in order. The state is never stored; it is replayed from the actions. <see cref="Version"/>
 /// counts the saves, so that two concurrent changes cannot both win. Beside them, what a lobby lists a game by,
-/// kept so that it need not replay it: whether it is over, and when it last changed.
+/// kept so that it need not replay it: whether it is over, when it was created and when it last changed.
 /// </summary>
 public sealed record GameRecord(
     GameId Id,
@@ -28,6 +28,9 @@ public sealed record GameRecord(
     /// (<see cref="GameService.Summarize"/>).
     /// </summary>
     public bool? IsOver { get; init; }
+
+    /// <summary>When the game was created; none, for a game created before this was kept.</summary>
+    public DateTimeOffset? Created { get; init; }
 
     /// <summary>When the game was last saved; none, for a game saved before this was kept.</summary>
     public DateTimeOffset? LastChanged { get; init; }

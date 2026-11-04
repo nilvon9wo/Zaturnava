@@ -89,6 +89,9 @@ namespace Net.NowhereAtAll.Zaturnava.Persistence.EfCore.SqlServer.Migrations
                     b.Property<string>("Id")
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<DateTime?>("Created")
+                        .HasColumnType("datetime2");
+
                     b.Property<bool?>("IsOver")
                         .HasColumnType("bit");
 

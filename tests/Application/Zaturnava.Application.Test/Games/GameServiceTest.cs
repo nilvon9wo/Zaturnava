@@ -515,6 +515,21 @@ public sealed class GameServiceTest
     }
 
     [Fact]
+    public async Task Create_WhenCalled_SavesWhenTheGameWasCreated()
+    {
+        // Arrange
+        InMemoryGameStore store = new();
+        GameService service = this.Service(GameServiceSettings.Default, store);
+
+        // Act
+        GameId id = await service.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
+
+        // Assert
+        GameRecord? saved = await store.Find(id, this._cancellation);
+        Assert.Equal((this._time.Now, this._time.Now), (saved?.Created, saved?.LastChanged));
+    }
+
+    [Fact]
     public async Task Submit_WhenItEndsTheGame_SavesItAsOverAndWhen()
     {
         // Arrange

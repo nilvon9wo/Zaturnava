@@ -87,6 +87,10 @@ public sealed class InMemoryGameStoreTest
         // Assert
         GameListing listed = Assert.Single(page.Games);
         Assert.Equal(("a", 3, 1, false), (listed.Id.Value, page.Total, listed.Moves, listed.IsOver));
+        Assert.Equal(
+            ((DateTimeOffset?)DateTimeOffset.UnixEpoch.AddHours(-1), (DateTimeOffset?)DateTimeOffset.UnixEpoch),
+            (listed.Created, listed.LastChanged)
+        );
     }
 
     [Fact]
@@ -184,7 +188,12 @@ public sealed class InMemoryGameStoreTest
         DateTimeOffset start = DateTimeOffset.UnixEpoch;
         GameRecord[] games =
         [
-            Record("a") with { Actions = [new ActionDescriptor("pass", Arguments)], LastChanged = start },
+            Record("a") with
+            {
+                Actions = [new ActionDescriptor("pass", Arguments)],
+                Created = start.AddHours(-1),
+                LastChanged = start,
+            },
             Record("b") with { Controllers = [new HumanSeat("hash")], IsOver = false, LastChanged = start.AddHours(2) },
             Record("c") with { Controllers = [new BotSeat("random")], IsOver = true, LastChanged = start.AddHours(1) },
             Record("d") with { RulesetId = "retired", IsOver = false, LastChanged = start.AddHours(3) },

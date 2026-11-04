@@ -7,7 +7,8 @@ namespace Net.NowhereAtAll.Zaturnava.Contracts;
 /// plays each seat (<c>open</c>; for a person, as <see cref="SeatDto.Player"/> says, their name, <c>guest</c> or
 /// <c>deleted player</c>; or the bot's id), <see cref="Moves"/> how many
 /// actions have been taken, <see cref="SeatNames"/> what the ruleset calls each seat, and
-/// <see cref="IsOver"/> whether the game has ended.
+/// <see cref="IsOver"/> whether the game has ended. <see cref="Created"/> and <see cref="LastChanged"/> say when it
+/// was created and when it last changed, a move or a seat taken; none, for a game from before they were kept.
 /// </summary>
 public sealed record GameSummaryDto(
     string Id,
@@ -25,4 +26,8 @@ public sealed record GameSummaryDto(
     public ImmutableList<string> SeatNames { get; init; } = [];
 
     public bool IsOver { get; init; }
+
+    public DateTimeOffset? Created { get; init; }
+
+    public DateTimeOffset? LastChanged { get; init; }
 }

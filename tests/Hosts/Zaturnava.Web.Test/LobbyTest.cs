@@ -1082,6 +1082,75 @@ public sealed class LobbyTest : IDisposable
     }
 
     [Theory]
+    [InlineData("1", 12, false, "Waiting for a player")]
+    [InlineData("1,3", 12, false, "Waiting for players")]
+    [InlineData("", 0, false, "Not started")]
+    [InlineData("", 12, false, "")]
+    [InlineData("1", 0, true, "")]
+    public void Render_WhenGamesAreListed_SaysWhetherEachWaitsOrHasNotStarted(
+        string open,
+        int moves,
+        bool isOver,
+        string expected
+    )
+    {
+        // Arrange
+        this._page.Server.Games =
+        [
+            this._page.Server.Games[0] with
+            {
+                OpenSeats = [.. open.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(int.Parse)],
+                Moves = moves,
+                IsOver = isOver,
+            },
+        ];
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Assert
+        Assert.Equal(expected, lobby.Find("span.state").TextContent);
+    }
+
+    [Fact]
+    public void Render_WhenAGamesTimesWereKept_SaysWhenItWasCreatedAndLastChanged()
+    {
+        // Arrange - well inside the hour and the minute they round down to, however slow the test
+        DateTimeOffset now = DateTimeOffset.UtcNow;
+        this._page.Server.Games =
+        [
+            this._page.Server.Games[0] with
+            {
+                OpenSeats = [],
+                Created = now.AddMinutes(-210),
+                LastChanged = now.AddSeconds(-330),
+            },
+        ];
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Assert
+        Assert.Equal("created 3 h ago, last change 5 min ago", lobby.Find("span.state").TextContent);
+    }
+
+    [Fact]
+    public void Render_WhenAWaitingGameWasCreatedJustNow_SaysBoth()
+    {
+        // Arrange
+        this._page.Server.Games =
+        [
+            this._page.Server.Games[0] with { Created = DateTimeOffset.UtcNow },
+        ];
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Assert
+        Assert.Equal("Waiting for players; created just now", lobby.Find("span.state").TextContent);
+    }
+
+    [Theory]
     [InlineData(true, true)]
     [InlineData(false, null)]
     public void FilterPeople_WhenTicked_ListsOnlyGamesWithNoBotsOrAny(bool ticked, bool? expected)
