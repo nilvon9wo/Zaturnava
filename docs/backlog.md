@@ -29,8 +29,6 @@ first.
 - Grand Legions (preview until these are done):
   - **N25** Letters as pieces, ambiguous ones, make it nearly unplayable: it needs its own pieces' symbols.
   - **N26** In the small game, with thrones in the corners, leaders start on their thrones.
-  - **N27** Elephants are cavalry that move diagonally, more like bishops: never "translated" as Rooks.
-  - **N28** Grand Legions needs no traditional/chess pieces toggle; the toggle may not belong in the lobby.
 - **N29** (low) An encyclopedia of pieces: each piece's name here, its other names, the games it comes from
   (Chess, Xiangqi...), the games here that use it, its variants (kinds of Pawn, of Elephant...), and how it
   moves, captures and what else it may do.
@@ -191,6 +189,9 @@ first.
 
 ## Done
 
+- **N27, N28** The choice of chaturaji or chess pieces is offered only at a table whose pieces it changes (a Raja,
+  Elephant or Horse in play): not in the lobby, nor at Grand Legions, whose pieces, Elephants among them, are
+  always shown by their own names, never "translated" as Rooks.
 - **N23** A bot's name at the table opens a profile of the bot, as a person's does: what it does, whether it asks
   an AI (and costs tokens each use), and its rating at the game.
 - **N12** Escaping names each prisoner once ("Escape Black's Boat, held by Yellow"). Choosing it marks the

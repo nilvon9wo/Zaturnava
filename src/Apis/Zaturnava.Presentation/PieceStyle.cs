@@ -78,6 +78,14 @@ public static partial class PieceStyle
             ? symbol + TextPresentation
             : name[..1];
 
+    /// <summary>
+    /// Whether the set chosen changes any of <paramref name="kinds"/>: the Raja, Elephant and Horse are drawn and
+    /// named as chess pieces; every other kind, as a game with other pieces has (Grand Legions), stays as it is, so
+    /// such a game offers no choice of set, and shows its pieces by its own names.
+    /// </summary>
+    public static bool HasChessForms([Required] IEnumerable<string> kinds) =>
+        kinds.Any(kind => ChessSymbols.ContainsKey(kind) && ChaturajiShapes.ContainsKey(kind));
+
     /// <summary>The kind's shape, as SVG path data; null for a kind drawn as a glyph.</summary>
     public static string? ShapeOf([Required] string kind, PieceSet set) =>
         (set == PieceSet.Chess ? ChessShapes : ChaturajiShapes).GetValueOrDefault(kind);
