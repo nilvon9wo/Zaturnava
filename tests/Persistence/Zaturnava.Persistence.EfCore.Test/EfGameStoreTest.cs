@@ -291,6 +291,32 @@ public sealed class EfGameStoreTest : IDisposable
         );
     }
 
+    [Fact]
+    public async Task Unrated_WhenGamesAreOver_ReadsThoseNotYetRatedEarliestChangedFirstThenById()
+    {
+        // Arrange - c over an hour in; x, w and v over from the start, but v rated
+        await this.AddListed();
+        foreach (string id in new[] { "x", "w", "v" })
+        {
+            await this._store.Add(
+                Record(id) with { IsOver = true, LastChanged = DateTimeOffset.UnixEpoch },
+                this._cancellation
+            );
+        }
+
+        await this._store.MarkRated(new GameId("v"), this._cancellation);
+
+        // Act
+        ImmutableList<GameRecord> unrated =
+            await new EfGameStore(this._database.NewContext()).Unrated(3, this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            ("w,x,c", 1),
+            (string.Join(",", unrated.Select(game => game.Id.Value)), unrated[0].Actions.Count)
+        );
+    }
+
     private static GameRecord Record(string id) =>
         new(
             new GameId(id),

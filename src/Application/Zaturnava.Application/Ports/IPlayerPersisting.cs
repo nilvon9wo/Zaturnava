@@ -55,6 +55,27 @@ public interface IPlayerPersisting
     /// <summary>Lets the session go: its token stands for no one any more. None to let go is no matter.</summary>
     Task RemoveSession([Required] string tokenHash, CancellationToken cancellationToken);
 
-    /// <summary>Forgets the player altogether: their name, their logins and every session of theirs.</summary>
+    /// <summary>
+    /// Forgets the player altogether: their name, their logins, every session of theirs and where they stand.
+    /// </summary>
     Task Remove(PlayerId player, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Where each of <paramref name="players"/> stands at <paramref name="game"/>; one who has never finished a
+    /// game of it, or is forgotten, is left out.
+    /// </summary>
+    Task<ImmutableDictionary<PlayerId, Standing>> Standings(
+        [Required] string game,
+        [Required] ImmutableList<PlayerId> players,
+        CancellationToken cancellationToken
+    );
+
+    /// <summary>Keeps where each player stands, in place of where they stood.</summary>
+    Task Keep([Required] ImmutableList<Standing> standings, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// The <paramref name="count"/> players standing highest at <paramref name="game"/>: by Elo, then experience,
+    /// then by id, so that ties keep an order.
+    /// </summary>
+    Task<ImmutableList<Standing>> Leaders([Required] string game, int count, CancellationToken cancellationToken);
 }

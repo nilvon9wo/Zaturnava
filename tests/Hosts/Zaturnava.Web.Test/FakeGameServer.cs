@@ -124,6 +124,12 @@ internal sealed class FakeGameServer : IGameServing
     private static ImmutableDictionary<string, int> Rated(int rating) =>
         ImmutableDictionary<string, int>.Empty.Add("chaturaji-2027", rating);
 
+    /// <summary>Each game's leaderboard, by the game's id: none, unless a test sets one.</summary>
+    public ImmutableDictionary<string, ImmutableList<StandingDto>> Leaderboards { get; set; } = [];
+
+    public Task<ImmutableList<StandingDto>> Leaderboard([Required] string game, CancellationToken cancellationToken) =>
+        this.Answer($"leaderboard {game}", this.Leaderboards.GetValueOrDefault(game, []));
+
     public Task<GamePageDto> List(GameListQuery? query, CancellationToken cancellationToken)
     {
         this.Listed = query;

@@ -26,6 +26,9 @@ public sealed class GameEntity
     /// </summary>
     public DateTime? LastChanged { get; set; }
 
+    /// <summary>Whether the game, over, has been counted in its players' standings.</summary>
+    public bool IsRated { get; set; }
+
     public List<SeatEntity> Seats { get; set; } = [];
 
     public List<ActionEntity> Actions { get; set; } = [];

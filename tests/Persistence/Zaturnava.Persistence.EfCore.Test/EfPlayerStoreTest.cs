@@ -52,6 +52,74 @@ public sealed class EfPlayerStoreTest : IDisposable
         Assert.Equal([KeyValuePair.Create(Ada.Id, "Ada")], names);
     }
 
+    [Fact]
+    public async Task Standings_WhenKeptAndKeptAgain_ReadBackTheLatestOfTheGameAskedFor()
+    {
+        // Arrange
+        await this._store.Add(Ada, this._cancellation);
+        await this._store.Keep(
+            [new Standing(Ada.Id, "chess") { Elo = 1400 }, new Standing(Ada.Id, "go") { Won = 1 }],
+            this._cancellation
+        );
+        Standing kept = new(Ada.Id, "chess") { Elo = 1520.5, Experience = 7, Won = 2, Lost = 3, Drawn = 4 };
+        await new EfPlayerStore(this._database.NewContext()).Keep([kept], this._cancellation);
+
+        // Act
+        ImmutableDictionary<PlayerId, Standing> standings = await new EfPlayerStore(this._database.NewContext())
+            .Standings("chess", [Ada.Id, new PlayerId("bea"), Ada.Id], this._cancellation);
+
+        // Assert
+        Assert.Equal([KeyValuePair.Create(Ada.Id, kept)], standings);
+    }
+
+    [Fact]
+    public async Task Leaders_WhenPlayersStandAtSeveralGames_ListTheBestOfTheGameByEloThenExperienceThenId()
+    {
+        // Arrange
+        foreach (string id in new[] { "a", "b", "c", "d", "e", "f" })
+        {
+            await this._store.Add(new Player(new PlayerId(id), id, []), this._cancellation);
+        }
+
+        await this._store.Keep(
+            [
+                new Standing(new PlayerId("c"), "chess") { Elo = 1600, Experience = 5 },
+                new Standing(new PlayerId("b"), "chess") { Elo = 1600, Experience = 9 },
+                new Standing(new PlayerId("a"), "chess") { Elo = 1600, Experience = 5 },
+                new Standing(new PlayerId("d"), "chess") { Elo = 1700 },
+                new Standing(new PlayerId("e"), "chess") { Elo = 1100 },
+                new Standing(new PlayerId("f"), "go") { Elo = 2000 },
+            ],
+            this._cancellation
+        );
+
+        // Act
+        ImmutableList<Standing> leaders =
+            await new EfPlayerStore(this._database.NewContext()).Leaders("chess", 4, this._cancellation);
+
+        // Assert
+        Assert.Equal("d,b,a,c", string.Join(",", leaders.Select(leader => leader.Player.Value)));
+    }
+
+    [Fact]
+    public async Task Remove_WhenThePlayerStandsAtAGame_ForgetsWhereTheyStoodAlone()
+    {
+        // Arrange
+        Player bea = new(new PlayerId("bea"), "Bea", []);
+        await this._store.Add(Ada, this._cancellation);
+        await this._store.Add(bea, this._cancellation);
+        await this._store.Keep([new Standing(Ada.Id, "chess"), new Standing(bea.Id, "chess")], this._cancellation);
+
+        // Act
+        await this._store.Remove(Ada.Id, this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            [new Standing(bea.Id, "chess")],
+            await new EfPlayerStore(this._database.NewContext()).Leaders("chess", 10, this._cancellation)
+        );
+    }
+
     [Theory]
     [InlineData("hash", true)]
     [InlineData("other", false)]

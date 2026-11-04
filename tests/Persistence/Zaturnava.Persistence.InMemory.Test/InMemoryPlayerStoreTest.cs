@@ -164,6 +164,62 @@ public sealed class InMemoryPlayerStoreTest
     }
 
     [Fact]
+    public async Task Standings_WhenKeptAndKeptAgain_ReadBackTheLatestOfTheGameAskedFor()
+    {
+        // Arrange
+        await this._store.Keep(
+            [new Standing(Ada.Id, "chess") { Elo = 1400 }, new Standing(Ada.Id, "go") { Won = 1 }],
+            this._cancellation
+        );
+        await this._store.Keep([new Standing(Ada.Id, "chess") { Elo = 1520, Won = 2 }], this._cancellation);
+
+        // Act
+        ImmutableDictionary<PlayerId, Standing> standings =
+            await this._store.Standings("chess", [Ada.Id, new PlayerId("bea"), Ada.Id], this._cancellation);
+
+        // Assert
+        Assert.Equal([KeyValuePair.Create(Ada.Id, new Standing(Ada.Id, "chess") { Elo = 1520, Won = 2 })], standings);
+    }
+
+    [Fact]
+    public async Task Leaders_WhenPlayersStandAtSeveralGames_ListTheBestOfTheGameByEloThenExperienceThenId()
+    {
+        // Arrange
+        await this._store.Keep(
+            [
+                new Standing(new PlayerId("c"), "chess") { Elo = 1600, Experience = 5 },
+                new Standing(new PlayerId("b"), "chess") { Elo = 1600, Experience = 9 },
+                new Standing(new PlayerId("a"), "chess") { Elo = 1600, Experience = 5 },
+                new Standing(new PlayerId("d"), "chess") { Elo = 1700 },
+                new Standing(new PlayerId("e"), "chess") { Elo = 1100 },
+                new Standing(new PlayerId("f"), "go") { Elo = 2000 },
+            ],
+            this._cancellation
+        );
+
+        // Act
+        ImmutableList<Standing> leaders = await this._store.Leaders("chess", 4, this._cancellation);
+
+        // Assert
+        Assert.Equal("d,b,a,c", string.Join(",", leaders.Select(leader => leader.Player.Value)));
+    }
+
+    [Fact]
+    public async Task Remove_WhenThePlayerStandsAtAGame_ForgetsWhereTheyStoodAlone()
+    {
+        // Arrange
+        Standing bea = new(new PlayerId("bea"), "chess");
+        await this._store.Add(Ada, this._cancellation);
+        await this._store.Keep([new Standing(Ada.Id, "chess"), bea], this._cancellation);
+
+        // Act
+        await this._store.Remove(Ada.Id, this._cancellation);
+
+        // Assert
+        Assert.Equal([bea], await this._store.Leaders("chess", 10, this._cancellation));
+    }
+
+    [Fact]
     public async Task Remove_WhenAPlayerHasSessions_ForgetsThemAndTheirsAlone()
     {
         // Arrange

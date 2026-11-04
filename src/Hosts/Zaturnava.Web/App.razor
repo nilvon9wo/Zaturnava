@@ -1,6 +1,6 @@
 @* The whole page: the lobby until the player sits at (or watches) a table, under signing in (at the top right, if
    the server offers it) and over a quiet bar of the page's name, buttons opening the guide to the game and the
-   guide to the bots, and the page's own settings (the safety, beside
+   guide to the bots and the leaderboard, and the page's own settings (the safety, beside
    the table's view buttons; how it looks: theme, and pieces at a table whose pieces that changes; then sound); at a
    table, the table shows the guide's button and the settings in its own bar. No URL routing, so the page works from any address it is served at. A seat the player takes is
    remembered in the browser, so that they can come back to it. *@
@@ -44,6 +44,11 @@ else
     <BotGuide OnClose="this.CloseBotGuide" />
 }
 
+@if (this._isLeaderboardOpen)
+{
+    <Leaderboard OnClose="this.CloseLeaderboard" />
+}
+
 @code {
     private Seating? _seating;
     private string _theme = Browser.Dark;
@@ -51,6 +56,7 @@ else
     private bool _isSafetyOn = true;
     private bool _isGuideOpen;
     private bool _isBotGuideOpen;
+    private bool _isLeaderboardOpen;
     private PieceSet _pieces;
 
     private RenderFragment HowToPlay =>
@@ -58,6 +64,7 @@ else
         {
             builder.AddContent(0, this.HowToPlayButton);
             builder.AddContent(1, this.BotsButton);
+            builder.AddContent(2, this.LeaderboardButton);
         };
 
     private RenderFragment HowToPlayButton =>
@@ -65,6 +72,9 @@ else
 
     private RenderFragment BotsButton =>
         @<button class="the-bots" @onclick="this.OpenBotGuide">The bots</button>;
+
+    private RenderFragment LeaderboardButton =>
+        @<button class="leaderboard-open" @onclick="this.OpenLeaderboard">Leaderboard</button>;
 
     /// <summary>The page's settings; the choice of pieces only where it changes them, at a table.</summary>
     private RenderFragment<bool> Settings =>
@@ -109,6 +119,10 @@ else
     private void OpenBotGuide() => this._isBotGuideOpen = true;
 
     private void CloseBotGuide() => this._isBotGuideOpen = false;
+
+    private void OpenLeaderboard() => this._isLeaderboardOpen = true;
+
+    private void CloseLeaderboard() => this._isLeaderboardOpen = false;
 
     private async Task SwitchTheme()
     {

@@ -12,7 +12,12 @@ first.
 - **N2** The database stays as it is through every change, by migrations; never wiped (*Stated*).
 - **N3** A leaderboard, for players to compete for; with each player's Elo and their **experience**: each time
   a player is on the winning team, they gain their own points plus their team's (*Stated*). Each player's
-  statistics also count the games they won, lost, drew and abandoned (*Stated*).
+  statistics also count the games they won, lost, drew and abandoned (*Stated*). *Done*, but for abandoned games:
+  a **Leaderboard** button in the page's bar lists, game by game, the top 100 signed-in players by Elo, with their
+  experience and games won, lost and drawn. Each finished game counts once, within a minute of ending, for every
+  signed-in seat but one their own AI played; everyone starts at 1500, K is 32, and each team is rated as the mean
+  of its seats (a bot's by its rating at the ruleset, a guest's 1500), its expected score the average against
+  each other team (*Proposed*).
 - The lobby's list of games:
   - **N20, N21** Filter by players or bots (wildcards allowed, any seat), several at once ("Bob and Joe, and a
     seat open"). *Done*: a Players box takes names separated by commas, "Bob, Jo*, open"; `*` for any letters,

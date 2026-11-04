@@ -1,0 +1,106 @@
+@* Who stands highest at each game: the players signed in, best first, by their Elo rating at it, with their experience
+   and how many of its games they won, lost and drew; one game at a time, chosen among those the server offers (the
+   first, to begin with). Shown over the lobby or the table, from the page's bar, until closed. *@
+@inject IGameServing Games
+
+<div class="guide-backdrop">
+    <section class="guide leaderboard" role="dialog" aria-modal="true" aria-labelledby="leaderboard-title">
+        <header class="guide-head">
+            <h2 id="leaderboard-title">Leaderboard</h2>
+            <button class="close" @onclick="this.OnClose">Close</button>
+        </header>
+
+        @if (this._problem is { } problem)
+        {
+            <p class="problem" role="alert">@problem</p>
+        }
+
+        @if (this._games.Count > 1)
+        {
+            <label class="choice">
+                <span class="choice-name">Game</span>
+                <select class="leaderboard-game" value="@this._game" @onchange="this.Choose">
+                    @foreach (RulesetDto game in this._games)
+                    {
+                        <option value="@game.Game">@game.GameName</option>
+                    }
+                </select>
+            </label>
+        }
+
+        @if (this._leaders is { } leaders)
+        {
+            @if (leaders.IsEmpty)
+            {
+                <p class="no-leaders">No one signed in has finished a game of it yet.</p>
+            }
+            else
+            {
+                <table class="leaders">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Player</th>
+                            <th>Elo</th>
+                            <th>Experience</th>
+                            <th>Won</th>
+                            <th>Lost</th>
+                            <th>Drawn</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (StandingDto standing in leaders)
+                        {
+                            <tr>
+                                <td class="place">@standing.Place</td>
+                                <td class="name">@standing.Name</td>
+                                <td class="elo">@standing.Elo</td>
+                                <td class="experience">@standing.Experience</td>
+                                <td class="won">@standing.Won</td>
+                                <td class="lost">@standing.Lost</td>
+                                <td class="drawn">@standing.Drawn</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        }
+
+        <p class="about-standings">
+            Each game finished counts for the players signed in at it, but not for a seat their own AI played. Everyone
+            starts at Elo 1500, and gains or loses by how their team did against what the teams' ratings led to
+            expect, a bot's team by the bot's own rating. Each win earns as experience your own points plus your
+            team's.
+        </p>
+    </section>
+</div>
+
+@code {
+    private ImmutableList<RulesetDto> _games = [];
+    private string _game = string.Empty;
+    private ImmutableList<StandingDto>? _leaders;
+    private string? _problem;
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    protected override async Task OnInitializedAsync() => this._problem = await Requests.Attempt(this.Load);
+
+    private async Task Load()
+    {
+        CatalogDto catalog = await this.Games.Catalog(CancellationToken.None);
+        this._games = [.. catalog.Rulesets.DistinctBy(ruleset => ruleset.Game, StringComparer.Ordinal)];
+        await this.Show(this._games[0].Game);
+    }
+
+    /// <summary>The leaderboard of the game chosen; told why not, if the server cannot give it.</summary>
+    private async Task Choose(ChangeEventArgs change) =>
+        this._problem = await Requests.Attempt(() => this.Show($"{change.Value}"));
+
+    private async Task Show(string game)
+    {
+        this._game = game;
+        this._leaders = null;
+        this._leaders = await this.Games.Leaderboard(game, CancellationToken.None);
+    }
+}

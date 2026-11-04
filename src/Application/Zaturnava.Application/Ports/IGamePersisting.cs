@@ -33,6 +33,15 @@ public interface IGamePersisting
     /// </summary>
     Task<ImmutableList<GameRecord>> Idle(DateTimeOffset since, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// The first <paramref name="count"/> games over, as last saved, not yet counted in their players' standings: the
+    /// one that last changed earliest first, then by id, so that each counts in the order the games ended.
+    /// </summary>
+    Task<ImmutableList<GameRecord>> Unrated(int count, CancellationToken cancellationToken);
+
+    /// <summary>Keeps that the game has been counted in its players' standings, leaving its version as it is.</summary>
+    Task MarkRated(GameId id, CancellationToken cancellationToken);
+
     /// <summary>Lets go of the games, with everything kept of them.</summary>
     Task Remove([Required] ImmutableList<GameId> ids, CancellationToken cancellationToken);
 

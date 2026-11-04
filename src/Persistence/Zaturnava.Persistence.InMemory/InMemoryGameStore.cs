@@ -9,6 +9,7 @@ namespace Net.NowhereAtAll.Zaturnava.Persistence.InMemory;
 public sealed class InMemoryGameStore : IGamePersisting
 {
     private readonly ConcurrentDictionary<GameId, GameRecord> _games = new();
+    private readonly ConcurrentDictionary<GameId, bool> _rated = new();
 
     public Task<GameRecord?> Find(GameId id, CancellationToken cancellationToken) =>
         Task.FromResult(this._games.GetValueOrDefault(id));
@@ -59,11 +60,31 @@ public sealed class InMemoryGameStore : IGamePersisting
         return Task.FromResult(games);
     }
 
+    public Task<ImmutableList<GameRecord>> Unrated(int count, CancellationToken cancellationToken)
+    {
+        ImmutableList<GameRecord> games =
+        [
+            .. this._games.Values
+                .Where(game => game.IsOver == true && !this._rated.ContainsKey(game.Id))
+                .OrderBy(game => game.LastChanged)
+                .ThenBy(game => game.Id.Value, StringComparer.Ordinal)
+                .Take(count),
+        ];
+        return Task.FromResult(games);
+    }
+
+    public Task MarkRated(GameId id, CancellationToken cancellationToken)
+    {
+        this._rated[id] = true;
+        return Task.CompletedTask;
+    }
+
     public Task Remove([Required] ImmutableList<GameId> ids, CancellationToken cancellationToken)
     {
         foreach (GameId id in ids)
         {
             _ = this._games.TryRemove(id, out _);
+            _ = this._rated.TryRemove(id, out _);
         }
 
         return Task.CompletedTask;
