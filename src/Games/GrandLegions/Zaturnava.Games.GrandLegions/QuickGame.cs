@@ -60,6 +60,9 @@ public sealed record QuickGame(
     /// </summary>
     public const bool IsPreview = true;
 
+    /// <summary>The rivers across the board: none, as yet, in any quick game.</summary>
+    public Rivers Rivers { get; init; } = Rivers.None;
+
     /// <summary>The game and its size, as the rules tell them.</summary>
     public GameSize Game => new(GameId, GameName, this.Size, IsPreview);
 

@@ -64,18 +64,23 @@ public class ZaturnavaServer : WebApplicationFactory<Program>
 
 /// <summary>
 /// Dice that let the first of every four seats to roll off win, and otherwise always come up
-/// <see cref="ZaturnavaServer.DieValue"/>. A roll-off is the only roll of a single die.
+/// <see cref="ZaturnavaServer.DieValue"/>. A roll-off is the only roll of a single six-sided die; a single die of
+/// more sides seeds a game dealt anew, always with 1.
 /// </summary>
 file sealed class LoadedDice : IDiceRolling
 {
     private const int Seats = 4;
+    private const int Sides = 6;
 
     private int _rolledOff = -1;
 
     public ImmutableList<int> Roll([Required] DiceRequest request) =>
-        request.Count == 1
-            ? [this.RollOff()]
-            : [.. Enumerable.Repeat(ZaturnavaServer.DieValue, request.Count)];
+        request switch
+        {
+            { Count: 1, Sides: > Sides } => [1],
+            { Count: 1 } => [this.RollOff()],
+            _ => [.. Enumerable.Repeat(ZaturnavaServer.DieValue, request.Count)],
+        };
 
     private int RollOff() =>
         Interlocked.Increment(ref this._rolledOff) % Seats == 0

@@ -111,13 +111,15 @@ How a quick game's armies are chosen and placed (*Stated*, 2026-11-01 and 2026-1
 
 What the program does so far (2026-11-04), and the gaps against the above:
 
-- *Gap*: `QuickArmy` picks one army for all four seats, the cheapest that meets the minimums, then the
-  best the budget buys; it should pick each army apart, at random, as above.
-- *Gap*: it leaves out every piece an area holds (palace or river) until palaces come; a river piece
-  should depend on the river alone.
-- *Gap*: the leader takes the back rank's inner corner and the others fixed places, the same for
-  every army; they should be placed in random order, as above. (The small game's outer corner is
-  done.)
+- Each game is dealt its own armies: its first action carries a seed (`ScenarioStart.Dealt`), from which
+  `QuickArmy` picks and places each seat's army apart, at random, as above; each leader's start is its
+  throne, and each piece's its home for ransom. Games begun before this replay as the first seed deals
+  them. The order of the middle classes (heavy, artillery, cavalry) and how the dearest pieces are made
+  cheaper (each time, the piece dearest beyond its class's cheapest, one step down) are *Proposed*.
+- Palace pieces are left out, as quick games have no palaces; river pieces, unless the game has rivers
+  (each area restriction says which it is about: `Terrain`).
+- *Gap*: lifts are not bought with what is left of the budget, as nothing plays a lifted restriction yet.
+- *Gap*: there is no setting yet for all four armies alike, or laid out symmetrically.
 - The Chaturaji 2027 bonuses are × 10, as is the lead a team needs to win by giving up its turns
   (*Proposed*: 100), each read from a table (`Scoring/grand-legions.json`; Chaturaji 2027's own in
   `Scoring/chaturaji-2027.json`) that can be changed apart from the code. Piece values are still in

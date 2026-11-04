@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.ComponentModel.DataAnnotations;
+using Net.NowhereAtAll.Zaturnava.Application.Scenarios;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Chance;
 using Net.NowhereAtAll.Zaturnava.Engine.Decisions;
@@ -44,7 +45,10 @@ public static class DecisionLoop
         return current;
     }
 
-    /// <summary>A whole game in which every seat is played by the decider at its index.</summary>
+    /// <summary>
+    /// A whole game in which every seat is played by the decider at its index; dealt anew first, by a seed
+    /// <paramref name="dice"/> roll, if the ruleset deals each game its own armies.
+    /// </summary>
     public static Task<Played> PlayAll(
         [Required] IRulesApplying rules,
         [Required] ImmutableList<IDeciding> players,
@@ -53,7 +57,8 @@ public static class DecisionLoop
         CancellationToken cancellationToken
     )
     {
-        Played start = new(rules.CreateInitialState(), []);
+        ImmutableList<ActionDescriptor> dealt = rules.IsDealt ? [ScenarioStart.Dealt(dice)] : [];
+        Played start = new(ScenarioStart.StateOf(dealt, rules), dealt);
         return PlayWhile(rules, start, seat => players[seat.Value], dice, maximumSteps, cancellationToken);
     }
 

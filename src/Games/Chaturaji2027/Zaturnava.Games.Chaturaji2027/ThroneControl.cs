@@ -11,14 +11,16 @@ namespace Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
 /// Who commands which armies (rules.md §6): a seat moves its own army, the army of every throne its
 /// Raja sits on (§6.1a), and, while it has a Raja, the army of any ally left without one (§6.1b).
 /// An ally may take a seat's turn for it, if the seat lets it (§6.2); an enemy Raja on a seat's throne
-/// shares that seat's turn (§6.3).
+/// shares that seat's turn (§6.3). The thrones are the game's own, if it was dealt them; else
+/// <paramref name="thrones"/>, the rules'.
 /// </summary>
 internal sealed class ThroneControl(ImmutableDictionary<SeatId, CellId> thrones, ImmutableHashSet<PieceKindId> leaders)
 {
     private readonly ImmutableDictionary<SeatId, CellId> _thrones = thrones;
     private readonly ImmutableHashSet<PieceKindId> _leaders = leaders;
-    private readonly ImmutableDictionary<CellId, SeatId> _owners =
-        thrones.ToImmutableDictionary(throne => throne.Value, throne => throne.Key);
+
+    /// <summary>Each seat's throne in the game as it stands.</summary>
+    public ImmutableDictionary<SeatId, CellId> ThronesOf(GameState state) => state.Thrones ?? this._thrones;
 
     /// <summary>The armies the deciding seat may move now: only the one it acts for, if it acts for one.</summary>
     public ImmutableHashSet<SeatId> ArmiesOf(GameState state, SeatId seat) =>
@@ -61,21 +63,22 @@ internal sealed class ThroneControl(ImmutableDictionary<SeatId, CellId> thrones,
             .Select(ally => ally.Id)
             .Where(ally => ally != seat && state.Teams.AreAllied(ally, seat) && this.HasRaja(state, ally))
             .Where(ally =>
-                !this.HasRaja(state, seat) || this.IsRajaOf(state.Position.PieceAt(this._thrones[seat]), ally)
+                !this.HasRaja(state, seat) || this.IsRajaOf(state.Position.PieceAt(this.ThronesOf(state)[seat]), ally)
             );
 
     /// <summary>The seat whose throne <paramref name="cell"/> is; null if it is no one's.</summary>
-    public SeatId? OwnerOf(CellId cell) =>
-        this._owners.TryGetValue(cell, out SeatId owner)
-            ? owner
-            : null;
+    public SeatId? OwnerOf(GameState state, CellId cell) =>
+        this.ThronesOf(state)
+            .Where(throne => throne.Value == cell)
+            .Select(throne => (SeatId?)throne.Key)
+            .FirstOrDefault();
 
-    public bool IsThroneOf(CellId cell, SeatId seat) => this._thrones[seat] == cell;
+    public bool IsThroneOf(GameState state, CellId cell, SeatId seat) => this.ThronesOf(state)[seat] == cell;
 
     /// <summary>The enemy whose Raja sits on <paramref name="seat"/>'s throne; null if none does.</summary>
     public SeatId? OccupierOf(GameState state, SeatId seat)
     {
-        Piece? occupant = state.Position.PieceAt(this._thrones[seat]);
+        Piece? occupant = state.Position.PieceAt(this.ThronesOf(state)[seat]);
         bool isEnemyRaja = occupant is { } piece
             && this.IsLeader(piece.Kind)
             && !state.Teams.AreAllied(occupant.Owner, seat)
@@ -113,7 +116,7 @@ internal sealed class ThroneControl(ImmutableDictionary<SeatId, CellId> thrones,
     private IEnumerable<SeatId> ThronesHeldBy(GameState state, SeatId seat) =>
         state.Retired.Contains(seat)
             ? []
-            : this._thrones
+            : this.ThronesOf(state)
                 .Where(throne => throne.Key != seat && !state.Retired.Contains(throne.Key))
                 .Where(throne => this.IsRajaOf(state.Position.PieceAt(throne.Value), seat))
                 .Select(throne => throne.Key);

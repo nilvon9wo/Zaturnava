@@ -65,6 +65,12 @@ public sealed record Chaturaji2027Variant(
     /// </summary>
     public MoveAllowing? MayMove { get; init; }
 
+    /// <summary>
+    /// Where every piece of a game dealt by a seed starts, each game its own armies; null, if every game starts
+    /// as <see cref="Start"/> has it.
+    /// </summary>
+    public Func<int, ImmutableList<Placement>>? Dealer { get; init; }
+
     /// <summary>Each seat's throne: the square its first leader starts on.</summary>
     public ImmutableDictionary<SeatId, CellId> Thrones([Required] SquareGridTopology grid) =>
         this.Start

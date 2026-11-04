@@ -99,6 +99,23 @@ public sealed class GameServiceTest
     }
 
     [Fact]
+    public async Task Create_WhenTheRulesetDealsEachGame_DealsItBySeedAndReplaysFromTheDeal()
+    {
+        // Arrange - the loaded dice roll the seed, 4, which the tiny rules score to the first seat
+        GameService service = this.Service(GameServiceSettings.Default, isDealt: true);
+        GameId id = await service.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
+
+        // Act
+        GameSnapshot snapshot = await service.Get(id, this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            (ScenarioStart.DealKind, 4),
+            (snapshot.Record.Actions[0].Kind, snapshot.State.Scores[First])
+        );
+    }
+
+    [Fact]
     public async Task Create_WhenTheScenarioIsForAnotherRuleset_ThrowsInvalidScenarioException()
     {
         // Arrange - nothing beyond the service
@@ -1374,10 +1391,11 @@ public sealed class GameServiceTest
     private GameService Service(
         GameServiceSettings settings,
         InMemoryGameStore? store = null,
-        ImmutableList<IBotPlaying>? bots = null
+        ImmutableList<IBotPlaying>? bots = null,
+        bool isDealt = false
     ) =>
         new(
-            new RulesetCatalog([new TinyRules(GameLength), new RollingRules(GameLength)]),
+            new RulesetCatalog([new TinyRules(GameLength, isDealt), new RollingRules(GameLength)]),
             new BotCatalog(bots ?? [new FirstChoiceBot()]),
             new ScenarioCatalog(
                 [

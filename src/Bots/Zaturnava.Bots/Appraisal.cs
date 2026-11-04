@@ -85,7 +85,7 @@ internal static class Appraisal
 
     /// <summary>How many enemy thrones the team's leaders sit on, less how many of its own enemy leaders do.</summary>
     private static int Thrones(DecisionRequest request, GameState state) =>
-        request.Rules.Thrones
+        request.Rules.ThronesOf(state)
             .Select(throne => (Throne: throne.Key, Occupant: state.Position.PieceAt(throne.Value)))
             .Where(held => held.Occupant is not null
                 && request.Rules.IsLeader(held.Occupant.Kind)

@@ -48,7 +48,10 @@ public static class GrandLegionsRules
             VariantOf(game, ClassDice.SixSided)
         );
 
-    /// <summary>The quick game as the rules play it: its board, its armies as the program picks them.</summary>
+    /// <summary>
+    /// The quick game as the rules play it: its board, and its armies as the program deals them, each game its own;
+    /// a game begun before games were dealt starts as the first seed deals it.
+    /// </summary>
     public static Chaturaji2027Variant VariantOf([Required] QuickGame game, [Required] ClassDice dice) =>
         new(
             game.Id,
@@ -59,15 +62,18 @@ public static class GrandLegionsRules
             GrandLegionsPieces.Catalogue.ToImmutableDictionary(piece => piece.Id, piece => piece.Name),
             Leaders,
             Pawns,
-            Pinwheel.Armies(game.Side, QuickArmy.Layout(game, QuickArmy.Pick(game)))
+            QuickArmy.Dealt(game, 0)
         )
         {
+            Dealer = seed => QuickArmy.Dealt(game, seed),
             Game = game.Game,
             Heavies = Heavies,
             Marks = GrandLegionsPieces.Marks,
             Scoring = Scoring,
             DieNames = dice.Classes.ToImmutableDictionary(face => face.Key, face => NameOf(face.Value)),
-            MayMove = RiverCrossing.On(new GrandBoard(game.Side, game.Side, game.KingdomWidth, game.KingdomDepth)),
+            MayMove = RiverCrossing.On(
+                new GrandBoard(game.Side, game.Side, game.KingdomWidth, game.KingdomDepth, Rivers: game.Rivers)
+            ),
         };
 
     /// <summary>The dice as kinds: each value lets every piece of the classes it names move.</summary>

@@ -75,9 +75,12 @@ public sealed class GameService(
     )
     {
         IRulesApplying rules = this._rulesets.Find(rulesetId);
-        ImmutableList<ActionDescriptor> start = scenarioId is null
-            ? []
-            : [ScenarioStart.Describe(this.ScenarioFor(rules, scenarioId))];
+        ImmutableList<ActionDescriptor> start = (scenarioId, rules.IsDealt) switch
+        {
+            ({ } scenario, _) => [ScenarioStart.Describe(this.ScenarioFor(rules, scenario))],
+            (null, true) => [ScenarioStart.Dealt(this._dice)],
+            _ => [],
+        };
         GameState initial = ScenarioStart.StateOf(start, rules);
         GameRecord created = new(GameId.New(), rules.Id, this.ControllersFor(initial, seats), start, 0);
         Played played = await this.PlayBots(rules, created, new Played(initial, start), cancellationToken);

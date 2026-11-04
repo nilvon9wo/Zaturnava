@@ -252,6 +252,8 @@ html { scrollbar-gutter: stable; }
     margin: 6px 0;
 }
 .choices label { display: contents; }
+/* Each choice a row of its own: its name always starts one, even where the row before left a column free. */
+.choices .choice-name { grid-column: 1; }
 .choices p.rules { grid-column: 1 / -1; margin: 0; }
 .choices select, .panel label.scenario select { width: 100%; min-width: 0; }
 .panel label.previews { display: block; margin: 6px 0; font-size: 0.9em; }

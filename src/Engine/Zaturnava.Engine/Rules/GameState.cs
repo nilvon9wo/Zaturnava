@@ -22,6 +22,17 @@ public sealed record GameState(
     ImmutableList<Prisoner> Prisoners
 )
 {
+    /// <summary>
+    /// Each seat's throne in this game, if it was dealt its own (<see cref="IRulesApplying.Deal"/>); null, if the
+    /// thrones are where the rules have them (<see cref="IRulesApplying.Thrones"/>).
+    /// </summary>
+    public ImmutableDictionary<SeatId, CellId>? Thrones { get; init; }
+
+    /// <summary>
+    /// Where every piece started in this game, if it was dealt its own armies; null, if as the rules start them.
+    /// </summary>
+    public Position? Start { get; init; }
+
     /// <summary>The dice the game waits on, rolled for <see cref="DecidingSeat"/>; null if none.</summary>
     public DiceRequest? AwaitedDice { get; init; }
 

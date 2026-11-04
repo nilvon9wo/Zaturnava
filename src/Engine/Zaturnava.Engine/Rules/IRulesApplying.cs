@@ -43,7 +43,25 @@ public interface IRulesApplying
     /// <summary>Each seat's throne, if the ruleset has thrones; empty if it has none.</summary>
     ImmutableDictionary<SeatId, CellId> Thrones { get; }
 
+    /// <summary>
+    /// Each seat's throne in the game as it stands: the game's own, if it was dealt; else the ruleset's.
+    /// </summary>
+    ImmutableDictionary<SeatId, CellId> ThronesOf([Required] GameState state) => state.Thrones ?? this.Thrones;
+
     GameState CreateInitialState();
+
+    /// <summary>
+    /// Whether each game is dealt anew as it begins (<see cref="Deal"/>): its armies picked and placed at random,
+    /// say, so that no two games begin alike. A ruleset that is not begins every game as
+    /// <see cref="CreateInitialState"/> does.
+    /// </summary>
+    bool IsDealt => false;
+
+    /// <summary>
+    /// The new game <paramref name="initial"/>, dealt by <paramref name="seed"/>: the same seed always deals the same
+    /// game, so that a game replays from the seed it began with. As it is, for a ruleset that is not dealt.
+    /// </summary>
+    GameState Deal([Required] GameState initial, int seed) => initial;
 
     /// <summary>What the deciding seat may do; empty once the game is over, and while it waits on dice.</summary>
     ImmutableList<GameAction> LegalActions([Required] GameState state);

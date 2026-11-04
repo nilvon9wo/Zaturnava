@@ -36,6 +36,18 @@ public static class Pinwheel
         .. Enumerable.Range(0, SeatCount).SelectMany(seat => army.Select(piece => Turned(side, seat, piece))),
     ];
 
+    /// <summary>
+    /// Each seat's own army on a board <paramref name="side"/> cells square, seat by seat: the seat's of
+    /// <paramref name="armies"/>, as it would stand for seat 0, turned for the seat.
+    /// </summary>
+    public static ImmutableList<Placement> EachOwn(
+        int side,
+        [Required] ImmutableList<ImmutableList<ArmyPiece>> armies
+    ) =>
+    [
+        .. armies.SelectMany((army, seat) => army.Select(piece => Turned(side, seat, piece))),
+    ];
+
     /// <summary>The pieces placed, numbered in order from 0.</summary>
     public static Position PositionOf([Required] SquareGridTopology grid, [Required] ImmutableList<Placement> start) =>
         start

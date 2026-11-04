@@ -91,7 +91,9 @@ internal static class GameViews
     )
     {
         ImmutableDictionary<CellId, SeatId> thrones =
-            snapshot.Rules.Thrones.ToImmutableDictionary(throne => throne.Value, throne => throne.Key);
+            snapshot.Rules
+                .ThronesOf(snapshot.State)
+                .ToImmutableDictionary(throne => throne.Value, throne => throne.Key);
         return new GameViewDto(
             snapshot.Record.Id.Value,
             snapshot.Rules.Id,
@@ -150,7 +152,6 @@ internal static class GameViews
             ? new EndProposalDto(proposal.Proposer.Value, proposal.Resigns)
             : null;
 
-    /// <summary>The enemy seat whose leader sits on the throne of the seat deciding for itself; null if none.</summary>
     /// <summary>
     /// The enemy whose leader sits on the throne of the seat whose turn the deciding seat plays, its own or an
     /// ally's; null if none does, or the deciding seat is that enemy, sharing the turn.
@@ -161,7 +162,7 @@ internal static class GameViews
             : null;
 
     private static int? HolderOf(IRulesApplying rules, GameState state, SeatId deciding, SeatId seat) =>
-        rules.Thrones
+        rules.ThronesOf(state)
             .Where(throne => throne.Key == seat)
             .Select(throne => state.Position.PieceAt(throne.Value))
             .OfType<Piece>()

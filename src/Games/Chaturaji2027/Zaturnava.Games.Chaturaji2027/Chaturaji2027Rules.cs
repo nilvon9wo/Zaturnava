@@ -6,6 +6,7 @@ using Net.NowhereAtAll.Zaturnava.Engine.Chance;
 using Net.NowhereAtAll.Zaturnava.Engine.Events;
 using Net.NowhereAtAll.Zaturnava.Engine.Moves;
 using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
+using Net.NowhereAtAll.Zaturnava.Engine.Positions;
 using Net.NowhereAtAll.Zaturnava.Engine.Rules;
 using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 using Net.NowhereAtAll.Zaturnava.Topology.SquareGrid;
@@ -133,6 +134,26 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             []
         );
         return state with { RollOff = [.. seats.Select(seat => seat.Id)], AwaitedDice = this.RollOffDie };
+    }
+
+    public bool IsDealt => this._variant.Dealer is not null;
+
+    public ImmutableDictionary<SeatId, CellId> ThronesOf([Required] GameState state) => this._control.ThronesOf(state);
+
+    /// <summary>
+    /// The game dealt its own armies by <paramref name="seed"/>, if the variant deals them: each leader's start its
+    /// throne, and every piece's its home; else as it is.
+    /// </summary>
+    public GameState Deal([Required] GameState initial, int seed)
+    {
+        if (this._variant.Dealer is not { } dealer)
+        {
+            return initial;
+        }
+
+        Chaturaji2027Variant dealt = this._variant with { Start = dealer(seed) };
+        Position position = dealt.InitialPosition(this._grid);
+        return initial with { Position = position, Thrones = dealt.Thrones(this._grid), Start = position };
     }
 
     public ImmutableList<GameAction> LegalActions([Required] GameState state) =>
@@ -947,7 +968,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             ? this._variant.Points[captured.Kind]
             : 0;
         bool isEnemyRaja = isEnemy && this.IsLeader(captured.Kind);
-        bool isOnThrone = isEnemyRaja && this._control.IsThroneOf(cell, captured.Owner);
+        bool isOnThrone = isEnemyRaja && this._control.IsThroneOf(moved.State, cell, captured.Owner);
         Transition scored = this._farming.Forfeited(
             Scored(moved, captor, points, new PieceCaptured(captured, captor, points)),
             captured,
@@ -1021,7 +1042,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     private Transition EnteredThrone(Transition moved, Piece mover, CellId cell)
     {
         SeatId? throne = this.IsLeader(mover.Kind)
-            ? this._control.OwnerOf(cell)
+            ? this._control.OwnerOf(moved.State, cell)
             : null;
         int points = this._variant.Scoring.ThroneEntryBonus;
         return throne is { } enemy && !moved.State.Teams.AreAllied(enemy, mover.Owner)

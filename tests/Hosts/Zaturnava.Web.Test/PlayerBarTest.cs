@@ -385,7 +385,10 @@ public sealed class PlayerBarTest : IDisposable
         bar.Find("input.name").Change("Countess");
 
         // Assert
-        Assert.Equal("Countess", bar.Find("span.player strong").TextContent);
+        Assert.Equal(
+            ("Countess", "Name saved."),
+            (bar.Find("span.player strong").TextContent, bar.Find("p.saved").TextContent)
+        );
     }
 
     [Fact]
@@ -415,26 +418,30 @@ public sealed class PlayerBarTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ("Discord", "Link GitHub"),
+            ("Discord", "Link GitHub", "GitHub unlinked."),
             (
                 bar.Find("ul.services li").TextContent.Trim(),
-                string.Join('|', bar.FindAll("button.link").Select(button => button.TextContent))
+                string.Join('|', bar.FindAll("button.link").Select(button => button.TextContent)),
+                bar.Find("p.saved").TextContent
             )
         );
     }
 
     [Fact]
-    public void Profile_WhenDone_Closes()
+    public void Profile_WhenClosed_ClosesAndForgetsWhatItSaved()
     {
-        // Arrange
+        // Arrange - a player told of no services
         IRenderedComponent<PlayerBar> bar = this.SignedInAsAda();
         bar.Find("button.open-profile").Click();
+        bar.Find("input.name").Change("Countess");
 
         // Act
         bar.Find("button.close-profile").Click();
 
         // Assert
         Assert.Empty(bar.FindAll("[role=dialog]"));
+        bar.Find("button.open-profile").Click();
+        Assert.Empty(bar.FindAll("p.saved"));
     }
 
     [Fact]

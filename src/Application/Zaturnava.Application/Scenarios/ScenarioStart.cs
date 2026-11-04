@@ -1,7 +1,9 @@
 using System.Collections.Immutable;
 using System.ComponentModel.DataAnnotations;
+using System.Globalization;
 using System.Text.Json;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
+using Net.NowhereAtAll.Zaturnava.Engine.Chance;
 using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
 using Net.NowhereAtAll.Zaturnava.Engine.Positions;
 using Net.NowhereAtAll.Zaturnava.Engine.Rules;
@@ -10,14 +12,34 @@ using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 namespace Net.NowhereAtAll.Zaturnava.Application.Scenarios;
 
 /// <summary>
-/// How a game begins from a <see cref="Scenario"/>: its first action, which no ruleset sees, carries the
-/// scenario whole, so that the game replays from the scenario as it was when the game began, however its
-/// file changes since.
+/// How a game begins, if not as its ruleset begins every game: from a <see cref="Scenario"/>, its first action,
+/// which no ruleset sees, carrying the scenario whole, so that the game replays from the scenario as it was when
+/// the game began, however its file changes since; or dealt anew (<see cref="IRulesApplying.Deal"/>), its first
+/// action carrying the seed it was dealt by.
 /// </summary>
 public static class ScenarioStart
 {
     public const string Kind = "scenario";
+
+    /// <summary>The kind of the first action of a game dealt anew.</summary>
+    public const string DealKind = "deal";
+
     private const string Argument = "scenario";
+    private const string SeedArgument = "seed";
+
+    /// <summary>The roll that seeds a game dealt anew: one die of as many sides as a seed may be.</summary>
+    private static readonly DiceRequest SeedRoll = new(1, int.MaxValue - 1);
+
+    /// <summary>Whether the action begins the game, rather than being played in it.</summary>
+    public static bool IsStart([Required] ActionDescriptor action) => action.Kind is Kind or DealKind;
+
+    /// <summary>The first action of a game dealt by a seed <paramref name="dice"/> roll.</summary>
+    public static ActionDescriptor Dealt([Required] IDiceRolling dice) =>
+        new(
+            DealKind,
+            ImmutableSortedDictionary<string, string>.Empty
+                .Add(SeedArgument, dice.Roll(SeedRoll)[0].ToString(CultureInfo.InvariantCulture))
+        );
 
     public static ActionDescriptor Describe([Required] Scenario scenario) =>
         new(
@@ -26,14 +48,23 @@ public static class ScenarioStart
                 .Add(Argument, JsonSerializer.Serialize(scenario, JsonSerializerOptions.Web))
         );
 
-    /// <summary>Where a game of these actions starts: as the scenario its first carries, if any; else as new.</summary>
+    /// <summary>
+    /// Where a game of these actions starts: as the scenario its first carries, if any; as dealt by the seed it
+    /// carries, if it is dealt; else as new.
+    /// </summary>
     public static GameState StateOf(
         [Required] ImmutableList<ActionDescriptor> actions,
         [Required] IRulesApplying rules
     ) =>
-        actions.FirstOrDefault() is { Kind: Kind } first
-            ? StateFrom(ScenarioOf(first), rules)
-            : rules.CreateInitialState();
+        actions.FirstOrDefault() switch
+        {
+            { Kind: Kind } first => StateFrom(ScenarioOf(first), rules),
+            { Kind: DealKind } first => rules.Deal(
+                rules.CreateInitialState(),
+                int.Parse(first.Arguments[SeedArgument], CultureInfo.InvariantCulture)
+            ),
+            _ => rules.CreateInitialState(),
+        };
 
     /// <summary>
     /// A new game of the ruleset, set up as the scenario says. Each piece is given the id of a piece of its seat

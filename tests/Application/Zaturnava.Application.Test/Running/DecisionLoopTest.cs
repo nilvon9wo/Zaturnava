@@ -31,6 +31,22 @@ public sealed class DecisionLoopTest
     }
 
     [Fact]
+    public async Task PlayAll_WhenTheRulesetDealsEachGame_DealsItFirstBySeed()
+    {
+        // Arrange - the loaded dice roll the seed, 4, which the tiny rules score to the first seat
+        TinyRules rules = new(GameLength, isDealt: true);
+
+        // Act
+        Played played = await DecisionLoop.PlayAll(rules, this._players, this._dice, 100, this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            ("deal", GameLength + 1, 4),
+            (played.Actions[0].Kind, played.Actions.Count, played.State.Scores[new SeatId(0)])
+        );
+    }
+
+    [Fact]
     public async Task PlayAll_WhenTheStepsRunOut_StopsThere()
     {
         // Arrange - nothing beyond the rules and players

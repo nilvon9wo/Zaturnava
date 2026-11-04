@@ -135,7 +135,7 @@ internal sealed class Learning(IRulesApplying rules, TextWriter progress)
         return
         [
             .. history.Actions
-                .Where(action => action.Kind != ScenarioStart.Kind)
+                .Where(action => !ScenarioStart.IsStart(action))
                 .Aggregate(
                     ImmutableList.Create(start),
                     (sofar, action) => sofar.Add(this._rules.Apply(sofar[^1], this._rules.Parse(action)).State)

@@ -74,7 +74,7 @@ internal sealed class Farming(ThroneControl control, MoveGenerator moves, int en
     }
 
     private bool IsEnemyThrone(GameState state, CellId cell, SeatId seat) =>
-        this._control.OwnerOf(cell) is { } owner && !state.Teams.AreAllied(owner, seat);
+        this._control.OwnerOf(state, cell) is { } owner && !state.Teams.AreAllied(owner, seat);
 
     /// <summary>Whether the Raja on <paramref name="cell"/> attacks and guards no piece from there.</summary>
     private bool IsIdle(GameState state, CellId cell, SeatId seat) =>

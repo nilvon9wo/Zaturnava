@@ -19,7 +19,8 @@ namespace Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
 /// When it may go to more than one, its owner chooses, and the game waits on that choice. A seat may also give
 /// back prisoners of its own team (§8): its own, at once, or an ally's, at once unless an enemy holds the
 /// ally's throne; but only once every seat has had a turn since they were taken. No piece going home takes
-/// anything. Accepting scores as <paramref name="scoring"/> says.
+/// anything. Accepting scores as <paramref name="scoring"/> says. Starting squares are where the game was dealt
+/// its pieces, if it was; else <paramref name="start"/>.
 /// </summary>
 internal sealed class Ransom(
     SquareGridTopology grid,
@@ -31,19 +32,7 @@ internal sealed class Ransom(
     private readonly SquareGridTopology _grid = grid;
     private readonly ImmutableHashSet<PieceKindId> _leaders = leaders;
     private readonly Scoring _scoring = scoring;
-
-    private readonly ImmutableDictionary<PieceId, CellId> _homes =
-        start.Occupants.ToImmutableDictionary(occupant => occupant.Value.Id, occupant => occupant.Key);
-
-    /// <summary>For each piece, the starting squares of its army's pieces of its kind, its own among them.</summary>
-    private readonly ImmutableDictionary<PieceId, ImmutableList<CellId>> _kin =
-        start.Occupants.ToImmutableDictionary(
-            occupant => occupant.Value.Id,
-            occupant => start.Occupants
-                .Where(other => other.Value.Owner == occupant.Value.Owner && other.Value.Kind == occupant.Value.Kind)
-                .Select(other => other.Key)
-                .ToImmutableList()
-        );
+    private readonly Homes _homes = new(start);
 
     /// <summary>Whether <paramref name="seat"/> holds a prisoner it could give back now.</summary>
     public static bool HoldsRansom(GameState state, SeatId seat) =>
@@ -195,7 +184,7 @@ internal sealed class Ransom(
     /// </summary>
     public ImmutableList<CellId> EscapesFor(GameState state, Prisoner prisoner)
     {
-        CellId home = this._homes[prisoner.Piece.Id];
+        CellId home = this.HomesOf(state).Cells[prisoner.Piece.Id];
         return state.Position.PieceAt(home) is { } there && !state.Teams.AreAllied(there.Owner, prisoner.Piece.Owner)
             ? [home]
             : this.PlacesFor(state, prisoner);
@@ -260,10 +249,11 @@ internal sealed class Ransom(
     /// </summary>
     private ImmutableList<CellId> PlacesFor(GameState state, Prisoner prisoner)
     {
-        CellId home = this._homes[prisoner.Piece.Id];
+        Homes homes = this.HomesOf(state);
+        CellId home = homes.Cells[prisoner.Piece.Id];
         Direction forward = state.SeatOf(prisoner.Piece.Owner).Forward;
         ImmutableList<CellId> free = [.. this._grid.Cells.Where(cell => state.Position.PieceAt(cell) is null)];
-        ImmutableList<CellId> kin = [.. this._kin[prisoner.Piece.Id].Where(free.Contains)];
+        ImmutableList<CellId> kin = [.. homes.Kin[prisoner.Piece.Id].Where(free.Contains)];
         IEnumerable<CellId> places = (kin.Contains(home), kin.IsEmpty) switch
         {
             (true, _) => [home],
@@ -293,4 +283,30 @@ internal sealed class Ransom(
             Math.Abs(this._grid.ColumnOf(from) - this._grid.ColumnOf(to)),
             Math.Abs(this._grid.RowOf(from) - this._grid.RowOf(to))
         );
+
+    private Homes HomesOf(GameState state) =>
+        state.Start is { } dealt
+            ? new Homes(dealt)
+            : this._homes;
+
+    /// <summary>
+    /// Where each piece started (<see cref="Cells"/>), and, for each, the starting squares of its army's pieces of
+    /// its kind, its own among them (<see cref="Kin"/>).
+    /// </summary>
+    private sealed class Homes(Position start)
+    {
+        public ImmutableDictionary<PieceId, CellId> Cells { get; } =
+            start.Occupants.ToImmutableDictionary(occupant => occupant.Value.Id, occupant => occupant.Key);
+
+        public ImmutableDictionary<PieceId, ImmutableList<CellId>> Kin { get; } =
+            start.Occupants.ToImmutableDictionary(
+                occupant => occupant.Value.Id,
+                occupant => start.Occupants
+                    .Where(other =>
+                        other.Value.Owner == occupant.Value.Owner && other.Value.Kind == occupant.Value.Kind
+                    )
+                    .Select(other => other.Key)
+                    .ToImmutableList()
+            );
+    }
 }
