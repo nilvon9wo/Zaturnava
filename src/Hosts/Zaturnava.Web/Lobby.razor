@@ -7,7 +7,8 @@
    which of those bots, each named with its rating; else each is chosen at random among them - or quick: start one
    at once, at a seat chosen at random, easy, medium or hard by which bots it seats among the others - or join,
    watch or go back to one already started, each saying whether it waits for players or has not started, and when it
-   was created and last changed; a game over is only listed, with nothing left to watch. Seats go by
+   was created and last changed, and listed by game, size, state, bots or who is at it ("Bob, Jo*, open"); a game
+   over is only listed, with nothing left to watch. Seats go by
    the ruleset's names for them (Black, Yellow...), not by number. A bot paid for each use is seated only when
    chosen: never by default, nor at random. A server in development also offers scenarios, games set up
    part-way, to start from. Preview games, not yet ready for everyone, are named so, and neither offered nor listed
@@ -218,6 +219,15 @@
                            checked="@(this._filter.PeopleOnly == true)"
                            @onchange="this.FilterPeople" />
                     No bots
+                </label>
+                <label class="players-filter">
+                    Players
+                    <input type="search"
+                           class="filter-players"
+                           placeholder="Bob, Jo*, open"
+                           title="Who must be at the game, separated by commas: * for any letters, open for an open seat"
+                           value="@this._filter.Players"
+                           @onchange="this.FilterPlayers" />
                 </label>
             </div>
             @if (this._games.IsEmpty)
@@ -567,6 +577,13 @@
 
     private Task FilterPeople(ChangeEventArgs change) =>
         this.Filter(this._filter with { PeopleOnly = true.Equals(change.Value) ? true : null });
+
+    /// <summary>
+    /// The games everyone named is at (Proposed: "Bob, Jo*, open", as <see cref="GameListQuery.Players"/> reads
+    /// it); any, if no one is named.
+    /// </summary>
+    private Task FilterPlayers(ChangeEventArgs change) =>
+        this.Filter(this._filter with { Players = Chosen(change) });
 
     /// <summary>The page <paramref name="by"/> pages on (or back).</summary>
     private async Task Turn(int by)

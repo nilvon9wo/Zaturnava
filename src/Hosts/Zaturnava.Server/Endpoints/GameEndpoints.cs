@@ -42,7 +42,10 @@ internal static class GameEndpoints
     private static CatalogDto Catalog(GameService games) =>
         GameViews.CatalogOf(games.Rulesets, games.Bots, games.Scenarios);
 
-    /// <summary>A page of the games asked for, read as stored: none is replayed.</summary>
+    /// <summary>
+    /// A page of the games asked for, read as stored: none is replayed. Games asked for by who is at them are all
+    /// read, to be matched by what their players are called, before the page is cut.
+    /// </summary>
     private static async Task<GamePageDto> List(
         [AsParameters] GameListQuery asked,
         GameService games,
@@ -60,7 +63,10 @@ internal static class GameEndpoints
             asked.Game,
             asked.Preview
         ).Bounded();
-        GamePage page = await games.Page(query, cancellationToken);
+        ImmutableList<string> wanted = PlayerPatterns.Of(asked.Players);
+        GamePage page = wanted.IsEmpty
+            ? await games.Page(query, cancellationToken)
+            : await Matching(query, wanted, games, players, cancellationToken);
         ImmutableDictionary<HumanSeat, string> names = await players.NamesOf(
             page.Games.SelectMany(game => game.Controllers),
             cancellationToken
@@ -72,6 +78,23 @@ internal static class GameEndpoints
             query.Page,
             query.PageSize
         );
+    }
+
+    /// <summary>The page asked for of the games everyone <paramref name="wanted"/> is at.</summary>
+    private static async Task<GamePage> Matching(
+        GameQuery query,
+        ImmutableList<string> wanted,
+        GameService games,
+        PlayerService players,
+        CancellationToken cancellationToken
+    )
+    {
+        ImmutableList<GameListing> all = await games.All(query, cancellationToken);
+        ImmutableDictionary<HumanSeat, string> names =
+            await players.NamesOf(all.SelectMany(game => game.Controllers), cancellationToken);
+        ImmutableList<GameListing> matching =
+            [.. all.Where(game => PlayerPatterns.AreAllAt(wanted, game, names, games.Bots))];
+        return new GamePage([.. matching.Skip(query.Skipped).Take(query.PageSize)], matching.Count);
     }
 
     /// <summary>The game as its seats see it, naming the bots and whoever holds each person's seat.</summary>

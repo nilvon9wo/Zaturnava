@@ -1165,6 +1165,21 @@ public sealed class LobbyTest : IDisposable
         Assert.Equal(Waiting() with { PeopleOnly = expected }, this._page.Server.Listed);
     }
 
+    [Theory]
+    [InlineData("Bob, Jo*", "Bob, Jo*")]
+    [InlineData("", null)]
+    public void FilterPlayers_WhenSomeoneIsNamed_ListsOnlyGamesTheyAreAllAtOrAny(string named, string? expected)
+    {
+        // Arrange
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Act
+        lobby.Find("input.filter-players").Change(named);
+
+        // Assert
+        Assert.Equal(Waiting() with { Players = expected }, this._page.Server.Listed);
+    }
+
     [Fact]
     public void Render_WhenNoGameMatches_SaysSo()
     {
