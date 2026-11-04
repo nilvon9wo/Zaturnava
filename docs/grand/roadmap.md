@@ -25,8 +25,7 @@ Not first, and blocking nothing: boat triumph (Chaturaji 2027 only, and a near-i
 nice-to-have); games that survive a restart, identities, statistics and chat (part of going
 online, not of either game's rules).
 
-Choose a name for the grand game at any point, or keep "grand" as the working name of its project
-and key.
+The grand game is named **Grand Legions** (chosen 2026-10-31).
 
 ## Stage 1 — The catalogue as data
 
@@ -82,27 +81,54 @@ beside Chaturaji 2027, each at easy, medium or hard:
 | Medium | 8 × 8 | 4 × 2 | 125 | 1 leader, 1 heavy, 1 cavalry, 1 artillery, 4 infantry |
 | Large | 12 × 12 | 6 × 3 (6 along the edge, 3 deep, a pinwheel as in Chaturaji) | 200 | 1 leader, 3 heavy, 2 cavalry, 2 artillery, 8 infantry |
 
-*Proposed*, for the author to confirm or change:
+How a quick game's armies are chosen and placed (*Stated*, 2026-11-01 and 2026-11-04):
 
-- The program picks each army (`QuickArmy`), the same for all four seats: the cheapest pieces that meet
-  the minimums, then class by class (heavy, cavalry, artillery, infantry, the leader last) the best
-  piece the rest of the budget buys, a piece not yet in the army first; then, while the kingdom has
-  room, the best affordable pieces but no second leader. Pieces an area holds (palace, river) are left
-  out until palaces come. The leader takes the back rank's inner corner, as the Raja does; heavy,
-  artillery and cavalry the rest of the back ranks; infantry the front. Where the kingdoms touch, with no
-  neutral ground between them (the small game: two kingdoms of 3 fill a side of 6), the leader takes the
-  far corner instead, so that it is likely to outlive the first moves (*Stated 2026-11-01*). An army the
-  program lays out for a custom game will follow the same rule.
-- The quick games are played by Chaturaji 2027's own rules, generalised (`Chaturaji2027Variant`):
-  each leader is what they call a Raja and its start its throne; the Western, Makruk and Shogi Pawns are
-  their Pawns, promoted at the far edge into a captured piece; a die moves any piece of the class it
-  names; taking a piece scores its value, with the Chaturaji 2027 bonuses as they are (not yet × 10).
-- The board has no river in a quick game; a river keeps a Xiangqi Elephant on its own side
-  (`RiverCrossing`). The Xiangqi Soldier's sideways step once across is still to come.
+- **Each army apart.** Each seat's army is picked on its own, at random, so the four differ, and
+  differ from game to game. (A setting may give all four one army, chosen at random or by the
+  creator; never the default.) Pieces are picked one at a time, at random, from the most expensive
+  classes down: the leader first (a quick game has exactly one), then heavy, artillery, cavalry, and
+  infantry last, until the minimums are met. If the budget cannot buy the minimum army, the dearer
+  pieces are exchanged for cheaper ones until it can. With budget and room in the kingdom left, more
+  pieces, of any class; with budget still left, lifts, at random across the army.
+- **Pieces an area holds.** A piece that depends on palaces is picked only in a game with palaces; one
+  that depends on a river (the Xiangqi Elephant and Soldier), only in a game with a river. This holds
+  for armies picked at random: a player building their own army may buy them regardless, though they
+  are no priority until palaces and rivers, respectively, are in the game.
+- **Placing them.** Where the kingdoms touch, with no ground between them (the small game: two
+  kingdoms of 3 fill a side of 6), the leader stands on its throne at the board's outer corner. In
+  every other quick game, the leader, heavy, artillery and cavalry are placed in the back rank(s) in a
+  random order, the leader on its throne; infantry in random order in front of them. So each army is
+  laid out differently, unless the creator chose a symmetrical game. In a game not quick, each player
+  places all their pieces.
+- **The rules.** Every Chaturaji 2027 rule applies (rules.md), but the Boat triumph, as there are no
+  boats; each piece moves as the catalogue describes it, which may or may not map easily onto Chaturaji
+  2027's. One leader, if an army has any, starts on the throne. Every kind of infantry may be promoted
+  into any captured piece at the far edge, besides any promotion of its own. The Chaturaji 2027
+  bonuses are × 10 (specification §6.3).
+- **Looks.** Every piece has a symbol, shared if need be, with letters over it to tell apart pieces
+  that share one, so that every piece can always be told from every other by its symbol and letters
+  together. First letters alone are not enough: they are not unique.
+
+What the program does so far (2026-11-04), and the gaps against the above:
+
+- *Gap*: `QuickArmy` picks one army for all four seats, the cheapest that meets the minimums, then the
+  best the budget buys; it should pick each army apart, at random, as above.
+- *Gap*: it leaves out every piece an area holds (palace or river) until palaces come; a river piece
+  should depend on the river alone.
+- *Gap*: the leader takes the back rank's inner corner and the others fixed places, the same for
+  every army; they should be placed in random order, as above. (The small game's outer corner is
+  done.)
+- The Chaturaji 2027 bonuses are × 10, as is the lead a team needs to win by giving up its turns
+  (*Proposed*: 100), each read from a table (`Scoring/grand-legions.json`; Chaturaji 2027's own in
+  `Scoring/chaturaji-2027.json`) that can be changed apart from the code. Piece values are still in
+  the code (`GrandLegionsPieces`, `Chaturaji2027Pieces`): a gap, against specification §6.3.
+- The board has no river in a quick game yet; a river keeps a Xiangqi Elephant on its own side
+  (`RiverCrossing`). The Xiangqi Soldier's sideways step once across is still to come. Until quick
+  games have rivers, they have no river pieces.
 - The Medium kingdom, 4 × 2, is below the 3 × 3 a palace needs; quick games have no palace, so it
   plays, but a Medium game with palaces will need the palace to stand partly outside the kingdom
   (specification §5), or none.
-- Pieces with no symbol of their own show the first letter of their name.
+- Pieces are drawn by their class's emblem with letters telling them apart (#146).
 - Still to come: choosing a quick setup for one's own kingdom in a game set up by hand, which waits for
   the draft (Stage 4).
 
@@ -125,9 +151,9 @@ drawn simply, a shape for its class and a letter for its kind.
 
 ## Stage 4 — The draft
 
-- A setup phase before play: each player drafts within the budget, buys lifts, places their palace,
-  throne and pieces, in secret or in turn as the game is set; a "fill at random"
-  for each step. Points not spent start the player's score.
+- A setup phase before play: each player places their palace and throne, then drafts within the
+  budget, buying lifts and placing each piece, in secret or in turn as the game is set; a "fill at
+  random" for each step. Points not spent start the player's score.
 - Infantry placed beyond the start rows (2, or as the game is set), without start-row powers.
 - Pieces confined to a palace placed in it.
 - Bots draft too: Random at random, Midas by value, Solomon… evenly.
@@ -146,11 +172,11 @@ drawn simply, a shape for its class and a letter for its kind.
 
 ## Stage 6 — Special powers
 
-- Start-row powers: the two-square first move, *en passant*.
+- Start-row powers: the two-square first move, *en passant*, which may take any infantry piece.
 - Castling.
 - The flying-general capture.
-- The leader face-off: a decision out of turn, which the turn machine handles as it
-  handles a ransom window.
+- The leader face-off: a decision out of turn, open for as long as the two leaders face each other;
+  a flashing button while it is open, and optionally a pause when it first opens (specification §6.4).
 
 ## Stage 7 — Looks
 

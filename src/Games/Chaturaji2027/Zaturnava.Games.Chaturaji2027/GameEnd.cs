@@ -24,9 +24,6 @@ internal static class GameEnd
     public const string RetiredAndBehind = "a team has only retired Rajas left, and fewer points than its enemies";
     public const string TeamGaveUp = "a whole team gave up their turns, so points decide";
 
-    /// <summary>How far ahead, on points and on the board both, a team must be to win by giving up its turns.</summary>
-    public const int ClearLead = 10;
-
     /// <summary>
     /// The ended game, if the board leaves nothing to play for; otherwise null. A team whose only pieces left are
     /// retired Rajas plays no more: a draw if it has as many points as its enemies or more, else they win - so that
@@ -72,7 +69,7 @@ internal static class GameEnd
 
     /// <summary>
     /// The ended game, once every seat of a team still playing has given up its turns (rules.md §10), if that
-    /// team trails on points, or leads by a <see cref="ClearLead"/> on points and on the board both: points
+    /// team trails on points, or leads by a <see cref="Scoring.ClearLead"/> on points and on the board both: points
     /// decide, any proposal waiting with them. Otherwise the game as it was, its enemies playing on, so that a
     /// team cannot win by giving up the moment it leads.
     /// </summary>
@@ -109,13 +106,12 @@ internal static class GameEnd
             || state.Prisoners.Any(prisoner => prisoner.Piece.Owner == seat || prisoner.Holder == seat));
 
     /// <summary>Whether giving up its turns ends the game for the team: it trails, or leads by far.</summary>
-    private static bool MayGiveUp(GameState state, int team, Chaturaji2027Variant variant) =>
-        (PointsLead(state, team), BoardLead(state, team, variant)) switch
-        {
-            ( < 0, _) => true,
-            ( >= ClearLead, >= ClearLead) => true,
-            _ => false,
-        };
+    private static bool MayGiveUp(GameState state, int team, Chaturaji2027Variant variant)
+    {
+        int points = PointsLead(state, team);
+        int clear = variant.Scoring.ClearLead;
+        return points < 0 || (points >= clear && BoardLead(state, team, variant) >= clear);
+    }
 
     /// <summary>The points of the team, less its enemies'.</summary>
     public static int PointsLead(GameState state, int team) =>

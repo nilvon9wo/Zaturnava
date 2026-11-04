@@ -37,6 +37,32 @@ public sealed class GrandLegionsRulesTest
     }
 
     [Fact]
+    public void Scoring_WhenRead_IsChaturaji2027sTenTimesOver()
+    {
+        // Arrange
+        Scoring standard = Scoring.Standard;
+
+        // Act
+        Scoring grand = GrandLegionsRules.Scoring;
+
+        // Assert
+        Assert.Equal(
+            new Scoring(
+                standard.ThroneEntryBonus * 10,
+                standard.RajaOnThroneBonus * 10,
+                standard.EmpireBonus * 10,
+                standard.EmpireByCaptureBonus * 10,
+                standard.EmpireByThroneCaptureBonus * 10,
+                standard.EveryPieceBonus * 10,
+                standard.RansomAcceptedBonus * 10,
+                standard.RansomRajaBonus * 10,
+                standard.ClearLead * 10
+            ),
+            grand
+        );
+    }
+
+    [Fact]
     public void Quick_WhenStarted_HasEachLeaderOnItsOwnThroneAtEverySize()
     {
         // Arrange - nothing beyond the rules

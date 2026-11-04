@@ -1,0 +1,11 @@
+{
+  "throneEntryBonus": 1,
+  "rajaOnThroneBonus": 2,
+  "empireBonus": 1,
+  "empireByCaptureBonus": 2,
+  "empireByThroneCaptureBonus": 4,
+  "everyPieceBonus": 2,
+  "ransomAcceptedBonus": 1,
+  "ransomRajaBonus": 2,
+  "clearLead": 10
+}
