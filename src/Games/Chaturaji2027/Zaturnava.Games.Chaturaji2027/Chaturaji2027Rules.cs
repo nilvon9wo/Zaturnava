@@ -33,30 +33,6 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     /// <summary>How many rounds no one may roll or move before the game ends on points.</summary>
     public const int DefaultIdleRounds = 3;
 
-    /// <summary>The points for a Raja entering an enemy's throne (rules.md §5).</summary>
-    public const int ThroneEntryBonus = 1;
-
-    /// <summary>The points, on top of the capture, for taking a Raja on its own throne (rules.md §5).</summary>
-    public const int RajaOnThroneBonus = 2;
-
-    /// <summary>The points for creating the empire (rules.md §5).</summary>
-    public const int EmpireBonus = 1;
-
-    /// <summary>The points, on top of <see cref="EmpireBonus"/>, for taking the Raja that creates it.</summary>
-    public const int EmpireByCaptureBonus = 2;
-
-    /// <summary>The points instead of <see cref="EmpireByCaptureBonus"/> when that Raja was on its throne.</summary>
-    public const int EmpireByThroneCaptureBonus = 4;
-
-    /// <summary>The points for commanding every piece on the board, on one's own turn (rules.md §5).</summary>
-    public const int EveryPieceBonus = 2;
-
-    /// <summary>The points for accepting a ransom, for each prisoner it sends home (rules.md §8).</summary>
-    public const int RansomAcceptedBonus = 1;
-
-    /// <summary>The points instead of <see cref="RansomAcceptedBonus"/> for a Raja sent home (rules.md §8).</summary>
-    public const int RansomRajaBonus = 2;
-
     /// <summary>The timer on a seat whose turn is over, while it may still offer ransoms.</summary>
     public const string RansomWindowTimer = "ransom-window";
 
@@ -116,9 +92,14 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         this.Thrones = this._variant.Thrones(this._grid);
         this._control = new ThroneControl(this.Thrones, this._variant.Leaders);
         this._command = new Command(this._control);
-        this._everyPiece = new EveryPiece(this._control);
-        this._farming = new Farming(this._control, this._moves);
-        this._ransom = new Ransom(this._grid, this._variant.InitialPosition(this._grid), this._variant.Leaders);
+        this._everyPiece = new EveryPiece(this._control, this._variant.Scoring.EveryPieceBonus);
+        this._farming = new Farming(this._control, this._moves, this._variant.Scoring.ThroneEntryBonus);
+        this._ransom = new Ransom(
+            this._grid,
+            this._variant.InitialPosition(this._grid),
+            this._variant.Leaders,
+            this._variant.Scoring
+        );
         this._progress = new Progress(this._grid, this._variant.Pawns);
     }
 
@@ -985,9 +966,10 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
                     : state.TakenByOwnTeam,
             },
         };
-        RajaCapturedOnThrone bonus = new(captured, captor, RajaOnThroneBonus);
+        int onThronePoints = this._variant.Scoring.RajaOnThroneBonus;
+        RajaCapturedOnThrone bonus = new(captured, captor, onThronePoints);
         Transition onThrone = isOnThrone
-            ? Scored(taken, captor, RajaOnThroneBonus, bonus)
+            ? Scored(taken, captor, onThronePoints, bonus)
             : taken;
         return isEnemyRaja
             ? this.Empire(onThrone, captured.Owner, captor, isOnThrone)
@@ -1017,20 +999,23 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             taken,
             (empire, creator) =>
             {
-                int points = EmpirePoints(creator == captor, isOnThrone);
+                int points = this.EmpirePoints(creator == captor, isOnThrone);
                 return Scored(empire, creator, points, new EmpireCreated(creator, points));
             }
         );
     }
 
     /// <summary>The empire's points: more for its captor, and more still if it took the Raja on its throne.</summary>
-    private static int EmpirePoints(bool isCaptor, bool isOnThrone) =>
-        (isCaptor, isOnThrone) switch
+    private int EmpirePoints(bool isCaptor, bool isOnThrone)
+    {
+        Scoring scoring = this._variant.Scoring;
+        return (isCaptor, isOnThrone) switch
         {
-            (false, _) => EmpireBonus,
-            (true, false) => EmpireBonus + EmpireByCaptureBonus,
-            (true, true) => EmpireBonus + EmpireByThroneCaptureBonus,
+            (false, _) => scoring.EmpireBonus,
+            (true, false) => scoring.EmpireBonus + scoring.EmpireByCaptureBonus,
+            (true, true) => scoring.EmpireBonus + scoring.EmpireByThroneCaptureBonus,
         };
+    }
 
     /// <summary>A Raja entering an enemy's throne scores its owner a bonus (rules.md §5).</summary>
     private Transition EnteredThrone(Transition moved, Piece mover, CellId cell)
@@ -1038,8 +1023,9 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         SeatId? throne = this.IsLeader(mover.Kind)
             ? this._control.OwnerOf(cell)
             : null;
+        int points = this._variant.Scoring.ThroneEntryBonus;
         return throne is { } enemy && !moved.State.Teams.AreAllied(enemy, mover.Owner)
-            ? Scored(moved, mover.Owner, ThroneEntryBonus, new ThroneEntered(mover, enemy, ThroneEntryBonus))
+            ? Scored(moved, mover.Owner, points, new ThroneEntered(mover, enemy, points))
             : moved;
     }
 

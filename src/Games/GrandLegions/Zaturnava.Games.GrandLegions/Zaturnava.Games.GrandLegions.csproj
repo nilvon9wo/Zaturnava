@@ -13,4 +13,9 @@
     <ProjectReference Include="..\..\Chaturaji2027\Zaturnava.Games.Chaturaji2027\Zaturnava.Games.Chaturaji2027.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- What the Chaturaji 2027 bonuses score here (Scoring.Of), a table that can be changed apart from the code. -->
+    <EmbeddedResource Include="Scoring\*.json" LogicalName="Scoring/%(Filename)%(Extension)" />
+  </ItemGroup>
+
 </Project>

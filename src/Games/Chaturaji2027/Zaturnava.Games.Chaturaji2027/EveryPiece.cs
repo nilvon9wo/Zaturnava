@@ -9,11 +9,12 @@ namespace Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
 /// <summary>
 /// Commanding every piece on the board, on one's own turn, scores a bonus (rules.md §5): once, until every
 /// seat has a piece on the board again. A retired seat's Raja counts for neither (§10). It is reckoned as the
-/// seat deciding on its own turn sees what it commands, after each action.
+/// seat deciding on its own turn sees what it commands, after each action; it scores <paramref name="bonus"/>.
 /// </summary>
-internal sealed class EveryPiece(ThroneControl control)
+internal sealed class EveryPiece(ThroneControl control, int bonus)
 {
     private readonly ThroneControl _control = control;
+    private readonly int _bonus = bonus;
 
     public Transition Scored(Transition after)
     {
@@ -33,8 +34,8 @@ internal sealed class EveryPiece(ThroneControl control)
             (null, false, false, { } scorer) => Chaturaji2027Rules.Scored(
                 after with { State = state with { IsEveryPieceScored = true } },
                 scorer,
-                Chaturaji2027Rules.EveryPieceBonus,
-                new EveryPieceCommanded(scorer, Chaturaji2027Rules.EveryPieceBonus)
+                this._bonus,
+                new EveryPieceCommanded(scorer, this._bonus)
             ),
             _ => after,
         };

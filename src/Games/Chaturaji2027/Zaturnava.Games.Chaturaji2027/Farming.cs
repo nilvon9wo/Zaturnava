@@ -12,12 +12,14 @@ namespace Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
 /// Farming a throne (rules.md §5): a Raja stepping off an enemy throne idly - taking nothing, and attacking or
 /// guarding no piece from where it lands - and back on again, its player moving nothing else meanwhile. The
 /// points such entries score are farmed, at risk until its player does anything else; were the Raja taken
-/// meanwhile, its player loses them, and its captor scores twice as much.
+/// meanwhile, its player loses them, and its captor scores twice as much. Each entry farms
+/// <paramref name="entryBonus"/>.
 /// </summary>
-internal sealed class Farming(ThroneControl control, MoveGenerator moves)
+internal sealed class Farming(ThroneControl control, MoveGenerator moves, int entryBonus)
 {
     private readonly ThroneControl _control = control;
     private readonly MoveGenerator _moves = moves;
+    private readonly int _entryBonus = entryBonus;
 
     /// <summary>What a move does to its actor's farming: farms more, steps off idly, or stops farming.</summary>
     public Transition Tallied(GameState before, MoveAction move, Transition moved)
@@ -36,7 +38,7 @@ internal sealed class Farming(ThroneControl control, MoveGenerator moves)
             {
                 Farmed = state.Farmed.SetItem(
                     farmer,
-                    state.Farmed.GetValueOrDefault(farmer) + Chaturaji2027Rules.ThroneEntryBonus
+                    state.Farmed.GetValueOrDefault(farmer) + this._entryBonus
                 ),
                 SteppedOff = state.SteppedOff.Remove(farmer),
             },

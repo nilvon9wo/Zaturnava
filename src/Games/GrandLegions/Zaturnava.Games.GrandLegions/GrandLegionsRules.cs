@@ -30,6 +30,12 @@ public static class GrandLegionsRules
             .Select(piece => piece.Id),
     ];
 
+    /// <summary>
+    /// What the Chaturaji 2027 bonuses score in Grand Legions (Stated: each × 10, beside captures worth up to 75;
+    /// the clear lead to win by giving up, × 10 too, Proposed), as its table has it.
+    /// </summary>
+    public static Scoring Scoring { get; } = Scoring.Of(typeof(GrandLegionsRules).Assembly, QuickGame.GameId);
+
     /// <summary>The rules of each quick game, small, medium and large.</summary>
     public static ImmutableList<Chaturaji2027Rules> Quick { get; } = [.. QuickGame.All.Select(RulesOf)];
 
@@ -59,6 +65,7 @@ public static class GrandLegionsRules
             Game = game.Game,
             Heavies = Heavies,
             Marks = GrandLegionsPieces.Marks,
+            Scoring = Scoring,
             DieNames = dice.Classes.ToImmutableDictionary(face => face.Key, face => NameOf(face.Value)),
             MayMove = RiverCrossing.On(new GrandBoard(game.Side, game.Side, game.KingdomWidth, game.KingdomDepth)),
         };

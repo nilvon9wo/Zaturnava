@@ -53,6 +53,9 @@ public sealed record Chaturaji2027Variant(
     /// <summary>How each kind is marked on its piece, where it is not drawn as itself: none, unless set.</summary>
     public ImmutableDictionary<PieceKindId, PieceMark> Marks { get; init; } = [];
 
+    /// <summary>What the bonuses score: Chaturaji 2027's own, unless set.</summary>
+    public Scoring Scoring { get; init; } = Scoring.Standard;
+
     /// <summary>What a die showing each value is called, where not by the kinds it lets move: none.</summary>
     public ImmutableDictionary<int, string> DieNames { get; init; } = [];
 

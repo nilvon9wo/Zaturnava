@@ -10,4 +10,9 @@
     <ProjectReference Include="..\..\..\Engine\Zaturnava.Topology.SquareGrid\Zaturnava.Topology.SquareGrid.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- What the bonuses score (Scoring.Of), a table that can be changed apart from the code. -->
+    <EmbeddedResource Include="Scoring\*.json" LogicalName="Scoring/%(Filename)%(Extension)" />
+  </ItemGroup>
+
 </Project>

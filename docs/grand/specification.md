@@ -1,8 +1,8 @@
 # The grand game — Specification (v0.8 draft)
 
-[Chaturaji 2027](../rules.md) is one small part of a larger design, **the grand game**. Its proposed
-name is **Grand Legions** (the designer, 2026-10-31, in place of "The Grand Draft", which put the
-drafting before the play); the program calls it so already (`Zaturnava.Games.GrandLegions`). Chaturaji
+[Chaturaji 2027](../rules.md) is one small part of a larger design, **the grand game**. Its name is
+**Grand Legions** (chosen by the designer, 2026-10-31, in place of "The Grand Draft", which put the
+drafting before the play); the program calls it so (`Zaturnava.Games.GrandLegions`). Chaturaji
 2027 stays available, unchanged, as a variant of its own.
 
 Sources: the designer's notes and answers of 2026-10-25, and the designer's spreadsheet of pieces,
@@ -39,8 +39,12 @@ than a piece, and with points won in play to be spent on upgrades and promotions
 | Army points | a number | What each player has to spend on their army. |
 | Drafting | in secret, all at once / in turn, in view | How players build and place their armies (§3). |
 
-- **Stated.** For now, the four kingdoms are alike and each starts in a corner of the board. More
-  kingdoms, kingdoms of unequal size, or kingdoms elsewhere may come later.
+- **Stated.** For now, the four kingdoms (the ground each army starts on) are of one size, and each
+  lies in a corner of the board. More kingdoms, kingdoms of unequal size, or kingdoms elsewhere may
+  come later.
+- **Stated (2026-11-04).** The **armies** are not alike: each is chosen apart, whether at random (a
+  quick game) or by its player, so they differ. A game may be set to give all four the same army,
+  chosen at random or by the creator; that is a setting, never the default.
 - **Stated.** With the kingdom's size set apart from the board's, the setup can keep every
   army a distance from the enemy, and from any promotion zone.
 - **Stated.** The smallest game is a 6 × 6 board with four 3 × 3 kingdoms, which touch. Kingdoms
@@ -102,13 +106,15 @@ than a piece, and with points won in play to be spent on upgrades and promotions
 
 **Stated.** Each player, on joining, sees the board and its rivers, and then:
 
-1. **Drafts pieces** from the [catalogue](pieces.md) (and perhaps more pieces later), each at its
-   **Piece Value**.
-2. **Buys upgrades** at draft time: paying a piece's lift cost removes a restriction on it
-   (movement restrictions and area restrictions are priced apart).
-3. **Places a palace**: a 3 × 3 square within their kingdom.
-4. **Places a throne** on any cell of the palace; it need not be the centre.
-5. **Places every drafted piece** on any cell of their kingdom.
+1. **Places a palace**: a 3 × 3 square within their kingdom.
+2. **Places a throne** on any cell of the palace; it need not be the centre.
+3. **Drafts pieces** from the [catalogue](pieces.md) (and perhaps more pieces later), each at its
+   **Piece Value**, **buying upgrades** for them as they go (paying a piece's lift cost removes a
+   restriction on it; movement restrictions and area restrictions are priced apart), and **places**
+   each on a cell of their kingdom.
+
+(**Stated, 2026-11-04**: in this order; the palace and throne first, so that the pieces are drafted
+and placed knowing where they stand.)
 
 - **Stated.** A player may draft as many leaders as they can afford. Leaders are dear (60 points
   and more), and some pieces promote into further leaders.
@@ -122,11 +128,15 @@ than a piece, and with points won in play to be spent on upgrades and promotions
 - **Stated.** Start-row powers make up for the distance to cross, and speed the game. An infantry
   piece placed beyond its army's first two rows has been brought forward already, and has none of
   them: a Western Pawn on row 3 may not step two squares on its first move, nor take *en passant*.
+  **Stated (2026-11-04):** *en passant* may take any Infantry piece that has just made a two-square
+  first move past it, not only a Western Pawn: Western Pawns will seldom face each other.
   **Stated:** how many rows count as start rows (2) may be a setting of the game.
   **Stated:** a piece that starts without them never gains them.
 - **Stated.** An army may have no leader, as an army in Chaturaji 2027 may lose its Raja and play
   on. A player who starts without one plays as one whose leader has been captured, except that
-  there is no leader to ransom, to escape, or to promote into.
+  there is no leader of theirs to ransom or to escape. **Stated (2026-11-04):** they may still gain
+  one: some pieces that are not leaders may be promoted into leaders (and pieces that can are dear
+  to start with).
 - **Stated.** A player may draft any pieces the budget allows: several leaders, and several of one
   kind, leaders included.
 - **Q5.** May a player buy a second palace, on a board large enough, and at what price? Left open.
@@ -177,7 +187,9 @@ They may be added later. The program keeps their keys apart from the grand piece
   line passes through (so that such a line is one step, straight to the throne) may be a setting
   of the game.
 - **Stated.** A piece confined to a palace must start in one: since a player places their army in
-  their own kingdom, at most nine such pieces fit, in their own palace.
+  their own kingdom, at most nine such pieces fit, in their own palace. **Stated (2026-11-04):** the
+  limit is only the palace's nine cells, not a rule about those kinds: a piece whose confinement is
+  bought off at draft is not confined, so an army may have more than nine of them.
 - **Stated.** A confined piece is confined to the palace it is in. Only one that has left its
   palace (the Xiangqi General, by its flying-general capture) or bought off its confinement can
   ever be in another, and one that bought it off is not confined in any palace.
@@ -250,6 +262,9 @@ commanding every piece, a ransom's point for each prisoner, 2 for a Raja) were r
   leader on its own throne 20, the empire 10 (plus 20, or 40 on the throne, for its captor),
   commanding every piece 20, and each prisoner a ransom sends home 10, or 20 for any leader. Piece
   values stay as they are: dividing them by 10 instead would need fractions.
+- **Stated (2026-11-04).** No game's scoring should be written into its code: piece values and
+  bonuses, Chaturaji 2027's and Grand Legions' alike, belong in tables that can be edited apart
+  from the program.
 - **Stated.** Playtesting may still adjust any bonus on its own; so too the leader bonus of 60,
   which is meant to make players guard their leaders even when they are not using them to take
   thrones.
@@ -268,9 +283,14 @@ commanding every piece, a ransom's point for each prisoner, 2 for a Raja) were r
   and both players score the capture. Neither need be in a palace: the General may have bought off
   his confinement, and the other leader may never have had one.
   - **Stated.** As Janggi's *bikjang*: when the General and an enemy leader face each other along
-    an open orthogonal line, with nothing between. It is a choice, not automatic: the chance comes
-    whenever a move, anyone's, makes it so, and lasts until the next move is made; the page offers
-    it to the General's player, as it offers a ransom, and a bot answers at once.
+    an open orthogonal line, with nothing between. It is a choice, not automatic.
+  - **Stated (2026-11-04).** The chance lasts as long as the two face each other, however many moves
+    are made meanwhile. So as not to hold the game up asking, the game does not wait: while the
+    chance holds, the General's player sees a flashing button saying the General may call the
+    face-off, and clicking it does. If the other leader moved away first, they are told kindly that
+    it is too late. A setting of the game may also pause it (30 seconds, say, itself a setting) when
+    the chance first comes, so that the player has it explicitly before anything else happens; but
+    either way the face-off may be called for as long as the chance holds. A bot decides at once.
 - **Stated — Western King, castling.** The King may castle with "the Rook": nothing between them,
   the two in one orthogonal line, and not castling across check. The King steps two squares toward
   the Rook, and the Rook goes to the King's far side. Castling is allowed even after either piece

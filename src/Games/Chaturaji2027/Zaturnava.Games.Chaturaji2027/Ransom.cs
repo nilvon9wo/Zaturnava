@@ -19,12 +19,18 @@ namespace Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
 /// When it may go to more than one, its owner chooses, and the game waits on that choice. A seat may also give
 /// back prisoners of its own team (§8): its own, at once, or an ally's, at once unless an enemy holds the
 /// ally's throne; but only once every seat has had a turn since they were taken. No piece going home takes
-/// anything.
+/// anything. Accepting scores as <paramref name="scoring"/> says.
 /// </summary>
-internal sealed class Ransom(SquareGridTopology grid, Position start, ImmutableHashSet<PieceKindId> leaders)
+internal sealed class Ransom(
+    SquareGridTopology grid,
+    Position start,
+    ImmutableHashSet<PieceKindId> leaders,
+    Scoring scoring
+)
 {
     private readonly SquareGridTopology _grid = grid;
     private readonly ImmutableHashSet<PieceKindId> _leaders = leaders;
+    private readonly Scoring _scoring = scoring;
 
     private readonly ImmutableDictionary<PieceId, CellId> _homes =
         start.Occupants.ToImmutableDictionary(occupant => occupant.Value.Id, occupant => occupant.Key);
@@ -142,8 +148,8 @@ internal sealed class Ransom(SquareGridTopology grid, Position start, ImmutableH
             : state.Prisoners
                 .Where(prisoner => offer.Asked.Contains(prisoner.Piece.Id))
                 .Sum(prisoner => this._leaders.Contains(prisoner.Piece.Kind)
-                    ? Chaturaji2027Rules.RansomRajaBonus
-                    : Chaturaji2027Rules.RansomAcceptedBonus
+                    ? this._scoring.RansomRajaBonus
+                    : this._scoring.RansomAcceptedBonus
                 );
 
     /// <summary>

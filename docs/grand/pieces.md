@@ -1,7 +1,8 @@
 # The grand game — Pieces
 
 The pieces of the [grand game](specification.md), as listed in the designer's spreadsheet,
-`docs/Other Potential Pieces.xlsx`, most valuable first within each class. The spreadsheet is the
+`docs/Other Potential Pieces.xlsx`, grouped by class (within a class, not necessarily most valuable
+first). The spreadsheet is the
 source; this page is a readable copy of it, and the two are changed together.
 
 ## Value
