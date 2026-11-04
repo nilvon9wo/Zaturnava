@@ -65,6 +65,12 @@ internal static class ZaturnavaServices
     public const string AwaitedGamesKeptKey = "Games:AwaitedGamesKeptSeconds";
     public const string GameSweepKey = "Games:SweepSeconds";
 
+    /// <summary>
+    /// The configuration key for how often, in seconds, games over are counted in their players' standings
+    /// (<see cref="StandingSweeper"/>).
+    /// </summary>
+    public const string StandingSweepKey = "Standings:SweepSeconds";
+
     private const string DefaultTimerKey = "Default";
 
     public static IServiceCollection AddZaturnava(this IServiceCollection services, IConfiguration configuration) =>
@@ -98,6 +104,15 @@ internal static class ZaturnavaServices
                 )
             )
             .AddHostedService<GameSweeper>()
+            .AddScoped<StandingService>()
+            .AddSingleton(
+                new StandingSweeper.Interval(
+                    TimeSpan.FromSeconds(
+                        configuration.GetValue(StandingSweepKey, StandingSweeper.Interval.Default.TotalSeconds)
+                    )
+                )
+            )
+            .AddHostedService<StandingSweeper>()
             .AddProblemDetails()
             .AddExceptionHandler<RefusalHandler>();
 

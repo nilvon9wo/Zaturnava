@@ -394,17 +394,8 @@ public sealed class GameService(
     /// The game replayed; none, if its rules have changed since so that its actions no longer replay, so that one such
     /// game does not keep every other from being listed.
     /// </summary>
-    private static GameSnapshot? Replayable(GameRecord record, IRulesApplying rules)
-    {
-        try
-        {
-            return GameSnapshot.Of(record, rules);
-        }
-        catch (IllegalActionException)
-        {
-            return null;
-        }
-    }
+    private static GameSnapshot? Replayable(GameRecord record, IRulesApplying rules) =>
+        GameSnapshot.TryOf(record, rules);
 
     /// <exception cref="IllegalActionException">
     /// The action is how dice came up, or passing for a seat away, which only the host decides.

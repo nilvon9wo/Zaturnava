@@ -25,6 +25,7 @@ server is at `https://zaturnava.runasp.net/`.
 | Have a bot play for someone away | `POST api/games/{id}/replace`, with a seat's token | The game, the seat a bot's if one was free |
 | A game's history | `GET api/games/{id}/history` | [Game histories](game-histories.md) |
 | Every finished game's history | `GET api/history` | A list of them |
+| Who stands highest at a game | `GET api/leaderboards/{game}`, by the catalog's `game` id | Up to 100 players signed in, best first: each one's `place`, `name`, `elo`, `experience`, and games `won`, `lost` and `drawn` |
 | What was said at the table | `GET api/games/{id}/chat?after={n}`, with a seat's token or none | [The talk](#talk-at-the-table) since message `n` |
 | Say something | `POST api/games/{id}/chat`, with the seat's token | The message, numbered |
 

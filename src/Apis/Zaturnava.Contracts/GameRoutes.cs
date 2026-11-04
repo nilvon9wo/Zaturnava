@@ -39,6 +39,12 @@ public static class GameRoutes
     /// <summary>The players by id: each one's profile, as anyone may see it.</summary>
     public const string Players = "api/players";
 
+    /// <summary>The players standing highest at each game (<see cref="StandingDto"/>).</summary>
+    public const string Leaderboards = "api/leaderboards";
+
+    /// <summary>The players standing highest at a game, any size, by its id (<see cref="RulesetDto.Game"/>).</summary>
+    public static string Leaderboard([Required] string game) => $"{Leaderboards}/{Uri.EscapeDataString(game)}";
+
     /// <summary>A player's profile, as anyone may see it (<see cref="ProfileDto"/>).</summary>
     public static string Profile([Required] string playerId) => $"{Players}/{Uri.EscapeDataString(playerId)}";
 

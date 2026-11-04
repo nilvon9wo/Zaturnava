@@ -24,6 +24,7 @@ internal static class GameEndpoints
     {
         _ = routes.MapGet(GameRoutes.Catalog, Catalog);
         _ = routes.MapGet(GameRoutes.Games, List);
+        _ = routes.MapGet(GameRoutes.Leaderboards + "/{game}", Leaderboard);
         _ = routes.MapPost(GameRoutes.Games, Create).RequireRateLimiting(RequestLimits.NewGames);
         _ = routes.MapGet(GameRoute, Get);
         _ = routes.MapGet(GameRoute + "/history", History);
@@ -79,6 +80,26 @@ internal static class GameEndpoints
             query.PageSize
         );
     }
+
+    /// <summary>The players standing highest at the game, each in their place, their Elo rounded.</summary>
+    private static async Task<ImmutableList<StandingDto>> Leaderboard(
+        string game,
+        StandingService standings,
+        CancellationToken cancellationToken
+    ) =>
+    [
+        .. (await standings.Leaders(game, cancellationToken)).Select((leader, index) =>
+            new StandingDto(
+                index + 1,
+                leader.Name,
+                (int)Math.Round(leader.Standing.Elo, MidpointRounding.AwayFromZero),
+                leader.Standing.Experience,
+                leader.Standing.Won,
+                leader.Standing.Lost,
+                leader.Standing.Drawn
+            )
+        ),
+    ];
 
     /// <summary>The page asked for of the games everyone <paramref name="wanted"/> is at.</summary>
     private static async Task<GamePage> Matching(

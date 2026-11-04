@@ -11,6 +11,7 @@ public sealed class InMemoryPlayerStore : IPlayerPersisting
     private readonly ConcurrentDictionary<PlayerId, Player> _players = new();
     private readonly ConcurrentDictionary<string, PlayerId> _sessions = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<PlayerId, DateTimeOffset> _signedIn = new();
+    private readonly ConcurrentDictionary<(PlayerId Player, string Game), Standing> _standings = new();
 
     public Task<Player?> ByLogin(Login login, CancellationToken cancellationToken) =>
         Task.FromResult(this._players.Values.FirstOrDefault(player => player.Logins.Contains(login)));
@@ -88,7 +89,46 @@ public sealed class InMemoryPlayerStore : IPlayerPersisting
         ImmutableList<string> sessions =
             [.. this._sessions.Where(session => session.Value == player).Select(session => session.Key)];
         sessions.ForEach(session => _ = this._sessions.TryRemove(session, out _));
+        ImmutableList<(PlayerId, string)> standings = [.. this._standings.Keys.Where(key => key.Player == player)];
+        standings.ForEach(standing => _ = this._standings.TryRemove(standing, out _));
         return Task.CompletedTask;
+    }
+
+    public Task<ImmutableDictionary<PlayerId, Standing>> Standings(
+        [Required] string game,
+        [Required] ImmutableList<PlayerId> players,
+        CancellationToken cancellationToken
+    ) =>
+        Task.FromResult(
+            players
+                .Distinct()
+                .Select(player => this._standings.GetValueOrDefault((player, game)))
+                .OfType<Standing>()
+                .ToImmutableDictionary(standing => standing.Player)
+        );
+
+    public Task Keep([Required] ImmutableList<Standing> standings, CancellationToken cancellationToken)
+    {
+        standings.ForEach(standing => this._standings[(standing.Player, standing.Game)] = standing);
+        return Task.CompletedTask;
+    }
+
+    public Task<ImmutableList<Standing>> Leaders(
+        [Required] string game,
+        int count,
+        CancellationToken cancellationToken
+    )
+    {
+        ImmutableList<Standing> leaders =
+        [
+            .. this._standings.Values
+                .Where(standing => standing.Game == game)
+                .OrderByDescending(standing => standing.Elo)
+                .ThenByDescending(standing => standing.Experience)
+                .ThenBy(standing => standing.Player.Value, StringComparer.Ordinal)
+                .Take(count),
+        ];
+        return Task.FromResult(leaders);
     }
 
     /// <summary>Changes the player, if still known.</summary>

@@ -132,6 +132,25 @@ public sealed class HttpGameClientTest
     }
 
     [Fact]
+    public async Task Leaderboard_WhenGivenAGame_GetsWhoStandsHighestAtIt()
+    {
+        // Arrange
+        StubServer server = new(
+            HttpStatusCode.OK,
+            """[{"place":1,"name":"Ada","elo":1516,"experience":14,"won":1,"lost":0,"drawn":0}]"""
+        );
+
+        // Act
+        ImmutableList<StandingDto> leaders = await Client(server).Leaderboard("chaturaji 2027", this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            ("GET", "/api/leaderboards/chaturaji%202027", new StandingDto(1, "Ada", 1516, 14, 1, 0, 0)),
+            (server.Method, server.Path, Assert.Single(leaders))
+        );
+    }
+
+    [Fact]
     public async Task Histories_WhenAsked_GetsEveryFinishedGamesHistory()
     {
         // Arrange

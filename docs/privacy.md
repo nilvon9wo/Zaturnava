@@ -41,6 +41,9 @@ hash) of the token your browser is then given, as for a seat. A seat you take wh
 player id, so that the others at the table, and anyone watching or listing the games, see your name there; a seat
 taken without signing in shows "guest".
 
+Each game you finish while signed in counts in where you stand at that game: your Elo rating, experience, and how
+many of its games you won, lost and drew. The leaderboard shows these beside your name, to anyone.
+
 When it is finished, signing in with a provider (itch.io, GitHub, Google, Discord, perhaps later Facebook) will
 keep:
 
@@ -67,7 +70,8 @@ the same player, and only if you choose to.
 - **Without an account:** clearing this site's data in your browser deletes your tokens and settings. Talk at a table
   is deleted by itself, once every player has left. Games keep nothing that says who you are.
 - **With an account:** while signed in, press **Delete account** at the top right of the lobby, and confirm. The server
-  then forgets you at once: your name, your id at each provider and every sign-in of yours. No one has to do
+  then forgets you at once: your name, your id at each provider, every sign-in of yours and where you stood at
+  each game, so you leave the leaderboards. No one has to do
   anything by hand, and you need no other account to ask. The games you played stay, so that other players' records
   and ratings stay true, but nothing in them says who you were: they show "deleted player" in your seat. (Your
   player id, a random value that no longer leads to anyone, stays beside the seat.)

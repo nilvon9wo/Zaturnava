@@ -90,6 +90,9 @@ namespace Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Sqlite.Migrations
                     b.Property<bool?>("IsOver")
                         .HasColumnType("INTEGER");
 
+                    b.Property<bool>("IsRated")
+                        .HasColumnType("INTEGER");
+
                     b.Property<DateTime?>("LastChanged")
                         .HasColumnType("TEXT");
 
@@ -192,6 +195,38 @@ namespace Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Sqlite.Migrations
                     b.ToTable("Sessions");
                 });
 
+            modelBuilder.Entity("Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Entities.StandingEntity", b =>
+                {
+                    b.Property<string>("PlayerId")
+                        .HasMaxLength(32)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Game")
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Drawn")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<double>("Elo")
+                        .HasColumnType("REAL");
+
+                    b.Property<int>("Experience")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Lost")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Won")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("PlayerId", "Game");
+
+                    b.HasIndex("Game", "Elo");
+
+                    b.ToTable("Standings");
+                });
+
             modelBuilder.Entity("Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Entities.ActionEntity", b =>
                 {
                     b.HasOne("Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Entities.GameEntity", null)
@@ -220,6 +255,15 @@ namespace Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Sqlite.Migrations
                 });
 
             modelBuilder.Entity("Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Entities.SessionEntity", b =>
+                {
+                    b.HasOne("Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Entities.PlayerEntity", null)
+                        .WithMany()
+                        .HasForeignKey("PlayerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Entities.StandingEntity", b =>
                 {
                     b.HasOne("Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Entities.PlayerEntity", null)
                         .WithMany()

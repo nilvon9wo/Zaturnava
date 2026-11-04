@@ -83,6 +83,23 @@ public sealed class EfGameStore(GameDbContext context) : IGamePersisting
         return [.. entities.Select(GameRecordMapping.ToRecord)];
     }
 
+    public async Task<ImmutableList<GameRecord>> Unrated(int count, CancellationToken cancellationToken)
+    {
+        List<GameEntity> entities = await this.Games()
+            .AsNoTracking()
+            .Where(game => game.IsOver == true && !game.IsRated)
+            .OrderBy(game => game.LastChanged)
+            .ThenBy(game => game.Id)
+            .Take(count)
+            .ToListAsync(cancellationToken);
+        return [.. entities.Select(GameRecordMapping.ToRecord)];
+    }
+
+    public async Task MarkRated(GameId id, CancellationToken cancellationToken) =>
+        _ = await this._context.Games
+            .Where(game => game.Id == id.Value)
+            .ExecuteUpdateAsync(set => set.SetProperty(game => game.IsRated, true), cancellationToken);
+
     public async Task Remove([Required] ImmutableList<GameId> ids, CancellationToken cancellationToken)
     {
         ImmutableList<string> keys = [.. ids.Select(id => id.Value)];

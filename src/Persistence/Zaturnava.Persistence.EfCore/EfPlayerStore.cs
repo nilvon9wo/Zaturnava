@@ -132,10 +132,75 @@ public sealed class EfPlayerStore(GameDbContext context) : IPlayerPersisting
         _ = await this._context.Set<LoginEntity>()
             .Where(login => login.PlayerId == player.Value)
             .ExecuteDeleteAsync(cancellationToken);
+        _ = await this._context.Standings
+            .Where(standing => standing.PlayerId == player.Value)
+            .ExecuteDeleteAsync(cancellationToken);
         _ = await this._context.Players
             .Where(entity => entity.Id == player.Value)
             .ExecuteDeleteAsync(cancellationToken);
     }
+
+    public async Task<ImmutableDictionary<PlayerId, Standing>> Standings(
+        [Required] string game,
+        [Required] ImmutableList<PlayerId> players,
+        CancellationToken cancellationToken
+    )
+    {
+        List<string> ids = [.. players.Select(player => player.Value).Distinct(StringComparer.Ordinal)];
+        List<StandingEntity> known = await this._context.Standings
+            .AsNoTracking()
+            .Where(standing => standing.Game == game && ids.Contains(standing.PlayerId))
+            .ToListAsync(cancellationToken);
+        return known.ToImmutableDictionary(standing => new PlayerId(standing.PlayerId), ToStanding);
+    }
+
+    public async Task Keep([Required] ImmutableList<Standing> standings, CancellationToken cancellationToken)
+    {
+        foreach (Standing standing in standings)
+        {
+            StandingEntity? stored = await this._context.Standings.FindAsync(
+                [standing.Player.Value, standing.Game],
+                cancellationToken
+            );
+            StandingEntity kept = stored ?? this._context.Standings.Add(
+                new StandingEntity { PlayerId = standing.Player.Value, Game = standing.Game }
+            ).Entity;
+            kept.Elo = standing.Elo;
+            kept.Experience = standing.Experience;
+            kept.Won = standing.Won;
+            kept.Lost = standing.Lost;
+            kept.Drawn = standing.Drawn;
+        }
+
+        _ = await this._context.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<ImmutableList<Standing>> Leaders(
+        [Required] string game,
+        int count,
+        CancellationToken cancellationToken
+    )
+    {
+        List<StandingEntity> leaders = await this._context.Standings
+            .AsNoTracking()
+            .Where(standing => standing.Game == game)
+            .OrderByDescending(standing => standing.Elo)
+            .ThenByDescending(standing => standing.Experience)
+            .ThenBy(standing => standing.PlayerId)
+            .Take(count)
+            .ToListAsync(cancellationToken);
+        return [.. leaders.Select(ToStanding)];
+    }
+
+    private static Standing ToStanding(StandingEntity entity) =>
+        new(new PlayerId(entity.PlayerId), entity.Game)
+        {
+            Elo = entity.Elo,
+            Experience = entity.Experience,
+            Won = entity.Won,
+            Lost = entity.Lost,
+            Drawn = entity.Drawn,
+        };
 
     private static Player? ToPlayer(PlayerEntity? entity) =>
         entity is null

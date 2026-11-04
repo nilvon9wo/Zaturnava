@@ -14,6 +14,12 @@ public interface IGameServing
     /// <summary>A page of the games <paramref name="query"/> asks for; the newest 20, if it asks nothing.</summary>
     Task<GamePageDto> List(GameListQuery? query, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// The signed-in players standing highest at <paramref name="game"/>, at any size, by its id
+    /// (<see cref="RulesetDto.Game"/>), best first: at most 100. Each game over counts within a minute or so.
+    /// </summary>
+    Task<ImmutableList<StandingDto>> Leaderboard([Required] string game, CancellationToken cancellationToken);
+
     Task<GameCreatedDto> Create([Required] CreateGameRequest request, CancellationToken cancellationToken);
 
     Task<GameViewDto> Get([Required] string gameId, CancellationToken cancellationToken);

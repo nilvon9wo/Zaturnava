@@ -273,6 +273,7 @@ base address (`GameRoutes`):
 | A game | `GET api/games/{id}` | `GameViewDto`: cells (with names and thrones), pieces, seats (with scores, bot names and prisoners), the dice and what each allows, the latest events, whose decision and for which seat, the legal actions (labelled where the kind alone cannot say), how the game ended, whether the deciding seat may offer a ransom, the offer waiting on its answer, the time left on a timed decision, and the cell of a Pawn whose promotion is due |
 | A game's history | `GET api/games/{id}/history` | `GameHistoryDto`: each seat (its name, team, who played it and its score), every action in order, the dice among them, and how it ended (the winners, the kind of ending as the ruleset's code, and why), or null while it goes on: the shape the BotRunner writes self-play games in |
 | Every finished game's history | `GET api/history` | `GameHistoryDto[]` |
+| Who stands highest at a game | `GET api/leaderboards/{game}` | `StandingDto[]`: up to 100 players, best first by Elo, then experience; counted by `StandingSweeper` every `Standings:SweepSeconds` (default 60) from the games over not yet counted |
 | Let a bot or a timer decide | `POST api/games/{id}/advance` with `AdvanceRequest` (the version the caller saw) | `GameViewDto` after one bot decision, or the timer's decision once a timed one has run out of time; unchanged if the version is stale or neither is due |
 | Claim an open seat | `POST api/games/{id}/seats/{seat}` | `SeatClaimedDto` with the seat's token |
 | Act | `POST api/games/{id}/actions` with `ActionDto`, `Authorization: Bearer {token}` | `GameViewDto` after the action and any bot replies |
@@ -282,7 +283,7 @@ base address (`GameRoutes`):
 | Sign in, in a window the page opens | `GET signin/{provider}?origin={the page's origin}` | the service's page; then, from `signin/done`, a page posting a `SignedInDto` to the opener at that origin, which must be the page host's |
 | Who a player's token stands for | `GET api/players/me`, `Authorization: Bearer {token}` | `PlayerDto`, or 401 |
 | Sign out | `DELETE api/players/me/session`, `Authorization: Bearer {token}` | 204, the session let go |
-| Delete the account | `DELETE api/players/me`, `Authorization: Bearer {token}` | 204, the player, their logins and sessions forgotten; or 401 |
+| Delete the account | `DELETE api/players/me`, `Authorization: Bearer {token}` | 204, the player, their logins, sessions and standings forgotten; or 401 |
 
 - **Talk** is kept per table (`ChatTables`): a table is known by its first
   game, and a game played again after another (`CreateGameRequest.Continuing`)

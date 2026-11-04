@@ -45,6 +45,19 @@ public sealed record GameSnapshot(
         return new GameSnapshot(record, rules, replayed.State, replayed.Events, legal);
     }
 
+    /// <summary>The game replayed, as <see cref="Of"/> does; none, if its rules no longer replay it.</summary>
+    public static GameSnapshot? TryOf([Required] GameRecord record, [Required] IRulesApplying rules)
+    {
+        try
+        {
+            return Of(record, rules);
+        }
+        catch (IllegalActionException)
+        {
+            return null;
+        }
+    }
+
     /// <summary>
     /// Whether <paramref name="token"/> holds the seat that acts, and it may act now: the game is not waiting for
     /// its seats to be taken, and the seat is deciding, or it proposes ending the game, rejoins it, or votes on
