@@ -159,9 +159,8 @@ internal static class Ransoms
             Position = Position.Empty.Place(new CellId(5), new Piece(Id(20), new PieceKindId("horse"), Black)),
         };
         Attack attack = new(new Piece(Id(60), new PieceKindId("pawn"), Yellow), new CellId(6), new CellId(5));
-        ImmutableDictionary<GameAction, int> scoring = points == 0
-            ? ImmutableDictionary<GameAction, int>.Empty.Add(Done, 0)
-            : ImmutableDictionary<GameAction, int>.Empty.Add(Done, 0).Add(new AcceptAction(accepter), points);
+        ImmutableDictionary<GameAction, int> scoring =
+            ImmutableDictionary<GameAction, int>.Empty.Add(Done, 0).Add(new AcceptAction(accepter), points);
         return request with
         {
             Rules = new ScoringRules(scoring)

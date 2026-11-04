@@ -90,7 +90,8 @@ internal static class Trading
 
     /// <summary>
     /// The state once <paramref name="offer"/> is accepted: offered first, unless it is the offer waiting. Its
-    /// prisoners go home as the rules send them, unless one waits on where its owner would have it.
+    /// prisoners go home as the rules send them, unless one waits on where its owner would have it. An offer the
+    /// rules need no answer to (a gift to an ally, say, sent home at once) is done once offered.
     /// </summary>
     public static GameState After(DecisionRequest request, RansomOffer offer)
     {
@@ -98,7 +99,10 @@ internal static class Trading
         GameState offered = state.Offer == offer
             ? state
             : request.Rules.Apply(state, new OfferAction(offer.From, offer.To, offer.Given, offer.Asked)).State;
-        return request.Rules.Apply(offered, new AcceptAction(offer.To)).State;
+        AcceptAction accept = new(offer.To);
+        return request.Rules.LegalActions(offered).Contains(accept)
+            ? request.Rules.Apply(offered, accept).State
+            : offered;
     }
 
     public static int WorthOf(DecisionRequest request, ImmutableList<PieceId> pieces) =>
