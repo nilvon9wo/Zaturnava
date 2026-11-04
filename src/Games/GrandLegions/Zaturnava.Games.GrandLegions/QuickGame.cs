@@ -55,8 +55,13 @@ public sealed record QuickGame(
 
     public static ImmutableList<QuickGame> All { get; } = [Small, Medium, Large];
 
+    /// <summary>
+    /// Whether the game is a preview (Stated: until its own pieces' symbols, thrones and Elephants are done).
+    /// </summary>
+    public const bool IsPreview = true;
+
     /// <summary>The game and its size, as the rules tell them.</summary>
-    public GameSize Game => new(GameId, GameName, this.Size);
+    public GameSize Game => new(GameId, GameName, this.Size, IsPreview);
 
     /// <summary>What a game of this size is called: "Grand Legions (small)".</summary>
     public string Name => $"{GameName} ({this.Size})";

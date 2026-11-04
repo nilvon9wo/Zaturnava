@@ -17,6 +17,11 @@ public sealed record RulesetDto(string Id, string Name, int SeatCount)
     /// <summary>The size the game is played at ("small"); none, for a game played at one size only.</summary>
     public string? Size { get; init; }
 
+    /// <summary>
+    /// Whether the game is a preview: playable, but not yet ready for the public, so a lobby hides it unless asked.
+    /// </summary>
+    public bool IsPreview { get; init; }
+
     public ImmutableList<string> SeatNames { get; init; } = [];
 
     /// <summary>Each seat's team, by number: seats of the same number are allies.</summary>

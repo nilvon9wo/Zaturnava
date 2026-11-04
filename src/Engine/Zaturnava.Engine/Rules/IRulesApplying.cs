@@ -33,6 +33,11 @@ public interface IRulesApplying
     /// <summary>The size the game is played at ("small"); none, for a game played at one size only.</summary>
     string? Size => null;
 
+    /// <summary>
+    /// Whether the game is a preview: playable, but not yet ready for the public, so a lobby hides it unless asked.
+    /// </summary>
+    bool IsPreview => false;
+
     ICellNavigating Topology { get; }
 
     /// <summary>Each seat's throne, if the ruleset has thrones; empty if it has none.</summary>

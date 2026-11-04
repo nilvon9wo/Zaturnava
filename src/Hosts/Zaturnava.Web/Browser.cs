@@ -24,6 +24,8 @@ internal sealed class Browser(IJSRuntime js)
     private const string ChatOrderKey = "zaturnava.chat-order";
     private const string AiTalkKey = "zaturnava.ai-talk";
     private const string Hidden = "hidden";
+    private const string Shown = "shown";
+    private const string PreviewKey = "zaturnava.previews";
     private const string PlayerKey = "zaturnava.player";
     private const string NicknameKey = "zaturnava.nickname";
     private const string SetupKey = "zaturnava.setup";
@@ -96,7 +98,7 @@ internal sealed class Browser(IJSRuntime js)
     /// <summary>Whether the talk at the table leaves out what AIs say: only if the player chose so.</summary>
     public async ValueTask<bool> IsAiTalkHidden() => await this.Load(AiTalkKey) == Hidden;
 
-    public ValueTask SetAiTalkHidden(bool isHidden) => this.Save(AiTalkKey, isHidden ? Hidden : "shown");
+    public ValueTask SetAiTalkHidden(bool isHidden) => this.Save(AiTalkKey, isHidden ? Hidden : Shown);
 
     /// <summary>How the lobby last set up a new game: a quick game, unless the player chose otherwise.</summary>
     /// <remarks>Seat by seat, no longer offered, is set up as the player chooses too.</remarks>
@@ -104,6 +106,11 @@ internal sealed class Browser(IJSRuntime js)
         await this.Load(SetupKey) is Custom or SeatBySeat ? SetupMode.Custom : SetupMode.Quick;
 
     public ValueTask SetSetup(SetupMode mode) => this.Save(SetupKey, mode == SetupMode.Custom ? Custom : "quick");
+
+    /// <summary>Whether the lobby shows preview games: only if the player chose so.</summary>
+    public async ValueTask<bool> ArePreviewsShown() => await this.Load(PreviewKey) == Shown;
+
+    public ValueTask SetPreviewsShown(bool isShown) => this.Save(PreviewKey, isShown ? Shown : Hidden);
 
     /// <summary>The game the player last started, if they have.</summary>
     public ValueTask<string?> LastGame() => this.Load(LastGameKey);

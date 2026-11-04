@@ -47,7 +47,7 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
     }
 
     [Fact]
-    public async Task Catalog_WhenAsked_TellsEachRulesetsGameAndSize()
+    public async Task Catalog_WhenAsked_TellsEachRulesetsGameAndSizeAndWhetherAPreview()
     {
         // Arrange - nothing beyond the server
 
@@ -56,9 +56,14 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
 
         // Assert
         Assert.Equal(
-            "chaturaji-2027/Chaturaji 2027/,grand-legions/Grand Legions/small,grand-legions/Grand Legions/medium,"
-            + "grand-legions/Grand Legions/large",
-            string.Join(",", catalog.Rulesets.Select(offered => $"{offered.Game}/{offered.GameName}/{offered.Size}"))
+            "chaturaji-2027/Chaturaji 2027//False,grand-legions/Grand Legions/small/True,"
+            + "grand-legions/Grand Legions/medium/True,grand-legions/Grand Legions/large/True",
+            string.Join(
+                ",",
+                catalog.Rulesets.Select(offered =>
+                    $"{offered.Game}/{offered.GameName}/{offered.Size}/{offered.IsPreview}"
+                )
+            )
         );
     }
 
@@ -81,6 +86,36 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
         // Assert
         Assert.Equal(
             (false, true),
+            (page.Games.Any(game => game.Id == chaturaji), page.Games.Any(game => game.Id == grand.GameId))
+        );
+    }
+
+    [Theory]
+    [InlineData(false, true, false)]
+    [InlineData(true, false, true)]
+    [InlineData(null, true, true)]
+    public async Task List_WhenAskedForPreviewsOrNot_ListsOnlyThoseOrOnlyOthersOrBoth(
+        bool? preview,
+        bool listsChaturaji,
+        bool listsGrand
+    )
+    {
+        // Arrange
+        string chaturaji = await this.CreateGame();
+        GameCreatedDto grand = await this._client.Create(
+            new CreateGameRequest("grand-legions-small", [null, "random", "random", "random"]),
+            this._cancellation
+        );
+
+        // Act
+        GamePageDto page = await this._client.List(
+            new GameListQuery(PageSize: GameQueryMax, Preview: preview),
+            this._cancellation
+        );
+
+        // Assert
+        Assert.Equal(
+            (listsChaturaji, listsGrand),
             (page.Games.Any(game => game.Id == chaturaji), page.Games.Any(game => game.Id == grand.GameId))
         );
     }

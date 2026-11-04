@@ -485,6 +485,22 @@ public sealed class GameServiceTest
         Assert.Equal(rolling, Assert.Single(page.Games).Id);
     }
 
+    [Theory]
+    [InlineData(false, TinyRules.RulesetId)]
+    [InlineData(true, RollingRules.RulesetId)]
+    public async Task Page_WhenAskedForPreviewsOrNot_ListsOnlyThoseOrOnlyOthers(bool preview, string expected)
+    {
+        // Arrange
+        _ = await this.CreateOpen();
+        _ = await this._service.Create(RollingRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
+
+        // Act
+        GamePage page = await this._service.Page(new GameQuery(IsPreview: preview), this._cancellation);
+
+        // Assert
+        Assert.Equal(expected, Assert.Single(page.Games).RulesetId);
+    }
+
     [Fact]
     public async Task Page_WhenAskedForTooBigAPage_ListsAPageOfTheMost()
     {

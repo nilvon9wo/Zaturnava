@@ -12,22 +12,22 @@ namespace Net.NowhereAtAll.Zaturnava.Engine.Test.Rules;
 public sealed class RulesApplyingTest
 {
     [Fact]
-    public void Game_WhenTheRulesetSaysNoOther_IsItsOwnAtNoSize()
+    public void Game_WhenTheRulesetSaysNoOther_IsItsOwnAtNoSizeAndNoPreview()
     {
         // Arrange
         OneSizeRules rules = new();
 
         // Act
-        (string Id, string Name, string? Size) game = GameOf(rules);
+        (string Id, string Name, string? Size, bool IsPreview) game = GameOf(rules);
 
         // Assert
-        Assert.Equal(("solo", "Solo", null), game);
+        Assert.Equal(("solo", "Solo", null, false), game);
     }
 
     /// <summary>The game any rules play, as the interface tells it.</summary>
-    private static (string Id, string Name, string? Size) GameOf<TRules>(TRules rules)
+    private static (string Id, string Name, string? Size, bool IsPreview) GameOf<TRules>(TRules rules)
         where TRules : IRulesApplying =>
-        (rules.GameId, rules.GameName, rules.Size);
+        (rules.GameId, rules.GameName, rules.Size, rules.IsPreview);
 }
 
 /// <summary>Rules of a game played at one size, asked only what they are called.</summary>

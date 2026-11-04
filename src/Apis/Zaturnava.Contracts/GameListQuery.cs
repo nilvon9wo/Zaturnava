@@ -5,8 +5,9 @@ namespace Net.NowhereAtAll.Zaturnava.Contracts;
 /// <summary>
 /// Which games to list, and which page (Proposed): of one game, at any size (<see cref="Game"/>, as
 /// <see cref="RulesetDto.Game"/>), or of one ruleset, which is one game at one size; with open seats or without; with
-/// no seat played by a bot (<see cref="PeopleOnly"/>); over or not. A filter left null does not filter. Pages count
-/// from 1; a page holds at most 100 games, 20 unless asked otherwise.
+/// no seat played by a bot (<see cref="PeopleOnly"/>); over or not; of preview games or not
+/// (<see cref="RulesetDto.IsPreview"/>). A filter left null does not filter. Pages count from 1; a page holds at most
+/// 100 games, 20 unless asked otherwise.
 /// </summary>
 public sealed record GameListQuery(
     string? Ruleset = null,
@@ -15,7 +16,8 @@ public sealed record GameListQuery(
     bool? Over = null,
     int? Page = null,
     int? PageSize = null,
-    string? Game = null
+    string? Game = null,
+    bool? Preview = null
 )
 {
     /// <summary>The query as an address's query string, from its "?"; empty, if it asks nothing.</summary>
@@ -28,6 +30,7 @@ public sealed record GameListQuery(
                 ("open", Flag(this.Open)),
                 ("peopleOnly", Flag(this.PeopleOnly)),
                 ("over", Flag(this.Over)),
+                ("preview", Flag(this.Preview)),
                 ("page", Number(this.Page)),
                 ("pageSize", Number(this.PageSize)),
             }

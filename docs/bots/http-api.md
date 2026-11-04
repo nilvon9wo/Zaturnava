@@ -33,8 +33,10 @@ server is at `https://zaturnava.runasp.net/`.
 `GET api/games` takes, each optional: `game` (a game's id, as the catalog gives each ruleset's `game`: its games at
 every size), `ruleset` (a ruleset's id: one game at one size), `open` (`true` for only games waiting for players to
 take an open seat, `false` for only those under way), `peopleOnly` (`true` for only games with no bot at a seat, `false` for only those
-with one), `over` (`true` or `false`), `page` (from 1) and `pageSize` (20 if left out, at most 100). A filter left
-out does not filter. For example, `GET api/games?ruleset=chaturaji-2027&open=true&over=false` lists the games of
+with one), `over` (`true` or `false`), `preview` (`true` for only games of preview rulesets, `false` for only the
+others), `page` (from 1) and `pageSize` (20 if left out, at most 100). A filter left out does not filter. A preview
+ruleset, marked `"isPreview": true` in the catalog, is playable but not yet ready for everyone (Grand Legions, for
+now): the game page neither offers nor lists its games unless the player chooses to show previews. For example, `GET api/games?ruleset=chaturaji-2027&open=true&over=false` lists the games of
 Chaturaji 2027 a player may still join. The reply:
 
 ```json
