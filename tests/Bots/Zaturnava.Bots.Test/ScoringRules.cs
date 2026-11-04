@@ -48,9 +48,14 @@ internal sealed class ScoringRules(ImmutableDictionary<GameAction, int> points) 
     /// <summary>The state each action named leads to, its points added; any other leaves it as it was.</summary>
     public ImmutableDictionary<GameAction, GameState> Results { get; init; } = [];
 
+    /// <summary>The actions the rules refuse, as not allowed now; none, unless set.</summary>
+    public ImmutableHashSet<GameAction> Refused { get; init; } = [];
+
     public Transition Apply([Required] GameState state, [Required] GameAction action)
     {
-        GameState result = this.Results.GetValueOrDefault(action, state);
+        GameState result = this.Refused.Contains(action)
+            ? throw new IllegalActionException(action)
+            : this.Results.GetValueOrDefault(action, state);
         return new(
             result with
             {

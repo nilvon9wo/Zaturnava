@@ -62,6 +62,30 @@ public sealed class AthenaBotTest
         Assert.Equal(Step, action);
     }
 
+    [Fact]
+    public async Task Decide_WhenTakingAGuardedPawnWithItsRajaOnlyLosesIt_StepsAsideInstead()
+    {
+        // Arrange - an enemy Pawn its other Pawn guards; the network judging taking it a little better
+        MoveAction take = LineRules.Move(3, 4);
+        DecisionRequest request = LineRules.Request(
+            [take, Step],
+            (3, LineRules.Raja, LineRules.Seat),
+            (4, LineRules.Pawn, LineRules.Enemy),
+            (5, LineRules.Pawn, LineRules.Enemy)
+        );
+        ValueNetworkData network = Taught.Network(
+            request.Rules,
+            (request.Rules.Apply(request.State, take).State, LineRules.Seat, 0.1),
+            (request.Rules.Apply(request.State, Step).State, LineRules.Seat, 0)
+        );
+
+        // Act
+        GameAction action = await Athena(network).Decide(request, this._cancellation);
+
+        // Assert
+        Assert.Equal(Step, action);
+    }
+
     [Theory]
     [InlineData(20, 5, true)]
     [InlineData(5, 20, false)]
