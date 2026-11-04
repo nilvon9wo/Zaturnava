@@ -1398,6 +1398,70 @@ public sealed class TableTest : IDisposable
     }
 
     [Fact]
+    public void Board_WhenPiecesAreMarkedByClass_DrawsEachKnownEmblemAboveItsLetters()
+    {
+        // Arrange - a Rook, marked as heavy, and a piece of a class this client draws no emblem for
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Pieces =
+            [
+                new PieceDto(1, "rook", "Rook (Western)", 1, 3) { Mark = new PieceMarkDto("heavy", "R") },
+                new PieceDto(2, "wizard", "Wizard", 0, 2) { Mark = new PieceMarkDto("wizard", "Wz") },
+            ],
+        };
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Assert
+        Assert.Equal(
+            ("R,Wz", 1, true),
+            (
+                string.Join(",", table.FindAll("svg.board g.piece text.letters").Select(text => text.TextContent)),
+                table.FindAll("svg.board g.piece path").Count,
+                table.Find("svg.board g.piece path").GetAttribute("transform")!.EndsWith(
+                    PieceStyle.EmblemPlacement,
+                    StringComparison.Ordinal
+                )
+            )
+        );
+    }
+
+    [Fact]
+    public void Seats_WhenTheyHoldPrisonersMarkedByClass_ShowEachByItsMark()
+    {
+        // Arrange
+        ImmutableList<SeatDto> seats = FakeGameServer.SeatZeroToMove.Seats;
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Seats = seats.SetItem(
+                0,
+                seats[0] with
+                {
+                    Prisoners =
+                    [
+                        new PrisonerDto(9, "rook", "Rook (Western)", 1) { Mark = new PieceMarkDto("heavy", "R") },
+                        new PrisonerDto(8, "wizard", "Wizard", 1) { Mark = new PieceMarkDto("wizard", "Wz") },
+                    ],
+                }
+            ),
+        };
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Assert
+        AngleSharp.Dom.IElement held = table.FindAll("li.seat")[0];
+        Assert.Equal(
+            ("R,Wz", 1),
+            (
+                string.Join(",", held.QuerySelectorAll("svg text.letters").Select(text => text.TextContent)),
+                held.QuerySelectorAll("svg path").Length
+            )
+        );
+    }
+
+    [Fact]
     public void Seats_WhenSeated_GroupsThemByTeamWithItsTotalTheirOwnTeamFirst()
     {
         // Arrange - Black (0) and Green (3) against Yellow (5) and Red (2); the player is Yellow

@@ -359,6 +359,13 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
     dominant-baseline: hanging;
 }
 
+/* A marked piece's letters, small and bold under its class's emblem: "Sh" under a shield. */
+.piece text.letters {
+    font-family: "Segoe UI", "DejaVu Sans", Arial, sans-serif;
+    font-size: 0.26px;
+    font-weight: 700;
+}
+
 .piece-icon { width: 20px; height: 20px; vertical-align: middle; }
 .piece-icon circle { stroke: var(--piece-edge); stroke-width: 0.035; }
 .piece-icon text {

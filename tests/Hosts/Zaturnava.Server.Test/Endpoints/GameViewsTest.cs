@@ -11,6 +11,7 @@ using Net.NowhereAtAll.Zaturnava.Engine.Positions;
 using Net.NowhereAtAll.Zaturnava.Engine.Rules;
 using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 using Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
+using Net.NowhereAtAll.Zaturnava.Games.GrandLegions;
 using Net.NowhereAtAll.Zaturnava.Server.Endpoints;
 
 namespace Net.NowhereAtAll.Zaturnava.Server.Test.Endpoints;
@@ -621,6 +622,44 @@ public sealed class GameViewsTest
         Assert.Equal(("a1", "h8"), (view.Cells[0].Name, view.Cells[63].Name));
     }
 
+    [Fact]
+    public void ViewOf_WhenTheRulesMarkPiecesByClass_MarksEachOnTheBoardAndHeld()
+    {
+        // Arrange - a Grand Legions game, Black holding a Rook of Yellow's
+        Chaturaji2027Rules grand = GrandLegionsRules.RulesOf(QuickGame.Small);
+        Piece rook = new(new PieceId(500), GrandLegionsPieces.Rook, new SeatId(1));
+        GameState state = grand.CreateInitialState() with { Prisoners = [new Prisoner(rook, new SeatId(0))] };
+
+        // Act
+        GameViewDto view = GameViews.ViewOf(Snapshot(grand, state), Bots);
+
+        // Assert
+        PieceDto leader = view.Pieces.First(piece => grand.IsLeader(new PieceKindId(piece.Kind)));
+        Assert.Equal(
+            ("leader", new PieceMarkDto("heavy", "R")),
+            (leader.Mark?.Emblem, view.Seats[0].Prisoners.Single().Mark)
+        );
+    }
+
+    [Fact]
+    public void ViewOf_WhenTheRulesDrawPiecesAsThemselves_MarksNone()
+    {
+        // Arrange
+        Piece pawn = new(new PieceId(20), Chaturaji2027Pieces.Pawn, new SeatId(1));
+        GameSnapshot snapshot = Snapshot(
+            Rules.CreateInitialState() with { Prisoners = [new Prisoner(pawn, new SeatId(0))] }
+        );
+
+        // Act
+        GameViewDto view = GameViews.ViewOf(snapshot, Bots);
+
+        // Assert
+        Assert.Equal(
+            (false, null),
+            (view.Pieces.Any(piece => piece.Mark is not null), view.Seats[0].Prisoners.Single().Mark)
+        );
+    }
+
     private static Piece Holder(PieceKindId kind, int owner) => new(new PieceId(99), kind, new SeatId(owner));
 
     private static string Flags(GameViewDto view, Func<SeatDto, bool> flag) =>
@@ -631,15 +670,17 @@ public sealed class GameViewsTest
 
     private static ActionDescriptor Pass(int seat) => new PassAction(new SeatId(seat)).Describe();
 
-    private static GameSnapshot Snapshot(GameState state)
+    private static GameSnapshot Snapshot(GameState state) => Snapshot(Rules, state);
+
+    private static GameSnapshot Snapshot(Chaturaji2027Rules rules, GameState state)
     {
         GameRecord record = new(
             new GameId("g"),
-            Rules.Id,
+            rules.Id,
             [new OpenSeat(), new OpenSeat(), new OpenSeat(), new OpenSeat()],
             [],
             0
         );
-        return new GameSnapshot(record, Rules, state, [], Rules.LegalActions(state));
+        return new GameSnapshot(record, rules, state, [], rules.LegalActions(state));
     }
 }

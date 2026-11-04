@@ -253,6 +253,8 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
 
     public string NameOf(PieceKindId kind) => this._variant.Names[kind];
 
+    public PieceMark? MarkOf(PieceKindId kind) => this._variant.Marks.GetValueOrDefault(kind);
+
     public string NameOf(SeatId seat) => Chaturaji2027Setup.SeatNames[seat.Value];
 
     /// <summary>The kinds the die lets move: "Horse", or "Pawn or Raja"; "Nothing" for a value no die shows.</summary>

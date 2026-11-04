@@ -65,7 +65,7 @@
                                 <span class="prisoners" title="Prisoners">
                                     @foreach (PrisonerDto prisoner in seat.Prisoners)
                                     {
-                                        <PieceIcon Kind="@prisoner.Kind" Name="@prisoner.Name" Owner="prisoner.Owner" Pieces="this.PiecesShown" />
+                                        <PieceIcon Kind="@prisoner.Kind" Name="@prisoner.Name" Owner="prisoner.Owner" Mark="prisoner.Mark" Pieces="this.PiecesShown" />
                                     }
                                 </span>
                                 <span class="score">@seat.Score</span>
@@ -236,7 +236,7 @@
                                         <button class="choice"
                                                 title="@this.Named(ActionLabels.LabelOf(action))"
                                                 @onclick="() => this.Submit(turn.Claim, action)">
-                                            <PieceIcon Kind="@into.Kind" Name="@into.Name" Owner="into.Owner" Pieces="this.PiecesShown" />
+                                            <PieceIcon Kind="@into.Kind" Name="@into.Name" Owner="into.Owner" Mark="into.Mark" Pieces="this.PiecesShown" />
                                             <span class="name">@this.Named(Owned(view, into))</span>
                                             <span class="holder">@HeldBy(holder, turn.Claim.Seat)</span>
                                         </button>
@@ -293,7 +293,7 @@
                                                 title="@TitleOf(prisoner)"
                                                 disabled="@(!prisoner.MayGoBack)"
                                                 @onclick="() => this.Give(receiver.Id, [prisoner.Id])">
-                                            <PieceIcon Kind="@prisoner.Kind" Name="@prisoner.Name" Owner="prisoner.Owner" Pieces="this.PiecesShown" />
+                                            <PieceIcon Kind="@prisoner.Kind" Name="@prisoner.Name" Owner="prisoner.Owner" Mark="prisoner.Mark" Pieces="this.PiecesShown" />
                                         </button>
                                     }
                                     <button class="all"
@@ -313,7 +313,7 @@
                                                 title="@TitleOf(prisoner)"
                                                 disabled="@(!prisoner.MayGoBack)"
                                                 @onclick="() => this.Ask(prisoner.Id)">
-                                            <PieceIcon Kind="@prisoner.Kind" Name="@prisoner.Name" Owner="prisoner.Owner" Pieces="this.PiecesShown" />
+                                            <PieceIcon Kind="@prisoner.Kind" Name="@prisoner.Name" Owner="prisoner.Owner" Mark="prisoner.Mark" Pieces="this.PiecesShown" />
                                         </button>
                                     }
                                 </div>

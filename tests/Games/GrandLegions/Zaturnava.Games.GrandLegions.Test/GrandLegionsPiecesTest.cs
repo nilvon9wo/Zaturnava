@@ -64,6 +64,35 @@ public sealed class GrandLegionsPiecesTest
         { "grasshopper", 0 },
     };
 
+    [Fact]
+    public void Marks_WhenEveryPieceIsMarked_TellEachFromTheOthersOfItsClass()
+    {
+        // Act
+        ImmutableList<IGrouping<string, PieceMark>> classes =
+            [.. GrandLegionsPieces.Marks.Values.GroupBy(mark => mark.Emblem)];
+
+        // Assert
+        Assert.Equal((GrandLegionsPieces.Catalogue.Count, 5), (GrandLegionsPieces.Marks.Count, classes.Count));
+        Assert.All(classes, marks => Assert.Equal(marks.Count(), marks.DistinctBy(mark => mark.Letters).Count()));
+    }
+
+    [Theory]
+    [InlineData("western-pawn", "infantry", "W")]
+    [InlineData("shogi-pawn", "infantry", "Sh")]
+    [InlineData("janggi-soldier", "infantry", "SJ")]
+    [InlineData("dragon-king", "leader", "DK")]
+    [InlineData("rook", "heavy", "R")]
+    [InlineData("xiangqi-horse", "cavalry", "HX")]
+    [InlineData("xiangqi-cannon", "artillery", "CX")]
+    public void Marks_WhenAPieceIsMarked_AreItsClassesEmblemAndItsLetters(string kind, string emblem, string letters)
+    {
+        // Act
+        PieceMark mark = GrandLegionsPieces.Marks[new PieceKindId(kind)];
+
+        // Assert
+        Assert.Equal(new PieceMark(emblem, letters), mark);
+    }
+
     [Theory]
     [MemberData(nameof(Reaches))]
     public void Reach_WhenAloneOnTheBoard_IsWhatItsValueCounts(string kind, int expected)

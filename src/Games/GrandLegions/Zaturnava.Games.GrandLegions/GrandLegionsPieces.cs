@@ -192,6 +192,70 @@ public static class GrandLegionsPieces
     public static readonly ImmutableDictionary<PieceKindId, PieceKind> Kinds =
         Catalogue.ToImmutableDictionary(piece => piece.Id, piece => piece.Kind);
 
+    /// <summary>
+    /// The letters that tell each piece from the others of its class (Proposed, but for the Pawns' "Sh", "W" and "M"
+    /// and the Soldiers' "SJ" and "SX", which are as asked): a name's first letter, or its first two, or the first
+    /// of each word; with the game's after it where two pieces share a name ("GX" and "GJ", the Generals).
+    /// </summary>
+    public static readonly ImmutableDictionary<PieceKindId, string> Letters =
+        ImmutableDictionary<PieceKindId, string>.Empty
+            .Add(DragonKing, "DK")
+            .Add(FairyGeneral, "FG")
+            .Add(WesternKing, "K")
+            .Add(XiangqiGeneral, "GX")
+            .Add(JanggiGeneral, "GJ")
+            .Add(GoldGeneral, "Go")
+            .Add(SilverGeneral, "Si")
+            .Add(ShogiPawn, "Sh")
+            .Add(WesternPawn, "W")
+            .Add(JanggiGuard, "Gu")
+            .Add(Noble, "N")
+            .Add(JanggiSoldier, "SJ")
+            .Add(Minister, "Mi")
+            .Add(Courtier, "C")
+            .Add(MakrukPawn, "M")
+            .Add(XiangqiSoldier, "SX")
+            .Add(XiangqiAdvisor, "A")
+            .Add(Amazon, "Am")
+            .Add(Queen, "Q")
+            .Add(Chancellor, "Ch")
+            .Add(Archbishop, "Ar")
+            .Add(DragonBishop, "DB")
+            .Add(DragonHorse, "DH")
+            .Add(Lance, "L")
+            .Add(Rook, "R")
+            .Add(Bishop, "B")
+            .Add(Knightrider, "KR")
+            .Add(Zebra, "Z")
+            .Add(Knight, "Kn")
+            .Add(Camel, "Ca")
+            .Add(Horse, "HX")
+            .Add(JanggiElephant, "EJ")
+            .Add(Giraffe, "Gi")
+            .Add(Alfil, "Al")
+            .Add(Threeleaper, "Th")
+            .Add(XiangqiElephant, "EX")
+            .Add(WarEngine, "WE")
+            .Add(XiangqiCannon, "CX")
+            .Add(JanggiCannon, "CJ")
+            .Add(Grasshopper, "G");
+
+    /// <summary>The emblem each class's pieces are drawn with, its letters under it.</summary>
+    public static readonly ImmutableDictionary<PieceClass, string> Emblems =
+        ImmutableDictionary<PieceClass, string>.Empty
+            .Add(Leader, "leader")
+            .Add(Infantry, "infantry")
+            .Add(Heavy, "heavy")
+            .Add(Cavalry, "cavalry")
+            .Add(Artillery, "artillery");
+
+    /// <summary>How every piece of the catalogue is marked: its class's emblem, and its letters.</summary>
+    public static readonly ImmutableDictionary<PieceKindId, PieceMark> Marks =
+        Catalogue.ToImmutableDictionary(
+            piece => piece.Id,
+            piece => new PieceMark(Emblems[piece.Class], Letters[piece.Id])
+        );
+
     private static GrandPiece Piece(
         PieceKindId id,
         string name,

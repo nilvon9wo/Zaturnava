@@ -36,6 +36,10 @@ first.
   developer makes their own bot from them.
 - Grand Legions (preview until these are done):
   - **N25** Letters as pieces, ambiguous ones, make it nearly unplayable: it needs its own pieces' symbols.
+    *Done*, as asked: each piece is drawn with its class's emblem (*Proposed*: a crown for a leader, a shield for
+    infantry, a tower for a heavy piece, a horse's head for cavalry, a cannon for artillery) and letters under it
+    that tell it from the others of its class (Pawns Sh, W and M; Soldiers SJ and SX; the rest *Proposed*). Still
+    to come: upgrades as small badges, once a piece's lifted restrictions are kept in the game.
 - **N29** (low) An encyclopedia of pieces: each piece's name here, its other names, the games it comes from
   (Chess, Xiangqi...), the games here that use it, its variants (kinds of Pawn, of Elephant...), and how it
   moves, captures and what else it may do.

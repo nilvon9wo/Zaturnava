@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Boards;
+using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
 using Net.NowhereAtAll.Zaturnava.Engine.Rules;
 using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 using Net.NowhereAtAll.Zaturnava.Topology.SquareGrid;
@@ -69,6 +70,18 @@ public sealed class Chaturaji2027VariantTest
 
         // Assert
         Assert.Equal(("fenced", "Fenced", null, false), game);
+    }
+
+    [Fact]
+    public void MarkOf_WhenTheVariantMarksNoKind_IsNoneForAny()
+    {
+        // Arrange - nothing beyond the rules
+
+        // Act
+        PieceMark? mark = this._rules.MarkOf(Chaturaji2027Pieces.Raja);
+
+        // Assert
+        Assert.Null(mark);
     }
 
     [Theory]

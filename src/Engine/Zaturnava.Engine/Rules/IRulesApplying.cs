@@ -111,6 +111,12 @@ public interface IRulesApplying
 
     string NameOf(PieceKindId kind);
 
+    /// <summary>
+    /// How a piece of <paramref name="kind"/> is marked, if by a class's emblem and letters; none, for a kind
+    /// drawn as itself (a Raja, a Pawn).
+    /// </summary>
+    PieceMark? MarkOf(PieceKindId kind) => null;
+
     string NameOf(SeatId seat);
 
     /// <summary>What a die showing <paramref name="value"/> lets its roller do, for people: "Horse".</summary>

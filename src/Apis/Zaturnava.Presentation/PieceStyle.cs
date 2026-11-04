@@ -31,6 +31,34 @@ public static partial class PieceStyle
             .Add("horse", "\u265E")
             .Add("pawn", "\u265F");
 
+    private const string Crown =
+        "M-0.25 0.18H0.25L0.28 -0.14L0.13 0L0 -0.22L-0.13 0L-0.28 -0.14Z"
+            + "M-0.25 0.17V0.26H0.25V0.17Z";
+
+    private const string HorseHead =
+        "M0.18 0.26H-0.12L-0.06 0.06L-0.24 0.02L-0.27 -0.08L-0.06 -0.24L0 -0.32L0.05 -0.22"
+            + "Q0.24 -0.12 0.18 0.26Z";
+
+    /// <summary>
+    /// SVG path data for each class's emblem (Proposed), drawn as a shape is, but small, above its piece's letters:
+    /// a crown for a leader, a shield for infantry, a battlemented tower for a heavy piece, a horse's head for
+    /// cavalry, and a cannon on its wheel for artillery.
+    /// </summary>
+    private static readonly ImmutableDictionary<string, string> Emblems =
+        ImmutableDictionary<string, string>.Empty
+            .Add("leader", Crown)
+            .Add("infantry", "M-0.24 -0.28H0.24V0Q0.24 0.18 0 0.3Q-0.24 0.18 -0.24 0Z")
+            .Add(
+                "heavy",
+                "M-0.2 0.26V-0.1H-0.26V-0.3H-0.15V-0.2H-0.05V-0.3H0.05V-0.2H0.15V-0.3H0.26V-0.1H0.2V0.26Z"
+            )
+            .Add("cavalry", HorseHead)
+            .Add(
+                "artillery",
+                "M-0.28 0.02L0.2 -0.22L0.26 -0.1L-0.2 0.14Z"
+                    + "M-0.2 0.14A0.12 0.12 0 1 1 0.04 0.14A0.12 0.12 0 1 1 -0.2 0.14Z"
+            );
+
     private static readonly ImmutableDictionary<string, string> ChaturajiSymbols =
         ImmutableDictionary<string, string>.Empty.Add("pawn", "\u265F");
 
@@ -41,11 +69,7 @@ public static partial class PieceStyle
     /// </summary>
     private static readonly ImmutableDictionary<string, string> ChaturajiShapes =
         ImmutableDictionary<string, string>.Empty
-            .Add(
-                "raja",
-                "M-0.25 0.18H0.25L0.28 -0.14L0.13 0L0 -0.22L-0.13 0L-0.28 -0.14Z"
-                    + "M-0.25 0.17V0.26H0.25V0.17Z"
-            )
+            .Add("raja", Crown)
             .Add(
                 "elephant",
                 "M-0.14 0A0.2 0.14 0 1 0 0.26 0A0.2 0.14 0 1 0 -0.14 0Z"
@@ -55,11 +79,7 @@ public static partial class PieceStyle
                     + "M0.03 0.08V0.26H0.1V0.08Z"
                     + "M0.14 0.08V0.26H0.21V0.08Z"
             )
-            .Add(
-                "horse",
-                "M0.18 0.26H-0.12L-0.06 0.06L-0.24 0.02L-0.27 -0.08L-0.06 -0.24L0 -0.32L0.05 -0.22"
-                    + "Q0.24 -0.12 0.18 0.26Z"
-            )
+            .Add("horse", HorseHead)
             .Add("boat", Boat);
 
     private static readonly ImmutableDictionary<string, string> ChessShapes =
@@ -85,6 +105,15 @@ public static partial class PieceStyle
     /// </summary>
     public static bool HasChessForms([Required] IEnumerable<string> kinds) =>
         kinds.Any(kind => ChessSymbols.ContainsKey(kind) && ChaturajiShapes.ContainsKey(kind));
+
+    /// <summary>How far below its piece's centre a marked piece's letters are written, in board units.</summary>
+    public const double LettersDrop = 0.17;
+
+    /// <summary>How an emblem is placed about its piece's centre: shrunk, and raised above the letters.</summary>
+    public const string EmblemPlacement = "translate(0 -0.13) scale(0.5)";
+
+    /// <summary>The emblem of a class of pieces, as SVG path data; null for one not known here.</summary>
+    public static string? EmblemOf([Required] string emblem) => Emblems.GetValueOrDefault(emblem);
 
     /// <summary>The kind's shape, as SVG path data; null for a kind drawn as a glyph.</summary>
     public static string? ShapeOf([Required] string kind, PieceSet set) =>
