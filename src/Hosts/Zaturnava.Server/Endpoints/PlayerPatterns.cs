@@ -39,7 +39,7 @@ internal static class PlayerPatterns
             game.Controllers.Any(seat => NamesOf(seat, names, bots).Any(name => Matches(pattern, name)))
         );
 
-    /// <summary>Whether <paramref name="name"/> is <paramref name="pattern"/>, each <c>*</c> in it any letters.</summary>
+    /// <summary>Whether <paramref name="name"/> is <paramref name="pattern"/>, each <c>*</c> any letters.</summary>
     public static bool Matches(string pattern, string name) =>
         Regex.IsMatch(
             name,
