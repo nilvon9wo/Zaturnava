@@ -42,6 +42,7 @@ internal static class Agreement
         GameState rejoined = state with
         {
             Resigned = state.Resigned.Remove(seat),
+            Retired = state.Retired.Remove(seat),
             Absence = absence.MissedBy(seat) > 0 ? absence with { Returning = absence.Returning.Add(seat) } : absence,
         };
         return new Transition(rejoined, [new Rejoined(seat)]);

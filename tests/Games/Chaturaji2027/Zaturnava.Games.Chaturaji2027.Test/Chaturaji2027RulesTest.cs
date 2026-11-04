@@ -1787,6 +1787,30 @@ public sealed class Chaturaji2027RulesTest
         Assert.False(mayOffer);
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Apply_WhenASeatThatGaveUpItsTurnsIsOffered_RejoinsTheGameOnlyByAccepting(bool accepts)
+    {
+        // Arrange - Yellow has given up its turns
+        GameState state = this.Ransoms() with { Resigned = [Yellow] };
+        OfferAction offer = new(Black, Yellow, [new PieceId(12)], [new PieceId(1)]);
+        Transition offered = this._rules.Apply(state, offer);
+
+        // Act
+        Transition answered = this._rules.Apply(
+            offered.State,
+            accepts ? new AcceptAction(Yellow) : new DeclineAction(Yellow)
+        );
+
+        // Assert
+        Assert.Equal(Yellow, offered.State.DecidingSeat);
+        Assert.Equal(
+            (accepts, !accepts),
+            (answered.Events[0] == new Rejoined(Yellow), answered.State.Resigned.Contains(Yellow))
+        );
+    }
+
     [Fact]
     public void Apply_WhenOffering_WaitsOnTheReceiversAnswerAgainstTheClock()
     {
@@ -2014,11 +2038,13 @@ public sealed class Chaturaji2027RulesTest
         Assert.Equal([new RajaRetired(Black), new GameEnded(ended)], retired.Events);
     }
 
-    [Fact]
-    public void Apply_WhenTakingAPieceLeavesItsTeamOnlyARetiredRaja_EndsTheGameByPoints()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Apply_WhenTakingAPieceLeavesItsTeamOnlyARetiredRaja_EndsTheGameByPoints(bool hasRedHorse)
     {
-        // Arrange - Yellow's Horse on a6 is its team's last piece but Red's retired Raja
-        GameState state = this.StateWith(
+        // Arrange - Yellow's Horse on a6 is its team's last piece but Red's retired Raja, and maybe Red's Horse
+        GameState placed = this.StateWith(
             (Grid.CellAt(0, 0), Piece(1, Chaturaji2027Pieces.Elephant, Black)),
             (Grid.CellAt(0, 5), Piece(2, Chaturaji2027Pieces.Horse, Yellow)),
             (Grid.CellAt(7, 7), Piece(27, Chaturaji2027Pieces.Raja, Red))
@@ -2026,6 +2052,12 @@ public sealed class Chaturaji2027RulesTest
         {
             Retired = [Red],
         };
+        GameState state = hasRedHorse
+            ? placed with
+            {
+                Position = placed.Position.Place(Grid.CellAt(7, 5), Piece(26, Chaturaji2027Pieces.Horse, Red)),
+            }
+            : placed;
 
         // Act
         Transition transition = this._rules.Apply(state, new MoveAction(Black, Grid.CellAt(0, 0), Grid.CellAt(0, 5)));
@@ -2036,7 +2068,7 @@ public sealed class Chaturaji2027RulesTest
             "only-retired-left",
             "a team has only retired Rajas left, and fewer points than its enemies"
         );
-        Assert.Equal(won, transition.State.Outcome);
+        Assert.Equal(hasRedHorse ? null : won, transition.State.Outcome);
     }
 
     [Theory]
@@ -2148,12 +2180,17 @@ public sealed class Chaturaji2027RulesTest
     [InlineData(false)]
     public void Apply_WhenTheOnlyCommandOfAnAllyIsARetiredSeatsOrOverOne_CreatesNoEmpire(bool isBlackRajaless)
     {
-        // Arrange - either Black has no Raja, and retired Green has; or Black's Raja holds retired Green's throne
+        // Arrange - either Black has no Raja, and retired Green has; or Black's Raja holds retired Green's throne;
+        // Green has nothing but its Raja
         GameState held = this.Empire(GreenThrone, hasGreenRaja: true);
         GameState empire = isBlackRajaless
             ? held with { Position = new Position(held.Position.Occupants.Remove(GreenThrone)) }
             : held;
-        GameState state = empire with { Retired = [Green] };
+        GameState state = empire with
+        {
+            Position = new Position(empire.Position.Occupants.Remove(Grid.CellAt(2, 6))),
+            Retired = [Green],
+        };
 
         // Act
         Transition transition = this._rules.Apply(state, new MoveAction(Black, Grid.CellAt(0, 0), Grid.CellAt(0, 5)));
@@ -2162,25 +2199,73 @@ public sealed class Chaturaji2027RulesTest
         Assert.DoesNotContain(transition.Events, happened => happened is EmpireCreated);
     }
 
-    [Fact]
-    public void LegalActions_WhenARetiredAllyHasNoRaja_CommandsNoneOfItsArmy()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void LegalActions_WhenARetiredAllyHasAPieceBesidesItsRaja_CommandsItWhileItHasARajaOfItsOwn(
+        bool hasBlackRaja
+    )
     {
-        // Arrange - Green, retired, has lost its Raja; its Pawn is on c7
+        // Arrange - Green, retired, has its Raja on g3 and a Pawn on c7; Black has a Pawn on f2
         GameState state = this.Later() with
         {
             Position = Alone().Place(Grid.CellAt(5, 1), Piece(5, Chaturaji2027Pieces.Pawn, Black)),
             Retired = [Green],
         };
-        GameState rajaless = state with
-        {
-            Position = new Position(state.Position.Occupants.Remove(Grid.CellAt(6, 2))),
-        };
+        GameState placed = hasBlackRaja
+            ? state
+            : state with { Position = new Position(state.Position.Occupants.Remove(Grid.CellAt(3, 3))) };
 
         // Act
-        ImmutableList<GameAction> actions = this._rules.LegalActions(rajaless);
+        ImmutableList<GameAction> actions = this._rules.LegalActions(placed);
 
         // Assert
-        Assert.DoesNotContain(actions, action => action is MoveAction move && move.From == Grid.CellAt(2, 6));
+        Assert.Equal(
+            (hasBlackRaja, false),
+            (
+                actions.Any(action => action is MoveAction move && move.From == Grid.CellAt(2, 6)),
+                actions.Any(action => action is MoveAction move && move.From == Grid.CellAt(6, 2))
+            )
+        );
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void MayRejoin_WhenRetired_IsWhetherItHasAPieceBesidesItsRaja(bool hasPawn)
+    {
+        // Arrange - Green, retired, has its Raja on g3, and maybe a Pawn on c7
+        GameState state = this.Later() with { Position = Alone(), Retired = [Green] };
+        GameState placed = hasPawn
+            ? state
+            : state with { Position = new Position(state.Position.Occupants.Remove(Grid.CellAt(2, 6))) };
+
+        // Act
+        bool mayRejoin = this._rules.MayRejoin(placed, Green);
+
+        // Assert
+        Assert.Equal(hasPawn, mayRejoin);
+    }
+
+    [Fact]
+    public void Apply_WhenARetiredSeatRejoins_TakesBackItsArmyAndItsTurns()
+    {
+        // Arrange - Green, retired, has its Raja on g3 and a Pawn on c7
+        GameState state = this.Later() with { Position = Alone(), Retired = [Green] };
+
+        // Act
+        Transition rejoined = this._rules.Apply(state, new RejoinAction(Green));
+
+        // Assert
+        Assert.Equal(
+            (new Rejoined(Green), new CommandEnded(Black, Green)),
+            (rejoined.Events[0], rejoined.Events[1])
+        );
+        Assert.Empty(rejoined.State.Retired);
+        Assert.DoesNotContain(
+            this._rules.LegalActions(rejoined.State),
+            action => action is MoveAction move && move.From == Grid.CellAt(2, 6)
+        );
     }
 
     public static TheoryData<string, OfferAction> InvalidOffers =>
@@ -2536,7 +2621,7 @@ public sealed class Chaturaji2027RulesTest
         Transition transition = this._rules.Apply(state, new EscapeAction(Black, raja.Id, BlackThrone));
 
         // Assert
-        Assert.Equal(new PieceEscaped(raja, BlackThrone, Black), transition.Events[0]);
+        Assert.Equal(new PieceEscaped(raja, BlackThrone, Black, HeldBy: Yellow), transition.Events[0]);
         Assert.Equal(
             (raja, 1, Yellow, true),
             (

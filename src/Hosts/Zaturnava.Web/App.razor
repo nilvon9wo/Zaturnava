@@ -72,7 +72,7 @@ else
                     @onclick="this.SwitchSafety">
                 @(this._isSafetyOn ? "Safety: on" : "Safety: OFF")
             </button>
-            <button class="theme" @onclick="this.SwitchTheme">@(this._theme == Browser.Dark ? "Light theme" : "Dark theme")</button>
+            <button class="theme" @onclick="this.SwitchTheme">@(this._theme == Browser.Dark ? "Theme: dark" : "Theme: light")</button>
             <button class="pieces" @onclick="this.SwitchPieces">
                 @(this._pieces == PieceSet.Chess ? "Pieces: chess" : "Pieces: chaturaji")
             </button>

@@ -10,9 +10,6 @@ Numbered **N1**, **N2**... after that playtest's own notes. In the order planned
 first.
 
 - Rules: these change who wins, so they come first.
-  - **N9** A player who passes on all their turns is still offered ransoms; accepting one rejoins the game.
-  - **N10** The log tells an escape as "Y escaped from X", or "Z helped Y escape from X" when an ally's doubles
-    freed it, never "X let Y escape".
   - **N12** Escaping names each prisoner once ("Escape Black's Boat, held by Yellow"). Choosing it marks the
     squares it may go to (a ring where it would take a piece), and a click on one frees it there; clicking
     anything else leaves it a prisoner.
@@ -20,7 +17,8 @@ first.
   the lobby's game choices and list unless the player ticks "Show preview games" (*Stated*: no feature flags).
 - **N2** The database stays as it is through every change, by migrations; never wiped (*Stated*).
 - **N3** A leaderboard, for players to compete for; with each player's Elo and their **experience**: each time
-  a player is on the winning team, they gain their own points plus their team's (*Stated*).
+  a player is on the winning team, they gain their own points plus their team's (*Stated*). Each player's
+  statistics also count the games they won, lost, drew and abandoned (*Stated*).
 - The lobby's "New game" panel:
   - **N13, N14** Quick game or Custom chosen above the game (or to its right, toward the panel's right edge,
     where there is room).
@@ -211,6 +209,14 @@ first.
 
 ## Done
 
+- **N10** The log tells an escape as "Black's Horse escaped from Red, to b1.", or "Green helped Black's Horse
+  escape from Red, to b1." when an ally's doubles freed it.
+- **N9** A player who passes on all their turns is still offered ransoms; accepting one rejoins the game
+  (rules.md §10).
+- The theme button shows the theme in use ("Theme: dark"), as the other settings buttons show theirs.
+- A retired player's ally, while it has a Raja, commands any piece the retired player gets back (a Pawn
+  promoted into it); the retired player may rejoin to play it, and only retired Rajas end the game
+  (rules.md §10).
 - **N6** Once a team's only pieces left are retired Rajas, the game ends: a draw if that team has as many
   points as the other or more, else the other team wins (rules.md §10).
 - **N7, N11** A seat with no pieces on the board still takes its turns while any of its pieces is held

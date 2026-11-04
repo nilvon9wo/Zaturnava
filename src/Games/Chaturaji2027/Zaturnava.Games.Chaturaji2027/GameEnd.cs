@@ -40,7 +40,7 @@ internal static class GameEnd
         int? retired = teams
             .Where(team => pieces
                 .Where(piece => state.Teams.TeamOf(piece.Owner) == team)
-                .All(piece => state.Retired.Contains(piece.Owner))
+                .All(piece => state.Retired.Contains(piece.Owner) && variant.Leaders.Contains(piece.Kind))
             )
             .Cast<int?>()
             .FirstOrDefault();
