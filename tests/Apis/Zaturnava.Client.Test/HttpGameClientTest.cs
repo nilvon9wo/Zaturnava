@@ -417,28 +417,6 @@ public sealed class HttpGameClientTest
         );
     }
 
-    [Fact]
-    public async Task SetLinks_WhenGivenLinks_PutsThemWithTheToken()
-    {
-        // Arrange
-        StubServer server = new(HttpStatusCode.OK, """{"id":"p","name":"Ada","links":["https://a.example"]}""");
-
-        // Act
-        PlayerDto? player = await Client(server).SetLinks("secret", ["https://a.example"], this._cancellation);
-
-        // Assert
-        Assert.Equal(
-            (
-                "PUT",
-                "/api/players/me/links",
-                "Bearer secret",
-                """{"links":["https://a.example"]}""",
-                "https://a.example"
-            ),
-            (server.Method, server.Path, server.Authorization, server.Body, player?.Links?.Single())
-        );
-    }
-
     [Theory]
     [InlineData(HttpStatusCode.OK, """{"token":"ai-1"}""", "ai-1")]
     [InlineData(HttpStatusCode.Unauthorized, "", null)]

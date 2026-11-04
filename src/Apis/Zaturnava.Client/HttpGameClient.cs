@@ -155,13 +155,6 @@ public sealed class HttpGameClient(HttpClient http) : IGameServing
     ) =>
         this.IfSomeone<PlayerDto>(HttpMethod.Delete, GameRoutes.Login(provider), null, token, cancellationToken);
 
-    public Task<PlayerDto?> SetLinks(
-        [Required] string token,
-        [Required] ImmutableList<string> links,
-        CancellationToken cancellationToken
-    ) =>
-        this.IfSomeone<PlayerDto>(HttpMethod.Put, GameRoutes.Links, new LinksRequest(links), token, cancellationToken);
-
     public async Task<string?> AiToken([Required] string token, CancellationToken cancellationToken) =>
         (await this.IfSomeone<AiTokenDto>(HttpMethod.Post, GameRoutes.AiToken, null, token, cancellationToken))
             ?.Token;

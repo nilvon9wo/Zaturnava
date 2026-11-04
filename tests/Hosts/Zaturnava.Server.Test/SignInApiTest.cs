@@ -401,64 +401,18 @@ public sealed partial class SignInApiTest(SigningInServer server) : IClassFixtur
     }
 
     [Fact]
-    public async Task SetLinks_WhenTheyAreWebAddresses_ShowsThemOnTheProfileAnyoneMaySee()
+    public async Task Profile_WhenThePlayerIsKnown_ShowsTheirNameToAnyone()
     {
         // Arrange
         HttpGameClient client = server.GameClient();
         string token = TokenOf(await this.Done("GitHub|13|Ada", SigningInServer.Page));
+        PlayerDto? ada = await client.Me(token, this._cancellation);
 
         // Act
-        PlayerDto? shown = await client.SetLinks(token, [" https://ada.example "], this._cancellation);
+        ProfileDto? profile = await client.Profile($"{ada?.Id}", this._cancellation);
 
         // Assert
-        ProfileDto? profile = await client.Profile($"{shown?.Id}", this._cancellation);
-        Assert.Equal(
-            ("Ada", "https://ada.example", "https://ada.example"),
-            (profile?.Name, string.Join(',', shown?.Links ?? []), string.Join(',', profile?.Links ?? []))
-        );
-    }
-
-    [Fact]
-    public async Task SetLinks_WhenOneIsNoWebAddress_IsRefusedAsInvalid()
-    {
-        // Arrange
-        HttpGameClient client = server.GameClient();
-        string token = TokenOf(await this.Done("GitHub|14|Ada", SigningInServer.Page));
-
-        // Act
-        GameRequestRefusedException refused = await Assert.ThrowsAsync<GameRequestRefusedException>(() =>
-            client.SetLinks(token, ["javascript:alert(1)"], this._cancellation)
-        );
-
-        // Assert
-        Assert.Equal(Refusal.Invalid, refused.Refusal);
-    }
-
-    [Theory]
-    [InlineData(null)]
-    [InlineData("not-a-token")]
-    public async Task SetLinks_WhenTheTokenIsMissingOrStandsForNoOne_IsUnauthorized(string? token)
-    {
-        // Arrange - nothing beyond the server
-
-        // Act
-        using HttpResponseMessage response =
-            await this.Send(HttpMethod.Put, "api/players/me/links", token, new LinksRequest([]));
-
-        // Assert
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-    }
-
-    [Fact]
-    public void LinksRequest_WhenComparedWithThePlayers_HasTheSameLimits()
-    {
-        // Arrange - nothing
-
-        // Act
-        (int, int) contract = (LinksRequest.MaximumLinks, LinksRequest.MaximumLinkLength);
-
-        // Assert
-        Assert.Equal((PlayerService.MaximumLinks, PlayerService.MaximumLinkLength), contract);
+        Assert.Equal(("Ada", ada?.Id), (profile?.Name, profile?.Id));
     }
 
     [Fact]

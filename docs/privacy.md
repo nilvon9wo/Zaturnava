@@ -44,8 +44,8 @@ keep:
 - the name you are shown by, which you may change;
 - which games you played, at which seat, and how each ended, for your rating and record.
 
-Your public profile will show only your name, rating, wins, losses and draws, points, recent scores, and links you
-chose to add. Your e-mail address, if a provider offers it, is not asked for. You may link more than one provider to
+Your public profile will show only your name, rating, wins, losses, draws and abandoned games, points, and recent
+scores. Your e-mail address, if a provider offers it, is not asked for. You may link more than one provider to
 the same player, and only if you choose to.
 
 ## The services the game runs on

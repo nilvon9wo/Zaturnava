@@ -4,8 +4,7 @@
    window of its own. Once signed in, the player's name, a button to sign out (the server lets the token go), and
    one to delete the account, which asks first, here in the page, and once confirmed has the server forget the
    player altogether; and their profile, where they may change the name others see them by, and link other services
-   to sign in with (or unlink any but the last), give links anyone may see, and have a token issued for an AI to play
-   for them. The player's token is kept in the browser. *@
+   to sign in with (or unlink any but the last), and have a token issued for an AI to play for them. The player's token is kept in the browser. *@
 @using Microsoft.JSInterop
 @implements IDisposable
 @inject IGameServing Games
@@ -34,7 +33,6 @@
     {
         ImmutableList<string> services = player.Services ?? [];
         ImmutableList<string> others = [.. this._providers.Except(services)];
-        string links = string.Join('\n', player.Links ?? []);
         <div class="backdrop">
             <div class="dialog profile-dialog" role="dialog" aria-modal="true" aria-labelledby="profile-title">
                 <h2 id="profile-title">Your profile</h2>
@@ -58,15 +56,6 @@
                         </li>
                     }
                 </ul>
-                <label class="links">
-                    Your links, one a line (at most @LinksRequest.MaximumLinks), shown to anyone who looks at your
-                    profile
-                    <textarea class="links"
-                              rows="@LinksRequest.MaximumLinks"
-                              placeholder="https://..."
-                              value="@links"
-                              @onchange="change => this.SetLinks(token, change)"></textarea>
-                </label>
                 <p>An AI may play for you with a token of its own, which may claim seats, but not change your profile;
                     a seat it claims is shown as played by an AI.</p>
                 <div class="actions">
@@ -246,15 +235,6 @@ else
         this._notice = await Requests.Attempt(async () =>
             await this.Showing(token, this.Games.Unlink(token, provider, CancellationToken.None))
         );
-
-    /// <summary>Shows the links given, one a line, on the player's profile; told why not, if the server cannot.</summary>
-    private async Task SetLinks(string token, ChangeEventArgs change)
-    {
-        ImmutableList<string> links = [.. $"{change.Value}".Split('\n', StringSplitOptions.TrimEntries)];
-        this._notice = await Requests.Attempt(async () =>
-            await this.Showing(token, this.Games.SetLinks(token, links, CancellationToken.None))
-        );
-    }
 
     /// <summary>A new token for an AI to play for the player, shown until the profile closes.</summary>
     private async Task IssueAiToken(string token) =>

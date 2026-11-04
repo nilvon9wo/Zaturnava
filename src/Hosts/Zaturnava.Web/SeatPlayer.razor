@@ -1,6 +1,5 @@
 @* Who holds a seat, as the table shows them. A player who claimed it signed in may be looked at: their name opens a
-   dialog with their profile, as anyone may see it, their name and links (each opened in a tab of its own, and
-   followed by no search engine). *@
+   dialog with their profile, as anyone may see it. *@
 @inject IGameServing Games
 
 @if (this.PlayerId is { } playerId)
@@ -18,19 +17,6 @@ else
             @if (this._profile is { } profile)
             {
                 <h2 id="public-profile-title">@profile.Name</h2>
-                @if (profile.Links.IsEmpty)
-                {
-                    <p class="no-links">No links.</p>
-                }
-                else
-                {
-                    <ul class="links">
-                        @foreach (string link in profile.Links)
-                        {
-                            <li><a href="@link" target="_blank" rel="noopener noreferrer nofollow">@link</a></li>
-                        }
-                    </ul>
-                }
             }
             else
             {

@@ -28,7 +28,6 @@ first.
     waiting for a signed-in player who has not signed in for 31 days.
   - **N20** On signing in, a player is reminded of every game waiting for their move, oldest first, and
     encouraged to end those they no longer play and resume the oldest of the rest.
-- **N22** Profile: the free-form links field goes (the links come from sign-in instead; task 26).
 - **N23** A bot's name opens a profile of the bot, as a person's does.
 - **N24** Athena takes Pawns with its Raja and Rook (Elephant) when that only loses them: not a real sacrifice.
 - AI clients (*Stated*): two complete sample clients that play on Zaturnava, one by **MCP** and one by **UTCP**.
@@ -199,6 +198,8 @@ first.
 
 ## Done
 
+- **N22** A profile no longer has a free-form links field: the profile shows the player's name, and the column is
+  dropped from the database by a migration.
 - **N13–N18** The lobby's New game panel: Quick game or Custom above the game; every choice's dropdown in one
   column; Play at the bottom right; each game set up as the player last started it, and the game last started
   chosen; a game played at several sizes set up at its middle one (*Proposed*: Grand Legions, medium).
