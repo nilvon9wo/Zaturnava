@@ -335,18 +335,23 @@ file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bo
         return this with { Told = this.Told.Add(told) };
     }
 
-    /// <summary>"Black's Raja escaped, to d1.", or "Black let Green's Raja escape, to h4."</summary>
+    /// <summary>
+    /// "Black's Raja escaped from Yellow, to d1.", or "Black helped Green's Raja escape from Red, to h4."; without
+    /// whom it escaped from, in a game played before that was told.
+    /// </summary>
     private Teller Escaped(int number, PieceEscaped escaped)
     {
         Piece piece = escaped.Piece;
         string kind = this.Rules.NameOf(piece.Kind);
         string cell = this.Rules.Topology.NameOf(escaped.Cell);
+        string from = escaped.HeldBy is { } holder ? $" from {this.Name(holder)}" : "";
         string taking = escaped.Took is { } took
             ? $", taking {this.Name(took.Owner)}'s {this.Rules.NameOf(took.Kind)}!"
             : ".";
+        string whose = $"{this.Name(piece.Owner)}'s {kind}";
         string text = piece.Owner == escaped.EscapedBy
-            ? $"{this.Name(piece.Owner)}'s {kind} escaped, to {cell}{taking}"
-            : $"{this.Name(escaped.EscapedBy)} let {this.Name(piece.Owner)}'s {kind} escape, to {cell}{taking}";
+            ? $"{whose} escaped{from}, to {cell}{taking}"
+            : $"{this.Name(escaped.EscapedBy)} helped {whose} escape{from}, to {cell}{taking}";
         EventDto told = new(
             number,
             EventDto.Escaped,

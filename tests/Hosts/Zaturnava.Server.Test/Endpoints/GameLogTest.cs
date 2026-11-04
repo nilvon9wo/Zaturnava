@@ -341,11 +341,13 @@ public sealed class GameLogTest
     [Fact]
     public void LatestOf_WhenPrisonersEscape_TellsOfItAndOfWhatTheyTake()
     {
-        // Arrange - Black's own Horse escapes, taking Yellow's Pawn; then Red lets Yellow's Pawn escape
+        // Arrange - Black's own Horse escapes Red, taking Yellow's Pawn; then Red helps Yellow's Pawn escape Black;
+        // then, in a game from before whom it escaped from was told, Yellow's Pawn escapes again
         GameSnapshot snapshot = Snapshot(
-            new PieceEscaped(Horse, Cell("b1"), Black, Pawn),
+            new PieceEscaped(Horse, Cell("b1"), Black, Pawn, Red),
             new PieceCaptured(Pawn, Black, 1),
-            new PieceEscaped(Pawn, Cell("a7"), Red)
+            new PieceEscaped(Pawn, Cell("a7"), Red, HeldBy: Black),
+            new PieceEscaped(Pawn, Cell("a6"), Yellow)
         );
 
         // Act
@@ -354,13 +356,14 @@ public sealed class GameLogTest
         // Assert
         Assert.Equal(
             [
-                "escaped 0: Black's Horse escaped, to b1, taking Yellow's Pawn!",
+                "escaped 0: Black's Horse escaped from Red, to b1, taking Yellow's Pawn!",
                 "captured 0: Black took Yellow's Pawn (+1).",
-                "escaped 3: Red let Yellow's Pawn escape, to a7.",
+                "escaped 3: Red helped Yellow's Pawn escape from Black, to a7.",
+                "escaped 1: Yellow's Pawn escaped, to a6.",
             ],
             log.Select(Told)
         );
-        Assert.Equal((Cell("a7").Value, Yellow.Value), (log[^1].To, log[^1].Owner));
+        Assert.Equal((Cell("a7").Value, Yellow.Value), (log[2].To, log[2].Owner));
     }
 
     [Theory]

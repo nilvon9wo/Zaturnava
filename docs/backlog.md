@@ -10,9 +10,6 @@ Numbered **N1**, **N2**... after that playtest's own notes. In the order planned
 first.
 
 - Rules: these change who wins, so they come first.
-  - **N9** A player who passes on all their turns is still offered ransoms; accepting one rejoins the game.
-  - **N10** The log tells an escape as "Y escaped from X", or "Z helped Y escape from X" when an ally's doubles
-    freed it, never "X let Y escape".
   - **N12** Escaping names each prisoner once ("Escape Black's Boat, held by Yellow"). Choosing it marks the
     squares it may go to (a ring where it would take a piece), and a click on one frees it there; clicking
     anything else leaves it a prisoner.
@@ -212,6 +209,10 @@ first.
 
 ## Done
 
+- **N10** The log tells an escape as "Black's Horse escaped from Red, to b1.", or "Green helped Black's Horse
+  escape from Red, to b1." when an ally's doubles freed it.
+- **N9** A player who passes on all their turns is still offered ransoms; accepting one rejoins the game
+  (rules.md §10).
 - The theme button shows the theme in use ("Theme: dark"), as the other settings buttons show theirs.
 - A retired player's ally, while it has a Raja, commands any piece the retired player gets back (a Pawn
   promoted into it); the retired player may rejoin to play it, and only retired Rajas end the game

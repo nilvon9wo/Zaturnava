@@ -700,6 +700,9 @@ both the triumphing player and their ally may move each other's Boat.
   - *(Stated 2026-10-26)* Once they have given up their turns, the End game
     button becomes a green **Rejoin game** button, which takes their turns
     back: they are in the game again, playing their own turns.
+  - *(Stated 2026-11-04)* A player who has given up their turns is still
+    offered ransoms, and answers them; accepting one rejoins the game, as
+    the Rejoin game button does.
   - *(Stated 2026-10-28)* Once every player of a team has given up their
     turns, the game ends at once, as if all had agreed: points decide.
   - *(Stated 2026-10-29)* But a team must not collect wins by giving up its

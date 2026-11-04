@@ -419,7 +419,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     private ImmutableHashSet<PieceKindId> RolledKinds(GameState state) =>
         [.. state.Dice.SelectMany(this._dice.KindsOf)];
 
-    /// <summary>The moves of the armies the seat commands, but a retired Raja's: no one moves it (rules.md §10).</summary>
+    /// <summary>The moves of the armies the seat commands, but a retired Raja's: no one moves it (§10).</summary>
     private IEnumerable<GameAction> MovesOf(GameState state, SeatId seat, Func<PieceKindId, bool> isMovable)
     {
         ImmutableHashSet<SeatId> armies = this._control.ArmiesOf(state, seat);
@@ -500,7 +500,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             HandOverAction handOver => HandedToRegent(state, handOver),
             RetireAction retire => this.Retired(state, retire),
             AnswerEndAction answer => Agreement.Answered(state, answer),
-            AcceptAction => this._ransom.Accepted(state),
+            AcceptAction accept => this.Accepted(state, accept),
             PlaceAction place => this._ransom.Placed(state, place),
             DeclineAction => Ransom.Declined(state),
             _ when state.PromotionDue is not null =>
@@ -518,6 +518,19 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             [new RajaRetired(retire.Actor)]
         );
         return GameEnd.AfterMove(retired, this._variant) ?? this.Handed(retired);
+    }
+
+    /// <summary>
+    /// The offer is accepted; a seat that had given up its turns, still offered ransoms, rejoins the game by
+    /// accepting one (rules.md §10).
+    /// </summary>
+    private Transition Accepted(GameState state, AcceptAction accept)
+    {
+        Transition rejoined = state.Resigned.Contains(accept.Actor)
+            ? Agreement.Rejoined(state, new RejoinAction(accept.Actor))
+            : new Transition(state, []);
+        Transition accepted = this._ransom.Accepted(rejoined.State);
+        return accepted with { Events = [.. rejoined.Events, .. accepted.Events] };
     }
 
     /// <summary>The regent decides the rest of the turn, for the seat whose turn it is (rules.md §6.2).</summary>
@@ -641,7 +654,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         };
         Transition transition = new(
             escaped,
-            [new PieceEscaped(prisoner.Piece, escape.Home, escape.Actor, captured)]
+            [new PieceEscaped(prisoner.Piece, escape.Home, escape.Actor, captured, prisoner.Holder)]
         );
         Transition taken = captured is null
             ? transition

@@ -1787,6 +1787,30 @@ public sealed class Chaturaji2027RulesTest
         Assert.False(mayOffer);
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Apply_WhenASeatThatGaveUpItsTurnsIsOffered_RejoinsTheGameOnlyByAccepting(bool accepts)
+    {
+        // Arrange - Yellow has given up its turns
+        GameState state = this.Ransoms() with { Resigned = [Yellow] };
+        OfferAction offer = new(Black, Yellow, [new PieceId(12)], [new PieceId(1)]);
+        Transition offered = this._rules.Apply(state, offer);
+
+        // Act
+        Transition answered = this._rules.Apply(
+            offered.State,
+            accepts ? new AcceptAction(Yellow) : new DeclineAction(Yellow)
+        );
+
+        // Assert
+        Assert.Equal(Yellow, offered.State.DecidingSeat);
+        Assert.Equal(
+            (accepts, !accepts),
+            (answered.Events[0] == new Rejoined(Yellow), answered.State.Resigned.Contains(Yellow))
+        );
+    }
+
     [Fact]
     public void Apply_WhenOffering_WaitsOnTheReceiversAnswerAgainstTheClock()
     {
@@ -2597,7 +2621,7 @@ public sealed class Chaturaji2027RulesTest
         Transition transition = this._rules.Apply(state, new EscapeAction(Black, raja.Id, BlackThrone));
 
         // Assert
-        Assert.Equal(new PieceEscaped(raja, BlackThrone, Black), transition.Events[0]);
+        Assert.Equal(new PieceEscaped(raja, BlackThrone, Black, HeldBy: Yellow), transition.Events[0]);
         Assert.Equal(
             (raja, 1, Yellow, true),
             (
