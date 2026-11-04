@@ -20,7 +20,8 @@ first.
   the lobby's game choices and list unless the player ticks "Show preview games" (*Stated*: no feature flags).
 - **N2** The database stays as it is through every change, by migrations; never wiped (*Stated*).
 - **N3** A leaderboard, for players to compete for; with each player's Elo and their **experience**: each time
-  a player is on the winning team, they gain their own points plus their team's (*Stated*).
+  a player is on the winning team, they gain their own points plus their team's (*Stated*). Each player's
+  statistics also count the games they won, lost, drew and abandoned (*Stated*).
 - The lobby's "New game" panel:
   - **N13, N14** Quick game or Custom chosen above the game (or to its right, toward the panel's right edge,
     where there is room).
@@ -211,6 +212,10 @@ first.
 
 ## Done
 
+- The theme button shows the theme in use ("Theme: dark"), as the other settings buttons show theirs.
+- A retired player's ally, while it has a Raja, commands any piece the retired player gets back (a Pawn
+  promoted into it); the retired player may rejoin to play it, and only retired Rajas end the game
+  (rules.md §10).
 - **N6** Once a team's only pieces left are retired Rajas, the game ends: a draw if that team has as many
   points as the other or more, else the other team wins (rules.md §10).
 - **N7, N11** A seat with no pieces on the board still takes its turns while any of its pieces is held

@@ -29,6 +29,10 @@ internal sealed class ThroneControl(ImmutableDictionary<SeatId, CellId> thrones,
     /// <summary>Whether the kind leads an army: what Chaturaji 2027 calls a Raja.</summary>
     public bool IsLeader(PieceKindId kind) => this._leaders.Contains(kind);
 
+    /// <summary>Whether the seat has a piece on the board besides its Raja.</summary>
+    public bool HasOtherThanRaja(GameState state, SeatId seat) =>
+        state.Position.Occupants.Values.Any(piece => piece.Owner == seat && !this.IsLeader(piece.Kind));
+
     /// <summary>
     /// Whether <paramref name="seat"/> commands an ally's army, whoever's turn it is: its Raja sits on the
     /// ally's throne, or the ally has no Raja while it has one.
@@ -82,14 +86,18 @@ internal sealed class ThroneControl(ImmutableDictionary<SeatId, CellId> thrones,
     }
 
     /// <summary>
-    /// The allies with no Raja, if the seat has one and has not retired; a retired ally is commanded by no one.
+    /// The allies with no Raja, if the seat has one and has not retired; a retired ally counts as one, once it has
+    /// a piece besides its Raja on the board (one a Pawn was promoted into, say), until it rejoins (rules.md §10).
     /// </summary>
     private IEnumerable<SeatId> RajalessAllies(GameState state, SeatId seat) =>
         this.HasRaja(state, seat) && !state.Retired.Contains(seat)
             ? state.Seats
                 .Select(ally => ally.Id)
-                .Where(ally => ally != seat && state.Teams.AreAllied(ally, seat) && !this.HasRaja(state, ally))
-                .Where(ally => !state.Retired.Contains(ally))
+                .Where(ally => ally != seat && state.Teams.AreAllied(ally, seat))
+                .Where(ally => state.Retired.Contains(ally)
+                    ? this.HasOtherThanRaja(state, ally)
+                    : !this.HasRaja(state, ally)
+                )
             : [];
 
     private static CommandBasis ThroneBasis(bool isAllied) =>

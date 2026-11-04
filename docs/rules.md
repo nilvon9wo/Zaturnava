@@ -625,10 +625,11 @@ both the triumphing player and their ally may move each other's Boat.
   alone for the rest of the game.
   - *(Stated 2026-11-04)* A player with no pieces on the board still takes
     their turns while any of their pieces is held prisoner, or while they
-    hold prisoners: they may roll to let a piece escape (§7), and offer
-    their prisoners for ransom, until the game is over. Bots do too. Only a
-    player with no pieces on the board, none held prisoner and no prisoners
-    of their own is skipped.
+    hold prisoners: they may roll to let a piece escape (§7), offer their
+    prisoners for ransom, or propose ending the game, until the game is
+    over. Bots do too. As every piece but a promoted Pawn is either on the
+    board or held prisoner, that is nearly always; only a player whose last
+    pieces were Pawns promoted away, holding no prisoners, is skipped.
 - **Voluntary Raja retirement**: a player reduced to only their Raja may
   choose to end their own participation; no points are ever awarded for
   capturing that Raja from then on.
@@ -636,12 +637,21 @@ both the triumphing player and their ally may move each other's Boat.
     - "Reduced to only their Raja" means their Raja is their only piece on
       the board. They may retire at the start of their own turn, before
       rolling (also when an enemy holds their throne), but not as someone's
-      regent. Retiring ends that turn, and it cannot be undone.
+      regent. Retiring ends that turn.
     - From then on their turns are skipped, as an eliminated player's are.
-      Their Raja stays where it is, and no one may move it: no one commands
-      a retired player's army, through their throne or their having no Raja.
-      Nor does it command anything: on a throne, it gives no command and
-      forces no shared turn (§6), and a retired player commands no ally.
+      Their Raja stays where it is, and no one may move it, nor command
+      their army through their throne. Nor does it command anything: on a
+      throne, it gives no command and forces no shared turn (§6), and a
+      retired player commands no ally.
+    - *(Stated 2026-11-04)* An ally may promote a Pawn into one of the
+      retired player's captured pieces (§8). Their ally then commands that
+      piece if, and only if, the ally still has a Raja of their own, as a
+      regent does for a player whose Raja was taken (§6.1b). The retired
+      player may come out of retirement (the **Rejoin game** button) to
+      play it themselves, which ends that regency.
+    - *(Proposed)* They may rejoin only while they have a piece besides
+      their Raja on the board, so that retiring cannot shield a Raja for a
+      while; once rejoined, their Raja scores again when taken.
     - Taking their Raja scores nothing, not even the throne bonus, and it
       does not count for the empire: the empire is created when the last
       enemy Raja that has not retired is taken. A retired player creates no
@@ -652,7 +662,11 @@ both the triumphing player and their ally may move each other's Boat.
     draw if that team has as many points as the other or more, else the
     other team wins. So neither retiring nor taking a retired Raja (which
     scores nothing) hands the win to a team behind on points. This applies
-    as soon as a Raja retires, or a move leaves a team so.
+    as soon as a Raja retires, or a capture leaves a team so (the enemy
+    taking the ally's last piece, say).
+  - *(Stated 2026-11-04)* Retiring is not ending the game (below). A team
+    that has not retired, with only Rajas left, may still win by points
+    when everyone agrees to end the game.
 - *(Stated 2026-10-29)* **How bots end a game.**
   - A bot follows a resting ally: when an ally has given up their turns with
     a clear lead (10 on points and on the board both), and no one else in

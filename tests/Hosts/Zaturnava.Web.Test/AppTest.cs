@@ -142,7 +142,7 @@ public sealed class AppTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ("Dark theme", "Light theme", "dark,light,dark"),
+            ("Theme: light", "Theme: dark", "dark,light,dark"),
             (
                 afterOne,
                 app.Find("button.theme").TextContent,

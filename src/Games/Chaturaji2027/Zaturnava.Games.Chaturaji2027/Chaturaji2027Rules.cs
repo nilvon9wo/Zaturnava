@@ -189,7 +189,16 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
 
     public bool MayProposeEnd([Required] GameState state, SeatId seat) => Agreement.MayPropose(state, seat);
 
-    public bool MayRejoin([Required] GameState state, SeatId seat) => Agreement.MayRejoin(state, seat);
+    /// <summary>
+    /// A seat may rejoin as <see cref="Agreement.MayRejoin"/> says; and a retired one, once it has a piece besides
+    /// its Raja on the board again, to play it itself (rules.md §10).
+    /// </summary>
+    public bool MayRejoin([Required] GameState state, SeatId seat) =>
+        Agreement.MayRejoin(state, seat)
+        || (state.Outcome is null
+            && state.Proposal is null
+            && state.Retired.Contains(seat)
+            && this._control.HasOtherThanRaja(state, seat));
 
     public bool MayVoteAway([Required] GameState state, SeatId voter, SeatId absent) =>
         Away.MayVote(state, voter, absent);
@@ -410,11 +419,15 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     private ImmutableHashSet<PieceKindId> RolledKinds(GameState state) =>
         [.. state.Dice.SelectMany(this._dice.KindsOf)];
 
+    /// <summary>The moves of the armies the seat commands, but a retired Raja's: no one moves it (rules.md §10).</summary>
     private IEnumerable<GameAction> MovesOf(GameState state, SeatId seat, Func<PieceKindId, bool> isMovable)
     {
         ImmutableHashSet<SeatId> armies = this._control.ArmiesOf(state, seat);
         return state.Position.Occupants
             .Where(occupant => armies.Contains(occupant.Value.Owner) && isMovable(occupant.Value.Kind))
+            .Where(occupant =>
+                !state.Retired.Contains(occupant.Value.Owner) || !this.IsLeader(occupant.Value.Kind)
+            )
             .SelectMany(occupant => this.MovesFrom(state, occupant.Key, occupant.Value, seat))
             .Select(move => new MoveAction(seat, move.From, move.To));
     }
