@@ -22,7 +22,6 @@ first.
     waiting for a signed-in player who has not signed in for 31 days.
   - **N20** On signing in, a player is reminded of every game waiting for their move, oldest first, and
     encouraged to end those they no longer play and resume the oldest of the rest.
-- **N23** A bot's name opens a profile of the bot, as a person's does.
 - **N24** Athena takes Pawns with its Raja and Rook (Elephant) when that only loses them: not a real sacrifice.
 - AI clients (*Stated*): two complete sample clients that play on Zaturnava, one by **MCP** and one by **UTCP**.
   Both decide by the same shared project Athena uses, compile and run apart from Zaturnava, and document how a
@@ -192,6 +191,8 @@ first.
 
 ## Done
 
+- **N23** A bot's name at the table opens a profile of the bot, as a person's does: what it does, whether it asks
+  an AI (and costs tokens each use), and its rating at the game.
 - **N12** Escaping names each prisoner once ("Escape Black's Boat, held by Yellow"). Choosing it marks the
   squares it may go to (a ring where it would take a piece), and a click on one frees it there; clicking
   anything else leaves it a prisoner.

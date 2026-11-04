@@ -1,10 +1,17 @@
 @* Who holds a seat, as the table shows them. A player who claimed it signed in may be looked at: their name opens a
-   dialog with their profile, as anyone may see it. *@
+   dialog with their profile, as anyone may see it. A bot may be looked at too: its name opens its profile, from the
+   server's catalog - what it does, whether it asks an AI (and costs tokens each use), and its rating at this game. *@
 @inject IGameServing Games
 
 @if (this.PlayerId is { } playerId)
 {
     <button class="player profile" title="See their profile" @onclick="() => this.Open(playerId)">@this.Text</button>
+}
+else if (this.BotId is { } botId)
+{
+    <button class="player bot-profile" title="See the bot's profile" @onclick="() => this.OpenBot(botId)">
+        @this.Text
+    </button>
 }
 else
 {
@@ -18,10 +25,17 @@ else
             {
                 <h2 id="public-profile-title">@profile.Name</h2>
             }
+            else if (this._bot is { } bot)
+            {
+                <h2 id="public-profile-title">@bot.Name</h2>
+                <p class="bot-description">@bot.Description</p>
+                <p class="bot-kind">@KindOf(bot)</p>
+                <p class="bot-rating">@this.RatingOf(bot)</p>
+            }
             else
             {
                 <h2 id="public-profile-title">@this.Text</h2>
-                <p class="problem" role="alert">@(this._problem ?? Gone)</p>
+                <p class="problem" role="alert">@(this._problem ?? this.Gone)</p>
             }
             <div class="actions">
                 <button class="close-public-profile" @onclick="() => this._isOpen = false">Close</button>
@@ -31,7 +45,8 @@ else
 }
 
 @code {
-    public const string Gone = "This player's profile is gone.";
+    public const string GonePlayer = "This player's profile is gone.";
+    public const string GoneBot = "This bot is no longer offered.";
 
     /// <summary>What the table calls whoever holds the seat.</summary>
     [Parameter, EditorRequired]
@@ -41,9 +56,20 @@ else
     [Parameter]
     public string? PlayerId { get; set; }
 
+    /// <summary>The id of the bot that plays the seat; null for anyone else.</summary>
+    [Parameter]
+    public string? BotId { get; set; }
+
+    /// <summary>The game's ruleset, which a bot's rating is at.</summary>
+    [Parameter]
+    public string RulesetId { get; set; } = string.Empty;
+
     private bool _isOpen;
     private ProfileDto? _profile;
+    private BotDto? _bot;
     private string? _problem;
+
+    private string Gone => this.BotId is null ? GonePlayer : GoneBot;
 
     private async Task Open(string playerId)
     {
@@ -53,4 +79,28 @@ else
             this._profile = await this.Games.Profile(playerId, CancellationToken.None)
         );
     }
+
+    private async Task OpenBot(string botId)
+    {
+        this._isOpen = true;
+        this._bot = null;
+        this._problem = await Requests.Attempt(async () =>
+            this._bot = (await this.Games.Catalog(CancellationToken.None)).Bots.FirstOrDefault(bot => bot.Id == botId)
+        );
+    }
+
+    /// <summary>"Asks an AI; each use costs tokens", "Asks an AI", or "A plain algorithm: no AI".</summary>
+    private static string KindOf(BotDto bot) =>
+        (bot.UsesAi, bot.IsPaid) switch
+        {
+            (true, true) => "Asks an AI; each use costs tokens.",
+            (true, false) => "Asks an AI.",
+            _ => "A plain algorithm: no AI.",
+        };
+
+    /// <summary>"Rated 1250 at this game, from games between the bots"; or not yet rated at it.</summary>
+    private string RatingOf(BotDto bot) =>
+        bot.Ratings.TryGetValue(this.RulesetId, out int rating)
+            ? $"Rated {rating} at this game, from games between the bots."
+            : "Not yet rated at this game.";
 }

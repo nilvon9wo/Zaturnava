@@ -50,7 +50,10 @@
                             <li class="seat seat-@seat.Id @(seat.Id == view.DecidingSeat ? "deciding" : null)">
                                 <span class="swatch"></span>
                                 <span class="name">@seat.Name</span>
-                                <SeatPlayer Text="@this.Player(seat)" PlayerId="@seat.PlayerId" />
+                                <SeatPlayer Text="@this.Player(seat)"
+                                            PlayerId="@seat.PlayerId"
+                                            BotId="@seat.BotId"
+                                            RulesetId="@view.RulesetId" />
                                 @if (seat.IsRetired)
                                 {
                                     <span class="retired">retired</span>
