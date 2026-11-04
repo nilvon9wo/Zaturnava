@@ -5,6 +5,23 @@ namespace Net.NowhereAtAll.Zaturnava.Presentation.Test;
 public sealed class PieceStyleTest
 {
     [Theory]
+    [InlineData("pawn,boat,raja", true)]
+    [InlineData("elephant", true)]
+    [InlineData("horse", true)]
+    [InlineData("pawn,boat", false)]
+    [InlineData("xiangqi-elephant,xiangqi-horse,western-king", false)]
+    public void HasChessForms_WhenTheSetChangesAnyOfTheKinds_IsTrue(string kinds, bool expected)
+    {
+        // Arrange - nothing beyond the kinds
+
+        // Act
+        bool hasChessForms = PieceStyle.HasChessForms(kinds.Split(','));
+
+        // Assert
+        Assert.Equal(expected, hasChessForms);
+    }
+
+    [Theory]
     [InlineData("raja", "\u265A\uFE0E")]
     [InlineData("elephant", "\u265C\uFE0E")]
     [InlineData("horse", "\u265E\uFE0E")]

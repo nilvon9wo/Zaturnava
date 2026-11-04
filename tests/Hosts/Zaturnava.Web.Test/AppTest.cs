@@ -1,4 +1,5 @@
 using Bunit;
+using Net.NowhereAtAll.Zaturnava.Contracts;
 
 namespace Net.NowhereAtAll.Zaturnava.Web.Test;
 
@@ -185,10 +186,45 @@ public sealed class AppTest : IDisposable
     }
 
     [Fact]
-    public void PiecesButton_WhenClicked_ShowsChessPiecesAndBack()
+    public void PiecesButton_WhenInTheLobby_IsNotOffered()
+    {
+        // Arrange - nothing beyond the page
+
+        // Act
+        IRenderedComponent<App> app = this._page.Render<App>();
+
+        // Assert
+        Assert.Empty(app.FindAll("button.pieces"));
+    }
+
+    [Fact]
+    public void PiecesButton_WhenAtATableOfAGameWithPiecesOfItsOwn_IsNotOfferedAndNamesThemAsTheyAre()
+    {
+        // Arrange - Grand Legions' Elephant, which the chess set would otherwise call a Rook
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.pieces").SetResult("chess");
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Pieces = [new PieceDto(0, "xiangqi-elephant", "Elephant (Xiangqi)", 0, 0)],
+            Seats = [.. FakeGameServer.SeatZeroToMove.Seats.Select(seat => seat with { Prisoners = [] })],
+        };
+        IRenderedComponent<App> app = this._page.Render<App>();
+
+        // Act
+        Play(app);
+
+        // Assert
+        Assert.Equal(
+            (0, "Elephant (Xiangqi)"),
+            (app.FindAll("button.pieces").Count, app.Find("svg.board .piece title").TextContent)
+        );
+    }
+
+    [Fact]
+    public void PiecesButton_WhenClickedAtATable_ShowsChessPiecesAndBack()
     {
         // Arrange
         IRenderedComponent<App> app = this._page.Render<App>();
+        Play(app);
 
         // Act
         app.Find("button.pieces").Click();

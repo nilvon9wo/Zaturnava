@@ -50,7 +50,10 @@
                             <li class="seat seat-@seat.Id @(seat.Id == view.DecidingSeat ? "deciding" : null)">
                                 <span class="swatch"></span>
                                 <span class="name">@seat.Name</span>
-                                <SeatPlayer Text="@this.Player(seat)" PlayerId="@seat.PlayerId" />
+                                <SeatPlayer Text="@this.Player(seat)"
+                                            PlayerId="@seat.PlayerId"
+                                            BotId="@seat.BotId"
+                                            RulesetId="@view.RulesetId" />
                                 @if (seat.IsRetired)
                                 {
                                     <span class="retired">retired</span>
@@ -62,7 +65,7 @@
                                 <span class="prisoners" title="Prisoners">
                                     @foreach (PrisonerDto prisoner in seat.Prisoners)
                                     {
-                                        <PieceIcon Kind="@prisoner.Kind" Name="@prisoner.Name" Owner="prisoner.Owner" Pieces="this.Pieces" />
+                                        <PieceIcon Kind="@prisoner.Kind" Name="@prisoner.Name" Owner="prisoner.Owner" Pieces="this.PiecesShown" />
                                     }
                                 </span>
                                 <span class="score">@seat.Score</span>
@@ -79,7 +82,7 @@
                    Selection="this._selection"
                    Turn="this._boardTurn"
                    LastMove="this._lastMove"
-                   Pieces="this.Pieces"
+                   Pieces="this.PiecesShown"
                    OnCellClicked="this.Click" />
 
             <div class="@(this._turn is null ? "turn" : "turn yours")">
@@ -233,7 +236,7 @@
                                         <button class="choice"
                                                 title="@this.Named(ActionLabels.LabelOf(action))"
                                                 @onclick="() => this.Submit(turn.Claim, action)">
-                                            <PieceIcon Kind="@into.Kind" Name="@into.Name" Owner="into.Owner" Pieces="this.Pieces" />
+                                            <PieceIcon Kind="@into.Kind" Name="@into.Name" Owner="into.Owner" Pieces="this.PiecesShown" />
                                             <span class="name">@this.Named(Owned(view, into))</span>
                                             <span class="holder">@HeldBy(holder, turn.Claim.Seat)</span>
                                         </button>
@@ -290,7 +293,7 @@
                                                 title="@TitleOf(prisoner)"
                                                 disabled="@(!prisoner.MayGoBack)"
                                                 @onclick="() => this.Give(receiver.Id, [prisoner.Id])">
-                                            <PieceIcon Kind="@prisoner.Kind" Name="@prisoner.Name" Owner="prisoner.Owner" Pieces="this.Pieces" />
+                                            <PieceIcon Kind="@prisoner.Kind" Name="@prisoner.Name" Owner="prisoner.Owner" Pieces="this.PiecesShown" />
                                         </button>
                                     }
                                     <button class="all"
@@ -310,7 +313,7 @@
                                                 title="@TitleOf(prisoner)"
                                                 disabled="@(!prisoner.MayGoBack)"
                                                 @onclick="() => this.Ask(prisoner.Id)">
-                                            <PieceIcon Kind="@prisoner.Kind" Name="@prisoner.Name" Owner="prisoner.Owner" Pieces="this.Pieces" />
+                                            <PieceIcon Kind="@prisoner.Kind" Name="@prisoner.Name" Owner="prisoner.Owner" Pieces="this.PiecesShown" />
                                         </button>
                                     }
                                 </div>
@@ -430,7 +433,7 @@
                 <button class="turn-right" title="Turn the board clockwise" @onclick="this.TurnRight">&#x27F3;</button>
             </span>
         }
-        @this.PageSettings
+        @this.PageSettings?.Invoke(this._hasPieceSets)
     </footer>
 </section>
 
@@ -513,13 +516,25 @@
     [Parameter]
     public bool IsSafetyOn { get; set; } = true;
 
-    /// <summary>How the pieces are drawn and named, the server's names being the chaturaji ones.</summary>
+    /// <summary>
+    /// How the player chose to have the pieces drawn and named, the server's names being the chaturaji ones; at a
+    /// game whose pieces the choice does not change (<see cref="_hasPieceSets"/>), they are as the server has them.
+    /// </summary>
     [Parameter]
     public PieceSet Pieces { get; set; }
 
-    /// <summary>The page's own settings, for the table's bar.</summary>
+    /// <summary>The page's own settings, for the table's bar, given whether to offer the choice of pieces.</summary>
     [Parameter]
-    public RenderFragment? PageSettings { get; set; }
+    public RenderFragment<bool>? PageSettings { get; set; }
+
+    /// <summary>
+    /// Whether the choice of pieces changes any of this game's, on the board or held prisoner: none of a game with
+    /// pieces of its own, as Grand Legions has; none either until the game is shown.
+    /// </summary>
+    private bool _hasPieceSets;
+
+    /// <summary>How the pieces are drawn and named here: as the player chose, if the choice changes them.</summary>
+    private PieceSet PiecesShown => this._hasPieceSets ? this.Pieces : PieceSet.Chaturaji;
 
     /// <summary>The button opening the guide to the game, beside the game's name.</summary>
     [Parameter]
@@ -792,7 +807,7 @@
     private async Task SitAgain(Func<Task<Seating>> seating) =>
         this._problem = await Requests.Attempt(async () => await this.OnSeated.InvokeAsync(await seating()));
 
-    private string Named(string text) => PieceStyle.Named(text, this.Pieces);
+    private string Named(string text) => PieceStyle.Named(text, this.PiecesShown);
 
     private void Dismiss() => this._notice = null;
 
@@ -1034,6 +1049,10 @@
         bool isFirst = this._view is null;
         bool isNew = view.Version != this._view?.Version;
         this._view = view;
+        this._hasPieceSets = PieceStyle.HasChessForms(
+            view.Pieces.Select(piece => piece.Kind)
+                .Concat(view.Seats.SelectMany(holder => holder.Prisoners).Select(prisoner => prisoner.Kind))
+        );
         this._deadline = view.SecondsLeft is { } seconds ? this.Clock.GetUtcNow().AddSeconds(seconds) : null;
         this._receiver = isNew ? null : this._receiver;
         this._given = isNew ? [] : this._given;

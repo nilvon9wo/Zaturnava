@@ -22,16 +22,12 @@ first.
     waiting for a signed-in player who has not signed in for 31 days.
   - **N20** On signing in, a player is reminded of every game waiting for their move, oldest first, and
     encouraged to end those they no longer play and resume the oldest of the rest.
-- **N23** A bot's name opens a profile of the bot, as a person's does.
 - **N24** Athena takes Pawns with its Raja and Rook (Elephant) when that only loses them: not a real sacrifice.
 - AI clients (*Stated*): two complete sample clients that play on Zaturnava, one by **MCP** and one by **UTCP**.
   Both decide by the same shared project Athena uses, compile and run apart from Zaturnava, and document how a
   developer makes their own bot from them.
 - Grand Legions (preview until these are done):
   - **N25** Letters as pieces, ambiguous ones, make it nearly unplayable: it needs its own pieces' symbols.
-  - **N26** In the small game, with thrones in the corners, leaders start on their thrones.
-  - **N27** Elephants are cavalry that move diagonally, more like bishops: never "translated" as Rooks.
-  - **N28** Grand Legions needs no traditional/chess pieces toggle; the toggle may not belong in the lobby.
 - **N29** (low) An encyclopedia of pieces: each piece's name here, its other names, the games it comes from
   (Chess, Xiangqi...), the games here that use it, its variants (kinds of Pawn, of Elephant...), and how it
   moves, captures and what else it may do.
@@ -192,6 +188,13 @@ first.
 
 ## Done
 
+- **N26** Checked: at every size of Grand Legions, small included, each leader starts on its own throne (in the
+  small game, where the kingdoms touch, that is the board's corner); a test now keeps it so.
+- **N27, N28** The choice of chaturaji or chess pieces is offered only at a table whose pieces it changes (a Raja,
+  Elephant or Horse in play): not in the lobby, nor at Grand Legions, whose pieces, Elephants among them, are
+  always shown by their own names, never "translated" as Rooks.
+- **N23** A bot's name at the table opens a profile of the bot, as a person's does: what it does, whether it asks
+  an AI (and costs tokens each use), and its rating at the game.
 - **N12** Escaping names each prisoner once ("Escape Black's Boat, held by Yellow"). Choosing it marks the
   squares it may go to (a ring where it would take a piece), and a click on one frees it there; clicking
   anything else leaves it a prisoner.
