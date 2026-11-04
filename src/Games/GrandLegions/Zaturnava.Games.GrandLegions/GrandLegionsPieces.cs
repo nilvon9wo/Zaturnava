@@ -117,7 +117,7 @@ public static class GrandLegionsPieces
         Piece(XiangqiSoldier, "Soldier (Xiangqi)", Infantry, Xiangqi, 4, ForwardStep)
             .Restricted(
                 Moves(NeverBack, 2),
-                Area("Sideways only once across a river", 3)
+                Area(Terrain.River, "Sideways only once across a river", 3)
             ),
         Piece(XiangqiAdvisor, "Advisor (Xiangqi)", Infantry, Xiangqi, 2, DiagonalStep)
             .Restricted(Area(Palace, 5)),
@@ -155,7 +155,7 @@ public static class GrandLegionsPieces
         Piece(XiangqiElephant, "Elephant (Xiangqi)", Cavalry, Xiangqi, 2, Leaper(2, 2).Lame())
             .Restricted(
                 Moves("The square between must be empty", 2),
-                Area("May not cross a river", 3),
+                Area(Terrain.River, "May not cross a river", 3),
                 Bound("One cell in eight")
             ),
         Piece(WarEngine, "War Engine", Cavalry, Fairy, 2, Leaper(2, 0))
@@ -269,8 +269,12 @@ public static class GrandLegionsPieces
     /// <summary>A restriction on how the piece moves, lifted for <paramref name="lift"/>.</summary>
     private static Restriction Moves(string description, int lift) => new(RestrictionKind.Movement, description, lift);
 
-    /// <summary>A restriction on where the piece may go, lifted for <paramref name="lift"/>.</summary>
-    private static Restriction Area(string description, int lift) => new(RestrictionKind.Area, description, lift);
+    /// <summary>A restriction on where the piece may go, about a palace, lifted for <paramref name="lift"/>.</summary>
+    private static Restriction Area(string description, int lift) => Area(Terrain.Palace, description, lift);
+
+    /// <summary>A restriction on where the piece may go, about <paramref name="terrain"/>, lifted at a price.</summary>
+    private static Restriction Area(Terrain terrain, string description, int lift) =>
+        new(RestrictionKind.Area, description, lift) { Terrain = terrain };
 
     /// <summary>The share of the board the piece's own move keeps it to: nothing lifts it.</summary>
     private static Restriction Bound(string description) => new(RestrictionKind.Binding, description);

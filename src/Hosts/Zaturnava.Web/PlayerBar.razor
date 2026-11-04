@@ -36,6 +36,7 @@
         <div class="backdrop">
             <div class="dialog profile-dialog" role="dialog" aria-modal="true" aria-labelledby="profile-title">
                 <h2 id="profile-title">Your profile</h2>
+                <p class="autosave">Each change is saved as you make it: your name once you leave its field.</p>
                 <label class="name">
                     The name others see
                     <input class="name"
@@ -75,8 +76,12 @@
                         }
                     </div>
                 }
+                @if (this._saved is { } saved)
+                {
+                    <p class="saved" role="status">@saved</p>
+                }
                 <div class="actions">
-                    <button class="close-profile" @onclick="this.CloseProfile">Done</button>
+                    <button class="close-profile" @onclick="this.CloseProfile">Close</button>
                 </div>
             </div>
         </div>
@@ -151,6 +156,9 @@ else
 
     /// <summary>The token last issued for an AI, shown once, until the profile closes.</summary>
     private string? _aiToken;
+
+    /// <summary>What the profile last saved, told until the profile closes.</summary>
+    private string? _saved;
     private string? _notice;
     private DotNetObjectReference<PlayerBar>? _listener;
 
@@ -170,6 +178,7 @@ else
         _ = await Requests.Attempt(async () => await this.Show(token));
         if (this._isEditing)
         {
+            this._saved = "Linked.";
             await this.AskLinkCode(token);
         }
 
@@ -225,15 +234,23 @@ else
         await this.AskLinkCode(token);
     }
 
-    /// <summary>Names the player anew; told why not, if the server cannot.</summary>
+    /// <summary>Names the player anew, as the name's field is left; told why not, if the server cannot.</summary>
     private async Task Rename(string token, ChangeEventArgs change) =>
         this._notice = await Requests.Attempt(async () =>
-            await this.Showing(token, this.Games.Rename(token, $"{change.Value}", CancellationToken.None))
+            await this.Showing(
+                token,
+                this.Games.Rename(token, $"{change.Value}", CancellationToken.None),
+                "Name saved."
+            )
         );
 
     private async Task Unlink(string token, string provider) =>
         this._notice = await Requests.Attempt(async () =>
-            await this.Showing(token, this.Games.Unlink(token, provider, CancellationToken.None))
+            await this.Showing(
+                token,
+                this.Games.Unlink(token, provider, CancellationToken.None),
+                $"{provider} unlinked."
+            )
         );
 
     /// <summary>A new token for an AI to play for the player, shown until the profile closes.</summary>
@@ -246,11 +263,18 @@ else
     {
         this._isEditing = false;
         this._aiToken = null;
+        this._saved = null;
     }
 
-    /// <summary>Shows the player the server answered with; or, if the token stood for no one, no one.</summary>
-    private async Task Showing(string token, Task<PlayerDto?> answer) =>
+    /// <summary>
+    /// Shows the player the server answered with, telling what was <paramref name="saved"/>; or, if the token stood
+    /// for no one, no one.
+    /// </summary>
+    private async Task Showing(string token, Task<PlayerDto?> answer, string saved)
+    {
         this._signedIn = await answer is { } player ? (player, token) : null;
+        this._saved = saved;
+    }
 
     /// <summary>Has the server let the token go, and forgets it here, even if the server cannot be reached.</summary>
     private async Task SignOut(string token)

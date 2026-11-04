@@ -15,10 +15,12 @@ namespace Net.NowhereAtAll.Zaturnava.Application.Test.Fakes;
 /// turns have been played, with no outcome; the second seat has only so long to pass, and may end the game
 /// whenever it likes, by proposing so, as its winner. Either may vote on waiting for the other while it
 /// decides; a seat passed while away may say it is back. Its board is a row of four cells
-/// (<see cref="TinyBoard"/>), where each seat has a Pawn, and the first a King, that never move.
+/// (<see cref="TinyBoard"/>), where each seat has a Pawn, and the first a King, that never move. If
+/// <paramref name="isDealt"/>, each game is dealt anew: its seed is the first seat's score, to tell it by. Given a
+/// <paramref name="failure"/>, applying any action throws it, as rules that no longer replay a game might.
 /// Enough to drive the application without any real game.
 /// </summary>
-internal sealed class TinyRules(int length) : IRulesApplying
+internal sealed class TinyRules(int length, bool isDealt = false, Exception? failure = null) : IRulesApplying
 {
     public const string RulesetId = "tiny";
     public const int SeatCount = 2;
@@ -51,6 +53,11 @@ internal sealed class TinyRules(int length) : IRulesApplying
             []
         );
 
+    public bool IsDealt { get; } = isDealt;
+
+    public GameState Deal([Required] GameState initial, int seed) =>
+        initial with { Scores = initial.Scores.SetItem(new SeatId(0), seed) };
+
     public ImmutableList<GameAction> LegalActions([Required] GameState state) =>
         state.DecidingSeat is { } seat
             ? [new PassAction(seat)]
@@ -58,6 +65,11 @@ internal sealed class TinyRules(int length) : IRulesApplying
 
     public Transition Apply([Required] GameState state, [Required] GameAction action)
     {
+        if (failure is not null)
+        {
+            throw failure;
+        }
+
         bool isLegal = this.LegalActions(state).Contains(action);
         GameState next = (action, isLegal) switch
         {

@@ -103,6 +103,26 @@ public sealed class ScenarioStartTest
     }
 
     [Fact]
+    public void StateOf_WhenTheFirstActionDealsTheGame_DealsItByItsSeed()
+    {
+        // Arrange - the loaded dice roll the seed, 4, which the tiny rules score to the first seat
+        ImmutableList<ActionDescriptor> actions = [ScenarioStart.Dealt(new LoadedDice(4))];
+
+        // Act
+        GameState state = ScenarioStart.StateOf(actions, new TinyRules(6, isDealt: true));
+
+        // Assert
+        Assert.Equal(
+            (true, false, 4),
+            (
+                ScenarioStart.IsStart(actions[0]),
+                ScenarioStart.IsStart(new PassAction(First).Describe()),
+                state.Scores[First]
+            )
+        );
+    }
+
+    [Fact]
     public void StateOf_WhenNoActionCarriesAScenario_StartsANewGame()
     {
         // Arrange - no actions at all

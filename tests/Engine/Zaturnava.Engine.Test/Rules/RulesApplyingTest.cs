@@ -4,6 +4,7 @@ using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Boards;
 using Net.NowhereAtAll.Zaturnava.Engine.Moves;
 using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
+using Net.NowhereAtAll.Zaturnava.Engine.Positions;
 using Net.NowhereAtAll.Zaturnava.Engine.Rules;
 using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 
@@ -11,6 +12,8 @@ namespace Net.NowhereAtAll.Zaturnava.Engine.Test.Rules;
 
 public sealed class RulesApplyingTest
 {
+    private static readonly SeatId Seat = new(0);
+
     [Fact]
     public void Game_WhenTheRulesetSaysNoOther_IsItsOwnAtNoSizeAndNoPreview()
     {
@@ -37,6 +40,46 @@ public sealed class RulesApplyingTest
         Assert.Null(mark);
     }
 
+    [Fact]
+    public void Deal_WhenTheRulesetSaysNoOther_DealsNothingAndLeavesTheGameAsItIs()
+    {
+        // Arrange
+        OneSizeRules rules = new();
+        GameState initial = OneSizeRules.State;
+
+        // Act
+        (bool IsDealt, GameState Dealt) dealt = DealOf(rules, initial);
+
+        // Assert
+        Assert.Equal((false, initial), dealt);
+    }
+
+    [Theory]
+    [InlineData(false, 0)]
+    [InlineData(true, 2)]
+    public void ThronesOf_WhenTheGameWasOrWasNotDealtItsOwn_IsItsOwnElseTheRulesets(bool isDealt, int expected)
+    {
+        // Arrange - the ruleset's throne is cell 0; the game's own, if dealt, cell 2
+        OneSizeRules rules = new();
+        GameState state = isDealt
+            ? OneSizeRules.State with { Thrones = ImmutableDictionary<SeatId, CellId>.Empty.Add(Seat, new CellId(2)) }
+            : OneSizeRules.State;
+
+        // Act
+        ImmutableDictionary<SeatId, CellId> thrones = ThronesOf(rules, state);
+
+        // Assert
+        Assert.Equal(expected, thrones[Seat].Value);
+    }
+
+    private static ImmutableDictionary<SeatId, CellId> ThronesOf<TRules>(TRules rules, GameState state)
+        where TRules : IRulesApplying =>
+        rules.ThronesOf(state);
+
+    private static (bool IsDealt, GameState Dealt) DealOf<TRules>(TRules rules, GameState initial)
+        where TRules : IRulesApplying =>
+        (rules.IsDealt, rules.Deal(initial, 7));
+
     private static PieceMark? MarkOf<TRules>(TRules rules, PieceKindId kind)
         where TRules : IRulesApplying =>
         rules.MarkOf(kind);
@@ -47,16 +90,28 @@ public sealed class RulesApplyingTest
         (rules.GameId, rules.GameName, rules.Size, rules.IsPreview);
 }
 
-/// <summary>Rules of a game played at one size, asked only what they are called.</summary>
+/// <summary>Rules of a game played at one size, by one seat with its throne on cell 0, asked little else.</summary>
 file sealed class OneSizeRules : IRulesApplying
 {
+    /// <summary>A game of these rules, its one seat to decide.</summary>
+    public static GameState State { get; } = new(
+        Position.Empty,
+        [new Seat(new SeatId(0), new Direction(0, 1))],
+        TeamGraph.FromTeams([[new SeatId(0)]]),
+        new SeatId(0),
+        1,
+        [],
+        []
+    );
+
     public string Id => "solo";
 
     public string Name => "Solo";
 
     public ICellNavigating Topology => throw new NotSupportedException();
 
-    public ImmutableDictionary<SeatId, CellId> Thrones => throw new NotSupportedException();
+    public ImmutableDictionary<SeatId, CellId> Thrones { get; } =
+        ImmutableDictionary<SeatId, CellId>.Empty.Add(new SeatId(0), new CellId(0));
 
     public GameState CreateInitialState() => throw new NotSupportedException();
 

@@ -123,11 +123,38 @@ public sealed class GrandLegionsRulesTest
         GameState state = rules.CreateInitialState();
 
         // Assert
-        Assert.Equal(32, state.Position.Occupants.Count);
+        Assert.InRange(state.Position.Occupants.Count, 32, 4 * QuickGame.Medium.Cells);
         Assert.All(
             rules.Thrones,
             throne => Assert.True(
                 state.Position.PieceAt(throne.Value) is { } leader
+                && rules.IsLeader(leader.Kind)
+                && leader.Owner == throne.Key
+            )
+        );
+    }
+
+    [Theory]
+    [InlineData("grand-legions-small")]
+    [InlineData("grand-legions-medium")]
+    [InlineData("grand-legions-large")]
+    public void Deal_ForEachQuickGame_DealsArmiesOfTheGamesOwnEachLeaderOnItsThrone(string id)
+    {
+        // Arrange
+        Chaturaji2027Rules rules = GrandLegionsRules.Quick.Single(quick => quick.Id == id);
+        GameState initial = rules.CreateInitialState();
+
+        // Act
+        GameState dealt = rules.Deal(initial, 9);
+
+        // Assert
+        Assert.True(rules.IsDealt);
+        Assert.Equal(dealt.Position, dealt.Start);
+        Assert.NotEqual(initial.Position.Occupants, dealt.Position.Occupants);
+        Assert.All(
+            rules.ThronesOf(dealt),
+            throne => Assert.True(
+                dealt.Position.PieceAt(throne.Value) is { } leader
                 && rules.IsLeader(leader.Kind)
                 && leader.Owner == throne.Key
             )
@@ -214,9 +241,9 @@ public sealed class GrandLegionsRulesTest
     [InlineData("grand-legions-large")]
     public void Apply_WhenPlayedOutByAnyLegalAction_EndsTheGame(string id)
     {
-        // Arrange - dice and choices alike at random, the same each run
+        // Arrange - dealt, then dice and choices alike at random, the same each run
         Chaturaji2027Rules rules = GrandLegionsRules.Quick.Single(quick => quick.Id == id);
-        GameState state = rules.CreateInitialState();
+        GameState state = rules.Deal(rules.CreateInitialState(), 2027);
         Random random = new(2027);
 
         // Act

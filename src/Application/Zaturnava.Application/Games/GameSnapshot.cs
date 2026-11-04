@@ -36,7 +36,7 @@ public sealed record GameSnapshot(
     public static GameSnapshot Of([Required] GameRecord record, [Required] IRulesApplying rules)
     {
         Transition replayed = record.Actions
-            .Where(descriptor => descriptor.Kind != ScenarioStart.Kind)
+            .Where(descriptor => !ScenarioStart.IsStart(descriptor))
             .Aggregate(
                 new Transition(ScenarioStart.StateOf(record.Actions, rules), []),
                 (sofar, descriptor) => Replayed(rules, sofar, descriptor)
@@ -45,14 +45,21 @@ public sealed record GameSnapshot(
         return new GameSnapshot(record, rules, replayed.State, replayed.Events, legal);
     }
 
-    /// <summary>The game replayed, as <see cref="Of"/> does; none, if its rules no longer replay it.</summary>
+    /// <summary>
+    /// The game replayed, as <see cref="Of"/> does; none, if its rules no longer replay it: an action no longer legal
+    /// or no longer known, or a piece or square its rules no longer have, as when a game's armies change.
+    /// </summary>
     public static GameSnapshot? TryOf([Required] GameRecord record, [Required] IRulesApplying rules)
     {
         try
         {
             return Of(record, rules);
         }
-        catch (IllegalActionException)
+        catch (Exception unreplayable) when (unreplayable is IllegalActionException
+            or MalformedActionException
+            or KeyNotFoundException
+            or ArgumentException
+            or InvalidOperationException)
         {
             return null;
         }

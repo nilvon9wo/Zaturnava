@@ -61,7 +61,7 @@ internal static class Careful
                 request.Rules.WorthOf(occupant.Value.Kind),
                 [.. threats[occupant.Key]],
                 WorthsOf(request, guards[occupant.Key]),
-                IsThroneOf(request, occupant.Key)
+                IsThroneOf(request, after, occupant.Key)
             ));
         return losses.Append(0).Max() + ThroneThreat(request, after, threats);
     }
@@ -89,8 +89,8 @@ internal static class Careful
         return entries.Append(Exchange(target, takers, retakers)).Max();
     }
 
-    private static bool IsThroneOf(DecisionRequest request, CellId cell) =>
-        request.Rules.Thrones.Contains(new KeyValuePair<SeatId, CellId>(request.Seat, cell));
+    private static bool IsThroneOf(DecisionRequest request, GameState after, CellId cell) =>
+        request.Rules.ThronesOf(after).Contains(new KeyValuePair<SeatId, CellId>(request.Seat, cell));
 
     /// <summary>
     /// What the side about to take wins, if it takes <paramref name="target"/> with the cheapest of its
@@ -107,7 +107,8 @@ internal static class Careful
     /// worth, if the throne is empty; nothing otherwise.
     /// </summary>
     private static int ThroneThreat(DecisionRequest request, GameState after, ILookup<CellId, Attack> threats) =>
-        request.Rules.Thrones.TryGetValue(request.Seat, out CellId throne) && after.Position.PieceAt(throne) is null
+        request.Rules.ThronesOf(after).TryGetValue(request.Seat, out CellId throne)
+        && after.Position.PieceAt(throne) is null
             ? threats[throne]
                 .Where(attack => request.Rules.IsLeader(attack.Attacker.Kind))
                 .Select(attack => request.Rules.WorthOf(attack.Attacker.Kind))
