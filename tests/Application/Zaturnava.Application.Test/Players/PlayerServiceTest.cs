@@ -394,76 +394,16 @@ public sealed class PlayerServiceTest
     }
 
     [Fact]
-    public async Task SetLinks_WhenTheyAreWebAddresses_ShowsThemTrimmedWithoutBlanksOrRepeatsAtMostFive()
-    {
-        // Arrange
-        SignedIn ada = await this._service.SignIn(Login, "Ada", this._cancellation);
-        string?[] links =
-        [
-            " https://a.example ", null, "  ", "https://a.example", "http://b.example", "https://c.example",
-            "https://d.example", "https://e.example", "https://f.example",
-        ];
-
-        // Act
-        Player? shown = await this._service.SetLinks(ada.Token, links, this._cancellation);
-
-        // Assert
-        const string expected =
-            "https://a.example http://b.example https://c.example https://d.example https://e.example";
-        Assert.Equal(
-            (expected, expected),
-            (
-                string.Join(' ', shown?.Links ?? []),
-                string.Join(' ', (await this._service.Profile(ada.Player.Id, this._cancellation))?.Links ?? [])
-            )
-        );
-    }
-
-    [Theory]
-    [InlineData("ftp://a.example")]
-    [InlineData("javascript:alert(1)")]
-    [InlineData("a.example")]
-    public async Task SetLinks_WhenOneIsNoWebAddress_IsRefusedAsInvalid(string link)
+    public async Task Profile_WhenThePlayerIsKnown_IsThem()
     {
         // Arrange
         SignedIn ada = await this._service.SignIn(Login, "Ada", this._cancellation);
 
         // Act
-        BadLinkException refused = await Assert.ThrowsAsync<BadLinkException>(() =>
-            this._service.SetLinks(ada.Token, [link], this._cancellation)
-        );
+        Player? profile = await this._service.Profile(ada.Player.Id, this._cancellation);
 
         // Assert
-        Assert.Equal(
-            (GameRequestFailure.Invalid, true),
-            (refused.Failure, refused.Message.StartsWith($"'{link}' is not a web address", StringComparison.Ordinal))
-        );
-    }
-
-    [Fact]
-    public async Task SetLinks_WhenOneIsTooLong_IsRefused()
-    {
-        // Arrange
-        SignedIn ada = await this._service.SignIn(Login, "Ada", this._cancellation);
-        string link = "https://a.example/" + new string('a', PlayerService.MaximumLinkLength);
-
-        // Act
-        Task<Player?> setting = this._service.SetLinks(ada.Token, [link], this._cancellation);
-
-        // Assert
-        _ = await Assert.ThrowsAsync<BadLinkException>(() => setting);
-    }
-
-    [Fact]
-    public async Task SetLinks_WhenTheTokenStandsForNoOne_IsNoOne()
-    {
-        // Arrange - nothing beyond the empty store
-
-        // Act
-        Player? shown = await this._service.SetLinks("not a token", ["https://a.example"], this._cancellation);
-
-        // Assert
-        Assert.Null(shown);
+        Assert.Equal("Ada", profile?.Name);
     }
 
     [Fact]
@@ -509,7 +449,6 @@ public sealed class PlayerServiceTest
     [Theory]
     [InlineData("ai token")]
     [InlineData("link code")]
-    [InlineData("links")]
     [InlineData("unlink")]
     [InlineData("rename")]
     [InlineData("delete")]
@@ -525,7 +464,6 @@ public sealed class PlayerServiceTest
             {
                 "ai token" => this._service.AiToken(ai, this._cancellation),
                 "link code" => this._service.LinkCode(ai, this._cancellation),
-                "links" => this._service.SetLinks(ai, [], this._cancellation),
                 "unlink" => this._service.Unlink(ai, Login.Provider, this._cancellation),
                 "rename" => this._service.Rename(ai, "Bot", this._cancellation),
                 _ => this._service.Delete(ai, this._cancellation),

@@ -5,7 +5,7 @@ namespace Net.NowhereAtAll.Zaturnava.Web.Test;
 
 public sealed class SeatPlayerTest : IDisposable
 {
-    private static readonly ProfileDto Ada = new("p", "Ada", ["https://ada.example"]);
+    private static readonly ProfileDto Ada = new("p", "Ada");
 
     private readonly PageContext _page = new();
 
@@ -24,7 +24,7 @@ public sealed class SeatPlayerTest : IDisposable
     }
 
     [Fact]
-    public void Open_WhenThePlayerIsKnown_ShowsTheirNameAndLinksSafely()
+    public void Open_WhenThePlayerIsKnown_ShowsTheirName()
     {
         // Arrange
         this._page.Server.Profiles = this._page.Server.Profiles.Add("p", Ada);
@@ -34,30 +34,10 @@ public sealed class SeatPlayerTest : IDisposable
         player.Find("button.player").Click();
 
         // Assert
-        AngleSharp.Dom.IElement link = player.Find("[role=dialog] ul.links a");
         Assert.Equal(
-            ("Ada", "https://ada.example", "noopener noreferrer nofollow", "_blank"),
-            (
-                player.Find("[role=dialog] h2").TextContent,
-                link.GetAttribute("href"),
-                link.GetAttribute("rel"),
-                link.GetAttribute("target")
-            )
+            ("Ada", 0),
+            (player.Find("[role=dialog] h2").TextContent, player.FindAll("[role=dialog] [role=alert]").Count)
         );
-    }
-
-    [Fact]
-    public void Open_WhenThePlayerHasNoLinks_SaysSo()
-    {
-        // Arrange
-        this._page.Server.Profiles = this._page.Server.Profiles.Add("p", Ada with { Links = [] });
-        IRenderedComponent<SeatPlayer> player = this.Rendered("p");
-
-        // Act
-        player.Find("button.player").Click();
-
-        // Assert
-        _ = Assert.Single(player.FindAll("[role=dialog] p.no-links"));
     }
 
     [Fact]

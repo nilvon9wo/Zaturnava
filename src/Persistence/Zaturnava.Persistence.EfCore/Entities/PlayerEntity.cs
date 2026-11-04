@@ -11,8 +11,5 @@ public sealed class PlayerEntity
 
     public string Name { get; set; } = null!;
 
-    /// <summary>The links on the player's profile, one to a line; null for none.</summary>
-    public string? Links { get; set; }
-
     public List<LoginEntity> Logins { get; set; } = [];
 }

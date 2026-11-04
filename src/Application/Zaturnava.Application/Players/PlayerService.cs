@@ -9,19 +9,13 @@ namespace Net.NowhereAtAll.Zaturnava.Application.Players;
 /// Signing in, which is optional: a provider vouches for a login, and the player whose login it is (made the first
 /// time, named as the provider names them) gets a token, as a seat's is made (<see cref="SeatTokens"/>), to show
 /// from then on. Only its hash is kept. A player may sign in with several services (<see cref="Link"/>), name
-/// themselves as they please (<see cref="Rename"/>), show others links on their profile (<see cref="SetLinks"/>),
-/// and give an AI a token of its own to play for them (<see cref="AiToken"/>), which may do nothing to their account.
+/// themselves as they please (<see cref="Rename"/>), and give an AI a token of its own to play for them
+/// (<see cref="AiToken"/>), which may do nothing to their account.
 /// </summary>
 public sealed class PlayerService(IPlayerPersisting store, LinkCodes links)
 {
     /// <summary>The longest a player's name may be, in characters; a longer one is cut.</summary>
     public const int MaximumNameLength = 40;
-
-    /// <summary>The most links a profile may show; any more are let go.</summary>
-    public const int MaximumLinks = 5;
-
-    /// <summary>The longest a link may be, in characters.</summary>
-    public const int MaximumLinkLength = 200;
 
     /// <summary>How an AI's token begins: it is part of what is hashed, so it cannot be taken off.</summary>
     public const string AiTokenPrefix = "ai-";
@@ -79,38 +73,7 @@ public sealed class PlayerService(IPlayerPersisting store, LinkCodes links)
         return issued;
     }
 
-    /// <summary>
-    /// Shows <paramref name="links"/> on the profile of the player the token stands for (none, if it stands for no
-    /// one), in place of any shown before: each without the spaces around it, blanks and repeats left out, the first
-    /// <see cref="MaximumLinks"/> kept.
-    /// </summary>
-    /// <exception cref="BadLinkException">A link is not an http or https address, or is too long.</exception>
-    /// <exception cref="AiTokenRefusedException">The token is an AI's.</exception>
-    public async Task<Player?> SetLinks(
-        [Required] string token,
-        [Required] IEnumerable<string?> links,
-        CancellationToken cancellationToken
-    )
-    {
-        ImmutableList<string> kept =
-        [
-            .. links
-                .Select(link => (link ?? string.Empty).Trim())
-                .Where(link => link.Length > 0)
-                .Distinct(StringComparer.Ordinal)
-                .Take(MaximumLinks)
-                .Select(Checked),
-        ];
-        if (await this.Owner(token, cancellationToken) is not { } player)
-        {
-            return null;
-        }
-
-        await this._store.SetLinks(player.Id, kept, cancellationToken);
-        return player with { Links = kept };
-    }
-
-    /// <summary>The player as anyone may see them: their name and links; none, if no such player is known.</summary>
+    /// <summary>The player as anyone may see them: their name; none, if no such player is known.</summary>
     public Task<Player?> Profile(PlayerId id, CancellationToken cancellationToken) =>
         this._store.ById(id, cancellationToken);
 
@@ -248,15 +211,6 @@ public sealed class PlayerService(IPlayerPersisting store, LinkCodes links)
 
     private static string? Cut(string name) =>
         name.Length == 0 ? null : name[..Math.Min(name.Length, MaximumNameLength)].TrimEnd();
-
-    /// <summary>The link, if it is an http or https address, short enough.</summary>
-    /// <exception cref="BadLinkException">It is not.</exception>
-    private static string Checked(string link) =>
-        link.Length <= MaximumLinkLength
-        && Uri.TryCreate(link, UriKind.Absolute, out Uri? uri)
-        && (uri.Scheme == Uri.UriSchemeHttps || uri.Scheme == Uri.UriSchemeHttp)
-            ? link
-            : throw new BadLinkException(link);
 
     /// <summary>The player the token stands for, if it may change their account.</summary>
     /// <exception cref="AiTokenRefusedException">The token is an AI's.</exception>
