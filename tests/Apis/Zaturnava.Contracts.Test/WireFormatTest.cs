@@ -122,6 +122,19 @@ public sealed class WireFormatTest
     }
 
     [Fact]
+    public void Standing_WhenSentAsJson_ArrivesUnchanged()
+    {
+        // Arrange
+        StandingDto standing = new(1, "Ada", 1516, 14, 1, 2, 3);
+
+        // Act
+        StandingDto? arrived = RoundTrip(standing);
+
+        // Assert
+        Assert.Equal(standing, arrived);
+    }
+
+    [Fact]
     public void CreateGameRequest_WhenSentAsJson_KeepsItsOpenSeats()
     {
         // Arrange

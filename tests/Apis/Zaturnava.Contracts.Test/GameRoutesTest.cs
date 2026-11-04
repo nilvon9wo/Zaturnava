@@ -15,6 +15,18 @@ public sealed class GameRoutesTest
     }
 
     [Fact]
+    public void Leaderboard_WhenTheGameNeedsEscaping_EscapesIt()
+    {
+        // Arrange - nothing beyond the game
+
+        // Act
+        string route = GameRoutes.Leaderboard("a/b c");
+
+        // Assert
+        Assert.Equal("api/leaderboards/a%2Fb%20c", route);
+    }
+
+    [Fact]
     public void Seat_WhenGivenASeat_RoutesUnderItsGame()
     {
         // Arrange - nothing beyond the arguments

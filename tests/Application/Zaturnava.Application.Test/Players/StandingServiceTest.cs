@@ -186,8 +186,8 @@ public sealed class StandingServiceTest
                 [new FirstChoiceBot()],
                 botRating is { } rating
                     ? ImmutableDictionary<string, ImmutableDictionary<string, int>>.Empty.Add(
-                        FirstChoiceBot.BotId,
-                        ImmutableDictionary<string, int>.Empty.Add(EndedRules.RulesetId, rating)
+                        EndedRules.RulesetId,
+                        ImmutableDictionary<string, int>.Empty.Add(FirstChoiceBot.BotId, rating)
                     )
                     : []
             ),
