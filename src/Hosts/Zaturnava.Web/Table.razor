@@ -257,8 +257,16 @@
                     }
                     else
                     {
-                        <p class="hint">@Hint(turn.Actions)</p>
+                        <p class="hint">@this.Hint(turn.Actions)</p>
                         <div class="actions">
+                            @foreach (string choice in turn.Actions.Choices)
+                            {
+                                <button class="action primary choose"
+                                        aria-pressed="@(this._selection.Choice == choice ? "true" : "false")"
+                                        @onclick="() => this.Choose(choice)">
+                                    @this.Named(choice)
+                                </button>
+                            }
                             @foreach (ActionDto action in turn.Actions.OffBoard)
                             {
                                 <button class="action primary @(IsUrged(view, action) ? "urged" : null)"
@@ -584,12 +592,21 @@
             _ => "Nothing it lets move can move now",
         };
 
-    private static string Hint(BoardActions actions) =>
-        actions.Origins.IsEmpty
-            ? "Choose what to do:"
-            : actions.OffBoard.IsEmpty
-                ? "Pick a ringed piece, then a marked square."
-                : "Move a ringed piece (pick it, then a marked square), or:";
+    private string Hint(BoardActions actions) =>
+        (this._selection.Choice, actions.Origins.IsEmpty, actions.OffBoard.IsEmpty && actions.Choices.IsEmpty) switch
+        {
+            ({ }, _, _) => "Pick a marked square to bring it back there; anywhere else leaves it a prisoner.",
+            (_, true, _) => "Choose what to do:",
+            (_, _, true) => "Pick a ringed piece, then a marked square.",
+            _ => "Move a ringed piece (pick it, then a marked square), or:",
+        };
+
+    /// <summary>
+    /// Chooses what to bring back (a prisoner to escape), its squares then marked on the board; chosen again, lets
+    /// it go.
+    /// </summary>
+    private void Choose(string choice) =>
+        this._selection = this._selection.Choice == choice ? BoardSelection.None : BoardSelection.Choosing(choice);
 
     /// <summary>
     /// How the game ended; else who is answering an offer, or whose turn is over but who may still offer;

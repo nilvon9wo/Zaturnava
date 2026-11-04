@@ -17,6 +17,10 @@ internal static class Actions
             (ActionArguments.To, to.ToString(CultureInfo.InvariantCulture))
         );
 
+    /// <summary>An action chosen by <paramref name="choice"/>, then by the cell <paramref name="home"/>.</summary>
+    public static ActionDto Escape(string choice, string home) =>
+        Of("escape", (ActionArguments.Actor, "0"), (ActionArguments.Home, home)) with { Choice = choice };
+
     public static ActionDto Of(string kind, params (string Name, string Value)[] arguments) =>
         new(kind, arguments.ToImmutableSortedDictionary(argument => argument.Name, argument => argument.Value));
 }

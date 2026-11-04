@@ -2,7 +2,7 @@
    colour, the last move tinted, the pieces on top, then the marks of a move being made - a ring
    around each piece that can move (flashing around one that can be promoted), and a dot (or, over a piece to capture, a ring) wherever the
    piece picked up can go, or, with none picked up, wherever a piece coming onto the board can be
-   dropped. Each cell's name is written small in its top left corner, as the board is turned, so that
+   dropped, or wherever the piece chosen to come back (a prisoner escaping) can be placed. Each cell's name is written small in its top left corner, as the board is turned, so that
    the log's "from c2 to c3" can be found. The whole board turns by Turn; the pieces' symbols and the names stay upright. *@
 
 <svg class="board" viewBox="@this._frame.ViewBox" role="grid">
@@ -97,7 +97,12 @@
     public EventCallback<int> OnCellClicked { get; set; }
 
     private ImmutableHashSet<int> Targets =>
-        this.Selection.Selected is { } from ? this.Actions.TargetsFrom(from) : this.Actions.Drops;
+        (this.Selection.Choice, this.Selection.Selected) switch
+        {
+            ({ } choice, _) => this.Actions.PlacesOf(choice),
+            (_, { } from) => this.Actions.TargetsFrom(from),
+            _ => this.Actions.Drops,
+        };
 
     protected override void OnParametersSet()
     {

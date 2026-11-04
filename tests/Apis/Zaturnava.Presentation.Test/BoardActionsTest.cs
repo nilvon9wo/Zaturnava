@@ -30,6 +30,32 @@ public sealed class BoardActionsTest
     }
 
     [Fact]
+    public void Choices_WhenActionsAreChosenByAButtonThenACell_OffersEachOnceInOrderAndNotApart()
+    {
+        // Arrange - the boat to 3 or 4, the horse to 5; and one with a choice but no cell, offered apart
+        ActionDto boatTo3 = Actions.Escape("Escape the Boat", "3");
+        ActionDto boatTo4 = Actions.Escape("Escape the Boat", "4");
+        ActionDto horseTo5 = Actions.Escape("Escape the Horse", "5");
+        ActionDto nowhere = Actions.Pass with { Choice = "Pass" };
+        BoardActions actions = new([boatTo3, horseTo5, boatTo4, nowhere]);
+
+        // Act
+        string choices = string.Join('|', actions.Choices);
+
+        // Assert
+        Assert.Equal(
+            ("Escape the Boat|Escape the Horse", nowhere, "3,4", boatTo4, null),
+            (
+                choices,
+                Assert.Single(actions.OffBoard),
+                string.Join(',', actions.PlacesOf("Escape the Boat").Order()),
+                actions.PlacementAt("Escape the Boat", 4),
+                actions.PlacementAt("Escape the Horse", 4)
+            )
+        );
+    }
+
+    [Fact]
     public void Origins_WhenMovesStartFromCells_AreThoseCells()
     {
         // Arrange - nothing beyond the actions

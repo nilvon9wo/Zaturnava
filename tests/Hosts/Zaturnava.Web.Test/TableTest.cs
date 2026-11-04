@@ -232,6 +232,82 @@ public sealed class TableTest : IDisposable
     }
 
     [Fact]
+    public void Choose_WhenAPrisonerMayEscape_OffersItOnceAndMarksItsSquaresRingingAPieceItWouldTake()
+    {
+        // Arrange - Black's Boat, held by Yellow, may escape to cell 2, or to 3, taking Yellow's Pawn there
+        this.Escapable();
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Act
+        table.Find("button.choose").Click();
+
+        // Assert
+        const string hint = "Pick a marked square to bring it back there; anywhere else leaves it a prisoner.";
+        Assert.Equal(
+            (1, "true", false, true, true, "mark|mark capture", hint),
+            (
+                table.FindAll("button.choose").Count,
+                table.Find("button.choose").GetAttribute("aria-pressed"),
+                Cell(table, 1).ClassList.Contains("target"),
+                Cell(table, 2).ClassList.Contains("target"),
+                Cell(table, 3).ClassList.Contains("target"),
+                string.Join("|", table.FindAll("circle.mark").Select(mark => mark.GetAttribute("class"))),
+                table.Find("p.hint").TextContent
+            )
+        );
+    }
+
+    [Fact]
+    public void Click_WhenAMarkedSquareIsPickedForAPrisoner_SubmitsItsEscapeThere()
+    {
+        // Arrange
+        this.Escapable();
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        table.Find("button.choose").Click();
+
+        // Act
+        Cell(table, 3).Click();
+
+        // Assert
+        (string GameId, string Token, ActionDto Action)? submitted = this._page.Server.Submitted;
+        Assert.Equal(
+            (FakeGameServer.GameId, FakeGameServer.Token, FakeGameServer.Escape(3).Label),
+            (submitted?.GameId, submitted?.Token, submitted?.Action.Label)
+        );
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Click_WhenAnythingElseIsPickedForAPrisoner_LeavesItAPrisoner(bool isButton)
+    {
+        // Arrange
+        this.Escapable();
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        table.Find("button.choose").Click();
+
+        // Act
+        if (isButton)
+        {
+            table.Find("button.choose").Click();
+        }
+        else
+        {
+            Cell(table, 1).Click();
+        }
+
+        // Assert
+        Assert.Equal(
+            (null, "false", 0),
+            (
+                this._page.Server.Submitted,
+                table.Find("button.choose").GetAttribute("aria-pressed"),
+                table.FindAll("circle.mark").Count
+            )
+        );
+    }
+
+    [Fact]
     public void Click_WhenThePieceIsPutDownWhereItCanGo_SubmitsThatMove()
     {
         // Arrange
@@ -1091,6 +1167,14 @@ public sealed class TableTest : IDisposable
 
     private static IEnumerable<string> Played(PageContext page) =>
         page.JSInterop.Invocations["zaturnava.play"].SelectMany(call => call.Arguments.Select(sound => (string)sound!));
+
+    /// <summary>Black to move, whose Boat, held by Yellow, may escape to cell 2, or 3, taking Yellow's Pawn.</summary>
+    private void Escapable() =>
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Pieces = [.. FakeGameServer.SeatZeroToMove.Pieces, new PieceDto(1, "pawn", "Pawn", 1, 3)],
+            LegalActions = [FakeGameServer.Escape(2), FakeGameServer.Escape(3), FakeGameServer.Pass],
+        };
 
     private IRenderedComponent<Table> Render(Seating seating) =>
         this._page.Render<Table>(parameters => parameters.Add(x => x.Seating, seating));

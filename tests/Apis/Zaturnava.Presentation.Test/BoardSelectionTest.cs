@@ -88,4 +88,36 @@ public sealed class BoardSelectionTest
         // Assert
         Assert.Equal((BoardSelection.None, isDrop ? drop : null), (next, chosen));
     }
+
+    [Fact]
+    public void Click_WhenAChoiceMayBePlacedThere_ChoosesThatPlacement()
+    {
+        // Arrange
+        ActionDto escape = Actions.Escape("Escape the Boat", "20");
+        BoardActions actions = new([Advance, escape]);
+
+        // Act
+        (BoardSelection next, ActionDto? chosen) = BoardSelection.Choosing("Escape the Boat").Click(20, actions);
+
+        // Assert
+        Assert.Equal((BoardSelection.None, escape), (next, chosen));
+    }
+
+    [Theory]
+    [InlineData(8, 8)]
+    [InlineData(21, null)]
+    public void Click_WhenAChoiceMayNotBePlacedThere_LetsItGoAndDoesWhatTheClickWouldHaveDone(
+        int cell,
+        int? selected
+    )
+    {
+        // Arrange
+        BoardActions actions = new([Advance, Actions.Escape("Escape the Boat", "20")]);
+
+        // Act
+        (BoardSelection next, ActionDto? chosen) = BoardSelection.Choosing("Escape the Boat").Click(cell, actions);
+
+        // Assert
+        Assert.Equal((new BoardSelection(selected), null), (next, chosen));
+    }
 }
