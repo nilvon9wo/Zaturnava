@@ -173,6 +173,24 @@ public sealed class EfPlayerStoreTest : IDisposable
         Assert.Equal("ada Ada GitHub:1234", Described(found));
     }
 
+    [Fact]
+    public async Task LastSignedIn_WhenSomePlayersSignedInSinceItWasKept_ReadsBackTheirsAlone()
+    {
+        // Arrange
+        Player bea = new(new PlayerId("bea"), "Bea", [new Login("GitHub", "5678")]);
+        DateTimeOffset time = new(2026, 11, 4, 12, 0, 0, TimeSpan.FromHours(1));
+        await this._store.Add(Ada, this._cancellation);
+        await this._store.Add(bea, this._cancellation);
+        await this._store.MarkSignedIn(Ada.Id, time, this._cancellation);
+
+        // Act
+        ImmutableDictionary<PlayerId, DateTimeOffset> signedIn = await new EfPlayerStore(this._database.NewContext())
+            .LastSignedIn([Ada.Id, bea.Id, new PlayerId("gone"), Ada.Id], this._cancellation);
+
+        // Assert
+        Assert.Equal([KeyValuePair.Create(Ada.Id, time)], signedIn);
+    }
+
     /// <summary>"ada Ada GitHub:1234 Google:abcd": the player, their logins in order of provider.</summary>
     private static string? Described(Player? player) =>
         player is null

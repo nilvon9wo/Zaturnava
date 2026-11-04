@@ -10,9 +10,9 @@ namespace Net.NowhereAtAll.Zaturnava.Application.Players;
 /// time, named as the provider names them) gets a token, as a seat's is made (<see cref="SeatTokens"/>), to show
 /// from then on. Only its hash is kept. A player may sign in with several services (<see cref="Link"/>), name
 /// themselves as they please (<see cref="Rename"/>), and give an AI a token of its own to play for them
-/// (<see cref="AiToken"/>), which may do nothing to their account.
+/// (<see cref="AiToken"/>), which may do nothing to their account. When each last signed in is kept.
 /// </summary>
-public sealed class PlayerService(IPlayerPersisting store, LinkCodes links)
+public sealed class PlayerService(IPlayerPersisting store, LinkCodes links, TimeProvider clock)
 {
     /// <summary>The longest a player's name may be, in characters; a longer one is cut.</summary>
     public const int MaximumNameLength = 40;
@@ -31,6 +31,7 @@ public sealed class PlayerService(IPlayerPersisting store, LinkCodes links)
 
     private readonly IPlayerPersisting _store = store;
     private readonly LinkCodes _links = links;
+    private readonly TimeProvider _clock = clock;
 
     /// <summary>
     /// Signs in the player whose login it is: the one already known, else a new one, named
@@ -223,11 +224,12 @@ public sealed class PlayerService(IPlayerPersisting store, LinkCodes links)
         return player;
     }
 
-    /// <summary>The player signed in, with a new token.</summary>
+    /// <summary>The player signed in, now, with a new token.</summary>
     private async Task<SignedIn> Session(Player player, CancellationToken cancellationToken)
     {
         string token = SeatTokens.Issue();
         await this._store.AddSession(player.Id, SeatTokens.Hash(token), cancellationToken);
+        await this._store.MarkSignedIn(player.Id, this._clock.GetUtcNow(), cancellationToken);
         return new SignedIn(player, token);
     }
 }

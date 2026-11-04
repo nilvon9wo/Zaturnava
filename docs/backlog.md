@@ -17,9 +17,14 @@ first.
   - **N20, N21** Filter by players or bots (wildcards allowed, any seat), several at once ("Bob and Joe, and a
     seat open").
   - **N20** Each game says when it was created, whether it has started, when its last move was made, and
-    whether it waits for someone to take an open seat or for a player who went away to come back.
+    whether it waits for someone to take an open seat or for a player who went away to come back. *Done*, but
+    for the player who went away: the lobby says when each game was created and last changed, and whether it
+    waits for players or has not started. Who is away is not yet known to the server.
   - **N20** Abandoned games are purged: any game with a guest in it and no activity for 24 hours, and any game
-    waiting for a signed-in player who has not signed in for 31 days.
+    waiting for a signed-in player who has not signed in for 31 days. *Done*, for games not over only
+    (*Proposed*: a finished game's history is public and rates its players). Waiting for a player means it is
+    their seat to decide, and the game unchanged for 31 days too; a player not signed in since when they last
+    did was kept is never counted gone (*Proposed*).
   - **N20** On signing in, a player is reminded of every game waiting for their move, oldest first, and
     encouraged to end those they no longer play and resume the oldest of the rest.
 - **N24** Athena takes Pawns with its Raja and Rook (Elephant) when that only loses them: not a real sacrifice.

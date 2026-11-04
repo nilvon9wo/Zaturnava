@@ -4,7 +4,8 @@ namespace Net.NowhereAtAll.Zaturnava.Application.Games;
 
 /// <summary>
 /// A game as a lobby lists it, read as stored, without replaying it: who controls each seat, how many actions have
-/// been taken, and whether it is over.
+/// been taken, whether it is over, and when it was created and last changed (none, for a game from before these
+/// were kept).
 /// </summary>
 public sealed record GameListing(
     GameId Id,
@@ -13,4 +14,9 @@ public sealed record GameListing(
     ImmutableList<SeatController> Controllers,
     int Moves,
     bool IsOver
-);
+)
+{
+    public DateTimeOffset? Created { get; init; }
+
+    public DateTimeOffset? LastChanged { get; init; }
+}

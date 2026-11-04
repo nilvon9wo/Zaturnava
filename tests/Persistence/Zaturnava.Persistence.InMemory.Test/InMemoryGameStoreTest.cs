@@ -87,6 +87,10 @@ public sealed class InMemoryGameStoreTest
         // Assert
         GameListing listed = Assert.Single(page.Games);
         Assert.Equal(("a", 3, 1, false), (listed.Id.Value, page.Total, listed.Moves, listed.IsOver));
+        Assert.Equal(
+            ((DateTimeOffset?)DateTimeOffset.UnixEpoch.AddHours(-1), (DateTimeOffset?)DateTimeOffset.UnixEpoch),
+            (listed.Created, listed.LastChanged)
+        );
     }
 
     [Fact]
@@ -173,6 +177,35 @@ public sealed class InMemoryGameStoreTest
     private static readonly ImmutableSortedDictionary<string, string> Arguments =
         ImmutableSortedDictionary<string, string>.Empty;
 
+    [Fact]
+    public async Task Idle_WhenGamesChangedBeforeAndAfter_ReturnsThoseNotOverUnchangedSince()
+    {
+        // Arrange - c is over, d changed later, and e from before when it changed was kept
+        await this.AddListed();
+        await this._store.Add(Record("e"), this._cancellation);
+
+        // Act
+        ImmutableList<GameRecord> idle =
+            await this._store.Idle(DateTimeOffset.UnixEpoch.AddHours(2.5), this._cancellation);
+
+        // Assert
+        Assert.Equal("a,b", string.Join(",", idle.Select(game => game.Id.Value).Order(StringComparer.Ordinal)));
+    }
+
+    [Fact]
+    public async Task Remove_WhenGamesAreNamed_LetsGoOfThemAlone()
+    {
+        // Arrange
+        await this.AddListed();
+
+        // Act
+        await this._store.Remove([new GameId("a"), new GameId("c"), new GameId("missing")], this._cancellation);
+
+        // Assert
+        ImmutableList<GameRecord> kept = await this._store.List(this._cancellation);
+        Assert.Equal("b,d", string.Join(",", kept.Select(game => game.Id.Value)));
+    }
+
     private static GameRecord Record(string id) => new(new GameId(id), "tiny", [new OpenSeat()], [], 0);
 
     /// <summary>
@@ -184,7 +217,12 @@ public sealed class InMemoryGameStoreTest
         DateTimeOffset start = DateTimeOffset.UnixEpoch;
         GameRecord[] games =
         [
-            Record("a") with { Actions = [new ActionDescriptor("pass", Arguments)], LastChanged = start },
+            Record("a") with
+            {
+                Actions = [new ActionDescriptor("pass", Arguments)],
+                Created = start.AddHours(-1),
+                LastChanged = start,
+            },
             Record("b") with { Controllers = [new HumanSeat("hash")], IsOver = false, LastChanged = start.AddHours(2) },
             Record("c") with { Controllers = [new BotSeat("random")], IsOver = true, LastChanged = start.AddHours(1) },
             Record("d") with { RulesetId = "retired", IsOver = false, LastChanged = start.AddHours(3) },

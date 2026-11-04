@@ -52,6 +52,23 @@ public sealed class InMemoryGameStore : IGamePersisting
         return Task.CompletedTask;
     }
 
+    public Task<ImmutableList<GameRecord>> Idle(DateTimeOffset since, CancellationToken cancellationToken)
+    {
+        ImmutableList<GameRecord> games =
+            [.. this._games.Values.Where(game => game.IsOver != true && game.LastChanged < since)];
+        return Task.FromResult(games);
+    }
+
+    public Task Remove([Required] ImmutableList<GameId> ids, CancellationToken cancellationToken)
+    {
+        foreach (GameId id in ids)
+        {
+            _ = this._games.TryRemove(id, out _);
+        }
+
+        return Task.CompletedTask;
+    }
+
     public Task Add([Required] GameRecord record, CancellationToken cancellationToken) =>
         this._games.TryAdd(record.Id, record)
             ? Task.CompletedTask
@@ -70,5 +87,9 @@ public sealed class InMemoryGameStore : IGamePersisting
     private static bool IsBot(SeatController controller) => controller is BotSeat;
 
     private static GameListing ListingOf(GameRecord game) =>
-        new(game.Id, game.RulesetId, game.Version, game.Controllers, game.Actions.Count, game.IsOver ?? false);
+        new(game.Id, game.RulesetId, game.Version, game.Controllers, game.Actions.Count, game.IsOver ?? false)
+        {
+            Created = game.Created,
+            LastChanged = game.LastChanged,
+        };
 }

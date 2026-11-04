@@ -18,6 +18,7 @@ internal static class GameRecordMapping
         return new GameRecord(new GameId(entity.Id), entity.RulesetId, controllers, actions, entity.Version)
         {
             IsOver = entity.IsOver,
+            Created = ToOffset(entity.Created),
             LastChanged = ToOffset(entity.LastChanged),
         };
     }
@@ -29,6 +30,7 @@ internal static class GameRecordMapping
             RulesetId = record.RulesetId,
             Version = record.Version,
             IsOver = record.IsOver,
+            Created = ToUtc(record.Created),
             LastChanged = ToUtc(record.LastChanged),
             Seats = [.. record.Controllers.Select((controller, seat) => ToSeat(record.Id, seat, controller))],
             Actions = [.. NewActions(record, 0)],
@@ -78,7 +80,11 @@ internal static class GameRecordMapping
             [.. seats.OrderBy(seat => seat.Seat).Select(ToController)],
             moves,
             entity.IsOver ?? false
-        );
+        )
+        {
+            Created = ToOffset(entity.Created),
+            LastChanged = ToOffset(entity.LastChanged),
+        };
 
     private static DateTimeOffset? ToOffset(DateTime? utc) =>
         utc is { } time ? new DateTimeOffset(DateTime.SpecifyKind(time, DateTimeKind.Utc)) : null;

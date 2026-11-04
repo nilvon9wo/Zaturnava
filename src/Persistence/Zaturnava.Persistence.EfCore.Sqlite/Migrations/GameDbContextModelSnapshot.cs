@@ -84,6 +84,9 @@ namespace Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Sqlite.Migrations
                     b.Property<string>("Id")
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("Created")
+                        .HasColumnType("TEXT");
+
                     b.Property<bool?>("IsOver")
                         .HasColumnType("INTEGER");
 
@@ -130,6 +133,9 @@ namespace Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Sqlite.Migrations
                 {
                     b.Property<string>("Id")
                         .HasMaxLength(32)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("LastSignedIn")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Name")

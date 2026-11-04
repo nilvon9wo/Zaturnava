@@ -40,11 +40,14 @@ now): the game page neither offers nor lists its games unless the player chooses
 Chaturaji 2027 a player may still join. The reply:
 
 ```json
-{ "games": [ { "id": "...", "rulesetId": "chaturaji-2027", "openSeats": [2], "isOver": false } ],
+{ "games": [ { "id": "...", "rulesetId": "chaturaji-2027", "openSeats": [2], "isOver": false,
+    "created": "2026-11-04T09:30:00+00:00", "lastChanged": "2026-11-04T12:05:00+00:00" } ],
   "total": 31, "page": 1, "pageSize": 20 }
 ```
 
-Each game is listed as last saved, so listing is quick however many games there are.
+Each game is listed as last saved, so listing is quick however many games there are, newest change first.
+`created` and `lastChanged` say when it was created and when it last changed (a move, or a seat taken); a game
+from before these were kept has neither.
 
 A game is created with its ruleset and, for each seat in order, the id of the bot that plays it, or
 `null` to leave the seat open:

@@ -29,7 +29,8 @@ public sealed class GameService(
     IGameNotifying notifier,
     IDiceRolling dice,
     DecisionClock clock,
-    GameServiceSettings settings
+    GameServiceSettings settings,
+    IPlayerPersisting players
 )
 {
     private readonly IRulesetLocating _rulesets = rulesets;
@@ -40,6 +41,7 @@ public sealed class GameService(
     private readonly IDiceRolling _dice = dice;
     private readonly DecisionClock _clock = clock;
     private readonly GameServiceSettings _settings = settings;
+    private readonly IPlayerPersisting _players = players;
 
     public ImmutableList<IRulesApplying> Rulesets => this._rulesets.All;
 
@@ -79,11 +81,13 @@ public sealed class GameService(
         GameState initial = ScenarioStart.StateOf(start, rules);
         GameRecord created = new(GameId.New(), rules.Id, this.ControllersFor(initial, seats), start, 0);
         Played played = await this.PlayBots(rules, created, new Played(initial, start), cancellationToken);
+        DateTimeOffset now = this._clock.Now;
         GameRecord record = created with
         {
             Actions = played.Actions,
             IsOver = played.State.Outcome is not null,
-            LastChanged = this._clock.Now,
+            Created = now,
+            LastChanged = now,
         };
         await this._store.Add(record, cancellationToken);
         return record.Id;
@@ -122,6 +126,48 @@ public sealed class GameService(
             await this._store.MarkOver(record.Id, isOver, cancellationToken);
         }
     }
+
+    /// <summary>
+    /// Lets go of the games abandoned, not over and with nothing done: with a person at a seat who never signed in,
+    /// for <see cref="GameServiceSettings.GuestGamesKept"/>; or waiting for a signed-in player to decide, for
+    /// <see cref="GameServiceSettings.AwaitedGamesKept"/>, who has not signed in for as long. How many there were.
+    /// </summary>
+    public async Task<int> PurgeAbandoned(CancellationToken cancellationToken)
+    {
+        DateTimeOffset awaitedSince = this._clock.Now - this._settings.AwaitedGamesKept;
+        ImmutableList<GameRecord> guests =
+            await this._store.Idle(this._clock.Now - this._settings.GuestGamesKept, cancellationToken);
+        ImmutableDictionary<string, IRulesApplying> offered = this.Rulesets.ToImmutableDictionary(rules => rules.Id);
+        ImmutableDictionary<GameId, PlayerId> awaited = (await this._store.Idle(awaitedSince, cancellationToken))
+            .Select(game => (game.Id, Player: AwaitedPlayer(game, offered.GetValueOrDefault(game.RulesetId))))
+            .Where(entry => entry.Player is not null)
+            .ToImmutableDictionary(entry => entry.Id, entry => entry.Player!.Value);
+        ImmutableDictionary<PlayerId, DateTimeOffset> signedIn =
+            await this._players.LastSignedIn([.. awaited.Values.Distinct()], cancellationToken);
+        ImmutableList<GameId> abandoned =
+        [
+            .. guests.Where(game => game.Controllers.Any(controller => controller.IsGuest))
+                .Select(game => game.Id)
+                .Concat(
+                    awaited
+                        .Where(entry =>
+                            signedIn.TryGetValue(entry.Value, out DateTimeOffset last) && last < awaitedSince
+                        )
+                        .Select(entry => entry.Key)
+                )
+                .Distinct(),
+        ];
+        await this._store.Remove(abandoned, cancellationToken);
+        return abandoned.Count;
+    }
+
+    /// <summary>The signed-in player the game waits for to decide, replayed by its rules, if still offered.</summary>
+    private static PlayerId? AwaitedPlayer(GameRecord record, IRulesApplying? rules) =>
+        rules is not null
+        && Replayable(record, rules)?.State.DecidingSeat is { } seat
+        && record.Controllers[seat.Value] is HumanSeat { Claimant: { } claimant }
+            ? claimant
+            : null;
 
     /// <summary>Every stored game of a ruleset still offered, replayed, as a lobby lists them.</summary>
     public async Task<ImmutableList<GameSnapshot>> Snapshots(CancellationToken cancellationToken)

@@ -73,6 +73,28 @@ public sealed class EfGameStore(GameDbContext context) : IGamePersisting
             .Where(game => game.Id == id.Value)
             .ExecuteUpdateAsync(set => set.SetProperty(game => game.IsOver, isOver), cancellationToken);
 
+    public async Task<ImmutableList<GameRecord>> Idle(DateTimeOffset since, CancellationToken cancellationToken)
+    {
+        DateTime? utc = GameRecordMapping.ToUtc(since);
+        List<GameEntity> entities = await this.Games()
+            .AsNoTracking()
+            .Where(game => game.IsOver != true && game.LastChanged < utc)
+            .ToListAsync(cancellationToken);
+        return [.. entities.Select(GameRecordMapping.ToRecord)];
+    }
+
+    public async Task Remove([Required] ImmutableList<GameId> ids, CancellationToken cancellationToken)
+    {
+        ImmutableList<string> keys = [.. ids.Select(id => id.Value)];
+        _ = await this._context.Set<ActionEntity>()
+            .Where(action => keys.Contains(action.GameId))
+            .ExecuteDeleteAsync(cancellationToken);
+        _ = await this._context.Set<SeatEntity>()
+            .Where(seat => keys.Contains(seat.GameId))
+            .ExecuteDeleteAsync(cancellationToken);
+        _ = await this._context.Games.Where(game => keys.Contains(game.Id)).ExecuteDeleteAsync(cancellationToken);
+    }
+
     public async Task Add([Required] GameRecord record, CancellationToken cancellationToken)
     {
         _ = this._context.Games.Add(GameRecordMapping.ToEntity(record));

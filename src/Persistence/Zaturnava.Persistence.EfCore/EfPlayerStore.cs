@@ -55,6 +55,29 @@ public sealed class EfPlayerStore(GameDbContext context) : IPlayerPersisting
         return known.ToImmutableDictionary(entity => new PlayerId(entity.Id), entity => entity.Name);
     }
 
+    public async Task<ImmutableDictionary<PlayerId, DateTimeOffset>> LastSignedIn(
+        [Required] ImmutableList<PlayerId> players,
+        CancellationToken cancellationToken
+    )
+    {
+        List<string> ids = [.. players.Select(player => player.Value).Distinct(StringComparer.Ordinal)];
+        List<PlayerEntity> known = await this._context.Players
+            .Where(entity => ids.Contains(entity.Id) && entity.LastSignedIn != null)
+            .ToListAsync(cancellationToken);
+        return known.ToImmutableDictionary(
+            entity => new PlayerId(entity.Id),
+            entity => new DateTimeOffset(DateTime.SpecifyKind(entity.LastSignedIn!.Value, DateTimeKind.Utc))
+        );
+    }
+
+    public async Task MarkSignedIn(PlayerId player, DateTimeOffset time, CancellationToken cancellationToken) =>
+        _ = await this._context.Players
+            .Where(entity => entity.Id == player.Value)
+            .ExecuteUpdateAsync(
+                setters => setters.SetProperty(entity => entity.LastSignedIn, time.UtcDateTime),
+                cancellationToken
+            );
+
     public async Task Add([Required] Player player, CancellationToken cancellationToken)
     {
         _ = this._context.Players.Add(

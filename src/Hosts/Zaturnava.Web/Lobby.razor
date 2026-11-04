@@ -6,13 +6,15 @@
    hard, by the bots' ratings; a strength whose bots all have seats is offered to no other), and, if they like,
    which of those bots, each named with its rating; else each is chosen at random among them - or quick: start one
    at once, at a seat chosen at random, easy, medium or hard by which bots it seats among the others - or join,
-   watch or go back to one already started; a game over is only listed, with nothing left to watch. Seats go by
+   watch or go back to one already started, each saying whether it waits for players or has not started, and when it
+   was created and last changed; a game over is only listed, with nothing left to watch. Seats go by
    the ruleset's names for them (Black, Yellow...), not by number. A bot paid for each use is seated only when
    chosen: never by default, nor at random. A server in development also offers scenarios, games set up
    part-way, to start from. Preview games, not yet ready for everyone, are named so, and neither offered nor listed
    unless the player chooses to show them (remembered in the browser). *@
 @inject IGameServing Games
 @inject Browser Browser
+@inject TimeProvider Clock
 
 <section class="lobby">
     @if (this._problem is { } problem)
@@ -230,6 +232,7 @@
                         <span class="ruleset">@NameOf(catalog, game.RulesetId)</span>
                         <span class="players">@Players(game)</span>
                         <span class="moves">@Moves(game)</span>
+                        <span class="state">@this.StateOf(game)</span>
                         @if (game.IsOver)
                         {
                             <span class="over">Over</span>
@@ -466,6 +469,26 @@
         IsAlly(ruleset, you, seat) ? "Your ally" : "Enemy";
 
     private static string Moves(GameSummaryDto game) => game.Moves == 1 ? "1 move" : $"{game.Moves} moves";
+
+    /// <summary>
+    /// "Waiting for a player; created 3 h ago, last change 5 min ago": whether it waits for a seat to be taken or has
+    /// not started, and when it was created and last changed, if those were kept.
+    /// </summary>
+    private string StateOf(GameSummaryDto game)
+    {
+        DateTimeOffset now = this.Clock.GetUtcNow();
+        string? progress = (game.IsOver, game.OpenSeats.Count, game.Moves) switch
+        {
+            (false, 1, _) => "Waiting for a player",
+            (false, > 1, _) => "Waiting for players",
+            (false, _, 0) => "Not started",
+            _ => null,
+        };
+        string? created = game.Created is { } time ? $"created {TimeAgo.Since(time, now)}" : null;
+        string? changed = game.LastChanged is { } last ? $"last change {TimeAgo.Since(last, now)}" : null;
+        string times = string.Join(", ", new[] { created, changed }.OfType<string>());
+        return string.Join("; ", new[] { progress, times }.Where(part => !string.IsNullOrEmpty(part)));
+    }
 
     /// <summary>What the ruleset calls the seat, "Black"; "seat 2" if it names none.</summary>
     private static string SeatName(ImmutableList<string> names, int seat) =>

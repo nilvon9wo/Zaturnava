@@ -121,6 +121,36 @@ public sealed class InMemoryPlayerStoreTest
     }
 
     [Fact]
+    public async Task LastSignedIn_WhenSomePlayersSignedIn_ReadsBackTheirsAlone()
+    {
+        // Arrange
+        DateTimeOffset time = DateTimeOffset.UnixEpoch;
+        await this._store.Add(Ada, this._cancellation);
+        await this._store.MarkSignedIn(Ada.Id, time, this._cancellation);
+
+        // Act
+        ImmutableDictionary<PlayerId, DateTimeOffset> signedIn =
+            await this._store.LastSignedIn([Ada.Id, new PlayerId("bea"), Ada.Id], this._cancellation);
+
+        // Assert
+        Assert.Equal([KeyValuePair.Create(Ada.Id, time)], signedIn);
+    }
+
+    [Fact]
+    public async Task Remove_WhenThePlayerSignedIn_ForgetsWhen()
+    {
+        // Arrange
+        await this._store.Add(Ada, this._cancellation);
+        await this._store.MarkSignedIn(Ada.Id, DateTimeOffset.UnixEpoch, this._cancellation);
+
+        // Act
+        await this._store.Remove(Ada.Id, this._cancellation);
+
+        // Assert
+        Assert.Empty(await this._store.LastSignedIn([Ada.Id], this._cancellation));
+    }
+
+    [Fact]
     public async Task Remove_WhenThePlayerHasNoSession_ForgetsThemStill()
     {
         // Arrange

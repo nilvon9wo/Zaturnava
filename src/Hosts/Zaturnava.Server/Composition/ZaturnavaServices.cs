@@ -56,6 +56,15 @@ internal static class ZaturnavaServices
     public const string ChatLeftAfterKey = "Chat:LeftAfterSeconds";
     public const string ChatSweepKey = "Chat:SweepSeconds";
 
+    /// <summary>
+    /// The configuration keys for how long, in seconds, a game not over with a guest at it is kept once nothing more
+    /// happens; one waiting for a signed-in player who has not signed in for as long; and how often such games are
+    /// looked for (<see cref="GameSweeper"/>).
+    /// </summary>
+    public const string GuestGamesKeptKey = "Games:GuestGamesKeptSeconds";
+    public const string AwaitedGamesKeptKey = "Games:AwaitedGamesKeptSeconds";
+    public const string GameSweepKey = "Games:SweepSeconds";
+
     private const string DefaultTimerKey = "Default";
 
     public static IServiceCollection AddZaturnava(this IServiceCollection services, IConfiguration configuration) =>
@@ -76,10 +85,19 @@ internal static class ZaturnavaServices
             .AddScoped<GameService>()
             .AddScoped<ChatService>()
             .AddScoped<PlayerService>()
+            .AddSingleton(TimeProvider.System)
             .AddSingleton(new LinkCodes(TimeProvider.System))
             .AddSingleton(ChatSettingsOf(configuration))
             .AddSingleton<ChatTables>()
             .AddHostedService<ChatSweeper>()
+            .AddSingleton(
+                new GameSweeper.Interval(
+                    TimeSpan.FromSeconds(
+                        configuration.GetValue(GameSweepKey, GameSweeper.Interval.Default.TotalSeconds)
+                    )
+                )
+            )
+            .AddHostedService<GameSweeper>()
             .AddProblemDetails()
             .AddExceptionHandler<RefusalHandler>();
 
@@ -133,6 +151,12 @@ internal static class ZaturnavaServices
             ),
             ReplaceWait = TimeSpan.FromSeconds(
                 configuration.GetValue(ReplaceWaitKey, GameServiceSettings.DefaultReplaceWait.TotalSeconds)
+            ),
+            GuestGamesKept = TimeSpan.FromSeconds(
+                configuration.GetValue(GuestGamesKeptKey, GameServiceSettings.DefaultGuestGamesKept.TotalSeconds)
+            ),
+            AwaitedGamesKept = TimeSpan.FromSeconds(
+                configuration.GetValue(AwaitedGamesKeptKey, GameServiceSettings.DefaultAwaitedGamesKept.TotalSeconds)
             ),
         };
     }

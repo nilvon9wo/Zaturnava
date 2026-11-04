@@ -25,6 +25,18 @@ public interface IPlayerPersisting
         CancellationToken cancellationToken
     );
 
+    /// <summary>
+    /// When each of <paramref name="players"/> last signed in; one forgotten, or not signed in since this was kept,
+    /// is left out.
+    /// </summary>
+    Task<ImmutableDictionary<PlayerId, DateTimeOffset>> LastSignedIn(
+        [Required] ImmutableList<PlayerId> players,
+        CancellationToken cancellationToken
+    );
+
+    /// <summary>Keeps that the player signed in at <paramref name="time"/>.</summary>
+    Task MarkSignedIn(PlayerId player, DateTimeOffset time, CancellationToken cancellationToken);
+
     /// <summary>Keeps a new player, with their logins.</summary>
     Task Add([Required] Player player, CancellationToken cancellationToken);
 

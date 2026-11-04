@@ -59,6 +59,8 @@ internal static class GameViews
         {
             SeatNames = [.. game.Controllers.Select((_, seat) => rules.NameOf(new SeatId(seat)))],
             IsOver = game.IsOver,
+            Created = game.Created,
+            LastChanged = game.LastChanged,
         };
 
     /// <summary>A game's history, on the wire: the same shape self-play writes it in.</summary>

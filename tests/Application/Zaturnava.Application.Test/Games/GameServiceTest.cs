@@ -31,6 +31,7 @@ public sealed class GameServiceTest
 
     private readonly RecordingNotifier _notifier = new();
     private readonly SteppedTime _time = new();
+    private readonly InMemoryPlayerStore _players = new();
     private readonly GameService _service;
     private readonly GameService _paced;
     private readonly CancellationToken _cancellation = TestContext.Current.CancellationToken;
@@ -512,6 +513,85 @@ public sealed class GameServiceTest
 
         // Assert
         Assert.Equal(1, page.Total);
+    }
+
+    [Fact]
+    public async Task PurgeAbandoned_WhenAGuestsGameWasLeftLongEnough_LetsGoOfItAlone()
+    {
+        // Arrange - a guest's game, a signed-in player's and nobody's, left long enough; and a guest's game since
+        InMemoryGameStore store = new();
+        GameService service = this.Service(GameServiceSettings.Default, store);
+        GameId guest = await service.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
+        _ = await service.Claim(guest, First, this._cancellation);
+        GameId player = await service.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
+        _ = await service.Claim(player, First, new PlayerId("ada"), null, this._cancellation);
+        GameId nobody = await service.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
+        this._time.Pass(GameServiceSettings.DefaultGuestGamesKept + FiveSeconds);
+        GameId recent = await service.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
+        _ = await service.Claim(recent, First, this._cancellation);
+
+        // Act
+        int purged = await service.PurgeAbandoned(this._cancellation);
+
+        // Assert
+        ImmutableList<GameRecord> kept = await store.List(this._cancellation);
+        IEnumerable<string> expected = new[] { player, nobody, recent }.Select(id => id.Value);
+        Assert.Equal(
+            (1, string.Join(",", expected.Order(StringComparer.Ordinal))),
+            (purged, string.Join(",", kept.Select(game => game.Id.Value)))
+        );
+    }
+
+    [Fact]
+    public async Task PurgeAbandoned_WhenGamesWaitLongForPlayersGoneAsLong_LetsGoOfThoseAlone()
+    {
+        // Arrange - each game but the last left long enough, the first seat to decide in each
+        InMemoryGameStore store = new();
+        GameService service = this.Service(GameServiceSettings.Default, store);
+        DateTimeOffset now = this._time.Now;
+        DateTimeOffset longAgo = now - GameServiceSettings.DefaultAwaitedGamesKept - FiveSeconds;
+        await this._players.MarkSignedIn(new PlayerId("gone"), longAgo, this._cancellation);
+        await this._players.MarkSignedIn(new PlayerId("back"), now, this._cancellation);
+        GameRecord[] games =
+        [
+            Waiting("gone", "gone", longAgo),
+            Waiting("back", "back", longAgo),
+            Waiting("unknown", "unknown", longAgo),
+            Waiting("guest", "gone", longAgo) with { Controllers = [new HumanSeat("hash"), new OpenSeat()] },
+            Waiting("retired", "gone", longAgo) with { RulesetId = "retired" },
+            Waiting("broken", "gone", longAgo) with { Actions = [new PassAction(Second).Describe()] },
+            Waiting("bot", "gone", longAgo) with { Controllers = [new BotSeat(FirstChoiceBot.BotId), new OpenSeat()] },
+            Waiting("recent", "gone", now),
+        ];
+        foreach (GameRecord game in games)
+        {
+            await store.Add(game, this._cancellation);
+        }
+
+        // Act
+        int purged = await service.PurgeAbandoned(this._cancellation);
+
+        // Assert
+        ImmutableList<GameRecord> kept = await store.List(this._cancellation);
+        Assert.Equal(
+            (2, "back,bot,broken,recent,retired,unknown"),
+            (purged, string.Join(",", kept.Select(game => game.Id.Value)))
+        );
+    }
+
+    [Fact]
+    public async Task Create_WhenCalled_SavesWhenTheGameWasCreated()
+    {
+        // Arrange
+        InMemoryGameStore store = new();
+        GameService service = this.Service(GameServiceSettings.Default, store);
+
+        // Act
+        GameId id = await service.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
+
+        // Assert
+        GameRecord? saved = await store.Find(id, this._cancellation);
+        Assert.Equal((this._time.Now, this._time.Now), (saved?.Created, saved?.LastChanged));
     }
 
     [Fact]
@@ -1262,6 +1342,20 @@ public sealed class GameServiceTest
     private Task<GameId> CreateOpen() =>
         this._service.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
 
+    /// <summary>A game of <see cref="TinyRules"/> not over, its first seat a signed-in player's.</summary>
+    private static GameRecord Waiting(string id, string player, DateTimeOffset changed) =>
+        new(
+            new GameId(id),
+            TinyRules.RulesetId,
+            [new HumanSeat("hash", new PlayerId(player)), new OpenSeat()],
+            [],
+            1
+        )
+        {
+            IsOver = false,
+            LastChanged = changed,
+        };
+
     private GameService Service(
         GameServiceSettings settings,
         InMemoryGameStore? store = null,
@@ -1284,6 +1378,7 @@ public sealed class GameServiceTest
             this._notifier,
             new LoadedDice(4),
             new DecisionClock(this._time),
-            settings
+            settings,
+            this._players
         );
 }
