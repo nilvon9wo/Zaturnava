@@ -9,6 +9,12 @@ public static class Chaturaji2027Endings
     /// <summary>Only Rajas are left: an honourable peace, a draw.</summary>
     public const string OnlyRajasLeft = "only-rajas-left";
 
+    /// <summary>
+    /// A team's only pieces left are retired Rajas: a draw if it has as many points as its enemies or more, else
+    /// they win.
+    /// </summary>
+    public const string OnlyRetiredLeft = "only-retired-left";
+
     /// <summary>Every player still playing agreed to end it; points decide.</summary>
     public const string Agreement = "agreement";
 

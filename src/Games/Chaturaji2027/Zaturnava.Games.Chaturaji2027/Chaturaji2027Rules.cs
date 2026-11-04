@@ -485,12 +485,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             PromoteAction promote => this.Promoted(state, promote),
             EscapeAction escape => this.Escaped(state, escape),
             HandOverAction handOver => HandedToRegent(state, handOver),
-            RetireAction retire => this.Handed(
-                new Transition(
-                    state with { Retired = state.Retired.Add(retire.Actor) },
-                    [new RajaRetired(retire.Actor)]
-                )
-            ),
+            RetireAction retire => this.Retired(state, retire),
             AnswerEndAction answer => Agreement.Answered(state, answer),
             AcceptAction => this._ransom.Accepted(state),
             PlaceAction place => this._ransom.Placed(state, place),
@@ -501,6 +496,16 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             _ when state.Dice.IsEmpty => this.IdlePass(new Transition(state, []), Ransom.MayOffer(state)),
             _ => this.Declined(new Transition(state, []), Ransom.MayOffer(state)),
         };
+
+    /// <summary>The seat retires; if its team has only retired Rajas left, the game ends (rules.md §10).</summary>
+    private Transition Retired(GameState state, RetireAction retire)
+    {
+        Transition retired = new(
+            state with { Retired = state.Retired.Add(retire.Actor) },
+            [new RajaRetired(retire.Actor)]
+        );
+        return GameEnd.AfterMove(retired, this._variant) ?? this.Handed(retired);
+    }
 
     /// <summary>The regent decides the rest of the turn, for the seat whose turn it is (rules.md §6.2).</summary>
     private static Transition HandedToRegent(GameState state, HandOverAction handOver) =>
@@ -857,7 +862,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     }
 
     /// <summary>
-    /// The turn goes clockwise to the next seat with pieces left (rules.md §10) - and, if that seat has
+    /// The turn goes clockwise to the next seat still playing (rules.md §10) - and, if that seat has
     /// given up its turns, on to its ally, if the ally may be its regent (§6.2).
     /// </summary>
     private Transition Handed(Transition transition)

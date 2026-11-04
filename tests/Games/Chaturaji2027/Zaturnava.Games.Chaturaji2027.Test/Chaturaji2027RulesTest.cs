@@ -1976,6 +1976,104 @@ public sealed class Chaturaji2027RulesTest
         Assert.Equal(Yellow, round.State.DecidingSeat);
     }
 
+    [Theory]
+    [InlineData(2, 2, false)]
+    [InlineData(3, 1, false)]
+    [InlineData(1, 2, true)]
+    public void Apply_WhenARetiringRajaLeavesItsTeamOnlyRetiredRajas_EndsTheGameByPoints(
+        int blacksPoints,
+        int yellowsPoints,
+        bool isBehind
+    )
+    {
+        // Arrange - Black's Raja is its team's last piece
+        GameState state = this.StateWith(
+            (Grid.CellAt(3, 3), Piece(3, Chaturaji2027Pieces.Raja, Black)),
+            (Grid.CellAt(0, 6), Piece(12, Chaturaji2027Pieces.Pawn, Yellow))
+        ) with
+        {
+            Scores = this.Later().Scores.SetItem(Black, blacksPoints).SetItem(Yellow, yellowsPoints),
+        };
+
+        // Act
+        Transition retired = this._rules.Apply(state, new RetireAction(Black));
+
+        // Assert
+        GameOutcome ended = isBehind
+            ? new(
+                [Yellow, Red],
+                "only-retired-left",
+                "a team has only retired Rajas left, and fewer points than its enemies"
+            )
+            : new(
+                [],
+                "only-retired-left",
+                "a team has only retired Rajas left, and at least as many points as its enemies: a draw"
+            );
+        Assert.Equal((null, ended), (retired.State.DecidingSeat, retired.State.Outcome));
+        Assert.Equal([new RajaRetired(Black), new GameEnded(ended)], retired.Events);
+    }
+
+    [Fact]
+    public void Apply_WhenTakingAPieceLeavesItsTeamOnlyARetiredRaja_EndsTheGameByPoints()
+    {
+        // Arrange - Yellow's Horse on a6 is its team's last piece but Red's retired Raja
+        GameState state = this.StateWith(
+            (Grid.CellAt(0, 0), Piece(1, Chaturaji2027Pieces.Elephant, Black)),
+            (Grid.CellAt(0, 5), Piece(2, Chaturaji2027Pieces.Horse, Yellow)),
+            (Grid.CellAt(7, 7), Piece(27, Chaturaji2027Pieces.Raja, Red))
+        ) with
+        {
+            Retired = [Red],
+        };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new MoveAction(Black, Grid.CellAt(0, 0), Grid.CellAt(0, 5)));
+
+        // Assert
+        GameOutcome won = new(
+            [Black, Green],
+            "only-retired-left",
+            "a team has only retired Rajas left, and fewer points than its enemies"
+        );
+        Assert.Equal(won, transition.State.Outcome);
+    }
+
+    [Theory]
+    [InlineData("nothing", "Green")]
+    [InlineData("a piece of its own held", "Yellow")]
+    [InlineData("a prisoner of its own", "Yellow")]
+    [InlineData("a prisoner, but retired", "Green")]
+    public void Apply_WhenTheTurnComesToASeatWithNoPiecesOnTheBoard_GivesItTheTurnWhilePrisonersAreInPlay(
+        string held,
+        string next
+    )
+    {
+        // Arrange - Yellow has no pieces on the board
+        Prisoner own = new(Piece(12, Chaturaji2027Pieces.Pawn, Yellow), Green);
+        Prisoner taken = new(Piece(4, Chaturaji2027Pieces.Pawn, Black), Yellow);
+        GameState state = this.StateWith(
+            (Grid.CellAt(3, 3), Piece(3, Chaturaji2027Pieces.Raja, Black)),
+            (Grid.CellAt(6, 2), Piece(19, Chaturaji2027Pieces.Raja, Green)),
+            (Grid.CellAt(6, 6), Piece(29, Chaturaji2027Pieces.Pawn, Red))
+        ) with
+        {
+            Prisoners = held switch
+            {
+                "nothing" => [],
+                "a piece of its own held" => [own],
+                _ => [taken],
+            },
+            Retired = held == "a prisoner, but retired" ? [Yellow] : [],
+        };
+
+        // Act
+        Transition passed = this._rules.Apply(state, new PassAction(Black));
+
+        // Assert
+        Assert.Equal(next == "Yellow" ? Yellow : Green, passed.State.DecidingSeat);
+    }
+
     [Fact]
     public void Apply_WhenARetiredSeatsRajaIsTaken_ScoresNoOne()
     {
@@ -2976,7 +3074,7 @@ public sealed class Chaturaji2027RulesTest
     [InlineData("gave up")]
     public void MayProposeEnd_WhenTheGameCannotPauseOrTheSeatGaveUp_IsFalse(string situation)
     {
-        // Arrange - Red has no pieces left in the ransoms' position
+        // Arrange - Red has no pieces left in the ransoms' position, nor, without prisoners, anything to play for
         GameState playing = this.Regency(hasBlackRaja: true, Grid.CellAt(6, 2));
         (GameState state, SeatId seat) = situation switch
         {
@@ -2985,7 +3083,7 @@ public sealed class Chaturaji2027RulesTest
             "dice awaited" => (playing with { AwaitedDice = new DiceRequest(2, 6) }, Black),
             "rolling off" => (this._rules.CreateInitialState() with { AwaitedDice = null }, Black),
             "gave up" => (playing with { Resigned = [Black] }, Black),
-            _ => (this.Ransoms(), Red),
+            _ => (this.Ransoms() with { Prisoners = [] }, Red),
         };
 
         // Act
@@ -3173,15 +3271,16 @@ public sealed class Chaturaji2027RulesTest
     [InlineData("absent has no pieces")]
     public void MayVoteAway_WhenEitherSeatIsOutOrTheyAreOne_IsFalse(string why)
     {
-        // Arrange - in the ransoms' position, Red has no pieces
+        // Arrange - in the ransoms' position, Red has no pieces; without prisoners, nothing to play for
         GameState playing = this.Ransoms();
+        GameState freed = playing with { Prisoners = [] };
         (GameState state, SeatId voter, SeatId absent) = why switch
         {
             "game over" => (playing with { Outcome = new GameOutcome([], "over", "over") }, Yellow, Black),
             "oneself" => (playing, Black, Black),
-            "voter has no pieces" => (playing, Red, Black),
+            "voter has no pieces" => (freed, Red, Black),
             "voter gave up" => (playing with { Resigned = [Yellow] }, Yellow, Black),
-            _ => (playing, Yellow, Red),
+            _ => (freed, Yellow, Red),
         };
 
         // Act
