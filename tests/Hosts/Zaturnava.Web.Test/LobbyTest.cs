@@ -685,7 +685,7 @@ public sealed class LobbyTest : IDisposable
     }
 
     [Fact]
-    public void Render_WhenLoaded_ListsTheFirstPageOfTheGamesNotOver()
+    public void Render_WhenLoaded_ListsTheFirstPageOfTheGamesWaitingForPlayers()
     {
         // Arrange - nothing beyond the server
 
@@ -694,7 +694,7 @@ public sealed class LobbyTest : IDisposable
 
         // Assert
         Assert.Equal(
-            (new GameListQuery(Over: false), "not-over", 0),
+            (Waiting(), "waiting", 0),
             (this._page.Server.Listed, lobby.Find("select.filter-state").GetAttribute("value"), Pages(lobby))
         );
     }
@@ -764,7 +764,7 @@ public sealed class LobbyTest : IDisposable
 
         // Assert
         Assert.Equal(
-            (new GameListQuery(Over: false, Game: "grand-legions"), "Any|small|large"),
+            (Waiting() with { Game = "grand-legions" }, "Any|small|large"),
             (
                 this._page.Server.Listed,
                 string.Join('|', lobby.FindAll("select.filter-size option").Select(option => option.TextContent))
@@ -786,7 +786,7 @@ public sealed class LobbyTest : IDisposable
         lobby.Find("select.filter-size").Change(chosen);
 
         // Assert
-        Assert.Equal(new GameListQuery(expected, Over: false, Game: "grand-legions"), this._page.Server.Listed);
+        Assert.Equal(Waiting() with { Ruleset = expected, Game = "grand-legions" }, this._page.Server.Listed);
     }
 
     [Fact]
@@ -803,7 +803,7 @@ public sealed class LobbyTest : IDisposable
 
         // Assert
         Assert.Equal(
-            (new GameListQuery(Over: false, Game: "chaturaji-2027"), 0),
+            (Waiting() with { Game = "chaturaji-2027" }, 0),
             (this._page.Server.Listed, lobby.FindAll("select.filter-size").Count)
         );
     }
@@ -819,7 +819,7 @@ public sealed class LobbyTest : IDisposable
         lobby.Find("select.filter-game").Change(string.Empty);
 
         // Assert
-        Assert.Equal(new GameListQuery(Over: false), this._page.Server.Listed);
+        Assert.Equal(Waiting(), this._page.Server.Listed);
     }
 
     [Theory]
@@ -849,7 +849,7 @@ public sealed class LobbyTest : IDisposable
         lobby.Find("input.filter-people").Change(ticked);
 
         // Assert
-        Assert.Equal(new GameListQuery(PeopleOnly: expected, Over: false), this._page.Server.Listed);
+        Assert.Equal(Waiting() with { PeopleOnly = expected }, this._page.Server.Listed);
     }
 
     [Fact]
@@ -897,7 +897,7 @@ public sealed class LobbyTest : IDisposable
 
         // Assert
         Assert.Equal(
-            (new GameListQuery(Over: false, Page: 2), "Page 2 of 3 (45 games)"),
+            (Waiting() with { Page = 2 }, "Page 2 of 3 (45 games)"),
             (this._page.Server.Listed, lobby.Find("span.page-number").TextContent)
         );
     }
@@ -939,6 +939,9 @@ public sealed class LobbyTest : IDisposable
     }
 
     private static int Pages(IRenderedComponent<Lobby> lobby) => lobby.FindAll("div.pages").Count;
+
+    /// <summary>What the list asks for until the player filters it otherwise: the games waiting for players.</summary>
+    private static GameListQuery Waiting() => new(Open: true, Over: false);
 
     /// <summary>A ruleset that is one size of a game played at several: "Grand Legions (small)".</summary>
     private static RulesetDto Sized(string game, string gameName, string size) =>
