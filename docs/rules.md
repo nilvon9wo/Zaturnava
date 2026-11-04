@@ -31,7 +31,7 @@ Everything else here is specified but not yet played by the engine.
 | §7 Escape | Implemented, as clarified below: the escape takes the place of the double move and ends the turn. |
 | §9 Boat triumph | Not yet. |
 | §8 Promotion & ransom | Implemented, as clarified below: promotion into any captured piece (`promotion.pawns` a constructor argument; `promotion.pool` fixed at `unrestricted`), and ransom with its timed protocol, including the receiving player's choice among equidistant squares, and the release of one's own team's pieces. |
-| §10 Game end | Implemented: elimination (a seat with no pieces is skipped), Raja retirement, honourable peace, team elimination, ending by agreement (as stated and proposed below), a team that has all given up its turns, and a safety net (below). |
+| §10 Game end | Implemented: elimination (a seat with no pieces, and no prisoners in play, is skipped), Raja retirement and a team left only retired Rajas, honourable peace, team elimination, ending by agreement (as stated and proposed below), a team that has all given up its turns, and a safety net (below). |
 | §11 Setup roll-off | Implemented. |
 | §12 Toggles | None per game yet: the defaults are fixed. |
 
@@ -623,6 +623,12 @@ both the triumphing player and their ally may move each other's Boat.
 
 - **Elimination**: if a player loses every piece, their ally continues playing
   alone for the rest of the game.
+  - *(Stated 2026-11-04)* A player with no pieces on the board still takes
+    their turns while any of their pieces is held prisoner, or while they
+    hold prisoners: they may roll to let a piece escape (§7), and offer
+    their prisoners for ransom, until the game is over. Bots do too. Only a
+    player with no pieces on the board, none held prisoner and no prisoners
+    of their own is skipped.
 - **Voluntary Raja retirement**: a player reduced to only their Raja may
   choose to end their own participation; no points are ever awarded for
   capturing that Raja from then on.
@@ -641,6 +647,12 @@ both the triumphing player and their ally may move each other's Boat.
       enemy Raja that has not retired is taken. A retired player creates no
       empire, and is offered no ransom.
     - Bots never retire.
+  - *(Stated 2026-11-04)* Once a team's only pieces left on the board are
+    retired Rajas, the game is over, as no one is left to play against: a
+    draw if that team has as many points as the other or more, else the
+    other team wins. So neither retiring nor taking a retired Raja (which
+    scores nothing) hands the win to a team behind on points. This applies
+    as soon as a Raja retires, or a move leaves a team so.
 - *(Stated 2026-10-29)* **How bots end a game.**
   - A bot follows a resting ally: when an ally has given up their turns with
     a clear lead (10 on points and on the board both), and no one else in
@@ -693,8 +705,8 @@ both the triumphing player and their ally may move each other's Boat.
       lead is only needed to force the end. As long as someone on each team
       wants to keep going, nothing forces an end; a team behind may always
       concede. The Guide says so.
-    - *(Proposed)* "Every player" means every one still playing (§10: with
-      pieces left, not retired); giving up by missing turns while away (below)
+    - *(Proposed)* "Every player" means every one still playing (§10: not
+      retired, with pieces left, or prisoners in play); giving up by missing turns while away (below)
       counts too; a proposal still waiting for answers ends with the game.
   - *(Proposed)* The details:
     - Any player still playing may propose it at any time, on anyone's turn,

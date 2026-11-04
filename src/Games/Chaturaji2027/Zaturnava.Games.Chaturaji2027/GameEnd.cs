@@ -17,21 +17,38 @@ internal static class GameEnd
 {
     public const string OneTeamLeft = "only one team has pieces left";
     public const string OnlyRajasLeft = "only Rajas are left, an honourable peace";
+
+    public const string RetiredAndLevel =
+        "a team has only retired Rajas left, and at least as many points as its enemies: a draw";
+
+    public const string RetiredAndBehind = "a team has only retired Rajas left, and fewer points than its enemies";
     public const string TeamGaveUp = "a whole team gave up their turns, so points decide";
 
     /// <summary>How far ahead, on points and on the board both, a team must be to win by giving up its turns.</summary>
     public const int ClearLead = 10;
 
-    /// <summary>The ended game, if the board leaves nothing to play for; otherwise null.</summary>
+    /// <summary>
+    /// The ended game, if the board leaves nothing to play for; otherwise null. A team whose only pieces left are
+    /// retired Rajas plays no more: a draw if it has as many points as its enemies or more, else they win - so that
+    /// neither retiring a Raja nor taking a retired one decides the game.
+    /// </summary>
     public static Transition? AfterMove(Transition transition, Chaturaji2027Variant variant)
     {
         GameState state = transition.State;
         ImmutableList<Piece> pieces = [.. state.Position.Occupants.Values];
         ImmutableList<int> teams = [.. pieces.Select(piece => state.Teams.TeamOf(piece.Owner)).Distinct()];
-        GameOutcome? outcome = (teams.Count, pieces.All(piece => variant.Leaders.Contains(piece.Kind))) switch
+        int? retired = teams
+            .Where(team => pieces
+                .Where(piece => state.Teams.TeamOf(piece.Owner) == team)
+                .All(piece => state.Retired.Contains(piece.Owner))
+            )
+            .Cast<int?>()
+            .FirstOrDefault();
+        GameOutcome? outcome = (teams.Count, pieces.All(piece => variant.Leaders.Contains(piece.Kind)), retired) switch
         {
-            (1, _) => new GameOutcome(TeamOf(state, teams[0]), Chaturaji2027Endings.OneTeamLeft, OneTeamLeft),
-            (_, true) => new GameOutcome([], Chaturaji2027Endings.OnlyRajasLeft, OnlyRajasLeft),
+            (1, _, _) => new GameOutcome(TeamOf(state, teams[0]), Chaturaji2027Endings.OneTeamLeft, OneTeamLeft),
+            (_, true, _) => new GameOutcome([], Chaturaji2027Endings.OnlyRajasLeft, OnlyRajasLeft),
+            (_, _, { } team) => OnlyRetiredLeft(state, team),
             _ => null,
         };
         return outcome is null
@@ -82,9 +99,14 @@ internal static class GameEnd
     public static Transition ByPoints(Transition transition, string ending, string reason) =>
         Ended(transition, OutcomeByPoints(transition.State, ending, reason));
 
-    /// <summary>Whether the seat still takes its turns: it has pieces left, and has not retired.</summary>
+    /// <summary>
+    /// Whether the seat still plays, taking its turns (rules.md §10): it has not retired, and has pieces on the
+    /// board, or pieces held prisoner, which may yet escape, or prisoners of its own, to offer back.
+    /// </summary>
     public static bool IsPlaying(GameState state, SeatId seat) =>
-        !state.Retired.Contains(seat) && state.Position.Occupants.Values.Any(piece => piece.Owner == seat);
+        !state.Retired.Contains(seat)
+        && (state.Position.Occupants.Values.Any(piece => piece.Owner == seat)
+            || state.Prisoners.Any(prisoner => prisoner.Piece.Owner == seat || prisoner.Holder == seat));
 
     /// <summary>Whether giving up its turns ends the game for the team: it trails, or leads by far.</summary>
     private static bool MayGiveUp(GameState state, int team, Chaturaji2027Variant variant) =>
@@ -119,6 +141,16 @@ internal static class GameEnd
         ImmutableList<int> leaders = [.. totals.Where(total => total.Points == best).Select(total => total.Team)];
         return new GameOutcome(leaders.Count == 1 ? TeamOf(state, leaders[0]) : [], ending, reason);
     }
+
+    /// <summary>A team left only retired Rajas: a draw if it is not behind on points, else its enemies win.</summary>
+    private static GameOutcome OnlyRetiredLeft(GameState state, int team) =>
+        PointsLead(state, team) >= 0
+            ? new GameOutcome([], Chaturaji2027Endings.OnlyRetiredLeft, RetiredAndLevel)
+            : new GameOutcome(
+                [.. state.Seats.Select(seat => seat.Id).Where(seat => state.Teams.TeamOf(seat) != team)],
+                Chaturaji2027Endings.OnlyRetiredLeft,
+                RetiredAndBehind
+            );
 
     private static ImmutableList<SeatId> TeamOf(GameState state, int team) =>
         [.. state.Seats.Select(seat => seat.Id).Where(seat => state.Teams.TeamOf(seat) == team)];

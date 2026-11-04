@@ -4,6 +4,57 @@ What the first playtest (2026-10-24) asked for, sorted by kind. Numbers are the 
 that each item can be traced to the note it came from. Items move to "Done" with the change that
 did them.
 
+## Going public (playtest of 2026-11-04)
+
+Numbered **N1**, **N2**... after that playtest's own notes. In the order planned (*Proposed*), most pressing
+first.
+
+- Rules: these change who wins, so they come first.
+  - **N9** A player who passes on all their turns is still offered ransoms; accepting one rejoins the game.
+  - **N10** The log tells an escape as "Y escaped from X", or "Z helped Y escape from X" when an ally's doubles
+    freed it, never "X let Y escape".
+  - **N12** Escaping names each prisoner once ("Escape Black's Boat, held by Yellow"). Choosing it marks the
+    squares it may go to (a ring where it would take a piece), and a click on one frees it there; clicking
+    anything else leaves it a prisoner.
+- **N4, N5** Games not ready for the public (Grand Legions now) are *preview* games: named so, and hidden from
+  the lobby's game choices and list unless the player ticks "Show preview games" (*Stated*: no feature flags).
+- **N2** The database stays as it is through every change, by migrations; never wiped (*Stated*).
+- **N3** A leaderboard, for players to compete for; with each player's Elo and their **experience**: each time
+  a player is on the winning team, they gain their own points plus their team's (*Stated*).
+- The lobby's "New game" panel:
+  - **N13, N14** Quick game or Custom chosen above the game (or to its right, toward the panel's right edge,
+    where there is room).
+  - **N15** The choices' dropdowns aligned, not staggered.
+  - **N16** Play at the bottom right.
+  - **N17** The last setup of each game remembered when the player comes back.
+  - **N18** Grand Legions medium by default.
+- **N19** The footer kept at the bottom of the screen, not moving with the panels' content.
+- **N1** The itch.io page showed an old version. Every upload since 2026-11-01 took the usual time, so it is
+  likely something kept an old copy; the page should say which build it is (*Proposed*: in the footer).
+- The lobby's list of games:
+  - **N20, N21** Filter by players or bots (wildcards allowed, any seat), several at once ("Bob and Joe, and a
+    seat open").
+  - **N20** Each game says when it was created, whether it has started, when its last move was made, and
+    whether it waits for someone to take an open seat or for a player who went away to come back.
+  - **N20** Abandoned games are purged: any game with a guest in it and no activity for 24 hours, and any game
+    waiting for a signed-in player who has not signed in for 31 days.
+  - **N20** On signing in, a player is reminded of every game waiting for their move, oldest first, and
+    encouraged to end those they no longer play and resume the oldest of the rest.
+- **N22** Profile: the free-form links field goes (the links come from sign-in instead; task 26).
+- **N23** A bot's name opens a profile of the bot, as a person's does.
+- **N24** Athena takes Pawns with its Raja and Rook (Elephant) when that only loses them: not a real sacrifice.
+- AI clients (*Stated*): two complete sample clients that play on Zaturnava, one by **MCP** and one by **UTCP**.
+  Both decide by the same shared project Athena uses, compile and run apart from Zaturnava, and document how a
+  developer makes their own bot from them.
+- Grand Legions (preview until these are done):
+  - **N25** Letters as pieces, ambiguous ones, make it nearly unplayable: it needs its own pieces' symbols.
+  - **N26** In the small game, with thrones in the corners, leaders start on their thrones.
+  - **N27** Elephants are cavalry that move diagonally, more like bishops: never "translated" as Rooks.
+  - **N28** Grand Legions needs no traditional/chess pieces toggle; the toggle may not belong in the lobby.
+- **N29** (low) An encyclopedia of pieces: each piece's name here, its other names, the games it comes from
+  (Chess, Xiangqi...), the games here that use it, its variants (kinds of Pawn, of Elephant...), and how it
+  moves, captures and what else it may do.
+
 ## Seeing what happens
 
 - **25** In the lobby, say when each game started (who plays, how many moves and which seats are
@@ -160,6 +211,10 @@ did them.
 
 ## Done
 
+- **N6** Once a team's only pieces left are retired Rajas, the game ends: a draw if that team has as many
+  points as the other or more, else the other team wins (rules.md §10).
+- **N7, N11** A seat with no pieces on the board still takes its turns while any of its pieces is held
+  prisoner, or it holds prisoners: it may roll to let a piece escape, and offer ransoms (rules.md §10).
 - When the enemy on a player's throne passes on the move it makes for them, the player may still make it
   (rules.md §6.3): a rule the engine had lost.
 - Accepting a ransom scores a point for each prisoner it sends home (rules.md §8).
