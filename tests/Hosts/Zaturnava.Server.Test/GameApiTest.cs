@@ -162,6 +162,51 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
         );
     }
 
+    [Theory]
+    [InlineData("bob, Rand*", false, true)]
+    [InlineData("open,random", true, false)]
+    [InlineData("person, Bob (guest)", false, true)]
+    [InlineData("Bob, nobody", false, false)]
+    [InlineData(" , ", true, true)]
+    public async Task List_WhenAskedByPlayers_ListsOnlyTheGamesTheyAreAllAt(string players, bool lists, bool listsBobs)
+    {
+        // Arrange
+        string open = await this.CreateGame();
+        string bobs = await this.CreateGame();
+        _ = await this._client.Claim(bobs, 0, null, new ClaimSeatRequest("Bob"), this._cancellation);
+
+        // Act
+        GamePageDto page = await this._client.List(
+            new GameListQuery(PageSize: GameQueryMax, Players: players),
+            this._cancellation
+        );
+
+        // Assert
+        Assert.Equal(
+            (lists, listsBobs),
+            (page.Games.Any(game => game.Id == open), page.Games.Any(game => game.Id == bobs))
+        );
+    }
+
+    [Fact]
+    public async Task List_WhenAskedByPlayersForALaterPage_CountsOnlyTheGamesTheyAreAt()
+    {
+        // Arrange - a name no other game on the shared server has
+        string name = $"Pat{Guid.NewGuid():N}"[..12];
+        _ = await this.CreateGame();
+        string pats = await this.CreateGame();
+        _ = await this._client.Claim(pats, 0, null, new ClaimSeatRequest(name), this._cancellation);
+
+        // Act
+        GamePageDto page = await this._client.List(
+            new GameListQuery(Page: 2, PageSize: 1, Players: name),
+            this._cancellation
+        );
+
+        // Assert
+        Assert.Equal((0, 1), (page.Games.Count, page.Total));
+    }
+
     [Fact]
     public async Task List_WhenAskedForTooBigAPage_ListsAtMostTheMost()
     {

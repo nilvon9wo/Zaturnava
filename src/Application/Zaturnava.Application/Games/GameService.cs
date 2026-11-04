@@ -97,18 +97,29 @@ public sealed class GameService(
     /// The page of games <paramref name="query"/> asks for, of the rulesets still offered (of its game and ruleset, if
     /// it names them; previews or not, if it asks), as stored: none is replayed, however many there are.
     /// </summary>
-    public Task<GamePage> Page([Required] GameQuery query, CancellationToken cancellationToken)
+    public Task<GamePage> Page([Required] GameQuery query, CancellationToken cancellationToken) =>
+        this._store.Page(query.Bounded(), this.RulesetsAsked(query), cancellationToken);
+
+    /// <summary>
+    /// Every game <paramref name="query"/> asks for, as <see cref="Page"/> lists them but on no page: for filtering
+    /// further, by what the store does not know.
+    /// </summary>
+    public async Task<ImmutableList<GameListing>> All([Required] GameQuery query, CancellationToken cancellationToken)
     {
-        ImmutableHashSet<string> asked =
-        [
-            .. this.Rulesets
-                .Where(rules => query.GameId is null || rules.GameId == query.GameId)
-                .Where(rules => query.RulesetId is null || rules.Id == query.RulesetId)
-                .Where(rules => query.IsPreview is not { } preview || rules.IsPreview == preview)
-                .Select(rules => rules.Id),
-        ];
-        return this._store.Page(query.Bounded(), asked, cancellationToken);
+        GameQuery unpaged = query with { Page = 1, PageSize = int.MaxValue };
+        GamePage page = await this._store.Page(unpaged, this.RulesetsAsked(query), cancellationToken);
+        return page.Games;
     }
+
+    /// <summary>The rulesets still offered that <paramref name="query"/> asks for.</summary>
+    private ImmutableHashSet<string> RulesetsAsked(GameQuery query) =>
+    [
+        .. this.Rulesets
+            .Where(rules => query.GameId is null || rules.GameId == query.GameId)
+            .Where(rules => query.RulesetId is null || rules.Id == query.RulesetId)
+            .Where(rules => query.IsPreview is not { } preview || rules.IsPreview == preview)
+            .Select(rules => rules.Id),
+    ];
 
     /// <summary>
     /// Works out, once, whether each game saved before that was kept is over, by replaying it; a game of a ruleset

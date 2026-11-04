@@ -15,7 +15,8 @@ first.
   statistics also count the games they won, lost, drew and abandoned (*Stated*).
 - The lobby's list of games:
   - **N20, N21** Filter by players or bots (wildcards allowed, any seat), several at once ("Bob and Joe, and a
-    seat open").
+    seat open"). *Done*: a Players box takes names separated by commas, "Bob, Jo*, open"; `*` for any letters,
+    `open` for an open seat, `person` for anyone's, a bot by name or id, case not counting (*Proposed*).
   - **N20** Each game says when it was created, whether it has started, when its last move was made, and
     whether it waits for someone to take an open seat or for a player who went away to come back. *Done*, but
     for the player who went away: the lobby says when each game was created and last changed, and whether it
@@ -28,6 +29,8 @@ first.
   - **N20** On signing in, a player is reminded of every game waiting for their move, oldest first, and
     encouraged to end those they no longer play and resume the oldest of the rest.
 - **N24** Athena takes Pawns with its Raja and Rook (Elephant) when that only loses them: not a real sacrifice.
+  *Done*: Athena now subtracts a twentieth of what an enemy could take next from its network's judgement
+  (*Proposed* weight). Against Sage it went from about 63 Elo behind to about 17 behind.
 - AI clients (*Stated*): two complete sample clients that play on Zaturnava, one by **MCP** and one by **UTCP**.
   Both decide by the same shared project Athena uses, compile and run apart from Zaturnava, and document how a
   developer makes their own bot from them.

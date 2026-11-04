@@ -516,6 +516,21 @@ public sealed class GameServiceTest
     }
 
     [Fact]
+    public async Task All_WhenMoreGamesMatchThanAPageHolds_ListsEachOfTheRulesetAskedFor()
+    {
+        // Arrange
+        ImmutableList<GameId> tiny = [.. await Task.WhenAll(Enumerable.Range(0, 3).Select(_ => this.CreateOpen()))];
+        _ = await this._service.Create(RollingRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
+
+        // Act
+        ImmutableList<GameListing> all =
+            await this._service.All(new GameQuery(TinyRules.RulesetId, Page: 2, PageSize: 1), this._cancellation);
+
+        // Assert
+        Assert.Equal(tiny.Select(id => id.Value).Order(), all.Select(game => game.Id.Value).Order());
+    }
+
+    [Fact]
     public async Task PurgeAbandoned_WhenAGuestsGameWasLeftLongEnough_LetsGoOfItAlone()
     {
         // Arrange - a guest's game, a signed-in player's and nobody's, left long enough; and a guest's game since
