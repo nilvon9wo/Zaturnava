@@ -10,6 +10,7 @@ public sealed class InMemoryPlayerStore : IPlayerPersisting
 {
     private readonly ConcurrentDictionary<PlayerId, Player> _players = new();
     private readonly ConcurrentDictionary<string, PlayerId> _sessions = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<PlayerId, DateTimeOffset> _signedIn = new();
 
     public Task<Player?> ByLogin(Login login, CancellationToken cancellationToken) =>
         Task.FromResult(this._players.Values.FirstOrDefault(player => player.Logins.Contains(login)));
@@ -35,6 +36,23 @@ public sealed class InMemoryPlayerStore : IPlayerPersisting
                 .OfType<Player>()
                 .ToImmutableDictionary(player => player.Id, player => player.Name)
         );
+
+    public Task<ImmutableDictionary<PlayerId, DateTimeOffset>> LastSignedIn(
+        [Required] ImmutableList<PlayerId> players,
+        CancellationToken cancellationToken
+    ) =>
+        Task.FromResult(
+            players
+                .Distinct()
+                .Where(this._signedIn.ContainsKey)
+                .ToImmutableDictionary(player => player, player => this._signedIn[player])
+        );
+
+    public Task MarkSignedIn(PlayerId player, DateTimeOffset time, CancellationToken cancellationToken)
+    {
+        this._signedIn[player] = time;
+        return Task.CompletedTask;
+    }
 
     public Task Add([Required] Player player, CancellationToken cancellationToken)
     {
@@ -66,6 +84,7 @@ public sealed class InMemoryPlayerStore : IPlayerPersisting
     public Task Remove(PlayerId player, CancellationToken cancellationToken)
     {
         _ = this._players.TryRemove(player, out _);
+        _ = this._signedIn.TryRemove(player, out _);
         ImmutableList<string> sessions =
             [.. this._sessions.Where(session => session.Value == player).Select(session => session.Key)];
         sessions.ForEach(session => _ = this._sessions.TryRemove(session, out _));

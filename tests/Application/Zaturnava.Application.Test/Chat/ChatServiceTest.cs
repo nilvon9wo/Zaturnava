@@ -34,7 +34,8 @@ public sealed class ChatServiceTest
             new RecordingNotifier(),
             new LoadedDice(4),
             new DecisionClock(this._time),
-            GameServiceSettings.Default
+            GameServiceSettings.Default,
+            new InMemoryPlayerStore()
         );
         DecisionClock clock = new(this._time);
         this._chat = new ChatService(

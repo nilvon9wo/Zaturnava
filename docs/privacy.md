@@ -14,7 +14,8 @@ You need no account to play, and today there is none to make. What is kept:
   every action taken in it, in order; and when it was created and last changed. Nothing in a game says who a person
   is, unless they signed in (below). Finished games are kept, and their histories are public (at `api/history`), so
   that anyone, bots' authors included, can study them. A game not finished, with a guest (someone not signed in) at
-  it, is deleted once nothing has happened in it for 24 hours.
+  it, is deleted once nothing has happened in it for 24 hours; one waiting for a signed-in player to move, once
+  nothing has happened in it, and they have not signed in, for 31 days.
 - **On the server, for each seat a person holds:** a fingerprint (a SHA-256 hash) of the seat's secret token, so the
   server can tell the token when your browser shows it, without keeping the token itself; and the nickname you play
   by, if you gave one, shown to everyone as "Nickname (guest)" and kept with the game.
@@ -34,7 +35,8 @@ Signing in is optional, and is being built: the game page offers to sign in with
 (whichever the server is set up for), in a window of its own. Each is asked only who you are: your id there and the
 name you show there, never your e-mail address, your contacts or your servers.
 Your browser then keeps the token you were given until you sign out, when the server lets it go too, and it stands
-for no one any more. Signing in sets one cookie, only for the few minutes it takes, deleted once you are signed in. It keeps, on the server, your id at the provider, the name it shows you by, and a fingerprint (a SHA-256
+for no one any more. Signing in sets one cookie, only for the few minutes it takes, deleted once you are signed in. It keeps, on the server, your id at the provider, the name it shows you by, when you last signed in (so that a game
+left waiting for you can be let go once you have long stopped coming), and a fingerprint (a SHA-256
 hash) of the token your browser is then given, as for a seat. A seat you take while signed in also keeps your
 player id, so that the others at the table, and anyone watching or listing the games, see your name there; a seat
 taken without signing in shows "guest".

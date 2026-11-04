@@ -12,10 +12,27 @@ public sealed class PlayerServiceTest
     private static readonly Login Other = new("Google", "abcd");
 
     private readonly SteppedTime _time = new();
+    private readonly InMemoryPlayerStore _store = new();
     private readonly PlayerService _service;
     private readonly CancellationToken _cancellation = TestContext.Current.CancellationToken;
 
-    public PlayerServiceTest() => this._service = new(new InMemoryPlayerStore(), new LinkCodes(this._time));
+    public PlayerServiceTest() => this._service = new(this._store, new LinkCodes(this._time), this._time);
+
+    [Fact]
+    public async Task SignIn_WhenAgainLater_KeepsWhenTheyLastSignedIn()
+    {
+        // Arrange
+        SignedIn first = await this._service.SignIn(Login, "Ada", this._cancellation);
+        this._time.Pass(TimeSpan.FromDays(1));
+
+        // Act
+        _ = await this._service.SignIn(Login, "Ada", this._cancellation);
+
+        // Assert
+        ImmutableDictionary<PlayerId, DateTimeOffset> signedIn =
+            await this._store.LastSignedIn([first.Player.Id], this._cancellation);
+        Assert.Equal(this._time.Now, signedIn[first.Player.Id]);
+    }
 
     [Fact]
     public async Task SignIn_WhenTheLoginIsNew_MakesAPlayerNamedAsTheProviderNamesThem()

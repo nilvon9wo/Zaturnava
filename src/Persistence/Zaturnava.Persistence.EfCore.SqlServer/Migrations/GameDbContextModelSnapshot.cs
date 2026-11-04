@@ -140,6 +140,9 @@ namespace Net.NowhereAtAll.Zaturnava.Persistence.EfCore.SqlServer.Migrations
                         .HasMaxLength(32)
                         .HasColumnType("nvarchar(32)");
 
+                    b.Property<DateTime?>("LastSignedIn")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(40)

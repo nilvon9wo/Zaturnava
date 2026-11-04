@@ -294,8 +294,11 @@ base address (`GameRoutes`):
   when the server began.
 - **Abandoned games**: a game not over, with a guest at a seat, and unchanged
   for `Games:GuestGamesKeptSeconds` (default 86400, a day), is let go by the
-  `GameSweeper`, looking every `Games:SweepSeconds` (default 3600). A game
-  saved before its last change was kept is never let go this way.
+  `GameSweeper`, looking every `Games:SweepSeconds` (default 3600); so is one
+  unchanged for `Games:AwaitedGamesKeptSeconds` (default 31 days) whose
+  deciding seat, as replayed, is a signed-in player's who has not signed in
+  for as long. A game saved before its last change was kept, or a player not
+  signed in since when they last signed in was kept, is never let go this way.
 - **Seat tokens** are what a seat is played by. One is issued when a seat is
   claimed, shown once, and stored only as a hash. **Player tokens**, issued on
   signing in (optional, Proposed), are kept the same way; the provider vouches

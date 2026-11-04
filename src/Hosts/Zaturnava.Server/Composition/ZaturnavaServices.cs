@@ -58,9 +58,11 @@ internal static class ZaturnavaServices
 
     /// <summary>
     /// The configuration keys for how long, in seconds, a game not over with a guest at it is kept once nothing more
-    /// happens, and how often such games are looked for (<see cref="GameSweeper"/>).
+    /// happens; one waiting for a signed-in player who has not signed in for as long; and how often such games are
+    /// looked for (<see cref="GameSweeper"/>).
     /// </summary>
     public const string GuestGamesKeptKey = "Games:GuestGamesKeptSeconds";
+    public const string AwaitedGamesKeptKey = "Games:AwaitedGamesKeptSeconds";
     public const string GameSweepKey = "Games:SweepSeconds";
 
     private const string DefaultTimerKey = "Default";
@@ -83,6 +85,7 @@ internal static class ZaturnavaServices
             .AddScoped<GameService>()
             .AddScoped<ChatService>()
             .AddScoped<PlayerService>()
+            .AddSingleton(TimeProvider.System)
             .AddSingleton(new LinkCodes(TimeProvider.System))
             .AddSingleton(ChatSettingsOf(configuration))
             .AddSingleton<ChatTables>()
@@ -151,6 +154,9 @@ internal static class ZaturnavaServices
             ),
             GuestGamesKept = TimeSpan.FromSeconds(
                 configuration.GetValue(GuestGamesKeptKey, GameServiceSettings.DefaultGuestGamesKept.TotalSeconds)
+            ),
+            AwaitedGamesKept = TimeSpan.FromSeconds(
+                configuration.GetValue(AwaitedGamesKeptKey, GameServiceSettings.DefaultAwaitedGamesKept.TotalSeconds)
             ),
         };
     }
