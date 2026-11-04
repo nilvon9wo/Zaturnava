@@ -50,6 +50,26 @@ public sealed class NetworkValuingTest
         Assert.Equal(outcome + (NetworkValuing.MarginWeight * margin), value, 1e-9);
     }
 
+    [Fact]
+    public void ValueOf_WhenAnEnemyCouldTakeAPieceNext_IsWorseByWhatItWouldWin()
+    {
+        // Arrange - seat 0's Pawn beside an enemy Horse, no one guarding it
+        ValueNetwork network = Untrained();
+        DecisionRequest request = LineRules.Request(
+            [],
+            (0, LineRules.Pawn, LineRules.Seat),
+            (1, LineRules.Horse, LineRules.Enemy)
+        );
+        (double outcome, double margin) =
+            network.Evaluate(new PositionEncoder(Rules).Encode(request.State, LineRules.Seat));
+
+        // Act
+        double value = Valuing(network).ValueOf(request, request.State);
+
+        // Assert - the Pawn, worth 1, is what the Horse would win
+        Assert.Equal(outcome + (NetworkValuing.MarginWeight * margin) - NetworkValuing.Wariness, value, 1e-9);
+    }
+
     [Theory]
     [InlineData(20, 5, true)]
     [InlineData(5, 20, false)]
