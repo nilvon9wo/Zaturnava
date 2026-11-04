@@ -19,16 +19,6 @@ first.
 - **N3** A leaderboard, for players to compete for; with each player's Elo and their **experience**: each time
   a player is on the winning team, they gain their own points plus their team's (*Stated*). Each player's
   statistics also count the games they won, lost, drew and abandoned (*Stated*).
-- The lobby's "New game" panel:
-  - **N13, N14** Quick game or Custom chosen above the game (or to its right, toward the panel's right edge,
-    where there is room).
-  - **N15** The choices' dropdowns aligned, not staggered.
-  - **N16** Play at the bottom right.
-  - **N17** The last setup of each game remembered when the player comes back.
-  - **N18** Grand Legions medium by default.
-- **N19** The footer kept at the bottom of the screen, not moving with the panels' content.
-- **N1** The itch.io page showed an old version. Every upload since 2026-11-01 took the usual time, so it is
-  likely something kept an old copy; the page should say which build it is (*Proposed*: in the footer).
 - The lobby's list of games:
   - **N20, N21** Filter by players or bots (wildcards allowed, any seat), several at once ("Bob and Joe, and a
     seat open").
@@ -209,6 +199,11 @@ first.
 
 ## Done
 
+- **N13–N18** The lobby's New game panel: Quick game or Custom above the game; every choice's dropdown in one
+  column; Play at the bottom right; each game set up as the player last started it, and the game last started
+  chosen; a game played at several sizes set up at its middle one (*Proposed*: Grand Legions, medium).
+- **N19** The lobby's bar stays at the foot of the window.
+- **N1** The bar tells which build the page is ("Build 1a2b3c4", its commit), so an old copy shows itself.
 - **N10** The log tells an escape as "Black's Horse escaped from Red, to b1.", or "Green helped Black's Horse
   escape from Red, to b1." when an ally's doubles freed it.
 - **N9** A player who passes on all their turns is still offered ransoms; accepting one rejoins the game

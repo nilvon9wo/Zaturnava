@@ -27,6 +27,8 @@ internal sealed class Browser(IJSRuntime js)
     private const string PlayerKey = "zaturnava.player";
     private const string NicknameKey = "zaturnava.nickname";
     private const string SetupKey = "zaturnava.setup";
+    private const string LastGameKey = "zaturnava.last-game";
+    private const string SetupOfKey = "zaturnava.setup-of.";
     private const string Custom = "strength";
     private const string SeatBySeat = "seats";
     private const string Everything = "everything";
@@ -102,6 +104,19 @@ internal sealed class Browser(IJSRuntime js)
         await this.Load(SetupKey) is Custom or SeatBySeat ? SetupMode.Custom : SetupMode.Quick;
 
     public ValueTask SetSetup(SetupMode mode) => this.Save(SetupKey, mode == SetupMode.Custom ? Custom : "quick");
+
+    /// <summary>The game the player last started, if they have.</summary>
+    public ValueTask<string?> LastGame() => this.Load(LastGameKey);
+
+    /// <summary>How the player last set up <paramref name="game"/> to start it, if they have.</summary>
+    public async ValueTask<GameSetup?> SetupOf(string game) => GameSetup.Parse(await this.Load(SetupOfKey + game));
+
+    /// <summary>Remembers the game the player starts, and how they set it up.</summary>
+    public async ValueTask RememberSetup(string game, GameSetup setup)
+    {
+        await this.Save(LastGameKey, game);
+        await this.Save(SetupOfKey + game, setup.Text);
+    }
 
     /// <summary>The token of the player signed in on this browser, if one is.</summary>
     public async ValueTask<string?> PlayerToken() => await this.Load(PlayerKey) is { Length: > 0 } token ? token : null;
