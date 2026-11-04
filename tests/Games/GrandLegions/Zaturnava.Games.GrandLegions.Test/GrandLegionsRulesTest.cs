@@ -36,6 +36,29 @@ public sealed class GrandLegionsRulesTest
     }
 
     [Fact]
+    public void Quick_WhenStarted_HasEachLeaderOnItsOwnThroneAtEverySize()
+    {
+        // Arrange - nothing beyond the rules
+
+        // Act
+        ImmutableList<string> thrones =
+        [
+            .. GrandLegionsRules.Quick.SelectMany(rules =>
+                rules.Thrones.Select(throne =>
+                    rules.CreateInitialState().Position.PieceAt(throne.Value) is { } piece
+                    && piece.Owner == throne.Key
+                    && rules.IsLeader(piece.Kind)
+                        ? "leader"
+                        : $"{rules.Id}: seat {throne.Key.Value}'s throne has no leader of its own"
+                )
+            ),
+        ];
+
+        // Assert
+        Assert.Equal(Enumerable.Repeat("leader", 12), thrones);
+    }
+
+    [Fact]
     public void Quick_WhenRead_IsAPreviewAtEverySize()
     {
         // Arrange - nothing beyond the rules

@@ -28,7 +28,6 @@ first.
   developer makes their own bot from them.
 - Grand Legions (preview until these are done):
   - **N25** Letters as pieces, ambiguous ones, make it nearly unplayable: it needs its own pieces' symbols.
-  - **N26** In the small game, with thrones in the corners, leaders start on their thrones.
 - **N29** (low) An encyclopedia of pieces: each piece's name here, its other names, the games it comes from
   (Chess, Xiangqi...), the games here that use it, its variants (kinds of Pawn, of Elephant...), and how it
   moves, captures and what else it may do.
@@ -189,6 +188,8 @@ first.
 
 ## Done
 
+- **N26** Checked: at every size of Grand Legions, small included, each leader starts on its own throne (in the
+  small game, where the kingdoms touch, that is the board's corner); a test now keeps it so.
 - **N27, N28** The choice of chaturaji or chess pieces is offered only at a table whose pieces it changes (a Raja,
   Elephant or Horse in play): not in the lobby, nor at Grand Legions, whose pieces, Elephants among them, are
   always shown by their own names, never "translated" as Rooks.
