@@ -254,6 +254,7 @@ html { scrollbar-gutter: stable; }
 .choices label { display: contents; }
 .choices p.rules { grid-column: 1 / -1; margin: 0; }
 .choices select, .panel label.scenario select { width: 100%; min-width: 0; }
+.panel label.previews { display: block; margin: 6px 0; font-size: 0.9em; }
 /* Play, at the bottom right of the panel, where the setup ends. */
 .start { display: flex; justify-content: flex-end; margin-top: 8px; }
 /* The lobby's bar stays at the foot of the window, however long or short the panels above it. */

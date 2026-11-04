@@ -132,6 +132,8 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
 
     public string? Size => this._variant.Game?.Size;
 
+    public bool IsPreview => this._variant.Game?.IsPreview == true;
+
     public ICellNavigating Topology => this._grid;
 
     public ImmutableDictionary<SeatId, CellId> Thrones { get; }

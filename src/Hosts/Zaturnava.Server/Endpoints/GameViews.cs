@@ -180,6 +180,7 @@ internal static class GameViews
             Game = rules.GameId,
             GameName = rules.GameName,
             Size = rules.Size,
+            IsPreview = rules.IsPreview,
             SeatNames = [.. state.Seats.Select(seat => rules.NameOf(seat.Id))],
             SeatTeams = [.. state.Seats.Select(seat => state.Teams.TeamOf(seat.Id))],
         };

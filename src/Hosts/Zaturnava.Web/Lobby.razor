@@ -9,7 +9,8 @@
    watch or go back to one already started; a game over is only listed, with nothing left to watch. Seats go by
    the ruleset's names for them (Black, Yellow...), not by number. A bot paid for each use is seated only when
    chosen: never by default, nor at random. A server in development also offers scenarios, games set up
-   part-way, to start from. *@
+   part-way, to start from. Preview games, not yet ready for everyone, are named so, and neither offered nor listed
+   unless the player chooses to show them (remembered in the browser). *@
 @inject IGameServing Games
 @inject Browser Browser
 
@@ -24,7 +25,7 @@
         <div class="panel">
             <h2>New game</h2>
             @{
-                ImmutableList<RulesetDto> games = GamesOf(catalog);
+                ImmutableList<RulesetDto> games = this.GamesOf(catalog);
                 ImmutableList<RulesetDto> sizes = SizesOf(catalog, this.Ruleset(catalog).Game);
             }
             <div class="setup-modes">
@@ -47,14 +48,14 @@
                         <select class="game" @bind="this.Game">
                             @foreach (RulesetDto game in games)
                             {
-                                <option value="@game.Game">@game.GameName</option>
+                                <option value="@game.Game">@GameNameOf(game)</option>
                             }
                         </select>
                     </label>
                 }
                 else
                 {
-                    <p class="rules">@this.Ruleset(catalog).GameName</p>
+                    <p class="rules">@GameNameOf(this.Ruleset(catalog))</p>
                 }
                 @if (sizes.Count > 1)
                 {
@@ -69,6 +70,16 @@
                     </label>
                 }
             </div>
+            @if (catalog.Rulesets.Any(ruleset => ruleset.IsPreview))
+            {
+                <label class="previews">
+                    <input type="checkbox"
+                           class="show-previews"
+                           checked="@this._arePreviewsShown"
+                           @onchange="change => this.ShowPreviews(catalog, change)" />
+                    Show preview games, not yet ready for everyone
+                </label>
+            }
             @if (this._mode == SetupMode.Quick)
             {
                 <div class="quick-games">
@@ -168,9 +179,9 @@
                     Game
                     <select class="filter-game" value="@this._filter.Game" @onchange="this.FilterGame">
                         <option value="">Any</option>
-                        @foreach (RulesetDto game in GamesOf(catalog))
+                        @foreach (RulesetDto game in this.GamesOf(catalog))
                         {
-                            <option value="@game.Game">@game.GameName</option>
+                            <option value="@game.Game">@GameNameOf(game)</option>
                         }
                     </select>
                 </label>
@@ -289,6 +300,9 @@
     /// <summary>How the player last started each game, by the game, as the browser remembers.</summary>
     private ImmutableDictionary<string, GameSetup> _setups = ImmutableDictionary<string, GameSetup>.Empty;
 
+    /// <summary>Whether the lobby shows preview games, as the player last chose; not, unless they did.</summary>
+    private bool _arePreviewsShown;
+
     [Parameter]
     public EventCallback<Seating> OnSeated { get; set; }
 
@@ -389,9 +403,45 @@
         await this.Browser.RememberSetup(this.Ruleset(catalog).Game, setup);
     }
 
-    /// <summary>Each game the server offers, by its first ruleset, whatever the sizes it is played at.</summary>
-    private static ImmutableList<RulesetDto> GamesOf(CatalogDto catalog) =>
+    /// <summary>
+    /// Each game the server offers, by its first ruleset, whatever the sizes it is played at; but for its previews,
+    /// unless the player shows them, or the server offers nothing else.
+    /// </summary>
+    private ImmutableList<RulesetDto> GamesOf(CatalogDto catalog)
+    {
+        ImmutableList<RulesetDto> games = AllGamesOf(catalog);
+        ImmutableList<RulesetDto> shown = [.. games.Where(game => this._arePreviewsShown || !game.IsPreview)];
+        return shown.IsEmpty ? games : shown;
+    }
+
+    private static ImmutableList<RulesetDto> AllGamesOf(CatalogDto catalog) =>
         [.. catalog.Rulesets.DistinctBy(ruleset => ruleset.Game, StringComparer.Ordinal)];
+
+    /// <summary>What a game is called, "Grand Legions (preview)" if it is a preview.</summary>
+    private static string GameNameOf(RulesetDto game) => game.IsPreview ? $"{game.GameName} (preview)" : game.GameName;
+
+    /// <summary>
+    /// Shows preview games, or hides them, here and whenever the lobby is shown again: in the list, and among the
+    /// games to start, of which one hidden while chosen gives way to the first shown.
+    /// </summary>
+    private async Task ShowPreviews(CatalogDto catalog, ChangeEventArgs change)
+    {
+        this._arePreviewsShown = true.Equals(change.Value);
+        await this.Browser.SetPreviewsShown(this._arePreviewsShown);
+        ImmutableList<RulesetDto> games = this.GamesOf(catalog);
+        if (games.All(game => game.Game != this.Game))
+        {
+            this.Game = games[0].Game;
+        }
+
+        GameListQuery filter = games.Any(game => game.Game == this._filter.Game)
+            ? this._filter
+            : this._filter with { Game = null, Ruleset = null };
+        await this.Filter(filter with { Preview = this.PreviewFilter });
+    }
+
+    /// <summary>Which games the list keeps to: any, if the player shows previews; else those not previews.</summary>
+    private bool? PreviewFilter => this._arePreviewsShown ? null : false;
 
     /// <summary>The sizes <paramref name="game"/> is played at, each its ruleset: one, unless it has several.</summary>
     private static ImmutableList<RulesetDto> SizesOf(CatalogDto catalog, string game) =>
@@ -428,8 +478,10 @@
     private async Task Load()
     {
         CatalogDto catalog = await this.Games.Catalog(CancellationToken.None);
+        this._arePreviewsShown = await this.Browser.ArePreviewsShown();
+        this._filter = this._filter with { Preview = this.PreviewFilter };
         await this.ListGames();
-        foreach (RulesetDto game in GamesOf(catalog))
+        foreach (RulesetDto game in AllGamesOf(catalog))
         {
             this._setups = await this.Browser.SetupOf(game.Game) is { } setup
                 ? this._setups.SetItem(game.Game, setup)
@@ -437,7 +489,8 @@
         }
 
         string? last = await this.Browser.LastGame();
-        RulesetDto first = GamesOf(catalog).FirstOrDefault(game => game.Game == last) ?? catalog.Rulesets[0];
+        ImmutableList<RulesetDto> games = this.GamesOf(catalog);
+        RulesetDto first = games.FirstOrDefault(game => game.Game == last) ?? games[0];
         this.Choose(catalog, first.Game);
         this._mode = await this.Browser.Setup();
         this._catalog = catalog;

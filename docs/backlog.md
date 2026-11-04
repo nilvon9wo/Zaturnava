@@ -13,8 +13,6 @@ first.
   - **N12** Escaping names each prisoner once ("Escape Black's Boat, held by Yellow"). Choosing it marks the
     squares it may go to (a ring where it would take a piece), and a click on one frees it there; clicking
     anything else leaves it a prisoner.
-- **N4, N5** Games not ready for the public (Grand Legions now) are *preview* games: named so, and hidden from
-  the lobby's game choices and list unless the player ticks "Show preview games" (*Stated*: no feature flags).
 - **N2** The database stays as it is through every change, by migrations; never wiped (*Stated*).
 - **N3** A leaderboard, for players to compete for; with each player's Elo and their **experience**: each time
   a player is on the winning team, they gain their own points plus their team's (*Stated*). Each player's
@@ -198,6 +196,9 @@ first.
 
 ## Done
 
+- **N4, N5** Games not ready for the public (Grand Legions now) are *preview* games: named so ("Grand Legions
+  (preview)"), and neither offered nor listed in the lobby unless the player ticks "Show preview games", which the
+  browser remembers. A game says so itself, in its rules: no feature flags.
 - **N22** A profile no longer has a free-form links field: the profile shows the player's name, and the column is
   dropped from the database by a migration.
 - **N13–N18** The lobby's New game panel: Quick game or Custom above the game; every choice's dropdown in one

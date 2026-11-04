@@ -57,7 +57,8 @@ internal static class GameEndpoints
             asked.Over,
             asked.Page ?? 1,
             asked.PageSize ?? GameQuery.DefaultPageSize,
-            asked.Game
+            asked.Game,
+            asked.Preview
         ).Bounded();
         GamePage page = await games.Page(query, cancellationToken);
         ImmutableDictionary<HumanSeat, string> names = await players.NamesOf(

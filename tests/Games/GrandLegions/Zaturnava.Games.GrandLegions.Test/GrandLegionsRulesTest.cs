@@ -36,6 +36,18 @@ public sealed class GrandLegionsRulesTest
     }
 
     [Fact]
+    public void Quick_WhenRead_IsAPreviewAtEverySize()
+    {
+        // Arrange - nothing beyond the rules
+
+        // Act
+        ImmutableList<bool> previews = [.. GrandLegionsRules.Quick.Select(rules => rules.IsPreview)];
+
+        // Assert
+        Assert.Equal([true, true, true], previews);
+    }
+
+    [Fact]
     public void IsHeavy_ForEachPiece_IsTrueOnlyForTheHeavyClass()
     {
         // Arrange

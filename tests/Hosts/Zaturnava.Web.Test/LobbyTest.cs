@@ -12,6 +12,9 @@ public sealed class LobbyTest : IDisposable
         Sized("grand-legions", "Grand Legions", "large"),
     ];
 
+    private static readonly ImmutableList<RulesetDto> PreviewSizes =
+        [.. GrandSizes.Select(ruleset => ruleset with { IsPreview = true })];
+
     private readonly PageContext _page = new();
     private Seating? _seated;
 
@@ -37,6 +40,115 @@ public sealed class LobbyTest : IDisposable
                 lobby.Find("span.game").TextContent
             )
         );
+    }
+
+    [Fact]
+    public void Render_WhenAGameIsAPreview_NeitherOffersNorListsIt()
+    {
+        // Arrange
+        this._page.Server.MoreRulesets = PreviewSizes;
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Assert
+        Assert.Equal(
+            ("Chaturaji 2027", false, "Any|Chaturaji 2027", false),
+            (
+                lobby.Find("p.rules").TextContent,
+                lobby.Find("input.show-previews").HasAttribute("checked"),
+                string.Join('|', lobby.FindAll("select.filter-game option").Select(option => option.TextContent)),
+                this._page.Server.Listed?.Preview
+            )
+        );
+    }
+
+    [Fact]
+    public void Render_WhenNoGameIsAPreview_OffersNoChoiceToShowThem()
+    {
+        // Arrange - nothing beyond the server's catalog
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Assert
+        Assert.Empty(lobby.FindAll("input.show-previews"));
+    }
+
+    [Fact]
+    public void ShowPreviews_WhenTicked_OffersAndListsThemNamedSoAndRemembersIt()
+    {
+        // Arrange
+        this._page.Server.MoreRulesets = PreviewSizes;
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Act
+        lobby.Find("input.show-previews").Change(true);
+
+        // Assert
+        Assert.Equal(
+            ("Chaturaji 2027|Grand Legions (preview)", "chaturaji-2027", null, "shown"),
+            (
+                string.Join('|', lobby.FindAll("select.game option").Select(option => option.TextContent)),
+                lobby.Find("select.game").GetAttribute("value"),
+                this._page.Server.Listed?.Preview,
+                $"{this._page.JSInterop.Invocations["zaturnava.save"][^1].Arguments[1]}"
+            )
+        );
+    }
+
+    [Fact]
+    public void ShowPreviews_WhenUntickedWithOneChosenAndListed_GoesBackToTheFirstGameShownAndAnyInTheList()
+    {
+        // Arrange
+        this._page.Server.MoreRulesets = PreviewSizes;
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.previews").SetResult("shown");
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.last-game").SetResult("grand-legions");
+        IRenderedComponent<Lobby> lobby = this.Render();
+        lobby.Find("select.filter-game").Change("grand-legions");
+        lobby.Find("select.filter-size").Change("grand-legions-large");
+        string chosen = $"{lobby.Find("select.game").GetAttribute("value")}";
+
+        // Act
+        lobby.Find("input.show-previews").Change(false);
+
+        // Assert
+        Assert.Equal(
+            ("grand-legions", "Chaturaji 2027", Waiting()),
+            (chosen, lobby.Find("p.rules").TextContent, this._page.Server.Listed)
+        );
+    }
+
+    [Fact]
+    public void ShowPreviews_WhenUntickedWithAnotherChosenAndListed_KeepsBoth()
+    {
+        // Arrange
+        this._page.Server.MoreRulesets = PreviewSizes;
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.previews").SetResult("shown");
+        IRenderedComponent<Lobby> lobby = this.Render();
+        lobby.Find("select.filter-game").Change("chaturaji-2027");
+
+        // Act
+        lobby.Find("input.show-previews").Change(false);
+
+        // Assert
+        Assert.Equal(
+            ("Chaturaji 2027", Waiting() with { Game = "chaturaji-2027" }),
+            (lobby.Find("p.rules").TextContent, this._page.Server.Listed)
+        );
+    }
+
+    [Fact]
+    public void Render_WhenEveryGameIsAPreview_OffersThemAllNamedSo()
+    {
+        // Arrange
+        this._page.Server.ArePreviewsOnly = true;
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Assert
+        Assert.Equal("Chaturaji 2027 (preview)", lobby.Find("p.rules").TextContent);
     }
 
     [Fact]
@@ -845,7 +957,7 @@ public sealed class LobbyTest : IDisposable
 
         // Assert
         Assert.Equal(
-            (new GameListQuery(Open: open, Over: false), state),
+            (new GameListQuery(Open: open, Over: false, Preview: false), state),
             (this._page.Server.Listed, lobby.Find("select.filter-state").GetAttribute("value"))
         );
     }
@@ -1073,7 +1185,7 @@ public sealed class LobbyTest : IDisposable
     private static int Pages(IRenderedComponent<Lobby> lobby) => lobby.FindAll("div.pages").Count;
 
     /// <summary>What the list asks for until the player filters it otherwise: the games waiting for players.</summary>
-    private static GameListQuery Waiting() => new(Open: true, Over: false);
+    private static GameListQuery Waiting() => new(Open: true, Over: false, Preview: false);
 
     /// <summary>A ruleset that is one size of a game played at several: "Grand Legions (small)".</summary>
     private static RulesetDto Sized(string game, string gameName, string size) =>
