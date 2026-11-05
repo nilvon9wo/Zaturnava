@@ -1,4 +1,4 @@
-namespace SampleBot;
+namespace HttpApiSampleBot;
 
 /// <summary>
 /// The bot's mind: given the game as it stands and its own seat, which of the legal actions to take. This is

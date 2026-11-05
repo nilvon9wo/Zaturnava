@@ -4,7 +4,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 
-namespace SampleBot;
+namespace HttpApiSampleBot;
 
 /// <summary>
 /// The HTTP API, as a bot uses it: create a game, claim a seat, read the game, act, and let the server's own bots

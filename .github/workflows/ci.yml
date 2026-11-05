@@ -33,8 +33,8 @@ jobs:
       # of its own; it is built here so that it never rots.
       - name: Build and verify the sample bot
         run: |
-          dotnet build samples/SampleBot/SampleBot.slnx
-          dotnet format samples/SampleBot/SampleBot.slnx --verify-no-changes --severity info
+          dotnet build samples/HttpApiSampleBot/HttpApiSampleBot.slnx
+          dotnet format samples/HttpApiSampleBot/HttpApiSampleBot.slnx --verify-no-changes --severity info
 
       # IDE0005 (unnecessary using) never fails `dotnet build`, even with
       # EnforceCodeStyleInBuild. ReSharper's inspectcode catches it and more;

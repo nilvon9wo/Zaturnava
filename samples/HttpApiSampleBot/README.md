@@ -5,8 +5,8 @@ one included (the one the [itch.io page](https://nilvon9wo.itch.io/zaturnava) pl
 copy it, and replace its mind with yours.
 
 It talks to the server over [the HTTP API](../../docs/bots/http-api.md), plain requests and JSON, as a program in
-any language may. It uses neither MCP nor UTCP: those are for the two other samples, still to come, one playing
-through each (as the [backlog](../../docs/backlog.md) says).
+any language may. It uses neither MCP nor UTCP: those are for the two other samples, still to come, `McpSampleBot` and
+`UtcpSampleBot`, one playing through each (as the [backlog](../../docs/backlog.md) says).
 
 It stands alone. It references none of Zaturnava's code and imports none of its build settings. It could live in a
 repository of its own, and one day will.
@@ -20,7 +20,7 @@ the loop around the mind, which any bot needs.
 With the [.NET 10 SDK](https://dotnet.microsoft.com/download):
 
 ```shell
-cd samples/SampleBot
+cd samples/HttpApiSampleBot
 # A game of its own, as Black, the server's Sage in every other seat:
 dotnet run -- --server https://zaturnava.runasp.net/
 # As Yellow, with Random as its ally (Red) and Midas and Sage as its opponents (Black, then Green):
@@ -56,7 +56,7 @@ It plays as a guest. To play as a signed-in player's AI instead, sign in on the 
 **Profile**, and put it in the environment as `ZATURNAVA_AI_TOKEN` (never on the command line, where others may
 see it). The seat then shows the player's name, marked as an AI's.
 
-From this repository, under WSL: `wsl -d Ubuntu -- bash scripts/wsl-sample-bot.sh --server ...`.
+From this repository, under WSL: `wsl -d Ubuntu -- bash scripts/wsl-http-api-sample-bot.sh --server ...`.
 
 ## How it is built
 

@@ -1,6 +1,6 @@
 using System.Collections.Immutable;
 
-namespace SampleBot;
+namespace HttpApiSampleBot;
 
 // The parts of the server's JSON this bot reads, and no more: a client need not model what it ignores. Names are
 // camelCase on the wire; the serializer maps them (GameApi). The whole of the view is described at

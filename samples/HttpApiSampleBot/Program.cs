@@ -1,6 +1,6 @@
 using System.Collections.Immutable;
 using System.Globalization;
-using SampleBot;
+using HttpApiSampleBot;
 
 // A bot that plays Zaturnava's games through the server's public HTTP API, as any program may (README.md):
 //
