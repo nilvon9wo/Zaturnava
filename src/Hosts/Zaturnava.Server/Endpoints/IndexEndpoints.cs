@@ -5,7 +5,7 @@ namespace Net.NowhereAtAll.Zaturnava.Server.Endpoints;
 /// <summary>
 /// What someone finds at the server's own address, or at <c>api</c>: what it is, and where to go from there - the
 /// catalog, the games, every finished game's history, the API described as OpenAPI and as a page to browse and
-/// try it on, the MCP server for AIs, how to use it, and what is kept about the people who play.
+/// try it on, the MCP server for AIs, the UTCP manual, how to use it, and what is kept about the people who play.
 /// </summary>
 internal static class IndexEndpoints
 {
@@ -32,6 +32,7 @@ internal static class IndexEndpoints
         OpenApiDocument,
         Reference,
         McpEndpoints.Route,
+        UtcpEndpoints.Route,
         Documentation,
         Privacy
     );
@@ -55,6 +56,7 @@ internal sealed record ServerIndex(
     string OpenApi,
     string Reference,
     string Mcp,
+    string Utcp,
     string Documentation,
     string Privacy
 );

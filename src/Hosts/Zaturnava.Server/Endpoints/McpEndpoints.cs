@@ -37,15 +37,19 @@ internal static class McpEndpoints
         return routes;
     }
 
+    /// <summary>
+    /// This server's own address, ending in "/": <c>Mcp:SelfAddress</c>, if configured (as a live server's is); else
+    /// the address <paramref name="request"/> came to.
+    /// </summary>
+    public static string SelfAddressOf(IConfiguration configuration, HttpRequest request) =>
+        configuration.GetValue(SelfAddressKey, $"{request.Scheme}://{request.Host}{request.PathBase}/");
+
     private static HttpClient SelfOf(IServiceProvider provider)
     {
         HttpContext context = provider.GetRequiredService<IHttpContextAccessor>().HttpContext!;
         HttpRequest request = context.Request;
         HttpClient client = provider.GetRequiredService<IHttpClientFactory>().CreateClient(SelfClient);
-        client.BaseAddress = new Uri(
-            provider.GetRequiredService<IConfiguration>()
-                .GetValue(SelfAddressKey, $"{request.Scheme}://{request.Host}{request.PathBase}/")
-        );
+        client.BaseAddress = new Uri(SelfAddressOf(provider.GetRequiredService<IConfiguration>(), request));
         client.DefaultRequestHeaders.Add(SelfPass.Header, provider.GetRequiredService<SelfPass>().Value);
         client.DefaultRequestHeaders.Add(SelfPass.ForHeader, SelfPass.OwnAddressOf(context));
         return client;

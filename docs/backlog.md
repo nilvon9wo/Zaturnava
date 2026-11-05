@@ -40,7 +40,9 @@ first.
   Both decide by the same shared project Athena uses, compile and run apart from Zaturnava, and document how a
   developer makes their own bot from them. MCP: *Done* as [McpSampleBot](../samples/McpSampleBot/README.md), for
   now with the HTTP sample's mechanical mind, until the engine and Athena's network are packages it can take
-  (below). UTCP: next, once the server serves a UTCP manual.
+  (below). UTCP: *Done*: the server serves a [UTCP manual](bots/utcp.md) at `utcp` (the MCP tools, by the same
+  names, each a call to its HTTP route), and [UtcpSampleBot](../samples/UtcpSampleBot/README.md) plays by it, with
+  a small UTCP client of its own, as there is no C# one yet.
 - Grand Legions (preview until these are done):
   - **N25** Letters as pieces, ambiguous ones, make it nearly unplayable: it needs its own pieces' symbols.
     *Done*, as asked: each piece is drawn with its class's emblem (*Proposed*: a crown for a leader, a shield for
@@ -184,6 +186,8 @@ first.
        through the HTTP API, with notes on putting an AI in it.
      - Done: [a sample bot over MCP](../samples/McpSampleBot/README.md), its twin: the same loop and
        mind, through the server's MCP tools, by the protocol's C# SDK.
+     - Done: [a UTCP manual](bots/utcp.md) at `utcp`, and [a sample bot over UTCP](../samples/UtcpSampleBot/README.md)
+       playing by it.
      - Next: a push channel, so that a program need not poll; the engine and the bot interface as
        packages, so that a bot need not reference the repository's projects (*Proposed*: Athena's value
        network among them, so that the sample bot, moved to a repository of its own, may play by it);
