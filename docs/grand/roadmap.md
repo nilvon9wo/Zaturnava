@@ -176,7 +176,9 @@ drawn simply, a shape for its class and a letter for its kind.
 ## Stage 6 — Special powers
 
 - Start-row powers: the two-square first move, *en passant*, which may take any enemy piece that
-  moves forward two squares or more past the pawn, from two squares away (specification §3).
+  moves forward two squares or more past the pawn, from two squares away (specification §3). *Done*
+  (2026-11-05) for the Western Pawn, with start rows 2 (`StartRowMoves`); its special-power bonus is
+  3, its value 9 (*Proposed*, [pieces.md](pieces.md#value)). Still to come: start rows as a setting.
 - Castling.
 - The flying-general capture.
 - The leader face-off: a decision out of turn, open for as long as the two leaders face each other;

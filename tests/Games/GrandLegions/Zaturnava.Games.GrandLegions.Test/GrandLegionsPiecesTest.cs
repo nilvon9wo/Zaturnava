@@ -229,7 +229,7 @@ public sealed class GrandLegionsPiecesTest
         // Assert
         Assert.Equal(table, values);
         Assert.Equal(
-            (78, 7, 2),
+            (78, 9, 2),
             (
                 values[GrandLegionsPieces.DragonKing],
                 values[GrandLegionsPieces.WesternPawn],

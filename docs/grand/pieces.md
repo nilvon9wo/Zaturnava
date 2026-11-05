@@ -28,7 +28,10 @@ piece is worth about its parts (Chancellor 22 = Rook 14 + Knight 8).
   on every cell next to it (the Grasshopper 8, the Janggi Cannon 10). The Xiangqi Cannon moves as a
   Rook does (14), but takes only by hopping (−4).
 - A power that reach does not see is a special-power bonus: the Xiangqi General's flying-general
-  capture is worth 7.
+  capture is worth 7. The Western Pawn's start-row powers are worth 3 (*Proposed*, 2026-11-05; 1
+  before *en passant* was widened to take any enemy piece moving forward past the pawn): 1 for the
+  double first step, 2 for an *en passant* that may now, now and then, take a heavy piece. To be
+  settled by playtesting (**Q14**).
 - Reach is counted on 8 × 8 even when the board is larger, so that it stays bounded.
 
 ### Promotion premium
@@ -51,7 +54,7 @@ and has no such premium.
 |---|---|---|---|
 | Lance (Shogi) | Gold General, 13 over 5 rows | 3 | 56 |
 | Pawn (Shogi) | Gold General, 16 over 4 rows | 4 | 54 |
-| Pawn (Western) | Queen, 24 over 6 rows | 4 | 7 |
+| Pawn (Western) | Queen, 22 over 6 rows | 4 | 9 |
 | Silver General (Shogi) | Gold General, 1 over 5 rows | 0 | 65 |
 | Pawn (Makruk) | Courtier, 3 over 4 rows; the far edge pays more | 2 | 4 |
 | Other Infantry, not confined | the far edge (Rook, 14), over 6 rows | 2 | +2 |
@@ -129,7 +132,7 @@ The dice name a class, not a piece ([specification §6.1](specification.md#61-th
 | Piece | Moves | Restrictions | Powers / promotion | Value | Lifts |
 |---|---|---|---|---|---|
 | Pawn (Shogi) | One square forward | Move: blocked straight ahead | → Gold General in the far three ranks | 54 | 2 / — |
-| Pawn (Western) | One square forward; captures one square diagonally forward | Move: blocked straight ahead | First move two squares; *en passant*; → Queen, Rook, Bishop or Knight on the last rank | 7 | 2 / — |
+| Pawn (Western) | One square forward; captures one square diagonally forward | Move: blocked straight ahead | First move two squares; *en passant*, of any enemy piece moving forward two squares or more past it from two squares away; → Queen, Rook, Bishop or Knight on the last rank | 9 | 2 / — |
 | Guard (Janggi) | One square orthogonally, or diagonally along palace lines | Area: its 3 × 3 palace | Palace lines | 7 | — / 5 |
 | Noble (Makruk) | One square diagonally, or straight forward | — | — | 7 | — / — |
 | Soldier (Janggi) | One square forward or sideways (diagonally forward along palace lines) | Move: may not go back; Area: palace diagonals only | Palace lines | 7 | 2 / 2 |

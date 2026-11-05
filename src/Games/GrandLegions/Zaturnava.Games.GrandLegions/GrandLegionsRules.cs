@@ -70,6 +70,7 @@ public static class GrandLegionsRules
             Heavies = Heavies,
             Marks = GrandLegionsPieces.Marks,
             Scoring = Scoring,
+            StartRowPowers = [GrandLegionsPieces.WesternPawn],
             DieNames = dice.Classes.ToImmutableDictionary(face => face.Key, face => NameOf(face.Value)),
             MayMove = RiverCrossing.On(
                 new GrandBoard(game.Side, game.Side, game.KingdomWidth, game.KingdomDepth, Rivers: game.Rivers)

@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Net.NowhereAtAll.Zaturnava.Engine.Boards;
 using Net.NowhereAtAll.Zaturnava.Engine.Chance;
+using Net.NowhereAtAll.Zaturnava.Engine.Moves;
 using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
 using Net.NowhereAtAll.Zaturnava.Engine.Positions;
 using Net.NowhereAtAll.Zaturnava.Engine.Seats;
@@ -87,6 +88,12 @@ public sealed record GameState(
     /// the turn goes on, or leave for later; null if none.
     /// </summary>
     public CellId? PromotionDue { get; init; }
+
+    /// <summary>
+    /// The moves straight ahead of two cells or more that may still be taken <i>en passant</i>: each until its
+    /// piece's seat's turn comes round again, or the piece moves on.
+    /// </summary>
+    public ImmutableList<Passage> Passages { get; init; } = [];
 
     /// <summary>
     /// Prisoners going home that wait on where the first is to go, chosen by its owner, the deciding
