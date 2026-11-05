@@ -64,6 +64,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     private readonly EveryPiece _everyPiece;
     private readonly Farming _farming;
     private readonly Ransom _ransom;
+    private readonly StartRowMoves _startRows;
 
     public Chaturaji2027Rules()
         : this(DiceProfile.WeightedSixSided, DefaultIdleRounds, PawnPromotion.OtherArmies)
@@ -102,6 +103,13 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             this._variant.Scoring
         );
         this._progress = new Progress(this._grid, this._variant.Pawns);
+        this._startRows = new StartRowMoves(
+            this._grid,
+            this._moves,
+            this._variant.InitialPosition(this._grid),
+            this._variant.StartRowPowers,
+            this._variant.StartRows
+        );
     }
 
     public string Id => this._variant.Id;
@@ -435,22 +443,22 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
                 !state.Retired.Contains(occupant.Value.Owner) || !this.IsLeader(occupant.Value.Kind)
             )
             .SelectMany(occupant => this.MovesFrom(state, occupant.Key, occupant.Value, seat))
-            .Select(move => new MoveAction(seat, move.From, move.To));
+            .Select(move => new MoveAction(seat, move.From, move.To))
+            .Distinct();
     }
 
     /// <summary>
-    /// A piece moves the way its own army faces, as the board lets it; a Pawn may also swap with one back to
-    /// back.
+    /// A piece moves the way its own army faces, as the board lets it, with its start-row powers, if it has them;
+    /// a Pawn may also swap with one back to back.
     /// </summary>
-    private IEnumerable<Move> MovesFrom(GameState state, CellId cell, Piece piece, SeatId mover) =>
-        this._moves.MovesFrom(
-                state.Position,
-                cell,
-                state.SeatOf(piece.Owner),
-                target => this.IsCapturable(state, target, mover)
-            )
+    private IEnumerable<Move> MovesFrom(GameState state, CellId cell, Piece piece, SeatId mover)
+    {
+        bool MayTake(Piece target) => this.IsCapturable(state, target, mover);
+        return this._moves.MovesFrom(state.Position, cell, state.SeatOf(piece.Owner), MayTake)
+            .Concat(this._startRows.MovesFrom(state, cell, piece, MayTake))
             .Where(this.MayGo)
             .Concat(this.SwapsFrom(state, cell, piece));
+    }
 
     /// <summary>Whether the board lets a piece make the move its kind allows.</summary>
     private bool MayGo(Move move) => this._variant.MayMove?.Invoke(this._grid, move) ?? true;
@@ -916,6 +924,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             OffersMade = [],
             PromotionDue = null,
             IsHandedBack = false,
+            Passages = state.Passages.RemoveAll(passage => passage.Piece.Owner == next),
         };
         SeatId? regent = passed.Resigned.Contains(next)
             ? this._control.RegentsFor(passed, next).Cast<SeatId?>().FirstOrDefault()
@@ -932,9 +941,10 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     private Transition Moved(GameState state, MoveAction move)
     {
         Piece mover = state.Position.PieceAt(move.From)!; // the move is legal, so a piece stands there
-        return this.IsSwap(state, move.From, mover, move.To)
+        Transition moved = this.IsSwap(state, move.From, mover, move.To)
             ? Swapped(state, move, mover)
             : this.Displaced(state, move, mover);
+        return moved with { State = this._startRows.Passed(state, moved.State, move, mover) };
     }
 
     /// <summary>Two Pawns back to back trade places; nothing is taken.</summary>
@@ -945,14 +955,25 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         return new Transition(swapped, [new PawnsSwapped(mover, other, move.From, move.To, move.Actor)]);
     }
 
+    /// <summary>The piece moves, taking what stands where it goes, or what it takes <i>en passant</i>.</summary>
     private Transition Displaced(GameState state, MoveAction move, Piece mover)
     {
-        Piece? captured = state.Position.PieceAt(move.To);
-        GameState relocated = state with { Position = state.Position.Relocate(move.From, move.To) };
-        Transition moved = new(relocated, [new PieceMoved(mover, move.From, move.To, move.Actor)]);
+        Passage? passing = this._startRows.TakenBy(
+            state,
+            move,
+            mover,
+            target => this.IsCapturable(state, target, move.Actor)
+        );
+        Piece? captured = state.Position.PieceAt(move.To) ?? passing?.Piece;
+        Position relocated = state.Position.Relocate(move.From, move.To);
+        Position position = passing is { } passage
+            ? new Position(relocated.Occupants.Remove(passage.To))
+            : relocated;
+        PieceMoved went = new(mover, move.From, move.To, move.Actor);
+        Transition moved = new(state with { Position = position }, [went]);
         Transition taken = captured is null
             ? moved
-            : this.Captured(moved, captured, move.Actor, move.To);
+            : this.Captured(moved, captured, move.Actor, passing?.To ?? move.To);
         return this.EnteredThrone(taken, mover, move.To);
     }
 

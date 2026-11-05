@@ -66,6 +66,15 @@ public sealed record Chaturaji2027Variant(
     public MoveAllowing? MayMove { get; init; }
 
     /// <summary>
+    /// The kinds with start-row powers, the two-cell first move and <i>en passant</i>, if they start within their
+    /// army's <see cref="StartRows"/>: none, unless set.
+    /// </summary>
+    public ImmutableHashSet<PieceKindId> StartRowPowers { get; init; } = [];
+
+    /// <summary>How many of an army's rows, from its back rank, are its start rows: 2, unless set.</summary>
+    public int StartRows { get; init; } = 2;
+
+    /// <summary>
     /// Where every piece of a game dealt by a seed starts, each game its own armies; null, if every game starts
     /// as <see cref="Start"/> has it.
     /// </summary>
