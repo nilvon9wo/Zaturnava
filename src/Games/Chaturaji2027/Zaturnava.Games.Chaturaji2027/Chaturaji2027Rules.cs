@@ -66,6 +66,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     private readonly Ransom _ransom;
     private readonly StartRowMoves _startRows;
     private readonly Castling _castling;
+    private readonly FlyingCapture _flying;
 
     public Chaturaji2027Rules()
         : this(DiceProfile.WeightedSixSided, DefaultIdleRounds, PawnPromotion.OtherArmies)
@@ -120,6 +121,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             this._variant.CastlingRooks,
             this.AttackedAgainst
         );
+        this._flying = new FlyingCapture(this._grid, this._variant.FlyingCapturers, this._variant.Leaders);
     }
 
     public string Id => this._variant.Id;
@@ -257,7 +259,10 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     [
         .. state.Position.Occupants
             .Where(occupant => occupant.Value.Owner == seat)
-            .SelectMany(occupant => this._moves.AttacksFrom(state.Position, occupant.Key, state.SeatOf(seat)))
+            .SelectMany(occupant => this._moves.AttacksFrom(state.Position, occupant.Key, state.SeatOf(seat))
+                .Concat(this._flying.AttacksFrom(state, occupant.Key, occupant.Value))
+            )
+            .Distinct()
             .Where(attack => this.MayGo(new Move(attack.Attacker, attack.From, attack.Target, null))),
     ];
 
@@ -461,8 +466,8 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     }
 
     /// <summary>
-    /// A piece moves the way its own army faces, as the board lets it, with its start-row powers, if it has them,
-    /// and castling, if it may castle; a Pawn may also swap with one back to back.
+    /// A piece moves the way its own army faces, as the board lets it, with its start-row powers, castling and the
+    /// flying-general capture, if it has them; a Pawn may also swap with one back to back.
     /// </summary>
     private IEnumerable<Move> MovesFrom(GameState state, CellId cell, Piece piece, SeatId mover)
     {
@@ -470,20 +475,35 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         return this._moves.MovesFrom(state.Position, cell, state.SeatOf(piece.Owner), MayTake)
             .Concat(this._startRows.MovesFrom(state, cell, piece, MayTake))
             .Concat(this._castling.MovesFrom(state, cell, piece))
+            .Concat(this._flying.MovesFrom(state, cell, piece, MayTake))
+            .Distinct()
             .Where(this.MayGo)
             .Concat(this.SwapsFrom(state, cell, piece));
     }
 
-    /// <summary>The cells a piece of an army not allied with <paramref name="seat"/>'s could capture on.</summary>
-    private ImmutableHashSet<CellId> AttackedAgainst(GameState state, SeatId seat) =>
-    [
-        .. state.Position.Occupants
-            .Select(occupant => occupant.Value.Owner)
-            .Distinct()
-            .Where(owner => !state.Teams.AreAllied(owner, seat))
-            .SelectMany(enemy => this.AttacksOf(state, enemy))
-            .Select(attack => attack.Target),
-    ];
+    /// <summary>
+    /// The cells a piece of an army not allied with <paramref name="seat"/>'s could capture a leader on, as a castling
+    /// leader would be: every cell any piece could capture on, and those a flyer could take a leader on.
+    /// </summary>
+    private ImmutableHashSet<CellId> AttackedAgainst(GameState state, SeatId seat)
+    {
+        ImmutableList<KeyValuePair<CellId, Piece>> enemies =
+        [
+            .. state.Position.Occupants.Where(occupant => !state.Teams.AreAllied(occupant.Value.Owner, seat)),
+        ];
+        return
+        [
+            .. enemies
+                .Select(enemy => enemy.Value.Owner)
+                .Distinct()
+                .SelectMany(enemy => this.AttacksOf(state, enemy))
+                .Select(attack => attack.Target),
+            .. enemies
+                .SelectMany(enemy => this._flying.ReachFrom(state, enemy.Key, enemy.Value)
+                    .Where(target => this.MayGo(new Move(enemy.Value, enemy.Key, target, null)))
+                ),
+        ];
+    }
 
     /// <summary>Whether the board lets a piece make the move its kind allows.</summary>
     private bool MayGo(Move move) => this._variant.MayMove?.Invoke(this._grid, move) ?? true;

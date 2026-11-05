@@ -63,19 +63,13 @@ internal sealed class Castling(
     /// </summary>
     private Castle? CastleFrom(GameState state, CellId cell, Piece piece, Direction way)
     {
-        ImmutableList<CellId> line = this.Line(cell, way);
+        ImmutableList<CellId> line = this._grid.Ray(cell, way);
         int first = line.FindIndex(next => state.Position.PieceAt(next) is not null);
         Piece? rook = first >= 0 ? state.Position.PieceAt(line[first]) : null;
         return first > Steps - 1 && rook!.Owner == piece.Owner && this._rooks.Contains(rook.Kind)
             ? new Castle(line[Steps - 1], [cell, .. line.Take(Steps)], line[first], line[0])
             : null;
     }
-
-    /// <summary>Every cell from <paramref name="from"/> that way, nearest first.</summary>
-    private ImmutableList<CellId> Line(CellId from, Direction way) =>
-        this._grid.Step(from, way) is { } next
-            ? [next, .. this.Line(next, way)]
-            : [];
 
     /// <summary>
     /// A castling: where the castler lands, the cells it starts on, passes and lands on, and the rook's cell and where

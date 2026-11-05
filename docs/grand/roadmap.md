@@ -194,7 +194,10 @@ drawn simply, a shape for its class and a letter for its kind.
   three away with nothing between, and the Rook goes to the cell the King passed over; not where an
   enemy piece could capture on the King's start, the cell it passes or where it lands. As the Rook
   then stands on the cell passed, the King is never taken *en passant* for it.
-- The flying-general capture.
+- The flying-general capture (specification §6.4). *Done* (2026-11-05) for the Xiangqi General
+  (`FlyingCapture`): it may take a leader along an open orthogonal line of any length, nothing
+  between, moving onto its cell; bots see it as an attack, and a King may not castle across such a
+  line. Still to come with palaces: the General's confinement, suspended outside every palace.
 - The leader face-off: a decision out of turn, open for as long as the two leaders face each other;
   a flashing button while it is open, and optionally a pause when it first opens (specification §6.4).
 

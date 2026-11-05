@@ -78,6 +78,19 @@ public sealed class SquareGridTopologyTest
         Assert.Null(to);
     }
 
+    [Fact]
+    public void Ray_WhenCalled_GoesThatWayToTheEdgeNearestFirst()
+    {
+        // Arrange
+        CellId from = this._grid.CellAt(1, 1);
+
+        // Act
+        ImmutableList<CellId> ray = this._grid.Ray(from, Right);
+
+        // Assert
+        Assert.Equal([this._grid.CellAt(2, 1), this._grid.CellAt(3, 1)], ray);
+    }
+
     [Theory]
     [InlineData("orthogonal", 4)]
     [InlineData("diagonal", 4)]
