@@ -2070,8 +2070,27 @@ public sealed class TableTest : IDisposable
         );
     }
 
-    /// <summary>Seat 0 to move, while seat 1 may call a face-off.</summary>
-    private static GameViewDto FaceOffChance() =>
+    [Fact]
+    public void Chance_WhenThePieceToTakeInPassingHasGoneMeanwhile_SaysItIsTooLate()
+    {
+        // Arrange
+        this._page.Server.View = FaceOffChance("move");
+        IRenderedComponent<Table> table = this.Render(SeatOne);
+        this._page.Server.Failure = new GameRequestRefusedException(Refusal.Illegal, "Not now.");
+
+        // Act
+        table.Find("button.chance").Click();
+
+        // Assert
+        Assert.Equal(
+            "Too late, sorry: that piece can no longer be taken in passing.",
+            table.Find("p.problem").TextContent
+        );
+    }
+
+    /// <summary>Seat 0 to move, while seat 1 has a chance: a face-off, unless of another <paramref name="kind"/>.
+    /// </summary>
+    private static GameViewDto FaceOffChance(string kind = "face-off") =>
         FakeGameServer.SeatZeroToMove with
         {
             Seats = FakeGameServer.SeatZeroToMove.Seats.SetItem(
@@ -2081,7 +2100,7 @@ public sealed class TableTest : IDisposable
                     Chances =
                     [
                         new ActionDto(
-                            "face-off",
+                            kind,
                             ImmutableSortedDictionary<string, string>.Empty.Add("caller", "3").Add("faced", "43")
                         )
                         {

@@ -6,6 +6,7 @@ using Net.NowhereAtAll.Zaturnava.Engine.Moves;
 using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
 using Net.NowhereAtAll.Zaturnava.Engine.Positions;
 using Net.NowhereAtAll.Zaturnava.Engine.Rules;
+using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 using Net.NowhereAtAll.Zaturnava.Topology.SquareGrid;
 
 namespace Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
@@ -18,8 +19,8 @@ namespace Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
 /// two cells or more in a line against the pawn's forward, whichever way its own army faces, its first step onto a
 /// cell diagonally beside the pawn, where it could have stopped (Stated: so, past a pawn on b4 facing a1, from a2 to
 /// a4 or a5, but not from a1 or a3; nor a piece that leapt or hopped over a3): by moving onto that cell, taking the
-/// piece where it stopped, until that piece's seat's turn comes round again, or it moves on. Where each piece
-/// started is where the game was dealt it, if it was; else <paramref name="start"/>.
+/// piece where it stopped, while it stays there, by a seat whose own turn has not ended since (Stated 2026-11-06).
+/// Where each piece started is where the game was dealt it, if it was; else <paramref name="start"/>.
 /// </summary>
 internal sealed class StartRowMoves(
     SquareGridTopology grid,
@@ -36,21 +37,44 @@ internal sealed class StartRowMoves(
     private readonly int _rows = rows;
     private readonly ConditionalWeakTable<Position, ImmutableDictionary<PieceId, CellId>> _starts = [];
 
-    /// <summary>The two-cell first move, and each <i>en passant</i>, of the piece on <paramref name="cell"/>.</summary>
-    public IEnumerable<Move> MovesFrom(GameState state, CellId cell, Piece piece, Func<Piece, bool> isCapturable) =>
+    /// <summary>
+    /// The two-cell first move, and each <i>en passant</i> <paramref name="actor"/> may take, of the piece on
+    /// <paramref name="cell"/>.
+    /// </summary>
+    public IEnumerable<Move> MovesFrom(
+        GameState state,
+        CellId cell,
+        Piece piece,
+        SeatId actor,
+        Func<Piece, bool> isCapturable
+    ) =>
         this._kinds.Contains(piece.Kind)
             ?
             [
                 .. this.DoubleStepFrom(state, cell, piece),
-                .. this.InPassing(state, cell, piece, isCapturable)
-                    .Select(taking => new Move(piece, cell, taking.Cell, taking.Passage.Piece)),
+                .. this.InPassingFrom(state, cell, piece, actor, isCapturable),
             ]
+            : [];
+
+    /// <summary>
+    /// Each <i>en passant</i> <paramref name="actor"/> may take with the piece on <paramref name="cell"/>.
+    /// </summary>
+    public IEnumerable<Move> InPassingFrom(
+        GameState state,
+        CellId cell,
+        Piece piece,
+        SeatId actor,
+        Func<Piece, bool> isCapturable
+    ) =>
+        this._kinds.Contains(piece.Kind)
+            ? this.InPassing(state, cell, piece, actor, isCapturable)
+                .Select(taking => new Move(piece, cell, taking.Cell, taking.Passage.Piece))
             : [];
 
     /// <summary>What <paramref name="move"/> takes <i>en passant</i>, if anything.</summary>
     public Passage? TakenBy(GameState state, MoveAction move, Piece mover, Func<Piece, bool> isCapturable) =>
         state.Position.PieceAt(move.To) is null && this._kinds.Contains(mover.Kind)
-            ? this.InPassing(state, move.From, mover, isCapturable)
+            ? this.InPassing(state, move.From, mover, move.Actor, isCapturable)
                 .Where(taking => taking.Cell == move.To)
                 .Select(taking => taking.Passage)
                 .FirstOrDefault()
@@ -100,15 +124,22 @@ internal sealed class StartRowMoves(
     }
 
     /// <summary>
-    /// Each enemy piece <paramref name="pawn"/>, on <paramref name="cell"/>, may take <i>en passant</i>, having moved
-    /// against the pawn's forward, and the empty cell, its first step, diagonally beside <paramref name="cell"/>, that
-    /// the pawn would take it from.
+    /// Each enemy piece <paramref name="pawn"/>, on <paramref name="cell"/>, may take <i>en passant</i> for
+    /// <paramref name="actor"/>, having moved against the pawn's forward, and the empty cell, its first step,
+    /// diagonally beside <paramref name="cell"/>, that the pawn would take it from.
     /// </summary>
-    private IEnumerable<Taking> InPassing(GameState state, CellId cell, Piece pawn, Func<Piece, bool> isCapturable)
+    private IEnumerable<Taking> InPassing(
+        GameState state,
+        CellId cell,
+        Piece pawn,
+        SeatId actor,
+        Func<Piece, bool> isCapturable
+    )
     {
         Direction against = Behind(state.SeatOf(pawn.Owner).Forward);
         return state.Passages
-            .Where(passage => this.Distance(cell, passage.From) == EnPassantDistance
+            .Where(passage => !passage.Closed.Contains(actor)
+                && this.Distance(cell, passage.From) == EnPassantDistance
                 && this.IsDiagonallyBeside(cell, passage.Passed[0])
                 && this._grid.Step(passage.From, against) == passage.Passed[0]
                 && state.Position.PieceAt(passage.Passed[0]) is null

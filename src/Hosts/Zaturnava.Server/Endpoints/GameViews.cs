@@ -246,8 +246,26 @@ internal static class GameViews
             controller is HumanSeat { Claimant: { } claimant } ? claimant.Value : null
         )
         {
-            Chances = [.. snapshot.Rules.ChancesOf(snapshot.State, seat).Select(chance => ActionOf(snapshot, chance))],
+            Chances = [.. snapshot.Rules.ChancesOf(snapshot.State, seat).Select(chance => ChanceOf(snapshot, chance))],
         };
+    }
+
+    /// <summary>A chance the seat has, whoever decides: a move one only ever takes <i>en passant</i>.</summary>
+    private static ActionDto ChanceOf(GameSnapshot snapshot, GameAction chance) =>
+        chance is MoveAction move
+            ? ActionOf(snapshot, chance) with { Label = InPassingOf(snapshot, move) }
+            : ActionOf(snapshot, chance);
+
+    /// <summary>"En passant: your Pawn on c4 to d5, taking Yellow's Pawn on d4".</summary>
+    private static string InPassingOf(GameSnapshot snapshot, MoveAction move)
+    {
+        IRulesApplying rules = snapshot.Rules;
+        Piece mover = snapshot.State.Position.PieceAt(move.From)!; // a chance moves a piece on the board
+        Piece taken = rules.Apply(snapshot.State, move).Events.OfType<PieceCaptured>().First().Piece;
+        CellId cell = snapshot.State.Passages.First(passage => passage.Piece == taken).To;
+        return $"En passant: your {rules.NameOf(mover.Kind)} on {rules.Topology.NameOf(move.From)} to "
+            + $"{rules.Topology.NameOf(move.To)}, taking {rules.NameOf(taken.Owner)}'s {rules.NameOf(taken.Kind)} on "
+            + $"{rules.Topology.NameOf(cell)}";
     }
 
     /// <summary>

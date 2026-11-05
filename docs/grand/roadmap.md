@@ -189,6 +189,9 @@ drawn simply, a shape for its class and a letter for its kind.
   (2026-11-05) for the Western Pawn, with start rows 2 for the double step, and *en passant* wherever
   the pawn started (`StartRowMoves`); its special-power bonus is
   3, its value 9 (*Proposed*, [pieces.md](pieces.md#value)). Still to come: start rows as a setting.
+  *Done* (2026-11-06): *en passant* out of turn, as a chance like the face-off, for no die, and on
+  the player's own turn as an ordinary move; open to each player until their own next turn ends, or
+  the piece moves on (`Passage.Closed`).
 - Castling (specification §6.4). *Done* (2026-11-05) for the Western King with a Western Rook
   (`Castling`): the King steps two cells toward a Rook of its own in one orthogonal line, at least
   three away with nothing between, and the Rook goes to the cell the King passed over; not where an

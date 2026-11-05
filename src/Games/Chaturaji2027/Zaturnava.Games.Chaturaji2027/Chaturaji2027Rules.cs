@@ -200,6 +200,8 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
                                 VoteAwayAction vote => this.Voted(state, vote),
                                 PassAwayAction pass => this.PassedAway(state, pass),
                                 FaceOffAction faceOff => this.FacedOff(state, faceOff),
+                                MoveAction move when state.DecidingSeat != move.Actor =>
+                                    this.TakenInPassing(state, move),
                                 _ => this.Decided(state, action),
                             }
                         ),
@@ -232,8 +234,10 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
 
     /// <summary>
     /// Each leader face-off <paramref name="seat"/> may call (<see cref="FaceOff"/>), with a caller of an army it
-    /// commands; none while the game waits on something else first (Proposed): dice, a promotion, prisoners going
-    /// home, an offer, a proposal to end, or the roll for who goes first; nor once it is over, or the seat retired.
+    /// commands; and, while it does not decide, each <i>en passant</i> it may take with a piece of such an army, for
+    /// no die (Stated 2026-11-06), as on its own turn it would be an ordinary move. None while the game waits on
+    /// something else first (Proposed): dice, a promotion, prisoners going home, an offer, a proposal to end, or the
+    /// roll for who goes first; nor once it is over, or the seat retired.
     /// </summary>
     public ImmutableList<GameAction> ChancesOf([Required] GameState state, SeatId seat) =>
         state.Outcome is null
@@ -244,8 +248,26 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         && state.Proposal is null
         && state.RollOff.IsEmpty
         && !state.Retired.Contains(seat)
-            ? [.. this._faceOff.ChancesOf(state, seat, this._control.ArmiesOf(state with { ActingFor = null }, seat))]
+            ? this.ChancesFor(state, seat, this._control.ArmiesOf(state with { ActingFor = null }, seat))
             : [];
+
+    private ImmutableList<GameAction> ChancesFor(GameState state, SeatId seat, ImmutableHashSet<SeatId> armies) =>
+    [
+        .. this._faceOff.ChancesOf(state, seat, armies),
+        .. state.DecidingSeat == seat
+            ? []
+            : state.Position.Occupants
+                .Where(occupant => armies.Contains(occupant.Value.Owner))
+                .SelectMany(occupant => this._startRows.InPassingFrom(
+                    state,
+                    occupant.Key,
+                    occupant.Value,
+                    seat,
+                    target => this.IsCapturable(state, target, seat)
+                ))
+                .Where(this.MayGo)
+                .Select(move => new MoveAction(seat, move.From, move.To)),
+    ];
 
     /// <summary>
     /// A seat choosing where a piece goes home, answering an offer, or offering once its turn is over, has
@@ -493,7 +515,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     {
         bool MayTake(Piece target) => this.IsCapturable(state, target, mover);
         return this._moves.MovesFrom(state.Position, cell, state.SeatOf(piece.Owner), MayTake)
-            .Concat(this._startRows.MovesFrom(state, cell, piece, MayTake))
+            .Concat(this._startRows.MovesFrom(state, cell, piece, mover, MayTake))
             .Concat(this._castling.MovesFrom(state, cell, piece))
             .Concat(this._flying.MovesFrom(state, cell, piece, MayTake))
             .Distinct()
@@ -670,6 +692,19 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             faced.Owner,
             faceOff.Caller
         );
+        return GameEnd.AfterMove(taken, this._variant) ?? taken;
+    }
+
+    /// <summary>
+    /// A piece taken <i>en passant</i> out of turn (Stated 2026-11-06): no die used, and whoever decided still does,
+    /// unless the game is over.
+    /// </summary>
+    /// <exception cref="IllegalActionException">The seat may not take so now.</exception>
+    private Transition TakenInPassing(GameState state, MoveAction move)
+    {
+        Transition taken = this.ChancesOf(state, move.Actor).Contains(move)
+            ? this.Moved(state, move)
+            : throw new IllegalActionException(move);
         return GameEnd.AfterMove(taken, this._variant) ?? taken;
     }
 
@@ -1018,7 +1053,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             OffersMade = [],
             PromotionDue = null,
             IsHandedBack = false,
-            Passages = state.Passages.RemoveAll(passage => passage.Piece.Owner == next),
+            Passages = Closed(state, current),
         };
         SeatId? regent = passed.Resigned.Contains(next)
             ? this._control.RegentsFor(passed, next).Cast<SeatId?>().FirstOrDefault()
@@ -1031,6 +1066,20 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             }
             : handed;
     }
+
+    /// <summary>
+    /// The pieces that may still be taken <i>en passant</i> once <paramref name="ended"/>'s turn is over: no longer by
+    /// that seat; and none at all once no seat still playing that is an enemy of its piece's may take it.
+    /// </summary>
+    private static ImmutableList<Passage> Closed(GameState state, SeatId ended) =>
+    [
+        .. state.Passages
+            .Select(passage => passage with { Closed = passage.Closed.Add(ended) })
+            .Where(passage => state.Seats.Any(seat => !state.Teams.AreAllied(seat.Id, passage.Piece.Owner)
+                && GameEnd.IsPlaying(state, seat.Id)
+                && !passage.Closed.Contains(seat.Id)
+            )),
+    ];
 
     private Transition Moved(GameState state, MoveAction move)
     {
