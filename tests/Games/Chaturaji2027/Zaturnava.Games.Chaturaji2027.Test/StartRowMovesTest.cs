@@ -19,6 +19,7 @@ public sealed class StartRowMovesTest
 {
     private const int PawnDie = 5;
     private const int ElephantDie = 3;
+    private const int BoatDie = 1;
 
     private static readonly SeatId Black = new(0);
     private static readonly SeatId Yellow = new(1);
@@ -133,12 +134,12 @@ public sealed class StartRowMovesTest
     }
 
     [Fact]
-    public void Apply_WhenAPieceGoesTwoOrMoreStraightAhead_MayBeTakenInPassing()
+    public void Apply_WhenAPieceGoesTwoOrMoreInALineAnyWay_MayBeTakenInPassing()
     {
-        // Arrange - Yellow's Elephant, facing right, goes three; Black's Pawn's double step, from before, stands
+        // Arrange - Yellow's Elephant, facing right, goes three down; Black's Pawn's double step, from before, stands
         Passage black = new(BlackPawn, Cell(3, 1), [Cell(3, 2)], Cell(3, 3));
         GameState state = this.YellowToMove(
-            (Cell(1, 4), YellowElephant),
+            (Cell(2, 5), YellowElephant),
             (Cell(3, 3), BlackPawn),
             (Cell(7, 7), GreenElephant),
             (Cell(7, 0), RedElephant)
@@ -148,16 +149,16 @@ public sealed class StartRowMovesTest
         };
 
         // Act
-        GameState moved = this._rules.Apply(state, new MoveAction(Yellow, Cell(1, 4), Cell(4, 4))).State;
+        GameState moved = this._rules.Apply(state, new MoveAction(Yellow, Cell(2, 5), Cell(2, 2))).State;
 
         // Assert
         Assert.Equal(black, moved.Passages[0]);
         Passage passage = moved.Passages[1];
         Assert.Equal(
-            (YellowElephant, Cell(1, 4), Cell(4, 4)),
+            (YellowElephant, Cell(2, 5), Cell(2, 2)),
             (passage.Piece, passage.From, passage.To)
         );
-        Assert.Equal([Cell(2, 4), Cell(3, 4)], passage.Passed);
+        Assert.Equal([Cell(2, 4), Cell(2, 3)], passage.Passed);
     }
 
     [Theory]
@@ -176,31 +177,85 @@ public sealed class StartRowMovesTest
     }
 
     [Fact]
-    public void LegalActions_WhenAnEnemyPassedFromTwoAway_MayTakeItInPassingFromEachCellItPassed()
+    public void Apply_WhenAPieceLeapsOverTheCellItPasses_LeavesNothingToTakeInPassing()
     {
-        // Arrange - Yellow's Elephant went from b5 to f5, over c5, d5 and e5, past Black's Pawn on d4
-        GameState state = this.Passed(YellowElephant, Cell(1, 4), Cell(5, 4));
+        // Arrange - Yellow's Boat leaps from b5 to d7, over c6, where it could never stop
+        Piece boat = new(new PieceId(5), Chaturaji2027Pieces.Boat, Yellow);
+        GameState state = this.BlackToMove(Cell(3, 1), BoatDie, (Cell(1, 4), boat), (Cell(3, 3), BlackPawn)) with
+        {
+            DecidingSeat = Yellow,
+        };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new MoveAction(Yellow, Cell(1, 4), Cell(3, 6)));
+
+        // Assert
+        Assert.Equal(boat, transition.State.Position.PieceAt(Cell(3, 6)));
+        Assert.Empty(transition.State.Passages);
+    }
+
+    /// <summary>
+    /// The user's examples, turned up the board: Yellow's Elephants, facing right, and Red's, facing left, going down,
+    /// against Black's Pawn on d4, which faces up and started there, beyond the start rows: neither matters.
+    /// </summary>
+    public static TheoryData<string, Piece, int, int, int, int> Passings =>
+        new()
+        {
+            { "two, from two away", YellowElephant, 2, 5, 2, 3 },
+            { "more than two", YellowElephant, 2, 5, 2, 0 },
+            { "on the other side", RedElephant, 4, 5, 4, 3 },
+            { "more than two, on the other side", RedElephant, 4, 5, 4, 1 },
+        };
+
+    [Theory]
+    [MemberData(nameof(Passings), DisableDiscoveryEnumeration = true)]
+    public void LegalActions_WhenAnEnemyGoesTwoOrMoreAgainstThePawnFromTwoAway_MayTakeItOntoItsFirstStep(
+        string why,
+        Piece piece,
+        int fromColumn,
+        int fromRow,
+        int toColumn,
+        int toRow
+    )
+    {
+        // Arrange
+        CellId from = Cell(fromColumn, fromRow);
+        CellId to = Cell(toColumn, toRow);
+        GameState state = this.Passed(piece, from, to, Cell(3, 3));
 
         // Act
         ImmutableList<GameAction> actions = this._rules.LegalActions(state);
 
         // Assert
-        Assert.Contains(new MoveAction(Black, Cell(3, 3), Cell(2, 4)), actions);
-        Assert.Contains(new MoveAction(Black, Cell(3, 3), Cell(4, 4)), actions);
+        Assert.Contains(new MoveAction(Black, Cell(3, 3), Between(from, to)[0]), actions);
+        Assert.NotEmpty(why);
+    }
+
+    [Fact]
+    public void LegalActions_WhenAnEnemyGoesOnPastThePawn_OffersNoTakingInPassingOntoItsLaterSteps()
+    {
+        // Arrange - Yellow's Elephant went from c6 to c1, over c5, c4, c3 and c2
+        GameState passed = this.Passed(YellowElephant, Cell(2, 5), Cell(2, 0));
+
+        // Act
+        ImmutableList<GameAction> actions = this._rules.LegalActions(passed);
+
+        // Assert
+        Assert.DoesNotContain(new MoveAction(Black, Cell(3, 3), Cell(2, 3)), actions);
     }
 
     [Fact]
     public void Apply_WhenAPawnTakesInPassing_TakesThePieceWhereItStopped()
     {
         // Arrange
-        GameState state = this.Passed(YellowElephant, Cell(1, 4), Cell(5, 4));
+        GameState state = this.Passed(YellowElephant, Cell(2, 5), Cell(2, 1));
 
         // Act
         Transition transition = this._rules.Apply(state, new MoveAction(Black, Cell(3, 3), Cell(2, 4)));
 
         // Assert
         Assert.Equal(BlackPawn, transition.State.Position.PieceAt(Cell(2, 4)));
-        Assert.Null(transition.State.Position.PieceAt(Cell(5, 4)));
+        Assert.Null(transition.State.Position.PieceAt(Cell(2, 1)));
         Assert.Contains(new PieceCaptured(YellowElephant, Black, 4), transition.Events);
         Assert.Empty(transition.State.Passages);
     }
@@ -208,7 +263,7 @@ public sealed class StartRowMovesTest
     [Fact]
     public void Apply_WhenAPawnTakesAPieceThatPassedWhereItStands_TakesItThereAndNoMoreInPassing()
     {
-        // Arrange - Yellow's Elephant went from b5 to e5, past Black's Pawn on d4
+        // Arrange - Yellow's Elephant went from b5 to e5, across Black's Pawn on d4's way
         GameState state = this.Passed(YellowElephant, Cell(1, 4), Cell(4, 4));
 
         // Act
@@ -222,14 +277,19 @@ public sealed class StartRowMovesTest
     public static TheoryData<string, Piece, int, int, int, int> NoPassings =>
         new()
         {
-            { "an ally", GreenElephant, 4, 5, 4, 2 },
-            { "from three away", YellowElephant, 0, 4, 5, 4 },
-            { "passing no cell the pawn takes on", RedElephant, 5, 2, 2, 2 },
+            { "an ally", GreenElephant, 2, 5, 2, 3 },
+            { "from three away", YellowElephant, 2, 6, 2, 2 },
+            { "from beside the pawn", YellowElephant, 2, 4, 2, 1 },
+            { "along the pawn's forward", YellowElephant, 2, 1, 2, 5 },
+            { "across the pawn's way", YellowElephant, 1, 4, 3, 4 },
+            { "across the pawn's way, the other way", RedElephant, 5, 4, 3, 4 },
+            { "two rows away", RedElephant, 5, 5, 2, 5 },
+            { "two columns away", GreenElephant, 5, 5, 5, 2 },
         };
 
     [Theory]
     [MemberData(nameof(NoPassings), DisableDiscoveryEnumeration = true)]
-    public void LegalActions_WhenThePassingIsNoEnemyFromTwoAwayPastThePawn_OffersNoTakingInPassing(
+    public void LegalActions_WhenThePassingIsNoEnemyFromTwoAwayAgainstThePawn_OffersNoTakingInPassing(
         string why,
         Piece piece,
         int fromColumn,
@@ -239,14 +299,15 @@ public sealed class StartRowMovesTest
     )
     {
         // Arrange
-        GameState state = this.Passed(piece, Cell(fromColumn, fromRow), Cell(toColumn, toRow));
+        CellId from = Cell(fromColumn, fromRow);
+        CellId to = Cell(toColumn, toRow);
+        GameState state = this.Passed(piece, from, to);
 
         // Act
         ImmutableList<GameAction> actions = this._rules.LegalActions(state);
 
         // Assert
-        Assert.DoesNotContain(new MoveAction(Black, Cell(3, 3), Cell(2, 4)), actions);
-        Assert.DoesNotContain(new MoveAction(Black, Cell(3, 3), Cell(4, 4)), actions);
+        Assert.DoesNotContain(new MoveAction(Black, Cell(3, 3), Between(from, to)[0]), actions);
         Assert.NotEmpty(why);
     }
 
@@ -254,7 +315,7 @@ public sealed class StartRowMovesTest
     public void LegalActions_WhenTheCellPassedIsTakenSince_OffersNoTakingInPassingOntoIt()
     {
         // Arrange - Green's Elephant has come onto c5 since
-        GameState passed = this.Passed(YellowElephant, Cell(1, 4), Cell(4, 4));
+        GameState passed = this.Passed(YellowElephant, Cell(2, 5), Cell(2, 2));
         GameState state = passed with { Position = passed.Position.Place(Cell(2, 4), GreenElephant) };
 
         // Act
@@ -318,9 +379,12 @@ public sealed class StartRowMovesTest
     private GameState YellowToMove(params (CellId Cell, Piece Piece)[] placements) =>
         this.BlackToMove(Cell(3, 1), ElephantDie, placements) with { DecidingSeat = Yellow };
 
-    /// <summary>Black to move its Pawn on d4, which started on d2, once <paramref name="piece"/> passed.</summary>
-    private GameState Passed(Piece piece, CellId from, CellId to) =>
-        this.BlackToMove(Cell(3, 1), PawnDie, (Cell(3, 3), BlackPawn), (to, piece)) with
+    /// <summary>
+    /// Black to move its Pawn on d4, which started on <paramref name="start"/>, or d2, once <paramref name="piece"/>
+    /// passed.
+    /// </summary>
+    private GameState Passed(Piece piece, CellId from, CellId to, CellId? start = null) =>
+        this.BlackToMove(start ?? Cell(3, 1), PawnDie, (Cell(3, 3), BlackPawn), (to, piece)) with
         {
             Passages = [new Passage(piece, from, Between(from, to), to)],
         };

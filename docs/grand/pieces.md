@@ -29,7 +29,7 @@ piece is worth about its parts (Chancellor 22 = Rook 14 + Knight 8).
   Rook does (14), but takes only by hopping (−4).
 - A power that reach does not see is a special-power bonus: the Xiangqi General's flying-general
   capture is worth 7. The Western Pawn's start-row powers are worth 3 (*Proposed*, 2026-11-05; 1
-  before *en passant* was widened to take any enemy piece moving forward past the pawn): 1 for the
+  before *en passant* was widened to take any enemy piece moving against the pawn, past it): 1 for the
   double first step, 2 for an *en passant* that may now, now and then, take a heavy piece. To be
   settled by playtesting (**Q14**).
 - Reach is counted on 8 × 8 even when the board is larger, so that it stays bounded.
@@ -132,7 +132,7 @@ The dice name a class, not a piece ([specification §6.1](specification.md#61-th
 | Piece | Moves | Restrictions | Powers / promotion | Value | Lifts |
 |---|---|---|---|---|---|
 | Pawn (Shogi) | One square forward | Move: blocked straight ahead | → Gold General in the far three ranks | 54 | 2 / — |
-| Pawn (Western) | One square forward; captures one square diagonally forward | Move: blocked straight ahead | First move two squares; *en passant*, of any enemy piece moving forward two squares or more past it from two squares away; → Queen, Rook, Bishop or Knight on the last rank | 9 | 2 / — |
+| Pawn (Western) | One square forward; captures one square diagonally forward | Move: blocked straight ahead | First move two squares; *en passant*, of any enemy piece moving two squares or more against it, past it, from two squares away; → Queen, Rook, Bishop or Knight on the last rank | 9 | 2 / — |
 | Guard (Janggi) | One square orthogonally, or diagonally along palace lines | Area: its 3 × 3 palace | Palace lines | 7 | — / 5 |
 | Noble (Makruk) | One square diagonally, or straight forward | — | — | 7 | — / — |
 | Soldier (Janggi) | One square forward or sideways (diagonally forward along palace lines) | Move: may not go back; Area: palace diagonals only | Palace lines | 7 | 2 / 2 |

@@ -86,9 +86,9 @@ public static class GrandLegionsPieces
         Piece(FairyGeneral, "Fairy General", Leader, Fairy, Step(DirectionSets.Any), KnightLeap),
         Piece(WesternKing, "King (Western)", Leader, Western, Step(DirectionSets.Any)),
         Piece(XiangqiGeneral, "General (Xiangqi)", Leader, Xiangqi, OrthogonalStep)
-            .Restricted(Area(Palace, 5)),
+            .Restricted(Confined(5)),
         Piece(JanggiGeneral, "General (Janggi)", Leader, Janggi, OrthogonalStep)
-            .Restricted(Area(Palace, 5)),
+            .Restricted(Confined(5)),
         Piece(GoldGeneral, "Gold General (Shogi)", Leader, Shogi, OrthogonalStep, Step(DirectionSets.ForwardDiagonals)),
         Piece(SilverGeneral, "Silver General (Shogi)", Leader, Shogi, DiagonalStep, ForwardStep)
             .Promoting(GoldGeneral),
@@ -101,7 +101,7 @@ public static class GrandLegionsPieces
             .Restricted(Moves(BlockedAhead, 2))
             .Promoting(Queen, Rook, Bishop, Knight),
         Piece(JanggiGuard, "Guard (Janggi)", Infantry, Janggi, OrthogonalStep)
-            .Restricted(Area(Palace, 5)),
+            .Restricted(Confined(5)),
         Piece(Noble, "Noble (Makruk)", Infantry, Makruk, DiagonalStep, ForwardStep),
         Piece(JanggiSoldier, "Soldier (Janggi)", Infantry, Janggi, ForwardStep, Sideways())
             .Restricted(
@@ -120,7 +120,7 @@ public static class GrandLegionsPieces
                 Area(Terrain.River, "Sideways only once across a river", 3)
             ),
         Piece(XiangqiAdvisor, "Advisor (Xiangqi)", Infantry, Xiangqi, DiagonalStep)
-            .Restricted(Area(Palace, 5)),
+            .Restricted(Confined(5)),
 
         // Heavy / Slider
         Piece(Lance, "Lance (Shogi)", Heavy, Shogi, MovementRule.Slide(DirectionSets.Forward))
@@ -269,6 +269,9 @@ public static class GrandLegionsPieces
 
     /// <summary>A restriction on where the piece may go, about a palace, lifted for <paramref name="lift"/>.</summary>
     private static Restriction Area(string description, int lift) => Area(Terrain.Palace, description, lift);
+
+    /// <summary>A restriction that keeps the piece within its palace, lifted for <paramref name="lift"/>.</summary>
+    private static Restriction Confined(int lift) => Area(Terrain.Palace, Palace, lift) with { IsConfining = true };
 
     /// <summary>A restriction on where the piece may go, about <paramref name="terrain"/>, lifted at a price.</summary>
     private static Restriction Area(Terrain terrain, string description, int lift) =>

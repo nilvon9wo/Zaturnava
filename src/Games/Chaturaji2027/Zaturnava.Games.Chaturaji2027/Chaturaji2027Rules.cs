@@ -105,7 +105,6 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         this._progress = new Progress(this._grid, this._variant.Pawns);
         this._startRows = new StartRowMoves(
             this._grid,
-            this._moves,
             this._variant.InitialPosition(this._grid),
             this._variant.StartRowPowers,
             this._variant.StartRows
@@ -944,7 +943,9 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         Transition moved = this.IsSwap(state, move.From, mover, move.To)
             ? Swapped(state, move, mover)
             : this.Displaced(state, move, mover);
-        return moved with { State = this._startRows.Passed(state, moved.State, move, mover) };
+        bool MayStop(CellId cell) =>
+            this.MovesFrom(state, move.From, mover, move.Actor).Any(other => other.To == cell);
+        return moved with { State = this._startRows.Passed(moved.State, move, mover, MayStop) };
     }
 
     /// <summary>Two Pawns back to back trade places; nothing is taken.</summary>

@@ -90,8 +90,9 @@ How a quick game's armies are chosen and placed (*Stated*, 2026-11-01 and 2026-1
   infantry last, until the minimums are met. If the budget cannot buy the minimum army, the dearer
   pieces are exchanged for cheaper ones until it can. With budget and room in the kingdom left, more
   pieces, of any class; with budget still left, lifts, at random across the army.
-- **Pieces an area holds.** A piece that depends on palaces is picked only in a game with palaces; one
-  that depends on a river (the Xiangqi Elephant and Soldier), only in a game with a river. This holds
+- **Pieces an area holds.** A piece confined to a palace is picked only in a game with palaces; one
+  that only gains a power there, such as a move along palace lines, is picked in any game
+  (2026-11-05). One that depends on a river (the Xiangqi Elephant and Soldier), only in a game with a river. This holds
   for armies picked at random: a player building their own army may buy them regardless, though they
   are no priority until palaces and rivers, respectively, are in the game.
 - **Placing them.** Where the kingdoms touch, with no ground between them (the small game: two
@@ -114,10 +115,17 @@ What the program does so far (2026-11-04), and the gaps against the above:
 - Each game is dealt its own armies: its first action carries a seed (`ScenarioStart.Dealt`), from which
   `QuickArmy` picks and places each seat's army apart, at random, as above; each leader's start is its
   throne, and each piece's its home for ransom. Games begun before this replay as the first seed deals
-  them. The order of the middle classes (heavy, artillery, cavalry) and how the dearest pieces are made
-  cheaper (each time, the piece dearest beyond its class's cheapest, one step down) are *Proposed*.
-- Palace pieces are left out, as quick games have no palaces; river pieces, unless the game has rivers
-  (each area restriction says which it is about: `Terrain`).
+  them. How the minimum is kept within the budget is *Proposed* (2026-11-05), in one pass: the
+  minimum's slots are filled in a random order, each piece drawn evenly from those of its class the
+  budget can still pay for, leaving enough for the slots still to fill at their classes' cheapest.
+  Dear pieces come seldom, as they seldom fit (Stated: as players will seldom spend so much on them),
+  but every class has its turn to draw first, and no piece comes the more for being next cheaper.
+  (Making the dearest piece one step cheaper, as before, turned every Shogi Pawn into a Western Pawn,
+  so that Western Pawns came twice as often as any other infantry.)
+- Pieces confined to a palace are left out, as quick games have no palaces; a piece with powers along
+  palace lines, such as the Janggi Soldier, is not (Stated, 2026-11-05). River pieces are left out
+  unless the game has rivers (each area restriction says which terrain it is about, `Terrain`, and
+  whether it confines the piece to it, `IsConfining`).
 - *Gap*: lifts are not bought with what is left of the budget, as nothing plays a lifted restriction yet.
 - *Gap*: there is no setting yet for all four armies alike, or laid out symmetrically.
 - The Chaturaji 2027 bonuses are × 10, as is the lead a team needs to win by giving up its turns
@@ -176,8 +184,10 @@ drawn simply, a shape for its class and a letter for its kind.
 ## Stage 6 — Special powers
 
 - Start-row powers: the two-square first move, *en passant*, which may take any enemy piece that
-  moves forward two squares or more past the pawn, from two squares away (specification §3). *Done*
-  (2026-11-05) for the Western Pawn, with start rows 2 (`StartRowMoves`); its special-power bonus is
+  moves two squares or more against the pawn's forward, past it, from two squares away
+  (specification §3). *Done*
+  (2026-11-05) for the Western Pawn, with start rows 2 for the double step, and *en passant* wherever
+  the pawn started (`StartRowMoves`); its special-power bonus is
   3, its value 9 (*Proposed*, [pieces.md](pieces.md#value)). Still to come: start rows as a setting.
 - Castling.
 - The flying-general capture.

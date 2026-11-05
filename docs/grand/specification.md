@@ -127,15 +127,24 @@ and placed knowing where they stand.)
   from its kingdom's back rank.
 - **Stated.** Start-row powers make up for the distance to cross, and speed the game. An infantry
   piece placed beyond its army's first two rows has been brought forward already, and has none of
-  them: a Western Pawn on row 3 may not step two squares on its first move, nor take *en passant*.
-  **Stated (2026-11-04):** *en passant* is widened to be of more use: if any enemy piece, standing
-  exactly two squares away, moves forward at least two squares, passing the pawn, the pawn may take it
-  *en passant*; so a pawn might, now and then, take a Rook so. **Stated:** it may be taken so until
-  its own seat's turn comes round again, unless it moves first; and a pawn that could also simply
-  move onto the square passed takes the piece there *en passant*. *Proposed:* "two squares away" is
-  counted in king's steps from the pawn to where the piece stood; "forward" is straight ahead, as
-  its own army faces; "passing the pawn" means passing over a square the pawn could capture on,
-  which is where the pawn goes, taking the piece where it stopped.
+  them: a Western Pawn on row 3 may not step two squares on its first move.
+  **Stated (2026-11-04, made plain 2026-11-05):** *en passant* is the Western Pawn's own power,
+  widened to be of more use, and not a start-row power: where the pawn started, or stands, does not
+  matter. What matters is where the piece that just moved stood beside the pawn, and which way and how
+  far it moved. If any enemy piece, standing exactly two squares away, moves at least two squares
+  against the pawn's forward, passing the pawn, the pawn may take it *en passant*; so a pawn might,
+  now and then, take a Rook so. Which way the moving piece's own army faces, or which other ways it
+  could have moved, does not matter; only the way it did move. It must have passed through the square
+  next to where it started, one it could have stopped on: a piece that leapt or hopped over it, as a
+  Knight or a Cannon might, may not be taken so. With the pawn on b4, facing a1: a piece
+  moving from a2 to a4, or on to a5, a6 or as far as it goes (two is the least, not the only distance),
+  may be taken; one starting on a1 may not, as it started too far away, nor one on a3, too close. With
+  the pawn on b3, a piece moving from a1 to a3 may be taken; with it on b5, one from a3 to a5, or from
+  c3 to c5 or c7; and so on, on either side, in any column, and around the pinwheel. **Stated:** it
+  may be taken so until its own seat's turn comes round again, unless it moves first; and a pawn that
+  could also simply move onto the square passed takes the piece there *en passant*. **Stated
+  (2026-11-05):** "two squares away" is counted in king's steps; the pawn takes it by moving onto the
+  square of its first step, diagonally beside the pawn (a3, in the first example).
   **Stated:** how many rows count as start rows (2) may be a setting of the game.
   **Stated:** a piece that starts without them never gains them.
 - **Stated.** An army may have no leader, as an army in Chaturaji 2027 may lose its Raja and play
