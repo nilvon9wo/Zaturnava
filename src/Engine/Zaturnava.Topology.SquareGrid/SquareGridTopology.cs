@@ -52,6 +52,12 @@ public sealed class SquareGridTopology(
             : null;
     }
 
+    /// <summary>Every cell from <paramref name="from"/> that way, to the edge of the board, nearest first.</summary>
+    public ImmutableList<CellId> Ray(CellId from, Direction direction) =>
+        this.Step(from, direction) is { } next
+            ? [next, .. this.Ray(next, direction)]
+            : [];
+
     public ImmutableList<Direction> Resolve([Required] DirectionSet set, Direction forward) =>
         set.Name switch
         {

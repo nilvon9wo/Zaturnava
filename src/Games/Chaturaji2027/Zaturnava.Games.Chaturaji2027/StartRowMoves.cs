@@ -68,7 +68,7 @@ internal sealed class StartRowMoves(
             return after;
         }
 
-        ImmutableList<CellId> ahead = this.Ahead(move.From, this.Heading(move.From, move.To));
+        ImmutableList<CellId> ahead = this._grid.Ray(move.From, this.Heading(move.From, move.To));
         int reached = ahead.IndexOf(move.To);
         ImmutableList<Passage> passages = reached >= 1 && mayStop(ahead[0])
             ? [new Passage(mover, move.From, [.. ahead.Take(reached)], move.To)]
@@ -90,7 +90,7 @@ internal sealed class StartRowMoves(
     private IEnumerable<Move> DoubleStepFrom(GameState state, CellId cell, Piece piece)
     {
         Direction forward = state.SeatOf(piece.Owner).Forward;
-        ImmutableList<CellId> ahead = this.Ahead(cell, forward);
+        ImmutableList<CellId> ahead = this._grid.Ray(cell, forward);
         bool mayStep = this.StartsOf(state).TryGetValue(piece.Id, out CellId first)
             && first == cell
             && this.IsWithin(first, Behind(forward), this._rows)
@@ -124,12 +124,6 @@ internal sealed class StartRowMoves(
     /// <summary>Whether fewer than <paramref name="remaining"/> rows lie behind <paramref name="cell"/>.</summary>
     private bool IsWithin(CellId cell, Direction back, int remaining) =>
         remaining > 0 && (this._grid.Step(cell, back) is not { } behind || this.IsWithin(behind, back, remaining - 1));
-
-    /// <summary>Every cell straight ahead of <paramref name="from"/>, nearest first.</summary>
-    private ImmutableList<CellId> Ahead(CellId from, Direction forward) =>
-        this._grid.Step(from, forward) is { } next
-            ? [next, .. this.Ahead(next, forward)]
-            : [];
 
     /// <summary>The way from <paramref name="from"/> towards <paramref name="to"/>, a king's step.</summary>
     private Direction Heading(CellId from, CellId to) =>

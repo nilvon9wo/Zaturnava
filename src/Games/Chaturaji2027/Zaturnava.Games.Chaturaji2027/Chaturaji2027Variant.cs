@@ -80,6 +80,9 @@ public sealed record Chaturaji2027Variant(
     /// <summary>The kinds a castler may castle with (a Western Rook): none, unless set.</summary>
     public ImmutableHashSet<PieceKindId> CastlingRooks { get; init; } = [];
 
+    /// <summary>The kinds with the flying-general capture (a Xiangqi General): none, unless set.</summary>
+    public ImmutableHashSet<PieceKindId> FlyingCapturers { get; init; } = [];
+
     /// <summary>
     /// Where every piece of a game dealt by a seed starts, each game its own armies; null, if every game starts
     /// as <see cref="Start"/> has it.
