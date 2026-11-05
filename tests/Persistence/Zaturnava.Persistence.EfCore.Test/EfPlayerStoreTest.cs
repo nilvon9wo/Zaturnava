@@ -120,6 +120,49 @@ public sealed class EfPlayerStoreTest : IDisposable
         );
     }
 
+    [Fact]
+    public async Task Merge_WhenAnotherPlayerIsMergedIn_TheirLoginsSessionsAndStandingsAreTheOnesAndTheyAreGone()
+    {
+        // Arrange - Bea stands at chess, as Ada does, and at go, as Ada does not
+        Login discord = new("Discord", "99");
+        Player bea = new(new PlayerId("bea"), "Bea", [discord]);
+        await this._store.Add(Ada, this._cancellation);
+        await this._store.Add(bea, this._cancellation);
+        await this._store.AddSession(bea.Id, "bea", this._cancellation);
+        await this._store.Keep(
+            [
+                new Standing(Ada.Id, "chess") { Elo = 1600, Won = 1 },
+                new Standing(bea.Id, "chess") { Elo = 1300, Lost = 2 },
+                new Standing(bea.Id, "go") { Elo = 1550, Drawn = 1 },
+            ],
+            this._cancellation
+        );
+
+        // Act
+        await new EfPlayerStore(this._database.NewContext()).Merge(bea.Id, Ada.Id, this._cancellation);
+
+        // Assert
+        EfPlayerStore reader = new(this._database.NewContext());
+        Assert.Equal(
+            ("ada Ada Discord:99 GitHub:1234 Google:abcd", "ada", (string?)null),
+            (
+                Described(await reader.ByLogin(discord, this._cancellation)),
+                (await reader.BySession("bea", this._cancellation))?.Id.Value,
+                Described(await reader.ById(bea.Id, this._cancellation))
+            )
+        );
+        Assert.Equal(
+            [
+                new Standing(Ada.Id, "chess") { Elo = 1400, Won = 1, Lost = 2 },
+                new Standing(Ada.Id, "go") { Elo = 1550, Drawn = 1 },
+            ],
+            [
+                .. await reader.Leaders("chess", 10, this._cancellation),
+                .. await reader.Leaders("go", 10, this._cancellation),
+            ]
+        );
+    }
+
     [Theory]
     [InlineData("hash", true)]
     [InlineData("other", false)]

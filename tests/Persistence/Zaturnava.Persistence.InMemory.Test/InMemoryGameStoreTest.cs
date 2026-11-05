@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Net.NowhereAtAll.Zaturnava.Application.Games;
+using Net.NowhereAtAll.Zaturnava.Application.Players;
 using Net.NowhereAtAll.Zaturnava.Application.Ports;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 
@@ -204,6 +205,28 @@ public sealed class InMemoryGameStoreTest
         // Assert
         ImmutableList<GameRecord> kept = await this._store.List(this._cancellation);
         Assert.Equal("b,d", string.Join(",", kept.Select(game => game.Id.Value)));
+    }
+
+    [Fact]
+    public async Task Reclaim_WhenAPlayerClaimedSeats_GivesThemToTheOtherAndLeavesTheRestAsTheyWere()
+    {
+        // Arrange
+        PlayerId bea = new("bea");
+        PlayerId ada = new("ada");
+        await this.AddListed();
+        await this._store.Add(
+            Record("e") with { Controllers = [new HumanSeat("one", bea), new HumanSeat("two"), new OpenSeat()] },
+            this._cancellation
+        );
+
+        // Act
+        await this._store.Reclaim(bea, ada, this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            [new HumanSeat("one", ada), new HumanSeat("two"), new OpenSeat()],
+            (await this._store.Find(new GameId("e"), this._cancellation))?.Controllers ?? []
+        );
     }
 
     [Fact]

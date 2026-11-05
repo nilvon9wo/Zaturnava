@@ -362,11 +362,11 @@ public sealed partial class SignInApiTest(SigningInServer server) : IClassFixtur
     }
 
     [Fact]
-    public async Task Done_WhenTheLoginToLinkIsAnotherPlayers_SaysSoAndSignsNoOneIn()
+    public async Task Done_WhenTheLoginToLinkIsAnotherPlayers_MergesThatPlayerIntoThePlayerWhoAskedForIt()
     {
         // Arrange
         HttpGameClient client = server.GameClient();
-        _ = await this.Done("Google|11|Bea", SigningInServer.Page);
+        string bea = TokenOf(await this.Done("Google|11|Bea", SigningInServer.Page));
         string token = TokenOf(await this.Done("GitHub|11|Ada", SigningInServer.Page));
         string? code = await client.LinkCode(token, this._cancellation);
 
@@ -374,10 +374,25 @@ public sealed partial class SignInApiTest(SigningInServer server) : IClassFixtur
         string page = await this.Done("Google|11|Bea", SigningInServer.Page, code);
 
         // Assert
+        PlayerDto? linked = await this.Me(TokenOf(page));
+        Assert.Equal(
+            ("GitHub,Google", "Ada", (await this.Me(token))?.Id, linked?.Id),
+            (string.Join(',', linked?.Services ?? []), linked?.Name, linked?.Id, (await this.Me(bea))?.Id)
+        );
+    }
+
+    [Fact]
+    public async Task Done_WhenTheCodeToLinkWithIsNoGood_SaysSoAndSignsNoOneIn()
+    {
+        // Arrange - no such code was ever issued
+
+        // Act
+        string page = await this.Done("Google|13|Bea", SigningInServer.Page, "no-such-code");
+
+        // Assert
         Assert.Equal(
             (true, string.Empty),
-            (page.Contains("That Google account is already another player&#39;s here.", StringComparison.Ordinal),
-                TokenOf(page))
+            (page.Contains("That link has run out, or was used already", StringComparison.Ordinal), TokenOf(page))
         );
     }
 

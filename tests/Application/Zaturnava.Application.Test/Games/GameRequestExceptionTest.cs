@@ -66,11 +66,6 @@ public sealed class GameRequestExceptionTest
             "That link has run out, or was used already: ask for another, and try again."
         },
         {
-            new LoginTakenException("GitHub"),
-            GameRequestFailure.Conflict,
-            "That GitHub account is already another player's here."
-        },
-        {
             new LastLoginException("GitHub"),
             GameRequestFailure.Conflict,
             "GitHub is the only way left to sign in as this player: link another first."

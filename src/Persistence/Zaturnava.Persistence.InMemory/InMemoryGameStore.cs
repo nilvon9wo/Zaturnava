@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using System.ComponentModel.DataAnnotations;
 using Net.NowhereAtAll.Zaturnava.Application.Games;
+using Net.NowhereAtAll.Zaturnava.Application.Players;
 using Net.NowhereAtAll.Zaturnava.Application.Ports;
 
 namespace Net.NowhereAtAll.Zaturnava.Persistence.InMemory;
@@ -76,6 +77,19 @@ public sealed class InMemoryGameStore : IGamePersisting
     public Task MarkRated(GameId id, CancellationToken cancellationToken)
     {
         this._rated[id] = true;
+        return Task.CompletedTask;
+    }
+
+    public Task Reclaim(PlayerId from, PlayerId into, CancellationToken cancellationToken)
+    {
+        foreach (GameRecord game in this._games.Values)
+        {
+            this._games[game.Id] = game with
+            {
+                Controllers = [.. game.Controllers.Select(seat => HumanSeat.Reclaimed(seat, from, into))],
+            };
+        }
+
         return Task.CompletedTask;
     }
 

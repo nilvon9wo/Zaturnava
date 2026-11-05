@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Net.NowhereAtAll.Zaturnava.Application.Players;
 
 /// <summary>
@@ -19,4 +21,24 @@ public sealed record Standing(PlayerId Player, string Game)
     public int Lost { get; init; }
 
     public int Drawn { get; init; }
+
+    /// <summary>How many games of it they finished.</summary>
+    public int Played => this.Won + this.Lost + this.Drawn;
+
+    /// <summary>
+    /// Where they stand with <paramref name="other"/>'s games too, as one player (Proposed): games and experience
+    /// added up, and the Elo ratings averaged, each weighed by the games behind it.
+    /// </summary>
+    public Standing Merged([Required] Standing other)
+    {
+        int played = this.Played + other.Played;
+        return this with
+        {
+            Elo = played == 0 ? this.Elo : ((this.Elo * this.Played) + (other.Elo * other.Played)) / played,
+            Experience = this.Experience + other.Experience,
+            Won = this.Won + other.Won,
+            Lost = this.Lost + other.Lost,
+            Drawn = this.Drawn + other.Drawn,
+        };
+    }
 }

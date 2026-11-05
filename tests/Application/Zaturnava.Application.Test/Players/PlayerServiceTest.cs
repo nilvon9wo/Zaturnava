@@ -13,10 +13,12 @@ public sealed class PlayerServiceTest
 
     private readonly SteppedTime _time = new();
     private readonly InMemoryPlayerStore _store = new();
+    private readonly InMemoryGameStore _games = new();
     private readonly PlayerService _service;
     private readonly CancellationToken _cancellation = TestContext.Current.CancellationToken;
 
-    public PlayerServiceTest() => this._service = new(this._store, new LinkCodes(this._time), this._time);
+    public PlayerServiceTest() =>
+        this._service = new(this._store, this._games, new LinkCodes(this._time), this._time);
 
     [Fact]
     public async Task SignIn_WhenAgainLater_KeepsWhenTheyLastSignedIn()
@@ -287,20 +289,61 @@ public sealed class PlayerServiceTest
     }
 
     [Fact]
-    public async Task Link_WhenTheLoginIsAnotherPlayers_IsRefused()
+    public async Task Link_WhenTheLoginIsAnotherPlayers_MergesThatPlayerIntoThem()
     {
-        // Arrange
+        // Arrange - Bea, signed in with Google, has an AI's token, a seat beside Ada's and a guest's, and standings
         SignedIn ada = await this._service.SignIn(Login, "Ada", this._cancellation);
-        _ = await this._service.SignIn(Other, "Bea", this._cancellation);
+        SignedIn bea = await this._service.SignIn(Other, "Bea", this._cancellation);
+        string ai = await this._service.AiToken(bea.Token, this._cancellation) ?? throw new InvalidOperationException();
+        GameRecord game = new(
+            GameId.New(),
+            "ruleset",
+            [
+                new HumanSeat("a", ada.Player.Id),
+                new HumanSeat("b", bea.Player.Id),
+                new HumanSeat("c"),
+                new BotSeat("random"),
+            ],
+            [],
+            0
+        );
+        await this._games.Add(game, this._cancellation);
+        await this._store.Keep(
+            [
+                new Standing(ada.Player.Id, "chess") { Elo = 1600, Won = 1 },
+                new Standing(bea.Player.Id, "chess") { Elo = 1300, Lost = 2, Experience = 5 },
+                new Standing(bea.Player.Id, "go") { Elo = 1550, Won = 1 },
+            ],
+            this._cancellation
+        );
         string code = await this.CodeFor(ada);
 
         // Act
-        LoginTakenException refused = await Assert.ThrowsAsync<LoginTakenException>(() =>
-            this._service.Link(code, Other, this._cancellation)
-        );
+        SignedIn linked = await this._service.Link(code, Other, this._cancellation);
 
         // Assert
-        Assert.Equal("That Google account is already another player's here.", refused.Message);
+        Assert.Equal(
+            (ada.Player.Id, "Ada", 2, (PlayerId?)ada.Player.Id, (PlayerId?)ada.Player.Id, (Player?)null),
+            (linked.Player.Id, linked.Player.Name, linked.Player.Logins.Count,
+                (await this._service.Find(bea.Token, this._cancellation))?.Id,
+                (await this._service.Find(ai, this._cancellation))?.Id,
+                await this._service.Profile(bea.Player.Id, this._cancellation))
+        );
+        GameRecord? reclaimed = await this._games.Find(game.Id, this._cancellation);
+        Assert.Equal(
+            [new HumanSeat("a", ada.Player.Id), new HumanSeat("b", ada.Player.Id), new HumanSeat("c"),
+                new BotSeat("random")],
+            reclaimed?.Controllers ?? []
+        );
+        ImmutableDictionary<PlayerId, Standing> chess =
+            await this._store.Standings("chess", [ada.Player.Id, bea.Player.Id], this._cancellation);
+        ImmutableDictionary<PlayerId, Standing> go =
+            await this._store.Standings("go", [ada.Player.Id], this._cancellation);
+        Assert.Equal(
+            (1, 1400.0, 1, 2, 5, 1550.0),
+            (chess.Count, chess[ada.Player.Id].Elo, chess[ada.Player.Id].Won, chess[ada.Player.Id].Lost,
+                chess[ada.Player.Id].Experience, go[ada.Player.Id].Elo)
+        );
     }
 
     [Fact]

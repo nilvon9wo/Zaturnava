@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.EntityFrameworkCore;
 using Net.NowhereAtAll.Zaturnava.Application.Games;
+using Net.NowhereAtAll.Zaturnava.Application.Players;
 using Net.NowhereAtAll.Zaturnava.Application.Ports;
 using Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Entities;
 
@@ -99,6 +100,23 @@ public sealed class EfGameStore(GameDbContext context) : IGamePersisting
         _ = await this._context.Games
             .Where(game => game.Id == id.Value)
             .ExecuteUpdateAsync(set => set.SetProperty(game => game.IsRated, true), cancellationToken);
+
+    public async Task Reclaim(PlayerId from, PlayerId into, CancellationToken cancellationToken)
+    {
+        string claimedBy = $"%{from.Value}"; // a player's id is hex digits only, nothing LIKE reads as a wildcard
+        List<SeatEntity> seats = await this._context.Set<SeatEntity>()
+            .Where(seat => seat.Kind == HumanSeat.KindName && EF.Functions.Like(seat.Detail, claimedBy))
+            .ToListAsync(cancellationToken);
+        foreach (SeatEntity seat in seats)
+        {
+            GameRecordMapping.Update(
+                seat,
+                HumanSeat.Reclaimed(SeatController.From(seat.Kind, seat.Detail), from, into)
+            );
+        }
+
+        _ = await this._context.SaveChangesAsync(cancellationToken);
+    }
 
     public async Task Remove([Required] ImmutableList<GameId> ids, CancellationToken cancellationToken)
     {

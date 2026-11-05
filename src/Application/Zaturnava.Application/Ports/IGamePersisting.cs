@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.ComponentModel.DataAnnotations;
 using Net.NowhereAtAll.Zaturnava.Application.Games;
+using Net.NowhereAtAll.Zaturnava.Application.Players;
 
 namespace Net.NowhereAtAll.Zaturnava.Application.Ports;
 
@@ -41,6 +42,12 @@ public interface IGamePersisting
 
     /// <summary>Keeps that the game has been counted in its players' standings, leaving its version as it is.</summary>
     Task MarkRated(GameId id, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Every seat <paramref name="from"/> claimed, in any game, claimed by <paramref name="into"/> instead
+    /// (<see cref="HumanSeat.Reclaimed"/>), leaving each game's version as it is.
+    /// </summary>
+    Task Reclaim(PlayerId from, PlayerId into, CancellationToken cancellationToken);
 
     /// <summary>Lets go of the games, with everything kept of them.</summary>
     Task Remove([Required] ImmutableList<GameId> ids, CancellationToken cancellationToken);
