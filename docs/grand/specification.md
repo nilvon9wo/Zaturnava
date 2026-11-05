@@ -128,8 +128,14 @@ and placed knowing where they stand.)
 - **Stated.** Start-row powers make up for the distance to cross, and speed the game. An infantry
   piece placed beyond its army's first two rows has been brought forward already, and has none of
   them: a Western Pawn on row 3 may not step two squares on its first move, nor take *en passant*.
-  **Stated (2026-11-04):** *en passant* may take any Infantry piece that has just made a two-square
-  first move past it, not only a Western Pawn: Western Pawns will seldom face each other.
+  **Stated (2026-11-04):** *en passant* is widened to be of more use: if any enemy piece, standing
+  exactly two squares away, moves forward at least two squares, passing the pawn, the pawn may take it
+  *en passant*; so a pawn might, now and then, take a Rook so. **Stated:** it may be taken so until
+  its own seat's turn comes round again, unless it moves first; and a pawn that could also simply
+  move onto the square passed takes the piece there *en passant*. *Proposed:* "two squares away" is
+  counted in king's steps from the pawn to where the piece stood; "forward" is straight ahead, as
+  its own army faces; "passing the pawn" means passing over a square the pawn could capture on,
+  which is where the pawn goes, taking the piece where it stopped.
   **Stated:** how many rows count as start rows (2) may be a setting of the game.
   **Stated:** a piece that starts without them never gains them.
 - **Stated.** An army may have no leader, as an army in Chaturaji 2027 may lose its Raja and play

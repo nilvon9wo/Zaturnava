@@ -1,13 +1,14 @@
 using System.Collections.Immutable;
 using Net.NowhereAtAll.Zaturnava.Engine.Boards;
 using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
+using Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
 using static Net.NowhereAtAll.Zaturnava.Games.GrandLegions.PieceClass;
 using static Net.NowhereAtAll.Zaturnava.Games.GrandLegions.Tradition;
 
 namespace Net.NowhereAtAll.Zaturnava.Games.GrandLegions;
 
 /// <summary>
-/// The catalogue of pieces (docs/grand/pieces.md), most valuable first within each class. Each moves as its
+/// The catalogue of pieces (docs/grand/pieces.md), each worth what the game's table of values says. Each moves as its
 /// own game has it; what its area restrictions (palace, river) and powers (castling, the flying general...)
 /// add is the ruleset's, still to come. Keys are kept apart from Chaturaji 2027's, whose Horse and Elephant
 /// move otherwise.
@@ -64,6 +65,13 @@ public static class GrandLegionsPieces
     public static readonly PieceKindId JanggiCannon = new("janggi-cannon");
     public static readonly PieceKindId Grasshopper = new("grasshopper");
 
+    /// <summary>
+    /// What each piece is worth, its price and what taking it scores, as the game's table of values has it
+    /// (<c>Values/grand-legions.json</c>), which can be changed apart from the code.
+    /// </summary>
+    private static readonly ImmutableDictionary<PieceKindId, int> Values =
+        PieceValues.Of(typeof(GrandLegionsPieces).Assembly, QuickGame.GameId);
+
     private static readonly MovementRule KnightLeap = MovementRule.Leap(DirectionSets.Knight, 1);
     private static readonly MovementRule OrthogonalStep = MovementRule.Step(DirectionSets.Orthogonal);
     private static readonly MovementRule DiagonalStep = MovementRule.Step(DirectionSets.Diagonal);
@@ -74,91 +82,83 @@ public static class GrandLegionsPieces
     public static readonly ImmutableList<GrandPiece> Catalogue =
     [
         // Leaders
-        Piece(DragonKing, "Dragon King (Shogi)", Leader, Shogi, 78, OrthogonalSlide, DiagonalStep),
-        Piece(FairyGeneral, "Fairy General", Leader, Fairy, 76, Step(DirectionSets.Any), KnightLeap),
-        Piece(WesternKing, "King (Western)", Leader, Western, 70, Step(DirectionSets.Any)),
-        Piece(XiangqiGeneral, "General (Xiangqi)", Leader, Xiangqi, 69, OrthogonalStep)
+        Piece(DragonKing, "Dragon King (Shogi)", Leader, Shogi, OrthogonalSlide, DiagonalStep),
+        Piece(FairyGeneral, "Fairy General", Leader, Fairy, Step(DirectionSets.Any), KnightLeap),
+        Piece(WesternKing, "King (Western)", Leader, Western, Step(DirectionSets.Any)),
+        Piece(XiangqiGeneral, "General (Xiangqi)", Leader, Xiangqi, OrthogonalStep)
             .Restricted(Area(Palace, 5)),
-        Piece(JanggiGeneral, "General (Janggi)", Leader, Janggi, 68, OrthogonalStep)
+        Piece(JanggiGeneral, "General (Janggi)", Leader, Janggi, OrthogonalStep)
             .Restricted(Area(Palace, 5)),
-        Piece(
-            GoldGeneral,
-            "Gold General (Shogi)",
-            Leader,
-            Shogi,
-            66,
-            OrthogonalStep,
-            Step(DirectionSets.ForwardDiagonals)
-        ),
-        Piece(SilverGeneral, "Silver General (Shogi)", Leader, Shogi, 65, DiagonalStep, ForwardStep)
+        Piece(GoldGeneral, "Gold General (Shogi)", Leader, Shogi, OrthogonalStep, Step(DirectionSets.ForwardDiagonals)),
+        Piece(SilverGeneral, "Silver General (Shogi)", Leader, Shogi, DiagonalStep, ForwardStep)
             .Promoting(GoldGeneral),
 
         // Infantry
-        Piece(ShogiPawn, "Pawn (Shogi)", Infantry, Shogi, 54, ForwardStep)
+        Piece(ShogiPawn, "Pawn (Shogi)", Infantry, Shogi, ForwardStep)
             .Restricted(Moves(BlockedAhead, 2))
             .Promoting(GoldGeneral),
-        Piece(WesternPawn, "Pawn (Western)", Infantry, Western, 7, PawnMovement())
+        Piece(WesternPawn, "Pawn (Western)", Infantry, Western, PawnMovement())
             .Restricted(Moves(BlockedAhead, 2))
             .Promoting(Queen, Rook, Bishop, Knight),
-        Piece(JanggiGuard, "Guard (Janggi)", Infantry, Janggi, 7, OrthogonalStep)
+        Piece(JanggiGuard, "Guard (Janggi)", Infantry, Janggi, OrthogonalStep)
             .Restricted(Area(Palace, 5)),
-        Piece(Noble, "Noble (Makruk)", Infantry, Makruk, 7, DiagonalStep, ForwardStep),
-        Piece(JanggiSoldier, "Soldier (Janggi)", Infantry, Janggi, 7, ForwardStep, Sideways())
+        Piece(Noble, "Noble (Makruk)", Infantry, Makruk, DiagonalStep, ForwardStep),
+        Piece(JanggiSoldier, "Soldier (Janggi)", Infantry, Janggi, ForwardStep, Sideways())
             .Restricted(
                 Moves(NeverBack, 2),
                 Area("Diagonally only along palace lines", 2)
             ),
-        Piece(Minister, "Minister", Infantry, Fairy, 6, OrthogonalStep),
-        Piece(Courtier, "Courtier", Infantry, Fairy, 5, DiagonalStep)
+        Piece(Minister, "Minister", Infantry, Fairy, OrthogonalStep),
+        Piece(Courtier, "Courtier", Infantry, Fairy, DiagonalStep)
             .Restricted(Bound(OneColour)),
-        Piece(MakrukPawn, "Pawn (Makruk)", Infantry, Makruk, 4, PawnMovement())
+        Piece(MakrukPawn, "Pawn (Makruk)", Infantry, Makruk, PawnMovement())
             .Restricted(Moves(BlockedAhead, 2))
             .Promoting(Courtier),
-        Piece(XiangqiSoldier, "Soldier (Xiangqi)", Infantry, Xiangqi, 4, ForwardStep)
+        Piece(XiangqiSoldier, "Soldier (Xiangqi)", Infantry, Xiangqi, ForwardStep)
             .Restricted(
                 Moves(NeverBack, 2),
                 Area(Terrain.River, "Sideways only once across a river", 3)
             ),
-        Piece(XiangqiAdvisor, "Advisor (Xiangqi)", Infantry, Xiangqi, 2, DiagonalStep)
+        Piece(XiangqiAdvisor, "Advisor (Xiangqi)", Infantry, Xiangqi, DiagonalStep)
             .Restricted(Area(Palace, 5)),
 
         // Heavy / Slider
-        Piece(Lance, "Lance (Shogi)", Heavy, Shogi, 56, MovementRule.Slide(DirectionSets.Forward))
+        Piece(Lance, "Lance (Shogi)", Heavy, Shogi, MovementRule.Slide(DirectionSets.Forward))
             .Restricted(Moves("Blocked by pieces in its path", 2))
             .Promoting(GoldGeneral),
-        Piece(Amazon, "Amazon", Heavy, Fairy, 37, MovementRule.Slide(DirectionSets.Any), KnightLeap),
-        Piece(Queen, "Queen (Western)", Heavy, Western, 27, MovementRule.Slide(DirectionSets.Any)),
-        Piece(Chancellor, "Chancellor", Heavy, Fairy, 22, OrthogonalSlide, KnightLeap),
-        Piece(Archbishop, "Archbishop", Heavy, Fairy, 21, DiagonalSlide, KnightLeap),
-        Piece(DragonBishop, "Dragon Bishop", Heavy, Fairy, 21, DiagonalSlide, KnightLeap),
-        Piece(DragonHorse, "Dragon Horse (Shogi)", Heavy, Shogi, 17, DiagonalSlide, OrthogonalStep),
-        Piece(Rook, "Rook (Western)", Heavy, Western, 14, OrthogonalSlide),
-        Piece(Bishop, "Bishop (Western)", Heavy, Western, 12, DiagonalSlide)
+        Piece(Amazon, "Amazon", Heavy, Fairy, MovementRule.Slide(DirectionSets.Any), KnightLeap),
+        Piece(Queen, "Queen (Western)", Heavy, Western, MovementRule.Slide(DirectionSets.Any)),
+        Piece(Chancellor, "Chancellor", Heavy, Fairy, OrthogonalSlide, KnightLeap),
+        Piece(Archbishop, "Archbishop", Heavy, Fairy, DiagonalSlide, KnightLeap),
+        Piece(DragonBishop, "Dragon Bishop", Heavy, Fairy, DiagonalSlide, KnightLeap),
+        Piece(DragonHorse, "Dragon Horse (Shogi)", Heavy, Shogi, DiagonalSlide, OrthogonalStep),
+        Piece(Rook, "Rook (Western)", Heavy, Western, OrthogonalSlide),
+        Piece(Bishop, "Bishop (Western)", Heavy, Western, DiagonalSlide)
             .Restricted(Bound(OneColour)),
 
         // Cavalry / Leaper
-        Piece(Knightrider, "Knightrider", Cavalry, Fairy, 12, MovementRule.Slide(DirectionSets.Knight))
+        Piece(Knightrider, "Knightrider", Cavalry, Fairy, MovementRule.Slide(DirectionSets.Knight))
             .Restricted(Moves("Each landing short of the last must be empty", 3)),
-        Piece(Zebra, "Zebra", Cavalry, Fairy, 8, Leaper(3, 2)),
-        Piece(Knight, "Knight (Western)", Cavalry, Western, 8, KnightLeap),
-        Piece(Camel, "Camel", Cavalry, Fairy, 7, Leaper(3, 1))
+        Piece(Zebra, "Zebra", Cavalry, Fairy, Leaper(3, 2)),
+        Piece(Knight, "Knight (Western)", Cavalry, Western, KnightLeap),
+        Piece(Camel, "Camel", Cavalry, Fairy, Leaper(3, 1))
             .Restricted(Bound(OneColour)),
-        Piece(Horse, "Horse (Xiangqi)", Cavalry, Xiangqi, 7, KnightLeap.Lame())
+        Piece(Horse, "Horse (Xiangqi)", Cavalry, Xiangqi, KnightLeap.Lame())
             .Restricted(Moves("The first square of its leg must be empty", 2)),
-        Piece(JanggiElephant, "Elephant (Janggi)", Cavalry, Janggi, 7, Leaper(3, 2).Lame())
+        Piece(JanggiElephant, "Elephant (Janggi)", Cavalry, Janggi, Leaper(3, 2).Lame())
             .Restricted(Moves("Each cell on the way must be empty", 2)),
-        Piece(Giraffe, "Giraffe", Cavalry, Fairy, 4, Leaper(4, 1)),
-        Piece(Alfil, "Elephant (Alfil)", Cavalry, Fairy, 2, Leaper(2, 2))
+        Piece(Giraffe, "Giraffe", Cavalry, Fairy, Leaper(4, 1)),
+        Piece(Alfil, "Elephant (Alfil)", Cavalry, Fairy, Leaper(2, 2))
             .Restricted(Bound("One cell in eight")),
-        Piece(Threeleaper, "Threeleaper", Cavalry, Fairy, 2, Leaper(3, 0))
+        Piece(Threeleaper, "Threeleaper", Cavalry, Fairy, Leaper(3, 0))
             .Restricted(Bound("One cell in nine")),
-        Piece(XiangqiElephant, "Elephant (Xiangqi)", Cavalry, Xiangqi, 2, Leaper(2, 2).Lame())
+        Piece(XiangqiElephant, "Elephant (Xiangqi)", Cavalry, Xiangqi, Leaper(2, 2).Lame())
             .Restricted(
                 Moves("The square between must be empty", 2),
                 Area(Terrain.River, "May not cross a river", 3),
                 Bound("One cell in eight")
             ),
-        Piece(WarEngine, "War Engine", Cavalry, Fairy, 2, Leaper(2, 0))
+        Piece(WarEngine, "War Engine", Cavalry, Fairy, Leaper(2, 0))
             .Restricted(Bound("One cell in four")),
 
         // Specialty / Artillery
@@ -167,7 +167,6 @@ public static class GrandLegionsPieces
             "Cannon (Xiangqi)",
             Artillery,
             Xiangqi,
-            10,
             OrthogonalSlide.MoveOnly(),
             MovementRule.Hop(DirectionSets.Orthogonal, int.MaxValue).CaptureOnly()
         ),
@@ -176,11 +175,10 @@ public static class GrandLegionsPieces
                 "Cannon (Janggi)",
                 Artillery,
                 Janggi,
-                8,
                 MovementRule.Hop(DirectionSets.Orthogonal, int.MaxValue).Shunning([XiangqiCannon, JanggiCannon])
             )
             .Restricted(Moves("Must hop exactly one piece, and never a Cannon", 3)),
-        Piece(Grasshopper, "Grasshopper", Artillery, Fairy, 7, MovementRule.Hop(DirectionSets.Any, 1))
+        Piece(Grasshopper, "Grasshopper", Artillery, Fairy, MovementRule.Hop(DirectionSets.Any, 1))
             .Restricted(Moves("Must hop, landing just beyond", 3)),
     ];
 
@@ -256,15 +254,15 @@ public static class GrandLegionsPieces
             piece => new PieceMark(Emblems[piece.Class], Letters[piece.Id])
         );
 
+    /// <summary>A piece of the catalogue, worth what the game's table of values says.</summary>
     private static GrandPiece Piece(
         PieceKindId id,
         string name,
         PieceClass pieceClass,
         Tradition tradition,
-        int value,
         params MovementRule[] movement
     ) =>
-        new(id, name, pieceClass, tradition, value, [.. movement]);
+        new(id, name, pieceClass, tradition, Values[id], [.. movement]);
 
     /// <summary>A restriction on how the piece moves, lifted for <paramref name="lift"/>.</summary>
     private static Restriction Moves(string description, int lift) => new(RestrictionKind.Movement, description, lift);

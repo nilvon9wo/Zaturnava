@@ -10,6 +10,7 @@ using Net.NowhereAtAll.Zaturnava.Bots.Learning;
 using Net.NowhereAtAll.Zaturnava.Engine.Decisions;
 using Net.NowhereAtAll.Zaturnava.Engine.Rules;
 using Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
+using Net.NowhereAtAll.Zaturnava.Games.GrandLegions;
 
 namespace Net.NowhereAtAll.Zaturnava.BotRunner;
 
@@ -24,7 +25,7 @@ internal static class SelfPlayCommand
 
     private static readonly JsonSerializerOptions Indented = new(JsonSerializerOptions.Web) { WriteIndented = true };
 
-    private static readonly RulesetCatalog Rulesets = new([new Chaturaji2027Rules()]);
+    private static readonly RulesetCatalog Rulesets = new([new Chaturaji2027Rules(), .. GrandLegionsRules.Quick]);
 
     private static readonly ImmutableList<IBotPlaying> Bots =
     [

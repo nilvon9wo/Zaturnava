@@ -4,6 +4,7 @@ using Net.NowhereAtAll.Zaturnava.Engine.Moves;
 using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
 using Net.NowhereAtAll.Zaturnava.Engine.Positions;
 using Net.NowhereAtAll.Zaturnava.Engine.Seats;
+using Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
 using Net.NowhereAtAll.Zaturnava.Topology.SquareGrid;
 
 namespace Net.NowhereAtAll.Zaturnava.Games.GrandLegions.Test;
@@ -215,20 +216,26 @@ public sealed class GrandLegionsPiecesTest
     }
 
     [Fact]
-    public void Catalogue_WhenItsClassIsMostValuable_ListsTheMostValuableFirst()
+    public void Catalogue_WhenValued_IsWorthWhatTheGamesTableSaysForEveryPieceAndNoOther()
     {
-        // Arrange - nothing beyond the catalogue
+        // Arrange
+        ImmutableDictionary<PieceKindId, int> table =
+            PieceValues.Of(typeof(GrandLegionsPieces).Assembly, QuickGame.GameId);
 
         // Act
-        ImmutableList<ImmutableList<int>> values =
-        [
-            .. GrandLegionsPieces.Catalogue
-                .GroupBy(piece => piece.Class)
-                .Select(group => group.Select(piece => piece.Value).ToImmutableList()),
-        ];
+        ImmutableDictionary<PieceKindId, int> values =
+            GrandLegionsPieces.Catalogue.ToImmutableDictionary(piece => piece.Id, piece => piece.Value);
 
         // Assert
-        Assert.All(values, inClass => Assert.Equal(inClass.OrderDescending(), inClass));
+        Assert.Equal(table, values);
+        Assert.Equal(
+            (78, 7, 2),
+            (
+                values[GrandLegionsPieces.DragonKing],
+                values[GrandLegionsPieces.WesternPawn],
+                values[GrandLegionsPieces.XiangqiAdvisor]
+            )
+        );
     }
 
     /// <summary>The cells the piece on d4 could move or capture on, each once.</summary>

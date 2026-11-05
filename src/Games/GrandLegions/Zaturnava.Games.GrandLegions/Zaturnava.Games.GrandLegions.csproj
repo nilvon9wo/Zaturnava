@@ -16,6 +16,8 @@
   <ItemGroup>
     <!-- What the Chaturaji 2027 bonuses score here (Scoring.Of), a table that can be changed apart from the code. -->
     <EmbeddedResource Include="Scoring\*.json" LogicalName="Scoring/%(Filename)%(Extension)" />
+    <!-- What each piece is worth, its price and what taking it scores (PieceValues.Of), a table apart from the code. -->
+    <EmbeddedResource Include="Values\*.json" LogicalName="Values/%(Filename)%(Extension)" />
   </ItemGroup>
 
 </Project>

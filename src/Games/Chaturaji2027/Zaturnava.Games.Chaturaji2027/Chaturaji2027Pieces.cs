@@ -21,13 +21,9 @@ public static class Chaturaji2027Pieces
             .Add(Boat, new PieceKind(Boat, [MovementRule.Leap(DirectionSets.Diagonal, 2)]))
             .Add(Pawn, new PieceKind(Pawn, PawnMovement()));
 
+    /// <summary>What taking each piece scores, as its table has it (<c>Values/chaturaji-2027.json</c>).</summary>
     public static readonly ImmutableDictionary<PieceKindId, int> Points =
-        ImmutableDictionary<PieceKindId, int>.Empty
-            .Add(Pawn, 1)
-            .Add(Boat, 2)
-            .Add(Horse, 3)
-            .Add(Elephant, 4)
-            .Add(Raja, 5);
+        PieceValues.Of(typeof(Chaturaji2027Pieces).Assembly, Chaturaji2027Rules.RulesetId);
 
     public static readonly ImmutableDictionary<PieceKindId, string> ChaturajiNames =
         ImmutableDictionary<PieceKindId, string>.Empty

@@ -49,7 +49,7 @@ public sealed class DependencyRulesTest
             ["Hosting.Discord"] = ["Hosting"],
 
             // self-play: the application's decision loop, with the server's rulesets and bots
-            ["BotRunner"] = ["Application", "Bots", "Engine", "Games.Chaturaji2027"],
+            ["BotRunner"] = ["Application", "Bots", "Engine", "Games.Chaturaji2027", "Games.GrandLegions"],
 
             // the composition root: the one project that knows everything
             ["Server"] =
