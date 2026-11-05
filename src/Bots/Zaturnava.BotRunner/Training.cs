@@ -6,15 +6,21 @@ namespace Net.NowhereAtAll.Zaturnava.BotRunner;
 /// <summary>
 /// Tunes Sage's weights by playing it against itself: each round, each weight in turn is nudged up - and,
 /// if that does not win, down, unless it is nothing already - and a nudge is kept when Sage with it beats
-/// Sage without it (<paramref name="match"/>) clearly enough: winning more than it loses by a tenth of the
-/// games won or lost. What each nudge did is written to <paramref name="progress"/>, as it goes.
+/// Sage without it (<paramref name="match"/>) clearly enough: winning more than it loses by twice the
+/// spread chance alone would give (the square root of the games won or lost), as two evenly matched would
+/// so win about one time in forty-four. What each nudge did is written to <paramref name="progress"/>, as it
+/// goes.
 /// </summary>
+/// <remarks>
+/// Proposed. It was a tenth of the games won or lost; but over 60 games that let a nudge changing nothing at all
+/// be kept (35 won to 25), and with some forty nudges a round, several such each round.
+/// </remarks>
 internal sealed class Training(
     Func<SageWeights, SageWeights, CancellationToken, Task<(int Won, int Lost)>> match,
     TextWriter progress
 )
 {
-    private const double Margin = 0.1;
+    private const double Spreads = 2;
     private const double Up = 1.3;
     private const double Down = 0.7;
     private const double FromNothing = 0.3;
@@ -57,7 +63,7 @@ internal sealed class Training(
     )
     {
         (int won, int lost) = await this._match(candidate, current, cancellationToken);
-        bool isKept = won > lost + (Margin * (won + lost));
+        bool isKept = won - lost > Spreads * Math.Sqrt(won + lost);
         await this._progress.WriteLineAsync(
             string.Create(
                 CultureInfo.InvariantCulture,

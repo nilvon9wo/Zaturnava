@@ -106,7 +106,9 @@ dotnet run --project src/Bots/Zaturnava.BotRunner -- --games 10 --max-steps 200 
 ```
 
 Sage's weights, tuned by Sage playing itself (here 2 rounds, each nudge tried over 40 games a side; how each
-went is written to standard error). Copy what it writes into `src/Bots/Zaturnava.Bots/Weights/`:
+went is written to standard error). A nudge is kept only when it wins by more than twice the square root of
+the games won or lost, so with few games a side little is kept. Copy what it writes into
+`src/Bots/Zaturnava.Bots/Weights/`:
 
 ```shell
 dotnet run --project src/Bots/Zaturnava.BotRunner -- --train 2 --games 40 --out chaturaji-2027.json
