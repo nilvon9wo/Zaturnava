@@ -110,7 +110,9 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             this._variant.Pawns,
             (state, cell, piece) => this.MovesFrom(state, cell, piece, piece.Owner),
             this.AttacksOf,
-            this._control
+            this._control,
+            this._ransom.HomeOf,
+            this.WorthOf
         );
         this._startRows = new StartRowMoves(
             this._grid,

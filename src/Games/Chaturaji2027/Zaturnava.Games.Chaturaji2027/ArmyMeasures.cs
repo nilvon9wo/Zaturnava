@@ -23,17 +23,20 @@ namespace Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
 /// <item>how many of the thrones it commands by are in danger (rules.md §6): its own, should an enemy leader
 /// be able to step onto it, or take its leader sitting there, and each other throne its leader sits on, should an
 /// enemy be able to take that leader;</item>
-/// <item>and how many pieces of other armies it commands on its own turns (§6.1): pieces that may move on more
-/// turns of a round than their own army's, so that one may take and then get away.</item>
+/// <item>how many pieces of other armies it commands on its own turns (§6.1): pieces that may move on more
+/// turns of a round than their own army's, so that one may take and then get away;</item>
+/// <item>and what its pieces are worth that stand where an enemy's prisoner would land, should it escape (§7):
+/// its starting square, a throne for a leader, deep in the enemy's kingdom.</item>
 /// </list>
-/// The last three each seat's alone, for a bot to weigh apart as its own, its allies' and its enemies'.
 /// </summary>
 internal sealed class ArmyMeasures(
     ICellNavigating grid,
     ImmutableHashSet<PieceKindId> pawns,
     Func<GameState, CellId, Piece, IEnumerable<Move>> movesFrom,
     Func<GameState, SeatId, IEnumerable<Attack>> attacksOf,
-    ThroneControl control
+    ThroneControl control,
+    Func<GameState, PieceId, CellId> homeOf,
+    Func<PieceKindId, int> worthOf
 )
 {
     public const string PawnProgress = "pawn-progress";
@@ -43,15 +46,18 @@ internal sealed class ArmyMeasures(
     public const string LeadersAttacked = "leaders-attacked";
     public const string ThronesInDanger = "thrones-in-danger";
     public const string Commanded = "commanded";
+    public const string UnderEscapes = "under-escapes";
 
     private readonly ICellNavigating _grid = grid;
     private readonly ImmutableHashSet<PieceKindId> _pawns = pawns;
     private readonly Func<GameState, CellId, Piece, IEnumerable<Move>> _movesFrom = movesFrom;
     private readonly Func<GameState, SeatId, IEnumerable<Attack>> _attacksOf = attacksOf;
     private readonly ThroneControl _control = control;
+    private readonly Func<GameState, PieceId, CellId> _homeOf = homeOf;
+    private readonly Func<PieceKindId, int> _worthOf = worthOf;
 
     public static ImmutableList<string> Names { get; } =
-        [PawnProgress, NearPromotion, Reach, Retreat, LeadersAttacked, ThronesInDanger, Commanded];
+        [PawnProgress, NearPromotion, Reach, Retreat, LeadersAttacked, ThronesInDanger, Commanded, UnderEscapes];
 
     public ImmutableList<double> Of(GameState state, SeatId seat)
     {
@@ -72,7 +78,24 @@ internal sealed class ArmyMeasures(
             .. this.Danger(state, seat, army),
             this._control.CommandedBy(state, seat)
                 .Sum(command => state.Position.Occupants.Values.Count(piece => piece.Owner == command.Army)),
+            this.UnderEscapesOf(state, seat),
         ];
+    }
+
+    /// <summary>
+    /// What the seat's pieces are worth that stand where an enemy's prisoner, whoever holds it, would land escaping.
+    /// </summary>
+    private int UnderEscapesOf(GameState state, SeatId seat)
+    {
+        ImmutableHashSet<CellId> landings =
+        [
+            .. state.Prisoners
+                .Where(prisoner => !state.Teams.AreAllied(prisoner.Piece.Owner, seat))
+                .Select(prisoner => this._homeOf(state, prisoner.Piece.Id)),
+        ];
+        return state.Position.Occupants
+            .Where(occupant => occupant.Value.Owner == seat && landings.Contains(occupant.Key))
+            .Sum(occupant => this._worthOf(occupant.Value.Kind));
     }
 
     /// <summary>

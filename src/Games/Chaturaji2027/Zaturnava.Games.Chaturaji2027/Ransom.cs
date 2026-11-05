@@ -184,11 +184,14 @@ internal sealed class Ransom(
     /// </summary>
     public ImmutableList<CellId> EscapesFor(GameState state, Prisoner prisoner)
     {
-        CellId home = this.HomesOf(state).Cells[prisoner.Piece.Id];
+        CellId home = this.HomeOf(state, prisoner.Piece.Id);
         return state.Position.PieceAt(home) is { } there && !state.Teams.AreAllied(there.Owner, prisoner.Piece.Owner)
             ? [home]
             : this.PlacesFor(state, prisoner);
     }
+
+    /// <summary>Where <paramref name="piece"/> started, and lands should it escape (rules.md §7).</summary>
+    public CellId HomeOf(GameState state, PieceId piece) => this.HomesOf(state).Cells[piece];
 
     /// <summary>The first prisoner waiting goes where its owner chose; the rest follow.</summary>
     public Transition Placed(GameState state, PlaceAction place)

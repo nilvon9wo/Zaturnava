@@ -159,6 +159,11 @@ first.
        leader up on purpose needs Sage to look past the enemy's taking it, which it does not yet do; the
        ally's rating is for the bot to weigh as trusting the ally above says. Midas, Solomon and Argus
        weigh a ransom by worth alone, and keep doing so.
+     - *(Stated 2026-11-06)* Pieces in an enemy's kingdom, and above all on its throne, stand where
+       escaping prisoners land (rules §7), so entering and sitting there is a risk. Done *(Proposed)*:
+       a fourth measure, `under-escapes`, what a seat's pieces are worth that stand on the starting
+       square of an enemy's piece now held prisoner, by anyone; weighed apart by side, starting at no
+       weight. Only prisoners held now count; a square some later prisoner might land on does not.
      - *(Stated 2026-11-05)* Private team chat, and how well bots plan through it, is another thing
        to measure; moot while our bots do not talk, and not with bots that spend tokens.
   3. **A learned bot**, the AI to play against: a small neural network, trained by self-play and on

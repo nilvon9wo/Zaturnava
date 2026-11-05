@@ -424,11 +424,34 @@ public sealed class Chaturaji2027RulesTest
         Assert.Equal(
             [
                 "pawn-progress", "pawns-near-promotion", "reach", "retreat", "leaders-attacked", "thrones-in-danger",
-                "commanded",
+                "commanded", "under-escapes",
             ],
             this._rules.Measures
         );
-        Assert.Equal([5d, 1d, 9d, 3d, 0d, 0d, 0d], black);
+        Assert.Equal([5d, 1d, 9d, 3d, 0d, 0d, 0d, 0d], black);
+    }
+
+    [Fact]
+    public void MeasuresOf_WhenItsPieceStandsWhereAnEnemysPrisonerWouldLandEscaping_CountsWhatItIsWorth()
+    {
+        // Arrange - Green holds Yellow's Raja, whose starting square, Yellow's throne, Black's Raja sits on; Yellow
+        // holds a Black Pawn, Black's own; Black's Elephant on c3 is where no prisoner would land
+        Piece yellowRaja = this._rules.CreateInitialState().Position.PieceAt(YellowThrone)!;
+        Piece blackPawn = this._rules.CreateInitialState().Position.PieceAt(Grid.CellAt(0, 1))!;
+        GameState state = this.StateWith(
+            (YellowThrone, Piece(1, Chaturaji2027Pieces.Raja, Black)),
+            (Grid.CellAt(2, 2), Piece(2, Chaturaji2027Pieces.Elephant, Black)),
+            (Grid.CellAt(7, 7), Piece(3, Chaturaji2027Pieces.Pawn, Yellow))
+        ) with
+        {
+            Prisoners = [new Prisoner(yellowRaja, Green), new Prisoner(blackPawn, Yellow)],
+        };
+
+        // Act
+        double underEscapes = this._rules.MeasuresOf(state, Black)[7];
+
+        // Assert
+        Assert.Equal(this._rules.WorthOf(Chaturaji2027Pieces.Raja), underEscapes);
     }
 
     [Fact]
@@ -446,7 +469,7 @@ public sealed class Chaturaji2027RulesTest
         ImmutableList<double> black = this._rules.MeasuresOf(state, Black);
 
         // Assert - its leaders attacked, its thrones in danger, the pieces of others it commands
-        Assert.Equal([1d, 1d, 1d], black.Skip(4));
+        Assert.Equal([1d, 1d, 1d], black.Skip(4).Take(3));
     }
 
     [Fact]
@@ -462,7 +485,7 @@ public sealed class Chaturaji2027RulesTest
         ImmutableList<double> black = this._rules.MeasuresOf(state, Black);
 
         // Assert
-        Assert.Equal([0d, 1d, 0d], black.Skip(4));
+        Assert.Equal([0d, 1d, 0d], black.Skip(4).Take(3));
     }
 
     [Fact]
@@ -480,7 +503,7 @@ public sealed class Chaturaji2027RulesTest
         ImmutableList<double> black = this._rules.MeasuresOf(state, Black);
 
         // Assert
-        Assert.Equal([0d, 0d, 1d], black.Skip(4));
+        Assert.Equal([0d, 0d, 1d], black.Skip(4).Take(3));
     }
 
     [Fact]
