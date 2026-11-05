@@ -1,6 +1,6 @@
 using System.Net;
 
-namespace SampleBot;
+namespace HttpApiSampleBot;
 
 /// <summary>
 /// Plays one seat of one game to its end, as docs/bots/http-api.md#playing describes: read the game; if it is

@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <RootNamespace>SampleBot</RootNamespace>
+    <RootNamespace>HttpApiSampleBot</RootNamespace>
   </PropertyGroup>
 
 </Project>

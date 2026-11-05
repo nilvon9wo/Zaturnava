@@ -1,6 +1,6 @@
 using System.Collections.Immutable;
 
-namespace SampleBot;
+namespace HttpApiSampleBot;
 
 // The parts of the server's JSON this bot reads, and no more: a client need not model what it ignores. Names are
 // camelCase on the wire; the serializer maps them (GameApi). The whole of the view is described at
@@ -30,7 +30,17 @@ internal sealed record GameView(
     Outcome? Outcome
 );
 
-internal sealed record Ruleset(string Id, string Name, int SeatCount);
+/// <summary>
+/// A ruleset: what it calls each seat (Black, Yellow...), and each seat's team, by number: seats of one number are
+/// allies.
+/// </summary>
+internal sealed record Ruleset(
+    string Id,
+    string Name,
+    int SeatCount,
+    ImmutableList<string> SeatNames,
+    ImmutableList<int> SeatTeams
+);
 
 /// <summary>What the server hosts, as <c>GET api/catalog</c> gives it: here, only its rulesets.</summary>
 internal sealed record Catalog(ImmutableList<Ruleset> Rulesets);

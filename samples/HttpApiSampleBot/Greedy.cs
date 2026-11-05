@@ -1,7 +1,7 @@
 using System.Collections.Immutable;
 using System.Globalization;
 
-namespace SampleBot;
+namespace HttpApiSampleBot;
 
 /// <summary>
 /// A mechanical mind, no AI at all: it takes the most valuable enemy piece it can; else rolls, or moves, at
