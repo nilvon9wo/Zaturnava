@@ -21,27 +21,28 @@ internal sealed class Player(GameApi api, IChoosing mind, TimeSpan pause, TextWr
     {
         while (true)
         {
-            GameView view = await this._api.Get(gameId, cancellationToken);
-            if (view.Outcome is { } outcome)
+            if (await this.Step(gameId, seat, seatToken, cancellationToken) is { } outcome)
             {
                 return outcome;
             }
 
-            await this.Step(view, seat, seatToken, cancellationToken);
             // Be a good guest: a game needs no more than a few requests a second.
             await Task.Delay(this._pause, cancellationToken);
         }
     }
 
     /// <summary>
-    /// One step of the game: the bot's own decision, a server bot's, or none, while a person (or no one yet)
-    /// decides. A request the game outran (409, someone else moved it meanwhile) is simply tried again next step.
+    /// One step of the game: read it; then the bot's own decision, a server bot's, or none, while a person (or no one
+    /// yet) decides. The outcome, once the game is over. A request the game outran (409, someone else moved it
+    /// meanwhile) is simply tried again next step; so is any, after a minute, when the server is too busy (429).
     /// </summary>
-    private async Task Step(GameView view, int seat, string seatToken, CancellationToken cancellationToken)
+    private async Task<Outcome?> Step(string gameId, int seat, string seatToken, CancellationToken cancellationToken)
     {
         try
         {
+            GameView view = await this._api.Get(gameId, cancellationToken);
             await this.Decide(view, seat, seatToken, cancellationToken);
+            return view.Outcome;
         }
         catch (RefusedException refused) when (refused.Status == HttpStatusCode.Conflict)
         {
@@ -52,6 +53,8 @@ internal sealed class Player(GameApi api, IChoosing mind, TimeSpan pause, TextWr
             await this._log.WriteLineAsync("The server is busy: waiting a minute.");
             await Task.Delay(TooBusyPause, cancellationToken);
         }
+
+        return null;
     }
 
     private async Task Decide(GameView view, int seat, string seatToken, CancellationToken cancellationToken)
