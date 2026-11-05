@@ -136,13 +136,17 @@ public sealed class PositionEncoder
 
     /// <summary>
     /// What each of the numbers Sage counts weighs, by its index, as <paramref name="weights"/> weigh them: a
-    /// weighted sum of a position's numbers so weighed is what Sage judges it worth.
+    /// weighted sum of a position's numbers so weighed is what Sage judges it worth, if it weighs each side alike;
+    /// else, as near as one weight for the team's less its enemies' comes (<see cref="Sided.Mean"/>).
     /// </summary>
     public ImmutableList<(int Index, double Weight)> Weighing([Required] SageWeights weights) =>
     [
-        .. weights.Values
-            .Take(this.Features - this._measures.Count)
-            .Concat(this._measures.Select(name => weights.Measures.GetValueOrDefault(name)))
+        .. new[]
+            {
+                weights.Score.Mean, weights.Material.Mean, weights.Leaders.Mean, weights.Prisoners.Mean,
+                weights.Thrones.Mean, weights.Exposure, weights.Chances, weights.Mobility.Mean,
+            }
+            .Concat(this._measures.Select(name => weights.Measures.GetValueOrDefault(name).Mean))
             .Select((weight, at) => (this.FeaturesAt + at, weight * FeatureScale)),
     ];
 

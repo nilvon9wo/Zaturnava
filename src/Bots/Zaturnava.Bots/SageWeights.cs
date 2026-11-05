@@ -12,16 +12,17 @@ namespace Net.NowhereAtAll.Zaturnava.Bots;
 /// pieces on the board, the leaders among them, the prisoners held, the thrones held, the worst the enemy
 /// could win next, the most the team could, how many cells its pieces attack (<see cref="Mobility"/>), and
 /// the ruleset's own measures, by name (<see cref="Measures"/>, as <see cref="IPositionMeasuring"/> offers
-/// them; one not named weighs nothing). What each is worth to winning is for playing to show, not for
+/// them; one not named weighs nothing). All but the worst and the most are weighed apart for the bot's own seat,
+/// its allies and its enemies (<see cref="Sided"/>). What each is worth to winning is for playing to show, not for
 /// guessing: <see cref="Default"/> is a starting guess, and <see cref="Learned"/> what Sage, playing itself,
 /// has tuned it to for each ruleset. Two weights are equal when they weigh the same things the same.
 /// </summary>
 public sealed record SageWeights(
-    double Score,
-    double Material,
-    double Leaders,
-    double Prisoners,
-    double Thrones,
+    Sided Score,
+    Sided Material,
+    Sided Leaders,
+    Sided Prisoners,
+    Sided Thrones,
     double Exposure,
     double Chances
 )
@@ -42,35 +43,53 @@ public sealed record SageWeights(
     /// <summary>The weights Sage has learned for each ruleset, by its id; a ruleset not there has none yet.</summary>
     public static ImmutableDictionary<string, SageWeights> Learned { get; } = LearnedIn(typeof(SageWeights).Assembly);
 
-    private static readonly ImmutableList<string> Counted =
-        ["score", "material", "leaders", "prisoners", "thrones", "exposure", "chances", "mobility"];
+    /// <summary>Where <see cref="Mobility"/>'s weights start, in <see cref="Values"/>: the measures' follow.</summary>
+    private const int MobilityAt = 17;
 
-    public double Mobility { get; init; }
+    public Sided Mobility { get; init; }
 
-    public ImmutableSortedDictionary<string, double> Measures { get; init; } =
-        ImmutableSortedDictionary<string, double>.Empty.WithComparers(StringComparer.Ordinal);
+    public ImmutableSortedDictionary<string, Sided> Measures { get; init; } =
+        ImmutableSortedDictionary<string, Sided>.Empty.WithComparers(StringComparer.Ordinal);
 
-    /// <summary>What each weight is called, in the order of <see cref="Values"/>: the measures last.</summary>
+    /// <summary>
+    /// What each weight is called, in the order of <see cref="Values"/>: a sided one's three by its side
+    /// ("material.own", "material.ally", "material.enemy"); the measures last.
+    /// </summary>
     [JsonIgnore]
-    public ImmutableList<string> Names => [.. Counted, .. this.Measures.Keys];
+    public ImmutableList<string> Names =>
+    [
+        .. SidesOf("score"), .. SidesOf("material"), .. SidesOf("leaders"), .. SidesOf("prisoners"),
+        .. SidesOf("thrones"), "exposure", "chances", .. SidesOf("mobility"), .. this.Measures.Keys.SelectMany(SidesOf),
+    ];
 
     /// <summary>The weights in order, for one tuning them in turn.</summary>
     [JsonIgnore]
     public ImmutableList<double> Values =>
     [
-        this.Score, this.Material, this.Leaders, this.Prisoners, this.Thrones, this.Exposure, this.Chances,
-        this.Mobility, .. this.Measures.Values,
+        .. this.Score.Values, .. this.Material.Values, .. this.Leaders.Values, .. this.Prisoners.Values,
+        .. this.Thrones.Values, this.Exposure, this.Chances, .. this.Mobility.Values,
+        .. this.Measures.Values.SelectMany(weight => weight.Values),
     ];
 
     /// <summary>The same weights, but the one at <paramref name="index"/> in <see cref="Values"/>.</summary>
     public SageWeights With(int index, double value)
     {
         ImmutableList<double> values = this.Values.SetItem(index, value);
-        return new SageWeights(values[0], values[1], values[2], values[3], values[4], values[5], values[6])
+        return new SageWeights(
+            Sided.At(values, 0),
+            Sided.At(values, 3),
+            Sided.At(values, 6),
+            Sided.At(values, 9),
+            Sided.At(values, 12),
+            values[15],
+            values[16]
+        )
         {
-            Mobility = values[7],
+            Mobility = Sided.At(values, MobilityAt),
             Measures = this.Measures.SetItems(
-                this.Measures.Keys.Select((name, at) => KeyValuePair.Create(name, values[Counted.Count + at]))
+                this.Measures.Keys.Select((name, at) =>
+                    KeyValuePair.Create(name, Sided.At(values, MobilityAt + (Sided.Sides.Count * (at + 1))))
+                )
             ),
         };
     }
@@ -80,7 +99,9 @@ public sealed record SageWeights(
         this with
         {
             Measures = this.Measures.SetItems(
-                measures.Where(name => !this.Measures.ContainsKey(name)).Select(name => KeyValuePair.Create(name, 0d))
+                measures
+                    .Where(name => !this.Measures.ContainsKey(name))
+                    .Select(name => KeyValuePair.Create(name, Sided.Alike(0)))
             ),
         };
 
@@ -94,6 +115,8 @@ public sealed record SageWeights(
         other is not null && this.Names.SequenceEqual(other.Names) && this.Values.SequenceEqual(other.Values);
 
     public override int GetHashCode() => HashCode.Combine(this.Score, this.Material, this.Measures.Count);
+
+    private static IEnumerable<string> SidesOf(string name) => Sided.Sides.Select(side => $"{name}.{side}");
 
     private static ImmutableDictionary<string, SageWeights> LearnedIn(Assembly assembly) =>
         assembly

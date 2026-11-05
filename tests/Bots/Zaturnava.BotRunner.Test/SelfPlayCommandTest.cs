@@ -126,7 +126,7 @@ public sealed class SelfPlayCommandTest
             (
                 exitCode,
                 tuned is not null,
-                this._errors.ToString().StartsWith("round 1, score ", StringComparison.Ordinal)
+                this._errors.ToString().StartsWith("round 1, score.own ", StringComparison.Ordinal)
             )
         );
     }
