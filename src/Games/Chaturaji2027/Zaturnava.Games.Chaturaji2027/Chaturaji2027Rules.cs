@@ -65,6 +65,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     private readonly Farming _farming;
     private readonly Ransom _ransom;
     private readonly StartRowMoves _startRows;
+    private readonly Castling _castling;
 
     public Chaturaji2027Rules()
         : this(DiceProfile.WeightedSixSided, DefaultIdleRounds, PawnPromotion.OtherArmies)
@@ -112,6 +113,12 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             this._variant.InitialPosition(this._grid),
             this._variant.StartRowPowers,
             this._variant.StartRows
+        );
+        this._castling = new Castling(
+            this._grid,
+            this._variant.Castlers,
+            this._variant.CastlingRooks,
+            this.AttackedAgainst
         );
     }
 
@@ -454,17 +461,29 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     }
 
     /// <summary>
-    /// A piece moves the way its own army faces, as the board lets it, with its start-row powers, if it has them;
-    /// a Pawn may also swap with one back to back.
+    /// A piece moves the way its own army faces, as the board lets it, with its start-row powers, if it has them,
+    /// and castling, if it may castle; a Pawn may also swap with one back to back.
     /// </summary>
     private IEnumerable<Move> MovesFrom(GameState state, CellId cell, Piece piece, SeatId mover)
     {
         bool MayTake(Piece target) => this.IsCapturable(state, target, mover);
         return this._moves.MovesFrom(state.Position, cell, state.SeatOf(piece.Owner), MayTake)
             .Concat(this._startRows.MovesFrom(state, cell, piece, MayTake))
+            .Concat(this._castling.MovesFrom(state, cell, piece))
             .Where(this.MayGo)
             .Concat(this.SwapsFrom(state, cell, piece));
     }
+
+    /// <summary>The cells a piece of an army not allied with <paramref name="seat"/>'s could capture on.</summary>
+    private ImmutableHashSet<CellId> AttackedAgainst(GameState state, SeatId seat) =>
+    [
+        .. state.Position.Occupants
+            .Select(occupant => occupant.Value.Owner)
+            .Distinct()
+            .Where(owner => !state.Teams.AreAllied(owner, seat))
+            .SelectMany(enemy => this.AttacksOf(state, enemy))
+            .Select(attack => attack.Target),
+    ];
 
     /// <summary>Whether the board lets a piece make the move its kind allows.</summary>
     private bool MayGo(Move move) => this._variant.MayMove?.Invoke(this._grid, move) ?? true;
@@ -963,7 +982,10 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         return new Transition(swapped, [new PawnsSwapped(mover, other, move.From, move.To, move.Actor)]);
     }
 
-    /// <summary>The piece moves, taking what stands where it goes, or what it takes <i>en passant</i>.</summary>
+    /// <summary>
+    /// The piece moves, taking what stands where it goes, or what it takes <i>en passant</i>; or castles, its rook
+    /// moving too.
+    /// </summary>
     private Transition Displaced(GameState state, MoveAction move, Piece mover)
     {
         Passage? passing = this._startRows.TakenBy(
@@ -973,12 +995,18 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             target => this.IsCapturable(state, target, move.Actor)
         );
         Piece? captured = state.Position.PieceAt(move.To) ?? passing?.Piece;
+        (CellId From, CellId To)? castled = captured is null ? this._castling.RookOf(state, move, mover) : null;
         Position relocated = state.Position.Relocate(move.From, move.To);
         Position position = passing is { } passage
             ? new Position(relocated.Occupants.Remove(passage.To))
-            : relocated;
+            : castled is { } rook
+                ? relocated.Relocate(rook.From, rook.To)
+                : relocated;
         PieceMoved went = new(mover, move.From, move.To, move.Actor);
-        Transition moved = new(state with { Position = position }, [went]);
+        ImmutableList<GameEvent> events = castled is { } rookMove
+            ? [went, new PieceMoved(state.Position.PieceAt(rookMove.From)!, rookMove.From, rookMove.To, move.Actor)]
+            : [went];
+        Transition moved = new(state with { Position = position }, events);
         Transition taken = captured is null
             ? moved
             : this.Captured(moved, captured, move.Actor, passing?.To ?? move.To);

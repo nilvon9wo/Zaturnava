@@ -74,6 +74,12 @@ public sealed record Chaturaji2027Variant(
     /// <summary>How many of an army's rows, from its back rank, are its start rows: 2, unless set.</summary>
     public int StartRows { get; init; } = 2;
 
+    /// <summary>The kinds that may castle (a Western King): none, unless set.</summary>
+    public ImmutableHashSet<PieceKindId> Castlers { get; init; } = [];
+
+    /// <summary>The kinds a castler may castle with (a Western Rook): none, unless set.</summary>
+    public ImmutableHashSet<PieceKindId> CastlingRooks { get; init; } = [];
+
     /// <summary>
     /// Where every piece of a game dealt by a seed starts, each game its own armies; null, if every game starts
     /// as <see cref="Start"/> has it.
