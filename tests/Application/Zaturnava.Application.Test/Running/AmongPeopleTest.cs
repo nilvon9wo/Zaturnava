@@ -33,7 +33,30 @@ public sealed class AmongPeopleTest
         Assert.Equal([new SeatId(1)], bot.People);
     }
 
-    /// <summary>A bot that remembers whom it was told people play, and takes the first legal action.</summary>
+    [Fact]
+    public async Task Seize_WhenAsked_TellsTheBotWhichSeatsPeoplePlay()
+    {
+        // Arrange - a person plays seat 1
+        TinyRules rules = new(5, hasFaceOff: true);
+        GameState state = rules.CreateInitialState();
+        Recording bot = new();
+        AmongPeople among = new(bot, [new SeatId(1)]);
+        ImmutableList<GameAction> chances = rules.ChancesOf(state, new SeatId(0));
+
+        // Act
+        GameAction? taken = await among.Seize(
+            new DecisionRequest(rules, state, new SeatId(0), chances),
+            this._cancellation
+        );
+
+        // Assert
+        Assert.Equal(chances[0], taken);
+        Assert.Equal([new SeatId(1)], bot.People);
+    }
+
+    /// <summary>
+    /// A bot that remembers whom it was told people play, and takes the first legal action, or the first chance.
+    /// </summary>
     private sealed class Recording : IDeciding
     {
         public ImmutableHashSet<SeatId> People { get; private set; } = [];
@@ -42,6 +65,12 @@ public sealed class AmongPeopleTest
         {
             this.People = request.People;
             return Task.FromResult(request.LegalActions[0]);
+        }
+
+        public Task<GameAction?> Seize([Required] DecisionRequest request, CancellationToken cancellationToken)
+        {
+            this.People = request.People;
+            return Task.FromResult<GameAction?>(request.LegalActions[0]);
         }
     }
 }

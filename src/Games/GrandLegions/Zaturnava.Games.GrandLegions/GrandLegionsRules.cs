@@ -74,6 +74,7 @@ public static class GrandLegionsRules
             Castlers = [GrandLegionsPieces.WesternKing],
             CastlingRooks = [GrandLegionsPieces.Rook],
             FlyingCapturers = [GrandLegionsPieces.XiangqiGeneral],
+            FaceOffCallers = [GrandLegionsPieces.JanggiGeneral],
             DieNames = dice.Classes.ToImmutableDictionary(face => face.Key, face => NameOf(face.Value)),
             MayMove = RiverCrossing.On(
                 new GrandBoard(game.Side, game.Side, game.KingdomWidth, game.KingdomDepth, Rivers: game.Rivers)

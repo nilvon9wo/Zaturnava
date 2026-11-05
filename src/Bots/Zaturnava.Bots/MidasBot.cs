@@ -28,6 +28,10 @@ public sealed class MidasBot(Random random) : IBotPlaying
         UsesAi: false
     );
 
+    /// <summary>A chance that gains its team points (<see cref="Chances"/>).</summary>
+    public Task<GameAction?> Seize([Required] DecisionRequest request, CancellationToken cancellationToken) =>
+        Chances.Gainful(request, cancellationToken);
+
     public Task<GameAction> Decide([Required] DecisionRequest request, CancellationToken cancellationToken) =>
         cancellationToken.IsCancellationRequested
             ? Task.FromCanceled<GameAction>(cancellationToken)

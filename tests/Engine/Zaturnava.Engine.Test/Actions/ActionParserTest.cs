@@ -76,6 +76,7 @@ public sealed class ActionParserTest
         new VoteAwayAction(new SeatId(1), new SeatId(2), Stops: true),
         new PassAwayAction(new SeatId(2)),
         new RetireAction(new SeatId(1)),
+        new FaceOffAction(new SeatId(2), new CellId(3), new CellId(43)),
     ];
 
     [Theory]

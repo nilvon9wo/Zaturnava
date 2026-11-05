@@ -97,6 +97,12 @@ public interface IRulesApplying
     /// </summary>
     bool MayVoteAway([Required] GameState state, SeatId voter, SeatId absent);
 
+    /// <summary>
+    /// What <paramref name="seat"/> may do now whoever decides, for as long as the chance holds, as a leader face-off:
+    /// none, unless the ruleset has such chances. <see cref="Apply"/> takes one this offers, from any seat.
+    /// </summary>
+    ImmutableList<GameAction> ChancesOf([Required] GameState state, SeatId seat) => [];
+
     /// <summary>How the deciding seat's decision is timed; null if it may take as long as it likes.</summary>
     DecisionTimer? TimerOf([Required] GameState state);
 

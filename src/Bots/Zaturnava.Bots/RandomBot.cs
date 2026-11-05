@@ -23,6 +23,15 @@ public sealed class RandomBot(Random random) : IBotPlaying
         UsesAi: false
     );
 
+    /// <summary>Any chance, or none, at random.</summary>
+    public Task<GameAction?> Seize([Required] DecisionRequest request, CancellationToken cancellationToken)
+    {
+        int pick = this._random.Next(request.LegalActions.Count + 1);
+        return cancellationToken.IsCancellationRequested
+            ? Task.FromCanceled<GameAction?>(cancellationToken)
+            : Task.FromResult(pick < request.LegalActions.Count ? request.LegalActions[pick] : null);
+    }
+
     public Task<GameAction> Decide([Required] DecisionRequest request, CancellationToken cancellationToken)
     {
         ImmutableList<GameAction> choices = Playable.Of(request);

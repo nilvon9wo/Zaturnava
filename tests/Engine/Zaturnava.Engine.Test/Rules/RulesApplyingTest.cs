@@ -72,6 +72,23 @@ public sealed class RulesApplyingTest
         Assert.Equal(expected, thrones[Seat].Value);
     }
 
+    [Fact]
+    public void ChancesOf_WhenTheRulesetSaysNoOther_IsNone()
+    {
+        // Arrange
+        OneSizeRules rules = new();
+
+        // Act
+        ImmutableList<GameAction> chances = ChancesOf(rules, OneSizeRules.State);
+
+        // Assert
+        Assert.Empty(chances);
+    }
+
+    private static ImmutableList<GameAction> ChancesOf<TRules>(TRules rules, GameState state)
+        where TRules : IRulesApplying =>
+        rules.ChancesOf(state, Seat);
+
     private static ImmutableDictionary<SeatId, CellId> ThronesOf<TRules>(TRules rules, GameState state)
         where TRules : IRulesApplying =>
         rules.ThronesOf(state);

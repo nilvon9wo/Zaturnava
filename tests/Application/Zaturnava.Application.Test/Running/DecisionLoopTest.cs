@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using Net.NowhereAtAll.Zaturnava.Application.Running;
 using Net.NowhereAtAll.Zaturnava.Application.Test.Fakes;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
+using Net.NowhereAtAll.Zaturnava.Engine.Boards;
 using Net.NowhereAtAll.Zaturnava.Engine.Chance;
 using Net.NowhereAtAll.Zaturnava.Engine.Decisions;
 using Net.NowhereAtAll.Zaturnava.Engine.Rules;
@@ -126,6 +127,50 @@ public sealed class DecisionLoopTest
 
         // Assert
         Assert.Equal((2, new SeatId(1)), (played.Actions.Count, played.State.DecidingSeat));
+    }
+
+    [Fact]
+    public async Task PlayAll_WhenABotHasAChanceItTakes_TakesItAtOnceAndOnlyWhileItHolds()
+    {
+        // Arrange - the first seat's bot takes every chance; taking the face-off ends it
+        TinyRules rules = new(GameLength, hasFaceOff: true);
+        ImmutableList<IDeciding> players = [new SeizingBot(), new FirstChoiceBot()];
+
+        // Act
+        Played played = await DecisionLoop.PlayAll(rules, players, this._dice, 100, this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            (FaceOffAction.Kind, GameLength + 1, null),
+            (played.Actions[0].Kind, played.Actions.Count, played.State.Position.PieceAt(new CellId(1)))
+        );
+    }
+
+    [Fact]
+    public async Task PlayAll_WhenABotLetsItsChanceGoBy_PlaysOnWithoutIt()
+    {
+        // Arrange
+        TinyRules rules = new(GameLength, hasFaceOff: true);
+
+        // Act
+        Played played = await DecisionLoop.PlayAll(rules, this._players, this._dice, 100, this._cancellation);
+
+        // Assert
+        Assert.DoesNotContain(played.Actions, action => action.Kind == FaceOffAction.Kind);
+    }
+
+    [Fact]
+    public async Task PlayWhile_WhenTheSeatWithAChanceHasNoDecider_LeavesItToThem()
+    {
+        // Arrange - a person plays the seat with the chance
+        TinyRules rules = new(GameLength, hasFaceOff: true);
+        Played start = new(rules.CreateInitialState(), []);
+
+        // Act
+        Played played = await DecisionLoop.PlayWhile(rules, start, _ => null, this._dice, 100, this._cancellation);
+
+        // Assert
+        Assert.Same(start, played);
     }
 
     [Fact]

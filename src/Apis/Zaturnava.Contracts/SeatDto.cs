@@ -37,4 +37,11 @@ public sealed record SeatDto(
     bool IsGuest = false,
     bool IsAi = false,
     string? PlayerId = null
-);
+)
+{
+    /// <summary>
+    /// What the seat may do now, whoever decides, for as long as the chance holds, as a leader face-off; each submitted
+    /// as any action is, its <see cref="ActionDto.Label"/> saying what it does. Empty, for none.
+    /// </summary>
+    public ImmutableList<ActionDto> Chances { get; init; } = [];
+}
