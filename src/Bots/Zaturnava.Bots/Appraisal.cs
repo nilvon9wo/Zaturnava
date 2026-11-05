@@ -42,7 +42,7 @@ internal static class Appraisal
         ILookup<CellId, Attack> ours = Careful.AttacksBy(request, state, isAllied: true);
         ILookup<CellId, Attack> theirs = Careful.AttacksBy(request, state, isAllied: false);
         ImmutableList<double> measures = request.Rules is IPositionMeasuring measuring
-            ? [.. measuring.Measures.Select((_, at) => Measure(request, state, measuring, at).Net)]
+            ? [.. Measures(request, state, measuring).Select(measure => measure.Net)]
             : [];
         return
         [
@@ -127,21 +127,28 @@ internal static class Appraisal
             + weights.Mobility.Weigh(Mobility(request, ours, theirs));
     }
 
-    /// <summary>The ruleset's own measures, each side's, as the weights weigh them.</summary>
+    /// <summary>
+    /// The ruleset's own measures, each side's, as the weights weigh them; not measured at all when the weights
+    /// weigh none of them, as some take long to count (a ruleset's pieces' moves, say).
+    /// </summary>
     private static double Measured(DecisionRequest request, GameState state, SageWeights weights) =>
-        (request.Rules, weights.Measures.IsEmpty) switch
+        (request.Rules, weights.Measures.Values.Any(weight => weight != default)) switch
         {
-            (IPositionMeasuring measuring, false) => measuring.Measures
-                .Select((name, at) => weights.Measures.GetValueOrDefault(name)
-                    .Weigh(Measure(request, state, measuring, at))
-                )
-                .Sum(),
+            (IPositionMeasuring measuring, true) => measuring.Measures
+                .Zip(Measures(request, state, measuring))
+                .Sum(measured => weights.Measures.GetValueOrDefault(measured.First).Weigh(measured.Second)),
             _ => 0,
         };
 
-    /// <summary>Each side's measure, the <paramref name="at"/>th the ruleset offers.</summary>
-    private static Sided Measure(DecisionRequest request, GameState state, IPositionMeasuring measuring, int at) =>
-        Tally(request, state, state.Seats.Select(seat => (seat.Id, measuring.MeasuresOf(state, seat.Id)[at])));
+    /// <summary>Each side's measures, in the order the ruleset offers them: each seat's counted once.</summary>
+    private static IEnumerable<Sided> Measures(DecisionRequest request, GameState state, IPositionMeasuring measuring)
+    {
+        ImmutableList<(SeatId Seat, ImmutableList<double> Measures)> measured =
+            [.. state.Seats.Select(seat => (seat.Id, measuring.MeasuresOf(state, seat.Id)))];
+        return measuring.Measures.Select((_, at) =>
+            Tally(request, state, measured.Select(each => (each.Seat, each.Measures[at])))
+        );
+    }
 
     private static int Chances(
         DecisionRequest request,

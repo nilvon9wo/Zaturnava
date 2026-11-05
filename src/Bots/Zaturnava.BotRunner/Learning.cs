@@ -48,7 +48,7 @@ internal sealed class Learning(IRulesApplying rules, TextWriter progress)
         CancellationToken cancellationToken
     )
     {
-        PositionEncoder encoder = new(this._rules);
+        PositionEncoder encoder = PositionEncoder.Fitting(this._rules, network.Inputs)!; // made, or read, to fit
         ImmutableList<Sequence> sequences =
         [
             .. histories

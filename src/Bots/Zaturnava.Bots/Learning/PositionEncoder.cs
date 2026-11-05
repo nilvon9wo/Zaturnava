@@ -39,10 +39,19 @@ public sealed class PositionEncoder
     private readonly ImmutableDictionary<Direction, ImmutableDictionary<CellId, int>> _rows;
 
     public PositionEncoder([Required] IRulesApplying rules)
+        : this(rules, int.MaxValue)
+    {
+    }
+
+    /// <summary>
+    /// An encoder seeing only the first <paramref name="measures"/> of the ruleset's own measures: as a network
+    /// that learned before the ruleset offered the rest sees it.
+    /// </summary>
+    private PositionEncoder(IRulesApplying rules, int measures)
     {
         GameState initial = rules.CreateInitialState();
         this._rules = rules;
-        this._measures = rules is IPositionMeasuring measuring ? measuring.Measures : [];
+        this._measures = rules is IPositionMeasuring measuring ? [.. measuring.Measures.Take(measures)] : [];
         this._kinds =
         [
             .. initial.Position.Occupants.Values
@@ -53,7 +62,7 @@ public sealed class PositionEncoder
         this._seats = initial.Seats.Count;
         this.Features = Appraisal
             .FeaturesOf(new DecisionRequest(rules, initial, initial.Seats[0].Id, []), initial)
-            .Count;
+            .Count - (rules is IPositionMeasuring all ? all.Measures.Count - this._measures.Count : 0);
         this._rows = initial.Seats
             .Select(seat => seat.Forward)
             .Distinct()
@@ -62,6 +71,18 @@ public sealed class PositionEncoder
 
     /// <summary>How many numbers a position is.</summary>
     public int Size => this.FeaturesAt + this.Features;
+
+    /// <summary>
+    /// An encoder giving the ruleset's positions as <paramref name="inputs"/> numbers, if any does: all its own
+    /// measures, or only the first of them, for a network that learned before the ruleset offered the rest, which
+    /// come last; else null.
+    /// </summary>
+    public static PositionEncoder? Fitting([Required] IRulesApplying rules, int inputs)
+    {
+        PositionEncoder full = new(rules);
+        int known = full._measures.Count - (full.Size - inputs);
+        return known >= 0 && known <= full._measures.Count ? new PositionEncoder(rules, known) : null;
+    }
 
     /// <summary>How many of the numbers are what Sage counts.</summary>
     private int Features { get; }
@@ -116,6 +137,7 @@ public sealed class PositionEncoder
             state.Retired.Select(other => (this.RetiredAt + this.Relative(other, seat), 1d));
         IEnumerable<(int Index, double Value)> features = Appraisal
             .FeaturesOf(new DecisionRequest(this._rules, state, seat, []), state)
+            .Take(this.Features)
             .Select((value, at) => (this.FeaturesAt + at, value / FeatureScale));
         return
         [

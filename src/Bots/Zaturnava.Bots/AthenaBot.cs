@@ -14,7 +14,7 @@ namespace Net.NowhereAtAll.Zaturnava.Bots;
 /// its team, and by how much. Asked to end the game, it agrees when ending it now, points deciding, is worth as
 /// much as playing on, as the network judges playing on. Deals in prisoners as Sage does, by the position a
 /// trade leaves, as the network judges it (<see cref="ByPosition"/>). For a ruleset it
-/// has no network for (or one of another size than the ruleset's positions), it plays as Sage does.
+/// has no network for (or one that cannot judge the ruleset's positions), it plays as Sage does.
 /// </summary>
 public sealed class AthenaBot(Random random, ImmutableDictionary<string, ValueNetworkData> networks) : IBotPlaying
 {
@@ -62,14 +62,13 @@ public sealed class AthenaBot(Random random, ImmutableDictionary<string, ValueNe
     private NetworkValuing? LearnedFor(IRulesApplying rules) =>
         this._valuings.GetOrAdd(rules.Id, _ => this.Valuing(rules));
 
+    /// <summary>
+    /// The network's judgement, if it judges positions as the ruleset's can be given (<see
+    /// cref="PositionEncoder.Fitting"/>); else null.
+    /// </summary>
     private NetworkValuing? Valuing(IRulesApplying rules) =>
         this._networks.TryGetValue(rules.Id, out ValueNetworkData? data)
-            ? Fitting(new PositionEncoder(rules), ValueNetwork.From(data))
-            : null;
-
-    /// <summary>The network's judgement, if it judges positions of the size the ruleset's are; else null.</summary>
-    private static NetworkValuing? Fitting(PositionEncoder encoder, ValueNetwork network) =>
-        network.Inputs == encoder.Size
-            ? new NetworkValuing(encoder, network)
+            && PositionEncoder.Fitting(rules, data.Inputs) is { } encoder
+            ? new NetworkValuing(encoder, ValueNetwork.From(data))
             : null;
 }
