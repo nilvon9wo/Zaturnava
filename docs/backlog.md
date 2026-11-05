@@ -150,6 +150,15 @@ first.
        (`commanded`). As every measure is, each is weighed apart for the bot's own seat, its allies and
        its enemies, starting at no weight for tuning to find. Next: tune them; and a bot that hands its
        turn to a regent ally (no bot does yet) when the ally would play the rest of it better.
+     - *(Stated 2026-11-06)* Along the same line: giving up the leader, so that an ally commands the
+       army; and passing up a ransom or an escape that would bring the leader home, so that the ally
+       keeps command of it. Probably worth more than handing a turn over, unless the ally is the
+       stronger player (higher Elo). *(Proposed)*: learned rather than written in. Sage already weighs a
+       ransom and an escape by the whole position once it is done, so `commanded`, weighed for the
+       ally, counts what bringing a leader home takes from the ally; tuning finds how much. Giving the
+       leader up on purpose needs Sage to look past the enemy's taking it, which it does not yet do; the
+       ally's rating is for the bot to weigh as trusting the ally above says. Midas, Solomon and Argus
+       weigh a ransom by worth alone, and keep doing so.
      - *(Stated 2026-11-05)* Private team chat, and how well bots plan through it, is another thing
        to measure; moot while our bots do not talk, and not with bots that spend tokens.
   3. **A learned bot**, the AI to play against: a small neural network, trained by self-play and on
