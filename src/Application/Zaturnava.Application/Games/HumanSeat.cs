@@ -46,6 +46,13 @@ public sealed record HumanSeat(
 
     public override bool IsHeldBy([Required] string token) => SeatTokens.Hash(token) == this.TokenHash;
 
+    /// <summary>
+    /// The seat, claimed by <paramref name="into"/> instead if <paramref name="from"/> claimed it: as one player is
+    /// merged into another.
+    /// </summary>
+    public static SeatController Reclaimed([Required] SeatController seat, PlayerId from, PlayerId into) =>
+        seat is HumanSeat human && human.Claimant == from ? human with { Claimant = into } : seat;
+
     /// <summary>The seat as <see cref="Detail"/> stores it.</summary>
     public static HumanSeat From([Required] string detail) => Of(detail.Split(' ', 2));
 

@@ -124,6 +124,35 @@ public sealed class EfPlayerStore(GameDbContext context) : IPlayerPersisting
             .Where(session => session.TokenHash == tokenHash)
             .ExecuteDeleteAsync(cancellationToken);
 
+    public async Task Merge(PlayerId from, PlayerId into, CancellationToken cancellationToken)
+    {
+        _ = await this._context.Sessions
+            .Where(session => session.PlayerId == from.Value)
+            .ExecuteUpdateAsync(set => set.SetProperty(session => session.PlayerId, into.Value), cancellationToken);
+        _ = await this._context.Set<LoginEntity>()
+            .Where(login => login.PlayerId == from.Value)
+            .ExecuteUpdateAsync(set => set.SetProperty(login => login.PlayerId, into.Value), cancellationToken);
+        List<StandingEntity> standings = await this._context.Standings
+            .AsNoTracking()
+            .Where(standing => standing.PlayerId == from.Value || standing.PlayerId == into.Value)
+            .ToListAsync(cancellationToken);
+        ImmutableDictionary<string, Standing> mine = standings
+            .Where(standing => standing.PlayerId == into.Value)
+            .ToImmutableDictionary(standing => standing.Game, ToStanding);
+        ImmutableList<Standing> merged =
+        [
+            .. standings
+                .Where(standing => standing.PlayerId == from.Value)
+                .Select(ToStanding)
+                .Select(theirs => mine.GetValueOrDefault(theirs.Game) is { } own
+                    ? own.Merged(theirs)
+                    : theirs with { Player = into }
+                ),
+        ];
+        await this.Remove(from, cancellationToken);
+        await this.Keep(merged, cancellationToken);
+    }
+
     public async Task Remove(PlayerId player, CancellationToken cancellationToken)
     {
         _ = await this._context.Sessions

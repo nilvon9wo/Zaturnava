@@ -252,8 +252,10 @@ A player starts out named as the service names them, and may choose another name
 only spaces changes nothing). Every seat they hold shows the new name. A player may also sign in with several
 services, as one player (Proposed). They ask for a code, and open the sign-in window with it. The code is used once
 and lasts five minutes, so the player token itself never goes into an address. That service's account is then
-theirs too, and either signs them in. An account that is already another player's is not moved; the window says
-so. A player may stop signing in with any service but the last; to be rid of that one, they delete the account.
+theirs too, and either signs them in. If that account is already another player's, that player is merged into
+them: every account, sign-in (an AI's token too) and seat of theirs becomes this player's, and they are no more.
+This player keeps their own name, and each game's standings are added up, the Elo ratings weighed by the games
+behind each (Proposed). A player may stop signing in with any service but the last; to be rid of that one, they delete the account.
 The game page offers all of this under **Profile**.
 
 Anyone may see a player's profile, their name: a seat a signed-in player holds gives the player's id, as

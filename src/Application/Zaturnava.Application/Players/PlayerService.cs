@@ -12,7 +12,7 @@ namespace Net.NowhereAtAll.Zaturnava.Application.Players;
 /// themselves as they please (<see cref="Rename"/>), and give an AI a token of its own to play for them
 /// (<see cref="AiToken"/>), which may do nothing to their account. When each last signed in is kept.
 /// </summary>
-public sealed class PlayerService(IPlayerPersisting store, LinkCodes links, TimeProvider clock)
+public sealed class PlayerService(IPlayerPersisting store, IGamePersisting games, LinkCodes links, TimeProvider clock)
 {
     /// <summary>The longest a player's name may be, in characters; a longer one is cut.</summary>
     public const int MaximumNameLength = 40;
@@ -30,6 +30,7 @@ public sealed class PlayerService(IPlayerPersisting store, LinkCodes links, Time
     public const string Deleted = "deleted player";
 
     private readonly IPlayerPersisting _store = store;
+    private readonly IGamePersisting _games = games;
     private readonly LinkCodes _links = links;
     private readonly TimeProvider _clock = clock;
 
@@ -80,10 +81,11 @@ public sealed class PlayerService(IPlayerPersisting store, LinkCodes links, Time
 
     /// <summary>
     /// Makes <paramref name="login"/> the login of the player <paramref name="code"/> was issued to, and signs them
-    /// in, with a new token; from then on, they may sign in with either.
+    /// in, with a new token; from then on, they may sign in with either. If it is another player's, that player is
+    /// merged into them (Stated): their every login, session (an AI's too), seat and standing becomes this player's,
+    /// and they are no more; this player keeps their own name (Proposed).
     /// </summary>
     /// <exception cref="LinkExpiredException">The code is spent or was never issued, or its player is gone.</exception>
-    /// <exception cref="LoginTakenException">The login is another player's.</exception>
     public async Task<SignedIn> Link([Required] string code, Login login, CancellationToken cancellationToken)
     {
         Player player =
@@ -98,7 +100,9 @@ public sealed class PlayerService(IPlayerPersisting store, LinkCodes links, Time
         }
         else if (holder.Id != player.Id)
         {
-            throw new LoginTakenException(login.Provider);
+            await this._games.Reclaim(holder.Id, player.Id, cancellationToken);
+            await this._store.Merge(holder.Id, player.Id, cancellationToken);
+            player = player with { Logins = player.Logins.AddRange(holder.Logins) };
         }
 
         return await this.Session(player, cancellationToken);

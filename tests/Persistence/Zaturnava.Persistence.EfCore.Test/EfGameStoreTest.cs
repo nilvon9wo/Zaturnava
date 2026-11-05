@@ -3,6 +3,7 @@ using Net.NowhereAtAll.Xfty.Core;
 using Net.NowhereAtAll.Xfty.Core.RecordProviders;
 using Net.NowhereAtAll.Xfty.EntityFrameworkCore;
 using Net.NowhereAtAll.Zaturnava.Application.Games;
+using Net.NowhereAtAll.Zaturnava.Application.Players;
 using Net.NowhereAtAll.Zaturnava.Application.Ports;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Seats;
@@ -288,6 +289,42 @@ public sealed class EfGameStoreTest : IDisposable
                 context.Set<SeatEntity>().Count(),
                 context.Set<ActionEntity>().Count()
             )
+        );
+    }
+
+    [Fact]
+    public async Task Reclaim_WhenAPlayerClaimedSeats_GivesThemToTheOtherAndLeavesTheRestAsTheyWere()
+    {
+        // Arrange - a guest named so that her seat's detail ends as Bea's id does
+        PlayerId bea = new("bea");
+        PlayerId ada = new("ada");
+        await this._store.Add(
+            Record("g") with
+            {
+                Controllers =
+                [
+                    new HumanSeat("one", bea, IsAi: true),
+                    new HumanSeat("two", ada),
+                    new HumanSeat("three", Nickname: "bea"),
+                    new BotSeat("random"),
+                ],
+            },
+            this._cancellation
+        );
+
+        // Act
+        await new EfGameStore(this._database.NewContext()).Reclaim(bea, ada, this._cancellation);
+
+        // Assert
+        GameRecord? game = await new EfGameStore(this._database.NewContext()).Find(new GameId("g"), this._cancellation);
+        Assert.Equal(
+            [
+                new HumanSeat("one", ada, IsAi: true),
+                new HumanSeat("two", ada),
+                new HumanSeat("three", Nickname: "bea"),
+                new BotSeat("random"),
+            ],
+            game?.Controllers ?? []
         );
     }
 

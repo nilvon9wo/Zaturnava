@@ -82,6 +82,21 @@ public sealed class InMemoryPlayerStore : IPlayerPersisting
         return Task.CompletedTask;
     }
 
+    public Task Merge(PlayerId from, PlayerId into, CancellationToken cancellationToken)
+    {
+        _ = this.Change(into, known => known with { Logins = known.Logins.AddRange(this._players[from].Logins) });
+        ImmutableList<string> sessions =
+            [.. this._sessions.Where(session => session.Value == from).Select(session => session.Key)];
+        sessions.ForEach(session => this._sessions[session] = into);
+        ImmutableList<Standing> standings = [.. this._standings.Values.Where(standing => standing.Player == from)];
+        standings.ForEach(standing => this._standings[(into, standing.Game)] =
+            this._standings.GetValueOrDefault((into, standing.Game)) is { } mine
+                ? mine.Merged(standing)
+                : standing with { Player = into }
+        );
+        return this.Remove(from, cancellationToken);
+    }
+
     public Task Remove(PlayerId player, CancellationToken cancellationToken)
     {
         _ = this._players.TryRemove(player, out _);

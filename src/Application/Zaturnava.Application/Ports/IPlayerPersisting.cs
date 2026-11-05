@@ -56,6 +56,12 @@ public interface IPlayerPersisting
     Task RemoveSession([Required] string tokenHash, CancellationToken cancellationToken);
 
     /// <summary>
+    /// Makes <paramref name="from"/>'s logins, sessions and standings <paramref name="into"/>'s (a standing at a game
+    /// both have one at, <see cref="Standing.Merged"/>), then forgets <paramref name="from"/>. Both are still known.
+    /// </summary>
+    Task Merge(PlayerId from, PlayerId into, CancellationToken cancellationToken);
+
+    /// <summary>
     /// Forgets the player altogether: their name, their logins, every session of theirs and where they stand.
     /// </summary>
     Task Remove(PlayerId player, CancellationToken cancellationToken);
