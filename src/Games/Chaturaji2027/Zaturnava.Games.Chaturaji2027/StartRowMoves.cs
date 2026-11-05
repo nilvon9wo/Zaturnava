@@ -16,10 +16,10 @@ namespace Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
 /// straight ahead, over an empty cell onto an empty one; one placed further forward never may. And any of them,
 /// wherever it started or stands, may take <i>en passant</i> an enemy piece that, from two king's steps away, moved
 /// two cells or more in a line against the pawn's forward, whichever way its own army faces, its first step onto a
-/// cell diagonally beside the pawn (Stated: so, past a pawn on b4 facing a1, from a2 to a4 or a5, but not from a1 or
-/// a3): by moving onto that cell, taking the piece where it stopped, until that piece's seat's turn comes round
-/// again, or it moves on. Where each piece started is where the game was dealt it,
-/// if it was; else <paramref name="start"/>.
+/// cell diagonally beside the pawn, where it could have stopped (Stated: so, past a pawn on b4 facing a1, from a2 to
+/// a4 or a5, but not from a1 or a3; nor a piece that leapt or hopped over a3): by moving onto that cell, taking the
+/// piece where it stopped, until that piece's seat's turn comes round again, or it moves on. Where each piece
+/// started is where the game was dealt it, if it was; else <paramref name="start"/>.
 /// </summary>
 internal sealed class StartRowMoves(
     SquareGridTopology grid,
@@ -58,9 +58,10 @@ internal sealed class StartRowMoves(
 
     /// <summary>
     /// After <paramref name="move"/>: a piece that moved on, or was taken, may no longer be taken <i>en passant</i>;
-    /// the mover may, if it went two cells or more in a line, any way. Nothing, where no kind has the powers.
+    /// the mover may, if it went two cells or more in a line, any way, through a cell it could have stopped on
+    /// (<paramref name="mayStop"/>), not over one it leapt or hopped. Nothing, where no kind has the powers.
     /// </summary>
-    public GameState Passed(GameState after, MoveAction move, Piece mover)
+    public GameState Passed(GameState after, MoveAction move, Piece mover, Func<CellId, bool> mayStop)
     {
         if (this._kinds.IsEmpty)
         {
@@ -69,7 +70,7 @@ internal sealed class StartRowMoves(
 
         ImmutableList<CellId> ahead = this.Ahead(move.From, this.Heading(move.From, move.To));
         int reached = ahead.IndexOf(move.To);
-        ImmutableList<Passage> passages = reached >= 1
+        ImmutableList<Passage> passages = reached >= 1 && mayStop(ahead[0])
             ? [new Passage(mover, move.From, [.. ahead.Take(reached)], move.To)]
             : [];
         return after with

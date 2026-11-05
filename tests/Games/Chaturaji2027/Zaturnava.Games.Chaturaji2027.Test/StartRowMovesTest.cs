@@ -19,6 +19,7 @@ public sealed class StartRowMovesTest
 {
     private const int PawnDie = 5;
     private const int ElephantDie = 3;
+    private const int BoatDie = 1;
 
     private static readonly SeatId Black = new(0);
     private static readonly SeatId Yellow = new(1);
@@ -173,6 +174,24 @@ public sealed class StartRowMovesTest
 
         // Assert
         Assert.Empty(moved.Passages);
+    }
+
+    [Fact]
+    public void Apply_WhenAPieceLeapsOverTheCellItPasses_LeavesNothingToTakeInPassing()
+    {
+        // Arrange - Yellow's Boat leaps from b5 to d7, over c6, where it could never stop
+        Piece boat = new(new PieceId(5), Chaturaji2027Pieces.Boat, Yellow);
+        GameState state = this.BlackToMove(Cell(3, 1), BoatDie, (Cell(1, 4), boat), (Cell(3, 3), BlackPawn)) with
+        {
+            DecidingSeat = Yellow,
+        };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new MoveAction(Yellow, Cell(1, 4), Cell(3, 6)));
+
+        // Assert
+        Assert.Equal(boat, transition.State.Position.PieceAt(Cell(3, 6)));
+        Assert.Empty(transition.State.Passages);
     }
 
     /// <summary>
