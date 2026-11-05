@@ -71,6 +71,8 @@ public static class GrandLegionsRules
             Marks = GrandLegionsPieces.Marks,
             Scoring = Scoring,
             StartRowPowers = [GrandLegionsPieces.WesternPawn],
+            Castlers = [GrandLegionsPieces.WesternKing],
+            CastlingRooks = [GrandLegionsPieces.Rook],
             DieNames = dice.Classes.ToImmutableDictionary(face => face.Key, face => NameOf(face.Value)),
             MayMove = RiverCrossing.On(
                 new GrandBoard(game.Side, game.Side, game.KingdomWidth, game.KingdomDepth, Rivers: game.Rivers)

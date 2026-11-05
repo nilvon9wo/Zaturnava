@@ -189,7 +189,11 @@ drawn simply, a shape for its class and a letter for its kind.
   (2026-11-05) for the Western Pawn, with start rows 2 for the double step, and *en passant* wherever
   the pawn started (`StartRowMoves`); its special-power bonus is
   3, its value 9 (*Proposed*, [pieces.md](pieces.md#value)). Still to come: start rows as a setting.
-- Castling.
+- Castling (specification §6.4). *Done* (2026-11-05) for the Western King with a Western Rook
+  (`Castling`): the King steps two cells toward a Rook of its own in one orthogonal line, at least
+  three away with nothing between, and the Rook goes to the cell the King passed over; not where an
+  enemy piece could capture on the King's start, the cell it passes or where it lands. As the Rook
+  then stands on the cell passed, the King is never taken *en passant* for it.
 - The flying-general capture.
 - The leader face-off: a decision out of turn, open for as long as the two leaders face each other;
   a flashing button while it is open, and optionally a pause when it first opens (specification §6.4).
