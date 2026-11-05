@@ -140,8 +140,17 @@ and placed knowing where they stand.)
   moving from a2 to a4, or on to a5, a6 or as far as it goes (two is the least, not the only distance),
   may be taken; one starting on a1 may not, as it started too far away, nor one on a3, too close. With
   the pawn on b3, a piece moving from a1 to a3 may be taken; with it on b5, one from a3 to a5, or from
-  c3 to c5 or c7; and so on, on either side, in any column, and around the pinwheel. **Stated:** it
-  may be taken so until its own seat's turn comes round again, unless it moves first; and a pawn that
+  c3 to c5 or c7; and so on, on either side, in any column, and around the pinwheel. **Stated
+  (2026-11-06, replacing "until its own seat's turn comes round again"):** with four players, the
+  board can change much between the passing and the pawn's next turn. So the pawn may take it at
+  once, out of turn, as a leader face-off is called: while anyone else decides, the player sees a
+  flashing button, and taking so uses no die. On their own turn, taking it is an ordinary Infantry
+  move (without rolling, or for a 5 or 6). The chance ends when the piece is no longer where it
+  stopped (it moved on, or someone else took it), or when the player's own next turn ends without
+  taking it. It is any player's who commands a pawn that may take it, as with the face-off.
+  *Proposed*: a player deciding, even for an ally as regent, takes only as an ordinary move; a pawn
+  taking out of turn onto the far edge waits for its owner's promotion as any pawn there would.
+  **Stated:** a pawn that
   could also simply move onto the square passed takes the piece there *en passant*. **Stated
   (2026-11-05):** "two squares away" is counted in king's steps; the pawn takes it by moving onto the
   square of its first step, diagonally beside the pawn (a3, in the first example).

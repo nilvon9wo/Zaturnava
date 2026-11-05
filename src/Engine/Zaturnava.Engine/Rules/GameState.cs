@@ -90,8 +90,8 @@ public sealed record GameState(
     public CellId? PromotionDue { get; init; }
 
     /// <summary>
-    /// The moves straight ahead of two cells or more that may still be taken <i>en passant</i>: each until its
-    /// piece's seat's turn comes round again, or the piece moves on.
+    /// The moves straight ahead of two cells or more that may still be taken <i>en passant</i>: each by a seat until
+    /// its own turn ends (<see cref="Passage.Closed"/>), or the piece moves on.
     /// </summary>
     public ImmutableList<Passage> Passages { get; init; } = [];
 
