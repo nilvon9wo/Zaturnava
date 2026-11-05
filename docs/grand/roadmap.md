@@ -184,7 +184,8 @@ drawn simply, a shape for its class and a letter for its kind.
 ## Stage 6 — Special powers
 
 - Start-row powers: the two-square first move, *en passant*, which may take any enemy piece that
-  moves forward two squares or more past the pawn, from two squares away (specification §3). *Done*
+  moves two squares or more against the pawn's forward, past it, from two squares away
+  (specification §3). *Done*
   (2026-11-05) for the Western Pawn, with start rows 2 for the double step, and *en passant* wherever
   the pawn started (`StartRowMoves`); its special-power bonus is
   3, its value 9 (*Proposed*, [pieces.md](pieces.md#value)). Still to come: start rows as a setting.

@@ -943,7 +943,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         Transition moved = this.IsSwap(state, move.From, mover, move.To)
             ? Swapped(state, move, mover)
             : this.Displaced(state, move, mover);
-        return moved with { State = this._startRows.Passed(state, moved.State, move, mover) };
+        return moved with { State = this._startRows.Passed(moved.State, move, mover) };
     }
 
     /// <summary>Two Pawns back to back trade places; nothing is taken.</summary>

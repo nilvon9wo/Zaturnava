@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Rounds of Athena's learning, each one command's work, kept in --folder (default artifacts/athena, git-ignored).
+"""Rounds of Athena's learning at --ruleset (default chaturaji-2027), each one command's work, kept in --folder
+(default artifacts/athena for Chaturaji 2027, else artifacts/athena-RULESET; git-ignored).
 
 Each round:
 1. learns: a network goes on from the last round's (round-N.json), or starts judging as Sage does, and learns
@@ -15,7 +16,7 @@ Each round:
 
 Usage: athena-rounds.py RUNNER [--rounds 1] [--games 200] [--epochs 4] [--lambda 0.8] [--rate 0.1]
                                [--hidden 32] [--seed games.jsonl,more.jsonl] [--max-steps 2000] [--jobs N]
-                               [--folder artifacts/athena]
+                               [--ruleset chaturaji-2027] [--folder artifacts/athena]
 """
 
 import argparse
@@ -32,6 +33,12 @@ rate_bots = importlib.import_module("rate-bots")
 
 BAR = 0.55
 SIDES = ((("athena", "sage", "athena", "sage"), (0, 2)), (("sage", "athena", "sage", "athena"), (1, 3)))
+CHATURAJI = "chaturaji-2027"
+
+
+def folder_for(ruleset):
+    """Where a ruleset's rounds are kept unless --folder says: artifacts/athena for Chaturaji 2027, as ever."""
+    return os.path.join("artifacts", "athena" if ruleset == CHATURAJI else f"athena-{ruleset}")
 
 
 def rounds_done(folder):
@@ -115,10 +122,12 @@ def main():
     parser.add_argument("--seed")
     parser.add_argument("--max-steps", type=int, default=2000)
     parser.add_argument("--jobs", type=int, default=os.cpu_count())
-    parser.add_argument("--folder", default=os.path.join("artifacts", "athena"))
+    parser.add_argument("--ruleset", default=CHATURAJI)
+    parser.add_argument("--folder")
     options = parser.parse_args()
+    options.folder = options.folder or folder_for(options.ruleset)
     os.makedirs(options.folder, exist_ok=True)
-    runner = [options.runner]
+    runner = [options.runner, "--ruleset", options.ruleset]
     for _ in range(options.rounds):
         number = rounds_done(options.folder) + 1
         network = learn(runner, options.folder, number, options)

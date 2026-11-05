@@ -131,17 +131,18 @@ and placed knowing where they stand.)
   **Stated (2026-11-04, made plain 2026-11-05):** *en passant* is the Western Pawn's own power,
   widened to be of more use, and not a start-row power: where the pawn started, or stands, does not
   matter. What matters is where the piece that just moved stood beside the pawn, and which way and how
-  far it moved. If any enemy piece, standing exactly two squares away, moves forward at least two
-  squares, passing the pawn, the pawn may take it *en passant*; so a pawn might, now and then, take a
-  Rook so. With the pawn on b4: a piece moving from a2 to a4, or on to a5 (two is the least, not the
-  only distance), may be taken; one moving from a1 to a4 may not, as it started too far away. With the
-  pawn on b3, a piece moving from a1 to a3 may be taken; with it on b5, one from a3 to a5, or from c3
-  to c5 or c7; and so on, on either side, in any column, and around the pinwheel. **Stated:** it may
-  be taken so until its own seat's turn comes round again, unless it moves first; and a pawn that
-  could also simply move onto the square passed takes the piece there *en passant*. *Proposed:* "two
-  squares away" is counted in king's steps; "forward" is straight ahead, as the moving piece's army
-  faces; the pawn takes it by moving onto the square of its first step, diagonally beside the pawn
-  (a3, in the first example), whichever way the pawn itself faces.
+  far it moved. If any enemy piece, standing exactly two squares away, moves at least two squares
+  against the pawn's forward, passing the pawn, the pawn may take it *en passant*; so a pawn might,
+  now and then, take a Rook so. Which way the moving piece's own army faces, or which other ways it
+  could have moved, does not matter; only the way it did move. With the pawn on b4, facing a1: a piece
+  moving from a2 to a4, or on to a5, a6 or as far as it goes (two is the least, not the only distance),
+  may be taken; one starting on a1 may not, as it started too far away, nor one on a3, too close. With
+  the pawn on b3, a piece moving from a1 to a3 may be taken; with it on b5, one from a3 to a5, or from
+  c3 to c5 or c7; and so on, on either side, in any column, and around the pinwheel. **Stated:** it
+  may be taken so until its own seat's turn comes round again, unless it moves first; and a pawn that
+  could also simply move onto the square passed takes the piece there *en passant*. **Stated
+  (2026-11-05):** "two squares away" is counted in king's steps; the pawn takes it by moving onto the
+  square of its first step, diagonally beside the pawn (a3, in the first example).
   **Stated:** how many rows count as start rows (2) may be a setting of the game.
   **Stated:** a piece that starts without them never gains them.
 - **Stated.** An army may have no leader, as an army in Chaturaji 2027 may lose its Raja and play
