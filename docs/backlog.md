@@ -129,6 +129,11 @@ first.
        restrictions, how fast it moves, whether it can go back, and how near it is to promoting. Those
        parts, measured where the piece stands (little reach at the edge, a Pawn a step from promoting),
        may say more than the piece's fixed worth. *(Proposed)*: count them as measures of their own.
+       Done *(Proposed: each measure)*: beside the Pawns' progress, Chaturaji 2027 and the grand game now
+       measure how near each army's Pawns are to promoting (one over the rows each has still to go), its
+       pieces' reach where they stand (their moves, all told), and how many of those moves go back. They
+       start at no weight, for tuning to find theirs; Athena's network, trained before them, plays on
+       seeing only the measures it knew. Next: tune them, and teach Athena them.
      - *(Stated 2026-11-05)* Private team chat, and how well bots plan through it, is another thing
        to measure; moot while our bots do not talk, and not with bots that spend tokens.
   3. **A learned bot**, the AI to play against: a small neural network, trained by self-play and on

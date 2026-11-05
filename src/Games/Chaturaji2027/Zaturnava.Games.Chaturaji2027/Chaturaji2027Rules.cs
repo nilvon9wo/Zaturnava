@@ -53,7 +53,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
 
     private readonly Chaturaji2027Variant _variant;
     private readonly SquareGridTopology _grid;
-    private readonly Progress _progress;
+    private readonly ArmyMeasures _measures;
     private readonly MoveGenerator _moves;
     private readonly DiceProfile _dice;
     private readonly int _idleRounds;
@@ -102,7 +102,11 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             this._variant.Leaders,
             this._variant.Scoring
         );
-        this._progress = new Progress(this._grid, this._variant.Pawns);
+        this._measures = new ArmyMeasures(
+            this._grid,
+            this._variant.Pawns,
+            (state, cell, piece) => this.MovesFrom(state, cell, piece, piece.Owner)
+        );
         this._startRows = new StartRowMoves(
             this._grid,
             this._variant.InitialPosition(this._grid),
@@ -254,11 +258,14 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
 
     public bool IsHeavy(PieceKindId kind) => this._variant.Heavies.Contains(kind);
 
-    /// <summary>What a bot may weigh beyond what every ruleset has: how far the army's Pawns have come.</summary>
-    public ImmutableList<string> Measures { get; } = [Progress.PawnProgress];
+    /// <summary>
+    /// What a bot may weigh beyond what every ruleset has: how far the army's Pawns have come and how near they are
+    /// to promoting, and its pieces' reach where they stand, and how much of it goes back (<see cref="ArmyMeasures"/>).
+    /// </summary>
+    public ImmutableList<string> Measures => ArmyMeasures.Names;
 
     public ImmutableList<double> MeasuresOf([Required] GameState state, SeatId seat) =>
-        [this._progress.Of(state, seat)];
+        this._measures.Of(state, seat);
 
     public string NameOf(PieceKindId kind) => this._variant.Names[kind];
 

@@ -50,6 +50,42 @@ public sealed class PositionEncoderTest
         Assert.Equal((4 * 2) + (4 * 4) + 4 + 4 + PositionEncoder.DieFaces + 1 + 4 + 4 + 8, size);
     }
 
+    [Theory]
+    [InlineData(0, FeaturesAt + 9)]
+    [InlineData(-1, FeaturesAt + 8)]
+    public void Fitting_WhenANetworkKnowsAllOrAllButTheLastOfTheMeasures_GivesPositionsOfItsSize(int fewer, int size)
+    {
+        // Arrange - the line's one measure is the last of its numbers
+        GameState later = Start with { Dice = [2] };
+
+        // Act
+        PositionEncoder? encoder = PositionEncoder.Fitting(Rules, FeaturesAt + 9 + fewer);
+
+        // Assert - nothing past the size, and the measure's weight only if it is seen
+        Assert.Equal(
+            (size, true, size - 1 - FeaturesAt),
+            (
+                encoder?.Size,
+                encoder!.Encode(later, LineRules.Seat).All(entry => entry.Index < size),
+                encoder.Weighing(SageWeights.Default.WeighingMeasuresOf(Rules)).Count - 1
+            )
+        );
+    }
+
+    [Theory]
+    [InlineData(-2)]
+    [InlineData(1)]
+    public void Fitting_WhenANetworkIsOfNoSizeTheRulesetsPositionsCanBe_GivesNone(int more)
+    {
+        // Arrange - a network short of more than the ruleset's own measures, or longer than its positions
+
+        // Act
+        PositionEncoder? encoder = PositionEncoder.Fitting(Rules, FeaturesAt + 9 + more);
+
+        // Assert
+        Assert.Null(encoder);
+    }
+
     [Fact]
     public void Weighing_WhenGivenSagesWeights_WeighsWhatSageCountsAsTheyDoForTheScaleTheyAreShownIn()
     {

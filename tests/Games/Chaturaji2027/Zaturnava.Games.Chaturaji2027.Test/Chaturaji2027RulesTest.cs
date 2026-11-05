@@ -401,9 +401,41 @@ public sealed class Chaturaji2027RulesTest
 
         // Assert
         Assert.Equal(
-            ("pawn-progress", 2, 0),
-            (Assert.Single(this._rules.Measures), Assert.Single(black), this._rules.MeasuresOf(twice, Yellow)[0])
+            ("pawn-progress", 2d, 0d),
+            (this._rules.Measures[0], black[0], this._rules.MeasuresOf(twice, Yellow)[0])
         );
+    }
+
+    [Fact]
+    public void MeasuresOf_WhenAPawnIsARowFromPromotingAndARajaIsInMidBoard_CountsTheirPartsWhereTheyStand()
+    {
+        // Arrange - Black's Pawn on d7, a row short of the far edge, with one move; its Raja on d4, with eight, three
+        // of them back
+        GameState state = this.StateWith(
+            (Grid.CellAt(3, 6), Piece(1, Chaturaji2027Pieces.Pawn, Black)),
+            (Grid.CellAt(3, 3), Piece(2, Chaturaji2027Pieces.Raja, Black)),
+            (Grid.CellAt(0, 7), Piece(3, Chaturaji2027Pieces.Pawn, Yellow))
+        );
+
+        // Act
+        ImmutableList<double> black = this._rules.MeasuresOf(state, Black);
+
+        // Assert - its progress, its nearness to promoting, its reach and its retreats
+        Assert.Equal(["pawn-progress", "pawns-near-promotion", "reach", "retreat"], this._rules.Measures);
+        Assert.Equal([5d, 1d, 9d, 3d], black);
+    }
+
+    [Fact]
+    public void MeasuresOf_WhenAPawnHasJustStarted_CountsItFarFromPromoting()
+    {
+        // Arrange - Black's Pawn on a2, six rows short of the far edge
+        GameState state = this.StateWith((Grid.CellAt(0, 1), Piece(1, Chaturaji2027Pieces.Pawn, Black)));
+
+        // Act
+        double near = this._rules.MeasuresOf(state, Black)[1];
+
+        // Assert
+        Assert.Equal(1 / 6d, near, 6);
     }
 
     [Fact]

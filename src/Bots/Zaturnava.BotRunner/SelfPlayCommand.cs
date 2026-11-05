@@ -162,7 +162,7 @@ internal static class SelfPlayCommand
 
         return data is { } network
             && network.RulesetId == rules.Id
-            && network.Inputs == new PositionEncoder(rules).Size
+            && PositionEncoder.Fitting(rules, network.Inputs) is not null
                 ? network
                 : throw new ArgumentException($"{path} holds no network judging {rules.Id}'s positions.");
     }
