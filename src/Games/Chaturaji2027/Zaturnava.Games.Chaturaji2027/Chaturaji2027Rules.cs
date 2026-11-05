@@ -105,7 +105,6 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         this._progress = new Progress(this._grid, this._variant.Pawns);
         this._startRows = new StartRowMoves(
             this._grid,
-            this._moves,
             this._variant.InitialPosition(this._grid),
             this._variant.StartRowPowers,
             this._variant.StartRows

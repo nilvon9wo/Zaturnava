@@ -55,7 +55,7 @@ public sealed class QuickArmyTest
     }
 
     [Fact]
-    public void Eligible_WithoutRivers_LeavesOutWhatAPalaceOrARiverHolds()
+    public void Eligible_WithoutRivers_LeavesOutWhatAPalaceConfinesOrARiverHoldsButNotWhatPalaceLinesEmpower()
     {
         // Arrange - quick games have neither palaces nor rivers
         QuickGame game = QuickGame.Medium;
@@ -65,7 +65,8 @@ public sealed class QuickArmyTest
 
         // Assert
         Assert.DoesNotContain(XiangqiGeneral, eligible);
-        Assert.DoesNotContain(JanggiSoldier, eligible);
+        Assert.DoesNotContain(JanggiGuard, eligible);
+        Assert.Contains(JanggiSoldier, eligible);
         Assert.DoesNotContain(XiangqiSoldier, eligible);
         Assert.DoesNotContain(XiangqiElephant, eligible);
         Assert.Contains(Lance, eligible);
@@ -87,7 +88,7 @@ public sealed class QuickArmyTest
     }
 
     [Fact]
-    public void Pick_WhenTheMinimumCostsMoreThanTheBudget_MakesTheDearestPiecesCheaperUntilItDoesNot()
+    public void Pick_WhenTheBudgetIsTight_DrawsOnlyWhatLeavesEnoughForTheRestOfTheMinimum()
     {
         // Arrange - the cheapest leader and heavy cost 65 and 12: the budget allows nothing dearer
         QuickGame game = Tight(77);
@@ -96,7 +97,27 @@ public sealed class QuickArmyTest
         ImmutableList<ImmutableList<GrandPiece>> armies = [.. Seeds.Select(seed => QuickArmy.Pick(game, new(seed)))];
 
         // Assert
-        Assert.All(armies, army => Assert.Equal([SilverGeneral, Bishop], army.Select(piece => piece.Id)));
+        Assert.All(armies, army => Assert.Equal([Bishop, SilverGeneral], army.Select(piece => piece.Id).OrderBy(Name)));
+    }
+
+    [Fact]
+    public void Pick_ForAQuickGame_NeverDrawsAnInfantryPieceMoreOftenThanACheaperOne()
+    {
+        // Arrange - the infantry every medium army can afford, dearest first: none favoured for being next cheaper
+        ImmutableList<PieceKindId> cheap = [WesternPawn, Noble, Minister, Courtier, MakrukPawn];
+
+        // Act
+        ImmutableDictionary<PieceKindId, int> counts = Enumerable.Range(0, 400)
+            .SelectMany(seed => QuickArmy.Pick(QuickGame.Medium, new(seed)))
+            .Select(piece => piece.Id)
+            .Where(cheap.Contains)
+            .GroupBy(kind => kind)
+            .ToImmutableDictionary(kind => kind.Key, kind => kind.Count());
+
+        // Assert
+        ImmutableList<int> ordered = [.. cheap.Select(kind => counts.GetValueOrDefault(kind))];
+        Assert.True(ordered.Min() > 0);
+        Assert.Equal(ordered.Order(), ordered);
     }
 
     [Fact]
@@ -109,7 +130,7 @@ public sealed class QuickArmyTest
         ImmutableList<GrandPiece> army = QuickArmy.Pick(game, new(3));
 
         // Assert
-        Assert.Equal([SilverGeneral, Bishop], army.Select(piece => piece.Id));
+        Assert.Equal([Bishop, SilverGeneral], army.Select(piece => piece.Id).OrderBy(Name));
     }
 
     [Fact]
@@ -204,6 +225,8 @@ public sealed class QuickArmyTest
             seed => ArmyOf(QuickArmy.Dealt(game, seed), 0) != ArmyOf(QuickArmy.Dealt(game, seed), 1)
         );
     }
+
+    private static string Name(PieceKindId kind) => kind.Value;
 
     private static QuickGame Tight(int budget) =>
         new(

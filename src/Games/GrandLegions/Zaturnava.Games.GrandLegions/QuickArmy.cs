@@ -6,10 +6,12 @@ using static Net.NowhereAtAll.Zaturnava.Games.GrandLegions.PieceClass;
 namespace Net.NowhereAtAll.Zaturnava.Games.GrandLegions;
 
 /// <summary>
-/// The armies the program deals a quick game, each seat its own (Stated). Each is picked piece by piece, at random:
-/// the minimum of each class, the dearest classes first - the one leader, then heavy, artillery, cavalry (that
-/// order Proposed), infantry last. Should the minimum cost more than the budget, the dearest pieces, for their
-/// class, are made cheaper, one step at a time, until it does not (how, Proposed). Then, while the kingdom has
+/// The armies the program deals a quick game, each seat its own (Stated). Each is picked at random, in one pass: the
+/// minimum of each class, the one leader among them, slot by slot in a random order, each piece drawn evenly from
+/// those of its class the budget can still pay for, leaving enough for the slots still to fill at their classes'
+/// cheapest (Proposed); so that dear pieces come seldom, as they seldom fit, but no class is always left what the
+/// others did not spend, and no piece comes the more for being the next cheaper than another. The class's cheapest,
+/// if even that does not fit. Then, while the kingdom has
 /// room and the budget allows, more pieces at random, never another leader. Pieces a palace holds are left out, as
 /// quick games have none yet; pieces a river holds, unless the game has rivers (Stated); lifts, which nothing plays
 /// yet, are not bought. The leader
@@ -19,18 +21,18 @@ namespace Net.NowhereAtAll.Zaturnava.Games.GrandLegions;
 /// </summary>
 public static class QuickArmy
 {
-    private static readonly ImmutableList<PieceClass> PickOrder = [Leader, Heavy, Artillery, Cavalry, Infantry];
+    private static readonly ImmutableList<PieceClass> Classes = [Leader, Heavy, Artillery, Cavalry, Infantry];
 
     /// <summary>
-    /// The pieces a quick army may have: any no palace holds, as quick games have none yet; and any a river holds
-    /// only if the game has rivers.
+    /// The pieces a quick army may have: any not confined to a palace, as quick games have none yet, though one
+    /// may have powers along palace lines (Stated); and any a river holds only if the game has rivers.
     /// </summary>
     public static ImmutableList<GrandPiece> Eligible([Required] QuickGame game) =>
     [
         .. GrandLegionsPieces.Catalogue.Where(piece =>
             piece.Restrictions.All(restriction => restriction.Terrain switch
             {
-                Terrain.Palace => false,
+                Terrain.Palace => !restriction.IsConfining,
                 Terrain.River => game.Rivers != Rivers.None,
                 _ => true,
             })
@@ -51,15 +53,32 @@ public static class QuickArmy
     public static ImmutableList<GrandPiece> Pick([Required] QuickGame game, [Required] Random random)
     {
         ImmutableList<GrandPiece> eligible = Eligible(game);
-        ImmutableList<GrandPiece> drawn =
+        PieceClass[] order =
         [
-            .. PickOrder.SelectMany(pieceClass =>
-                Enumerable
-                    .Range(0, game.Minimums.GetValueOrDefault(pieceClass))
-                    .Select(_ => Drawn(eligible.Where(piece => piece.Class == pieceClass), random))
+            .. Classes.SelectMany(pieceClass =>
+                Enumerable.Repeat(pieceClass, game.Minimums.GetValueOrDefault(pieceClass))
             ),
         ];
-        return Filled(eligible, Downgraded(eligible, drawn, game.Budget), game, random);
+        random.Shuffle(order);
+        ImmutableList<PieceClass> slots = [.. order];
+        ImmutableList<GrandPiece> drawn = slots
+            .Select((pieceClass, index) => (Class: pieceClass, Later: slots.Skip(index + 1)))
+            .Aggregate(
+                ImmutableList<GrandPiece>.Empty,
+                (army, slot) => army.Add(
+                    Drawn(
+                        Within(
+                            eligible,
+                            slot.Class,
+                            game.Budget
+                                - army.Sum(piece => piece.Value)
+                                - slot.Later.Sum(later => Cheapest(eligible, later).Value)
+                        ),
+                        random
+                    )
+                )
+            );
+        return Filled(eligible, drawn, game, random);
     }
 
     /// <summary>The army, as seat 0 lays it out in its kingdom, from the bottom-left corner.</summary>
@@ -102,31 +121,22 @@ public static class QuickArmy
     }
 
     /// <summary>
-    /// The army, made cheaper while it costs more than <paramref name="budget"/>: each time, the piece dearest
-    /// beyond the cheapest of its class is swapped for the next cheaper of its class. One every piece of which is
-    /// already the cheapest stays as it is.
+    /// The pieces of the class that cost no more than <paramref name="left"/>, what the budget leaves once the
+    /// slots still to fill are paid for at their classes' cheapest; or, if none does, the class's cheapest alone.
     /// </summary>
-    private static ImmutableList<GrandPiece> Downgraded(
+    private static ImmutableList<GrandPiece> Within(
         ImmutableList<GrandPiece> eligible,
-        ImmutableList<GrandPiece> army,
-        int budget
+        PieceClass pieceClass,
+        int left
     )
     {
-        GrandPiece? dearest = army
-            .Where(piece => piece.Value > Cheapest(eligible, piece.Class).Value)
-            .MaxBy(piece => piece.Value - Cheapest(eligible, piece.Class).Value);
-        return army.Sum(piece => piece.Value) <= budget || dearest is null
-            ? army
-            : Downgraded(eligible, army.Replace(dearest, CheaperThan(eligible, dearest)), budget);
+        ImmutableList<GrandPiece> affordable =
+            [.. eligible.Where(piece => piece.Class == pieceClass && piece.Value <= left)];
+        return affordable.IsEmpty ? [Cheapest(eligible, pieceClass)] : affordable;
     }
 
     private static GrandPiece Cheapest(ImmutableList<GrandPiece> eligible, PieceClass pieceClass) =>
         eligible.Where(piece => piece.Class == pieceClass).MinBy(piece => piece.Value)!;
-
-    private static GrandPiece CheaperThan(ImmutableList<GrandPiece> eligible, GrandPiece piece) =>
-        eligible
-            .Where(other => other.Class == piece.Class && other.Value < piece.Value)
-            .MaxBy(other => other.Value)!;
 
     /// <summary>The army, with pieces but leaders added at random while its kingdom has room and it can pay.</summary>
     private static ImmutableList<GrandPiece> Filled(

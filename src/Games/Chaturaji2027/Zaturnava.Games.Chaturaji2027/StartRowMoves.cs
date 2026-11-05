@@ -11,17 +11,17 @@ using Net.NowhereAtAll.Zaturnava.Topology.SquareGrid;
 namespace Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
 
 /// <summary>
-/// Start-row powers (Grand Legions specification §3): a piece of <paramref name="kinds"/> that started within its
-/// army's first <paramref name="rows"/> rows may, from the cell it started on, step two cells straight ahead, over an
-/// empty cell onto an empty one; and may take <i>en passant</i> an enemy piece that, from two king's steps away,
-/// moved two cells or more straight ahead over a cell the piece could capture on: by moving onto that cell, taking the
-/// piece where it stopped, until that piece's seat's turn comes round again, or it moves on. A piece placed further
-/// forward never has them. Where each piece started is where the game was dealt it, if it was; else
-/// <paramref name="start"/>.
+/// The Western Pawn's powers (Grand Legions specification §3), for each piece of <paramref name="kinds"/>. One that
+/// started within its army's first <paramref name="rows"/> rows may, from the cell it started on, step two cells
+/// straight ahead, over an empty cell onto an empty one; one placed further forward never may. And any of them,
+/// wherever it started or stands, may take <i>en passant</i> an enemy piece that, from two king's steps away, moved
+/// two cells or more straight ahead, its first step onto a cell diagonally beside it (Stated: so from a2 to a4 or a5
+/// past a pawn on b4, but not from a1): by moving onto that cell, taking the piece where it stopped, until that
+/// piece's seat's turn comes round again, or it moves on. Where each piece started is where the game was dealt it,
+/// if it was; else <paramref name="start"/>.
 /// </summary>
 internal sealed class StartRowMoves(
     SquareGridTopology grid,
-    MoveGenerator moves,
     Position start,
     ImmutableHashSet<PieceKindId> kinds,
     int rows
@@ -30,7 +30,6 @@ internal sealed class StartRowMoves(
     private const int EnPassantDistance = 2;
 
     private readonly SquareGridTopology _grid = grid;
-    private readonly MoveGenerator _moves = moves;
     private readonly Position _start = start;
     private readonly ImmutableHashSet<PieceKindId> _kinds = kinds;
     private readonly int _rows = rows;
@@ -38,19 +37,19 @@ internal sealed class StartRowMoves(
 
     /// <summary>The two-cell first move, and each <i>en passant</i>, of the piece on <paramref name="cell"/>.</summary>
     public IEnumerable<Move> MovesFrom(GameState state, CellId cell, Piece piece, Func<Piece, bool> isCapturable) =>
-        this.HasPowers(state, piece)
+        this._kinds.Contains(piece.Kind)
             ?
             [
                 .. this.DoubleStepFrom(state, cell, piece),
-                .. this.InPassing(state, cell, piece, isCapturable)
+                .. this.InPassing(state, cell, isCapturable)
                     .Select(taking => new Move(piece, cell, taking.Cell, taking.Passage.Piece)),
             ]
             : [];
 
     /// <summary>What <paramref name="move"/> takes <i>en passant</i>, if anything.</summary>
     public Passage? TakenBy(GameState state, MoveAction move, Piece mover, Func<Piece, bool> isCapturable) =>
-        state.Position.PieceAt(move.To) is null && this.HasPowers(state, mover)
-            ? this.InPassing(state, move.From, mover, isCapturable)
+        state.Position.PieceAt(move.To) is null && this._kinds.Contains(mover.Kind)
+            ? this.InPassing(state, move.From, isCapturable)
                 .Where(taking => taking.Cell == move.To)
                 .Select(taking => taking.Passage)
                 .FirstOrDefault()
@@ -82,39 +81,38 @@ internal sealed class StartRowMoves(
         };
     }
 
-    /// <summary>Whether the piece's kind has start-row powers, and it started within its army's start rows.</summary>
-    private bool HasPowers(GameState state, Piece piece) =>
-        this._kinds.Contains(piece.Kind)
-        && this.StartsOf(state).TryGetValue(piece.Id, out CellId first)
-        && this.IsWithin(first, Behind(state.SeatOf(piece.Owner).Forward), this._rows);
-
-    /// <summary>Two cells straight ahead, both empty, from the cell the piece started on.</summary>
+    /// <summary>
+    /// Two cells straight ahead, both empty, from the cell the piece started on, if that is within its army's start
+    /// rows.
+    /// </summary>
     private IEnumerable<Move> DoubleStepFrom(GameState state, CellId cell, Piece piece)
     {
-        ImmutableList<CellId> ahead = this.Ahead(cell, state.SeatOf(piece.Owner).Forward);
-        bool mayStep = this.StartsOf(state)[piece.Id] == cell
+        Direction forward = state.SeatOf(piece.Owner).Forward;
+        ImmutableList<CellId> ahead = this.Ahead(cell, forward);
+        bool mayStep = this.StartsOf(state).TryGetValue(piece.Id, out CellId first)
+            && first == cell
+            && this.IsWithin(first, Behind(forward), this._rows)
             && ahead.Count >= EnPassantDistance
             && ahead.Take(EnPassantDistance).All(next => state.Position.PieceAt(next) is null);
         return mayStep ? [new Move(piece, cell, ahead[1], null)] : [];
     }
 
     /// <summary>
-    /// Each enemy piece the piece on <paramref name="cell"/> may take <i>en passant</i>, and the empty cell it passed
-    /// over that the piece would take it from.
+    /// Each enemy piece the piece on <paramref name="cell"/> may take <i>en passant</i>, and the empty cell, its
+    /// first step, diagonally beside <paramref name="cell"/>, that the piece would take it from.
     /// </summary>
-    private IEnumerable<Taking> InPassing(GameState state, CellId cell, Piece piece, Func<Piece, bool> isCapturable)
-    {
-        ImmutableHashSet<CellId> reach =
-        [
-            .. this._moves.AttacksFrom(state.Position, cell, state.SeatOf(piece.Owner)).Select(attack => attack.Target),
-        ];
-        return state.Passages
-            .Where(passage => this.Distance(cell, passage.From) == EnPassantDistance && isCapturable(passage.Piece))
-            .SelectMany(passage => passage.Passed
-                .Where(passed => reach.Contains(passed) && state.Position.PieceAt(passed) is null)
-                .Select(passed => new Taking(passage, passed))
-            );
-    }
+    private IEnumerable<Taking> InPassing(GameState state, CellId cell, Func<Piece, bool> isCapturable) =>
+        state.Passages
+            .Where(passage => this.Distance(cell, passage.From) == EnPassantDistance
+                && this.IsDiagonallyBeside(cell, passage.Passed[0])
+                && state.Position.PieceAt(passage.Passed[0]) is null
+                && isCapturable(passage.Piece)
+            )
+            .Select(passage => new Taking(passage, passage.Passed[0]));
+
+    private bool IsDiagonallyBeside(CellId cell, CellId other) =>
+        Math.Abs(this._grid.ColumnOf(cell) - this._grid.ColumnOf(other)) == 1
+        && Math.Abs(this._grid.RowOf(cell) - this._grid.RowOf(other)) == 1;
 
     /// <summary>Whether fewer than <paramref name="remaining"/> rows lie behind <paramref name="cell"/>.</summary>
     private bool IsWithin(CellId cell, Direction back, int remaining) =>
