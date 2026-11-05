@@ -30,7 +30,17 @@ internal sealed record GameView(
     Outcome? Outcome
 );
 
-internal sealed record Ruleset(string Id, string Name, int SeatCount);
+/// <summary>
+/// A ruleset: what it calls each seat (Black, Yellow...), and each seat's team, by number: seats of one number are
+/// allies.
+/// </summary>
+internal sealed record Ruleset(
+    string Id,
+    string Name,
+    int SeatCount,
+    ImmutableList<string> SeatNames,
+    ImmutableList<int> SeatTeams
+);
 
 /// <summary>What the server hosts, as <c>GET api/catalog</c> gives it: here, only its rulesets.</summary>
 internal sealed record Catalog(ImmutableList<Ruleset> Rulesets);

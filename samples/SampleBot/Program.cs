@@ -4,10 +4,11 @@ using SampleBot;
 
 // A bot that plays Zaturnava's games through the server's public HTTP API, as any program may (README.md):
 //
-//     dotnet run -- --server https://the.server/                   a game of its own against the server's bots
-//     dotnet run -- --server https://the.server/ --join ID --seat N   a seat left open for it, in someone's game
+//     dotnet run -- --server https://the.server/                       a game of its own against the server's bots
+//     dotnet run -- --server https://the.server/ --join ID --seat Red    a seat left open for it, in someone's game
 //
-// With ZATURNAVA_AI_TOKEN set in the environment (an AI token, from a signed-in player's profile), it plays as that
+// Seats go by the names the game gives them (in Chaturaji 2027, Black, Yellow, Green and Red). With
+// ZATURNAVA_AI_TOKEN set in the environment (an AI token, from a signed-in player's profile), it plays as that
 // player's AI; else as a guest. A token is never taken on the command line, where others may see it.
 
 Options options = Options.Parse(args);
@@ -21,8 +22,8 @@ using HttpClient http = new() { BaseAddress = options.Server };
 GameApi api = new(http);
 
 (string gameId, int seat) = options.Join is { } joining
-    ? (joining, options.Seat)
-    : (await Create(api, options, stop.Token), 0);
+    ? (joining, SeatNamed([.. (await api.Get(joining, stop.Token)).Seats.Select(held => held.Name)], options.Seat))
+    : await Create(api, options, stop.Token);
 string? playerToken = Environment.GetEnvironmentVariable("ZATURNAVA_AI_TOKEN");
 string seatToken = await api.Claim(
     gameId,
@@ -31,15 +32,16 @@ string seatToken = await api.Claim(
     playerToken,
     stop.Token
 );
-Console.WriteLine($"Playing seat {seat} of game {gameId}: watch it in the lobby of the server's page.");
+Console.WriteLine($"Playing game {gameId}: watch it in the lobby of the server's page.");
 
 Player player = new(api, new Greedy(new Random()), options.Pause, Console.Out);
 Outcome outcome = await player.Play(gameId, seat, seatToken, stop.Token);
 Console.WriteLine(outcome.Text);
 return outcome.Winners.Contains(seat) ? 0 : 1;
 
-// A game of the ruleset with the bot at seat 0 and the server's bots, in turn, at the others.
-static async Task<string> Create(GameApi api, Options options, CancellationToken cancellationToken)
+// A game of the ruleset with the bot at its seat, the server's bots at the others: --allies on its own team's
+// seats, --opponents on the rest, each list taken in turn, in seat order. Says who sits where.
+static async Task<(string GameId, int Seat)> Create(GameApi api, Options options, CancellationToken cancellationToken)
 {
     Catalog catalog = await api.Catalog(cancellationToken);
     Ruleset ruleset = catalog.Rulesets.FirstOrDefault(offered => offered.Id == options.Ruleset)
@@ -47,22 +49,45 @@ static async Task<string> Create(GameApi api, Options options, CancellationToken
             $"The server has no ruleset {options.Ruleset}: it has "
                 + string.Join(", ", catalog.Rulesets.Select(offered => offered.Id))
         );
-    ImmutableList<string?> bots =
-    [
-        null,
-        .. Enumerable.Range(0, ruleset.SeatCount - 1)
-            .Select(other => options.Opponents[other % options.Opponents.Count]),
-    ];
-    return await api.Create(ruleset.Id, bots, cancellationToken);
+    int seat = SeatNamed(ruleset.SeatNames, options.Seat);
+    ImmutableList<int> others = [.. Enumerable.Range(0, ruleset.SeatCount).Where(other => other != seat)];
+    ImmutableList<int> allies = [.. others.Where(other => ruleset.SeatTeams[other] == ruleset.SeatTeams[seat])];
+    ImmutableList<int> opponents = [.. others.Except(allies)];
+    ImmutableDictionary<int, string> bots = allies
+        .Select((other, turn) => (other, Bot: options.Allies[turn % options.Allies.Count]))
+        .Concat(opponents.Select((other, turn) => (other, Bot: options.Opponents[turn % options.Opponents.Count])))
+        .ToImmutableDictionary(placed => placed.other, placed => placed.Bot);
+    foreach (int each in Enumerable.Range(0, ruleset.SeatCount))
+    {
+        string role = each == seat ? "this bot" : allies.Contains(each) ? "ally" : "opponent";
+        Console.WriteLine($"{ruleset.SeatNames[each]}: {(each == seat ? role : $"{bots[each]} ({role})")}");
+    }
+
+    string gameId = await api.Create(
+        ruleset.Id,
+        Enumerable.Range(0, ruleset.SeatCount).Select(each => bots.GetValueOrDefault(each)),
+        cancellationToken
+    );
+    return (gameId, seat);
 }
+
+// The seat of that name, whatever its case; the first, if none is named.
+static int SeatNamed(ImmutableList<string> names, string? name) =>
+    name is null
+        ? 0
+        : names.FindIndex(each => string.Equals(each, name, StringComparison.OrdinalIgnoreCase)) is var found
+            and >= 0
+            ? found
+            : throw new ArgumentException($"There is no seat {name}: the seats are {string.Join(", ", names)}");
 
 /// <summary>What the command line asks for.</summary>
 internal sealed record Options(
     Uri Server,
     string Ruleset,
+    string? Seat,
+    ImmutableList<string> Allies,
     ImmutableList<string> Opponents,
     string? Join,
-    int Seat,
     string Nickname,
     TimeSpan Pause
 )
@@ -76,9 +101,10 @@ internal sealed record Options(
         return new Options(
             new Uri(server.EndsWith('/') ? server : server + "/"),
             named.GetValueOrDefault("--ruleset", "chaturaji-2027"),
+            named.GetValueOrDefault("--seat"),
+            [.. named.GetValueOrDefault("--allies", "sage").Split(',')],
             [.. named.GetValueOrDefault("--opponents", "sage").Split(',')],
             named.GetValueOrDefault("--join"),
-            int.Parse(named.GetValueOrDefault("--seat", "0"), CultureInfo.InvariantCulture),
             named.GetValueOrDefault("--nickname", "Sample bot"),
             TimeSpan.FromMilliseconds(
                 int.Parse(named.GetValueOrDefault("--pause-ms", "250"), CultureInfo.InvariantCulture)

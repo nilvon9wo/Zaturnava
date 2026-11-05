@@ -1,11 +1,14 @@
-# A sample bot
+# A sample bot, over plain HTTP
 
 A complete bot, in about three hundred lines of C#, that plays Zaturnava's games on any of its servers, the live
 one included (the one the [itch.io page](https://nilvon9wo.itch.io/zaturnava) plays on). It is a starting point:
 copy it, and replace its mind with yours.
 
-It stands alone. It references none of Zaturnava's code and imports none of its build settings: it talks to the
-server over [the HTTP API](../../docs/bots/http-api.md), as a program in any language may. It could live in a
+It talks to the server over [the HTTP API](../../docs/bots/http-api.md), plain requests and JSON, as a program in
+any language may. It uses neither MCP nor UTCP: those are for the two other samples, still to come, one playing
+through each (as the [backlog](../../docs/backlog.md) says).
+
+It stands alone. It references none of Zaturnava's code and imports none of its build settings. It could live in a
 repository of its own, and one day will.
 
 Its mind is mechanical, no AI at all, so running it costs nothing: it takes the most valuable enemy piece it can,
@@ -18,22 +21,36 @@ With the [.NET 10 SDK](https://dotnet.microsoft.com/download):
 
 ```shell
 cd samples/SampleBot
-# A game of its own, against the server's bots (Sage, by default, in every other seat):
+# A game of its own, as Black, the server's Sage in every other seat:
 dotnet run -- --server https://zaturnava.runasp.net/
-# Against others of them, in turn:
-dotnet run -- --server https://zaturnava.runasp.net/ --opponents random,midas,solomon
+# As Yellow, with Random as its ally (Red) and Midas and Sage as its opponents (Black, then Green):
+dotnet run -- --server https://zaturnava.runasp.net/ --seat Yellow --allies random --opponents midas,sage
 # A seat left open for it in someone's game, such as one set up on the page for "Your own AI":
-dotnet run -- --server https://zaturnava.runasp.net/ --join {the game's id} --seat {the seat, from 0}
+dotnet run -- --server https://zaturnava.runasp.net/ --join {the game's id} --seat Red
+```
+
+Seats go by the names the game gives them, as on the board: in Chaturaji 2027, Black and Green are one team,
+Yellow and Red the other. Before a game of its own begins, the bot says who sits where:
+
+```text
+Black: midas (opponent)
+Yellow: this bot
+Green: sage (opponent)
+Red: random (ally)
 ```
 
 | Option | | Default |
 |---|---|---|
 | `--server` | The server's address | (required) |
-| `--ruleset` | The game, for a game of its own (`GET api/catalog` lists them) | `chaturaji-2027` |
-| `--opponents` | The server's bots for the other seats, by id, comma-separated, taken in turn | `sage` |
-| `--join`, `--seat` | Play this seat of this game, instead of a game of its own | |
+| `--ruleset` | The game, for a game of its own (`GET api/catalog` lists them, with their seats and teams) | `chaturaji-2027` |
+| `--seat` | The bot's own seat, by name (any case) | the first |
+| `--allies` | The server's bots for its allies' seats, by id, comma-separated, in seat order; in a game of everyone for themselves, none | `sage` |
+| `--opponents` | The server's bots for its opponents' seats, likewise | `sage` |
+| `--join` | Play `--seat` of this game, instead of a game of its own | |
 | `--nickname` | The name the seat shows, followed by "(guest)" | `Sample bot` |
 | `--pause-ms` | How long to wait between requests: be a good guest | `250` |
+
+A list shorter than the seats it fills is taken again from its start.
 
 It plays as a guest. To play as a signed-in player's AI instead, sign in on the page, make an AI token under
 **Profile**, and put it in the environment as `ZATURNAVA_AI_TOKEN` (never on the command line, where others may
