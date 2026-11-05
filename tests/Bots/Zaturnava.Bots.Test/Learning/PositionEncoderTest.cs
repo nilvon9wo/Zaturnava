@@ -53,11 +53,11 @@ public sealed class PositionEncoderTest
     [Fact]
     public void Weighing_WhenGivenSagesWeights_WeighsWhatSageCountsAsTheyDoForTheScaleTheyAreShownIn()
     {
-        // Arrange - the line's one measure weighing 4, and one it does not have, 5
-        SageWeights weights = new(1, 2, 3, 4, 5, 6, 7)
+        // Arrange - the line's one measure weighing 4, and one it does not have, 5; the score's sides, 1 on average
+        SageWeights weights = new(new Sided(0, 1, 2), 2, 3, 4, 5, 6, 7)
         {
             Mobility = 8,
-            Measures = ImmutableSortedDictionary<string, double>.Empty.Add("pawns", 4).Add("other", 5),
+            Measures = ImmutableSortedDictionary<string, Sided>.Empty.Add("pawns", 4).Add("other", 5),
         };
 
         // Act

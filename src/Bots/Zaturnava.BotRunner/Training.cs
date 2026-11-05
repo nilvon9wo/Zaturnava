@@ -5,9 +5,9 @@ namespace Net.NowhereAtAll.Zaturnava.BotRunner;
 
 /// <summary>
 /// Tunes Sage's weights by playing it against itself: each round, each weight in turn is nudged up - and,
-/// if that does not win, down - and a nudge is kept when Sage with it beats Sage without it (<paramref
-/// name="match"/>) clearly enough: winning more than it loses by a tenth of the games won or lost. What
-/// each nudge did is written to <paramref name="progress"/>, as it goes.
+/// if that does not win, down, unless it is nothing already - and a nudge is kept when Sage with it beats
+/// Sage without it (<paramref name="match"/>) clearly enough: winning more than it loses by a tenth of the
+/// games won or lost. What each nudge did is written to <paramref name="progress"/>, as it goes.
 /// </summary>
 internal sealed class Training(
     Func<SageWeights, SageWeights, CancellationToken, Task<(int Won, int Lost)>> match,
@@ -43,7 +43,7 @@ internal sealed class Training(
         SageWeights up = current.With(index, value > 0 ? value * Up : FromNothing);
         SageWeights down = current.With(index, value * Down);
         return await this.Kept(current, up, round, index, cancellationToken)
-            ?? await this.Kept(current, down, round, index, cancellationToken)
+            ?? (value == 0 ? null : await this.Kept(current, down, round, index, cancellationToken)) // none lower
             ?? current;
     }
 

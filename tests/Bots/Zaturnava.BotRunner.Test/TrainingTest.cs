@@ -11,10 +11,10 @@ public sealed class TrainingTest
     [Fact]
     public async Task Tune_WhenANudgeWinsClearly_KeepsIt()
     {
-        // Arrange - raising any weight wins 6 to 4, but raising leaders loses; lowering it wins
+        // Arrange - raising any weight wins 6 to 4, but raising its own leaders' loses; lowering it wins
         Training training = new(
             (candidate, current, _) => Task.FromResult(
-                (candidate.Leaders, current.Leaders) switch
+                (candidate.Leaders.Own, current.Leaders.Own) switch
                 {
                     ( > 2, _) => (3, 7),
                     ( < 2, 2) => (8, 2),
@@ -29,11 +29,13 @@ public sealed class TrainingTest
 
         // Assert
         Assert.Equal(
-            ImmutableList.Create(1.3, 1.3, 1.4, 0.65, 3.9, 1.3, 0.39, 0.3),
+            ImmutableList.Create(
+                1.3, 1.3, 1.3, 1.3, 1.3, 1.3, 1.4, 2.6, 2.6, 0.65, 0.65, 0.65, 3.9, 3.9, 3.9, 1.3, 0.39, 0.3, 0.3, 0.3
+            ),
             [.. tuned.Values.Select(value => Math.Round(value, 6))]
         );
         Assert.Contains(
-            "round 1, leaders 2 to 1.4: won 8, lost 2, kept",
+            "round 1, leaders.own 2 to 1.4: won 8, lost 2, kept",
             this._progress.ToString(),
             StringComparison.Ordinal
         );
@@ -42,7 +44,8 @@ public sealed class TrainingTest
     [Fact]
     public async Task Tune_WhenNoNudgeWinsClearly_LeavesTheWeightsAndSaysSo()
     {
-        // Arrange - every nudge wins by less than a tenth of the games won or lost
+        // Arrange - every nudge wins by less than a tenth of the games won or lost; mobility's three, of nothing, can
+        // only be raised
         Training training = new((_, _, _) => Task.FromResult((10, 9)), this._progress);
 
         // Act
@@ -51,7 +54,7 @@ public sealed class TrainingTest
         // Assert
         Assert.Equal(SageWeights.Default, tuned);
         Assert.Equal(
-            (32, "round 1, score 1 to 1.3: won 10, lost 9"),
+            (2 * ((17 * 2) + 3), "round 1, score.own 1 to 1.3: won 10, lost 9"),
             (this.Lines().Length, this.Lines()[0])
         );
     }

@@ -148,6 +148,33 @@ public sealed class SageBotTest
         Assert.Equal(sitting, action);
     }
 
+    [Theory]
+    [InlineData(2, 1, "own")]
+    [InlineData(1, 2, "ally's")]
+    public async Task Decide_WhenWeighingItsOwnAndItsAllysMaterialApart_KeepsWhicheverWeighsMore(
+        double own,
+        double ally,
+        string kept
+    )
+    {
+        // Arrange - one way it keeps its own Horse and its ally loses theirs; the other, the other way round
+        MoveAction keepingOwn = LineRules.Move(0, 1);
+        MoveAction keepingAllys = LineRules.Move(0, 2);
+        ScriptedRules rules = new(
+            ImmutableDictionary<GameAction, GameState>.Empty
+                .Add(keepingOwn, ScriptedRules.State((5, LineRules.Horse, Seat), (6, LineRules.Pawn, Enemy)))
+                .Add(keepingAllys, ScriptedRules.State((5, LineRules.Horse, Ally), (6, LineRules.Pawn, Enemy)))
+        );
+        SageWeights weights = Nothing with { Material = new Sided(own, ally, 1) };
+
+        // Act
+        GameAction action =
+            await new SageBot(new Random(Seed), weights, []).Decide(rules.Request(), this._cancellation);
+
+        // Assert
+        Assert.Equal(kept == "own" ? keepingOwn : keepingAllys, action);
+    }
+
     [Fact]
     public async Task Decide_WhenWeighingLeaders_WouldRatherKeepItsOwnThanTheEnemyKeepTheirs()
     {
@@ -345,10 +372,10 @@ public sealed class SageBotTest
         SageWeights weights = SageWeights.Default;
 
         // Act
-        SageWeights changed = weights.With(weights.Names.IndexOf("thrones"), 7);
+        SageWeights changed = weights.With(weights.Names.IndexOf("thrones.ally"), 7);
 
         // Assert
-        Assert.Equal(weights with { Thrones = 7 }, changed);
+        Assert.Equal(weights with { Thrones = new Sided(3, 7, 3) }, changed);
     }
 
     [Fact]
@@ -406,7 +433,7 @@ public sealed class SageBotTest
         SageWeights weights = Nothing with
         {
             Material = measure == "other" ? 1 : 0,
-            Measures = ImmutableSortedDictionary<string, double>.Empty.Add(measure, 1),
+            Measures = ImmutableSortedDictionary<string, Sided>.Empty.Add(measure, 1),
         };
 
         // Act
@@ -429,7 +456,7 @@ public sealed class SageBotTest
         SageWeights weights = Nothing with
         {
             Leaders = 1,
-            Measures = ImmutableSortedDictionary<string, double>.Empty.Add("pawns", 100),
+            Measures = ImmutableSortedDictionary<string, Sided>.Empty.Add("pawns", 100),
         };
 
         // Act
@@ -447,11 +474,11 @@ public sealed class SageBotTest
         SageWeights weights = SageWeights.Default.Weighing(["pawn-progress", "command"]);
 
         // Act
-        SageWeights changed = weights.With(weights.Names.IndexOf("pawn-progress"), 0.5);
+        SageWeights changed = weights.With(weights.Names.IndexOf("pawn-progress.enemy"), 0.5);
 
         // Assert
         Assert.Equal(
-            (0.5, 0, weights.Material),
+            (new Sided(0, 0, 0.5), Sided.Alike(0), weights.Material),
             (changed.Measures["pawn-progress"], changed.Measures["command"], changed.Material)
         );
     }
@@ -462,7 +489,7 @@ public sealed class SageBotTest
         // Arrange
         SageWeights weights = SageWeights.Default with
         {
-            Measures = ImmutableSortedDictionary<string, double>.Empty.Add("pawn-progress", 2),
+            Measures = ImmutableSortedDictionary<string, Sided>.Empty.Add("pawn-progress", 2),
         };
 
         // Act
@@ -470,11 +497,17 @@ public sealed class SageBotTest
 
         // Assert
         Assert.Equal(
-            ["score", "material", "leaders", "prisoners", "thrones", "exposure", "chances", "mobility", "command",
-                "pawn-progress"],
+            [
+                .. Sides("score"), .. Sides("material"), .. Sides("leaders"), .. Sides("prisoners"),
+                .. Sides("thrones"), "exposure", "chances", .. Sides("mobility"), .. Sides("command"),
+                .. Sides("pawn-progress"),
+            ],
             weighing.Names
         );
-        Assert.Equal((0, 2), (weighing.Measures["command"], weighing.Measures["pawn-progress"]));
+        Assert.Equal(
+            (Sided.Alike(0), Sided.Alike(2)),
+            (weighing.Measures["command"], weighing.Measures["pawn-progress"])
+        );
     }
 
     [Fact]
@@ -512,10 +545,13 @@ public sealed class SageBotTest
     }
 
     [Fact]
-    public void Learned_WhenReadAsJson_KeepsMobilityAndTheMeasures()
+    public void Learned_WhenReadAsJson_KeepsMobilityAndTheMeasuresAndEachSidesWeight()
     {
-        // Arrange
-        SageWeights weights = SageWeights.Default.Weighing(["pawn-progress"]).With(7, 0.25).With(8, 0.5);
+        // Arrange - the score weighed alike, written as one number; mobility and the measure told apart by side
+        SageWeights start = SageWeights.Default.Weighing(["pawn-progress"]);
+        SageWeights weights = start
+            .With(start.Names.IndexOf("mobility.ally"), 0.25)
+            .With(start.Names.IndexOf("pawn-progress.enemy"), 0.5);
 
         // Act
         SageWeights? read = JsonSerializer.Deserialize<SageWeights>(
@@ -525,6 +561,22 @@ public sealed class SageBotTest
 
         // Assert
         Assert.Equal((weights, weights.GetHashCode()), (read, read!.GetHashCode()));
+    }
+
+    [Fact]
+    public void Read_WhenAWeightIsOneNumber_WeighsEverySideSo()
+    {
+        // Arrange - as weights learned before the sides were told apart were kept
+        const string json = """{"score":0.7,"material":{"own":2,"ally":1,"enemy":1.5},"exposure":1,"chances":0}""";
+
+        // Act
+        SageWeights? read = JsonSerializer.Deserialize<SageWeights>(json, JsonSerializerOptions.Web);
+
+        // Assert
+        Assert.Equal(
+            (Sided.FromDouble(0.7), new Sided(2, 1, 1.5), true, false),
+            (read?.Score, read?.Material, read?.Score.IsAlike, read?.Material.IsAlike)
+        );
     }
 
     [Fact]
@@ -541,6 +593,9 @@ public sealed class SageBotTest
     }
 
     private static Piece Piece(int id, PieceKindId kind, SeatId owner) => new(new PieceId(id), kind, owner);
+
+    /// <summary>What a sided weight's three are called: "material.own", "material.ally", "material.enemy".</summary>
+    private static IEnumerable<string> Sides(string name) => Sided.Sides.Select(side => $"{name}.{side}");
 
     private static ImmutableDictionary<SeatId, int> Scored(int points) =>
         ImmutableDictionary<SeatId, int>.Empty.Add(Seat, points);

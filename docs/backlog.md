@@ -117,6 +117,20 @@ first.
        reply. The Chaturaji 2027 features serve the grand game too (grand/specification.md §6.1).
      - *(Stated 2026-10-29)* With the enemy's reply weighed, Sage may take its own team's pieces
        (rules §6.4), when that saves a better one; until then no bot does.
+     - Done *(Stated 2026-11-05; the split Proposed)*: every weight but exposure and chances is told
+       apart by side: the bot's own seat's, its ally's and its enemies'. A single number in the
+       weights' JSON still weighs all three alike, so weights tuned before keep playing as they did;
+       tuning nudges each side on its own.
+     - *(Stated 2026-11-05)* Trusting the ally: how far to rely on the ally's pieces should depend on
+       how well the ally plays. *(Proposed)*: the ally's rating as a feature, so the ally-side weights
+       can grow with a strong ally and shrink with a weak one; learned by Athena, or tuned in Sage
+       against allies of several strengths.
+     - *(Stated 2026-11-05)* Pieces decomposed: a piece's worth comes from its reach, its
+       restrictions, how fast it moves, whether it can go back, and how near it is to promoting. Those
+       parts, measured where the piece stands (little reach at the edge, a Pawn a step from promoting),
+       may say more than the piece's fixed worth. *(Proposed)*: count them as measures of their own.
+     - *(Stated 2026-11-05)* Private team chat, and how well bots plan through it, is another thing
+       to measure; moot while our bots do not talk, and not with bots that spend tokens.
   3. **A learned bot**, the AI to play against: a small neural network, trained by self-play and on
      recorded games, judging positions inside Sage's look-ahead through the dice. Free, offline, no
      keys.
