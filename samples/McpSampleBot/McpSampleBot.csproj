@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>McpSampleBot</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The official C# SDK of the Model Context Protocol: here, only its client. -->
+    <PackageReference Include="ModelContextProtocol" Version="2.2.0" />
+  </ItemGroup>
+
+</Project>

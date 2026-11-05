@@ -5,8 +5,9 @@ one included (the one the [itch.io page](https://nilvon9wo.itch.io/zaturnava) pl
 copy it, and replace its mind with yours.
 
 It talks to the server over [the HTTP API](../../docs/bots/http-api.md), plain requests and JSON, as a program in
-any language may. It uses neither MCP nor UTCP: those are for the two other samples, still to come, `McpSampleBot` and
-`UtcpSampleBot`, one playing through each (as the [backlog](../../docs/backlog.md) says).
+any language may. It uses neither MCP nor UTCP: its twin, [`McpSampleBot`](../McpSampleBot/README.md), plays the same
+way through the server's MCP tools, and a third, `UtcpSampleBot`, still to come, will play through UTCP (as the
+[backlog](../../docs/backlog.md) says).
 
 It stands alone. It references none of Zaturnava's code and imports none of its build settings. It could live in a
 repository of its own, and one day will.
