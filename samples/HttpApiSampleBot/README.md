@@ -6,8 +6,8 @@ copy it, and replace its mind with yours.
 
 It talks to the server over [the HTTP API](../../docs/bots/http-api.md), plain requests and JSON, as a program in
 any language may. It uses neither MCP nor UTCP: its twin, [`McpSampleBot`](../McpSampleBot/README.md), plays the same
-way through the server's MCP tools, and a third, `UtcpSampleBot`, still to come, will play through UTCP (as the
-[backlog](../../docs/backlog.md) says).
+way through the server's MCP tools, and a third, [`UtcpSampleBot`](../UtcpSampleBot/README.md), through its UTCP
+manual.
 
 It stands alone. It references none of Zaturnava's code and imports none of its build settings. It could live in a
 repository of its own, and one day will.

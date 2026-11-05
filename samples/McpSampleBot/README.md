@@ -8,8 +8,8 @@ It talks to the server through [its MCP tools](../../docs/bots/mcp.md), served a
 the [Model Context Protocol](https://modelcontextprotocol.io), by the protocol's official
 [C# SDK](https://www.nuget.org/packages/ModelContextProtocol). It is the program an AI assistant would be, when it
 plays through those tools, but with a mind of its own in place of a language model's. Its twin,
-[`HttpApiSampleBot`](../HttpApiSampleBot/README.md), plays the same way over plain HTTP; a third, `UtcpSampleBot`,
-is still to come (as the [backlog](../../docs/backlog.md) says).
+[`HttpApiSampleBot`](../HttpApiSampleBot/README.md), plays the same way over plain HTTP; a third,
+[`UtcpSampleBot`](../UtcpSampleBot/README.md), through the server's UTCP manual.
 
 It stands alone. It references none of Zaturnava's code and imports none of its build settings. It could live in a
 repository of its own, and one day will.

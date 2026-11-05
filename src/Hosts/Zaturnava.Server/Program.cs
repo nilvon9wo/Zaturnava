@@ -19,4 +19,5 @@ _ = app.MapGames();
 _ = app.MapSignIn();
 _ = app.MapTokenSignIn();
 _ = app.MapHostedMcp();
+_ = app.MapUtcp();
 app.Run();

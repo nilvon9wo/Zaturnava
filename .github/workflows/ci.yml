@@ -37,6 +37,8 @@ jobs:
           dotnet format samples/HttpApiSampleBot/HttpApiSampleBot.slnx --verify-no-changes --severity info
           dotnet build samples/McpSampleBot/McpSampleBot.slnx
           dotnet format samples/McpSampleBot/McpSampleBot.slnx --verify-no-changes --severity info
+          dotnet build samples/UtcpSampleBot/UtcpSampleBot.slnx
+          dotnet format samples/UtcpSampleBot/UtcpSampleBot.slnx --verify-no-changes --severity info
 
       # IDE0005 (unnecessary using) never fails `dotnet build`, even with
       # EnforceCodeStyleInBuild. ReSharper's inspectcode catches it and more;
