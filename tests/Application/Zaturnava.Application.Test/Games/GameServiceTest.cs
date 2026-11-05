@@ -26,6 +26,9 @@ public sealed class GameServiceTest
     private static readonly SeatId Second = new(1);
     private static readonly SeatPlan Bot = new(FirstChoiceBot.BotId);
 
+    private static readonly ActionDescriptor FaceOff =
+        new FaceOffAction(First, new CellId(1), new CellId(3)).Describe();
+
     private static readonly TimeSpan FiveSeconds = TimeSpan.FromSeconds(5);
     private static readonly TimeSpan Grace = GameServiceSettings.DefaultAwayGrace;
 
@@ -862,6 +865,33 @@ public sealed class GameServiceTest
     }
 
     [Fact]
+    public async Task Submit_WhenAFaceOffComesOutOfTurnFromASeatWithThatChance_TakesIt()
+    {
+        // Arrange - the first seat has passed, so the second decides; the first's King may call a face-off
+        GameService service = this.Service(GameServiceSettings.Default, hasFaceOff: true);
+        (GameId id, string token) = await FirstPassed(service, this._cancellation);
+
+        // Act
+        GameSnapshot snapshot = await service.Submit(id, token, FaceOff, this._cancellation);
+
+        // Assert
+        Assert.Null(snapshot.State.Position.PieceAt(new CellId(1)));
+    }
+
+    [Fact]
+    public async Task Submit_WhenAFaceOffComesOutOfTurnFromASeatWithoutThatChance_ThrowsNotYourTurnException()
+    {
+        // Arrange - the first seat has passed, so the second decides; the rules offer no face-off
+        (GameId id, string token) = await FirstPassed(this._service, this._cancellation);
+
+        // Act
+        Task<GameSnapshot> submitting = this._service.Submit(id, token, FaceOff, this._cancellation);
+
+        // Assert
+        _ = await Assert.ThrowsAsync<NotYourTurnException>(() => submitting);
+    }
+
+    [Fact]
     public async Task Submit_WhenASeatThatMayNotRejoinsOutOfTurn_ThrowsNotYourTurnException()
     {
         // Arrange - the first seat decides; the second never gave up its turns
@@ -1370,6 +1400,18 @@ public sealed class GameServiceTest
         return (id, waiting);
     }
 
+    /// <summary>A game of Tiny, its second seat open, once the person holding the first has passed.</summary>
+    private static async Task<(GameId Id, string Token)> FirstPassed(
+        GameService service,
+        CancellationToken cancellationToken
+    )
+    {
+        GameId id = await service.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], cancellationToken);
+        string token = await Sit(service, id, First, cancellationToken);
+        _ = await service.Submit(id, token, Pass(First), cancellationToken);
+        return (id, token);
+    }
+
     /// <summary>A game of Tiny, its every seat open.</summary>
     private Task<GameId> CreateOpen() =>
         this._service.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
@@ -1392,10 +1434,13 @@ public sealed class GameServiceTest
         GameServiceSettings settings,
         InMemoryGameStore? store = null,
         ImmutableList<IBotPlaying>? bots = null,
-        bool isDealt = false
+        bool isDealt = false,
+        bool hasFaceOff = false
     ) =>
         new(
-            new RulesetCatalog([new TinyRules(GameLength, isDealt), new RollingRules(GameLength)]),
+            new RulesetCatalog(
+                [new TinyRules(GameLength, isDealt, hasFaceOff: hasFaceOff), new RollingRules(GameLength)]
+            ),
             new BotCatalog(bots ?? [new FirstChoiceBot()]),
             new ScenarioCatalog(
                 [

@@ -107,6 +107,17 @@
                 {
                     <p class="safety-off" role="alert">Safety OFF: you may take your own team's pieces.</p>
                 }
+                @if (this.Seating.Claim is { } caller && !view.Seats[caller.Seat].Chances.IsEmpty)
+                {
+                    <div class="chances">
+                        @foreach (ActionDto chance in view.Seats[caller.Seat].Chances)
+                        {
+                            <button class="action chance flashing" @onclick="() => this.Seize(caller, chance)">
+                                @chance.Label
+                            </button>
+                        }
+                    </div>
+                }
                 <p class="status">@this.Status(view)</p>
                 @if (view.Outcome is null && OpenSeatsOf(view) is not null)
                 {
@@ -1018,6 +1029,16 @@
 
     private Task Submit(SeatClaim claim, ActionDto action) =>
         this.Request(() => this.Games.Submit(this.Seating.GameId, claim.Token, action, CancellationToken.None));
+
+    /// <summary>
+    /// Takes a chance, as a leader face-off; should it have gone meanwhile, the other leader having moved away first,
+    /// says so kindly.
+    /// </summary>
+    private async Task Seize(SeatClaim claim, ActionDto chance)
+    {
+        await this.Submit(claim, chance);
+        this._problem = this._problem is null ? null : "Too late, sorry: the two leaders no longer face each other.";
+    }
 
     /// <summary>
     /// Makes the request, and shows the game it answers with; if it fails, says why, and looks again

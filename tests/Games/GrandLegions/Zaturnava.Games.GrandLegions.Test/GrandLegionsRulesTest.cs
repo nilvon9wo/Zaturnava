@@ -1,6 +1,8 @@
 using System.Collections.Immutable;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
+using Net.NowhereAtAll.Zaturnava.Engine.Boards;
 using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
+using Net.NowhereAtAll.Zaturnava.Engine.Positions;
 using Net.NowhereAtAll.Zaturnava.Engine.Rules;
 using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 using Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
@@ -191,6 +193,32 @@ public sealed class GrandLegionsRulesTest
 
         // Assert
         Assert.Equal((78, "Dragon King (Shogi)"), worth);
+    }
+
+    [Fact]
+    public void ChancesOf_WhenAJanggiGeneralFacesAnEnemyLeader_IsAFaceOffWhoeverDecides()
+    {
+        // Arrange - Black's Janggi General on c1 faces Yellow's Western King on the c-file's far end, while Yellow
+        // decides
+        Chaturaji2027Rules rules = GrandLegionsRules.RulesOf(QuickGame.Small);
+        int side = (int)Math.Sqrt(rules.Topology.Cells.Count);
+        CellId general = new(2);
+        CellId king = new(((side - 1) * side) + 2);
+        GameState state = rules.CreateInitialState() with
+        {
+            RollOff = [],
+            AwaitedDice = null,
+            DecidingSeat = new SeatId(1),
+            Position = Position.Empty
+                .Place(general, new Piece(new PieceId(1), GrandLegionsPieces.JanggiGeneral, new SeatId(0)))
+                .Place(king, new Piece(new PieceId(2), GrandLegionsPieces.WesternKing, new SeatId(1))),
+        };
+
+        // Act
+        ImmutableList<GameAction> chances = rules.ChancesOf(state, new SeatId(0));
+
+        // Assert
+        Assert.Equal([new FaceOffAction(new SeatId(0), general, king)], chances);
     }
 
     [Fact]

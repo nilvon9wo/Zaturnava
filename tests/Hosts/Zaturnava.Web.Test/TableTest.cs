@@ -2023,6 +2023,76 @@ public sealed class TableTest : IDisposable
     }
 
     [Fact]
+    public void Render_WhenTheSeatHasAChance_OffersItFlashingEvenOutOfTurn()
+    {
+        // Arrange
+        this._page.Server.View = FaceOffChance();
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatOne);
+
+        // Assert
+        Assert.Equal("Face-off!", table.Find(".chances button.chance.flashing").TextContent.Trim());
+    }
+
+    [Fact]
+    public void Chance_WhenClicked_TakesIt()
+    {
+        // Arrange
+        this._page.Server.View = FaceOffChance();
+        IRenderedComponent<Table> table = this.Render(SeatOne);
+
+        // Act
+        table.Find("button.chance").Click();
+
+        // Assert
+        Assert.Equal(
+            ("face-off", 0),
+            (this._page.Server.Submitted?.Action.Kind, table.FindAll("p.problem").Count)
+        );
+    }
+
+    [Fact]
+    public void Chance_WhenItHasGoneMeanwhile_SaysItIsTooLate()
+    {
+        // Arrange
+        this._page.Server.View = FaceOffChance();
+        IRenderedComponent<Table> table = this.Render(SeatOne);
+        this._page.Server.Failure = new GameRequestRefusedException(Refusal.Illegal, "Not now.");
+
+        // Act
+        table.Find("button.chance").Click();
+
+        // Assert
+        Assert.Equal(
+            "Too late, sorry: the two leaders no longer face each other.",
+            table.Find("p.problem").TextContent
+        );
+    }
+
+    /// <summary>Seat 0 to move, while seat 1 may call a face-off.</summary>
+    private static GameViewDto FaceOffChance() =>
+        FakeGameServer.SeatZeroToMove with
+        {
+            Seats = FakeGameServer.SeatZeroToMove.Seats.SetItem(
+                1,
+                FakeGameServer.SeatZeroToMove.Seats[1] with
+                {
+                    Chances =
+                    [
+                        new ActionDto(
+                            "face-off",
+                            ImmutableSortedDictionary<string, string>.Empty.Add("caller", "3").Add("faced", "43")
+                        )
+                        {
+                            Label = "Face-off!",
+                        },
+                    ],
+                }
+            ),
+        };
+
+    [Fact]
     public void Render_WhenNoOneWouldStopWaitingForTheAbsentPlayer_SaysNothingOfIt()
     {
         // Arrange - another seat is the one waited for

@@ -101,6 +101,14 @@ file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bo
             PieceMoved moved => this.Moved(number, moved),
             PawnsSwapped swapped => this.Swapped(number, swapped),
             PieceCaptured captured => this.Captured(number, captured),
+            LeadersFacedOff faced => this.Add(
+                number,
+                EventDto.Moved,
+                faced.CalledBy,
+                $"{this.Name(faced.CalledBy)} called a face-off: {this.Whose(faced.Caller.Owner, faced.CalledBy)} "
+                    + $"{this.Rules.NameOf(faced.Caller.Kind)} and {this.Name(faced.Faced.Owner)}'s "
+                    + $"{this.Rules.NameOf(faced.Faced.Kind)} each take the other."
+            ),
             CommandBegun begun => this.Add(number, EventDto.Command, begun.Commander, this.Begun(begun)),
             CommandEnded ended => this.Ended(
                 number,

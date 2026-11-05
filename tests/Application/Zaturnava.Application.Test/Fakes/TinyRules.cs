@@ -17,10 +17,12 @@ namespace Net.NowhereAtAll.Zaturnava.Application.Test.Fakes;
 /// decides; a seat passed while away may say it is back. Its board is a row of four cells
 /// (<see cref="TinyBoard"/>), where each seat has a Pawn, and the first a King, that never move. If
 /// <paramref name="isDealt"/>, each game is dealt anew: its seed is the first seat's score, to tell it by. Given a
-/// <paramref name="failure"/>, applying any action throws it, as rules that no longer replay a game might.
-/// Enough to drive the application without any real game.
+/// <paramref name="failure"/>, applying any action throws it, as rules that no longer replay a game might. If
+/// <paramref name="hasFaceOff"/>, the first seat's King faces the second seat's Pawn, which it may call a face-off
+/// against whoever decides, taking the King off the board. Enough to drive the application without any real game.
 /// </summary>
-internal sealed class TinyRules(int length, bool isDealt = false, Exception? failure = null) : IRulesApplying
+internal sealed class TinyRules(int length, bool isDealt = false, Exception? failure = null, bool hasFaceOff = false)
+    : IRulesApplying
 {
     public const string RulesetId = "tiny";
     public const int SeatCount = 2;
@@ -84,6 +86,10 @@ internal sealed class TinyRules(int length, bool isDealt = false, Exception? fai
             {
                 Absence = state.Absence with { Returning = state.Absence.Returning.Add(rejoin.Actor) },
             },
+            (FaceOffAction faceOff, _) => state with
+            {
+                Position = new Position(state.Position.Occupants.Remove(faceOff.Caller)),
+            },
             (_, true) => this.After(state),
             _ => throw new IllegalActionException(action),
         };
@@ -100,6 +106,11 @@ internal sealed class TinyRules(int length, bool isDealt = false, Exception? fai
 
     public bool MayVoteAway([Required] GameState state, SeatId voter, SeatId absent) =>
         voter != absent && state.DecidingSeat is not null;
+
+    public ImmutableList<GameAction> ChancesOf([Required] GameState state, SeatId seat) =>
+        hasFaceOff && seat.Value == 0 && state.Position.PieceAt(new CellId(1)) is not null
+            ? [new FaceOffAction(seat, new CellId(1), new CellId(3))]
+            : [];
 
     public DecisionTimer? TimerOf([Required] GameState state) =>
         state.DecidingSeat?.Value == 1

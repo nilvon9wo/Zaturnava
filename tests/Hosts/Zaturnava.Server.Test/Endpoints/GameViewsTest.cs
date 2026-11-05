@@ -642,6 +642,42 @@ public sealed class GameViewsTest
     }
 
     [Fact]
+    public void ViewOf_WhenASeatMayCallAFaceOffWhileAnotherDecides_OffersItToThatSeatAndSaysWhatItDoes()
+    {
+        // Arrange - a Grand Legions game: Black's Janggi General faces Yellow's Western King up a file, nothing
+        // between, while Yellow decides; Black's Pawn plays on
+        Chaturaji2027Rules grand = GrandLegionsRules.RulesOf(QuickGame.Small);
+        CellId general = Cell(grand, 2, 0);
+        CellId king = Cell(grand, 2, 5);
+        GameState state = grand.CreateInitialState() with
+        {
+            RollOff = [],
+            AwaitedDice = null,
+            DecidingSeat = new SeatId(1),
+            Position = Position.Empty
+                .Place(general, Holder(GrandLegionsPieces.JanggiGeneral, 0))
+                .Place(king, new Piece(new PieceId(98), GrandLegionsPieces.WesternKing, new SeatId(1)))
+                .Place(Cell(grand, 0, 0), new Piece(new PieceId(97), GrandLegionsPieces.WesternPawn, new SeatId(0))),
+        };
+
+        // Act
+        GameViewDto view = GameViews.ViewOf(Snapshot(grand, state), Bots);
+
+        // Assert
+        ActionDto chance = view.Seats[0].Chances.Single();
+        Assert.Equal(
+            (
+                FaceOffAction.Kind,
+                $"Face-off: your General (Janggi) on {grand.Topology.NameOf(general)} and "
+                    + $"{grand.NameOf(new SeatId(1))}'s King (Western) on {grand.Topology.NameOf(king)}, "
+                    + "each taken by the other's side",
+                0
+            ),
+            (chance.Kind, chance.Label, view.Seats[1].Chances.Count)
+        );
+    }
+
+    [Fact]
     public void ViewOf_WhenTheRulesDrawPiecesAsThemselves_MarksNone()
     {
         // Arrange
@@ -661,6 +697,10 @@ public sealed class GameViewsTest
     }
 
     private static Piece Holder(PieceKindId kind, int owner) => new(new PieceId(99), kind, new SeatId(owner));
+
+    /// <summary>The cell of a square board, counted from the bottom left.</summary>
+    private static CellId Cell(Chaturaji2027Rules rules, int column, int row) =>
+        new((row * (int)Math.Sqrt(rules.Topology.Cells.Count)) + column);
 
     private static string Flags(GameViewDto view, Func<SeatDto, bool> flag) =>
         string.Join(',', view.Seats.Select(flag));

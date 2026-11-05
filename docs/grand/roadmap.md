@@ -200,6 +200,12 @@ drawn simply, a shape for its class and a letter for its kind.
   line. Still to come with palaces: the General's confinement, suspended outside every palace.
 - The leader face-off: a decision out of turn, open for as long as the two leaders face each other;
   a flashing button while it is open, and optionally a pause when it first opens (specification §6.4).
+  *Done* (2026-11-05) for the Janggi General (`FaceOff`), but for the pause: the rules offer each
+  seat its chances (`ChancesOf`), the table shows each as a flashing button, and a bot is asked
+  after every action whether to seize one (`IDeciding.Seize`). *Proposed*: no chance is open while
+  the game waits on something else (dice, a promotion, an offer or a proposal, the roll-off), nor
+  for a seat retired or against a retired seat's leader; and the bots call a face-off only when it
+  widens their side's lead. Still to come: the optional pause.
 
 ## Stage 7 — Looks
 

@@ -53,6 +53,23 @@ public sealed class GameLogTest
     }
 
     [Fact]
+    public void LatestOf_WhenAFaceOffIsCalled_TellsWhoCalledItAndWhichLeadersTookEachOther()
+    {
+        // Arrange
+        Piece blackRaja = new(new PieceId(1), Chaturaji2027Pieces.Raja, Black);
+        GameSnapshot snapshot = Snapshot(new LeadersFacedOff(blackRaja, RedRaja, Black));
+
+        // Act
+        ImmutableList<EventDto> log = GameLog.LatestOf(snapshot);
+
+        // Assert
+        Assert.Equal(
+            ["moved 0: Black called a face-off: their Raja and Red's Raja each take the other."],
+            log.Select(Told)
+        );
+    }
+
+    [Fact]
     public void LatestOf_WhenThingsHappened_TellsOfEachInTheRulesetsNames()
     {
         // Arrange

@@ -244,7 +244,10 @@ internal static class GameViews
             controller.IsGuest,
             controller is HumanSeat { IsAi: true },
             controller is HumanSeat { Claimant: { } claimant } ? claimant.Value : null
-        );
+        )
+        {
+            Chances = [.. snapshot.Rules.ChancesOf(snapshot.State, seat).Select(chance => ActionOf(snapshot, chance))],
+        };
     }
 
     /// <summary>
@@ -326,8 +329,21 @@ internal static class GameViews
             (PassAction, _, { }) => "Promote later",
             (MoveAction move, _, _) => SwapOf(snapshot, move),
             (RetireAction, _, _) => "Retire from the game: taking your Raja will score no one",
+            (FaceOffAction faceOff, _, _) => FaceOffOf(snapshot, faceOff),
             _ => null,
         };
+
+    /// <summary>"Face-off: your General (Janggi) on e1 and Yellow's Raja on e8, each taken by the other's side".
+    /// </summary>
+    private static string FaceOffOf(GameSnapshot snapshot, FaceOffAction faceOff)
+    {
+        IRulesApplying rules = snapshot.Rules;
+        Piece caller = snapshot.State.Position.PieceAt(faceOff.Caller)!; // a chance names leaders on the board
+        Piece faced = snapshot.State.Position.PieceAt(faceOff.Faced)!;
+        return $"Face-off: your {rules.NameOf(caller.Kind)} on {rules.Topology.NameOf(faceOff.Caller)} and "
+            + $"{rules.NameOf(faced.Owner)}'s {rules.NameOf(faced.Kind)} on {rules.Topology.NameOf(faceOff.Faced)}, "
+            + "each taken by the other's side";
+    }
 
     /// <summary>"Swap places with Green's Pawn", if the move swaps with the piece it goes to; the rules say.</summary>
     private static string? SwapOf(GameSnapshot snapshot, MoveAction move) =>

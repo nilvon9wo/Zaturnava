@@ -28,6 +28,7 @@ public sealed class ActionParser(ImmutableDictionary<string, Func<ActionDescript
             .Add(OfferAction.Kind, OfferAction.Parse)
             .Add(AcceptAction.Kind, AcceptAction.Parse)
             .Add(DeclineAction.Kind, DeclineAction.Parse)
+            .Add(FaceOffAction.Kind, FaceOffAction.Parse)
     );
 
     /// <exception cref="MalformedActionException">The kind is unknown, or an argument is malformed.</exception>

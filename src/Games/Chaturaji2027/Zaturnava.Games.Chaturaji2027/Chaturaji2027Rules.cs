@@ -67,6 +67,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     private readonly StartRowMoves _startRows;
     private readonly Castling _castling;
     private readonly FlyingCapture _flying;
+    private readonly FaceOff _faceOff;
 
     public Chaturaji2027Rules()
         : this(DiceProfile.WeightedSixSided, DefaultIdleRounds, PawnPromotion.OtherArmies)
@@ -122,6 +123,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             this.AttackedAgainst
         );
         this._flying = new FlyingCapture(this._grid, this._variant.FlyingCapturers, this._variant.Leaders);
+        this._faceOff = new FaceOff(this._grid, this._variant.FaceOffCallers, this._variant.Leaders);
     }
 
     public string Id => this._variant.Id;
@@ -197,6 +199,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
                                 RejoinAction rejoin => this.Rejoined(state, rejoin),
                                 VoteAwayAction vote => this.Voted(state, vote),
                                 PassAwayAction pass => this.PassedAway(state, pass),
+                                FaceOffAction faceOff => this.FacedOff(state, faceOff),
                                 _ => this.Decided(state, action),
                             }
                         ),
@@ -226,6 +229,23 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
 
     public bool MayVoteAway([Required] GameState state, SeatId voter, SeatId absent) =>
         Away.MayVote(state, voter, absent);
+
+    /// <summary>
+    /// Each leader face-off <paramref name="seat"/> may call (<see cref="FaceOff"/>), with a caller of an army it
+    /// commands; none while the game waits on something else first (Proposed): dice, a promotion, prisoners going
+    /// home, an offer, a proposal to end, or the roll for who goes first; nor once it is over, or the seat retired.
+    /// </summary>
+    public ImmutableList<GameAction> ChancesOf([Required] GameState state, SeatId seat) =>
+        state.Outcome is null
+        && state.AwaitedDice is null
+        && state.PromotionDue is null
+        && state.Returning is null
+        && state.Offer is null
+        && state.Proposal is null
+        && state.RollOff.IsEmpty
+        && !state.Retired.Contains(seat)
+            ? [.. this._faceOff.ChancesOf(state, seat, this._control.ArmiesOf(state with { ActingFor = null }, seat))]
+            : [];
 
     /// <summary>
     /// A seat choosing where a piece goes home, answering an offer, or offering once its turn is over, has
@@ -622,6 +642,35 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             : throw new IllegalActionException(pass);
         Transition passed = this.Act(missed.State, new PassAction(seat));
         return passed with { Events = [.. missed.Events, .. passed.Events] };
+    }
+
+    /// <summary>
+    /// The face-off: the faced leader taken by the caller's seat, the caller by the faced leader's, both scoring;
+    /// whoever decided still does, unless the game is over.
+    /// </summary>
+    /// <exception cref="IllegalActionException">The seat may not call this face-off now.</exception>
+    private Transition FacedOff(GameState state, FaceOffAction faceOff)
+    {
+        Piece caller = this.ChancesOf(state, faceOff.Actor).Contains(faceOff)
+            ? state.Position.PieceAt(faceOff.Caller)!
+            : throw new IllegalActionException(faceOff);
+        Piece faced = state.Position.PieceAt(faceOff.Faced)!;
+        Position position = new(state.Position.Occupants.Remove(faceOff.Caller).Remove(faceOff.Faced));
+        Transition called = new(
+            state with
+            {
+                Position = position,
+                Passages = [.. state.Passages.Where(passage => position.PieceAt(passage.To) is not null)],
+            },
+            [new LeadersFacedOff(caller, faced, faceOff.Actor)]
+        );
+        Transition taken = this.Captured(
+            this.Captured(called, faced, faceOff.Actor, faceOff.Faced),
+            caller,
+            faced.Owner,
+            faceOff.Caller
+        );
+        return GameEnd.AfterMove(taken, this._variant) ?? taken;
     }
 
     /// <summary>Whatever a seat plays itself shows it is not away.</summary>

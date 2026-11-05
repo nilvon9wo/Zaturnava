@@ -32,17 +32,63 @@ public static class DecisionLoop
         CancellationToken cancellationToken
     )
     {
-        Played current = played;
+        Played current = await Seized(rules, played, deciderFor, cancellationToken);
         int stepsLeft = maximumSteps;
         IDeciding? decider = NextDecider(current.State, deciderFor, dice, stepsLeft);
         while (decider is not null)
         {
             stepsLeft = current.State.AwaitedDice is null ? stepsLeft - 1 : stepsLeft;
-            current = await Step(rules, current, decider, cancellationToken);
+            Played stepped = await Step(rules, current, decider, cancellationToken);
+            current = await Seized(rules, stepped, deciderFor, cancellationToken);
             decider = NextDecider(current.State, deciderFor, dice, stepsLeft);
         }
 
         return current;
+    }
+
+    /// <summary>
+    /// Each seat with a decider, in seat order, is offered the chances it has, whoever decides (a leader face-off), at
+    /// once; and again after any is taken, until none is.
+    /// </summary>
+    private static async Task<Played> Seized(
+        IRulesApplying rules,
+        Played played,
+        Func<SeatId, IDeciding?> deciderFor,
+        CancellationToken cancellationToken
+    )
+    {
+        Played current = played;
+        GameAction? taken = await Seizing(rules, current.State, deciderFor, cancellationToken);
+        while (taken is not null)
+        {
+            current = new Played(rules.Apply(current.State, taken).State, current.Actions.Add(taken.Describe()));
+            taken = await Seizing(rules, current.State, deciderFor, cancellationToken);
+        }
+
+        return current;
+    }
+
+    /// <summary>The first chance a seat's decider takes, in seat order; none, if none does.</summary>
+    private static async Task<GameAction?> Seizing(
+        IRulesApplying rules,
+        GameState state,
+        Func<SeatId, IDeciding?> deciderFor,
+        CancellationToken cancellationToken
+    )
+    {
+        foreach (Seat seat in state.Seats)
+        {
+            ImmutableList<GameAction> chances = rules.ChancesOf(state, seat.Id);
+            GameAction? taken = !chances.IsEmpty && deciderFor(seat.Id) is { } decider
+                ? await decider.Seize(new DecisionRequest(rules, state, seat.Id, chances), cancellationToken)
+                : null;
+            if (taken is not null)
+            {
+                return taken;
+            }
+        }
+
+        return null;
     }
 
     /// <summary>

@@ -14,4 +14,7 @@ public sealed class AmongPeople([Required] IDeciding bot, [Required] ImmutableHa
 
     public Task<GameAction> Decide([Required] DecisionRequest request, CancellationToken cancellationToken) =>
         this._bot.Decide(request with { People = this._people }, cancellationToken);
+
+    public Task<GameAction?> Seize([Required] DecisionRequest request, CancellationToken cancellationToken) =>
+        this._bot.Seize(request with { People = this._people }, cancellationToken);
 }
