@@ -151,8 +151,9 @@ public sealed class StartRowMovesTest
         // Act
         GameState moved = this._rules.Apply(state, new MoveAction(Yellow, Cell(2, 5), Cell(2, 2))).State;
 
-        // Assert
-        Assert.Equal(black, moved.Passages[0]);
+        // Assert - Black's still stands, but not for Yellow, whose turn is over
+        Assert.Equal((BlackPawn, Cell(3, 3)), (moved.Passages[0].Piece, moved.Passages[0].To));
+        Assert.Equal([Yellow], moved.Passages[0].Closed);
         Passage passage = moved.Passages[1];
         Assert.Equal(
             (YellowElephant, Cell(2, 5), Cell(2, 2)),
@@ -326,23 +327,145 @@ public sealed class StartRowMovesTest
     }
 
     [Fact]
-    public void Apply_WhenTheTurnComesToTheSeatThatPassed_NoLongerLetsItsPieceBeTakenInPassing()
+    public void Apply_WhenASeatsTurnEndsWithoutTakingInPassing_LetsItTakeNoMoreButLeavesItToOthers()
     {
-        // Arrange - Yellow's passing and Red's both stand as Black passes the turn to Yellow
+        // Arrange - Yellow's Elephant passed; Green, Black's ally, plays on
         GameState passed = this.Passed(YellowElephant, Cell(1, 4), Cell(4, 4));
-        Passage red = new(RedElephant, Cell(7, 6), [Cell(6, 6)], Cell(5, 6));
+        GameState state = passed with { Position = passed.Position.Place(Cell(7, 7), GreenElephant) };
+
+        // Act
+        GameState handed = this._rules.Apply(state, new PassAction(Black)).State;
+
+        // Assert
+        Assert.Equal([Black], Assert.Single(handed.Passages).Closed);
+        Assert.DoesNotContain(new MoveAction(Black, Cell(3, 3), Cell(4, 4)), this._rules.ChancesOf(handed, Black));
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Apply_WhenNoEnemyStillPlayingMayTakeAPassingPiece_LeavesNothingToTakeInPassing(bool isGreenPlaying)
+    {
+        // Arrange - Green, if it plays, has had its turn since Yellow's Elephant passed; then Black's ends
+        GameState passed = this.Passed(YellowElephant, Cell(1, 4), Cell(4, 4));
         GameState state = passed with
         {
-            Position = passed.Position.Place(Cell(5, 6), RedElephant),
-            Passages = passed.Passages.Add(red),
+            Position = isGreenPlaying ? passed.Position.Place(Cell(7, 7), GreenElephant) : passed.Position,
+            Passages = [passed.Passages[0] with { Closed = [Green] }],
         };
 
         // Act
         GameState handed = this._rules.Apply(state, new PassAction(Black)).State;
 
         // Assert
-        Assert.Equal(Yellow, handed.DecidingSeat);
-        Assert.Equal([red], handed.Passages);
+        Assert.Empty(handed.Passages);
+    }
+
+    [Fact]
+    public void ChancesOf_WhileAnotherSeatDecides_IsEachTakingInPassingTheSeatMayMake()
+    {
+        // Arrange - Yellow's Elephant went from c6 to c2, past Black's Pawn on d4, and Yellow decides on
+        GameState state = this.Passed(YellowElephant, Cell(2, 5), Cell(2, 1)) with { DecidingSeat = Yellow };
+
+        // Act
+        ImmutableList<GameAction> chances = this._rules.ChancesOf(state, Black);
+
+        // Assert
+        Assert.Equal([new MoveAction(Black, Cell(3, 3), Cell(2, 4))], chances);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void ChancesOf_OnItsOwnTurnOrOnceItsTurnHasEnded_IsNoTakingInPassing(bool isOwnTurn)
+    {
+        // Arrange - on its own turn, taking is an ordinary move, for a die; once that turn has ended, it is too late
+        GameState passed = this.Passed(YellowElephant, Cell(2, 5), Cell(2, 1));
+        GameState state = isOwnTurn
+            ? passed
+            : passed with
+            {
+                DecidingSeat = Yellow,
+                Passages = [passed.Passages[0] with { Closed = [Black] }],
+            };
+
+        // Act
+        ImmutableList<GameAction> chances = this._rules.ChancesOf(state, Black);
+
+        // Assert
+        Assert.Empty(chances);
+    }
+
+    [Fact]
+    public void Apply_WhenAPawnTakesInPassingOutOfTurn_TakesForNoDieAndWhoeverDecidedStillDoes()
+    {
+        // Arrange - Yellow decides, its die unused; Red's Elephant on h1 plays on
+        GameState passed = this.Passed(YellowElephant, Cell(2, 5), Cell(2, 1));
+        GameState state = passed with
+        {
+            DecidingSeat = Yellow,
+            Dice = [ElephantDie],
+            Position = passed.Position.Place(Cell(7, 0), RedElephant),
+        };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new MoveAction(Black, Cell(3, 3), Cell(2, 4)));
+
+        // Assert
+        GameState after = transition.State;
+        Assert.Equal(
+            (BlackPawn, false, Yellow),
+            (after.Position.PieceAt(Cell(2, 4)), after.Position.PieceAt(Cell(2, 1)) is not null, after.DecidingSeat)
+        );
+        Assert.Equal([ElephantDie], after.Dice);
+        Assert.Contains(new PieceCaptured(YellowElephant, Black, 4), transition.Events);
+        Assert.Empty(after.Passages);
+    }
+
+    [Fact]
+    public void Apply_WhenNoSeatDecides_StillLetsAPawnTakeInPassing()
+    {
+        // Arrange - between decisions, no seat deciding; Red's Elephant on h1 plays on
+        GameState passed = this.Passed(YellowElephant, Cell(2, 5), Cell(2, 1));
+        GameState state = passed with
+        {
+            DecidingSeat = null,
+            Position = passed.Position.Place(Cell(7, 0), RedElephant),
+        };
+
+        // Act
+        GameState after = this._rules.Apply(state, new MoveAction(Black, Cell(3, 3), Cell(2, 4))).State;
+
+        // Assert
+        Assert.Equal(BlackPawn, after.Position.PieceAt(Cell(2, 4)));
+    }
+
+    [Fact]
+    public void Apply_WhenTakingInPassingOutOfTurnTakesTheLastEnemyPiece_EndsTheGame()
+    {
+        // Arrange - Yellow's Elephant is all Black's enemies have left
+        GameState state = this.Passed(YellowElephant, Cell(2, 5), Cell(2, 1)) with { DecidingSeat = Yellow };
+
+        // Act
+        GameState after = this._rules.Apply(state, new MoveAction(Black, Cell(3, 3), Cell(2, 4))).State;
+
+        // Assert
+        Assert.NotNull(after.Outcome);
+    }
+
+    [Fact]
+    public void Apply_WhenAMoveOutOfTurnIsNoChanceTheSeatHas_Throws()
+    {
+        // Arrange - Yellow decides, and nothing passed Black's Pawn
+        GameState state = this.BlackToMove(Cell(3, 1), PawnDie, (Cell(3, 3), BlackPawn)) with { DecidingSeat = Yellow };
+
+        // Act
+        Exception? exception = Record.Exception(
+            () => this._rules.Apply(state, new MoveAction(Black, Cell(3, 3), Cell(3, 4)))
+        );
+
+        // Assert
+        _ = Assert.IsType<IllegalActionException>(exception);
     }
 
     private static Chaturaji2027Rules RulesWith(int rows) =>

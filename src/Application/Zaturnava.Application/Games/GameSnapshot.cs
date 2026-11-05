@@ -83,7 +83,7 @@ public sealed record GameSnapshot(
             RejoinAction => this.Rules.MayRejoin(this.State, action.Actor),
             VoteAwayAction { Stops: false } vote => this.Rules.MayVoteAway(this.State, vote.Actor, vote.Absent),
             VoteAwayAction vote => this.Away is { IsOpen: true } away && away.Absent == vote.Absent,
-            FaceOffAction => this.Rules.ChancesOf(this.State, action.Actor).Contains(action),
+            FaceOffAction or MoveAction => this.Rules.ChancesOf(this.State, action.Actor).Contains(action),
             _ => false,
         };
 

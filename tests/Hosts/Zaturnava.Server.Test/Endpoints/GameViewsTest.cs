@@ -6,6 +6,7 @@ using Net.NowhereAtAll.Zaturnava.Contracts;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Boards;
 using Net.NowhereAtAll.Zaturnava.Engine.Decisions;
+using Net.NowhereAtAll.Zaturnava.Engine.Moves;
 using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
 using Net.NowhereAtAll.Zaturnava.Engine.Positions;
 using Net.NowhereAtAll.Zaturnava.Engine.Rules;
@@ -674,6 +675,42 @@ public sealed class GameViewsTest
                 0
             ),
             (chance.Kind, chance.Label, view.Seats[1].Chances.Count)
+        );
+    }
+
+    [Fact]
+    public void ViewOf_WhenASeatMayTakeInPassingWhileAnotherDecides_OffersItToThatSeatAndSaysWhatItTakes()
+    {
+        // Arrange - Chaturaji 2027 with Pawns that take in passing: Yellow's Elephant went from c6 to c3, past
+        // Black's Pawn on d4, and Yellow decides on
+        Chaturaji2027Rules rules = new(
+            DiceProfile.WeightedSixSided,
+            Chaturaji2027Rules.DefaultIdleRounds,
+            PawnPromotion.OtherArmies,
+            variant: Chaturaji2027Variant.Standard with { StartRowPowers = [Chaturaji2027Pieces.Pawn] }
+        );
+        Piece elephant = new(new PieceId(98), Chaturaji2027Pieces.Elephant, new SeatId(1));
+        CellId pawn = Cell(rules, 3, 3);
+        CellId landed = Cell(rules, 2, 2);
+        GameState state = rules.CreateInitialState() with
+        {
+            RollOff = [],
+            AwaitedDice = null,
+            DecidingSeat = new SeatId(1),
+            Position = Position.Empty
+                .Place(pawn, Holder(Chaturaji2027Pieces.Pawn, 0))
+                .Place(landed, elephant),
+            Passages = [new Passage(elephant, Cell(rules, 2, 5), [Cell(rules, 2, 4), Cell(rules, 2, 3)], landed)],
+        };
+
+        // Act
+        GameViewDto view = GameViews.ViewOf(Snapshot(rules, state), Bots);
+
+        // Assert
+        ActionDto chance = view.Seats[0].Chances.Single();
+        Assert.Equal(
+            (MoveAction.Kind, "En passant: your Pawn on d4 to c5, taking Yellow's Elephant on c3"),
+            (chance.Kind, chance.Label)
         );
     }
 

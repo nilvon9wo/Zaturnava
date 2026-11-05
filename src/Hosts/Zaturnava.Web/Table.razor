@@ -1031,13 +1031,18 @@
         this.Request(() => this.Games.Submit(this.Seating.GameId, claim.Token, action, CancellationToken.None));
 
     /// <summary>
-    /// Takes a chance, as a leader face-off; should it have gone meanwhile, the other leader having moved away first,
-    /// says so kindly.
+    /// Takes a chance, a leader face-off or an <i>en passant</i>; should it have gone meanwhile, the other leader or
+    /// the passing piece having moved first, says so kindly.
     /// </summary>
     private async Task Seize(SeatClaim claim, ActionDto chance)
     {
         await this.Submit(claim, chance);
-        this._problem = this._problem is null ? null : "Too late, sorry: the two leaders no longer face each other.";
+        this._problem = (this._problem, chance.Kind) switch
+        {
+            (null, _) => null,
+            (_, "face-off") => "Too late, sorry: the two leaders no longer face each other.",
+            _ => "Too late, sorry: that piece can no longer be taken in passing.",
+        };
     }
 
     /// <summary>
