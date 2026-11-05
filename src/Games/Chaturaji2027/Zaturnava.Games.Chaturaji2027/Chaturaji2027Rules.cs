@@ -108,7 +108,9 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         this._measures = new ArmyMeasures(
             this._grid,
             this._variant.Pawns,
-            (state, cell, piece) => this.MovesFrom(state, cell, piece, piece.Owner)
+            (state, cell, piece) => this.MovesFrom(state, cell, piece, piece.Owner),
+            this.AttacksOf,
+            this._control
         );
         this._startRows = new StartRowMoves(
             this._grid,
@@ -292,7 +294,8 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
 
     /// <summary>
     /// What a bot may weigh beyond what every ruleset has: how far the army's Pawns have come and how near they are
-    /// to promoting, and its pieces' reach where they stand, and how much of it goes back (<see cref="ArmyMeasures"/>).
+    /// to promoting, its pieces' reach where they stand and how much of it goes back, how safe its leaders and thrones
+    /// are, and how many other armies' pieces it commands (<see cref="ArmyMeasures"/>).
     /// </summary>
     public ImmutableList<string> Measures => ArmyMeasures.Names;
 

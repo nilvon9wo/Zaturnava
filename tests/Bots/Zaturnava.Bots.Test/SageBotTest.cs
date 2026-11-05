@@ -366,6 +366,33 @@ public sealed class SageBotTest
     }
 
     [Fact]
+    public void Learned_WhenAsked_HasWeightsForTheSmallGrandLegionsBoard()
+    {
+        // Arrange - nothing beyond what Sage has learned
+
+        // Act
+        SageWeights small = SageWeights.Learned["grand-legions-small"];
+
+        // Assert
+        Assert.Equal(
+            (new Sided(0.7, 1, 1), new Sided(2.6, 2, 2), new Sided(3.9, 3, 3)),
+            (small.Material, small.Leaders, small.Thrones)
+        );
+    }
+
+    [Fact]
+    public void Learned_WhenAsked_HasWeightsForTheMediumGrandLegionsBoard()
+    {
+        // Arrange - nothing beyond what Sage has learned
+
+        // Act
+        SageWeights medium = SageWeights.Learned["grand-legions-medium"];
+
+        // Assert
+        Assert.Equal(new Sided(2, 2, 2.6), medium.Leaders);
+    }
+
+    [Fact]
     public void With_WhenGivenAWeight_ChangesThatOneOnly()
     {
         // Arrange

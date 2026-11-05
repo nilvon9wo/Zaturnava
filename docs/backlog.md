@@ -138,6 +138,18 @@ first.
        pieces' reach where they stand (their moves, all told), and how many of those moves go back. They
        start at no weight, for tuning to find theirs; Athena's network, trained before them, plays on
        seeing only the measures it knew. Next: tune them, and teach Athena them.
+     - *(Stated 2026-11-05)* Safety and shared command: the safety of every side's leaders, not only
+       the bot's own; the safety of thrones, as losing a throne loses command of an army; and command
+       shared through thrones and regency, so that moves can be coordinated and one piece may move on
+       more turns of a round than its own army's (taking, then getting away before the counterattack).
+       Done *(Proposed: each measure)*: Chaturaji 2027 and the grand game measure, for each seat, how
+       many of its leaders an enemy could take next (`leaders-attacked`); how many of the thrones it
+       commands by are in danger (`thrones-in-danger`: its own, should an enemy leader be able to step
+       onto it or take its leader there, and each other throne its leader sits on, should an enemy be
+       able to take that leader); and how many pieces of other armies it commands on its own turns
+       (`commanded`). As every measure is, each is weighed apart for the bot's own seat, its allies and
+       its enemies, starting at no weight for tuning to find. Next: tune them; and a bot that hands its
+       turn to a regent ally (no bot does yet) when the ally would play the rest of it better.
      - *(Stated 2026-11-05)* Private team chat, and how well bots plan through it, is another thing
        to measure; moot while our bots do not talk, and not with bots that spend tokens.
   3. **A learned bot**, the AI to play against: a small neural network, trained by self-play and on
