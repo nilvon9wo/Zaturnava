@@ -13,6 +13,8 @@
   <ItemGroup>
     <!-- What the bonuses score (Scoring.Of), a table that can be changed apart from the code. -->
     <EmbeddedResource Include="Scoring\*.json" LogicalName="Scoring/%(Filename)%(Extension)" />
+    <!-- What each piece is worth (PieceValues.Of), a table that can be changed apart from the code. -->
+    <EmbeddedResource Include="Values\*.json" LogicalName="Values/%(Filename)%(Extension)" />
   </ItemGroup>
 
 </Project>

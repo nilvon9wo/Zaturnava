@@ -122,8 +122,9 @@ What the program does so far (2026-11-04), and the gaps against the above:
 - *Gap*: there is no setting yet for all four armies alike, or laid out symmetrically.
 - The Chaturaji 2027 bonuses are × 10, as is the lead a team needs to win by giving up its turns
   (*Proposed*: 100), each read from a table (`Scoring/grand-legions.json`; Chaturaji 2027's own in
-  `Scoring/chaturaji-2027.json`) that can be changed apart from the code. Piece values are still in
-  the code (`GrandLegionsPieces`, `Chaturaji2027Pieces`): a gap, against specification §6.3.
+  `Scoring/chaturaji-2027.json`) that can be changed apart from the code. Piece values, each piece's
+  price and what taking it scores, are read from tables too (`Values/grand-legions.json`,
+  `Values/chaturaji-2027.json`), as specification §6.3 asks.
 - The board has no river in a quick game yet; a river keeps a Xiangqi Elephant on its own side
   (`RiverCrossing`). The Xiangqi Soldier's sideways step once across is still to come. Until quick
   games have rivers, they have no river pieces.
@@ -174,7 +175,8 @@ drawn simply, a shape for its class and a letter for its kind.
 
 ## Stage 6 — Special powers
 
-- Start-row powers: the two-square first move, *en passant*, which may take any infantry piece.
+- Start-row powers: the two-square first move, *en passant*, which may take any enemy piece that
+  moves forward two squares or more past the pawn, from two squares away (specification §3).
 - Castling.
 - The flying-general capture.
 - The leader face-off: a decision out of turn, open for as long as the two leaders face each other;
