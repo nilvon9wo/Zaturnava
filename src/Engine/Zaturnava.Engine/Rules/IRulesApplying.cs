@@ -60,9 +60,24 @@ public interface IRulesApplying
     /// <summary>
     /// The new game <paramref name="initial"/>, dealt by <paramref name="seed"/>: the same seed always deals the same
     /// game, so that a game replays from the seed it began with; every army alike, laid out alike, if
-    /// <paramref name="areAlike"/>. As it is, for a ruleset that is not dealt.
+    /// <paramref name="areAlike"/>; its terrain too (<see cref="GameState.Terrain"/>: its rivers, say), if
+    /// <paramref name="dealsTerrain"/>, which a game dealt before terrain was never does. As it is, for a ruleset
+    /// that is not dealt.
     /// </summary>
-    GameState Deal([Required] GameState initial, int seed, bool areAlike = false) => initial;
+    GameState Deal([Required] GameState initial, int seed, bool areAlike = false, bool dealsTerrain = false) =>
+        initial;
+
+    /// <summary>
+    /// The lines drawn on the board in the game as it stands, such as its rivers; none, unless the ruleset says
+    /// otherwise.
+    /// </summary>
+    ImmutableList<BoardLine> LinesOf([Required] GameState state) => [];
+
+    /// <summary>
+    /// What a player should know of the board in the game as it stands beyond its cells and lines: "A river runs
+    /// north to south, around the kingdoms"; null, if nothing.
+    /// </summary>
+    string? TerrainOf([Required] GameState state) => null;
 
     /// <summary>What the deciding seat may do; empty once the game is over, and while it waits on dice.</summary>
     ImmutableList<GameAction> LegalActions([Required] GameState state);

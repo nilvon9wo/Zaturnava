@@ -1,5 +1,7 @@
 using Net.NowhereAtAll.Zaturnava.Engine.Moves;
 using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
+using Net.NowhereAtAll.Zaturnava.Engine.Positions;
+using Net.NowhereAtAll.Zaturnava.Engine.Rules;
 using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 using Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
 using Net.NowhereAtAll.Zaturnava.Topology.SquareGrid;
@@ -21,14 +23,19 @@ public sealed class RiverCrossingTest
         bool mayMove
     )
     {
-        // Arrange - seat 0's piece, in the west, goes to the column given
-        GrandBoard board = new(side, side, 3, 3, Rivers: Rivers.NorthSouth);
+        // Arrange - seat 0's piece, in the west, goes to the column given, in a game dealt a north-south river
+        QuickGame game = QuickGame.Medium with { Side = side, KingdomWidth = 3, KingdomDepth = 3 };
+        GameState state = new(Position.Empty, [], TeamGraph.FromTeams([]), null, 0, [], []) { Terrain = 1 };
         SquareGridTopology grid = new(side, side);
         Piece piece = new(new PieceId(1), new PieceKindId(kind), new SeatId(0));
-        MoveAllowing allowing = RiverCrossing.On(board);
+        MoveAllowing allowing = RiverCrossing.On(game);
 
         // Act
-        bool isAllowed = allowing(grid, new Move(piece, grid.CellAt(column - 2, 1), grid.CellAt(column, 3), null));
+        bool isAllowed = allowing(
+            state,
+            grid,
+            new Move(piece, grid.CellAt(column - 2, 1), grid.CellAt(column, 3), null)
+        );
 
         // Assert
         Assert.Equal(mayMove, isAllowed);

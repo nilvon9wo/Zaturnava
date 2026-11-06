@@ -138,12 +138,14 @@ What the program does so far (2026-11-04), and the gaps against the above:
   `Scoring/chaturaji-2027.json`) that can be changed apart from the code. Piece values, each piece's
   price and what taking it scores, are read from tables too (`Values/grand-legions.json`,
   `Values/chaturaji-2027.json`), as specification §6.3 asks.
-- The board has no river in a quick game yet; a river keeps a Xiangqi Elephant on its own side
-  (`RiverCrossing`). The Xiangqi Soldier's sideways step once across is still to come. Until quick
-  games have rivers, they have no river pieces. *Stated* (2026-11-06): a quick game's rivers are
-  decided at random, each layout equally likely (none, north–south, east–west, both), through the
-  kingdoms or around them equally likely; the game's description tells them, and playing again with
-  the same armies keeps them (specification §2). Still to come.
+- A river keeps a Xiangqi Elephant on its own side (`RiverCrossing`). The Xiangqi Soldier's
+  sideways step once across is still to come. *Stated* (2026-11-06), *done*: a quick game's rivers
+  are decided at random, each layout equally likely (none, north–south, east–west, both), through
+  the kingdoms or around them equally likely (`QuickTerrain`, kept as the game's terrain); they are
+  drawn in blue on the board and told beside the game's name, the armies are picked for them (river
+  pieces only with a river), and playing again with the same armies keeps them (specification §2).
+  *Proposed*: they are dealt by the same seed as the armies, so a game replays with them; a game
+  dealt before rivers were has none.
 - The Medium kingdom, 4 × 2, is below the 3 × 3 a palace needs; quick games have no palace, so it
   plays, but a Medium game with palaces will need the palace to stand partly outside the kingdom
   (specification §5), or none.

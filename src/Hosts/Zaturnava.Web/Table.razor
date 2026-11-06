@@ -471,6 +471,10 @@
     <footer class="bar table-bar">
         <span class="where">
             <span class="brand">@(this._view?.RulesetName ?? "Zaturnava")</span>
+            @if (this._view?.Terrain is { } terrain)
+            {
+                <span class="terrain">@terrain</span>
+            }
             @this.HowToPlay
             <button class="leave" @onclick="this.OnLeave">Lobby</button>
         </span>

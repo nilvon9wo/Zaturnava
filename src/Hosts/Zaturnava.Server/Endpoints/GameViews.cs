@@ -123,6 +123,12 @@ internal static class GameViews
         )
         {
             Kinds = KindsOf(snapshot.Rules, snapshot.State),
+            Lines =
+            [
+                .. snapshot.Rules.LinesOf(snapshot.State)
+                    .Select(line => new LineDto(line.Kind, line.FromX, line.FromY, line.ToX, line.ToY)),
+            ],
+            Terrain = snapshot.Rules.TerrainOf(snapshot.State),
             IsDealt = snapshot.Rules.IsDealt,
             AreArmiesAlike = ScenarioStart.AreAlike(snapshot.Record.Actions),
         };

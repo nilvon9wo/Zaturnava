@@ -199,19 +199,31 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     /// <summary>
     /// The game dealt its own armies by <paramref name="seed"/> - or one army, the same for every seat, if
     /// <paramref name="areAlike"/> - if the variant deals them: each leader's start its throne, and every piece's its
-    /// home; else as it is.
+    /// home; on its own terrain too, if <paramref name="dealsTerrain"/> and the variant deals terrain; else as it is.
     /// </summary>
-    public GameState Deal([Required] GameState initial, int seed, bool areAlike = false)
+    public GameState Deal([Required] GameState initial, int seed, bool areAlike = false, bool dealsTerrain = false)
     {
         if (this._variant.Dealer is not { } dealer)
         {
             return initial;
         }
 
-        Chaturaji2027Variant dealt = this._variant with { Start = dealer(seed, areAlike) };
+        int terrain = dealsTerrain && this._variant.TerrainDealer is { } terrains ? terrains(seed) : 0;
+        Chaturaji2027Variant dealt = this._variant with { Start = dealer(seed, areAlike, terrain) };
         Position position = dealt.InitialPosition(this._grid);
-        return initial with { Position = position, Thrones = dealt.Thrones(this._grid), Start = position };
+        return initial with
+        {
+            Position = position,
+            Thrones = dealt.Thrones(this._grid),
+            Start = position,
+            Terrain = terrain,
+        };
     }
+
+    public ImmutableList<BoardLine> LinesOf([Required] GameState state) =>
+        this._variant.Lines?.Invoke(state, this._grid) ?? [];
+
+    public string? TerrainOf([Required] GameState state) => this._variant.Terrain?.Invoke(state);
 
     public ImmutableList<GameAction> LegalActions([Required] GameState state) =>
         (state.DecidingSeat, state.AwaitedDice) is ({ } seat, null)
@@ -310,7 +322,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
                     seat,
                     target => this.IsCapturable(state, target, seat)
                 ))
-                .Where(this.MayGo)
+                .Where(move => this.MayGo(state, move))
                 .Select(move => new MoveAction(seat, move.From, move.To)),
     ];
 
@@ -350,7 +362,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
                 .Concat(this._flying.AttacksFrom(state, occupant.Key, occupant.Value))
             )
             .Distinct()
-            .Where(attack => this.MayGo(new Move(attack.Attacker, attack.From, attack.Target, null))),
+            .Where(attack => this.MayGo(state, new Move(attack.Attacker, attack.From, attack.Target, null))),
     ];
 
     /// <summary>The lead that wins by giving up its turns (rules.md §10), as the variant scores it.</summary>
@@ -676,7 +688,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             .Concat(this._castling.MovesFrom(state, cell, piece))
             .Concat(this._flying.MovesFrom(state, cell, piece, MayTake))
             .Distinct()
-            .Where(this.MayGo)
+            .Where(move => this.MayGo(state, move))
             .Concat(this.SwapsFrom(state, cell, piece));
     }
 
@@ -699,13 +711,13 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
                 .Select(attack => attack.Target),
             .. enemies
                 .SelectMany(enemy => this._flying.ReachFrom(state, enemy.Key, enemy.Value)
-                    .Where(target => this.MayGo(new Move(enemy.Value, enemy.Key, target, null)))
+                    .Where(target => this.MayGo(state, new Move(enemy.Value, enemy.Key, target, null)))
                 ),
         ];
     }
 
     /// <summary>Whether the board lets a piece make the move its kind allows.</summary>
-    private bool MayGo(Move move) => this._variant.MayMove?.Invoke(this._grid, move) ?? true;
+    private bool MayGo(GameState state, Move move) => this._variant.MayMove?.Invoke(state, this._grid, move) ?? true;
 
     /// <summary>
     /// A Pawn facing an allied Pawn of another army, back to back, may swap places with it: its move

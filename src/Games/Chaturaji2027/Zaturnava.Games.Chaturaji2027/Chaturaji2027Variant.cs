@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations;
 using Net.NowhereAtAll.Zaturnava.Engine.Boards;
 using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
 using Net.NowhereAtAll.Zaturnava.Engine.Positions;
+using Net.NowhereAtAll.Zaturnava.Engine.Rules;
 using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 using Net.NowhereAtAll.Zaturnava.Topology.SquareGrid;
 
@@ -106,9 +107,22 @@ public sealed record Chaturaji2027Variant(
 
     /// <summary>
     /// Where every piece of a game dealt by a seed starts, each game its own armies - each seat's the same, if asked
-    /// for alike; null, if every game starts as <see cref="Start"/> has it.
+    /// for alike - on the terrain dealt it (<see cref="TerrainDealer"/>); null, if every game starts as
+    /// <see cref="Start"/> has it.
     /// </summary>
-    public Func<int, bool, ImmutableList<Placement>>? Dealer { get; init; }
+    public Func<int, bool, int, ImmutableList<Placement>>? Dealer { get; init; }
+
+    /// <summary>
+    /// The terrain a game dealt by a seed is dealt (<see cref="GameState.Terrain"/>), as the variant numbers its
+    /// terrains; null, if every game is played on the board as it is.
+    /// </summary>
+    public Func<int, int>? TerrainDealer { get; init; }
+
+    /// <summary>The lines drawn on the board, as its rivers, in the game as it stands; none, if null.</summary>
+    public Func<GameState, SquareGridTopology, ImmutableList<BoardLine>>? Lines { get; init; }
+
+    /// <summary>What a player should be told of the terrain in the game as it stands; nothing, if null.</summary>
+    public Func<GameState, string?>? Terrain { get; init; }
 
     /// <summary>Each seat's throne: the square its first leader starts on.</summary>
     public ImmutableDictionary<SeatId, CellId> Thrones([Required] SquareGridTopology grid) =>

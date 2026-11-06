@@ -34,6 +34,12 @@ public sealed record GameState(
     /// </summary>
     public Position? Start { get; init; }
 
+    /// <summary>
+    /// The terrain this game was dealt (<see cref="IRulesApplying.Deal"/>): its rivers, say, numbered as its ruleset
+    /// numbers them; 0, the ruleset's own.
+    /// </summary>
+    public int Terrain { get; init; }
+
     /// <summary>The dice the game waits on, rolled for <see cref="DecidingSeat"/>; null if none.</summary>
     public DiceRequest? AwaitedDice { get; init; }
 

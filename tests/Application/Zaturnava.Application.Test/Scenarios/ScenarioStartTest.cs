@@ -123,6 +123,24 @@ public sealed class ScenarioStartTest
     }
 
     [Fact]
+    public void StateOf_WhenTheGameWasDealtBeforeTerrainWas_DealsItNone()
+    {
+        // Arrange - a deal of seed 4 as games were dealt before terrain was, and one dealt now
+        ActionDescriptor now = ScenarioStart.Dealt(new LoadedDice(4));
+        ActionDescriptor before = now with { Arguments = now.Arguments.Remove("terrain") };
+        TinyRules rules = new(6, isDealt: true);
+
+        // Act
+        (int Before, int Now) terrain = (
+            ScenarioStart.StateOf([before], rules).Terrain,
+            ScenarioStart.StateOf([now], rules).Terrain
+        );
+
+        // Assert
+        Assert.Equal((0, 1), terrain);
+    }
+
+    [Fact]
     public void AreAlike_WhenTheGameWasNotDealtAlike_IsFalseElseTrue()
     {
         // Arrange

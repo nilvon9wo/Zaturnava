@@ -182,4 +182,71 @@ public sealed class GrandBoardTest
         // Assert
         Assert.Equal(expected, isInRiver);
     }
+
+    [Fact]
+    public void RiverLines_WhenARiverRunsBetweenTheMiddleColumns_DrawItBetweenThemCellByCell()
+    {
+        // Arrange
+        GrandBoard board = new(6, 6, 3, 3, Rivers: Rivers.NorthSouth);
+
+        // Act
+        ImmutableList<BoardLine> lines = board.RiverLines();
+
+        // Assert
+        Assert.Equal(
+            [.. Enumerable.Range(0, 6).Select(row => new BoardLine("river", 2.5, row - 0.5, 2.5, row + 0.5))],
+            lines
+        );
+    }
+
+    [Fact]
+    public void RiverLines_WhenARiverCutsTheMiddleRow_DrawItThroughItsCells()
+    {
+        // Arrange
+        GrandBoard board = new(9, 9, 3, 3, Rivers: Rivers.EastWest);
+
+        // Act
+        ImmutableList<BoardLine> lines = board.RiverLines();
+
+        // Assert
+        Assert.Equal(
+            [.. Enumerable.Range(0, 9).Select(column => new BoardLine("river", column - 0.5, 4, column + 0.5, 4))],
+            lines
+        );
+    }
+
+    [Fact]
+    public void RiverLines_WhenARiverGoesAroundKingdomsAcrossTheMiddle_DrawItAlongTheirEdges()
+    {
+        // Arrange - the west kingdoms reach to the fifth column in the south, the east ones from the fourth in the
+        // north
+        GrandBoard board = new(8, 8, 5, 3, Rivers: Rivers.NorthSouth, Course: RiverCourse.AroundKingdoms);
+        ImmutableHashSet<BoardLine> expected =
+        [
+            .. Enumerable.Range(0, 3).Select(row => new BoardLine("river", 4.5, row - 0.5, 4.5, row + 0.5)),
+            .. Enumerable.Range(3, 2).Select(row => new BoardLine("river", 3.5, row - 0.5, 3.5, row + 0.5)),
+            .. Enumerable.Range(5, 3).Select(row => new BoardLine("river", 2.5, row - 0.5, 2.5, row + 0.5)),
+            new("river", 3.5, 2.5, 4.5, 2.5),
+            new("river", 2.5, 4.5, 3.5, 4.5),
+        ];
+
+        // Act
+        ImmutableHashSet<BoardLine> lines = [.. board.RiverLines()];
+
+        // Assert
+        Assert.Equal(expected, lines);
+    }
+
+    [Fact]
+    public void RiverLines_WhenThereIsNoRiver_AreNone()
+    {
+        // Arrange
+        GrandBoard board = new(6, 6, 3, 3);
+
+        // Act
+        ImmutableList<BoardLine> lines = board.RiverLines();
+
+        // Assert
+        Assert.Empty(lines);
+    }
 }

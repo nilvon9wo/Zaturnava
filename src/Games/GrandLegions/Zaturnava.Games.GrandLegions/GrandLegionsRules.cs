@@ -100,17 +100,11 @@ public static class GrandLegionsRules
         );
 
     /// <summary>
-    /// The quick game as the rules play it: its board, and its armies as the program deals them, each game its own;
-    /// a game begun before games were dealt starts as the first seed deals it.
+    /// The quick game as the rules play it: its board, and its rivers and armies as the program deals them, each game
+    /// its own (<see cref="QuickTerrain"/>, <see cref="QuickArmy"/>); a game begun before games were dealt starts as
+    /// the first seed deals it, one begun before rivers were, with none.
     /// </summary>
     public static Chaturaji2027Variant VariantOf([Required] QuickGame game, [Required] ClassDice dice) =>
-        VariantOn(
-            game,
-            dice,
-            new GrandBoard(game.Side, game.Side, game.KingdomWidth, game.KingdomDepth, Rivers: game.Rivers)
-        );
-
-    private static Chaturaji2027Variant VariantOn(QuickGame game, ClassDice dice, GrandBoard board) =>
         new(
             game.Id,
             game.Name,
@@ -123,11 +117,15 @@ public static class GrandLegionsRules
             QuickArmy.Dealt(game, 0)
         )
         {
-            Dealer = (seed, areAlike) => QuickArmy.Dealt(game, seed, areAlike),
+            Dealer = (seed, areAlike, terrain) =>
+                QuickArmy.Dealt(game with { Rivers = QuickTerrain.RiversOf(terrain) }, seed, areAlike),
+            TerrainDealer = QuickTerrain.Dealt,
+            Lines = (state, _) => QuickTerrain.LinesOf(game, state.Terrain),
+            Terrain = state => QuickTerrain.Described(state.Terrain),
             Game = game.Game,
             Heavies = Heavies,
             Promotables = Promotables,
-            OwnPromotions = OwnPromotionsOn(board),
+            OwnPromotions = OwnPromotionsOn(QuickTerrain.BoardOf(game, 0)),
             Marks = GrandLegionsPieces.Marks,
             Guides = Guides,
             Scoring = Scoring,
@@ -137,7 +135,7 @@ public static class GrandLegionsRules
             FlyingCapturers = [GrandLegionsPieces.XiangqiGeneral],
             FaceOffCallers = [GrandLegionsPieces.JanggiGeneral],
             DieNames = dice.Classes.ToImmutableDictionary(face => face.Key, face => NameOf(face.Value)),
-            MayMove = RiverCrossing.On(board),
+            MayMove = RiverCrossing.On(game),
         };
 
     /// <summary>The dice as kinds: each value lets every piece of the classes it names move.</summary>

@@ -124,6 +124,7 @@ select {
 }
 
 .bar .brand { font-weight: 700; letter-spacing: 0.04em; }
+.bar .terrain { font-size: 0.85em; color: var(--muted); }
 .bar .build { font-family: ui-monospace, monospace; font-size: 0.8em; }
 .bar .settings { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
 .bar button { font-size: 0.85rem; padding: 2px 10px; }
@@ -327,6 +328,13 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
 .throne.seat-1 { stroke: var(--seat-1); }
 .throne.seat-2 { stroke: var(--seat-2); }
 .throne.seat-3 { stroke: var(--seat-3); }
+
+.line.river {
+    stroke: #2f7fd8;
+    stroke-width: 0.09;
+    stroke-linecap: round;
+    opacity: 0.9;
+}
 
 .piece circle { stroke: var(--piece-edge); stroke-width: 0.035; }
 .piece text {

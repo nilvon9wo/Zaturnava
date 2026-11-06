@@ -60,7 +60,10 @@ public sealed record QuickGame(
     /// </summary>
     public const bool IsPreview = true;
 
-    /// <summary>The rivers across the board: none, as yet, in any quick game.</summary>
+    /// <summary>
+    /// The rivers across the board its armies are picked for: none, unless a game is dealt rivers
+    /// (<see cref="QuickTerrain"/>).
+    /// </summary>
     public Rivers Rivers { get; init; } = Rivers.None;
 
     /// <summary>The game and its size, as the rules tell them.</summary>

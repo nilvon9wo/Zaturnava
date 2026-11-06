@@ -367,6 +367,40 @@ public sealed class TableTest : IDisposable
         Assert.Equal("throne seat-1", table.Find("rect.throne").GetAttribute("class"));
     }
 
+    [Fact]
+    public void Render_WhenTheBoardHasARiver_DrawsItsLinesAndTellsWhereItRuns()
+    {
+        // Arrange - a river between the first two cells, up the board
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Lines = [new LineDto("river", 0.5, -0.5, 0.5, 0.5)],
+            Terrain = "A river runs north to south.",
+        };
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Assert
+        AngleSharp.Dom.IElement line = table.Find("line.river");
+        Assert.Equal(
+            ("line river", "0.5", "0.5", "A river runs north to south."),
+            (line.GetAttribute("class"), line.GetAttribute("x1"), line.GetAttribute("y1"),
+                table.Find(".terrain").TextContent)
+        );
+    }
+
+    [Fact]
+    public void Render_WhenTheBoardHasNoTerrain_TellsNone()
+    {
+        // Arrange - nothing beyond the board
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Assert
+        Assert.Equal((0, 0), (table.FindAll("line").Count, table.FindAll(".terrain").Count));
+    }
+
     [Theory]
     [InlineData(true, false, "Pick a ringed piece, then a marked square.")]
     [InlineData(false, true, "Choose what to do:")]

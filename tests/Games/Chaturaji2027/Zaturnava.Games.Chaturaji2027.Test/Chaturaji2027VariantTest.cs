@@ -18,7 +18,7 @@ public sealed class Chaturaji2027VariantTest
         Id = "fenced",
         Name = "Fenced",
         DieNames = ImmutableDictionary<int, string>.Empty.Add(1, "Ships"),
-        MayMove = (grid, move) => grid.RowOf(move.To) < 3,
+        MayMove = (_, grid, move) => grid.RowOf(move.To) < 3,
     };
 
     private readonly Chaturaji2027Rules _rules = new(
