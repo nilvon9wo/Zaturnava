@@ -46,7 +46,7 @@ internal static class GameEndpoints
 
     /// <summary>
     /// A page of the games asked for, read as stored: none is replayed. Games asked for by who is at them are all
-    /// read, to be matched by what their players are called, before the page is cut.
+    /// read, to be matched by what their players are called, or by the player's id, before the page is cut.
     /// </summary>
     private static async Task<GamePageDto> List(
         [AsParameters] GameListQuery asked,
@@ -66,9 +66,9 @@ internal static class GameEndpoints
             asked.Preview
         ).Bounded();
         ImmutableList<string> wanted = PlayerPatterns.Of(asked.Players);
-        GamePage page = wanted.IsEmpty
+        GamePage page = wanted.IsEmpty && asked.Player is null
             ? await games.Page(query, cancellationToken)
-            : await Matching(query, wanted, games, players, cancellationToken);
+            : await Matching(query, wanted, asked.Player, games, players, cancellationToken);
         ImmutableDictionary<HumanSeat, string> names = await players.NamesOf(
             page.Games.SelectMany(game => game.Controllers),
             cancellationToken
@@ -103,10 +103,14 @@ internal static class GameEndpoints
         ),
     ];
 
-    /// <summary>The page asked for of the games everyone <paramref name="wanted"/> is at.</summary>
+    /// <summary>
+    /// The page asked for of the games everyone <paramref name="wanted"/> is at, and <paramref name="player"/> too, if
+    /// asked: at a seat they claimed signed in.
+    /// </summary>
     private static async Task<GamePage> Matching(
         GameQuery query,
         ImmutableList<string> wanted,
+        string? player,
         GameService games,
         PlayerService players,
         CancellationToken cancellationToken
@@ -116,9 +120,18 @@ internal static class GameEndpoints
         ImmutableDictionary<HumanSeat, string> names =
             await players.NamesOf(all.SelectMany(game => game.Controllers), cancellationToken);
         ImmutableList<GameListing> matching =
-            [.. all.Where(game => PlayerPatterns.AreAllAt(wanted, game, names, games.Bots))];
+        [
+            .. all.Where(game =>
+                PlayerPatterns.AreAllAt(wanted, game, names, games.Bots) && IsAt(player, game)
+            ),
+        ];
         return new GamePage([.. matching.Skip(query.Skipped).Take(query.PageSize)], matching.Count);
     }
+
+    /// <summary>Whether the player, by id, claimed a seat at the game signed in; yes, if none is asked for.</summary>
+    private static bool IsAt(string? player, GameListing game) =>
+        player is null
+        || game.Controllers.Any(seat => seat is HumanSeat { Claimant: { } claimant } && claimant.Value == player);
 
     /// <summary>The game as its seats see it, naming the bots and whoever holds each person's seat.</summary>
     private static async Task<GameViewDto> ViewOf(

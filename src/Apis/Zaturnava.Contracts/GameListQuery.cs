@@ -6,8 +6,9 @@ namespace Net.NowhereAtAll.Zaturnava.Contracts;
 /// Which games to list, and which page (Proposed): of one game, at any size (<see cref="Game"/>, as
 /// <see cref="RulesetDto.Game"/>), or of one ruleset, which is one game at one size; with open seats or without; with
 /// no seat played by a bot (<see cref="PeopleOnly"/>); over or not; of preview games or not
-/// (<see cref="RulesetDto.IsPreview"/>); with everyone named in <see cref="Players"/> at it. A filter left null does
-/// not filter. Pages count from 1; a page holds at most 100 games, 20 unless asked otherwise.
+/// (<see cref="RulesetDto.IsPreview"/>); with everyone named in <see cref="Players"/> at it; with a seat the player
+/// <see cref="Player"/> claimed signed in. A filter left null does not filter. Pages count from 1; a page holds at
+/// most 100 games, 20 unless asked otherwise.
 /// </summary>
 /// <param name="Players">
 /// Who must be at the game, in any seats, separated by commas: "Bob, Joe, open" lists the games Bob and Joe both play,
@@ -15,6 +16,8 @@ namespace Net.NowhereAtAll.Zaturnava.Contracts;
 /// anyone's; <c>*</c> stands for any letters ("Bo*"), and case does not count. A name matches with or without what
 /// follows it in brackets: "Ada" matches "Ada (guest)".
 /// </param>
+/// <param name="Player">A player's id, as <see cref="GameSummaryDto.PlayerIds"/> gives it: their games, a lobby's
+/// Mine.</param>
 public sealed record GameListQuery(
     string? Ruleset = null,
     bool? Open = null,
@@ -24,7 +27,8 @@ public sealed record GameListQuery(
     int? PageSize = null,
     string? Game = null,
     bool? Preview = null,
-    string? Players = null
+    string? Players = null,
+    string? Player = null
 )
 {
     /// <summary>The query as an address's query string, from its "?"; empty, if it asks nothing.</summary>
@@ -39,6 +43,7 @@ public sealed record GameListQuery(
                 ("over", Flag(this.Over)),
                 ("preview", Flag(this.Preview)),
                 ("players", Escaped(this.Players)),
+                ("player", Escaped(this.Player)),
                 ("page", Number(this.Page)),
                 ("pageSize", Number(this.PageSize)),
             }

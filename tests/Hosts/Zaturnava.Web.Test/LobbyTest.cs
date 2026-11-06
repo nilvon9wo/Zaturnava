@@ -1121,6 +1121,32 @@ public sealed class LobbyTest : IDisposable
     }
 
     [Fact]
+    public void FilterState_WhenAPlayerSignedInChoosesMine_ListsTheirGamesUntilAnotherIsChosen()
+    {
+        // Arrange
+        this.SignInAsAdaAtYellow();
+        IRenderedComponent<Lobby> lobby = this.Render();
+        string offered =
+            string.Join('|', lobby.FindAll("select.filter-state option").Select(option => option.TextContent));
+
+        // Act
+        lobby.Find("select.filter-state").Change("mine");
+        (GameListQuery?, string?) mine =
+            (this._page.Server.Listed, lobby.Find("select.filter-state").GetAttribute("value"));
+        lobby.Find("select.filter-state").Change("waiting");
+
+        // Assert
+        Assert.Equal(
+            (
+                "Any not over|Waiting for players|In progress|Mine",
+                (new GameListQuery(Over: false, Preview: false, Player: "ada"), "mine"),
+                new GameListQuery(Open: true, Over: false, Preview: false)
+            ),
+            (offered, mine, this._page.Server.Listed)
+        );
+    }
+
+    [Fact]
     public void FilterState_WhenRendered_OffersNoGamesOver()
     {
         // Arrange - nothing beyond the server
