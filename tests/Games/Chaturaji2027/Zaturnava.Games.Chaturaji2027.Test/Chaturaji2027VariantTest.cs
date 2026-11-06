@@ -214,6 +214,7 @@ public sealed class Chaturaji2027VariantTest
                     {
                         Class = "Leader",
                         Powers = ["Sings."],
+                        SpecialPowers = ["Dances."],
                         Restrictions = ["Never on Sundays."],
                     }
                 ),
@@ -225,8 +226,9 @@ public sealed class Chaturaji2027VariantTest
 
         // Assert
         Assert.Equal(
-            ("Leader", 2, "Sings.", "Never on Sundays."),
-            (guide.Class, guide.Powers.Count, guide.Powers[^1], guide.Restrictions.Single())
+            ("Leader", 2, "Sings.", "Dances.", "Never on Sundays."),
+            (guide.Class, guide.Powers.Count, guide.Powers[^1], guide.SpecialPowers.Single(),
+                guide.Restrictions.Single())
         );
     }
 

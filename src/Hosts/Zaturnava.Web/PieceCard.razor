@@ -1,7 +1,9 @@
-@* What a player is told of a piece they clicked on, whether or not they may move it: whose it is and where it
-   stands, its kind's name, class and worth, how it moves and captures - drawn (MoveDiagramView), or in words where
-   the ruleset draws nothing - its special powers, and what holds it back, each as the ruleset tells it. A kind the
-   ruleset tells nothing more of shows its name and worth alone. *@
+@* What a player is told of a piece they clicked on, whether or not they may move it: as labelled facts, whose it
+   is, where it stands, and its kind's class, value (what taking it scores), and what its own promotion may make
+   it, if it has one, saying so if the game does not play it yet; then how it moves and captures -
+   drawn (MoveDiagramView), turned as the board shows its army, or in words where the ruleset draws nothing - its
+   powers, those every piece of its sort has (common) apart from its own (special), and what holds it back, each as
+   the ruleset tells it. A kind the ruleset tells nothing of shows its owner and square alone. *@
 
 <aside class="piece-card" aria-label="About this piece">
     <header>
@@ -9,20 +11,50 @@
         <h2>@this.Named(this.Piece.Name)</h2>
         <button class="close" title="Close" @onclick="this.OnClose">&#x2715;</button>
     </header>
-    <p class="whose">@this.Owner's, on @this.Cell</p>
+    <dl class="facts">
+        <dt>Owner</dt>
+        <dd class="owner">@this.Owner</dd>
+        <dt>Square</dt>
+        <dd class="square">@this.Cell</dd>
+        @if (this.Kind?.Class is { } pieceClass)
+        {
+            <dt>Class</dt>
+            <dd class="class">@pieceClass</dd>
+        }
+        @if (this.Kind is { } known)
+        {
+            <dt title="What taking it scores">Value</dt>
+            <dd class="value">@known.Value</dd>
+            @if (!known.PromotesTo.IsEmpty)
+            {
+                <dt title="What its own promotion may make it">Promotes to</dt>
+                <dd class="promotes-to">
+                    @this.Named(string.Join(", ", known.PromotesTo))
+                    @if (!known.IsPromotionPlayed)
+                    {
+                        <span class="not-yet"> (not yet in play)</span>
+                    }
+                </dd>
+            }
+        }
+    </dl>
     @if (this.Kind is { } kind)
     {
-        <p class="worth">@(kind.Class is { } pieceClass ? $"{pieceClass}; taking" : "Taking") it scores @kind.Value.</p>
         @if (kind.Diagram is { Side: > 0 } diagram)
         {
-            <MoveDiagramView Diagram="diagram" Piece="this.Piece" Pieces="this.Pieces" />
+            <MoveDiagramView Diagram="diagram"
+                             Piece="this.Piece"
+                             Pieces="this.Pieces"
+                             Angle="this.Turn.AngleOf(this.Forward)"
+                             IsOnDark="this.IsOnDark" />
         }
         else
         {
             @this.Listed("moves", "Moves", kind.Moves)
             @this.Listed("captures", "Captures", kind.Captures)
         }
-        @this.Listed("powers", "Special powers", kind.Powers)
+        @this.Listed("powers", "Common powers", kind.Powers)
+        @this.Listed("special-powers", "Special powers", kind.SpecialPowers)
         @this.Listed("restrictions", "Restrictions", kind.Restrictions)
     }
 </aside>
@@ -45,6 +77,18 @@
 
     [Parameter]
     public PieceSet Pieces { get; set; }
+
+    /// <summary>Which way is forward for the piece's army, on the board unturned: up, unless set.</summary>
+    [Parameter]
+    public DirectionDto Forward { get; set; } = new(0, 1);
+
+    /// <summary>Whether the piece stands on a dark square: the diagram's centre is shaded to match.</summary>
+    [Parameter]
+    public bool IsOnDark { get; set; }
+
+    /// <summary>How the board is turned: the diagram is turned with it.</summary>
+    [Parameter]
+    public BoardTurn Turn { get; set; } = BoardTurn.None;
 
     [Parameter]
     public EventCallback OnClose { get; set; }

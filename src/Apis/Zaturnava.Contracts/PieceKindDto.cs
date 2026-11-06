@@ -16,7 +16,19 @@ public sealed record PieceKindDto(string Kind, string Name, int Value)
 
     public ImmutableList<string> Captures { get; init; } = [];
 
+    /// <summary>What every piece of its sort may do beyond its moves: every leader leads its army.</summary>
     public ImmutableList<string> Powers { get; init; } = [];
+
+    /// <summary>What it may do beyond its moves that is its kind's own: castling, say.</summary>
+    public ImmutableList<string> SpecialPowers { get; init; } = [];
+
+    /// <summary>
+    /// The names of what its own promotion may make it, as a Western Pawn's makes it a Queen: none, for a kind
+    /// with none. <see cref="IsPromotionPlayed"/> says whether the game plays it yet.
+    /// </summary>
+    public ImmutableList<string> PromotesTo { get; init; } = [];
+
+    public bool IsPromotionPlayed { get; init; }
 
     public ImmutableList<string> Restrictions { get; init; } = [];
 

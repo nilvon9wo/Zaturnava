@@ -664,6 +664,25 @@ public sealed class GameViewsTest
     }
 
     [Fact]
+    public void ViewOf_WhenAKindHasAPromotionOfItsOwn_NamesWhatItMayBecome()
+    {
+        // Arrange - a Grand Legions game, Black holding a Western Pawn of Yellow's
+        Chaturaji2027Rules grand = GrandLegionsRules.RulesOf(QuickGame.Small);
+        Piece pawn = new(new PieceId(500), GrandLegionsPieces.WesternPawn, new SeatId(1));
+        GameState state = grand.CreateInitialState() with { Prisoners = [new Prisoner(pawn, new SeatId(0))] };
+
+        // Act
+        GameViewDto view = GameViews.ViewOf(Snapshot(grand, state), Bots);
+
+        // Assert
+        PieceKindDto told = view.Kinds.Single(kind => kind.Kind == "western-pawn");
+        Assert.Equal(
+            ("Queen (Western), Rook (Western), Bishop (Western), Knight (Western)", false, 2, 2),
+            (string.Join(", ", told.PromotesTo), told.IsPromotionPlayed, told.Powers.Count, told.SpecialPowers.Count)
+        );
+    }
+
+    [Fact]
     public void ViewOf_WhenPiecesMoveOneWayAndCaptureAnother_TellsEachKindsWaysApartInNameOrder()
     {
         // Arrange - nothing beyond Chaturaji 2027's own start
@@ -678,6 +697,30 @@ public sealed class GameViewsTest
                 (string?)null),
             (string.Join(" ", view.Kinds.Select(kind => kind.Name)), pawn.Moves.Single(), pawn.Captures.Single(),
                 pawn.Class)
+        );
+    }
+
+    [Fact]
+    public void ViewOf_WhenSeatsFaceEachTheirOwnWay_SendsEachSeatsForward()
+    {
+        // Arrange - nothing beyond Chaturaji 2027's pinwheel, each army facing its own way
+
+        // Act
+        GameViewDto view = GameViews.ViewOf(Snapshot(Rules.CreateInitialState()), Bots);
+
+        // Assert
+        Assert.Equal(
+            (
+                string.Join(
+                    " ",
+                    Rules.CreateInitialState().Seats.Select(seat => seat.Forward.First + "," + seat.Forward.Second)
+                ),
+                4
+            ),
+            (
+                string.Join(" ", view.Seats.Select(seat => seat.Forward.X + "," + seat.Forward.Y)),
+                view.Seats.Select(seat => seat.Forward).Distinct().Count()
+            )
         );
     }
 

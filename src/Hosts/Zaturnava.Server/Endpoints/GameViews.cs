@@ -146,6 +146,9 @@ internal static class GameViews
             Moves = TextOf(guide.Kind.Movement.Where(rule => rule.CanMove), rules.NameOf),
             Captures = TextOf(guide.Kind.Movement.Where(rule => rule.CanCapture), rules.NameOf),
             Powers = guide.Powers,
+            SpecialPowers = guide.SpecialPowers,
+            PromotesTo = [.. guide.PromotesTo.Select(rules.NameOf)],
+            IsPromotionPlayed = guide.IsPromotionPlayed,
             Restrictions = guide.Restrictions,
             Mark = MarkOf(rules, kind),
             Diagram = new MoveDiagramDto(
@@ -287,6 +290,10 @@ internal static class GameViews
         )
         {
             Chances = [.. snapshot.Rules.ChancesOf(snapshot.State, seat).Select(chance => ChanceOf(snapshot, chance))],
+            Forward = new DirectionDto(
+                snapshot.State.SeatOf(seat).Forward.First,
+                snapshot.State.SeatOf(seat).Forward.Second
+            ),
         };
     }
 

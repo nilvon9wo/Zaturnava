@@ -44,4 +44,11 @@ public sealed record SeatDto(
     /// as any action is, its <see cref="ActionDto.Label"/> saying what it does. Empty, for none.
     /// </summary>
     public ImmutableList<ActionDto> Chances { get; init; } = [];
+
+    /// <summary>
+    /// Which way is forward for the seat's pieces, on the board as it lies, unturned: up, for the seat whose pieces
+    /// move up the board. A piece's move diagram (<see cref="MoveDiagramDto"/>) is drawn with forward up, so a client
+    /// turns it this way to show it as the board lies. Up, unless set.
+    /// </summary>
+    public DirectionDto Forward { get; init; } = new(0, 1);
 }

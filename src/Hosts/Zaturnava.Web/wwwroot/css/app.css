@@ -405,25 +405,47 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
 .piece-card h2 { flex: 1; margin: 0; font-size: 1.15rem; }
 .piece-card h3 { margin: 12px 0 4px; font-size: 0.95rem; color: var(--accent); }
 .piece-card p { margin: 6px 0 0; }
-.piece-card .whose { color: var(--muted); }
+.piece-card .facts { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; margin: 10px 0 0; }
+.piece-card .facts dt { color: var(--muted); }
+.piece-card .facts dd { margin: 0; }
+.piece-card .facts .not-yet { color: var(--muted); font-style: italic; }
 .piece-card ul { margin: 0; padding-left: 1.2rem; }
 .piece-card li { margin: 2px 0; }
 /* A kind's moves drawn: its own small board, a dot where it moves, as the board marks one, a ring in the danger
    colour where it captures, a grey disc for a piece it hops over. */
+/* The diagram turned as the board shows the piece's army, in a square with room on every side for the arrow at its
+   forward edge, so that turning it never changes its size. */
+.move-diagram-turn {
+    position: relative;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 300px;
+    aspect-ratio: 1;
+    margin: 8px auto 0;
+    padding: 16px;
+}
+.move-diagram-turn .forward-arrow {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 12px;
+    line-height: 16px;
+    color: var(--accent);
+}
 .move-diagram {
     display: grid;
     grid-template-columns: repeat(var(--side), 1fr);
     width: 100%;
-    max-width: 270px;
     aspect-ratio: 1;
-    margin: 12px auto 0;
     border-radius: 4px;
     overflow: hidden;
 }
+.move-diagram .upright { display: grid; place-items: center; width: 90%; height: 90%; }
 .move-diagram .square { position: relative; display: grid; place-items: center; }
 .move-diagram .square.light { background: var(--board-light); }
 .move-diagram .square.dark { background: var(--board-dark); }
-.move-diagram .piece-icon { width: 90%; height: 90%; }
+.move-diagram .piece-icon { width: 100%; height: 100%; }
 .move-diagram .move::before, .diagram-key .move::before,
 .move-diagram .capture::after, .diagram-key .capture::after,
 .move-diagram .screen::before, .diagram-key .screen::before {
@@ -434,15 +456,26 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
 .move-diagram .move::before, .diagram-key .move::before { inset: 34%; background: var(--mark); }
 .move-diagram .capture::after, .diagram-key .capture::after { inset: 8%; border: 2px solid var(--danger); }
 .move-diagram .screen::before, .diagram-key .screen::before { inset: 14%; background: var(--muted); }
-.diagram-key { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; color: var(--muted); }
+/* Each mark kept beside its meaning: a line breaks between them, never within one. */
+.diagram-key { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; color: var(--muted); }
+.diagram-key .key-item { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
 .diagram-key .key {
     position: relative;
     display: inline-block;
     width: 1.1em;
     height: 1.1em;
-    margin-left: 6px;
     background: var(--board-light);
     border-radius: 2px;
+}
+.diagram-key .key.arrow { background: none; }
+.diagram-key .key.arrow::before {
+    content: "\25B2";
+    position: absolute;
+    inset: 0;
+    color: var(--accent);
+    font-size: 0.75em;
+    text-align: center;
+    line-height: 1.5em;
 }
 
 @media (min-width: 900px) {

@@ -24,7 +24,7 @@ public sealed class WireFormatTest
             [new PieceDto(0, "raja", "Raja", 0, 0)],
             [
                 new SeatDto(0, "Black", 0, 5, "bot", "Random", [new PrisonerDto(9, "pawn", "Pawn", 1)]),
-                new SeatDto(1, "Yellow", 1, 0, "open", null, []),
+                new SeatDto(1, "Yellow", 1, 0, "open", null, []) { Forward = new DirectionDto(1, 0) },
             ],
             [new ActionDto("pass", ImmutableSortedDictionary.CreateRange([KeyValuePair.Create("actor", "1")]))],
             [new DieDto(5, "Pawn or Raja"), new DieDto(3, "Elephant")],
@@ -54,6 +54,9 @@ public sealed class WireFormatTest
             Moves = ["Any distance orthogonally, up to the first piece in the way"],
             Captures = ["Hops over one piece orthogonally, to any cell beyond it up to the next piece"],
             Powers = ["Sings."],
+            SpecialPowers = ["Dances."],
+            PromotesTo = ["Queen (Western)"],
+            IsPromotionPlayed = true,
             Restrictions = ["Never on Sundays."],
             Mark = new PieceMarkDto("artillery", "CX"),
             Diagram = new MoveDiagramDto(9, [49], [67, 76], [58]),

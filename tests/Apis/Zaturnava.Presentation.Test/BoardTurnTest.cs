@@ -32,6 +32,26 @@ public sealed class BoardTurnTest
         Assert.Equal(expected, turn.QuarterTurns);
     }
 
+    [Theory]
+    [InlineData(0, 1, 0, 0)]
+    [InlineData(1, 0, 0, 90)]
+    [InlineData(0, -1, 0, 180)]
+    [InlineData(-1, 0, 0, 270)]
+    [InlineData(1, 0, 1, 180)]
+    [InlineData(-1, 0, 1, 0)]
+    [InlineData(0, 1, 3, 270)]
+    public void AngleOf_WhenForwardIsSomeWayAndTheBoardTurned_TurnsByBoth(int x, int y, int turns, int expected)
+    {
+        // Arrange
+        BoardTurn turn = new(turns);
+
+        // Act
+        int angle = turn.AngleOf(new DirectionDto(x, y));
+
+        // Assert
+        Assert.Equal(expected, angle);
+    }
+
     [Fact]
     public void HomeOf_WhenTheSeatHasNoThroneButPieces_TurnsTheirMiddleToTheBottomLeft()
     {
