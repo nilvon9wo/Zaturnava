@@ -54,7 +54,7 @@ public sealed class AthenaBot(Random random, ImmutableDictionary<string, ValueNe
     {
         NetworkValuing? learned = this.LearnedFor(request.Rules);
         IPositionValuing valuing = (IPositionValuing?)learned
-            ?? new Appraiser(SageWeights.Learned.GetValueOrDefault(request.Rules.Id, SageWeights.Default));
+            ?? new Appraiser(WeightsFor(request.Rules));
         GameAction? ending = (request.State.Proposal, learned) switch
         {
             ({ }, { } judge) => new AnswerEndAction(request.Seat, judge.IsBetterEnded(request)),
@@ -67,12 +67,15 @@ public sealed class AthenaBot(Random random, ImmutableDictionary<string, ValueNe
         this._valuings.GetOrAdd(rules.Id, _ => this.Valuing(rules));
 
     /// <summary>
-    /// The network's judgement, if it judges positions as the ruleset's can be given (<see
-    /// cref="PositionEncoder.Fitting"/>); else null.
+    /// The network's judgement, steadied by Sage's (<see cref="NetworkValuing.Steadiness"/>), if it judges
+    /// positions as the ruleset's can be given (<see cref="PositionEncoder.Fitting"/>); else null.
     /// </summary>
     private NetworkValuing? Valuing(IRulesApplying rules) =>
         this._networks.TryGetValue(rules.Id, out ValueNetworkData? data)
             && PositionEncoder.Fitting(rules, data.Inputs) is { } encoder
-            ? new NetworkValuing(encoder, ValueNetwork.From(data))
+            ? new NetworkValuing(encoder, ValueNetwork.From(data), WeightsFor(rules))
             : null;
+
+    private static SageWeights WeightsFor(IRulesApplying rules) =>
+        SageWeights.Learned.GetValueOrDefault(rules.Id, SageWeights.Default);
 }

@@ -49,6 +49,16 @@ first.
 - **N24** Athena takes Pawns with its Raja and Rook (Elephant) when that only loses them: not a real sacrifice.
   *Done*: Athena now subtracts a twentieth of what an enemy could take next from its network's judgement
   (*Proposed* weight). Against Sage it went from about 63 Elo behind to about 17 behind.
+- **N31** In a game all but won, Athena played as if at random: it passed over a sure taking for a roll, drifted
+  pieces about, moved a guarded Elephant somewhere worse, and parked a Boat on an enemy throne, where only an allied
+  Raja would do any good. Its network judged every move there all but alike, and its guess at the margin swung by
+  six points between quiet moves. *Done* (*Proposed* weights): it no longer counts the network's margin for a game
+  going on; Sage's appraisal, at a five-hundredth of a unit (`NetworkValuing.Steadiness`), settles what the network
+  leaves even; and each of its team's pieces other than a Raja on an enemy throne costs it a fiftieth
+  (`NetworkValuing.Blocking`). Against Random, Argus and Sage it now rates about 47 Elo above Sage.
+- **N32** The lobby lists the games waiting for a signed-in player's move, but not their other games in progress:
+  a game waiting on someone else is found again only through the Players filter. A **Mine** list or filter would
+  find it (gap).
 - AI clients (*Stated*): two complete sample clients that play on Zaturnava, one by **MCP** and one by **UTCP**.
   Both decide by the same shared project Athena uses, compile and run apart from Zaturnava, and document how a
   developer makes their own bot from them. MCP: *Done* as [McpSampleBot](../samples/McpSampleBot/README.md), for
