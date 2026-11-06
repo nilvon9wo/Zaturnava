@@ -22,14 +22,15 @@ public sealed class BoardPricesTest
     }
 
     [Theory]
-    [InlineData("grand-legions-small", 10, 70, 12)]
-    [InlineData("grand-legions-medium", 14, 70, 9)]
-    [InlineData("grand-legions-large", 22, 70, 7)]
+    [InlineData("grand-legions-small", 10, 70, 12, 1)]
+    [InlineData("grand-legions-medium", 14, 70, 9, 4)]
+    [InlineData("grand-legions-large", 22, 70, 7, 8)]
     public void On_WhenTheBoardIsLargerOrSmaller_PricesReachAndPromotionByItsDimensions(
         string game,
         int rook,
         int king,
-        int pawn
+        int pawn,
+        int giraffe
     )
     {
         // Arrange - a Rook reaches further on a larger board; a King no further; a Pawn has further to promote
@@ -40,11 +41,12 @@ public sealed class BoardPricesTest
 
         // Assert
         Assert.Equal(
-            (rook, king, pawn),
+            (rook, king, pawn, giraffe),
             (
                 prices[GrandLegionsPieces.Rook],
                 prices[GrandLegionsPieces.WesternKing],
-                prices[GrandLegionsPieces.WesternPawn]
+                prices[GrandLegionsPieces.WesternPawn],
+                prices[GrandLegionsPieces.Giraffe]
             )
         );
     }

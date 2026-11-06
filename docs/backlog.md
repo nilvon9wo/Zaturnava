@@ -63,7 +63,8 @@ first.
     per kind of restriction, once a piece's lifted restrictions are kept in the game.
   - Each game's pieces priced on its own board, from its actual dimensions, not values set per size (*Stated*
     2026-11-06; [pieces](grand/pieces.md#prices-for-each-game)): on the small board the Giraffe cannot move
-    from the centre, yet costs what it does on 8 × 8.
+    from the centre, yet costs what it does on 8 × 8. *Done*: reach counted from the centre of the actual
+    board, and the promotion premium over the actual distance, adjust the sheet's value.
 - **N29** (low) An encyclopedia of pieces: each piece's name here, its other names, the games it comes from
   (Chess, Xiangqi...), the games here that use it, its variants (kinds of Pawn, of Elephant...), and how it
   moves, captures and what else it may do.
