@@ -276,12 +276,14 @@ base address (`GameRoutes`):
 | Who stands highest at a game | `GET api/leaderboards/{game}` | `StandingDto[]`: up to 100 players, best first by Elo, then experience; counted by `StandingSweeper` every `Standings:SweepSeconds` (default 60) from the games over not yet counted |
 | Let a bot or a timer decide | `POST api/games/{id}/advance` with `AdvanceRequest` (the version the caller saw) | `GameViewDto` after one bot decision, or the timer's decision once a timed one has run out of time; unchanged if the version is stale or neither is due |
 | Claim an open seat | `POST api/games/{id}/seats/{seat}` | `SeatClaimedDto` with the seat's token |
+| Take back one's own seat, from any device | `POST api/games/{id}/seats/{seat}/take-back`, `Authorization: Bearer {player token}` of the player who claimed it | `SeatClaimedDto` with a new token; the old one holds the seat no more |
 | Act | `POST api/games/{id}/actions` with `ActionDto`, `Authorization: Bearer {token}` | `GameViewDto` after the action and any bot replies |
 | What was said at the table | `GET api/games/{id}/chat?after={n}`, the token optional | `ChatMessageDto[]` after message `n`: what was said to the table, and to the token holder's team |
 | Say something | `POST api/games/{id}/chat` with `SayRequest` (`table` or `team`, and the words), `Authorization: Bearer {token}` | `ChatMessageDto`, numbered within its table |
 | The services to sign in with | `GET api/signin` | their names |
 | Sign in, in a window the page opens | `GET signin/{provider}?origin={the page's origin}` | the service's page; then, from `signin/done`, a page posting a `SignedInDto` to the opener at that origin, which must be the page host's |
 | Who a player's token stands for | `GET api/players/me`, `Authorization: Bearer {token}` | `PlayerDto`, or 401 |
+| The games waiting for a player's move | `GET api/players/me/awaiting`, `Authorization: Bearer {token}` | `AwaitedGameDto[]`, earliest changed first, or 401 |
 | Sign out | `DELETE api/players/me/session`, `Authorization: Bearer {token}` | 204, the session let go |
 | Delete the account | `DELETE api/players/me`, `Authorization: Bearer {token}` | 204, the player, their logins, sessions and standings forgotten; or 401 |
 

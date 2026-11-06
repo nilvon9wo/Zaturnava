@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Net.NowhereAtAll.Zaturnava.Application.Players;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 
 namespace Net.NowhereAtAll.Zaturnava.Application.Games;
@@ -36,4 +37,10 @@ public sealed record GameRecord(
     public DateTimeOffset? LastChanged { get; init; }
 
     public GameRecord Next() => this with { Version = this.Version + 1 };
+
+    /// <summary>
+    /// Whether <paramref name="player"/> claimed a seat of the game signed in, whether they or their AI play it.
+    /// </summary>
+    public bool IsClaimedBy(PlayerId player) =>
+        this.Controllers.Any(controller => controller is HumanSeat human && human.Claimant == player);
 }

@@ -118,6 +118,19 @@ public sealed class EfGameStore(GameDbContext context) : IGamePersisting
         _ = await this._context.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task<ImmutableList<GameRecord>> ClaimedBy(PlayerId player, CancellationToken cancellationToken)
+    {
+        string claimedBy = $"%{player.Value}"; // as Reclaim's; a guest's nickname may end so too, and is left out
+        List<GameEntity> entities = await this.Games()
+            .AsNoTracking()
+            .Where(game =>
+                game.IsOver != true
+                && game.Seats.Any(seat => seat.Kind == HumanSeat.KindName && EF.Functions.Like(seat.Detail, claimedBy))
+            )
+            .ToListAsync(cancellationToken);
+        return [.. entities.Select(GameRecordMapping.ToRecord).Where(game => game.IsClaimedBy(player))];
+    }
+
     public async Task Remove([Required] ImmutableList<GameId> ids, CancellationToken cancellationToken)
     {
         ImmutableList<string> keys = [.. ids.Select(id => id.Value)];

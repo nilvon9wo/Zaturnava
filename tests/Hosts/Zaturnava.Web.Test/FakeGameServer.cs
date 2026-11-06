@@ -191,6 +191,17 @@ internal sealed class FakeGameServer : IGameServing
     /// <summary>Each seat said anew to be held, in order: "{game} {seat} {token} {player token} {nickname}".</summary>
     public ConcurrentQueue<string> Identified { get; } = new();
 
+    public Task<SeatClaimedDto> TakeBack(
+        [Required] string gameId,
+        int seat,
+        [Required] string playerToken,
+        CancellationToken cancellationToken
+    ) =>
+        this.Answer(
+            $"take back {gameId} {seat.ToString(CultureInfo.InvariantCulture)} {playerToken}",
+            new SeatClaimedDto(Token)
+        );
+
     public Task Identify(
         [Required] string gameId,
         int seat,
@@ -269,6 +280,18 @@ internal sealed class FakeGameServer : IGameServing
 
     public Task<PlayerDto?> Me([Required] string token, CancellationToken cancellationToken) =>
         this.SignedIn(() => this.Players.GetValueOrDefault(token));
+
+    /// <summary>
+    /// The games waiting for each player token's player to decide: none, unless a test says; null, for a token a test
+    /// says stands for no one by now.
+    /// </summary>
+    public ImmutableDictionary<string, ImmutableList<AwaitedGameDto>?> Awaited { get; set; } = [];
+
+    public Task<ImmutableList<AwaitedGameDto>?> Awaiting(
+        [Required] string token,
+        CancellationToken cancellationToken
+    ) =>
+        this.SignedIn(() => this.Awaited.TryGetValue(token, out ImmutableList<AwaitedGameDto>? games) ? games : []);
 
     public Task<PlayerDto?> Rename(
         [Required] string token,

@@ -266,6 +266,116 @@ public sealed partial class SignInApiTest(SigningInServer server) : IClassFixtur
     }
 
     [Fact]
+    public async Task TakeBack_WhenThePlayerClaimedTheSeatOnAnotherDevice_HandsThemATokenAndTheOldOneNoMore()
+    {
+        // Arrange
+        HttpGameClient client = server.GameClient();
+        GameCreatedDto created = await client.Create(
+            new CreateGameRequest(ZaturnavaServer.Chaturaji2027, ZaturnavaServer.OneOpenSeat),
+            this._cancellation
+        );
+        string player = TokenOf(await this.Done("GitHub|taking-back|Ada", SigningInServer.Page));
+        SeatClaimedDto old = await client.Claim(created.GameId, 0, player, null, this._cancellation);
+
+        // Act
+        SeatClaimedDto taken = await client.TakeBack(created.GameId, 0, player, this._cancellation);
+
+        // Assert
+        await client.Identify(created.GameId, 0, player, new IdentifySeatRequest(taken.Token), this._cancellation);
+        GameRequestRefusedException refused = await Assert.ThrowsAsync<GameRequestRefusedException>(() =>
+            client.Identify(created.GameId, 0, player, new IdentifySeatRequest(old.Token), this._cancellation)
+        );
+        Assert.Equal(Refusal.Forbidden, refused.Refusal);
+    }
+
+    [Theory]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    public async Task List_WhenAPlayerSignedInHoldsASeat_SaysWhoUnlessTheirAiPlaysIt(bool isAi, bool isShown)
+    {
+        // Arrange
+        HttpGameClient client = server.GameClient();
+        GameCreatedDto created = await client.Create(
+            new CreateGameRequest(ZaturnavaServer.Chaturaji2027, ZaturnavaServer.OneOpenSeat),
+            this._cancellation
+        );
+        string name = isAi ? "Imogen" : "Ignatius";
+        string player = TokenOf(await this.Done($"GitHub|{name}|{name}", SigningInServer.Page));
+        _ = await client.Claim(created.GameId, 0, player, new ClaimSeatRequest(null, isAi), this._cancellation);
+        string? id = (await this.Me(player))?.Id;
+
+        // Act
+        GamePageDto page = await client.List(new GameListQuery(Players: name), this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            [isShown ? id : null, null, null, null],
+            page.Games.Single(game => game.Id == created.GameId).PlayerIds
+        );
+    }
+
+    [Fact]
+    public async Task Awaiting_WhenAGameWaitsForThePlayersMove_ListsItWithTheirSeat()
+    {
+        // Arrange - the last seat taken, its player has the opening die to play
+        HttpGameClient client = server.GameClient();
+        GameCreatedDto created = await client.Create(
+            new CreateGameRequest(ZaturnavaServer.Chaturaji2027, ZaturnavaServer.OneOpenSeat),
+            this._cancellation
+        );
+        string player = TokenOf(await this.Done("GitHub|awaited|Ada", SigningInServer.Page));
+        _ = await client.Claim(created.GameId, 0, player, null, this._cancellation);
+
+        // Act
+        ImmutableList<AwaitedGameDto>? awaited = await client.Awaiting(player, this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            [(created.GameId, 0, "Ada")],
+            awaited?.Select(game => (game.Game.Id, game.Seat, game.Game.Players[0])) ?? []
+        );
+    }
+
+    [Theory]
+    [InlineData("not-a-token")]
+    [InlineData("someone else")]
+    public async Task TakeBack_WhenTheTokenIsNotTheClaimants_IsRefused(string who)
+    {
+        // Arrange
+        HttpGameClient client = server.GameClient();
+        GameCreatedDto created = await client.Create(
+            new CreateGameRequest(ZaturnavaServer.Chaturaji2027, ZaturnavaServer.OneOpenSeat),
+            this._cancellation
+        );
+        string ada = TokenOf(await this.Done("GitHub|claimant|Ada", SigningInServer.Page));
+        _ = await client.Claim(created.GameId, 0, ada, null, this._cancellation);
+        string token = who == "someone else"
+            ? TokenOf(await this.Done("GitHub|not-the-claimant|Bob", SigningInServer.Page))
+            : who;
+
+        // Act
+        GameRequestRefusedException refused = await Assert.ThrowsAsync<GameRequestRefusedException>(() =>
+            client.TakeBack(created.GameId, 0, token, this._cancellation)
+        );
+
+        // Assert
+        Assert.Equal(Refusal.Forbidden, refused.Refusal);
+    }
+
+    [Fact]
+    public async Task TakeBack_WhenNoPlayerTokenIsSent_IsRefused()
+    {
+        // Arrange - nothing beyond the server
+
+        // Act
+        using HttpResponseMessage response =
+            await this.Send(HttpMethod.Post, "api/games/g/seats/0/take-back", null);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
     public async Task Identify_WhenTheTokenDoesNotHoldTheSeat_IsRefused()
     {
         // Arrange
@@ -297,6 +407,8 @@ public sealed partial class SignInApiTest(SigningInServer server) : IClassFixtur
     [InlineData("PUT", "api/players/me", "not-a-token")]
     [InlineData("POST", "api/players/me/ai-token", null)]
     [InlineData("POST", "api/players/me/ai-token", "not-a-token")]
+    [InlineData("GET", "api/players/me/awaiting", null)]
+    [InlineData("GET", "api/players/me/awaiting", "not-a-token")]
     public async Task Request_WhenTheTokenIsMissingOrStandsForNoOne_IsUnauthorized(
         string method,
         string route,

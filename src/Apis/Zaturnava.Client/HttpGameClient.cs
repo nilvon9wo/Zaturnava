@@ -96,6 +96,20 @@ public sealed class HttpGameClient(HttpClient http) : IGameServing
         }
     }
 
+    public Task<SeatClaimedDto> TakeBack(
+        [Required] string gameId,
+        int seat,
+        [Required] string playerToken,
+        CancellationToken cancellationToken
+    ) =>
+        this.Send<SeatClaimedDto>(
+            HttpMethod.Post,
+            GameRoutes.TakeBack(gameId, seat),
+            null,
+            playerToken,
+            cancellationToken
+        );
+
     public Task<GameViewDto> FillOpenSeats(
         [Required] string gameId,
         [Required] string token,
@@ -145,6 +159,18 @@ public sealed class HttpGameClient(HttpClient http) : IGameServing
 
     public Task<PlayerDto?> Me([Required] string token, CancellationToken cancellationToken) =>
         this.IfSomeone<PlayerDto>(HttpMethod.Get, GameRoutes.Me, null, token, cancellationToken);
+
+    public Task<ImmutableList<AwaitedGameDto>?> Awaiting(
+        [Required] string token,
+        CancellationToken cancellationToken
+    ) =>
+        this.IfSomeone<ImmutableList<AwaitedGameDto>>(
+            HttpMethod.Get,
+            GameRoutes.Awaiting,
+            null,
+            token,
+            cancellationToken
+        );
 
     public Task<PlayerDto?> Rename(
         [Required] string token,

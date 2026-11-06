@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Net;
 using System.Security.Claims;
 using System.Text.Json;
@@ -6,6 +7,7 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Net.NowhereAtAll.Zaturnava.Application.Games;
 using Net.NowhereAtAll.Zaturnava.Application.Players;
 using Net.NowhereAtAll.Zaturnava.Contracts;
+using Net.NowhereAtAll.Zaturnava.Engine.Rules;
 using Net.NowhereAtAll.Zaturnava.Hosting;
 using Net.NowhereAtAll.Zaturnava.Server.Composition;
 
@@ -30,6 +32,7 @@ internal static class SignInEndpoints
         _ = routes.MapGet("signin/{provider}", Challenge);
         _ = routes.MapGet(Done, Finish);
         _ = routes.MapGet(GameRoutes.Me, Me);
+        _ = routes.MapGet(GameRoutes.Awaiting, Awaiting);
         _ = routes.MapPut(GameRoutes.Me, Rename);
         _ = routes.MapDelete(GameRoutes.Me, Delete);
         _ = routes.MapDelete(GameRoutes.Session, SignOut);
@@ -128,6 +131,36 @@ internal static class SignInEndpoints
         SeatToken.OrNull(request) is { } token && await players.Find(token, cancellationToken) is { } player
             ? TypedResults.Ok(ToDto(player))
             : TypedResults.Unauthorized();
+
+    /// <summary>The games waiting for the player the token stands for to decide, each as a lobby lists it.</summary>
+    private static async Task<Results<Ok<ImmutableList<AwaitedGameDto>>, UnauthorizedHttpResult>> Awaiting(
+        HttpRequest request,
+        PlayerService players,
+        GameService games,
+        CancellationToken cancellationToken
+    )
+    {
+        if (
+            SeatToken.OrNull(request) is not { } token
+            || await players.Find(token, cancellationToken) is not { } player
+        )
+        {
+            return TypedResults.Unauthorized();
+        }
+
+        ImmutableList<AwaitedGame> awaited = await games.Awaiting(player.Id, cancellationToken);
+        ImmutableDictionary<HumanSeat, string> names =
+            await players.NamesOf(awaited.SelectMany(game => game.Record.Controllers), cancellationToken);
+        ImmutableDictionary<string, IRulesApplying> rulesets = games.Rulesets.ToImmutableDictionary(rules => rules.Id);
+        return TypedResults.Ok<ImmutableList<AwaitedGameDto>>(
+            [
+                .. awaited.Select(game => new AwaitedGameDto(
+                    GameViews.SummaryOf(GameListing.Of(game.Record), rulesets[game.Record.RulesetId], names),
+                    game.Seat.Value
+                )),
+            ]
+        );
+    }
 
     private static async Task<Results<Ok<PlayerDto>, UnauthorizedHttpResult>> Rename(
         RenameRequest renaming,

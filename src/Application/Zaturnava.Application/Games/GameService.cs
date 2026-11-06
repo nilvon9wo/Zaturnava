@@ -208,12 +208,41 @@ public sealed class GameService(
         return abandoned.Count;
     }
 
+    /// <summary>
+    /// The games waiting for <paramref name="player"/> to decide, at a seat they play themselves, not by an AI, the one
+    /// that changed earliest first, so that they may be reminded of them (Stated): each replayed, of a ruleset still
+    /// offered.
+    /// </summary>
+    public async Task<ImmutableList<AwaitedGame>> Awaiting(PlayerId player, CancellationToken cancellationToken)
+    {
+        ImmutableList<GameRecord> claimed = await this._store.ClaimedBy(player, cancellationToken);
+        ImmutableDictionary<string, IRulesApplying> offered = this.Rulesets.ToImmutableDictionary(rules => rules.Id);
+        return
+        [
+            .. claimed
+                .OrderBy(record => record.LastChanged)
+                .ThenBy(record => record.Id.Value, StringComparer.Ordinal)
+                .Select(record => AwaitedBy(record, offered.GetValueOrDefault(record.RulesetId), player))
+                .OfType<AwaitedGame>(),
+        ];
+    }
+
+    /// <summary>The game, if it waits for <paramref name="player"/> to decide, replayed by its rules.</summary>
+    private static AwaitedGame? AwaitedBy(GameRecord record, IRulesApplying? rules, PlayerId player) =>
+        Awaited(record, rules) is { } awaited && !awaited.Human.IsAi && player.Equals(awaited.Human.Claimant)
+            ? new AwaitedGame(record, awaited.Seat)
+            : null;
+
     /// <summary>The signed-in player the game waits for to decide, replayed by its rules, if still offered.</summary>
     private static PlayerId? AwaitedPlayer(GameRecord record, IRulesApplying? rules) =>
+        Awaited(record, rules)?.Human.Claimant;
+
+    /// <summary>The person's seat the game waits for to decide, replayed by its rules, if still offered.</summary>
+    private static (SeatId Seat, HumanSeat Human)? Awaited(GameRecord record, IRulesApplying? rules) =>
         rules is not null
         && Replayable(record, rules)?.State.DecidingSeat is { } seat
-        && record.Controllers[seat.Value] is HumanSeat { Claimant: { } claimant }
-            ? claimant
+        && record.Controllers[seat.Value] is HumanSeat human
+            ? (seat, human)
             : null;
 
     /// <summary>Every stored game of a ruleset still offered, replayed, as a lobby lists them.</summary>
@@ -340,6 +369,31 @@ public sealed class GameService(
             record.Next() with { Controllers = record.Controllers.SetItem(seat.Value, identified) },
             cancellationToken
         );
+    }
+
+    /// <summary>
+    /// Hands <paramref name="player"/> a new token for the seat they claimed signed in, wherever they claimed it from
+    /// (Stated): the token the seat was held by holds it no more (Proposed). A seat their AI plays is the AI's, and
+    /// stays so (Proposed).
+    /// </summary>
+    /// <exception cref="GameNotFoundException">There is no such game.</exception>
+    /// <exception cref="NotYourSeatException">The player did not claim the seat, or their AI plays it.</exception>
+    public async Task<string> TakeBack(GameId id, SeatId seat, PlayerId player, CancellationToken cancellationToken)
+    {
+        GameRecord record = await this.Load(id, cancellationToken);
+        HumanSeat held = record.Controllers.ElementAtOrDefault(seat.Value) is HumanSeat { IsAi: false } person
+            && person.Claimant == player
+                ? person
+                : throw new NotYourSeatException(id, seat);
+        string token = SeatTokens.Issue();
+        await this.Save(
+            record.Next() with
+            {
+                Controllers = record.Controllers.SetItem(seat.Value, held with { TokenHash = SeatTokens.Hash(token) }),
+            },
+            cancellationToken
+        );
+        return token;
     }
 
     /// <summary>

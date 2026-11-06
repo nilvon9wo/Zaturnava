@@ -26,6 +26,31 @@
 
     @if (this._catalog is { } catalog)
     {
+        @if (this._me is { } me && !this._awaited.IsEmpty)
+        {
+            <div class="panel awaited">
+                <h2>Waiting for your move</h2>
+                <p class="awaited-hint">
+                    End the games you no longer play (<strong>End game</strong>, at the table), and resume the oldest of
+                    the rest: the others are waiting for you.
+                </p>
+                <ul class="games">
+                    @foreach (AwaitedGameDto awaited in this._awaited)
+                    {
+                        GameSummaryDto game = awaited.Game;
+                        <li>
+                            <span class="ruleset">@NameOf(catalog, game.RulesetId)</span>
+                            <span class="players">@Players(game)</span>
+                            <span class="state">@this.StateOf(game)</span>
+                            <button class="awaited-resume primary"
+                                    @onclick="() => this.BackTo(game.Id, awaited.Seat, me.Token)">
+                                Back to @SeatName(game.SeatNames, awaited.Seat)
+                            </button>
+                        </li>
+                    }
+                </ul>
+            </div>
+        }
         <div class="panel">
             <h2>New game</h2>
             @{
@@ -261,6 +286,14 @@
                             {
                                 <button class="resume primary" @onclick="() => this.Resume(game.Id, claim)">Back to @SeatName(game.SeatNames, claim.Seat)</button>
                             }
+                            else if (this.MySeat(game) is { } mine)
+                            {
+                                <button class="take-back primary"
+                                        title="Your seat, taken from another device: take it back here"
+                                        @onclick="() => this.TakeBack(game.Id, mine.Seat, mine.Token)">
+                                    Back to @SeatName(game.SeatNames, mine.Seat)
+                                </button>
+                            }
                             @foreach (int seat in game.OpenSeats)
                             {
                                 <button class="join" @onclick="() => this.Join(game.Id, seat)">Join as @SeatName(game.SeatNames, seat)</button>
@@ -303,6 +336,12 @@
     private int _pages = 1;
     private int _total;
     private ImmutableDictionary<string, SeatClaim> _held = ImmutableDictionary<string, SeatClaim>.Empty;
+
+    /// <summary>The player signed in, by id, and the token they are signed in by; none, if no one is.</summary>
+    private (string Id, string Token)? _me;
+
+    /// <summary>The games waiting for the player signed in to decide, the one that changed earliest first.</summary>
+    private ImmutableList<AwaitedGameDto> _awaited = [];
     private const int PersonLevel = GameStarter.PersonLevel;
     private const int OwnAiLevel = GameStarter.OwnAiLevel;
 
@@ -522,6 +561,14 @@
     private async Task Load()
     {
         CatalogDto catalog = await this.Games.Catalog(CancellationToken.None);
+        this._me = await this.Browser.PlayerToken() is { } token
+            && await this.Games.Me(token, CancellationToken.None) is { } player
+                ? (player.Id, token)
+                : null;
+        this._awaited = this._me is { } me
+            ? await this.Games.Awaiting(me.Token, CancellationToken.None) ?? []
+            : [];
+        await this.Recall(this._awaited.Select(awaited => awaited.Game));
         this._arePreviewsShown = await this.Browser.ArePreviewsShown();
         this._filter = this._filter with { Preview = this.PreviewFilter };
         await this.ListGames();
@@ -548,7 +595,13 @@
         this._total = page.Total;
         this._pageNumber = page.Page;
         this._pages = Math.Max(1, (page.Total + page.PageSize - 1) / page.PageSize);
-        foreach (GameSummaryDto game in this._games)
+        await this.Recall(this._games);
+    }
+
+    /// <summary>The seats this browser holds at the games.</summary>
+    private async Task Recall(IEnumerable<GameSummaryDto> games)
+    {
+        foreach (GameSummaryDto game in games)
         {
             this._held = await this.Browser.Recall(game.Id) is { } claim ? this._held.SetItem(game.Id, claim) : this._held;
         }
@@ -717,6 +770,29 @@
     /// <summary>Back to a seat held, known there as the player is now: signed in, or by their nickname.</summary>
     private Task Resume(string gameId, SeatClaim claim) =>
         this.Sit(async () => await GameStarter.Resume(this.Games, gameId, claim, await this.Browser.Claimant()));
+
+    /// <summary>
+    /// Back to a seat the player claimed signed in, from another device, or a browser that has forgotten it: taken
+    /// back for a new token, which this browser keeps from now on (Stated: from any device).
+    /// </summary>
+    private Task TakeBack(string gameId, int seat, string playerToken) =>
+        this.Sit(async () =>
+        {
+            SeatClaimedDto taken = await this.Games.TakeBack(gameId, seat, playerToken, CancellationToken.None);
+            return new Seating(gameId, new SeatClaim(seat, taken.Token));
+        });
+
+    /// <summary>
+    /// Back to a game waiting for the player: to the seat this browser holds there, if it holds it; else taken back.
+    /// </summary>
+    private Task BackTo(string gameId, int seat, string playerToken) =>
+        this._held.GetValueOrDefault(gameId) is { } claim && claim.Seat == seat
+            ? this.Resume(gameId, claim)
+            : this.TakeBack(gameId, seat, playerToken);
+
+    /// <summary>The seat the player signed in plays at the game, themselves, if any, and their token.</summary>
+    private (int Seat, string Token)? MySeat(GameSummaryDto game) =>
+        this._me is { } me && game.PlayerIds.IndexOf(me.Id) is >= 0 and var seat ? (seat, me.Token) : null;
 
     private async Task Sit(Func<Task<Seating>> seating) =>
         this._problem = await Requests.Attempt(async () => await this.OnSeated.InvokeAsync(await seating()));

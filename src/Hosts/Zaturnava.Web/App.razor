@@ -21,9 +21,9 @@
 else
 {
     <header class="account">
-        <PlayerBar />
+        <PlayerBar OnSignedInOrOut="this.Refresh" />
     </header>
-    <Lobby OnSeated="this.Sit" />
+    <Lobby @key="this._signIns" OnSeated="this.Sit" />
     <footer class="bar">
         <span class="where">
             <span class="brand">Zaturnava</span>
@@ -58,6 +58,9 @@ else
     private bool _isBotGuideOpen;
     private bool _isLeaderboardOpen;
     private PieceSet _pieces;
+
+    /// <summary>How many times a player has signed in or out here: the lobby is made anew each time.</summary>
+    private int _signIns;
 
     private RenderFragment HowToPlay =>
         builder =>
@@ -111,6 +114,11 @@ else
     }
 
     private void Leave() => this._seating = null;
+
+    /// <summary>
+    /// The lobby anew, for whoever is signed in now: the games waiting for them, the seats they may take back.
+    /// </summary>
+    private void Refresh() => this._signIns++;
 
     private void OpenGuide() => this._isGuideOpen = true;
 

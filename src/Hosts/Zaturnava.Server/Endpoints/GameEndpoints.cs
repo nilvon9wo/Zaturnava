@@ -31,6 +31,7 @@ internal static class GameEndpoints
         _ = routes.MapGet(GameRoutes.Histories, Histories);
         _ = routes.MapPost(GameRoute + "/seats/{seat:int}", Claim);
         _ = routes.MapPut(GameRoute + "/seats/{seat:int}", Identify);
+        _ = routes.MapPost(GameRoute + "/seats/{seat:int}/take-back", TakeBack);
         _ = routes.MapPost(GameRoute + "/actions", Submit);
         _ = routes.MapPost(GameRoute + "/advance", Advance);
         _ = routes.MapPost(GameRoute + "/fill", Fill);
@@ -275,6 +276,24 @@ internal static class GameEndpoints
             cancellationToken
         );
         return TypedResults.NoContent();
+    }
+
+    /// <summary>
+    /// Hands the player the request's token stands for a new token for the seat they claimed: refused, if it carries
+    /// none, or stands for no one.
+    /// </summary>
+    private static async Task<SeatClaimedDto> TakeBack(
+        string gameId,
+        int seat,
+        HttpRequest request,
+        GameService games,
+        PlayerService players,
+        CancellationToken cancellationToken
+    )
+    {
+        PlayerId player = await ClaimantOf(request, players, cancellationToken) ?? throw new UnknownPlayerException();
+        string token = await games.TakeBack(new GameId(gameId), new SeatId(seat), player, cancellationToken);
+        return new SeatClaimedDto(token);
     }
 
     /// <summary>The player the request's token stands for, if it carries one; refused, if it is no one's.</summary>

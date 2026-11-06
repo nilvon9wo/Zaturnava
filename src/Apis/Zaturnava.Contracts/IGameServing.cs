@@ -63,6 +63,18 @@ public interface IGameServing
     );
 
     /// <summary>
+    /// Takes back the seat the player whose token <paramref name="playerToken"/> is claimed, signed in, from wherever
+    /// they claimed it: the token returned holds it from now on, and the one it was held by no more. Refused for a
+    /// seat they did not claim, or one their AI plays.
+    /// </summary>
+    Task<SeatClaimedDto> TakeBack(
+        [Required] string gameId,
+        int seat,
+        [Required] string playerToken,
+        CancellationToken cancellationToken
+    );
+
+    /// <summary>
     /// Has bots take the open seats of a game waiting for people, for the player whose seat <paramref name="token"/>
     /// holds, once they may (<see cref="VacancyDto"/>); the game begins, if no seat is left open.
     /// </summary>
@@ -107,6 +119,12 @@ public interface IGameServing
 
     /// <summary>The player a player's <paramref name="token"/> stands for; none, if it stands for no one.</summary>
     Task<PlayerDto?> Me([Required] string token, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// The games waiting for the player <paramref name="token"/> stands for to decide, at a seat they play themselves,
+    /// the one that changed earliest first; none, if it stands for no one.
+    /// </summary>
+    Task<ImmutableList<AwaitedGameDto>?> Awaiting([Required] string token, CancellationToken cancellationToken);
 
     /// <summary>
     /// Names the player <paramref name="token"/> stands for anew (<see cref="RenameRequest"/>); none, if it stands for

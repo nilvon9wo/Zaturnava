@@ -49,6 +49,12 @@ public interface IGamePersisting
     /// </summary>
     Task Reclaim(PlayerId from, PlayerId into, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// The games not over, as last saved, at which <paramref name="player"/> claimed a seat signed in, whether they or
+    /// their AI play it.
+    /// </summary>
+    Task<ImmutableList<GameRecord>> ClaimedBy(PlayerId player, CancellationToken cancellationToken);
+
     /// <summary>Lets go of the games, with everything kept of them.</summary>
     Task Remove([Required] ImmutableList<GameId> ids, CancellationToken cancellationToken);
 

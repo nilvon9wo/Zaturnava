@@ -139,6 +139,10 @@ else
 @code {
     public const string Deleted = "Your account is deleted.";
 
+    /// <summary>Told once a player has signed in, or out: what the page shows for them may change.</summary>
+    [Parameter]
+    public EventCallback OnSignedInOrOut { get; set; }
+
     private ImmutableList<string> _providers = [];
     private string? _nickname;
 
@@ -183,6 +187,7 @@ else
         }
 
         this.StateHasChanged();
+        await this.OnSignedInOrOut.InvokeAsync();
     }
 
     public void Dispose() => this._listener?.Dispose();
@@ -308,5 +313,6 @@ else
         this._signedIn = null;
         this._isConfirming = false;
         this._isEditing = false;
+        await this.OnSignedInOrOut.InvokeAsync();
     }
 }

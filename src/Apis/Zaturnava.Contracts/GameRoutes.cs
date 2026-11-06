@@ -36,6 +36,12 @@ public static class GameRoutes
     /// <summary>Where a player asks for a token an AI may play for them with (<see cref="AiTokenDto"/>).</summary>
     public const string AiToken = Me + "/ai-token";
 
+    /// <summary>
+    /// The games waiting for the bearer of a player's token to decide, at a seat they play themselves, the one that
+    /// changed earliest first (<see cref="AwaitedGameDto"/>).
+    /// </summary>
+    public const string Awaiting = Me + "/awaiting";
+
     /// <summary>The players by id: each one's profile, as anyone may see it.</summary>
     public const string Players = "api/players";
 
@@ -65,6 +71,9 @@ public static class GameRoutes
 
     public static string Seat([Required] string gameId, int seat) =>
         $"{Game(gameId)}/seats/{seat.ToString(CultureInfo.InvariantCulture)}";
+
+    /// <summary>Where a signed-in player takes back the seat they claimed, from any device, for a new token.</summary>
+    public static string TakeBack([Required] string gameId, int seat) => $"{Seat(gameId, seat)}/take-back";
 
     public static string Actions([Required] string gameId) => $"{Game(gameId)}/actions";
 

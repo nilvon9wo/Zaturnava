@@ -863,6 +863,106 @@ public sealed class LobbyTest : IDisposable
     }
 
     [Fact]
+    public void TakeBack_WhenThePlayerSignedInClaimedASeatThisBrowserDoesNotHold_TakesItBackForANewToken()
+    {
+        // Arrange
+        this.SignInAsAdaAtYellow();
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Act
+        lobby.Find("button.take-back").Click();
+
+        // Assert
+        Assert.Equal(
+            ("Back to Yellow", new Seating(FakeGameServer.GameId, new SeatClaim(1, FakeGameServer.Token))),
+            (lobby.Find("button.take-back").TextContent.Trim(), this._seated)
+        );
+        Assert.Contains($"take back {FakeGameServer.GameId} 1 player", this._page.Server.Calls);
+    }
+
+    [Theory]
+    [InlineData(null, "take back", FakeGameServer.Token)]
+    [InlineData("1 kept", "resume", "kept")]
+    [InlineData("2 kept", "take back", FakeGameServer.Token)]
+    public void BackTo_WhenAGameWaitsForThePlayer_GoesBackToTheSeatHeldHereElseTakesItBack(
+        string? held,
+        string how,
+        string token
+    )
+    {
+        // Arrange
+        this.SignInAsAdaAtYellow();
+        this._page.Server.Awaited = this._page.Server.Awaited.SetItem(
+            "player",
+            [new AwaitedGameDto(this._page.Server.Games[0], 1)]
+        );
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.seat." + FakeGameServer.GameId)
+            .SetResult(held);
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Act
+        lobby.Find("button.awaited-resume").Click();
+
+        // Assert
+        Assert.Equal(
+            ("Back to Yellow", new Seating(FakeGameServer.GameId, new SeatClaim(1, token)), how == "take back"),
+            (
+                lobby.Find("button.awaited-resume").TextContent.Trim(),
+                this._seated,
+                this._page.Server.Calls.Contains($"take back {FakeGameServer.GameId} 1 player")
+            )
+        );
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Render_WhenNoGameWaitsForThePlayer_ShowsNoneWaiting(bool isKnown)
+    {
+        // Arrange - the player's games told, none; or not told, the token standing for no one by then
+        this.SignInAsAdaAtYellow();
+        this._page.Server.Awaited = isKnown ? [] : this._page.Server.Awaited.SetItem("player", null);
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Assert
+        Assert.Empty(lobby.FindAll(".awaited"));
+    }
+
+    [Fact]
+    public void Render_WhenThePlayerSignedInPlaysNoSeat_OffersNoneToTakeBack()
+    {
+        // Arrange
+        this.SignInAsAdaAtYellow();
+        this._page.Server.Players = this._page.Server.Players.SetItem("player", new PlayerDto("bob", "Bob"));
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Assert
+        Assert.Empty(lobby.FindAll("button.take-back"));
+    }
+
+    [Fact]
+    public void TakeBack_WhenRefused_SaysWhyAndStaysInTheLobby()
+    {
+        // Arrange
+        this.SignInAsAdaAtYellow();
+        IRenderedComponent<Lobby> lobby = this.Render();
+        this._page.Server.Failure = new GameRequestRefusedException(Refusal.Forbidden, "Not your seat.");
+
+        // Act
+        lobby.Find("button.take-back").Click();
+
+        // Assert
+        Assert.Equal(
+            ((Seating?)null, "Not your seat."),
+            (this._seated, lobby.Find("p.problem").TextContent)
+        );
+    }
+
+    [Fact]
     public void Resume_WhenThePlayerSignedInOrChoseANicknameSince_SaysSoAtTheSeat()
     {
         // Arrange
@@ -1341,4 +1441,15 @@ public sealed class LobbyTest : IDisposable
 
     private IRenderedComponent<Lobby> Render() =>
         this._page.Render<Lobby>(parameters => parameters.Add(x => x.OnSeated, seating => this._seated = seating));
+
+    /// <summary>Ada signed in, by the token "player", playing Yellow themselves at the game listed.</summary>
+    private void SignInAsAdaAtYellow()
+    {
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.player").SetResult("player");
+        this._page.Server.Players = this._page.Server.Players.SetItem("player", new PlayerDto("ada", "Ada"));
+        this._page.Server.Games =
+        [
+            .. this._page.Server.Games.Select(game => game with { PlayerIds = [null, "ada", null, null] }),
+        ];
+    }
 }

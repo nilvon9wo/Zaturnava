@@ -18,6 +18,7 @@ server is at `https://zaturnava.runasp.net/`.
 | Create a game | `POST api/games` | `201`, `{"gameId": "..."}` |
 | Claim a seat | `POST api/games/{id}/seats/{seat}`, with a player token or none, and a guest's nickname or none | `{"token": "..."}` |
 | Say anew who holds a seat | `PUT api/games/{id}/seats/{seat}`, with a player token or none, and the seat's token and a guest's nickname or none | `204` |
+| Take back your own seat, from any device | `POST api/games/{id}/seats/{seat}/take-back`, with the token of the player who claimed it (not for a seat their AI plays); the seat's old token holds it no more | `{"token": "..."}` |
 | A game | `GET api/games/{id}` | The game as it stands ([the view](#the-view)) |
 | Act | `POST api/games/{id}/actions`, with the seat's token | The game after it |
 | Let a bot (or a timer) decide | `POST api/games/{id}/advance` | The game after one decision |
@@ -233,6 +234,7 @@ opens, with a service the server is set up for (Proposed):
 | The services to sign in with | `GET api/signin` | Their names, such as `["GitHub", "Google", "Discord", "Itch"]`; none, if none is set up |
 | Sign in, in a window of its own | `GET signin/{service}?origin={the page's origin}` | The service's own page; then, once the person agrees, a page that posts `{"token": "...", "name": "..."}` to the page that opened it, and closes |
 | Who a player's token stands for | `GET api/players/me`, with the player's token | `{"id": "...", "name": "...", "services": ["GitHub"]}`, or `401` |
+| The games waiting for the player's move | `GET api/players/me/awaiting`, with the player's token | `[{"game": {...}, "seat": 0}]`, each game as the list shows it, the one changed earliest first; or `401` |
 | Change the name others see | `PUT api/players/me`, with the player's token, and `{"name": "..."}` | The player, renamed; or `401` |
 | A code to link another service with | `POST api/players/me/link-code`, with the player's token | `{"code": "..."}`, or `401` |
 | Link another service | `GET signin/{service}?origin={the page's origin}&link={code}` | As signing in, but the service's account is added to the player the code was given to |
