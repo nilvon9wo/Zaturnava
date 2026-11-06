@@ -47,6 +47,15 @@ public sealed record Chaturaji2027Variant(
     /// </summary>
     public GameSize? Game { get; init; }
 
+    /// <summary>
+    /// The kinds promoted, at the far edge, into a captured piece (rules.md §8): the <see cref="Pawns"/>, unless set.
+    /// </summary>
+    public ImmutableHashSet<PieceKindId> Promotables
+    {
+        get => field ?? this.Pawns;
+        init;
+    }
+
     /// <summary>The kinds, leaders apart, most dangerous to let loose, as a Rook is: none, unless set.</summary>
     public ImmutableHashSet<PieceKindId> Heavies { get; init; } = [];
 

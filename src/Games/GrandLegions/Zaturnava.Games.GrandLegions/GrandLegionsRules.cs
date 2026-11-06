@@ -7,14 +7,23 @@ namespace Net.NowhereAtAll.Zaturnava.Games.GrandLegions;
 
 /// <summary>
 /// Grand Legions played by Chaturaji 2027's rules (Proposed): each leader is what those rules call a Raja, its
-/// start its seat's throne; the Western, Makruk and Shogi Pawns are their Pawns, promoted at the far edge into a
-/// captured piece; a die names a class, so moves any piece of it; and taking a piece scores its value. Palaces,
-/// more than one leader, and each piece's own promotion are still to come.
+/// start its seat's throne; the Western, Makruk and Shogi Pawns are their Pawns, swapping back to back; every
+/// Infantry piece is promoted at the far edge into a captured piece; a die names a class, so moves any piece of
+/// it; and taking a piece scores its value. Palaces, more than one leader, and each piece's own promotion are
+/// still to come.
 /// </summary>
 public static class GrandLegionsRules
 {
     public static ImmutableHashSet<PieceKindId> Pawns { get; } =
         [GrandLegionsPieces.WesternPawn, GrandLegionsPieces.MakrukPawn, GrandLegionsPieces.ShogiPawn];
+
+    /// <summary>Every Infantry piece, promoted at the far edge into a captured piece (specification §6.1).</summary>
+    public static ImmutableHashSet<PieceKindId> Promotables { get; } =
+    [
+        .. GrandLegionsPieces.Catalogue
+            .Where(piece => piece.Class == PieceClass.Infantry)
+            .Select(piece => piece.Id),
+    ];
 
     public static ImmutableHashSet<PieceKindId> Leaders { get; } =
     [
@@ -84,6 +93,7 @@ public static class GrandLegionsRules
             Dealer = seed => QuickArmy.Dealt(game, seed),
             Game = game.Game,
             Heavies = Heavies,
+            Promotables = Promotables,
             Marks = GrandLegionsPieces.Marks,
             Guides = Guides,
             Scoring = Scoring,
