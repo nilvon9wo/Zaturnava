@@ -59,12 +59,17 @@ first.
     Bishop, Knight), and the elephants the elephant; like pieces have like symbols (Stated; see
     [spec §8](grand/specification.md#8-the-page)). A class's emblem with letters, as first done, was not
     playable alone; the class's emblem is now drawn small beneath the symbol, so that the class is told too, with
-    every piece's own abbreviation beside it (Stated). Still to come: lifts as small badges above the symbol, one
+    every piece's own abbreviation beside it (Stated). The emblems are pictures, not a map's frames, which were too
+    alike and abstract to tell apart (Stated 2026-11-06): a flag, crossed swords, a stirrup, a weight, a bomb; the
+    Courtier a plumed cap (Proposed). Rivers wave, rather than run straight. Still to come: lifts as small badges above the symbol, one
     per kind of restriction, once a piece's lifted restrictions are kept in the game.
   - Each game's pieces priced on its own board, from its actual dimensions, not values set per size (*Stated*
     2026-11-06; [pieces](grand/pieces.md#prices-for-each-game)): on the small board the Giraffe cannot move
     from the centre, yet costs what it does on 8 × 8. *Done*: reach counted from the centre of the actual
     board, and the promotion premium over the actual distance, adjust the sheet's value.
+- The piece cards (*Stated* 2026-11-06): a **Cards** setting at the table turns them off and on, remembered;
+  and a card may be dragged by its title anywhere on the screen, where it opens from then on. *Done*. The lobby
+  says, under Quick game and Custom, that Custom is how to play other people.
 - **N29** (low) An encyclopedia of pieces: each piece's name here, its other names, the games it comes from
   (Chess, Xiangqi...), the games here that use it, its variants (kinds of Pawn, of Elephant...), and how it
   moves, captures and what else it may do.
