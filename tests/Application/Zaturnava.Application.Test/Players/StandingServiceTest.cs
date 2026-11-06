@@ -171,6 +171,59 @@ public sealed class StandingServiceTest
         Assert.Equal("Bea 1550, Ada 1450", string.Join(", ", leaders.Select(l => $"{l.Name} {l.Standing.Elo}")));
     }
 
+    [Fact]
+    public async Task Leaders_WhenGamesHaveWaitedADayForAPlayersMove_CountsThemAbandonedByThatPlayerAlone()
+    {
+        // Arrange - Black to decide in every game of the rules, not over; the games of "over" replay to their end
+        await this._players.Add(new Player(Ada, "Ada", []), this._cancellation);
+        await this._players.Add(new Player(Bea, "Bea", []), this._cancellation);
+        await this._players.Keep(
+            [
+                new Standing(Ada, EndedRules.RulesetId) { Elo = 1550 },
+                new Standing(Bea, EndedRules.RulesetId) { Elo = 1450 },
+                new Standing(Ada, "over") { Elo = 1550 },
+            ],
+            this._cancellation
+        );
+        HumanSeat ada = new("ada", Ada);
+        GameRecord[] games =
+        [
+            Waiting("first", ada, new HumanSeat("bea", Bea)),
+            Waiting("second", ada, new BotSeat(FirstChoiceBot.BotId)),
+            Waiting("lately", ada) with { LastChanged = DateTimeOffset.UtcNow },
+            Waiting("with a guest", ada, new HumanSeat("guest")),
+            Waiting("by an AI", new HumanSeat("ada", Ada, IsAi: true)),
+            Waiting("a bot's move", new BotSeat(FirstChoiceBot.BotId), new HumanSeat("bea", Bea)),
+            Waiting("retired", ada) with { RulesetId = "retired" },
+            Waiting("ended", ada) with { RulesetId = "over" },
+        ];
+        foreach (GameRecord game in games)
+        {
+            await this._games.Add(game, this._cancellation);
+        }
+
+        StandingService service = this.Service(
+            [
+                new EndedRules(EndedRules.State([]) with { Outcome = null, DecidingSeat = Black }),
+                new EndedRules(EndedRules.State([]), "over"),
+            ],
+            null
+        );
+
+        // Act
+        ImmutableList<Leader> leaders = await service.Leaders(EndedRules.RulesetId, this._cancellation);
+        ImmutableList<Leader> overLeaders = await service.Leaders("over", this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            ("Ada 2, Bea 0", "Ada 0"),
+            (
+                string.Join(", ", leaders.Select(leader => $"{leader.Name} {leader.Abandoned}")),
+                string.Join(", ", overLeaders.Select(leader => $"{leader.Name} {leader.Abandoned}"))
+            )
+        );
+    }
+
     private static GameRecord Record(string id, params SeatController[] seats) =>
         new(new GameId(id), EndedRules.RulesetId, [.. seats], [], 1)
         {
@@ -178,10 +231,16 @@ public sealed class StandingServiceTest
             LastChanged = DateTimeOffset.UnixEpoch,
         };
 
+    /// <summary>A game not over, untouched since long ago.</summary>
+    private static GameRecord Waiting(string id, params SeatController[] seats) =>
+        Record(id, seats) with { IsOver = null };
+
     /// <summary>The service, the first-choice bot rated <paramref name="botRating"/> at the rules, if at all.</summary>
-    private StandingService Service(EndedRules rules, int? botRating) =>
+    private StandingService Service(EndedRules rules, int? botRating) => this.Service([rules], botRating);
+
+    private StandingService Service(ImmutableList<EndedRules> rules, int? botRating) =>
         new(
-            new RulesetCatalog([rules]),
+            new RulesetCatalog([.. rules]),
             new BotCatalog(
                 [new FirstChoiceBot()],
                 botRating is { } rating
@@ -192,21 +251,23 @@ public sealed class StandingServiceTest
                     : []
             ),
             this._games,
-            this._players
+            this._players,
+            TimeProvider.System
         );
 }
 
 /// <summary>
 /// Rules of a game of four seats, 0 and 2 against 1 and 3, that is over before it begins: replayed, every game of
-/// them is <paramref name="ended"/>.
+/// them is <paramref name="ended"/> (or, despite the name, not over, if it has no outcome); <see cref="RulesetId"/>,
+/// unless <paramref name="id"/> says otherwise.
 /// </summary>
-internal sealed class EndedRules(GameState ended) : IRulesApplying
+internal sealed class EndedRules(GameState ended, string id = EndedRules.RulesetId) : IRulesApplying
 {
     public const string RulesetId = "ended";
 
     private readonly GameState _ended = ended;
 
-    public string Id => RulesetId;
+    public string Id { get; } = id;
 
     public string Name => "Ended";
 

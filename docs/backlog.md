@@ -12,9 +12,12 @@ first.
 - **N2** The database stays as it is through every change, by migrations; never wiped (*Stated*).
 - **N3** A leaderboard, for players to compete for; with each player's Elo and their **experience**: each time
   a player is on the winning team, they gain their own points plus their team's (*Stated*). Each player's
-  statistics also count the games they won, lost, drew and abandoned (*Stated*). *Done*, but for abandoned games:
-  a **Leaderboard** button in the page's bar lists, game by game, the top 100 signed-in players by Elo, with their
-  experience and games won, lost and drawn. Each finished game counts once, within a minute of ending, for every
+  statistics also count the games they won, lost, drew and abandoned (*Stated*). *Done*: a **Leaderboard**
+  button in the page's bar lists, game by game, the top 100 signed-in players by Elo, with their experience and
+  games won, lost, drawn and abandoned. A game is abandoned by a player while it is not over, has no guest at it
+  (such games are purged instead), has been untouched for 24 hours, and waits for that player's own move; waiting
+  for someone else's, it counts for no one, and once the player moves it counts no more (*Stated* 2026-11-06).
+  Each finished game counts once, within a minute of ending, for every
   signed-in seat but one their own AI played; everyone starts at 1500, K is 32, and each team is rated as the mean
   of its seats (a bot's by its rating at the ruleset, a guest's 1500), its expected score the average against
   each other team (*Proposed*).

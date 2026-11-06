@@ -22,7 +22,7 @@ public sealed class LeaderboardTest : IDisposable
         // Arrange
         this._page.Server.Leaderboards = this._page.Server.Leaderboards.Add(
             "chaturaji-2027",
-            [new StandingDto(1, "Ada", 1516, 14, 1, 0, 0), new StandingDto(2, "Bea", 1484, 0, 0, 1, 0)]
+            [new StandingDto(1, "Ada", 1516, 14, 1, 0, 0, 2), new StandingDto(2, "Bea", 1484, 0, 0, 1, 0)]
         );
 
         // Act
@@ -30,7 +30,7 @@ public sealed class LeaderboardTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ("1 Ada 1516 14 1 0 0|2 Bea 1484 0 0 1 0", 0),
+            ("1 Ada 1516 14 1 0 0 2|2 Bea 1484 0 0 1 0 0", 0),
             (
                 string.Join(
                     "|",
@@ -53,10 +53,7 @@ public sealed class LeaderboardTest : IDisposable
             [new StandingDto(1, "Cy", 1530, 40, 2, 0, 0)]
         );
         IRenderedComponent<Leaderboard> board = this._page.Render<Leaderboard>();
-        string before = string.Join(
-            ' ',
-            board.Find(".no-leaders").TextContent.Split(default(char[]), StringSplitOptions.RemoveEmptyEntries)
-        );
+        string before = board.Find(".no-leaders").TextContent;
 
         // Act
         board.Find("select.leaderboard-game").Change("grand-legions");
@@ -64,8 +61,7 @@ public sealed class LeaderboardTest : IDisposable
         // Assert
         Assert.Equal(
             (
-                "No one signed in has finished a game of it yet. A game played as a guest does not count: sign in "
-                    + "before you play.",
+                "No one signed in has finished a game of it yet.",
                 "Chaturaji 2027,Grand Legions",
                 "Cy",
                 "leaderboard chaturaji-2027,leaderboard grand-legions"

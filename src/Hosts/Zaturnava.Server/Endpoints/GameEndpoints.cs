@@ -97,7 +97,8 @@ internal static class GameEndpoints
                 leader.Standing.Experience,
                 leader.Standing.Won,
                 leader.Standing.Lost,
-                leader.Standing.Drawn
+                leader.Standing.Drawn,
+                leader.Abandoned
             )
         ),
     ];
