@@ -46,10 +46,8 @@ first.
 - Grand Legions (preview until these are done):
   - **N25** Letters as pieces, ambiguous ones, make it nearly unplayable: it needs its own pieces' symbols.
     *Done*, as asked: every piece has a symbol of its own, as chess's pieces have theirs (King, Queen, Rook,
-    Bishop, Knight), and the elephants the elephant; only pieces sharing a name share one. *Proposed*: which
-    symbol each other piece has (a star, a flag, the sun, the moon, a shield, a fan, a scroll, a tiara, a key, a
-    sword, a lance, a bow, scales, a cross, dragon's wings, chevrons, stripes, a camel, a horseshoe, a giraffe,
-    three dots, a catapult, a cannon, a grasshopper). A class's emblem with letters, as first done, was not
+    Bishop, Knight), and the elephants the elephant; like pieces have like symbols (Stated; see
+    [spec §8](grand/specification.md#8-the-page)). A class's emblem with letters, as first done, was not
     playable alone; the class's emblem is now drawn small beneath the symbol, so that the class is told too, with
     every piece's own abbreviation beside it (the Pawns' Sh, W and M and Soldiers' SJ and SX as asked; the rest
     *Proposed*). Still to come: lifts as small badges above the symbol, once a piece's lifted restrictions are kept

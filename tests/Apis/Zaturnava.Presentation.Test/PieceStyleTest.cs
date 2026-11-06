@@ -32,30 +32,38 @@ public sealed class PieceStyleTest
     }
 
     [Fact]
-    public void EmblemOf_ForEachSymbol_IsAShapeOfItsOwnOrAChessGlyph()
+    public void EmblemOf_ForEachSymbol_IsAShapeAGlyphOrAGlyphWithWhatItAdds()
     {
-        // Arrange
-        string[] symbols =
+        // Arrange - shapes alone; chess glyphs alone; chess glyphs with more drawn round them
+        string[] shapes =
         [
-            "star", "general", "sun", "moon", "shield", "fan", "scroll", "tiara", "key", "sword", "lance", "bow",
-            "scales", "cross", "dragon", "chevrons", "stripes", "camel", "horseshoe", "elephant", "giraffe", "dots",
+            "star", "shield", "fan", "scroll", "tiara", "key", "sword", "lance", "camel", "elephant", "giraffe", "dots",
             "catapult", "cannon", "grasshopper",
         ];
         string[] glyphs = ["king", "queen", "rook", "bishop", "knight", "pawn"];
+        string[] both =
+        [
+            "dragon-king", "dragon-bishop", "dragon-horse", "amazon", "archbishop", "chancellor", "knightrider",
+            "zebra", "xiangqi-horse",
+        ];
 
         // Act
-        string?[] shapes = [.. symbols.Select(PieceStyle.EmblemOf)];
-        string?[] drawn = [.. glyphs.Select(PieceStyle.EmblemGlyphOf)];
+        (string? Shape, string? Glyph)[] drawn =
+        [
+            .. shapes.Concat(glyphs).Concat(both).Select(symbol =>
+                (PieceStyle.EmblemOf(symbol), PieceStyle.EmblemGlyphOf(symbol))
+            ),
+        ];
 
         // Assert
         Assert.Equal(
-            (symbols.Length, glyphs.Length, "♜︎", 0, 0),
+            (shapes.Length + glyphs.Length + both.Length, shapes.Length + both.Length, glyphs.Length + both.Length,
+                "♜︎"),
             (
-                shapes.OfType<string>().Distinct(StringComparer.Ordinal).Count(),
-                drawn.OfType<string>().Distinct(StringComparer.Ordinal).Count(),
-                drawn[2],
-                glyphs.Count(glyph => PieceStyle.EmblemOf(glyph) is not null),
-                symbols.Count(symbol => PieceStyle.EmblemGlyphOf(symbol) is not null)
+                drawn.Distinct().Count(),
+                drawn.Count(symbol => symbol.Shape is not null),
+                drawn.Count(symbol => symbol.Glyph is not null),
+                drawn[shapes.Length + 2].Glyph
             )
         );
     }
@@ -81,18 +89,18 @@ public sealed class PieceStyleTest
 
         // Assert
         Assert.Equal(
-            (classes.Length, PieceStyle.ShapeOf("raja", PieceSet.Chaturaji), null),
+            (classes.Length, 0, null),
             (
                 shapes.OfType<string>().Distinct(StringComparer.Ordinal).Count(),
-                shapes[0],
+                shapes.Count(shape => shape == PieceStyle.EmblemOf("star") || shape == PieceStyle.EmblemOf("cannon")),
                 PieceStyle.ClassEmblemOf("wizard")
             )
         );
     }
 
     [Theory]
-    [InlineData("", "translate(0 0.24) scale(0.3)")]
-    [InlineData("Sh", "translate(-0.09 0.24) scale(0.3)")]
+    [InlineData("", "translate(0 0.24) scale(0.28)")]
+    [InlineData("Sh", "translate(-0.1 0.24) scale(0.28)")]
     public void ClassPlacementBeside_WhenThePieceHasLettersOrNot_IsAtTheirLeftElseInTheMiddle(
         string letters,
         string expected

@@ -51,7 +51,7 @@
                     {
                         <path d="@emblem" transform="@Placed(this.Turn, x, y, PieceStyle.EmblemPlacement)" />
                     }
-                    else if (PieceStyle.EmblemGlyphOf(mark.Emblem) is { } glyph)
+                    @if (PieceStyle.EmblemGlyphOf(mark.Emblem) is { } glyph)
                     {
                         <g>
                             <text class="symbol"

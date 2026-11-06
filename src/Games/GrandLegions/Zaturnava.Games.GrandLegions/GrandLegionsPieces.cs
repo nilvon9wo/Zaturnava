@@ -191,20 +191,21 @@ public static class GrandLegionsPieces
         Catalogue.ToImmutableDictionary(piece => piece.Id, piece => piece.Kind);
 
     /// <summary>
-    /// The symbol each piece is drawn with, so that it is known at a glance (Stated: a symbol of its own for every
-    /// piece, the chess symbols for the pieces named as chess's, the elephant for the elephants; pieces sharing a
-    /// name, as the Pawns do, may share one, their abbreviations telling them apart). Which symbol each other piece
-    /// has is Proposed.
+    /// The symbol each piece is drawn with, so that it is known at a glance (Stated: the chess symbols for the pieces
+    /// named as chess's, the elephant for the elephants; pieces alike drawn alike, the Pawns sharing one and the
+    /// Generals the star, their abbreviations telling them apart; a Dragon as its piece between dragon's wings; the
+    /// Knight's kin as the Knight, marked). The Amazon, Archbishop and Chancellor as the Queen, Bishop and Rook with
+    /// a Knight's leap, and the other pieces' symbols, are Proposed.
     /// </summary>
     public static readonly ImmutableDictionary<PieceKindId, string> Symbols =
         ImmutableDictionary<PieceKindId, string>.Empty
-            .Add(DragonKing, "dragon")
+            .Add(DragonKing, "dragon-king")
             .Add(FairyGeneral, "star")
             .Add(WesternKing, "king")
-            .Add(XiangqiGeneral, "general")
-            .Add(JanggiGeneral, "general")
-            .Add(GoldGeneral, "sun")
-            .Add(SilverGeneral, "moon")
+            .Add(XiangqiGeneral, "star")
+            .Add(JanggiGeneral, "star")
+            .Add(GoldGeneral, "star")
+            .Add(SilverGeneral, "star")
             .Add(ShogiPawn, "pawn")
             .Add(WesternPawn, "pawn")
             .Add(JanggiGuard, "shield")
@@ -215,20 +216,20 @@ public static class GrandLegionsPieces
             .Add(MakrukPawn, "pawn")
             .Add(XiangqiSoldier, "sword")
             .Add(XiangqiAdvisor, "fan")
-            .Add(Amazon, "bow")
+            .Add(Amazon, "amazon")
             .Add(Queen, "queen")
-            .Add(Chancellor, "scales")
-            .Add(Archbishop, "cross")
-            .Add(DragonBishop, "dragon")
-            .Add(DragonHorse, "dragon")
+            .Add(Chancellor, "chancellor")
+            .Add(Archbishop, "archbishop")
+            .Add(DragonBishop, "dragon-bishop")
+            .Add(DragonHorse, "dragon-horse")
             .Add(Lance, "lance")
             .Add(Rook, "rook")
             .Add(Bishop, "bishop")
-            .Add(Knightrider, "chevrons")
-            .Add(Zebra, "stripes")
+            .Add(Knightrider, "knightrider")
+            .Add(Zebra, "zebra")
             .Add(Knight, "knight")
             .Add(Camel, "camel")
-            .Add(Horse, "horseshoe")
+            .Add(Horse, "xiangqi-horse")
             .Add(JanggiElephant, "elephant")
             .Add(Giraffe, "giraffe")
             .Add(Alfil, "elephant")

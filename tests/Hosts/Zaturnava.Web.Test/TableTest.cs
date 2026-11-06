@@ -1714,14 +1714,15 @@ public sealed class TableTest : IDisposable
     [Fact]
     public void Board_WhenPiecesAreMarkedBySymbol_DrawsEachWithItsClassAndLettersBeneath()
     {
-        // Arrange - a Camel and a Rook, each its own symbol; a Xiangqi Cannon sharing its; a Pawn of no class told
+        // Arrange - a Camel, its own shape; a Xiangqi Cannon sharing its; a Dragon King, a glyph with wings round it;
+        // a Pawn of no class told
         this._page.Server.View = FakeGameServer.SeatZeroToMove with
         {
             Pieces =
             [
                 new PieceDto(1, "camel", "Camel", 1, 0) { Mark = Marked("camel", string.Empty, "cavalry") },
                 new PieceDto(2, "xiangqi-cannon", "Cannon", 1, 1) { Mark = Marked("cannon", "X", "artillery") },
-                new PieceDto(3, "rook", "Rook (Western)", 0, 2) { Mark = Marked("rook", string.Empty, "heavy") },
+                new PieceDto(3, "dragon-king", "Dragon King", 0, 2) { Mark = Marked("dragon-king", "DK", "leader") },
                 new PieceDto(4, "western-pawn", "Pawn (Western)", 0, 3) { Mark = new PieceMarkDto("pawn", "W") },
             ],
         };
@@ -1735,10 +1736,11 @@ public sealed class TableTest : IDisposable
             .. table.FindAll("svg.board g.piece path.class-emblem").Select(path => path.GetAttribute("transform")!),
         ];
         Assert.Equal(
-            ("X,W", 2, 3, true, true),
+            ("X,DK,W", 2, 6, 3, true, true),
             (
                 string.Join(",", table.FindAll("svg.board g.piece text.letters").Select(text => text.TextContent)),
                 table.FindAll("svg.board g.piece text.symbol").Count,
+                table.FindAll("svg.board g.piece path").Count,
                 classes.Count,
                 classes[0].EndsWith(PieceStyle.ClassPlacementBeside(string.Empty), StringComparison.Ordinal),
                 classes[1].EndsWith(PieceStyle.ClassPlacementBeside("X"), StringComparison.Ordinal)
@@ -1782,7 +1784,7 @@ public sealed class TableTest : IDisposable
                     Prisoners =
                     [
                         new PrisonerDto(9, "camel", "Camel", 1) { Mark = Marked("camel", "", "cavalry") },
-                        new PrisonerDto(8, "rook", "Rook (Western)", 1) { Mark = Marked("rook", "", "heavy") },
+                        new PrisonerDto(8, "chancellor", "Chancellor", 1) { Mark = Marked("chancellor", "", "heavy") },
                         new PrisonerDto(7, "western-pawn", "Pawn", 1) { Mark = new PieceMarkDto("pawn", "W") },
                         new PrisonerDto(6, "wizard", "Wizard", 1) { Mark = Marked("wizard", "Wz", "sorcery") },
                     ],
@@ -1796,7 +1798,7 @@ public sealed class TableTest : IDisposable
         // Assert
         AngleSharp.Dom.IElement held = table.FindAll("li.seat")[0];
         Assert.Equal(
-            ("W,Wz", 2, 3),
+            ("W,Wz", 2, 4),
             (
                 string.Join(",", held.QuerySelectorAll("svg text.letters").Select(text => text.TextContent)),
                 held.QuerySelectorAll("svg text.symbol").Length,

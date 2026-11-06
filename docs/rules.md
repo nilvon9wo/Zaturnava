@@ -56,10 +56,9 @@ Played in teams of 2, with teammates seated opposite each other on the board.
   corresponding back-rank piece.
 - Each player's starting Raja square is that player's **throne**. In this
   base configuration the throne is simply the fixed starting square for the
-  whole game. *(Open question, not yet decided: whether a throne should track
-  a relocated Raja starting square in configurations that vary where the Raja
-  starts — this only matters once such a variance exists; see
-  [architecture.md §10](architecture.md#10-open-questions--deferred).)*
+  whole game. *(Stated 2026-11-06)* Chaturaji 2027 has no plan to vary where
+  the Raja starts, so a throne never needs to follow it. (In Grand Legions, a
+  kingdom set up for the player always starts its one leader on its throne.)
 - Each army: 1 Raja, 1 Horse, 1 Elephant, 1 Boat, 4 Pawns (8 pieces, 32 total
   on the board at start).
 - Traditional colors: black, yellow, green, red (no gameplay significance).
@@ -685,6 +684,11 @@ both the triumphing player and their ally may move each other's Boat.
     game (a team that trails ends it by giving up, §10).
   - *(Proposed 2026-11-06)* "A clear lead" is the game's own: 10 in
     Chaturaji 2027, 100 in Grand Legions, whose points are ten times as many.
+    *(Stated 2026-11-06)* In Grand Legions, ×10 suits the bonuses but not
+    when to give up, which should follow what is left on the board: whether
+    the team still has leaders, and heavies, and whether, with the pieces it
+    has, it could take enough to catch up within about ten rounds. How to
+    weigh that is [OQ16](open-questions.md).
     "An Elephant (a Rook)" is any piece the game counts among its most
     dangerous, as Grand Legions does its Heavy class.
 - **Honourable peace**: if only Rajas remain on the board (across all
@@ -795,14 +799,22 @@ both the triumphing player and their ally may move each other's Boat.
     conditions layered on top of the agreement mechanic — e.g. a move-count
     cap, or "every remaining player passed on their last turn." These are
     off by default for human games and are an architecture/engine concern
-    (see architecture.md) more than a core rules concern — exact parameters
-    are deliberately left open for now.
-  - *(Provisional, 2026-10-25)* The `chaturaji-2027` ruleset has one safety net on,
-    for every game: when no one has rolled or moved for **three rounds** (every
-    seat still playing has passed its turn three times in a row without
-    rolling), the game ends, and the team with more points wins (a draw if
-    the teams are level). The number of rounds is a constructor argument, not
-    yet a per-game toggle.
+    (see architecture.md) more than a core rules concern. Which ones, and
+    their limits: below.
+  - *(Stated 2026-11-06)* The safety nets are not settings the creator of a game
+    chooses; their limits are the server's, in its settings file. Each ends the
+    game, the team with more points winning (a draw if the teams are level):
+    - **Three rounds of passing**: every seat still playing passes its turn
+      three rounds in a row. Rolling and then passing counts as passing, as if
+      it had passed without rolling. Players are warned in the last round that
+      if everyone passes, the game ends.
+    - **Three rounds of repetition**: all four players repeat their moves for
+      three rounds. Players are warned in the last round.
+    - **Fifty moves without a capture**. Players are warned as the limit nears.
+  - *(Provisional, 2026-10-25, until the above is built)* The `chaturaji-2027`
+    ruleset has one safety net on, for every game: when no one has rolled or
+    moved for **three rounds** (every seat still playing has passed its turn
+    three times in a row without rolling), the game ends.
 
 ## 11. Setup Roll-off
 
@@ -833,7 +845,7 @@ configuration this document describes.
 | `scoring.bonuses.empireCreatedByCapture` | `2` | Additional empire bonus when the player personally captured the triggering Raja (§5). |
 | `scoring.bonuses.empireCreatedByThroneCapture` | `4` | Replaces the previous bonus when that capture happened on the enemy Raja's own throne (§5). |
 | `scoring.bonuses.everyPieceCommanded` | `2` | Commanding every piece on the board, on one's own turn (§5). |
-| `pieceSet.naming` | `traditional` | Display naming only, no movement change: `traditional` (Pawn/Boat/Horse/Elephant/Raja) vs. `modern` (Pawn/Boat/Knight/Rook/King). *(Newly raised — which chess-standard labels map to which traditional piece, and whether "Boat" itself is replaced by something else entirely, is still undecided; see [§13](#13-open-items--deferred).)* |
+| `pieceSet.naming` | `traditional` | Display naming only, no movement change: `traditional` (Pawn/Boat/Horse/Elephant/Raja) vs. `modern` (Pawn/Boat/Knight/Rook/King). The Boat stays the Boat in both (*Stated 2026-11-06*; see [§13](#13-open-items--deferred)). |
 
 *(Clarified)* There is deliberately no `ransom.requiresCapturerConsent` (or
 similar) toggle: consent behavior for Promotion (never required) and Ransom
@@ -850,24 +862,15 @@ and are tracked in [architecture.md](architecture.md) instead.)*
 
 Nothing rules-level is currently blocking. Noted for later attention:
 
-- Exact default parameters for the `gameEnd.safetyNet.*` toggles (move cap
-  size, etc.), and whether the provisional three idle rounds (§10) should be a
-  per-game toggle.
 - Whether team membership can ever change *during* a game (a future variant
   idea raised during design discussion) is explicitly out of scope for now —
   team assignment is fixed at game creation.
 - **Piece naming/set**: *(updated)* traditional-vs-chess-standard naming is
   now the `pieceSet.naming` toggle in §12, rather than a one-time decision —
   players can pick either label set (Pawn/Boat/Horse/Elephant/Raja vs.
-  Pawn/Boat/Knight/Rook/King) per game. Still genuinely open: whether to
-  replace the Boat specifically with a different piece *identity* (not just a
-  chess-standard relabeling), since "jumping boats" reads as an odd fit for a
-  two-square diagonal leap — a kangaroo, or some other jumping-diagonal-mover
-  flavor, was floated as an alternative. That would need its own naming-set
-  entry (or a third `pieceSet.naming` option) once decided. Purely
-  cosmetic/identity, per
-  [architecture.md §2.2](architecture.md#22-piece-catalog-and-movement-grammar)
-  — the movement grammar doesn't change either way — but left open since it
-  affects every rules doc and UI label once decided.
+  Pawn/Boat/Knight/Rook/King) per game. *(Stated 2026-11-06)* The Boat stays
+  the Boat: it is traditional, and helps those who know the traditional game.
+  Should another game (Grand Legions, say) want it, it may come there as a new
+  piece, with a name and symbol of its own if need be.
 - Hosting is not a rules concern; see
   [architecture.md §8](architecture.md#8-tech-stack--hosting).

@@ -450,16 +450,12 @@ scoring) are listed in [rules.md §12](rules.md#12-configuration-toggles). The
 - A push channel to replace polling (§6).
 - The turn phase machine (§2.5), controlled armies
   (§2.4) and rule modules (§2.6), as the remaining rules are implemented.
-- Exact `gameEnd.safetyNet.*` parameters (rules.md §13) — now that bots exist,
-  bots advance one step at a time, but the rules-level
-  defaults are still open.
+- The `gameEnd.safetyNet.*` limits (rules.md §10, Stated 2026-11-06): three
+  rounds of passing, three of repetition, fifty moves without a capture, each
+  limit in the server's settings file. Still to build: repetition, the
+  fifty-move count, the warnings, and counting a roll then a pass as a pass.
 - An SDK for variants: once Chaturaji 2027 works, boards, piece sets,
   starting positions, rulesets and bots become things others implement. Their
   extension points should then be gathered into a documented SDK, with
   examples checked by the build (as Stipulate's documentation examples are).
 - Fluid team membership mid-game — out of scope, a possible future variant.
-- Whether a throne should follow a relocated Raja starting square, for
-  configurations that vary where the Raja starts (rules.md §2) — only matters
-  once such a variance exists.
-- Piece naming and the Boat's identity (rules.md §13) — cosmetic only; the
-  movement grammar (§2.2) is unaffected either way.
