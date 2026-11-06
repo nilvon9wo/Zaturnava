@@ -360,6 +360,12 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
 .mark { fill: var(--mark); }
 .mark.capture { fill: none; stroke: var(--mark); stroke-width: 0.08; }
 .mark.swap { fill: none; stroke: var(--mark); stroke-width: 0.08; stroke-dasharray: 0.18 0.12; }
+/* Where a prisoner chosen to escape may be placed: blinking, since the board now waits for one to be picked. */
+.mark.placing { animation: placing 0.9s ease-in-out infinite; }
+@keyframes placing { 50% { opacity: 0.15; } }
+@media (prefers-reduced-motion: reduce) {
+    .mark.placing { animation: none; stroke: var(--promotable); stroke-width: 0.06; }
+}
 
 .piece.seat-0 circle { fill: var(--seat-0); }
 .piece.seat-0 text, .piece.seat-0 path { fill: var(--seat-0-ink); }
