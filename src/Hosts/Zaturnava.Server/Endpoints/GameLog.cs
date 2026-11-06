@@ -257,6 +257,14 @@ file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bo
                 $"No one has moved for {Text(warned.Rounds)} {(warned.Rounds == 1 ? "round" : "rounds")}: "
                     + "if no one moves this round either, the game ends, and points decide."
             ),
+            QuietWarned quiet => this.Add(
+                number,
+                EventDto.Ending,
+                quiet.Seat,
+                $"No piece has been taken for {Text(quiet.Rounds)} rounds: if none is taken in the next "
+                    + $"{(quiet.RoundsLeft == 1 ? "round" : $"{Text(quiet.RoundsLeft)} rounds")}, the game ends, "
+                    + "and points decide."
+            ),
             RajaRetired retired => this.Add(
                 number,
                 EventDto.Passed,

@@ -26,6 +26,11 @@ internal static class GameEnd
     public const string TeamGaveUp = "a whole team gave up their turns, so points decide";
 
     /// <summary>
+    /// How many rounds before the game would end for want of a capture its players are warned (Proposed).
+    /// </summary>
+    public static readonly ImmutableList<int> QuietWarnings = [10, 1];
+
+    /// <summary>
     /// The ended game, if the board leaves nothing to play for; otherwise null. A team whose only pieces left are
     /// retired Rajas plays no more: a draw if it has as many points as its enemies or more, else they win - so that
     /// neither retiring a Raja nor taking a retired one decides the game.
@@ -87,6 +92,44 @@ internal static class GameEnd
             ? ByPoints(transition, Chaturaji2027Endings.Idle, reason)
             : null;
     }
+
+    /// <summary>
+    /// The transition, with the turns since a piece was last taken counted: the game ends on points once no piece
+    /// has been taken for <paramref name="rounds"/> rounds, its players warned as each of
+    /// <see cref="QuietWarnings"/> rounds are left.
+    /// </summary>
+    public static Transition AfterQuietTurns(GameState before, Transition transition, int rounds)
+    {
+        GameState state = transition.State;
+        int turns = transition.Events.Any(happened => happened is PieceCaptured)
+            ? 0
+            : before.TurnsSinceCapture + transition.Events.Count(happened => happened is TurnPassed);
+        Transition counted = transition with { State = state with { TurnsSinceCapture = turns } };
+        int playing = state.Seats.Count(seat => IsPlaying(state, seat.Id));
+        int? left = QuietWarnings
+            .Where(warning => IsReached(before.TurnsSinceCapture, turns, (rounds - warning) * playing))
+            .Cast<int?>()
+            .FirstOrDefault();
+        string reason = string.Create(
+            CultureInfo.InvariantCulture,
+            $"no piece was taken for {rounds} rounds, so points decide"
+        );
+        return (state.Outcome, turns >= rounds * playing, left) switch
+        {
+            (not null, _, _) => counted,
+            (_, true, _) => ByPoints(counted, Chaturaji2027Endings.Quiet, reason),
+            (_, _, { } roundsLeft) => counted with
+            {
+                Events = counted.Events.Add(
+                    new QuietWarned(state.DecidingSeat!.Value, rounds - roundsLeft, roundsLeft) // the game goes on
+                ),
+            },
+            _ => counted,
+        };
+    }
+
+    /// <summary>Whether a count, <paramref name="from"/> one to <paramref name="to"/>, just reached a mark.</summary>
+    private static bool IsReached(int from, int to, int mark) => from < mark && to >= mark;
 
     /// <summary>
     /// The ended game, once every seat of a team still playing has given up its turns (rules.md §10), if that

@@ -31,8 +31,14 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     /// <summary>The dice rolled on a turn.</summary>
     public const int TurnDice = 2;
 
-    /// <summary>How many rounds no one may roll or move before the game ends on points.</summary>
+    /// <summary>How many rounds no one may move before the game ends on points.</summary>
     public const int DefaultIdleRounds = 3;
+
+    /// <summary>
+    /// How many rounds may pass with no piece taken before the game ends on points: fifty, each seat's fifty
+    /// turns, as chess counts fifty moves (Proposed).
+    /// </summary>
+    public const int DefaultQuietRounds = 50;
 
     /// <summary>The timer on a seat whose turn is over, while it may still offer ransoms.</summary>
     public const string RansomWindowTimer = "ransom-window";
@@ -57,6 +63,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     private readonly MoveGenerator _moves;
     private readonly DiceProfile _dice;
     private readonly int _idleRounds;
+    private readonly int _quietRounds;
     private readonly int _awayTurns;
     private readonly PawnPromotion _pawnPromotion;
     private readonly ThroneControl _control;
@@ -78,17 +85,19 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     /// <summary>
     /// The rules as configured; <paramref name="awayTurns"/> is how many turns in a row a seat away may have
     /// passed before it gives them up; <paramref name="variant"/> what the game is played with, Chaturaji 2027's
-    /// own if none.
+    /// own if none; <paramref name="quietRounds"/> how many rounds may pass with no piece taken.
     /// </summary>
     public Chaturaji2027Rules(
         [Required] DiceProfile dice,
         [Range(1, int.MaxValue)] int idleRounds,
         PawnPromotion pawnPromotion,
         [Range(1, int.MaxValue)] int awayTurns = DefaultAwayTurns,
-        Chaturaji2027Variant? variant = null
+        Chaturaji2027Variant? variant = null,
+        [Range(1, int.MaxValue)] int quietRounds = DefaultQuietRounds
     )
     {
         this._variant = variant ?? Chaturaji2027Variant.Standard;
+        this._quietRounds = quietRounds;
         this._grid = new SquareGridTopology(this._variant.Side, this._variant.Side);
         this._awayTurns = awayTurns;
         this._moves = new MoveGenerator(this._grid, this._variant.Kinds);
@@ -196,29 +205,33 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             this._everyPiece.Scored(
                 this.Unstalled(
                     GameEnd.AfterGivingUp(
-                        GameEnd.Unidled(
+                        GameEnd.AfterQuietTurns(
                             state,
-                            Attended(
-                                action,
-                                action switch
-                                {
-                                    DiceAction dice => this.Rolled(state, dice),
-                                    OfferAction offer => this.Offered(state, offer),
-                                    ProposeEndAction propose => this.Proposed(state, propose),
-                                    RejoinAction rejoin => this.Rejoined(state, rejoin),
-                                    VoteAwayAction vote => this.Voted(state, vote),
-                                    PassAwayAction pass => this.PassedAway(state, pass),
-                                    FaceOffAction faceOff => this.FacedOff(state, faceOff),
-                                    MoveAction move when state.DecidingSeat != move.Actor =>
-                                        this.TakenInPassing(state, move),
-                                    _ => this.Decided(state, action),
-                                }
-                            )
+                            GameEnd.Unidled(state, this.Acted(state, action)),
+                            this._quietRounds
                         ),
                         this._variant
                     )
                 )
             )
+        );
+
+    /// <summary>The action itself, before the counts and endings that follow any action.</summary>
+    private Transition Acted(GameState state, GameAction action) =>
+        Attended(
+            action,
+            action switch
+            {
+                DiceAction dice => this.Rolled(state, dice),
+                OfferAction offer => this.Offered(state, offer),
+                ProposeEndAction propose => this.Proposed(state, propose),
+                RejoinAction rejoin => this.Rejoined(state, rejoin),
+                VoteAwayAction vote => this.Voted(state, vote),
+                PassAwayAction pass => this.PassedAway(state, pass),
+                FaceOffAction faceOff => this.FacedOff(state, faceOff),
+                MoveAction move when state.DecidingSeat != move.Actor => this.TakenInPassing(state, move),
+                _ => this.Decided(state, action),
+            }
         );
 
     public bool MayOffer([Required] GameState state) => Ransom.MayOffer(state);

@@ -23,4 +23,7 @@ public static class Chaturaji2027Endings
 
     /// <summary>No one moved for some rounds, whether they rolled or not; points decide.</summary>
     public const string Idle = "idle";
+
+    /// <summary>No piece was taken for some rounds; points decide.</summary>
+    public const string Quiet = "quiet";
 }

@@ -266,6 +266,25 @@ public sealed class GameLogTest
     }
 
     [Theory]
+    [InlineData(40, 10, "the next 10 rounds")]
+    [InlineData(49, 1, "the next round")]
+    public void LatestOf_WhenNoPieceHasBeenTakenForLong_WarnsTheGameMayEnd(int rounds, int left, string next)
+    {
+        // Arrange
+        GameSnapshot snapshot = Snapshot(new QuietWarned(Green, rounds, left));
+
+        // Act
+        ImmutableList<EventDto> log = GameLog.LatestOf(snapshot);
+
+        // Assert
+        Assert.Equal(
+            $"ending 2: No piece has been taken for {rounds} rounds: if none is taken in {next}, the game ends, "
+                + "and points decide.",
+            Told(Assert.Single(log))
+        );
+    }
+
+    [Theory]
     [InlineData(2, "rounds")]
     [InlineData(1, "round")]
     public void LatestOf_WhenNoOneHasMovedForAllButTheLastIdleRound_WarnsTheGameMayEnd(int rounds, string unit)
