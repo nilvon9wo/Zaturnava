@@ -411,7 +411,7 @@
                 </ChildContent>
             </TableTalk>
 
-            @if (view.Pieces.Find(piece => piece.Id == this._inspected) is { } inspected)
+            @if (this.AreCardsShown && view.Pieces.Find(piece => piece.Id == this._inspected) is { } inspected)
             {
                 <PieceCard Piece="inspected"
                            Kind="view.Kinds.Find(kind => kind.Kind == inspected.Kind)"
@@ -573,6 +573,10 @@
     /// <summary>Whether the player is kept from taking their own team's pieces, as an enemy army they command may.</summary>
     [Parameter]
     public bool IsSafetyOn { get; set; } = true;
+
+    /// <summary>Whether a piece clicked on is told of on a card: unless the player turned the cards off.</summary>
+    [Parameter]
+    public bool AreCardsShown { get; set; } = true;
 
     /// <summary>
     /// How the player chose to have the pieces drawn and named, the server's names being the chaturaji ones; at a

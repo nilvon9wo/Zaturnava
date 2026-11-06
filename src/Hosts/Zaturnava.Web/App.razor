@@ -1,7 +1,8 @@
 @* The whole page: the lobby until the player sits at (or watches) a table, under signing in (at the top right, if
    the server offers it) and over a quiet bar of the page's name, buttons opening the guide to the game and the
    guide to the bots and the leaderboard, and the page's own settings (the safety, beside
-   the table's view buttons; how it looks: theme, and pieces at a table whose pieces that changes; then sound); at a
+   the table's view buttons; how it looks: theme, and pieces at a table whose pieces that changes; at a table, the
+   piece cards on or off; then sound); at a
    table, the table shows the guide's button and the settings in its own bar. No URL routing, so the page works from any address it is served at. A seat the player takes is
    remembered in the browser, so that they can come back to it. *@
 @inject Browser Browser
@@ -12,6 +13,7 @@
            Seating="seating"
            IsSoundOn="this._isSoundOn"
            IsSafetyOn="this._isSafetyOn"
+           AreCardsShown="this._areCardsShown"
            Pieces="this._pieces"
            PageSettings="this.Settings"
            HowToPlay="this.HowToPlay"
@@ -54,6 +56,7 @@ else
     private string _theme = Browser.Dark;
     private bool _isSoundOn = true;
     private bool _isSafetyOn = true;
+    private bool _areCardsShown = true;
     private bool _isGuideOpen;
     private bool _isBotGuideOpen;
     private bool _isLeaderboardOpen;
@@ -95,6 +98,14 @@ else
                         @(this._pieces == PieceSet.Chess ? "Pieces: chess" : "Pieces: chaturaji")
                     </button>
                 }
+                @if (this._seating is not null)
+                {
+                    <button class="cards"
+                            title="Whether clicking a piece opens a card telling how it moves"
+                            @onclick="this.SwitchCards">
+                        @(this._areCardsShown ? "Cards: on" : "Cards: off")
+                    </button>
+                }
                 <button class="sound" @onclick="this.SwitchSound">@(this._isSoundOn ? "Sound: on" : "Sound: off")</button>
             </span>;
 
@@ -103,6 +114,7 @@ else
         this._theme = await this.Browser.Theme();
         this._isSoundOn = await this.Browser.IsSoundOn();
         this._isSafetyOn = await this.Browser.IsSafetyOn();
+        this._areCardsShown = await this.Browser.AreCardsShown();
         this._pieces = await this.Browser.Pieces();
         await this.Browser.ShowTheme(this._theme);
     }
@@ -148,6 +160,12 @@ else
     {
         this._isSafetyOn = !this._isSafetyOn;
         await this.Browser.SetSafety(this._isSafetyOn);
+    }
+
+    private async Task SwitchCards()
+    {
+        this._areCardsShown = !this._areCardsShown;
+        await this.Browser.SetCards(this._areCardsShown);
     }
 
     private async Task SwitchSound()

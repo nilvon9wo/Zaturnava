@@ -129,7 +129,7 @@ public sealed class AppTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ("brand,how-to-play,the-bots,leaderboard-open,leave", "safety,theme,pieces,sound"),
+            ("brand,how-to-play,the-bots,leaderboard-open,leave", "safety,theme,pieces,cards,sound"),
             (
                 string.Join(",", app.FindAll(".table-bar .where > *").Select(part => part.ClassName)),
                 string.Join(",", app.FindAll(".table-bar .settings button").Select(button => button.ClassName))
@@ -204,6 +204,51 @@ public sealed class AppTest : IDisposable
             ("Safety: OFF (safety off)", "Safety: on"),
             (afterOne, app.Find("button.safety").TextContent.Trim())
         );
+    }
+
+    [Fact]
+    public void CardsButton_WhenClickedAtATable_HidesThePieceCardsUntilClickedAgain()
+    {
+        // Arrange - a piece clicked on, its card open
+        IRenderedComponent<App> app = this._page.Render<App>();
+        Play(app);
+        app.Find("svg.board rect[data-cell='0']").Click();
+        int before = app.FindAll(".piece-card").Count;
+
+        // Act
+        app.Find("button.cards").Click();
+        (string Label, int Cards) off =
+            (app.Find("button.cards").TextContent.Trim(), app.FindAll(".piece-card").Count);
+        app.Find("button.cards").Click();
+
+        // Assert
+        Assert.Equal(
+            (1, ("Cards: off", 0), "Cards: on", 1, "off,on"),
+            (
+                before,
+                off,
+                app.Find("button.cards").TextContent.Trim(),
+                app.FindAll(".piece-card").Count,
+                string.Join(
+                    ",",
+                    this._page.JSInterop.Invocations["zaturnava.save"]
+                        .Where(call => (string)call.Arguments[0]! == "zaturnava.cards")
+                        .Select(call => call.Arguments[1])
+                )
+            )
+        );
+    }
+
+    [Fact]
+    public void CardsButton_WhenInTheLobby_IsNotOffered()
+    {
+        // Arrange - nothing beyond the page
+
+        // Act
+        IRenderedComponent<App> app = this._page.Render<App>();
+
+        // Assert
+        Assert.Empty(app.FindAll("button.cards"));
     }
 
     [Fact]

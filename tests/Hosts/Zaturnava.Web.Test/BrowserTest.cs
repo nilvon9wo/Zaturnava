@@ -1,4 +1,5 @@
 using Bunit;
+using Microsoft.AspNetCore.Components;
 using Net.NowhereAtAll.Zaturnava.Presentation;
 
 namespace Net.NowhereAtAll.Zaturnava.Web.Test;
@@ -237,6 +238,54 @@ public sealed class BrowserTest : IDisposable
         Assert.Equal(
             ["zaturnava.safety", expected],
             this._context.JSInterop.Invocations["zaturnava.save"].Single().Arguments
+        );
+    }
+
+    [Theory]
+    [InlineData("off", false)]
+    [InlineData(null, true)]
+    public async Task AreCardsShown_WhenRead_AreShownUnlessTurnedOff(string? remembered, bool expected)
+    {
+        // Arrange
+        _ = this._context.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.cards").SetResult(remembered);
+
+        // Act
+        bool areShown = await this._browser.AreCardsShown();
+
+        // Assert
+        Assert.Equal(expected, areShown);
+    }
+
+    [Theory]
+    [InlineData(true, "on")]
+    [InlineData(false, "off")]
+    public async Task SetCards_WhenSet_RemembersIt(bool isShown, string expected)
+    {
+        // Arrange - nothing beyond the browser
+
+        // Act
+        await this._browser.SetCards(isShown);
+
+        // Assert
+        Assert.Equal(
+            ["zaturnava.cards", expected],
+            this._context.JSInterop.Invocations["zaturnava.save"].Single().Arguments
+        );
+    }
+
+    [Fact]
+    public async Task MakeDraggable_WhenAsked_HasTheBrowserRememberWhereTheCardIsPut()
+    {
+        // Arrange
+        ElementReference card = new("card");
+
+        // Act
+        await this._browser.MakeDraggable(card);
+
+        // Assert
+        Assert.Equal(
+            "zaturnava.card-place",
+            this._context.JSInterop.Invocations["zaturnava.draggable"].Single().Arguments[1]
         );
     }
 

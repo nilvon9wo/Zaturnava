@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Globalization;
+using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using Net.NowhereAtAll.Zaturnava.Presentation;
 
@@ -7,8 +8,9 @@ namespace Net.NowhereAtAll.Zaturnava.Web;
 
 /// <summary>
 /// What the page asks of the browser itself (wwwroot/js/zaturnava.js): sounds, a memory that outlives
-/// the page (seats held, the player signed in or a guest's nickname, and settings: sound, pieces, how a game is
-/// set up), the colour theme, word of the page shown again, and a window to sign in.
+/// the page (seats held, the player signed in or a guest's nickname, and settings: sound, pieces, the piece cards
+/// and where they open, how a game is set up), the colour theme, word of the page shown again, a piece card to
+/// drag, and a window to sign in.
 /// </summary>
 internal sealed class Browser(IJSRuntime js)
 {
@@ -20,6 +22,8 @@ internal sealed class Browser(IJSRuntime js)
     private const string SoundKey = "zaturnava.sound";
     private const string SafetyKey = "zaturnava.safety";
     private const string PiecesKey = "zaturnava.pieces";
+    private const string CardsKey = "zaturnava.cards";
+    private const string CardPlaceKey = "zaturnava.card-place";
     private const string LogKey = "zaturnava.log";
     private const string ChatOrderKey = "zaturnava.chat-order";
     private const string AiTalkKey = "zaturnava.ai-talk";
@@ -75,6 +79,17 @@ internal sealed class Browser(IJSRuntime js)
     public async ValueTask<bool> IsSafetyOn() => await this.Load(SafetyKey) != Off;
 
     public ValueTask SetSafety(bool isOn) => this.Save(SafetyKey, isOn ? "on" : Off);
+
+    /// <summary>Whether a piece clicked on is told of on a card: unless the player turned the cards off.</summary>
+    public async ValueTask<bool> AreCardsShown() => await this.Load(CardsKey) != Off;
+
+    public ValueTask SetCards(bool isShown) => this.Save(CardsKey, isShown ? "on" : Off);
+
+    /// <summary>
+    /// Lets the player drag the piece card by its header wherever they like; it opens where they last put it.
+    /// </summary>
+    public ValueTask MakeDraggable(ElementReference card) =>
+        this._js.InvokeVoidAsync("zaturnava.draggable", card, CardPlaceKey);
 
     /// <summary>The pieces as the player last chose to see them: chaturaji, unless they chose chess.</summary>
     public async ValueTask<PieceSet> Pieces() =>
