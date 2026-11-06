@@ -1115,7 +1115,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     }
 
     /// <summary>
-    /// A turn passed without rolling or moving: enough of those in a row end the game. Having passed it
+    /// A turn passed without moving: enough of those in a row end the game. Having passed it
     /// when it <paramref name="mayHaveOffered"/>, the seat gets no window to offer ransoms.
     /// </summary>
     private Transition IdlePass(Transition transition, bool mayHaveOffered)
@@ -1125,8 +1125,13 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         return GameEnd.AfterIdlePass(counted, this._idleRounds) ?? this.Ending(counted, mayHaveOffered);
     }
 
+    /// <summary>
+    /// The turn passes: idly, if no die rolled was used, as a roll and then a pass is a pass (rules.md §10).
+    /// </summary>
     private Transition PassTurn(Transition transition, bool mayHaveOffered = false) =>
-        this.Ending(transition with { State = transition.State with { IdlePasses = 0 } }, mayHaveOffered);
+        transition.State.Dice.Count == TurnDice
+            ? this.IdlePass(transition, mayHaveOffered)
+            : this.Ending(transition with { State = transition.State with { IdlePasses = 0 } }, mayHaveOffered);
 
     /// <summary>
     /// The turn is over. A seat holding prisoners may still offer ransoms (rules.md §8) before it

@@ -972,7 +972,7 @@ public sealed class Chaturaji2027RulesTest
     [Theory]
     [InlineData(3, "0,2")]
     [InlineData(0, "")]
-    public void Apply_WhenNoOneHasRolledOrMovedForThreeRounds_EndsTheGameOnPoints(int blacksPoints, string winners)
+    public void Apply_WhenNoOneHasMovedForThreeRounds_EndsTheGameOnPoints(int blacksPoints, string winners)
     {
         // Arrange
         GameState state = this.Later() with
@@ -987,9 +987,34 @@ public sealed class Chaturaji2027RulesTest
         // Assert
         GameOutcome? outcome = transition.State.Outcome;
         Assert.Equal(
-            (winners, "no one rolled or moved for 3 rounds, so points decide"),
+            (winners, "no one moved for 3 rounds, so points decide"),
             (string.Join(',', outcome!.Winners.Select(seat => seat.Value)), outcome.Reason)
         );
+    }
+
+    [Theory]
+    [InlineData(2, 11, true, 12)]
+    [InlineData(2, 4, false, 5)]
+    [InlineData(1, 11, false, 0)]
+    public void Apply_WhenASeatPassesHavingRolled_CountsItIdleUnlessItMoved(
+        int diceLeft,
+        int idlePasses,
+        bool isOver,
+        int expected
+    )
+    {
+        // Arrange - Black rolled two dice, of which it has used any not left
+        GameState state = this.Later() with
+        {
+            Dice = diceLeft == 2 ? [5, 1] : [5],
+            IdlePasses = idlePasses,
+        };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new PassAction(Black));
+
+        // Assert
+        Assert.Equal((isOver, expected), (transition.State.Outcome is not null, transition.State.IdlePasses));
     }
 
     [Fact]
@@ -1194,17 +1219,17 @@ public sealed class Chaturaji2027RulesTest
     }
 
     [Fact]
-    public void Apply_WhenPassingWithDiceLeft_ForfeitsThemWithoutCountingAnIdlePass()
+    public void Apply_WhenPassingWithBothDiceLeft_ForfeitsThemCountingAnIdlePass()
     {
-        // Arrange
-        GameState state = this.PawnAndBoat() with { Dice = [5, 1], IdlePasses = 5 };
+        // Arrange - a roll and then a pass is a pass (rules.md §10)
+        GameState state = this.PawnAndBoat() with { Dice = [5, 1], IdlePasses = 4 };
 
         // Act
         Transition transition = this._rules.Apply(state, new PassAction(Black));
 
         // Assert
         Assert.Equal(
-            (Yellow, 0, 0),
+            (Yellow, 0, 5),
             (transition.State.DecidingSeat, transition.State.Dice.Count, transition.State.IdlePasses)
         );
     }

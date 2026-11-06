@@ -49,7 +49,7 @@ public sealed record GameState(
     /// <summary>The seat whose turn <see cref="DecidingSeat"/> is playing for it; null if its own.</summary>
     public SeatId? ActingFor { get; init; }
 
-    /// <summary>How many turns in a row have been passed without rolling or moving.</summary>
+    /// <summary>How many turns in a row have been passed without moving, whether the dice were rolled or not.</summary>
     public int IdlePasses { get; init; }
 
     /// <summary>
