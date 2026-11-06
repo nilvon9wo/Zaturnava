@@ -8,7 +8,8 @@
    armies are dealt at random, whether every army is alike (each its own, unless asked) - or quick: start one
    at once, at a seat chosen at random, easy, medium or hard by which bots it seats among the others - or join,
    watch or go back to one already started, each saying whether it waits for players or has not started, and when it
-   was created and last changed, and listed by game, size, state, bots or who is at it ("Bob, Jo*, open"); a game
+   was created and last changed, and listed by game, size, state (or, for a player signed in, Mine: their own games),
+   bots or who is at it ("Bob, Jo*, open"); a game
    over is only listed, with nothing left to watch. Seats go by
    the ruleset's names for them (Black, Yellow...), not by number. A bot paid for each use is seated only when
    chosen: never by default, nor at random. A server in development also offers scenarios, games set up
@@ -247,6 +248,10 @@
                         <option value="@NotOver">Any not over</option>
                         <option value="@Waiting">Waiting for players</option>
                         <option value="@InProgress">In progress</option>
+                        @if (this._me is not null)
+                        {
+                            <option value="@Mine">Mine</option>
+                        }
                     </select>
                 </label>
                 <label class="people-only">
@@ -330,6 +335,7 @@
     private const string NotOver = "not-over";
     private const string Waiting = "waiting";
     private const string InProgress = "in-progress";
+    private const string Mine = "mine";
 
     private ImmutableList<GameSummaryDto> _games = [];
 
@@ -631,14 +637,18 @@
         return chosen.Length > 0 ? chosen : null;
     }
 
-    /// <summary>The games waiting for players to take their open seats, those under way, or either.</summary>
+    /// <summary>
+    /// The games waiting for players to take their open seats, those under way, either, or those of the player signed
+    /// in (Mine): at a seat they claimed signed in, whether or not they wait for others.
+    /// </summary>
     private Task FilterState(ChangeEventArgs change) =>
         this.Filter(
             $"{change.Value}" switch
             {
-                Waiting => this._filter with { Open = true },
-                InProgress => this._filter with { Open = false },
-                _ => this._filter with { Open = null },
+                Waiting => this._filter with { Open = true, Player = null },
+                InProgress => this._filter with { Open = false, Player = null },
+                Mine => this._filter with { Open = null, Player = this._me.GetValueOrDefault().Id },
+                _ => this._filter with { Open = null, Player = null },
             }
         );
 
@@ -662,6 +672,11 @@
     /// <summary>What the list shows, as the Show choice names it.</summary>
     private static string StateOf(GameListQuery filter)
     {
+        if (filter.Player is not null)
+        {
+            return Mine;
+        }
+
         if (true.Equals(filter.Open))
         {
             return Waiting;

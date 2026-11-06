@@ -58,8 +58,9 @@ first.
   leaves even; and each of its team's pieces other than a Raja on an enemy throne costs it a fiftieth
   (`NetworkValuing.Blocking`). Against Random, Argus and Sage it now rates about 47 Elo above Sage.
 - **N32** The lobby lists the games waiting for a signed-in player's move, but not their other games in progress:
-  a game waiting on someone else is found again only through the Players filter. A **Mine** list or filter would
-  find it (gap).
+  a game waiting on someone else is found again only through the Players filter. A **Mine** list (*Stated*).
+  *Done*: the lobby's **Show** offers a player signed in **Mine**: their games not over, at seats they claimed signed
+  in, whoever's move it is (`GET api/games?player=`).
 - AI clients (*Stated*): two complete sample clients that play on Zaturnava, one by **MCP** and one by **UTCP**.
   Both decide by the same shared project Athena uses, compile and run apart from Zaturnava, and document how a
   developer makes their own bot from them. MCP: *Done* as [McpSampleBot](../samples/McpSampleBot/README.md), for

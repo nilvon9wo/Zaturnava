@@ -315,6 +315,29 @@ public sealed partial class SignInApiTest(SigningInServer server) : IClassFixtur
     }
 
     [Fact]
+    public async Task List_WhenAskedByAPlayersId_ListsOnlyTheGamesTheyClaimedASeatAtSignedIn()
+    {
+        // Arrange - a game of theirs, a guest's and another player's
+        HttpGameClient client = server.GameClient();
+        CreateGameRequest request = new(ZaturnavaServer.Chaturaji2027, ZaturnavaServer.OneOpenSeat);
+        string theirs = (await client.Create(request, this._cancellation)).GameId;
+        string guests = (await client.Create(request, this._cancellation)).GameId;
+        string others = (await client.Create(request, this._cancellation)).GameId;
+        string player = TokenOf(await this.Done("GitHub|mine|Ada", SigningInServer.Page));
+        string other = TokenOf(await this.Done("GitHub|not-mine|Cy", SigningInServer.Page));
+        _ = await client.Claim(theirs, 0, player, null, this._cancellation);
+        _ = await client.Claim(guests, 0, null, new ClaimSeatRequest("Ada"), this._cancellation);
+        _ = await client.Claim(others, 0, other, null, this._cancellation);
+        string? id = (await this.Me(player))?.Id;
+
+        // Act
+        GamePageDto page = await client.List(new GameListQuery(Player: id), this._cancellation);
+
+        // Assert
+        Assert.Equal([theirs], page.Games.Select(game => game.Id));
+    }
+
+    [Fact]
     public async Task Awaiting_WhenAGameWaitsForThePlayersMove_ListsItWithTheirSeat()
     {
         // Arrange - the last seat taken, its player has the opening die to play
