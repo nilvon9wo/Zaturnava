@@ -1,5 +1,5 @@
 @* Who stands highest at each game: the players signed in, best first, by their Elo rating at it, with their experience
-   and how many of its games they won, lost and drew; one game at a time, chosen among those the server offers (the
+   and how many of its games they won, lost, drew and abandoned; one game at a time, chosen among those the server offers (the
    first, to begin with). Shown over the lobby or the table, from the page's bar, until closed. *@
 @inject IGameServing Games
 
@@ -32,10 +32,7 @@
         {
             @if (leaders.IsEmpty)
             {
-                <p class="no-leaders">
-                    No one signed in has finished a game of it yet. A game played as a guest does not count: sign in
-                    before you play.
-                </p>
+                <p class="no-leaders">No one signed in has finished a game of it yet.</p>
             }
             else
             {
@@ -49,6 +46,7 @@
                             <th>Won</th>
                             <th>Lost</th>
                             <th>Drawn</th>
+                            <th title="Games not over that have waited a day or more for their move">Abandoned</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -62,6 +60,7 @@
                                 <td class="won">@standing.Won</td>
                                 <td class="lost">@standing.Lost</td>
                                 <td class="drawn">@standing.Drawn</td>
+                                <td class="abandoned">@standing.Abandoned</td>
                             </tr>
                         }
                     </tbody>
@@ -73,7 +72,8 @@
             Each game finished counts for the players signed in at it, but not for a seat their own AI played. Everyone
             starts at Elo 1500, and gains or loses by how their team did against what the teams' ratings led to
             expect, a bot's team by the bot's own rating. Each win earns as experience your own points plus your
-            team's.
+            team's. A game not over, with no guest at it, counts as abandoned by a player once it has waited a day for
+            their move, and no longer once they make it.
         </p>
     </section>
 </div>

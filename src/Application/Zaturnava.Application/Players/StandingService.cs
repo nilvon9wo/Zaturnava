@@ -21,9 +21,13 @@ public sealed class StandingService(
     IRulesetLocating rulesets,
     IBotLocating bots,
     IGamePersisting games,
-    IPlayerPersisting players
+    IPlayerPersisting players,
+    TimeProvider time
 )
 {
+    /// <summary>How long a game must wait untouched for a player's move to count as abandoned (Stated).</summary>
+    public static readonly TimeSpan AbandonedAfter = TimeSpan.FromHours(24);
+
     /// <summary>How far one game may move a rating (Proposed).</summary>
     public const double K = 32;
 
@@ -39,6 +43,7 @@ public sealed class StandingService(
     private readonly IBotLocating _bots = bots;
     private readonly IGamePersisting _games = games;
     private readonly IPlayerPersisting _players = players;
+    private readonly TimeProvider _time = time;
 
     private enum Result
     {
@@ -68,21 +73,53 @@ public sealed class StandingService(
     }
 
     /// <summary>
-    /// The players standing highest at <paramref name="game"/> (a ruleset's game id), each by name, best first: at
-    /// most <see cref="MostLeaders"/>.
+    /// The players standing highest at <paramref name="game"/> (a ruleset's game id), each by name, best first, with
+    /// how many of its games they have abandoned: at most <see cref="MostLeaders"/>.
     /// </summary>
     public async Task<ImmutableList<Leader>> Leaders([Required] string game, CancellationToken cancellationToken)
     {
         ImmutableList<Standing> leaders = await this._players.Leaders(game, MostLeaders, cancellationToken);
         ImmutableDictionary<PlayerId, string> names =
             await this._players.Names([.. leaders.Select(standing => standing.Player)], cancellationToken);
+        ImmutableDictionary<PlayerId, int> abandoned = await this.Abandoned(game, cancellationToken);
         return
         [
             .. leaders
                 .Where(standing => names.ContainsKey(standing.Player))
-                .Select(standing => new Leader(names[standing.Player], standing)),
+                .Select(standing =>
+                    new Leader(names[standing.Player], standing)
+                    {
+                        Abandoned = abandoned.GetValueOrDefault(standing.Player),
+                    }
+                ),
         ];
     }
+
+    /// <summary>
+    /// How many games of <paramref name="game"/> each player has abandoned, as they stand now (Stated): games not
+    /// over, untouched for <see cref="AbandonedAfter"/>, with no guest at them (such a game is let go instead), waiting
+    /// for that player to decide at a seat they play themselves, not their AI. Once they move, it counts no more.
+    /// </summary>
+    private async Task<ImmutableDictionary<PlayerId, int>> Abandoned(string game, CancellationToken cancellationToken)
+    {
+        ImmutableList<GameRecord> idle =
+            await this._games.Idle(this._time.GetUtcNow() - AbandonedAfter, cancellationToken);
+        return idle
+            .Where(record => !record.Controllers.Any(controller => controller.IsGuest))
+            .Select(record => this.AwaitedPlayer(record, game))
+            .OfType<PlayerId>()
+            .GroupBy(player => player)
+            .ToImmutableDictionary(players => players.Key, players => players.Count());
+    }
+
+    /// <summary>The player a game of <paramref name="game"/> waits for, at a seat they play themselves.</summary>
+    private PlayerId? AwaitedPlayer(GameRecord record, string game) =>
+        this.Replayed(record) is { } snapshot
+        && snapshot.Rules.GameId == game
+        && snapshot.State.DecidingSeat is { } seat
+        && record.Controllers[seat.Value] is HumanSeat { IsAi: false } human
+            ? human.Claimant
+            : null;
 
     private GameSnapshot? Replayed(GameRecord game) =>
         this._rulesets.All.FirstOrDefault(ruleset => ruleset.Id == game.RulesetId) is { } rules
