@@ -880,6 +880,56 @@ public sealed class LobbyTest : IDisposable
         Assert.Contains($"take back {FakeGameServer.GameId} 1 player", this._page.Server.Calls);
     }
 
+    [Theory]
+    [InlineData(null, "take back", FakeGameServer.Token)]
+    [InlineData("1 kept", "resume", "kept")]
+    [InlineData("2 kept", "take back", FakeGameServer.Token)]
+    public void BackTo_WhenAGameWaitsForThePlayer_GoesBackToTheSeatHeldHereElseTakesItBack(
+        string? held,
+        string how,
+        string token
+    )
+    {
+        // Arrange
+        this.SignInAsAdaAtYellow();
+        this._page.Server.Awaited = this._page.Server.Awaited.SetItem(
+            "player",
+            [new AwaitedGameDto(this._page.Server.Games[0], 1)]
+        );
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.seat." + FakeGameServer.GameId)
+            .SetResult(held);
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Act
+        lobby.Find("button.awaited-resume").Click();
+
+        // Assert
+        Assert.Equal(
+            ("Back to Yellow", new Seating(FakeGameServer.GameId, new SeatClaim(1, token)), how == "take back"),
+            (
+                lobby.Find("button.awaited-resume").TextContent.Trim(),
+                this._seated,
+                this._page.Server.Calls.Contains($"take back {FakeGameServer.GameId} 1 player")
+            )
+        );
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Render_WhenNoGameWaitsForThePlayer_ShowsNoneWaiting(bool isKnown)
+    {
+        // Arrange - the player's games told, none; or not told, the token standing for no one by then
+        this.SignInAsAdaAtYellow();
+        this._page.Server.Awaited = isKnown ? [] : this._page.Server.Awaited.SetItem("player", null);
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Assert
+        Assert.Empty(lobby.FindAll(".awaited"));
+    }
+
     [Fact]
     public void Render_WhenThePlayerSignedInPlaysNoSeat_OffersNoneToTakeBack()
     {

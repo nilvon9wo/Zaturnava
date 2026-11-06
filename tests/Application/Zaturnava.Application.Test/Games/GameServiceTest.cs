@@ -431,6 +431,59 @@ public sealed class GameServiceTest
         Assert.Equal((true, false, ada), (seat.IsHeldBy(token), seat.IsHeldBy(old), seat.Claimant));
     }
 
+    [Fact]
+    public async Task Awaiting_WhenGamesWaitForThePlayerOrAnother_ListsThoseWaitingForThemEarliestChangedFirst()
+    {
+        // Arrange - Ada plays first at both games, Bob after Ada; the game created last is the one changed earliest
+        PlayerId ada = new("ada");
+        PlayerId bob = new("bob");
+        GameId later = await this.CreateOpen();
+        this._time.Pass(FiveSeconds);
+        GameId earlier = await this.CreateOpen();
+        foreach (GameId id in new[] { earlier, later })
+        {
+            _ = await this._service.Claim(id, First, ada, null, this._cancellation);
+            _ = await this._service.Claim(id, Second, bob, null, this._cancellation);
+            this._time.Pass(FiveSeconds);
+        }
+
+        // Act
+        ImmutableList<AwaitedGame> awaited = await this._service.Awaiting(ada, this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            ($"{earlier},{later}", $"{First},{First}", 0),
+            (
+                string.Join(",", awaited.Select(game => game.Record.Id)),
+                string.Join(",", awaited.Select(game => game.Seat)),
+                (await this._service.Awaiting(bob, this._cancellation)).Count
+            )
+        );
+    }
+
+    [Theory]
+    [InlineData(true, TinyRules.RulesetId)]
+    [InlineData(false, "retired")]
+    public async Task Awaiting_WhenTheSeatIsTheirAisOrTheRulesetIsGone_ListsNothing(bool isAi, string ruleset)
+    {
+        // Arrange
+        PlayerId ada = new("ada");
+        InMemoryGameStore store = new();
+        GameService service = this.Service(GameServiceSettings.Default, store);
+        GameId id = await service.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
+        _ = await service.Claim(id, First, ada, null, isAi, this._cancellation);
+        _ = await service.Claim(id, Second, this._cancellation);
+        GameRecord kept = (await store.Find(id, this._cancellation))!;
+        await store.Remove([id], this._cancellation);
+        await store.Add(kept with { RulesetId = ruleset }, this._cancellation);
+
+        // Act
+        ImmutableList<AwaitedGame> awaited = await service.Awaiting(ada, this._cancellation);
+
+        // Assert
+        Assert.Empty(awaited);
+    }
+
     [Theory]
     [InlineData("someone else's")]
     [InlineData("a guest's")]

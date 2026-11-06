@@ -114,6 +114,12 @@ internal sealed class StubGameServer : IGameServing
     ) =>
         throw new NotSupportedException("The tools leave replacing a player to the people at the table.");
 
+    public Task<ImmutableList<AwaitedGameDto>?> Awaiting(
+        [Required] string token,
+        CancellationToken cancellationToken
+    ) =>
+        throw new NotSupportedException("The tools play the games they are given.");
+
     public Task<SeatClaimedDto> TakeBack(
         [Required] string gameId,
         int seat,

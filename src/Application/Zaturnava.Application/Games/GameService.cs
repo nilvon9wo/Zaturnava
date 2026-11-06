@@ -208,12 +208,41 @@ public sealed class GameService(
         return abandoned.Count;
     }
 
+    /// <summary>
+    /// The games waiting for <paramref name="player"/> to decide, at a seat they play themselves, not by an AI, the one
+    /// that changed earliest first, so that they may be reminded of them (Stated): each replayed, of a ruleset still
+    /// offered.
+    /// </summary>
+    public async Task<ImmutableList<AwaitedGame>> Awaiting(PlayerId player, CancellationToken cancellationToken)
+    {
+        ImmutableList<GameRecord> claimed = await this._store.ClaimedBy(player, cancellationToken);
+        ImmutableDictionary<string, IRulesApplying> offered = this.Rulesets.ToImmutableDictionary(rules => rules.Id);
+        return
+        [
+            .. claimed
+                .OrderBy(record => record.LastChanged)
+                .ThenBy(record => record.Id.Value, StringComparer.Ordinal)
+                .Select(record => AwaitedBy(record, offered.GetValueOrDefault(record.RulesetId), player))
+                .OfType<AwaitedGame>(),
+        ];
+    }
+
+    /// <summary>The game, if it waits for <paramref name="player"/> to decide, replayed by its rules.</summary>
+    private static AwaitedGame? AwaitedBy(GameRecord record, IRulesApplying? rules, PlayerId player) =>
+        Awaited(record, rules) is { } awaited && !awaited.Human.IsAi && player.Equals(awaited.Human.Claimant)
+            ? new AwaitedGame(record, awaited.Seat)
+            : null;
+
     /// <summary>The signed-in player the game waits for to decide, replayed by its rules, if still offered.</summary>
     private static PlayerId? AwaitedPlayer(GameRecord record, IRulesApplying? rules) =>
+        Awaited(record, rules)?.Human.Claimant;
+
+    /// <summary>The person's seat the game waits for to decide, replayed by its rules, if still offered.</summary>
+    private static (SeatId Seat, HumanSeat Human)? Awaited(GameRecord record, IRulesApplying? rules) =>
         rules is not null
         && Replayable(record, rules)?.State.DecidingSeat is { } seat
-        && record.Controllers[seat.Value] is HumanSeat { Claimant: { } claimant }
-            ? claimant
+        && record.Controllers[seat.Value] is HumanSeat human
+            ? (seat, human)
             : null;
 
     /// <summary>Every stored game of a ruleset still offered, replayed, as a lobby lists them.</summary>

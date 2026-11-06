@@ -37,6 +37,27 @@ public sealed class AppTest : IDisposable
     }
 
     [Fact]
+    public async Task SignedIn_WhenAPlayerSignsIn_ShowsTheLobbyAnewWithTheGamesWaitingForThem()
+    {
+        // Arrange - the player's token kept, but no game waiting for them until they sign in again
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.player").SetResult("new");
+        this._page.Server.Players = this._page.Server.Players.Add("new", new PlayerDto("ada", "Ada"));
+        IRenderedComponent<App> app = this._page.Render<App>();
+        int before = app.FindAll(".awaited").Count;
+        this._page.Server.Awaited = this._page.Server.Awaited.SetItem(
+            "new",
+            [new AwaitedGameDto(this._page.Server.Games[0], 0)]
+        );
+
+        // Act
+        IRenderedComponent<PlayerBar> bar = app.FindComponent<PlayerBar>();
+        await bar.InvokeAsync(() => bar.Instance.SignedIn("new"));
+
+        // Assert
+        Assert.Equal((0, 1), (before, app.FindAll(".awaited").Count));
+    }
+
+    [Fact]
     public void HowToPlay_WhenClicked_OpensTheGuideUntilClosed()
     {
         // Arrange

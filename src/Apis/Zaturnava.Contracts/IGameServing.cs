@@ -121,6 +121,12 @@ public interface IGameServing
     Task<PlayerDto?> Me([Required] string token, CancellationToken cancellationToken);
 
     /// <summary>
+    /// The games waiting for the player <paramref name="token"/> stands for to decide, at a seat they play themselves,
+    /// the one that changed earliest first; none, if it stands for no one.
+    /// </summary>
+    Task<ImmutableList<AwaitedGameDto>?> Awaiting([Required] string token, CancellationToken cancellationToken);
+
+    /// <summary>
     /// Names the player <paramref name="token"/> stands for anew (<see cref="RenameRequest"/>); none, if it stands for
     /// no one.
     /// </summary>

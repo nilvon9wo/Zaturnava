@@ -87,6 +87,18 @@ public sealed class GameRoutesTest
     }
 
     [Fact]
+    public void TakeBack_WhenGivenAGameAndSeat_RoutesUnderTheSeat()
+    {
+        // Arrange - nothing beyond the id and seat
+
+        // Act
+        string route = GameRoutes.TakeBack("g", 2);
+
+        // Assert
+        Assert.Equal("api/games/g/seats/2/take-back", route);
+    }
+
+    [Fact]
     public void Replace_WhenGivenAGame_RoutesUnderIt()
     {
         // Arrange - nothing beyond the id

@@ -38,7 +38,10 @@ public sealed class InMemoryGameStore : IGamePersisting
                 .OrderByDescending(game => game.LastChanged)
                 .ThenBy(game => game.Id.Value, StringComparer.Ordinal),
         ];
-        GamePage page = new([.. matching.Skip(query.Skipped).Take(query.PageSize).Select(ListingOf)], matching.Count);
+        GamePage page = new(
+            [.. matching.Skip(query.Skipped).Take(query.PageSize).Select(GameListing.Of)],
+            matching.Count
+        );
         return Task.FromResult(page);
     }
 
@@ -93,6 +96,13 @@ public sealed class InMemoryGameStore : IGamePersisting
         return Task.CompletedTask;
     }
 
+    public Task<ImmutableList<GameRecord>> ClaimedBy(PlayerId player, CancellationToken cancellationToken)
+    {
+        ImmutableList<GameRecord> games =
+            [.. this._games.Values.Where(game => game.IsOver != true && game.IsClaimedBy(player))];
+        return Task.FromResult(games);
+    }
+
     public Task Remove([Required] ImmutableList<GameId> ids, CancellationToken cancellationToken)
     {
         foreach (GameId id in ids)
@@ -120,11 +130,4 @@ public sealed class InMemoryGameStore : IGamePersisting
     }
 
     private static bool IsBot(SeatController controller) => controller is BotSeat;
-
-    private static GameListing ListingOf(GameRecord game) =>
-        new(game.Id, game.RulesetId, game.Version, game.Controllers, game.Actions.Count, game.IsOver ?? false)
-        {
-            Created = game.Created,
-            LastChanged = game.LastChanged,
-        };
 }

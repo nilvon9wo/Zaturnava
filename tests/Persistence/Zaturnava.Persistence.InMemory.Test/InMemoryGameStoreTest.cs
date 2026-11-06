@@ -230,6 +230,32 @@ public sealed class InMemoryGameStoreTest
     }
 
     [Fact]
+    public async Task ClaimedBy_WhenAPlayerClaimedSeats_ListsTheGamesNotOverTheyClaimedOne()
+    {
+        // Arrange - Bea claimed a seat at e (their AI plays it) and at f, which is over; a guest called bea is at g
+        PlayerId bea = new("bea");
+        await this.AddListed();
+        await this._store.Add(
+            Record("e") with { Controllers = [new HumanSeat("one", bea, IsAi: true), new OpenSeat()] },
+            this._cancellation
+        );
+        await this._store.Add(
+            Record("f") with { Controllers = [new HumanSeat("two", bea)], IsOver = true },
+            this._cancellation
+        );
+        await this._store.Add(
+            Record("g") with { Controllers = [new HumanSeat("three", Nickname: "bea")] },
+            this._cancellation
+        );
+
+        // Act
+        ImmutableList<GameRecord> claimed = await this._store.ClaimedBy(bea, this._cancellation);
+
+        // Assert
+        Assert.Equal(["e"], claimed.Select(game => game.Id.Value));
+    }
+
+    [Fact]
     public async Task Unrated_WhenGamesAreOver_ListsThoseNotYetRatedEarliestChangedFirstThenById()
     {
         // Arrange - c over an hour in; x, w and v over from the start, but v rated

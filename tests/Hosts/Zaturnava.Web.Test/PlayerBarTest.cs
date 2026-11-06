@@ -202,6 +202,24 @@ public sealed class PlayerBarTest : IDisposable
         );
     }
 
+    [Fact]
+    public async Task SignedInOrOut_WhenAPlayerSignsInThenOut_TellsThePageEachTime()
+    {
+        // Arrange
+        int told = 0;
+        this._page.Server.Providers = ["GitHub"];
+        this._page.Server.Players = this._page.Server.Players.Add("new", Ada);
+        IRenderedComponent<PlayerBar> bar =
+            this._page.Render<PlayerBar>(parameters => parameters.Add(x => x.OnSignedInOrOut, () => told++));
+
+        // Act
+        await bar.InvokeAsync(() => bar.Instance.SignedIn("new"));
+        await bar.Find("button.sign-out").ClickAsync(new MouseEventArgs());
+
+        // Assert
+        Assert.Equal(2, told);
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]

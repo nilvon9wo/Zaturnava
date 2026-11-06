@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.ComponentModel.DataAnnotations;
 
 namespace Net.NowhereAtAll.Zaturnava.Application.Games;
 
@@ -19,4 +20,12 @@ public sealed record GameListing(
     public DateTimeOffset? Created { get; init; }
 
     public DateTimeOffset? LastChanged { get; init; }
+
+    /// <summary>The game as a lobby lists it, from the game as stored.</summary>
+    public static GameListing Of([Required] GameRecord game) =>
+        new(game.Id, game.RulesetId, game.Version, game.Controllers, game.Actions.Count, game.IsOver ?? false)
+        {
+            Created = game.Created,
+            LastChanged = game.LastChanged,
+        };
 }

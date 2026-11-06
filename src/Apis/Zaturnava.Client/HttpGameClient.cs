@@ -160,6 +160,18 @@ public sealed class HttpGameClient(HttpClient http) : IGameServing
     public Task<PlayerDto?> Me([Required] string token, CancellationToken cancellationToken) =>
         this.IfSomeone<PlayerDto>(HttpMethod.Get, GameRoutes.Me, null, token, cancellationToken);
 
+    public Task<ImmutableList<AwaitedGameDto>?> Awaiting(
+        [Required] string token,
+        CancellationToken cancellationToken
+    ) =>
+        this.IfSomeone<ImmutableList<AwaitedGameDto>>(
+            HttpMethod.Get,
+            GameRoutes.Awaiting,
+            null,
+            token,
+            cancellationToken
+        );
+
     public Task<PlayerDto?> Rename(
         [Required] string token,
         [Required] string name,

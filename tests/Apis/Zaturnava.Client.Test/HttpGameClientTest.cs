@@ -242,6 +242,25 @@ public sealed class HttpGameClientTest
     }
 
     [Fact]
+    public async Task Awaiting_WhenTheTokenStandsForAPlayer_GetsTheGamesWaitingForThem()
+    {
+        // Arrange
+        StubServer server = new(
+            HttpStatusCode.OK,
+            """[{"game":{"id":"g","rulesetId":"r","version":3,"openSeats":[],"players":["Ada"],"moves":2},"seat":0}]"""
+        );
+
+        // Act
+        ImmutableList<AwaitedGameDto>? awaited = await Client(server).Awaiting("player", this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            ("GET", "/api/players/me/awaiting", "Bearer player", "g", 0),
+            (server.Method, server.Path, server.Authorization, awaited?[0].Game.Id, awaited?[0].Seat)
+        );
+    }
+
+    [Fact]
     public async Task TakeBack_WhenGivenASeat_PostsThePlayersTokenToTakeItBack()
     {
         // Arrange

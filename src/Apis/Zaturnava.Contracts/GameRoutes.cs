@@ -36,6 +36,12 @@ public static class GameRoutes
     /// <summary>Where a player asks for a token an AI may play for them with (<see cref="AiTokenDto"/>).</summary>
     public const string AiToken = Me + "/ai-token";
 
+    /// <summary>
+    /// The games waiting for the bearer of a player's token to decide, at a seat they play themselves, the one that
+    /// changed earliest first (<see cref="AwaitedGameDto"/>).
+    /// </summary>
+    public const string Awaiting = Me + "/awaiting";
+
     /// <summary>The players by id: each one's profile, as anyone may see it.</summary>
     public const string Players = "api/players";
 

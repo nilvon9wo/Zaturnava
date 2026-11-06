@@ -274,7 +274,7 @@ public sealed partial class SignInApiTest(SigningInServer server) : IClassFixtur
             new CreateGameRequest(ZaturnavaServer.Chaturaji2027, ZaturnavaServer.OneOpenSeat),
             this._cancellation
         );
-        string player = TokenOf(await this.Done("GitHub|10|Ada", SigningInServer.Page));
+        string player = TokenOf(await this.Done("GitHub|taking-back|Ada", SigningInServer.Page));
         SeatClaimedDto old = await client.Claim(created.GameId, 0, player, null, this._cancellation);
 
         // Act
@@ -314,6 +314,28 @@ public sealed partial class SignInApiTest(SigningInServer server) : IClassFixtur
         );
     }
 
+    [Fact]
+    public async Task Awaiting_WhenAGameWaitsForThePlayersMove_ListsItWithTheirSeat()
+    {
+        // Arrange - the last seat taken, its player has the opening die to play
+        HttpGameClient client = server.GameClient();
+        GameCreatedDto created = await client.Create(
+            new CreateGameRequest(ZaturnavaServer.Chaturaji2027, ZaturnavaServer.OneOpenSeat),
+            this._cancellation
+        );
+        string player = TokenOf(await this.Done("GitHub|awaited|Ada", SigningInServer.Page));
+        _ = await client.Claim(created.GameId, 0, player, null, this._cancellation);
+
+        // Act
+        ImmutableList<AwaitedGameDto>? awaited = await client.Awaiting(player, this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            [(created.GameId, 0, "Ada")],
+            awaited?.Select(game => (game.Game.Id, game.Seat, game.Game.Players[0])) ?? []
+        );
+    }
+
     [Theory]
     [InlineData("not-a-token")]
     [InlineData("someone else")]
@@ -325,10 +347,10 @@ public sealed partial class SignInApiTest(SigningInServer server) : IClassFixtur
             new CreateGameRequest(ZaturnavaServer.Chaturaji2027, ZaturnavaServer.OneOpenSeat),
             this._cancellation
         );
-        string ada = TokenOf(await this.Done("GitHub|11|Ada", SigningInServer.Page));
+        string ada = TokenOf(await this.Done("GitHub|claimant|Ada", SigningInServer.Page));
         _ = await client.Claim(created.GameId, 0, ada, null, this._cancellation);
         string token = who == "someone else"
-            ? TokenOf(await this.Done("GitHub|12|Bob", SigningInServer.Page))
+            ? TokenOf(await this.Done("GitHub|not-the-claimant|Bob", SigningInServer.Page))
             : who;
 
         // Act
@@ -385,6 +407,8 @@ public sealed partial class SignInApiTest(SigningInServer server) : IClassFixtur
     [InlineData("PUT", "api/players/me", "not-a-token")]
     [InlineData("POST", "api/players/me/ai-token", null)]
     [InlineData("POST", "api/players/me/ai-token", "not-a-token")]
+    [InlineData("GET", "api/players/me/awaiting", null)]
+    [InlineData("GET", "api/players/me/awaiting", "not-a-token")]
     public async Task Request_WhenTheTokenIsMissingOrStandsForNoOne_IsUnauthorized(
         string method,
         string route,
