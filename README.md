@@ -26,12 +26,14 @@ play as a guest), talk at the table, and play. The `chaturaji-2027` ruleset has 
 board, the pieces' moves and captures, the roll-off, dice, scoring with the throne bonuses and the empire,
 command of other armies through thrones, regency, escape, promotion, ransom and the end of the game; the boat
 triumph and the per-game toggles are still to come
-([rules.md, implementation status](docs/rules.md#implementation-status)).
+([rules.md, implementation status](docs/rules.md#implementation-status)). Grand Legions, the grand game, is
+playable as a preview, in its quick games of three sizes, shown in the lobby only to those who ask for previews
+([its roadmap](docs/grand/roadmap.md)).
 
 | Part | |
 |---|---|
 | `Zaturnava.Engine`, `.Topology.SquareGrid`, `.Games.Chaturaji2027` | The rules engine, a square-grid board, Chaturaji 2027 |
-| `Zaturnava.Games.GrandLegions` | Grand Legions, the grand game: so far its catalogue of pieces, its board and its dice |
+| `Zaturnava.Games.GrandLegions` | Grand Legions, the grand game: its catalogue of pieces, its boards and dice, and its quick games |
 | `Zaturnava.Application`, `.Bots`, `.Persistence.*` | Games, seats and bots; storage in memory, SQLite or SQL Server |
 | `Zaturnava.Server` | The game server: an HTTP API |
 | `Zaturnava.Contracts`, `.Client` | The protocol, and a .NET client for it |
