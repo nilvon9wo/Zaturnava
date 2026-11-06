@@ -184,7 +184,8 @@ The rules refuse any of these that may not be made, as they refuse any illegal a
 
 ## The view
 
-`GET api/games/{id}` returns the game as any client shows it:
+`GET api/games/{id}` returns the game as any client shows it (or `409`, saying so, for a game begun under rules
+that have changed since, so that its actions no longer replay: a preview's, most often):
 
 | Field | |
 |---|---|

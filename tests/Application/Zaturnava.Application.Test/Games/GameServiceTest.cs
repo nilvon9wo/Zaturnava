@@ -432,6 +432,25 @@ public sealed class GameServiceTest
     }
 
     [Fact]
+    public async Task Get_WhenItsRulesNoLongerReplayTheGame_ThrowsGameUnreplayableException()
+    {
+        // Arrange - a game whose first action, the second seat passing, is not one its rules allow
+        InMemoryGameStore store = new();
+        GameService service = this.Service(GameServiceSettings.Default, store);
+        GameId id = await service.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
+        GameRecord kept = (await store.Find(id, this._cancellation))!;
+        await store.Remove([id], this._cancellation);
+        await store.Add(kept with { Actions = [new PassAction(Second).Describe()] }, this._cancellation);
+
+        // Act
+        Task<GameSnapshot> getting = service.Get(id, this._cancellation);
+
+        // Assert
+        GameUnreplayableException refused = await Assert.ThrowsAsync<GameUnreplayableException>(() => getting);
+        Assert.Equal(GameRequestFailure.Conflict, refused.Failure);
+    }
+
+    [Fact]
     public async Task Awaiting_WhenGamesWaitForThePlayerOrAnother_ListsThoseWaitingForThemEarliestChangedFirst()
     {
         // Arrange - Ada plays first at both games, Bob after Ada; the game created last is the one changed earliest

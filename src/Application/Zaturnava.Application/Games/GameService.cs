@@ -260,10 +260,13 @@ public sealed class GameService(
     }
 
     /// <exception cref="GameNotFoundException">There is no such game.</exception>
+    /// <exception cref="GameUnreplayableException">Its rules no longer replay it.</exception>
     public async Task<GameSnapshot> Get(GameId id, CancellationToken cancellationToken)
     {
         GameRecord record = await this.Load(id, cancellationToken);
-        return this.Timed(GameSnapshot.Of(record, this._rulesets.Find(record.RulesetId)));
+        GameSnapshot snapshot = GameSnapshot.TryOf(record, this._rulesets.Find(record.RulesetId))
+            ?? throw new GameUnreplayableException(id);
+        return this.Timed(snapshot);
     }
 
     /// <summary>
