@@ -1361,6 +1361,27 @@ public sealed class TableTest : IDisposable
     }
 
     [Fact]
+    public void PlayAgain_WhenTheDealtGameIsOverAndTheSameArmiesAreChosen_DealsThemAgainAlikeAsBefore()
+    {
+        // Arrange - a dealt game, its armies alike
+        this._page.Server.View = Over() with { IsDealt = true, AreArmiesAlike = true };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Act
+        table.Find("button.same-armies").Click();
+
+        // Assert
+        Assert.Equal(
+            ("Play again, same armies", true, FakeGameServer.GameId),
+            (
+                table.Find("button.same-armies").TextContent.Trim(),
+                this._page.Server.Created!.AreArmiesAlike,
+                this._page.Server.Created.ArmiesOf
+            )
+        );
+    }
+
+    [Fact]
     public void QuickGame_WhenTheGameIsOver_SitsAtSomeSeatWithEachBotOnceAmongTheOthers()
     {
         // Arrange

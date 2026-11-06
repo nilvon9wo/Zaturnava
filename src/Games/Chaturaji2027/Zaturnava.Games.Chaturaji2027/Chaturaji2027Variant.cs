@@ -105,10 +105,10 @@ public sealed record Chaturaji2027Variant(
     public ImmutableHashSet<PieceKindId> FaceOffCallers { get; init; } = [];
 
     /// <summary>
-    /// Where every piece of a game dealt by a seed starts, each game its own armies; null, if every game starts
-    /// as <see cref="Start"/> has it.
+    /// Where every piece of a game dealt by a seed starts, each game its own armies - each seat's the same, if asked
+    /// for alike; null, if every game starts as <see cref="Start"/> has it.
     /// </summary>
-    public Func<int, ImmutableList<Placement>>? Dealer { get; init; }
+    public Func<int, bool, ImmutableList<Placement>>? Dealer { get; init; }
 
     /// <summary>Each seat's throne: the square its first leader starts on.</summary>
     public ImmutableDictionary<SeatId, CellId> Thrones([Required] SquareGridTopology grid) =>

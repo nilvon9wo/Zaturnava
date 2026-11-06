@@ -26,6 +26,7 @@ public static class ScenarioStart
 
     private const string Argument = "scenario";
     private const string SeedArgument = "seed";
+    private const string AlikeArgument = "alike";
 
     /// <summary>The roll that seeds a game dealt anew: one die of as many sides as a seed may be.</summary>
     private static readonly DiceRequest SeedRoll = new(1, int.MaxValue - 1);
@@ -33,13 +34,23 @@ public static class ScenarioStart
     /// <summary>Whether the action begins the game, rather than being played in it.</summary>
     public static bool IsStart([Required] ActionDescriptor action) => action.Kind is Kind or DealKind;
 
-    /// <summary>The first action of a game dealt by a seed <paramref name="dice"/> roll.</summary>
-    public static ActionDescriptor Dealt([Required] IDiceRolling dice) =>
-        new(
+    /// <summary>
+    /// The first action of a game dealt by a seed <paramref name="dice"/> roll: every army alike, if
+    /// <paramref name="areAlike"/>, which a game dealt before armies could be alike never says.
+    /// </summary>
+    public static ActionDescriptor Dealt([Required] IDiceRolling dice, bool areAlike = false)
+    {
+        ImmutableSortedDictionary<string, string> seeded = ImmutableSortedDictionary<string, string>.Empty
+            .Add(SeedArgument, dice.Roll(SeedRoll)[0].ToString(CultureInfo.InvariantCulture));
+        return new ActionDescriptor(
             DealKind,
-            ImmutableSortedDictionary<string, string>.Empty
-                .Add(SeedArgument, dice.Roll(SeedRoll)[0].ToString(CultureInfo.InvariantCulture))
+            areAlike ? seeded.Add(AlikeArgument, ActionDescriptor.Flag(true)) : seeded
         );
+    }
+
+    /// <summary>Whether the first of <paramref name="actions"/> dealt every army alike.</summary>
+    public static bool AreAlike([Required] ImmutableList<ActionDescriptor> actions) =>
+        actions.FirstOrDefault() is { Kind: DealKind } first && first.Arguments.ContainsKey(AlikeArgument);
 
     public static ActionDescriptor Describe([Required] Scenario scenario) =>
         new(
@@ -61,7 +72,8 @@ public static class ScenarioStart
             { Kind: Kind } first => StateFrom(ScenarioOf(first), rules),
             { Kind: DealKind } first => rules.Deal(
                 rules.CreateInitialState(),
-                int.Parse(first.Arguments[SeedArgument], CultureInfo.InvariantCulture)
+                int.Parse(first.Arguments[SeedArgument], CultureInfo.InvariantCulture),
+                AreAlike(actions)
             ),
             _ => rules.CreateInitialState(),
         };

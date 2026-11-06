@@ -92,7 +92,8 @@ public sealed class HttpGameClientTest
             (
                 "POST",
                 "/api/games",
-                """{"rulesetId":"chaturaji-2027","bots":[null,"random"],"scenario":null,"continuing":null}""",
+                """{"rulesetId":"chaturaji-2027","bots":[null,"random"],"scenario":null,"continuing":null,"""
+                    + "\"areArmiesAlike\":false,\"armiesOf\":null}",
                 "g"
             ),
             (server.Method, server.Path, server.Body, created.GameId)

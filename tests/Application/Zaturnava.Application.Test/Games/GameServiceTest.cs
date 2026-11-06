@@ -119,6 +119,77 @@ public sealed class GameServiceTest
     }
 
     [Fact]
+    public async Task Create_WhenTheArmiesAreAskedForAlike_DealsThemAlike()
+    {
+        // Arrange - the tiny rules score 1 to the second seat for a game dealt alike
+        GameService service = this.Service(GameServiceSettings.Default, isDealt: true);
+        GameId id = await service.Create(
+            TinyRules.RulesetId,
+            [SeatPlan.Open, SeatPlan.Open],
+            null,
+            new Dealing(AreAlike: true),
+            this._cancellation
+        );
+
+        // Act
+        GameSnapshot snapshot = await service.Get(id, this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            (true, 1),
+            (ScenarioStart.AreAlike(snapshot.Record.Actions), snapshot.State.Scores[Second])
+        );
+    }
+
+    [Fact]
+    public async Task Create_WhenTheArmiesOfAnotherGameAreAskedFor_DealsAsItWasDealt()
+    {
+        // Arrange - a game dealt alike, played again with its armies though not asked for alike
+        GameService service = this.Service(GameServiceSettings.Default, isDealt: true);
+        ImmutableList<SeatPlan> seats = [SeatPlan.Open, SeatPlan.Open];
+        GameId first =
+            await service.Create(TinyRules.RulesetId, seats, null, new Dealing(AreAlike: true), this._cancellation);
+        GameId again =
+            await service.Create(TinyRules.RulesetId, seats, null, new Dealing(ArmiesOf: first), this._cancellation);
+
+        // Act
+        GameSnapshot snapshot = await service.Get(again, this._cancellation);
+
+        // Assert
+        GameSnapshot original = await service.Get(first, this._cancellation);
+        Assert.Equal(original.Record.Actions[0], snapshot.Record.Actions[0]);
+    }
+
+    [Fact]
+    public async Task Create_WhenTheArmiesOfAGameNotDealtOrUnknownAreAskedFor_DealsAnew()
+    {
+        // Arrange - a rolling game, not dealt, and a game that never was
+        GameService service = this.Service(GameServiceSettings.Default, isDealt: true);
+        ImmutableList<SeatPlan> seats = [SeatPlan.Open, SeatPlan.Open];
+        GameId rolling = await service.Create(RollingRules.RulesetId, seats, this._cancellation);
+
+        // Act
+        ImmutableList<GameId> anew =
+        [
+            await service.Create(TinyRules.RulesetId, seats, null, new Dealing(ArmiesOf: rolling), this._cancellation),
+            await service.Create(
+                TinyRules.RulesetId,
+                seats,
+                null,
+                new Dealing(ArmiesOf: GameId.New()),
+                this._cancellation
+            ),
+        ];
+
+        // Assert
+        foreach (GameId id in anew)
+        {
+            GameSnapshot snapshot = await service.Get(id, this._cancellation);
+            Assert.Equal((ScenarioStart.DealKind, 0), (snapshot.Record.Actions[0].Kind, snapshot.State.Scores[Second]));
+        }
+    }
+
+    [Fact]
     public async Task Create_WhenTheScenarioIsForAnotherRuleset_ThrowsInvalidScenarioException()
     {
         // Arrange - nothing beyond the service

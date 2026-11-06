@@ -28,7 +28,7 @@ public sealed class DealtGameTest
         DiceProfile.WeightedSixSided,
         Chaturaji2027Rules.DefaultIdleRounds,
         PawnPromotion.OtherArmies,
-        variant: Chaturaji2027Variant.Standard with { Dealer = _ => Swapped }
+        variant: Chaturaji2027Variant.Standard with { Dealer = (_, _) => Swapped }
     );
 
     [Fact]

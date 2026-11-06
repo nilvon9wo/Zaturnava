@@ -102,7 +102,7 @@ public static class GrandLegionsRules
             QuickArmy.Dealt(game, 0)
         )
         {
-            Dealer = seed => QuickArmy.Dealt(game, seed),
+            Dealer = (seed, areAlike) => QuickArmy.Dealt(game, seed, areAlike),
             Game = game.Game,
             Heavies = Heavies,
             Promotables = Promotables,

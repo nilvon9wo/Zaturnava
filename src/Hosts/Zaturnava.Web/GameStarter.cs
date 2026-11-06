@@ -135,7 +135,8 @@ internal static class GameStarter
     /// Starts a game of the ruleset with <paramref name="bots"/> in their seats, from the start or the
     /// <paramref name="scenario"/>, and sits the <paramref name="claimant"/> at <paramref name="person"/>; or has
     /// them watch, if that is no seat. A game played again after another (<paramref name="continuing"/>) is at its
-    /// table.
+    /// table. A game whose armies are dealt is dealt them as <paramref name="armies"/> asks: each its own, unless
+    /// asked.
     /// </summary>
     public static async Task<Seating> Start(
         IGameServing games,
@@ -144,10 +145,17 @@ internal static class GameStarter
         int person,
         string? scenario,
         Claimant claimant,
-        string? continuing = null
+        string? continuing = null,
+        ArmyDeal? armies = null
     )
     {
-        CreateGameRequest request = new(rulesetId, bots) { Scenario = scenario, Continuing = continuing };
+        CreateGameRequest request = new(rulesetId, bots)
+        {
+            Scenario = scenario,
+            Continuing = continuing,
+            AreArmiesAlike = armies?.AreAlike ?? false,
+            ArmiesOf = armies?.Of,
+        };
         GameCreatedDto created = await games.Create(request, CancellationToken.None);
         return person >= 0
             ? await Claim(games, created.GameId, person, claimant)

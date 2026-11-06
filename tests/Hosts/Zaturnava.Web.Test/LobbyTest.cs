@@ -383,6 +383,34 @@ public sealed class LobbyTest : IDisposable
         Assert.Equal((null, 0), (this._page.Server.Created?.Scenario, lobby.FindAll("p.scenario-description").Count));
     }
 
+    [Theory]
+    [InlineData(false, false, 0)]
+    [InlineData(true, false, 1)]
+    [InlineData(true, true, 1)]
+    public void Play_WhenTheGameIsDealt_OffersEveryArmyAlike(bool isDealt, bool areAlike, int offered)
+    {
+        // Arrange
+        this._page.Server.IsDealt = isDealt;
+        IRenderedComponent<Lobby> lobby = this.ByStrength();
+        if (areAlike)
+        {
+            lobby.Find("input.armies-alike").Change(true);
+        }
+
+        // Act
+        lobby.Find("button.create").Click();
+
+        // Assert
+        Assert.Equal(
+            (offered, areAlike, (string?)null),
+            (
+                lobby.FindAll("input.armies-alike").Count,
+                this._page.Server.Created!.AreArmiesAlike,
+                this._page.Server.Created.ArmiesOf
+            )
+        );
+    }
+
     [Fact]
     public void Render_WhenTheServerOffersNoScenarios_OffersNoChoiceOfStart()
     {

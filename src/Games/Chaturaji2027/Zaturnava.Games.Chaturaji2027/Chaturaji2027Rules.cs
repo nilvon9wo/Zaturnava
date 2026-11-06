@@ -169,17 +169,18 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     public ImmutableDictionary<SeatId, CellId> ThronesOf([Required] GameState state) => this._control.ThronesOf(state);
 
     /// <summary>
-    /// The game dealt its own armies by <paramref name="seed"/>, if the variant deals them: each leader's start its
-    /// throne, and every piece's its home; else as it is.
+    /// The game dealt its own armies by <paramref name="seed"/> - or one army, the same for every seat, if
+    /// <paramref name="areAlike"/> - if the variant deals them: each leader's start its throne, and every piece's its
+    /// home; else as it is.
     /// </summary>
-    public GameState Deal([Required] GameState initial, int seed)
+    public GameState Deal([Required] GameState initial, int seed, bool areAlike = false)
     {
         if (this._variant.Dealer is not { } dealer)
         {
             return initial;
         }
 
-        Chaturaji2027Variant dealt = this._variant with { Start = dealer(seed) };
+        Chaturaji2027Variant dealt = this._variant with { Start = dealer(seed, areAlike) };
         Position position = dealt.InitialPosition(this._grid);
         return initial with { Position = position, Thrones = dealt.Thrones(this._grid), Start = position };
     }

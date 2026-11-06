@@ -123,6 +123,25 @@ public sealed class ScenarioStartTest
     }
 
     [Fact]
+    public void AreAlike_WhenTheGameWasNotDealtAlike_IsFalseElseTrue()
+    {
+        // Arrange
+        ImmutableList<ImmutableList<ActionDescriptor>> games =
+        [
+            [],
+            [ScenarioStart.Describe(Tiny())],
+            [ScenarioStart.Dealt(new LoadedDice(4))],
+            [ScenarioStart.Dealt(new LoadedDice(4), areAlike: true)],
+        ];
+
+        // Act
+        ImmutableList<bool> alike = [.. games.Select(ScenarioStart.AreAlike)];
+
+        // Assert
+        Assert.Equal([false, false, false, true], alike);
+    }
+
+    [Fact]
     public void StateOf_WhenNoActionCarriesAScenario_StartsANewGame()
     {
         // Arrange - no actions at all
