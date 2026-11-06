@@ -297,10 +297,11 @@ public sealed class TableTest : IDisposable
     }
 
     [Theory]
-    [InlineData(false, "Promotes to Queen, Rook (not yet in play)")]
-    [InlineData(true, "Promotes to Queen, Rook")]
-    public void Click_WhenTheKindHasAPromotionOfItsOwn_TellsWhatItMayBecomeAndWhetherItIsPlayed(
+    [InlineData(false, null, "Promotes to Queen, Rook (not yet in play)")]
+    [InlineData(true, "on the last row", "Promotes to Queen, Rook, on the last row")]
+    public void Click_WhenTheKindHasAPromotionOfItsOwn_TellsWhatItMayBecomeWhereAndWhetherItIsPlayed(
         bool isPlayed,
+        string? where,
         string expected
     )
     {
@@ -309,7 +310,12 @@ public sealed class TableTest : IDisposable
         {
             Kinds =
             [
-                new PieceKindDto("raja", "Raja", 5) { PromotesTo = ["Queen", "Rook"], IsPromotionPlayed = isPlayed },
+                new PieceKindDto("raja", "Raja", 5)
+                {
+                    PromotesTo = ["Queen", "Rook"],
+                    IsPromotionPlayed = isPlayed,
+                    PromotesWhere = where,
+                },
             ],
         };
         IRenderedComponent<Table> table = this.Render(SeatZero);
@@ -2640,6 +2646,31 @@ public sealed class TableTest : IDisposable
     }
 
     [Fact]
+    public void Render_WhenAPieceMayBePromotedByItsOwnPromotion_ShowsThoseChoicesFirstEachByItsKindsName()
+    {
+        // Arrange - the Pawn may become a Queen, which the game tells of, or a Zebra, which it does not
+        GameViewDto promotions = Promotions();
+        this._page.Server.View = promotions with
+        {
+            PromotionDue = 2,
+            Kinds = [new PieceKindDto("queen", "Queen (Western)", 9)],
+            LegalActions = [.. promotions.LegalActions, OwnPromotion("queen"), OwnPromotion("zebra")],
+        };
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Assert
+        Assert.Equal(
+            ("Queen (Western) its own promotion|zebra its own promotion", 4),
+            (
+                string.Join('|', table.FindAll(".promotion-choices.own .choice").Select(Choice)),
+                table.FindAll(".promotion-choices").Count
+            )
+        );
+    }
+
+    [Fact]
     public void Render_WhenAPawnMayBePromoted_RingsItWithoutOpeningItsMenu()
     {
         // Arrange
@@ -2848,6 +2879,15 @@ public sealed class TableTest : IDisposable
                 .Add(ActionArguments.Actor, "0")
                 .Add(ActionArguments.Cell, "2")
                 .Add(ActionArguments.Into, into.ToString(CultureInfo.InvariantCulture))
+        );
+
+    private static ActionDto OwnPromotion(string becomes) =>
+        new(
+            "promote-own",
+            ImmutableSortedDictionary<string, string>.Empty
+                .Add(ActionArguments.Actor, "0")
+                .Add(ActionArguments.Cell, "2")
+                .Add(ActionArguments.Becomes, becomes)
         );
 
     /// <summary>The game waiting for someone to take Yellow's seat, open, before it begins.</summary>

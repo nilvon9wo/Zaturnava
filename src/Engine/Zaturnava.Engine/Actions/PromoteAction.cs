@@ -5,8 +5,10 @@ using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 
 namespace Net.NowhereAtAll.Zaturnava.Engine.Actions;
 
-/// <summary>Promote the Pawn on <see cref="Cell"/> into the captured piece <see cref="Into"/>.</summary>
-public sealed record PromoteAction(SeatId Actor, CellId Cell, PieceId Into) : GameAction(Actor)
+/// <summary>
+/// Promote the Pawn on <see cref="PromotionAction.Cell"/> into the captured piece <see cref="Into"/>.
+/// </summary>
+public sealed record PromoteAction(SeatId Actor, CellId Cell, PieceId Into) : PromotionAction(Actor, Cell)
 {
     public const string Kind = "promote";
     public const string CellArgument = "cell";

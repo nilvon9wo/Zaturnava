@@ -9,8 +9,7 @@ namespace Net.NowhereAtAll.Zaturnava.Games.GrandLegions;
 /// Grand Legions played by Chaturaji 2027's rules (Proposed): each leader is what those rules call a Raja, its
 /// start its seat's throne; the Western, Makruk and Shogi Pawns are their Pawns, swapping back to back; every
 /// Infantry piece is promoted at the far edge into a captured piece; a die names a class, so moves any piece of
-/// it; and taking a piece scores its value. Palaces, more than one leader, and each piece's own promotion are
-/// still to come.
+/// it; taking a piece scores its value; and each piece's own promotion is played. Palaces are still to come.
 /// </summary>
 public static class GrandLegionsRules
 {
@@ -24,6 +23,19 @@ public static class GrandLegionsRules
             .Where(piece => piece.Class == PieceClass.Infantry)
             .Select(piece => piece.Id),
     ];
+
+    /// <summary>
+    /// Each piece's own promotion, as the catalogue names it (specification §6.2): a Western piece's on the last
+    /// row; a Shogi piece's in the far three rows; a Makruk Pawn's on the sixth rank or beyond, which on any board is
+    /// taken as the far three rows too (Proposed).
+    /// </summary>
+    public static ImmutableDictionary<PieceKindId, OwnPromotion> OwnPromotions { get; } =
+        GrandLegionsPieces.Catalogue
+            .Where(piece => piece.PromotesTo.Count > 0)
+            .ToImmutableDictionary(
+                piece => piece.Id,
+                piece => new OwnPromotion([.. piece.PromotesTo], piece.Tradition == Tradition.Western ? 1 : 3)
+            );
 
     public static ImmutableHashSet<PieceKindId> Leaders { get; } =
     [
@@ -41,7 +53,7 @@ public static class GrandLegionsRules
 
     /// <summary>
     /// What a player is told of each piece of the catalogue beyond its moves: its class, what its own promotion may
-    /// make it - not played yet - and what holds it back. How much lifting a restriction costs is not told: quick
+    /// make it, and what holds it back. How much lifting a restriction costs is not told: quick
     /// games lift none.
     /// </summary>
     public static ImmutableDictionary<PieceKindId, PieceGuide> Guides { get; } =
@@ -94,6 +106,7 @@ public static class GrandLegionsRules
             Game = game.Game,
             Heavies = Heavies,
             Promotables = Promotables,
+            OwnPromotions = OwnPromotions,
             Marks = GrandLegionsPieces.Marks,
             Guides = Guides,
             Scoring = Scoring,

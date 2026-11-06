@@ -1,6 +1,6 @@
 @* What a player is told of a piece they clicked on, whether or not they may move it: as labelled facts, whose it
    is, where it stands, and its kind's class, value (what taking it scores), and what its own promotion may make
-   it, if it has one, saying so if the game does not play it yet; then how it moves and captures -
+   it, if it has one, and where, saying so if the game does not play it yet; then how it moves and captures -
    drawn (MoveDiagramView), turned as the board shows its army, or in words where the ruleset draws nothing - its
    powers, those every piece of its sort has (common) apart from its own (special), and what holds it back, each as
    the ruleset tells it. A kind the ruleset tells nothing of shows its owner and square alone. *@
@@ -30,6 +30,10 @@
                 <dt title="What its own promotion may make it">Promotes to</dt>
                 <dd class="promotes-to">
                     @this.Named(string.Join(", ", known.PromotesTo))
+                    @if (known.PromotesWhere is { } where)
+                    {
+                        <span class="where">, @where</span>
+                    }
                     @if (!known.IsPromotionPlayed)
                     {
                         <span class="not-yet"> (not yet in play)</span>

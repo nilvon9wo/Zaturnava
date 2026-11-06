@@ -12,7 +12,8 @@ namespace Net.NowhereAtAll.Zaturnava.Bots;
 /// most at once, at random among equals; when nothing gains, any action that does something and loses
 /// nothing, passing only when nothing else is left. An action gains what it scores, and a promotion
 /// what it puts on the board for the bot's team, less what it takes off: so a Pawn is promoted into
-/// the team's best piece, and never into an enemy's. An escape, likewise, gains what it puts back.
+/// the team's best piece, and never into an enemy's, and a piece by its own promotion into the best it may become.
+/// An escape, likewise, gains what it puts back.
 /// </summary>
 internal static class Greedy
 {
@@ -50,6 +51,7 @@ internal static class Greedy
             + action switch
             {
                 PromoteAction promotion => PromotionGain(request, promotion),
+                PromoteOwnAction promotion => OwnPromotionGain(request, promotion),
                 EscapeAction escape => SideOf(request, PrisonerOf(request, escape.Piece)),
                 _ => 0,
             };
@@ -60,6 +62,13 @@ internal static class Greedy
         GameState state = request.State;
         Piece pawn = state.Position.PieceAt(promotion.Cell)!; // a legal promotion has a Pawn to promote
         return SideOf(request, PrisonerOf(request, promotion.Into)) - SideOf(request, pawn);
+    }
+
+    /// <summary>What the piece becomes is worth to the bot's team, less what it was.</summary>
+    private static int OwnPromotionGain(DecisionRequest request, PromoteOwnAction promotion)
+    {
+        Piece piece = request.State.Position.PieceAt(promotion.Cell)!; // a legal promotion has a piece to promote
+        return SideOf(request, piece with { Kind = promotion.Becomes }) - SideOf(request, piece);
     }
 
     private static Piece PrisonerOf(DecisionRequest request, PieceId piece) =>

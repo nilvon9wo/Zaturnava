@@ -338,17 +338,25 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     /// <summary>
     /// How a piece of <paramref name="kind"/> moves, drawn as well (<see cref="MoveDiagrams"/>), and its class and
     /// what holds it back as the variant tells them, with the powers these rules give it first: those every piece of
-    /// its sort has, and its own.
+    /// its sort has, and its own - and its own promotion, where these rules play it, and where it may be taken.
     /// </summary>
     public PieceGuide GuideOf(PieceKindId kind)
     {
         PieceGuide told = this._variant.Guides.GetValueOrDefault(kind) ?? new PieceGuide(this._variant.Kinds[kind]);
-        return told with
+        PieceGuide drawn = told with
         {
             Powers = [.. this.PowersOf(kind), .. told.Powers],
             SpecialPowers = [.. this.SpecialPowersOf(kind), .. told.SpecialPowers],
             Diagram = this._diagrams.Of(kind),
         };
+        return this._variant.OwnPromotions.TryGetValue(kind, out OwnPromotion? own)
+            ? drawn with
+            {
+                PromotesTo = own.Into,
+                IsPromotionPlayed = true,
+                PromotesWhere = own.Ranks == 1 ? "on the last row" : $"in the far {own.Ranks} rows",
+            }
+            : drawn;
     }
 
     public string NameOf(SeatId seat) => Chaturaji2027Setup.SeatNames[seat.Value];
@@ -518,13 +526,10 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     }
 
     /// <summary>
-    /// Each Pawn (each piece of the variant's <see cref="Chaturaji2027Variant.Promotables"/>) of an army the seat
-    /// commands that stands on the far edge - with nowhere forward left to go - may become any captured piece,
-    /// whoever holds it: the piece goes back to its own army (rules.md §8). A Pawn of an enemy army waits on a die
-    /// that moves a Pawn. Pieces alike held by the same seat are offered once - the first taken - the
-    /// highest-scoring first, then by owner, then by holder.
+    /// The promotions of the pieces of the armies the seat commands, each piece's own (if it has one) first, then
+    /// into a captured piece. A piece of an enemy army waits on a die that moves its kind.
     /// </summary>
-    private IEnumerable<PromoteAction> PromotionsOf(GameState state, SeatId seat)
+    private IEnumerable<PromotionAction> PromotionsOf(GameState state, SeatId seat)
     {
         ImmutableHashSet<SeatId> armies = this._control.ArmiesOf(state, seat);
         ImmutableHashSet<PieceKindId> rolled = this.RolledKinds(state);
@@ -538,18 +543,51 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
                 .Select(prisoner => prisoner.Piece),
         ];
         return state.Position.Occupants
-            .Where(occupant =>
-                this._variant.Promotables.Contains(occupant.Value.Kind) && armies.Contains(occupant.Value.Owner)
-            )
+            .Where(occupant => armies.Contains(occupant.Value.Owner))
             .Where(occupant =>
                 rolled.Contains(occupant.Value.Kind) || state.Teams.AreAllied(occupant.Value.Owner, seat)
             )
-            .Where(occupant => this._grid.Step(occupant.Key, state.SeatOf(occupant.Value.Owner).Forward) is null)
-            .SelectMany(occupant => pool
-                .Where(piece => this.MayBecome(occupant.Value, piece))
-                .Select(piece => new PromoteAction(seat, occupant.Key, piece.Id))
-            );
+            .SelectMany(occupant => (IEnumerable<PromotionAction>)
+            [
+                .. this.OwnPromotionsOf(state, seat, occupant.Key, occupant.Value),
+                .. this.FarEdgePromotionsOf(state, seat, occupant.Key, occupant.Value, pool),
+            ]);
     }
+
+    /// <summary>
+    /// A piece with a promotion of its own (<see cref="Chaturaji2027Variant.OwnPromotions"/>), standing within its
+    /// rows of the far edge, may become any kind it names, for its own army, free (specification §6.2); a retired
+    /// seat's, which no one moves, may not.
+    /// </summary>
+    private IEnumerable<PromoteOwnAction> OwnPromotionsOf(GameState state, SeatId seat, CellId cell, Piece piece) =>
+        this._variant.OwnPromotions.TryGetValue(piece.Kind, out OwnPromotion? own)
+        && this.RowsAhead(cell, state.SeatOf(piece.Owner).Forward) < own.Ranks
+        && !state.Retired.Contains(piece.Owner)
+            ? own.Into.Select(kind => new PromoteOwnAction(seat, cell, kind))
+            : [];
+
+    /// <summary>
+    /// Each Pawn (each piece of the variant's <see cref="Chaturaji2027Variant.Promotables"/>) that stands on the far
+    /// edge - with nowhere forward left to go - may become any captured piece, whoever holds it: the piece goes back
+    /// to its own army (rules.md §8). Pieces alike held by the same seat are offered once - the first taken - the
+    /// highest-scoring first, then by owner, then by holder.
+    /// </summary>
+    private IEnumerable<PromoteAction> FarEdgePromotionsOf(
+        GameState state,
+        SeatId seat,
+        CellId cell,
+        Piece piece,
+        ImmutableList<Piece> pool
+    ) =>
+        this._variant.Promotables.Contains(piece.Kind)
+        && this._grid.Step(cell, state.SeatOf(piece.Owner).Forward) is null
+            ? pool.Where(into => this.MayBecome(piece, into)).Select(into => new PromoteAction(seat, cell, into.Id))
+            : [];
+
+    /// <summary>How many rows lie ahead of <paramref name="cell"/>, facing <paramref name="forward"/>: 0 on the edge.
+    /// </summary>
+    private int RowsAhead(CellId cell, Direction forward) =>
+        this._grid.Step(cell, forward) is { } next ? 1 + this.RowsAhead(next, forward) : 0;
 
     /// <summary>Into any piece but a Pawn of its own army; into another army's Pawn, as the rules are set.</summary>
     private bool MayBecome(Piece pawn, Piece piece) =>
@@ -557,8 +595,8 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
 
     private bool IsPawn(Piece piece) => this._variant.Pawns.Contains(piece.Kind);
 
-    /// <summary>Promoting a Pawn of an enemy army takes a die that moves a Pawn; one's own team's, none.</summary>
-    private static bool UsesDie(GameState state, PromoteAction promotion) =>
+    /// <summary>Promoting a piece of an enemy army takes a die that moves its kind; one's own team's, none.</summary>
+    private static bool UsesDie(GameState state, PromotionAction promotion) =>
         !state.Teams.AreAllied(state.Position.PieceAt(promotion.Cell)!.Owner, promotion.Actor);
 
     private ImmutableHashSet<PieceKindId> RolledKinds(GameState state) =>
@@ -667,7 +705,8 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         {
             RollAction => new Transition(state with { AwaitedDice = new DiceRequest(TurnDice, this._dice.Sides) }, []),
             MoveAction move => this.AfterMove(state, move),
-            PromoteAction promote => this.Promoted(state, promote),
+            PromoteAction promote => this.Promoted(state, promote, FromPrisoner(state, promote)),
+            PromoteOwnAction promote => this.Promoted(state, promote, Become(state, promote)),
             EscapeAction escape => this.Escaped(state, escape),
             HandOverAction handOver => HandedToRegent(state, handOver),
             RetireAction retire => this.Retired(state, retire),
@@ -824,22 +863,31 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         || !offer.Asked.IsEmpty
         || (offer.Receiver != offer.Actor && this._control.OccupierOf(state, offer.Receiver) is not null);
 
-    /// <summary>
-    /// The Pawn becomes the captured piece, for that piece's own army - unless that leaves only Rajas on
-    /// the board. Promoting one's own team's Pawn uses no die, so the turn goes on as it was; an enemy's
-    /// uses a die, as a move does; a Pawn just come to the edge lets the turn go on from that move.
-    /// </summary>
-    private Transition Promoted(GameState state, PromoteAction promote)
+    /// <summary>The Pawn becomes the captured piece, for that piece's own army: the prisoner is freed.</summary>
+    private static (Piece Into, GameState State) FromPrisoner(GameState state, PromoteAction promote)
     {
-        Piece pawn = state.Position.PieceAt(promote.Cell)!; // the promotion is legal, so the Pawn stands there
         Prisoner prisoner = state.Prisoners.First(held => held.Piece.Id == promote.Into);
-        GameState promoted = state with
+        return (prisoner.Piece, state with { Prisoners = state.Prisoners.Remove(prisoner) });
+    }
+
+    /// <summary>The piece becomes the kind its own promotion names, still itself, and its army's.</summary>
+    private static (Piece Into, GameState State) Become(GameState state, PromoteOwnAction promote) =>
+        (state.Position.PieceAt(promote.Cell)! with { Kind = promote.Becomes }, state);
+
+    /// <summary>
+    /// The piece becomes <paramref name="becoming"/>'s piece - unless that leaves only Rajas on the board.
+    /// Promoting one's own team's piece uses no die, so the turn goes on as it was; an enemy's uses a die, as a
+    /// move does; a piece just come to where it may be promoted lets the turn go on from that move.
+    /// </summary>
+    private Transition Promoted(GameState state, PromotionAction promote, (Piece Into, GameState State) becoming)
+    {
+        Piece pawn = state.Position.PieceAt(promote.Cell)!; // the promotion is legal, so the piece stands there
+        GameState promoted = becoming.State with
         {
-            Position = state.Position.Place(promote.Cell, prisoner.Piece),
-            Prisoners = state.Prisoners.Remove(prisoner),
+            Position = state.Position.Place(promote.Cell, becoming.Into),
             PromotionDue = null,
         };
-        Transition transition = new(promoted, [new PiecePromoted(pawn, prisoner.Piece, promote.Cell, promote.Actor)]);
+        Transition transition = new(promoted, [new PiecePromoted(pawn, becoming.Into, promote.Cell, promote.Actor)]);
         bool usesDie = UsesDie(state, promote);
         Transition used = usesDie
             ? this.WithoutDieFor(transition, pawn.Kind)

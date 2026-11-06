@@ -141,8 +141,7 @@ What the program does so far (2026-11-04), and the gaps against the above:
   (specification §5), or none.
 - Every Infantry piece, not only the three Pawns, may be promoted into a captured piece at the far
   edge (2026-11-06), as specification §6.1 states. Only the Pawns swap back to back, and the bots'
-  measure of how far an army's pawns have come still counts the Pawns alone. Each piece's own
-  promotion is still to come (Stage 5).
+  measure of how far an army's pawns have come still counts the Pawns alone.
 - Pieces are drawn by their class's emblem with letters telling them apart (#146).
 - Still to come: choosing a quick setup for one's own kingdom in a game set up by hand, which waits for
   the draft (Stage 4).
@@ -181,7 +180,16 @@ drawn simply, a shape for its class and a letter for its kind.
   lowering the score.
 - Promotion by a piece's own condition, free; Infantry promoting at the far edge, into its own
   promotion or any captured piece; every promotion optional, and able to wait while its condition
-  holds.
+  holds. *Done* (2026-11-06, `PromoteOwnAction`, `OwnPromotion`): a Western Pawn on the last row may
+  become a Queen, Rook, Bishop or Knight; a Shogi Pawn, Lance or Silver General in the far three rows
+  a Gold General, a leader, so an army may gain leaders; a Makruk Pawn a Courtier. The piece stays
+  itself, its army's, and scores as what it became. *Proposed*: the Makruk Pawn's "sixth rank" is
+  taken as the sixth or beyond, so the far three rows on any board; rows are counted along the
+  army's forward, as the far edge is. A piece that moves to where it may be promoted waits on that
+  choice, as a Pawn come to the far edge does ("Promote later" puts it off); otherwise a promotion
+  may be taken at the start of a turn, or between moves. Promoting a piece of an enemy army one
+  commands takes a die that moves it, as the far-edge promotion does. A retired seat's piece is not
+  promoted. Greedy bots promote into the most valuable kind; the others weigh it as any action.
 - The four-throne bonus, once for each set of leaders.
 - Bots that spend.
 
