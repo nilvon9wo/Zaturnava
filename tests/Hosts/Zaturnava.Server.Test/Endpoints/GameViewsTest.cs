@@ -648,7 +648,7 @@ public sealed class GameViewsTest
     }
 
     [Fact]
-    public void ViewOf_WhenTheRulesMarkPiecesByClass_MarksEachOnTheBoardAndHeld()
+    public void ViewOf_WhenTheRulesMarkPiecesBySymbol_MarksEachOnTheBoardAndHeld()
     {
         // Arrange - a Grand Legions game, Black holding a Rook of Yellow's
         Chaturaji2027Rules grand = GrandLegionsRules.RulesOf(QuickGame.Small);
@@ -661,7 +661,10 @@ public sealed class GameViewsTest
         // Assert
         PieceDto leader = view.Pieces.First(piece => grand.IsLeader(new PieceKindId(piece.Kind)));
         Assert.Equal(
-            ("leader", new PieceMarkDto("heavy", "R")),
+            (
+                GrandLegionsPieces.Symbols[new PieceKindId(leader.Kind)],
+                new PieceMarkDto("rook", "R") { Class = "heavy" }
+            ),
             (leader.Mark?.Emblem, view.Seats[0].Prisoners.Single().Mark)
         );
     }
@@ -680,9 +683,9 @@ public sealed class GameViewsTest
         // Assert
         PieceKindDto told = view.Kinds.Single(kind => kind.Kind == "rook");
         Assert.Equal(
-            ("Rook (Western)", grand.WorthOf(GrandLegionsPieces.Rook), "Heavy", "R",
+            ("Rook (Western)", grand.WorthOf(GrandLegionsPieces.Rook), "Heavy", "rook",
                 "Any distance orthogonally, up to the first piece in the way", 1, 0),
-            (told.Name, told.Value, told.Class, told.Mark?.Letters, told.Moves.Single(), told.Captures.Count,
+            (told.Name, told.Value, told.Class, told.Mark?.Emblem, told.Moves.Single(), told.Captures.Count,
                 told.Powers.Count)
         );
     }

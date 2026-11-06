@@ -142,9 +142,9 @@ What the program does so far (2026-11-04), and the gaps against the above:
   plays, but a Medium game with palaces will need the palace to stand partly outside the kingdom
   (specification §5), or none.
 - Every Infantry piece, not only the three Pawns, may be promoted into a captured piece at the far
-  edge (2026-11-06), as specification §6.1 states. Only the Pawns swap back to back, and the bots'
-  measure of how far an army's pawns have come still counts the Pawns alone.
-- Pieces are drawn by their class's emblem with letters telling them apart (#146).
+  edge (2026-11-06), as specification §6.1 states. Only the Pawns swap back to back; the bots' measure
+  of how far an army's pawns have come counts every piece promoted at the far edge.
+- Pieces are drawn each by a symbol of its own (2026-11-06; see Stage 7).
 - Still to come: choosing a quick setup for one's own kingdom in a game set up by hand, which waits for
   the draft (Stage 4).
 
@@ -226,9 +226,12 @@ drawn simply, a shape for its class and a letter for its kind.
 
 ## Stage 7 — Looks
 
-- Every kind its own look, in both piece sets; the class told at a glance (spec §8). Still to come: so
-  far each kind is drawn by its class's emblem and one or two letters, which tells apart little at a
-  glance. Next: a symbol for each kind of its own.
+- Every kind its own look, in both piece sets; the class told at a glance (spec §8). *Done* (2026-11-06):
+  each kind has a symbol of its own, the chess symbols for the pieces named as chess's, the elephant for the
+  elephants; only pieces sharing a name share one. The other symbols are *Proposed*. Beneath the symbol, its
+  class's emblem, small, so that the class is told at a glance, and beside it the piece's abbreviation, every
+  piece its own (Stated; the emblems and the abbreviations, but for the Pawns' and Soldiers', *Proposed*).
+  Still to come: above the symbol, a badge for each restriction lifted, once lifts are kept in the game.
 - Telling a player what a piece is and does. *Done* (2026-11-06): hovering over a piece names it, its
   owner and its class; clicking on any piece, the player's or not, tells of it at the side of the
   window: as labelled facts, its owner, square, class and value; a diagram of where it moves and

@@ -345,9 +345,12 @@ commanding every piece, a ransom's point for each prisoner, 2 for a Raja) were r
   captures, restrictions still on it (and bought off), powers, what it may promote to, and its
   value; with the cells it could reach marked on the board, as the page does now for the player's
   own pieces.
-- **Stated 2026-10-31, subject to playtesting.** Each class gets its own outline, and each kind its own mark inside it, so that a
-  piece's class can be told at a glance (and with it, which die moves it) and its kind on a closer
-  look. The two piece sets (traditional, chess) carry over.
+- **Stated 2026-11-06, replacing the outlines of 2026-10-31.** Each kind has a symbol of its own in the
+  middle of the piece: the chess symbols for the pieces named as chess's, the elephant for the
+  elephants; pieces sharing a name (the Pawns) may share one. Beneath it, small, its class's emblem, so
+  that the class can be told at a glance (and with it, which die moves it), and beside that its
+  abbreviation, every piece its own. Above it, a badge for each restriction lifted. A class's emblem
+  and letters alone are not playable.
 
 ## 9. Open questions
 

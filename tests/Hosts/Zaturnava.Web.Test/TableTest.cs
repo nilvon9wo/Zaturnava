@@ -1712,15 +1712,17 @@ public sealed class TableTest : IDisposable
     }
 
     [Fact]
-    public void Board_WhenPiecesAreMarkedByClass_DrawsEachKnownEmblemAboveItsLetters()
+    public void Board_WhenPiecesAreMarkedBySymbol_DrawsEachWithItsClassAndLettersBeneath()
     {
-        // Arrange - a Rook, marked as heavy, and a piece of a class this client draws no emblem for
+        // Arrange - a Camel and a Rook, each its own symbol; a Xiangqi Cannon sharing its; a Pawn of no class told
         this._page.Server.View = FakeGameServer.SeatZeroToMove with
         {
             Pieces =
             [
-                new PieceDto(1, "rook", "Rook (Western)", 1, 3) { Mark = new PieceMarkDto("heavy", "R") },
-                new PieceDto(2, "wizard", "Wizard", 0, 2) { Mark = new PieceMarkDto("wizard", "Wz") },
+                new PieceDto(1, "camel", "Camel", 1, 0) { Mark = Marked("camel", string.Empty, "cavalry") },
+                new PieceDto(2, "xiangqi-cannon", "Cannon", 1, 1) { Mark = Marked("cannon", "X", "artillery") },
+                new PieceDto(3, "rook", "Rook (Western)", 0, 2) { Mark = Marked("rook", string.Empty, "heavy") },
+                new PieceDto(4, "western-pawn", "Pawn (Western)", 0, 3) { Mark = new PieceMarkDto("pawn", "W") },
             ],
         };
 
@@ -1728,21 +1730,46 @@ public sealed class TableTest : IDisposable
         IRenderedComponent<Table> table = this.Render(SeatZero);
 
         // Assert
+        ImmutableList<string> classes =
+        [
+            .. table.FindAll("svg.board g.piece path.class-emblem").Select(path => path.GetAttribute("transform")!),
+        ];
         Assert.Equal(
-            ("R,Wz", 1, true),
+            ("X,W", 2, 3, true, true),
             (
                 string.Join(",", table.FindAll("svg.board g.piece text.letters").Select(text => text.TextContent)),
-                table.FindAll("svg.board g.piece path").Count,
-                table.Find("svg.board g.piece path").GetAttribute("transform")!.EndsWith(
-                    PieceStyle.EmblemPlacement,
-                    StringComparison.Ordinal
-                )
+                table.FindAll("svg.board g.piece text.symbol").Count,
+                classes.Count,
+                classes[0].EndsWith(PieceStyle.ClassPlacementBeside(string.Empty), StringComparison.Ordinal),
+                classes[1].EndsWith(PieceStyle.ClassPlacementBeside("X"), StringComparison.Ordinal)
             )
         );
     }
 
     [Fact]
-    public void Seats_WhenTheyHoldPrisonersMarkedByClass_ShowEachByItsMark()
+    public void Board_WhenAPieceIsMarkedBySymbolNotKnownHere_DrawsNoneButItsLetters()
+    {
+        // Arrange
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Pieces = [new PieceDto(2, "wizard", "Wizard", 0, 2) { Mark = Marked("wizard", "Wz", "sorcery") }],
+        };
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Assert
+        Assert.Equal(
+            ("Wz", 0),
+            (
+                string.Join(",", table.FindAll("svg.board g.piece text").Select(text => text.TextContent)),
+                table.FindAll("svg.board g.piece path").Count
+            )
+        );
+    }
+
+    [Fact]
+    public void Seats_WhenTheyHoldPrisonersMarkedBySymbol_ShowEachByItsMark()
     {
         // Arrange
         ImmutableList<SeatDto> seats = FakeGameServer.SeatZeroToMove.Seats;
@@ -1754,8 +1781,10 @@ public sealed class TableTest : IDisposable
                 {
                     Prisoners =
                     [
-                        new PrisonerDto(9, "rook", "Rook (Western)", 1) { Mark = new PieceMarkDto("heavy", "R") },
-                        new PrisonerDto(8, "wizard", "Wizard", 1) { Mark = new PieceMarkDto("wizard", "Wz") },
+                        new PrisonerDto(9, "camel", "Camel", 1) { Mark = Marked("camel", "", "cavalry") },
+                        new PrisonerDto(8, "rook", "Rook (Western)", 1) { Mark = Marked("rook", "", "heavy") },
+                        new PrisonerDto(7, "western-pawn", "Pawn", 1) { Mark = new PieceMarkDto("pawn", "W") },
+                        new PrisonerDto(6, "wizard", "Wizard", 1) { Mark = Marked("wizard", "Wz", "sorcery") },
                     ],
                 }
             ),
@@ -1767,13 +1796,18 @@ public sealed class TableTest : IDisposable
         // Assert
         AngleSharp.Dom.IElement held = table.FindAll("li.seat")[0];
         Assert.Equal(
-            ("R,Wz", 1),
+            ("W,Wz", 2, 3),
             (
                 string.Join(",", held.QuerySelectorAll("svg text.letters").Select(text => text.TextContent)),
+                held.QuerySelectorAll("svg text.symbol").Length,
                 held.QuerySelectorAll("svg path").Length
             )
         );
     }
+
+    /// <summary>A piece marked by <paramref name="symbol"/>, any <paramref name="letters"/>, and its class.</summary>
+    private static PieceMarkDto Marked(string symbol, string letters, string pieceClass) =>
+        new(symbol, letters) { Class = pieceClass };
 
     [Fact]
     public void Seats_WhenSeated_GroupsThemByTeamWithItsTotalTheirOwnTeamFirst()

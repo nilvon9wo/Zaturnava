@@ -509,7 +509,7 @@ public sealed class GrandLegionsRulesTest
     }
 
     [Fact]
-    public void MarkOf_WhenAsked_IsThePiecesClassEmblemAndLetters()
+    public void MarkOf_WhenAsked_IsThePiecesSymbolAndLetters()
     {
         // Arrange
         Chaturaji2027Rules rules = GrandLegionsRules.RulesOf(QuickGame.Small);
@@ -518,7 +518,7 @@ public sealed class GrandLegionsRulesTest
         PieceMark? mark = rules.MarkOf(GrandLegionsPieces.MakrukPawn);
 
         // Assert
-        Assert.Equal(new PieceMark("infantry", "M"), mark);
+        Assert.Equal(new PieceMark("pawn", "M") { Class = "infantry" }, mark);
     }
 
     [Theory]

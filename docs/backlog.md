@@ -2,7 +2,7 @@
 
 What the first playtest (2026-10-24) asked for, sorted by kind. Numbers are the playtest's own, so
 that each item can be traced to the note it came from. Items move to "Done" with the change that
-did them.
+did them. Questions waiting on an answer are gathered in [open-questions.md](open-questions.md).
 
 ## Going public (playtest of 2026-11-04)
 
@@ -45,10 +45,15 @@ first.
   a small UTCP client of its own, as there is no C# one yet.
 - Grand Legions (preview until these are done):
   - **N25** Letters as pieces, ambiguous ones, make it nearly unplayable: it needs its own pieces' symbols.
-    *Done*, as asked: each piece is drawn with its class's emblem (*Proposed*: a crown for a leader, a shield for
-    infantry, a tower for a heavy piece, a horse's head for cavalry, a cannon for artillery) and letters under it
-    that tell it from the others of its class (Pawns Sh, W and M; Soldiers SJ and SX; the rest *Proposed*). Still
-    to come: upgrades as small badges, once a piece's lifted restrictions are kept in the game.
+    *Done*, as asked: every piece has a symbol of its own, as chess's pieces have theirs (King, Queen, Rook,
+    Bishop, Knight), and the elephants the elephant; only pieces sharing a name share one. *Proposed*: which
+    symbol each other piece has (a star, a flag, the sun, the moon, a shield, a fan, a scroll, a tiara, a key, a
+    sword, a lance, a bow, scales, a cross, dragon's wings, chevrons, stripes, a camel, a horseshoe, a giraffe,
+    three dots, a catapult, a cannon, a grasshopper). A class's emblem with letters, as first done, was not
+    playable alone; the class's emblem is now drawn small beneath the symbol, so that the class is told too, with
+    every piece's own abbreviation beside it (the Pawns' Sh, W and M and Soldiers' SJ and SX as asked; the rest
+    *Proposed*). Still to come: lifts as small badges above the symbol, once a piece's lifted restrictions are kept
+    in the game.
 - **N29** (low) An encyclopedia of pieces: each piece's name here, its other names, the games it comes from
   (Chess, Xiangqi...), the games here that use it, its variants (kinds of Pawn, of Elephant...), and how it
   moves, captures and what else it may do.

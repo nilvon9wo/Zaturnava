@@ -9,9 +9,24 @@
         {
             <path d="@emblem" transform="@PieceStyle.EmblemPlacement" />
         }
-        <g>
-            <text class="letters" x="0" y="@Svg.Number(PieceStyle.LettersDrop)">@mark.Letters</text>
-        </g>
+        else if (PieceStyle.EmblemGlyphOf(mark.Emblem) is { } glyph)
+        {
+            <g>
+                <text class="symbol" x="0" y="@Svg.Number(-PieceStyle.GlyphRise)">@glyph</text>
+            </g>
+        }
+        @if (mark.Class is { } pieceClass && PieceStyle.ClassEmblemOf(pieceClass) is { } classEmblem)
+        {
+            <path class="class-emblem" d="@classEmblem" transform="@PieceStyle.ClassPlacementBeside(mark.Letters)" />
+        }
+        @if (mark.Letters.Length > 0)
+        {
+            <g>
+                <text class="letters"
+                      x="@Svg.Number(PieceStyle.LettersShift)"
+                      y="@Svg.Number(PieceStyle.LettersDrop)">@mark.Letters</text>
+            </g>
+        }
     }
     else if (PieceStyle.ShapeOf(this.Kind, this.Pieces) is { } shape)
     {
@@ -38,7 +53,7 @@
     [Parameter]
     public PieceSet Pieces { get; set; }
 
-    /// <summary>How the piece is marked, if by an emblem and letters; none, for a kind drawn as itself.</summary>
+    /// <summary>How the piece is marked, if by a symbol and any letters; none, for a kind drawn as itself.</summary>
     [Parameter]
     public PieceMarkDto? Mark { get; set; }
 }
