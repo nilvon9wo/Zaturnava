@@ -1487,8 +1487,69 @@ public sealed class Chaturaji2027RulesTest
 
         // Assert
         Assert.Equal(
-            (Black, Yellow, "5,2"),
-            (transition.State.DecidingSeat, transition.State.ActingFor, string.Join(',', transition.State.Dice))
+            (Black, Yellow, "5,2", new TurnShared(Yellow, Black) { HasPassed = true }),
+            (
+                transition.State.DecidingSeat,
+                transition.State.ActingFor,
+                string.Join(',', transition.State.Dice),
+                transition.Events[^1]
+            )
+        );
+    }
+
+    [Fact]
+    public void LegalActions_WhenTheSeatPassesDoublesToItsOccupier_OffersTheOccupierNoEscape()
+    {
+        // Arrange - Yellow's Pawn, held by Green, may escape on Yellow's double 5, until Yellow passes them on
+        GameState state = this.SharedTurn() with
+        {
+            Dice = [5, 5],
+            Prisoners = [new Prisoner(Piece(9, Chaturaji2027Pieces.Pawn, Yellow), Green)],
+        };
+        bool mayEscape = this._rules.LegalActions(state).OfType<EscapeAction>().Any();
+
+        // Act
+        GameState shared = this._rules.Apply(state, new PassAction(Yellow)).State;
+
+        // Assert
+        Assert.Equal(
+            (true, Black, "5,5", false),
+            (
+                mayEscape,
+                shared.DecidingSeat,
+                string.Join(',', shared.Dice),
+                this._rules.LegalActions(shared).OfType<EscapeAction>().Any()
+            )
+        );
+    }
+
+    [Fact]
+    public void Apply_WhenTheOccupierBringsTheSeatsPawnToTheFarEdge_LetsItPromoteThePawnThenWithoutADie()
+    {
+        // Arrange - Black's Raja on Red's throne; Red's Pawn faces left, a step from the edge; no dice rolled
+        Piece elephant = Piece(11, Chaturaji2027Pieces.Elephant, Green);
+        GameState state = this.StateWith(
+            (RedThrone, Piece(1, Chaturaji2027Pieces.Raja, Black)),
+            (Grid.CellAt(1, 5), Piece(7, Chaturaji2027Pieces.Pawn, Red)),
+            (Grid.CellAt(0, 0), Piece(8, Chaturaji2027Pieces.Raja, Yellow))
+        ) with
+        {
+            Prisoners = [new Prisoner(elephant, Yellow)],
+        };
+        GameState moved = this._rules.Apply(state, new MoveAction(Black, Grid.CellAt(1, 5), Grid.CellAt(0, 5))).State;
+
+        // Act
+        Transition transition = this._rules.Apply(moved, new PromoteAction(Black, Grid.CellAt(0, 5), elephant.Id));
+
+        // Assert - the move was deliberate, so the turn passes once the Pawn is promoted
+        Assert.Equal(
+            (Black, Grid.CellAt(0, 5), elephant, Yellow),
+            (
+                moved.DecidingSeat,
+                moved.PromotionDue,
+                transition.State.Position.PieceAt(Grid.CellAt(0, 5)),
+                transition.State.DecidingSeat
+            )
         );
     }
 

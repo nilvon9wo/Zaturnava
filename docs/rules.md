@@ -350,7 +350,10 @@ throne:
    move from that expanded pool rather than being restricted to just their
    native army; that privilege is theirs regardless of whose turn triggered
    it. Movement is still optional; declining means the occupier gets both
-   dice-moves instead of one.
+   dice-moves instead of one: *(Stated 2026-11-06)* it is up to the occupied
+   player to move something if they do not want the occupier to make two
+   moves. The log says that the occupied player passed. The occupier may not
+   use the dice for an escape (§7), which the occupied player rolled.
    - *(Clarified)* If this first move **liberates the occupied player's own
      throne** — i.e. one of the occupied player's own pieces (native army, or
      expanded pool per the case above) captures the enemy Raja sitting on
@@ -431,6 +434,9 @@ forced into either):
     player chooses between them: it uses both dice, and the turn ends. It is
     offered only while both dice of the doubles are unused. What the escaping
     piece takes is the escaping player's, scored as any capture is (§5).
+  - *(Stated 2026-11-06)* Never for an occupier moving for the player whose
+    throne it holds (§6.3), even with both of that player's dice: an escape is
+    only for doubles one rolled oneself, or a regent's for its ally (§6.2).
 
 If multiple valid captured pieces qualify (e.g. both the player's own captured
 Raja and an ally's captured Raja qualify under a "5 or 6" roll), the player
@@ -491,12 +497,15 @@ available (via a future capture, by anyone).
 - *(Clarified 2026-10-25)* Promoting a Pawn of one's own team (one's own, or
   a Raja-less ally's) is its own decision, at any time during one's turn:
   before rolling, or between moves. It uses no die, and the turn goes on.
-  Promoting an **enemy's** Pawn — whose throne one's Raja holds — takes a die
-  that moves a Pawn, which it uses up, as a Pawn's move would.
-- *(Clarified 2026-10-25)* A Pawn that has just come to the far edge, if it
-  may be promoted, is offered at once: the player promotes it, or leaves it
-  for later, before the turn goes on. Later, the player picks the Pawn up to
-  promote it.
+  Promoting an **enemy's** Pawn — whose throne one's Raja holds — that was
+  already waiting on the far edge takes a die that moves a Pawn, which it uses
+  up, as a Pawn's move would.
+- *(Clarified 2026-10-25; Stated 2026-11-06)* A Pawn that has just come to
+  the far edge, if it may be promoted, is offered at once to the player who
+  brought it there, whoever's Pawn it is: the player promotes it, using no
+  die, or leaves it for later, before the turn goes on. Later, the player
+  picks the Pawn up to promote it: its owner (or their team) without a die,
+  an enemy holding its throne with one.
 - **[toggle: `promotion.pawns`]** — Default: `otherArmies`. A Pawn may be
   promoted into another army's captured Pawn, which then moves the way its
   own army faces (and may reach another edge, and be promoted again);

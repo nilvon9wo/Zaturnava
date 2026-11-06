@@ -525,12 +525,16 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     /// <summary>
     /// On doubles, not yet used, instead of moving: a captured piece of the kind they show, of an army the
     /// seat commands, whoever holds it, may escape (rules.md §7) - to each square it may go to. Pieces alike
-    /// held by the same seat are offered once, the highest-scoring first, then by owner, then by holder.
+    /// held by the same seat are offered once, the highest-scoring first, then by owner, then by holder. Never to
+    /// an enemy moving for the seat whose throne it holds, on dice that seat rolled (Stated 2026-11-06).
     /// </summary>
     private IEnumerable<EscapeAction> EscapesOf(GameState state, SeatId seat)
     {
         ImmutableHashSet<SeatId> armies = this._control.ArmiesOf(state, seat);
-        ImmutableHashSet<PieceKindId> kinds = state.Dice.Count == TurnDice && state.Dice.Distinct().Count() == 1
+        bool isOccupier = state.ActingFor is { } occupied && !state.Teams.AreAllied(seat, occupied);
+        ImmutableHashSet<PieceKindId> kinds = !isOccupier
+            && state.Dice.Count == TurnDice
+            && state.Dice.Distinct().Count() == 1
             ? [.. this._dice.KindsOf(state.Dice[0])]
             : [];
         return state.Prisoners
@@ -582,7 +586,8 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
 
     /// <summary>
     /// The promotions of the pieces of the armies the seat commands, each piece's own (if it has one) first, then
-    /// into a captured piece. A piece of an enemy army waits on a die that moves its kind.
+    /// into a captured piece. A piece of an enemy army waits on a die that moves its kind, unless the seat has just
+    /// brought it where it may be promoted (Stated 2026-11-06).
     /// </summary>
     private IEnumerable<PromotionAction> PromotionsOf(GameState state, SeatId seat)
     {
@@ -600,7 +605,9 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         return state.Position.Occupants
             .Where(occupant => armies.Contains(occupant.Value.Owner))
             .Where(occupant =>
-                rolled.Contains(occupant.Value.Kind) || state.Teams.AreAllied(occupant.Value.Owner, seat)
+                rolled.Contains(occupant.Value.Kind)
+                || state.Teams.AreAllied(occupant.Value.Owner, seat)
+                || state.PromotionDue == occupant.Key
             )
             .SelectMany(occupant => (IEnumerable<PromotionAction>)
             [
@@ -655,9 +662,13 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
 
     private bool IsPawn(Piece piece) => this._variant.Pawns.Contains(piece.Kind);
 
-    /// <summary>Promoting a piece of an enemy army takes a die that moves its kind; one's own team's, none.</summary>
+    /// <summary>
+    /// Promoting a piece of an enemy army takes a die that moves its kind; one's own team's, none; nor one just
+    /// brought where it may be promoted, whoever's it is (Stated 2026-11-06).
+    /// </summary>
     private static bool UsesDie(GameState state, PromotionAction promotion) =>
-        !state.Teams.AreAllied(state.Position.PieceAt(promotion.Cell)!.Owner, promotion.Actor);
+        state.PromotionDue != promotion.Cell
+        && !state.Teams.AreAllied(state.Position.PieceAt(promotion.Cell)!.Owner, promotion.Actor);
 
     private ImmutableHashSet<PieceKindId> RolledKinds(GameState state) =>
         [.. state.Dice.SelectMany(this._dice.KindsOf)];
@@ -778,7 +789,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
                 this.GoneOn(new Transition(state with { PromotionDue = null }, [])),
             _ when state.IsRansomWindow => this.Handed(new Transition(state, [])),
             _ when state.Dice.IsEmpty => this.IdlePass(new Transition(state, []), Ransom.MayOffer(state)),
-            _ => this.Declined(new Transition(state, []), Ransom.MayOffer(state)),
+            _ => this.Declined(new Transition(state, []), Ransom.MayOffer(state), hasPassed: true),
         };
 
     /// <summary>The seat retires; if its team has only retired Rajas left, the game ends (rules.md §10).</summary>
@@ -1006,7 +1017,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         Transition rolled = new(state with { Dice = dice.Values }, [new DiceRolled(dice.Actor, dice.Values)]);
         return this.HasUsableDie(rolled.State)
             ? rolled
-            : this.Declined(Forfeited(rolled), mayHaveOffered: false);
+            : this.Declined(Forfeited(rolled), mayHaveOffered: false, hasPassed: false);
     }
 
     /// <summary>
@@ -1052,11 +1063,12 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         PieceKindId kind = state.Position.PieceAt(move.From)!.Kind; // the move is legal, so a piece stands there
         Transition moved = this._farming.Tallied(state, move, this.Moved(state, move));
         Transition used = this.WithoutDieFor(moved, kind);
-        bool isDue = this.PromotionsOf(used.State, move.Actor).Any(promotion => promotion.Cell == move.To);
+        GameState due = used.State with { PromotionDue = move.To };
+        bool isDue = this.PromotionsOf(due, move.Actor).Any(promotion => promotion.Cell == move.To);
         return (GameEnd.AfterMove(moved, this._variant), isDue) switch
         {
             ({ } over, _) => over,
-            (_, true) => used with { State = used.State with { PromotionDue = move.To } },
+            (_, true) => used with { State = due },
             _ => this.GoneOn(used),
         };
     }
@@ -1090,16 +1102,17 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     /// <summary>
     /// Dice left unused: the occupier of the seat's throne may use them, if any; the occupier leaves those it
     /// does not use to the seat (rules.md §6.3); else the turn ends - with no window to offer ransoms if the
-    /// seat <paramref name="mayHaveOffered"/> before it passed.
+    /// seat <paramref name="mayHaveOffered"/> before it passed. The log says whether the seat
+    /// <paramref name="hasPassed"/>, or could use none of its dice.
     /// </summary>
-    private Transition Declined(Transition transition, bool mayHaveOffered)
+    private Transition Declined(Transition transition, bool mayHaveOffered, bool hasPassed)
     {
         GameState state = transition.State;
         SeatId deciding = state.DecidingSeat!.Value; // a seat decides while dice are left
         bool isOccupier = state.ActingFor is { } seat && !state.Teams.AreAllied(deciding, seat);
         return (this.OccupierToHandTo(state), isOccupier) switch
         {
-            ({ } occupier, _) => this.HandedOver(transition, occupier),
+            ({ } occupier, _) => this.HandedOver(transition, occupier, hasPassed),
             (_, true) => this.HandedBack(transition),
             _ => this.PassTurn(transition, mayHaveOffered),
         };
@@ -1128,12 +1141,13 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             : null;
     }
 
-    private Transition HandedOver(Transition transition, SeatId occupier)
+    private Transition HandedOver(Transition transition, SeatId occupier, bool hasPassed = false)
     {
         GameState state = transition.State;
         SeatId seat = (state.ActingFor ?? state.DecidingSeat)!.Value; // a seat decides while dice are left
         GameState shared = state with { DecidingSeat = occupier, ActingFor = seat };
-        return this.EndTurnIfStuck(new Transition(shared, transition.Events.Add(new TurnShared(seat, occupier))));
+        TurnShared handed = new(seat, occupier) { HasPassed = hasPassed };
+        return this.EndTurnIfStuck(new Transition(shared, transition.Events.Add(handed)));
     }
 
     /// <summary>A die no piece can use is forfeit; once no die is left to use, the turn passes.</summary>
