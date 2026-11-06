@@ -9,15 +9,18 @@ namespace Net.NowhereAtAll.Zaturnava.Bots;
 
 /// <summary>
 /// How a bot ends a game, a lead clear by the ruleset's <see cref="IRulesApplying.ClearLead"/>. Asked to end it, it
-/// agrees if its team leads on points, if its game is hopeless - behind by a clear lead on points and on the board
-/// both, with no leader and no heavy piece left to its team while its enemies have one - or if an ally has given up
-/// its turns while the team trails by a clear lead on points (Proposed). Otherwise, when an ally has given up its
+/// agrees if its team leads on points, if its game is hopeless - behind by more than it could hope to take back
+/// (<see cref="IsHopeless"/>) - or if an ally has given up its turns while the team trails by a clear lead on points
+/// (Proposed). Otherwise, when an ally has given up its
 /// turns and no one else in the game is a person, it gives up its own as well, ending the game, if its team leads
 /// clearly, or trails clearly (Proposed): an ally that gave up concedes a game it trails, so playing on alone only
 /// keeps everyone waiting for a game already lost.
 /// </summary>
 internal static class Ending
 {
+    /// <summary>How a team's hope is counted against its face: erring to hope, but not by much (Proposed).</summary>
+    public const double Optimism = 1.25;
+
     /// <summary>
     /// The answer to the proposal waiting, if one is; else giving up its turns beside a resting ally, if it
     /// would; else null.
@@ -53,17 +56,12 @@ internal static class Ending
             other != request.Seat && request.State.Teams.AreAllied(other, request.Seat)
         );
 
-    private static bool IsHopeless(DecisionRequest request)
-    {
-        ILookup<bool, Piece> majors = OnBoard(request)
-            .Where(piece => request.Rules.IsLeader(piece.Kind) || request.Rules.IsHeavy(piece.Kind))
-            .ToLookup(piece => request.State.Teams.AreAllied(piece.Owner, request.Seat));
-        int clear = request.Rules.ClearLead;
-        return PointsLead(request) <= -clear
-            && BoardLead(request) <= -clear
-            && !majors[true].Any()
-            && majors[false].Any();
-    }
+    /// <summary>
+    /// Whether the team trails by more than it could hope to take back (<see cref="Hope"/>), that hope counted at
+    /// <see cref="Optimism"/> times its face, to err on the side of hope (rules.md §10, Stated 2026-11-06).
+    /// </summary>
+    private static bool IsHopeless(DecisionRequest request) =>
+        -PointsLead(request) > Optimism * Hope.Of(request);
 
     /// <summary>The points of the bot's team, less its enemies'.</summary>
     private static int PointsLead(DecisionRequest request) =>

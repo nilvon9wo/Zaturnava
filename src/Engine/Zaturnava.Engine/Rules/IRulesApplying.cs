@@ -132,6 +132,12 @@ public interface IRulesApplying
     /// </summary>
     int ClearLead => 10;
 
+    /// <summary>
+    /// How many moves a piece of <paramref name="kind"/> may expect to be let make in one of its seat's turns, as
+    /// the dice fall: one, unless the ruleset says otherwise. For one weighing how soon a piece may get somewhere.
+    /// </summary>
+    double MovesPerTurn(PieceKindId kind) => 1;
+
     /// <summary>Whether a piece of <paramref name="kind"/> leads its army, as a Chaturaji 2027 Raja does.</summary>
     bool IsLeader(PieceKindId kind);
 

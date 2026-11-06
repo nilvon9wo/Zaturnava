@@ -35,7 +35,17 @@ internal sealed class ScoringRules(ImmutableDictionary<GameAction, int> points) 
 
     public string Name => "Scoring";
 
-    public ICellNavigating Topology => throw new NotSupportedException();
+    public ICellNavigating Topology { get; } = new LineTopology();
+
+    /// <summary>How each kind moves along the line; not at all, unless set.</summary>
+    public ImmutableDictionary<PieceKindId, ImmutableList<MovementRule>> Moves { get; init; } = [];
+
+    public PieceGuide GuideOf(PieceKindId kind) => new(new PieceKind(kind, this.Moves.GetValueOrDefault(kind, [])));
+
+    /// <summary>How many moves a piece may expect each turn: one, unless set.</summary>
+    public double Pace { get; init; } = 1;
+
+    public double MovesPerTurn(PieceKindId kind) => this.Pace;
 
     public ImmutableDictionary<SeatId, CellId> Thrones => [];
 

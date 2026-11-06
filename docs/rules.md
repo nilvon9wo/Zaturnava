@@ -671,10 +671,9 @@ both the triumphing player and their ally may move each other's Boat.
     a clear lead (on points and on the board both), and no one else in
     the game is a person, the bot gives up its turns too, so the game ends.
   - Asked to end the game, a bot agrees if its team leads on points, or if
-    its game is hopeless: behind by a clear lead, with no Raja and no
-    Elephant (a Rook) left to its team, while the other team still has one.
-    Merely trailing by a clear lead is a long shot, not hopeless: such a
-    team can still come back.
+    its game is hopeless: behind by more than it could hope to take back
+    (the weighing below). Merely trailing by a clear lead is a long shot, not
+    hopeless: such a team can still come back.
   - *(Proposed 2026-11-06)* But not once an ally has given up their turns:
     then the team trailing by a clear lead on points has conceded, and a bot
     playing on alone would only keep everyone waiting for a game already
@@ -702,8 +701,10 @@ both the triumphing player and their ally may move each other's Boat.
     discounted, the worth of that seat's pieces it would come to command. The
     team gives up when the gap is greater than the hope. Bots err on the side
     of hope, but not by much: *(Proposed)* the hope is counted at 125%.
-    "An Elephant (a Rook)" is any piece the game counts among its most
-    dangerous, as Grand Legions does its Heavy class.
+    Built, in every game, for every bot. *(Proposed)* The pieces in the way
+    are taken as they stand; a piece is reached only by moves that take
+    nothing on the way; and two pieces hoping for the same enemy piece both
+    count it.
 - **Honourable peace**: if only Rajas remain on the board (across all
   players), the game is a draw.
 - **Team elimination win**: if only one team still has any pieces on the

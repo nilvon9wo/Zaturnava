@@ -70,6 +70,19 @@ public sealed class RulesApplyingTest
     }
 
     [Fact]
+    public void MovesPerTurn_WhenTheRulesetSaysNoOther_IsOne()
+    {
+        // Arrange
+        OneSizeRules rules = new();
+
+        // Act
+        double moves = MovesPerTurnOf(rules, new PieceKindId("pawn"));
+
+        // Assert
+        Assert.Equal(1, moves);
+    }
+
+    [Fact]
     public void Deal_WhenTheRulesetSaysNoOther_DealsNothingAndLeavesTheGameAsItIs()
     {
         // Arrange
@@ -137,6 +150,10 @@ public sealed class RulesApplyingTest
     private static PieceGuide GuideOf<TRules>(TRules rules, PieceKindId kind)
         where TRules : IRulesApplying =>
         rules.GuideOf(kind);
+
+    private static double MovesPerTurnOf<TRules>(TRules rules, PieceKindId kind)
+        where TRules : IRulesApplying =>
+        rules.MovesPerTurn(kind);
 
     /// <summary>The game any rules play, as the interface tells it.</summary>
     private static (string Id, string Name, string? Size, bool IsPreview) GameOf<TRules>(TRules rules)
