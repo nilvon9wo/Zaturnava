@@ -74,15 +74,23 @@ public static class GrandLegionsRules
     public static Scoring Scoring { get; } = Scoring.Of(typeof(GrandLegionsRules).Assembly, QuickGame.GameId);
 
     /// <summary>The rules of each quick game, small, medium and large.</summary>
-    public static ImmutableList<Chaturaji2027Rules> Quick { get; } = [.. QuickGame.All.Select(RulesOf)];
+    public static ImmutableList<Chaturaji2027Rules> Quick { get; } = QuickWith(SafetyNets.Default);
 
-    public static Chaturaji2027Rules RulesOf([Required] QuickGame game) =>
+    /// <summary>The rules of each quick game, each ending on points at the limits of <paramref name="nets"/>.</summary>
+    public static ImmutableList<Chaturaji2027Rules> QuickWith([Required] SafetyNets nets) =>
+        [.. QuickGame.All.Select(game => RulesOf(game, nets))];
+
+    public static Chaturaji2027Rules RulesOf([Required] QuickGame game) => RulesOf(game, SafetyNets.Default);
+
+    public static Chaturaji2027Rules RulesOf([Required] QuickGame game, [Required] SafetyNets nets) =>
         new(
             DiceOf(ClassDice.SixSided),
-            Chaturaji2027Rules.DefaultIdleRounds,
+            nets.IdleRounds,
             PawnPromotion.OtherArmies,
             Chaturaji2027Rules.DefaultAwayTurns,
-            VariantOf(game, ClassDice.SixSided)
+            VariantOf(game, ClassDice.SixSided),
+            nets.QuietRounds,
+            nets.RepeatRounds
         );
 
     /// <summary>

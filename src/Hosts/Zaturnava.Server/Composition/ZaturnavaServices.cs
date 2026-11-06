@@ -71,6 +71,12 @@ internal static class ZaturnavaServices
     /// </summary>
     public const string StandingSweepKey = "Standings:SweepSeconds";
 
+    /// <summary>
+    /// The configuration section giving the limits of the safety nets that end a game on points
+    /// (<see cref="SafetyNets"/>), by their names; the rules' own for any not given.
+    /// </summary>
+    public const string SafetyNetsKey = "Games:SafetyNets";
+
     private const string DefaultTimerKey = "Default";
 
     public static IServiceCollection AddZaturnava(this IServiceCollection services, IConfiguration configuration) =>
@@ -79,9 +85,7 @@ internal static class ZaturnavaServices
             .AddPageHosting(configuration)
             .AddSignIn(configuration)
             .AddRequestLimits(configuration)
-            .AddSingleton<IRulesetLocating>(
-                new RulesetCatalog([new Chaturaji2027Rules(), .. GrandLegionsRules.Quick])
-            )
+            .AddSingleton<IRulesetLocating>(Rulesets(SafetyNetsOf(configuration)))
             .AddSingleton<IBotLocating>(Bots())
             .AddSingleton(Scenarios(configuration))
             .AddSingleton<IGameNotifying, SilentNotifier>()
@@ -115,6 +119,20 @@ internal static class ZaturnavaServices
             .AddHostedService<StandingSweeper>()
             .AddProblemDetails()
             .AddExceptionHandler<RefusalHandler>();
+
+    private static RulesetCatalog Rulesets(SafetyNets nets) =>
+        new([new Chaturaji2027Rules(nets), .. GrandLegionsRules.QuickWith(nets)]);
+
+    /// <summary>The safety nets' limits as configured, each the rules' own where it is not.</summary>
+    private static SafetyNets SafetyNetsOf(IConfiguration configuration)
+    {
+        IConfigurationSection nets = configuration.GetSection(SafetyNetsKey);
+        return new SafetyNets(
+            nets.GetValue(nameof(SafetyNets.IdleRounds), SafetyNets.Default.IdleRounds),
+            nets.GetValue(nameof(SafetyNets.QuietRounds), SafetyNets.Default.QuietRounds),
+            nets.GetValue(nameof(SafetyNets.RepeatRounds), SafetyNets.Default.RepeatRounds)
+        );
+    }
 
     private static IScenarioLocating Scenarios(IConfiguration configuration) =>
         configuration[ScenariosKey] is { } folder

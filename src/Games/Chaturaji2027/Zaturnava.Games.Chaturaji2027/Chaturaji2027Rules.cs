@@ -36,7 +36,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
 
     /// <summary>
     /// How many rounds may pass with no piece taken before the game ends on points: fifty, each seat's fifty
-    /// turns, as chess counts fifty moves (Proposed).
+    /// turns, as chess counts fifty moves (Stated 2026-11-06).
     /// </summary>
     public const int DefaultQuietRounds = 50;
 
@@ -82,7 +82,19 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     private readonly MoveDiagrams _diagrams;
 
     public Chaturaji2027Rules()
-        : this(DiceProfile.WeightedSixSided, DefaultIdleRounds, PawnPromotion.OtherArmies)
+        : this(SafetyNets.Default)
+    {
+    }
+
+    /// <summary>Chaturaji 2027's own rules, the game ending on points at <paramref name="nets"/>' limits.</summary>
+    public Chaturaji2027Rules([Required] SafetyNets nets)
+        : this(
+            DiceProfile.WeightedSixSided,
+            nets.IdleRounds,
+            PawnPromotion.OtherArmies,
+            quietRounds: nets.QuietRounds,
+            repeatRounds: nets.RepeatRounds
+        )
     {
     }
 

@@ -1026,6 +1026,20 @@ public sealed class Chaturaji2027RulesTest
     }
 
     [Fact]
+    public void Apply_WhenTheSafetyNetsAreSetTighter_EndsTheGameAtTheirLimits()
+    {
+        // Arrange - one idle round, of four seats
+        Chaturaji2027Rules rules = new(new SafetyNets(1, 50, 3));
+        GameState state = this.Later() with { IdlePasses = 3 };
+
+        // Act
+        Transition transition = rules.Apply(state, new PassAction(Black));
+
+        // Assert
+        Assert.Equal(Chaturaji2027Endings.Idle, transition.State.Outcome?.Ending);
+    }
+
+    [Fact]
     public void Apply_WhenATurnIsPassedIdly_LeavesTheCountOfRepeatedTurnsToTheIdleCount()
     {
         // Arrange
