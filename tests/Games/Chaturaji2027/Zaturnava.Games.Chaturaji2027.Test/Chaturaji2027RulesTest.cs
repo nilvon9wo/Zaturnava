@@ -2076,6 +2076,21 @@ public sealed class Chaturaji2027RulesTest
     }
 
     [Fact]
+    public void MovesPerTurn_WhenAsked_IsHowOftenTheTwoDiceShowTheKind()
+    {
+        // Arrange - an Elephant moves on two faces of six, a Boat on one
+
+        // Act
+        (double Elephant, double Boat) moves = (
+            this._rules.MovesPerTurn(Chaturaji2027Pieces.Elephant),
+            this._rules.MovesPerTurn(Chaturaji2027Pieces.Boat)
+        );
+
+        // Assert
+        Assert.Equal((2 * 2 / 6.0, 2 / 6.0), moves);
+    }
+
+    [Fact]
     public void MayOffer_WhenTheSeatHoldsAnotherSeatsPieceOnItsOwnTurn_IsTrue()
     {
         // Arrange

@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Boards;
 using Net.NowhereAtAll.Zaturnava.Engine.Decisions;
+using Net.NowhereAtAll.Zaturnava.Engine.Moves;
 using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
 using Net.NowhereAtAll.Zaturnava.Engine.Positions;
 using Net.NowhereAtAll.Zaturnava.Engine.Rules;
@@ -21,27 +22,29 @@ public sealed class EndingTest
     private readonly CancellationToken _cancellation = TestContext.Current.CancellationToken;
 
     [Theory]
-    [InlineData("pawn", "elephant", true)]
-    [InlineData("pawn", "raja", true)]
-    [InlineData("pawn", "horse", false)]
-    [InlineData("elephant", "elephant", false)]
-    [InlineData("raja", "elephant", false)]
-    public async Task Decide_WhenAskedFarBehind_AgreesOnlyIfItsTeamHasNoMajorPieceLeftAndTheEnemyHas(
-        string ours,
-        string theirs,
+    [InlineData(5, 1, false)]
+    [InlineData(6, 1, true)]
+    [InlineData(1, 0.1, true)]
+    public async Task Decide_WhenAskedBehind_AgreesOnlyIfItTrailsByMoreThanItCouldHopeToTakeBack(
+        int theirPoints,
+        double pace,
         bool agrees
     )
     {
-        // Arrange - Black's team trails by 20 points, and by 10 or more on the board: four of theirs to one
-        DecisionRequest request = Request(
-            [(Black, ours), (Yellow, theirs), (Yellow, theirs), (Red, theirs), (Red, theirs)],
-            ourPoints: 0,
-            theirPoints: 20
-        );
-        DecisionRequest asked = request with
+        // Arrange - Black's Elephant slides next to Yellow's Raja, worth 5: a move away, of the ten it may expect, so
+        // hoped for at 4.5, counted as 5.625; Black's Pawn, which does not move, hopes for nothing; at a tenth the
+        // pace, the Elephant may expect but one move, so hopes for nothing either
+        ScoringRules rules = new(Points())
         {
-            State = request.State with { Proposal = new EndProposal(Yellow, false, Black, null) },
+            MayPropose = true,
+            Moves = Moving((new PieceKindId("elephant"), MovementRule.Slide(DirectionSets.Orthogonal))),
+            Pace = pace,
         };
+        DecisionRequest asked = Asked(
+            rules,
+            [(0, Black, "elephant"), (1, Yellow, "raja"), (7, Black, "pawn")],
+            theirPoints
+        );
 
         // Act
         GameAction action = await new MidasBot(new Random(1)).Decide(asked, this._cancellation);
@@ -51,33 +54,57 @@ public sealed class EndingTest
     }
 
     [Theory]
-    [InlineData(0, 4, 0)]
-    [InlineData(0, 20, 0)]
-    [InlineData(5, 0, 0)]
-    public async Task Decide_WhenAskedButNotFarEnoughBehind_RefusesThoughItHasNoMajorPiece(
-        int ourPoints,
-        int theirPoints,
-        int extraEnemyElephants
+    [InlineData(false, false)]
+    [InlineData(true, true)]
+    public async Task Decide_WhenItsLeaderCouldReachAnEnemyThrone_HopesForItsArmyUnlessTheThroneIsGuarded(
+        bool isGuarded,
+        bool agrees
     )
     {
-        // Arrange - Black has a Pawn; Yellow an Elephant, and maybe more
-        ImmutableList<(SeatId, string)> pieces =
-        [
-            (Black, "pawn"),
-            (Yellow, "elephant"),
-            .. Enumerable.Repeat((Red, "elephant"), extraEnemyElephants / 4),
-        ];
-        DecisionRequest request = Request(pieces, ourPoints, theirPoints);
+        // Arrange - Black's Raja steps along to Yellow's throne, three steps off, its army worth 8 (hoped for at 5.6,
+        // counted as 7), but no farther: retired Red's Pawn stands in its way. Retired Green's Pawn, next to
+        // Yellow's Elephants, hopes for nothing. Black trails by 6.
+        ScoringRules moving = new(Points())
+        {
+            MayPropose = true,
+            Moves = Moving(
+                (new PieceKindId("raja"), MovementRule.Step(DirectionSets.Orthogonal)),
+                (new PieceKindId("pawn"), MovementRule.Step(DirectionSets.Orthogonal))
+            ),
+        };
+        Piece guard = new(new PieceId(4), new PieceKindId("elephant"), Yellow);
+        ScoringRules rules = isGuarded
+            ? new(Points())
+            {
+                MayPropose = moving.MayPropose,
+                Moves = moving.Moves,
+                Attacks = [new Attack(guard, new CellId(6), new CellId(3))],
+            }
+            : moving;
+        DecisionRequest request = Asked(
+            rules,
+            [
+                (0, Black, "raja"), (4, Red, "pawn"), (5, Green, "pawn"), (6, Yellow, "elephant"),
+                (7, Yellow, "elephant"),
+            ],
+            theirPoints: 6
+        );
         DecisionRequest asked = request with
         {
-            State = request.State with { Proposal = new EndProposal(Yellow, false, Black, null) },
+            State = request.State with
+            {
+                Thrones = ImmutableDictionary<SeatId, CellId>.Empty
+                    .Add(Black, new CellId(1))
+                    .Add(Yellow, new CellId(3)),
+                Retired = [Green, Red],
+            },
         };
 
         // Act
         GameAction action = await new MidasBot(new Random(1)).Decide(asked, this._cancellation);
 
         // Assert
-        Assert.Equal(new AnswerEndAction(Black, ourPoints > theirPoints), action);
+        Assert.Equal(new AnswerEndAction(Black, agrees), action);
     }
 
     [Fact]
@@ -133,21 +160,28 @@ public sealed class EndingTest
     }
 
     [Theory]
-    [InlineData(10, true)]
+    [InlineData(1, true)]
     [InlineData(100, false)]
     public async Task Decide_WhenAskedWhileAnAllyRestsAndTheTeamTrails_AgreesIfTheRulesCallItClear(
         int clearLead,
         bool agrees
     )
     {
-        // Arrange - Green rests; Black's team trails by 20 points, ahead on the board, an Elephant to the good
+        // Arrange - Green rests; Black's team trails by 2 points, though not hopelessly: Green's Elephant slides
+        // next to Yellow's, worth 4
         DecisionRequest request = Resting(people: [Green], ourPoints: 0);
         DecisionRequest asked = request with
         {
-            Rules = new ScoringRules(Points()) { MayPropose = true, ClearLead = clearLead },
+            Rules = new ScoringRules(Points())
+            {
+                MayPropose = true,
+                ClearLead = clearLead,
+                Moves = Moving((new PieceKindId("elephant"), MovementRule.Slide(DirectionSets.Orthogonal))),
+            },
             State = request.State with
             {
-                Scores = request.State.Scores.SetItem(Yellow, 20),
+                Seats = [new Seat(Black, new Direction(1, 0)), new Seat(Green, new Direction(1, 0))],
+                Scores = request.State.Scores.SetItem(Yellow, 2),
                 Proposal = new EndProposal(Yellow, false, Black, null),
             },
         };
@@ -217,6 +251,40 @@ public sealed class EndingTest
         };
         return new DecisionRequest(rules, state, Black, rules.LegalActions(state));
     }
+
+    /// <summary>
+    /// Black asked to end the game, which Yellow proposed, under <paramref name="rules"/>, with each piece on its
+    /// cell, Black facing up the line and Yellow down it, and Yellow ahead by <paramref name="theirPoints"/>.
+    /// </summary>
+    private static DecisionRequest Asked(
+        ScoringRules rules,
+        ImmutableList<(int Cell, SeatId Owner, string Kind)> pieces,
+        int theirPoints
+    )
+    {
+        GameState state = ScoringRules.State() with
+        {
+            Seats = [new Seat(Black, new Direction(1, 0)), new Seat(Yellow, new Direction(-1, 0))],
+            Teams = TeamGraph.FromTeams([[Black, Green], [Yellow, Red]]),
+            Scores = ImmutableDictionary<SeatId, int>.Empty.Add(Yellow, theirPoints),
+            Proposal = new EndProposal(Yellow, false, Black, null),
+            Position = pieces
+                .Select((piece, index) => (piece, index))
+                .Aggregate(
+                    Position.Empty,
+                    (position, placed) => position.Place(
+                        new CellId(placed.piece.Cell),
+                        new Piece(new PieceId(placed.index), new PieceKindId(placed.piece.Kind), placed.piece.Owner)
+                    )
+                ),
+        };
+        return new DecisionRequest(rules, state, Black, rules.LegalActions(state));
+    }
+
+    private static ImmutableDictionary<PieceKindId, ImmutableList<MovementRule>> Moving(
+        params (PieceKindId Kind, MovementRule Rule)[] moves
+    ) =>
+        moves.ToImmutableDictionary(move => move.Kind, move => ImmutableList.Create(move.Rule));
 
     private static ImmutableDictionary<GameAction, int> Points() =>
         ImmutableDictionary<GameAction, int>.Empty.Add(Pass, 0);

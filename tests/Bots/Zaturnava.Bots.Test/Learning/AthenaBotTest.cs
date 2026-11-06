@@ -114,8 +114,8 @@ public sealed class AthenaBotTest
     [Fact]
     public async Task Decide_WhenAskedToEndAGameItHasNoNetworkFor_AnswersAsSageDoes()
     {
-        // Arrange - its team behind
-        DecisionRequest asked = Proposals.Asked(5, 20);
+        // Arrange - its team behind, by less than it may hope to take back
+        DecisionRequest asked = Proposals.Asked(19, 20);
 
         // Act
         GameAction action = await new AthenaBot(new Random(Seed)).Decide(asked, this._cancellation);

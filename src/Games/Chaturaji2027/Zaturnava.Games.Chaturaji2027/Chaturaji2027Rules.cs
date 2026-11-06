@@ -356,6 +356,10 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     /// <summary>The lead that wins by giving up its turns (rules.md §10), as the variant scores it.</summary>
     public int ClearLead => this._variant.Scoring.ClearLead;
 
+    /// <summary>The dice of a turn, each letting the kind move as often as its faces name it.</summary>
+    public double MovesPerTurn(PieceKindId kind) =>
+        TurnDice * (double)this._dice.Kinds.Count(face => face.Value.Contains(kind)) / this._dice.Sides;
+
     public bool IsLeader(PieceKindId kind) => this._control.IsLeader(kind);
 
     public bool IsHeavy(PieceKindId kind) => this._variant.Heavies.Contains(kind);

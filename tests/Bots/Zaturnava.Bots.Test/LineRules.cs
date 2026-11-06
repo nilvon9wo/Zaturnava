@@ -166,7 +166,10 @@ internal sealed class LineRules(ImmutableList<GameAction> legalActions) : IRules
     }
 }
 
-/// <summary>The cells of a line, 0 up to 7: a step goes along it, and one any other way goes off it.</summary>
+/// <summary>
+/// The cells of a line, 0 up to 7: a step goes along it, and one any other way goes off it; every set of directions
+/// is the line, both ways.
+/// </summary>
 internal sealed class LineTopology : ICellNavigating
 {
     private const int Length = 8;
@@ -181,7 +184,7 @@ internal sealed class LineTopology : ICellNavigating
         };
 
     public ImmutableList<Direction> Resolve([Required] DirectionSet set, Direction forward) =>
-        throw new NotSupportedException();
+        [new(1, 0), new(-1, 0)];
 
     public ImmutableList<Direction> WaypointsOf(Direction leap) => [];
 
