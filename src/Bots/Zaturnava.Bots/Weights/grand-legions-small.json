@@ -1,0 +1,28 @@
+{
+  "score": 1,
+  "material": {
+    "own": 0.7,
+    "ally": 1,
+    "enemy": 1
+  },
+  "leaders": {
+    "own": 2.6,
+    "ally": 2,
+    "enemy": 2
+  },
+  "prisoners": 0.5,
+  "thrones": {
+    "own": 3.9,
+    "ally": 3,
+    "enemy": 3
+  },
+  "exposure": 1,
+  "chances": 0.3,
+  "mobility": 0,
+  "measures": {
+    "pawn-progress": 0,
+    "pawns-near-promotion": 0,
+    "reach": 0,
+    "retreat": 0
+  }
+}

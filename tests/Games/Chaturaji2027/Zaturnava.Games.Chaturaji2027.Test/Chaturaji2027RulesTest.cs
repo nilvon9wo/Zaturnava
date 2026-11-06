@@ -420,9 +420,90 @@ public sealed class Chaturaji2027RulesTest
         // Act
         ImmutableList<double> black = this._rules.MeasuresOf(state, Black);
 
-        // Assert - its progress, its nearness to promoting, its reach and its retreats
-        Assert.Equal(["pawn-progress", "pawns-near-promotion", "reach", "retreat"], this._rules.Measures);
-        Assert.Equal([5d, 1d, 9d, 3d], black);
+        // Assert - its progress, its nearness to promoting, its reach and its retreats; no danger, no command
+        Assert.Equal(
+            [
+                "pawn-progress", "pawns-near-promotion", "reach", "retreat", "leaders-attacked", "thrones-in-danger",
+                "commanded", "under-escapes",
+            ],
+            this._rules.Measures
+        );
+        Assert.Equal([5d, 1d, 9d, 3d, 0d, 0d, 0d, 0d], black);
+    }
+
+    [Fact]
+    public void MeasuresOf_WhenItsPieceStandsWhereAnEnemysPrisonerWouldLandEscaping_CountsWhatItIsWorth()
+    {
+        // Arrange - Green holds Yellow's Raja, whose starting square, Yellow's throne, Black's Raja sits on; Yellow
+        // holds a Black Pawn, Black's own; Black's Elephant on c3 is where no prisoner would land
+        Piece yellowRaja = this._rules.CreateInitialState().Position.PieceAt(YellowThrone)!;
+        Piece blackPawn = this._rules.CreateInitialState().Position.PieceAt(Grid.CellAt(0, 1))!;
+        GameState state = this.StateWith(
+            (YellowThrone, Piece(1, Chaturaji2027Pieces.Raja, Black)),
+            (Grid.CellAt(2, 2), Piece(2, Chaturaji2027Pieces.Elephant, Black)),
+            (Grid.CellAt(7, 7), Piece(3, Chaturaji2027Pieces.Pawn, Yellow))
+        ) with
+        {
+            Prisoners = [new Prisoner(yellowRaja, Green), new Prisoner(blackPawn, Yellow)],
+        };
+
+        // Act
+        double underEscapes = this._rules.MeasuresOf(state, Black)[7];
+
+        // Assert
+        Assert.Equal(this._rules.WorthOf(Chaturaji2027Pieces.Raja), underEscapes);
+    }
+
+    [Fact]
+    public void MeasuresOf_WhenItsRajaSitsOnAnEnemysThroneWhereAnEnemyCouldTakeIt_CountsItAndTheThroneInDanger()
+    {
+        // Arrange - Black's Raja on Yellow's throne, a5, where Red's Elephant on a8 could take it; Yellow's Pawn on h8
+        // is Black's to command
+        GameState state = this.StateWith(
+            (YellowThrone, Piece(1, Chaturaji2027Pieces.Raja, Black)),
+            (Grid.CellAt(0, 7), Piece(2, Chaturaji2027Pieces.Elephant, Red)),
+            (Grid.CellAt(7, 7), Piece(3, Chaturaji2027Pieces.Pawn, Yellow))
+        );
+
+        // Act
+        ImmutableList<double> black = this._rules.MeasuresOf(state, Black);
+
+        // Assert - its leaders attacked, its thrones in danger, the pieces of others it commands
+        Assert.Equal([1d, 1d, 1d], black.Skip(4).Take(3));
+    }
+
+    [Fact]
+    public void MeasuresOf_WhenAnEnemyRajaCouldStepOntoItsEmptyThrone_CountsTheThroneInDanger()
+    {
+        // Arrange - Black's Raja on d4, far from Yellow's on e2, which could step onto Black's throne, d1
+        GameState state = this.StateWith(
+            (Grid.CellAt(3, 3), Piece(1, Chaturaji2027Pieces.Raja, Black)),
+            (Grid.CellAt(4, 1), Piece(2, Chaturaji2027Pieces.Raja, Yellow))
+        );
+
+        // Act
+        ImmutableList<double> black = this._rules.MeasuresOf(state, Black);
+
+        // Assert
+        Assert.Equal([0d, 1d, 0d], black.Skip(4).Take(3));
+    }
+
+    [Fact]
+    public void MeasuresOf_WhenItsRajaSitsSafeOnItsOwnThroneAndAnAllyHasNone_CountsOnlyTheAllysPiecesItCommands()
+    {
+        // Arrange - Black's Raja on its throne, d1, out of reach of Yellow's Pawn on h8; Green, without its Raja, has
+        // a Pawn on e7
+        GameState state = this.StateWith(
+            (BlackThrone, Piece(1, Chaturaji2027Pieces.Raja, Black)),
+            (Grid.CellAt(7, 7), Piece(2, Chaturaji2027Pieces.Pawn, Yellow)),
+            (Grid.CellAt(4, 6), Piece(3, Chaturaji2027Pieces.Pawn, Green))
+        );
+
+        // Act
+        ImmutableList<double> black = this._rules.MeasuresOf(state, Black);
+
+        // Assert
+        Assert.Equal([0d, 0d, 1d], black.Skip(4).Take(3));
     }
 
     [Fact]

@@ -16,6 +16,9 @@ public sealed class TableTest : IDisposable
     private static readonly EventDto Captured =
         new(2, EventDto.Captured, 1, "Yellow took Black's Pawn (+1).", null, null);
 
+    /// <summary>Splitting text into its words, however spaced.</summary>
+    private const StringSplitOptions Words = StringSplitOptions.RemoveEmptyEntries;
+
     private readonly PageContext _page = new();
 
     public void Dispose() => this._page.Dispose();
@@ -71,6 +74,206 @@ public sealed class TableTest : IDisposable
                 table.Find("svg.board .piece").ClassList.Contains("movable")
             )
         );
+    }
+
+    [Theory]
+    [InlineData(null, "Black's Raja")]
+    [InlineData("Leader", "Black's Raja, Leader")]
+    public void Render_WhenACellHoldsAPiece_NamesItOnHoverOverTheCell(string? pieceClass, string expected)
+    {
+        // Arrange
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Kinds = [new PieceKindDto("raja", "Raja", 5) { Class = pieceClass }],
+        };
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Assert
+        Assert.Equal((expected, 0), (Cell(table, 0).TextContent, Cell(table, 1).ChildElementCount));
+    }
+
+    [Fact]
+    public void Click_WhenOnAPieceThePlayerMayNotMove_TellsOfItBesideTheBoard()
+    {
+        // Arrange
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Pieces = [.. FakeGameServer.SeatZeroToMove.Pieces, new PieceDto(9, "elephant", "Elephant", 1, 3)],
+            Kinds =
+            [
+                new PieceKindDto("elephant", "Elephant", 5)
+                {
+                    Moves = ["Any distance orthogonally"],
+                    Captures = ["Any distance orthogonally"],
+                    Powers = ["Tramples Elephants."],
+                },
+            ],
+        };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Act
+        Cell(table, 3).Click();
+
+        // Assert
+        Assert.Equal(
+            ("Elephant", "Yellow's, on c3", "Taking it scores 5.", "Moves Captures Special powers",
+                "Tramples Elephants.", 0),
+            (
+                table.Find(".piece-card h2").TextContent,
+                table.Find(".piece-card .whose").TextContent,
+                table.Find(".piece-card .worth").TextContent,
+                string.Join(" ", table.FindAll(".piece-card h3").Select(heading => heading.TextContent)),
+                table.Find(".piece-card ul.powers li").TextContent,
+                table.FindAll("svg.board .cell.selected").Count
+            )
+        );
+    }
+
+    [Fact]
+    public void Click_WhenTheChessSetIsShown_TellsOfThePieceByItsNames()
+    {
+        // Arrange
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Kinds =
+            [
+                new PieceKindDto("raja", "Raja", 5)
+                {
+                    Class = "Leader",
+                    Restrictions = ["Never beside another Raja."],
+                },
+            ],
+        };
+        IRenderedComponent<Table> table = this._page.Render<Table>(
+            parameters => parameters.Add(x => x.Seating, SeatZero).Add(x => x.Pieces, PieceSet.Chess)
+        );
+
+        // Act
+        Cell(table, 0).Click();
+
+        // Assert
+        Assert.Equal(
+            ("King", "Leader; taking it scores 5.", "Never beside another King."),
+            (
+                table.Find(".piece-card h2").TextContent,
+                table.Find(".piece-card .worth").TextContent,
+                table.Find(".piece-card ul.restrictions li").TextContent
+            )
+        );
+    }
+
+    [Fact]
+    public void Click_WhenTheKindIsDrawn_DrawsItsMovesAndCapturesAroundThePieceInsteadOfWords()
+    {
+        // Arrange - on a 3 x 3 diagram, the Raja on cell 4 moves up to 7 and captures on 6 and 7
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Kinds =
+            [
+                new PieceKindDto("raja", "Raja", 5)
+                {
+                    Moves = ["One cell straight forward"],
+                    Diagram = new MoveDiagramDto(3, [7], [6, 7], []),
+                },
+            ],
+        };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Act
+        Cell(table, 0).Click();
+
+        // Assert
+        Assert.Equal(
+            ("square dark capture", "square light move capture", "square light", 1, 0, "moves captures"),
+            (
+                Square(table, 6).ClassName,
+                Square(table, 7).ClassName,
+                Square(table, 1).ClassName,
+                Square(table, 4).QuerySelectorAll(".piece-icon").Length,
+                table.FindAll(".piece-card ul.moves").Count,
+                string.Join(" ", table.Find(".diagram-key").TextContent.Split((char[]?)null, Words))
+            )
+        );
+    }
+
+    [Fact]
+    public void Click_WhenTheKindHopsOverAPieceDrawn_SaysWhatThatPieceIs()
+    {
+        // Arrange
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Kinds = [new PieceKindDto("raja", "Raja", 5) { Diagram = new MoveDiagramDto(3, [], [], [7]) }],
+        };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Act
+        Cell(table, 0).Click();
+
+        // Assert
+        Assert.Equal(
+            ("square light screen", true),
+            (Square(table, 7).ClassName, table.Find(".diagram-key").TextContent.Contains("a piece to hop over"))
+        );
+    }
+
+    [Fact]
+    public void Click_WhenTheKindIsNotDrawn_TellsItsMovesInWords()
+    {
+        // Arrange
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Kinds =
+            [
+                new PieceKindDto("raja", "Raja", 5)
+                {
+                    Moves = ["One cell in any direction"],
+                    Diagram = new MoveDiagramDto(0, [], [], []),
+                },
+            ],
+        };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Act
+        Cell(table, 0).Click();
+
+        // Assert
+        Assert.Equal(
+            ("One cell in any direction", 0),
+            (table.Find(".piece-card ul.moves li").TextContent, table.FindAll(".move-diagram").Count)
+        );
+    }
+
+    [Fact]
+    public void Click_WhenOnAnEmptyCellAfterAPiece_KeepsTellingOfThePiece()
+    {
+        // Arrange
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        Cell(table, 0).Click();
+
+        // Act
+        Cell(table, 2).Click();
+
+        // Assert
+        Assert.Equal(
+            ("Raja", 0),
+            (table.Find(".piece-card h2").TextContent, table.FindAll(".piece-card .worth").Count)
+        );
+    }
+
+    [Fact]
+    public void PutAway_WhenThePieceCardIsClosed_TellsOfNoPiece()
+    {
+        // Arrange
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        Cell(table, 0).Click();
+
+        // Act
+        table.Find(".piece-card button.close").Click();
+
+        // Assert
+        Assert.Empty(table.FindAll(".piece-card"));
     }
 
     [Fact]
@@ -1156,6 +1359,10 @@ public sealed class TableTest : IDisposable
 
     private static AngleSharp.Dom.IElement Cell(IRenderedComponent<Table> table, int id) =>
         table.Find($"rect[data-cell='{id}']");
+
+    /// <summary>A square of the piece card's diagram.</summary>
+    private static AngleSharp.Dom.IElement Square(IRenderedComponent<Table> table, int id) =>
+        table.Find($".move-diagram .square[data-cell='{id}']");
 
     private static string Text(AngleSharp.Dom.IElement element) =>
         string.Join(' ', element.Children.Select(child => child.TextContent.Trim()).Where(text => text.Length > 0));

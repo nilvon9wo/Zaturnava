@@ -45,6 +45,28 @@ public sealed class WireFormatTest
     }
 
     [Fact]
+    public void PieceKind_WhenSentAsJson_ArrivesUnchanged()
+    {
+        // Arrange
+        PieceKindDto kind = new("xiangqi-cannon", "Cannon (Xiangqi)", 45)
+        {
+            Class = "Artillery",
+            Moves = ["Any distance orthogonally, up to the first piece in the way"],
+            Captures = ["Hops over one piece orthogonally, to any cell beyond it up to the next piece"],
+            Powers = ["Sings."],
+            Restrictions = ["Never on Sundays."],
+            Mark = new PieceMarkDto("artillery", "CX"),
+            Diagram = new MoveDiagramDto(9, [49], [67, 76], [58]),
+        };
+
+        // Act
+        PieceKindDto? arrived = RoundTrip(kind);
+
+        // Assert
+        Assert.Equivalent(kind, arrived, strict: true);
+    }
+
+    [Fact]
     public void GameView_WhenTheGameIsOver_SendsNoDecidingSeat()
     {
         // Arrange

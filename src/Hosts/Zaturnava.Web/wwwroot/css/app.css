@@ -384,6 +384,71 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
     dominant-baseline: central;
 }
 
+/* A piece clicked on, told of: at the window's right, over whatever is there, until put away; on a narrow
+   screen, along its bottom. */
+.piece-card {
+    position: fixed;
+    z-index: 20;
+    right: 12px;
+    bottom: 12px;
+    left: 12px;
+    max-height: 50dvh;
+    overflow-y: auto;
+    background: var(--panel);
+    border: 2px solid var(--accent);
+    border-radius: 12px;
+    padding: 12px 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+}
+.piece-card header { display: flex; align-items: center; gap: 10px; }
+.piece-card header .piece-icon { width: 40px; height: 40px; flex: none; }
+.piece-card h2 { flex: 1; margin: 0; font-size: 1.15rem; }
+.piece-card h3 { margin: 12px 0 4px; font-size: 0.95rem; color: var(--accent); }
+.piece-card p { margin: 6px 0 0; }
+.piece-card .whose { color: var(--muted); }
+.piece-card ul { margin: 0; padding-left: 1.2rem; }
+.piece-card li { margin: 2px 0; }
+/* A kind's moves drawn: its own small board, a dot where it moves, as the board marks one, a ring in the danger
+   colour where it captures, a grey disc for a piece it hops over. */
+.move-diagram {
+    display: grid;
+    grid-template-columns: repeat(var(--side), 1fr);
+    width: 100%;
+    max-width: 270px;
+    aspect-ratio: 1;
+    margin: 12px auto 0;
+    border-radius: 4px;
+    overflow: hidden;
+}
+.move-diagram .square { position: relative; display: grid; place-items: center; }
+.move-diagram .square.light { background: var(--board-light); }
+.move-diagram .square.dark { background: var(--board-dark); }
+.move-diagram .piece-icon { width: 90%; height: 90%; }
+.move-diagram .move::before, .diagram-key .move::before,
+.move-diagram .capture::after, .diagram-key .capture::after,
+.move-diagram .screen::before, .diagram-key .screen::before {
+    content: "";
+    position: absolute;
+    border-radius: 50%;
+}
+.move-diagram .move::before, .diagram-key .move::before { inset: 34%; background: var(--mark); }
+.move-diagram .capture::after, .diagram-key .capture::after { inset: 8%; border: 2px solid var(--danger); }
+.move-diagram .screen::before, .diagram-key .screen::before { inset: 14%; background: var(--muted); }
+.diagram-key { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; color: var(--muted); }
+.diagram-key .key {
+    position: relative;
+    display: inline-block;
+    width: 1.1em;
+    height: 1.1em;
+    margin-left: 6px;
+    background: var(--board-light);
+    border-radius: 2px;
+}
+
+@media (min-width: 900px) {
+    .piece-card { top: 80px; bottom: auto; left: auto; width: 340px; max-height: calc(100dvh - 160px); }
+}
+
 /* Room for the usual turn (two lines of status, a countdown, a hint and a row of buttons); the border
    is as thick whoever's turn it is. */
 .turn {

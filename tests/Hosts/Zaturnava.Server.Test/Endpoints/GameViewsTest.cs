@@ -643,6 +643,61 @@ public sealed class GameViewsTest
     }
 
     [Fact]
+    public void ViewOf_WhenAPieceIsHeld_TellsOfItsKindAmongTheOnesOnTheBoard()
+    {
+        // Arrange - a Grand Legions game, Black holding a Rook of Yellow's
+        Chaturaji2027Rules grand = GrandLegionsRules.RulesOf(QuickGame.Small);
+        Piece rook = new(new PieceId(500), GrandLegionsPieces.Rook, new SeatId(1));
+        GameState state = grand.CreateInitialState() with { Prisoners = [new Prisoner(rook, new SeatId(0))] };
+
+        // Act
+        GameViewDto view = GameViews.ViewOf(Snapshot(grand, state), Bots);
+
+        // Assert
+        PieceKindDto told = view.Kinds.Single(kind => kind.Kind == "rook");
+        Assert.Equal(
+            ("Rook (Western)", grand.WorthOf(GrandLegionsPieces.Rook), "Heavy", "R",
+                "Any distance orthogonally, up to the first piece in the way", 1, 0),
+            (told.Name, told.Value, told.Class, told.Mark?.Letters, told.Moves.Single(), told.Captures.Count,
+                told.Powers.Count)
+        );
+    }
+
+    [Fact]
+    public void ViewOf_WhenPiecesMoveOneWayAndCaptureAnother_TellsEachKindsWaysApartInNameOrder()
+    {
+        // Arrange - nothing beyond Chaturaji 2027's own start
+
+        // Act
+        GameViewDto view = GameViews.ViewOf(Snapshot(Rules.CreateInitialState()), Bots);
+
+        // Assert
+        PieceKindDto pawn = view.Kinds.Single(kind => kind.Kind == "pawn");
+        Assert.Equal(
+            ("Boat Elephant Horse Pawn Raja", "One cell straight forward", "One cell diagonally forward",
+                (string?)null),
+            (string.Join(" ", view.Kinds.Select(kind => kind.Name)), pawn.Moves.Single(), pawn.Captures.Single(),
+                pawn.Class)
+        );
+    }
+
+    [Fact]
+    public void ViewOf_WhenTheRulesDrawAKind_SendsItsDiagram()
+    {
+        // Arrange - nothing beyond Chaturaji 2027's own start
+
+        // Act
+        GameViewDto view = GameViews.ViewOf(Snapshot(Rules.CreateInitialState()), Bots);
+
+        // Assert
+        MoveDiagramDto diagram = view.Kinds.Single(kind => kind.Kind == "pawn").Diagram!;
+        Assert.Equal(
+            (9, "49", "48,50", 0),
+            (diagram.Side, string.Join(",", diagram.Moves), string.Join(",", diagram.Captures), diagram.Screens.Count)
+        );
+    }
+
+    [Fact]
     public void ViewOf_WhenASeatMayCallAFaceOffWhileAnotherDecides_OffersItToThatSeatAndSaysWhatItDoes()
     {
         // Arrange - a Grand Legions game: Black's Janggi General faces Yellow's Western King up a file, nothing

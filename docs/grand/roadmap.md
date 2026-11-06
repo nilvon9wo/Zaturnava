@@ -212,7 +212,21 @@ drawn simply, a shape for its class and a letter for its kind.
 
 ## Stage 7 — Looks
 
-- Every kind its own look, in both piece sets; the class told at a glance (spec §8).
+- Every kind its own look, in both piece sets; the class told at a glance (spec §8). Still to come: so
+  far each kind is drawn by its class's emblem and one or two letters, which tells apart little at a
+  glance. Next: a symbol for each kind of its own.
+- Telling a player what a piece is and does. *Done* (2026-11-06): hovering over a piece names it, its
+  owner and its class; clicking on any piece, the player's or not, tells of it at the side of the
+  window: its name, class and worth, a diagram of where it moves and captures, its special powers,
+  and what holds it back (`IRulesApplying.GuideOf`, `GameViewDto.Kinds`, `PieceCard`). *Proposed*:
+  the diagram is found by the game's own move generator (`MoveDiagrams`): the piece alone on the
+  centre of an empty 9 × 9 board, facing up, a dot where it may move, as the board marks one, a ring
+  in the danger colour where it may capture, an enemy put on each square in turn; a piece that hops
+  has a piece two squares ahead to hop over. What the board or the rules add (a river, the two-cell
+  first move) is left to the powers and restrictions. The moves are told in words as well
+  (`MovementText`), for clients that draw nothing; the powers come from the rules the game plays, and
+  the restrictions as the catalogue words them, without what lifting them costs, as quick games lift
+  none.
 - Playtest, as Chaturaji 2027 was, and act on what it asks for: among other things, the Chaturaji 2027
   bonuses, the leader bonus of 60, and the Pawns' promotion premiums
   ([pieces.md](pieces.md#still-open)) (**Q14**).

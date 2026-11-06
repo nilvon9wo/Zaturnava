@@ -53,6 +53,12 @@ public sealed record Chaturaji2027Variant(
     /// <summary>How each kind is marked on its piece, where it is not drawn as itself: none, unless set.</summary>
     public ImmutableDictionary<PieceKindId, PieceMark> Marks { get; init; } = [];
 
+    /// <summary>
+    /// What a player may want told of each kind beyond its moves, as its class and what holds it back: none, unless
+    /// set. The rules add the powers they give it.
+    /// </summary>
+    public ImmutableDictionary<PieceKindId, PieceGuide> Guides { get; init; } = [];
+
     /// <summary>What the bonuses score: Chaturaji 2027's own, unless set.</summary>
     public Scoring Scoring { get; init; } = Scoring.Standard;
 

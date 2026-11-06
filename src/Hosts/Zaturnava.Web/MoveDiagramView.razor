@@ -1,0 +1,60 @@
+@* A kind's moves and captures, drawn as the server found them: a small board, the piece on its centre facing up, a dot
+   on each square it may move to, as the board marks one, and a ring, in another colour, on each it may capture on;
+   a square it may do both on has both. A piece it hops over, for a piece that hops, is drawn as a grey disc. Under
+   it, what each mark means. *@
+
+<div class="move-diagram" style="--side: @this.Diagram.Side" role="img" aria-label="@this.Described">
+    @for (int row = this.Diagram.Side - 1; row >= 0; row--)
+    {
+        @for (int column = 0; column < this.Diagram.Side; column++)
+        {
+            int cell = (row * this.Diagram.Side) + column;
+            <span class="@this.ClassOf(cell, row, column)" data-cell="@cell">
+                @if (cell == this.Centre)
+                {
+                    <PieceIcon Kind="@this.Piece.Kind" Name="@this.Piece.Name" Owner="this.Piece.Owner" Mark="this.Piece.Mark" Pieces="this.Pieces" />
+                }
+            </span>
+        }
+    }
+</div>
+<p class="diagram-key">
+    <span class="key move"></span> moves
+    <span class="key capture"></span> captures
+    @if (!this.Diagram.Screens.IsEmpty)
+    {
+        <span class="key screen"></span><text> a piece to hop over</text>
+    }
+</p>
+
+@code {
+    [Parameter, EditorRequired]
+    public MoveDiagramDto Diagram { get; set; } = null!;
+
+    /// <summary>The piece drawn on the centre square.</summary>
+    [Parameter, EditorRequired]
+    public PieceDto Piece { get; set; } = null!;
+
+    [Parameter]
+    public PieceSet Pieces { get; set; }
+
+    private int Centre => (this.Diagram.Side * this.Diagram.Side) / 2;
+
+    /// <summary>For one who cannot see it: how many squares it may move to and capture on.</summary>
+    private string Described =>
+        $"From the centre, it may move to {this.Diagram.Moves.Count} squares and capture on "
+        + $"{this.Diagram.Captures.Count}";
+
+    private string ClassOf(int cell, int row, int column) =>
+        string.Join(
+            ' ',
+            new[]
+            {
+                "square",
+                (row + column) % 2 == 0 ? "dark" : "light",
+                this.Diagram.Moves.Contains(cell) ? "move" : null,
+                this.Diagram.Captures.Contains(cell) ? "capture" : null,
+                this.Diagram.Screens.Contains(cell) ? "screen" : null,
+            }.OfType<string>()
+        );
+}

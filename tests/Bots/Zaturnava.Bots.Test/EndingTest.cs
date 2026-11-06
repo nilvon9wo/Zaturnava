@@ -116,6 +116,50 @@ public sealed class EndingTest
     }
 
     [Fact]
+    public async Task Decide_WhenAnAllyRestsWhileTheTeamTrailsClearly_GivesUpItsTurnsToo()
+    {
+        // Arrange - Green, a person, rests; Black's team trails by 20 points, though ahead on the board
+        DecisionRequest request = Resting(people: [Green], ourPoints: 0);
+        DecisionRequest trailing = request with
+        {
+            State = request.State with { Scores = request.State.Scores.SetItem(Yellow, 20) },
+        };
+
+        // Act
+        GameAction action = await new MidasBot(new Random(1)).Decide(trailing, this._cancellation);
+
+        // Assert
+        Assert.Equal(new ProposeEndAction(Black, Resigns: true), action);
+    }
+
+    [Theory]
+    [InlineData(10, true)]
+    [InlineData(100, false)]
+    public async Task Decide_WhenAskedWhileAnAllyRestsAndTheTeamTrails_AgreesIfTheRulesCallItClear(
+        int clearLead,
+        bool agrees
+    )
+    {
+        // Arrange - Green rests; Black's team trails by 20 points, ahead on the board, an Elephant to the good
+        DecisionRequest request = Resting(people: [Green], ourPoints: 0);
+        DecisionRequest asked = request with
+        {
+            Rules = new ScoringRules(Points()) { MayPropose = true, ClearLead = clearLead },
+            State = request.State with
+            {
+                Scores = request.State.Scores.SetItem(Yellow, 20),
+                Proposal = new EndProposal(Yellow, false, Black, null),
+            },
+        };
+
+        // Act
+        GameAction action = await new MidasBot(new Random(1)).Decide(asked, this._cancellation);
+
+        // Assert
+        Assert.Equal(new AnswerEndAction(Black, agrees), action);
+    }
+
+    [Fact]
     public async Task Decide_WhenNoAllyRests_PlaysOn()
     {
         // Arrange - a clear lead, but no one rests

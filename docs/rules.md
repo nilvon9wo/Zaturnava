@@ -669,13 +669,24 @@ both the triumphing player and their ally may move each other's Boat.
     when everyone agrees to end the game.
 - *(Stated 2026-10-29)* **How bots end a game.**
   - A bot follows a resting ally: when an ally has given up their turns with
-    a clear lead (10 on points and on the board both), and no one else in
+    a clear lead (on points and on the board both), and no one else in
     the game is a person, the bot gives up its turns too, so the game ends.
   - Asked to end the game, a bot agrees if its team leads on points, or if
     its game is hopeless: behind by a clear lead, with no Raja and no
     Elephant (a Rook) left to its team, while the other team still has one.
     Merely trailing by a clear lead is a long shot, not hopeless: such a
     team can still come back.
+  - *(Proposed 2026-11-06)* But not once an ally has given up their turns:
+    then the team trailing by a clear lead on points has conceded, and a bot
+    playing on alone would only keep everyone waiting for a game already
+    lost. So, when an ally has given up their turns and the team trails by a
+    clear lead on points, the bot agrees to end the game if asked; and, if no
+    one else in the game is a person, gives up its turns too, which ends the
+    game (a team that trails ends it by giving up, §10).
+  - *(Proposed 2026-11-06)* "A clear lead" is the game's own: 10 in
+    Chaturaji 2027, 100 in Grand Legions, whose points are ten times as many.
+    "An Elephant (a Rook)" is any piece the game counts among its most
+    dangerous, as Grand Legions does its Heavy class.
 - **Honourable peace**: if only Rajas remain on the board (across all
   players), the game is a draw.
 - **Team elimination win**: if only one team still has any pieces on the

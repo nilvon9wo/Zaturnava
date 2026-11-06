@@ -81,6 +81,9 @@ internal sealed class ScoringRules(ImmutableDictionary<GameAction, int> points) 
 
     public bool MayProposeEnd([Required] GameState state, SeatId seat) => this.MayPropose;
 
+    /// <summary>How far ahead a lead is clear: Chaturaji 2027's 10, unless set.</summary>
+    public int ClearLead { get; init; } = 10;
+
     public bool MayRejoin([Required] GameState state, SeatId seat) => false;
 
     public bool MayVoteAway([Required] GameState state, SeatId voter, SeatId absent) => false;

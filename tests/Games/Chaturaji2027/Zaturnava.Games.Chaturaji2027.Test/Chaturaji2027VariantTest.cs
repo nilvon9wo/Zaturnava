@@ -84,6 +84,152 @@ public sealed class Chaturaji2027VariantTest
         Assert.Null(mark);
     }
 
+    [Fact]
+    public void GuideOf_WhenTheVariantTellsNothingOfALeader_IsItsMovesAndLeadingAlone()
+    {
+        // Arrange - nothing beyond the rules
+
+        // Act
+        PieceGuide guide = this._rules.GuideOf(Chaturaji2027Pieces.Raja);
+
+        // Assert
+        Assert.Equal(
+            (Chaturaji2027Pieces.Kinds[Chaturaji2027Pieces.Raja], (string?)null, 0,
+                "Leads its army; standing on another army's throne, it takes command of that army too."),
+            (guide.Kind, guide.Class, guide.Restrictions.Count, guide.Powers.Single())
+        );
+    }
+
+    [Fact]
+    public void GuideOf_WhenAPawn_TellsOfPromotionAndTheSwap()
+    {
+        // Arrange - nothing beyond the rules
+
+        // Act
+        PieceGuide guide = this._rules.GuideOf(Chaturaji2027Pieces.Pawn);
+
+        // Assert
+        Assert.Equal<string>(
+            [
+                "Promoted, on reaching the far edge, into a captured piece.",
+                "Swaps places with an allied Pawn straight ahead of it, the two back to back.",
+            ],
+            guide.Powers
+        );
+    }
+
+    [Fact]
+    public void GuideOf_WhenALeader_DrawsItMovingAndCapturingOneSquareAnyWay()
+    {
+        // Arrange - the Raja on the centre of a 9 x 9 board, cell 40
+        ImmutableList<int> around = [30, 31, 32, 39, 41, 48, 49, 50];
+
+        // Act
+        MoveDiagram diagram = this._rules.GuideOf(Chaturaji2027Pieces.Raja).Diagram;
+
+        // Assert
+        Assert.Equal(
+            (9, string.Join(",", around), string.Join(",", around), 0),
+            (diagram.Side, string.Join(",", diagram.Moves), string.Join(",", diagram.Captures), diagram.Screens.Count)
+        );
+    }
+
+    [Fact]
+    public void GuideOf_WhenAPawn_DrawsItMovingUpAndCapturingDiagonallyUp()
+    {
+        // Arrange - nothing beyond the rules
+
+        // Act
+        MoveDiagram diagram = this._rules.GuideOf(Chaturaji2027Pieces.Pawn).Diagram;
+
+        // Assert
+        Assert.Equal(("49", "48,50"), (string.Join(",", diagram.Moves), string.Join(",", diagram.Captures)));
+    }
+
+    [Fact]
+    public void GuideOf_WhenAKindHops_DrawsAPieceTwoSquaresAheadToHopOver()
+    {
+        // Arrange - a Boat that hops along rows and columns, landing just beyond what it hops
+        Chaturaji2027Rules rules = new(
+            DiceProfile.WeightedSixSided,
+            Chaturaji2027Rules.DefaultIdleRounds,
+            PawnPromotion.OtherArmies,
+            variant: Fenced with
+            {
+                Kinds = Fenced.Kinds.SetItem(
+                    Chaturaji2027Pieces.Boat,
+                    new PieceKind(Chaturaji2027Pieces.Boat, [MovementRule.Hop(DirectionSets.Orthogonal, 1)])
+                ),
+            }
+        );
+
+        // Act
+        MoveDiagram diagram = rules.GuideOf(Chaturaji2027Pieces.Boat).Diagram;
+
+        // Assert
+        Assert.Equal(
+            ("67", "67", 58),
+            (string.Join(",", diagram.Moves), string.Join(",", diagram.Captures), diagram.Screens.Single())
+        );
+    }
+
+    [Fact]
+    public void ClearLead_WhenAsked_IsTheVariantsScoring()
+    {
+        // Arrange - nothing beyond the rules
+
+        // Act
+        int clear = this._rules.ClearLead;
+
+        // Assert
+        Assert.Equal(Scoring.Standard.ClearLead, clear);
+    }
+
+    [Fact]
+    public void GuideOf_WhenAskedAgain_DrawsTheSameDiagram()
+    {
+        // Arrange
+        MoveDiagram first = this._rules.GuideOf(Chaturaji2027Pieces.Horse).Diagram;
+
+        // Act
+        MoveDiagram again = this._rules.GuideOf(Chaturaji2027Pieces.Horse).Diagram;
+
+        // Assert
+        Assert.Same(first, again);
+    }
+
+    [Fact]
+    public void GuideOf_WhenTheVariantTellsOfTheKind_PutsTheRulesPowersBeforeItsOwn()
+    {
+        // Arrange
+        Chaturaji2027Rules rules = new(
+            DiceProfile.WeightedSixSided,
+            Chaturaji2027Rules.DefaultIdleRounds,
+            PawnPromotion.OtherArmies,
+            variant: Fenced with
+            {
+                Guides = ImmutableDictionary<PieceKindId, PieceGuide>.Empty.Add(
+                    Chaturaji2027Pieces.Raja,
+                    new PieceGuide(Chaturaji2027Pieces.Kinds[Chaturaji2027Pieces.Raja])
+                    {
+                        Class = "Leader",
+                        Powers = ["Sings."],
+                        Restrictions = ["Never on Sundays."],
+                    }
+                ),
+            }
+        );
+
+        // Act
+        PieceGuide guide = rules.GuideOf(Chaturaji2027Pieces.Raja);
+
+        // Assert
+        Assert.Equal(
+            ("Leader", 2, "Sings.", "Never on Sundays."),
+            (guide.Class, guide.Powers.Count, guide.Powers[^1], guide.Restrictions.Single())
+        );
+    }
+
     [Theory]
     [InlineData(1, "Ships")]
     [InlineData(2, "Horse")]
