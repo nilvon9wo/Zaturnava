@@ -52,6 +52,9 @@ public sealed record GameState(
     /// <summary>How many turns in a row have been passed without moving, whether the dice were rolled or not.</summary>
     public int IdlePasses { get; init; }
 
+    /// <summary>How many turns have passed since a piece was last taken.</summary>
+    public int TurnsSinceCapture { get; init; }
+
     /// <summary>
     /// Whether the occupier of the throne of the seat whose turn it is has left that seat the dice it did not
     /// use, so that it moves for that seat no more this turn.

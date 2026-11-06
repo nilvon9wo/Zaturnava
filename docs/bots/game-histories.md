@@ -66,6 +66,7 @@ from one that took every enemy piece. The `ending` says which:
 | `agreement` | Every player still playing agreed to end it | The team with more points (a draw if level) |
 | `team-gave-up` | A whole team gave up its turns, trailing (or far ahead) | The team with more points |
 | `idle` | No one moved for some rounds, whether they rolled or not | The team with more points |
+| `quiet` | No piece was taken for some rounds | The team with more points |
 
 The scores, with the ending, say by how much. [rules.md §10](../rules.md) has the rules behind each.
 

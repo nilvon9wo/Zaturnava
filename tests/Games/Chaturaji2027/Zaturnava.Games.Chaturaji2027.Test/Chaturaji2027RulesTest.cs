@@ -993,6 +993,67 @@ public sealed class Chaturaji2027RulesTest
     }
 
     [Theory]
+    [InlineData(159, 40, 10)]
+    [InlineData(195, 49, 1)]
+    public void Apply_WhenATurnPassesNearTheEndOfQuietRounds_WarnsEveryoneTheGameMayEnd(
+        int turns,
+        int rounds,
+        int left
+    )
+    {
+        // Arrange - four seats playing: 160 turns are 40 rounds
+        GameState state = this.Later() with { TurnsSinceCapture = turns };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new PassAction(Black));
+
+        // Assert
+        Assert.Equal(
+            (turns + 1, new QuietWarned(transition.State.DecidingSeat!.Value, rounds, left)),
+            (transition.State.TurnsSinceCapture, transition.Events.OfType<QuietWarned>().Single())
+        );
+    }
+
+    [Theory]
+    [InlineData(199, true, 0)]
+    [InlineData(150, false, 0)]
+    public void Apply_WhenFiftyRoundsPassWithNoPieceTaken_EndsTheGameOnPoints(int turns, bool isOver, int warned)
+    {
+        // Arrange - four seats playing: 200 turns are 50 rounds
+        GameState state = this.Later() with { TurnsSinceCapture = turns };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new PassAction(Black));
+
+        // Assert
+        Assert.Equal(
+            (isOver ? Chaturaji2027Endings.Quiet : null, warned),
+            (transition.State.Outcome?.Ending, transition.Events.OfType<QuietWarned>().Count())
+        );
+    }
+
+    [Fact]
+    public void Apply_WhenAPieceIsTaken_StartsTheCountOfQuietTurnsAgain()
+    {
+        // Arrange - Black's Raja takes Yellow's Pawn
+        GameState state = this.StateWith(
+            (Grid.CellAt(3, 3), Piece(1, Chaturaji2027Pieces.Raja, Black)),
+            (Grid.CellAt(4, 4), Piece(2, Chaturaji2027Pieces.Pawn, Yellow)),
+            (Grid.CellAt(4, 5), Piece(4, Chaturaji2027Pieces.Pawn, Yellow)),
+            (Grid.CellAt(7, 0), Piece(3, Chaturaji2027Pieces.Raja, Red))
+        ) with
+        {
+            TurnsSinceCapture = 120,
+        };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new MoveAction(Black, Grid.CellAt(3, 3), Grid.CellAt(4, 4)));
+
+        // Assert
+        Assert.Equal(0, transition.State.TurnsSinceCapture);
+    }
+
+    [Theory]
     [InlineData(7, 1)]
     [InlineData(6, 0)]
     [InlineData(8, 0)]

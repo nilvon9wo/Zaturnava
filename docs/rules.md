@@ -827,10 +827,13 @@ both the triumphing player and their ally may move each other's Boat.
     - **Three rounds of repetition**: all four players repeat their moves for
       three rounds. Players are warned in the last round.
     - **Fifty moves without a capture**. Players are warned as the limit nears.
+      *(Proposed)* As chess counts fifty moves of each player, fifty rounds
+      ([OQ17](open-questions.md)); warned with ten rounds left, and with one.
   - Built so far: three rounds of passing, rolling and then passing counted as
-    passing, with the warning as the last round begins, told in the game's log
-    (the limit is still the ruleset's, not yet the settings file's). Still to
-    build: repetition, and fifty moves without a capture.
+    passing, with the warning as the last round begins; fifty rounds without a
+    capture, with its warnings; each told in the game's log (the limits are
+    still the ruleset's, not yet the settings file's). Still to build:
+    repetition.
 
 ## 11. Setup Roll-off
 
