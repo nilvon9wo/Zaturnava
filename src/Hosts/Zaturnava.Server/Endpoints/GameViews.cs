@@ -123,6 +123,8 @@ internal static class GameViews
         )
         {
             Kinds = KindsOf(snapshot.Rules, snapshot.State),
+            IsDealt = snapshot.Rules.IsDealt,
+            AreArmiesAlike = ScenarioStart.AreAlike(snapshot.Record.Actions),
         };
     }
 
@@ -233,6 +235,7 @@ internal static class GameViews
             GameName = rules.GameName,
             Size = rules.Size,
             IsPreview = rules.IsPreview,
+            IsDealt = rules.IsDealt,
             SeatNames = [.. state.Seats.Select(seat => rules.NameOf(seat.Id))],
             SeatTeams = [.. state.Seats.Select(seat => state.Teams.TeamOf(seat.Id))],
         };

@@ -57,8 +57,8 @@ internal sealed class TinyRules(int length, bool isDealt = false, Exception? fai
 
     public bool IsDealt { get; } = isDealt;
 
-    public GameState Deal([Required] GameState initial, int seed) =>
-        initial with { Scores = initial.Scores.SetItem(new SeatId(0), seed) };
+    public GameState Deal([Required] GameState initial, int seed, bool areAlike = false) =>
+        initial with { Scores = initial.Scores.SetItem(new SeatId(0), seed).SetItem(new SeatId(1), areAlike ? 1 : 0) };
 
     public ImmutableList<GameAction> LegalActions([Required] GameState state) =>
         state.DecidingSeat is { } seat

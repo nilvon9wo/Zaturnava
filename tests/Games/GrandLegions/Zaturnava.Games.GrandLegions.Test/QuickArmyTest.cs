@@ -226,6 +226,23 @@ public sealed class QuickArmyTest
         );
     }
 
+    [Fact]
+    public void Dealt_WhenTheArmiesAreAlike_DealsEverySeatTheFirstSeatsArmy()
+    {
+        // Arrange
+        QuickGame game = QuickGame.Large;
+
+        // Act
+        ImmutableList<Placement> dealt = QuickArmy.Dealt(game, 21, areAlike: true);
+
+        // Assert
+        string first = ArmyOf(QuickArmy.Dealt(game, 21), 0);
+        Assert.Equal(
+            Enumerable.Repeat(first, Pinwheel.SeatCount),
+            Enumerable.Range(0, Pinwheel.SeatCount).Select(seat => ArmyOf(dealt, seat))
+        );
+    }
+
     private static string Name(PieceKindId kind) => kind.Value;
 
     private static QuickGame Tight(int budget) =>

@@ -81,6 +81,9 @@ internal sealed class FakeGameServer : IGameServing
     /// <summary>Whether Chaturaji 2027 is a preview too, so that every game the catalog offers is one.</summary>
     public bool ArePreviewsOnly { get; set; }
 
+    /// <summary>Whether Chaturaji 2027 is dealt, as if its armies were picked at random.</summary>
+    public bool IsDealt { get; set; }
+
     /// <summary>The scenarios the catalog offers: none, unless a test sets some.</summary>
     public ImmutableList<ScenarioDto> Scenarios { get; set; } = [];
 
@@ -104,6 +107,7 @@ internal sealed class FakeGameServer : IGameServing
                         SeatNames = SeatNames,
                         SeatTeams = [0, 1, 0, 1],
                         IsPreview = this.ArePreviewsOnly,
+                        IsDealt = this.IsDealt,
                     },
                     .. this.MoreRulesets,
                 ],

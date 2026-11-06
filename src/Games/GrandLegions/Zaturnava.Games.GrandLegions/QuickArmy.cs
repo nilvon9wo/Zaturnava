@@ -39,15 +39,19 @@ public static class QuickArmy
         ),
     ];
 
-    /// <summary>Every seat's army, as <paramref name="seed"/> deals them, seat by seat.</summary>
-    public static ImmutableList<Placement> Dealt([Required] QuickGame game, int seed)
+    /// <summary>
+    /// Every seat's army, as <paramref name="seed"/> deals them, seat by seat; or, if <paramref name="areAlike"/>
+    /// (Stated: only if the game's creator asks), the first seat's for every seat, laid out alike, each in its own
+    /// kingdom.
+    /// </summary>
+    public static ImmutableList<Placement> Dealt([Required] QuickGame game, int seed, bool areAlike = false)
     {
         Random random = new(seed);
         ImmutableList<ImmutableList<ArmyPiece>> armies =
         [
             .. Enumerable.Range(0, Pinwheel.SeatCount).Select(_ => Layout(game, Pick(game, random), random)),
         ];
-        return Pinwheel.EachOwn(game.Side, armies);
+        return Pinwheel.EachOwn(game.Side, areAlike ? [.. armies.Select(_ => armies[0])] : armies);
     }
 
     public static ImmutableList<GrandPiece> Pick([Required] QuickGame game, [Required] Random random)

@@ -204,6 +204,12 @@
                         {
                             <button class="action primary again" @onclick="() => this.PlayAgain(view)">Play again</button>
                         }
+                        @if (view.IsDealt)
+                        {
+                            <button class="action again same-armies" @onclick="() => this.PlayAgain(view, true)">
+                                Play again, same armies
+                            </button>
+                        }
                         <button class="action quick" @onclick="() => this.QuickGame(view)">Quick game</button>
                     </div>
                 }
@@ -836,8 +842,11 @@
     private static ImmutableList<string> PaidBotsOf(GameViewDto view) =>
         [.. view.Seats.Where(seat => seat.IsPaidBot).Select(seat => seat.Bot).OfType<string>()];
 
-    /// <summary>The same game again: its ruleset, its bots in the same seats, the player at the same seat.</summary>
-    private Task PlayAgain(GameViewDto view) =>
+    /// <summary>
+    /// The same game again: its ruleset, its bots in the same seats, the player at the same seat; for a game dealt its
+    /// armies, armies alike if they were, and the very same armies if <paramref name="isSameArmies"/>.
+    /// </summary>
+    private Task PlayAgain(GameViewDto view, bool isSameArmies = false) =>
         this.SitAgain(async () => await GameStarter.Start(
             this.Games,
             view.RulesetId,
@@ -845,7 +854,8 @@
             this.Seating.Claim is { } claim ? claim.Seat : -1,
             null,
             await this.Browser.Claimant(),
-            view.Id
+            view.Id,
+            new ArmyDeal(view.AreArmiesAlike, isSameArmies ? view.Id : null)
         ));
 
     /// <summary>A quick game, medium, of the same game as this: the server's first, should it offer this no more.</summary>

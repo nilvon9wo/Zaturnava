@@ -67,10 +67,30 @@ public sealed class GameService(
     /// </exception>
     /// <exception cref="InvalidGameSetupException">The plan does not give every seat exactly one plan.</exception>
     /// <exception cref="UnknownBotException">A plan names no known bot.</exception>
+    public Task<GameId> Create(
+        [Required] string rulesetId,
+        [Required] ImmutableList<SeatPlan> seats,
+        string? scenarioId,
+        CancellationToken cancellationToken
+    ) =>
+        this.Create(rulesetId, seats, scenarioId, Dealing.Anew, cancellationToken);
+
+    /// <summary>
+    /// A new game: from the scenario <paramref name="scenarioId"/> names, if any; else, if its ruleset deals its
+    /// armies, dealt as <paramref name="dealing"/> asks.
+    /// </summary>
+    /// <exception cref="UnknownRulesetException">There is no such ruleset.</exception>
+    /// <exception cref="UnknownScenarioException">There is no such scenario.</exception>
+    /// <exception cref="InvalidScenarioException">
+    /// The scenario is for another ruleset, or names what the ruleset lacks.
+    /// </exception>
+    /// <exception cref="InvalidGameSetupException">The plan does not give every seat exactly one plan.</exception>
+    /// <exception cref="UnknownBotException">A plan names no known bot.</exception>
     public async Task<GameId> Create(
         [Required] string rulesetId,
         [Required] ImmutableList<SeatPlan> seats,
         string? scenarioId,
+        [Required] Dealing dealing,
         CancellationToken cancellationToken
     )
     {
@@ -78,7 +98,7 @@ public sealed class GameService(
         ImmutableList<ActionDescriptor> start = (scenarioId, rules.IsDealt) switch
         {
             ({ } scenario, _) => [ScenarioStart.Describe(this.ScenarioFor(rules, scenario))],
-            (null, true) => [ScenarioStart.Dealt(this._dice)],
+            (null, true) => [await this.DealFor(dealing, cancellationToken)],
             _ => [],
         };
         GameState initial = ScenarioStart.StateOf(start, rules);
@@ -94,6 +114,19 @@ public sealed class GameService(
         };
         await this._store.Add(record, cancellationToken);
         return record.Id;
+    }
+
+    /// <summary>
+    /// How a game begins dealt: as the game <see cref="Dealing.ArmiesOf"/> names began, if it was dealt, so that it is
+    /// dealt by the same seed, the same armies again (played again, of the same ruleset); else anew, its armies alike
+    /// as asked.
+    /// </summary>
+    private async Task<ActionDescriptor> DealFor(Dealing dealing, CancellationToken cancellationToken)
+    {
+        GameRecord? previous = dealing.ArmiesOf is { } id ? await this._store.Find(id, cancellationToken) : null;
+        return previous is { Actions: [{ Kind: ScenarioStart.DealKind } first, ..] }
+            ? first
+            : ScenarioStart.Dealt(this._dice, dealing.AreAlike);
     }
 
     /// <summary>

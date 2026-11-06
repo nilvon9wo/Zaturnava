@@ -22,6 +22,12 @@ public sealed record RulesetDto(string Id, string Name, int SeatCount)
     /// </summary>
     public bool IsPreview { get; init; }
 
+    /// <summary>
+    /// Whether each game is dealt its armies at random as it begins, so that a game may ask for them alike, or for
+    /// another game's again.
+    /// </summary>
+    public bool IsDealt { get; init; }
+
     public ImmutableList<string> SeatNames { get; init; } = [];
 
     /// <summary>Each seat's team, by number: seats of the same number are allies.</summary>

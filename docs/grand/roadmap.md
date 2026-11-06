@@ -127,7 +127,9 @@ What the program does so far (2026-11-04), and the gaps against the above:
   unless the game has rivers (each area restriction says which terrain it is about, `Terrain`, and
   whether it confines the piece to it, `IsConfining`).
 - *Gap*: lifts are not bought with what is left of the budget, as nothing plays a lifted restriction yet.
-- *Gap*: there is no setting yet for all four armies alike, or laid out symmetrically.
+- Done: all four armies alike, one picked at random for every seat and laid out as each seat's own, so
+  symmetrically. *Proposed*: it is a checkbox of the custom game set-up, for a dealt game only; a game over offers
+  to play again with the same armies (dealt by the same seed, alike if they were) or, as before, new ones.
 - The Chaturaji 2027 bonuses are × 10, as is the lead a team needs to win by giving up its turns
   (*Proposed*: 100), each read from a table (`Scoring/grand-legions.json`; Chaturaji 2027's own in
   `Scoring/chaturaji-2027.json`) that can be changed apart from the code. Piece values, each piece's

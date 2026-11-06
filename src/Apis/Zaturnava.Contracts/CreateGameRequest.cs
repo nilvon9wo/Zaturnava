@@ -17,4 +17,16 @@ public sealed record CreateGameRequest([Required] string RulesetId, [Required] I
     /// goes on.
     /// </summary>
     public string? Continuing { get; init; }
+
+    /// <summary>
+    /// For a game whose armies are dealt (<see cref="RulesetDto.IsDealt"/>): every seat the same army, laid out alike
+    /// in its own kingdom; each its own, unless asked.
+    /// </summary>
+    public bool AreArmiesAlike { get; init; }
+
+    /// <summary>
+    /// For a game whose armies are dealt: the game whose armies, as they were dealt, this one is dealt again (played
+    /// again with the same armies); null to deal anew.
+    /// </summary>
+    public string? ArmiesOf { get; init; }
 }

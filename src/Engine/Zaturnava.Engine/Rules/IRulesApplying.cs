@@ -59,9 +59,10 @@ public interface IRulesApplying
 
     /// <summary>
     /// The new game <paramref name="initial"/>, dealt by <paramref name="seed"/>: the same seed always deals the same
-    /// game, so that a game replays from the seed it began with. As it is, for a ruleset that is not dealt.
+    /// game, so that a game replays from the seed it began with; every army alike, laid out alike, if
+    /// <paramref name="areAlike"/>. As it is, for a ruleset that is not dealt.
     /// </summary>
-    GameState Deal([Required] GameState initial, int seed) => initial;
+    GameState Deal([Required] GameState initial, int seed, bool areAlike = false) => initial;
 
     /// <summary>What the deciding seat may do; empty once the game is over, and while it waits on dice.</summary>
     ImmutableList<GameAction> LegalActions([Required] GameState state);

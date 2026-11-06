@@ -139,7 +139,8 @@ internal static class GameEndpoints
     )
     {
         ImmutableList<SeatPlan> seats = [.. request.Bots.Select(bot => new SeatPlan(bot))];
-        GameId id = await games.Create(request.RulesetId, seats, request.Scenario, cancellationToken);
+        Dealing dealing = new(request.AreArmiesAlike, request.ArmiesOf is { } armies ? new GameId(armies) : null);
+        GameId id = await games.Create(request.RulesetId, seats, request.Scenario, dealing, cancellationToken);
         if (request.Continuing is { } previous)
         {
             chat.Continue(id, new GameId(previous));

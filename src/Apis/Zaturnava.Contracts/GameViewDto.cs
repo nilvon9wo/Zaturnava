@@ -51,4 +51,13 @@ public sealed record GameViewDto(
 )
 {
     public ImmutableList<PieceKindDto> Kinds { get; init; } = [];
+
+    /// <summary>
+    /// Whether the game was dealt its armies at random as it began, so that it may be played again with the same
+    /// armies or new ones (<see cref="CreateGameRequest.ArmiesOf"/>).
+    /// </summary>
+    public bool IsDealt { get; init; }
+
+    /// <summary>Whether every seat was dealt the same army (<see cref="CreateGameRequest.AreArmiesAlike"/>).</summary>
+    public bool AreArmiesAlike { get; init; }
 }

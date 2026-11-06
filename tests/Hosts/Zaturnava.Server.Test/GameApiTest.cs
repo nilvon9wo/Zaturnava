@@ -121,6 +121,30 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
     }
 
     [Fact]
+    public async Task Create_WhenTheArmiesOfAGameDealtAlikeAreAskedFor_DealsThemAgainAlike()
+    {
+        // Arrange - no bots, so that nothing moves before the armies are compared
+        GameCreatedDto first = await this._client.Create(
+            new CreateGameRequest("grand-legions-small", [null, null, null, null]) { AreArmiesAlike = true },
+            this._cancellation
+        );
+
+        // Act
+        GameCreatedDto again = await this._client.Create(
+            new CreateGameRequest("grand-legions-small", [null, null, null, null]) { ArmiesOf = first.GameId },
+            this._cancellation
+        );
+
+        // Assert
+        GameViewDto before = await this._client.Get(first.GameId, this._cancellation);
+        GameViewDto after = await this._client.Get(again.GameId, this._cancellation);
+        Assert.Equal(
+            (true, true, Armies(before)),
+            (after.IsDealt, after.AreArmiesAlike, Armies(after))
+        );
+    }
+
+    [Fact]
     public async Task List_WhenAGameWasCreated_ShowsItsOpenSeatsByNameAndWhenItWasCreated()
     {
         // Arrange
@@ -441,6 +465,13 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
         GameRequestRefusedException refused = await Assert.ThrowsAsync<GameRequestRefusedException>(() => request);
         Assert.Equal(expected, refused.Refusal);
     }
+
+    /// <summary>Each piece of <paramref name="view"/>, by its cell, owner and kind, in order of cell.</summary>
+    private static string Armies(GameViewDto view) =>
+        string.Join(
+            ',',
+            view.Pieces.OrderBy(piece => piece.Cell).Select(piece => $"{piece.Cell}:{piece.Owner}:{piece.Kind}")
+        );
 
     private static ImmutableSortedDictionary<string, string> Arguments(
         params (string Name, string Value)[] arguments
