@@ -68,6 +68,27 @@ public sealed class SageBotTest
         Assert.Equal(LineRules.Move(2, 1), action);
     }
 
+    [Fact]
+    public async Task Decide_WhenPassingLeavesTheEnemyOnItsThroneToMoveItsArmy_WeighsTheWorstTheEnemyCouldDo()
+    {
+        // Arrange - passing scores 2 but lets the enemy on Sage's throne move its army for it, which could score
+        // the enemy 5; moving scores 1 and leaves the enemy nothing to do with it
+        MoveAction move = LineRules.Move(0, 1);
+        ScriptedRules rules = new(
+            ImmutableDictionary<GameAction, GameState>.Empty
+                .Add(Pass, ScriptedRules.State() with { Scores = Scored(Seat, 2), ActingFor = Seat })
+                .Add(move, ScriptedRules.State() with { Scores = Scored(Seat, 1) }),
+            ImmutableDictionary<GameAction, GameState>.Empty
+                .Add(new PassAction(Enemy), ScriptedRules.State() with { Scores = Scored(Enemy, 5), ActingFor = Seat })
+        );
+
+        // Act
+        GameAction action = await new SageBot(new Random(Seed)).Decide(rules.Request(), this._cancellation);
+
+        // Assert
+        Assert.Equal(move, action);
+    }
+
     [Theory]
     [InlineData("won", "end")]
     [InlineData("drawn", "score")]
@@ -624,6 +645,8 @@ public sealed class SageBotTest
     /// <summary>What a sided weight's three are called: "material.own", "material.ally", "material.enemy".</summary>
     private static IEnumerable<string> Sides(string name) => Sided.Sides.Select(side => $"{name}.{side}");
 
-    private static ImmutableDictionary<SeatId, int> Scored(int points) =>
-        ImmutableDictionary<SeatId, int>.Empty.Add(Seat, points);
+    private static ImmutableDictionary<SeatId, int> Scored(int points) => Scored(Seat, points);
+
+    private static ImmutableDictionary<SeatId, int> Scored(SeatId seat, int points) =>
+        ImmutableDictionary<SeatId, int>.Empty.Add(seat, points);
 }

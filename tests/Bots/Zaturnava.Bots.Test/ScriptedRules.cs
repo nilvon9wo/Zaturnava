@@ -15,15 +15,20 @@ namespace Net.NowhereAtAll.Zaturnava.Bots.Test;
 /// Rules in which each action the test names leads straight to the state it says, the turn passed to the
 /// enemy - or to no one, once the game is over. Seats 0 and 2 are allied against 1 and 3, each with its
 /// throne on the cell of its own number; a piece is worth what <see cref="ScoringRules.Worth"/> says, and
-/// the Raja leads.
+/// the Raja leads. Where a scripted state has the enemy moving for seat 0 (holding its throne), the enemy may
+/// take any of <paramref name="replies"/>, each leading straight to the state it says.
 /// </summary>
-internal sealed class ScriptedRules(ImmutableDictionary<GameAction, GameState> results) : IRulesApplying
+internal sealed class ScriptedRules(
+    ImmutableDictionary<GameAction, GameState> results,
+    ImmutableDictionary<GameAction, GameState>? replies = null
+) : IRulesApplying
 {
     public static readonly SeatId Seat = new(0);
     public static readonly SeatId Enemy = new(1);
     public static readonly SeatId Ally = new(2);
 
     private readonly ImmutableDictionary<GameAction, GameState> _results = results;
+    private readonly ImmutableDictionary<GameAction, GameState> _replies = replies ?? [];
 
     public string Id => "scripted";
 
@@ -69,11 +74,18 @@ internal sealed class ScriptedRules(ImmutableDictionary<GameAction, GameState> r
         };
 
     public ImmutableList<GameAction> LegalActions([Required] GameState state) =>
-        state.DecidingSeat == Seat ? [.. this._results.Keys] : [];
+        (state.DecidingSeat == Seat, state.ActingFor == Seat) switch
+        {
+            (true, _) => [.. this._results.Keys],
+            (_, true) => [.. this._replies.Keys],
+            _ => [],
+        };
 
     public Transition Apply([Required] GameState state, [Required] GameAction action)
     {
-        GameState result = this._results[action];
+        GameState result = this._results.TryGetValue(action, out GameState? scripted)
+            ? scripted
+            : this._replies[action];
         return new Transition(result with { DecidingSeat = result.Outcome is null ? Enemy : null }, []);
     }
 
