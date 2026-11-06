@@ -48,4 +48,5 @@ stands the same way; ask about any of them here.
 
 Not questions to answer now, but open until play settles them: the Chaturaji 2027 bonuses in Grand Legions,
 ×10 to start with, and the leader bonus of 60 (specification Q14); the abbreviations; the lift badges, one per
-kind of restriction.
+kind of restriction; a roll and then a pass counted as a pass ([rules §10](rules.md)), which may prove too
+strict, though one player moving resets the count and everyone is warned in the last round.

@@ -337,7 +337,7 @@ Second playtest (2026-10-25):
 - Throne bonuses: +1 for a Raja entering an enemy's throne, +2 more for taking a Raja on its own
   throne.
 - **21, 22, 26** (partly) The game ends when only one team has pieces (that team wins), when only
-  Rajas are left (a draw), or when no one has rolled or moved for three rounds (points decide); a
+  Rajas are left (a draw), or when no one has moved for three rounds (points decide); a
   seat with no pieces is skipped.
 - **15** Each seat shows the prisoners it holds.
 - **2** (more) The boat is a drawn sailing boat, not a bishop.

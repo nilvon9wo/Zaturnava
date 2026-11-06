@@ -21,6 +21,6 @@ public static class Chaturaji2027Endings
     /// <summary>A whole team gave up its turns; points decide.</summary>
     public const string TeamGaveUp = "team-gave-up";
 
-    /// <summary>No one rolled or moved for some rounds; points decide.</summary>
+    /// <summary>No one moved for some rounds, whether they rolled or not; points decide.</summary>
     public const string Idle = "idle";
 }

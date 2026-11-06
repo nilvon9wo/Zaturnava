@@ -807,14 +807,14 @@ both the triumphing player and their ally may move each other's Boat.
     - **Three rounds of passing**: every seat still playing passes its turn
       three rounds in a row. Rolling and then passing counts as passing, as if
       it had passed without rolling. Players are warned in the last round that
-      if everyone passes, the game ends.
+      if everyone passes, the game ends. Reasonable, as one player moving
+      resets the count; to revisit after playtesting.
     - **Three rounds of repetition**: all four players repeat their moves for
       three rounds. Players are warned in the last round.
     - **Fifty moves without a capture**. Players are warned as the limit nears.
-  - *(Provisional, 2026-10-25, until the above is built)* The `chaturaji-2027`
-    ruleset has one safety net on, for every game: when no one has rolled or
-    moved for **three rounds** (every seat still playing has passed its turn
-    three times in a row without rolling), the game ends.
+  - Built so far: three rounds of passing, rolling and then passing counted as
+    passing (the limit is still the ruleset's, not yet the settings file's).
+    Still to build: the warnings, repetition, and fifty moves without a capture.
 
 ## 11. Setup Roll-off
 

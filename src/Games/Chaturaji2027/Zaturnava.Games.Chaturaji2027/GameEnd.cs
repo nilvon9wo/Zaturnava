@@ -53,14 +53,14 @@ internal static class GameEnd
             : Ended(transition, outcome);
     }
 
-    /// <summary>The ended game, once no one has rolled or moved for <paramref name="rounds"/> rounds.</summary>
+    /// <summary>The ended game, once no one has moved for <paramref name="rounds"/> rounds.</summary>
     public static Transition? AfterIdlePass(Transition transition, int rounds)
     {
         GameState state = transition.State;
         int playing = state.Seats.Count(seat => IsPlaying(state, seat.Id));
         string reason = string.Create(
             CultureInfo.InvariantCulture,
-            $"no one rolled or moved for {rounds} rounds, so points decide"
+            $"no one moved for {rounds} rounds, so points decide"
         );
         return state.IdlePasses >= rounds * playing
             ? ByPoints(transition, Chaturaji2027Endings.Idle, reason)
