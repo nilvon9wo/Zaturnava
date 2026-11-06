@@ -51,7 +51,7 @@ public sealed class LobbyTest : IDisposable
         IRenderedComponent<Lobby> lobby = this.Render();
 
         // Assert
-        Assert.Contains("Click Custom to create a game against other", lobby.Find("p.setup-hint").TextContent);
+        Assert.Equal("Click Custom to play other people.", lobby.Find("p.setup-hint").TextContent.Trim());
     }
 
     [Fact]
