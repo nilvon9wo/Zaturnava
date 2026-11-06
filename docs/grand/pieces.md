@@ -32,7 +32,8 @@ piece is worth about its parts (Chancellor 22 = Rook 14 + Knight 8).
   before *en passant* was widened to take any enemy piece moving against the pawn, past it): 1 for the
   double first step, 2 for an *en passant* that may now, now and then, take a heavy piece. To be
   settled by playtesting (**Q14**).
-- Reach is counted on 8 × 8 even when the board is larger, so that it stays bounded.
+- The sheet counts reach on 8 × 8; a game on another board adjusts it, as
+  [Prices for each game](#prices-for-each-game) says.
 
 ### Promotion premium
 
@@ -83,9 +84,26 @@ board's actual dimensions, adjusting the base price, never from values set for e
 games' sizes are only conveniences. *Proposed*: by the same rules, on that game's board and kingdoms, the
 prices shown in the draft; the sheet stays the reference, on 8 × 8.
 
-- Reach is counted from the board's centre.
+- Reach is counted from the board's centre (d4 on 8 × 8), with a piece on every cell next to a hopper
+  if that reaches more.
 - A promotion's distance is counted from the kingdom's front row, the furthest forward a piece may
-  start, to the zone: placing a piece well forward cannot buy its premium cheap.
+  start, to the zone: placing a piece well forward cannot buy its premium cheap. A Western piece's
+  zone is the last row, a Shogi piece's the far three, a Makruk Pawn's the enemy kingdom ahead; the
+  far edge is the last row.
+
+*Done*: a piece's price on a game's board is its sheet value, plus the cells it reaches there less
+those it reaches on 8 × 8, plus its premium there less its sheet premium (kept, as the sheet has it, in
+`Values/grand-legions-premiums.json`). On the medium game's 8 × 8 board, kingdoms 2 deep, the prices are
+the sheet's. *Proposed*: a price is never below 1, as a piece that reaches nothing from the centre of a
+small board (the Giraffe on 6 × 6) would otherwise be free, and an army could fill its kingdom with it.
+The price is what the piece costs in a quick army and what taking it scores.
+
+| Piece | Small (6 × 6) | Medium (8 × 8) | Large (12 × 12) |
+|---|---|---|---|
+| Rook | 10 | 14 | 22 |
+| King (Western) | 70 | 70 | 70 |
+| Pawn (Western) | 12 | 9 | 7 |
+| Giraffe | 1 | 4 | 8 |
 
 ### Binding
 
@@ -248,8 +266,8 @@ What was found, and what is made of it:
   cells, yet costs what it does on 8 × 8; on the large board sliders and leapers reach more. The Makruk Pawn's
   premium rests on four rows to its sixth rank, but it now promotes on entering an enemy kingdom: one row
   ahead on the small board; on the medium and large boards three and four rows ahead on the files that lead
-  into one, and on the others only by taking aside. This is
-  what [Prices for each game](#prices-for-each-game) settles: each game's pieces priced on its own board.
+  into one, and on the others only by taking aside. *Done*:
+  [Prices for each game](#prices-for-each-game) settles it, each game's pieces priced on its own board.
 - **Hoppers are counted at their best.** A hopper's reach is counted with a piece on every cell next to it, the
   most it could reach; on an emptying board it may have nothing to hop, so the Grasshopper (7) and the Janggi
   Cannon (8) may be dear beside the Knight (8). *Proposed*: kept as it is, for playtesting to settle.

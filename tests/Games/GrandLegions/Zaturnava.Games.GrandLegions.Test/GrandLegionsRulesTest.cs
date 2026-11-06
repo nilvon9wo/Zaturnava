@@ -208,9 +208,9 @@ public sealed class GrandLegionsRulesTest
     }
 
     [Fact]
-    public void WorthOf_WhenAsked_IsThePiecesValue()
+    public void WorthOf_WhenAsked_IsThePiecesPriceOnTheGamesBoard()
     {
-        // Arrange
+        // Arrange - the Dragon King, 78 on 8 × 8, reaching 8 cells more from the middle of 12 × 12
         Chaturaji2027Rules rules = GrandLegionsRules.RulesOf(QuickGame.Large);
 
         // Act
@@ -220,7 +220,7 @@ public sealed class GrandLegionsRulesTest
         );
 
         // Assert
-        Assert.Equal((78, "Dragon King (Shogi)"), worth);
+        Assert.Equal((86, "Dragon King (Shogi)"), worth);
     }
 
     [Fact]

@@ -182,7 +182,8 @@ drawn simply, a shape for its class and a letter for its kind.
 - Pieces confined to a palace placed in it.
 - Bots draft too: Random at random, Midas by value, Solomon… evenly.
 - Prices for each game, from its own board's actual dimensions and kingdoms (*Stated* 2026-11-06;
-  [pieces.md](pieces.md#prices-for-each-game)).
+  [pieces.md](pieces.md#prices-for-each-game)). *Done* for the quick games, in their armies and scores;
+  the draft, when it comes, shows the same prices.
 
 ## Stage 5 — Points to spend
 

@@ -9,7 +9,8 @@ namespace Net.NowhereAtAll.Zaturnava.Games.GrandLegions;
 /// Grand Legions played by Chaturaji 2027's rules (Proposed): each leader is what those rules call a Raja, its
 /// start its seat's throne; the Western, Makruk and Shogi Pawns are their Pawns, swapping back to back; every
 /// Infantry piece is promoted at the far edge into a captured piece; a die names a class, so moves any piece of
-/// it; taking a piece scores its value; and each piece's own promotion is played. Palaces are still to come.
+/// it; taking a piece scores its value, priced on the game's board (<see cref="BoardPrices"/>); and each piece's
+/// own promotion is played. Palaces are still to come.
 /// </summary>
 public static class GrandLegionsRules
 {
@@ -110,7 +111,7 @@ public static class GrandLegionsRules
             game.Name,
             game.Side,
             GrandLegionsPieces.Kinds,
-            GrandLegionsPieces.Catalogue.ToImmutableDictionary(piece => piece.Id, piece => piece.Value),
+            BoardPrices.On(QuickTerrain.BoardOf(game, 0)),
             GrandLegionsPieces.Catalogue.ToImmutableDictionary(piece => piece.Id, piece => piece.Name),
             Leaders,
             Pawns,
