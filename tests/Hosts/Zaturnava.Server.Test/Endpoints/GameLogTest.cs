@@ -329,6 +329,7 @@ public sealed class GameLogTest
         GameSnapshot snapshot = Snapshot(
             new TurnHandedOver(Red, Black),
             new TurnShared(Red, Black),
+            new TurnShared(Red, Black) { HasPassed = true },
             new PieceMoved(Pawn, Cell("h2"), Cell("g2"), Black),
             new ThroneEntered(RedRaja, Yellow, 1),
             new PieceCaptured(RedRaja, Black, 5),
@@ -347,6 +348,7 @@ public sealed class GameLogTest
             [
                 "shared 0: Red let Black take the rest of their turn.",
                 "shared 0: Black holds Red's throne, so moves for Red now.",
+                "shared 0: Red passed, leaving their dice to Black, who holds Red's throne and moves for Red now.",
                 "moved 0: Black moved Yellow's Pawn from h2 to g2, without rolling. 15-14",
                 "bonus 3: Red's Raja entered Yellow's throne (+1).",
                 "captured 0: Black took Red's Raja, with Yellow's Pawn, and holds it prisoner (+5).",

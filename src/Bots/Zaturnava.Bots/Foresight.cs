@@ -63,12 +63,14 @@ internal sealed class Foresight(IPositionValuing valuing, int depth, int beam)
     }
 
     /// <summary>
-    /// What the state is worth to the bot: once its turn has passed (or the game is over), its value;
-    /// the average over the dice, if it waits on the bot's; else the best the bot could make of it.
+    /// What the state is worth to the bot: while an enemy holding its throne moves its army for it, the worst
+    /// that enemy could do with it; once its turn has passed (or the game is over), its value; the average over
+    /// the dice, if it waits on the bot's; else the best the bot could make of it.
     /// </summary>
     private double WorthOf(DecisionRequest request, GameState state, int stepsLeft) =>
         (state.DecidingSeat == request.Seat, state.AwaitedDice) switch
         {
+            (false, _) when state.ActingFor == request.Seat => this.WorstReplyOf(request, state),
             (false, _) => this._valuing.ValueOf(request, state),
             (_, { } dice) => Outcomes(dice).Sum(outcome =>
                 outcome.Chance
@@ -100,6 +102,17 @@ internal sealed class Foresight(IPositionValuing valuing, int depth, int beam)
             .Append(this._valuing.ValueOf(request, state))
             .Max();
     }
+
+    /// <summary>
+    /// The worst the enemy on the bot's throne could leave the bot, moving the bot's army with the dice the bot
+    /// left it (rules.md §6.3): a bot never hands its turn to an ally, so only an enemy ever moves for it. Passing
+    /// so leaves that enemy both dice; moving first, one.
+    /// </summary>
+    private double WorstReplyOf(DecisionRequest request, GameState state) =>
+        request.Rules.LegalActions(state)
+            .Select(action => this._valuing.ValueOf(request, Apply(request, state, action)))
+            .Append(this._valuing.ValueOf(request, state))
+            .Min();
 
     private static GameState Apply(DecisionRequest request, GameState state, GameAction action) =>
         request.Rules.Apply(state, action).State;
