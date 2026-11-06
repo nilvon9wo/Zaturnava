@@ -3,9 +3,11 @@
    it, if it has one, and where, saying so if the game does not play it yet; then how it moves and captures -
    drawn (MoveDiagramView), turned as the board shows its army, or in words where the ruleset draws nothing - its
    powers, those every piece of its sort has (common) apart from its own (special), and what holds it back, each as
-   the ruleset tells it. A kind the ruleset tells nothing of shows its owner and square alone. *@
+   the ruleset tells it. A kind the ruleset tells nothing of shows its owner and square alone. The player may drag
+   the card by its header wherever they like; it opens where they last put it. *@
+@inject Browser Browser
 
-<aside class="piece-card" aria-label="About this piece">
+<aside class="piece-card" aria-label="About this piece" @ref="this._card">
     <header>
         <PieceIcon Kind="@this.Piece.Kind" Name="@this.Piece.Name" Owner="this.Piece.Owner" Mark="this.Piece.Mark" Pieces="this.Pieces" />
         <h2>@this.Named(this.Piece.Name)</h2>
@@ -64,6 +66,8 @@
 </aside>
 
 @code {
+    private ElementReference _card;
+
     [Parameter, EditorRequired]
     public PieceDto Piece { get; set; } = null!;
 
@@ -96,6 +100,9 @@
 
     [Parameter]
     public EventCallback OnClose { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender) =>
+        await (firstRender ? this.Browser.MakeDraggable(this._card) : ValueTask.CompletedTask);
 
     private string Named(string text) => PieceStyle.Named(text, this.Pieces);
 

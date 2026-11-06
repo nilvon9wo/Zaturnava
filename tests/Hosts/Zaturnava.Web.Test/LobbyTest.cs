@@ -43,6 +43,18 @@ public sealed class LobbyTest : IDisposable
     }
 
     [Fact]
+    public void Render_WhenShown_TellsThatCustomIsTheWayToPlayOtherPeople()
+    {
+        // Arrange - nothing beyond the server's catalog and games
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Assert
+        Assert.Equal("Click Custom to play other people.", lobby.Find("p.setup-hint").TextContent.Trim());
+    }
+
+    [Fact]
     public void Render_WhenAGameIsAPreview_NeitherOffersNorListsIt()
     {
         // Arrange

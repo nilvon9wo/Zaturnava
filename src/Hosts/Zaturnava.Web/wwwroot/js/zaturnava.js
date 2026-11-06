@@ -154,6 +154,58 @@ window.zaturnava = (() => {
         theme(name) {
             document.documentElement.dataset.theme = name;
         },
+        // A panel the player may drag by its header wherever they like, kept on the screen; where they last put it
+        // is remembered under key, and it opens there again.
+        draggable(panel, key) {
+            const header = panel?.querySelector("header");
+            if (!header) {
+                return;
+            }
+            // Kept as wide as the stylesheet made it, as it no longer reaches across from side to side.
+            const width = panel.offsetWidth;
+            const place = (left, top) => {
+                const x = Math.max(0, Math.min(left, window.innerWidth - width));
+                const y = Math.max(0, Math.min(top, window.innerHeight - 48));
+                Object.assign(panel.style, {
+                    left: `${x}px`, top: `${y}px`, right: "auto", bottom: "auto", width: `${width}px`,
+                });
+                return [x, y];
+            };
+            try {
+                const [left, top] = (localStorage.getItem(key) || "").split(",").map(Number);
+                if (Number.isFinite(left) && Number.isFinite(top)) {
+                    place(left, top);
+                }
+            } catch {
+                // where the stylesheet puts it, then
+            }
+            header.classList.add("draggable");
+            header.addEventListener("pointerdown", down => {
+                if (down.target.closest("button")) {
+                    return;
+                }
+                const start = panel.getBoundingClientRect();
+                const dx = down.clientX - start.left;
+                const dy = down.clientY - start.top;
+                let last = [start.left, start.top];
+                header.setPointerCapture(down.pointerId);
+                const moved = move => { last = place(move.clientX - dx, move.clientY - dy); };
+                const dropped = () => {
+                    header.removeEventListener("pointermove", moved);
+                    header.removeEventListener("pointerup", dropped);
+                    header.removeEventListener("pointercancel", dropped);
+                    try {
+                        localStorage.setItem(key, last.join(","));
+                    } catch {
+                        // forgotten, then
+                    }
+                };
+                header.addEventListener("pointermove", moved);
+                header.addEventListener("pointerup", dropped);
+                header.addEventListener("pointercancel", dropped);
+                down.preventDefault();
+            });
+        },
         watch(table) {
             watcher = table;
         },

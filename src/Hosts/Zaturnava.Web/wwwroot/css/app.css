@@ -419,6 +419,8 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
 }
 .piece-card header { display: flex; align-items: center; gap: 10px; }
+/* The header a player drags the card by. */
+.piece-card header.draggable { cursor: move; touch-action: none; user-select: none; }
 .piece-card header .piece-icon { width: 40px; height: 40px; flex: none; }
 .piece-card h2 { flex: 1; margin: 0; font-size: 1.15rem; }
 .piece-card h3 { margin: 12px 0 4px; font-size: 0.95rem; color: var(--accent); }
