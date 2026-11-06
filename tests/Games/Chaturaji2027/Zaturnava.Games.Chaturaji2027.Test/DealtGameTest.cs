@@ -28,7 +28,24 @@ public sealed class DealtGameTest
         DiceProfile.WeightedSixSided,
         Chaturaji2027Rules.DefaultIdleRounds,
         PawnPromotion.OtherArmies,
-        variant: Chaturaji2027Variant.Standard with { Dealer = (_, _) => Swapped }
+        variant: Chaturaji2027Variant.Standard with { Dealer = (_, _, _) => Swapped }
+    );
+
+    /// <summary>
+    /// Rules dealing terrain one more than the seed, Black's Raja and Boat swapped on any but terrain 0; a line
+    /// drawn along the terrain's column, and the terrain told by its number.
+    /// </summary>
+    private readonly Chaturaji2027Rules _terrained = new(
+        DiceProfile.WeightedSixSided,
+        Chaturaji2027Rules.DefaultIdleRounds,
+        PawnPromotion.OtherArmies,
+        variant: Chaturaji2027Variant.Standard with
+        {
+            Dealer = (_, _, terrain) => terrain == 0 ? Chaturaji2027Setup.Start : Swapped,
+            TerrainDealer = seed => seed + 1,
+            Lines = (state, grid) => [new BoardLine("river", state.Terrain, 0, state.Terrain, grid.Cells.Count)],
+            Terrain = state => $"terrain {state.Terrain}",
+        }
     );
 
     [Fact]
@@ -60,6 +77,45 @@ public sealed class DealtGameTest
         Assert.Equal(dealt.Position, dealt.Start);
         Assert.Equal(Grid.CellAt(0, 0), this._rules.ThronesOf(dealt)[Black]);
         Assert.Equal(Grid.CellAt(3, 0), this._rules.ThronesOf(initial)[Black]);
+    }
+
+    [Theory]
+    [InlineData(false, 0, 3)]
+    [InlineData(true, 5, 0)]
+    public void Deal_WhenTheVariantDealsTerrain_DealsItOnlyIfAskedAndTheArmiesOnIt(
+        bool dealsTerrain,
+        int terrain,
+        int throneColumn
+    )
+    {
+        // Arrange
+        GameState initial = this._terrained.CreateInitialState();
+
+        // Act
+        GameState dealt = this._terrained.Deal(initial, 4, dealsTerrain: dealsTerrain);
+
+        // Assert
+        Assert.Equal(
+            (terrain, Grid.CellAt(throneColumn, 0), $"terrain {terrain}", (double)terrain),
+            (dealt.Terrain, this._terrained.ThronesOf(dealt)[Black], this._terrained.TerrainOf(dealt),
+                this._terrained.LinesOf(dealt).Single().FromX)
+        );
+    }
+
+    [Fact]
+    public void Deal_WhenAskedForTerrainTheVariantDoesNotDeal_DealsNoneAndTellsNoTerrainNorLines()
+    {
+        // Arrange
+        GameState initial = this._rules.CreateInitialState();
+
+        // Act
+        GameState dealt = this._rules.Deal(initial, 4, dealsTerrain: true);
+
+        // Assert
+        Assert.Equal(
+            (0, null, 0),
+            (dealt.Terrain, this._rules.TerrainOf(dealt), this._rules.LinesOf(dealt).Count)
+        );
     }
 
     [Fact]

@@ -88,7 +88,7 @@ than a piece, and with points won in play to be spent on upgrades and promotions
 - **Stated (2026-11-06).** In a quick game the rivers are decided at random, each layout as likely as
   the others: none, one north–south, one east–west, or both; and, either equally likely, through the
   kingdoms or around them. The lobby need not filter games by their rivers, but a game's description
-  tells them. Playing again with the same armies keeps the rivers too.
+  tells them. Playing again with the same armies keeps the rivers too. *Done* (2026-11-06).
 
 ### 2.1 Saved settings
 

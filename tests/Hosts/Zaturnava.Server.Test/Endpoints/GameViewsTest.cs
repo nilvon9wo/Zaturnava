@@ -211,6 +211,23 @@ public sealed class GameViewsTest
     }
 
     [Fact]
+    public void ViewOf_WhenTheGameWasDealtARiver_DrawsItAndTellsWhereItRuns()
+    {
+        // Arrange - a small Grand Legions game, dealt a north-south river through the kingdoms
+        Chaturaji2027Rules grand = GrandLegionsRules.RulesOf(QuickGame.Small);
+        GameState state = grand.CreateInitialState() with { Terrain = 1 };
+
+        // Act
+        GameViewDto view = GameViews.ViewOf(Snapshot(grand, state), Bots);
+
+        // Assert
+        Assert.Equal(
+            (6, new LineDto("river", 2.5, -0.5, 2.5, 0.5), "A river runs north to south, through the kingdoms."),
+            (view.Lines.Count, view.Lines[0], view.Terrain)
+        );
+    }
+
+    [Fact]
     public void ViewOf_WhenAPawnMayBePromoted_LabelsEachPromotion()
     {
         // Arrange - Black's Pawn on c8, the far edge; Green's Elephant is held by Red

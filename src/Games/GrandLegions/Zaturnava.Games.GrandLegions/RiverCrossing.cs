@@ -11,7 +11,11 @@ namespace Net.NowhereAtAll.Zaturnava.Games.GrandLegions;
 /// </summary>
 public static class RiverCrossing
 {
-    public static MoveAllowing On([Required] GrandBoard board) => (grid, move) => MayMove(board, grid, move);
+    /// <summary>
+    /// The rivers of <paramref name="game"/>, as each game of it was dealt them (<see cref="QuickTerrain"/>).
+    /// </summary>
+    public static MoveAllowing On([Required] QuickGame game) =>
+        (state, grid, move) => MayMove(QuickTerrain.BoardOf(game, state.Terrain), grid, move);
 
     private static bool MayMove(GrandBoard board, SquareGridTopology grid, Move move)
     {

@@ -16,7 +16,8 @@ namespace Net.NowhereAtAll.Zaturnava.Application.Test.Fakes;
 /// whenever it likes, by proposing so, as its winner. Either may vote on waiting for the other while it
 /// decides; a seat passed while away may say it is back. Its board is a row of four cells
 /// (<see cref="TinyBoard"/>), where each seat has a Pawn, and the first a King, that never move. If
-/// <paramref name="isDealt"/>, each game is dealt anew: its seed is the first seat's score, to tell it by. Given a
+/// <paramref name="isDealt"/>, each game is dealt anew: its seed is the first seat's score, to tell it by, and its
+/// terrain 1 if dealt with the rest. Given a
 /// <paramref name="failure"/>, applying any action throws it, as rules that no longer replay a game might. If
 /// <paramref name="hasFaceOff"/>, the first seat's King faces the second seat's Pawn, which it may call a face-off
 /// against whoever decides, taking the King off the board. Enough to drive the application without any real game.
@@ -57,8 +58,12 @@ internal sealed class TinyRules(int length, bool isDealt = false, Exception? fai
 
     public bool IsDealt { get; } = isDealt;
 
-    public GameState Deal([Required] GameState initial, int seed, bool areAlike = false) =>
-        initial with { Scores = initial.Scores.SetItem(new SeatId(0), seed).SetItem(new SeatId(1), areAlike ? 1 : 0) };
+    public GameState Deal([Required] GameState initial, int seed, bool areAlike = false, bool dealsTerrain = false) =>
+        initial with
+        {
+            Scores = initial.Scores.SetItem(new SeatId(0), seed).SetItem(new SeatId(1), areAlike ? 1 : 0),
+            Terrain = dealsTerrain ? 1 : 0,
+        };
 
     public ImmutableList<GameAction> LegalActions([Required] GameState state) =>
         state.DecidingSeat is { } seat

@@ -83,6 +83,19 @@ public sealed class RulesApplyingTest
     }
 
     [Fact]
+    public void LinesOfAndTerrainOf_WhenTheRulesetSaysNoOther_AreNone()
+    {
+        // Arrange
+        OneSizeRules rules = new();
+
+        // Act
+        (int Lines, string? Terrain) board = BoardOf(rules, OneSizeRules.State);
+
+        // Assert
+        Assert.Equal((0, null), board);
+    }
+
+    [Fact]
     public void Deal_WhenTheRulesetSaysNoOther_DealsNothingAndLeavesTheGameAsItIs()
     {
         // Arrange
@@ -150,6 +163,10 @@ public sealed class RulesApplyingTest
     private static PieceGuide GuideOf<TRules>(TRules rules, PieceKindId kind)
         where TRules : IRulesApplying =>
         rules.GuideOf(kind);
+
+    private static (int Lines, string? Terrain) BoardOf<TRules>(TRules rules, GameState state)
+        where TRules : IRulesApplying =>
+        (rules.LinesOf(state).Count, rules.TerrainOf(state));
 
     private static double MovesPerTurnOf<TRules>(TRules rules, PieceKindId kind)
         where TRules : IRulesApplying =>

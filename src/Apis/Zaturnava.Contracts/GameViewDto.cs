@@ -52,6 +52,12 @@ public sealed record GameViewDto(
 {
     public ImmutableList<PieceKindDto> Kinds { get; init; } = [];
 
+    /// <summary>The lines drawn on the board, such as its rivers; none, for most games.</summary>
+    public ImmutableList<LineDto> Lines { get; init; } = [];
+
+    /// <summary>What a player should know of the board beyond its cells, as its rivers; null if nothing.</summary>
+    public string? Terrain { get; init; }
+
     /// <summary>
     /// Whether the game was dealt its armies at random as it began, so that it may be played again with the same
     /// armies or new ones (<see cref="CreateGameRequest.ArmiesOf"/>).

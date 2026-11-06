@@ -26,6 +26,9 @@ public sealed record GrandBoard(
     public const int MaximumSide = 26;
     public const int MinimumKingdomSide = 3;
 
+    /// <summary>What a river's lines are called, for a client to draw them its own way.</summary>
+    public const string RiverKind = "river";
+
     private static readonly Direction North = new(0, 1);
     private static readonly Direction East = new(1, 0);
     private static readonly Direction South = new(0, -1);
@@ -64,6 +67,48 @@ public sealed record GrandBoard(
     public bool IsInRiver(int column, int row) =>
         (this.Rivers.HasFlag(Rivers.NorthSouth) && this.WestEastOf(column, row) == 0)
         || (this.Rivers.HasFlag(Rivers.EastWest) && this.SouthNorthOf(column, row) == 0);
+
+    /// <summary>
+    /// The rivers as lines to draw, measured as the cells' centres are, a unit apart (Stated: the blue lines come
+    /// with the rivers): between each two neighbouring cells a river parts, and through each cell one cuts. Where a
+    /// river goes around a kingdom it cuts no cell, so it is drawn as it goes, cell by cell.
+    /// </summary>
+    public ImmutableList<BoardLine> RiverLines() =>
+    [
+        .. this.Rivers.HasFlag(Rivers.NorthSouth) ? this.LinesOf(this.WestEastOf, false) : [],
+        .. this.Rivers.HasFlag(Rivers.EastWest) ? this.LinesOf(this.SouthNorthOf, true) : [],
+    ];
+
+    /// <summary>
+    /// One river's lines, its halves told cell by cell by <paramref name="halfOf"/>; drawn as a north-south river, or
+    /// turned on its side, if <paramref name="isTurned"/>, as an east-west one.
+    /// </summary>
+    private IEnumerable<BoardLine> LinesOf(Func<int, int, int> halfOf, bool isTurned)
+    {
+        (int across, int along) = isTurned ? (this.Length, this.Width) : (this.Width, this.Length);
+        int HalfAt(int index, int at) => isTurned ? halfOf(at, index) : halfOf(index, at);
+        BoardLine Line(double fromIndex, double fromAt, double toIndex, double toAt) =>
+            isTurned
+                ? new BoardLine(RiverKind, fromAt, fromIndex, toAt, toIndex)
+                : new BoardLine(RiverKind, fromIndex, fromAt, toIndex, toAt);
+        return Enumerable.Range(0, across)
+            .SelectMany(index => Enumerable.Range(0, along).Select(at => (Index: index, At: at)))
+            .SelectMany(cell => (IEnumerable<BoardLine>)
+            [
+                .. HalfAt(cell.Index, cell.At) == 0
+                    ? [Line(cell.Index, cell.At - 0.5, cell.Index, cell.At + 0.5)]
+                    : Array.Empty<BoardLine>(),
+                .. cell.Index + 1 < across
+                    && HalfAt(cell.Index, cell.At) == -1
+                    && HalfAt(cell.Index + 1, cell.At) == 1
+                    ? [Line(cell.Index + 0.5, cell.At - 0.5, cell.Index + 0.5, cell.At + 0.5)]
+                    : Array.Empty<BoardLine>(),
+                .. cell.At + 1 < along
+                    && HalfAt(cell.Index, cell.At) * HalfAt(cell.Index, cell.At + 1) == -1
+                    ? [Line(cell.Index - 0.5, cell.At + 0.5, cell.Index + 0.5, cell.At + 0.5)]
+                    : Array.Empty<BoardLine>(),
+            ]);
+    }
 
     private ImmutableList<Kingdom> Pinwheel() =>
     [
