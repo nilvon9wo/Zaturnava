@@ -692,8 +692,16 @@ both the triumphing player and their ally may move each other's Boat.
     without leaders or heavies, but not against a team far ahead when what it
     has left could not take enough back (Infantry far from any enemy, say, or
     worth too little). Where pieces stand matters too: a leader steps from an
-    unguarded enemy throne may win that seat's pieces to fight with. How to
-    weigh it is [OQ16](open-questions.md).
+    unguarded enemy throne may win that seat's pieces to fight with.
+    *(Stated 2026-11-06, to try)* The weighing: **the gap** is how many points
+    the team trails the leading team by; **the hope** is what it could take
+    back within ten rounds, the sum, over each of its pieces, of the most
+    valuable enemy piece it could reach, worth × (1 − moves needed ÷ moves it
+    can expect in ten rounds, by how often its class is rolled), nothing if
+    farther; a leader within such reach of an unguarded enemy throne adds, so
+    discounted, the worth of that seat's pieces it would come to command. The
+    team gives up when the gap is greater than the hope. Bots err on the side
+    of hope, but not by much: *(Proposed)* the hope is counted at 125%.
     "An Elephant (a Rook)" is any piece the game counts among its most
     dangerous, as Grand Legions does its Heavy class.
 - **Honourable peace**: if only Rajas remain on the board (across all

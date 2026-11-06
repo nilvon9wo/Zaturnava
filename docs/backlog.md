@@ -57,7 +57,7 @@ first.
   - **N31** The Makruk Pawn promotes on entering an enemy kingdom, not in the far three rows (Stated
     2026-11-06; [roadmap](grand/roadmap.md)).
   - **N32** A bot gives up by what is left on the board, not by a lead ×10 (Stated 2026-11-06;
-    [rules §10](rules.md)); how to weigh it is [OQ16](open-questions.md).
+    [rules §10](rules.md)), weighing the gap against the hope, as Stated there.
 - **N29** (low) An encyclopedia of pieces: each piece's name here, its other names, the games it comes from
   (Chess, Xiangqi...), the games here that use it, its variants (kinds of Pawn, of Elephant...), and how it
   moves, captures and what else it may do.
