@@ -210,7 +210,7 @@ public static class GrandLegionsPieces
             .Add(Noble, "tiara")
             .Add(JanggiSoldier, "sword")
             .Add(Minister, "scroll")
-            .Add(Courtier, "goblet")
+            .Add(Courtier, "plumed-cap")
             .Add(MakrukPawn, "pawn")
             .Add(XiangqiSoldier, "sword")
             .Add(XiangqiAdvisor, "fan")
