@@ -139,6 +139,10 @@ What the program does so far (2026-11-04), and the gaps against the above:
 - The Medium kingdom, 4 × 2, is below the 3 × 3 a palace needs; quick games have no palace, so it
   plays, but a Medium game with palaces will need the palace to stand partly outside the kingdom
   (specification §5), or none.
+- Every Infantry piece, not only the three Pawns, may be promoted into a captured piece at the far
+  edge (2026-11-06), as specification §6.1 states. Only the Pawns swap back to back, and the bots'
+  measure of how far an army's pawns have come still counts the Pawns alone. Each piece's own
+  promotion is still to come (Stage 5).
 - Pieces are drawn by their class's emblem with letters telling them apart (#146).
 - Still to come: choosing a quick setup for one's own kingdom in a game set up by hand, which waits for
   the draft (Stage 4).

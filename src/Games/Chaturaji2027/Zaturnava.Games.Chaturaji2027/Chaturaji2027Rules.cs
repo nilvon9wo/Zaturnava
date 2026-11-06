@@ -383,7 +383,8 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             {
                 (this._variant.Leaders.Contains(kind),
                     "Leads its army; standing on another army's throne, it takes command of that army too."),
-                (this._variant.Pawns.Contains(kind), "Promoted, on reaching the far edge, into a captured piece."),
+                (this._variant.Promotables.Contains(kind),
+                    "Promoted, on reaching the far edge, into a captured piece."),
                 (this._variant.Pawns.Contains(kind),
                     "Swaps places with an allied Pawn straight ahead of it, the two back to back."),
             }
@@ -517,11 +518,11 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     }
 
     /// <summary>
-    /// Each Pawn of an army the seat commands that stands on the far edge - with nowhere forward left
-    /// to go - may become any captured piece, whoever holds it: the piece goes back to its own army
-    /// (rules.md §8). A Pawn of an enemy army waits on a die that moves a Pawn. Pieces alike held by the
-    /// same seat are offered once - the first taken - the highest-scoring first, then by owner, then by
-    /// holder.
+    /// Each Pawn (each piece of the variant's <see cref="Chaturaji2027Variant.Promotables"/>) of an army the seat
+    /// commands that stands on the far edge - with nowhere forward left to go - may become any captured piece,
+    /// whoever holds it: the piece goes back to its own army (rules.md §8). A Pawn of an enemy army waits on a die
+    /// that moves a Pawn. Pieces alike held by the same seat are offered once - the first taken - the
+    /// highest-scoring first, then by owner, then by holder.
     /// </summary>
     private IEnumerable<PromoteAction> PromotionsOf(GameState state, SeatId seat)
     {
@@ -537,7 +538,9 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
                 .Select(prisoner => prisoner.Piece),
         ];
         return state.Position.Occupants
-            .Where(occupant => this.IsPawn(occupant.Value) && armies.Contains(occupant.Value.Owner))
+            .Where(occupant =>
+                this._variant.Promotables.Contains(occupant.Value.Kind) && armies.Contains(occupant.Value.Owner)
+            )
             .Where(occupant =>
                 rolled.Contains(occupant.Value.Kind) || state.Teams.AreAllied(occupant.Value.Owner, seat)
             )

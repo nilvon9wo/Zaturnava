@@ -222,6 +222,44 @@ public sealed class GrandLegionsRulesTest
     }
 
     [Fact]
+    public void LegalActions_WhenAnInfantryPieceNotAPawnStandsOnTheFarEdge_OffersItsPromotion()
+    {
+        // Arrange - Black's Minister on the c-file's far end, a Yellow Rook held prisoner, Black to decide
+        Chaturaji2027Rules rules = GrandLegionsRules.RulesOf(QuickGame.Small);
+        int side = (int)Math.Sqrt(rules.Topology.Cells.Count);
+        CellId edge = new(((side - 1) * side) + 2);
+        Piece rook = new(new PieceId(2), GrandLegionsPieces.Rook, new SeatId(1));
+        GameState state = rules.CreateInitialState() with
+        {
+            RollOff = [],
+            AwaitedDice = null,
+            DecidingSeat = new SeatId(0),
+            Position = Position.Empty
+                .Place(edge, new Piece(new PieceId(1), GrandLegionsPieces.Minister, new SeatId(0))),
+            Prisoners = [new Prisoner(rook, new SeatId(0))],
+        };
+
+        // Act
+        ImmutableList<GameAction> actions = rules.LegalActions(state);
+
+        // Assert
+        Assert.Contains(new PromoteAction(new SeatId(0), edge, rook.Id), actions);
+    }
+
+    [Fact]
+    public void GuideOf_WhenAnInfantryPieceNotAPawn_TellsItsFarEdgePromotionAsCommon()
+    {
+        // Arrange
+        Chaturaji2027Rules rules = GrandLegionsRules.RulesOf(QuickGame.Small);
+
+        // Act
+        PieceGuide guide = rules.GuideOf(GrandLegionsPieces.Minister);
+
+        // Assert
+        Assert.Equal("Promoted, on reaching the far edge, into a captured piece.", guide.Powers.Single());
+    }
+
+    [Fact]
     public void GuideOf_WhenAWesternPawn_TellsItsClassStartRowPowersAndRestriction()
     {
         // Arrange
