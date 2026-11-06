@@ -31,7 +31,7 @@ Everything else here is specified but not yet played by the engine.
 | §7 Escape | Implemented, as clarified below: the escape takes the place of the double move and ends the turn. |
 | §9 Boat triumph | Not yet. |
 | §8 Promotion & ransom | Implemented, as clarified below: promotion into any captured piece (`promotion.pawns` a constructor argument; `promotion.pool` fixed at `unrestricted`), and ransom with its timed protocol, including the receiving player's choice among equidistant squares, and the release of one's own team's pieces. |
-| §10 Game end | Implemented: elimination (a seat with no pieces, and no prisoners in play, is skipped), Raja retirement and a team left only retired Rajas, honourable peace, team elimination, ending by agreement (as stated and proposed below), a team that has all given up its turns, and a safety net (below). |
+| §10 Game end | Implemented: elimination (a seat with no pieces, and no prisoners in play, is skipped), Raja retirement and a team left only retired Rajas, honourable peace, team elimination, ending by agreement (as stated and proposed below), a team that has all given up its turns, and the three safety nets (below). |
 | §11 Setup roll-off | Implemented. |
 | §12 Toggles | None per game yet: the defaults are fixed. |
 
@@ -773,7 +773,7 @@ both the triumphing player and their ally may move each other's Boat.
       for its answers. A turn already handed to the regent stays with them
       to its end. Having given up their turns, a player cannot propose again
       until they rejoin.
-    - Bots agree only when their team leads on points.
+    - Bots agree as "How bots end a game" (above) says.
 - **A player away**: someone may leave a game unattended, with no clock to
   decide for them.
   - *(Stated 2026-10-26)* The other players may then vote that the absent
