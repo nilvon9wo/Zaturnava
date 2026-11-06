@@ -37,8 +37,8 @@ public sealed class PieceStyleTest
         // Arrange - shapes alone; chess glyphs alone; chess glyphs with more drawn round them
         string[] shapes =
         [
-            "star", "shield", "fan", "scroll", "tiara", "key", "sword", "lance", "camel", "elephant", "giraffe", "dots",
-            "catapult", "cannon", "grasshopper",
+            "star", "shield", "fan", "scroll", "tiara", "goblet", "sword", "lance", "camel", "elephant", "giraffe",
+            "dots", "catapult", "cannon", "grasshopper",
         ];
         string[] glyphs = ["king", "queen", "rook", "bishop", "knight", "pawn"];
         string[] both =

@@ -55,12 +55,12 @@ assemblies.
 - The page finds the server through `src/Hosts/Zaturnava.Web/wwwroot/appsettings.json` (`Server:Url`).
 - The server admits the page's origin through its page host; `appsettings.Development.json`
   chooses the `Listed` host, with `http://localhost:5165`.
-- Games are kept in memory unless `Storage:Provider` says `Sqlite` or `SqlServer`, with
-  `ConnectionStrings:Games`; for a file that survives restarts:
+- In development, `appsettings.Development.json` keeps games, players and their sign-ins in a SQLite file,
+  `artifacts/local-play.db` (git-ignored), so that a restart forgets no one: a player signed in stays signed in
+  until they sign out. Delete the file to start afresh. To keep them in memory instead, as the tests do:
 
 ```shell
-dotnet run --project src/Hosts/Zaturnava.Server --no-build -- --Storage:Provider=Sqlite \
-    "--ConnectionStrings:Games=Data Source=games.db"
+dotnet run --project src/Hosts/Zaturnava.Server --no-build -- --Storage:Provider=InMemory
 ```
 
 Signing in works on this machine as it does live, with each service the server is given a client for. A

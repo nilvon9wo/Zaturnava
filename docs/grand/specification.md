@@ -367,8 +367,9 @@ commanding every piece, a ransom's point for each prisoner, 2 for a Raja) were r
   Each class has an emblem unlike any piece's symbol. The abbreviations stand, until playtesting says
   otherwise. The badges for lifts are one per kind of restriction (movement, area, binding), until
   playtesting says otherwise. *Proposed*: the Chancellor is the Rook's symbol varied, as the Amazon the
-  Queen's; the class emblems are framed as on a map of armies (Infantry a cross, Heavy an oval, Cavalry a
-  slash, Artillery a dot; the Leader a flag).
+  Queen's; the class emblems are each a thing of its own outline (the Leader a flag, Infantry a boot,
+  Cavalry a stirrup, Heavy a weight, Artillery a bomb), replacing on 2026-11-06 the frames of a map of armies,
+  which were too alike and too abstract to tell apart so small (*Stated*); the Courtier a goblet, not a key.
 
 ## 9. Open questions
 
