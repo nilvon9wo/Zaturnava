@@ -1,7 +1,9 @@
 @* Who stands highest at each game: the players signed in, best first, by their Elo rating at it, with their experience
-   and how many of its games they won, lost, drew and abandoned; one game at a time, chosen among those the server offers (the
-   first, to begin with). Shown over the lobby or the table, from the page's bar, until closed. *@
+   and how many of its games they won, lost, drew and abandoned; one game at a time, chosen among those the server offers:
+   to begin with, at a table, the table's game; else the game the player last started; else the first. Shown over the
+   lobby or the table, from the page's bar, until closed. *@
 @inject IGameServing Games
+@inject Browser Browser
 
 <div class="guide-backdrop">
     <section class="guide leaderboard" role="dialog" aria-modal="true" aria-labelledby="leaderboard-title">
@@ -87,13 +89,19 @@
     [Parameter]
     public EventCallback OnClose { get; set; }
 
+    /// <summary>The ruleset of the table the leaderboard is opened over, if any.</summary>
+    [Parameter]
+    public string? RulesetId { get; set; }
+
     protected override async Task OnInitializedAsync() => this._problem = await Requests.Attempt(this.Load);
 
     private async Task Load()
     {
         CatalogDto catalog = await this.Games.Catalog(CancellationToken.None);
         this._games = [.. catalog.Rulesets.DistinctBy(ruleset => ruleset.Game, StringComparer.Ordinal)];
-        await this.Show(this._games[0].Game);
+        string? preferred = catalog.Rulesets.Find(ruleset => ruleset.Id == this.RulesetId)?.Game
+            ?? await this.Browser.LastGame();
+        await this.Show((this._games.Find(game => game.Game == preferred) ?? this._games[0]).Game);
     }
 
     /// <summary>The leaderboard of the game chosen; told why not, if the server cannot give it.</summary>

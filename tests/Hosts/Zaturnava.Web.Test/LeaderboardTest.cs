@@ -78,6 +78,38 @@ public sealed class LeaderboardTest : IDisposable
         );
     }
 
+    [Theory]
+    [InlineData("grand-legions-small", null, "grand-legions")]
+    [InlineData(null, "grand-legions", "grand-legions")]
+    [InlineData("no-such-ruleset", "no-such-game", "chaturaji-2027")]
+    public void Render_WhenOpened_BeginsAtTheTablesGameElseTheLastStartedElseTheFirst(
+        string? rulesetId,
+        string? last,
+        string expected
+    )
+    {
+        // Arrange
+        this._page.Server.MoreRulesets = GrandSizes;
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.last-game").SetResult(last);
+
+        // Act
+        IRenderedComponent<Leaderboard> board = this._page.Render<Leaderboard>(
+            parameters => parameters.Add(leaderboard => leaderboard.RulesetId, rulesetId)
+        );
+
+        // Assert
+        Assert.Equal(
+            (expected, $"leaderboard {expected}"),
+            (
+                board.Find("select.leaderboard-game").GetAttribute("value"),
+                string.Join(
+                    ",",
+                    this._page.Server.Calls.Where(call => call.StartsWith("leaderboard", StringComparison.Ordinal))
+                )
+            )
+        );
+    }
+
     [Fact]
     public void Choose_WhenTheServerCannotBeReached_SaysWhyAndListsNoOne()
     {

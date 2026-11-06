@@ -119,7 +119,35 @@ public sealed class AppTest : IDisposable
     }
 
     [Fact]
-    public void Play_WhenSeated_ShowsHowToPlayBesideTheGamesNameAndTheLooksBeforeTheSound()
+    public void Leaderboard_WhenOpenedAtATableAndThenInTheLobby_BeginsAtTheTablesGameThenTheLastStarted()
+    {
+        // Arrange
+        this._page.Server.MoreRulesets =
+        [
+            new("grand-legions-small", "Grand Legions (small)", 4)
+            {
+                Game = "grand-legions",
+                GameName = "Grand Legions",
+            },
+        ];
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.last-game").SetResult("grand-legions");
+        IRenderedComponent<App> app = this._page.Render<App>();
+        Play(app);
+
+        // Act
+        app.Find("button.leaderboard-open").Click();
+        string atTable = app.Find("select.leaderboard-game").GetAttribute("value")!;
+        app.Find(".leaderboard button.close").Click();
+        app.Find("button.leave").Click();
+        app.Find("button.leaderboard-open").Click();
+        string inLobby = app.Find("select.leaderboard-game").GetAttribute("value")!;
+
+        // Assert
+        Assert.Equal(("chaturaji-2027", "grand-legions"), (atTable, inLobby));
+    }
+
+    [Fact]
+    public void Play_WhenSeated_ShowsTheLobbyFirstThenHowToPlayBesideTheGamesNameAndTheLooksBeforeTheSound()
     {
         // Arrange
         IRenderedComponent<App> app = this._page.Render<App>();
@@ -129,7 +157,7 @@ public sealed class AppTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ("brand,how-to-play,the-bots,leaderboard-open,leave", "safety,theme,pieces,cards,sound"),
+            ("leave,brand,how-to-play,the-bots,leaderboard-open", "safety,theme,pieces,cards,sound"),
             (
                 string.Join(",", app.FindAll(".table-bar .where > *").Select(part => part.ClassName)),
                 string.Join(",", app.FindAll(".table-bar .settings button").Select(button => button.ClassName))
