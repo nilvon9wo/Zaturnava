@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Globalization;
+using Net.NowhereAtAll.Zaturnava.Engine.Boards;
 using Net.NowhereAtAll.Zaturnava.Engine.Events;
 using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
 using Net.NowhereAtAll.Zaturnava.Engine.Rules;
@@ -52,6 +53,26 @@ internal static class GameEnd
             ? null
             : Ended(transition, outcome);
     }
+
+    /// <summary>
+    /// The transition, its count of idle passes started again if anything on the board or among the prisoners
+    /// changed since <paramref name="before"/> (Stated 2026-11-06): a move, a ransom, an escape, a promotion.
+    /// </summary>
+    public static Transition Unidled(GameState before, Transition transition) =>
+        before.Prisoners.SequenceEqual(transition.State.Prisoners)
+        && Placements(before).SetEquals(Placements(transition.State))
+            ? transition
+            : transition with { State = transition.State with { IdlePasses = 0 } };
+
+    private static ImmutableHashSet<(CellId Cell, Piece Piece)> Placements(GameState state) =>
+        [.. state.Position.Occupants.Select(occupant => (occupant.Key, occupant.Value))];
+
+    /// <summary>
+    /// Whether no one has moved for every round but the last of the <paramref name="rounds"/> that end the game,
+    /// just now: its players are to be warned.
+    /// </summary>
+    public static bool IsLastIdleRound(GameState state, int rounds) =>
+        state.IdlePasses == (rounds - 1) * state.Seats.Count(seat => IsPlaying(state, seat.Id));
 
     /// <summary>The ended game, once no one has moved for <paramref name="rounds"/> rounds.</summary>
     public static Transition? AfterIdlePass(Transition transition, int rounds)

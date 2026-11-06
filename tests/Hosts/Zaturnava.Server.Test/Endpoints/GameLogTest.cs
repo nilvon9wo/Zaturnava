@@ -265,6 +265,25 @@ public sealed class GameLogTest
         );
     }
 
+    [Theory]
+    [InlineData(2, "rounds")]
+    [InlineData(1, "round")]
+    public void LatestOf_WhenNoOneHasMovedForAllButTheLastIdleRound_WarnsTheGameMayEnd(int rounds, string unit)
+    {
+        // Arrange
+        GameSnapshot snapshot = Snapshot(new IdleWarned(Green, rounds));
+
+        // Act
+        ImmutableList<EventDto> log = GameLog.LatestOf(snapshot);
+
+        // Assert
+        Assert.Equal(
+            $"ending 2: No one has moved for {rounds} {unit}: if no one moves this round either, the game ends, "
+                + "and points decide.",
+            Told(Assert.Single(log))
+        );
+    }
+
     [Fact]
     public void LatestOf_WhenThronesComeIntoPlay_TellsOfTheBonusesAndTheSharedTurn()
     {

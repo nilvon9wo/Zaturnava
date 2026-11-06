@@ -821,13 +821,16 @@ both the triumphing player and their ally may move each other's Boat.
       three rounds in a row. Rolling and then passing counts as passing, as if
       it had passed without rolling. Players are warned in the last round that
       if everyone passes, the game ends. Reasonable, as one player moving
-      resets the count; to revisit after playtesting.
+      resets the count; to revisit after playtesting. *(Stated 2026-11-06)*
+      Anything else that changes the board or the prisoners resets the count
+      too: a ransom accepted, an escape, a promotion, a piece going home.
     - **Three rounds of repetition**: all four players repeat their moves for
       three rounds. Players are warned in the last round.
     - **Fifty moves without a capture**. Players are warned as the limit nears.
   - Built so far: three rounds of passing, rolling and then passing counted as
-    passing (the limit is still the ruleset's, not yet the settings file's).
-    Still to build: the warnings, repetition, and fifty moves without a capture.
+    passing, with the warning as the last round begins, told in the game's log
+    (the limit is still the ruleset's, not yet the settings file's). Still to
+    build: repetition, and fifty moves without a capture.
 
 ## 11. Setup Roll-off
 
