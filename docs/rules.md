@@ -687,8 +687,13 @@ both the triumphing player and their ally may move each other's Boat.
     *(Stated 2026-11-06)* In Grand Legions, ×10 suits the bonuses but not
     when to give up, which should follow what is left on the board: whether
     the team still has leaders, and heavies, and whether, with the pieces it
-    has, it could take enough to catch up within about ten rounds. How to
-    weigh that is [OQ16](open-questions.md).
+    has, it could take enough to catch up within about ten rounds. *(Stated
+    2026-11-06)* These are weighed together, not each alone: a team may play on
+    without leaders or heavies, but not against a team far ahead when what it
+    has left could not take enough back (Infantry far from any enemy, say, or
+    worth too little). Where pieces stand matters too: a leader steps from an
+    unguarded enemy throne may win that seat's pieces to fight with. How to
+    weigh it is [OQ16](open-questions.md).
     "An Elephant (a Rook)" is any piece the game counts among its most
     dangerous, as Grand Legions does its Heavy class.
 - **Honourable peace**: if only Rajas remain on the board (across all
