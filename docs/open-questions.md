@@ -8,12 +8,6 @@ Choices marked *Proposed* elsewhere are decisions made without an answer; they s
 Anything to be built is in the [backlog](backlog.md) or the [roadmap](grand/roadmap.md), and anything left to
 playtesting is marked so where it is written.
 
-## OQ17 Fifty moves without a capture
-
-What is a "move" here? In chess, fifty moves means fifty by each player, so I took it as fifty rounds
-(*Proposed*, built). Taken as fifty pieces moved, a turn often moving two, the game would end after six or seven
-rounds without a capture instead. Fifty rounds, or something else? ([rules §10](rules.md))
-
 ## OQ7 A second palace
 
 May a player buy a second palace in Grand Legions, on a board large enough, and at what price? Left open until

@@ -831,10 +831,13 @@ both the triumphing player and their ally may move each other's Boat.
       three rounds of such turns in a row end the game. A turn passed without
       moving is left to the passing net: it neither counts nor resets.
     - **Fifty moves without a capture**. Players are warned as the limit nears.
-      *(Proposed)* As chess counts fifty moves of each player, fifty rounds
-      ([OQ17](open-questions.md)); warned with ten rounds left, and with one.
-  - Built: all three, each with its warnings, told in the game's log. Still to
-    build: the limits read from the settings file (for now the ruleset's).
+      *(Stated 2026-11-06)* Fifty rounds, as chess counts fifty moves of each
+      player: ample time for something to change, by choice or by chance, and
+      players who tire of it may agree to end the game sooner. *(Proposed)*
+      Warned with ten rounds left, and with one.
+  - Built: all three, each with its warnings, told in the game's log; their
+    limits are `Games:SafetyNets` in the server's `appsettings.json`
+    (`IdleRounds`, `QuietRounds`, `RepeatRounds`).
 
 ## 11. Setup Roll-off
 

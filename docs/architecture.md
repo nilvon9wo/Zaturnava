@@ -452,8 +452,8 @@ scoring) are listed in [rules.md §12](rules.md#12-configuration-toggles). The
   (§2.4) and rule modules (§2.6), as the remaining rules are implemented.
 - The `gameEnd.safetyNet.*` limits (rules.md §10, Stated 2026-11-06): three
   rounds of passing, three of repetition, fifty moves without a capture, each
-  limit in the server's settings file. The nets and their warnings are built;
-  still to build: the limits read from the settings file.
+  limit in the server's settings file. *Done*: the nets, their warnings, and
+  their limits, `Games:SafetyNets` in `appsettings.json` (`SafetyNets`).
 - An SDK for variants: once Chaturaji 2027 works, boards, piece sets,
   starting positions, rulesets and bots become things others implement. Their
   extension points should then be gathered into a documented SDK, with

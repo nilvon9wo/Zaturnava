@@ -101,6 +101,33 @@ public sealed class GrandLegionsRulesTest
     }
 
     [Fact]
+    public void QuickWith_WhenTheSafetyNetsAreSetTighter_EndsEachGameAtTheirLimits()
+    {
+        // Arrange - one idle round: every seat but the last has passed it
+        ImmutableList<Chaturaji2027Rules> quick = GrandLegionsRules.QuickWith(new SafetyNets(1, 50, 3));
+
+        // Act
+        ImmutableList<string?> endings =
+        [
+            .. quick.Select(rules =>
+            {
+                GameState state = rules.CreateInitialState() with
+                {
+                    RollOff = [],
+                    AwaitedDice = null,
+                    DecidingSeat = new SeatId(0),
+                    TurnNumber = 2,
+                    IdlePasses = 3,
+                };
+                return rules.Apply(state, new PassAction(new SeatId(0))).State.Outcome?.Ending;
+            }),
+        ];
+
+        // Assert
+        Assert.Equal([Chaturaji2027Endings.Idle, Chaturaji2027Endings.Idle, Chaturaji2027Endings.Idle], endings);
+    }
+
+    [Fact]
     public void IsHeavy_ForEachPiece_IsTrueOnlyForTheHeavyClass()
     {
         // Arrange
