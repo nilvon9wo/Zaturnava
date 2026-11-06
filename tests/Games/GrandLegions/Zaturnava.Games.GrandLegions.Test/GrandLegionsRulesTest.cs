@@ -394,6 +394,20 @@ public sealed class GrandLegionsRulesTest
         );
     }
 
+    [Fact]
+    public void MeasuresOf_WhenAnInfantryPieceNotAPawnIsARowFromTheFarEdge_CountsItNearPromoting()
+    {
+        // Arrange - Black's Minister, promoted at the far edge as every Infantry piece is
+        Chaturaji2027Rules rules = GrandLegionsRules.RulesOf(QuickGame.Small);
+        GameState state = BlackDeciding(rules, (Ahead(rules, 1), BlackPiece(GrandLegionsPieces.Minister)));
+
+        // Act
+        double near = rules.MeasuresOf(state, new SeatId(0))[1];
+
+        // Assert
+        Assert.Equal(1d, near, 6);
+    }
+
     /// <summary>The cell of the c-file <paramref name="rows"/> rows short of Black's far edge.</summary>
     private static CellId Ahead(Chaturaji2027Rules rules, int rows)
     {

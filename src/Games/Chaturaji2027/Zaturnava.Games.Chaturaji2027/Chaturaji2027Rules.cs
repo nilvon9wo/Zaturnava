@@ -109,7 +109,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         );
         this._measures = new ArmyMeasures(
             this._grid,
-            this._variant.Pawns,
+            this._variant.Promotables,
             (state, cell, piece) => this.MovesFrom(state, cell, piece, piece.Owner),
             this.AttacksOf,
             this._control,
