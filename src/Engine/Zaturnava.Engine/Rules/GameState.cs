@@ -56,6 +56,15 @@ public sealed record GameState(
     public int TurnsSinceCapture { get; init; }
 
     /// <summary>
+    /// Each position a turn has ended in since a piece was last taken, with the prisoners and the seat to play
+    /// then, kept as a key: equal positions have equal keys.
+    /// </summary>
+    public ImmutableHashSet<long> Seen { get; init; } = [];
+
+    /// <summary>How many turns in a row, each moving, have ended in a position seen before.</summary>
+    public int RepeatedTurns { get; init; }
+
+    /// <summary>
     /// Whether the occupier of the throne of the seat whose turn it is has left that seat the dice it did not
     /// use, so that it moves for that seat no more this turn.
     /// </summary>

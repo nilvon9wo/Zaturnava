@@ -825,15 +825,16 @@ both the triumphing player and their ally may move each other's Boat.
       Anything else that changes the board or the prisoners resets the count
       too: a ransom accepted, an escape, a promotion, a piece going home.
     - **Three rounds of repetition**: all four players repeat their moves for
-      three rounds. Players are warned in the last round.
+      three rounds. Players are warned in the last round. *(Proposed)* A turn
+      repeats when it ends in a position the game has been in before since a
+      piece was last taken, with the same prisoners and the same seat to play;
+      three rounds of such turns in a row end the game. A turn passed without
+      moving is left to the passing net: it neither counts nor resets.
     - **Fifty moves without a capture**. Players are warned as the limit nears.
       *(Proposed)* As chess counts fifty moves of each player, fifty rounds
       ([OQ17](open-questions.md)); warned with ten rounds left, and with one.
-  - Built so far: three rounds of passing, rolling and then passing counted as
-    passing, with the warning as the last round begins; fifty rounds without a
-    capture, with its warnings; each told in the game's log (the limits are
-    still the ruleset's, not yet the settings file's). Still to build:
-    repetition.
+  - Built: all three, each with its warnings, told in the game's log. Still to
+    build: the limits read from the settings file (for now the ruleset's).
 
 ## 11. Setup Roll-off
 

@@ -128,6 +128,71 @@ internal static class GameEnd
         };
     }
 
+    /// <summary>
+    /// The transition, with the position its turn ended in kept, and counted if seen before: the game ends on
+    /// points once every turn of <paramref name="rounds"/> rounds has (Stated 2026-11-06), its players warned as
+    /// the last begins. A turn passed idly is left to the idle count; a capture forgets every position before it,
+    /// as none can come again.
+    /// </summary>
+    public static Transition AfterRepeats(Transition transition, int rounds)
+    {
+        Transition forgotten = transition.Events.Any(happened => happened is PieceCaptured)
+            ? transition with { State = transition.State with { Seen = [], RepeatedTurns = 0 } }
+            : transition;
+        return transition.State.Outcome is null && transition.Events.Any(happened => happened is TurnPassed)
+            ? Repeated(forgotten, rounds)
+            : forgotten;
+    }
+
+    private static Transition Repeated(Transition transition, int rounds)
+    {
+        GameState state = transition.State;
+        long key = KeyOf(state);
+        int repeated = (state.IdlePasses > 0, state.Seen.Contains(key)) switch
+        {
+            (true, _) => state.RepeatedTurns,
+            (_, true) => state.RepeatedTurns + 1,
+            _ => 0,
+        };
+        Transition counted = transition with
+        {
+            State = state with { Seen = state.Seen.Add(key), RepeatedTurns = repeated },
+        };
+        int playing = state.Seats.Count(seat => IsPlaying(state, seat.Id));
+        string reason = string.Create(
+            CultureInfo.InvariantCulture,
+            $"for {rounds} rounds every turn ended where the game had been before, so points decide"
+        );
+        return (repeated >= rounds * playing, IsReached(state.RepeatedTurns, repeated, (rounds - 1) * playing)) switch
+        {
+            (true, _) => ByPoints(counted, Chaturaji2027Endings.Repeated, reason),
+            (_, true) => counted with
+            {
+                Events = counted.Events.Add(new RepetitionWarned(state.DecidingSeat!.Value, rounds - 1)),
+            },
+            _ => counted,
+        };
+    }
+
+    /// <summary>
+    /// The position, its prisoners and the seat to play, as a key: two hashes of the pieces where they stand, each
+    /// alike whatever order they are listed in.
+    /// </summary>
+    private static long KeyOf(GameState state)
+    {
+        int prisoners = state.Prisoners.Aggregate(0, (key, prisoner) => key ^ prisoner.GetHashCode());
+        int high = state.Position.Occupants.Aggregate(
+            0,
+            (key, occupant) => key ^ HashCode.Combine(occupant.Key, occupant.Value)
+        );
+        int low = state.Position.Occupants.Aggregate(
+            0,
+            (key, occupant) => key ^ HashCode.Combine(occupant.Value, occupant.Key, prisoners)
+        );
+        return ((long)HashCode.Combine(high, prisoners, state.DecidingSeat) << 32)
+            | (uint)HashCode.Combine(low, state.DecidingSeat);
+    }
+
     /// <summary>Whether a count, <paramref name="from"/> one to <paramref name="to"/>, just reached a mark.</summary>
     private static bool IsReached(int from, int to, int mark) => from < mark && to >= mark;
 
