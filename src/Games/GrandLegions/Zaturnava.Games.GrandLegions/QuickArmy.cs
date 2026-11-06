@@ -25,11 +25,12 @@ public static class QuickArmy
 
     /// <summary>
     /// The pieces a quick army may have: any not confined to a palace, as quick games have none yet, though one
-    /// may have powers along palace lines (Stated); and any a river holds only if the game has rivers.
+    /// may have powers along palace lines (Stated); and any a river holds only if the game has rivers. Each at its
+    /// price on the game's board (<see cref="BoardPrices"/>).
     /// </summary>
     public static ImmutableList<GrandPiece> Eligible([Required] QuickGame game) =>
     [
-        .. GrandLegionsPieces.Catalogue.Where(piece =>
+        .. BoardPrices.Catalogue(QuickTerrain.BoardOf(game, 0)).Where(piece =>
             piece.Restrictions.All(restriction => restriction.Terrain switch
             {
                 Terrain.Palace => !restriction.IsConfining,

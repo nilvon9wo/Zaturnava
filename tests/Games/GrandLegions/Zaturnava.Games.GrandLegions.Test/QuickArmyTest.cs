@@ -245,11 +245,12 @@ public sealed class QuickArmyTest
 
     private static string Name(PieceKindId kind) => kind.Value;
 
+    /// <summary>A game on 8 × 8, where a leader and a heavy cost what the sheet says, on a tight budget.</summary>
     private static QuickGame Tight(int budget) =>
         new(
             "tight",
             "Tight",
-            6,
+            8,
             3,
             3,
             budget,
