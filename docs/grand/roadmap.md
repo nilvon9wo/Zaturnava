@@ -128,8 +128,11 @@ What the program does so far (2026-11-04), and the gaps against the above:
   whether it confines the piece to it, `IsConfining`).
 - *Gap*: lifts are not bought with what is left of the budget, as nothing plays a lifted restriction yet.
 - Done: all four armies alike, one picked at random for every seat and laid out as each seat's own, so
-  symmetrically. *Proposed*: it is a checkbox of the custom game set-up, for a dealt game only; a game over offers
-  to play again with the same armies (dealt by the same seed, alike if they were) or, as before, new ones.
+  symmetrically. A checkbox of the custom game set-up, for a dealt game; a game over offers to play again with
+  the same armies (dealt by the same seed, alike if they were) or, as before, new ones. *Stated* (2026-11-06):
+  it may be an option of a game set up by hand too, the creator then crafting all four kingdoms as they craft
+  their own; and the lobby does not list such a game as waiting for players until the creator has finished.
+  Still to come, with games set up by hand.
 - The Chaturaji 2027 bonuses are × 10, as is the lead a team needs to win by giving up its turns
   (*Proposed*: 100), each read from a table (`Scoring/grand-legions.json`; Chaturaji 2027's own in
   `Scoring/chaturaji-2027.json`) that can be changed apart from the code. Piece values, each piece's
@@ -137,7 +140,10 @@ What the program does so far (2026-11-04), and the gaps against the above:
   `Values/chaturaji-2027.json`), as specification §6.3 asks.
 - The board has no river in a quick game yet; a river keeps a Xiangqi Elephant on its own side
   (`RiverCrossing`). The Xiangqi Soldier's sideways step once across is still to come. Until quick
-  games have rivers, they have no river pieces.
+  games have rivers, they have no river pieces. *Stated* (2026-11-06): a quick game's rivers are
+  decided at random, each layout equally likely (none, north–south, east–west, both), through the
+  kingdoms or around them equally likely; the game's description tells them, and playing again with
+  the same armies keeps them (specification §2). Still to come.
 - The Medium kingdom, 4 × 2, is below the 3 × 3 a palace needs; quick games have no palace, so it
   plays, but a Medium game with palaces will need the palace to stand partly outside the kingdom
   (specification §5), or none.
@@ -228,10 +234,11 @@ drawn simply, a shape for its class and a letter for its kind.
 
 - Every kind its own look, in both piece sets; the class told at a glance (spec §8). *Done* (2026-11-06):
   each kind has a symbol of its own, the chess symbols for the pieces named as chess's, the elephant for the
-  elephants; only pieces sharing a name share one. The other symbols are *Proposed*. Beneath the symbol, its
-  class's emblem, small, so that the class is told at a glance, and beside it the piece's abbreviation, every
-  piece its own (Stated; the emblems and the abbreviations, but for the Pawns' and Soldiers', *Proposed*).
-  Still to come: above the symbol, a badge for each restriction lifted, once lifts are kept in the game.
+  elephants; like pieces have like symbols (the Generals a star, the Dragons their piece winged, the Amazon
+  and Archbishop varied Queen and Bishop, the Knight's kin varied Knights). Beneath the symbol, its class's
+  emblem, small and unlike any piece's symbol, and beside it the piece's abbreviation, every piece its own
+  (all Stated; the emblems' looks *Proposed*). Still to come: above the symbol, a badge for each kind of
+  restriction lifted (Stated), once lifts are kept in the game.
 - Telling a player what a piece is and does. *Done* (2026-11-06): hovering over a piece names it, its
   owner and its class; clicking on any piece, the player's or not, tells of it at the side of the
   window: as labelled facts, its owner, square, class and value; a diagram of where it moves and

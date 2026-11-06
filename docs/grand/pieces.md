@@ -221,14 +221,13 @@ Chaturaji 2027.
 
 Together, **Q20** of the [specification](specification.md#9-open-questions).
 
-- **For playtesting (Stated 2026-10-29): the Pawns' promotion premiums may be out of balance.** The
-  Shogi Pawn was priced at 17 against the Western Pawn's 7, yet it is the weaker piece; the
-  [leader promotion bonus](#leader-promotion-bonus) now prices it at 54, widening the gap. It
-  captures on one square to the Western Pawn's two. It has no powers to the Western Pawn's two
-  (the double first step and *en passant*). It promotes into one piece, if a powerful one (the
-  Gold General, a leader), to the Western Pawn's four, the Queen among them. And it is likelier to
-  promote, needing 4 rows to the Western Pawn's 6. No change for now: investigate and playtest it
-  once work on the grand game begins (spec Q14).
+- **Intended (Stated 2026-11-06): the Shogi Pawn costs more than the Western Pawn.** It is the
+  weaker piece on its own, but it may be promoted into a leader (the Gold General), and the
+  [leader promotion bonus](#leader-promotion-bonus) prices it in line with the other pieces that
+  may become leaders. A discrepancy between a piece's price and its strength is not wrong in itself
+  (it may be a good or a bad investment), but it should be intended, not an accident of the formula.
+  Still to do: go through the catalogue for other discrepancies, even less obvious ones, which may
+  show flaws in the value formula ([OQ13](../open-questions.md)).
 
 ### Names the program keeps apart
 

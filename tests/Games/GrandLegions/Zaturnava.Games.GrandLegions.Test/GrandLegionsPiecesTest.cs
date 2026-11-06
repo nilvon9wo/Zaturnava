@@ -83,9 +83,9 @@ public sealed class GrandLegionsPiecesTest
     }
 
     [Fact]
-    public void Marks_WhenPiecesShareASymbol_ShareANameAndOnlyThose()
+    public void Marks_WhenPiecesShareASymbol_AreAlike()
     {
-        // Arrange - a name without its game: "Pawn", "General", "Elephant", "Dragon"
+        // Arrange - a name's first word: "Pawn", "General", "Elephant", "Gold"
         static string NameOf(GrandPiece piece) => piece.Name.Split(' ', '(')[0];
 
         // Act
@@ -98,7 +98,7 @@ public sealed class GrandLegionsPiecesTest
 
         // Assert
         Assert.Equal(
-            "cannon:Cannon,dragon:Dragon,elephant:Elephant,general:General,pawn:Pawn,sword:Soldier",
+            "cannon:Cannon,elephant:Elephant,pawn:Pawn,star:Fairy/General/Gold/Silver,sword:Soldier",
             string.Join(
                 ',',
                 shared
@@ -116,13 +116,15 @@ public sealed class GrandLegionsPiecesTest
     [InlineData("shogi-pawn", "pawn", "Sh", "infantry")]
     [InlineData("janggi-soldier", "sword", "SJ", "infantry")]
     [InlineData("minister", "scroll", "Mi", "infantry")]
-    [InlineData("dragon-king", "dragon", "DK", "leader")]
+    [InlineData("dragon-king", "dragon-king", "DK", "leader")]
+    [InlineData("gold-general", "star", "Go", "leader")]
+    [InlineData("amazon", "amazon", "Am", "heavy")]
     [InlineData("western-king", "king", "K", "leader")]
     [InlineData("queen", "queen", "Q", "heavy")]
     [InlineData("rook", "rook", "R", "heavy")]
     [InlineData("bishop", "bishop", "B", "heavy")]
     [InlineData("knight", "knight", "Kn", "cavalry")]
-    [InlineData("xiangqi-horse", "horseshoe", "HX", "cavalry")]
+    [InlineData("xiangqi-horse", "xiangqi-horse", "HX", "cavalry")]
     [InlineData("alfil", "elephant", "Al", "cavalry")]
     [InlineData("xiangqi-cannon", "cannon", "CX", "artillery")]
     public void Marks_WhenAPieceIsMarked_AreItsSymbolAnyLettersAndItsClass(

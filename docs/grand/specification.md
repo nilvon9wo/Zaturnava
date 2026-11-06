@@ -85,6 +85,10 @@ than a piece, and with points won in play to be spent on upgrades and promotions
   apply to: the Elephant goes anywhere, and the Soldier never steps sideways.
 - **Stated.** Random values range over: board 8 × 8 to 16 × 16; kingdom 3 × 3 to half
   the board; army points 120 to 240, so that a leader is always within reach, and two sometimes.
+- **Stated (2026-11-06).** In a quick game the rivers are decided at random, each layout as likely as
+  the others: none, one north–south, one east–west, or both; and, either equally likely, through the
+  kingdoms or around them. The lobby need not filter games by their rivers, but a game's description
+  tells them. Playing again with the same armies keeps the rivers too.
 
 ### 2.1 Saved settings
 
@@ -92,7 +96,9 @@ than a piece, and with points won in play to be spent on upgrades and promotions
   may name a set of settings, save it, pick it to start a game, and edit it before playing.
 - **Stated (2026-10-31).** Other players may search and browse the saved settings. They may not
   edit someone else's set, but they may copy it, and edit the copy.
-- **Q26** Do saved settings need versions, or a check for duplicates? Not important yet. The
+- **Q26** When a saved set of settings is edited, should games and players that used it keep the set
+  as it was (versions), and should two players saving the same settings share one set (a check for
+  duplicates)? Left open (2026-11-06): it matters only once players want to repeat games. The
   designer's thoughts (2026-10-31), for when it is:
   - A player who picks a set its owner has since edited may be frustrated to find it changed; but
     no one should have to remember version numbers, or dig through the details to see what changed.
@@ -351,6 +357,14 @@ commanding every piece, a ransom's point for each prisoner, 2 for a Raja) were r
   that the class can be told at a glance (and with it, which die moves it), and beside that its
   abbreviation, every piece its own. Above it, a badge for each restriction lifted. A class's emblem
   and letters alone are not playable.
+- **Stated 2026-11-06.** Like pieces have like symbols, though not the same: the Generals share a star; the
+  Dragons are their chess piece (King, Bishop, Knight) with a dragon's wings either side; the Amazon is the
+  Queen's symbol varied, the Archbishop the Bishop's; the Knightrider, Zebra and Xiangqi Horse the Knight's.
+  Each class has an emblem unlike any piece's symbol. The abbreviations stand, until playtesting says
+  otherwise. The badges for lifts are one per kind of restriction (movement, area, binding), until
+  playtesting says otherwise. *Proposed*: the Chancellor is the Rook's symbol varied, as the Archbishop the
+  Bishop's; the class emblems are framed as on a map of armies (Infantry a cross, Heavy an oval, Cavalry a
+  slash, Artillery a dot; the Leader a flag).
 
 ## 9. Open questions
 
@@ -362,7 +376,8 @@ The numbers stay as they are; answered questions are marked so.
 2. **Q2** *Answered:* rivers and a corner kingdom; no river at all (§2).
 3. **Q3** *Answered:* start rows, and a piece placed beyond them (§3).
 4. **Q4** *Answered:* an army may have no leader, and pieces may be drafted more than once (§3).
-5. **Q5** A second palace: may it be bought, and at what price? Left open (§3).
+5. **Q5** A second palace: may it be bought, and at what price? Left open (§3) until the rest of the game is
+   playable (2026-11-06).
 6. **Q6** *Answered:* forward is away from the kingdom's back rank (§3).
 7. **Q7** *Answered:* the Chaturaji 2027 pieces do not join the catalogue, for now (§4).
 8. **Q8** *Answered:* a step along a palace line (§5).
@@ -371,7 +386,8 @@ The numbers stay as they are; answered questions are marked so.
 11. **Q11** *Answered:* how the game ends, and how it is won (§6.1).
 12. **Q12** *Answered:* the four-throne bonus, once for each set of leaders (§6.2).
 13. **Q13** *Answered:* promotion by a piece's own condition is free, optional and may wait (§6.2).
-14. **Q14** *For playtesting:* the Chaturaji 2027 bonuses, ×10 to start with, and the leader bonus of 60 (§6.3).
+14. **Q14** *Closed until playtesting reopens it (2026-11-06):* the Chaturaji 2027 bonuses, ×10, and the leader
+    bonus of 60 (§6.3).
 15. **Q15** *Answered:* the flying-general capture (§6.4).
 16. **Q16** *Answered:* the leader face-off (§6.4).
 17. **Q17** *Answered:* castling, only with a Western Rook (§6.4).
@@ -384,5 +400,5 @@ The numbers stay as they are; answered questions are marked so.
 24. **Q24** *Answered:* which way a kingdom lies in its corner is a setting (§2).
 25. **Q25** *Answered (2026-10-29):* every piece whose normal move is forward only may make the
     back-to-back swap, with any other such piece (§6.1).
-26. **Q26** Saved settings: versions, or a check for duplicates? Not important yet; the designer's
-    thoughts are noted (§2.1).
+26. **Q26** Saved settings: versions, or a check for duplicates? Left open until players want to repeat
+    games; the designer's thoughts are noted (§2.1).

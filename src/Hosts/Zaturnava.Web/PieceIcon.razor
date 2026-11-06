@@ -9,7 +9,7 @@
         {
             <path d="@emblem" transform="@PieceStyle.EmblemPlacement" />
         }
-        else if (PieceStyle.EmblemGlyphOf(mark.Emblem) is { } glyph)
+        @if (PieceStyle.EmblemGlyphOf(mark.Emblem) is { } glyph)
         {
             <g>
                 <text class="symbol" x="0" y="@Svg.Number(-PieceStyle.GlyphRise)">@glyph</text>
