@@ -180,8 +180,8 @@ Adapters, chosen by the server's `Storage:Provider` setting:
 
 | Provider | Project | Use |
 |---|---|---|
-| `InMemory` (default) | Persistence.InMemory | Development, tests; lost on restart. |
-| `Sqlite` | Persistence.EfCore.Sqlite | A single file; `ConnectionStrings:Games`. |
+| `InMemory` (default) | Persistence.InMemory | Tests; lost on restart. |
+| `Sqlite` | Persistence.EfCore.Sqlite | A single file; `ConnectionStrings:Games`. Development, in `artifacts/local-play.db`. |
 | `SqlServer` | Persistence.EfCore.SqlServer | A hosted database; `ConnectionStrings:Games`. |
 
 Each database project holds its provider's EF Core migrations, and the server applies them as it starts

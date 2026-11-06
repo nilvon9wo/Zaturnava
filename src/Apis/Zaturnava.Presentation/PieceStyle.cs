@@ -60,11 +60,11 @@ public static partial class PieceStyle
     /// <summary>
     /// SVG path data for each symbol a marked piece is drawn with (Proposed), about the piece's centre as a shape is,
     /// alike for pieces alike (Stated): a star for every General; a shield for the Guard, a fan for the Advisor, a
-    /// scroll for the Minister, a tiara for the Noble, a key for the Courtier, a sword for a Soldier; a lance with its
-    /// pennant; a camel, an elephant, a giraffe, three dots for the Threeleaper, a catapult for the War Engine; a
-    /// cannon on its wheel, and a grasshopper. A piece drawn as a chess piece with more to it has here what it adds
-    /// (<see cref="SymbolGlyphs"/>): a Dragon its wings; the Amazon and Chancellor a small horseshoe, as
-    /// they leap as a Knight does too; and the Knight's kin the mark of how they differ: the Knightrider speed lines,
+    /// scroll for the Minister, a tiara for the Noble, a plumed cap for the Courtier, a sword for a Soldier; a lance
+    /// with its pennant; a camel, an elephant, a giraffe, three dots for the Threeleaper, a catapult for the War
+    /// Engine; a cannon on its wheel, and a grasshopper. A piece drawn as a chess piece with more to it has here what
+    /// it adds (<see cref="SymbolGlyphs"/>): a Dragon its wings; the Amazon and Chancellor a small horseshoe, as they
+    /// leap as a Knight does too; and the Knight's kin the mark of how they differ: the Knightrider speed lines,
     /// as it rides on, the Zebra stripes, and the Xiangqi Horse a block, as its leap may be blocked.
     /// </summary>
     private static readonly ImmutableDictionary<string, string> Symbols =
@@ -109,12 +109,10 @@ public static partial class PieceStyle
                     + "M-0.26 0.14H0.26V0.24H-0.26Z"
             )
             .Add(
-                "key",
-                Circle(0, -0.18, 0.12)
-                    + "M-0.05 -0.18A0.05 0.05 0 1 0 0.05 -0.18A0.05 0.05 0 1 0 -0.05 -0.18Z"
-                    + "M-0.03 -0.07H0.03V0.28H-0.03Z"
-                    + "M0.03 0.12H0.12V0.17H0.03Z"
-                    + "M0.03 0.22H0.1V0.27H0.03Z"
+                "plumed-cap",
+                "M-0.18 0.06Q-0.18 -0.14 0 -0.14Q0.18 -0.14 0.18 0.06Z"
+                    + "M-0.3 0.06H0.3Q0.3 0.16 0 0.16Q-0.3 0.16 -0.3 0.06Z"
+                    + "M0.06 -0.08Q0.22 -0.24 0.02 -0.32Q0.3 -0.3 0.1 -0.1Z"
             )
             .Add(
                 "sword",
@@ -164,30 +162,42 @@ public static partial class PieceStyle
                     + "M0.22 -0.07L0.28 -0.26L0.3 -0.25L0.25 -0.06Z"
             );
 
-    /// <summary>A frame, as a military map marks a unit, hollow, for a class's mark to stand in.</summary>
-    private const string Frame = "M-0.3 -0.2H0.3V0.2H-0.3Z" + "M-0.23 -0.13V0.13H0.23V-0.13Z";
-
-    /// <summary>A stroke across a frame, from its lower left to its upper right, as a map marks cavalry.</summary>
-    private const string Slash = "M0.23 -0.13V-0.1L-0.17 0.13H-0.23V0.1L0.17 -0.13Z";
-
     /// <summary>
     /// SVG path data for each class's emblem (Proposed), drawn small beneath a piece's symbol, each unlike any
-    /// piece's symbol (Stated): the frames a military map marks units with. A leader's is solid, on a staff, as a
-    /// headquarters'; infantry's crossed; a heavy piece's holds an oval, as armour's does; cavalry's has one stroke
-    /// across; artillery's a dot.
+    /// piece's symbol (Stated), and each a thing of its own outline, so that it can be told even so small: a leader's
+    /// a swallow-tailed flag on its staff; infantry's two swords crossed, unlike the Soldier's one upright; cavalry's
+    /// a stirrup; a heavy piece's a weight
+    /// with its handle; artillery's a bomb, its fuse lit. Each hole is drawn the other way round, so that it stays
+    /// open.
     /// </summary>
     private static readonly ImmutableDictionary<string, string> ClassEmblems =
         ImmutableDictionary<string, string>.Empty
-            .Add("leader", "M-0.3 -0.2H0.3V0.2H-0.3Z" + "M-0.3 0.2H-0.24V0.34H-0.3Z")
-            .Add("infantry", Frame + "M-0.23 -0.13H-0.17L0.23 0.1V0.13H0.17L-0.23 -0.1Z" + Slash)
+            .Add("leader", "M-0.24 -0.3H-0.17V0.3H-0.24Z" + "M-0.17 -0.3H0.3L0.18 -0.15L0.3 0H-0.17Z")
+            .Add(
+                "infantry",
+                "M0.28 -0.28L0.26 -0.2L-0.18 0.24L-0.24 0.18L0.2 -0.26Z"
+                    + "M-0.26 0.06L-0.22 0.02L-0.02 0.22L-0.06 0.26Z"
+                    + Circle(-0.25, 0.25, 0.05)
+                    + "M-0.28 -0.28L-0.2 -0.26L0.24 0.18L0.18 0.24L-0.26 -0.2Z"
+                    + "M0.06 0.26L0.02 0.22L0.22 0.02L0.26 0.06Z"
+                    + Circle(0.25, 0.25, 0.05)
+            )
+            .Add(
+                "cavalry",
+                "M-0.06 -0.3H0.06V-0.2H-0.06Z"
+                    + "M-0.24 0.3V0Q-0.24 -0.22 0 -0.22Q0.24 -0.22 0.24 0V0.3Z"
+                    + "M-0.14 0.2H0.14V0Q0.14 -0.12 0 -0.12Q-0.14 -0.12 -0.14 0Z"
+            )
             .Add(
                 "heavy",
-                Frame
-                    + "M-0.17 0A0.17 0.09 0 1 1 0.17 0A0.17 0.09 0 1 1 -0.17 0Z"
-                    + "M-0.11 0A0.11 0.04 0 1 0 0.11 0A0.11 0.04 0 1 0 -0.11 0Z"
+                "M-0.22 -0.06H0.22L0.3 0.3H-0.3Z"
+                    + "M-0.14 -0.06V-0.16Q-0.14 -0.3 0 -0.3Q0.14 -0.3 0.14 -0.16V-0.06Z"
+                    + "M-0.07 -0.06H0.07V-0.16Q0.07 -0.23 0 -0.23Q-0.07 -0.23 -0.07 -0.16Z"
             )
-            .Add("cavalry", Frame + Slash)
-            .Add("artillery", Frame + Circle(0, 0, 0.07));
+            .Add(
+                "artillery",
+                Circle(-0.04, 0.06, 0.22) + "M0.1 -0.14L0.2 -0.26L0.24 -0.22L0.14 -0.1Z" + Circle(0.26, -0.28, 0.05)
+            );
 
     /// <summary>
     /// The symbols drawn as chess's pieces, as its glyphs: King, Queen, Rook, Bishop, Knight, Pawn; and the pieces

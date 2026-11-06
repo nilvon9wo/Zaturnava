@@ -13,7 +13,7 @@ namespace Net.NowhereAtAll.Zaturnava.Server.Test;
 
 /// <summary>
 /// The server, hosted in the test process as configured for development (appsettings.json, then
-/// appsettings.Development.json): games kept in memory, the page served from this machine. Its dice
+/// appsettings.Development.json) but with games kept in memory, the page served from this machine. Its dice
 /// are loaded, so that what follows a roll is known: Black wins every roll-off with
 /// <see cref="OpeningValue"/>, and every later die comes up <see cref="DieValue"/>.
 /// </summary>
@@ -38,15 +38,16 @@ public class ZaturnavaServer : WebApplicationFactory<Program>
     public HttpGameClient GameClient() => new(this.CreateClient());
 
     /// <summary>
-    /// The dice loaded; the hosted MCP server's tools calling this server in the test process; and no service to
-    /// sign in with, whatever this machine's user secrets set up, so that a test sees only what it sets up itself.
+    /// The dice loaded; the hosted MCP server's tools calling this server in the test process; games kept in memory,
+    /// not in the file local play keeps them in; and no service to sign in with, whatever this machine's user
+    /// secrets set up, so that a test sees only what it sets up itself.
     /// </summary>
     protected override void ConfigureWebHost(IWebHostBuilder builder) =>
         SignInServices.Known
             .Select(provider => provider.Name)
             .Concat(SignInServices.KnownByToken.Select(provider => provider.Name))
             .Aggregate(
-                builder,
+                builder.UseSetting(GameStorage.ProviderKey, GameStorage.InMemory),
                 (configured, provider) =>
                     configured.UseSetting(
                         $"{SignInServices.ProvidersKey}:{provider}:{SignInServices.ClientIdKey}",

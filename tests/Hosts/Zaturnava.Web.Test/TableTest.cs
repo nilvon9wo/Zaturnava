@@ -368,9 +368,9 @@ public sealed class TableTest : IDisposable
     }
 
     [Fact]
-    public void Render_WhenTheBoardHasARiver_DrawsItsLinesAndTellsWhereItRuns()
+    public void Render_WhenTheBoardHasARiver_DrawsItWavingAndTellsWhereItRuns()
     {
-        // Arrange - a river between the first two cells, up the board
+        // Arrange - a river between the first two cells, up the board, a cell long: four bends
         this._page.Server.View = FakeGameServer.SeatZeroToMove with
         {
             Lines = [new LineDto("river", 0.5, -0.5, 0.5, 0.5)],
@@ -381,12 +381,31 @@ public sealed class TableTest : IDisposable
         IRenderedComponent<Table> table = this.Render(SeatZero);
 
         // Assert
-        AngleSharp.Dom.IElement line = table.Find("line.river");
+        AngleSharp.Dom.IElement line = table.Find("path.line");
         Assert.Equal(
-            ("line river", "0.5", "0.5", "A river runs north to south."),
-            (line.GetAttribute("class"), line.GetAttribute("x1"), line.GetAttribute("y1"),
-                table.Find(".terrain").TextContent)
+            (
+                "line river",
+                "M0.5 0.5Q0.62 0.375 0.5 0.25Q0.38 0.125 0.5 0Q0.62 -0.125 0.5 -0.25Q0.38 -0.375 0.5 -0.5",
+                "A river runs north to south."
+            ),
+            (line.GetAttribute("class"), line.GetAttribute("d"), table.Find(".terrain").TextContent)
         );
+    }
+
+    [Fact]
+    public void Render_WhenTheBoardHasALineOfAnotherKind_DrawsItStraight()
+    {
+        // Arrange - a line along the top of the first cell
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Lines = [new LineDto("wall", -0.5, 1, 0.5, 1)],
+        };
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Assert
+        Assert.Equal("M-0.5 -1L0.5 -1", table.Find("path.line.wall").GetAttribute("d"));
     }
 
     [Fact]
@@ -398,7 +417,7 @@ public sealed class TableTest : IDisposable
         IRenderedComponent<Table> table = this.Render(SeatZero);
 
         // Assert
-        Assert.Equal((0, 0), (table.FindAll("line").Count, table.FindAll(".terrain").Count));
+        Assert.Equal((0, 0), (table.FindAll("path.line").Count, table.FindAll(".terrain").Count));
     }
 
     [Theory]
