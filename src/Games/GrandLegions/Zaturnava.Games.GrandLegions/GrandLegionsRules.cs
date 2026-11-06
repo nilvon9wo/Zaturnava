@@ -31,8 +31,9 @@ public static class GrandLegionsRules
     ];
 
     /// <summary>
-    /// What a player is told of each piece of the catalogue beyond its moves: its class, and what holds it back. How
-    /// much lifting a restriction costs is not told: quick games lift none.
+    /// What a player is told of each piece of the catalogue beyond its moves: its class, what its own promotion may
+    /// make it - not played yet - and what holds it back. How much lifting a restriction costs is not told: quick
+    /// games lift none.
     /// </summary>
     public static ImmutableDictionary<PieceKindId, PieceGuide> Guides { get; } =
         GrandLegionsPieces.Catalogue.ToImmutableDictionary(
@@ -40,6 +41,7 @@ public static class GrandLegionsRules
             piece => new PieceGuide(GrandLegionsPieces.Kinds[piece.Id])
             {
                 Class = piece.Class.ToString(),
+                PromotesTo = [.. piece.PromotesTo],
                 Restrictions = [.. piece.Restrictions.Select(restriction => restriction.Description)],
             }
         );

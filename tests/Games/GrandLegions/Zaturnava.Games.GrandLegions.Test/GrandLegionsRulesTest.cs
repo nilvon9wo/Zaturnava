@@ -232,9 +232,26 @@ public sealed class GrandLegionsRulesTest
 
         // Assert
         Assert.Equal(
-            ("Infantry", 4, "From its start rows, its first move may go two cells straight ahead.",
+            ("Infantry", 2, 2, "From its start rows, its first move may go two cells straight ahead.",
                 "Blocked straight ahead"),
-            (guide.Class, guide.Powers.Count, guide.Powers[2], guide.Restrictions.Single())
+            (guide.Class, guide.Powers.Count, guide.SpecialPowers.Count, guide.SpecialPowers[0],
+                guide.Restrictions.Single())
+        );
+    }
+
+    [Fact]
+    public void GuideOf_WhenAPieceHasAPromotionOfItsOwn_TellsItAsNotYetPlayed()
+    {
+        // Arrange
+        Chaturaji2027Rules rules = GrandLegionsRules.RulesOf(QuickGame.Small);
+
+        // Act
+        PieceGuide guide = rules.GuideOf(GrandLegionsPieces.WesternPawn);
+
+        // Assert
+        Assert.Equal(
+            ("queen rook bishop knight", false),
+            (string.Join(" ", guide.PromotesTo.Select(kind => kind.Value)), guide.IsPromotionPlayed)
         );
     }
 
@@ -242,7 +259,7 @@ public sealed class GrandLegionsRulesTest
     [InlineData("western-king", "Castles with its own Rook (Western): two cells towards it")]
     [InlineData("xiangqi-general", "Flying general: ")]
     [InlineData("janggi-general", "Face-off: ")]
-    public void GuideOf_WhenALeaderWithAPowerOfItsOwn_TellsItAfterLeading(string leader, string power)
+    public void GuideOf_WhenALeaderWithAPowerOfItsOwn_TellsItAsSpecialApartFromLeading(string leader, string power)
     {
         // Arrange
         Chaturaji2027Rules rules = GrandLegionsRules.RulesOf(QuickGame.Small);
@@ -252,8 +269,12 @@ public sealed class GrandLegionsRulesTest
 
         // Assert
         Assert.Equal(
-            ("Leader", 2, true),
-            (guide.Class, guide.Powers.Count, guide.Powers[1].StartsWith(power, StringComparison.Ordinal))
+            ("Leader", "Leads its army", true),
+            (
+                guide.Class,
+                guide.Powers.Single()[..14],
+                guide.SpecialPowers.Single().StartsWith(power, StringComparison.Ordinal)
+            )
         );
     }
 

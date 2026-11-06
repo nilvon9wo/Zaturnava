@@ -44,6 +44,15 @@ public sealed record BoardTurn(int QuarterTurns)
             $"rotate({this.Angle} {frame.Left + (frame.Width / 2)} {frame.Top + (frame.Height / 2)})"
         );
 
+    /// <summary>
+    /// How far, in degrees clockwise on screen, something drawn with forward up is turned to show
+    /// <paramref name="forward"/> as the board, turned so, shows it: 0 for forward up the board, unturned; 90 for
+    /// forward to the right, or forward up, the board turned a quarter clockwise. From 0 to 359.
+    /// </summary>
+    public int AngleOf([Required] DirectionDto forward) =>
+        ((int)Math.Round(Math.Atan2(forward.X, forward.Y) * 180 / Math.PI) + this.Angle + (Full * Degrees))
+        % (Full * Degrees);
+
     /// <summary>The SVG <c>transform</c> turning a label at (x, y) back upright.</summary>
     public string Upright(double x, double y) =>
         string.Create(CultureInfo.InvariantCulture, $"rotate({-this.Angle} {x} {y})");

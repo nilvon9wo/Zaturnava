@@ -217,8 +217,10 @@ drawn simply, a shape for its class and a letter for its kind.
   glance. Next: a symbol for each kind of its own.
 - Telling a player what a piece is and does. *Done* (2026-11-06): hovering over a piece names it, its
   owner and its class; clicking on any piece, the player's or not, tells of it at the side of the
-  window: its name, class and worth, a diagram of where it moves and captures, its special powers,
-  and what holds it back (`IRulesApplying.GuideOf`, `GameViewDto.Kinds`, `PieceCard`). *Proposed*:
+  window: as labelled facts, its owner, square, class and value; a diagram of where it moves and
+  captures, turned as the board shows its army, an arrow at its forward edge; its powers, those every
+  piece of its sort has (common: every leader leads its army) apart from its own (special: castling,
+  say); and what holds it back (`IRulesApplying.GuideOf`, `GameViewDto.Kinds`, `PieceCard`). *Proposed*:
   the diagram is found by the game's own move generator (`MoveDiagrams`): the piece alone on the
   centre of an empty 9 × 9 board, facing up, a dot where it may move, as the board marks one, a ring
   in the danger colour where it may capture, an enemy put on each square in turn; a piece that hops

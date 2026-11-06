@@ -1,29 +1,38 @@
-@* A kind's moves and captures, drawn as the server found them: a small board, the piece on its centre facing up, a dot
-   on each square it may move to, as the board marks one, and a ring, in another colour, on each it may capture on;
-   a square it may do both on has both. A piece it hops over, for a piece that hops, is drawn as a grey disc. Under
-   it, what each mark means. *@
+@* A kind's moves and captures, drawn as the server found them: a small board, the piece on its centre, a dot on each
+   square it may move to, as the board marks one, and a ring, in another colour, on each it may capture on; a square
+   it may do both on has both. A piece it hops over, for a piece that hops, is drawn as a grey disc. The server draws
+   it forward up; it is shown turned by Angle, as the board shows the piece's own army - its forward, and the board's
+   turn - with an arrow at its forward edge, the piece itself kept upright, on a square shaded as the one it stands
+   on on the board (the centre's row and column always sum to an even number). Under it, what each mark means, each
+   mark kept beside its meaning. *@
 
-<div class="move-diagram" style="--side: @this.Diagram.Side" role="img" aria-label="@this.Described">
-    @for (int row = this.Diagram.Side - 1; row >= 0; row--)
-    {
-        @for (int column = 0; column < this.Diagram.Side; column++)
+<div class="move-diagram-turn" style="transform: rotate(@(this.Angle)deg)">
+    <span class="forward-arrow" aria-hidden="true">&#x25B2;</span>
+    <div class="move-diagram" style="--side: @this.Diagram.Side" role="img" aria-label="@this.Described">
+        @for (int row = this.Diagram.Side - 1; row >= 0; row--)
         {
-            int cell = (row * this.Diagram.Side) + column;
-            <span class="@this.ClassOf(cell, row, column)" data-cell="@cell">
-                @if (cell == this.Centre)
-                {
-                    <PieceIcon Kind="@this.Piece.Kind" Name="@this.Piece.Name" Owner="this.Piece.Owner" Mark="this.Piece.Mark" Pieces="this.Pieces" />
-                }
-            </span>
+            @for (int column = 0; column < this.Diagram.Side; column++)
+            {
+                int cell = (row * this.Diagram.Side) + column;
+                <span class="@this.ClassOf(cell, row, column)" data-cell="@cell">
+                    @if (cell == this.Centre)
+                    {
+                        <span class="upright" style="transform: rotate(@(-this.Angle)deg)">
+                            <PieceIcon Kind="@this.Piece.Kind" Name="@this.Piece.Name" Owner="this.Piece.Owner" Mark="this.Piece.Mark" Pieces="this.Pieces" />
+                        </span>
+                    }
+                </span>
+            }
         }
-    }
+    </div>
 </div>
 <p class="diagram-key">
-    <span class="key move"></span> moves
-    <span class="key capture"></span> captures
+    <span class="key-item"><span class="key arrow"></span>forward</span>
+    <span class="key-item"><span class="key move"></span>moves</span>
+    <span class="key-item"><span class="key capture"></span>captures</span>
     @if (!this.Diagram.Screens.IsEmpty)
     {
-        <span class="key screen"></span><text> a piece to hop over</text>
+        <span class="key-item"><span class="key screen"></span>a piece to hop over</span>
     }
 </p>
 
@@ -38,6 +47,17 @@
     [Parameter]
     public PieceSet Pieces { get; set; }
 
+    /// <summary>How far it is turned, in degrees clockwise: none shows forward up.</summary>
+    [Parameter]
+    public int Angle { get; set; }
+
+    /// <summary>
+    /// Whether the piece stands on a dark square on the board: its centre square is shaded so, the others
+    /// alternating from it, as the board's do.
+    /// </summary>
+    [Parameter]
+    public bool IsOnDark { get; set; }
+
     private int Centre => (this.Diagram.Side * this.Diagram.Side) / 2;
 
     /// <summary>For one who cannot see it: how many squares it may move to and capture on.</summary>
@@ -51,7 +71,7 @@
             new[]
             {
                 "square",
-                (row + column) % 2 == 0 ? "dark" : "light",
+                int.IsEvenInteger(row + column) == this.IsOnDark ? "dark" : "light",
                 this.Diagram.Moves.Contains(cell) ? "move" : null,
                 this.Diagram.Captures.Contains(cell) ? "capture" : null,
                 this.Diagram.Screens.Contains(cell) ? "screen" : null,

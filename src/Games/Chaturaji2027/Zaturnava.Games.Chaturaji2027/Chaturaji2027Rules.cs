@@ -337,12 +337,18 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
 
     /// <summary>
     /// How a piece of <paramref name="kind"/> moves, drawn as well (<see cref="MoveDiagrams"/>), and its class and
-    /// what holds it back as the variant tells them, with the powers these rules give it first.
+    /// what holds it back as the variant tells them, with the powers these rules give it first: those every piece of
+    /// its sort has, and its own.
     /// </summary>
     public PieceGuide GuideOf(PieceKindId kind)
     {
         PieceGuide told = this._variant.Guides.GetValueOrDefault(kind) ?? new PieceGuide(this._variant.Kinds[kind]);
-        return told with { Powers = [.. this.PowersOf(kind), .. told.Powers], Diagram = this._diagrams.Of(kind) };
+        return told with
+        {
+            Powers = [.. this.PowersOf(kind), .. told.Powers],
+            SpecialPowers = [.. this.SpecialPowersOf(kind), .. told.SpecialPowers],
+            Diagram = this._diagrams.Of(kind),
+        };
     }
 
     public string NameOf(SeatId seat) => Chaturaji2027Setup.SeatNames[seat.Value];
@@ -368,8 +374,24 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
 
     private DiceRequest RollOffDie => new(RollOffDice, this._dice.Sides);
 
-    /// <summary>The powers these rules give a piece of <paramref name="kind"/>, for people.</summary>
-    private IEnumerable<string> PowersOf(PieceKindId kind)
+    /// <summary>
+    /// The powers these rules give every piece of the sort a piece of <paramref name="kind"/> is, for people: every
+    /// leader's, every Pawn's.
+    /// </summary>
+    private IEnumerable<string> PowersOf(PieceKindId kind) =>
+        new (bool Has, string Power)[]
+            {
+                (this._variant.Leaders.Contains(kind),
+                    "Leads its army; standing on another army's throne, it takes command of that army too."),
+                (this._variant.Pawns.Contains(kind), "Promoted, on reaching the far edge, into a captured piece."),
+                (this._variant.Pawns.Contains(kind),
+                    "Swaps places with an allied Pawn straight ahead of it, the two back to back."),
+            }
+            .Where(power => power.Has)
+            .Select(power => power.Power);
+
+    /// <summary>The powers these rules give <paramref name="kind"/> alone among its sort, for people.</summary>
+    private IEnumerable<string> SpecialPowersOf(PieceKindId kind)
     {
         string rooks = string.Join(
             " or ",
@@ -377,11 +399,6 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         );
         return new (bool Has, string Power)[]
             {
-                (this._variant.Leaders.Contains(kind),
-                    "Leads its army; standing on another army's throne, it takes command of that army too."),
-                (this._variant.Pawns.Contains(kind), "Promoted, on reaching the far edge, into a captured piece."),
-                (this._variant.Pawns.Contains(kind),
-                    "Swaps places with an allied Pawn straight ahead of it, the two back to back."),
                 (this._variant.StartRowPowers.Contains(kind),
                     "From its start rows, its first move may go two cells straight ahead."),
                 (this._variant.StartRowPowers.Contains(kind),

@@ -391,7 +391,10 @@
                            Kind="view.Kinds.Find(kind => kind.Kind == inspected.Kind)"
                            Owner="@view.Seats[inspected.Owner].Name"
                            Cell="@view.Cells.First(cell => cell.Id == inspected.Cell).Name"
+                           IsOnDark="BoardFrame.IsDark(view.Cells.First(cell => cell.Id == inspected.Cell))"
                            Pieces="this.PiecesShown"
+                           Forward="view.Seats[inspected.Owner].Forward"
+                           Turn="this._boardTurn"
                            OnClose="this.PutAway" />
             }
         </div>
