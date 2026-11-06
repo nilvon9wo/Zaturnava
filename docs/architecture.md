@@ -276,6 +276,7 @@ base address (`GameRoutes`):
 | Who stands highest at a game | `GET api/leaderboards/{game}` | `StandingDto[]`: up to 100 players, best first by Elo, then experience; counted by `StandingSweeper` every `Standings:SweepSeconds` (default 60) from the games over not yet counted |
 | Let a bot or a timer decide | `POST api/games/{id}/advance` with `AdvanceRequest` (the version the caller saw) | `GameViewDto` after one bot decision, or the timer's decision once a timed one has run out of time; unchanged if the version is stale or neither is due |
 | Claim an open seat | `POST api/games/{id}/seats/{seat}` | `SeatClaimedDto` with the seat's token |
+| Take back one's own seat, from any device | `POST api/games/{id}/seats/{seat}/take-back`, `Authorization: Bearer {player token}` of the player who claimed it | `SeatClaimedDto` with a new token; the old one holds the seat no more |
 | Act | `POST api/games/{id}/actions` with `ActionDto`, `Authorization: Bearer {token}` | `GameViewDto` after the action and any bot replies |
 | What was said at the table | `GET api/games/{id}/chat?after={n}`, the token optional | `ChatMessageDto[]` after message `n`: what was said to the table, and to the token holder's team |
 | Say something | `POST api/games/{id}/chat` with `SayRequest` (`table` or `team`, and the words), `Authorization: Bearer {token}` | `ChatMessageDto`, numbered within its table |

@@ -66,6 +66,9 @@ public static class GameRoutes
     public static string Seat([Required] string gameId, int seat) =>
         $"{Game(gameId)}/seats/{seat.ToString(CultureInfo.InvariantCulture)}";
 
+    /// <summary>Where a signed-in player takes back the seat they claimed, from any device, for a new token.</summary>
+    public static string TakeBack([Required] string gameId, int seat) => $"{Seat(gameId, seat)}/take-back";
+
     public static string Actions([Required] string gameId) => $"{Game(gameId)}/actions";
 
     public static string Advance([Required] string gameId) => $"{Game(gameId)}/advance";

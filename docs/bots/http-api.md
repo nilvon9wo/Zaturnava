@@ -18,6 +18,7 @@ server is at `https://zaturnava.runasp.net/`.
 | Create a game | `POST api/games` | `201`, `{"gameId": "..."}` |
 | Claim a seat | `POST api/games/{id}/seats/{seat}`, with a player token or none, and a guest's nickname or none | `{"token": "..."}` |
 | Say anew who holds a seat | `PUT api/games/{id}/seats/{seat}`, with a player token or none, and the seat's token and a guest's nickname or none | `204` |
+| Take back your own seat, from any device | `POST api/games/{id}/seats/{seat}/take-back`, with the token of the player who claimed it (not for a seat their AI plays); the seat's old token holds it no more | `{"token": "..."}` |
 | A game | `GET api/games/{id}` | The game as it stands ([the view](#the-view)) |
 | Act | `POST api/games/{id}/actions`, with the seat's token | The game after it |
 | Let a bot (or a timer) decide | `POST api/games/{id}/advance` | The game after one decision |

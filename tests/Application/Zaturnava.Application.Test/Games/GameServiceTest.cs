@@ -416,6 +416,53 @@ public sealed class GameServiceTest
     }
 
     [Fact]
+    public async Task TakeBack_WhenThePlayerClaimedTheSeat_HandsThemATokenForItAndTheOldOneNoMore()
+    {
+        // Arrange
+        PlayerId ada = new("ada");
+        GameId id = await this._service.Create(TinyRules.RulesetId, [SeatPlan.Open, Bot], this._cancellation);
+        string old = await this._service.Claim(id, First, ada, null, this._cancellation);
+
+        // Act
+        string token = await this._service.TakeBack(id, First, ada, this._cancellation);
+
+        // Assert
+        HumanSeat seat = (HumanSeat)(await this._service.Get(id, this._cancellation)).Record.Controllers[0];
+        Assert.Equal((true, false, ada), (seat.IsHeldBy(token), seat.IsHeldBy(old), seat.Claimant));
+    }
+
+    [Theory]
+    [InlineData("someone else's")]
+    [InlineData("a guest's")]
+    [InlineData("their AI's")]
+    [InlineData("a bot's")]
+    [InlineData("no seat")]
+    public async Task TakeBack_WhenTheSeatIsNotOneThePlayerPlays_Refuses(string whose)
+    {
+        // Arrange
+        PlayerId ada = new("ada");
+        GameId id = await this._service.Create(TinyRules.RulesetId, [SeatPlan.Open, Bot], this._cancellation);
+        _ = whose switch
+        {
+            "someone else's" => await this._service.Claim(id, First, new PlayerId("bob"), null, this._cancellation),
+            "a guest's" => await this._service.Claim(id, First, this._cancellation),
+            _ => await this._service.Claim(id, First, ada, null, true, this._cancellation),
+        };
+        SeatId seat = whose switch
+        {
+            "a bot's" => Second,
+            "no seat" => new SeatId(7),
+            _ => First,
+        };
+
+        // Act
+        Task<string> taking = this._service.TakeBack(id, seat, ada, this._cancellation);
+
+        // Assert
+        _ = await Assert.ThrowsAsync<NotYourSeatException>(() => taking);
+    }
+
+    [Fact]
     public async Task Identify_WhenTheTokenDoesNotHoldTheSeat_Refuses()
     {
         // Arrange

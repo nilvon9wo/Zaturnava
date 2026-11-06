@@ -863,6 +863,56 @@ public sealed class LobbyTest : IDisposable
     }
 
     [Fact]
+    public void TakeBack_WhenThePlayerSignedInClaimedASeatThisBrowserDoesNotHold_TakesItBackForANewToken()
+    {
+        // Arrange
+        this.SignInAsAdaAtYellow();
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Act
+        lobby.Find("button.take-back").Click();
+
+        // Assert
+        Assert.Equal(
+            ("Back to Yellow", new Seating(FakeGameServer.GameId, new SeatClaim(1, FakeGameServer.Token))),
+            (lobby.Find("button.take-back").TextContent.Trim(), this._seated)
+        );
+        Assert.Contains($"take back {FakeGameServer.GameId} 1 player", this._page.Server.Calls);
+    }
+
+    [Fact]
+    public void Render_WhenThePlayerSignedInPlaysNoSeat_OffersNoneToTakeBack()
+    {
+        // Arrange
+        this.SignInAsAdaAtYellow();
+        this._page.Server.Players = this._page.Server.Players.SetItem("player", new PlayerDto("bob", "Bob"));
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Assert
+        Assert.Empty(lobby.FindAll("button.take-back"));
+    }
+
+    [Fact]
+    public void TakeBack_WhenRefused_SaysWhyAndStaysInTheLobby()
+    {
+        // Arrange
+        this.SignInAsAdaAtYellow();
+        IRenderedComponent<Lobby> lobby = this.Render();
+        this._page.Server.Failure = new GameRequestRefusedException(Refusal.Forbidden, "Not your seat.");
+
+        // Act
+        lobby.Find("button.take-back").Click();
+
+        // Assert
+        Assert.Equal(
+            ((Seating?)null, "Not your seat."),
+            (this._seated, lobby.Find("p.problem").TextContent)
+        );
+    }
+
+    [Fact]
     public void Resume_WhenThePlayerSignedInOrChoseANicknameSince_SaysSoAtTheSeat()
     {
         // Arrange
@@ -1341,4 +1391,15 @@ public sealed class LobbyTest : IDisposable
 
     private IRenderedComponent<Lobby> Render() =>
         this._page.Render<Lobby>(parameters => parameters.Add(x => x.OnSeated, seating => this._seated = seating));
+
+    /// <summary>Ada signed in, by the token "player", playing Yellow themselves at the game listed.</summary>
+    private void SignInAsAdaAtYellow()
+    {
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.player").SetResult("player");
+        this._page.Server.Players = this._page.Server.Players.SetItem("player", new PlayerDto("ada", "Ada"));
+        this._page.Server.Games =
+        [
+            .. this._page.Server.Games.Select(game => game with { PlayerIds = [null, "ada", null, null] }),
+        ];
+    }
 }

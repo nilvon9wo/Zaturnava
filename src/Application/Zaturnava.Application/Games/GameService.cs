@@ -343,6 +343,31 @@ public sealed class GameService(
     }
 
     /// <summary>
+    /// Hands <paramref name="player"/> a new token for the seat they claimed signed in, wherever they claimed it from
+    /// (Stated): the token the seat was held by holds it no more (Proposed). A seat their AI plays is the AI's, and
+    /// stays so (Proposed).
+    /// </summary>
+    /// <exception cref="GameNotFoundException">There is no such game.</exception>
+    /// <exception cref="NotYourSeatException">The player did not claim the seat, or their AI plays it.</exception>
+    public async Task<string> TakeBack(GameId id, SeatId seat, PlayerId player, CancellationToken cancellationToken)
+    {
+        GameRecord record = await this.Load(id, cancellationToken);
+        HumanSeat held = record.Controllers.ElementAtOrDefault(seat.Value) is HumanSeat { IsAi: false } person
+            && person.Claimant == player
+                ? person
+                : throw new NotYourSeatException(id, seat);
+        string token = SeatTokens.Issue();
+        await this.Save(
+            record.Next() with
+            {
+                Controllers = record.Controllers.SetItem(seat.Value, held with { TokenHash = SeatTokens.Hash(token) }),
+            },
+            cancellationToken
+        );
+        return token;
+    }
+
+    /// <summary>
     /// Fills the open seats of a game waiting for people with bots, for the person whose seat <paramref name="token"/>
     /// holds, if they may now (<see cref="Vacancy"/>): each with a bot not already seated, at random, never one paid
     /// for each use; a seat no bot is left for stays open. The game begins, if no seat is left open, and the bots due

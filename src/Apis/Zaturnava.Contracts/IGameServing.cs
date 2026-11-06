@@ -63,6 +63,18 @@ public interface IGameServing
     );
 
     /// <summary>
+    /// Takes back the seat the player whose token <paramref name="playerToken"/> is claimed, signed in, from wherever
+    /// they claimed it: the token returned holds it from now on, and the one it was held by no more. Refused for a
+    /// seat they did not claim, or one their AI plays.
+    /// </summary>
+    Task<SeatClaimedDto> TakeBack(
+        [Required] string gameId,
+        int seat,
+        [Required] string playerToken,
+        CancellationToken cancellationToken
+    );
+
+    /// <summary>
     /// Has bots take the open seats of a game waiting for people, for the player whose seat <paramref name="token"/>
     /// holds, once they may (<see cref="VacancyDto"/>); the game begins, if no seat is left open.
     /// </summary>

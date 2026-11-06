@@ -58,6 +58,12 @@ internal static class GameViews
         )
         {
             SeatNames = [.. game.Controllers.Select((_, seat) => rules.NameOf(new SeatId(seat)))],
+            PlayerIds =
+            [
+                .. game.Controllers.Select(controller =>
+                    controller is HumanSeat { IsAi: false, Claimant: { } claimant } ? claimant.Value : null
+                ),
+            ],
             IsOver = game.IsOver,
             Created = game.Created,
             LastChanged = game.LastChanged,

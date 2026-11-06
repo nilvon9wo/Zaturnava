@@ -25,6 +25,12 @@ public sealed record GameSummaryDto(
 
     public ImmutableList<string> SeatNames { get; init; } = [];
 
+    /// <summary>
+    /// For each seat a signed-in player plays themselves, not by an AI, their id (<see cref="SeatDto.PlayerId"/>); null
+    /// for the others. Such a player may take their seat back from any device (<see cref="GameRoutes.TakeBack"/>).
+    /// </summary>
+    public ImmutableList<string?> PlayerIds { get; init; } = [];
+
     public bool IsOver { get; init; }
 
     public DateTimeOffset? Created { get; init; }

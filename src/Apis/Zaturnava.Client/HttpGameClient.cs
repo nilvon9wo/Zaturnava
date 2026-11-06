@@ -96,6 +96,20 @@ public sealed class HttpGameClient(HttpClient http) : IGameServing
         }
     }
 
+    public Task<SeatClaimedDto> TakeBack(
+        [Required] string gameId,
+        int seat,
+        [Required] string playerToken,
+        CancellationToken cancellationToken
+    ) =>
+        this.Send<SeatClaimedDto>(
+            HttpMethod.Post,
+            GameRoutes.TakeBack(gameId, seat),
+            null,
+            playerToken,
+            cancellationToken
+        );
+
     public Task<GameViewDto> FillOpenSeats(
         [Required] string gameId,
         [Required] string token,

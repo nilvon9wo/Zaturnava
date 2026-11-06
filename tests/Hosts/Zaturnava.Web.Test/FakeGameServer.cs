@@ -191,6 +191,17 @@ internal sealed class FakeGameServer : IGameServing
     /// <summary>Each seat said anew to be held, in order: "{game} {seat} {token} {player token} {nickname}".</summary>
     public ConcurrentQueue<string> Identified { get; } = new();
 
+    public Task<SeatClaimedDto> TakeBack(
+        [Required] string gameId,
+        int seat,
+        [Required] string playerToken,
+        CancellationToken cancellationToken
+    ) =>
+        this.Answer(
+            $"take back {gameId} {seat.ToString(CultureInfo.InvariantCulture)} {playerToken}",
+            new SeatClaimedDto(Token)
+        );
+
     public Task Identify(
         [Required] string gameId,
         int seat,

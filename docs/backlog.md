@@ -36,6 +36,9 @@ first.
   - **N20** A signed-in player may take back their own seat from any device, signed in as themselves
     (*Stated* 2026-11-06), so that the reminder can list every game waiting for them, wherever they claimed
     it. *Proposed*: the server hands that browser a new token for the seat, and the old one no longer works.
+    *Done*: in the lobby, a game whose seat the player signed in claimed, and this browser does not hold, has a
+    **Back to** button, which takes the seat back (`POST api/games/{id}/seats/{seat}/take-back`). A seat their
+    AI plays stays the AI's (*Proposed*).
 - **N24** Athena takes Pawns with its Raja and Rook (Elephant) when that only loses them: not a real sacrifice.
   *Done*: Athena now subtracts a twentieth of what an enemy could take next from its network's judgement
   (*Proposed* weight). Against Sage it went from about 63 Elo behind to about 17 behind.
