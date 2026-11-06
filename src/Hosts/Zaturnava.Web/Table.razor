@@ -668,7 +668,9 @@
     private string Hint(BoardActions actions) =>
         (this._selection.Choice, actions.Origins.IsEmpty, actions.OffBoard.IsEmpty && actions.Choices.IsEmpty) switch
         {
-            ({ }, _, _) => "Pick a marked square to bring it back there; anywhere else leaves it a prisoner.",
+            ({ }, _, _) =>
+                "Now pick its destination: click a blinking circle to bring it back there, "
+                + "or any other square to cancel.",
             (_, true, _) => "Choose what to do:",
             (_, _, true) => "Pick a ringed piece, then a marked square.",
             _ => "Move a ringed piece (pick it, then a marked square), or:",

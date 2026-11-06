@@ -548,7 +548,7 @@ public sealed class TableTest : IDisposable
     }
 
     [Fact]
-    public void Choose_WhenAPrisonerMayEscape_OffersItOnceAndMarksItsSquaresRingingAPieceItWouldTake()
+    public void Choose_WhenAPrisonerMayEscape_OffersItOnceAndBlinksItsSquaresRingingAPieceItWouldTake()
     {
         // Arrange - Black's Boat, held by Yellow, may escape to cell 2, or to 3, taking Yellow's Pawn there
         this.Escapable();
@@ -558,9 +558,10 @@ public sealed class TableTest : IDisposable
         table.Find("button.choose").Click();
 
         // Assert
-        const string hint = "Pick a marked square to bring it back there; anywhere else leaves it a prisoner.";
+        const string hint =
+            "Now pick its destination: click a blinking circle to bring it back there, or any other square to cancel.";
         Assert.Equal(
-            (1, "true", false, true, true, "mark|mark capture", hint),
+            (1, "true", false, true, true, "mark placing|mark capture placing", hint),
             (
                 table.FindAll("button.choose").Count,
                 table.Find("button.choose").GetAttribute("aria-pressed"),
