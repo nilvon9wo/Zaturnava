@@ -98,6 +98,24 @@ public sealed class LobbyTest : IDisposable
     }
 
     [Fact]
+    public void ShowPreviews_WhenAPreviewOfSeveralSizesIsChosen_KeepsTheChoiceWithTheGamesAboveTheSize()
+    {
+        // Arrange
+        this._page.Server.MoreRulesets = PreviewSizes;
+        IRenderedComponent<Lobby> lobby = this.Render();
+        lobby.Find("input.show-previews").Change(true);
+
+        // Act
+        lobby.Find("select.game").Change("grand-legions");
+
+        // Assert
+        Assert.Equal(
+            ["game", "show-previews", "size"],
+            lobby.FindAll(".choices select, .choices input").Select(field => field.ClassName)
+        );
+    }
+
+    [Fact]
     public void ShowPreviews_WhenUntickedWithOneChosenAndListed_GoesBackToTheFirstGameShownAndAnyInTheList()
     {
         // Arrange
