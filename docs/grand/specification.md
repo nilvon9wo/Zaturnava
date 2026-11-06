@@ -277,7 +277,8 @@ on, with what follows in place of the Raja-and-dice parts.
   and back on.
 - **Stated — a piece's own promotion.** A piece that meets its own promotion condition (a Shogi
   piece in the far three ranks, a Makruk Pawn on the sixth rank, a Western Pawn on the last rank)
-  is promoted free.
+  is promoted free. *(Stated 2026-11-06)* Here the Makruk Pawn's sixth rank is any enemy kingdom
+  it enters, which follows the board's and kingdoms' sizes.
 - **Stated.** Every promotion is optional, and may be put off for as long as its condition holds:
   a player who expects the piece to be captured at once need not hand its captor the dearer score.
 - **Stated.** An Infantry piece with a promotion of its own (a Western Pawn) chooses, at the far

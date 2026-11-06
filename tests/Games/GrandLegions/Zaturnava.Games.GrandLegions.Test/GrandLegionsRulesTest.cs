@@ -308,7 +308,7 @@ public sealed class GrandLegionsRulesTest
     [Theory]
     [InlineData("western-pawn", "queen rook bishop knight", "on the last row")]
     [InlineData("shogi-pawn", "gold-general", "in the far 3 rows")]
-    [InlineData("makruk-pawn", "courtier", "in the far 3 rows")]
+    [InlineData("makruk-pawn", "courtier", "in an enemy kingdom")]
     public void GuideOf_WhenAPieceHasAPromotionOfItsOwn_TellsItAsPlayedAndWhere(
         string kind,
         string into,
@@ -358,6 +358,29 @@ public sealed class GrandLegionsRulesTest
         // Arrange
         Chaturaji2027Rules rules = GrandLegionsRules.RulesOf(QuickGame.Small);
         GameState state = BlackDeciding(rules, (Ahead(rules, rowsAhead), BlackPiece(GrandLegionsPieces.ShogiPawn)));
+
+        // Act
+        int offered = rules.LegalActions(state).OfType<PromoteOwnAction>().Count();
+
+        // Assert
+        Assert.Equal(expected, offered);
+    }
+
+    [Theory]
+    [InlineData(0, 0)]
+    [InlineData(1, 1)]
+    [InlineData(2, 0)]
+    [InlineData(3, 1)]
+    public void LegalActions_WhenAMakrukPawnStandsInAKingdom_OffersACourtierOnlyInAnEnemys(int seat, int expected)
+    {
+        // Arrange - Black's Makruk Pawn amid a seat's kingdom: its own, Yellow's, Green's (its ally's) or Red's
+        QuickGame game = QuickGame.Small;
+        Chaturaji2027Rules rules = GrandLegionsRules.RulesOf(game);
+        Kingdom kingdom = new GrandBoard(game.Side, game.Side, game.KingdomWidth, game.KingdomDepth).Kingdoms[seat];
+        CellId amid = new(
+            ((kingdom.Row + (kingdom.Height / 2)) * game.Side) + kingdom.Column + (kingdom.Width / 2)
+        );
+        GameState state = BlackDeciding(rules, (amid, BlackPiece(GrandLegionsPieces.MakrukPawn)));
 
         // Act
         int offered = rules.LegalActions(state).OfType<PromoteOwnAction>().Count();

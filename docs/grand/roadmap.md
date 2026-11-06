@@ -191,11 +191,10 @@ drawn simply, a shape for its class and a letter for its kind.
   holds. *Done* (2026-11-06, `PromoteOwnAction`, `OwnPromotion`): a Western Pawn on the last row may
   become a Queen, Rook, Bishop or Knight; a Shogi Pawn, Lance or Silver General in the far three rows
   a Gold General, a leader, so an army may gain leaders; a Makruk Pawn a Courtier. The piece stays
-  itself, its army's, and scores as what it became. For now the Makruk Pawn's "sixth rank" is
-  taken as the sixth or beyond, so the far three rows on any board; rows are counted along the
-  army's forward, as the far edge is. *Stated (2026-11-06), still to build*: the Makruk Pawn
-  promotes on entering an enemy kingdom instead, which follows the board's and kingdoms' sizes; the
-  other pieces keep their own rows. A piece that moves to where it may be promoted waits on that
+  itself, its army's, and scores as what it became. Rows are counted along the army's forward, as
+  the far edge is. *Stated (2026-11-06), done*: the Makruk Pawn promotes in an enemy kingdom (any
+  seat's its army is not allied with), which follows the board's and kingdoms' sizes; the other
+  pieces keep their own rows. A piece that moves to where it may be promoted waits on that
   choice, as a Pawn come to the far edge does ("Promote later" puts it off); otherwise a promotion
   may be taken at the start of a turn, or between moves. Promoting a piece of an enemy army one
   commands takes a die that moves it, as the far-edge promotion does. A retired seat's piece is not

@@ -10,7 +10,7 @@ namespace Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027.Test;
 
 /// <summary>
 /// A piece's own promotion, in a variant where a Pawn may become an Elephant or a Boat in the far two rows, and a
-/// Horse an Elephant on the last row.
+/// Horse an Elephant on the last row, and an Elephant a Boat on the a-file.
 /// </summary>
 public sealed class OwnPromotionTest
 {
@@ -23,7 +23,15 @@ public sealed class OwnPromotionTest
                 Chaturaji2027Pieces.Pawn,
                 new OwnPromotion([Chaturaji2027Pieces.Elephant, Chaturaji2027Pieces.Boat], 2)
             )
-            .Add(Chaturaji2027Pieces.Horse, new OwnPromotion([Chaturaji2027Pieces.Elephant], 1)),
+            .Add(Chaturaji2027Pieces.Horse, new OwnPromotion([Chaturaji2027Pieces.Elephant], 1))
+            .Add(
+                Chaturaji2027Pieces.Elephant,
+                new OwnPromotion([Chaturaji2027Pieces.Boat], 0)
+                {
+                    Zone = (_, grid, _, cell) => grid.ColumnOf(cell) == 0,
+                    Where = "on the a-file",
+                }
+            ),
     };
 
     private readonly Chaturaji2027Rules _rules = new(
@@ -36,6 +44,7 @@ public sealed class OwnPromotionTest
     [Theory]
     [InlineData("pawn", "elephant boat", "in the far 2 rows")]
     [InlineData("horse", "elephant", "on the last row")]
+    [InlineData("elephant", "boat", "on the a-file")]
     public void GuideOf_WhenAKindHasAPromotionOfItsOwn_TellsWhatAndWhereAsPlayed(
         string kind,
         string into,
@@ -74,6 +83,21 @@ public sealed class OwnPromotionTest
             expected,
             string.Join(" ", actions.OfType<PromoteOwnAction>().Select(promotion => promotion.Becomes.Value))
         );
+    }
+
+    [Theory]
+    [InlineData(0, 1)]
+    [InlineData(2, 0)]
+    public void LegalActions_WhenAPromotionHasAZone_OffersItOnlyThereWhateverTheRows(int column, int expected)
+    {
+        // Arrange - Black's Elephant on the fourth row, on the a-file or the c-file
+        GameState state = this.BlackDeciding(new CellId(24 + column), Chaturaji2027Pieces.Elephant);
+
+        // Act
+        int offered = this._rules.LegalActions(state).OfType<PromoteOwnAction>().Count();
+
+        // Assert
+        Assert.Equal(expected, offered);
     }
 
     [Fact]

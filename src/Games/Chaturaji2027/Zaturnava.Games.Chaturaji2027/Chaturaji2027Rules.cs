@@ -397,7 +397,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             {
                 PromotesTo = own.Into,
                 IsPromotionPlayed = true,
-                PromotesWhere = own.Ranks == 1 ? "on the last row" : $"in the far {own.Ranks} rows",
+                PromotesWhere = own.Where ?? (own.Ranks == 1 ? "on the last row" : $"in the far {own.Ranks} rows"),
             }
             : drawn;
     }
@@ -599,15 +599,20 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
 
     /// <summary>
     /// A piece with a promotion of its own (<see cref="Chaturaji2027Variant.OwnPromotions"/>), standing within its
-    /// rows of the far edge, may become any kind it names, for its own army, free (specification §6.2); a retired
-    /// seat's, which no one moves, may not.
+    /// rows of the far edge, or its zone, may become any kind it names, for its own army, free (specification
+    /// §6.2); a retired seat's, which no one moves, may not.
     /// </summary>
     private IEnumerable<PromoteOwnAction> OwnPromotionsOf(GameState state, SeatId seat, CellId cell, Piece piece) =>
         this._variant.OwnPromotions.TryGetValue(piece.Kind, out OwnPromotion? own)
-        && this.RowsAhead(cell, state.SeatOf(piece.Owner).Forward) < own.Ranks
+        && this.IsWhereOwnPromotes(state, own, cell, piece)
         && !state.Retired.Contains(piece.Owner)
             ? own.Into.Select(kind => new PromoteOwnAction(seat, cell, kind))
             : [];
+
+    private bool IsWhereOwnPromotes(GameState state, OwnPromotion own, CellId cell, Piece piece) =>
+        own.Zone is { } zone
+            ? zone(state, this._grid, piece, cell)
+            : this.RowsAhead(cell, state.SeatOf(piece.Owner).Forward) < own.Ranks;
 
     /// <summary>
     /// Each Pawn (each piece of the variant's <see cref="Chaturaji2027Variant.Promotables"/>) that stands on the far
