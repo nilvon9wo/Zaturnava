@@ -12,8 +12,10 @@ listed in [pieces.md](pieces.md). How the work is to be done, in stages, is in
 Every rule below is marked by where it stands:
 
 - **Stated**: the designer has said so.
-- **Proposed**: a suggestion, to fill a gap; not decided until the designer agrees.
-- **Q*n***: an open question, listed in full in [§9](#9-open-questions).
+- **Proposed**: a choice made to fill a gap, without the designer's word. It stands, and waits on no answer;
+  the designer may overrule it whenever they like, and it then becomes *Stated*.
+- **Q*n***: an open question, listed in full in [§9](#9-open-questions); every one still open is also in
+  [open questions](../open-questions.md).
 
 ## 1. Overview
 
