@@ -470,13 +470,14 @@
 
     <footer class="bar table-bar">
         <span class="where">
+            @* first, so that no long name or terrain ever pushes it out of sight *@
+            <button class="leave" @onclick="this.OnLeave">Lobby</button>
             <span class="brand">@(this._view?.RulesetName ?? "Zaturnava")</span>
             @if (this._view?.Terrain is { } terrain)
             {
                 <span class="terrain">@terrain</span>
             }
             @this.HowToPlay
-            <button class="leave" @onclick="this.OnLeave">Lobby</button>
         </span>
         @if (this._view is { } shown)
         {
@@ -604,6 +605,10 @@
 
     [Parameter]
     public EventCallback OnLeave { get; set; }
+
+    /// <summary>The game's ruleset, told once it is first shown: so that the leaderboard opens at it.</summary>
+    [Parameter]
+    public EventCallback<string> OnRuleset { get; set; }
 
     /// <summary>The player sat at (or watching) another game, started from this one once it is over.</summary>
     [Parameter]
@@ -1196,6 +1201,7 @@
         this._notice = this.NoticeOf(view, isFirst, wasTheirTurn);
         this._heard = view.Log.Count > 0 ? view.Log[^1].Number : this._heard;
         await (!sounds.IsEmpty && this.IsSoundOn ? this.Browser.Play(sounds) : ValueTask.CompletedTask);
+        await (isFirst ? this.OnRuleset.InvokeAsync(view.RulesetId) : Task.CompletedTask);
         _ = this._poll.Change(this.Wait(view), Timeout.InfiniteTimeSpan);
     }
 

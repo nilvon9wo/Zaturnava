@@ -13,7 +13,8 @@ first.
 - **N3** A leaderboard, for players to compete for; with each player's Elo and their **experience**: each time
   a player is on the winning team, they gain their own points plus their team's (*Stated*). Each player's
   statistics also count the games they won, lost, drew and abandoned (*Stated*). *Done*: a **Leaderboard**
-  button in the page's bar lists, game by game, the top 100 signed-in players by Elo, with their experience and
+  button in the page's bar lists, game by game (opening at the table's game, else the game last started:
+  *Stated*), the top 100 signed-in players by Elo, with their experience and
   games won, lost, drawn and abandoned. A game is abandoned by a player while it is not over, has no guest at it
   (such games are purged instead), has been untouched for 24 hours, and waits for that player's own move; waiting
   for someone else's, it counts for no one, and once the player moves it counts no more (*Stated* 2026-11-06).

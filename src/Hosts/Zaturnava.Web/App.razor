@@ -18,6 +18,7 @@
            PageSettings="this.Settings"
            HowToPlay="this.HowToPlay"
            OnLeave="this.Leave"
+           OnRuleset="this.AtRuleset"
            OnSeated="this.Sit" />
 }
 else
@@ -48,11 +49,12 @@ else
 
 @if (this._isLeaderboardOpen)
 {
-    <Leaderboard OnClose="this.CloseLeaderboard" />
+    <Leaderboard OnClose="this.CloseLeaderboard" RulesetId="@(this._seating is null ? null : this._rulesetId)" />
 }
 
 @code {
     private Seating? _seating;
+    private string? _rulesetId;
     private string _theme = Browser.Dark;
     private bool _isSoundOn = true;
     private bool _isSafetyOn = true;
@@ -126,6 +128,9 @@ else
     }
 
     private void Leave() => this._seating = null;
+
+    /// <summary>The ruleset of the table the player is at, for the leaderboard to open at.</summary>
+    private void AtRuleset(string rulesetId) => this._rulesetId = rulesetId;
 
     /// <summary>
     /// The lobby anew, for whoever is signed in now: the games waiting for them, the seats they may take back.
