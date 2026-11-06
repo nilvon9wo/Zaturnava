@@ -26,6 +26,12 @@ public sealed record AwayVoting(
 
     public bool IsAgreed => this.Voters.All(this.Stopping.Contains);
 
+    /// <summary>Whether <see cref="Absent"/> decides now: a seat away may be voted on while another does.</summary>
+    public bool IsDeciding { get; init; }
+
+    /// <summary>Whether the seat's turn passes, <see cref="GraceLeft"/> from now: it decides, and all agree.</summary>
+    public bool IsPassing => this.IsDeciding && this.IsAgreed;
+
     /// <summary>The first person to have taken a seat at the game; none, if no one has.</summary>
     public SeatId? FirstArrival { get; init; }
 

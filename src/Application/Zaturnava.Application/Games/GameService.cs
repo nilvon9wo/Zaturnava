@@ -546,24 +546,45 @@ public sealed class GameService(
         }
 
         DecisionTimer? timer = snapshot.Rules.TimerOf(snapshot.State);
-        AwayVoting? away = timer is null ? this.AwayVotingOf(snapshot) : null;
+        AwayVoting? away = this.AwayVotingOf(snapshot, timer is null);
         return (timer, away) switch
         {
-            ({ }, _) => snapshot with { TimeLeft = this.TimeLeft(snapshot.Record, timer) },
-            (_, { IsAgreed: true }) => snapshot with { Away = away, TimeLeft = away.GraceLeft },
+            ({ }, _) => snapshot with { Away = away, TimeLeft = this.TimeLeft(snapshot.Record, timer) },
+            (_, { IsPassing: true }) => snapshot with { Away = away, TimeLeft = away.GraceLeft },
             _ => snapshot with { Away = away },
         };
     }
 
     /// <summary>
-    /// The vote on waiting for the deciding seat, if a person (or no one yet) plays it and other people
-    /// still play; its grace runs from when this host first saw it so waited for.
+    /// The vote on waiting for a seat a person (or no one yet) plays, while other people still play: one whose turns
+    /// have passed while it was away, until it says it is back, the deciding seat first, whoever decides and however
+    /// (Proposed), so that the others may have a bot play for it on their own turns too; else the deciding seat, if no
+    /// timer limits its decision.
     /// </summary>
-    private AwayVoting? AwayVotingOf(GameSnapshot snapshot)
+    private AwayVoting? AwayVotingOf(GameSnapshot snapshot, bool isUntimed)
+    {
+        GameState state = snapshot.State;
+        Absence absence = state.Absence;
+        IEnumerable<SeatId> away = state.Seats
+            .Select(seat => seat.Id)
+            .Where(seat => absence.MissedBy(seat) > 0 && !absence.Returning.Contains(seat))
+            .OrderBy(seat => seat != state.DecidingSeat);
+        IEnumerable<SeatId> deciding = (isUntimed, state.DecidingSeat) is (true, { } decider) ? [decider] : [];
+        return away
+            .Concat(deciding)
+            .Where(seat => snapshot.Record.Controllers[seat.Value] is not BotSeat)
+            .Select(seat => this.VotingOn(snapshot, seat))
+            .FirstOrDefault(voting => !voting.Voters.IsEmpty);
+    }
+
+    /// <summary>
+    /// The vote on waiting for <paramref name="absent"/>; its grace runs from when this host first saw it so waited
+    /// for.
+    /// </summary>
+    private AwayVoting VotingOn(GameSnapshot snapshot, SeatId absent)
     {
         GameState state = snapshot.State;
         GameRecord record = snapshot.Record;
-        SeatId absent = state.DecidingSeat.GetValueOrDefault();
         ImmutableList<SeatId> voters =
         [
             .. state.Seats
@@ -583,20 +604,16 @@ public sealed class GameService(
         TimeSpan grace = hasGrace ? this._settings.AwayGrace : TimeSpan.Zero;
         DateTimeOffset end = this._clock.WaitingSince(record.Id, wait) + grace;
         TimeSpan left = TimeSpan.FromTicks(Math.Max(0, (end - this._clock.Now).Ticks));
-        bool isWaited = state.DecidingSeat is not null
-            && record.Controllers[absent.Value] is not BotSeat
-            && !voters.IsEmpty;
-        return isWaited
-            ? new AwayVoting(absent, voters, absence.StoppingFor(absent), left)
-            {
-                FirstArrival = FirstArrivalOf(record),
-                UntilAnyoneReplaces = this.Left(
-                    this._clock.AbsentSince(record.Id, AbsenceOf(record, absent))
-                        + this._settings.AwayGrace
-                        + this._settings.ReplaceWait
-                ),
-            }
-            : null;
+        return new AwayVoting(absent, voters, absence.StoppingFor(absent), left)
+        {
+            FirstArrival = FirstArrivalOf(record),
+            IsDeciding = state.DecidingSeat.Equals(absent),
+            UntilAnyoneReplaces = this.Left(
+                this._clock.AbsentSince(record.Id, AbsenceOf(record, absent))
+                    + this._settings.AwayGrace
+                    + this._settings.ReplaceWait
+            ),
+        };
     }
 
     /// <summary>
