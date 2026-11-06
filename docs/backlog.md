@@ -49,9 +49,15 @@ first.
     Bishop, Knight), and the elephants the elephant; like pieces have like symbols (Stated; see
     [spec §8](grand/specification.md#8-the-page)). A class's emblem with letters, as first done, was not
     playable alone; the class's emblem is now drawn small beneath the symbol, so that the class is told too, with
-    every piece's own abbreviation beside it (the Pawns' Sh, W and M and Soldiers' SJ and SX as asked; the rest
-    *Proposed*). Still to come: lifts as small badges above the symbol, once a piece's lifted restrictions are kept
-    in the game.
+    every piece's own abbreviation beside it (Stated). Still to come: lifts as small badges above the symbol, one
+    per kind of restriction, once a piece's lifted restrictions are kept in the game.
+  - **N30** Go through the catalogue for discrepancies between a piece's price and its worth, like the Shogi
+    Pawn's (intended): each to be made intended (a good or bad investment, noted as such) or fixed in the value
+    formula ([pieces.md](grand/pieces.md#still-open)).
+  - **N31** The Makruk Pawn promotes on entering an enemy kingdom, not in the far three rows (Stated
+    2026-11-06; [roadmap](grand/roadmap.md)).
+  - **N32** A bot gives up by what is left on the board, not by a lead ×10 (Stated 2026-11-06;
+    [rules §10](rules.md)), weighing the gap against the hope, as Stated there.
 - **N29** (low) An encyclopedia of pieces: each piece's name here, its other names, the games it comes from
   (Chess, Xiangqi...), the games here that use it, its variants (kinds of Pawn, of Elephant...), and how it
   moves, captures and what else it may do.

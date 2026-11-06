@@ -227,7 +227,7 @@ Together, **Q20** of the [specification](specification.md#9-open-questions).
   may become leaders. A discrepancy between a piece's price and its strength is not wrong in itself
   (it may be a good or a bad investment), but it should be intended, not an accident of the formula.
   Still to do: go through the catalogue for other discrepancies, even less obvious ones, which may
-  show flaws in the value formula ([OQ13](../open-questions.md)).
+  show flaws in the value formula; each found is to be made intended or fixed ([backlog N30](../backlog.md)).
 
 ### Names the program keeps apart
 

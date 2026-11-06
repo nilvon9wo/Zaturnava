@@ -96,10 +96,12 @@ than a piece, and with points won in play to be spent on upgrades and promotions
   may name a set of settings, save it, pick it to start a game, and edit it before playing.
 - **Stated (2026-10-31).** Other players may search and browse the saved settings. They may not
   edit someone else's set, but they may copy it, and edit the copy.
-- **Q26** When a saved set of settings is edited, should games and players that used it keep the set
-  as it was (versions), and should two players saving the same settings share one set (a check for
-  duplicates)? Left open (2026-11-06): it matters only once players want to repeat games. The
-  designer's thoughts (2026-10-31), for when it is:
+- **Stated (2026-11-06), answering Q26.** A game already played is in the past: editing a set changes
+  nothing about it. An edit matters only to games started from the set afterwards. Two sets with the
+  same settings are never merged: either owner editing one later would otherwise surprise the other,
+  or need the sets split again. *Proposed*: a game takes a copy of its settings when it is created,
+  so an edit reaches only games created after it; a player who wants a set kept as it is copies it
+  (as above). The designer's earlier thoughts (2026-10-31):
   - A player who picks a set its owner has since edited may be frustrated to find it changed; but
     no one should have to remember version numbers, or dig through the details to see what changed.
     Perhaps a player may keep a set they played and liked in their own list, so it stays as they
@@ -400,5 +402,5 @@ The numbers stay as they are; answered questions are marked so.
 24. **Q24** *Answered:* which way a kingdom lies in its corner is a setting (§2).
 25. **Q25** *Answered (2026-10-29):* every piece whose normal move is forward only may make the
     back-to-back swap, with any other such piece (§6.1).
-26. **Q26** Saved settings: versions, or a check for duplicates? Left open until players want to repeat
-    games; the designer's thoughts are noted (§2.1).
+26. **Q26** *Answered (2026-11-06):* an edit to saved settings reaches only later games; duplicates are not
+    merged (§2.1).
