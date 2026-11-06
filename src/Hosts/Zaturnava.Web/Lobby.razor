@@ -61,6 +61,16 @@
                 {
                     <p class="rules">@GameNameOf(this.Ruleset(catalog))</p>
                 }
+                @if (catalog.Rulesets.Any(ruleset => ruleset.IsPreview))
+                {
+                    <label class="previews">
+                        <input type="checkbox"
+                               class="show-previews"
+                               checked="@this._arePreviewsShown"
+                               @onchange="change => this.ShowPreviews(catalog, change)" />
+                        Show preview games, not yet ready for everyone
+                    </label>
+                }
                 @if (sizes.Count > 1)
                 {
                     <label class="size">
@@ -74,16 +84,6 @@
                     </label>
                 }
             </div>
-            @if (catalog.Rulesets.Any(ruleset => ruleset.IsPreview))
-            {
-                <label class="previews">
-                    <input type="checkbox"
-                           class="show-previews"
-                           checked="@this._arePreviewsShown"
-                           @onchange="change => this.ShowPreviews(catalog, change)" />
-                    Show preview games, not yet ready for everyone
-                </label>
-            }
             @if (this._mode == SetupMode.Quick)
             {
                 <div class="quick-games">
