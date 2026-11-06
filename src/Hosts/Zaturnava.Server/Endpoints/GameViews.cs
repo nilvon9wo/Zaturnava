@@ -126,12 +126,17 @@ internal static class GameViews
         };
     }
 
-    /// <summary>Each kind of piece on the board or held prisoner, by name, as one looking at it is told.</summary>
+    /// <summary>
+    /// Each kind of piece on the board or held prisoner, and each its own promotion may make it, by name, as one
+    /// looking at it is told.
+    /// </summary>
     private static ImmutableList<PieceKindDto> KindsOf(IRulesApplying rules, GameState state) =>
     [
         .. state.Position.Occupants.Values
             .Concat(state.Prisoners.Select(prisoner => prisoner.Piece))
             .Select(piece => piece.Kind)
+            .Distinct()
+            .SelectMany(kind => rules.GuideOf(kind).PromotesTo.Prepend(kind))
             .Distinct()
             .Select(kind => KindOf(rules, kind))
             .OrderBy(kind => kind.Name, StringComparer.Ordinal),
@@ -149,6 +154,7 @@ internal static class GameViews
             SpecialPowers = guide.SpecialPowers,
             PromotesTo = [.. guide.PromotesTo.Select(rules.NameOf)],
             IsPromotionPlayed = guide.IsPromotionPlayed,
+            PromotesWhere = guide.PromotesWhere,
             Restrictions = guide.Restrictions,
             Mark = MarkOf(rules, kind),
             Diagram = new MoveDiagramDto(
@@ -386,6 +392,7 @@ internal static class GameViews
         (action, snapshot.State.IsRansomWindow, snapshot.State.PromotionDue) switch
         {
             (PromoteAction promote, _, _) => PromotionOf(snapshot, promote),
+            (PromoteOwnAction promote, _, _) => OwnPromotionOf(snapshot, promote),
             (EscapeAction escape, _, _) => EscapeOf(snapshot, escape),
             (HandOverAction handOver, _, _) => $"Let {snapshot.Rules.NameOf(handOver.Regent)} take over",
             (AnswerEndAction { Agrees: true }, _, _) => "Agree to end the game",
@@ -428,6 +435,15 @@ internal static class GameViews
         Prisoner prisoner = snapshot.State.Prisoners.First(held => held.Piece.Id == escape.Piece);
         return $"Escape {rules.NameOf(prisoner.Piece.Owner)}'s {rules.NameOf(prisoner.Piece.Kind)}, "
             + $"held by {rules.NameOf(prisoner.Holder)}";
+    }
+
+    /// <summary>"Promote the Pawn (Western) on c8 to a Queen (Western)", by its own promotion.</summary>
+    private static string OwnPromotionOf(GameSnapshot snapshot, PromoteOwnAction promote)
+    {
+        IRulesApplying rules = snapshot.Rules;
+        Piece piece = snapshot.State.Position.PieceAt(promote.Cell)!; // a legal promotion has a piece to promote
+        return $"Promote the {rules.NameOf(piece.Kind)} on {rules.Topology.NameOf(promote.Cell)} "
+            + $"to a {rules.NameOf(promote.Becomes)}";
     }
 
     /// <summary>"Promote the Pawn on c8 to Green's Elephant, held by Red".</summary>

@@ -234,12 +234,32 @@
                 }
                 @if (this._turn is { } turn)
                 {
-                    ImmutableList<ActionDto> promotions = ByKinship(view, turn.Claim.Seat, this.AtSelection(turn));
+                    ImmutableList<ActionDto> promotions = this.AtSelection(turn);
                     @if (!promotions.IsEmpty)
                     {
+                        ImmutableList<ActionDto> own = [.. promotions.Where(IsOwnPromotion)];
+                        ImmutableList<ActionDto> captured =
+                            ByKinship(view, turn.Claim.Seat, [.. promotions.Where(action => !IsOwnPromotion(action))]);
                         <div class="promotion">
                             <p class="hint">@this.Named(PromotionHeading(view, this._selection.Selected!.Value))</p>
-                            @foreach (ImmutableList<ActionDto> army in ArmiesOf(view, promotions))
+                            @if (!own.IsEmpty)
+                            {
+                                int owner = view.Pieces.First(piece => piece.Cell == this._selection.Selected!.Value).Owner;
+                                <div class="promotion-choices own">
+                                    @foreach (ActionDto action in own)
+                                    {
+                                        PieceKindDto becomes = BecomingOf(view, action);
+                                        <button class="choice"
+                                                title="@this.Named(ActionLabels.LabelOf(action))"
+                                                @onclick="() => this.Submit(turn.Claim, action)">
+                                            <PieceIcon Kind="@becomes.Kind" Name="@becomes.Name" Owner="owner" Mark="becomes.Mark" Pieces="this.PiecesShown" />
+                                            <span class="name">@this.Named(becomes.Name)</span>
+                                            <span class="holder">its own promotion</span>
+                                        </button>
+                                    }
+                                </div>
+                            }
+                            @foreach (ImmutableList<ActionDto> army in ArmiesOf(view, captured))
                             {
                                 <div class="promotion-choices">
                                     @foreach (ActionDto action in army)
@@ -784,6 +804,16 @@
         PieceDto pawn = view.Pieces.First(piece => piece.Cell == cell);
         string name = view.Cells.First(at => at.Id == cell).Name;
         return $"Promote {view.Seats[pawn.Owner].Name}'s {pawn.Name} on {name} to:";
+    }
+
+    /// <summary>Whether the promotion is the piece's own, into a kind, rather than into a captured piece.</summary>
+    private static bool IsOwnPromotion(ActionDto promotion) => promotion.Arguments.ContainsKey(ActionArguments.Becomes);
+
+    /// <summary>What a piece's own promotion makes it: the kind as the game tells it, or, untold, by its id alone.</summary>
+    private static PieceKindDto BecomingOf(GameViewDto view, ActionDto promotion)
+    {
+        string kind = promotion.Arguments[ActionArguments.Becomes];
+        return view.Kinds.Find(told => told.Kind == kind) ?? new PieceKindDto(kind, kind, 0);
     }
 
     /// <summary>The captured piece a promotion brings back, and the seat holding it.</summary>

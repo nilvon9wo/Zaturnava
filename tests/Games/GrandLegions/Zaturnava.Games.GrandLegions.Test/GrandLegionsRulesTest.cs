@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Boards;
+using Net.NowhereAtAll.Zaturnava.Engine.Events;
 using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
 using Net.NowhereAtAll.Zaturnava.Engine.Positions;
 using Net.NowhereAtAll.Zaturnava.Engine.Rules;
@@ -277,20 +278,148 @@ public sealed class GrandLegionsRulesTest
         );
     }
 
-    [Fact]
-    public void GuideOf_WhenAPieceHasAPromotionOfItsOwn_TellsItAsNotYetPlayed()
+    [Theory]
+    [InlineData("western-pawn", "queen rook bishop knight", "on the last row")]
+    [InlineData("shogi-pawn", "gold-general", "in the far 3 rows")]
+    [InlineData("makruk-pawn", "courtier", "in the far 3 rows")]
+    public void GuideOf_WhenAPieceHasAPromotionOfItsOwn_TellsItAsPlayedAndWhere(
+        string kind,
+        string into,
+        string where
+    )
     {
         // Arrange
         Chaturaji2027Rules rules = GrandLegionsRules.RulesOf(QuickGame.Small);
 
         // Act
-        PieceGuide guide = rules.GuideOf(GrandLegionsPieces.WesternPawn);
+        PieceGuide guide = rules.GuideOf(new PieceKindId(kind));
 
         // Assert
         Assert.Equal(
-            ("queen rook bishop knight", false),
-            (string.Join(" ", guide.PromotesTo.Select(kind => kind.Value)), guide.IsPromotionPlayed)
+            (into, true, where),
+            (string.Join(" ", guide.PromotesTo.Select(promoted => promoted.Value)), guide.IsPromotionPlayed,
+                guide.PromotesWhere)
         );
+    }
+
+    [Fact]
+    public void LegalActions_WhenAWesternPawnStandsOnTheLastRow_OffersItsOwnPromotions()
+    {
+        // Arrange - Black's Western Pawn on the c-file's far end, no prisoners
+        Chaturaji2027Rules rules = GrandLegionsRules.RulesOf(QuickGame.Small);
+        CellId edge = Ahead(rules, 0);
+        GameState state = BlackDeciding(rules, (edge, BlackPiece(GrandLegionsPieces.WesternPawn)));
+
+        // Act
+        ImmutableList<GameAction> actions = rules.LegalActions(state);
+
+        // Assert
+        Assert.Equal(
+            ["queen", "rook", "bishop", "knight"],
+            actions.OfType<PromoteOwnAction>().Select(promotion => promotion.Becomes.Value)
+        );
+    }
+
+    [Theory]
+    [InlineData(2, 1)]
+    [InlineData(3, 0)]
+    public void LegalActions_WhenAShogiPawnStandsRowsFromTheFarEdge_OffersAGoldGeneralOnlyInTheFarThree(
+        int rowsAhead,
+        int expected
+    )
+    {
+        // Arrange
+        Chaturaji2027Rules rules = GrandLegionsRules.RulesOf(QuickGame.Small);
+        GameState state = BlackDeciding(rules, (Ahead(rules, rowsAhead), BlackPiece(GrandLegionsPieces.ShogiPawn)));
+
+        // Act
+        int offered = rules.LegalActions(state).OfType<PromoteOwnAction>().Count();
+
+        // Assert
+        Assert.Equal(expected, offered);
+    }
+
+    [Fact]
+    public void LegalActions_WhenTheSeatHasRetired_OffersNoOwnPromotionOfItsLeader()
+    {
+        // Arrange - Black's Silver General in the far three rows, Black retired
+        Chaturaji2027Rules rules = GrandLegionsRules.RulesOf(QuickGame.Small);
+        GameState state = BlackDeciding(rules, (Ahead(rules, 1), BlackPiece(GrandLegionsPieces.SilverGeneral))) with
+        {
+            Retired = [new SeatId(0)],
+        };
+
+        // Act
+        ImmutableList<GameAction> actions = rules.LegalActions(state);
+
+        // Assert
+        Assert.DoesNotContain(actions, action => action is PromoteOwnAction);
+    }
+
+    [Fact]
+    public void Apply_WhenAPieceIsPromotedByItsOwnPromotion_BecomesThatKindStillItself()
+    {
+        // Arrange
+        Chaturaji2027Rules rules = GrandLegionsRules.RulesOf(QuickGame.Small);
+        CellId cell = Ahead(rules, 1);
+        Piece pawn = BlackPiece(GrandLegionsPieces.ShogiPawn);
+        GameState state = BlackDeciding(rules, (cell, pawn));
+        PromoteOwnAction promotion = new(new SeatId(0), cell, GrandLegionsPieces.GoldGeneral);
+
+        // Act
+        Transition promoted = rules.Apply(state, promotion);
+
+        // Assert
+        Piece general = pawn with { Kind = GrandLegionsPieces.GoldGeneral };
+        Assert.Equal(general, promoted.State.Position.PieceAt(cell));
+        Assert.Contains(new PiecePromoted(pawn, general, cell, new SeatId(0)), promoted.Events);
+    }
+
+    [Fact]
+    public void Apply_WhenAPieceMovesWhereItMayBePromoted_WaitsOnThatPromotionOrPromotingLater()
+    {
+        // Arrange - Black's Shogi Pawn steps into the far three rows
+        Chaturaji2027Rules rules = GrandLegionsRules.RulesOf(QuickGame.Small);
+        CellId from = Ahead(rules, 3);
+        CellId to = Ahead(rules, 2);
+        GameState state = BlackDeciding(rules, (from, BlackPiece(GrandLegionsPieces.ShogiPawn)));
+
+        // Act
+        GameState moved = rules.Apply(state, new MoveAction(new SeatId(0), from, to)).State;
+
+        // Assert
+        Assert.Equal(
+            [new PassAction(new SeatId(0)), new PromoteOwnAction(new SeatId(0), to, GrandLegionsPieces.GoldGeneral)],
+            rules.LegalActions(moved)
+        );
+    }
+
+    /// <summary>The cell of the c-file <paramref name="rows"/> rows short of Black's far edge.</summary>
+    private static CellId Ahead(Chaturaji2027Rules rules, int rows)
+    {
+        int side = (int)Math.Sqrt(rules.Topology.Cells.Count);
+        return new CellId(((side - 1 - rows) * side) + 2);
+    }
+
+    private static Piece BlackPiece(PieceKindId kind) => new(new PieceId(1), kind, new SeatId(0));
+
+    /// <summary>
+    /// Black to decide, at the start of its turn, with only <paramref name="pieces"/> on the board, and Yellow's
+    /// King on d2, on no throne and out of the way, so that the game goes on.
+    /// </summary>
+    private static GameState BlackDeciding(Chaturaji2027Rules rules, params (CellId Cell, Piece Piece)[] pieces)
+    {
+        Position yellow = Position.Empty.Place(
+            new CellId(9),
+            new Piece(new PieceId(9), GrandLegionsPieces.WesternKing, new SeatId(1))
+        );
+        return rules.CreateInitialState() with
+        {
+            RollOff = [],
+            AwaitedDice = null,
+            DecidingSeat = new SeatId(0),
+            Position = pieces.Aggregate(yellow, (board, placed) => board.Place(placed.Cell, placed.Piece)),
+        };
     }
 
     [Theory]

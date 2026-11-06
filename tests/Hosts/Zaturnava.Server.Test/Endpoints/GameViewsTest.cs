@@ -187,6 +187,30 @@ public sealed class GameViewsTest
     }
 
     [Fact]
+    public void ViewOf_WhenAPieceMayBePromotedByItsOwnPromotion_LabelsEachPromotion()
+    {
+        // Arrange - a Grand Legions game, Black's Western Pawn on c6, its last row
+        Chaturaji2027Rules grand = GrandLegionsRules.RulesOf(QuickGame.Small);
+        Piece pawn = new(new PieceId(4), GrandLegionsPieces.WesternPawn, new SeatId(0));
+        GameState state = grand.CreateInitialState() with
+        {
+            RollOff = [],
+            AwaitedDice = null,
+            DecidingSeat = new SeatId(0),
+            Position = Position.Empty.Place(new CellId(32), pawn),
+        };
+
+        // Act
+        GameViewDto view = GameViews.ViewOf(Snapshot(grand, state), Bots);
+
+        // Assert
+        Assert.Equal(
+            "Promote the Pawn (Western) on c6 to a Queen (Western)",
+            view.LegalActions.First(action => action.Kind == "promote-own").Label
+        );
+    }
+
+    [Fact]
     public void ViewOf_WhenAPawnMayBePromoted_LabelsEachPromotion()
     {
         // Arrange - Black's Pawn on c8, the far edge; Green's Elephant is held by Red
@@ -677,9 +701,11 @@ public sealed class GameViewsTest
         // Assert
         PieceKindDto told = view.Kinds.Single(kind => kind.Kind == "western-pawn");
         Assert.Equal(
-            ("Queen (Western), Rook (Western), Bishop (Western), Knight (Western)", false, 2, 2),
-            (string.Join(", ", told.PromotesTo), told.IsPromotionPlayed, told.Powers.Count, told.SpecialPowers.Count)
+            ("Queen (Western), Rook (Western), Bishop (Western), Knight (Western)", true, "on the last row", 2, 2),
+            (string.Join(", ", told.PromotesTo), told.IsPromotionPlayed, told.PromotesWhere, told.Powers.Count,
+                told.SpecialPowers.Count)
         );
+        Assert.Contains(view.Kinds, kind => kind.Kind == "queen");
     }
 
     [Fact]

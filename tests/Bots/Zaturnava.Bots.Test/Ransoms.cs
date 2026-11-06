@@ -86,6 +86,24 @@ internal static class Ransoms
         return new DecisionRequest(rules, state, Black, rules.LegalActions(state));
     }
 
+    /// <summary>
+    /// Seat 0's turn, with its Pawn 40 on cell 7, which its own promotion may make a Horse or an Elephant, or not
+    /// at all (a pass).
+    /// </summary>
+    public static DecisionRequest PromotingOwn()
+    {
+        PassAction pass = new(Black);
+        PromoteOwnAction horse = new(Black, new CellId(7), new PieceKindId("horse"));
+        PromoteOwnAction elephant = new(Black, new CellId(7), new PieceKindId("elephant"));
+        ScoringRules rules =
+            new(ImmutableDictionary<GameAction, int>.Empty.Add(pass, 0).Add(horse, 0).Add(elephant, 0));
+        GameState state = Request().State with
+        {
+            Position = Position.Empty.Place(new CellId(7), new Piece(Id(40), new PieceKindId("pawn"), Black)),
+        };
+        return new DecisionRequest(rules, state, Black, rules.LegalActions(state));
+    }
+
     /// <summary>Seat 0's turn, when its Horse 20, which Yellow holds, may escape to cell 7, or it may pass.</summary>
     public static DecisionRequest Escaping()
     {

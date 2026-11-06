@@ -78,6 +78,19 @@ public sealed class MidasBotTest
     }
 
     [Fact]
+    public async Task Decide_WhenAPieceMayBePromotedByItsOwnPromotion_MakesItTheBestItMayBecome()
+    {
+        // Arrange - its Pawn 40 may become a Horse (3) or an Elephant (4)
+        DecisionRequest request = Ransoms.PromotingOwn();
+
+        // Act
+        ImmutableHashSet<GameAction> chosen = await Choices(request);
+
+        // Assert
+        Assert.Equal([new PromoteOwnAction(Seat, new CellId(7), new PieceKindId("elephant"))], chosen);
+    }
+
+    [Fact]
     public async Task Decide_WhenItsPieceMayEscape_LetsItEscape()
     {
         // Arrange - Yellow holds its Horse 20

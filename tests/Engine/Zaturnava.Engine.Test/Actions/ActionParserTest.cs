@@ -63,6 +63,7 @@ public sealed class ActionParserTest
     public static TheoryData<GameAction> RansomAndPromotion =>
     [
         new PromoteAction(new SeatId(1), new CellId(7), new PieceId(12)),
+        new PromoteOwnAction(new SeatId(1), new CellId(7), new PieceKindId("queen")),
         new OfferAction(new SeatId(1), new SeatId(2), [new PieceId(16), new PieceId(17)], [new PieceId(4)]),
         new OfferAction(new SeatId(1), new SeatId(2), [new PieceId(16)], []),
         new AcceptAction(new SeatId(2)),
@@ -90,6 +91,24 @@ public sealed class ActionParserTest
 
         // Assert
         Assert.Equal(action, parsed);
+    }
+
+    [Fact]
+    public void Parse_WhenAnOwnPromotionNamesNoKind_ThrowsMalformedActionException()
+    {
+        // Arrange
+        ActionDescriptor descriptor = new(
+            PromoteOwnAction.Kind,
+            ImmutableSortedDictionary<string, string>.Empty.Add("actor", "1").Add("cell", "7")
+        );
+
+        // Act
+        MalformedActionException exception = Assert.Throws<MalformedActionException>(
+            () => ActionParser.Standard.Parse(descriptor)
+        );
+
+        // Assert
+        Assert.Equal("The 'promote-own' action needs a kind for 'becomes'.", exception.Message);
     }
 
     [Fact]

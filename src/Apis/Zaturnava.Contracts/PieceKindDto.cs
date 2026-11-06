@@ -30,6 +30,9 @@ public sealed record PieceKindDto(string Kind, string Name, int Value)
 
     public bool IsPromotionPlayed { get; init; }
 
+    /// <summary>Where its own promotion may be taken: "on the last row"; none, if not told.</summary>
+    public string? PromotesWhere { get; init; }
+
     public ImmutableList<string> Restrictions { get; init; } = [];
 
     public MoveDiagramDto? Diagram { get; init; }

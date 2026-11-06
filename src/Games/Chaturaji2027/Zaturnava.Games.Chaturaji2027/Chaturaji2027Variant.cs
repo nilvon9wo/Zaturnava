@@ -56,6 +56,9 @@ public sealed record Chaturaji2027Variant(
         init;
     }
 
+    /// <summary>Each kind's own promotion, as a Western Pawn's into a Queen: none, unless set.</summary>
+    public ImmutableDictionary<PieceKindId, OwnPromotion> OwnPromotions { get; init; } = [];
+
     /// <summary>The kinds, leaders apart, most dangerous to let loose, as a Rook is: none, unless set.</summary>
     public ImmutableHashSet<PieceKindId> Heavies { get; init; } = [];
 
