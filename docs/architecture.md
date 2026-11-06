@@ -453,7 +453,8 @@ scoring) are listed in [rules.md §12](rules.md#12-configuration-toggles). The
 - The `gameEnd.safetyNet.*` limits (rules.md §10, Stated 2026-11-06): three
   rounds of passing, three of repetition, fifty moves without a capture, each
   limit in the server's settings file. Still to build: repetition, the
-  fifty-move count, the warnings, and the limits read from the settings file.
+  fifty-move count and their warnings, and the limits read from the settings
+  file (the passing net and its warning are built).
 - An SDK for variants: once Chaturaji 2027 works, boards, piece sets,
   starting positions, rulesets and bots become things others implement. Their
   extension points should then be gathered into a documented SDK, with

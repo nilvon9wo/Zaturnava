@@ -993,6 +993,25 @@ public sealed class Chaturaji2027RulesTest
     }
 
     [Theory]
+    [InlineData(7, 1)]
+    [InlineData(6, 0)]
+    [InlineData(8, 0)]
+    public void Apply_WhenAPassBeginsTheLastIdleRound_WarnsEveryoneTheGameMayEnd(int idlePasses, int expected)
+    {
+        // Arrange - four seats playing: eight passes are two rounds of three
+        GameState state = this.Later() with { IdlePasses = idlePasses };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new PassAction(Black));
+
+        // Assert
+        Assert.Equal(
+            Enumerable.Repeat(new IdleWarned(Black, 2), expected),
+            transition.Events.OfType<IdleWarned>()
+        );
+    }
+
+    [Theory]
     [InlineData(2, 11, true, 12)]
     [InlineData(2, 4, false, 5)]
     [InlineData(1, 11, false, 0)]
@@ -1692,6 +1711,40 @@ public sealed class Chaturaji2027RulesTest
                 transition.State.DecidingSeat
             )
         );
+    }
+
+    [Fact]
+    public void Apply_WhenAMoveChangesTheBoard_StartsTheCountOfIdlePassesAgain()
+    {
+        // Arrange - a die is left, so the turn does not pass
+        GameState state = this.PawnAndBoat() with { Dice = [5, 1], IdlePasses = 5 };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new MoveAction(Black, Grid.CellAt(3, 3), Grid.CellAt(3, 4)));
+
+        // Assert
+        Assert.Equal((Black, 0), (transition.State.DecidingSeat, transition.State.IdlePasses));
+    }
+
+    [Fact]
+    public void Apply_WhenAPromotionChangesThePrisoners_StartsTheCountOfIdlePassesAgain()
+    {
+        // Arrange - a Pawn at the far edge, promoted without a die
+        Piece elephant = Piece(11, Chaturaji2027Pieces.Elephant, Green);
+        GameState state = this.StateWith(
+            (Grid.CellAt(2, 7), Piece(1, Chaturaji2027Pieces.Pawn, Black)),
+            (Grid.CellAt(0, 0), Piece(3, Chaturaji2027Pieces.Raja, Yellow))
+        ) with
+        {
+            Prisoners = [new Prisoner(elephant, Red)],
+            IdlePasses = 5,
+        };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new PromoteAction(Black, Grid.CellAt(2, 7), elephant.Id));
+
+        // Assert
+        Assert.Equal(0, transition.State.IdlePasses);
     }
 
     [Fact]

@@ -196,21 +196,24 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             this._everyPiece.Scored(
                 this.Unstalled(
                     GameEnd.AfterGivingUp(
-                        Attended(
-                            action,
-                            action switch
-                            {
-                                DiceAction dice => this.Rolled(state, dice),
-                                OfferAction offer => this.Offered(state, offer),
-                                ProposeEndAction propose => this.Proposed(state, propose),
-                                RejoinAction rejoin => this.Rejoined(state, rejoin),
-                                VoteAwayAction vote => this.Voted(state, vote),
-                                PassAwayAction pass => this.PassedAway(state, pass),
-                                FaceOffAction faceOff => this.FacedOff(state, faceOff),
-                                MoveAction move when state.DecidingSeat != move.Actor =>
-                                    this.TakenInPassing(state, move),
-                                _ => this.Decided(state, action),
-                            }
+                        GameEnd.Unidled(
+                            state,
+                            Attended(
+                                action,
+                                action switch
+                                {
+                                    DiceAction dice => this.Rolled(state, dice),
+                                    OfferAction offer => this.Offered(state, offer),
+                                    ProposeEndAction propose => this.Proposed(state, propose),
+                                    RejoinAction rejoin => this.Rejoined(state, rejoin),
+                                    VoteAwayAction vote => this.Voted(state, vote),
+                                    PassAwayAction pass => this.PassedAway(state, pass),
+                                    FaceOffAction faceOff => this.FacedOff(state, faceOff),
+                                    MoveAction move when state.DecidingSeat != move.Actor =>
+                                        this.TakenInPassing(state, move),
+                                    _ => this.Decided(state, action),
+                                }
+                            )
                         ),
                         this._variant
                     )
@@ -1121,9 +1124,20 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     private Transition IdlePass(Transition transition, bool mayHaveOffered)
     {
         GameState state = transition.State;
+        SeatId seat = (state.ActingFor ?? state.DecidingSeat)!.Value; // someone just took a turn
         Transition counted = transition with { State = state with { IdlePasses = state.IdlePasses + 1 } };
-        return GameEnd.AfterIdlePass(counted, this._idleRounds) ?? this.Ending(counted, mayHaveOffered);
+        return GameEnd.AfterIdlePass(counted, this._idleRounds) ?? Warned(
+            this.Ending(counted, mayHaveOffered),
+            GameEnd.IsLastIdleRound(counted.State, this._idleRounds),
+            new IdleWarned(seat, this._idleRounds - 1)
+        );
     }
+
+    /// <summary>The transition, telling everyone the game may soon end, if it <paramref name="isNear"/>.</summary>
+    private static Transition Warned(Transition transition, bool isNear, GameEvent warning) =>
+        isNear
+            ? transition with { Events = transition.Events.Add(warning) }
+            : transition;
 
     /// <summary>
     /// The turn passes: idly, if no die rolled was used, as a roll and then a pass is a pass (rules.md §10).

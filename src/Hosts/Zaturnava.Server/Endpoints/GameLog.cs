@@ -250,6 +250,13 @@ file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bo
                 givenUp.Seat,
                 $"{this.Name(givenUp.Seat)} takes no more turns, so passes."
             ),
+            IdleWarned warned => this.Add(
+                number,
+                EventDto.Ending,
+                warned.Seat,
+                $"No one has moved for {Text(warned.Rounds)} {(warned.Rounds == 1 ? "round" : "rounds")}: "
+                    + "if no one moves this round either, the game ends, and points decide."
+            ),
             RajaRetired retired => this.Add(
                 number,
                 EventDto.Passed,
