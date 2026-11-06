@@ -222,6 +222,91 @@ public sealed class GrandLegionsRulesTest
     }
 
     [Fact]
+    public void GuideOf_WhenAWesternPawn_TellsItsClassStartRowPowersAndRestriction()
+    {
+        // Arrange
+        Chaturaji2027Rules rules = GrandLegionsRules.RulesOf(QuickGame.Small);
+
+        // Act
+        PieceGuide guide = rules.GuideOf(GrandLegionsPieces.WesternPawn);
+
+        // Assert
+        Assert.Equal(
+            ("Infantry", 4, "From its start rows, its first move may go two cells straight ahead.",
+                "Blocked straight ahead"),
+            (guide.Class, guide.Powers.Count, guide.Powers[2], guide.Restrictions.Single())
+        );
+    }
+
+    [Theory]
+    [InlineData("western-king", "Castles with its own Rook (Western): two cells towards it")]
+    [InlineData("xiangqi-general", "Flying general: ")]
+    [InlineData("janggi-general", "Face-off: ")]
+    public void GuideOf_WhenALeaderWithAPowerOfItsOwn_TellsItAfterLeading(string leader, string power)
+    {
+        // Arrange
+        Chaturaji2027Rules rules = GrandLegionsRules.RulesOf(QuickGame.Small);
+
+        // Act
+        PieceGuide guide = rules.GuideOf(new PieceKindId(leader));
+
+        // Assert
+        Assert.Equal(
+            ("Leader", 2, true),
+            (guide.Class, guide.Powers.Count, guide.Powers[1].StartsWith(power, StringComparison.Ordinal))
+        );
+    }
+
+    [Theory]
+    [InlineData("xiangqi-cannon", "4,13,22,31,36,37,38,39,41,42,43,44,49", "67,76")]
+    [InlineData("grasshopper", "67", "67")]
+    [InlineData("janggi-cannon", "67,76", "67,76")]
+    public void GuideOf_WhenAPieceHops_DrawsItWithAPieceToHopTwoSquaresAhead(
+        string hopper,
+        string moves,
+        string captures
+    )
+    {
+        // Arrange
+        Chaturaji2027Rules rules = GrandLegionsRules.RulesOf(QuickGame.Small);
+
+        // Act
+        MoveDiagram diagram = rules.GuideOf(new PieceKindId(hopper)).Diagram;
+
+        // Assert
+        Assert.Equal(
+            (moves, captures, 58),
+            (string.Join(",", diagram.Moves), string.Join(",", diagram.Captures), diagram.Screens.Single())
+        );
+    }
+
+    [Fact]
+    public void ClearLead_WhenAsked_IsTenTimesChaturajis()
+    {
+        // Arrange
+        Chaturaji2027Rules rules = GrandLegionsRules.RulesOf(QuickGame.Large);
+
+        // Act
+        int clear = rules.ClearLead;
+
+        // Assert
+        Assert.Equal(100, clear);
+    }
+
+    [Fact]
+    public void Guides_WhenRead_TellOfEveryPieceOfTheCatalogue()
+    {
+        // Arrange - nothing beyond the guides
+
+        // Act
+        ImmutableList<GrandPiece> untold =
+            [.. GrandLegionsPieces.Catalogue.Where(piece => !GrandLegionsRules.Guides.ContainsKey(piece.Id))];
+
+        // Assert
+        Assert.Empty(untold);
+    }
+
+    [Fact]
     public void MarkOf_WhenAsked_IsThePiecesClassEmblemAndLetters()
     {
         // Arrange

@@ -10,7 +10,8 @@
    If the server no longer has the game (restarted, say), it says so, stops asking, and offers the lobby.
    Shown again after being hidden (when the browser may have slowed its asking), it asks at once.
    Under it all, a quiet bar: the game's name and the way back to the lobby, the buttons that turn the
-   board, and the page's own settings. Beside the log, by tabs, the players' talk (TableTalk). *@
+   board, and the page's own settings. Beside the log, by tabs, the players' talk (TableTalk). Any piece clicked
+   on, the player's or not, is told of at the side (PieceCard) until put away. *@
 @using Microsoft.JSInterop
 @implements IDisposable
 @inject IGameServing Games
@@ -383,6 +384,16 @@
                     </ol>
                 </ChildContent>
             </TableTalk>
+
+            @if (view.Pieces.Find(piece => piece.Id == this._inspected) is { } inspected)
+            {
+                <PieceCard Piece="inspected"
+                           Kind="view.Kinds.Find(kind => kind.Kind == inspected.Kind)"
+                           Owner="@view.Seats[inspected.Owner].Name"
+                           Cell="@view.Cells.First(cell => cell.Id == inspected.Cell).Name"
+                           Pieces="this.PiecesShown"
+                           OnClose="this.PutAway" />
+            }
         </div>
     }
 
@@ -475,6 +486,9 @@
     private GameViewDto? _view;
     private Turn? _turn;
     private BoardSelection _selection = BoardSelection.None;
+
+    /// <summary>The piece last clicked on, told of beside the board until put away; none, if none was.</summary>
+    private int? _inspected;
     private BoardTurn _boardTurn = BoardTurn.None;
     private ImmutableHashSet<int> _lastMove = [];
     private bool _isHighlightsOnly = true;
@@ -783,6 +797,8 @@
 
     private void PutDown() => this._selection = BoardSelection.None;
 
+    private void PutAway() => this._inspected = null;
+
     /// <summary>The bots in the game paid for each use, by name: playing again would cost tokens again.</summary>
     private static ImmutableList<string> PaidBotsOf(GameViewDto view) =>
         [.. view.Seats.Where(seat => seat.IsPaidBot).Select(seat => seat.Bot).OfType<string>()];
@@ -993,8 +1009,13 @@
 
     private Task Refresh() => this.Request(() => this.Games.Get(this.Seating.GameId, CancellationToken.None));
 
+    /// <summary>
+    /// A cell clicked on: the piece on it, if any, is told of, whether or not it may be moved; and the move being
+    /// made goes on.
+    /// </summary>
     private Task Click(int cell)
     {
+        this._inspected = this._view!.Pieces.Find(piece => piece.Cell == cell)?.Id ?? this._inspected;
         (BoardSelection next, ActionDto? chosen) = this._selection.Click(cell, this.Actions);
         this._selection = next;
         return this._turn is { } turn && chosen is { } action ? this.Submit(turn.Claim, action) : Task.CompletedTask;

@@ -68,6 +68,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     private readonly Castling _castling;
     private readonly FlyingCapture _flying;
     private readonly FaceOff _faceOff;
+    private readonly MoveDiagrams _diagrams;
 
     public Chaturaji2027Rules()
         : this(DiceProfile.WeightedSixSided, DefaultIdleRounds, PawnPromotion.OtherArmies)
@@ -91,6 +92,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         this._grid = new SquareGridTopology(this._variant.Side, this._variant.Side);
         this._awayTurns = awayTurns;
         this._moves = new MoveGenerator(this._grid, this._variant.Kinds);
+        this._diagrams = new MoveDiagrams(this._variant.Kinds);
         this._dice = dice;
         this._idleRounds = idleRounds;
         this._pawnPromotion = pawnPromotion;
@@ -312,6 +314,9 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             .Where(attack => this.MayGo(new Move(attack.Attacker, attack.From, attack.Target, null))),
     ];
 
+    /// <summary>The lead that wins by giving up its turns (rules.md §10), as the variant scores it.</summary>
+    public int ClearLead => this._variant.Scoring.ClearLead;
+
     public bool IsLeader(PieceKindId kind) => this._control.IsLeader(kind);
 
     public bool IsHeavy(PieceKindId kind) => this._variant.Heavies.Contains(kind);
@@ -329,6 +334,16 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     public string NameOf(PieceKindId kind) => this._variant.Names[kind];
 
     public PieceMark? MarkOf(PieceKindId kind) => this._variant.Marks.GetValueOrDefault(kind);
+
+    /// <summary>
+    /// How a piece of <paramref name="kind"/> moves, drawn as well (<see cref="MoveDiagrams"/>), and its class and
+    /// what holds it back as the variant tells them, with the powers these rules give it first.
+    /// </summary>
+    public PieceGuide GuideOf(PieceKindId kind)
+    {
+        PieceGuide told = this._variant.Guides.GetValueOrDefault(kind) ?? new PieceGuide(this._variant.Kinds[kind]);
+        return told with { Powers = [.. this.PowersOf(kind), .. told.Powers], Diagram = this._diagrams.Of(kind) };
+    }
 
     public string NameOf(SeatId seat) => Chaturaji2027Setup.SeatNames[seat.Value];
 
@@ -352,6 +367,37 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         state.DecidingSeat is not null && this.MayMove(state, this._dice.KindsOf(value).Contains);
 
     private DiceRequest RollOffDie => new(RollOffDice, this._dice.Sides);
+
+    /// <summary>The powers these rules give a piece of <paramref name="kind"/>, for people.</summary>
+    private IEnumerable<string> PowersOf(PieceKindId kind)
+    {
+        string rooks = string.Join(
+            " or ",
+            this._variant.CastlingRooks.Select(this.NameOf).Order(StringComparer.Ordinal)
+        );
+        return new (bool Has, string Power)[]
+            {
+                (this._variant.Leaders.Contains(kind),
+                    "Leads its army; standing on another army's throne, it takes command of that army too."),
+                (this._variant.Pawns.Contains(kind), "Promoted, on reaching the far edge, into a captured piece."),
+                (this._variant.Pawns.Contains(kind),
+                    "Swaps places with an allied Pawn straight ahead of it, the two back to back."),
+                (this._variant.StartRowPowers.Contains(kind),
+                    "From its start rows, its first move may go two cells straight ahead."),
+                (this._variant.StartRowPowers.Contains(kind),
+                    "Takes en passant a piece that just went two cells past it, even out of turn, until its own turn "
+                    + "ends."),
+                (this._variant.Castlers.Contains(kind),
+                    $"Castles with its own {rooks}: two cells towards it, the {rooks} jumping over to its other side."),
+                (this._variant.FlyingCapturers.Contains(kind),
+                    "Flying general: takes an enemy leader along an open straight line, nothing between them."),
+                (this._variant.FaceOffCallers.Contains(kind),
+                    "Face-off: facing an enemy leader along an open straight line, may call both leaders taken at "
+                    + "once, even out of turn."),
+            }
+            .Where(power => power.Has)
+            .Select(power => power.Power);
+    }
 
     /// <summary>
     /// A proposal to end the game is answered; a piece going home is placed; an offer waiting is answered;

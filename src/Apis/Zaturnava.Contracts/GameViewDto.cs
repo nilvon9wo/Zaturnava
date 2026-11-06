@@ -21,6 +21,7 @@ namespace Net.NowhereAtAll.Zaturnava.Contracts;
 /// <see cref="Away"/>, the vote on whether to stop waiting for the deciding seat, if there is one.
 /// <see cref="Vacancy"/> says, while the game waits for its open seats to be taken, who may fill them with bots, and
 /// when.
+/// <see cref="Kinds"/> tells of each kind of piece on the board or held prisoner, for a player looking at one.
 /// </summary>
 public sealed record GameViewDto(
     string Id,
@@ -47,4 +48,7 @@ public sealed record GameViewDto(
     EndProposalDto? Proposal = null,
     AwayDto? Away = null,
     VacancyDto? Vacancy = null
-);
+)
+{
+    public ImmutableList<PieceKindDto> Kinds { get; init; } = [];
+}

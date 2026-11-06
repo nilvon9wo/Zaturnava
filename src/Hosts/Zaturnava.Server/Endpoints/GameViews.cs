@@ -120,8 +120,48 @@ internal static class GameViews
             ProposalOf(snapshot.State),
             AwayOf(snapshot.Away),
             VacancyOf(snapshot.Vacancy)
-        );
+        )
+        {
+            Kinds = KindsOf(snapshot.Rules, snapshot.State),
+        };
     }
+
+    /// <summary>Each kind of piece on the board or held prisoner, by name, as one looking at it is told.</summary>
+    private static ImmutableList<PieceKindDto> KindsOf(IRulesApplying rules, GameState state) =>
+    [
+        .. state.Position.Occupants.Values
+            .Concat(state.Prisoners.Select(prisoner => prisoner.Piece))
+            .Select(piece => piece.Kind)
+            .Distinct()
+            .Select(kind => KindOf(rules, kind))
+            .OrderBy(kind => kind.Name, StringComparer.Ordinal),
+    ];
+
+    private static PieceKindDto KindOf(IRulesApplying rules, PieceKindId kind)
+    {
+        PieceGuide guide = rules.GuideOf(kind);
+        return new PieceKindDto(kind.Value, rules.NameOf(kind), rules.WorthOf(kind))
+        {
+            Class = guide.Class,
+            Moves = TextOf(guide.Kind.Movement.Where(rule => rule.CanMove), rules.NameOf),
+            Captures = TextOf(guide.Kind.Movement.Where(rule => rule.CanCapture), rules.NameOf),
+            Powers = guide.Powers,
+            Restrictions = guide.Restrictions,
+            Mark = MarkOf(rules, kind),
+            Diagram = new MoveDiagramDto(
+                guide.Diagram.Side,
+                guide.Diagram.Moves,
+                guide.Diagram.Captures,
+                guide.Diagram.Screens
+            ),
+        };
+    }
+
+    private static ImmutableList<string> TextOf(
+        IEnumerable<MovementRule> movement,
+        Func<PieceKindId, string> nameOf
+    ) =>
+        [.. movement.Select(rule => MovementText.Of(rule, nameOf)).Distinct()];
 
     private static VacancyDto? VacancyOf(Vacancy? vacancy) =>
         vacancy is null

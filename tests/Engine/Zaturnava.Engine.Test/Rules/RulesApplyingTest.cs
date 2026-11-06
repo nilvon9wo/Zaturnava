@@ -41,6 +41,35 @@ public sealed class RulesApplyingTest
     }
 
     [Fact]
+    public void ClearLead_WhenTheRulesetSaysNoOther_IsChaturajis()
+    {
+        // Arrange
+        OneSizeRules rules = new();
+
+        // Act
+        int clear = ClearLeadOf(rules);
+
+        // Assert
+        Assert.Equal(10, clear);
+    }
+
+    [Fact]
+    public void GuideOf_WhenTheRulesetSaysNoOther_TellsNothingButTheKind()
+    {
+        // Arrange
+        OneSizeRules rules = new();
+
+        // Act
+        PieceGuide guide = GuideOf(rules, new PieceKindId("pawn"));
+
+        // Assert
+        Assert.Equal(
+            ("pawn", 0, (string?)null, 0, 0),
+            (guide.Kind.Id.Value, guide.Kind.Movement.Count, guide.Class, guide.Powers.Count, guide.Restrictions.Count)
+        );
+    }
+
+    [Fact]
     public void Deal_WhenTheRulesetSaysNoOther_DealsNothingAndLeavesTheGameAsItIs()
     {
         // Arrange
@@ -100,6 +129,14 @@ public sealed class RulesApplyingTest
     private static PieceMark? MarkOf<TRules>(TRules rules, PieceKindId kind)
         where TRules : IRulesApplying =>
         rules.MarkOf(kind);
+
+    private static int ClearLeadOf<TRules>(TRules rules)
+        where TRules : IRulesApplying =>
+        rules.ClearLead;
+
+    private static PieceGuide GuideOf<TRules>(TRules rules, PieceKindId kind)
+        where TRules : IRulesApplying =>
+        rules.GuideOf(kind);
 
     /// <summary>The game any rules play, as the interface tells it.</summary>
     private static (string Id, string Name, string? Size, bool IsPreview) GameOf<TRules>(TRules rules)

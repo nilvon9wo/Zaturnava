@@ -31,6 +31,20 @@ public static class GrandLegionsRules
     ];
 
     /// <summary>
+    /// What a player is told of each piece of the catalogue beyond its moves: its class, and what holds it back. How
+    /// much lifting a restriction costs is not told: quick games lift none.
+    /// </summary>
+    public static ImmutableDictionary<PieceKindId, PieceGuide> Guides { get; } =
+        GrandLegionsPieces.Catalogue.ToImmutableDictionary(
+            piece => piece.Id,
+            piece => new PieceGuide(GrandLegionsPieces.Kinds[piece.Id])
+            {
+                Class = piece.Class.ToString(),
+                Restrictions = [.. piece.Restrictions.Select(restriction => restriction.Description)],
+            }
+        );
+
+    /// <summary>
     /// What the Chaturaji 2027 bonuses score in Grand Legions (Stated: each × 10, beside captures worth up to 75;
     /// the clear lead to win by giving up, × 10 too, Proposed), as its table has it.
     /// </summary>
@@ -69,6 +83,7 @@ public static class GrandLegionsRules
             Game = game.Game,
             Heavies = Heavies,
             Marks = GrandLegionsPieces.Marks,
+            Guides = Guides,
             Scoring = Scoring,
             StartRowPowers = [GrandLegionsPieces.WesternPawn],
             Castlers = [GrandLegionsPieces.WesternKing],

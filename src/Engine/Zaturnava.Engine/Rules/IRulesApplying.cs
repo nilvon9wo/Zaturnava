@@ -124,6 +124,13 @@ public interface IRulesApplying
     /// </summary>
     ImmutableList<Attack> AttacksOf([Required] GameState state, SeatId seat);
 
+    /// <summary>
+    /// How far ahead a team is clearly ahead, on points and on what its pieces on the board are worth, as
+    /// <see cref="WorthOf"/> counts them: Chaturaji 2027's 10, unless the ruleset says otherwise. For one weighing
+    /// whether a game is won or lost.
+    /// </summary>
+    int ClearLead => 10;
+
     /// <summary>Whether a piece of <paramref name="kind"/> leads its army, as a Chaturaji 2027 Raja does.</summary>
     bool IsLeader(PieceKindId kind);
 
@@ -140,6 +147,12 @@ public interface IRulesApplying
     /// drawn as itself (a Raja, a Pawn).
     /// </summary>
     PieceMark? MarkOf(PieceKindId kind) => null;
+
+    /// <summary>
+    /// What a player looking at a piece of <paramref name="kind"/> may want to know: how it moves, its powers and
+    /// what holds it back; nothing but the kind, with no moves, where the ruleset says nothing of its kinds.
+    /// </summary>
+    PieceGuide GuideOf(PieceKindId kind) => new(new PieceKind(kind, []));
 
     string NameOf(SeatId seat);
 

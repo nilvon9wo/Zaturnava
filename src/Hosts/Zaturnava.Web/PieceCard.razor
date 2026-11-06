@@ -1,0 +1,68 @@
+@* What a player is told of a piece they clicked on, whether or not they may move it: whose it is and where it
+   stands, its kind's name, class and worth, how it moves and captures - drawn (MoveDiagramView), or in words where
+   the ruleset draws nothing - its special powers, and what holds it back, each as the ruleset tells it. A kind the
+   ruleset tells nothing more of shows its name and worth alone. *@
+
+<aside class="piece-card" aria-label="About this piece">
+    <header>
+        <PieceIcon Kind="@this.Piece.Kind" Name="@this.Piece.Name" Owner="this.Piece.Owner" Mark="this.Piece.Mark" Pieces="this.Pieces" />
+        <h2>@this.Named(this.Piece.Name)</h2>
+        <button class="close" title="Close" @onclick="this.OnClose">&#x2715;</button>
+    </header>
+    <p class="whose">@this.Owner's, on @this.Cell</p>
+    @if (this.Kind is { } kind)
+    {
+        <p class="worth">@(kind.Class is { } pieceClass ? $"{pieceClass}; taking" : "Taking") it scores @kind.Value.</p>
+        @if (kind.Diagram is { Side: > 0 } diagram)
+        {
+            <MoveDiagramView Diagram="diagram" Piece="this.Piece" Pieces="this.Pieces" />
+        }
+        else
+        {
+            @this.Listed("moves", "Moves", kind.Moves)
+            @this.Listed("captures", "Captures", kind.Captures)
+        }
+        @this.Listed("powers", "Special powers", kind.Powers)
+        @this.Listed("restrictions", "Restrictions", kind.Restrictions)
+    }
+</aside>
+
+@code {
+    [Parameter, EditorRequired]
+    public PieceDto Piece { get; set; } = null!;
+
+    /// <summary>What the ruleset tells of the piece's kind; none, from a server that tells nothing.</summary>
+    [Parameter]
+    public PieceKindDto? Kind { get; set; }
+
+    /// <summary>Whose it is: "Yellow".</summary>
+    [Parameter, EditorRequired]
+    public string Owner { get; set; } = string.Empty;
+
+    /// <summary>Where it stands: "c3".</summary>
+    [Parameter, EditorRequired]
+    public string Cell { get; set; } = string.Empty;
+
+    [Parameter]
+    public PieceSet Pieces { get; set; }
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    private string Named(string text) => PieceStyle.Named(text, this.Pieces);
+
+    /// <summary>A heading and its list, the list classed <paramref name="name"/>; nothing, for an empty list.</summary>
+    private RenderFragment Listed(string name, string heading, ImmutableList<string> lines) =>
+        @<text>
+            @if (!lines.IsEmpty)
+            {
+                <h3>@heading</h3>
+                <ul class="@name">
+                    @foreach (string line in lines)
+                    {
+                        <li>@this.Named(line)</li>
+                    }
+                </ul>
+            }
+        </text>;
+}
