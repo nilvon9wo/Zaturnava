@@ -181,8 +181,8 @@ drawn simply, a shape for its class and a letter for its kind.
 - Infantry placed beyond the start rows (2, or as the game is set), without start-row powers.
 - Pieces confined to a palace placed in it.
 - Bots draft too: Random at random, Midas by value, Solomon… evenly.
-- Later: prices for each game, from its own board and kingdoms
-  ([pieces.md](pieces.md#prices-for-each-game-proposed)).
+- Prices for each game, from its own board's actual dimensions and kingdoms (*Stated* 2026-11-06;
+  [pieces.md](pieces.md#prices-for-each-game)).
 
 ## Stage 5 — Points to spend
 
@@ -238,7 +238,7 @@ drawn simply, a shape for its class and a letter for its kind.
 - Every kind its own look, in both piece sets; the class told at a glance (spec §8). *Done* (2026-11-06):
   each kind has a symbol of its own, the chess symbols for the pieces named as chess's, the elephant for the
   elephants; like pieces have like symbols (the Generals a star, the Dragons their piece winged, the Amazon
-  and Archbishop varied Queen and Bishop, the Knight's kin varied Knights). Beneath the symbol, its class's
+  and Chancellor varied Queen and Rook, the Knight's kin varied Knights). Beneath the symbol, its class's
   emblem, small and unlike any piece's symbol, and beside it the piece's abbreviation, every piece its own
   (all Stated; the emblems' looks *Proposed*). Still to come: above the symbol, a badge for each kind of
   restriction lifted (Stated), once lifts are kept in the game.

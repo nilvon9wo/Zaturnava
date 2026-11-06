@@ -33,6 +33,9 @@ first.
     did was kept is never counted gone (*Proposed*).
   - **N20** On signing in, a player is reminded of every game waiting for their move, oldest first, and
     encouraged to end those they no longer play and resume the oldest of the rest.
+  - **N20** A signed-in player may take back their own seat from any device, signed in as themselves
+    (*Stated* 2026-11-06), so that the reminder can list every game waiting for them, wherever they claimed
+    it. *Proposed*: the server hands that browser a new token for the seat, and the old one no longer works.
 - **N24** Athena takes Pawns with its Raja and Rook (Elephant) when that only loses them: not a real sacrifice.
   *Done*: Athena now subtracts a twentieth of what an enemy could take next from its network's judgement
   (*Proposed* weight). Against Sage it went from about 63 Elo behind to about 17 behind.
@@ -51,9 +54,9 @@ first.
     playable alone; the class's emblem is now drawn small beneath the symbol, so that the class is told too, with
     every piece's own abbreviation beside it (Stated). Still to come: lifts as small badges above the symbol, one
     per kind of restriction, once a piece's lifted restrictions are kept in the game.
-  - **N30** Go through the catalogue for discrepancies between a piece's price and its worth, like the Shogi
-    Pawn's (intended): each to be made intended (a good or bad investment, noted as such) or fixed in the value
-    formula ([pieces.md](grand/pieces.md#still-open)).
+  - Each game's pieces priced on its own board, from its actual dimensions, not values set per size (*Stated*
+    2026-11-06; [pieces](grand/pieces.md#prices-for-each-game)): on the small board the Giraffe cannot move
+    from the centre, yet costs what it does on 8 × 8.
 - **N29** (low) An encyclopedia of pieces: each piece's name here, its other names, the games it comes from
   (Chess, Xiangqi...), the games here that use it, its variants (kinds of Pawn, of Elephant...), and how it
   moves, captures and what else it may do.

@@ -74,12 +74,14 @@ so the premium shrinks: the Lance is worth 56 (50 + reach 4 + premium 3 − 1), 
 (50 + 1 + 4 − 1). The Silver General is a leader already. The value is what capturing the piece
 scores too.
 
-### Prices for each game (proposed)
+### Prices for each game
 
 The sheet prices every piece on an 8 × 8 board. A game may be set on a much larger board, where a
-promotion is further away and a slider reaches further, or a smaller one. **Proposed**, for later:
-the program prices each game's pieces by the same rules, on that game's board and kingdoms, and
-shows the prices in the draft; the sheet stays the reference, on 8 × 8.
+promotion is further away and a slider reaches further, or a smaller one. *Stated* (2026-11-06): the
+program prices each game's pieces on that game's own board, if that is not too complicated; and from the
+board's actual dimensions, adjusting the base price, never from values set for each size, as the quick
+games' sizes are only conveniences. *Proposed*: by the same rules, on that game's board and kingdoms, the
+prices shown in the draft; the sheet stays the reference, on 8 × 8.
 
 - Reach is counted from the board's centre.
 - A promotion's distance is counted from the kingdom's front row, the furthest forward a piece may
@@ -153,7 +155,6 @@ Chaturaji 2027.
 | Amazon | Any distance in any direction, or leaps 2+1 | — | — | 37 | — / — |
 | Queen (Western) | Any distance in any direction | — | — | 27 | — / — |
 | Chancellor | Any distance orthogonally, or leaps 2+1 | — | — | 22 | — / — |
-| Archbishop | Any distance diagonally, or leaps 2+1 | — | — | 21 | — / — |
 | Dragon Bishop (custom) | Any distance diagonally, or leaps 2+1 | — | — | 21 | — / — |
 | Dragon Horse (Shogi) | Any distance diagonally, or one square orthogonally | — | — | 17 | — / — |
 | Rook (Western) | Any distance orthogonally | — | — | 14 | — / — |
@@ -190,7 +191,7 @@ Chaturaji 2027.
 - The Silver and Gold Generals are **Leaders** (the sheet had them as Infantry).
 - The **Dragon King** moves as in Shogi: any distance orthogonally, or one square diagonally.
 - The **Archbishop** moves any distance diagonally, or leaps 2+1 (its description had been the
-  Amazon's).
+  Amazon's). (Since gone: it was the Dragon Bishop, which stays; see the review of 2026-11-06.)
 - The Met, which the sheet had called the **Private**, moves exactly as the **Courtier** does: the
   Makruk Pawn promotes to the Courtier, and the Private is gone.
 - The Xiangqi General's flying-general capture is priced in: once as a speed of 7, now as a
@@ -226,8 +227,35 @@ Together, **Q20** of the [specification](specification.md#9-open-questions).
   [leader promotion bonus](#leader-promotion-bonus) prices it in line with the other pieces that
   may become leaders. A discrepancy between a piece's price and its strength is not wrong in itself
   (it may be a good or a bad investment), but it should be intended, not an accident of the formula.
-  Still to do: go through the catalogue for other discrepancies, even less obvious ones, which may
-  show flaws in the value formula; each found is to be made intended or fixed ([backlog N30](../backlog.md)).
+
+### Review of the catalogue (2026-11-06)
+
+The catalogue gone through for other discrepancies between a piece's price and its strength (backlog N30).
+What was found, and what is made of it:
+
+- **Weaker pieces dearer for their promotions.** The Western Pawn (9) costs more than the Noble (7) or the
+  Minister (6), which move better; the Lance (56) more than the Amazon (37), the strongest piece that is not a
+  leader. Both are the Shogi Pawn's case: the price is mostly the option to promote (into a Queen; into a Gold
+  General, a leader). *Proposed*: intended, by the same reasoning as the Shogi Pawn's.
+- **What taking such a piece scores.** A piece's value is also what taking it scores, so taking a Lance (56)
+  or a Shogi Pawn (54) scores more than taking a Queen (27). *Proposed*: intended, as it follows from two
+  Stated rules (price is value; value is the score); a player who buys the option puts it at risk.
+- **The Dragon Bishop was the Archbishop.** Both moved any distance diagonally or leapt 2+1, and both were
+  worth 21, perhaps one piece under two games' names. *Stated*: the Dragon Bishop stays, in keeping with the
+  other Dragons, and the Archbishop is gone, from the catalogue and the sheet.
+- **Values are counted on 8 × 8, but the quick games are 6 × 6, 8 × 8 and 12 × 12.** On the small board a
+  slider reaches less and a long leaper far less: the Giraffe (4+1) cannot move at all from the four centre
+  cells, yet costs what it does on 8 × 8; on the large board sliders and leapers reach more. The Makruk Pawn's
+  premium rests on four rows to its sixth rank, but it now promotes on entering an enemy kingdom: one row
+  ahead on the small board; on the medium and large boards three and four rows ahead on the files that lead
+  into one, and on the others only by taking aside. This is
+  what [Prices for each game](#prices-for-each-game) settles: each game's pieces priced on its own board.
+- **Hoppers are counted at their best.** A hopper's reach is counted with a piece on every cell next to it, the
+  most it could reach; on an emptying board it may have nothing to hop, so the Grasshopper (7) and the Janggi
+  Cannon (8) may be dear beside the Knight (8). *Proposed*: kept as it is, for playtesting to settle.
+- Nothing else stands out: leaders differ by their reach and powers (the Dragon King 78 above the Fairy
+  General 76 above the Western King 70), compound pieces are about the sum of their parts, and the bound
+  pieces lose a point or two, as [Binding](#binding) sets.
 
 ### Names the program keeps apart
 

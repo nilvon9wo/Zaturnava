@@ -9,7 +9,9 @@ Each argument is one change to docs/Other Potential Pieces.xlsx, on its first sh
   after `@` (`O15==LeaderPromotionBonus@50`);
 - `A1:v=12` sets only the last computed value of a formula cell, so that what a reader without a spreadsheet program
   sees stays true;
-- `name:Name=Sheet1!$A$1` defines (or redefines) a name.
+- `name:Name=Sheet1!$A$1` defines (or redefines) a name;
+- `row-:14` deletes row 14, moving the rows below it up one, and every reference to them with them (in cells,
+  formulas, ranges, comments and names). A range the row was inside shrinks by one.
 
 The file is edited as the XML it is, by text, so that nothing it holds is lost; a cell keeps its style, and a new
 cell takes the style of the cell to its left. Excel recalculates everything when the file is next opened. Needs
@@ -92,6 +94,55 @@ def set_name(workbook: str, name: str, reference: str) -> str:
     return workbook.replace("</sheets>", "</sheets><definedNames>" + defined + "</definedNames>", 1)
 
 
+REFERENCE = re.compile(r"(?<![A-Za-z_\d])(\$?[A-Z]{1,3}\$?)(\d+)(?![\d(])")
+
+
+def shift_references(text: str, deleted: int) -> str:
+    """Every cell reference below the deleted row, one row up."""
+
+    def shifted(found: re.Match[str]) -> str:
+        row = int(found.group(2))
+        return found.group(1) + str(row - 1 if row > deleted else row)
+
+    return REFERENCE.sub(shifted, text)
+
+
+def delete_row(parts: dict[str, bytes], deleted: int) -> None:
+    sheet = parts[SHEET].decode("utf-8")
+    row = re.search(rf'<row r="{deleted}"[^>]*?(?:/>|>.*?</row>)', sheet, re.S)
+    if not row:
+        raise SystemExit(f"row {deleted} is not in the sheet")
+    if re.search(r'<f t="shared"[^>]*ref=', row.group(0)):
+        raise SystemExit(f"row {deleted} holds the master of a shared formula")
+    sheet = sheet[: row.start()] + sheet[row.end() :]
+    # Text the sheet shows (inline or shared strings) is never a reference: only markup and formulas are shifted.
+    sheet = re.sub(
+        r'(?<=\s)(r|ref|sqref)="([^"]*)"',
+        lambda m: f'{m.group(1)}="{shift_references(m.group(2), deleted)}"',
+        sheet,
+    )
+    sheet = re.sub(
+        r"(<f[^>]*>)(.*?)(</f>)",
+        lambda m: m.group(1) + shift_references(m.group(2), deleted) + m.group(3),
+        sheet,
+        flags=re.S,
+    )
+    parts[SHEET] = sheet.encode("utf-8")
+    for name in [name for name in parts if re.fullmatch(r"xl/comments\d*\.xml", name)]:
+        comments = parts[name].decode("utf-8")
+        comments = re.sub(rf'<comment ref="[A-Z]+{deleted}".*?</comment>', "", comments, flags=re.S)
+        comments = re.sub(r'ref="([^"]*)"', lambda m: f'ref="{shift_references(m.group(1), deleted)}"', comments)
+        parts[name] = comments.encode("utf-8")
+    workbook = parts[WORKBOOK].decode("utf-8")
+    workbook = re.sub(
+        r"(<definedName[^>]*>)(.*?)(</definedName>)",
+        lambda m: m.group(1) + shift_references(m.group(2), deleted) + m.group(3),
+        workbook,
+        flags=re.S,
+    )
+    parts[WORKBOOK] = workbook.encode("utf-8")
+
+
 def recalculate_on_load(workbook: str) -> str:
     if "<calcPr" not in workbook:
         return workbook.replace("</workbook>", '<calcPr fullCalcOnLoad="1"/></workbook>', 1)
@@ -104,6 +155,9 @@ def main(changes: list[str]) -> None:
     with zipfile.ZipFile(BOOK) as book:
         parts = {item.filename: book.read(item.filename) for item in book.infolist()}
         infos = book.infolist()
+    for change in [change for change in changes if change.startswith("row-:")]:
+        delete_row(parts, int(change[len("row-:") :]))
+    changes = [change for change in changes if not change.startswith("row-:")]
     sheet = parts[SHEET].decode("utf-8")
     workbook = parts[WORKBOOK].decode("utf-8")
     for change in changes:

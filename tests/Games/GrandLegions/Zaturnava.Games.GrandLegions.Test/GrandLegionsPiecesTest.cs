@@ -43,7 +43,6 @@ public sealed class GrandLegionsPiecesTest
         { "amazon", 35 },
         { "queen", 27 },
         { "chancellor", 22 },
-        { "archbishop", 21 },
         { "dragon-bishop", 21 },
         { "dragon-horse", 17 },
         { "lance", 4 },
@@ -238,7 +237,7 @@ public sealed class GrandLegionsPiecesTest
 
         // Assert
         Assert.Equal(
-            (40, 7, 10, 9, 11, 3),
+            (39, 7, 10, 8, 11, 3),
             (
                 GrandLegionsPieces.ById.Count,
                 counts[PieceClass.Leader],
