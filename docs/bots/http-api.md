@@ -177,7 +177,8 @@ forms to list: build them yourself when the view says you may.
 - **Ending the game**: a seat whose `mayProposeEnd` is true may propose ending it; one whose `mayRejoin`
   is true may take its turns back.
 - **Waiting for someone away**: `away` in the view says who may vote, once the vote is open, and who may
-  [have a bot play for them](#playing), and when.
+  [have a bot play for them](#playing), and when. It is about a seat whose turns have passed while it was away, on
+  anyone's turn, until it says it is back; else about the deciding seat, if no timer limits its decision (Proposed).
 
 The rules refuse any of these that may not be made, as they refuse any illegal action.
 
@@ -198,7 +199,8 @@ The rules refuse any of these that may not be made, as they refuse any illegal a
 | `outcome` | Once over: the winners, the kind of ending, and the story |
 | `secondsLeft` | If the decision is timed, the time left; once it runs out, anyone may `advance` the game to decide for it |
 | `vacancy` | While seats wait to be claimed, who may [fill them with bots](#playing), and when |
-| `promotionDue`, `returning`, `offer`, `proposal`, `away` | What the deciding seat must deal with now, if anything |
+| `promotionDue`, `returning`, `offer`, `proposal` | What the deciding seat must deal with now, if anything |
+| `away` | The vote on waiting for a seat away, or for the deciding seat, if there is one |
 
 The full description of every field is in the contracts, `src/Apis/Zaturnava.Contracts`: each is a
 record, documented where it is declared (`GameViewDto.cs`, `SeatDto.cs`, and so on).

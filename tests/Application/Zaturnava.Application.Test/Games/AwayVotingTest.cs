@@ -42,4 +42,27 @@ public sealed class AwayVotingTest
         // Assert
         Assert.Equal(mayReplace, allowed);
     }
+
+    [Theory]
+    [InlineData(true, true, true)]
+    [InlineData(true, false, false)]
+    [InlineData(false, true, false)]
+    public void IsPassing_WhenAsked_IsTrueOnlyIfTheSeatDecidesAndAllWouldStopWaiting(
+        bool isDeciding,
+        bool isAgreed,
+        bool isPassing
+    )
+    {
+        // Arrange
+        AwayVoting voting = new(Away, [First, Other], isAgreed ? [First, Other] : [First], TimeSpan.Zero)
+        {
+            IsDeciding = isDeciding,
+        };
+
+        // Act
+        bool passing = voting.IsPassing;
+
+        // Assert
+        Assert.Equal(isPassing, passing);
+    }
 }

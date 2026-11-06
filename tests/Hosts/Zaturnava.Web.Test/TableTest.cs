@@ -2258,7 +2258,8 @@ public sealed class TableTest : IDisposable
             (
                 "Black is taking a long time. Keep waiting for them?",
                 "true",
-                "0 of 1 would stop waiting; all must, for their turn to pass."
+                "Stop waiting, and their turns pass, unplayed, until they come back; it takes all of you "
+                    + "(0 of 1 so far). A bot playing for them instead takes their seat for the rest of the game."
             ),
             shown
         );
@@ -2270,6 +2271,23 @@ public sealed class TableTest : IDisposable
                 this._page.Server.Submitted?.Action.Arguments[AwayDto.StopsArgument]
             )
         );
+    }
+
+    [Fact]
+    public void Render_WhenAnotherThanTheSeatDecidingIsAway_AsksWhetherToWaitForThemOnTheirTurns()
+    {
+        // Arrange - Black missed its turns; Yellow, the player, decides, and may vote
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            DecidingSeat = 1,
+            Away = new AwayDto(0, true, [1], []),
+        };
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatOne);
+
+        // Assert
+        Assert.Equal("Black is away. Keep waiting for them on their turns?", table.Find(".away-vote p").TextContent);
     }
 
     [Theory]

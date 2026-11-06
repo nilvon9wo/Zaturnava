@@ -813,6 +813,11 @@ both the triumphing player and their ally may move each other's Boat.
       two minutes back.
     - At the last missed turn the player gives up their turns, as in the
       ordinary end above, and may rejoin the same way.
+    - Once an absent player has missed a turn, the others see the vote on
+      them on anyone's turn, not only on the absent player's, until the
+      absent player says they are back: so that they may have a bot play for
+      them at any time, as their page offers. Stop waiting never seats a bot:
+      it only lets the absent player's turns pass.
     - A player who has given up their turns, whose turn it is to say
       whether to offer a ransom (§8), now passes on it, rather than leaving
       the game waiting for them.

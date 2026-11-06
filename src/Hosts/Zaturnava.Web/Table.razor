@@ -146,7 +146,7 @@
                 {
                     bool isStopping = away.Stopping.Contains(voter.Seat);
                     <div class="away-vote">
-                        <p>@Who(view.Seats[away.Seat]) is taking a long time. Keep waiting for them?</p>
+                        <p>@AwayQuestion(view, away)</p>
                         <div class="actions">
                             <button class="action keep-waiting"
                                     aria-pressed="@(isStopping ? "false" : "true")"
@@ -159,7 +159,7 @@
                                 Stop waiting
                             </button>
                         </div>
-                        <p class="hint">@away.Stopping.Count of @away.Voters.Count would stop waiting; all must, for their turn to pass.</p>
+                        <p class="hint">@AwayHint(away)</p>
                         @if (away.MayReplace(voter.Seat))
                         {
                             <button class="action replace" @onclick="() => this.Replace(voter)">
@@ -1089,6 +1089,23 @@
 
     private Task Fill(SeatClaim claim) =>
         this.Request(() => this.Games.FillOpenSeats(this.Seating.GameId, claim.Token, CancellationToken.None));
+
+    /// <summary>
+    /// "Yellow is taking a long time. Keep waiting for them?", while they decide; "Yellow is away. Keep waiting for them
+    /// on their turns?", while another does.
+    /// </summary>
+    private static string AwayQuestion(GameViewDto view, AwayDto away) =>
+        view.DecidingSeat == away.Seat
+            ? $"{Who(view.Seats[away.Seat])} is taking a long time. Keep waiting for them?"
+            : $"{Who(view.Seats[away.Seat])} is away. Keep waiting for them on their turns?";
+
+    /// <summary>
+    /// What stopping waiting does, and how far the others agree; and what a bot playing for them does instead.
+    /// </summary>
+    private static string AwayHint(AwayDto away) =>
+        "Stop waiting, and their turns pass, unplayed, until they come back; it takes all of you "
+            + $"({away.Stopping.Count} of {away.Voters.Count} so far). A bot playing for them instead takes their seat "
+            + "for the rest of the game.";
 
     /// <summary>"If they do not come back, you may have a bot play for them in 4 min 30 s."</summary>
     private static string ReplaceWait(AwayDto away)

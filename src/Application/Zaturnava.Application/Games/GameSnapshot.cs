@@ -23,7 +23,9 @@ public sealed record GameSnapshot(
     /// <summary>How long the deciding seat has left to decide; null if it may take as long as it likes.</summary>
     public TimeSpan? TimeLeft { get; init; }
 
-    /// <summary>Who may vote to stop waiting for the deciding seat, and how they stand; null if no one may.</summary>
+    /// <summary>
+    /// Who may vote to stop waiting for a seat away, or the deciding seat, and how they stand; null if no one may.
+    /// </summary>
     public AwayVoting? Away { get; init; }
 
     /// <summary>While the game waits for its open seats to be taken, who may fill them with bots, and when.</summary>
