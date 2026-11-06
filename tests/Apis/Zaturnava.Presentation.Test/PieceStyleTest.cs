@@ -43,7 +43,7 @@ public sealed class PieceStyleTest
         string[] glyphs = ["king", "queen", "rook", "bishop", "knight", "pawn"];
         string[] both =
         [
-            "dragon-king", "dragon-bishop", "dragon-horse", "amazon", "archbishop", "chancellor", "knightrider",
+            "dragon-king", "dragon-bishop", "dragon-horse", "amazon", "chancellor", "knightrider",
             "zebra", "xiangqi-horse",
         ];
 

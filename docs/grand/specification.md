@@ -362,11 +362,12 @@ commanding every piece, a ransom's point for each prisoner, 2 for a Raja) were r
   and letters alone are not playable.
 - **Stated 2026-11-06.** Like pieces have like symbols, though not the same: the Generals share a star; the
   Dragons are their chess piece (King, Bishop, Knight) with a dragon's wings either side; the Amazon is the
-  Queen's symbol varied, the Archbishop the Bishop's; the Knightrider, Zebra and Xiangqi Horse the Knight's.
+  Queen's symbol varied (and the Archbishop the Bishop's, before it went: *Stated* 2026-11-06, it was the
+  Dragon Bishop under another name); the Knightrider, Zebra and Xiangqi Horse the Knight's.
   Each class has an emblem unlike any piece's symbol. The abbreviations stand, until playtesting says
   otherwise. The badges for lifts are one per kind of restriction (movement, area, binding), until
-  playtesting says otherwise. *Proposed*: the Chancellor is the Rook's symbol varied, as the Archbishop the
-  Bishop's; the class emblems are framed as on a map of armies (Infantry a cross, Heavy an oval, Cavalry a
+  playtesting says otherwise. *Proposed*: the Chancellor is the Rook's symbol varied, as the Amazon the
+  Queen's; the class emblems are framed as on a map of armies (Infantry a cross, Heavy an oval, Cavalry a
   slash, Artillery a dot; the Leader a flag).
 
 ## 9. Open questions

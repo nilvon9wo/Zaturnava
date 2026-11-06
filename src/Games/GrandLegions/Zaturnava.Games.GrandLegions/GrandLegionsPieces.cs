@@ -42,7 +42,6 @@ public static class GrandLegionsPieces
     public static readonly PieceKindId Amazon = new("amazon");
     public static readonly PieceKindId Queen = new("queen");
     public static readonly PieceKindId Chancellor = new("chancellor");
-    public static readonly PieceKindId Archbishop = new("archbishop");
     public static readonly PieceKindId DragonBishop = new("dragon-bishop");
     public static readonly PieceKindId DragonHorse = new("dragon-horse");
     public static readonly PieceKindId Lance = new("lance");
@@ -129,7 +128,6 @@ public static class GrandLegionsPieces
         Piece(Amazon, "Amazon", Heavy, Fairy, MovementRule.Slide(DirectionSets.Any), KnightLeap),
         Piece(Queen, "Queen (Western)", Heavy, Western, MovementRule.Slide(DirectionSets.Any)),
         Piece(Chancellor, "Chancellor", Heavy, Fairy, OrthogonalSlide, KnightLeap),
-        Piece(Archbishop, "Archbishop", Heavy, Fairy, DiagonalSlide, KnightLeap),
         Piece(DragonBishop, "Dragon Bishop", Heavy, Fairy, DiagonalSlide, KnightLeap),
         Piece(DragonHorse, "Dragon Horse (Shogi)", Heavy, Shogi, DiagonalSlide, OrthogonalStep),
         Piece(Rook, "Rook (Western)", Heavy, Western, OrthogonalSlide),
@@ -194,8 +192,8 @@ public static class GrandLegionsPieces
     /// The symbol each piece is drawn with, so that it is known at a glance (Stated: the chess symbols for the pieces
     /// named as chess's, the elephant for the elephants; pieces alike drawn alike, the Pawns sharing one and the
     /// Generals the star, their abbreviations telling them apart; a Dragon as its piece between dragon's wings; the
-    /// Knight's kin as the Knight, marked). The Amazon, Archbishop and Chancellor as the Queen, Bishop and Rook with
-    /// a Knight's leap, and the other pieces' symbols, are Proposed.
+    /// Knight's kin as the Knight, marked). The Amazon and Chancellor as the Queen and Rook with a Knight's leap, and
+    /// the other pieces' symbols, are Proposed.
     /// </summary>
     public static readonly ImmutableDictionary<PieceKindId, string> Symbols =
         ImmutableDictionary<PieceKindId, string>.Empty
@@ -219,7 +217,6 @@ public static class GrandLegionsPieces
             .Add(Amazon, "amazon")
             .Add(Queen, "queen")
             .Add(Chancellor, "chancellor")
-            .Add(Archbishop, "archbishop")
             .Add(DragonBishop, "dragon-bishop")
             .Add(DragonHorse, "dragon-horse")
             .Add(Lance, "lance")
@@ -268,7 +265,6 @@ public static class GrandLegionsPieces
             .Add(Amazon, "Am")
             .Add(Queen, "Q")
             .Add(Chancellor, "Ch")
-            .Add(Archbishop, "Ar")
             .Add(DragonBishop, "DB")
             .Add(DragonHorse, "DH")
             .Add(Lance, "L")

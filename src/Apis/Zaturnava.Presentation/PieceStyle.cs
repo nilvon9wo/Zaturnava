@@ -63,7 +63,7 @@ public static partial class PieceStyle
     /// scroll for the Minister, a tiara for the Noble, a key for the Courtier, a sword for a Soldier; a lance with its
     /// pennant; a camel, an elephant, a giraffe, three dots for the Threeleaper, a catapult for the War Engine; a
     /// cannon on its wheel, and a grasshopper. A piece drawn as a chess piece with more to it has here what it adds
-    /// (<see cref="SymbolGlyphs"/>): a Dragon its wings; the Amazon, Archbishop and Chancellor a small horseshoe, as
+    /// (<see cref="SymbolGlyphs"/>): a Dragon its wings; the Amazon and Chancellor a small horseshoe, as
     /// they leap as a Knight does too; and the Knight's kin the mark of how they differ: the Knightrider speed lines,
     /// as it rides on, the Zebra stripes, and the Xiangqi Horse a block, as its leap may be blocked.
     /// </summary>
@@ -78,7 +78,6 @@ public static partial class PieceStyle
             .Add("dragon-bishop", Wings)
             .Add("dragon-horse", Wings)
             .Add("amazon", KnightsLeap)
-            .Add("archbishop", KnightsLeap)
             .Add("chancellor", KnightsLeap)
             .Add(
                 "knightrider",
@@ -193,8 +192,7 @@ public static partial class PieceStyle
     /// <summary>
     /// The symbols drawn as chess's pieces, as its glyphs: King, Queen, Rook, Bishop, Knight, Pawn; and the pieces
     /// that are one of those with more to it (Stated: the Dragons, the Knight's kin), each with what it adds drawn
-    /// round it (<see cref="Symbols"/>). The Amazon is a Queen that leaps too, the Archbishop a Bishop, the
-    /// Chancellor a Rook (Proposed).
+    /// round it (<see cref="Symbols"/>). The Amazon is a Queen that leaps too, the Chancellor a Rook (Proposed).
     /// </summary>
     private static readonly ImmutableDictionary<string, string> SymbolGlyphs =
         ImmutableDictionary<string, string>.Empty
@@ -208,7 +206,6 @@ public static partial class PieceStyle
             .Add("dragon-bishop", "♝")
             .Add("dragon-horse", "♞")
             .Add("amazon", "♛")
-            .Add("archbishop", "♝")
             .Add("chancellor", "♜")
             .Add("knightrider", "♞")
             .Add("zebra", "♞")

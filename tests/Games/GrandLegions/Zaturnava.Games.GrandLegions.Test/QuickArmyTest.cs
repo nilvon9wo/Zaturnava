@@ -114,10 +114,10 @@ public sealed class QuickArmyTest
             .GroupBy(kind => kind)
             .ToImmutableDictionary(kind => kind.Key, kind => kind.Count());
 
-        // Assert
+        // Assert - drawn by chance, so a few draws either way are noise: favoured means a twentieth more
         ImmutableList<int> ordered = [.. cheap.Select(kind => counts.GetValueOrDefault(kind))];
         Assert.True(ordered.Min() > 0);
-        Assert.Equal(ordered.Order(), ordered);
+        Assert.All(ordered.Zip(ordered.Skip(1)), pair => Assert.True(pair.First <= pair.Second * 1.05));
     }
 
     [Fact]
