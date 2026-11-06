@@ -993,6 +993,75 @@ public sealed class Chaturaji2027RulesTest
     }
 
     [Theory]
+    [InlineData(0, 1, null, 0)]
+    [InlineData(3, 4, null, 1)]
+    [InlineData(5, 6, Chaturaji2027Endings.Repeated, 0)]
+    public void Apply_WhenATurnEndsWhereTheGameHasBeen_CountsItTillThreeRoundsEndTheGame(
+        int repeated,
+        int expected,
+        string? ending,
+        int warned
+    )
+    {
+        // Arrange - two seats playing: Black moves its Pawn and passes, as it did once before
+        GameState start = this.PawnAndBoat() with { Dice = [5, 1] };
+        MoveAction pawnForward = new(Black, Grid.CellAt(3, 3), Grid.CellAt(3, 4));
+        GameState before = this._rules.Apply(this._rules.Apply(start, pawnForward).State, new PassAction(Black)).State;
+        GameState again = this._rules.Apply(start with { Seen = before.Seen, RepeatedTurns = repeated }, pawnForward)
+            .State;
+
+        // Act
+        Transition transition = this._rules.Apply(again, new PassAction(Black));
+
+        // Assert
+        Assert.Equal(
+            (0, expected, ending, warned),
+            (
+                before.RepeatedTurns,
+                transition.State.RepeatedTurns,
+                transition.State.Outcome?.Ending,
+                transition.Events.Count(happened => happened == new RepetitionWarned(Yellow, 2))
+            )
+        );
+    }
+
+    [Fact]
+    public void Apply_WhenATurnIsPassedIdly_LeavesTheCountOfRepeatedTurnsToTheIdleCount()
+    {
+        // Arrange
+        GameState state = this.Later() with { RepeatedTurns = 2 };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new PassAction(Black));
+
+        // Assert
+        Assert.Equal((2, 1), (transition.State.RepeatedTurns, transition.State.Seen.Count));
+    }
+
+    [Fact]
+    public void Apply_WhenATurnEndsWithACapture_ForgetsEveryPositionBeforeIt()
+    {
+        // Arrange - Black's Raja takes Yellow's Pawn with its last die, whether its turn then passes or not
+        GameState state = this.StateWith(
+            (Grid.CellAt(3, 3), Piece(1, Chaturaji2027Pieces.Raja, Black)),
+            (Grid.CellAt(4, 4), Piece(2, Chaturaji2027Pieces.Pawn, Yellow)),
+            (Grid.CellAt(4, 5), Piece(4, Chaturaji2027Pieces.Pawn, Yellow)),
+            (Grid.CellAt(7, 0), Piece(3, Chaturaji2027Pieces.Raja, Red))
+        ) with
+        {
+            Dice = [5],
+            Seen = [1L, 2L],
+            RepeatedTurns = 3,
+        };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new MoveAction(Black, Grid.CellAt(3, 3), Grid.CellAt(4, 4)));
+
+        // Assert
+        Assert.Equal((0, false), (transition.State.RepeatedTurns, transition.State.Seen.Overlaps([1L, 2L])));
+    }
+
+    [Theory]
     [InlineData(159, 40, 10)]
     [InlineData(195, 49, 1)]
     public void Apply_WhenATurnPassesNearTheEndOfQuietRounds_WarnsEveryoneTheGameMayEnd(

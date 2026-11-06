@@ -40,6 +40,9 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     /// </summary>
     public const int DefaultQuietRounds = 50;
 
+    /// <summary>How many rounds every turn may end where the game has been before, ere it ends on points.</summary>
+    public const int DefaultRepeatRounds = 3;
+
     /// <summary>The timer on a seat whose turn is over, while it may still offer ransoms.</summary>
     public const string RansomWindowTimer = "ransom-window";
 
@@ -64,6 +67,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     private readonly DiceProfile _dice;
     private readonly int _idleRounds;
     private readonly int _quietRounds;
+    private readonly int _repeatRounds;
     private readonly int _awayTurns;
     private readonly PawnPromotion _pawnPromotion;
     private readonly ThroneControl _control;
@@ -85,7 +89,8 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     /// <summary>
     /// The rules as configured; <paramref name="awayTurns"/> is how many turns in a row a seat away may have
     /// passed before it gives them up; <paramref name="variant"/> what the game is played with, Chaturaji 2027's
-    /// own if none; <paramref name="quietRounds"/> how many rounds may pass with no piece taken.
+    /// own if none; <paramref name="quietRounds"/> how many rounds may pass with no piece taken;
+    /// <paramref name="repeatRounds"/> how many may each turn end where the game has been before.
     /// </summary>
     public Chaturaji2027Rules(
         [Required] DiceProfile dice,
@@ -93,11 +98,13 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         PawnPromotion pawnPromotion,
         [Range(1, int.MaxValue)] int awayTurns = DefaultAwayTurns,
         Chaturaji2027Variant? variant = null,
-        [Range(1, int.MaxValue)] int quietRounds = DefaultQuietRounds
+        [Range(1, int.MaxValue)] int quietRounds = DefaultQuietRounds,
+        [Range(1, int.MaxValue)] int repeatRounds = DefaultRepeatRounds
     )
     {
         this._variant = variant ?? Chaturaji2027Variant.Standard;
         this._quietRounds = quietRounds;
+        this._repeatRounds = repeatRounds;
         this._grid = new SquareGridTopology(this._variant.Side, this._variant.Side);
         this._awayTurns = awayTurns;
         this._moves = new MoveGenerator(this._grid, this._variant.Kinds);
@@ -205,10 +212,13 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             this._everyPiece.Scored(
                 this.Unstalled(
                     GameEnd.AfterGivingUp(
-                        GameEnd.AfterQuietTurns(
-                            state,
-                            GameEnd.Unidled(state, this.Acted(state, action)),
-                            this._quietRounds
+                        GameEnd.AfterRepeats(
+                            GameEnd.AfterQuietTurns(
+                                state,
+                                GameEnd.Unidled(state, this.Acted(state, action)),
+                                this._quietRounds
+                            ),
+                            this._repeatRounds
                         ),
                         this._variant
                     )

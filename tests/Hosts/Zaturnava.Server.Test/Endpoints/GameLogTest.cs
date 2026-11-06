@@ -266,6 +266,25 @@ public sealed class GameLogTest
     }
 
     [Theory]
+    [InlineData(2, "2 rounds")]
+    [InlineData(1, "1 round")]
+    public void LatestOf_WhenTurnsHaveEndedWhereTheGameHasBeen_WarnsTheGameMayEnd(int rounds, string told)
+    {
+        // Arrange
+        GameSnapshot snapshot = Snapshot(new RepetitionWarned(Green, rounds));
+
+        // Act
+        ImmutableList<EventDto> log = GameLog.LatestOf(snapshot);
+
+        // Assert
+        Assert.Equal(
+            $"ending 2: For {told}, every turn has ended where the game has been before: if this round does too, "
+                + "the game ends, and points decide.",
+            Told(Assert.Single(log))
+        );
+    }
+
+    [Theory]
     [InlineData(40, 10, "the next 10 rounds")]
     [InlineData(49, 1, "the next round")]
     public void LatestOf_WhenNoPieceHasBeenTakenForLong_WarnsTheGameMayEnd(int rounds, int left, string next)

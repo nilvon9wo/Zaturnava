@@ -26,4 +26,7 @@ public static class Chaturaji2027Endings
 
     /// <summary>No piece was taken for some rounds; points decide.</summary>
     public const string Quiet = "quiet";
+
+    /// <summary>For some rounds, every turn ended where the game had been before; points decide.</summary>
+    public const string Repeated = "repeated";
 }

@@ -265,6 +265,13 @@ file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bo
                     + $"{(quiet.RoundsLeft == 1 ? "round" : $"{Text(quiet.RoundsLeft)} rounds")}, the game ends, "
                     + "and points decide."
             ),
+            RepetitionWarned repeated => this.Add(
+                number,
+                EventDto.Ending,
+                repeated.Seat,
+                $"For {Text(repeated.Rounds)} {(repeated.Rounds == 1 ? "round" : "rounds")}, every turn has ended "
+                    + "where the game has been before: if this round does too, the game ends, and points decide."
+            ),
             RajaRetired retired => this.Add(
                 number,
                 EventDto.Passed,
