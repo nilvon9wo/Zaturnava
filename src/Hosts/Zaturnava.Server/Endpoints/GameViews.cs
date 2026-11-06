@@ -262,7 +262,7 @@ internal static class GameViews
         };
 
     private static PieceMarkDto? MarkOf(IRulesApplying rules, PieceKindId kind) =>
-        rules.MarkOf(kind) is { } mark ? new PieceMarkDto(mark.Emblem, mark.Letters) : null;
+        rules.MarkOf(kind) is { } mark ? new PieceMarkDto(mark.Emblem, mark.Letters) { Class = mark.Class } : null;
 
     private static SeatDto SeatOf(
         GameSnapshot snapshot,

@@ -59,7 +59,7 @@ public sealed class WireFormatTest
             IsPromotionPlayed = true,
             PromotesWhere = "on the last row",
             Restrictions = ["Never on Sundays."],
-            Mark = new PieceMarkDto("artillery", "CX"),
+            Mark = new PieceMarkDto("cannon", "X") { Class = "artillery" },
             Diagram = new MoveDiagramDto(9, [49], [67, 76], [58]),
         };
 

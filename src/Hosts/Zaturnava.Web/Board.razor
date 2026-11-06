@@ -49,15 +49,34 @@
                 {
                     @if (PieceStyle.EmblemOf(mark.Emblem) is { } emblem)
                     {
-                        <path d="@emblem" transform="@EmblemTransform(this.Turn, x, y)" />
+                        <path d="@emblem" transform="@Placed(this.Turn, x, y, PieceStyle.EmblemPlacement)" />
                     }
-                    <g>
-                        <text class="letters"
-                              x="@Svg.Number(x)"
-                              y="@Svg.Number(y + PieceStyle.LettersDrop)"
-                              transform="@this.Turn.Upright(x, y)"
-                            >@mark.Letters</text>
-                    </g>
+                    else if (PieceStyle.EmblemGlyphOf(mark.Emblem) is { } glyph)
+                    {
+                        <g>
+                            <text class="symbol"
+                                  x="@Svg.Number(x)"
+                                  y="@Svg.Number(y - PieceStyle.GlyphRise)"
+                                  transform="@this.Turn.Upright(x, y)"
+                                >@glyph</text>
+                        </g>
+                    }
+                    @if (mark.Class is { } pieceClass && PieceStyle.ClassEmblemOf(pieceClass) is { } classEmblem)
+                    {
+                        <path class="class-emblem"
+                              d="@classEmblem"
+                              transform="@Placed(this.Turn, x, y, PieceStyle.ClassPlacementBeside(mark.Letters))" />
+                    }
+                    @if (mark.Letters.Length > 0)
+                    {
+                        <g>
+                            <text class="letters"
+                                  x="@Svg.Number(x + PieceStyle.LettersShift)"
+                                  y="@Svg.Number(y + PieceStyle.LettersDrop)"
+                                  transform="@this.Turn.Upright(x, y)"
+                                >@mark.Letters</text>
+                        </g>
+                    }
                 }
                 else if (PieceStyle.ShapeOf(piece.Kind, this.Pieces) is { } shape)
                 {
@@ -160,9 +179,9 @@
     private static string ShapeTransform(BoardTurn turn, double x, double y) =>
         $"{turn.Upright(x, y)} translate({Svg.Number(x)} {Svg.Number(y)})";
 
-    /// <summary>A class's emblem, drawn as a shape is, but small and above its piece's letters.</summary>
-    private static string EmblemTransform(BoardTurn turn, double x, double y) =>
-        $"{ShapeTransform(turn, x, y)} {PieceStyle.EmblemPlacement}";
+    /// <summary>A part of a marked piece, its symbol or its class's emblem, drawn as a shape is, and placed.</summary>
+    private static string Placed(BoardTurn turn, double x, double y, string placement) =>
+        $"{ShapeTransform(turn, x, y)} {placement}";
 
     private string CellClass(CellDto cell) =>
         string.Join(

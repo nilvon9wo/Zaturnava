@@ -368,12 +368,15 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
     dominant-baseline: hanging;
 }
 
-/* A marked piece's letters, small and bold under its class's emblem: "Sh" under a shield. */
+/* A marked piece's letters, small and bold beneath its symbol, beside its class's emblem: "Sh" under a pawn. */
 .piece text.letters {
     font-family: "Segoe UI", "DejaVu Sans", Arial, sans-serif;
-    font-size: 0.26px;
+    font-size: 0.18px;
     font-weight: 700;
 }
+
+/* A chess symbol as a marked piece's own, smaller, to leave its class's emblem room beneath. */
+.piece text.symbol { font-size: 0.42px; }
 
 .piece-icon { width: 20px; height: 20px; vertical-align: middle; }
 .piece-icon circle { stroke: var(--piece-edge); stroke-width: 0.035; }

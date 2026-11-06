@@ -66,32 +66,77 @@ public sealed class GrandLegionsPiecesTest
     };
 
     [Fact]
-    public void Marks_WhenEveryPieceIsMarked_TellEachFromTheOthersOfItsClass()
+    public void Marks_WhenEveryPieceIsMarked_GiveEachAnAbbreviationOfItsOwn()
     {
         // Act
-        ImmutableList<IGrouping<string, PieceMark>> classes =
-            [.. GrandLegionsPieces.Marks.Values.GroupBy(mark => mark.Emblem)];
+        ImmutableList<PieceMark> marks = [.. GrandLegionsPieces.Marks.Values];
 
         // Assert
-        Assert.Equal((GrandLegionsPieces.Catalogue.Count, 5), (GrandLegionsPieces.Marks.Count, classes.Count));
-        Assert.All(classes, marks => Assert.Equal(marks.Count(), marks.DistinctBy(mark => mark.Letters).Count()));
+        Assert.Equal(
+            (GrandLegionsPieces.Catalogue.Count, GrandLegionsPieces.Catalogue.Count, 0),
+            (
+                marks.Count,
+                marks.Select(mark => mark.Letters).Distinct(StringComparer.Ordinal).Count(),
+                marks.Count(mark => mark.Letters.Length == 0)
+            )
+        );
+    }
+
+    [Fact]
+    public void Marks_WhenPiecesShareASymbol_ShareANameAndOnlyThose()
+    {
+        // Arrange - a name without its game: "Pawn", "General", "Elephant", "Dragon"
+        static string NameOf(GrandPiece piece) => piece.Name.Split(' ', '(')[0];
+
+        // Act
+        ImmutableList<IGrouping<string, GrandPiece>> shared =
+        [
+            .. GrandLegionsPieces.Catalogue
+                .GroupBy(piece => GrandLegionsPieces.Marks[piece.Id].Emblem)
+                .Where(sharing => sharing.Count() > 1),
+        ];
+
+        // Assert
+        Assert.Equal(
+            "cannon:Cannon,dragon:Dragon,elephant:Elephant,general:General,pawn:Pawn,sword:Soldier",
+            string.Join(
+                ',',
+                shared
+                    .OrderBy(sharing => sharing.Key, StringComparer.Ordinal)
+                    .Select(sharing =>
+                        sharing.Key + ":" + string.Join('/', sharing.Select(NameOf).Distinct(StringComparer.Ordinal))
+                    )
+            )
+        );
     }
 
     [Theory]
-    [InlineData("western-pawn", "infantry", "W")]
-    [InlineData("shogi-pawn", "infantry", "Sh")]
-    [InlineData("janggi-soldier", "infantry", "SJ")]
-    [InlineData("dragon-king", "leader", "DK")]
-    [InlineData("rook", "heavy", "R")]
-    [InlineData("xiangqi-horse", "cavalry", "HX")]
-    [InlineData("xiangqi-cannon", "artillery", "CX")]
-    public void Marks_WhenAPieceIsMarked_AreItsClassesEmblemAndItsLetters(string kind, string emblem, string letters)
+    [InlineData("western-pawn", "pawn", "W", "infantry")]
+    [InlineData("makruk-pawn", "pawn", "M", "infantry")]
+    [InlineData("shogi-pawn", "pawn", "Sh", "infantry")]
+    [InlineData("janggi-soldier", "sword", "SJ", "infantry")]
+    [InlineData("minister", "scroll", "Mi", "infantry")]
+    [InlineData("dragon-king", "dragon", "DK", "leader")]
+    [InlineData("western-king", "king", "K", "leader")]
+    [InlineData("queen", "queen", "Q", "heavy")]
+    [InlineData("rook", "rook", "R", "heavy")]
+    [InlineData("bishop", "bishop", "B", "heavy")]
+    [InlineData("knight", "knight", "Kn", "cavalry")]
+    [InlineData("xiangqi-horse", "horseshoe", "HX", "cavalry")]
+    [InlineData("alfil", "elephant", "Al", "cavalry")]
+    [InlineData("xiangqi-cannon", "cannon", "CX", "artillery")]
+    public void Marks_WhenAPieceIsMarked_AreItsSymbolAnyLettersAndItsClass(
+        string kind,
+        string emblem,
+        string letters,
+        string pieceClass
+    )
     {
         // Act
         PieceMark mark = GrandLegionsPieces.Marks[new PieceKindId(kind)];
 
         // Assert
-        Assert.Equal(new PieceMark(emblem, letters), mark);
+        Assert.Equal(new PieceMark(emblem, letters) { Class = pieceClass }, mark);
     }
 
     [Theory]

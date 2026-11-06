@@ -21,39 +21,88 @@ public sealed class PieceStyleTest
         Assert.Equal(expected, hasChessForms);
     }
 
-    [Theory]
-    [InlineData("leader", "raja")]
-    [InlineData("cavalry", "horse")]
-    public void EmblemOf_WhenTheClassLeadsOrRides_IsTheChaturajiRajaOrHorse(string emblem, string kind)
+    [Fact]
+    public void EmblemOf_WhenTheSymbolIsTheElephant_IsTheChaturajiElephant()
     {
         // Act
-        string? shape = PieceStyle.EmblemOf(emblem);
+        string? shape = PieceStyle.EmblemOf("elephant");
 
         // Assert
-        Assert.Equal(PieceStyle.ShapeOf(kind, PieceSet.Chaturaji), shape);
+        Assert.Equal(PieceStyle.ShapeOf("elephant", PieceSet.Chaturaji), shape);
     }
 
     [Fact]
-    public void EmblemOf_ForEachClass_IsAShapeOfItsOwn()
+    public void EmblemOf_ForEachSymbol_IsAShapeOfItsOwnOrAChessGlyph()
+    {
+        // Arrange
+        string[] symbols =
+        [
+            "star", "general", "sun", "moon", "shield", "fan", "scroll", "tiara", "key", "sword", "lance", "bow",
+            "scales", "cross", "dragon", "chevrons", "stripes", "camel", "horseshoe", "elephant", "giraffe", "dots",
+            "catapult", "cannon", "grasshopper",
+        ];
+        string[] glyphs = ["king", "queen", "rook", "bishop", "knight", "pawn"];
+
+        // Act
+        string?[] shapes = [.. symbols.Select(PieceStyle.EmblemOf)];
+        string?[] drawn = [.. glyphs.Select(PieceStyle.EmblemGlyphOf)];
+
+        // Assert
+        Assert.Equal(
+            (symbols.Length, glyphs.Length, "♜︎", 0, 0),
+            (
+                shapes.OfType<string>().Distinct(StringComparer.Ordinal).Count(),
+                drawn.OfType<string>().Distinct(StringComparer.Ordinal).Count(),
+                drawn[2],
+                glyphs.Count(glyph => PieceStyle.EmblemOf(glyph) is not null),
+                symbols.Count(symbol => PieceStyle.EmblemGlyphOf(symbol) is not null)
+            )
+        );
+    }
+
+    [Fact]
+    public void EmblemOf_WhenTheSymbolIsNotKnownHere_IsNone()
+    {
+        // Act
+        (string? shape, string? glyph) = (PieceStyle.EmblemOf("wizard"), PieceStyle.EmblemGlyphOf("wizard"));
+
+        // Assert
+        Assert.Equal(((string?)null, (string?)null), (shape, glyph));
+    }
+
+    [Fact]
+    public void ClassEmblemOf_ForEachClass_IsAShapeOfItsOwnElseNone()
     {
         // Arrange
         string[] classes = ["leader", "infantry", "heavy", "cavalry", "artillery"];
 
         // Act
-        string?[] shapes = [.. classes.Select(PieceStyle.EmblemOf)];
+        string?[] shapes = [.. classes.Select(PieceStyle.ClassEmblemOf)];
 
         // Assert
-        Assert.Equal(classes.Length, shapes.OfType<string>().Distinct(StringComparer.Ordinal).Count());
+        Assert.Equal(
+            (classes.Length, PieceStyle.ShapeOf("raja", PieceSet.Chaturaji), null),
+            (
+                shapes.OfType<string>().Distinct(StringComparer.Ordinal).Count(),
+                shapes[0],
+                PieceStyle.ClassEmblemOf("wizard")
+            )
+        );
     }
 
-    [Fact]
-    public void EmblemOf_WhenTheClassIsNotKnownHere_IsNone()
+    [Theory]
+    [InlineData("", "translate(0 0.24) scale(0.3)")]
+    [InlineData("Sh", "translate(-0.09 0.24) scale(0.3)")]
+    public void ClassPlacementBeside_WhenThePieceHasLettersOrNot_IsAtTheirLeftElseInTheMiddle(
+        string letters,
+        string expected
+    )
     {
         // Act
-        string? shape = PieceStyle.EmblemOf("wizard");
+        string placement = PieceStyle.ClassPlacementBeside(letters);
 
         // Assert
-        Assert.Null(shape);
+        Assert.Equal(expected, placement);
     }
 
     [Theory]
