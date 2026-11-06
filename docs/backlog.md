@@ -54,8 +54,6 @@ first.
   - **N30** Go through the catalogue for discrepancies between a piece's price and its worth, like the Shogi
     Pawn's (intended): each to be made intended (a good or bad investment, noted as such) or fixed in the value
     formula ([pieces.md](grand/pieces.md#still-open)).
-  - **N31** The Makruk Pawn promotes on entering an enemy kingdom, not in the far three rows (Stated
-    2026-11-06; [roadmap](grand/roadmap.md)).
 - **N29** (low) An encyclopedia of pieces: each piece's name here, its other names, the games it comes from
   (Chess, Xiangqi...), the games here that use it, its variants (kinds of Pawn, of Elephant...), and how it
   moves, captures and what else it may do.

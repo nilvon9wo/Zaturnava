@@ -25,16 +25,22 @@ public static class GrandLegionsRules
     ];
 
     /// <summary>
-    /// Each piece's own promotion, as the catalogue names it (specification §6.2): a Western piece's on the last
-    /// row; a Shogi piece's in the far three rows; a Makruk Pawn's on the sixth rank or beyond, which on any board is
-    /// taken as the far three rows too (Proposed).
+    /// Each piece's own promotion on <paramref name="board"/>, as the catalogue names it (specification §6.2): a
+    /// Western piece's on the last row; a Shogi piece's in the far three rows; a Makruk Pawn's in an enemy kingdom
+    /// (<see cref="EnemyKingdoms"/>).
     /// </summary>
-    public static ImmutableDictionary<PieceKindId, OwnPromotion> OwnPromotions { get; } =
+    public static ImmutableDictionary<PieceKindId, OwnPromotion> OwnPromotionsOn([Required] GrandBoard board) =>
         GrandLegionsPieces.Catalogue
             .Where(piece => piece.PromotesTo.Count > 0)
             .ToImmutableDictionary(
                 piece => piece.Id,
-                piece => new OwnPromotion([.. piece.PromotesTo], piece.Tradition == Tradition.Western ? 1 : 3)
+                piece => piece.Id == GrandLegionsPieces.MakrukPawn
+                    ? new OwnPromotion([.. piece.PromotesTo], 0)
+                    {
+                        Zone = EnemyKingdoms.On(board),
+                        Where = EnemyKingdoms.Where,
+                    }
+                    : new OwnPromotion([.. piece.PromotesTo], piece.Tradition == Tradition.Western ? 1 : 3)
             );
 
     public static ImmutableHashSet<PieceKindId> Leaders { get; } =
@@ -98,6 +104,13 @@ public static class GrandLegionsRules
     /// a game begun before games were dealt starts as the first seed deals it.
     /// </summary>
     public static Chaturaji2027Variant VariantOf([Required] QuickGame game, [Required] ClassDice dice) =>
+        VariantOn(
+            game,
+            dice,
+            new GrandBoard(game.Side, game.Side, game.KingdomWidth, game.KingdomDepth, Rivers: game.Rivers)
+        );
+
+    private static Chaturaji2027Variant VariantOn(QuickGame game, ClassDice dice, GrandBoard board) =>
         new(
             game.Id,
             game.Name,
@@ -114,7 +127,7 @@ public static class GrandLegionsRules
             Game = game.Game,
             Heavies = Heavies,
             Promotables = Promotables,
-            OwnPromotions = OwnPromotions,
+            OwnPromotions = OwnPromotionsOn(board),
             Marks = GrandLegionsPieces.Marks,
             Guides = Guides,
             Scoring = Scoring,
@@ -124,9 +137,7 @@ public static class GrandLegionsRules
             FlyingCapturers = [GrandLegionsPieces.XiangqiGeneral],
             FaceOffCallers = [GrandLegionsPieces.JanggiGeneral],
             DieNames = dice.Classes.ToImmutableDictionary(face => face.Key, face => NameOf(face.Value)),
-            MayMove = RiverCrossing.On(
-                new GrandBoard(game.Side, game.Side, game.KingdomWidth, game.KingdomDepth, Rivers: game.Rivers)
-            ),
+            MayMove = RiverCrossing.On(board),
         };
 
     /// <summary>The dice as kinds: each value lets every piece of the classes it names move.</summary>
