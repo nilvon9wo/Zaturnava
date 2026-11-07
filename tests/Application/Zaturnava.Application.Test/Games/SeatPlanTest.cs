@@ -21,6 +21,19 @@ public sealed class SeatPlanTest
     }
 
     [Fact]
+    public void ToController_WhenOpenForPlayersOnly_IsAnOpenSeatForPlayers()
+    {
+        // Arrange
+        SeatPlan plan = SeatPlan.Open with { IsForPlayers = true };
+
+        // Act
+        SeatController controller = plan.ToController(Bots);
+
+        // Assert
+        Assert.Equal(new OpenSeat { IsForPlayers = true }, controller);
+    }
+
+    [Fact]
     public void ToController_WhenTheBotIsKnown_IsThatBotsSeat()
     {
         // Arrange

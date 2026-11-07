@@ -7,8 +7,9 @@
    which of those bots, each named with its rating; else each is chosen at random among them; and, for a game whose
    armies are dealt at random, whether every army is alike (each its own, unless asked) - or quick: start one
    at once, at a seat chosen at random, easy, medium or hard by which bots it seats among the others - or join,
-   watch or go back to one already started, each saying whether it waits for players or has not started, who at it
-   is away, and when it
+   watch or go back to one already started (a guest may not join one whose open seats are for players signed in,
+   as a player signed in may set up a custom game), each saying whether it waits for players or has not started,
+   who at it is away, and when it
    was created and last changed, and listed by game, size, state (or, for a player signed in, Mine: their own games),
    bots or who is at it ("Bob, Jo*, open"); a game
    over is only listed, with nothing left to watch. Seats go by
@@ -188,6 +189,13 @@
                     Every army alike: one army, picked at random, for every player
                 </label>
             }
+            @if (this._mode != SetupMode.Quick && this._me is not null)
+            {
+                <label class="for-players">
+                    <input type="checkbox" class="players-only" @bind="this._isForPlayers" />
+                    Players signed in only: no guests at the open seats
+                </label>
+            }
             @if (this._mode != SetupMode.Quick && !catalog.Scenarios.IsEmpty)
             {
                 <label class="scenario">
@@ -303,9 +311,18 @@
                                     Back to @SeatName(game.SeatNames, mine.Seat)
                                 </button>
                             }
-                            @foreach (int seat in game.OpenSeats)
+                            @if (game.IsForPlayers && this._me is null)
                             {
-                                <button class="join" @onclick="() => this.Join(game.Id, seat)">Join as @SeatName(game.SeatNames, seat)</button>
+                                <span class="for-players" title="Whoever set it up barred guests from its open seats">
+                                    Sign in to join
+                                </span>
+                            }
+                            else
+                            {
+                                @foreach (int seat in game.OpenSeats)
+                                {
+                                    <button class="join" @onclick="() => this.Join(game.Id, seat)">Join as @SeatName(game.SeatNames, seat)</button>
+                                }
                             }
                             <button class="watch" @onclick="() => this.OnSeated.InvokeAsync(Seating.Watching(game.Id))">
                                 Watch
@@ -368,6 +385,9 @@
 
     /// <summary>Whether a game whose armies are dealt deals every seat the same army: not, unless asked.</summary>
     private bool _areArmiesAlike;
+
+    /// <summary>Whether the game's open seats are for players signed in only, as a player signed in may ask.</summary>
+    private bool _isForPlayers;
     private string? _problem;
 
     /// <summary>How the player last started each game, by the game, as the browser remembers.</summary>
@@ -744,7 +764,8 @@
             this._colour,
             this._scenario.Length == 0 ? null : this._scenario,
             await this.Browser.Claimant(),
-            armies: new ArmyDeal(this._areArmiesAlike)
+            armies: new ArmyDeal(this._areArmiesAlike),
+            isForPlayers: this._isForPlayers
         ));
     }
 

@@ -63,6 +63,9 @@ A game is created with its ruleset and, for each seat in order, the id of the bo
 { "rulesetId": "chaturaji-2027", "bots": [null, "sage", "sage", "sage"] }
 ```
 
+With `"isForPlayers": true`, the seats left open are only for players signed in: a guest's claim of one is refused
+(`403`), and the game's listing says `"isForPlayers": true`.
+
 Claiming an open seat returns its **token**, once: the server keeps only its hash, and nothing else
 can act for the seat. Send it with every action, as `Authorization: Bearer {token}`. A seat is the
 whole of what a token holds. A player who has [signed in](#signing-in) may send their player token with the
@@ -281,7 +284,7 @@ A request the server will not do is answered with a [problem](https://www.rfc-ed
 | Status | Refusal | |
 |---|---|---|
 | 400 | `Invalid` | The request makes no sense: an unknown ruleset or bot, a malformed action |
-| 403 | `Forbidden` | The token does not hold the seat that must decide; or, to speak, holds a guest's seat; or is an AI's, asked to change its player's account |
+| 403 | `Forbidden` | The token does not hold the seat that must decide; or, to speak, holds a guest's seat; or is an AI's, asked to change its player's account; or a guest claims a seat for players signed in only |
 | 404 | `NotFound` | There is no such game |
 | 409 | `Conflict` | The seat is taken, or the game changed meanwhile |
 | 422 | `Illegal` | The rules do not allow the action now |

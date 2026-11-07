@@ -14,6 +14,7 @@ public sealed class SeatControllerTest
     public static TheoryData<SeatController, string, string?> Stored => new()
     {
         { new OpenSeat(), "open", null },
+        { new OpenSeat { IsForPlayers = true }, "open", "players" },
         { new HumanSeat("HASH"), "human", "HASH" },
         { new HumanSeat("HASH", new PlayerId("ada")), "human", "HASH ada" },
         { new HumanSeat("HASH", Nickname: "Ada ~ Lovelace"), "human", "HASH ~Ada ~ Lovelace" },

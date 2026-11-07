@@ -153,7 +153,8 @@ internal static class GameEndpoints
         CancellationToken cancellationToken
     )
     {
-        ImmutableList<SeatPlan> seats = [.. request.Bots.Select(bot => new SeatPlan(bot))];
+        ImmutableList<SeatPlan> seats =
+            [.. request.Bots.Select(bot => new SeatPlan(bot) { IsForPlayers = request.IsForPlayers })];
         Dealing dealing = new(request.AreArmiesAlike, request.ArmiesOf is { } armies ? new GameId(armies) : null);
         GameId id = await games.Create(request.RulesetId, seats, request.Scenario, dealing, cancellationToken);
         if (request.Continuing is { } previous)

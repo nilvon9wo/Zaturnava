@@ -42,4 +42,7 @@ public sealed record GameSummaryDto(
     /// back (<see cref="SeatDto.TurnsMissed"/>); as the game was last saved.
     /// </summary>
     public ImmutableList<int> AwaySeats { get; init; } = [];
+
+    /// <summary>Whether its open seats are only for players signed in: no guest may take one.</summary>
+    public bool IsForPlayers { get; init; }
 }

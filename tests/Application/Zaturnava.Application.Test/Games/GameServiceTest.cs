@@ -266,6 +266,37 @@ public sealed class GameServiceTest
     }
 
     [Fact]
+    public async Task Claim_WhenAGuestClaimsASeatForPlayers_ThrowsSeatForPlayersException()
+    {
+        // Arrange
+        SeatPlan forPlayers = SeatPlan.Open with { IsForPlayers = true };
+        GameId id = await this._service.Create(TinyRules.RulesetId, [forPlayers, Bot], this._cancellation);
+
+        // Act
+        Task<string> claiming = this._service.Claim(id, First, null, "Guest", this._cancellation);
+
+        // Assert
+        SeatForPlayersException refused = await Assert.ThrowsAsync<SeatForPlayersException>(() => claiming);
+        Assert.Equal(GameRequestFailure.Forbidden, refused.Failure);
+    }
+
+    [Fact]
+    public async Task Claim_WhenAPlayerSignedInClaimsASeatForPlayers_SeatsThem()
+    {
+        // Arrange
+        SeatPlan forPlayers = SeatPlan.Open with { IsForPlayers = true };
+        GameId id = await this._service.Create(TinyRules.RulesetId, [forPlayers, Bot], this._cancellation);
+        PlayerId player = new("ada");
+
+        // Act
+        _ = await this._service.Claim(id, First, player, null, this._cancellation);
+
+        // Assert
+        GameSnapshot snapshot = await this._service.Get(id, this._cancellation);
+        Assert.Equal(player, ((HumanSeat)snapshot.Record.Controllers[0]).Claimant);
+    }
+
+    [Fact]
     public async Task Claim_WhenAnAiClaims_MarksTheSeatAsAnAis()
     {
         // Arrange

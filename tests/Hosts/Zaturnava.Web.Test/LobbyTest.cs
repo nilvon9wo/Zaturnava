@@ -417,6 +417,61 @@ public sealed class LobbyTest : IDisposable
     [InlineData(false, false, 0)]
     [InlineData(true, false, 1)]
     [InlineData(true, true, 1)]
+    public void Play_WhenAPlayerIsSignedIn_OffersToBarGuests(bool isSignedIn, bool barsGuests, int offered)
+    {
+        // Arrange
+        if (isSignedIn)
+        {
+            this.SignInAsAdaAtYellow();
+        }
+
+        IRenderedComponent<Lobby> lobby = this.ByStrength();
+        if (barsGuests)
+        {
+            lobby.Find("input.players-only").Change(true);
+        }
+
+        // Act
+        lobby.Find("button.create").Click();
+
+        // Assert
+        Assert.Equal(
+            (offered, barsGuests),
+            (lobby.FindAll("input.players-only").Count, this._page.Server.Created!.IsForPlayers)
+        );
+    }
+
+    [Theory]
+    [InlineData(false, true, "Join as Yellow")]
+    [InlineData(true, false, "Join as Yellow")]
+    [InlineData(true, true, "Sign in to join")]
+    public void Render_WhenAGameIsForPlayersOnly_AsksAGuestToSignInToJoin(bool isForPlayers, bool isGuest, string shown)
+    {
+        // Arrange
+        if (!isGuest)
+        {
+            this.SignInAsAdaAtYellow();
+        }
+
+        this._page.Server.Games =
+        [
+            this._page.Server.Games[0] with { OpenSeats = [1], IsForPlayers = isForPlayers, PlayerIds = [] },
+        ];
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Assert
+        Assert.Equal(
+            shown,
+            lobby.Find(".panel:not(.awaited) ul.games li :is(button.join, span.for-players)").TextContent.Trim()
+        );
+    }
+
+    [Theory]
+    [InlineData(false, false, 0)]
+    [InlineData(true, false, 1)]
+    [InlineData(true, true, 1)]
     public void Play_WhenTheGameIsDealt_OffersEveryArmyAlike(bool isDealt, bool areAlike, int offered)
     {
         // Arrange

@@ -29,4 +29,10 @@ public sealed record CreateGameRequest([Required] string RulesetId, [Required] I
     /// again with the same armies); null to deal anew.
     /// </summary>
     public string? ArmiesOf { get; init; }
+
+    /// <summary>
+    /// Whether the seats left open are only for players signed in: a guest may not take one
+    /// (<see cref="GameSummaryDto.IsForPlayers"/>). Open to anyone, unless asked.
+    /// </summary>
+    public bool IsForPlayers { get; init; }
 }
