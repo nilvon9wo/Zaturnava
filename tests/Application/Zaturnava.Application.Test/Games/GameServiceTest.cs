@@ -382,9 +382,9 @@ public sealed class GameServiceTest
         GameSnapshot filled = await this._service.FillOpenSeats(id, token, this._cancellation);
 
         // Assert
-        Assert.Equal<(SeatController, bool, Vacancy?)>(
-            (new BotSeat(FirstChoiceBot.BotId), false, null),
-            (filled.Record.Controllers[1], filled.Record.IsWaiting, filled.Vacancy)
+        Assert.Equal<(SeatController, bool, Vacancy?, bool)>(
+            (new BotSeat(FirstChoiceBot.BotId), false, null, false),
+            (filled.Record.Controllers[1], filled.Record.IsWaiting, filled.Vacancy, filled.Record.HasChangedHands)
         );
     }
 
@@ -581,10 +581,45 @@ public sealed class GameServiceTest
         // Assert
         GameRecord record = (await this._service.Get(id, this._cancellation)).Record;
         HumanSeat seat = (HumanSeat)record.Controllers[1];
-        Assert.Equal<(bool, PlayerId?, bool, bool, int)>(
-            (true, ada, false, true, record.Version),
-            (seat.IsHeldBy(token), seat.Claimant, seat.IsAi, seat.IsForPlayers, seat.Arrival)
+        Assert.Equal<(bool, PlayerId?, bool, bool, int, bool)>(
+            (true, ada, false, true, record.Version, true),
+            (seat.IsHeldBy(token), seat.Claimant, seat.IsAi, seat.IsForPlayers, seat.Arrival, record.HasChangedHands)
         );
+    }
+
+    [Fact]
+    public async Task TakeOver_WhenTheGameStillWaitsForItsOpenSeats_ChangesNoHands()
+    {
+        // Arrange
+        GameId id = await this._service.Create(TinyRules.RulesetId, [SeatPlan.Open, Bot], this._cancellation);
+
+        // Act
+        _ = await this._service.TakeOver(id, Second, new PlayerId("ada"), this._cancellation);
+
+        // Assert
+        Assert.False((await this._service.Get(id, this._cancellation)).Record.HasChangedHands);
+    }
+
+    [Theory]
+    [InlineData("bob", true, true)]
+    [InlineData("ada", true, false)]
+    [InlineData("bob", false, false)]
+    public async Task Identify_WhenTheGameHasBegun_ChangesHandsOnlyForAnotherPlayer(
+        string who,
+        bool hasBegun,
+        bool expected
+    )
+    {
+        // Arrange - the game begins once its first seat is taken, if a bot plays the second
+        SeatPlan second = hasBegun ? Bot : SeatPlan.Open;
+        GameId id = await this._service.Create(TinyRules.RulesetId, [SeatPlan.Open, second], this._cancellation);
+        string token = await this._service.Claim(id, First, new PlayerId("ada"), null, this._cancellation);
+
+        // Act
+        await this._service.Identify(id, First, token, new PlayerId(who), null, this._cancellation);
+
+        // Assert
+        Assert.Equal(expected, (await this._service.Get(id, this._cancellation)).Record.HasChangedHands);
     }
 
     [Theory]
@@ -1494,9 +1529,9 @@ public sealed class GameServiceTest
         GameSnapshot replaced = await this._paced.ReplaceAway(id, first, this._cancellation);
 
         // Assert
-        Assert.Equal<(SeatController, AwayVoting?)>(
-            (new BotSeat(FirstChoiceBot.BotId), null),
-            (replaced.Record.Controllers[0], replaced.Away)
+        Assert.Equal<(SeatController, AwayVoting?, bool)>(
+            (new BotSeat(FirstChoiceBot.BotId), null, true),
+            (replaced.Record.Controllers[0], replaced.Away, replaced.Record.HasChangedHands)
         );
     }
 

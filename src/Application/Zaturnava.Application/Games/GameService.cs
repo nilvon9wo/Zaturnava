@@ -368,8 +368,9 @@ public sealed class GameService(
             Claimant = claimant,
             Nickname = claimant is null ? Nicknames.Of(nickname) : null,
         };
+        GameRecord next = record.Next() with { Controllers = record.Controllers.SetItem(seat.Value, identified) };
         await this.Save(
-            record.Next() with { Controllers = record.Controllers.SetItem(seat.Value, identified) },
+            identified.Claimant != held.Claimant && ChangesHands(record) ? next with { HasChangedHands = true } : next,
             cancellationToken
         );
     }
@@ -427,10 +428,12 @@ public sealed class GameService(
         {
             IsForPlayers = record.Controllers.Any(controller => controller.IsForPlayers),
         };
-        await this.Save(
-            Summarized(next with { Controllers = record.Controllers.SetItem(seat.Value, taken) }, snapshot.State),
-            cancellationToken
-        );
+        GameRecord reseated = next with
+        {
+            Controllers = record.Controllers.SetItem(seat.Value, taken),
+            HasChangedHands = ChangesHands(record),
+        };
+        await this.Save(Summarized(reseated, snapshot.State), cancellationToken);
         return token;
     }
 
@@ -726,14 +729,27 @@ public sealed class GameService(
                 .OrderBy(_ => Random.Shared.Next())
         );
 
-    /// <summary>The game with its seats played by <paramref name="controllers"/>, and the bots due played.</summary>
+    /// <summary>
+    /// Whether a seat handed to someone else now changes hands, as <see cref="GameRecord.HasChangedHands"/> says: once
+    /// the game has begun, not while it waits for its open seats. A game begun never waits again, as no seat reopens.
+    /// </summary>
+    private static bool ChangesHands(GameRecord record) => !record.IsWaiting;
+
+    /// <summary>
+    /// The game with its seats played by <paramref name="controllers"/>, and the bots due played; as changed hands, if
+    /// it has begun (<see cref="ChangesHands"/>).
+    /// </summary>
     private async Task<GameSnapshot> Reseated(
         GameSnapshot snapshot,
         ImmutableList<SeatController> controllers,
         CancellationToken cancellationToken
     )
     {
-        GameRecord reseated = snapshot.Record.Next() with { Controllers = controllers };
+        GameRecord reseated = snapshot.Record.Next() with
+        {
+            Controllers = controllers,
+            HasChangedHands = ChangesHands(snapshot.Record),
+        };
         Played played = await this.PlayBots(
             snapshot.Rules,
             reseated,

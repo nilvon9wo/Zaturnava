@@ -14,7 +14,8 @@ namespace Net.NowhereAtAll.Zaturnava.Application.Players;
 /// once, in the order the games ended, for every signed-in player at it, but not a seat their own AI played. Each
 /// team is rated as the mean of its seats': a player's, their Elo at the game; a bot's, its rating at the ruleset;
 /// anyone else's, <see cref="Standing.FirstElo"/>. A player's Elo moves by <see cref="K"/> times how far their result
-/// (1 won, a half drawn, 0 lost) is from what their team's rating led to expect against the other teams, on average.
+/// (1 won, a half drawn, 0 lost) is from what their team's rating led to expect against the other teams, on average:
+/// only for a game that counts toward Elo (<see cref="CountsTowardElo"/>).
 /// Each time a player is on the winning team, they gain as experience their own points plus their team's; and in every
 /// game, they add their own points to those they have scored.
 /// </summary>
@@ -148,12 +149,27 @@ public sealed class StandingService(
                 team => team.Key,
                 team => team.Average(seat => this.RatingOf(snapshot, before, seat.Id))
             );
+        bool isRated = CountsTowardElo(snapshot.Record);
         ImmutableList<Standing> after =
         [
-            .. before.Select(entry => After(state, outcome, teams, entry.Key, entry.Value)),
+            .. before.Select(entry => After(state, outcome, teams, entry.Key, entry.Value, isRated)),
         ];
         await this._players.Keep(after, cancellationToken);
     }
+
+    /// <summary>
+    /// Whether the game counts toward its players' Elo (Stated): only if its players stayed the same throughout, no
+    /// seat changing hands once it began (<see cref="GameRecord.HasChangedHands"/>); no seat was a guest's, whose
+    /// rating no one knows; and no player had several seats, their own and their AIs', however many, as one side could
+    /// then play badly to raise the other. Every other count stands, whether or not it does (Proposed).
+    /// </summary>
+    private static bool CountsTowardElo(GameRecord record) =>
+        !record.HasChangedHands
+        && !record.Controllers.Any(controller => controller.IsGuest)
+        && record.Controllers
+            .OfType<HumanSeat>()
+            .GroupBy(seat => seat.Claimant)
+            .All(seats => seats.Count() == 1);
 
     /// <summary>The player whose standing a seat counts in: a signed-in player's, unless their AI played it.</summary>
     private static PlayerId? RatedPlayer(SeatController seat) =>
@@ -174,13 +190,17 @@ public sealed class StandingService(
             .DefaultIfEmpty(Standing.FirstElo)
             .First();
 
-    /// <summary>Where the player at <paramref name="seat"/> stands, the game over.</summary>
+    /// <summary>
+    /// Where the player at <paramref name="seat"/> stands, the game over: their Elo as it was, unless the game
+    /// <paramref name="isRated"/>.
+    /// </summary>
     private static Standing After(
         GameState state,
         GameOutcome outcome,
         ImmutableDictionary<int, double> teams,
         SeatId seat,
-        Standing before
+        Standing before,
+        bool isRated
     )
     {
         int team = state.Teams.TeamOf(seat);
@@ -192,7 +212,7 @@ public sealed class StandingService(
             + state.Scores.Where(score => state.Teams.AreAllied(score.Key, seat)).Sum(score => score.Value);
         return before with
         {
-            Elo = before.Elo + (K * (((double)result / 2) - expected)),
+            Elo = isRated ? before.Elo + (K * (((double)result / 2) - expected)) : before.Elo,
             Experience = before.Experience + (result == Result.Won ? points : 0),
             Points = before.Points + state.Scores.GetValueOrDefault(seat),
             Won = before.Won + (result == Result.Won ? 1 : 0),

@@ -225,6 +225,22 @@ public sealed class EfGameStoreTest : IDisposable
     }
 
     [Fact]
+    public async Task Replace_WhenASeatChangesHands_KeepsThatItHas()
+    {
+        // Arrange
+        GameRecord record = Record("changed-hands");
+        await this._store.Add(record, this._cancellation);
+
+        // Act
+        await new EfGameStore(this._database.NewContext())
+            .Replace(record.Next() with { HasChangedHands = true }, this._cancellation);
+
+        // Assert
+        GameRecord? reread = await new EfGameStore(this._database.NewContext()).Find(record.Id, this._cancellation);
+        Assert.True(reread?.HasChangedHands);
+    }
+
+    [Fact]
     public async Task Replace_WhenASeatGoesAway_KeepsItAwayInTheGameAndItsListing()
     {
         // Arrange

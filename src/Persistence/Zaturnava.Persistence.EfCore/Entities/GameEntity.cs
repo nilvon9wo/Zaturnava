@@ -29,6 +29,9 @@ public sealed class GameEntity
     /// <summary>Whether the game, over, has been counted in its players' standings.</summary>
     public bool IsRated { get; set; }
 
+    /// <summary>Whether a seat has changed hands since the game began, so that it counts toward no one's Elo.</summary>
+    public bool HasChangedHands { get; set; }
+
     public List<SeatEntity> Seats { get; set; } = [];
 
     public List<ActionEntity> Actions { get; set; } = [];

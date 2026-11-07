@@ -22,6 +22,7 @@ internal static class GameRecordMapping
             Created = ToOffset(entity.Created),
             LastChanged = ToOffset(entity.LastChanged),
             Away = AwayOf(entity.Seats),
+            HasChangedHands = entity.HasChangedHands,
         };
     }
 
@@ -38,6 +39,7 @@ internal static class GameRecordMapping
             IsOver = record.IsOver,
             Created = ToUtc(record.Created),
             LastChanged = ToUtc(record.LastChanged),
+            HasChangedHands = record.HasChangedHands,
             Seats = [.. record.Controllers.Select((controller, seat) => ToSeat(record, seat, controller))],
             Actions = [.. NewActions(record, 0)],
         };

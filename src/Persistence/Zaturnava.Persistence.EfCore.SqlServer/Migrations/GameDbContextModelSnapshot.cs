@@ -92,6 +92,9 @@ namespace Net.NowhereAtAll.Zaturnava.Persistence.EfCore.SqlServer.Migrations
                     b.Property<DateTime?>("Created")
                         .HasColumnType("datetime2");
 
+                    b.Property<bool>("HasChangedHands")
+                        .HasColumnType("bit");
+
                     b.Property<bool?>("IsOver")
                         .HasColumnType("bit");
 

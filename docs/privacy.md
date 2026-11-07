@@ -47,7 +47,8 @@ kept on the server too, with your account, as you choose them, so that every bro
 them. The seats you hold, where you dragged the piece card and how you set up each game stay in your browser alone.
 
 Each game you finish while signed in counts in where you stand at that game: your Elo rating, experience, the
-points you scored, and how many of its games you won, lost and drew. The leaderboard shows these beside your name, to anyone.
+points you scored, and how many of its games you won, lost and drew. Your Elo rating moves only for a game whose
+players stayed the same throughout, with no guest at it and no player at several seats. The leaderboard shows these beside your name, to anyone.
 
 When it is finished, signing in with a provider (itch.io, GitHub, Google, Discord, perhaps later Facebook) will
 keep:

@@ -158,6 +158,7 @@ public sealed class EfGameStore(GameDbContext context) : IGamePersisting
             : throw new ConcurrencyConflictException(record.Id);
         current.Version = record.Version;
         current.IsOver = record.IsOver;
+        current.HasChangedHands = record.HasChangedHands;
         current.LastChanged = GameRecordMapping.ToUtc(record.LastChanged);
         foreach (SeatEntity seat in current.Seats)
         {
