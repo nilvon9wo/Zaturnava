@@ -105,13 +105,10 @@ public sealed class GameService(
         GameRecord created = new(GameId.New(), rules.Id, this.ControllersFor(initial, seats), start, 0);
         Played played = await this.PlayBots(rules, created, new Played(initial, start), cancellationToken);
         DateTimeOffset now = this._clock.Now;
-        GameRecord record = created with
-        {
-            Actions = played.Actions,
-            IsOver = played.State.Outcome is not null,
-            Created = now,
-            LastChanged = now,
-        };
+        GameRecord record = Summarized(
+            created with { Actions = played.Actions, Created = now, LastChanged = now },
+            played.State
+        );
         await this._store.Add(record, cancellationToken);
         return record.Id;
     }
@@ -336,10 +333,7 @@ public sealed class GameService(
             new Played(snapshot.State, seated.Actions),
             cancellationToken
         );
-        await this.Save(
-            seated with { Actions = played.Actions, IsOver = played.State.Outcome is not null },
-            cancellationToken
-        );
+        await this.Save(Summarized(seated with { Actions = played.Actions }, played.State), cancellationToken);
         return token;
     }
 
@@ -532,10 +526,21 @@ public sealed class GameService(
     private async Task<GameSnapshot> Saved(GameRecord record, IRulesApplying rules, CancellationToken cancellationToken)
     {
         GameSnapshot snapshot = GameSnapshot.Of(record, rules);
-        GameRecord summarized = record with { IsOver = snapshot.State.Outcome is not null };
+        GameRecord summarized = Summarized(record, snapshot.State);
         await this.Save(summarized, cancellationToken);
         return this.Timed(snapshot with { Record = summarized });
     }
+
+    /// <summary>
+    /// The record with what a lobby lists it by, kept so that it need not replay it: whether the game is over, and
+    /// which seats a person (or no one yet) plays are away.
+    /// </summary>
+    private static GameRecord Summarized(GameRecord record, GameState state) =>
+        record with
+        {
+            IsOver = state.Outcome is not null,
+            Away = [.. state.Absence.Away.Where(seat => record.Controllers[seat.Value] is not BotSeat)],
+        };
 
     /// <summary>
     /// The snapshot with the time its deciding seat has left, if its decision is timed; else, with who may
@@ -568,10 +573,7 @@ public sealed class GameService(
     {
         GameState state = snapshot.State;
         Absence absence = state.Absence;
-        IEnumerable<SeatId> away = state.Seats
-            .Select(seat => seat.Id)
-            .Where(seat => absence.MissedBy(seat) > 0 && !absence.Returning.Contains(seat))
-            .OrderBy(seat => seat != state.DecidingSeat);
+        IEnumerable<SeatId> away = absence.Away.OrderBy(seat => seat != state.DecidingSeat);
         IEnumerable<SeatId> deciding = (isUntimed, state.DecidingSeat) is (true, { } decider) ? [decider] : [];
         return away
             .Concat(deciding)

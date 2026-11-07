@@ -53,7 +53,8 @@ Chaturaji 2027 a player may still join. The reply:
 
 Each game is listed as last saved, so listing is quick however many games there are, newest change first.
 `created` and `lastChanged` say when it was created and when it last changed (a move, or a seat taken); a game
-from before these were kept has neither.
+from before these were kept has neither. `awaySeats` lists the seats away, in order: a person's whose turns have
+passed while they were away, until they say they are back; empty for a game not saved since this was kept.
 
 A game is created with its ruleset and, for each seat in order, the id of the bot that plays it, or
 `null` to leave the seat open:

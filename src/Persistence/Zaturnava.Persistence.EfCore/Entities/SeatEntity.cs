@@ -17,4 +17,7 @@ public sealed class SeatEntity
     public string Kind { get; set; } = null!;
 
     public string? Detail { get; set; }
+
+    /// <summary>Whether the seat is away, as the game was last saved; false, if unsaved since this was kept.</summary>
+    public bool IsAway { get; set; }
 }

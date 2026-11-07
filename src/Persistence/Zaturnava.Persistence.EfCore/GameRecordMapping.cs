@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Text.Json;
 using Net.NowhereAtAll.Zaturnava.Application.Games;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
+using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 using Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Entities;
 
 namespace Net.NowhereAtAll.Zaturnava.Persistence.EfCore;
@@ -20,8 +21,13 @@ internal static class GameRecordMapping
             IsOver = entity.IsOver,
             Created = ToOffset(entity.Created),
             LastChanged = ToOffset(entity.LastChanged),
+            Away = AwayOf(entity.Seats),
         };
     }
+
+    /// <summary>The seats away, in seat order.</summary>
+    private static ImmutableList<SeatId> AwayOf(IReadOnlyCollection<SeatEntity> seats) =>
+        [.. seats.Where(seat => seat.IsAway).Select(seat => new SeatId(seat.Seat)).OrderBy(seat => seat.Value)];
 
     public static GameEntity ToEntity(GameRecord record) =>
         new()
@@ -32,7 +38,7 @@ internal static class GameRecordMapping
             IsOver = record.IsOver,
             Created = ToUtc(record.Created),
             LastChanged = ToUtc(record.LastChanged),
-            Seats = [.. record.Controllers.Select((controller, seat) => ToSeat(record.Id, seat, controller))],
+            Seats = [.. record.Controllers.Select((controller, seat) => ToSeat(record, seat, controller))],
             Actions = [.. NewActions(record, 0)],
         };
 
@@ -51,14 +57,22 @@ internal static class GameRecordMapping
         seat.Detail = controller.Detail;
     }
 
-    private static SeatEntity ToSeat(GameId id, int seat, SeatController controller) =>
+    /// <summary>The seat as <paramref name="record"/> has it: who controls it, and whether it is away.</summary>
+    public static void Update(SeatEntity seat, GameRecord record)
+    {
+        Update(seat, record.Controllers[seat.Seat]);
+        seat.IsAway = record.Away.Contains(new SeatId(seat.Seat));
+    }
+
+    private static SeatEntity ToSeat(GameRecord record, int seat, SeatController controller) =>
         new()
         {
-            Id = ChildId(id, seat),
-            GameId = id.Value,
+            Id = ChildId(record.Id, seat),
+            GameId = record.Id.Value,
             Seat = seat,
             Kind = controller.Kind,
             Detail = controller.Detail,
+            IsAway = record.Away.Contains(new SeatId(seat)),
         };
 
     private static ActionEntity ToAction(GameId id, int sequence, ActionDescriptor descriptor) =>
@@ -72,7 +86,7 @@ internal static class GameRecordMapping
         };
 
     /// <summary>The game as a lobby lists it, from its row, its seats and how many actions it has.</summary>
-    public static GameListing ToListing(GameEntity entity, IEnumerable<SeatEntity> seats, int moves) =>
+    public static GameListing ToListing(GameEntity entity, IReadOnlyCollection<SeatEntity> seats, int moves) =>
         new(
             new GameId(entity.Id),
             entity.RulesetId,
@@ -84,6 +98,7 @@ internal static class GameRecordMapping
         {
             Created = ToOffset(entity.Created),
             LastChanged = ToOffset(entity.LastChanged),
+            Away = AwayOf(seats),
         };
 
     private static DateTimeOffset? ToOffset(DateTime? utc) =>

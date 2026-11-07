@@ -29,6 +29,22 @@ public sealed class AbsenceTest
     }
 
     [Fact]
+    public void Away_WhenSeatsMissedTurns_NamesThoseNotBackInSeatOrder()
+    {
+        // Arrange - Black is back; Green and Yellow missed turns, and a seat missed none
+        Absence absence = Away with
+        {
+            Missed = Away.Missed.Add(Green, 1).Add(Yellow, 3).Add(new SeatId(3), 0),
+        };
+
+        // Act
+        IEnumerable<SeatId> away = absence.Away;
+
+        // Assert
+        Assert.Equal([Yellow, Green], away);
+    }
+
+    [Fact]
     public void StoppingFor_WhenSeatsWouldStopWaiting_NamesThoseForThatSeatOnly()
     {
         // Arrange - nothing beyond who is away

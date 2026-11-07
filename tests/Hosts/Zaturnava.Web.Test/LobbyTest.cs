@@ -1296,6 +1296,31 @@ public sealed class LobbyTest : IDisposable
         Assert.Equal(expected, lobby.Find("span.state").TextContent);
     }
 
+    [Theory]
+    [InlineData("1", false, "Yellow away")]
+    [InlineData("1,3", false, "Yellow and Red away")]
+    [InlineData("1", true, "")]
+    public void Render_WhenSeatsAtAGameAreAway_SaysWhoUnlessItIsOver(string away, bool isOver, string expected)
+    {
+        // Arrange
+        this._page.Server.Games =
+        [
+            this._page.Server.Games[0] with
+            {
+                OpenSeats = [],
+                Moves = 12,
+                IsOver = isOver,
+                AwaySeats = [.. away.Split(',').Select(int.Parse)],
+            },
+        ];
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Assert
+        Assert.Equal(expected, lobby.Find("span.state").TextContent);
+    }
+
     [Fact]
     public void Render_WhenAGamesTimesWereKept_SaysWhenItWasCreatedAndLastChanged()
     {

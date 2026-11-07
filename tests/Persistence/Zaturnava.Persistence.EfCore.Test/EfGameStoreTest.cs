@@ -225,6 +225,25 @@ public sealed class EfGameStoreTest : IDisposable
     }
 
     [Fact]
+    public async Task Replace_WhenASeatGoesAway_KeepsItAwayInTheGameAndItsListing()
+    {
+        // Arrange
+        GameRecord record = Record("away");
+        await this._store.Add(record, this._cancellation);
+        GameRecord changed = record.Next() with { Away = [new SeatId(0)] };
+
+        // Act
+        await new EfGameStore(this._database.NewContext()).Replace(changed, this._cancellation);
+
+        // Assert
+        EfGameStore rereading = new(this._database.NewContext());
+        GameRecord? reread = await rereading.Find(record.Id, this._cancellation);
+        GamePage page = await rereading.Page(new GameQuery(), Offered, this._cancellation);
+        Assert.Equal([new SeatId(0)], reread?.Away ?? []);
+        Assert.Equal([new SeatId(0)], page.Games.Single().Away);
+    }
+
+    [Fact]
     public async Task Replace_WhenTheVersionIsStale_ThrowsConcurrencyConflictException()
     {
         // Arrange

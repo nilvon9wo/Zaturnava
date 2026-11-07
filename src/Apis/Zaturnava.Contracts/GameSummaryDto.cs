@@ -36,4 +36,10 @@ public sealed record GameSummaryDto(
     public DateTimeOffset? Created { get; init; }
 
     public DateTimeOffset? LastChanged { get; init; }
+
+    /// <summary>
+    /// The seats away, in seat order: a person's whose turns have passed while they were away, until they say they are
+    /// back (<see cref="SeatDto.TurnsMissed"/>); as the game was last saved.
+    /// </summary>
+    public ImmutableList<int> AwaySeats { get; init; } = [];
 }

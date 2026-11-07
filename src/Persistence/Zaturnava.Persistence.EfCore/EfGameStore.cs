@@ -161,7 +161,7 @@ public sealed class EfGameStore(GameDbContext context) : IGamePersisting
         current.LastChanged = GameRecordMapping.ToUtc(record.LastChanged);
         foreach (SeatEntity seat in current.Seats)
         {
-            GameRecordMapping.Update(seat, record.Controllers[seat.Seat]);
+            GameRecordMapping.Update(seat, record);
         }
 
         current.Actions.AddRange(GameRecordMapping.NewActions(record, current.Actions.Count));

@@ -67,6 +67,7 @@ internal static class GameViews
             IsOver = game.IsOver,
             Created = game.Created,
             LastChanged = game.LastChanged,
+            AwaySeats = [.. game.Away.Select(seat => seat.Value)],
         };
 
     /// <summary>A game's history, on the wire: the same shape self-play writes it in.</summary>

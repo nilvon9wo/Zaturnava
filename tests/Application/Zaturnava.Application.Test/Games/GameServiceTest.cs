@@ -1448,6 +1448,29 @@ public sealed class GameServiceTest
     }
 
     [Fact]
+    public async Task Advance_WhenASeatIsAway_SavesItAwayUntilABotTakesItsPlace()
+    {
+        // Arrange - the first seat, away, was passed; the second, its voter, decides now
+        (GameId id, string voter, _) = await this.FirstSeatAway();
+        this._time.Pass(Grace);
+        GameSnapshot voted = await this._paced.Submit(id, voter, StopWaitingFor(First), this._cancellation);
+
+        // Act
+        GameSnapshot passed = await this._paced.Advance(id, voted.Record.Version, this._cancellation);
+        this._time.Pass(GameServiceSettings.DefaultReplaceWait);
+        GameSnapshot replaced = await this._paced.ReplaceAway(id, voter, this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            ($"{First.Value}", string.Empty),
+            (
+                string.Join(",", passed.Record.Away.Select(seat => seat.Value)),
+                string.Join(",", replaced.Record.Away.Select(seat => seat.Value))
+            )
+        );
+    }
+
+    [Fact]
     public async Task ReplaceAway_WhenTheGraceIsNotOver_Refuses()
     {
         // Arrange - the second seat arrived first, but the first has had no time yet
