@@ -68,6 +68,7 @@ internal static class GameViews
             Created = game.Created,
             LastChanged = game.LastChanged,
             AwaySeats = [.. game.Away.Select(seat => seat.Value)],
+            IsForPlayers = game.Controllers.Any(controller => controller is OpenSeat { IsForPlayers: true }),
         };
 
     /// <summary>A game's history, on the wire: the same shape self-play writes it in.</summary>

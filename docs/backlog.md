@@ -122,7 +122,10 @@ first.
   decide ([OQ8](open-questions.md#oq8-which-games-count-toward-a-players-elo)): this asked that a game count
   toward a rating only if no seat changed hands during it and no seat was a guest's; N3 counts every finished
   game for its signed-in seats.
-- A signed-in player setting up a game may bar guests from it (*Stated 2026-11-01*).
+- A signed-in player setting up a game may bar guests from it (*Stated 2026-11-01*). *Done* (*Proposed*: how):
+  a custom game set up signed in may be **Players signed in only**; its open seats then refuse a guest, and the
+  lobby asks a guest to sign in to join it. Playing such a game again opens its seats to anyone, unless set up
+  so anew.
 - A person may take a seat over from a bot, where the game allows it (*Stated 2026-11-01*, low priority).
 - A custom game's board size chosen freely, within limits, rather than only small, medium or large
   (*Stated 2026-11-01*); likely to come with the game setup rework.

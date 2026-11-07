@@ -308,6 +308,7 @@ public sealed class GameService(
     /// </summary>
     /// <exception cref="GameNotFoundException">There is no such game.</exception>
     /// <exception cref="SeatUnavailableException">The seat does not exist, or is not open.</exception>
+    /// <exception cref="SeatForPlayersException">A guest claims a seat left only for players signed in.</exception>
     public async Task<string> Claim(
         GameId id,
         SeatId seat,
@@ -318,10 +319,12 @@ public sealed class GameService(
     )
     {
         GameRecord record = await this.Load(id, cancellationToken);
-        bool isOpen = record.Controllers.ElementAtOrDefault(seat.Value)?.IsOpen == true;
-        string token = isOpen
-            ? SeatTokens.Issue()
-            : throw new SeatUnavailableException(id, seat);
+        string token = (record.Controllers.ElementAtOrDefault(seat.Value), claimant) switch
+        {
+            (OpenSeat { IsForPlayers: true }, null) => throw new SeatForPlayersException(id, seat),
+            (OpenSeat, _) => SeatTokens.Issue(),
+            _ => throw new SeatUnavailableException(id, seat),
+        };
         GameRecord next = record.Next();
         HumanSeat claimed =
             new(SeatTokens.Hash(token), claimant, claimant is null ? Nicknames.Of(nickname) : null, isAi, next.Version);

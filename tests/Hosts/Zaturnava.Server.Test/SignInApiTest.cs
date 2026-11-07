@@ -198,6 +198,32 @@ public sealed partial class SignInApiTest(SigningInServer server) : IClassFixtur
     }
 
     [Fact]
+    public async Task Claim_WhenTheGameIsForPlayersOnly_RefusesAGuestButSeatsAPlayerSignedIn()
+    {
+        // Arrange
+        string token = TokenOf(await this.Done("GitHub|for-players|Ada", SigningInServer.Page));
+        HttpGameClient client = server.GameClient();
+        GameCreatedDto created = await client.Create(
+            new CreateGameRequest(ZaturnavaServer.Chaturaji2027, ZaturnavaServer.OneOpenSeat) { IsForPlayers = true },
+            this._cancellation
+        );
+        bool listed = (await client.List(new GameListQuery(PageSize: 100), this._cancellation))
+            .Games.Single(game => game.Id == created.GameId).IsForPlayers;
+
+        // Act
+        GameRequestRefusedException refused = await Assert.ThrowsAsync<GameRequestRefusedException>(() =>
+            client.Claim(created.GameId, 0, null, new ClaimSeatRequest("Guest"), this._cancellation)
+        );
+        _ = await client.Claim(created.GameId, 0, token, null, this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            (true, Refusal.Forbidden, "Ada"),
+            (listed, refused.Refusal, (await client.Get(created.GameId, this._cancellation)).Seats[0].Player)
+        );
+    }
+
+    [Fact]
     public async Task Claim_WhenThePlayerTokenStandsForNoOne_IsRefusedRatherThanSeatingAGuest()
     {
         // Arrange
