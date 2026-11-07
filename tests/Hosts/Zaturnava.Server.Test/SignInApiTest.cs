@@ -445,6 +445,40 @@ public sealed partial class SignInApiTest(SigningInServer server) : IClassFixtur
     }
 
     [Fact]
+    public async Task TakeOver_WhenAPlayerTakesABotsSeat_HoldsItByTheTokenGivenAndIsNamedThere()
+    {
+        // Arrange
+        HttpGameClient client = server.GameClient();
+        GameCreatedDto created = await client.Create(
+            new CreateGameRequest(ZaturnavaServer.Chaturaji2027, ZaturnavaServer.OneOpenSeat),
+            this._cancellation
+        );
+        _ = await client.Claim(created.GameId, 0, null, null, this._cancellation);
+        string player = TokenOf(await this.Done("GitHub|taking-over|Tamsin", SigningInServer.Page));
+
+        // Act
+        SeatClaimedDto taken = await client.TakeOver(created.GameId, 1, player, this._cancellation);
+
+        // Assert
+        await client.Identify(created.GameId, 1, player, new IdentifySeatRequest(taken.Token), this._cancellation);
+        GameViewDto view = await client.Get(created.GameId, this._cancellation);
+        Assert.Equal<(string?, string?)>((null, "Tamsin"), (view.Seats[1].BotId, view.Seats[1].Player));
+    }
+
+    [Fact]
+    public async Task TakeOver_WhenNoPlayerTokenIsSent_IsRefused()
+    {
+        // Arrange - nothing beyond the server
+
+        // Act
+        using HttpResponseMessage response =
+            await this.Send(HttpMethod.Post, "api/games/g/seats/0/take-over", null);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
     public async Task TakeBack_WhenNoPlayerTokenIsSent_IsRefused()
     {
         // Arrange - nothing beyond the server

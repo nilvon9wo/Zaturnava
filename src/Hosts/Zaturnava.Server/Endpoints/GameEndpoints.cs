@@ -32,6 +32,7 @@ internal static class GameEndpoints
         _ = routes.MapPost(GameRoute + "/seats/{seat:int}", Claim);
         _ = routes.MapPut(GameRoute + "/seats/{seat:int}", Identify);
         _ = routes.MapPost(GameRoute + "/seats/{seat:int}/take-back", TakeBack);
+        _ = routes.MapPost(GameRoute + "/seats/{seat:int}/take-over", TakeOver);
         _ = routes.MapPost(GameRoute + "/actions", Submit);
         _ = routes.MapPost(GameRoute + "/advance", Advance);
         _ = routes.MapPost(GameRoute + "/fill", Fill);
@@ -311,6 +312,24 @@ internal static class GameEndpoints
     {
         PlayerId player = await ClaimantOf(request, players, cancellationToken) ?? throw new UnknownPlayerException();
         string token = await games.TakeBack(new GameId(gameId), new SeatId(seat), player, cancellationToken);
+        return new SeatClaimedDto(token);
+    }
+
+    /// <summary>
+    /// Hands the player the request's token stands for the seat a bot plays, and a token to hold it by: refused, if
+    /// it carries none, or stands for no one.
+    /// </summary>
+    private static async Task<SeatClaimedDto> TakeOver(
+        string gameId,
+        int seat,
+        HttpRequest request,
+        GameService games,
+        PlayerService players,
+        CancellationToken cancellationToken
+    )
+    {
+        PlayerId player = await ClaimantOf(request, players, cancellationToken) ?? throw new UnknownPlayerException();
+        string token = await games.TakeOver(new GameId(gameId), new SeatId(seat), player, cancellationToken);
         return new SeatClaimedDto(token);
     }
 

@@ -10,7 +10,7 @@
 
 @if (this._seating is { } seating)
 {
-    <Table @key="seating.GameId"
+    <Table @key="(seating.GameId, seating.Claim?.Seat)"
            Seating="seating"
            IsSoundOn="this._isSoundOn"
            IsSafetyOn="this._isSafetyOn"

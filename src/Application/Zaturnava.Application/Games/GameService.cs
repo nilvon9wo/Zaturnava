@@ -400,6 +400,41 @@ public sealed class GameService(
     }
 
     /// <summary>
+    /// Hands <paramref name="player"/> the seat a bot plays, for the rest of the game, and a token to hold it by
+    /// (Stated: a person may take a seat over from a bot): only in a game not over, and only to a player holding no
+    /// seat at it already, so that no one plays two seats by it (Proposed). Should the game wait for that seat to
+    /// decide, the player now decides for it.
+    /// </summary>
+    /// <exception cref="GameNotFoundException">There is no such game.</exception>
+    /// <exception cref="GameUnreplayableException">Its rules no longer replay it.</exception>
+    /// <exception cref="SeatNotTakenOverException">
+    /// No bot plays the seat, the game is over, or the player holds a seat at it.
+    /// </exception>
+    public async Task<string> TakeOver(GameId id, SeatId seat, PlayerId player, CancellationToken cancellationToken)
+    {
+        GameSnapshot snapshot = await this.Get(id, cancellationToken);
+        GameRecord record = snapshot.Record;
+        if (record.Controllers.ElementAtOrDefault(seat.Value) is not BotSeat
+            || snapshot.State.Outcome is not null
+            || record.IsClaimedBy(player))
+        {
+            throw new SeatNotTakenOverException(id, seat);
+        }
+
+        string token = SeatTokens.Issue();
+        GameRecord next = record.Next();
+        HumanSeat taken = new(SeatTokens.Hash(token), player, Arrival: next.Version)
+        {
+            IsForPlayers = record.Controllers.Any(controller => controller.IsForPlayers),
+        };
+        await this.Save(
+            Summarized(next with { Controllers = record.Controllers.SetItem(seat.Value, taken) }, snapshot.State),
+            cancellationToken
+        );
+        return token;
+    }
+
+    /// <summary>
     /// Fills the open seats of a game waiting for people with bots, for the person whose seat <paramref name="token"/>
     /// holds, if they may now (<see cref="Vacancy"/>): each with a bot not already seated, at random, never one paid
     /// for each use; a seat no bot is left for stays open. The game begins, if no seat is left open, and the bots due

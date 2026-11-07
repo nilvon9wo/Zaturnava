@@ -567,6 +567,75 @@ public sealed class GameServiceTest
     }
 
     [Fact]
+    public async Task TakeOver_WhenABotPlaysTheSeat_HandsItToThePlayerForGood()
+    {
+        // Arrange - the game set up for players only, so that the seat taken over is too
+        PlayerId ada = new("ada");
+        SeatPlan forPlayers = SeatPlan.Open with { IsForPlayers = true };
+        GameId id = await this._service.Create(TinyRules.RulesetId, [forPlayers, Bot], this._cancellation);
+        _ = await this._service.Claim(id, First, new PlayerId("bob"), null, this._cancellation);
+
+        // Act
+        string token = await this._service.TakeOver(id, Second, ada, this._cancellation);
+
+        // Assert
+        GameRecord record = (await this._service.Get(id, this._cancellation)).Record;
+        HumanSeat seat = (HumanSeat)record.Controllers[1];
+        Assert.Equal<(bool, PlayerId?, bool, bool, int)>(
+            (true, ada, false, true, record.Version),
+            (seat.IsHeldBy(token), seat.Claimant, seat.IsAi, seat.IsForPlayers, seat.Arrival)
+        );
+    }
+
+    [Theory]
+    [InlineData("a person's")]
+    [InlineData("no seat")]
+    [InlineData("seated already")]
+    public async Task TakeOver_WhenNoBotPlaysTheSeatOrThePlayerSitsThere_Refuses(string why)
+    {
+        // Arrange
+        PlayerId ada = new("ada");
+        GameId id = await this._service.Create(TinyRules.RulesetId, [SeatPlan.Open, Bot], this._cancellation);
+        _ = await this._service.Claim(id, First, why == "seated already" ? ada : null, null, this._cancellation);
+        SeatId seat = why switch
+        {
+            "a person's" => First,
+            "no seat" => new SeatId(7),
+            _ => Second,
+        };
+
+        // Act
+        Task<string> taking = this._service.TakeOver(id, seat, ada, this._cancellation);
+
+        // Assert
+        SeatNotTakenOverException refused = await Assert.ThrowsAsync<SeatNotTakenOverException>(() => taking);
+        Assert.Equal(GameRequestFailure.Conflict, refused.Failure);
+    }
+
+    [Fact]
+    public async Task TakeOver_WhenTheGameIsOver_Refuses()
+    {
+        // Arrange - a game the second seat ended, its seat then handed to a bot
+        InMemoryGameStore store = new();
+        GameService service = this.Service(GameServiceSettings.Default, store);
+        GameId id = await service.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
+        string token = await Sit(service, id, Second, this._cancellation);
+        _ = await service.Submit(id, token, new ProposeEndAction(Second, false).Describe(), this._cancellation);
+        GameRecord ended = (await store.Find(id, this._cancellation))!;
+        await store.Remove([id], this._cancellation);
+        await store.Add(
+            ended with { Controllers = ended.Controllers.SetItem(1, new BotSeat(FirstChoiceBot.BotId)) },
+            this._cancellation
+        );
+
+        // Act
+        Task<string> taking = service.TakeOver(id, Second, new PlayerId("ada"), this._cancellation);
+
+        // Assert
+        _ = await Assert.ThrowsAsync<SeatNotTakenOverException>(() => taking);
+    }
+
+    [Fact]
     public async Task Identify_WhenTheTokenDoesNotHoldTheSeat_Refuses()
     {
         // Arrange

@@ -128,6 +128,14 @@ internal sealed class StubGameServer : IGameServing
     ) =>
         throw new NotSupportedException("The tools play the seats they claim, and take none back.");
 
+    public Task<SeatClaimedDto> TakeOver(
+        [Required] string gameId,
+        int seat,
+        [Required] string playerToken,
+        CancellationToken cancellationToken
+    ) =>
+        throw new NotSupportedException("The tools play the seats they claim, and take none over.");
+
     public Task Identify(
         [Required] string gameId,
         int seat,

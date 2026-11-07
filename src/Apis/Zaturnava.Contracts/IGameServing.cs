@@ -75,6 +75,18 @@ public interface IGameServing
     );
 
     /// <summary>
+    /// Takes the seat a bot plays over, for the rest of the game, for the player whose token
+    /// <paramref name="playerToken"/> is: the token returned holds it. Refused for a seat no bot plays, a game over,
+    /// or a player who holds a seat at the game already.
+    /// </summary>
+    Task<SeatClaimedDto> TakeOver(
+        [Required] string gameId,
+        int seat,
+        [Required] string playerToken,
+        CancellationToken cancellationToken
+    );
+
+    /// <summary>
     /// Has bots take the open seats of a game waiting for people, for the player whose seat <paramref name="token"/>
     /// holds, once they may (<see cref="VacancyDto"/>); the game begins, if no seat is left open.
     /// </summary>

@@ -110,6 +110,20 @@ public sealed class HttpGameClient(HttpClient http) : IGameServing
             cancellationToken
         );
 
+    public Task<SeatClaimedDto> TakeOver(
+        [Required] string gameId,
+        int seat,
+        [Required] string playerToken,
+        CancellationToken cancellationToken
+    ) =>
+        this.Send<SeatClaimedDto>(
+            HttpMethod.Post,
+            GameRoutes.TakeOver(gameId, seat),
+            null,
+            playerToken,
+            cancellationToken
+        );
+
     public Task<GameViewDto> FillOpenSeats(
         [Required] string gameId,
         [Required] string token,
