@@ -37,8 +37,11 @@ public sealed class StandingService(
     /// <summary>The most games counted at a time; any more, the next time.</summary>
     public const int MostRatedAtOnce = 50;
 
-    /// <summary>The most players a leaderboard lists (Proposed).</summary>
-    public const int MostLeaders = 100;
+    /// <summary>
+    /// The most players, or bots, a leaderboard lists (Proposed): enough for the page to sort and page through them
+    /// itself, by any column.
+    /// </summary>
+    public const int MostLeaders = 1000;
 
     private const double EloSpread = 400;
 

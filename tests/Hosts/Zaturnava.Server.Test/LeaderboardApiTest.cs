@@ -64,8 +64,10 @@ public sealed class LeaderboardApiTest(QuickStandingServer server) : IClassFixtu
         StandingDto standing = Assert.Single(againstBots, standing => standing.Name == bea.Name);
         BotStandingDto argus = Assert.Single(bots, bot => bot.Name == new ArgusBot(new Random(Seed)).Profile.Name);
         Assert.Equal(
-            (1, 1, true),
+            (bea.Id.Value, ArgusBot.BotId, 1, 1, true),
             (
+                standing.PlayerId,
+                argus.BotId,
                 standing.WonAgainstBots + standing.LostAgainstBots + standing.DrawnAgainstBots,
                 argus.Place,
                 argus.Won + argus.Lost + argus.Drawn >= 3

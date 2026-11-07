@@ -12,4 +12,7 @@ public sealed record BotStandingDto(int Place, string Name, int Points, int Won,
     public int LostAgainstPeople { get; init; }
 
     public int DrawnAgainstPeople { get; init; }
+
+    /// <summary>The bot's id, as the catalog offers it (<see cref="BotDto.Id"/>).</summary>
+    public string? BotId { get; init; }
 }
