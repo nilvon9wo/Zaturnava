@@ -95,8 +95,8 @@ internal static class UtcpEndpoints
                     "claim_seat",
                     "Claims an open seat, for an AI: returns the token that holds it, which every action for the seat "
                         + "needs, and which the server cannot show again. With a player's token (an AI token from "
-                        + "their profile), the seat is theirs, shown as \"Name (AI)\"; else an AI guest's, by its "
-                        + "nickname.",
+                        + "their profile), the seat is theirs, shown as \"Name (AI)\", or by the AI's nickname as "
+                        + "\"Nickname (Name's AI)\"; else an AI guest's, by its nickname.",
                     Inputs(
                         Input("gameId", Text("The game's id."), isRequired: true),
                         Input("seat", Typed("integer", "The seat's number, from 0."), isRequired: true),

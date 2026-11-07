@@ -180,9 +180,20 @@ public sealed class PlayerServiceTest
         HumanSeat adasAi = new("E", ada.Player.Id, IsAi: true);
         HumanSeat aiGuest = new("F", IsAi: true);
         HumanSeat namedAi = new("G", Nickname: "Hal", IsAi: true);
+        HumanSeat adasSage = new("H", ada.Player.Id, "Sage", IsAi: true);
         SeatController[] seats =
         [
-            adas, guests, deleted, nicknamed, adasAi, aiGuest, namedAi, new BotSeat("first"), new OpenSeat(), adas,
+            adas,
+            guests,
+            deleted,
+            nicknamed,
+            adasAi,
+            aiGuest,
+            namedAi,
+            adasSage,
+            new BotSeat("first"),
+            new OpenSeat(),
+            adas,
         ];
 
         // Act
@@ -190,7 +201,7 @@ public sealed class PlayerServiceTest
 
         // Assert
         Assert.Equal(
-            "A Ada|B guest|C deleted player|D Bea (guest)|E Ada (AI)|F AI guest|G Hal (AI guest)",
+            "A Ada|B guest|C deleted player|D Bea (guest)|E Ada (AI)|F AI guest|G Hal (AI guest)|H Sage (Ada's AI)",
             string.Join(
                 '|',
                 names.OrderBy(name => name.Key.TokenHash).Select(name => $"{name.Key.TokenHash} {name.Value}")

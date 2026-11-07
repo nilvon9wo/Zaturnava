@@ -1435,11 +1435,18 @@ public sealed class TableTest : IDisposable
         );
     }
 
-    [Fact]
-    public void TakeOver_WhenASignedInWatcherTakesABotsSeat_SitsThemThereByTheTokenGiven()
+    [Theory]
+    [InlineData("player", null, "player ")]
+    [InlineData(null, "Gus", " Gus")]
+    public void TakeOver_WhenAWatcherTakesABotsSeat_SitsThemThereByTheTokenGiven(
+        string? player,
+        string? nickname,
+        string asked
+    )
     {
-        // Arrange - Yellow is the Random bot
-        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.player").SetResult("player");
+        // Arrange - Yellow is the Random bot; the watcher signed in, or a guest by a nickname
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.player").SetResult(player);
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.nickname").SetResult(nickname);
         this._page.Server.View = WithRandomAtYellow(FakeGameServer.SeatZeroToMove);
         Seating? seated = null;
         IRenderedComponent<Table> table = this._page.Render<Table>(parameters => parameters
@@ -1456,7 +1463,7 @@ public sealed class TableTest : IDisposable
             (
                 table.FindAll("button.take-over").Count,
                 seated,
-                this._page.Server.Calls.Contains($"take over {FakeGameServer.GameId} 1 player")
+                this._page.Server.Calls.Contains($"take over {FakeGameServer.GameId} 1 {asked}")
             )
         );
     }
@@ -1465,12 +1472,15 @@ public sealed class TableTest : IDisposable
     [InlineData("a guest")]
     [InlineData("seated")]
     [InlineData("over")]
-    public void Render_WhenAGuestOrSomeoneSeatedWatchesOrTheGameIsOver_OffersNoSeatToTakeOver(string who)
+    public void Render_WhenAGuestAtAGameForPlayersOrSomeoneSeatedWatchesOrTheGameIsOver_OffersNoSeatToTakeOver(
+        string who
+    )
     {
-        // Arrange
+        // Arrange - the game only for players signed in
         _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.player")
             .SetResult(who == "a guest" ? null : "player");
-        this._page.Server.View = WithRandomAtYellow(who == "over" ? Over() : FakeGameServer.SeatZeroToMove);
+        this._page.Server.View =
+            WithRandomAtYellow(who == "over" ? Over() : FakeGameServer.SeatZeroToMove) with { IsForPlayers = true };
 
         // Act
         IRenderedComponent<Table> table =

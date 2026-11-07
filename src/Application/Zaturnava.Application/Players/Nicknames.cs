@@ -26,8 +26,17 @@ public static class Nicknames
         return nickname is null ? guest : $"{nickname} ({guest})";
     }
 
-    /// <summary>A signed-in player's name; for an AI playing on their behalf, "Ada (AI)".</summary>
-    public static string Labelled(string name, bool isAi) => isAi ? $"{name} ({Ai})" : name;
+    /// <summary>
+    /// A signed-in player's name; for an AI playing on their behalf, "Ada (AI)", or, by the nickname it gave itself,
+    /// "Sage (Ada's AI)".
+    /// </summary>
+    public static string Labelled(string name, bool isAi, string? nickname = null) =>
+        (isAi, nickname) switch
+        {
+            (false, _) => name,
+            (true, null) => $"{name} ({Ai})",
+            (true, { } own) => $"{own} ({name}'s {Ai})",
+        };
 
     private static string? Cut(string nickname) =>
         nickname.Length == 0 ? null : nickname[..Math.Min(nickname.Length, MaximumLength)].TrimEnd();

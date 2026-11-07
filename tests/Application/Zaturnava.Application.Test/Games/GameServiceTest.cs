@@ -313,18 +313,21 @@ public sealed class GameServiceTest
     }
 
     [Theory]
-    [InlineData("ada", "Impostor", "ada", null)]
-    [InlineData(null, "  Hal  ", null, "Hal")]
+    [InlineData("ada", "Impostor", false, "ada", null)]
+    [InlineData(null, "  Hal  ", false, null, "Hal")]
+    [InlineData("ada", " Sage ", true, "ada", "Sage")]
+    [InlineData(null, "Hal", true, null, "Hal")]
     public async Task Identify_WhenTheSeatsHolderSaysWhoTheyAreNow_KnowsThemSoAndKeepsTheRest(
         string? player,
         string? nickname,
+        bool isAi,
         string? claimant,
         string? kept
     )
     {
         // Arrange
         GameId id = await this._service.Create(TinyRules.RulesetId, [SeatPlan.Open, Bot], this._cancellation);
-        string token = await this._service.Claim(id, First, null, null, true, this._cancellation);
+        string token = await this._service.Claim(id, First, null, null, isAi, this._cancellation);
         PlayerId? who = player is null ? null : new PlayerId(player);
 
         // Act
@@ -334,8 +337,38 @@ public sealed class GameServiceTest
         GameSnapshot snapshot = await this._service.Get(id, this._cancellation);
         HumanSeat seat = (HumanSeat)snapshot.Record.Controllers[0];
         Assert.Equal(
-            (claimant, kept, true, true),
+            (claimant, kept, isAi, true),
             (seat.Claimant?.Value, seat.Nickname, seat.IsAi, seat.IsHeldBy(token))
+        );
+    }
+
+    [Fact]
+    public async Task Claim_WhenOnePlayersAisClaimSeveralSeats_SeatsEachByItsOwnNickname()
+    {
+        // Arrange
+        GameId id = await this._service.Create(
+            TinyRules.RulesetId,
+            [SeatPlan.Open, SeatPlan.Open],
+            this._cancellation
+        );
+        PlayerId player = new("ada");
+
+        // Act
+        string sage = await this._service.Claim(id, First, player, "Sage", true, this._cancellation);
+        string hal = await this._service.Claim(id, new SeatId(1), player, "Hal", true, this._cancellation);
+
+        // Assert
+        GameSnapshot snapshot = await this._service.Get(id, this._cancellation);
+        HumanSeat first = (HumanSeat)snapshot.Record.Controllers[0];
+        HumanSeat second = (HumanSeat)snapshot.Record.Controllers[1];
+        Assert.Equal(
+            ("ada Sage", true, "ada Hal", true),
+            (
+                $"{first.Claimant?.Value} {first.Nickname}",
+                first.IsHeldBy(sage),
+                $"{second.Claimant?.Value} {second.Nickname}",
+                second.IsHeldBy(hal)
+            )
         );
     }
 
@@ -572,11 +605,12 @@ public sealed class GameServiceTest
         // Arrange - the game set up for players only, so that the seat taken over is too
         PlayerId ada = new("ada");
         SeatPlan forPlayers = SeatPlan.Open with { IsForPlayers = true };
-        GameId id = await this._service.Create(TinyRules.RulesetId, [forPlayers, Bot], this._cancellation);
+        SeatPlan bot = Bot with { IsForPlayers = true };
+        GameId id = await this._service.Create(TinyRules.RulesetId, [forPlayers, bot], this._cancellation);
         _ = await this._service.Claim(id, First, new PlayerId("bob"), null, this._cancellation);
 
         // Act
-        string token = await this._service.TakeOver(id, Second, ada, this._cancellation);
+        string token = await this._service.TakeOver(id, Second, ada, null, this._cancellation);
 
         // Assert
         GameRecord record = (await this._service.Get(id, this._cancellation)).Record;
@@ -588,13 +622,44 @@ public sealed class GameServiceTest
     }
 
     [Fact]
+    public async Task TakeOver_WhenAGuestTakesABotsSeatOpenToAnyone_SeatsThemByTheirNickname()
+    {
+        // Arrange
+        GameId id = await this._service.Create(TinyRules.RulesetId, [SeatPlan.Open, Bot], this._cancellation);
+
+        // Act
+        string token = await this._service.TakeOver(id, Second, null, "Gus", this._cancellation);
+
+        // Assert
+        HumanSeat seat = (HumanSeat)(await this._service.Get(id, this._cancellation)).Record.Controllers[1];
+        Assert.Equal<(bool, PlayerId?, string?)>(
+            (true, null, "Gus"),
+            (seat.IsHeldBy(token), seat.Claimant, seat.Nickname)
+        );
+    }
+
+    [Fact]
+    public async Task TakeOver_WhenAGuestAsksForASeatOnlyForPlayers_ThrowsSeatForPlayersException()
+    {
+        // Arrange
+        SeatPlan bot = Bot with { IsForPlayers = true };
+        GameId id = await this._service.Create(TinyRules.RulesetId, [SeatPlan.Open, bot], this._cancellation);
+
+        // Act
+        Task<string> taking = this._service.TakeOver(id, Second, null, "Gus", this._cancellation);
+
+        // Assert
+        _ = await Assert.ThrowsAsync<SeatForPlayersException>(() => taking);
+    }
+
+    [Fact]
     public async Task TakeOver_WhenTheGameStillWaitsForItsOpenSeats_ChangesNoHands()
     {
         // Arrange
         GameId id = await this._service.Create(TinyRules.RulesetId, [SeatPlan.Open, Bot], this._cancellation);
 
         // Act
-        _ = await this._service.TakeOver(id, Second, new PlayerId("ada"), this._cancellation);
+        _ = await this._service.TakeOver(id, Second, new PlayerId("ada"), null, this._cancellation);
 
         // Assert
         Assert.False((await this._service.Get(id, this._cancellation)).Record.HasChangedHands);
@@ -640,7 +705,7 @@ public sealed class GameServiceTest
         };
 
         // Act
-        Task<string> taking = this._service.TakeOver(id, seat, ada, this._cancellation);
+        Task<string> taking = this._service.TakeOver(id, seat, ada, null, this._cancellation);
 
         // Assert
         SeatNotTakenOverException refused = await Assert.ThrowsAsync<SeatNotTakenOverException>(() => taking);
@@ -664,7 +729,7 @@ public sealed class GameServiceTest
         );
 
         // Act
-        Task<string> taking = service.TakeOver(id, Second, new PlayerId("ada"), this._cancellation);
+        Task<string> taking = service.TakeOver(id, Second, new PlayerId("ada"), null, this._cancellation);
 
         // Assert
         _ = await Assert.ThrowsAsync<SeatNotTakenOverException>(() => taking);

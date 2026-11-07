@@ -535,7 +535,10 @@
     private ImmutableHashSet<int> _lastMove = [];
     private bool _isHighlightsOnly = true;
 
-    /// <summary>The token of the player signed in on this browser, if one is: who may take a seat over.</summary>
+    /// <summary>
+    /// The token of the player signed in on this browser, if one is: who may take a seat over at a game only for
+    /// players signed in.
+    /// </summary>
     private string? _playerToken;
     private bool _isProposing;
     private DateTimeOffset? _deadline;
@@ -904,16 +907,30 @@
         });
 
     /// <summary>
-    /// Whether the player may take the seat over from its bot: signed in, watching, not playing, a game not over.
+    /// Whether the person may take the seat over from its bot: watching, not playing, a game not over; and signed in,
+    /// if the game is only for players signed in.
     /// </summary>
     private bool MayTakeOver(GameViewDto view, SeatDto seat) =>
-        this._playerToken is not null && this.Seating.Claim is null && view.Outcome is null && seat.BotId is not null;
+        (this._playerToken is not null || !view.IsForPlayers)
+        && this.Seating.Claim is null
+        && view.Outcome is null
+        && seat.BotId is not null;
 
-    /// <summary>The seat taken over from its bot, the player sitting at it from now on.</summary>
+    /// <summary>
+    /// The seat taken over from its bot, the person sitting at it from now on: as the player signed in, if one is,
+    /// else as a guest, by their nickname, if they gave one.
+    /// </summary>
     private Task TakeOver(GameViewDto view, int seat) =>
         this.SitAgain(async () =>
         {
-            SeatClaimedDto taken = await this.Games.TakeOver(view.Id, seat, this._playerToken!, CancellationToken.None);
+            Claimant claimant = await this.Browser.Claimant();
+            SeatClaimedDto taken = await this.Games.TakeOver(
+                view.Id,
+                seat,
+                claimant.PlayerToken,
+                new ClaimSeatRequest(claimant.Nickname),
+                CancellationToken.None
+            );
             return new Seating(view.Id, new SeatClaim(seat, taken.Token));
         });
 

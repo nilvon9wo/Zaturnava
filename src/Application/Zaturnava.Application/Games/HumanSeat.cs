@@ -8,7 +8,8 @@ namespace Net.NowhereAtAll.Zaturnava.Application.Games;
 /// A seat claimed by whoever holds its token - through any client, or an AI over MCP. Only the
 /// token's hash is kept; and, if whoever claimed it was signed in, the player they are, the <see cref="Claimant"/>;
 /// if not, the <see cref="Nickname"/> they gave, if any. <see cref="IsAi"/> says that an AI, or a program, plays it,
-/// as whoever claimed it said: for a signed-in player, on their behalf. <see cref="Arrival"/> is the game's version
+/// as whoever claimed it said: for a signed-in player, on their behalf, and by the <see cref="Nickname"/> it gave
+/// itself, if any, so that one player's AIs may be told apart. <see cref="Arrival"/> is the game's version
 /// when the seat was claimed, saying who came first; 0 for a seat claimed before arrivals were kept.
 /// <see cref="SeatController.IsForPlayers"/> says the seat was one only a player signed in might claim.
 /// </summary>
@@ -39,8 +40,8 @@ public sealed record HumanSeat(
     /// <summary>
     /// The token's hash, and <see cref="ArrivalMark"/> and the arrival, if kept; then, after a space,
     /// <see cref="ForPlayersMark"/> if the seat was only for players, <see cref="AiMark"/> if an AI plays it, and
-    /// the claimant's id, if a player claimed the seat, or else <see cref="NicknameMark"/> and the guest's nickname,
-    /// if they gave one.
+    /// the claimant's id, if a player claimed the seat; then <see cref="NicknameMark"/> and the nickname, if a guest,
+    /// or an AI, gave one.
     /// </summary>
     public override string Detail =>
         $"{this.TokenHash}{this.Arrived} {this.Marks}{this.Who}".TrimEnd();
@@ -77,12 +78,7 @@ public sealed record HumanSeat(
         (this.IsForPlayers ? $"{ForPlayersMark}" : string.Empty) + (this.IsAi ? $"{AiMark}" : string.Empty);
 
     private string Who =>
-        (this.Claimant, this.Nickname) switch
-        {
-            ({ } claimant, _) => claimant.Value,
-            (_, { } nickname) => $"{NicknameMark}{nickname}",
-            _ => string.Empty,
-        };
+        $"{this.Claimant?.Value}{(this.Nickname is { } nickname ? $"{NicknameMark}{nickname}" : string.Empty)}";
 
     private static HumanSeat Of(string hash, string? rest) =>
         rest switch
@@ -91,6 +87,9 @@ public sealed record HumanSeat(
             [ForPlayersMark, .. { } after] => Of(hash, after) with { IsForPlayers = true },
             [AiMark, .. { } after] => Of(hash, after) with { IsAi = true },
             [NicknameMark, .. { } nickname] => new HumanSeat(hash, Nickname: nickname),
-            _ => new HumanSeat(hash, new PlayerId(rest)),
+            _ => Claimed(hash, rest.Split(NicknameMark, 2)),
         };
+
+    private static HumanSeat Claimed(string hash, string[] who) =>
+        new(hash, new PlayerId(who[0]), who.ElementAtOrDefault(1));
 }

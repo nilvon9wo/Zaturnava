@@ -316,20 +316,28 @@ internal static class GameEndpoints
     }
 
     /// <summary>
-    /// Hands the player the request's token stands for the seat a bot plays, and a token to hold it by: refused, if
-    /// it carries none, or stands for no one.
+    /// Hands the seat a bot plays, and a token to hold it by, as a claim does: to the player the request's token
+    /// stands for, if it carries one (refused, if it stands for no one); else to a guest, by the nickname the body
+    /// gives, if it gives one.
     /// </summary>
     private static async Task<SeatClaimedDto> TakeOver(
         string gameId,
         int seat,
+        ClaimSeatRequest? claim,
         HttpRequest request,
         GameService games,
         PlayerService players,
         CancellationToken cancellationToken
     )
     {
-        PlayerId player = await ClaimantOf(request, players, cancellationToken) ?? throw new UnknownPlayerException();
-        string token = await games.TakeOver(new GameId(gameId), new SeatId(seat), player, cancellationToken);
+        PlayerId? claimant = await ClaimantOf(request, players, cancellationToken);
+        string token = await games.TakeOver(
+            new GameId(gameId),
+            new SeatId(seat),
+            claimant,
+            claim?.Nickname,
+            cancellationToken
+        );
         return new SeatClaimedDto(token);
     }
 

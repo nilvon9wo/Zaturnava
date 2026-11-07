@@ -113,13 +113,14 @@ public sealed class HttpGameClient(HttpClient http) : IGameServing
     public Task<SeatClaimedDto> TakeOver(
         [Required] string gameId,
         int seat,
-        [Required] string playerToken,
+        string? playerToken,
+        ClaimSeatRequest? claim,
         CancellationToken cancellationToken
     ) =>
         this.Send<SeatClaimedDto>(
             HttpMethod.Post,
             GameRoutes.TakeOver(gameId, seat),
-            null,
+            claim,
             playerToken,
             cancellationToken
         );

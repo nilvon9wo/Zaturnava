@@ -19,7 +19,7 @@ server is at `https://zaturnava.runasp.net/`.
 | Claim a seat | `POST api/games/{id}/seats/{seat}`, with a player token or none, and a guest's nickname or none | `{"token": "..."}` |
 | Say anew who holds a seat | `PUT api/games/{id}/seats/{seat}`, with a player token or none, and the seat's token and a guest's nickname or none | `204` |
 | Take back your own seat, from any device | `POST api/games/{id}/seats/{seat}/take-back`, with the token of the player who claimed it (not for a seat their AI plays); the seat's old token holds it no more | `{"token": "..."}` |
-| Take a seat over from a bot | `POST api/games/{id}/seats/{seat}/take-over`, with a player's token: the bot plays it no more, the player does, for the rest of the game | `{"token": "..."}`; `409` if no bot plays it, the game is over, or the player holds a seat there already; `403` without a player's token |
+| Take a seat over from a bot | `POST api/games/{id}/seats/{seat}/take-over`, as a claim: with a player's token, or as a guest with `{"nickname": "..."}`; the bot plays it no more, whoever took it does, for the rest of the game | `{"token": "..."}`; `409` if no bot plays it, the game is over, or the player holds a seat there already; `403` for a guest at a game for players signed in only |
 | A game | `GET api/games/{id}` | The game as it stands ([the view](#the-view)) |
 | Act | `POST api/games/{id}/actions`, with the seat's token | The game after it |
 | Let a bot (or a timer) decide | `POST api/games/{id}/advance` | The game after one decision |
@@ -64,8 +64,8 @@ A game is created with its ruleset and, for each seat in order, the id of the bo
 { "rulesetId": "chaturaji-2027", "bots": [null, "sage", "sage", "sage"] }
 ```
 
-With `"isForPlayers": true`, the seats left open are only for players signed in: a guest's claim of one is refused
-(`403`), and the game's listing says `"isForPlayers": true` while any is open. The game itself says
+With `"isForPlayers": true`, the seats are only for players signed in: a guest's claim of an open one, or taking one
+over from a bot, is refused (`403`), and the game's listing says `"isForPlayers": true` while any is open. The game itself says
 `"isForPlayers": true` for good, its seats taken or not, so that a client playing it again can ask the same.
 
 Claiming an open seat returns its **token**, once: the server keeps only its hash, and nothing else
@@ -85,6 +85,9 @@ the seat stays as claimed.
 A program playing a seat for an AI (a language model, say, rather than a bot of the server's own) says so with
 `"isAi": true` in the claim's body (`{"nickname": "Hal", "isAi": true}`). The seat is then shown as an AI's:
 `Ada (AI)` for a player's AI, `Hal (AI guest)` or `AI guest` for a guest's, and `isAi` is set on it in the view.
+An AI keeps the nickname it gives even when it plays for a player, shown as `Sage (Ada's AI)`: so one player may
+seat several AIs in a game, each telling itself apart. (A game where a player meets their own AIs, or their AIs meet
+each other, moves no Elo.)
 An AI whose claim carried a player's token speaks at the table as that player's seat would, labelled as an AI;
 a guest's AI only reads. Players at the table may hide what AIs say.
 
@@ -201,7 +204,7 @@ that have changed since, so that its actions no longer replay: a preview's, most
 | `legalActions` | What the deciding seat may do now |
 | `cells` | The board: each cell's id, where to draw it, its shape and name, and whose throne it is |
 | `pieces` | Each piece: its id, kind, owner and cell |
-| `seats` | Each seat: its name, team, score, who plays it (`controller`: `open`, `human` or `bot`; `bot`, the bot's name; `player`, a person's name, `deleted player`, `guest` or `Nickname (guest)`, with `(AI)` or `(AI guest)` for an AI's; `isGuest`, whether a person holds it without having signed in; `isAi`, whether an AI holds it), and the prisoners it holds |
+| `seats` | Each seat: its name, team, score, who plays it (`controller`: `open`, `human` or `bot`; `bot`, the bot's name; `player`, a person's name, `deleted player`, `guest` or `Nickname (guest)`, with `(AI)`, `(Name's AI)` or `(AI guest)` for an AI's; `isGuest`, whether a person holds it without having signed in; `isAi`, whether an AI holds it), and the prisoners it holds |
 | `dice` | The dice rolled this turn and not used yet, with what each lets move |
 | `log` | The latest events, told for people ("Black rolled 2 (Horse) and 5 (Pawn or Raja).") |
 | `outcome` | Once over: the winners, the kind of ending, and the story |

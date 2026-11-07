@@ -457,7 +457,7 @@ public sealed partial class SignInApiTest(SigningInServer server) : IClassFixtur
         string player = TokenOf(await this.Done("GitHub|taking-over|Tamsin", SigningInServer.Page));
 
         // Act
-        SeatClaimedDto taken = await client.TakeOver(created.GameId, 1, player, this._cancellation);
+        SeatClaimedDto taken = await client.TakeOver(created.GameId, 1, player, null, this._cancellation);
 
         // Assert
         await client.Identify(created.GameId, 1, player, new IdentifySeatRequest(taken.Token), this._cancellation);
@@ -465,17 +465,41 @@ public sealed partial class SignInApiTest(SigningInServer server) : IClassFixtur
         Assert.Equal<(string?, string?)>((null, "Tamsin"), (view.Seats[1].BotId, view.Seats[1].Player));
     }
 
-    [Fact]
-    public async Task TakeOver_WhenNoPlayerTokenIsSent_IsRefused()
+    [Theory]
+    [InlineData(false, "Gus (guest)")]
+    [InlineData(true, null)]
+    public async Task TakeOver_WhenAGuestTakesABotsSeat_SeatsThemUnlessTheGameIsForPlayersOnly(
+        bool isForPlayers,
+        string? expected
+    )
     {
-        // Arrange - nothing beyond the server
+        // Arrange
+        HttpGameClient client = server.GameClient();
+        GameCreatedDto created = await client.Create(
+            new CreateGameRequest(ZaturnavaServer.Chaturaji2027, ZaturnavaServer.OneOpenSeat)
+            {
+                IsForPlayers = isForPlayers,
+            },
+            this._cancellation
+        );
 
         // Act
-        using HttpResponseMessage response =
-            await this.Send(HttpMethod.Post, "api/games/g/seats/0/take-over", null);
+        Refusal? refusal = null;
+        try
+        {
+            _ = await client.TakeOver(created.GameId, 1, null, new ClaimSeatRequest("Gus"), this._cancellation);
+        }
+        catch (GameRequestRefusedException refused)
+        {
+            refusal = refused.Refusal;
+        }
 
         // Assert
-        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        GameViewDto view = await client.Get(created.GameId, this._cancellation);
+        Assert.Equal<(string?, Refusal?)>(
+            (expected, isForPlayers ? Refusal.Forbidden : null),
+            (view.Seats[1].Player, refusal)
+        );
     }
 
     [Fact]
