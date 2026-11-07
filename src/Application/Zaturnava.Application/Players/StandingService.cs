@@ -15,7 +15,8 @@ namespace Net.NowhereAtAll.Zaturnava.Application.Players;
 /// team is rated as the mean of its seats': a player's, their Elo at the game; a bot's, its rating at the ruleset;
 /// anyone else's, <see cref="Standing.FirstElo"/>. A player's Elo moves by <see cref="K"/> times how far their result
 /// (1 won, a half drawn, 0 lost) is from what their team's rating led to expect against the other teams, on average.
-/// Each time a player is on the winning team, they gain as experience their own points plus their team's.
+/// Each time a player is on the winning team, they gain as experience their own points plus their team's; and in every
+/// game, they add their own points to those they have scored.
 /// </summary>
 public sealed class StandingService(
     IRulesetLocating rulesets,
@@ -193,6 +194,7 @@ public sealed class StandingService(
         {
             Elo = before.Elo + (K * (((double)result / 2) - expected)),
             Experience = before.Experience + (result == Result.Won ? points : 0),
+            Points = before.Points + state.Scores.GetValueOrDefault(seat),
             Won = before.Won + (result == Result.Won ? 1 : 0),
             Lost = before.Lost + (result == Result.Lost ? 1 : 0),
             Drawn = before.Drawn + (result == Result.Drawn ? 1 : 0),

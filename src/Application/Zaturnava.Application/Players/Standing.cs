@@ -5,7 +5,8 @@ namespace Net.NowhereAtAll.Zaturnava.Application.Players;
 /// <summary>
 /// Where a signed-in player stands at one game, whatever its size (<see cref="Game"/>, as a ruleset's game id): their
 /// Elo rating, from <see cref="FirstElo"/>; their experience, gained in each game they won: their own points plus
-/// their team's (all its seats', theirs too); and how many games they won, lost and drew.
+/// their team's (all its seats', theirs too); the points they scored themselves, in every game they finished, won or
+/// not; and how many games they won, lost and drew.
 /// </summary>
 public sealed record Standing(PlayerId Player, string Game)
 {
@@ -15,6 +16,9 @@ public sealed record Standing(PlayerId Player, string Game)
     public double Elo { get; init; } = FirstElo;
 
     public int Experience { get; init; }
+
+    /// <summary>The points they scored, in all the games of it they finished, since these were counted.</summary>
+    public int Points { get; init; }
 
     public int Won { get; init; }
 
@@ -26,8 +30,8 @@ public sealed record Standing(PlayerId Player, string Game)
     public int Played => this.Won + this.Lost + this.Drawn;
 
     /// <summary>
-    /// Where they stand with <paramref name="other"/>'s games too, as one player (Proposed): games and experience
-    /// added up, and the Elo ratings averaged, each weighed by the games behind it.
+    /// Where they stand with <paramref name="other"/>'s games too, as one player (Proposed): games, experience and
+    /// points added up, and the Elo ratings averaged, each weighed by the games behind it.
     /// </summary>
     public Standing Merged([Required] Standing other)
     {
@@ -36,6 +40,7 @@ public sealed record Standing(PlayerId Player, string Game)
         {
             Elo = played == 0 ? this.Elo : ((this.Elo * this.Played) + (other.Elo * other.Played)) / played,
             Experience = this.Experience + other.Experience,
+            Points = this.Points + other.Points,
             Won = this.Won + other.Won,
             Lost = this.Lost + other.Lost,
             Drawn = this.Drawn + other.Drawn,

@@ -228,6 +228,9 @@ namespace Net.NowhereAtAll.Zaturnava.Persistence.EfCore.SqlServer.Migrations
                     b.Property<int>("Lost")
                         .HasColumnType("int");
 
+                    b.Property<int>("Points")
+                        .HasColumnType("int");
+
                     b.Property<int>("Won")
                         .HasColumnType("int");
 

@@ -9,6 +9,7 @@ using Net.NowhereAtAll.Zaturnava.Bots;
 using Net.NowhereAtAll.Zaturnava.Client;
 using Net.NowhereAtAll.Zaturnava.Contracts;
 using Net.NowhereAtAll.Zaturnava.Engine.Decisions;
+using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 using Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
 using Net.NowhereAtAll.Zaturnava.Server.Composition;
 
@@ -28,18 +29,21 @@ public sealed class LeaderboardApiTest(QuickStandingServer server) : IClassFixtu
     private readonly CancellationToken _cancellation = TestContext.Current.CancellationToken;
 
     [Fact]
-    public async Task Leaderboard_WhenAPlayerFinishedAGameAgainstBots_ListsThemAsHavingPlayedItOnce()
+    public async Task Leaderboard_WhenAPlayerFinishedAGameAgainstBots_ListsThemAsHavingPlayedItOnceWithTheirPoints()
     {
         // Arrange
         Player ada = new(new PlayerId("leaderboard-ada"), "Leaderboard Ada", []);
         await this._server.Services.GetRequiredService<IPlayerPersisting>().Add(ada, this._cancellation);
-        await this.AddEndedGame(ada.Id);
+        int points = await this.AddEndedGame(ada.Id);
 
         // Act
         StandingDto? standing = await this.Eventually(ada.Name);
 
         // Assert
-        Assert.Equal(1, standing is null ? 0 : standing.Won + standing.Lost + standing.Drawn);
+        Assert.Equal(
+            (1, points),
+            (standing is null ? 0 : standing.Won + standing.Lost + standing.Drawn, standing?.Points)
+        );
     }
 
     [Fact]
@@ -54,8 +58,11 @@ public sealed class LeaderboardApiTest(QuickStandingServer server) : IClassFixtu
         Assert.Empty(leaders);
     }
 
-    /// <summary>A game Argus played out on every seat, the first of them held by <paramref name="player"/>.</summary>
-    private async Task AddEndedGame(PlayerId player)
+    /// <summary>
+    /// A game Argus played out on every seat, the first of them held by <paramref name="player"/>; the points that seat
+    /// scored.
+    /// </summary>
+    private async Task<int> AddEndedGame(PlayerId player)
     {
         ImmutableList<IDeciding> players =
             [.. Enumerable.Range(0, 4).Select(seat => new ArgusBot(new Random(Seed + seat)))];
@@ -77,6 +84,7 @@ public sealed class LeaderboardApiTest(QuickStandingServer server) : IClassFixtu
             IsOver = true,
         };
         await this._server.Services.GetRequiredService<IGamePersisting>().Add(record, this._cancellation);
+        return played.State.Scores.GetValueOrDefault(new SeatId(0));
     }
 
     /// <summary>Where the player named <paramref name="name"/> stands, once listed within a few seconds.</summary>

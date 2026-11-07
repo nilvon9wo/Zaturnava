@@ -100,6 +100,9 @@ internal static class GameEndpoints
                 leader.Standing.Drawn,
                 leader.Abandoned
             )
+            {
+                Points = leader.Standing.Points,
+            }
         ),
     ];
 

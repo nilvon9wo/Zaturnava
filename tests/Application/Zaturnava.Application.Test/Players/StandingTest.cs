@@ -11,15 +11,15 @@ public sealed class StandingTest
     public void Merged_WhenBothHavePlayed_WeighsEachRatingByItsGamesAndAddsTheRestUp()
     {
         // Arrange
-        Standing ada = new(Ada, "chess") { Elo = 1600, Won = 3, Experience = 40 };
-        Standing bea = new(Bea, "chess") { Elo = 1200, Lost = 1, Drawn = 0, Experience = 2 };
+        Standing ada = new(Ada, "chess") { Elo = 1600, Won = 3, Experience = 40, Points = 30 };
+        Standing bea = new(Bea, "chess") { Elo = 1200, Lost = 1, Drawn = 0, Experience = 2, Points = 5 };
 
         // Act
         Standing merged = ada.Merged(bea);
 
         // Assert
-        Assert.Equal((Ada, 1500.0, 3, 1, 0, 42), (merged.Player, merged.Elo, merged.Won, merged.Lost, merged.Drawn,
-            merged.Experience));
+        Assert.Equal((Ada, 1500.0, 3, 1, 0, 42, 35), (merged.Player, merged.Elo, merged.Won, merged.Lost, merged.Drawn,
+            merged.Experience, merged.Points));
     }
 
     [Fact]

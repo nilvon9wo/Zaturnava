@@ -209,6 +209,7 @@ public sealed class EfPlayerStore(GameDbContext context) : IPlayerPersisting
             ).Entity;
             kept.Elo = standing.Elo;
             kept.Experience = standing.Experience;
+            kept.Points = standing.Points;
             kept.Won = standing.Won;
             kept.Lost = standing.Lost;
             kept.Drawn = standing.Drawn;
@@ -239,6 +240,7 @@ public sealed class EfPlayerStore(GameDbContext context) : IPlayerPersisting
         {
             Elo = entity.Elo,
             Experience = entity.Experience,
+            Points = entity.Points,
             Won = entity.Won,
             Lost = entity.Lost,
             Drawn = entity.Drawn,
