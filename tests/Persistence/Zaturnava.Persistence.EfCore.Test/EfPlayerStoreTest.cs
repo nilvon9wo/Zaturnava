@@ -61,7 +61,8 @@ public sealed class EfPlayerStoreTest : IDisposable
             [new Standing(Ada.Id, "chess") { Elo = 1400 }, new Standing(Ada.Id, "go") { Won = 1 }],
             this._cancellation
         );
-        Standing kept = new(Ada.Id, "chess") { Elo = 1520.5, Experience = 7, Won = 2, Lost = 3, Drawn = 4 };
+        Standing kept =
+            new(Ada.Id, "chess") { Elo = 1520.5, Experience = 7, Points = 11, Won = 2, Lost = 3, Drawn = 4 };
         await new EfPlayerStore(this._database.NewContext()).Keep([kept], this._cancellation);
 
         // Act

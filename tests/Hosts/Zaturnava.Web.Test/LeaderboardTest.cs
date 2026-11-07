@@ -22,7 +22,10 @@ public sealed class LeaderboardTest : IDisposable
         // Arrange
         this._page.Server.Leaderboards = this._page.Server.Leaderboards.Add(
             "chaturaji-2027",
-            [new StandingDto(1, "Ada", 1516, 14, 1, 0, 0, 2), new StandingDto(2, "Bea", 1484, 0, 0, 1, 0)]
+            [
+                new StandingDto(1, "Ada", 1516, 14, 1, 0, 0, 2) { Points = 9 },
+                new StandingDto(2, "Bea", 1484, 0, 0, 1, 0) { Points = 3 },
+            ]
         );
 
         // Act
@@ -30,7 +33,7 @@ public sealed class LeaderboardTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ("1 Ada 1516 14 1 0 0 2|2 Bea 1484 0 0 1 0 0", 0),
+            ("1 Ada 1516 14 9 1 0 0 2|2 Bea 1484 0 3 0 1 0 0", 0),
             (
                 string.Join(
                     "|",

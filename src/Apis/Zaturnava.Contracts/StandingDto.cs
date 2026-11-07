@@ -14,4 +14,8 @@ public sealed record StandingDto(
     int Lost,
     int Drawn,
     int Abandoned = 0
-);
+)
+{
+    /// <summary>The points they scored themselves, in all the games of it they finished, won or not.</summary>
+    public int Points { get; init; }
+}

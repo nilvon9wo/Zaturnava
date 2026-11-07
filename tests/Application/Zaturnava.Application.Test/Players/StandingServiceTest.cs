@@ -56,11 +56,13 @@ public sealed class StandingServiceTest
         ImmutableDictionary<PlayerId, Standing> standings =
             await this._players.Standings(EndedRules.RulesetId, [Ada, Bea], this._cancellation);
         Assert.Equal(
-            (1, 5 + 9, 4 + 9, 1, 1, 0),
+            (1, 5 + 9, 4 + 9, 5, 4, 1, 1, 0),
             (
                 rated,
                 standings[Ada].Experience,
                 standings[Bea].Experience,
+                standings[Ada].Points,
+                standings[Bea].Points,
                 standings[Ada].Won,
                 standings[Bea].Won,
                 (await this._games.Unrated(10, this._cancellation)).Count
@@ -73,7 +75,7 @@ public sealed class StandingServiceTest
     [Theory]
     [InlineData(false, 1500 - 16, 0, 1, 0)]
     [InlineData(true, 1500, 0, 0, 1)]
-    public async Task RateFinished_WhenAPlayerLosesOrDrawsEvenly_MovesTheirEloByHalfOfKOrNotAtAll(
+    public async Task RateFinished_WhenAPlayerLosesOrDrawsEvenly_MovesTheirEloByHalfOfKOrNotAtAllAndAddsTheirPoints(
         bool isDrawn,
         double elo,
         int won,
@@ -83,10 +85,13 @@ public sealed class StandingServiceTest
     {
         // Arrange - Ada, who has won before, and a bot no longer offered, against Bea's AI and a bot not rated here
         await this._players.Keep(
-            [new Standing(Ada, EndedRules.RulesetId) { Won = 3, Experience = 20 }],
+            [new Standing(Ada, EndedRules.RulesetId) { Won = 3, Experience = 20, Points = 10 }],
             this._cancellation
         );
-        GameState ended = EndedRules.State(isDrawn ? [] : [Yellow]);
+        GameState ended = EndedRules.State(isDrawn ? [] : [Yellow]) with
+        {
+            Scores = ImmutableDictionary<SeatId, int>.Empty.Add(Black, 2),
+        };
         await this._games.Add(
             Record(
                 "g",
@@ -110,6 +115,7 @@ public sealed class StandingServiceTest
             {
                 Elo = elo,
                 Experience = 20,
+                Points = 10 + 2,
                 Won = 3 + won,
                 Lost = lost,
                 Drawn = drawn,

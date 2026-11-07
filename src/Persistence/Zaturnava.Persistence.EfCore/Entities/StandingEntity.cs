@@ -11,6 +11,8 @@ public sealed class StandingEntity
 
     public int Experience { get; set; }
 
+    public int Points { get; set; }
+
     public int Won { get; set; }
 
     public int Lost { get; set; }

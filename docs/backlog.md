@@ -95,7 +95,8 @@ first.
 ## Seeing what happens
 
 - **25** In the lobby, say when each game started (who plays, how many moves and which seats are
-  open are shown).
+  open are shown). *Done*: each game says when it was created and last changed ("created 3 h ago, last change
+  5 min ago").
 
 ## Look and feel
 
@@ -117,7 +118,8 @@ first.
 - **34** Games survive a server restart (storage that persists, and identities to go with it). *Done*: the
   live server keeps games and players in its database (N2).
 - **35** Player statistics: games played and won, points scored... *Done* in part, with the leaderboard (N3):
-  games won, lost, drawn and abandoned, and experience; not yet points scored.
+  games won, lost, drawn and abandoned, and experience; and points scored, the player's own in every game they
+  finished, won or not (*Proposed*), counted for games finished from 2026-11-07 on.
 - Players' Elo ratings (*Stated 2026-11-01*). *Done* in part, with the leaderboard (N3), as N3 says. Still to
   decide ([OQ8](open-questions.md#oq8-which-games-count-toward-a-players-elo)): this asked that a game count
   toward a rating only if no seat changed hands during it and no seat was a guest's; N3 counts every finished

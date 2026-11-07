@@ -223,6 +223,9 @@ namespace Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Sqlite.Migrations
                     b.Property<int>("Lost")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int>("Points")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int>("Won")
                         .HasColumnType("INTEGER");
 
