@@ -144,6 +144,27 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
         );
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Get_WhenTheGameWasOrWasNotForPlayersOnly_SaysSo(bool isForPlayers)
+    {
+        // Arrange
+        GameCreatedDto created = await this._client.Create(
+            new CreateGameRequest("chaturaji-2027", [null, "random", "random", "random"])
+            {
+                IsForPlayers = isForPlayers,
+            },
+            this._cancellation
+        );
+
+        // Act
+        GameViewDto view = await this._client.Get(created.GameId, this._cancellation);
+
+        // Assert
+        Assert.Equal(isForPlayers, view.IsForPlayers);
+    }
+
     [Fact]
     public async Task List_WhenAGameWasCreated_ShowsItsOpenSeatsByNameAndWhenItWasCreated()
     {

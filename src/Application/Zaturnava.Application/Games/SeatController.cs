@@ -22,6 +22,12 @@ public abstract record SeatController
 
     public virtual bool IsOpen => false;
 
+    /// <summary>
+    /// Whether whoever set the game up left the seat only for a player signed in to claim: still open, or since
+    /// claimed by one; so the game, played again, is too.
+    /// </summary>
+    public bool IsForPlayers { get; init; }
+
     /// <summary>Whether a person holds the seat without having signed in, and so may only read the talk.</summary>
     public virtual bool IsGuest => false;
 

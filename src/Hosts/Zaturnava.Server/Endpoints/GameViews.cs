@@ -139,6 +139,7 @@ internal static class GameViews
             Terrain = snapshot.Rules.TerrainOf(snapshot.State),
             IsDealt = snapshot.Rules.IsDealt,
             AreArmiesAlike = ScenarioStart.AreAlike(snapshot.Record.Actions),
+            IsForPlayers = snapshot.Record.Controllers.Any(controller => controller.IsForPlayers),
         };
     }
 

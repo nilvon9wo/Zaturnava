@@ -64,7 +64,8 @@ A game is created with its ruleset and, for each seat in order, the id of the bo
 ```
 
 With `"isForPlayers": true`, the seats left open are only for players signed in: a guest's claim of one is refused
-(`403`), and the game's listing says `"isForPlayers": true`.
+(`403`), and the game's listing says `"isForPlayers": true` while any is open. The game itself says
+`"isForPlayers": true` for good, its seats taken or not, so that a client playing it again can ask the same.
 
 Claiming an open seat returns its **token**, once: the server keeps only its hash, and nothing else
 can act for the seat. Send it with every action, as `Authorization: Bearer {token}`. A seat is the

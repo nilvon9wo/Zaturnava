@@ -10,6 +10,7 @@ namespace Net.NowhereAtAll.Zaturnava.Application.Games;
 /// if not, the <see cref="Nickname"/> they gave, if any. <see cref="IsAi"/> says that an AI, or a program, plays it,
 /// as whoever claimed it said: for a signed-in player, on their behalf. <see cref="Arrival"/> is the game's version
 /// when the seat was claimed, saying who came first; 0 for a seat claimed before arrivals were kept.
+/// <see cref="SeatController.IsForPlayers"/> says the seat was one only a player signed in might claim.
 /// </summary>
 public sealed record HumanSeat(
     string TokenHash,
@@ -27,6 +28,9 @@ public sealed record HumanSeat(
     /// <summary>What marks, in <see cref="Detail"/>, a seat an AI plays.</summary>
     private const char AiMark = '*';
 
+    /// <summary>What marks, in <see cref="Detail"/>, a seat that was only for players signed in.</summary>
+    private const char ForPlayersMark = '+';
+
     /// <summary>What marks, in <see cref="Detail"/>, the <see cref="Arrival"/> after the token's hash.</summary>
     private const char ArrivalMark = '@';
 
@@ -34,11 +38,12 @@ public sealed record HumanSeat(
 
     /// <summary>
     /// The token's hash, and <see cref="ArrivalMark"/> and the arrival, if kept; then, after a space,
-    /// <see cref="AiMark"/> if an AI plays the seat, and the claimant's id, if a player claimed the seat, or else
-    /// <see cref="NicknameMark"/> and the guest's nickname, if they gave one.
+    /// <see cref="ForPlayersMark"/> if the seat was only for players, <see cref="AiMark"/> if an AI plays it, and
+    /// the claimant's id, if a player claimed the seat, or else <see cref="NicknameMark"/> and the guest's nickname,
+    /// if they gave one.
     /// </summary>
     public override string Detail =>
-        $"{this.TokenHash}{this.Arrived} {(this.IsAi ? $"{AiMark}" : string.Empty)}{this.Who}".TrimEnd();
+        $"{this.TokenHash}{this.Arrived} {this.Marks}{this.Who}".TrimEnd();
 
     public override string Player => GameHistory.Person;
 
@@ -68,6 +73,9 @@ public sealed record HumanSeat(
     private string Arrived =>
         this.Arrival == 0 ? string.Empty : $"{ArrivalMark}{this.Arrival.ToString(CultureInfo.InvariantCulture)}";
 
+    private string Marks =>
+        (this.IsForPlayers ? $"{ForPlayersMark}" : string.Empty) + (this.IsAi ? $"{AiMark}" : string.Empty);
+
     private string Who =>
         (this.Claimant, this.Nickname) switch
         {
@@ -80,6 +88,7 @@ public sealed record HumanSeat(
         rest switch
         {
             null or "" => new HumanSeat(hash),
+            [ForPlayersMark, .. { } after] => Of(hash, after) with { IsForPlayers = true },
             [AiMark, .. { } after] => Of(hash, after) with { IsAi = true },
             [NicknameMark, .. { } nickname] => new HumanSeat(hash, Nickname: nickname),
             _ => new HumanSeat(hash, new PlayerId(rest)),

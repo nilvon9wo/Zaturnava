@@ -66,4 +66,10 @@ public sealed record GameViewDto(
 
     /// <summary>Whether every seat was dealt the same army (<see cref="CreateGameRequest.AreArmiesAlike"/>).</summary>
     public bool AreArmiesAlike { get; init; }
+
+    /// <summary>
+    /// Whether its seats for people were only for players signed in (<see cref="CreateGameRequest.IsForPlayers"/>),
+    /// whether still open or since taken; so the game played again is too.
+    /// </summary>
+    public bool IsForPlayers { get; init; }
 }

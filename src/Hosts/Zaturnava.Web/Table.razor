@@ -858,8 +858,9 @@
         [.. view.Seats.Where(seat => seat.IsPaidBot).Select(seat => seat.Bot).OfType<string>()];
 
     /// <summary>
-    /// The same game again: its ruleset, its bots in the same seats, the player at the same seat; for a game dealt its
-    /// armies, armies alike if they were, and the very same armies if <paramref name="isSameArmies"/>.
+    /// The same game again: its ruleset, its bots in the same seats, the player at the same seat, its seats for people
+    /// only for players signed in if they were; for a game dealt its armies, armies alike if they were, and the very
+    /// same armies if <paramref name="isSameArmies"/>.
     /// </summary>
     private Task PlayAgain(GameViewDto view, bool isSameArmies = false) =>
         this.SitAgain(async () => await GameStarter.Start(
@@ -870,7 +871,8 @@
             null,
             await this.Browser.Claimant(),
             view.Id,
-            new ArmyDeal(view.AreArmiesAlike, isSameArmies ? view.Id : null)
+            new ArmyDeal(view.AreArmiesAlike, isSameArmies ? view.Id : null),
+            view.IsForPlayers
         ));
 
     /// <summary>A quick game, medium, of the same game as this: the server's first, should it offer this no more.</summary>
