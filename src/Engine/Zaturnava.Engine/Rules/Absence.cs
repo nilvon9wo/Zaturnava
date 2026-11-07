@@ -18,6 +18,17 @@ public sealed record Absence(
 
     public int MissedBy(SeatId seat) => this.Missed.GetValueOrDefault(seat);
 
+    /// <summary>
+    /// The seats away now, in seat order: each has had a turn passed while it was away, and has not said it is back.
+    /// </summary>
+    public ImmutableList<SeatId> Away =>
+    [
+        .. this.Missed
+            .Where(entry => entry.Value > 0 && !this.Returning.Contains(entry.Key))
+            .Select(entry => entry.Key)
+            .OrderBy(seat => seat.Value),
+    ];
+
     /// <summary>The seats that would stop waiting for <paramref name="absent"/>.</summary>
     public ImmutableHashSet<SeatId> StoppingFor(SeatId absent) =>
         [.. this.StopVotes.Where(vote => vote.Absent == absent).Select(vote => vote.Voter)];

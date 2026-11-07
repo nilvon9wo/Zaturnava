@@ -27,9 +27,10 @@ first.
     seat open"). *Done*: a Players box takes names separated by commas, "Bob, Jo*, open"; `*` for any letters,
     `open` for an open seat, `person` for anyone's, a bot by name or id, case not counting (*Proposed*).
   - **N20** Each game says when it was created, whether it has started, when its last move was made, and
-    whether it waits for someone to take an open seat or for a player who went away to come back. *Done*, but
-    for the player who went away: the lobby says when each game was created and last changed, and whether it
-    waits for players or has not started. Who is away is not yet known to the server.
+    whether it waits for someone to take an open seat or for a player who went away to come back. *Done*: the
+    lobby says when each game was created and last changed, whether it waits for players or has not started, and
+    who at it is away ("Yellow away"), as the game was last saved (`awaySeats`); a game not saved since then shows
+    no one away until its next move.
   - **N20** Abandoned games are purged: any game with a guest in it and no activity for 24 hours, and any game
     waiting for a signed-in player who has not signed in for 31 days. *Done*, for games not over only
     (*Proposed*: a finished game's history is public and rates its players). Waiting for a player means it is
@@ -55,8 +56,10 @@ first.
   Raja would do any good. Its network judged every move there all but alike, and its guess at the margin swung by
   six points between quiet moves. *Done* (*Proposed* weights): it no longer counts the network's margin for a game
   going on; Sage's appraisal, at a five-hundredth of a unit (`NetworkValuing.Steadiness`), settles what the network
-  leaves even; and each of its team's pieces other than a Raja on an enemy throne costs it a fiftieth
-  (`NetworkValuing.Blocking`). Against Random, Argus and Sage it now rates about 47 Elo above Sage.
+  leaves even; and each of its team's pieces other than a Raja on an enemy throne costs it two of those units
+  (`NetworkValuing.Blocking`): less than a Pawn taken, and far less than a piece kept from being taken, so that it
+  still goes onto a throne to take or to escape (*Stated*: boats should attack an enemy, a Raja most of all, on a
+  throne), but neither parks nor lingers there. Against Random, Argus and Sage it now rates about 47 Elo above Sage.
 - **N32** The lobby lists the games waiting for a signed-in player's move, but not their other games in progress:
   a game waiting on someone else is found again only through the Players filter. A **Mine** list (*Stated*).
   *Done*: the lobby's **Show** offers a player signed in **Mine**: their games not over, at seats they claimed signed
@@ -111,11 +114,14 @@ first.
 
 - **29** One person, one identity: a person may play several seats of one team when the game
   allows it, without pretending to be several people.
-- **34** Games survive a server restart (storage that persists, and identities to go with it).
-- **35** Player statistics: games played and won, points scored...
-- Players' Elo ratings (*Stated 2026-11-01*); only bots are rated so far, offline. A game counts toward a
-  player's rating only if no seat changed hands during it (no bot played for someone away, and no person took
-  over from a bot), and no seat was a guest's.
+- **34** Games survive a server restart (storage that persists, and identities to go with it). *Done*: the
+  live server keeps games and players in its database (N2).
+- **35** Player statistics: games played and won, points scored... *Done* in part, with the leaderboard (N3):
+  games won, lost, drawn and abandoned, and experience; not yet points scored.
+- Players' Elo ratings (*Stated 2026-11-01*). *Done* in part, with the leaderboard (N3), as N3 says. Still to
+  decide ([OQ8](open-questions.md#oq8-which-games-count-toward-a-players-elo)): this asked that a game count
+  toward a rating only if no seat changed hands during it and no seat was a guest's; N3 counts every finished
+  game for its signed-in seats.
 - A signed-in player setting up a game may bar guests from it (*Stated 2026-11-01*).
 - A person may take a seat over from a bot, where the game allows it (*Stated 2026-11-01*, low priority).
 - A custom game's board size chosen freely, within limits, rather than only small, medium or large

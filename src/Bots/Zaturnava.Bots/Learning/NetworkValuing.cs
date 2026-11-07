@@ -18,7 +18,9 @@ namespace Net.NowhereAtAll.Zaturnava.Bots.Learning;
 /// that lead there alike, or nearly, and would leave which to the slightest of its errors, a sure taking passed over
 /// for a roll, a guarded piece moved off for nothing; Sage's count of what each side holds settles it. And it is
 /// judged worse by <see cref="Blocking"/> for each of its team's pieces not a leader on a throne not the team's,
-/// which only a leader can hold: one there only keeps the team's leaders off it.
+/// which only a leader can hold: one there only keeps the team's leaders off it. That is little, less than a Pawn
+/// to Sage and far less than a piece kept from being taken: a piece goes onto a throne to take, or to escape, but
+/// not to park, and does not linger there.
 /// </summary>
 public sealed class NetworkValuing(PositionEncoder encoder, ValueNetwork network, SageWeights weights)
     : IPositionValuing
@@ -36,7 +38,7 @@ public sealed class NetworkValuing(PositionEncoder encoder, ValueNetwork network
     public const double Steadiness = 0.002;
 
     /// <summary>How much worse a game going on is judged for each throne its team blocks.</summary>
-    public const double Blocking = 0.02;
+    public const double Blocking = 0.004;
 
     private readonly PositionEncoder _encoder = encoder;
     private readonly ValueNetwork _network = network;

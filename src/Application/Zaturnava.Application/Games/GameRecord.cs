@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Net.NowhereAtAll.Zaturnava.Application.Players;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
+using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 
 namespace Net.NowhereAtAll.Zaturnava.Application.Games;
 
@@ -8,7 +9,8 @@ namespace Net.NowhereAtAll.Zaturnava.Application.Games;
 /// A game as stored: its ruleset, who controls each seat (by seat number), and every action taken,
 /// in order. The state is never stored; it is replayed from the actions. <see cref="Version"/>
 /// counts the saves, so that two concurrent changes cannot both win. Beside them, what a lobby lists a game by,
-/// kept so that it need not replay it: whether it is over, when it was created and when it last changed.
+/// kept so that it need not replay it: whether it is over, when it was created and when it last changed, and who is
+/// away.
 /// </summary>
 public sealed record GameRecord(
     GameId Id,
@@ -35,6 +37,12 @@ public sealed record GameRecord(
 
     /// <summary>When the game was last saved; none, for a game saved before this was kept.</summary>
     public DateTimeOffset? LastChanged { get; init; }
+
+    /// <summary>
+    /// The seats away, as last saved, in seat order: a person's (or no one's yet) whose turns have passed while they
+    /// were away, until they say they are back; none, for a game not saved since this was kept.
+    /// </summary>
+    public ImmutableList<SeatId> Away { get; init; } = [];
 
     public GameRecord Next() => this with { Version = this.Version + 1 };
 
