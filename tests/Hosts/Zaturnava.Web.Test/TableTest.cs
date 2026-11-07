@@ -1435,6 +1435,22 @@ public sealed class TableTest : IDisposable
         );
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void PlayAgain_WhenTheGameWasOrWasNotForPlayersOnly_IsAsItWas(bool isForPlayers)
+    {
+        // Arrange
+        this._page.Server.View = Over() with { IsForPlayers = isForPlayers };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Act
+        table.Find("button.again").Click();
+
+        // Assert
+        Assert.Equal(isForPlayers, this._page.Server.Created!.IsForPlayers);
+    }
+
     [Fact]
     public void QuickGame_WhenTheGameIsOver_SitsAtSomeSeatWithEachBotOnceAmongTheOthers()
     {

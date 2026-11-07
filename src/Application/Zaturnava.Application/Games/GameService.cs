@@ -327,7 +327,10 @@ public sealed class GameService(
         };
         GameRecord next = record.Next();
         HumanSeat claimed =
-            new(SeatTokens.Hash(token), claimant, claimant is null ? Nicknames.Of(nickname) : null, isAi, next.Version);
+            new(SeatTokens.Hash(token), claimant, claimant is null ? Nicknames.Of(nickname) : null, isAi, next.Version)
+            {
+                IsForPlayers = record.Controllers[seat.Value].IsForPlayers,
+            };
         GameRecord seated = next with { Controllers = record.Controllers.SetItem(seat.Value, claimed) };
         GameSnapshot snapshot = GameSnapshot.Of(seated, this._rulesets.Find(seated.RulesetId));
         Played played = await this.PlayBots(

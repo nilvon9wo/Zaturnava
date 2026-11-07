@@ -281,7 +281,7 @@ public sealed class GameServiceTest
     }
 
     [Fact]
-    public async Task Claim_WhenAPlayerSignedInClaimsASeatForPlayers_SeatsThem()
+    public async Task Claim_WhenAPlayerSignedInClaimsASeatForPlayers_SeatsThemAtASeatStillForPlayers()
     {
         // Arrange
         SeatPlan forPlayers = SeatPlan.Open with { IsForPlayers = true };
@@ -293,7 +293,8 @@ public sealed class GameServiceTest
 
         // Assert
         GameSnapshot snapshot = await this._service.Get(id, this._cancellation);
-        Assert.Equal(player, ((HumanSeat)snapshot.Record.Controllers[0]).Claimant);
+        HumanSeat seat = (HumanSeat)snapshot.Record.Controllers[0];
+        Assert.Equal<(PlayerId?, bool)>((player, true), (seat.Claimant, seat.IsForPlayers));
     }
 
     [Fact]

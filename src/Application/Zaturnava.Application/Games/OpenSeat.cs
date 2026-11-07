@@ -1,8 +1,8 @@
 namespace Net.NowhereAtAll.Zaturnava.Application.Games;
 
 /// <summary>
-/// A seat waiting for a person to claim it; only a player signed in, if <see cref="IsForPlayers"/>: whoever set the
-/// game up barred guests from it.
+/// A seat waiting for a person to claim it; only a player signed in, if <see cref="SeatController.IsForPlayers"/>:
+/// whoever set the game up barred guests from it.
 /// </summary>
 public sealed record OpenSeat : SeatController
 {
@@ -10,8 +10,6 @@ public sealed record OpenSeat : SeatController
 
     /// <summary>What marks, in <see cref="Detail"/>, a seat only a player signed in may claim.</summary>
     public const string ForPlayers = "players";
-
-    public bool IsForPlayers { get; init; }
 
     public override string Kind => KindName;
 
