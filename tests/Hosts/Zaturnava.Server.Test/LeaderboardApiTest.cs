@@ -47,6 +47,34 @@ public sealed class LeaderboardApiTest(QuickStandingServer server) : IClassFixtu
     }
 
     [Fact]
+    public async Task Leaderboards_WhenAPlayerFinishedAGameAgainstBotsAlone_ListThemAgainstBotsAndTheBotsByName()
+    {
+        // Arrange
+        Player bea = new(new PlayerId("leaderboard-bea"), "Leaderboard Bea", []);
+        await this._server.Services.GetRequiredService<IPlayerPersisting>().Add(bea, this._cancellation);
+        _ = await this.AddEndedGame(bea.Id);
+        _ = await this.Eventually(bea.Name);
+        string game = new Chaturaji2027Rules().GameId;
+
+        // Act
+        ImmutableList<StandingDto> againstBots = await this._client.AgainstBotsLeaderboard(game, this._cancellation);
+        ImmutableList<BotStandingDto> bots = await this._client.BotLeaderboard(game, this._cancellation);
+
+        // Assert
+        StandingDto standing = Assert.Single(againstBots, standing => standing.Name == bea.Name);
+        BotStandingDto argus = Assert.Single(bots, bot => bot.Name == new ArgusBot(new Random(Seed)).Profile.Name);
+        Assert.Equal(
+            (1, 1, true),
+            (
+                standing.WonAgainstBots + standing.LostAgainstBots + standing.DrawnAgainstBots,
+                argus.Place,
+                argus.Won + argus.Lost + argus.Drawn >= 3
+                    && argus.WonAgainstPeople + argus.LostAgainstPeople + argus.DrawnAgainstPeople == 0
+            )
+        );
+    }
+
+    [Fact]
     public async Task Leaderboard_WhenNoOneHasPlayedTheGame_ListsNoOne()
     {
         // Arrange - nothing beyond the server

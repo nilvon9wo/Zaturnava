@@ -55,6 +55,18 @@ internal sealed class StubGameServer : IGameServing
     public Task<ImmutableList<StandingDto>> Leaderboard([Required] string game, CancellationToken cancellationToken) =>
         this.Answer(ImmutableList<StandingDto>.Empty, game);
 
+    public Task<ImmutableList<StandingDto>> AgainstBotsLeaderboard(
+        [Required] string game,
+        CancellationToken cancellationToken
+    ) =>
+        this.Answer(ImmutableList<StandingDto>.Empty, game);
+
+    public Task<ImmutableList<BotStandingDto>> BotLeaderboard(
+        [Required] string game,
+        CancellationToken cancellationToken
+    ) =>
+        this.Answer(ImmutableList<BotStandingDto>.Empty, game);
+
     public Task<GamePageDto> List(GameListQuery? query, CancellationToken cancellationToken) =>
         this.Answer(
             new GamePageDto(

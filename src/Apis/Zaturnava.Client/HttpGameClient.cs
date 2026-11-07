@@ -35,6 +35,30 @@ public sealed class HttpGameClient(HttpClient http) : IGameServing
             cancellationToken
         );
 
+    public Task<ImmutableList<StandingDto>> AgainstBotsLeaderboard(
+        [Required] string game,
+        CancellationToken cancellationToken
+    ) =>
+        this.Send<ImmutableList<StandingDto>>(
+            HttpMethod.Get,
+            GameRoutes.AgainstBotsLeaderboard(game),
+            null,
+            null,
+            cancellationToken
+        );
+
+    public Task<ImmutableList<BotStandingDto>> BotLeaderboard(
+        [Required] string game,
+        CancellationToken cancellationToken
+    ) =>
+        this.Send<ImmutableList<BotStandingDto>>(
+            HttpMethod.Get,
+            GameRoutes.BotLeaderboard(game),
+            null,
+            null,
+            cancellationToken
+        );
+
     public Task<GamePageDto> List(GameListQuery? query, CancellationToken cancellationToken) =>
         this.Send<GamePageDto>(
             HttpMethod.Get,

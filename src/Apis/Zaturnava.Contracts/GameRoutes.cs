@@ -54,6 +54,19 @@ public static class GameRoutes
     /// <summary>The players standing highest at a game, any size, by its id (<see cref="RulesetDto.Game"/>).</summary>
     public static string Leaderboard([Required] string game) => $"{Leaderboards}/{Uri.EscapeDataString(game)}";
 
+    /// <summary>The server's bots standing highest at a game, any size (<see cref="BotStandingDto"/>).</summary>
+    public static string BotLeaderboard([Required] string game) => $"{Leaderboard(game)}/{BotsSegment}";
+
+    /// <summary>The players who have done best at a game against bots alone (<see cref="StandingDto"/>).</summary>
+    public static string AgainstBotsLeaderboard([Required] string game) =>
+        $"{Leaderboard(game)}/{AgainstBotsSegment}";
+
+    /// <summary>The last segment of <see cref="BotLeaderboard"/>.</summary>
+    public const string BotsSegment = "bots";
+
+    /// <summary>The last segment of <see cref="AgainstBotsLeaderboard"/>.</summary>
+    public const string AgainstBotsSegment = "against-bots";
+
     /// <summary>A player's profile, as anyone may see it (<see cref="ProfileDto"/>).</summary>
     public static string Profile([Required] string playerId) => $"{Players}/{Uri.EscapeDataString(playerId)}";
 

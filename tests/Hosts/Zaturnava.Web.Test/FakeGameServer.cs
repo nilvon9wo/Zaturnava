@@ -134,6 +134,22 @@ internal sealed class FakeGameServer : IGameServing
     public Task<ImmutableList<StandingDto>> Leaderboard([Required] string game, CancellationToken cancellationToken) =>
         this.Answer($"leaderboard {game}", this.Leaderboards.GetValueOrDefault(game, []));
 
+    public ImmutableDictionary<string, ImmutableList<StandingDto>> AgainstBotsLeaderboards { get; set; } = [];
+
+    public Task<ImmutableList<StandingDto>> AgainstBotsLeaderboard(
+        [Required] string game,
+        CancellationToken cancellationToken
+    ) =>
+        this.Answer($"against bots {game}", this.AgainstBotsLeaderboards.GetValueOrDefault(game, []));
+
+    public ImmutableDictionary<string, ImmutableList<BotStandingDto>> BotLeaderboards { get; set; } = [];
+
+    public Task<ImmutableList<BotStandingDto>> BotLeaderboard(
+        [Required] string game,
+        CancellationToken cancellationToken
+    ) =>
+        this.Answer($"bots {game}", this.BotLeaderboards.GetValueOrDefault(game, []));
+
     public Task<GamePageDto> List(GameListQuery? query, CancellationToken cancellationToken)
     {
         this.Listed = query;

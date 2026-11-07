@@ -50,6 +50,44 @@ namespace Net.NowhereAtAll.Zaturnava.Persistence.EfCore.SqlServer.Migrations
                     b.ToTable("ActionEntity");
                 });
 
+            modelBuilder.Entity("Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Entities.BotStandingEntity", b =>
+                {
+                    b.Property<string>("BotId")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("Game")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<int>("Drawn")
+                        .HasColumnType("int");
+
+                    b.Property<int>("DrawnAgainstPeople")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Lost")
+                        .HasColumnType("int");
+
+                    b.Property<int>("LostAgainstPeople")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Points")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Won")
+                        .HasColumnType("int");
+
+                    b.Property<int>("WonAgainstPeople")
+                        .HasColumnType("int");
+
+                    b.HasKey("BotId", "Game");
+
+                    b.HasIndex("Game", "Won");
+
+                    b.ToTable("BotStandings");
+                });
+
             modelBuilder.Entity("Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Entities.ChatEntity", b =>
                 {
                     b.Property<string>("Id")
@@ -222,6 +260,9 @@ namespace Net.NowhereAtAll.Zaturnava.Persistence.EfCore.SqlServer.Migrations
                     b.Property<int>("Drawn")
                         .HasColumnType("int");
 
+                    b.Property<int>("DrawnAgainstBots")
+                        .HasColumnType("int");
+
                     b.Property<double>("Elo")
                         .HasColumnType("float");
 
@@ -231,10 +272,16 @@ namespace Net.NowhereAtAll.Zaturnava.Persistence.EfCore.SqlServer.Migrations
                     b.Property<int>("Lost")
                         .HasColumnType("int");
 
+                    b.Property<int>("LostAgainstBots")
+                        .HasColumnType("int");
+
                     b.Property<int>("Points")
                         .HasColumnType("int");
 
                     b.Property<int>("Won")
+                        .HasColumnType("int");
+
+                    b.Property<int>("WonAgainstBots")
                         .HasColumnType("int");
 
                     b.HasKey("PlayerId", "Game");

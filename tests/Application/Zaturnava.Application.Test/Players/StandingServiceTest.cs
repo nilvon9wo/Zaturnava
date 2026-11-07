@@ -72,6 +72,189 @@ public sealed class StandingServiceTest
         Assert.Equal(elo, standings[Bea].Elo, 9);
     }
 
+    [Fact]
+    public async Task RateFinished_WhenPeopleBeatBotsAlone_CountsItAgainstBotsForThemAndAgainstPeopleForTheBots()
+    {
+        // Arrange - Ada and Bea beat the first-choice bot (3 points) and one no longer offered
+        GameState ended = EndedRules.State([Black]) with
+        {
+            Scores = ImmutableDictionary<SeatId, int>.Empty.Add(Yellow, 3),
+        };
+        await this._games.Add(
+            Record(
+                "g",
+                new HumanSeat("ada", Ada),
+                new BotSeat(FirstChoiceBot.BotId),
+                new HumanSeat("bea", Bea),
+                new BotSeat("gone")
+            ),
+            this._cancellation
+        );
+        StandingService service = this.Service(new EndedRules(ended), null);
+
+        // Act
+        _ = await service.RateFinished(this._cancellation);
+
+        // Assert
+        ImmutableDictionary<PlayerId, Standing> players =
+            await this._players.Standings(EndedRules.RulesetId, [Ada, Bea], this._cancellation);
+        ImmutableDictionary<string, BotStanding> bots =
+            await this._players.BotStandings(EndedRules.RulesetId, [FirstChoiceBot.BotId, "gone"], this._cancellation);
+        Assert.Equal(
+            (1, 1, 0),
+            (players[Ada].WonAgainstBots, players[Bea].WonAgainstBots, players[Ada].LostAgainstBots)
+        );
+        Assert.Equal(
+            [
+                new BotStanding(FirstChoiceBot.BotId, EndedRules.RulesetId)
+                {
+                    Points = 3,
+                    Lost = 1,
+                    LostAgainstPeople = 1,
+                },
+                new BotStanding("gone", EndedRules.RulesetId) { Lost = 1, LostAgainstPeople = 1 },
+            ],
+            bots.Values.OrderBy(standing => standing.BotId, StringComparer.Ordinal)
+        );
+    }
+
+    [Theory]
+    [InlineData(false, 1, 0)]
+    [InlineData(true, 0, 1)]
+    public async Task RateFinished_WhenABotPlaysSeveralSeatsAgainstAnAi_CountsEachSeatButNotAgainstPeople(
+        bool isDrawn,
+        int lost,
+        int drawn
+    )
+    {
+        // Arrange - the first-choice bot, at Yellow and the last seat, against Ada and Bea's AI; it has won before
+        await this._players.KeepBots(
+            [new BotStanding(FirstChoiceBot.BotId, EndedRules.RulesetId) { Won = 2, WonAgainstPeople = 1 }],
+            this._cancellation
+        );
+        await this._games.Add(
+            Record(
+                "g",
+                new HumanSeat("ada", Ada),
+                new BotSeat(FirstChoiceBot.BotId),
+                new HumanSeat("bea", Bea, IsAi: true),
+                new BotSeat(FirstChoiceBot.BotId)
+            ),
+            this._cancellation
+        );
+        StandingService service = this.Service(new EndedRules(EndedRules.State(isDrawn ? [] : [Black])), null);
+
+        // Act
+        _ = await service.RateFinished(this._cancellation);
+
+        // Assert
+        BotStanding standing = (
+            await this._players.BotStandings(EndedRules.RulesetId, [FirstChoiceBot.BotId], this._cancellation)
+        )[FirstChoiceBot.BotId];
+        Standing ada = (await this._players.Standings(EndedRules.RulesetId, [Ada], this._cancellation))[Ada];
+        Assert.Equal(
+            (2, 2 * lost, 2 * drawn, 1, 0, 1),
+            (
+                standing.Won,
+                standing.Lost,
+                standing.Drawn,
+                standing.WonAgainstPeople,
+                standing.LostAgainstPeople + standing.DrawnAgainstPeople,
+                ada.PlayedAgainstBots
+            )
+        );
+    }
+
+    [Fact]
+    public async Task RateFinished_WhenAPlayerDrawsOrLosesAgainstBotsAlone_CountsItAgainstBots()
+    {
+        // Arrange - Ada and a bot no longer offered against two first-choice bots: drawn, then lost
+        await this._games.Add(
+            Record(
+                "drawn",
+                new HumanSeat("ada", Ada),
+                new BotSeat(FirstChoiceBot.BotId),
+                new BotSeat("gone"),
+                new BotSeat(FirstChoiceBot.BotId)
+            ),
+            this._cancellation
+        );
+        StandingService service = this.Service(new EndedRules(EndedRules.State([])), null);
+        _ = await service.RateFinished(this._cancellation);
+        await this._games.Add(
+            Record(
+                "lost",
+                new HumanSeat("ada", Ada),
+                new BotSeat(FirstChoiceBot.BotId),
+                new BotSeat("gone"),
+                new BotSeat(FirstChoiceBot.BotId)
+            ),
+            this._cancellation
+        );
+
+        // Act
+        _ = await this.Service(new EndedRules(EndedRules.State([Yellow])), null).RateFinished(this._cancellation);
+
+        // Assert
+        Standing ada = (await this._players.Standings(EndedRules.RulesetId, [Ada], this._cancellation))[Ada];
+        Assert.Equal((0, 1, 1), (ada.WonAgainstBots, ada.LostAgainstBots, ada.DrawnAgainstBots));
+    }
+
+    [Fact]
+    public async Task LeadersAgainstBots_WhenPlayersHaveFacedBotsAlone_NamesThemMostWinsFirstThenFewestLosses()
+    {
+        // Arrange - one standing no longer known, and one who has never faced bots alone
+        await this._players.Add(new Player(Ada, "Ada", []), this._cancellation);
+        await this._players.Add(new Player(Bea, "Bea", []), this._cancellation);
+        await this._players.Add(new Player(new PlayerId("cy"), "Cy", []), this._cancellation);
+        await this._players.Keep(
+            [
+                new Standing(Ada, "chess") { WonAgainstBots = 2, LostAgainstBots = 3 },
+                new Standing(Bea, "chess") { WonAgainstBots = 2, LostAgainstBots = 1 },
+                new Standing(new PlayerId("cy"), "chess") { Won = 9 },
+                new Standing(new PlayerId("ghost"), "chess") { DrawnAgainstBots = 1 },
+            ],
+            this._cancellation
+        );
+        StandingService service = this.Service(new EndedRules(EndedRules.State([])), null);
+
+        // Act
+        ImmutableList<Leader> leaders = await service.LeadersAgainstBots("chess", this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            "Bea 2-1, Ada 2-3, deleted player 0-0",
+            string.Join(
+                ", ",
+                leaders.Select(l => $"{l.Name} {l.Standing.WonAgainstBots}-{l.Standing.LostAgainstBots}")
+            )
+        );
+    }
+
+    [Fact]
+    public async Task BotLeaders_WhenBotsHaveFinishedGames_NamesThoseStillOfferedMostWinsFirst()
+    {
+        // Arrange - the first-choice bot, one no longer offered, and another game's
+        await this._players.KeepBots(
+            [
+                new BotStanding(FirstChoiceBot.BotId, "chess") { Won = 1, Lost = 4 },
+                new BotStanding("gone", "chess") { Won = 7 },
+                new BotStanding(FirstChoiceBot.BotId, "shogi") { Won = 9 },
+            ],
+            this._cancellation
+        );
+        StandingService service = this.Service(new EndedRules(EndedRules.State([])), null);
+
+        // Act
+        ImmutableList<BotLeader> leaders = await service.BotLeaders("chess", this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            "First choice 1-4",
+            string.Join(", ", leaders.Select(l => $"{l.Name} {l.Standing.Won}-{l.Standing.Lost}"))
+        );
+    }
+
     [Theory]
     [InlineData("a guest")]
     [InlineData("changed hands")]

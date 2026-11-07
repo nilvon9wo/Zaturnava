@@ -45,6 +45,44 @@ namespace Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Sqlite.Migrations
                     b.ToTable("ActionEntity");
                 });
 
+            modelBuilder.Entity("Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Entities.BotStandingEntity", b =>
+                {
+                    b.Property<string>("BotId")
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Game")
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Drawn")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("DrawnAgainstPeople")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Lost")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("LostAgainstPeople")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Points")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Won")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("WonAgainstPeople")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("BotId", "Game");
+
+                    b.HasIndex("Game", "Won");
+
+                    b.ToTable("BotStandings");
+                });
+
             modelBuilder.Entity("Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Entities.ChatEntity", b =>
                 {
                     b.Property<string>("Id")
@@ -217,6 +255,9 @@ namespace Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Sqlite.Migrations
                     b.Property<int>("Drawn")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int>("DrawnAgainstBots")
+                        .HasColumnType("INTEGER");
+
                     b.Property<double>("Elo")
                         .HasColumnType("REAL");
 
@@ -226,10 +267,16 @@ namespace Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Sqlite.Migrations
                     b.Property<int>("Lost")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int>("LostAgainstBots")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int>("Points")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("Won")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("WonAgainstBots")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("PlayerId", "Game");

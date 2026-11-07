@@ -274,6 +274,8 @@ base address (`GameRoutes`):
 | A game's history | `GET api/games/{id}/history` | `GameHistoryDto`: each seat (its name, team, who played it and its score), every action in order, the dice among them, and how it ended (the winners, the kind of ending as the ruleset's code, and why), or null while it goes on: the shape the BotRunner writes self-play games in |
 | Every finished game's history | `GET api/history` | `GameHistoryDto[]` |
 | Who stands highest at a game | `GET api/leaderboards/{game}` | `StandingDto[]`: up to 100 players, best first by Elo, then experience; counted by `StandingSweeper` every `Standings:SweepSeconds` (default 60) from the games over not yet counted |
+| Who has done best against bots alone | `GET api/leaderboards/{game}/against-bots` | `StandingDto[]`: up to 100 players, most games against bots alone won first, then fewest lost |
+| Which bots stand highest | `GET api/leaderboards/{game}/bots` | `BotStandingDto[]`: up to 100 of the server's bots, by `BotStandings`, most games won first, then fewest lost; with their games against people alone |
 | Let a bot or a timer decide | `POST api/games/{id}/advance` with `AdvanceRequest` (the version the caller saw) | `GameViewDto` after one bot decision, or the timer's decision once a timed one has run out of time; unchanged if the version is stale or neither is due |
 | Claim an open seat | `POST api/games/{id}/seats/{seat}` | `SeatClaimedDto` with the seat's token |
 | Take back one's own seat, from any device | `POST api/games/{id}/seats/{seat}/take-back`, `Authorization: Bearer {player token}` of the player who claimed it | `SeatClaimedDto` with a new token; the old one holds the seat no more |
