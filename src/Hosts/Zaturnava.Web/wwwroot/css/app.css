@@ -745,6 +745,7 @@ button.safety.off {
 .seat .prisoners { flex: 1; min-width: 0; display: flex; gap: 1px; overflow: hidden; }
 .seat .prisoners .piece-icon { flex: 0 1 20px; min-width: 6px; }
 .seat .score { font-variant-numeric: tabular-nums; color: var(--muted); }
+.seat .take-over { padding: 2px 8px; font-size: 0.85em; }
 
 .log {
     display: flex;

@@ -1435,6 +1435,57 @@ public sealed class TableTest : IDisposable
         );
     }
 
+    [Fact]
+    public void TakeOver_WhenASignedInWatcherTakesABotsSeat_SitsThemThereByTheTokenGiven()
+    {
+        // Arrange - Yellow is the Random bot
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.player").SetResult("player");
+        this._page.Server.View = WithRandomAtYellow(FakeGameServer.SeatZeroToMove);
+        Seating? seated = null;
+        IRenderedComponent<Table> table = this._page.Render<Table>(parameters => parameters
+            .Add(x => x.Seating, Seating.Watching(FakeGameServer.GameId))
+            .Add(x => x.OnSeated, next => seated = next)
+        );
+
+        // Act
+        table.Find(".seat-1 button.take-over").Click();
+
+        // Assert
+        Assert.Equal(
+            (1, new Seating(FakeGameServer.GameId, new SeatClaim(1, FakeGameServer.Token)), true),
+            (
+                table.FindAll("button.take-over").Count,
+                seated,
+                this._page.Server.Calls.Contains($"take over {FakeGameServer.GameId} 1 player")
+            )
+        );
+    }
+
+    [Theory]
+    [InlineData("a guest")]
+    [InlineData("seated")]
+    [InlineData("over")]
+    public void Render_WhenAGuestOrSomeoneSeatedWatchesOrTheGameIsOver_OffersNoSeatToTakeOver(string who)
+    {
+        // Arrange
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.player")
+            .SetResult(who == "a guest" ? null : "player");
+        this._page.Server.View = WithRandomAtYellow(who == "over" ? Over() : FakeGameServer.SeatZeroToMove);
+
+        // Act
+        IRenderedComponent<Table> table =
+            this.Render(who == "seated" ? SeatZero : Seating.Watching(FakeGameServer.GameId));
+
+        // Assert
+        Assert.Empty(table.FindAll("button.take-over"));
+    }
+
+    private static GameViewDto WithRandomAtYellow(GameViewDto view) =>
+        view with
+        {
+            Seats = [.. view.Seats.Select(held => held with { BotId = held.Bot is null ? null : "random" })],
+        };
+
     [Theory]
     [InlineData(true)]
     [InlineData(false)]

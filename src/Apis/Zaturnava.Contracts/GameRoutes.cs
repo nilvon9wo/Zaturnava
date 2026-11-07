@@ -78,6 +78,9 @@ public static class GameRoutes
     /// <summary>Where a signed-in player takes back the seat they claimed, from any device, for a new token.</summary>
     public static string TakeBack([Required] string gameId, int seat) => $"{Seat(gameId, seat)}/take-back";
 
+    /// <summary>Where a signed-in player takes over the seat a bot plays, for a token of their own.</summary>
+    public static string TakeOver([Required] string gameId, int seat) => $"{Seat(gameId, seat)}/take-over";
+
     public static string Actions([Required] string gameId) => $"{Game(gameId)}/actions";
 
     public static string Advance([Required] string gameId) => $"{Game(gameId)}/advance";

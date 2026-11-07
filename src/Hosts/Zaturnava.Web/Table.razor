@@ -70,6 +70,14 @@
                                     }
                                 </span>
                                 <span class="score">@seat.Score</span>
+                                @if (this.MayTakeOver(view, seat))
+                                {
+                                    <button class="take-over"
+                                            title="Play this seat yourself, in the bot's place, for the rest of the game"
+                                            @onclick="() => this.TakeOver(view, seat.Id)">
+                                        Take over
+                                    </button>
+                                }
                             </li>
                         }
                     </ol>
@@ -526,6 +534,9 @@
     private BoardTurn _boardTurn = BoardTurn.None;
     private ImmutableHashSet<int> _lastMove = [];
     private bool _isHighlightsOnly = true;
+
+    /// <summary>The token of the player signed in on this browser, if one is: who may take a seat over.</summary>
+    private string? _playerToken;
     private bool _isProposing;
     private DateTimeOffset? _deadline;
     private int? _receiver;
@@ -643,6 +654,7 @@
     protected override async Task OnInitializedAsync()
     {
         this._isHighlightsOnly = await this.Browser.IsLogHighlightsOnly();
+        this._playerToken = await this.Browser.PlayerToken();
         await this.Browser.Watch(this._self);
         await this.Refresh();
         this._boardTurn = this._view is null ? BoardTurn.None : BoardTurn.HomeOf(this.Seating.Claim?.Seat, this._view);
@@ -889,6 +901,20 @@
                 Difficulty.Medium,
                 await this.Browser.Claimant()
             );
+        });
+
+    /// <summary>
+    /// Whether the player may take the seat over from its bot: signed in, watching, not playing, a game not over.
+    /// </summary>
+    private bool MayTakeOver(GameViewDto view, SeatDto seat) =>
+        this._playerToken is not null && this.Seating.Claim is null && view.Outcome is null && seat.BotId is not null;
+
+    /// <summary>The seat taken over from its bot, the player sitting at it from now on.</summary>
+    private Task TakeOver(GameViewDto view, int seat) =>
+        this.SitAgain(async () =>
+        {
+            SeatClaimedDto taken = await this.Games.TakeOver(view.Id, seat, this._playerToken!, CancellationToken.None);
+            return new Seating(view.Id, new SeatClaim(seat, taken.Token));
         });
 
     private async Task SitAgain(Func<Task<Seating>> seating) =>

@@ -128,6 +128,11 @@ first.
   a custom game set up signed in may be **Players signed in only**; its open seats then refuse a guest, and the
   lobby asks a guest to sign in to join it. Playing such a game again keeps it for players signed in only.
 - A person may take a seat over from a bot, where the game allows it (*Stated 2026-11-01*, low priority).
+  *Done* (*Proposed*: who and when): a player signed in, watching a game not over at which they hold no seat,
+  has a **Take over** button on each bot's seat; the seat is theirs for the rest of the game
+  (`POST api/games/{id}/seats/{seat}/take-over`). A guest may not, nor may anyone play two seats so. Whether
+  such a game still counts toward their Elo is part of
+  [OQ8](open-questions.md#oq8-which-games-count-toward-a-players-elo).
 - A custom game's board size chosen freely, within limits, rather than only small, medium or large
   (*Stated 2026-11-01*); likely to come with the game setup rework.
 - The page's preferences (theme, sound, pieces, the log's highlights) kept with the player's identity

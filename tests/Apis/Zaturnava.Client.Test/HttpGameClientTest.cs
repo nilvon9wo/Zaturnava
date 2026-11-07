@@ -277,6 +277,22 @@ public sealed class HttpGameClientTest
     }
 
     [Fact]
+    public async Task TakeOver_WhenGivenASeat_PostsThePlayersTokenToTakeItOver()
+    {
+        // Arrange
+        StubServer server = new(HttpStatusCode.OK, """{"token":"secret"}""");
+
+        // Act
+        SeatClaimedDto taken = await Client(server).TakeOver("g", 2, "player", this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            ("POST", "/api/games/g/seats/2/take-over", "Bearer player", "secret"),
+            (server.Method, server.Path, server.Authorization, taken.Token)
+        );
+    }
+
+    [Fact]
     public async Task Identify_WhenGivenASeatHeld_PutsWhoHoldsItToTheSeat()
     {
         // Arrange
