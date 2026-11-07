@@ -3,8 +3,9 @@
    in the browser for every table until cleared); or signed in, with any service the server is set up for, each in a
    window of its own. Once signed in, the player's name, a button to sign out (the server lets the token go), and
    one to delete the account, which asks first, here in the page, and once confirmed has the server forget the
-   player altogether; and their profile, where they may change the name others see them by, and link other services
-   to sign in with (or unlink any but the last), and have a token issued for an AI to play for them. The player's token is kept in the browser. *@
+   player altogether; and their profile, where they may change their username, which no other player may have, and
+   link other services to sign in with (or unlink any but the last), and have a token issued for an AI to play for
+   them. The player's token is kept in the browser. *@
 @using Microsoft.JSInterop
 @implements IDisposable
 @inject IGameServing Games
@@ -36,9 +37,9 @@
         <div class="backdrop">
             <div class="dialog profile-dialog" role="dialog" aria-modal="true" aria-labelledby="profile-title">
                 <h2 id="profile-title">Your profile</h2>
-                <p class="autosave">Each change is saved as you make it: your name once you leave its field.</p>
+                <p class="autosave">Each change is saved as you make it: your username once you leave its field.</p>
                 <label class="name">
-                    The name others see
+                    Username
                     <input class="name"
                            maxlength="@RenameRequest.MaximumNameLength"
                            value="@player.Name"
@@ -245,7 +246,7 @@ else
             await this.Showing(
                 token,
                 this.Games.Rename(token, $"{change.Value}", CancellationToken.None),
-                "Name saved."
+                "Username saved."
             )
         );
 

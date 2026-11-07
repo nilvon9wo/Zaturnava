@@ -225,6 +225,65 @@ public sealed class PlayerServiceTest
         );
     }
 
+    [Fact]
+    public async Task Rename_WhenAnotherPlayerGoesByTheName_ThrowsNameTakenExceptionAndLeavesTheirs()
+    {
+        // Arrange
+        _ = await this._service.SignIn(Other, "Bea", this._cancellation);
+        SignedIn ada = await this._service.SignIn(Login, "Ada", this._cancellation);
+
+        // Act
+        Task<Player?> renaming = this._service.Rename(ada.Token, "BEA", this._cancellation);
+
+        // Assert
+        NameTakenException refused = await Assert.ThrowsAsync<NameTakenException>(() => renaming);
+        Assert.Equal(
+            (GameRequestFailure.Conflict, "Ada"),
+            (refused.Failure, (await this._service.Find(ada.Token, this._cancellation))?.Name)
+        );
+    }
+
+    [Fact]
+    public async Task Rename_WhenOnlyTheirCapitalsChange_RenamesThem()
+    {
+        // Arrange
+        SignedIn ada = await this._service.SignIn(Login, "ada", this._cancellation);
+
+        // Act
+        Player? renamed = await this._service.Rename(ada.Token, "Ada", this._cancellation);
+
+        // Assert
+        Assert.Equal("Ada", renamed?.Name);
+    }
+
+    [Fact]
+    public async Task SignIn_WhenOthersGoByTheProvidersName_NamesTheNewPlayerByTheFirstNumberFree()
+    {
+        // Arrange - "Ada" and "ada 2" are taken
+        _ = await this._service.SignIn(Login, "Ada", this._cancellation);
+        _ = await this._service.SignIn(Other, "ada 2", this._cancellation);
+
+        // Act
+        SignedIn third = await this._service.SignIn(new Login("Discord", "9"), "Ada", this._cancellation);
+
+        // Assert
+        Assert.Equal("Ada 3", third.Player.Name);
+    }
+
+    [Fact]
+    public async Task SignIn_WhenALongNameIsTaken_CutsItToFitItsNumber()
+    {
+        // Arrange
+        string longest = new('x', PlayerService.MaximumNameLength);
+        _ = await this._service.SignIn(Login, longest, this._cancellation);
+
+        // Act
+        SignedIn second = await this._service.SignIn(Other, longest, this._cancellation);
+
+        // Assert
+        Assert.Equal(new string('x', PlayerService.MaximumNameLength - 2) + " 2", second.Player.Name);
+    }
+
     [Theory]
     [InlineData(null)]
     [InlineData("  \t ")]

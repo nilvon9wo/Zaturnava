@@ -251,7 +251,7 @@ opens, with a service the server is set up for (Proposed):
 | Who a player's token stands for | `GET api/players/me`, with the player's token | `{"id": "...", "name": "...", "services": ["GitHub"], "preferences": {"zaturnava.theme": "light"}}`, or `401` |
 | Keep one of the page's settings | `PUT api/players/me/preferences`, with the player's token, and `{"name": "...", "value": "..."}`; an empty value forgets it | The player, with their settings; `400` if it is unnamed, a name or value is over 64 characters, or it would be a 33rd; or `401`, also for an AI's token |
 | The games waiting for the player's move | `GET api/players/me/awaiting`, with the player's token | `[{"game": {...}, "seat": 0}]`, each game as the list shows it, the one changed earliest first; or `401` |
-| Change the name others see | `PUT api/players/me`, with the player's token, and `{"name": "..."}` | The player, renamed; or `401` |
+| Change the username | `PUT api/players/me`, with the player's token, and `{"name": "..."}` | The player, renamed; `409` if another player goes by that name, capitals or not; or `401` |
 | A code to link another service with | `POST api/players/me/link-code`, with the player's token | `{"code": "..."}`, or `401` |
 | Link another service | `GET signin/{service}?origin={the page's origin}&link={code}` | As signing in, but the service's account is added to the player the code was given to |
 | Stop signing in with a service | `DELETE api/players/me/logins/{service}`, with the player's token | The player, without it; `409` if it is their only one; or `401` |

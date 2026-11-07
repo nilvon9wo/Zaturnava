@@ -26,6 +26,11 @@ public interface IPlayerPersisting
     );
 
     /// <summary>
+    /// Whether a player other than <paramref name="except"/> is named <paramref name="name"/>, capitals or not.
+    /// </summary>
+    Task<bool> IsNameTaken([Required] string name, PlayerId? except, CancellationToken cancellationToken);
+
+    /// <summary>
     /// When each of <paramref name="players"/> last signed in; one forgotten, or not signed in since this was kept,
     /// is left out.
     /// </summary>

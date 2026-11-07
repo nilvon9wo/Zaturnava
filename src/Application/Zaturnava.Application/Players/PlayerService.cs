@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.ComponentModel.DataAnnotations;
+using System.Globalization;
 using Net.NowhereAtAll.Zaturnava.Application.Games;
 using Net.NowhereAtAll.Zaturnava.Application.Ports;
 
@@ -42,13 +43,33 @@ public sealed class PlayerService(IPlayerPersisting store, IGamePersisting games
 
     /// <summary>
     /// Signs in the player whose login it is: the one already known, else a new one, named
-    /// <paramref name="name"/>; either way with a new token.
+    /// <paramref name="name"/>, or, if another player goes by it, by the first of "name 2", "name 3" and so on that
+    /// no one does (Proposed); either way with a new token.
     /// </summary>
     public async Task<SignedIn> SignIn(Login login, string? name, CancellationToken cancellationToken)
     {
         Player player = await this._store.ByLogin(login, cancellationToken)
-            ?? await this.Add(new Player(PlayerId.New(), NameOf(name) ?? Unnamed, [login]), cancellationToken);
+            ?? await this.Add(
+                new Player(PlayerId.New(), await this.FreeName(NameOf(name) ?? Unnamed, cancellationToken), [login]),
+                cancellationToken
+            );
         return await this.Session(player, cancellationToken);
+    }
+
+    /// <summary>
+    /// <paramref name="name"/>, if no player goes by it; else the first of "name 2", "name 3" and so on that no one
+    /// does, the name cut so that each fits <see cref="MaximumNameLength"/>.
+    /// </summary>
+    private async Task<string> FreeName(string name, CancellationToken cancellationToken)
+    {
+        string free = name;
+        for (int number = 2; await this._store.IsNameTaken(free, null, cancellationToken); number++)
+        {
+            string suffix = $" {number.ToString(CultureInfo.InvariantCulture)}";
+            free = name[..Math.Min(name.Length, MaximumNameLength - suffix.Length)].TrimEnd() + suffix;
+        }
+
+        return free;
     }
 
     /// <summary>
@@ -148,9 +169,10 @@ public sealed class PlayerService(IPlayerPersisting store, IGamePersisting games
     /// <summary>
     /// Names the player the token stands for (none, if it stands for no one) <paramref name="name"/>, without
     /// control characters or the spaces around it, cut to <see cref="MaximumNameLength"/>; a name with nothing left
-    /// leaves theirs as it was.
+    /// leaves theirs as it was. No two players may go by one username, capitals or not (Stated).
     /// </summary>
     /// <exception cref="AiTokenRefusedException">The token is an AI's.</exception>
+    /// <exception cref="NameTakenException">Another player goes by the name.</exception>
     public async Task<Player?> Rename([Required] string token, string? name, CancellationToken cancellationToken)
     {
         if (await this.Owner(token, cancellationToken) is not { } player)
@@ -161,6 +183,11 @@ public sealed class PlayerService(IPlayerPersisting store, IGamePersisting games
         if (NameOf(name) is not { } named)
         {
             return player;
+        }
+
+        if (await this._store.IsNameTaken(named, player.Id, cancellationToken))
+        {
+            throw new NameTakenException(named);
         }
 
         await this._store.Rename(player.Id, named, cancellationToken);

@@ -332,6 +332,34 @@ public sealed class EfPlayerStoreTest : IDisposable
         Assert.Equal(expected, Described(found));
     }
 
+    [Theory]
+    [InlineData("ADA", null, true)]
+    [InlineData("ada", "ada", false)]
+    [InlineData("Bea", null, false)]
+    [InlineData("A%", null, false)]
+    [InlineData("A_a", null, false)]
+    [InlineData("[A]da", null, false)]
+    [InlineData("Ad\\a", null, false)]
+    public async Task IsNameTaken_WhenAskedOfANameAndWhoMayHaveIt_SaysWhetherAnotherHasIt(
+        string name,
+        string? except,
+        bool expected
+    )
+    {
+        // Arrange
+        await this._store.Add(Ada, this._cancellation);
+
+        // Act
+        bool isTaken = await new EfPlayerStore(this._database.NewContext()).IsNameTaken(
+            name,
+            except is null ? null : new PlayerId(except),
+            this._cancellation
+        );
+
+        // Assert
+        Assert.Equal(expected, isTaken);
+    }
+
     [Fact]
     public async Task Rename_WhenThePlayerIsKnown_NamesThemAnew()
     {
