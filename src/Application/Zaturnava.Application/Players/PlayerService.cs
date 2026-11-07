@@ -29,6 +29,12 @@ public sealed class PlayerService(IPlayerPersisting store, IGamePersisting games
     /// <summary>Whoever held a person's seat as a player who has since deleted their account.</summary>
     public const string Deleted = "deleted player";
 
+    /// <summary>The longest a setting's name or value may be, in characters (<see cref="Prefer"/>).</summary>
+    public const int MaximumPreferenceLength = 64;
+
+    /// <summary>The most settings a player may keep (<see cref="Prefer"/>).</summary>
+    public const int MostPreferences = 32;
+
     private readonly IPlayerPersisting _store = store;
     private readonly IGamePersisting _games = games;
     private readonly LinkCodes _links = links;
@@ -159,6 +165,39 @@ public sealed class PlayerService(IPlayerPersisting store, IGamePersisting games
 
         await this._store.Rename(player.Id, named, cancellationToken);
         return player with { Name = named };
+    }
+
+    /// <summary>
+    /// Keeps one of the page's settings (the theme, say) for the player the token stands for, an empty value
+    /// forgetting it, so that every browser they sign in on starts from it; none, if it stands for no one.
+    /// </summary>
+    /// <exception cref="AiTokenRefusedException">The token is an AI's.</exception>
+    /// <exception cref="PreferenceRefusedException">
+    /// The name is empty, or it or the value too long (<see cref="MaximumPreferenceLength"/>), or the player would
+    /// keep too many (<see cref="MostPreferences"/>).
+    /// </exception>
+    public async Task<Player?> Prefer(
+        [Required] string token,
+        [Required(AllowEmptyStrings = true)] string name,
+        [Required(AllowEmptyStrings = true)] string value,
+        CancellationToken cancellationToken
+    )
+    {
+        if (await this.Owner(token, cancellationToken) is not { } player)
+        {
+            return null;
+        }
+
+        ImmutableSortedDictionary<string, string> preferences = value.Length == 0
+            ? player.Preferences.Remove(name)
+            : player.Preferences.SetItem(name, value);
+        bool isKept = name.Length is > 0 and <= MaximumPreferenceLength
+            && value.Length <= MaximumPreferenceLength
+            && preferences.Count <= MostPreferences;
+        await (isKept
+            ? this._store.KeepPreferences(player.Id, preferences, cancellationToken)
+            : throw new PreferenceRefusedException());
+        return player with { Preferences = preferences };
     }
 
     /// <summary>The player the token stands for, if it stands for one.</summary>

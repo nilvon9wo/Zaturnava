@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using System.Globalization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
+using Net.NowhereAtAll.Zaturnava.Contracts;
 using Net.NowhereAtAll.Zaturnava.Presentation;
 
 namespace Net.NowhereAtAll.Zaturnava.Web;
@@ -10,9 +11,10 @@ namespace Net.NowhereAtAll.Zaturnava.Web;
 /// What the page asks of the browser itself (wwwroot/js/zaturnava.js): sounds, a memory that outlives
 /// the page (seats held, the player signed in or a guest's nickname, and settings: sound, pieces, the piece cards
 /// and where they open, how a game is set up), the colour theme, word of the page shown again, a piece card to
-/// drag, and a window to sign in.
+/// drag, and a window to sign in. A player signed in keeps the page's settings (<see cref="Kept"/>) with the server
+/// too, as they choose them, and every browser they sign in on starts from them (<see cref="Adopt"/>).
 /// </summary>
-internal sealed class Browser(IJSRuntime js)
+internal sealed class Browser(IJSRuntime js, IGameServing games)
 {
     public const string Dark = "dark";
     public const string Light = "light";
@@ -42,7 +44,38 @@ internal sealed class Browser(IJSRuntime js)
     private const string ChessPieces = "chess";
     private const string Off = "off";
 
+    /// <summary>
+    /// The settings a player signed in keeps with the server, by the names the browser keeps them by: how the page
+    /// looks and sounds, and how it plays and sets games up; not seats, sign-ins or a game's own setup.
+    /// </summary>
+    private static readonly ImmutableHashSet<string> Kept =
+    [
+        ThemeKey, SoundKey, SafetyKey, PiecesKey, CardsKey, LogKey, ChatOrderKey, AiTalkKey, PreviewKey, SetupKey,
+    ];
+
     private readonly IJSRuntime _js = js;
+    private readonly IGameServing _games = games;
+
+    /// <summary>
+    /// Takes up the settings the player signed in keeps with the server, in place of this browser's; none, if no one
+    /// is signed in, or the server cannot say. A setting the server keeps nothing of stays as it was.
+    /// </summary>
+    public async Task Adopt()
+    {
+        if (await this.PlayerToken() is not { } token)
+        {
+            return;
+        }
+
+        PlayerDto? player = null;
+        _ = await Requests.Attempt(async () => player = await this._games.Me(token, CancellationToken.None));
+        foreach (KeyValuePair<string, string> kept in player?.Preferences.Where(IsKept) ?? [])
+        {
+            await this.Store(kept.Key, kept.Value);
+        }
+    }
+
+    private static bool IsKept(KeyValuePair<string, string> setting) => Kept.Contains(setting.Key);
 
     public ValueTask Play(ImmutableList<string> sounds) => this._js.InvokeVoidAsync("zaturnava.play", [.. sounds]);
 
@@ -65,9 +98,13 @@ internal sealed class Browser(IJSRuntime js)
 
     public async ValueTask<string> Theme() => await this.Load(ThemeKey) == Light ? Light : Dark;
 
-    public async ValueTask ShowTheme(string theme)
+    /// <summary>Shows the page in the theme, as it is kept in this browser.</summary>
+    public ValueTask ShowTheme(string theme) => this._js.InvokeVoidAsync("zaturnava.theme", theme);
+
+    /// <summary>Shows the page in the theme the player chose, and keeps it.</summary>
+    public async ValueTask SetTheme(string theme)
     {
-        await this._js.InvokeVoidAsync("zaturnava.theme", theme);
+        await this.ShowTheme(theme);
         await this.Save(ThemeKey, theme);
     }
 
@@ -167,5 +204,15 @@ internal sealed class Browser(IJSRuntime js)
 
     private ValueTask<string?> Load(string key) => this._js.InvokeAsync<string?>("zaturnava.load", key);
 
-    private ValueTask Save(string key, string value) => this._js.InvokeVoidAsync("zaturnava.save", key, value);
+    /// <summary>Keeps the setting in this browser; and with the server, if kept so and a player is signed in.</summary>
+    private async ValueTask Save(string key, string value)
+    {
+        await this.Store(key, value);
+        PreferRequest preferring = new(key, value);
+        _ = Kept.Contains(key) && await this.PlayerToken() is { } token
+            ? await Requests.Attempt(() => this._games.Prefer(token, preferring, CancellationToken.None))
+            : null;
+    }
+
+    private ValueTask Store(string key, string value) => this._js.InvokeVoidAsync("zaturnava.save", key, value);
 }

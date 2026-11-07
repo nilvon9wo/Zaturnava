@@ -1,5 +1,6 @@
 using Bunit;
 using Microsoft.AspNetCore.Components;
+using Net.NowhereAtAll.Zaturnava.Contracts;
 using Net.NowhereAtAll.Zaturnava.Presentation;
 
 namespace Net.NowhereAtAll.Zaturnava.Web.Test;
@@ -9,15 +10,107 @@ public sealed class BrowserTest : IDisposable
     private const string SeatKey = "zaturnava.seat.g";
 
     private readonly BunitContext _context = new();
+    private readonly FakeGameServer _server = new();
     private readonly Browser _browser;
 
     public BrowserTest()
     {
         this._context.JSInterop.Mode = JSRuntimeMode.Loose;
-        this._browser = new Browser(this._context.JSInterop.JSRuntime);
+        this._browser = new Browser(this._context.JSInterop.JSRuntime, this._server);
     }
 
     public void Dispose() => this._context.Dispose();
+
+    [Theory]
+    [InlineData(true, "off")]
+    [InlineData(false, null)]
+    public async Task SetSound_WhenAPlayerIsSignedInOrNot_KeepsItWithTheServerOnlyIfOneIs(bool isSignedIn, string? kept)
+    {
+        // Arrange
+        this.SignInAda(isSignedIn ? "player" : null);
+
+        // Act
+        await this._browser.SetSound(false);
+
+        // Assert
+        Assert.Equal(kept, this._server.Players["player"].Preferences.GetValueOrDefault("zaturnava.sound"));
+    }
+
+    [Fact]
+    public async Task Remember_WhenAPlayerIsSignedIn_KeepsTheSeatInThisBrowserAlone()
+    {
+        // Arrange
+        this.SignInAda("player");
+
+        // Act
+        await this._browser.Remember("g", new SeatClaim(3, "secret"));
+
+        // Assert
+        Assert.Empty(this._server.Players["player"].Preferences);
+    }
+
+    [Fact]
+    public async Task SetTheme_WhenChosen_ShowsAndKeepsIt()
+    {
+        // Arrange - nothing beyond the browser
+
+        // Act
+        await this._browser.SetTheme(Browser.Light);
+
+        // Assert
+        Assert.Equal(
+            (Browser.Light, "zaturnava.theme"),
+            (
+                this._context.JSInterop.Invocations["zaturnava.theme"].Single().Arguments[0] as string,
+                this._context.JSInterop.Invocations["zaturnava.save"].Single().Arguments[0] as string
+            )
+        );
+    }
+
+    [Theory]
+    [InlineData("player", false, "zaturnava.theme=light")]
+    [InlineData("player", true, "")]
+    [InlineData(null, false, "")]
+    public async Task Adopt_WhenAPlayerIsSignedIn_TakesUpTheSettingsTheyKeepWithTheServer(
+        string? token,
+        bool isServerDown,
+        string expected
+    )
+    {
+        // Arrange - a setting kept so, and one that is not
+        this.SignInAda(token);
+        this._server.Players = this._server.Players.SetItem(
+            "player",
+            this._server.Players["player"] with
+            {
+                Preferences = this._server.Players["player"].Preferences
+                    .Add("zaturnava.theme", "light")
+                    .Add("zaturnava.seat.g", "0 stolen"),
+            }
+        );
+        this._server.SignInFailure = isServerDown ? new HttpRequestException("down") : null;
+
+        // Act
+        await this._browser.Adopt();
+
+        // Assert
+        Assert.Equal(
+            expected,
+            string.Join(
+                ",",
+                this._context.JSInterop.Invocations
+                    .Where(call => call.Identifier == "zaturnava.save")
+                    .Select(call => $"{call.Arguments[0]}={call.Arguments[1]}")
+            )
+        );
+    }
+
+    /// <summary>Ada, known to the server by the token "player", and signed in on this browser by it if given.</summary>
+    private void SignInAda(string? token)
+    {
+        _ = this._context.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.player").SetResult(token);
+        this._server.Players = this._server.Players.SetItem("player", new PlayerDto("ada", "Ada"));
+    }
 
     [Fact]
     public async Task Remember_WhenGivenASeat_SavesItForTheGame()

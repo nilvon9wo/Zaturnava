@@ -206,14 +206,54 @@ public sealed class WireFormatTest
     {
         // Arrange
         SignedInDto signedIn = new("token", "Ada");
-        PlayerDto player = new("p", "Ada");
+        PlayerDto player = new("p", "Ada", ["GitHub"])
+        {
+            Preferences = ImmutableSortedDictionary<string, string>.Empty.Add("zaturnava.theme", "light"),
+        };
+        PreferRequest preferring = new("zaturnava.theme", "light");
 
         // Act
-        (SignedInDto?, PlayerDto?) arrived = (RoundTrip(signedIn), RoundTrip(player));
+        (SignedInDto?, PlayerDto?, PreferRequest?) arrived =
+            (RoundTrip(signedIn), RoundTrip(player), RoundTrip(preferring));
 
         // Assert
-        Assert.Equal((signedIn, player), arrived);
+        Assert.Equal((signedIn, player, preferring), arrived);
     }
+
+    [Theory]
+    [InlineData(null, "Ada", null, "light", false)]
+    [InlineData("q", "Ada", null, "light", false)]
+    [InlineData("p", "Bea", null, "light", false)]
+    [InlineData("p", "Ada", "GitHub", "light", false)]
+    [InlineData("p", "Ada", null, "dark", false)]
+    [InlineData("p", "Ada", null, null, false)]
+    [InlineData("p", "Ada", null, "light", true)]
+    [InlineData("p", "Ada", "", "light", true)]
+    public void Equals_WhenComparedWithAnotherPlayer_IsWhetherTheyAreTheSameInEveryWay(
+        string? id,
+        string name,
+        string? service,
+        string? theme,
+        bool expected
+    )
+    {
+        // Arrange
+        PlayerDto player = new("p", "Ada", service == "" ? [] : null) { Preferences = Kept("light") };
+        PlayerDto? other = id is null
+            ? null
+            : new(id, name, service is { Length: > 0 } ? [service] : null) { Preferences = Kept(theme) };
+
+        // Act
+        bool isEqual = player.Equals(other);
+
+        // Assert
+        Assert.Equal((expected, true), (isEqual, player.GetHashCode() == new PlayerDto("p", "Ada").GetHashCode()));
+    }
+
+    private static ImmutableSortedDictionary<string, string> Kept(string? theme) =>
+        theme is null
+            ? ImmutableSortedDictionary<string, string>.Empty
+            : ImmutableSortedDictionary<string, string>.Empty.Add("theme", theme);
 
     private static T? RoundTrip<T>(T value) =>
         JsonSerializer.Deserialize<T>(JsonSerializer.Serialize(value, Wire), Wire);

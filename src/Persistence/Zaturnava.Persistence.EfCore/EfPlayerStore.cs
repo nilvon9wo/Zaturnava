@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Net.NowhereAtAll.Zaturnava.Application.Players;
 using Net.NowhereAtAll.Zaturnava.Application.Ports;
@@ -100,6 +101,18 @@ public sealed class EfPlayerStore(GameDbContext context) : IPlayerPersisting
         _ = await this._context.Players
             .Where(entity => entity.Id == player.Value)
             .ExecuteUpdateAsync(setters => setters.SetProperty(entity => entity.Name, name), cancellationToken);
+
+    public async Task KeepPreferences(
+        PlayerId player,
+        [Required] ImmutableSortedDictionary<string, string> preferences,
+        CancellationToken cancellationToken
+    )
+    {
+        string kept = JsonSerializer.Serialize(preferences);
+        _ = await this._context.Players
+            .Where(entity => entity.Id == player.Value)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(entity => entity.Preferences, kept), cancellationToken);
+    }
 
     public async Task AddLogin(PlayerId player, Login login, CancellationToken cancellationToken)
     {
@@ -238,5 +251,14 @@ public sealed class EfPlayerStore(GameDbContext context) : IPlayerPersisting
                 new PlayerId(entity.Id),
                 entity.Name,
                 [.. entity.Logins.Select(login => new Login(login.Provider, login.Key))]
-            );
+            )
+            {
+                Preferences = PreferencesOf(entity.Preferences),
+            };
+
+    /// <summary>The settings kept as JSON; none, if none were.</summary>
+    private static ImmutableSortedDictionary<string, string> PreferencesOf(string? kept) =>
+        kept is null
+            ? Player.NoPreferences
+            : Player.NoPreferences.AddRange(JsonSerializer.Deserialize<Dictionary<string, string>>(kept)!);
 }

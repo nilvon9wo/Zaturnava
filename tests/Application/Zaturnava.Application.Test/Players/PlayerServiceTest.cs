@@ -245,6 +245,74 @@ public sealed class PlayerServiceTest
     }
 
     [Fact]
+    public async Task Prefer_WhenGivenSettings_KeepsThemAndForgetsOneGivenNoValue()
+    {
+        // Arrange
+        SignedIn signedIn = await this._service.SignIn(Login, "Ada", this._cancellation);
+        _ = await this._service.Prefer(signedIn.Token, "theme", "light", this._cancellation);
+        _ = await this._service.Prefer(signedIn.Token, "sound", "off", this._cancellation);
+
+        // Act
+        Player? preferred = await this._service.Prefer(signedIn.Token, "sound", string.Empty, this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            ("theme=light", "theme=light"),
+            (
+                string.Join(",", preferred!.Preferences.Select(setting => $"{setting.Key}={setting.Value}")),
+                string.Join(
+                    ",",
+                    (await this._service.Find(signedIn.Token, this._cancellation))!.Preferences
+                        .Select(setting => $"{setting.Key}={setting.Value}")
+                )
+            )
+        );
+    }
+
+    [Theory]
+    [InlineData(0, 1, 0)]
+    [InlineData(65, 1, 0)]
+    [InlineData(1, 65, 0)]
+    [InlineData(1, 1, 32)]
+    public async Task Prefer_WhenUnnamedTooLongOrOneTooMany_ThrowsPreferenceRefusedException(
+        int nameLength,
+        int valueLength,
+        int keptAlready
+    )
+    {
+        // Arrange
+        SignedIn signedIn = await this._service.SignIn(Login, "Ada", this._cancellation);
+        foreach (int kept in Enumerable.Range(0, keptAlready))
+        {
+            _ = await this._service.Prefer(signedIn.Token, $"kept{kept}", "on", this._cancellation);
+        }
+
+        // Act
+        Task<Player?> preferring = this._service.Prefer(
+            signedIn.Token,
+            new string('n', nameLength),
+            new string('v', valueLength),
+            this._cancellation
+        );
+
+        // Assert
+        PreferenceRefusedException refused = await Assert.ThrowsAsync<PreferenceRefusedException>(() => preferring);
+        Assert.Equal(GameRequestFailure.Invalid, refused.Failure);
+    }
+
+    [Fact]
+    public async Task Prefer_WhenTheTokenStandsForNoOne_IsNoOne()
+    {
+        // Arrange - nothing beyond the empty store
+
+        // Act
+        Player? preferred = await this._service.Prefer("not a token", "theme", "light", this._cancellation);
+
+        // Assert
+        Assert.Null(preferred);
+    }
+
+    [Fact]
     public async Task LinkCode_WhenTheTokenStandsForNoOne_IsNone()
     {
         // Arrange - nothing beyond the empty store

@@ -179,6 +179,13 @@ public sealed class HttpGameClient(HttpClient http) : IGameServing
     ) =>
         this.IfSomeone<PlayerDto>(HttpMethod.Put, GameRoutes.Me, new RenameRequest(name), token, cancellationToken);
 
+    public Task<PlayerDto?> Prefer(
+        [Required] string token,
+        [Required] PreferRequest request,
+        CancellationToken cancellationToken
+    ) =>
+        this.IfSomeone<PlayerDto>(HttpMethod.Put, GameRoutes.Preferences, request, token, cancellationToken);
+
     public async Task<string?> LinkCode([Required] string token, CancellationToken cancellationToken) =>
         (await this.IfSomeone<LinkCodeDto>(HttpMethod.Post, GameRoutes.LinkCode, null, token, cancellationToken))
             ?.Code;

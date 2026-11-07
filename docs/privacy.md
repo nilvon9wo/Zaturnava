@@ -4,7 +4,7 @@ What Zaturnava keeps about the people who play it, why, for how long, and how to
 hobby project, open source under the MIT licence (https://github.com/nilvon9wo/Zaturnava), with no advertising,
 no analytics and nothing sold to anyone.
 
-*Last changed 2026-10-31.*
+*Last changed 2026-11-07.*
 
 ## Playing without signing in
 
@@ -41,6 +41,11 @@ hash) of the token your browser is then given, as for a seat. A seat you take wh
 player id, so that the others at the table, and anyone watching or listing the games, see your name there; a seat
 taken without signing in shows "guest".
 
+While you are signed in, the settings your browser keeps (the colour theme, sound, how the pieces are drawn, the
+safety, how the log and the talk are shown, whether preview games are listed, and how you set up a new game) are
+kept on the server too, with your account, as you choose them, so that every browser you sign in on starts from
+them. The seats you hold, where you dragged the piece card and how you set up each game stay in your browser alone.
+
 Each game you finish while signed in counts in where you stand at that game: your Elo rating, experience, and how
 many of its games you won, lost and drew. The leaderboard shows these beside your name, to anyone.
 
@@ -70,7 +75,7 @@ the same player, and only if you choose to.
 - **Without an account:** clearing this site's data in your browser deletes your tokens and settings. Talk at a table
   is deleted by itself, once every player has left. Games keep nothing that says who you are.
 - **With an account:** while signed in, press **Delete account** at the top right of the lobby, and confirm. The server
-  then forgets you at once: your name, your id at each provider, every sign-in of yours and where you stood at
+  then forgets you at once: your name, your id at each provider, your settings, every sign-in of yours and where you stood at
   each game, so you leave the leaderboards. No one has to do
   anything by hand, and you need no other account to ask. The games you played stay, so that other players' records
   and ratings stay true, but nothing in them says who you were: they show "deleted player" in your seat. (Your

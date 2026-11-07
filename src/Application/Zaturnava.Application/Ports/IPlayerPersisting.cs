@@ -43,6 +43,13 @@ public interface IPlayerPersisting
     /// <summary>Names the player anew.</summary>
     Task Rename(PlayerId player, [Required] string name, CancellationToken cancellationToken);
 
+    /// <summary>Keeps the page's settings the player prefers (<see cref="Player.Preferences"/>), as given.</summary>
+    Task KeepPreferences(
+        PlayerId player,
+        [Required] ImmutableSortedDictionary<string, string> preferences,
+        CancellationToken cancellationToken
+    );
+
     /// <summary>Makes <paramref name="login"/>, which is no one's, the player's too.</summary>
     Task AddLogin(PlayerId player, Login login, CancellationToken cancellationToken);
 

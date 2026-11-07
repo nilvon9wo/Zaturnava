@@ -133,6 +133,16 @@ public interface IGameServing
     Task<PlayerDto?> Rename([Required] string token, [Required] string name, CancellationToken cancellationToken);
 
     /// <summary>
+    /// Keeps one of the page's settings for the player <paramref name="token"/> stands for
+    /// (<see cref="PreferRequest"/>); none, if it stands for no one.
+    /// </summary>
+    Task<PlayerDto?> Prefer(
+        [Required] string token,
+        [Required] PreferRequest request,
+        CancellationToken cancellationToken
+    );
+
+    /// <summary>
     /// A one-time code for the player <paramref name="token"/> stands for to link another service with
     /// (<see cref="LinkCodeDto"/>); none, if it stands for no one.
     /// </summary>

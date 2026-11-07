@@ -42,6 +42,9 @@ public static class GameRoutes
     /// </summary>
     public const string Awaiting = Me + "/awaiting";
 
+    /// <summary>Where a player keeps one of the page's settings (<see cref="PreferRequest"/>).</summary>
+    public const string Preferences = Me + "/preferences";
+
     /// <summary>The players by id: each one's profile, as anyone may see it.</summary>
     public const string Players = "api/players";
 

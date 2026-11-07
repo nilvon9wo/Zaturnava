@@ -92,7 +92,7 @@ public sealed class InMemoryPlayerStoreTest
     }
 
     [Fact]
-    public async Task Changes_WhenThePlayerIsKnown_RenameAndLinkAndUnlinkThem()
+    public async Task Changes_WhenThePlayerIsKnown_RenameAndLinkAndUnlinkThemAndKeepTheirSettings()
     {
         // Arrange
         Login google = new("Google", "abcd");
@@ -102,10 +102,14 @@ public sealed class InMemoryPlayerStoreTest
         await this._store.Rename(Ada.Id, "Countess", this._cancellation);
         await this._store.AddLogin(Ada.Id, google, this._cancellation);
         await this._store.RemoveLogin(Ada.Id, GitHub, this._cancellation);
+        await this._store.KeepPreferences(Ada.Id, Player.NoPreferences.Add("theme", "light"), this._cancellation);
 
         // Assert
         Player? found = await this._store.ById(Ada.Id, this._cancellation);
-        Assert.Equal(("Countess", google), (found?.Name, found?.Logins.Single()));
+        Assert.Equal(
+            ("Countess", google, "light"),
+            (found?.Name, found?.Logins.Single(), found?.Preferences.GetValueOrDefault("theme"))
+        );
     }
 
     [Fact]
