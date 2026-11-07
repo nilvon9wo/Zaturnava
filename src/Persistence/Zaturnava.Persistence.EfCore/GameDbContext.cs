@@ -13,6 +13,7 @@ public sealed class GameDbContext(DbContextOptions<GameDbContext> options) : DbC
     private const int ProviderLength = 40;
     private const int LoginKeyLength = 200;
     private const int GameIdLength = 64;
+    private const int BotIdLength = 64;
 
     // seats and actions are reached only through their game
     public DbSet<GameEntity> Games => this.Set<GameEntity>();
@@ -28,6 +29,9 @@ public sealed class GameDbContext(DbContextOptions<GameDbContext> options) : DbC
     // where each player stands at each game: let go with the player
     public DbSet<StandingEntity> Standings => this.Set<StandingEntity>();
 
+    // where each of the server's bots stands at each game
+    public DbSet<BotStandingEntity> BotStandings => this.Set<BotStandingEntity>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         _ = modelBuilder.Entity<GameEntity>(MapGame);
@@ -38,6 +42,16 @@ public sealed class GameDbContext(DbContextOptions<GameDbContext> options) : DbC
         _ = modelBuilder.Entity<LoginEntity>(MapLogin);
         _ = modelBuilder.Entity<SessionEntity>(MapSession);
         _ = modelBuilder.Entity<StandingEntity>(MapStanding);
+        _ = modelBuilder.Entity<BotStandingEntity>(MapBotStanding);
+    }
+
+    private static void MapBotStanding(EntityTypeBuilder<BotStandingEntity> standing)
+    {
+        _ = standing.HasKey(entity => new { entity.BotId, entity.Game });
+        _ = standing.Property(entity => entity.BotId).HasMaxLength(BotIdLength);
+        _ = standing.Property(entity => entity.Game).HasMaxLength(GameIdLength);
+        // a leaderboard lists one game's bots, most games won first
+        _ = standing.HasIndex(entity => new { entity.Game, entity.Won });
     }
 
     private static void MapStanding(EntityTypeBuilder<StandingEntity> standing)

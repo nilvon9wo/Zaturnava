@@ -114,6 +114,101 @@ public sealed class LeaderboardTest : IDisposable
     }
 
     [Fact]
+    public void ChooseBoard_WhenTheBotsAreChosen_ListsThemWithHowTheyDidAgainstPeople()
+    {
+        // Arrange
+        this._page.Server.BotLeaderboards = this._page.Server.BotLeaderboards.Add(
+            "chaturaji-2027",
+            [
+                new BotStandingDto(1, "Sage", 9, 3, 1, 0)
+                {
+                    WonAgainstPeople = 2,
+                    LostAgainstPeople = 1,
+                    DrawnAgainstPeople = 0,
+                },
+            ]
+        );
+        IRenderedComponent<Leaderboard> board = this._page.Render<Leaderboard>();
+
+        // Act
+        board.Find("select.leaderboard-board").Change("bots");
+
+        // Assert
+        Assert.Equal(
+            ("1 Sage 9 3 1 0 2–1–0", "bots chaturaji-2027"),
+            (
+                string.Join(
+                    " ",
+                    board.FindAll(".bot-leaders tbody td").Select(cell => cell.TextContent.Trim())
+                ),
+                Assert.Single(this._page.Server.Calls, call => call.StartsWith("bots", StringComparison.Ordinal))
+            )
+        );
+    }
+
+    [Fact]
+    public void ChooseBoard_WhenPeopleAgainstBotsAreChosen_ListsTheirGamesAgainstBotsAlone()
+    {
+        // Arrange
+        this._page.Server.AgainstBotsLeaderboards = this._page.Server.AgainstBotsLeaderboards.Add(
+            "chaturaji-2027",
+            [
+                new StandingDto(1, "Ada", 1516, 14, 5, 2, 1)
+                {
+                    WonAgainstBots = 3,
+                    LostAgainstBots = 1,
+                    DrawnAgainstBots = 1,
+                },
+            ]
+        );
+        IRenderedComponent<Leaderboard> board = this._page.Render<Leaderboard>();
+
+        // Act
+        board.Find("select.leaderboard-board").Change("against-bots");
+
+        // Assert
+        Assert.Equal(
+            "1 Ada 3 1 1",
+            string.Join(" ", board.FindAll(".against-bots tbody td").Select(cell => cell.TextContent))
+        );
+    }
+
+    [Theory]
+    [InlineData("bots", "No bot has finished a game of it yet.")]
+    [InlineData("against-bots", "No one signed in has finished a game of it against bots alone yet.")]
+    [InlineData("players", "No one signed in has finished a game of it yet.")]
+    public void ChooseBoard_WhenTheBoardIsEmpty_SaysNoOneIsOnIt(string chosen, string expected)
+    {
+        // Arrange
+        IRenderedComponent<Leaderboard> board = this._page.Render<Leaderboard>();
+
+        // Act
+        board.Find("select.leaderboard-board").Change(chosen);
+
+        // Assert
+        Assert.Equal(expected, board.Find(".no-leaders").TextContent);
+    }
+
+    [Theory]
+    [InlineData("bots")]
+    [InlineData("against-bots")]
+    public void ChooseBoard_WhenTheServerCannotBeReached_SaysWhyAndListsNoOne(string chosen)
+    {
+        // Arrange
+        IRenderedComponent<Leaderboard> board = this._page.Render<Leaderboard>();
+        this._page.Server.Failure = new HttpRequestException("unreachable");
+
+        // Act
+        board.Find("select.leaderboard-board").Change(chosen);
+
+        // Assert
+        Assert.Equal(
+            (1, 0, 0),
+            (board.FindAll("p.problem").Count, board.FindAll(".leaders").Count, board.FindAll(".no-leaders").Count)
+        );
+    }
+
+    [Fact]
     public void Choose_WhenTheServerCannotBeReached_SaysWhyAndListsNoOne()
     {
         // Arrange

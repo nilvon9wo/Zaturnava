@@ -1,7 +1,8 @@
-@* Who stands highest at each game: the players signed in, best first, by their Elo rating at it, with their experience
-   and how many of its games they won, lost, drew and abandoned; one game at a time, chosen among those the server offers:
-   to begin with, at a table, the table's game; else the game the player last started; else the first. Shown over the
-   lobby or the table, from the page's bar, until closed. *@
+@* Who stands highest at each game, one board at a time: the players signed in, best first, by their Elo rating at it,
+   with their experience and how many of its games they won, lost, drew and abandoned; the server's bots, most games
+   won first, with how they did against people alone; or the players who have done best against bots alone. One game
+   at a time, chosen among those the server offers: to begin with, at a table, the table's game; else the game the
+   player last started; else the first. Shown over the lobby or the table, from the page's bar, until closed. *@
 @inject IGameServing Games
 @inject Browser Browser
 
@@ -17,6 +18,15 @@
             <p class="problem" role="alert">@problem</p>
         }
 
+        <label class="choice">
+            <span class="choice-name">Board</span>
+            <select class="leaderboard-board" value="@this._board" @onchange="this.ChooseBoard">
+                <option value="@PlayersBoard">Players</option>
+                <option value="@BotsBoard">Bots</option>
+                <option value="@AgainstBotsBoard">People against bots</option>
+            </select>
+        </label>
+
         @if (this._games.Count > 1)
         {
             <label class="choice">
@@ -30,62 +40,161 @@
             </label>
         }
 
-        @if (this._leaders is { } leaders)
+        @if (this._board == BotsBoard)
         {
-            @if (leaders.IsEmpty)
+            @if (this._bots is { } bots)
             {
-                <p class="no-leaders">No one signed in has finished a game of it yet.</p>
-            }
-            else
-            {
-                <table class="leaders">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Player</th>
-                            <th>Elo</th>
-                            <th>Experience</th>
-                            <th title="Points they scored, in every game finished">Points</th>
-                            <th>Won</th>
-                            <th>Lost</th>
-                            <th>Drawn</th>
-                            <th title="Games not over that have waited a day or more for their move">Abandoned</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (StandingDto standing in leaders)
-                        {
+                @if (bots.IsEmpty)
+                {
+                    <p class="no-leaders">No bot has finished a game of it yet.</p>
+                }
+                else
+                {
+                    <table class="leaders bot-leaders">
+                        <thead>
                             <tr>
-                                <td class="place">@standing.Place</td>
-                                <td class="name">@standing.Name</td>
-                                <td class="elo">@standing.Elo</td>
-                                <td class="experience">@standing.Experience</td>
-                                <td class="points">@standing.Points</td>
-                                <td class="won">@standing.Won</td>
-                                <td class="lost">@standing.Lost</td>
-                                <td class="drawn">@standing.Drawn</td>
-                                <td class="abandoned">@standing.Abandoned</td>
+                                <th>#</th>
+                                <th>Bot</th>
+                                <th title="Points it scored, in every game finished">Points</th>
+                                <th>Won</th>
+                                <th>Lost</th>
+                                <th>Drawn</th>
+                                <th title="Games won, lost and drawn against people alone">Against people</th>
                             </tr>
-                        }
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            @foreach (BotStandingDto standing in bots)
+                            {
+                                <tr>
+                                    <td class="place">@standing.Place</td>
+                                    <td class="name">@standing.Name</td>
+                                    <td class="points">@standing.Points</td>
+                                    <td class="won">@standing.Won</td>
+                                    <td class="lost">@standing.Lost</td>
+                                    <td class="drawn">@standing.Drawn</td>
+                                    <td class="against">
+                                        @Record(standing.WonAgainstPeople, standing.LostAgainstPeople,
+                                            standing.DrawnAgainstPeople)
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
             }
-        }
 
-        <p class="about-standings">
-            Each game finished counts for the players signed in at it, but not for a seat their own AI played. Everyone
-            starts at Elo 1500, and gains or loses by how their team did against what the teams' ratings led to
-            expect, a bot's team by the bot's own rating. Each win earns as experience your own points plus your
-            team's. A game not over, with no guest at it, counts as abandoned by a player once it has waited a day for
-            their move, and no longer once they make it.
-        </p>
+            <p class="about-standings">
+                Every game finished counts for the bots at it, a bot at several seats once for each. Against people
+                counts the games in which every seat not on the bot's team was played by a person, signed in or a
+                guest, rather than a bot or an AI: won, lost and drawn.
+            </p>
+        }
+        else if (this._board == AgainstBotsBoard)
+        {
+            @if (this._leaders is { } leaders)
+            {
+                @if (leaders.IsEmpty)
+                {
+                    <p class="no-leaders">No one signed in has finished a game of it against bots alone yet.</p>
+                }
+                else
+                {
+                    <table class="leaders against-bots">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Player</th>
+                                <th>Won</th>
+                                <th>Lost</th>
+                                <th>Drawn</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (StandingDto standing in leaders)
+                            {
+                                <tr>
+                                    <td class="place">@standing.Place</td>
+                                    <td class="name">@standing.Name</td>
+                                    <td class="won">@standing.WonAgainstBots</td>
+                                    <td class="lost">@standing.LostAgainstBots</td>
+                                    <td class="drawn">@standing.DrawnAgainstBots</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            }
+
+            <p class="about-standings">
+                A game counts here when every seat not on the player's team was a bot's: most games won so first, then
+                fewest lost. A seat their own AI played does not count.
+            </p>
+        }
+        else
+        {
+            @if (this._leaders is { } leaders)
+            {
+                @if (leaders.IsEmpty)
+                {
+                    <p class="no-leaders">No one signed in has finished a game of it yet.</p>
+                }
+                else
+                {
+                    <table class="leaders">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Player</th>
+                                <th>Elo</th>
+                                <th>Experience</th>
+                                <th title="Points they scored, in every game finished">Points</th>
+                                <th>Won</th>
+                                <th>Lost</th>
+                                <th>Drawn</th>
+                                <th title="Games not over that have waited a day or more for their move">Abandoned</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (StandingDto standing in leaders)
+                            {
+                                <tr>
+                                    <td class="place">@standing.Place</td>
+                                    <td class="name">@standing.Name</td>
+                                    <td class="elo">@standing.Elo</td>
+                                    <td class="experience">@standing.Experience</td>
+                                    <td class="points">@standing.Points</td>
+                                    <td class="won">@standing.Won</td>
+                                    <td class="lost">@standing.Lost</td>
+                                    <td class="drawn">@standing.Drawn</td>
+                                    <td class="abandoned">@standing.Abandoned</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            }
+
+            <p class="about-standings">
+                Each game finished counts for the players signed in at it, but not for a seat their own AI played.
+                Everyone starts at Elo 1500, and gains or loses by how their team did against what the teams' ratings
+                led to expect, a bot's team by the bot's own rating. Each win earns as experience your own points plus
+                your team's. A game not over, with no guest at it, counts as abandoned by a player once it has waited a
+                day for their move, and no longer once they make it.
+            </p>
+        }
     </section>
 </div>
 
 @code {
+    private const string PlayersBoard = "players";
+    private const string BotsBoard = "bots";
+    private const string AgainstBotsBoard = "against-bots";
+
     private ImmutableList<RulesetDto> _games = [];
     private string _game = string.Empty;
+    private string _board = PlayersBoard;
     private ImmutableList<StandingDto>? _leaders;
+    private ImmutableList<BotStandingDto>? _bots;
     private string? _problem;
 
     [Parameter]
@@ -96,6 +205,9 @@
     public string? RulesetId { get; set; }
 
     protected override async Task OnInitializedAsync() => this._problem = await Requests.Attempt(this.Load);
+
+    /// <summary>Won, lost and drawn, as "3–1–0".</summary>
+    private static string Record(int won, int lost, int drawn) => $"{won}–{lost}–{drawn}";
 
     private async Task Load()
     {
@@ -110,10 +222,29 @@
     private async Task Choose(ChangeEventArgs change) =>
         this._problem = await Requests.Attempt(() => this.Show($"{change.Value}"));
 
+    /// <summary>The board chosen, of the same game; told why not, if the server cannot give it.</summary>
+    private async Task ChooseBoard(ChangeEventArgs change)
+    {
+        this._board = $"{change.Value}";
+        this._problem = await Requests.Attempt(() => this.Show(this._game));
+    }
+
     private async Task Show(string game)
     {
         this._game = game;
         this._leaders = null;
-        this._leaders = await this.Games.Leaderboard(game, CancellationToken.None);
+        this._bots = null;
+        switch (this._board)
+        {
+            case BotsBoard:
+                this._bots = await this.Games.BotLeaderboard(game, CancellationToken.None);
+                break;
+            case AgainstBotsBoard:
+                this._leaders = await this.Games.AgainstBotsLeaderboard(game, CancellationToken.None);
+                break;
+            default:
+                this._leaders = await this.Games.Leaderboard(game, CancellationToken.None);
+                break;
+        }
     }
 }

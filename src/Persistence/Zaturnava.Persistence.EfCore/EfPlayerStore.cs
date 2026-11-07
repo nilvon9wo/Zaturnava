@@ -213,10 +213,99 @@ public sealed class EfPlayerStore(GameDbContext context) : IPlayerPersisting
             kept.Won = standing.Won;
             kept.Lost = standing.Lost;
             kept.Drawn = standing.Drawn;
+            kept.WonAgainstBots = standing.WonAgainstBots;
+            kept.LostAgainstBots = standing.LostAgainstBots;
+            kept.DrawnAgainstBots = standing.DrawnAgainstBots;
         }
 
         _ = await this._context.SaveChangesAsync(cancellationToken);
     }
+
+    public async Task<ImmutableList<Standing>> LeadersAgainstBots(
+        [Required] string game,
+        int count,
+        CancellationToken cancellationToken
+    )
+    {
+        List<StandingEntity> leaders = await this._context.Standings
+            .AsNoTracking()
+            .Where(standing =>
+                standing.Game == game
+                && standing.WonAgainstBots + standing.LostAgainstBots + standing.DrawnAgainstBots > 0
+            )
+            .OrderByDescending(standing => standing.WonAgainstBots)
+            .ThenBy(standing => standing.LostAgainstBots)
+            .ThenBy(standing => standing.PlayerId)
+            .Take(count)
+            .ToListAsync(cancellationToken);
+        return [.. leaders.Select(ToStanding)];
+    }
+
+    public async Task<ImmutableDictionary<string, BotStanding>> BotStandings(
+        [Required] string game,
+        [Required] ImmutableList<string> bots,
+        CancellationToken cancellationToken
+    )
+    {
+        List<string> ids = [.. bots.Distinct(StringComparer.Ordinal)];
+        List<BotStandingEntity> known = await this._context.BotStandings
+            .AsNoTracking()
+            .Where(standing => standing.Game == game && ids.Contains(standing.BotId))
+            .ToListAsync(cancellationToken);
+        return known.ToImmutableDictionary(standing => standing.BotId, ToBotStanding, StringComparer.Ordinal);
+    }
+
+    public async Task KeepBots([Required] ImmutableList<BotStanding> standings, CancellationToken cancellationToken)
+    {
+        foreach (BotStanding standing in standings)
+        {
+            BotStandingEntity? stored = await this._context.BotStandings.FindAsync(
+                [standing.BotId, standing.Game],
+                cancellationToken
+            );
+            BotStandingEntity kept = stored ?? this._context.BotStandings.Add(
+                new BotStandingEntity { BotId = standing.BotId, Game = standing.Game }
+            ).Entity;
+            kept.Points = standing.Points;
+            kept.Won = standing.Won;
+            kept.Lost = standing.Lost;
+            kept.Drawn = standing.Drawn;
+            kept.WonAgainstPeople = standing.WonAgainstPeople;
+            kept.LostAgainstPeople = standing.LostAgainstPeople;
+            kept.DrawnAgainstPeople = standing.DrawnAgainstPeople;
+        }
+
+        _ = await this._context.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<ImmutableList<BotStanding>> BotLeaders(
+        [Required] string game,
+        int count,
+        CancellationToken cancellationToken
+    )
+    {
+        List<BotStandingEntity> leaders = await this._context.BotStandings
+            .AsNoTracking()
+            .Where(standing => standing.Game == game)
+            .OrderByDescending(standing => standing.Won)
+            .ThenBy(standing => standing.Lost)
+            .ThenBy(standing => standing.BotId)
+            .Take(count)
+            .ToListAsync(cancellationToken);
+        return [.. leaders.Select(ToBotStanding)];
+    }
+
+    private static BotStanding ToBotStanding(BotStandingEntity entity) =>
+        new(entity.BotId, entity.Game)
+        {
+            Points = entity.Points,
+            Won = entity.Won,
+            Lost = entity.Lost,
+            Drawn = entity.Drawn,
+            WonAgainstPeople = entity.WonAgainstPeople,
+            LostAgainstPeople = entity.LostAgainstPeople,
+            DrawnAgainstPeople = entity.DrawnAgainstPeople,
+        };
 
     public async Task<ImmutableList<Standing>> Leaders(
         [Required] string game,
@@ -244,6 +333,9 @@ public sealed class EfPlayerStore(GameDbContext context) : IPlayerPersisting
             Won = entity.Won,
             Lost = entity.Lost,
             Drawn = entity.Drawn,
+            WonAgainstBots = entity.WonAgainstBots,
+            LostAgainstBots = entity.LostAgainstBots,
+            DrawnAgainstBots = entity.DrawnAgainstBots,
         };
 
     private static Player? ToPlayer(PlayerEntity? entity) =>

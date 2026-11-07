@@ -25,6 +25,8 @@ internal static class GameEndpoints
         _ = routes.MapGet(GameRoutes.Catalog, Catalog);
         _ = routes.MapGet(GameRoutes.Games, List);
         _ = routes.MapGet(GameRoutes.Leaderboards + "/{game}", Leaderboard);
+        _ = routes.MapGet(GameRoutes.Leaderboards + "/{game}/" + GameRoutes.AgainstBotsSegment, AgainstBotsLeaderboard);
+        _ = routes.MapGet(GameRoutes.Leaderboards + "/{game}/" + GameRoutes.BotsSegment, BotLeaderboard);
         _ = routes.MapPost(GameRoutes.Games, Create).RequireRateLimiting(RequestLimits.NewGames);
         _ = routes.MapGet(GameRoute, Get);
         _ = routes.MapGet(GameRoute + "/history", History);
@@ -88,24 +90,57 @@ internal static class GameEndpoints
         string game,
         StandingService standings,
         CancellationToken cancellationToken
+    ) => [.. (await standings.Leaders(game, cancellationToken)).Select(ToStandingDto)];
+
+    /// <summary>The players who have done best at the game against bots alone, each in their place.</summary>
+    private static async Task<ImmutableList<StandingDto>> AgainstBotsLeaderboard(
+        string game,
+        StandingService standings,
+        CancellationToken cancellationToken
+    ) => [.. (await standings.LeadersAgainstBots(game, cancellationToken)).Select(ToStandingDto)];
+
+    /// <summary>The server's bots standing highest at the game, each in its place.</summary>
+    private static async Task<ImmutableList<BotStandingDto>> BotLeaderboard(
+        string game,
+        StandingService standings,
+        CancellationToken cancellationToken
     ) =>
     [
-        .. (await standings.Leaders(game, cancellationToken)).Select((leader, index) =>
-            new StandingDto(
+        .. (await standings.BotLeaders(game, cancellationToken)).Select((leader, index) =>
+            new BotStandingDto(
                 index + 1,
                 leader.Name,
-                (int)Math.Round(leader.Standing.Elo, MidpointRounding.AwayFromZero),
-                leader.Standing.Experience,
+                leader.Standing.Points,
                 leader.Standing.Won,
                 leader.Standing.Lost,
-                leader.Standing.Drawn,
-                leader.Abandoned
+                leader.Standing.Drawn
             )
             {
-                Points = leader.Standing.Points,
+                WonAgainstPeople = leader.Standing.WonAgainstPeople,
+                LostAgainstPeople = leader.Standing.LostAgainstPeople,
+                DrawnAgainstPeople = leader.Standing.DrawnAgainstPeople,
             }
         ),
     ];
+
+    /// <summary>A player in their place on a leaderboard, their Elo rounded.</summary>
+    private static StandingDto ToStandingDto(Leader leader, int index) =>
+        new(
+            index + 1,
+            leader.Name,
+            (int)Math.Round(leader.Standing.Elo, MidpointRounding.AwayFromZero),
+            leader.Standing.Experience,
+            leader.Standing.Won,
+            leader.Standing.Lost,
+            leader.Standing.Drawn,
+            leader.Abandoned
+        )
+        {
+            Points = leader.Standing.Points,
+            WonAgainstBots = leader.Standing.WonAgainstBots,
+            LostAgainstBots = leader.Standing.LostAgainstBots,
+            DrawnAgainstBots = leader.Standing.DrawnAgainstBots,
+        };
 
     /// <summary>
     /// The page asked for of the games everyone <paramref name="wanted"/> is at, and <paramref name="player"/> too, if

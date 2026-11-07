@@ -253,6 +253,69 @@ public sealed class InMemoryPlayerStoreTest
     }
 
     [Fact]
+    public async Task LeadersAgainstBots_WhenSomeHaveFacedBotsAlone_ListThemByWinsThenFewestLossesThenId()
+    {
+        // Arrange - "e" has never faced bots alone; "f" stands at another game
+        await this._store.Keep(
+            [
+                new Standing(new PlayerId("c"), "chess") { WonAgainstBots = 2, LostAgainstBots = 1 },
+                new Standing(new PlayerId("b"), "chess") { WonAgainstBots = 2, LostAgainstBots = 1 },
+                new Standing(new PlayerId("a"), "chess") { WonAgainstBots = 2, LostAgainstBots = 4 },
+                new Standing(new PlayerId("d"), "chess") { DrawnAgainstBots = 1 },
+                new Standing(new PlayerId("e"), "chess") { Won = 9 },
+                new Standing(new PlayerId("f"), "go") { WonAgainstBots = 9 },
+            ],
+            this._cancellation
+        );
+
+        // Act
+        ImmutableList<Standing> leaders = await this._store.LeadersAgainstBots("chess", 3, this._cancellation);
+
+        // Assert
+        Assert.Equal("b,c,a", string.Join(",", leaders.Select(leader => leader.Player.Value)));
+    }
+
+    [Fact]
+    public async Task BotStandings_WhenKeptAndKeptAgain_ReadBackTheLatestOfTheGameAskedFor()
+    {
+        // Arrange
+        await this._store.KeepBots(
+            [new BotStanding("sage", "chess") { Won = 1 }, new BotStanding("sage", "go") { Lost = 1 }],
+            this._cancellation
+        );
+        await this._store.KeepBots([new BotStanding("sage", "chess") { Won = 2 }], this._cancellation);
+
+        // Act
+        ImmutableDictionary<string, BotStanding> standings =
+            await this._store.BotStandings("chess", ["sage", "random", "sage"], this._cancellation);
+
+        // Assert
+        Assert.Equal([KeyValuePair.Create("sage", new BotStanding("sage", "chess") { Won = 2 })], standings);
+    }
+
+    [Fact]
+    public async Task BotLeaders_WhenBotsStandAtSeveralGames_ListTheBestOfTheGameByWinsThenFewestLossesThenId()
+    {
+        // Arrange
+        await this._store.KeepBots(
+            [
+                new BotStanding("c", "chess") { Won = 3, Lost = 1 },
+                new BotStanding("b", "chess") { Won = 3, Lost = 1 },
+                new BotStanding("a", "chess") { Won = 3, Lost = 2 },
+                new BotStanding("d", "chess"),
+                new BotStanding("e", "go") { Won = 9 },
+            ],
+            this._cancellation
+        );
+
+        // Act
+        ImmutableList<BotStanding> leaders = await this._store.BotLeaders("chess", 3, this._cancellation);
+
+        // Assert
+        Assert.Equal("b,c,a", string.Join(",", leaders.Select(leader => leader.BotId)));
+    }
+
+    [Fact]
     public async Task Remove_WhenThePlayerStandsAtAGame_ForgetsWhereTheyStoodAlone()
     {
         // Arrange

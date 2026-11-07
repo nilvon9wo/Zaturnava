@@ -136,7 +136,10 @@ first.
   nickname it gives, shown as "Sage (Ada's AI)"; without one, "Ada (AI)". Still for the user to try by hand: an
   outside bot playing by the API or MCP.
 - Leaderboards for bots (*Stated 2026-11-07*): one of the bots alone, and ones showing how people fare against
-  the bots.
+  the bots. *Done* (*Proposed*: how): the leaderboard offers three boards. **Players** is as before. **Bots** lists
+  the server's bots, most games won first, each seat a bot played counting, with their record against people alone.
+  **People against bots** lists the players by their games against bots alone: every seat not on their team a
+  bot's. Counted from 2026-11-07, not for games before.
 - A signed-in player setting up a game may bar guests from it (*Stated 2026-11-01*). *Done* (*Proposed*: how):
   a custom game set up signed in may be **Players signed in only**; its open seats then refuse a guest, and the
   lobby asks a guest to sign in to join it. Playing such a game again keeps it for players signed in only.

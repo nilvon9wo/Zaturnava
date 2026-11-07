@@ -17,7 +17,8 @@ namespace Net.NowhereAtAll.Zaturnava.Application.Players;
 /// (1 won, a half drawn, 0 lost) is from what their team's rating led to expect against the other teams, on average:
 /// only for a game that counts toward Elo (<see cref="CountsTowardElo"/>).
 /// Each time a player is on the winning team, they gain as experience their own points plus their team's; and in every
-/// game, they add their own points to those they have scored.
+/// game, they add their own points to those they have scored. A game against bots alone counts too among a player's
+/// games against bots; and each game counts for the server's bots at it (<see cref="BotStanding"/>), Elo aside.
 /// </summary>
 public sealed class StandingService(
     IRulesetLocating rulesets,
@@ -98,6 +99,45 @@ public sealed class StandingService(
     }
 
     /// <summary>
+    /// The players who have done best at <paramref name="game"/> against bots alone, each by name, most games won so
+    /// first, then fewest lost: at most <see cref="MostLeaders"/> (Proposed).
+    /// </summary>
+    public async Task<ImmutableList<Leader>> LeadersAgainstBots(
+        [Required] string game,
+        CancellationToken cancellationToken
+    )
+    {
+        ImmutableList<Standing> leaders = await this._players.LeadersAgainstBots(game, MostLeaders, cancellationToken);
+        ImmutableDictionary<PlayerId, string> names =
+            await this._players.Names([.. leaders.Select(standing => standing.Player)], cancellationToken);
+        return
+        [
+            .. leaders.Select(standing =>
+                new Leader(names.GetValueOrDefault(standing.Player, PlayerService.Deleted), standing)
+            ),
+        ];
+    }
+
+    /// <summary>
+    /// The server's bots standing highest at <paramref name="game"/>, each by name, most games won first, then fewest
+    /// lost: at most <see cref="MostLeaders"/> (Proposed). A bot no longer offered is left out.
+    /// </summary>
+    public async Task<ImmutableList<BotLeader>> BotLeaders([Required] string game, CancellationToken cancellationToken)
+    {
+        ImmutableList<BotStanding> leaders = await this._players.BotLeaders(game, MostLeaders, cancellationToken);
+        return
+        [
+            .. leaders.Join(
+                this._bots.Bots,
+                standing => standing.BotId,
+                profile => profile.Id,
+                (standing, profile) => new BotLeader(profile.Name, standing),
+                StringComparer.Ordinal
+            ),
+        ];
+    }
+
+    /// <summary>
     /// How many games of <paramref name="game"/> each player has abandoned, as they stand now (Stated): games not
     /// over, untouched for <see cref="AbandonedAfter"/>, with no guest at them (such a game is let go instead), waiting
     /// for that player to decide at a seat they play themselves, not their AI. Once they move, it counts no more.
@@ -152,10 +192,73 @@ public sealed class StandingService(
         bool isRated = CountsTowardElo(snapshot.Record);
         ImmutableList<Standing> after =
         [
-            .. before.Select(entry => After(state, outcome, teams, entry.Key, entry.Value, isRated)),
+            .. before.Select(entry =>
+                After(state, outcome, teams, entry.Key, entry.Value, isRated, IsAgainstOnly(snapshot, entry.Key, IsBot))
+            ),
         ];
         await this._players.Keep(after, cancellationToken);
+        await this.RateBots(snapshot, outcome, cancellationToken);
     }
+
+    /// <summary>
+    /// Counts the game in the standing of each of the server's bots at it, once for each seat it played (Proposed).
+    /// </summary>
+    private async Task RateBots(GameSnapshot snapshot, GameOutcome outcome, CancellationToken cancellationToken)
+    {
+        string game = snapshot.Rules.GameId;
+        ImmutableList<(SeatId Seat, string Bot)> seated =
+        [
+            .. snapshot.State.Seats
+                .Where(seat => IsBot(snapshot.Record.Controllers[seat.Id.Value]))
+                .Select(seat => (seat.Id, ((BotSeat)snapshot.Record.Controllers[seat.Id.Value]).BotId)),
+        ];
+        ImmutableDictionary<string, BotStanding> stored =
+            await this._players.BotStandings(game, [.. seated.Select(entry => entry.Bot)], cancellationToken);
+        ImmutableDictionary<string, BotStanding> after = seated.Aggregate(
+            stored,
+            (standings, entry) => standings.SetItem(
+                entry.Bot,
+                BotAfter(
+                    snapshot,
+                    outcome,
+                    entry.Seat,
+                    standings.GetValueOrDefault(entry.Bot) ?? new BotStanding(entry.Bot, game)
+                )
+            )
+        );
+        await this._players.KeepBots([.. after.Values], cancellationToken);
+    }
+
+    /// <summary>Where the bot at <paramref name="seat"/> stands, the game over.</summary>
+    private static BotStanding BotAfter(GameSnapshot snapshot, GameOutcome outcome, SeatId seat, BotStanding before)
+    {
+        Result result = ResultOf(snapshot.State, outcome, seat);
+        bool isAgainstPeople = IsAgainstOnly(snapshot, seat, IsPerson);
+        return before with
+        {
+            Points = before.Points + snapshot.State.Scores.GetValueOrDefault(seat),
+            Won = before.Won + Counted(result, Result.Won),
+            Lost = before.Lost + Counted(result, Result.Lost),
+            Drawn = before.Drawn + Counted(result, Result.Drawn),
+            WonAgainstPeople = before.WonAgainstPeople + Counted(result, Result.Won, isAgainstPeople),
+            LostAgainstPeople = before.LostAgainstPeople + Counted(result, Result.Lost, isAgainstPeople),
+            DrawnAgainstPeople = before.DrawnAgainstPeople + Counted(result, Result.Drawn, isAgainstPeople),
+        };
+    }
+
+    /// <summary>Whether every seat not on <paramref name="seat"/>'s team is one <paramref name="isOf"/> says.</summary>
+    private static bool IsAgainstOnly(GameSnapshot snapshot, SeatId seat, Func<SeatController, bool> isOf) =>
+        snapshot.State.Seats
+            .Where(other => !snapshot.State.Teams.AreAllied(other.Id, seat))
+            .All(other => isOf(snapshot.Record.Controllers[other.Id.Value]));
+
+    private static bool IsBot(SeatController seat) => seat is BotSeat;
+
+    /// <summary>A person's seat: someone signed in, or a guest, playing it themselves, not their AI.</summary>
+    private static bool IsPerson(SeatController seat) => seat is HumanSeat { IsAi: false };
+
+    private static int Counted(Result result, Result counted, bool counts = true) =>
+        counts && result == counted ? 1 : 0;
 
     /// <summary>
     /// Whether the game counts toward its players' Elo (Stated): only if its players stayed the same throughout, no
@@ -192,7 +295,8 @@ public sealed class StandingService(
 
     /// <summary>
     /// Where the player at <paramref name="seat"/> stands, the game over: their Elo as it was, unless the game
-    /// <paramref name="isRated"/>.
+    /// <paramref name="isRated"/>; counted among their games against bots too, if it
+    /// <paramref name="isAgainstBots"/> alone.
     /// </summary>
     private static Standing After(
         GameState state,
@@ -200,7 +304,8 @@ public sealed class StandingService(
         ImmutableDictionary<int, double> teams,
         SeatId seat,
         Standing before,
-        bool isRated
+        bool isRated,
+        bool isAgainstBots
     )
     {
         int team = state.Teams.TeamOf(seat);
@@ -215,9 +320,12 @@ public sealed class StandingService(
             Elo = isRated ? before.Elo + (K * (((double)result / 2) - expected)) : before.Elo,
             Experience = before.Experience + (result == Result.Won ? points : 0),
             Points = before.Points + state.Scores.GetValueOrDefault(seat),
-            Won = before.Won + (result == Result.Won ? 1 : 0),
-            Lost = before.Lost + (result == Result.Lost ? 1 : 0),
-            Drawn = before.Drawn + (result == Result.Drawn ? 1 : 0),
+            Won = before.Won + Counted(result, Result.Won),
+            Lost = before.Lost + Counted(result, Result.Lost),
+            Drawn = before.Drawn + Counted(result, Result.Drawn),
+            WonAgainstBots = before.WonAgainstBots + Counted(result, Result.Won, isAgainstBots),
+            LostAgainstBots = before.LostAgainstBots + Counted(result, Result.Lost, isAgainstBots),
+            DrawnAgainstBots = before.DrawnAgainstBots + Counted(result, Result.Drawn, isAgainstBots),
         };
     }
 

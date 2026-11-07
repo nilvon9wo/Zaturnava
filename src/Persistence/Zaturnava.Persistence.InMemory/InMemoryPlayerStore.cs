@@ -12,6 +12,7 @@ public sealed class InMemoryPlayerStore : IPlayerPersisting
     private readonly ConcurrentDictionary<string, PlayerId> _sessions = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<PlayerId, DateTimeOffset> _signedIn = new();
     private readonly ConcurrentDictionary<(PlayerId Player, string Game), Standing> _standings = new();
+    private readonly ConcurrentDictionary<(string Bot, string Game), BotStanding> _botStandings = new();
 
     public Task<Player?> ByLogin(Login login, CancellationToken cancellationToken) =>
         Task.FromResult(this._players.Values.FirstOrDefault(player => player.Logins.Contains(login)));
@@ -148,6 +149,61 @@ public sealed class InMemoryPlayerStore : IPlayerPersisting
                 .OrderByDescending(standing => standing.Elo)
                 .ThenByDescending(standing => standing.Experience)
                 .ThenBy(standing => standing.Player.Value, StringComparer.Ordinal)
+                .Take(count),
+        ];
+        return Task.FromResult(leaders);
+    }
+
+    public Task<ImmutableList<Standing>> LeadersAgainstBots(
+        [Required] string game,
+        int count,
+        CancellationToken cancellationToken
+    )
+    {
+        ImmutableList<Standing> leaders =
+        [
+            .. this._standings.Values
+                .Where(standing => standing.Game == game && standing.PlayedAgainstBots > 0)
+                .OrderByDescending(standing => standing.WonAgainstBots)
+                .ThenBy(standing => standing.LostAgainstBots)
+                .ThenBy(standing => standing.Player.Value, StringComparer.Ordinal)
+                .Take(count),
+        ];
+        return Task.FromResult(leaders);
+    }
+
+    public Task<ImmutableDictionary<string, BotStanding>> BotStandings(
+        [Required] string game,
+        [Required] ImmutableList<string> bots,
+        CancellationToken cancellationToken
+    ) =>
+        Task.FromResult(
+            bots
+                .Distinct(StringComparer.Ordinal)
+                .Select(bot => this._botStandings.GetValueOrDefault((bot, game)))
+                .OfType<BotStanding>()
+                .ToImmutableDictionary(standing => standing.BotId, StringComparer.Ordinal)
+        );
+
+    public Task KeepBots([Required] ImmutableList<BotStanding> standings, CancellationToken cancellationToken)
+    {
+        standings.ForEach(standing => this._botStandings[(standing.BotId, standing.Game)] = standing);
+        return Task.CompletedTask;
+    }
+
+    public Task<ImmutableList<BotStanding>> BotLeaders(
+        [Required] string game,
+        int count,
+        CancellationToken cancellationToken
+    )
+    {
+        ImmutableList<BotStanding> leaders =
+        [
+            .. this._botStandings.Values
+                .Where(standing => standing.Game == game)
+                .OrderByDescending(standing => standing.Won)
+                .ThenBy(standing => standing.Lost)
+                .ThenBy(standing => standing.BotId, StringComparer.Ordinal)
                 .Take(count),
         ];
         return Task.FromResult(leaders);

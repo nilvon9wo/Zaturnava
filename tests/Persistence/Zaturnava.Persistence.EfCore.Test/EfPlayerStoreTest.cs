@@ -61,8 +61,18 @@ public sealed class EfPlayerStoreTest : IDisposable
             [new Standing(Ada.Id, "chess") { Elo = 1400 }, new Standing(Ada.Id, "go") { Won = 1 }],
             this._cancellation
         );
-        Standing kept =
-            new(Ada.Id, "chess") { Elo = 1520.5, Experience = 7, Points = 11, Won = 2, Lost = 3, Drawn = 4 };
+        Standing kept = new(Ada.Id, "chess")
+        {
+            Elo = 1520.5,
+            Experience = 7,
+            Points = 11,
+            Won = 2,
+            Lost = 3,
+            Drawn = 4,
+            WonAgainstBots = 1,
+            LostAgainstBots = 2,
+            DrawnAgainstBots = 3,
+        };
         await new EfPlayerStore(this._database.NewContext()).Keep([kept], this._cancellation);
 
         // Act
@@ -100,6 +110,86 @@ public sealed class EfPlayerStoreTest : IDisposable
 
         // Assert
         Assert.Equal("d,b,a,c", string.Join(",", leaders.Select(leader => leader.Player.Value)));
+    }
+
+    [Fact]
+    public async Task LeadersAgainstBots_WhenSomeHaveFacedBotsAlone_ListThemByWinsThenFewestLossesThenId()
+    {
+        // Arrange - "e" has never faced bots alone; "f" stands at another game
+        foreach (string id in new[] { "a", "b", "c", "d", "e", "f" })
+        {
+            await this._store.Add(new Player(new PlayerId(id), id, []), this._cancellation);
+        }
+
+        await this._store.Keep(
+            [
+                new Standing(new PlayerId("c"), "chess") { WonAgainstBots = 2, LostAgainstBots = 1 },
+                new Standing(new PlayerId("b"), "chess") { WonAgainstBots = 2, LostAgainstBots = 1 },
+                new Standing(new PlayerId("a"), "chess") { WonAgainstBots = 2, LostAgainstBots = 4 },
+                new Standing(new PlayerId("d"), "chess") { DrawnAgainstBots = 1 },
+                new Standing(new PlayerId("e"), "chess") { Won = 9 },
+                new Standing(new PlayerId("f"), "go") { WonAgainstBots = 9 },
+            ],
+            this._cancellation
+        );
+
+        // Act
+        ImmutableList<Standing> leaders =
+            await new EfPlayerStore(this._database.NewContext()).LeadersAgainstBots("chess", 3, this._cancellation);
+
+        // Assert
+        Assert.Equal("b,c,a", string.Join(",", leaders.Select(leader => leader.Player.Value)));
+    }
+
+    [Fact]
+    public async Task BotStandings_WhenKeptAndKeptAgain_ReadBackTheLatestOfTheGameAskedFor()
+    {
+        // Arrange
+        await this._store.KeepBots(
+            [new BotStanding("sage", "chess") { Won = 1 }, new BotStanding("sage", "go") { Lost = 1 }],
+            this._cancellation
+        );
+        BotStanding kept = new("sage", "chess")
+        {
+            Points = 9,
+            Won = 2,
+            Lost = 3,
+            Drawn = 4,
+            WonAgainstPeople = 1,
+            LostAgainstPeople = 2,
+            DrawnAgainstPeople = 3,
+        };
+        await new EfPlayerStore(this._database.NewContext()).KeepBots([kept], this._cancellation);
+
+        // Act
+        ImmutableDictionary<string, BotStanding> standings = await new EfPlayerStore(this._database.NewContext())
+            .BotStandings("chess", ["sage", "random", "sage"], this._cancellation);
+
+        // Assert
+        Assert.Equal([KeyValuePair.Create("sage", kept)], standings);
+    }
+
+    [Fact]
+    public async Task BotLeaders_WhenBotsStandAtSeveralGames_ListTheBestOfTheGameByWinsThenFewestLossesThenId()
+    {
+        // Arrange
+        await this._store.KeepBots(
+            [
+                new BotStanding("c", "chess") { Won = 3, Lost = 1 },
+                new BotStanding("b", "chess") { Won = 3, Lost = 1 },
+                new BotStanding("a", "chess") { Won = 3, Lost = 2 },
+                new BotStanding("d", "chess"),
+                new BotStanding("e", "go") { Won = 9 },
+            ],
+            this._cancellation
+        );
+
+        // Act
+        ImmutableList<BotStanding> leaders =
+            await new EfPlayerStore(this._database.NewContext()).BotLeaders("chess", 3, this._cancellation);
+
+        // Assert
+        Assert.Equal("b,c,a", string.Join(",", leaders.Select(leader => leader.BotId)));
     }
 
     [Fact]

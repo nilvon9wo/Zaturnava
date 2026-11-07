@@ -18,4 +18,10 @@ public sealed class StandingEntity
     public int Lost { get; set; }
 
     public int Drawn { get; set; }
+
+    public int WonAgainstBots { get; set; }
+
+    public int LostAgainstBots { get; set; }
+
+    public int DrawnAgainstBots { get; set; }
 }
