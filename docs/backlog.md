@@ -151,7 +151,9 @@ first.
   services they sign in with others may see.
 - A winning streak on the leaderboard, perhaps: open question [OQ9](open-questions.md#oq9-a-winning-streak).
 - A player's username unique (*Stated 2026-11-07*): no player may take a name another has. The profile's field
-  is called **Username**.
+  is called **Username**. *Done*: a rename to a name another player goes by, capitals or not, is refused (`409`)
+  and the profile says why. A new player whose service's name is taken gets the first of "Ada 2", "Ada 3" and so
+  on that is free (*Proposed*); names shared before this stay as they were (*Proposed*).
 - A signed-in player setting up a game may bar guests from it (*Stated 2026-11-01*). *Done* (*Proposed*: how):
   a custom game set up signed in may be **Players signed in only**; its open seats then refuse a guest, and the
   lobby asks a guest to sign in to join it. Playing such a game again keeps it for players signed in only.

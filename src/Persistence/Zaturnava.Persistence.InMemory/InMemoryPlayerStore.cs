@@ -39,6 +39,13 @@ public sealed class InMemoryPlayerStore : IPlayerPersisting
                 .ToImmutableDictionary(player => player.Id, player => player.Name)
         );
 
+    public Task<bool> IsNameTaken([Required] string name, PlayerId? except, CancellationToken cancellationToken) =>
+        Task.FromResult(
+            this._players.Values.Any(player =>
+                player.Id != except && string.Equals(player.Name, name, StringComparison.OrdinalIgnoreCase)
+            )
+        );
+
     public Task<ImmutableDictionary<PlayerId, DateTimeOffset>> LastSignedIn(
         [Required] ImmutableList<PlayerId> players,
         CancellationToken cancellationToken

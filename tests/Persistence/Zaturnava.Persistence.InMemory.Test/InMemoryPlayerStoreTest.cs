@@ -112,6 +112,30 @@ public sealed class InMemoryPlayerStoreTest
         );
     }
 
+    [Theory]
+    [InlineData("ADA", null, true)]
+    [InlineData("ada", "ada", false)]
+    [InlineData("Bea", null, false)]
+    public async Task IsNameTaken_WhenAskedOfANameAndWhoMayHaveIt_SaysWhetherAnotherHasIt(
+        string name,
+        string? except,
+        bool expected
+    )
+    {
+        // Arrange
+        await this._store.Add(Ada, this._cancellation);
+
+        // Act
+        bool isTaken = await this._store.IsNameTaken(
+            name,
+            except is null ? null : new PlayerId(except),
+            this._cancellation
+        );
+
+        // Assert
+        Assert.Equal(expected, isTaken);
+    }
+
     [Fact]
     public async Task Rename_WhenThePlayerIsUnknown_ChangesNothing()
     {

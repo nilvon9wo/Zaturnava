@@ -74,7 +74,7 @@ public sealed partial class SignInApiTest(SigningInServer server) : IClassFixtur
     }
 
     [Theory]
-    [InlineData("GitHub|1|Ada", "Ada")]
+    [InlineData("GitHub|1|Ada One", "Ada One")]
     [InlineData("GitHub|2", "Player")]
     public async Task Done_WhenTheServiceVouchedForSomeone_PostsTheirTokenToThePage(string vouched, string name)
     {
@@ -177,7 +177,7 @@ public sealed partial class SignInApiTest(SigningInServer server) : IClassFixtur
     public async Task Claim_WhenAPlayerSignedInTakesASeat_ShowsTheirNameThereUntilTheyAreDeleted()
     {
         // Arrange
-        string token = TokenOf(await this.Done("GitHub|7|Ada", SigningInServer.Page));
+        string token = TokenOf(await this.Done("GitHub|7|Ada Seven", SigningInServer.Page));
         HttpGameClient client = server.GameClient();
         GameCreatedDto created = await client.Create(
             new CreateGameRequest(ZaturnavaServer.Chaturaji2027, ZaturnavaServer.OneOpenSeat),
@@ -192,7 +192,7 @@ public sealed partial class SignInApiTest(SigningInServer server) : IClassFixtur
         using HttpResponseMessage deleted = await this.Send(HttpMethod.Delete, GameRoutes.Me, token);
         GamePageDto page = await client.List(null, this._cancellation);
         Assert.Equal(
-            ("Ada", PlayerService.Deleted),
+            ("Ada Seven", PlayerService.Deleted),
             (named, page.Games.Single(game => game.Id == created.GameId).Players[0])
         );
     }
@@ -234,7 +234,7 @@ public sealed partial class SignInApiTest(SigningInServer server) : IClassFixtur
     public async Task Claim_WhenTheGameIsForPlayersOnly_RefusesAGuestButSeatsAPlayerSignedIn()
     {
         // Arrange
-        string token = TokenOf(await this.Done("GitHub|for-players|Ada", SigningInServer.Page));
+        string token = TokenOf(await this.Done("GitHub|for-players|Ada Players", SigningInServer.Page));
         HttpGameClient client = server.GameClient();
         GameCreatedDto created = await client.Create(
             new CreateGameRequest(ZaturnavaServer.Chaturaji2027, ZaturnavaServer.OneOpenSeat) { IsForPlayers = true },
@@ -251,7 +251,7 @@ public sealed partial class SignInApiTest(SigningInServer server) : IClassFixtur
 
         // Assert
         Assert.Equal(
-            (true, Refusal.Forbidden, "Ada"),
+            (true, Refusal.Forbidden, "Ada Players"),
             (listed, refused.Refusal, (await client.Get(created.GameId, this._cancellation)).Seats[0].Player)
         );
     }
@@ -290,14 +290,14 @@ public sealed partial class SignInApiTest(SigningInServer server) : IClassFixtur
             this._cancellation
         );
         SeatClaimedDto seat = await client.Claim(created.GameId, 0, null, null, this._cancellation);
-        string token = TokenOf(await this.Done("GitHub|8|Ada", SigningInServer.Page));
+        string token = TokenOf(await this.Done("GitHub|8|Ada Eight", SigningInServer.Page));
 
         // Act
         await client.Identify(created.GameId, 0, token, new IdentifySeatRequest(seat.Token), this._cancellation);
 
         // Assert
         SeatDto shown = (await client.Get(created.GameId, this._cancellation)).Seats[0];
-        Assert.Equal(("Ada", false), (shown.Player, shown.IsGuest));
+        Assert.Equal(("Ada Eight", false), (shown.Player, shown.IsGuest));
     }
 
     [Fact]
@@ -405,7 +405,7 @@ public sealed partial class SignInApiTest(SigningInServer server) : IClassFixtur
             new CreateGameRequest(ZaturnavaServer.Chaturaji2027, ZaturnavaServer.OneOpenSeat),
             this._cancellation
         );
-        string player = TokenOf(await this.Done("GitHub|awaited|Ada", SigningInServer.Page));
+        string player = TokenOf(await this.Done("GitHub|awaited|Ada Awaited", SigningInServer.Page));
         _ = await client.Claim(created.GameId, 0, player, null, this._cancellation);
 
         // Act
@@ -413,7 +413,7 @@ public sealed partial class SignInApiTest(SigningInServer server) : IClassFixtur
 
         // Assert
         Assert.Equal(
-            [(created.GameId, 0, "Ada")],
+            [(created.GameId, 0, "Ada Awaited")],
             awaited?.Select(game => (game.Game.Id, game.Seat, game.Game.Players[0])) ?? []
         );
     }
@@ -619,7 +619,7 @@ public sealed partial class SignInApiTest(SigningInServer server) : IClassFixtur
         // Arrange
         HttpGameClient client = server.GameClient();
         string bea = TokenOf(await this.Done("Google|11|Bea", SigningInServer.Page));
-        string token = TokenOf(await this.Done("GitHub|11|Ada", SigningInServer.Page));
+        string token = TokenOf(await this.Done("GitHub|11|Ada Eleven", SigningInServer.Page));
         string? code = await client.LinkCode(token, this._cancellation);
 
         // Act
@@ -628,7 +628,7 @@ public sealed partial class SignInApiTest(SigningInServer server) : IClassFixtur
         // Assert
         PlayerDto? linked = await this.Me(TokenOf(page));
         Assert.Equal(
-            ("GitHub,Google", "Ada", (await this.Me(token))?.Id, linked?.Id),
+            ("GitHub,Google", "Ada Eleven", (await this.Me(token))?.Id, linked?.Id),
             (string.Join(',', linked?.Services ?? []), linked?.Name, linked?.Id, (await this.Me(bea))?.Id)
         );
     }
@@ -672,14 +672,14 @@ public sealed partial class SignInApiTest(SigningInServer server) : IClassFixtur
     {
         // Arrange
         HttpGameClient client = server.GameClient();
-        string token = TokenOf(await this.Done("GitHub|13|Ada", SigningInServer.Page));
+        string token = TokenOf(await this.Done("GitHub|13|Ada Thirteen", SigningInServer.Page));
         PlayerDto? ada = await client.Me(token, this._cancellation);
 
         // Act
         ProfileDto? profile = await client.Profile($"{ada?.Id}", this._cancellation);
 
         // Assert
-        Assert.Equal(("Ada", ada?.Id), (profile?.Name, profile?.Id));
+        Assert.Equal(("Ada Thirteen", ada?.Id), (profile?.Name, profile?.Id));
     }
 
     [Fact]

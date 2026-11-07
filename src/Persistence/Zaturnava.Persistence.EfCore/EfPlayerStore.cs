@@ -11,6 +11,9 @@ namespace Net.NowhereAtAll.Zaturnava.Persistence.EfCore;
 /// <summary>The players who have signed in, their logins and their sessions, in a relational database.</summary>
 public sealed class EfPlayerStore(GameDbContext context) : IPlayerPersisting
 {
+    /// <summary>What escapes a wildcard in a <c>LIKE</c> pattern.</summary>
+    private const string LikeEscape = "\\";
+
     private readonly GameDbContext _context = context;
 
     public async Task<Player?> ByLogin(Login login, CancellationToken cancellationToken)
@@ -54,6 +57,24 @@ public sealed class EfPlayerStore(GameDbContext context) : IPlayerPersisting
             .Where(entity => ids.Contains(entity.Id))
             .ToListAsync(cancellationToken);
         return known.ToImmutableDictionary(entity => new PlayerId(entity.Id), entity => entity.Name);
+    }
+
+    /// <remarks>
+    /// By <c>LIKE</c>, its wildcards escaped: without regard to capitals in SQLite (for ASCII letters) and in SQL
+    /// Server under its default collation.
+    /// </remarks>
+    public Task<bool> IsNameTaken([Required] string name, PlayerId? except, CancellationToken cancellationToken)
+    {
+        string pattern = name
+            .Replace(LikeEscape, LikeEscape + LikeEscape, StringComparison.Ordinal)
+            .Replace("%", LikeEscape + "%", StringComparison.Ordinal)
+            .Replace("_", LikeEscape + "_", StringComparison.Ordinal)
+            .Replace("[", LikeEscape + "[", StringComparison.Ordinal);
+        string? exception = except?.Value;
+        return this._context.Players.AnyAsync(
+            entity => EF.Functions.Like(entity.Name, pattern, LikeEscape) && entity.Id != exception,
+            cancellationToken
+        );
     }
 
     public async Task<ImmutableDictionary<PlayerId, DateTimeOffset>> LastSignedIn(
