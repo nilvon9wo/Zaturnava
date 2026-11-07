@@ -300,6 +300,18 @@ internal sealed class FakeGameServer : IGameServing
     ) =>
         this.SignedIn(() => this.Changed(token, player => player with { Name = name }));
 
+    public Task<PlayerDto?> Prefer(
+        [Required] string token,
+        [Required] PreferRequest request,
+        CancellationToken cancellationToken
+    ) =>
+        this.SignedIn(() =>
+            this.Changed(
+                token,
+                player => player with { Preferences = player.Preferences.SetItem(request.Name, request.Value) }
+            )
+        );
+
     public Task<string?> LinkCode([Required] string token, CancellationToken cancellationToken) =>
         this.SignedIn(() => this.Players.ContainsKey(token) ? "code-" + token : null);
 

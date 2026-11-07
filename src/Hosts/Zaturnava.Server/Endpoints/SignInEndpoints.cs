@@ -34,6 +34,7 @@ internal static class SignInEndpoints
         _ = routes.MapGet(GameRoutes.Me, Me);
         _ = routes.MapGet(GameRoutes.Awaiting, Awaiting);
         _ = routes.MapPut(GameRoutes.Me, Rename);
+        _ = routes.MapPut(GameRoutes.Preferences, Prefer);
         _ = routes.MapDelete(GameRoutes.Me, Delete);
         _ = routes.MapDelete(GameRoutes.Session, SignOut);
         _ = routes.MapPost(GameRoutes.LinkCode, LinkCode);
@@ -45,7 +46,10 @@ internal static class SignInEndpoints
 
     /// <summary>The player as the API shows them: the services they may sign in with in the order linked.</summary>
     public static PlayerDto ToDto(Player player) =>
-        new(player.Id.Value, player.Name, [.. player.Logins.Select(login => login.Provider).Distinct()]);
+        new(player.Id.Value, player.Name, [.. player.Logins.Select(login => login.Provider).Distinct()])
+        {
+            Preferences = player.Preferences,
+        };
 
     /// <summary>
     /// The player whose login it is signed in; or, with a <paramref name="link"/> code, the login linked to the
@@ -170,6 +174,18 @@ internal static class SignInEndpoints
     ) =>
         SeatToken.OrNull(request) is { } token
         && await players.Rename(token, renaming.Name, cancellationToken) is { } player
+            ? TypedResults.Ok(ToDto(player))
+            : TypedResults.Unauthorized();
+
+    /// <summary>Keeps one of the page's settings for the player the token stands for.</summary>
+    private static async Task<Results<Ok<PlayerDto>, UnauthorizedHttpResult>> Prefer(
+        PreferRequest preferring,
+        HttpRequest request,
+        PlayerService players,
+        CancellationToken cancellationToken
+    ) =>
+        SeatToken.OrNull(request) is { } token
+        && await players.Prefer(token, preferring.Name, preferring.Value, cancellationToken) is { } player
             ? TypedResults.Ok(ToDto(player))
             : TypedResults.Unauthorized();
 

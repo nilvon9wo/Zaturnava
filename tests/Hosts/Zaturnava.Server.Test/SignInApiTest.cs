@@ -198,6 +198,39 @@ public sealed partial class SignInApiTest(SigningInServer server) : IClassFixtur
     }
 
     [Fact]
+    public async Task Prefer_WhenAPlayerKeepsASetting_ShowsItWithThemFromThenOn()
+    {
+        // Arrange
+        string token = TokenOf(await this.Done("GitHub|prefers|Ada", SigningInServer.Page));
+        HttpGameClient client = server.GameClient();
+
+        // Act
+        PlayerDto? preferred = await client.Prefer(token, new PreferRequest("theme", "light"), this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            ("light", "light"),
+            (
+                preferred?.Preferences.GetValueOrDefault("theme"),
+                (await client.Me(token, this._cancellation))?.Preferences.GetValueOrDefault("theme")
+            )
+        );
+    }
+
+    [Fact]
+    public async Task Prefer_WhenTheTokenStandsForNoOne_IsNoOne()
+    {
+        // Arrange
+        HttpGameClient client = server.GameClient();
+
+        // Act
+        PlayerDto? preferred = await client.Prefer("no one", new PreferRequest("theme", "light"), this._cancellation);
+
+        // Assert
+        Assert.Null(preferred);
+    }
+
+    [Fact]
     public async Task Claim_WhenTheGameIsForPlayersOnly_RefusesAGuestButSeatsAPlayerSignedIn()
     {
         // Arrange

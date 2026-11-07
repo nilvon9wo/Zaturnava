@@ -146,6 +146,9 @@ namespace Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Sqlite.Migrations
                         .HasMaxLength(40)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("Preferences")
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Id");
 
                     b.ToTable("Players");

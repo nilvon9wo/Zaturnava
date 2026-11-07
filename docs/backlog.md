@@ -130,7 +130,10 @@ first.
 - A custom game's board size chosen freely, within limits, rather than only small, medium or large
   (*Stated 2026-11-01*); likely to come with the game setup rework.
 - The page's preferences (theme, sound, pieces, the log's highlights) kept with the player's identity
-  once there is one, not only in the browser.
+  once there is one, not only in the browser. *Done*: a player signed in keeps the theme, sound, safety,
+  pieces, piece cards, log, the talk's order and AI talk, previews and how the lobby sets games up with the
+  server as they choose them (`PUT api/players/me/preferences`), and every browser they sign in on takes them
+  up; seats held, a game's own setup and where the piece card was dragged stay with the browser (*Proposed*).
 
 ## Bots
 

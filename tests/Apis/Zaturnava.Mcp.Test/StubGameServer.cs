@@ -166,6 +166,13 @@ internal sealed class StubGameServer : IGameServing
     ) =>
         throw new NotSupportedException("The tools sign no one in.");
 
+    public Task<PlayerDto?> Prefer(
+        [Required] string token,
+        [Required] PreferRequest request,
+        CancellationToken cancellationToken
+    ) =>
+        throw new NotSupportedException("The tools sign no one in.");
+
     public Task<string?> LinkCode([Required] string token, CancellationToken cancellationToken) =>
         throw new NotSupportedException("The tools sign no one in.");
 

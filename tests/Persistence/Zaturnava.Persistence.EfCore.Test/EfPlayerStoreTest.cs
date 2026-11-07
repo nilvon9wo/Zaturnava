@@ -256,6 +256,24 @@ public sealed class EfPlayerStoreTest : IDisposable
     }
 
     [Fact]
+    public async Task KeepPreferences_WhenThePlayerIsKnown_KeepsTheirSettings()
+    {
+        // Arrange
+        await this._store.Add(Ada, this._cancellation);
+        ImmutableSortedDictionary<string, string> preferences = Player.NoPreferences.Add("theme", "light");
+
+        // Act
+        await this._store.KeepPreferences(Ada.Id, preferences, this._cancellation);
+
+        // Assert
+        Player? found = await new EfPlayerStore(this._database.NewContext()).ById(Ada.Id, this._cancellation);
+        Assert.Equal(
+            (0, "light"),
+            (Ada.Preferences.Count, found?.Preferences.GetValueOrDefault("theme"))
+        );
+    }
+
+    [Fact]
     public async Task AddLogin_WhenTheLoginIsNoOnes_MakesItThePlayersToo()
     {
         // Arrange

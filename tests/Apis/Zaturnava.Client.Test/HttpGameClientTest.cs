@@ -434,6 +434,22 @@ public sealed class HttpGameClientTest
         );
     }
 
+    [Fact]
+    public async Task Prefer_WhenGivenASetting_PutsItWithTheToken()
+    {
+        // Arrange
+        StubServer server = new(HttpStatusCode.OK, """{"id":"p","name":"Ada","preferences":{"theme":"light"}}""");
+
+        // Act
+        PlayerDto? player = await Client(server).Prefer("secret", new("theme", "light"), this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            ("PUT", "/api/players/me/preferences", "Bearer secret", """{"name":"theme","value":"light"}""", "light"),
+            (server.Method, server.Path, server.Authorization, server.Body, player?.Preferences["theme"])
+        );
+    }
+
     [Theory]
     [InlineData(HttpStatusCode.OK, """{"code":"c0de"}""", "c0de")]
     [InlineData(HttpStatusCode.Unauthorized, "", null)]

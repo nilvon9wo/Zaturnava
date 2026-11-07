@@ -14,5 +14,8 @@ public sealed class PlayerEntity
     /// <summary>When the player last signed in, in UTC; null for one not signed in since this was kept.</summary>
     public DateTime? LastSignedIn { get; set; }
 
+    /// <summary>The page's settings the player prefers, by name, as JSON; null for none kept.</summary>
+    public string? Preferences { get; set; }
+
     public List<LoginEntity> Logins { get; set; } = [];
 }

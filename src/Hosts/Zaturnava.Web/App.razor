@@ -4,7 +4,8 @@
    the table's view buttons; how it looks: theme, and pieces at a table whose pieces that changes; at a table, the
    piece cards on or off; then sound); at a
    table, the table shows the guide's button and the settings in its own bar. No URL routing, so the page works from any address it is served at. A seat the player takes is
-   remembered in the browser, so that they can come back to it. *@
+   remembered in the browser, so that they can come back to it. A player signed in keeps the settings with the
+   server too, and the page takes them up whenever they sign in. *@
 @inject Browser Browser
 
 @if (this._seating is { } seating)
@@ -111,8 +112,14 @@ else
                 <button class="sound" @onclick="this.SwitchSound">@(this._isSoundOn ? "Sound: on" : "Sound: off")</button>
             </span>;
 
-    protected override async Task OnInitializedAsync()
+    protected override Task OnInitializedAsync() => this.LoadSettings();
+
+    /// <summary>
+    /// The page's settings as this browser keeps them, after taking up those the player signed in keeps, if one is.
+    /// </summary>
+    private async Task LoadSettings()
     {
+        await this.Browser.Adopt();
         this._theme = await this.Browser.Theme();
         this._isSoundOn = await this.Browser.IsSoundOn();
         this._isSafetyOn = await this.Browser.IsSafetyOn();
@@ -133,9 +140,14 @@ else
     private void AtRuleset(string rulesetId) => this._rulesetId = rulesetId;
 
     /// <summary>
-    /// The lobby anew, for whoever is signed in now: the games waiting for them, the seats they may take back.
+    /// The lobby anew, for whoever is signed in now: the games waiting for them, the seats they may take back; and
+    /// the settings they keep.
     /// </summary>
-    private void Refresh() => this._signIns++;
+    private async Task Refresh()
+    {
+        this._signIns++;
+        await this.LoadSettings();
+    }
 
     private void OpenGuide() => this._isGuideOpen = true;
 
@@ -152,7 +164,7 @@ else
     private async Task SwitchTheme()
     {
         this._theme = this._theme == Browser.Dark ? Browser.Light : Browser.Dark;
-        await this.Browser.ShowTheme(this._theme);
+        await this.Browser.SetTheme(this._theme);
     }
 
     private async Task SwitchPieces()
