@@ -44,6 +44,12 @@ public sealed record GameRecord(
     /// </summary>
     public ImmutableList<SeatId> Away { get; init; } = [];
 
+    /// <summary>
+    /// Whether any seat has changed hands since the game began (a bot taking over from someone away, a person from a
+    /// bot, a seat said anew to be another player's): from then on it counts toward no one's Elo (Stated).
+    /// </summary>
+    public bool HasChangedHands { get; init; }
+
     public GameRecord Next() => this with { Version = this.Version + 1 };
 
     /// <summary>

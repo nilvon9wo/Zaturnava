@@ -28,9 +28,9 @@ public sealed class StandingServiceTest
     private readonly CancellationToken _cancellation = TestContext.Current.CancellationToken;
 
     [Fact]
-    public async Task RateFinished_WhenTwoPlayersBeatABotAndAGuest_RatesEachAgainstTheTeamsMeanAndAddsTheirPoints()
+    public async Task RateFinished_WhenTwoPlayersBeatTwoBots_RatesEachAgainstTheTeamsMeanAndAddsTheirPoints()
     {
-        // Arrange - Ada (5 points) and Bea (4) beat a bot rated 1700 (3) and a guest (0)
+        // Arrange - Ada (5 points) and Bea (4) beat a bot rated 1700 (3) and one no longer offered, so unrated (0)
         GameState ended = EndedRules.State([Black]) with
         {
             Scores = ImmutableDictionary<SeatId, int>.Empty
@@ -43,7 +43,7 @@ public sealed class StandingServiceTest
             new HumanSeat("ada", Ada),
             new BotSeat(FirstChoiceBot.BotId),
             new HumanSeat("bea", Bea),
-            new HumanSeat("guest")
+            new BotSeat("gone")
         );
         await this._games.Add(game, this._cancellation);
         StandingService service = this.Service(new EndedRules(ended), 1700);
@@ -70,6 +70,42 @@ public sealed class StandingServiceTest
         );
         Assert.Equal(elo, standings[Ada].Elo, 9);
         Assert.Equal(elo, standings[Bea].Elo, 9);
+    }
+
+    [Theory]
+    [InlineData("a guest")]
+    [InlineData("changed hands")]
+    [InlineData("Ada and her AI")]
+    [InlineData("two AIs of Ada's")]
+    public async Task RateFinished_WhenTheGameMayNotCountTowardElo_CountsTheWinButLeavesTheirEloAsItWas(string why)
+    {
+        // Arrange - Ada, at Black, wins
+        SeatController other = why switch
+        {
+            "a guest" => new HumanSeat("guest"),
+            "Ada and her AI" => new HumanSeat("hal", Ada, IsAi: true),
+            _ => new BotSeat(FirstChoiceBot.BotId),
+        };
+        bool areAis = why == "two AIs of Ada's";
+        SeatController ada = areAis ? new HumanSeat("ada", Ada, IsAi: true) : new HumanSeat("ada", Ada);
+        SeatController third = areAis ? new HumanSeat("hal", Ada, IsAi: true) : new BotSeat("gone");
+        GameRecord game = Record("g", ada, other, third, new BotSeat("gone")) with
+        {
+            HasChangedHands = why == "changed hands",
+        };
+        await this._games.Add(game, this._cancellation);
+        await this._players.Keep([new Standing(Ada, EndedRules.RulesetId)], this._cancellation);
+        StandingService service = this.Service(new EndedRules(EndedRules.State([Black])), 1700);
+
+        // Act
+        _ = await service.RateFinished(this._cancellation);
+
+        // Assert
+        Standing standing = (await this._players.Standings(EndedRules.RulesetId, [Ada], this._cancellation))[Ada];
+        Assert.Equal(
+            (Standing.FirstElo, areAis ? 0 : 1),
+            (standing.Elo, standing.Won)
+        );
     }
 
     [Theory]

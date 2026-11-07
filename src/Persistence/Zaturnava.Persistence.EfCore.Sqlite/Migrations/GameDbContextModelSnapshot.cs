@@ -87,6 +87,9 @@ namespace Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Sqlite.Migrations
                     b.Property<DateTime?>("Created")
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("HasChangedHands")
+                        .HasColumnType("INTEGER");
+
                     b.Property<bool?>("IsOver")
                         .HasColumnType("INTEGER");
 

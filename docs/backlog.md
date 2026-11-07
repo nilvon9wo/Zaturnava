@@ -109,7 +109,10 @@ first.
 
 - **21, 22, 26** (rest) The idle-rounds safety net as a per-game setting.
 - Boat triumph (§9): a nice-to-have; the condition is so unlikely that no one may miss it.
-- Ransom (§8): bots that offer during their turn (they offer as they pass, or once it is over).
+- Ransom (§8): bots that offer during their turn (they offer as they pass, or once it is over). Worth doing
+  (*Stated 2026-11-07*): offered at the start or in the middle of a turn, a trade may bring back a piece of one's
+  own to where it can take something at once, or send an enemy's home to where it can be taken at once; and a
+  trade made before moving gives less away of how the player means to use what comes back.
 
 ## Players and identity
 
@@ -120,21 +123,33 @@ first.
 - **35** Player statistics: games played and won, points scored... *Done* in part, with the leaderboard (N3):
   games won, lost, drawn and abandoned, and experience; and points scored, the player's own in every game they
   finished, won or not (*Proposed*), counted for games finished from 2026-11-07 on.
-- Players' Elo ratings (*Stated 2026-11-01*). *Done* in part, with the leaderboard (N3), as N3 says. Still to
-  decide ([OQ8](open-questions.md#oq8-which-games-count-toward-a-players-elo)): this asked that a game count
-  toward a rating only if no seat changed hands during it and no seat was a guest's; N3 counts every finished
-  game for its signed-in seats.
+- Players' Elo ratings (*Stated 2026-11-01*). *Done*, with the leaderboard (N3), as N3 says, and as follows
+  (*Stated 2026-11-07*): a game counts toward Elo only while its players stay the same: it may count at
+  first, but stops counting the moment any seat changes hands, for any reason (a bot taking over from someone
+  away, a person from a bot), since a seat's rating could otherwise be higher, lower or unknown at different
+  times; and no seat a guest's (*Stated 2026-11-01*). Nor does a game count toward Elo in which one player has
+  several seats, their own and their AIs' (a player against their own bots, or their bots against each other),
+  however many: one side could play badly to raise the other. Such a game still counts in the rest of the
+  player's standing: won, lost or drawn, experience and points (*Proposed*).
+- A player may seat several AIs of their own in one game (*Stated 2026-11-07*), each saying which it is, so
+  that a player's bots are told apart. Still to check, and for the user to try by hand: an outside bot playing
+  by the API.
+- Leaderboards for bots (*Stated 2026-11-07*): one of the bots alone, and ones showing how people fare against
+  the bots.
 - A signed-in player setting up a game may bar guests from it (*Stated 2026-11-01*). *Done* (*Proposed*: how):
   a custom game set up signed in may be **Players signed in only**; its open seats then refuse a guest, and the
   lobby asks a guest to sign in to join it. Playing such a game again keeps it for players signed in only.
 - A person may take a seat over from a bot, where the game allows it (*Stated 2026-11-01*, low priority).
   *Done* (*Proposed*: who and when): a player signed in, watching a game not over at which they hold no seat,
   has a **Take over** button on each bot's seat; the seat is theirs for the rest of the game
-  (`POST api/games/{id}/seats/{seat}/take-over`). A guest may not, nor may anyone play two seats so. Whether
-  such a game still counts toward their Elo is part of
-  [OQ8](open-questions.md#oq8-which-games-count-toward-a-players-elo).
+  (`POST api/games/{id}/seats/{seat}/take-over`). No one may play two seats so. Still to do (*Stated
+  2026-11-07*): whether a guest may take a seat over is the game's own setting, as for its open seats: a guest
+  may, unless whoever set the game up chose players signed in only. Such a game no longer counts toward Elo.
 - A custom game's board size chosen freely, within limits, rather than only small, medium or large
-  (*Stated 2026-11-01*); likely to come with the game setup rework.
+  (*Stated 2026-11-01*); likely to come with the game setup rework. One of the two most noticeable gaps in
+  custom games (*Stated 2026-11-07*).
+- A custom game's pieces chosen by hand and placed into each kingdom, rather than only dealt (*Stated
+  2026-11-07*): the other of the two most noticeable gaps.
 - The page's preferences (theme, sound, pieces, the log's highlights) kept with the player's identity
   once there is one, not only in the browser. *Done*: a player signed in keeps the theme, sound, safety,
   pieces, piece cards, log, the talk's order and AI talk, previews and how the lobby sets games up with the
