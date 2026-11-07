@@ -75,14 +75,16 @@ public interface IGameServing
     );
 
     /// <summary>
-    /// Takes the seat a bot plays over, for the rest of the game, for the player whose token
-    /// <paramref name="playerToken"/> is: the token returned holds it. Refused for a seat no bot plays, a game over,
-    /// or a player who holds a seat at the game already.
+    /// Takes the seat a bot plays over, for the rest of the game: the token returned holds it. With a signed-in
+    /// player's token (<paramref name="playerToken"/>), the seat is theirs; without one, a guest's, by the
+    /// <paramref name="claim"/>'s nickname, if one is given, as a claim is. Refused for a seat no bot plays, a game
+    /// over, or a player who holds a seat at the game already; and for a guest, at a game only for players signed in.
     /// </summary>
     Task<SeatClaimedDto> TakeOver(
         [Required] string gameId,
         int seat,
-        [Required] string playerToken,
+        string? playerToken,
+        ClaimSeatRequest? claim,
         CancellationToken cancellationToken
     );
 

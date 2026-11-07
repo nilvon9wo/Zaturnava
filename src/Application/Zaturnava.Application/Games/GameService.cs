@@ -303,8 +303,9 @@ public sealed class GameService(
     /// <summary>
     /// Claims an open seat for whoever holds the returned token: <paramref name="claimant"/>, if a player signed in
     /// claims it; else a guest, by <paramref name="nickname"/>, if they give one (<see cref="Nicknames.Of"/>);
-    /// played by an AI, if <paramref name="isAi"/>. The last open seat taken, the game begins, and the bots due to
-    /// play first play.
+    /// played by an AI, if <paramref name="isAi"/>, by the <paramref name="nickname"/> it gives itself even for a
+    /// player, so that one player's AIs may be told apart. The last open seat taken, the game begins, and the bots
+    /// due to play first play.
     /// </summary>
     /// <exception cref="GameNotFoundException">There is no such game.</exception>
     /// <exception cref="SeatUnavailableException">The seat does not exist, or is not open.</exception>
@@ -326,8 +327,9 @@ public sealed class GameService(
             _ => throw new SeatUnavailableException(id, seat),
         };
         GameRecord next = record.Next();
+        string? named = claimant is null || isAi ? Nicknames.Of(nickname) : null;
         HumanSeat claimed =
-            new(SeatTokens.Hash(token), claimant, claimant is null ? Nicknames.Of(nickname) : null, isAi, next.Version)
+            new(SeatTokens.Hash(token), claimant, named, isAi, next.Version)
             {
                 IsForPlayers = record.Controllers[seat.Value].IsForPlayers,
             };
@@ -345,8 +347,9 @@ public sealed class GameService(
 
     /// <summary>
     /// Says anew who holds the seat <paramref name="token"/> holds: <paramref name="claimant"/>, if a player signed in
-    /// since taking it, else a guest by <paramref name="nickname"/>, as a claim does; whether an AI plays it stays as
-    /// claimed. So a player who signs in, or chooses a nickname, after taking a seat is known by it there too.
+    /// since taking it, else a guest by <paramref name="nickname"/>, as a claim does (an AI by its nickname either
+    /// way); whether an AI plays it stays as claimed. So a player who signs in, or chooses a nickname, after taking a
+    /// seat is known by it there too.
     /// </summary>
     /// <exception cref="GameNotFoundException">There is no such game.</exception>
     /// <exception cref="NotYourSeatException">The token does not hold the seat.</exception>
@@ -366,7 +369,7 @@ public sealed class GameService(
         HumanSeat identified = held with
         {
             Claimant = claimant,
-            Nickname = claimant is null ? Nicknames.Of(nickname) : null,
+            Nickname = claimant is null || held.IsAi ? Nicknames.Of(nickname) : null,
         };
         GameRecord next = record.Next() with { Controllers = record.Controllers.SetItem(seat.Value, identified) };
         await this.Save(
@@ -401,33 +404,47 @@ public sealed class GameService(
     }
 
     /// <summary>
-    /// Hands <paramref name="player"/> the seat a bot plays, for the rest of the game, and a token to hold it by
-    /// (Stated: a person may take a seat over from a bot): only in a game not over, and only to a player holding no
-    /// seat at it already, so that no one plays two seats by it (Proposed). Should the game wait for that seat to
-    /// decide, the player now decides for it.
+    /// Hands the seat a bot plays, for the rest of the game, and a token to hold it by, to <paramref name="claimant"/>,
+    /// if a player signed in takes it over; else to a guest, by <paramref name="nickname"/>, if they give one, as a
+    /// claim does (Stated: a person may take a seat over from a bot; a guest may, unless the game is for players
+    /// signed in only). Only in a game not over, and only to a player holding no seat at it already, so that no one
+    /// plays two seats by it (Proposed); which seats a guest holds, only their browser knows. Should the game wait
+    /// for that seat to decide, whoever took it over now decides for it.
     /// </summary>
     /// <exception cref="GameNotFoundException">There is no such game.</exception>
     /// <exception cref="GameUnreplayableException">Its rules no longer replay it.</exception>
     /// <exception cref="SeatNotTakenOverException">
     /// No bot plays the seat, the game is over, or the player holds a seat at it.
     /// </exception>
-    public async Task<string> TakeOver(GameId id, SeatId seat, PlayerId player, CancellationToken cancellationToken)
+    /// <exception cref="SeatForPlayersException">A guest asks for a seat only for players signed in.</exception>
+    public async Task<string> TakeOver(
+        GameId id,
+        SeatId seat,
+        PlayerId? claimant,
+        string? nickname,
+        CancellationToken cancellationToken
+    )
     {
         GameSnapshot snapshot = await this.Get(id, cancellationToken);
         GameRecord record = snapshot.Record;
-        if (record.Controllers.ElementAtOrDefault(seat.Value) is not BotSeat
-            || snapshot.State.Outcome is not null
-            || record.IsClaimedBy(player))
+        BotSeat bot = record.Controllers.ElementAtOrDefault(seat.Value) is BotSeat seated
+            && snapshot.State.Outcome is null
+            && !(claimant is { } player && record.IsClaimedBy(player))
+                ? seated
+                : throw new SeatNotTakenOverException(id, seat);
+        if (bot.IsForPlayers && claimant is null)
         {
-            throw new SeatNotTakenOverException(id, seat);
+            throw new SeatForPlayersException(id, seat);
         }
 
         string token = SeatTokens.Issue();
         GameRecord next = record.Next();
-        HumanSeat taken = new(SeatTokens.Hash(token), player, Arrival: next.Version)
-        {
-            IsForPlayers = record.Controllers.Any(controller => controller.IsForPlayers),
-        };
+        string? guest = claimant is null ? Nicknames.Of(nickname) : null;
+        HumanSeat taken =
+            new(SeatTokens.Hash(token), claimant, guest, Arrival: next.Version)
+            {
+                IsForPlayers = bot.IsForPlayers,
+            };
         GameRecord reseated = next with
         {
             Controllers = record.Controllers.SetItem(seat.Value, taken),
@@ -489,7 +506,10 @@ public sealed class GameService(
             (_, { } away) when away.MayReplace(new SeatId(held)) && free.TryDequeue(out string? bot) =>
                 await this.Reseated(
                     snapshot,
-                    record.Controllers.SetItem(away.Absent.Value, new BotSeat(bot)),
+                    record.Controllers.SetItem(
+                        away.Absent.Value,
+                        new BotSeat(bot) { IsForPlayers = record.Controllers[away.Absent.Value].IsForPlayers }
+                    ),
                     cancellationToken
                 ),
             (_, { } away) when away.MayReplace(new SeatId(held)) => snapshot,
@@ -712,7 +732,9 @@ public sealed class GameService(
             snapshot,
             [
                 .. snapshot.Record.Controllers.Select(controller =>
-                    controller.IsOpen && free.TryDequeue(out string? bot) ? new BotSeat(bot) : controller
+                    controller.IsOpen && free.TryDequeue(out string? bot)
+                        ? new BotSeat(bot) { IsForPlayers = controller.IsForPlayers }
+                        : controller
                 ),
             ],
             cancellationToken

@@ -47,6 +47,19 @@ public sealed class SeatPlanTest
     }
 
     [Fact]
+    public void ToController_WhenABotsSeatIsForPlayersOnly_IsThatBotsSeatForPlayers()
+    {
+        // Arrange
+        SeatPlan plan = new(FirstChoiceBot.BotId) { IsForPlayers = true };
+
+        // Act
+        SeatController controller = plan.ToController(Bots);
+
+        // Assert
+        Assert.Equal(new BotSeat(FirstChoiceBot.BotId) { IsForPlayers = true }, controller);
+    }
+
+    [Fact]
     public void ToController_WhenTheBotIsUnknown_ThrowsUnknownBotException()
     {
         // Arrange

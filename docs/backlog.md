@@ -132,19 +132,21 @@ first.
   however many: one side could play badly to raise the other. Such a game still counts in the rest of the
   player's standing: won, lost or drawn, experience and points (*Proposed*).
 - A player may seat several AIs of their own in one game (*Stated 2026-11-07*), each saying which it is, so
-  that a player's bots are told apart. Still to check, and for the user to try by hand: an outside bot playing
-  by the API.
+  that a player's bots are told apart. *Done* (*Proposed*: how): an AI claiming a seat for a player keeps the
+  nickname it gives, shown as "Sage (Ada's AI)"; without one, "Ada (AI)". Still for the user to try by hand: an
+  outside bot playing by the API or MCP.
 - Leaderboards for bots (*Stated 2026-11-07*): one of the bots alone, and ones showing how people fare against
   the bots.
 - A signed-in player setting up a game may bar guests from it (*Stated 2026-11-01*). *Done* (*Proposed*: how):
   a custom game set up signed in may be **Players signed in only**; its open seats then refuse a guest, and the
   lobby asks a guest to sign in to join it. Playing such a game again keeps it for players signed in only.
 - A person may take a seat over from a bot, where the game allows it (*Stated 2026-11-01*, low priority).
-  *Done* (*Proposed*: who and when): a player signed in, watching a game not over at which they hold no seat,
-  has a **Take over** button on each bot's seat; the seat is theirs for the rest of the game
-  (`POST api/games/{id}/seats/{seat}/take-over`). No one may play two seats so. Still to do (*Stated
-  2026-11-07*): whether a guest may take a seat over is the game's own setting, as for its open seats: a guest
-  may, unless whoever set the game up chose players signed in only. Such a game no longer counts toward Elo.
+  *Done* (*Proposed*: when): anyone watching a game not over, at which they hold no seat, has a **Take over**
+  button on each bot's seat; the seat is theirs for the rest of the game
+  (`POST api/games/{id}/seats/{seat}/take-over`). No player signed in may play two seats so; which seats a guest
+  holds, only their browser knows, so it offers the button only to a guest watching. Whether a guest may is the
+  game's own setting, as for its open seats (*Stated 2026-11-07*): a guest may, unless whoever set the game up
+  chose players signed in only. Such a game no longer counts toward Elo.
 - A custom game's board size chosen freely, within limits, rather than only small, medium or large
   (*Stated 2026-11-01*); likely to come with the game setup rework. One of the two most noticeable gaps in
   custom games (*Stated 2026-11-07*).

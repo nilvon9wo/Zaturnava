@@ -277,7 +277,7 @@ base address (`GameRoutes`):
 | Let a bot or a timer decide | `POST api/games/{id}/advance` with `AdvanceRequest` (the version the caller saw) | `GameViewDto` after one bot decision, or the timer's decision once a timed one has run out of time; unchanged if the version is stale or neither is due |
 | Claim an open seat | `POST api/games/{id}/seats/{seat}` | `SeatClaimedDto` with the seat's token |
 | Take back one's own seat, from any device | `POST api/games/{id}/seats/{seat}/take-back`, `Authorization: Bearer {player token}` of the player who claimed it | `SeatClaimedDto` with a new token; the old one holds the seat no more |
-| Take a seat over from a bot | `POST api/games/{id}/seats/{seat}/take-over`, `Authorization: Bearer {player token}` | `SeatClaimedDto`; 409 if no bot plays it, the game is over, or the player holds a seat there |
+| Take a seat over from a bot | `POST api/games/{id}/seats/{seat}/take-over`, `Authorization: Bearer {player token}` or a guest's `ClaimSeatRequest` | `SeatClaimedDto`; 409 if no bot plays it, the game is over, or the player holds a seat there; 403 for a guest at a game for players only |
 | Act | `POST api/games/{id}/actions` with `ActionDto`, `Authorization: Bearer {token}` | `GameViewDto` after the action and any bot replies |
 | What was said at the table | `GET api/games/{id}/chat?after={n}`, the token optional | `ChatMessageDto[]` after message `n`: what was said to the table, and to the token holder's team |
 | Say something | `POST api/games/{id}/chat` with `SayRequest` (`table` or `team`, and the words), `Authorization: Bearer {token}` | `ChatMessageDto`, numbered within its table |

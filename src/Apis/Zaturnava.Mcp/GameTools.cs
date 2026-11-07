@@ -61,7 +61,10 @@ public sealed class GameTools(IGameServing games)
     public Task<SeatClaimedDto> ClaimSeat(
         string gameId,
         [Description("The seat's number, from 0.")] int seat,
-        [Description("A nickname to be shown by at the table, as \"Nickname (AI guest)\"; at most 20 characters.")]
+        [Description(
+            "A nickname to be shown by at the table, as \"Nickname (AI guest)\", or, played for a person, as "
+                + "\"Nickname (Name's AI)\", telling their AIs apart; at most 20 characters."
+        )]
         string? nickname,
         [Description("The player token of the person you play for, if they gave you one; else leave it out.")]
         string? playerToken,

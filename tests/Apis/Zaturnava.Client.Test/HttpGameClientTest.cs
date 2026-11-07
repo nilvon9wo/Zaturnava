@@ -283,12 +283,19 @@ public sealed class HttpGameClientTest
         StubServer server = new(HttpStatusCode.OK, """{"token":"secret"}""");
 
         // Act
-        SeatClaimedDto taken = await Client(server).TakeOver("g", 2, "player", this._cancellation);
+        SeatClaimedDto taken =
+            await Client(server).TakeOver("g", 2, "player", new ClaimSeatRequest("Ada"), this._cancellation);
 
         // Assert
         Assert.Equal(
-            ("POST", "/api/games/g/seats/2/take-over", "Bearer player", "secret"),
-            (server.Method, server.Path, server.Authorization, taken.Token)
+            (
+                "POST",
+                "/api/games/g/seats/2/take-over",
+                "Bearer player",
+                """{"nickname":"Ada","isAi":false}""",
+                "secret"
+            ),
+            (server.Method, server.Path, server.Authorization, server.Body, taken.Token)
         );
     }
 

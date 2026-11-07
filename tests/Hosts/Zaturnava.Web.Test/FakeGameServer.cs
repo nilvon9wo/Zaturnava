@@ -205,11 +205,12 @@ internal sealed class FakeGameServer : IGameServing
     public Task<SeatClaimedDto> TakeOver(
         [Required] string gameId,
         int seat,
-        [Required] string playerToken,
+        string? playerToken,
+        ClaimSeatRequest? claim,
         CancellationToken cancellationToken
     ) =>
         this.Answer(
-            $"take over {gameId} {seat.ToString(CultureInfo.InvariantCulture)} {playerToken}",
+            $"take over {gameId} {seat.ToString(CultureInfo.InvariantCulture)} {playerToken} {claim?.Nickname}",
             new SeatClaimedDto(Token)
         );
 

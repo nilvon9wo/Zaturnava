@@ -42,7 +42,7 @@ public abstract record SeatController
         {
             OpenSeat.KindName => OpenSeat.From(detail),
             HumanSeat.KindName => HumanSeat.From(detail!),
-            BotSeat.KindName => new BotSeat(detail!),
+            BotSeat.KindName => BotSeat.From(detail!),
             _ => throw new ArgumentException($"There is no '{kind}' seat controller.", nameof(kind)),
         };
 }
