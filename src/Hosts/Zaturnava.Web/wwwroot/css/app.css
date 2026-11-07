@@ -291,6 +291,10 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
 }
 .leaderboard .leaders th:nth-child(2), .leaderboard .leaders td.name { text-align: left; }
 .leaderboard .about-standings, .leaderboard .no-leaders { color: var(--muted); }
+.leaderboard .leaders th button.sort {
+    background: none; border: none; padding: 0; color: inherit; font: inherit; cursor: pointer;
+}
+.leaderboard .pager { display: flex; gap: 8px; align-items: center; justify-content: center; margin: 8px 0; }
 .games { list-style: none; padding: 0; }
 .games li { padding: 6px 0; border-bottom: 1px solid var(--panel-edge); }
 .games .game { font-family: ui-monospace, monospace; margin-right: 8px; }

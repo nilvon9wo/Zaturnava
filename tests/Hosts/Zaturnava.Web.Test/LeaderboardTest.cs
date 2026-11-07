@@ -33,12 +33,12 @@ public sealed class LeaderboardTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ("1 Ada 1516 14 9 1 0 0 2|2 Bea 1484 0 3 0 1 0 0", 0),
+            ("1 Ada 1516 14 1 0 0 2|2 Bea 1484 0 0 1 0 0", 0),
             (
                 string.Join(
                     "|",
                     board.FindAll(".leaders tbody tr").Select(row =>
-                        string.Join(" ", row.QuerySelectorAll("td").Select(cell => cell.TextContent))
+                        string.Join(" ", row.QuerySelectorAll("td").Select(cell => cell.TextContent.Trim()))
                     )
                 ),
                 board.FindAll("select.leaderboard-game").Count
@@ -72,7 +72,7 @@ public sealed class LeaderboardTest : IDisposable
             (
                 before,
                 string.Join(",", board.FindAll("select.leaderboard-game option").Select(option => option.TextContent)),
-                board.Find(".leaders td.name").TextContent,
+                board.Find(".leaders td.name").TextContent.Trim(),
                 string.Join(
                     ",",
                     this._page.Server.Calls.Where(call => call.StartsWith("leaderboard", StringComparison.Ordinal))
@@ -135,7 +135,7 @@ public sealed class LeaderboardTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ("1 Sage 9 3 1 0 2–1–0", "bots chaturaji-2027"),
+            ("1 Sage 3 1 0 2 1 0", "bots chaturaji-2027"),
             (
                 string.Join(
                     " ",
@@ -169,7 +169,126 @@ public sealed class LeaderboardTest : IDisposable
         // Assert
         Assert.Equal(
             "1 Ada 3 1 1",
-            string.Join(" ", board.FindAll(".against-bots tbody td").Select(cell => cell.TextContent))
+            string.Join(" ", board.FindAll(".against-bots tbody td").Select(cell => cell.TextContent.Trim()))
+        );
+    }
+
+    [Fact]
+    public void SortBy_WhenAHeaderIsClickedOnceThenTwice_SortsByItMostFirstThenFewestFirst()
+    {
+        // Arrange - by Elo, Ada first; Bea has lost the most, Cy the fewest
+        this._page.Server.Leaderboards = this._page.Server.Leaderboards.Add(
+            "chaturaji-2027",
+            [
+                new StandingDto(1, "Ada", 1600, 0, 0, 2, 0),
+                new StandingDto(2, "Bea", 1500, 0, 0, 5, 0),
+                new StandingDto(3, "Cy", 1400, 0, 0, 1, 0),
+            ]
+        );
+        IRenderedComponent<Leaderboard> board = this._page.Render<Leaderboard>();
+        string before = Names(board);
+
+        // Act
+        board.Find("button.sort.lost").Click();
+        string once = $"{Names(board)} {board.Find("th[aria-sort=descending]").TextContent.Trim()}";
+        board.Find("button.sort.lost").Click();
+        string twice = $"{Names(board)} {board.Find("th[aria-sort=ascending]").TextContent.Trim()}";
+
+        // Assert
+        Assert.Equal(
+            ("Ada,Bea,Cy", "Bea,Ada,Cy Lost ▼", "Cy,Ada,Bea Lost ▲", "1,2,3"),
+            (before, once, twice, string.Join(",", board.FindAll("td.place").Select(cell => cell.TextContent)))
+        );
+    }
+
+    [Fact]
+    public void Name_WhenAPlayersIsClicked_OpensTheirProfile()
+    {
+        // Arrange
+        this._page.Server.Profiles = this._page.Server.Profiles.Add("ada", new ProfileDto("ada", "Ada Lovelace"));
+        this._page.Server.Leaderboards = this._page.Server.Leaderboards.Add(
+            "chaturaji-2027",
+            [new StandingDto(1, "Ada", 1516, 0, 1, 0, 0) { PlayerId = "ada" }]
+        );
+        IRenderedComponent<Leaderboard> board = this._page.Render<Leaderboard>();
+
+        // Act
+        board.Find(".leaders td.name button.profile").Click();
+
+        // Assert
+        Assert.Equal("Ada Lovelace", board.Find(".public-profile h2").TextContent);
+    }
+
+    [Fact]
+    public void Name_WhenABotsIsClickedOverATable_OpensItsProfileWithItsRatingThere()
+    {
+        // Arrange
+        this._page.Server.BotLeaderboards = this._page.Server.BotLeaderboards.Add(
+            "chaturaji-2027",
+            [new BotStandingDto(1, "Random", 0, 3, 1, 0) { BotId = "random" }]
+        );
+        IRenderedComponent<Leaderboard> board = this._page.Render<Leaderboard>(
+            parameters => parameters.Add(leaderboard => leaderboard.RulesetId, "chaturaji-2027")
+        );
+        board.Find("select.leaderboard-board").Change("bots");
+
+        // Act
+        board.Find(".leaders td.name button.bot-profile").Click();
+
+        // Assert
+        Assert.Equal(
+            ("Random", "Rated 1000 at this game, from games between the bots."),
+            (board.Find(".public-profile h2").TextContent, board.Find(".public-profile .bot-rating").TextContent)
+        );
+    }
+
+    [Fact]
+    public void Paging_WhenMoreThanTenStand_ShowsTenAPageAndTurnsThePagesBothWays()
+    {
+        // Arrange - fifteen players, by Elo
+        this._page.Server.Leaderboards = this._page.Server.Leaderboards.Add(
+            "chaturaji-2027",
+            [.. Enumerable.Range(1, 15).Select(place => new StandingDto(place, $"P{place}", 2000 - place, 0, 0, 0, 0))]
+        );
+        IRenderedComponent<Leaderboard> board = this._page.Render<Leaderboard>();
+        string first = $"{board.FindAll(".leaders tbody tr").Count} {board.Find(".pager .page").TextContent}";
+
+        // Act
+        board.Find(".pager button.next").Click();
+        bool isLast = board.Find(".pager .next").HasAttribute("disabled");
+        string second = $"{Names(board)} {board.Find(".pager .page").TextContent} {isLast}";
+        board.Find(".pager button.previous").Click();
+
+        // Assert
+        Assert.Equal(
+            ("10 Page 1 of 2", "P11,P12,P13,P14,P15 Page 2 of 2 True", "P1", true),
+            (
+                first,
+                second,
+                board.Find(".leaders td.name").TextContent.Trim(),
+                board.Find(".pager .previous").HasAttribute("disabled")
+            )
+        );
+    }
+
+    [Fact]
+    public void SortBy_WhenOnALaterPage_ShowsTheFirstPageAgain()
+    {
+        // Arrange - eleven players, on the second page
+        this._page.Server.Leaderboards = this._page.Server.Leaderboards.Add(
+            "chaturaji-2027",
+            [.. Enumerable.Range(1, 11).Select(at => new StandingDto(at, $"P{at}", 2000 - at, at, 0, 0, 0))]
+        );
+        IRenderedComponent<Leaderboard> board = this._page.Render<Leaderboard>();
+        board.Find(".pager button.next").Click();
+
+        // Act
+        board.Find("button.sort.experience").Click();
+
+        // Assert
+        Assert.Equal(
+            ("P11", "Page 1 of 2"),
+            (board.Find(".leaders td.name").TextContent.Trim(), board.Find(".pager .page").TextContent)
         );
     }
 
@@ -225,4 +344,8 @@ public sealed class LeaderboardTest : IDisposable
             (board.FindAll("p.problem").Count, board.FindAll(".leaders").Count, board.FindAll(".no-leaders").Count)
         );
     }
+
+    /// <summary>The names on the page shown, in order.</summary>
+    private static string Names(IRenderedComponent<Leaderboard> board) =>
+        string.Join(",", board.FindAll(".leaders td.name").Select(cell => cell.TextContent.Trim()));
 }
