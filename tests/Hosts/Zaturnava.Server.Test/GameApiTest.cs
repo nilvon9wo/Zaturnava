@@ -32,7 +32,7 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
                 4,
                 "Black,Yellow,Green,Red",
                 "0,1,0,1",
-                "argus,athena,midas,random,sage,solomon",
+                "argus,athena,midas,random,sage,solomon,tactician",
                 true
             ),
             (
