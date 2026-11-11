@@ -41,8 +41,31 @@ internal static class SignInEndpoints
         _ = routes.MapDelete(GameRoutes.Logins + "/{provider}", Unlink);
         _ = routes.MapPost(GameRoutes.AiToken, AiToken);
         _ = routes.MapGet(GameRoutes.Players + "/{playerId}", Profile);
+        _ = routes.MapPost(GameRoutes.Aliases, TakeAlias);
+        _ = routes.MapGet(GameRoutes.MyAlias, MyAlias);
         return routes;
     }
+
+    /// <summary>A guest's alias for their visit, held by the token sent, if one is, else by a new one.</summary>
+    private static async Task<Ok<GuestAliasDto>> TakeAlias(
+        TakeAliasRequest taking,
+        HttpRequest request,
+        PlayerService players,
+        CancellationToken cancellationToken
+    )
+    {
+        GuestAlias taken = await players.TakeAlias(taking.Alias, SeatToken.OrNull(request), cancellationToken);
+        return TypedResults.Ok(new GuestAliasDto(taken.Alias, taken.Token));
+    }
+
+    /// <summary>The alias the token holds, renewed; unauthorized, if it holds none now.</summary>
+    private static Results<Ok<GuestAliasDto>, UnauthorizedHttpResult> MyAlias(
+        HttpRequest request,
+        PlayerService players
+    ) =>
+        SeatToken.OrNull(request) is { } token && players.RenewAlias(token) is { } held
+            ? TypedResults.Ok(new GuestAliasDto(held.Alias, held.Token))
+            : TypedResults.Unauthorized();
 
     /// <summary>The player as the API shows them: the services they may sign in with in the order linked.</summary>
     public static PlayerDto ToDto(Player player) =>

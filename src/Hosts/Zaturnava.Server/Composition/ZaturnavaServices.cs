@@ -97,6 +97,7 @@ internal static class ZaturnavaServices
             .AddScoped<PlayerService>()
             .AddSingleton(TimeProvider.System)
             .AddSingleton(new LinkCodes(TimeProvider.System))
+            .AddSingleton(new GuestAliases(TimeProvider.System))
             .AddSingleton(ChatSettingsOf(configuration))
             .AddSingleton<ChatTables>()
             .AddHostedService<ChatSweeper>()

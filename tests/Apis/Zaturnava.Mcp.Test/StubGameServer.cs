@@ -210,6 +210,12 @@ internal sealed class StubGameServer : IGameServing
     public Task<bool> DeleteMe([Required] string token, CancellationToken cancellationToken) =>
         throw new NotSupportedException("The tools sign no one in.");
 
+    public Task<GuestAliasDto> TakeAlias(string? alias, string? token, CancellationToken cancellationToken) =>
+        throw new NotSupportedException("The tools take no aliases.");
+
+    public Task<GuestAliasDto?> MyAlias([Required] string token, CancellationToken cancellationToken) =>
+        throw new NotSupportedException("The tools take no aliases.");
+
     public Task<ChatMessageDto> Say(
         [Required] string gameId,
         [Required] string token,

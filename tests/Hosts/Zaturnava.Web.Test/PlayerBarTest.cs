@@ -9,6 +9,7 @@ public sealed class PlayerBarTest : IDisposable
 {
     private const string PlayerKey = "zaturnava.player";
     private const string NicknameKey = "zaturnava.nickname";
+    private const string AliasKey = "zaturnava.alias";
 
     private static readonly PlayerDto Ada = new("p", "Ada");
 
@@ -27,9 +28,9 @@ public sealed class PlayerBarTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ("Sign in", 0, 0),
+            ("Sign in, or choose a name", 0, 0),
             (
-                string.Join('|', bar.FindAll("button").Select(button => button.TextContent)),
+                string.Join('|', bar.FindAll("button").Select(button => button.TextContent.Trim())),
                 bar.FindAll("[role=dialog]").Count,
                 bar.FindAll(".guest-name").Count
             )
@@ -99,9 +100,93 @@ public sealed class PlayerBarTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ("Playing as Bea (guest)", "Bea"),
+            ("Bea (guest) ▾", "Bea"),
             (bar.Find(".guest-name").TextContent, bar.Find("input.nickname").GetAttribute("value"))
         );
+    }
+
+    [Fact]
+    public void Render_WhenTheBrowserHoldsAnAliasStill_RenewsItAndPlaysByIt()
+    {
+        // Arrange - the alias held is Cy, though the browser kept Bea
+        this._page.Server.Aliases = this._page.Server.Aliases.Add("held", "Cy");
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", NicknameKey).SetResult("Bea");
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", AliasKey).SetResult("held");
+
+        // Act
+        IRenderedComponent<PlayerBar> bar = this._page.Render<PlayerBar>();
+
+        // Assert
+        Assert.Equal(
+            ("Cy", $"{NicknameKey} Cy"),
+            (bar.Find(".guest-name strong").TextContent, string.Join('|', this.SavedEach().Where(IsNickname)))
+        );
+    }
+
+    [Fact]
+    public void Render_WhenTheBrowserHoldsNoAliasNow_TakesTheNicknameAfresh()
+    {
+        // Arrange - the alias the browser held has lapsed
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", NicknameKey).SetResult("Bea");
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", AliasKey).SetResult("lapsed");
+
+        // Act
+        IRenderedComponent<PlayerBar> bar = this._page.Render<PlayerBar>();
+
+        // Assert
+        Assert.Equal(
+            ("Bea", "[alias-1, Bea]"),
+            (bar.Find(".guest-name strong").TextContent, string.Join('|', this._page.Server.Aliases))
+        );
+    }
+
+    [Fact]
+    public void Nickname_WhenTakenByAnother_PlaysByTheNextFreeAndSaysSo()
+    {
+        // Arrange
+        this._page.Server.TakenNames = ["Ada"];
+        IRenderedComponent<PlayerBar> bar = this._page.Render<PlayerBar>();
+        bar.Find("button.open-sign-in").Click();
+
+        // Act
+        bar.Find("input.nickname").Change("Ada");
+
+        // Assert
+        Assert.Equal(
+            ("Ada 2", "Ada is taken, so you are Ada 2."),
+            (bar.Find(".guest-name strong").TextContent, bar.Find("p.alias-note").TextContent)
+        );
+    }
+
+    [Fact]
+    public void Nickname_WhenChangedAgain_KeepsTheTokenTheAliasIsHeldBy()
+    {
+        // Arrange
+        IRenderedComponent<PlayerBar> bar = this._page.Render<PlayerBar>();
+        bar.Find("button.open-sign-in").Click();
+        bar.Find("input.nickname").Change("Bea");
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", AliasKey).SetResult("alias-1");
+
+        // Act
+        bar.Find("input.nickname").Change("Cy");
+
+        // Assert
+        Assert.Equal("[alias-1, Cy]", string.Join('|', this._page.Server.Aliases));
+    }
+
+    [Fact]
+    public void Nickname_WhenTheServerCannotHoldIt_SaysWhyAndKeepsNone()
+    {
+        // Arrange
+        IRenderedComponent<PlayerBar> bar = this._page.Render<PlayerBar>();
+        bar.Find("button.open-sign-in").Click();
+        this._page.Server.SignInFailure = new HttpRequestException("asleep");
+
+        // Act
+        bar.Find("input.nickname").Change("Bea");
+
+        // Assert
+        Assert.Equal(("asleep", 0), (bar.Find("span.notice").TextContent, bar.FindAll(".guest-name").Count));
     }
 
     [Fact]
@@ -116,11 +201,14 @@ public sealed class PlayerBarTest : IDisposable
         bar.Find("input.nickname").Change("   ");
 
         // Assert
-        Assert.Empty(bar.FindAll(".guest-name"));
+        Assert.Equal(
+            (0, $"{NicknameKey} |{AliasKey} "),
+            (bar.FindAll(".guest-name").Count, string.Join('|', this.SavedEach().TakeLast(2)))
+        );
     }
 
     [Fact]
-    public void Nickname_WhenChanged_IsRememberedWithoutTheSpacesAround()
+    public void Nickname_WhenChanged_IsHeldByTheServerAndRememberedWithoutTheSpacesAround()
     {
         // Arrange
         IRenderedComponent<PlayerBar> bar = this._page.Render<PlayerBar>();
@@ -131,8 +219,12 @@ public sealed class PlayerBarTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ($"{NicknameKey} Bea", "Bea"),
-            (string.Join(' ', this.Saved()), bar.Find("input.nickname").GetAttribute("value"))
+            ($"{AliasKey} alias-1|{NicknameKey} Bea", "Bea", 0),
+            (
+                string.Join('|', this.SavedEach()),
+                bar.Find("input.nickname").GetAttribute("value"),
+                bar.FindAll("p.alias-note").Count
+            )
         );
     }
 
@@ -214,6 +306,7 @@ public sealed class PlayerBarTest : IDisposable
 
         // Act
         await bar.InvokeAsync(() => bar.Instance.SignedIn("new"));
+        await bar.Find("button.account-name").ClickAsync(new MouseEventArgs());
         await bar.Find("button.sign-out").ClickAsync(new MouseEventArgs());
 
         // Assert
@@ -230,7 +323,7 @@ public sealed class PlayerBarTest : IDisposable
         this._page.Server.SignInFailure = isServerDown ? new HttpRequestException("asleep") : null;
 
         // Act
-        bar.Find("button.sign-out").Click();
+        Choose(bar, "button.sign-out");
 
         // Assert
         Assert.Equal(
@@ -244,13 +337,39 @@ public sealed class PlayerBarTest : IDisposable
     }
 
     [Fact]
+    public void AccountMenu_WhenTheNameIsClicked_OpensThenClosesAgain()
+    {
+        // Arrange
+        IRenderedComponent<PlayerBar> bar = this.SignedInAsAda();
+        int before = bar.FindAll("[role=menu]").Count;
+
+        // Act
+        bar.Find("button.account-name").Click();
+        string opened = string.Join('|', bar.FindAll("[role=menuitem]").Select(item => item.TextContent.Trim()));
+        string expanded = bar.Find("button.account-name").GetAttribute("aria-expanded")!;
+        bar.Find("button.account-name").Click();
+
+        // Assert
+        Assert.Equal(
+            (0, "Profile and sign-in services|Sign out|Delete account", "true", 0, "false"),
+            (
+                before,
+                opened,
+                expanded,
+                bar.FindAll("[role=menu]").Count,
+                bar.Find("button.account-name").GetAttribute("aria-expanded")
+            )
+        );
+    }
+
+    [Fact]
     public void DeleteAccount_WhenClicked_AsksFirstAndDeletesNothingYet()
     {
         // Arrange
         IRenderedComponent<PlayerBar> bar = this.SignedInAsAda();
 
         // Act
-        bar.Find("button.delete-account").Click();
+        Choose(bar, "button.delete-account");
 
         // Assert
         Assert.Equal(
@@ -264,7 +383,7 @@ public sealed class PlayerBarTest : IDisposable
     {
         // Arrange
         IRenderedComponent<PlayerBar> bar = this.SignedInAsAda();
-        bar.Find("button.delete-account").Click();
+        Choose(bar, "button.delete-account");
 
         // Act
         bar.Find("button.delete-cancelled").Click();
@@ -281,7 +400,7 @@ public sealed class PlayerBarTest : IDisposable
     {
         // Arrange
         IRenderedComponent<PlayerBar> bar = this.SignedInAsAda();
-        bar.Find("button.delete-account").Click();
+        Choose(bar, "button.delete-account");
 
         // Act
         bar.Find("button.delete-confirmed").Click();
@@ -303,7 +422,7 @@ public sealed class PlayerBarTest : IDisposable
     {
         // Arrange
         IRenderedComponent<PlayerBar> bar = this.SignedInAsAda();
-        bar.Find("button.delete-account").Click();
+        Choose(bar, "button.delete-account");
         this._page.Server.SignInFailure = new HttpRequestException("asleep");
 
         // Act
@@ -320,7 +439,7 @@ public sealed class PlayerBarTest : IDisposable
         IRenderedComponent<PlayerBar> bar = this.SignedInAsAda(["GitHub"]);
 
         // Act
-        bar.Find("button.open-profile").Click();
+        Choose(bar, "button.open-profile");
 
         // Assert
         Assert.Equal(
@@ -342,7 +461,7 @@ public sealed class PlayerBarTest : IDisposable
         this._page.Server.SignInFailure = new HttpRequestException("asleep");
 
         // Act
-        bar.Find("button.open-profile").Click();
+        Choose(bar, "button.open-profile");
 
         // Assert
         Assert.Equal(("asleep", 0), (bar.Find("[role=status]").TextContent, bar.FindAll("button.link").Count));
@@ -353,7 +472,7 @@ public sealed class PlayerBarTest : IDisposable
     {
         // Arrange
         IRenderedComponent<PlayerBar> bar = this.SignedInAsAda(["GitHub"]);
-        bar.Find("button.open-profile").Click();
+        Choose(bar, "button.open-profile");
 
         // Act
         bar.Find("button.link").Click();
@@ -373,6 +492,7 @@ public sealed class PlayerBarTest : IDisposable
     {
         // Arrange
         IRenderedComponent<PlayerBar> bar = this.SignedInAsAda(["GitHub"]);
+        await bar.Find("button.account-name").ClickAsync(new MouseEventArgs());
         await bar.Find("button.open-profile").ClickAsync(new MouseEventArgs());
         await bar.Find("button.link").ClickAsync(new MouseEventArgs());
         PlayerDto linked = Ada with { Services = ["GitHub", "Discord"] };
@@ -397,7 +517,7 @@ public sealed class PlayerBarTest : IDisposable
     {
         // Arrange
         IRenderedComponent<PlayerBar> bar = this.SignedInAsAda(["GitHub"]);
-        bar.Find("button.open-profile").Click();
+        Choose(bar, "button.open-profile");
 
         // Act
         bar.Find("input.name").Change("Countess");
@@ -414,7 +534,7 @@ public sealed class PlayerBarTest : IDisposable
     {
         // Arrange
         IRenderedComponent<PlayerBar> bar = this.SignedInAsAda(["GitHub"]);
-        bar.Find("button.open-profile").Click();
+        Choose(bar, "button.open-profile");
         this._page.Server.Players = this._page.Server.Players.Remove("known");
 
         // Act
@@ -429,7 +549,7 @@ public sealed class PlayerBarTest : IDisposable
     {
         // Arrange
         IRenderedComponent<PlayerBar> bar = this.SignedInAsAda(["GitHub", "Discord"]);
-        bar.Find("button.open-profile").Click();
+        Choose(bar, "button.open-profile");
 
         // Act
         bar.Find("button.unlink").Click();
@@ -450,7 +570,7 @@ public sealed class PlayerBarTest : IDisposable
     {
         // Arrange - a player told of no services
         IRenderedComponent<PlayerBar> bar = this.SignedInAsAda();
-        bar.Find("button.open-profile").Click();
+        Choose(bar, "button.open-profile");
         bar.Find("input.name").Change("Countess");
 
         // Act
@@ -458,7 +578,7 @@ public sealed class PlayerBarTest : IDisposable
 
         // Assert
         Assert.Empty(bar.FindAll("[role=dialog]"));
-        bar.Find("button.open-profile").Click();
+        Choose(bar, "button.open-profile");
         Assert.Empty(bar.FindAll("p.saved"));
     }
 
@@ -467,7 +587,7 @@ public sealed class PlayerBarTest : IDisposable
     {
         // Arrange
         IRenderedComponent<PlayerBar> bar = this.SignedInAsAda(["GitHub"]);
-        bar.Find("button.open-profile").Click();
+        Choose(bar, "button.open-profile");
 
         // Act
         bar.Find("button.ai-token").Click();
@@ -475,7 +595,7 @@ public sealed class PlayerBarTest : IDisposable
         // Assert
         string shown = bar.Find("p.ai-token code").TextContent;
         bar.Find("button.close-profile").Click();
-        bar.Find("button.open-profile").Click();
+        Choose(bar, "button.open-profile");
         Assert.Equal(("ai-known", 0), (shown, bar.FindAll("p.ai-token").Count));
     }
 
@@ -493,4 +613,17 @@ public sealed class PlayerBarTest : IDisposable
 
     /// <summary>What the page last asked the browser to remember.</summary>
     private IReadOnlyList<object?> Saved() => this._page.JSInterop.Invocations["zaturnava.save"].Single().Arguments;
+
+    /// <summary>Everything the page asked the browser to remember, in order, each as "key value".</summary>
+    private IEnumerable<string> SavedEach() =>
+        this._page.JSInterop.Invocations["zaturnava.save"].Select(call => $"{call.Arguments[0]} {call.Arguments[1]}");
+
+    private static bool IsNickname(string saved) => saved.StartsWith(NicknameKey, StringComparison.Ordinal);
+
+    /// <summary>Opens the signed-in player's menu, and chooses <paramref name="item"/> from it.</summary>
+    private static void Choose(IRenderedComponent<PlayerBar> bar, string item)
+    {
+        bar.Find("button.account-name").Click();
+        bar.Find(item).Click();
+    }
 }

@@ -590,6 +590,40 @@ public sealed class HttpGameClientTest
         );
     }
 
+    [Fact]
+    public async Task TakeAlias_WhenGivenTheTokenHeld_PostsTheAliasWithIt()
+    {
+        // Arrange
+        StubServer server = new(HttpStatusCode.OK, """{"alias":"Ada 2","token":"held"}""");
+
+        // Act
+        GuestAliasDto taken = await Client(server).TakeAlias("Ada", "held", this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            ("POST", "/api/aliases", "Bearer held", """{"alias":"Ada"}""", new GuestAliasDto("Ada 2", "held")),
+            (server.Method, server.Path, server.Authorization, server.Body, taken)
+        );
+    }
+
+    [Theory]
+    [InlineData(HttpStatusCode.OK, """{"alias":"Ada","token":"held"}""", "Ada")]
+    [InlineData(HttpStatusCode.Unauthorized, "", null)]
+    public async Task MyAlias_WhenAnswered_IsTheAliasIfStillHeld(HttpStatusCode status, string body, string? expected)
+    {
+        // Arrange
+        StubServer server = new(status, body);
+
+        // Act
+        GuestAliasDto? held = await Client(server).MyAlias("held", this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            ("GET", "/api/aliases/mine", "Bearer held", expected),
+            (server.Method, server.Path, server.Authorization, held?.Alias)
+        );
+    }
+
     [Theory]
     [InlineData(HttpStatusCode.NoContent, true)]
     [InlineData(HttpStatusCode.Unauthorized, false)]

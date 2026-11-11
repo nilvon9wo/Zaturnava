@@ -13,7 +13,13 @@ namespace Net.NowhereAtAll.Zaturnava.Application.Players;
 /// themselves as they please (<see cref="Rename"/>), and give an AI a token of its own to play for them
 /// (<see cref="AiToken"/>), which may do nothing to their account. When each last signed in is kept.
 /// </summary>
-public sealed class PlayerService(IPlayerPersisting store, IGamePersisting games, LinkCodes links, TimeProvider clock)
+public sealed class PlayerService(
+    IPlayerPersisting store,
+    IGamePersisting games,
+    LinkCodes links,
+    TimeProvider clock,
+    GuestAliases aliases
+)
 {
     /// <summary>The longest a player's name may be, in characters; a longer one is cut.</summary>
     public const int MaximumNameLength = 40;
@@ -40,6 +46,7 @@ public sealed class PlayerService(IPlayerPersisting store, IGamePersisting games
     private readonly IGamePersisting _games = games;
     private readonly LinkCodes _links = links;
     private readonly TimeProvider _clock = clock;
+    private readonly GuestAliases _aliases = aliases;
 
     /// <summary>
     /// Signs in the player whose login it is: the one already known, else a new one, named
@@ -63,14 +70,53 @@ public sealed class PlayerService(IPlayerPersisting store, IGamePersisting games
     private async Task<string> FreeName(string name, CancellationToken cancellationToken)
     {
         string free = name;
-        for (int number = 2; await this._store.IsNameTaken(free, null, cancellationToken); number++)
+        for (int number = 2; await this.IsTaken(free, null, cancellationToken); number++)
         {
-            string suffix = $" {number.ToString(CultureInfo.InvariantCulture)}";
-            free = name[..Math.Min(name.Length, MaximumNameLength - suffix.Length)].TrimEnd() + suffix;
+            free = Numbered(name, number, MaximumNameLength);
         }
 
         return free;
     }
+
+    /// <summary>"name 2", say, the name cut so that it fits <paramref name="longest"/>.</summary>
+    private static string Numbered(string name, int number, int longest)
+    {
+        string suffix = $" {number.ToString(CultureInfo.InvariantCulture)}";
+        return name[..Math.Min(name.Length, longest - suffix.Length)].TrimEnd() + suffix;
+    }
+
+    /// <summary>
+    /// Whether a player but <paramref name="except"/> goes by <paramref name="name"/>, or a guest holds it as their
+    /// alias (<see cref="GuestAliases"/>): either way, no one else may take it.
+    /// </summary>
+    private async Task<bool> IsTaken(string name, PlayerId? except, CancellationToken cancellationToken) =>
+        await this._store.IsNameTaken(name, except, cancellationToken) || this._aliases.IsHeld(name);
+
+    /// <summary>
+    /// Has a guest take <paramref name="wanted"/> as their alias for the visit (<see cref="Nicknames.Of"/>; "Guest",
+    /// if nothing is left of it), or, if a player goes by it or another guest holds it, the first of "alias 2",
+    /// "alias 3" and so on that is free (Stated 2026-11-11); held by <paramref name="token"/>, if the guest gives the
+    /// one they hold an alias by already, letting that go, else by a new one.
+    /// </summary>
+    public async Task<GuestAlias> TakeAlias(string? wanted, string? token, CancellationToken cancellationToken)
+    {
+        string holder = token ?? SeatTokens.Issue();
+        string hash = SeatTokens.Hash(holder);
+        string alias = Nicknames.Of(wanted) ?? Nicknames.Unnamed;
+        string free = alias;
+        for (int number = 2;
+            await this._store.IsNameTaken(free, null, cancellationToken) || !this._aliases.Hold(free, hash);
+            number++)
+        {
+            free = Numbered(alias, number, Nicknames.MaximumLength);
+        }
+
+        return new GuestAlias(free, holder);
+    }
+
+    /// <summary>The alias <paramref name="token"/> holds, held anew; none, if it holds none now.</summary>
+    public GuestAlias? RenewAlias([Required] string token) =>
+        this._aliases.Renew(SeatTokens.Hash(token)) is { } alias ? new GuestAlias(alias, token) : null;
 
     /// <summary>
     /// A one-time code (<see cref="LinkCodes"/>) for the player the token stands for to link another login with
@@ -185,7 +231,7 @@ public sealed class PlayerService(IPlayerPersisting store, IGamePersisting games
             return player;
         }
 
-        if (await this._store.IsNameTaken(named, player.Id, cancellationToken))
+        if (await this.IsTaken(named, player.Id, cancellationToken))
         {
             throw new NameTakenException(named);
         }
