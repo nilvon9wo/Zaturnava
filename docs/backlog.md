@@ -21,9 +21,9 @@ first.
   *Done*: the corner shows **Sign in, or choose a name**; a guest's alias, with "(guest)"; or the player's
   username with a ▾ opening **Profile and sign-in services**, **Sign out** and **Delete account**. The server
   holds each guest's alias for twelve hours from when the page last asked after it (*Proposed*), offering
-  "Ada 2" when "Ada" is taken ([http-api.md](bots/http-api.md#a-guests-name-for-the-visit)). Still to do
-  (*Proposed*): a guest claiming a seat sends their alias token too, and the server shows at the seat only the
-  alias that token holds, so no guest can claim a seat under another's alias or a player's username.
+  "Ada 2" when "Ada" is taken ([http-api.md](bots/http-api.md#a-guests-name-for-the-visit)). A guest claiming a
+  seat sends their alias token too, and a guest's name that a player goes by, or another guest holds, is refused
+  (*Proposed*): no guest can sit under another's alias or a player's username.
 - **N2** The database stays as it is through every change, by migrations; never wiped (*Stated*).
 - **N3** A leaderboard, for players to compete for; with each player's Elo and their **experience**: each time
   a player is on the winning team, they gain their own points plus their team's (*Stated*). Each player's

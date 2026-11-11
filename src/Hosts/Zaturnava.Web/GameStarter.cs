@@ -175,7 +175,7 @@ internal static class GameStarter
                 gameId,
                 seat,
                 claimant.PlayerToken,
-                new ClaimSeatRequest(claimant.Nickname),
+                claimant.Claim,
                 CancellationToken.None
             );
         return new Seating(gameId, new SeatClaim(seat, claimed.Token));
@@ -188,7 +188,7 @@ internal static class GameStarter
     /// </summary>
     public static async Task<Seating> Resume(IGameServing games, string gameId, SeatClaim claim, Claimant claimant)
     {
-        IdentifySeatRequest request = new(claim.Token, claimant.Nickname);
+        IdentifySeatRequest request = new(claim.Token, claimant.Nickname, claimant.AliasToken);
         _ = await Requests.Attempt(
             () => games.Identify(gameId, claim.Seat, claimant.PlayerToken, request, CancellationToken.None)
         );

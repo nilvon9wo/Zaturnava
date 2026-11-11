@@ -316,6 +316,67 @@ public sealed class PlayerServiceTest
     }
 
     [Fact]
+    public async Task CheckGuestName_WhenAPlayerGoesByTheNickname_ThrowsNameTakenException()
+    {
+        // Arrange
+        _ = await this._service.SignIn(Login, "Ada", this._cancellation);
+
+        // Act
+        Task checking = this._service.CheckGuestName(" ada ", null, this._cancellation);
+
+        // Assert
+        _ = await Assert.ThrowsAsync<NameTakenException>(() => checking);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("another token")]
+    public async Task CheckGuestName_WhenAnotherGuestHoldsTheNickname_ThrowsNameTakenException(string? aliasToken)
+    {
+        // Arrange
+        _ = await this._service.TakeAlias("Grace", null, this._cancellation);
+
+        // Act
+        Task checking = this._service.CheckGuestName("Grace", aliasToken, this._cancellation);
+
+        // Assert
+        _ = await Assert.ThrowsAsync<NameTakenException>(() => checking);
+    }
+
+    [Fact]
+    public async Task CheckGuestName_WhenTheGuestHoldsTheNicknameByTheTokenGiven_LetsThemGoByIt()
+    {
+        // Arrange
+        GuestAlias held = await this._service.TakeAlias("Grace", null, this._cancellation);
+
+        // Act
+        Exception? refused = await Record.ExceptionAsync(() =>
+            this._service.CheckGuestName("Grace", held.Token, this._cancellation)
+        );
+
+        // Assert
+        Assert.Null(refused);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("   ")]
+    [InlineData("Hopper")]
+    public async Task CheckGuestName_WhenNoOneElseGoesByTheNickname_LetsTheGuestGoByIt(string? nickname)
+    {
+        // Arrange
+        _ = await this._service.SignIn(Login, "Ada", this._cancellation);
+
+        // Act
+        Exception? refused = await Record.ExceptionAsync(() =>
+            this._service.CheckGuestName(nickname, null, this._cancellation)
+        );
+
+        // Assert
+        Assert.Null(refused);
+    }
+
+    [Fact]
     public async Task TakeAlias_WhenNoOneHasIt_GivesItHeldByANewToken()
     {
         // Arrange - nothing beyond the empty store

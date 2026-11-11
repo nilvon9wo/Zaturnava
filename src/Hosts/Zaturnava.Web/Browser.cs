@@ -189,8 +189,11 @@ internal sealed class Browser(IJSRuntime js, IGameServing games)
     public async ValueTask<string?> Nickname() =>
         await this.Load(NicknameKey) is { Length: > 0 } nickname ? nickname : null;
 
-    /// <summary>Who takes a seat from this browser: the player signed in, if one is, and a guest's nickname.</summary>
-    public async ValueTask<Claimant> Claimant() => new(await this.PlayerToken(), await this.Nickname());
+    /// <summary>
+    /// Who takes a seat from this browser: the player signed in, if one is, and a guest's nickname and alias token.
+    /// </summary>
+    public async ValueTask<Claimant> Claimant() =>
+        new(await this.PlayerToken(), await this.Nickname(), await this.AliasToken());
 
     /// <summary>Keeps the nickname to play by as a guest; an empty one clears it.</summary>
     public ValueTask SetNickname(string nickname) => this.Save(NicknameKey, nickname.Trim());

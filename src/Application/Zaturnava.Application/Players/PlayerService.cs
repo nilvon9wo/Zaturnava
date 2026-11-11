@@ -114,6 +114,23 @@ public sealed class PlayerService(
         return new GuestAlias(free, holder);
     }
 
+    /// <summary>
+    /// Refuses a guest the <paramref name="nickname"/> they would be shown by at a seat (<see cref="Nicknames.Of"/>)
+    /// if a player goes by it, or a guest holds it as their alias but by another token than
+    /// <paramref name="aliasToken"/> (Proposed): no guest passes for a player, nor for another guest. A name no one
+    /// goes by or holds is anyone's, alias or not, so a program playing as a guest needs none.
+    /// </summary>
+    /// <exception cref="NameTakenException">Someone else goes by the nickname.</exception>
+    public async Task CheckGuestName(string? nickname, string? aliasToken, CancellationToken cancellationToken)
+    {
+        if (Nicknames.Of(nickname) is { } named
+            && (await this._store.IsNameTaken(named, null, cancellationToken)
+                || this._aliases.IsHeld(named, aliasToken is null ? null : SeatTokens.Hash(aliasToken))))
+        {
+            throw new NameTakenException(named);
+        }
+    }
+
     /// <summary>The alias <paramref name="token"/> holds, held anew; none, if it holds none now.</summary>
     public GuestAlias? RenewAlias([Required] string token) =>
         this._aliases.Renew(SeatTokens.Hash(token)) is { } alias ? new GuestAlias(alias, token) : null;

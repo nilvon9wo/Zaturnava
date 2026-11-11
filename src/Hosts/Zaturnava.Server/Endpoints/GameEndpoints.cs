@@ -286,7 +286,8 @@ internal static class GameEndpoints
         CancellationToken cancellationToken
     )
     {
-        PlayerId? claimant = await ClaimantOf(request, players, cancellationToken);
+        PlayerId? claimant =
+            await GuestChecked(request, claim?.Nickname, claim?.AliasToken, players, cancellationToken);
         string token = await games.Claim(
             new GameId(gameId),
             new SeatId(seat),
@@ -312,7 +313,8 @@ internal static class GameEndpoints
         CancellationToken cancellationToken
     )
     {
-        PlayerId? claimant = await ClaimantOf(request, players, cancellationToken);
+        PlayerId? claimant =
+            await GuestChecked(request, identify.Nickname, identify.AliasToken, players, cancellationToken);
         await games.Identify(
             new GameId(gameId),
             new SeatId(seat),
@@ -357,7 +359,8 @@ internal static class GameEndpoints
         CancellationToken cancellationToken
     )
     {
-        PlayerId? claimant = await ClaimantOf(request, players, cancellationToken);
+        PlayerId? claimant =
+            await GuestChecked(request, claim?.Nickname, claim?.AliasToken, players, cancellationToken);
         string token = await games.TakeOver(
             new GameId(gameId),
             new SeatId(seat),
@@ -366,6 +369,27 @@ internal static class GameEndpoints
             cancellationToken
         );
         return new SeatClaimedDto(token);
+    }
+
+    /// <summary>
+    /// The player the request's token stands for, as <see cref="ClaimantOf"/>; or, if it carries none, none, once
+    /// the guest is seen to be free to go by <paramref name="nickname"/> (<see cref="PlayerService.CheckGuestName"/>).
+    /// </summary>
+    private static async Task<PlayerId?> GuestChecked(
+        HttpRequest request,
+        string? nickname,
+        string? aliasToken,
+        PlayerService players,
+        CancellationToken cancellationToken
+    )
+    {
+        PlayerId? claimant = await ClaimantOf(request, players, cancellationToken);
+        if (claimant is null)
+        {
+            await players.CheckGuestName(nickname, aliasToken, cancellationToken);
+        }
+
+        return claimant;
     }
 
     /// <summary>The player the request's token stands for, if it carries one; refused, if it is no one's.</summary>
