@@ -34,6 +34,7 @@ internal sealed class Browser(IJSRuntime js, IGameServing games)
     private const string PreviewKey = "zaturnava.previews";
     private const string PlayerKey = "zaturnava.player";
     private const string NicknameKey = "zaturnava.nickname";
+    private const string AliasKey = "zaturnava.alias";
     private const string SetupKey = "zaturnava.setup";
     private const string LastGameKey = "zaturnava.last-game";
     private const string SetupOfKey = "zaturnava.setup-of.";
@@ -193,6 +194,12 @@ internal sealed class Browser(IJSRuntime js, IGameServing games)
 
     /// <summary>Keeps the nickname to play by as a guest; an empty one clears it.</summary>
     public ValueTask SetNickname(string nickname) => this.Save(NicknameKey, nickname.Trim());
+
+    /// <summary>The token this browser holds its guest's alias by (<see cref="GuestAliasDto"/>), if any.</summary>
+    public async ValueTask<string?> AliasToken() => await this.Load(AliasKey) is { Length: > 0 } token ? token : null;
+
+    /// <summary>Keeps the token the guest's alias is held by; an empty one forgets it.</summary>
+    public ValueTask RememberAlias(string token) => this.Save(AliasKey, token);
 
     /// <summary>
     /// Opens a window of its own at <paramref name="url"/>, to sign in, and has <paramref name="listener"/> told

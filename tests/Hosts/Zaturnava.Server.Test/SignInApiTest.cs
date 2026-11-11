@@ -579,6 +579,73 @@ public sealed partial class SignInApiTest(SigningInServer server) : IClassFixtur
     }
 
     [Fact]
+    public async Task TakeAlias_WhenAPlayerGoesByTheName_HoldsTheNextFreeForTheGuest()
+    {
+        // Arrange
+        _ = await this.Done("GitHub|31|Zelda", SigningInServer.Page);
+
+        // Act
+        GuestAliasDto taken = await server.GameClient().TakeAlias("zelda", null, this._cancellation);
+
+        // Assert
+        GuestAliasDto? held = await server.GameClient().MyAlias(taken.Token, this._cancellation);
+        Assert.Equal(("zelda 2", "zelda 2"), (taken.Alias, held?.Alias));
+    }
+
+    [Fact]
+    public async Task TakeAlias_WhenTheGuestHoldsOneAlready_LetsItGoForTheNewOneByTheSameToken()
+    {
+        // Arrange
+        GuestAliasDto first = await server.GameClient().TakeAlias("Yorick", null, this._cancellation);
+
+        // Act
+        GuestAliasDto second = await server.GameClient().TakeAlias("Xena", first.Token, this._cancellation);
+
+        // Assert
+        GuestAliasDto other = await server.GameClient().TakeAlias("Yorick", null, this._cancellation);
+        Assert.Equal(("Xena", first.Token, "Yorick"), (second.Alias, second.Token, other.Alias));
+    }
+
+    [Fact]
+    public async Task MyAlias_WhenTheTokenHoldsNone_IsNone()
+    {
+        // Arrange - nothing beyond the server
+
+        // Act
+        GuestAliasDto? held = await server.GameClient().MyAlias("held by no one", this._cancellation);
+
+        // Assert
+        Assert.Null(held);
+    }
+
+    [Fact]
+    public async Task MyAlias_WhenNoTokenIsSent_IsUnauthorized()
+    {
+        // Arrange - nothing beyond the server
+
+        // Act
+        using HttpResponseMessage response = await this.Send(HttpMethod.Get, GameRoutes.MyAlias, null);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Rename_WhenAGuestHoldsTheNameAsTheirAlias_IsRefused()
+    {
+        // Arrange
+        string token = TokenOf(await this.Done("GitHub|32|Wanda", SigningInServer.Page));
+        _ = await server.GameClient().TakeAlias("Valerie", null, this._cancellation);
+
+        // Act
+        Task renaming = server.GameClient().Rename(token, "valerie", this._cancellation);
+
+        // Assert
+        GameRequestRefusedException refused = await Assert.ThrowsAsync<GameRequestRefusedException>(() => renaming);
+        Assert.Equal(Refusal.Conflict, refused.Refusal);
+    }
+
+    [Fact]
     public async Task SignIn_WhenGivenACodeToLinkWith_SendsThePersonToTheServiceStill()
     {
         // Arrange - nothing beyond the server

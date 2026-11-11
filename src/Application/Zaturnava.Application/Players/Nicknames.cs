@@ -9,6 +9,9 @@ public static class Nicknames
     /// <summary>The longest a nickname may be, in characters; a longer one is cut.</summary>
     public const int MaximumLength = 20;
 
+    /// <summary>A guest's alias, when they give none (<see cref="PlayerService.TakeAlias"/>).</summary>
+    public const string Unnamed = "Guest";
+
     /// <summary>
     /// The nickname without control characters or the spaces around it, cut to <see cref="MaximumLength"/>; none,
     /// if nothing is left.

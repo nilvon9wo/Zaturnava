@@ -48,6 +48,15 @@ public static class GameRoutes
     /// <summary>The players by id: each one's profile, as anyone may see it.</summary>
     public const string Players = "api/players";
 
+    /// <summary>
+    /// Where a guest takes an alias for their visit (<see cref="TakeAliasRequest"/>, <see cref="GuestAliasDto"/>), no
+    /// one else's, sending the token of the one they hold, if any.
+    /// </summary>
+    public const string Aliases = "api/aliases";
+
+    /// <summary>The alias the bearer of an alias's token holds, renewed by asking; none, if it has lapsed.</summary>
+    public const string MyAlias = Aliases + "/mine";
+
     /// <summary>The players standing highest at each game (<see cref="StandingDto"/>).</summary>
     public const string Leaderboards = "api/leaderboards";
 

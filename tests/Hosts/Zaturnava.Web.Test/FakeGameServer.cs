@@ -373,6 +373,27 @@ internal sealed class FakeGameServer : IGameServing
             return isKnown;
         });
 
+    /// <summary>The aliases guests hold, by the token they hold each by: none, unless taken.</summary>
+    public ImmutableDictionary<string, string> Aliases { get; set; } = [];
+
+    /// <summary>The names someone else goes by: taking one gives it as "name 2".</summary>
+    public ImmutableHashSet<string> TakenNames { get; set; } = [];
+
+    public Task<GuestAliasDto> TakeAlias(string? alias, string? token, CancellationToken cancellationToken) =>
+        this.SignedIn(() =>
+        {
+            string holder = token ?? $"alias-{(this.Aliases.Count + 1).ToString(CultureInfo.InvariantCulture)}";
+            string wanted = string.IsNullOrWhiteSpace(alias) ? "Guest" : alias.Trim();
+            string free = this.TakenNames.Contains(wanted) ? $"{wanted} 2" : wanted;
+            this.Aliases = this.Aliases.SetItem(holder, free);
+            return new GuestAliasDto(free, holder);
+        });
+
+    public Task<GuestAliasDto?> MyAlias([Required] string token, CancellationToken cancellationToken) =>
+        this.SignedIn(() =>
+            this.Aliases.TryGetValue(token, out string? alias) ? new GuestAliasDto(alias, token) : null
+        );
+
     /// <summary>The player the token stands for, changed, and kept so; none, if it stands for no one.</summary>
     private PlayerDto? Changed(string token, Func<PlayerDto, PlayerDto> change)
     {

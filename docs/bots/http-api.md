@@ -283,6 +283,22 @@ player, so a seat it claims is theirs, and is always shown as played by an AI. I
 but changing the account (renaming, link codes, unlinking, deleting, more AI tokens) answers `403`. Signing
 out with it lets it go; deleting the account lets every one go. The page shows a new one only once.
 
+### A guest's name for the visit
+
+A guest who does not sign in may still go by a name of their own for the visit, one no other guest holds then
+and no player goes by (Stated):
+
+| | Request | Reply |
+|---|---|---|
+| Take a name | `POST api/aliases`, with `{"alias": "..."}`, and with the token of the alias held already, if any | `{"alias": "...", "token": "..."}`: the name, or the next free of `name 2`, `name 3` and so on; `Guest`, if none is asked for |
+| The name the token holds | `GET api/aliases/mine`, with the alias token | `{"alias": "...", "token": "..."}`, held anew; or `401`, if it holds none |
+
+Taking a name with the token of one held lets that one go. A name is held for twelve hours from when it was
+last taken or asked after, and kept only in the server's memory, so a restart frees every one. While it is held,
+no player may rename themselves to it either. The game page takes one when the guest chooses a name, and asks
+after it on every visit. The name a seat shows is still the one sent when claiming it: the server does not yet
+check that it is the guest's own (Proposed, backlog N33).
+
 ## Refusals
 
 A request the server will not do is answered with a [problem](https://www.rfc-editor.org/rfc/rfc9457)

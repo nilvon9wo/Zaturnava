@@ -187,6 +187,15 @@ public interface IGameServing
     Task SignOut([Required] string token, CancellationToken cancellationToken);
 
     /// <summary>
+    /// Takes <paramref name="alias"/> for a guest's visit, or the first like it that is free ("Ada 2"), held by
+    /// <paramref name="token"/>, if the guest holds one already, which it lets go; else by a new token.
+    /// </summary>
+    Task<GuestAliasDto> TakeAlias(string? alias, string? token, CancellationToken cancellationToken);
+
+    /// <summary>The alias <paramref name="token"/> holds, renewed; none, if it has lapsed.</summary>
+    Task<GuestAliasDto?> MyAlias([Required] string token, CancellationToken cancellationToken);
+
+    /// <summary>
     /// Deletes the account the player's <paramref name="token"/> stands for: their name, sign-ins and sessions.
     /// Whether there was one to delete.
     /// </summary>

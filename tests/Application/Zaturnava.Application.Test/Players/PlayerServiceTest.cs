@@ -14,11 +14,15 @@ public sealed class PlayerServiceTest
     private readonly SteppedTime _time = new();
     private readonly InMemoryPlayerStore _store = new();
     private readonly InMemoryGameStore _games = new();
+    private readonly GuestAliases _aliases;
     private readonly PlayerService _service;
     private readonly CancellationToken _cancellation = TestContext.Current.CancellationToken;
 
-    public PlayerServiceTest() =>
-        this._service = new(this._store, this._games, new LinkCodes(this._time), this._time);
+    public PlayerServiceTest()
+    {
+        this._aliases = new GuestAliases(this._time);
+        this._service = new(this._store, this._games, new LinkCodes(this._time), this._time, this._aliases);
+    }
 
     [Fact]
     public async Task SignIn_WhenAgainLater_KeepsWhenTheyLastSignedIn()
@@ -282,6 +286,168 @@ public sealed class PlayerServiceTest
 
         // Assert
         Assert.Equal(new string('x', PlayerService.MaximumNameLength - 2) + " 2", second.Player.Name);
+    }
+
+    [Fact]
+    public async Task SignIn_WhenAGuestHoldsTheNameAsTheirAlias_NamesTheNewPlayerTheNextFree()
+    {
+        // Arrange
+        _ = await this._service.TakeAlias("Ada", null, this._cancellation);
+
+        // Act
+        SignedIn signedIn = await this._service.SignIn(Login, "ada", this._cancellation);
+
+        // Assert
+        Assert.Equal("ada 2", signedIn.Player.Name);
+    }
+
+    [Fact]
+    public async Task Rename_WhenAGuestHoldsTheNameAsTheirAlias_IsRefused()
+    {
+        // Arrange
+        SignedIn signedIn = await this._service.SignIn(Login, "Ada", this._cancellation);
+        _ = await this._service.TakeAlias("Grace", null, this._cancellation);
+
+        // Act
+        Task renaming = this._service.Rename(signedIn.Token, "Grace", this._cancellation);
+
+        // Assert
+        _ = await Assert.ThrowsAsync<NameTakenException>(() => renaming);
+    }
+
+    [Fact]
+    public async Task TakeAlias_WhenNoOneHasIt_GivesItHeldByANewToken()
+    {
+        // Arrange - nothing beyond the empty store
+
+        // Act
+        GuestAlias taken = await this._service.TakeAlias("  Ada  ", null, this._cancellation);
+
+        // Assert
+        Assert.Equal(("Ada", true, true), (taken.Alias, taken.Token.Length > 0, this._aliases.IsHeld("ADA")));
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("  \t ")]
+    public async Task TakeAlias_WhenNothingIsLeftOfIt_TakesGuest(string? wanted)
+    {
+        // Act
+        GuestAlias taken = await this._service.TakeAlias(wanted, null, this._cancellation);
+
+        // Assert
+        Assert.Equal(Nicknames.Unnamed, taken.Alias);
+    }
+
+    [Fact]
+    public async Task TakeAlias_WhenAPlayerGoesByIt_GivesTheNextFree()
+    {
+        // Arrange
+        _ = await this._service.SignIn(Login, "Ada", this._cancellation);
+
+        // Act
+        GuestAlias taken = await this._service.TakeAlias("ADA", null, this._cancellation);
+
+        // Assert
+        Assert.Equal("ADA 2", taken.Alias);
+    }
+
+    [Fact]
+    public async Task TakeAlias_WhenOtherGuestsHoldIt_GivesTheNextFree()
+    {
+        // Arrange
+        _ = await this._service.TakeAlias("Ada", null, this._cancellation);
+        _ = await this._service.TakeAlias("Ada", null, this._cancellation);
+
+        // Act
+        GuestAlias taken = await this._service.TakeAlias("ada", null, this._cancellation);
+
+        // Assert
+        Assert.Equal("ada 3", taken.Alias);
+    }
+
+    [Fact]
+    public async Task TakeAlias_WhenALongAliasIsTaken_CutsItToFitItsNumber()
+    {
+        // Arrange
+        string longest = new('x', Nicknames.MaximumLength);
+        _ = await this._service.TakeAlias(longest, null, this._cancellation);
+
+        // Act
+        GuestAlias taken = await this._service.TakeAlias(longest, null, this._cancellation);
+
+        // Assert
+        Assert.Equal(new string('x', Nicknames.MaximumLength - 2) + " 2", taken.Alias);
+    }
+
+    [Fact]
+    public async Task TakeAlias_WhenTheGuestHoldsOneAlready_LetsThatGoForOthers()
+    {
+        // Arrange
+        GuestAlias first = await this._service.TakeAlias("Ada", null, this._cancellation);
+
+        // Act
+        GuestAlias second = await this._service.TakeAlias("Grace", first.Token, this._cancellation);
+
+        // Assert
+        GuestAlias other = await this._service.TakeAlias("Ada", null, this._cancellation);
+        Assert.Equal(("Grace", first.Token, "Ada"), (second.Alias, second.Token, other.Alias));
+    }
+
+    [Fact]
+    public async Task TakeAlias_WhenTheGuestTakesTheOneTheyHold_KeepsIt()
+    {
+        // Arrange
+        GuestAlias first = await this._service.TakeAlias("Ada", null, this._cancellation);
+
+        // Act
+        GuestAlias again = await this._service.TakeAlias("ada", first.Token, this._cancellation);
+
+        // Assert
+        Assert.Equal("ada", again.Alias);
+    }
+
+    [Fact]
+    public async Task TakeAlias_WhenAnotherHeldItButLetItLapse_GivesIt()
+    {
+        // Arrange
+        _ = await this._service.TakeAlias("Ada", null, this._cancellation);
+        this._time.Pass(GuestAliases.Kept);
+
+        // Act
+        GuestAlias taken = await this._service.TakeAlias("Ada", null, this._cancellation);
+
+        // Assert
+        Assert.Equal("Ada", taken.Alias);
+    }
+
+    [Fact]
+    public async Task RenewAlias_WhenTheTokenHoldsOne_HoldsItAnewForAsLong()
+    {
+        // Arrange
+        GuestAlias taken = await this._service.TakeAlias("Ada", null, this._cancellation);
+        this._time.Pass(GuestAliases.Kept / 2);
+
+        // Act
+        GuestAlias? renewed = this._service.RenewAlias(taken.Token);
+
+        // Assert
+        this._time.Pass(GuestAliases.Kept * 3 / 4);
+        Assert.Equal((taken, true), (renewed, this._aliases.IsHeld("Ada")));
+    }
+
+    [Fact]
+    public async Task RenewAlias_WhenItLapsed_IsNone()
+    {
+        // Arrange
+        GuestAlias taken = await this._service.TakeAlias("Ada", null, this._cancellation);
+        this._time.Pass(GuestAliases.Kept);
+
+        // Act
+        GuestAlias? renewed = this._service.RenewAlias(taken.Token);
+
+        // Assert
+        Assert.Null(renewed);
     }
 
     [Theory]

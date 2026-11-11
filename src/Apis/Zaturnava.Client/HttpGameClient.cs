@@ -244,6 +244,18 @@ public sealed class HttpGameClient(HttpClient http) : IGameServing
         _ = await StoodForSomeone(response, cancellationToken);
     }
 
+    public Task<GuestAliasDto> TakeAlias(string? alias, string? token, CancellationToken cancellationToken) =>
+        this.Send<GuestAliasDto>(
+            HttpMethod.Post,
+            GameRoutes.Aliases,
+            new TakeAliasRequest(alias),
+            token,
+            cancellationToken
+        );
+
+    public Task<GuestAliasDto?> MyAlias([Required] string token, CancellationToken cancellationToken) =>
+        this.IfSomeone<GuestAliasDto>(HttpMethod.Get, GameRoutes.MyAlias, null, token, cancellationToken);
+
     public async Task<bool> DeleteMe([Required] string token, CancellationToken cancellationToken)
     {
         using HttpResponseMessage response =

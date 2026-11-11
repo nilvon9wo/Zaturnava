@@ -1,11 +1,13 @@
-@* Signing in, which is optional. Until then, the nickname played by as a guest, if any, and one button, Sign in,
-   opening a dialog that offers both ways to play: as a guest, by a nickname (shown as "Nickname (guest)", and kept
-   in the browser for every table until cleared); or signed in, with any service the server is set up for, each in a
-   window of its own. Once signed in, the player's name, a button to sign out (the server lets the token go), and
-   one to delete the account, which asks first, here in the page, and once confirmed has the server forget the
-   player altogether; and their profile, where they may change their username, which no other player may have, and
-   link other services to sign in with (or unlink any but the last), and have a token issued for an AI to play for
-   them. The player's token is kept in the browser. *@
+@* Who is playing, top right (Stated 2026-11-11), one of three things. To someone not yet known, one call to say who
+   they are, opening a dialog that offers both ways: an alias for the visit, shown as "Alias (guest)", which the
+   server holds for them alone (no other guest's at the time, and no player's username: "Ada 2", if Ada is taken),
+   kept in the browser with the token it is held by, and renewed as the page opens; or signing in, with any service
+   the server is set up for, each in a window of its own. To a guest, their alias, which opens the same dialog. To a
+   player signed in, their username, with a down arrow: a menu of their profile (where they may change their
+   username, which no one else may have, link other services to sign in with, or unlink any but the last, and have a
+   token issued for an AI to play for them), signing out (the server lets the token go), and deleting the account,
+   which asks first, here in the page, and once confirmed has the server forget the player altogether. The player's
+   token is kept in the browser. *@
 @using Microsoft.JSInterop
 @implements IDisposable
 @inject IGameServing Games
@@ -16,10 +18,21 @@
 @if (this._signedIn is var (player, token))
 {
     <span class="player">
-        Signed in as <strong>@player.Name</strong>
-        <button class="open-profile" @onclick="() => this.OpenProfile(token)">Profile</button>
-        <button class="sign-out" @onclick="() => this.SignOut(token)">Sign out</button>
-        <button class="delete-account" @onclick="() => this._isConfirming = true">Delete account</button>
+        <button class="account-name"
+                aria-haspopup="menu"
+                aria-expanded="@(this._isMenuOpen ? "true" : "false")"
+                title="Your account"
+                @onclick="() => this._isMenuOpen = !this._isMenuOpen"><strong>@player.Name</strong> ▾</button>
+        @if (this._isMenuOpen)
+        {
+            <span class="account-menu" role="menu" aria-label="Your account">
+                <button class="open-profile" role="menuitem" @onclick="() => this.OpenProfile(token)">
+                    Profile and sign-in services
+                </button>
+                <button class="sign-out" role="menuitem" @onclick="() => this.SignOut(token)">Sign out</button>
+                <button class="delete-account" role="menuitem" @onclick="this.AskToDelete">Delete account</button>
+            </span>
+        }
     </span>
     @if (this._isConfirming)
     {
@@ -93,25 +106,38 @@ else
     <span class="player">
         @if (this._nickname is { Length: > 0 } nickname)
         {
-            <span class="guest-name">Playing as <strong>@nickname</strong> (guest)</span>
+            <button class="open-sign-in guest-name"
+                    aria-haspopup="dialog"
+                    title="Change your name for this visit, or sign in"
+                    @onclick="() => this._isChoosing = true"><strong>@nickname</strong> (guest) ▾</button>
         }
-        <button class="open-sign-in" @onclick="() => this._isChoosing = true">Sign in</button>
+        else
+        {
+            <button class="open-sign-in" aria-haspopup="dialog" @onclick="() => this._isChoosing = true">
+                Sign in, or choose a name
+            </button>
+        }
     </span>
     @if (this._isChoosing)
     {
         <div class="backdrop">
             <div class="dialog sign-in-dialog" role="dialog" aria-modal="true" aria-labelledby="sign-in-title">
-                <h2 id="sign-in-title">Sign in</h2>
-                <p>Play as a guest, by a nickname, shown to the others as "Nickname (guest)". A guest may play, and read
-                    what is said at the table.</p>
+                <h2 id="sign-in-title">Who are you?</h2>
+                <p>Play as a guest, by a name for this visit, shown to the others as "Name (guest)": no one else's, so
+                    if it is taken, the next free one ("Ada 2"). A guest may play, and read what is said at the
+                    table.</p>
                 <label class="nickname">
-                    Nickname
+                    Name for this visit
                     <input class="nickname"
                            maxlength="@ClaimSeatRequest.MaximumNicknameLength"
                            placeholder="none: just guest"
                            value="@this._nickname"
                            @onchange="this.SetNickname" />
                 </label>
+                @if (this._aliasNote is { } note)
+                {
+                    <p class="alias-note" role="status">@note</p>
+                }
                 <div class="actions">
                     <button class="as-guest" @onclick="() => this._isChoosing = false">Play as a guest</button>
                 </div>
@@ -152,6 +178,10 @@ else
     private bool _isConfirming;
     private bool _isChoosing;
     private bool _isEditing;
+    private bool _isMenuOpen;
+
+    /// <summary>Why the guest's alias is not the name they asked for (it was taken), until they choose another.</summary>
+    private string? _aliasNote;
 
     /// <summary>
     /// A code to link another service with, asked for as the profile opens, so that a window can be opened the moment
@@ -171,6 +201,29 @@ else
     {
         this._nickname = await this.Browser.Nickname();
         _ = await Requests.Attempt(this.Load);
+        _ = this._signedIn is null && this._nickname is { } nickname
+            ? await Requests.Attempt(() => this.KeepAlias(nickname))
+            : null;
+    }
+
+    /// <summary>
+    /// Renews the alias this browser holds for its guest; or, if it holds none now (it lapsed, or it was kept before
+    /// aliases were held), takes <paramref name="nickname"/> afresh, or the next free name like it.
+    /// </summary>
+    private async Task KeepAlias(string nickname)
+    {
+        GuestAliasDto? held = await this.Browser.AliasToken() is { } token
+            ? await this.Games.MyAlias(token, CancellationToken.None)
+            : null;
+        await this.Hold(held ?? await this.Games.TakeAlias(nickname, null, CancellationToken.None));
+    }
+
+    /// <summary>Plays by the alias held from now on, keeping it and the token it is held by in the browser.</summary>
+    private async Task Hold(GuestAliasDto held)
+    {
+        await this.Browser.RememberAlias(held.Token);
+        await this.Browser.SetNickname(held.Alias);
+        this._nickname = held.Alias;
     }
 
     /// <summary>The token the sign-in window posted back: remembered, and the player it stands for shown.</summary>
@@ -220,8 +273,15 @@ else
 
     private async Task OpenProfile(string token)
     {
+        this._isMenuOpen = false;
         this._isEditing = true;
         await this.AskLinkCode(token);
+    }
+
+    private void AskToDelete()
+    {
+        this._isMenuOpen = false;
+        this._isConfirming = true;
     }
 
     private async Task AskLinkCode(string token) =>
@@ -300,12 +360,32 @@ else
         }
     }
 
-    /// <summary>Keeps the nickname to play by as a guest, at every table from now on; an empty one clears it.</summary>
+    /// <summary>
+    /// Has the server hold the name the guest chose as their alias, letting go the one they held, and plays by it at
+    /// every table from now on, told so if it was taken and they are given the next free one; told why not, if the
+    /// server cannot. An empty name clears it: they play as just "guest".
+    /// </summary>
     private async Task SetNickname(ChangeEventArgs change)
     {
-        string nickname = $"{change.Value}";
-        await this.Browser.SetNickname(nickname);
-        this._nickname = nickname.Trim();
+        string wanted = $"{change.Value}".Trim();
+        this._aliasNote = null;
+        if (wanted.Length == 0)
+        {
+            await this.Browser.SetNickname(string.Empty);
+            await this.Browser.RememberAlias(string.Empty);
+            this._nickname = null;
+            return;
+        }
+
+        this._notice = await Requests.Attempt(async () =>
+        {
+            GuestAliasDto held =
+                await this.Games.TakeAlias(wanted, await this.Browser.AliasToken(), CancellationToken.None);
+            await this.Hold(held);
+            this._aliasNote = string.Equals(held.Alias, wanted, StringComparison.Ordinal)
+                ? null
+                : $"{wanted} is taken, so you are {held.Alias}.";
+        });
     }
 
     private async Task Forget()
@@ -314,6 +394,7 @@ else
         this._signedIn = null;
         this._isConfirming = false;
         this._isEditing = false;
+        this._isMenuOpen = false;
         await this.OnSignedInOrOut.InvokeAsync();
     }
 }
