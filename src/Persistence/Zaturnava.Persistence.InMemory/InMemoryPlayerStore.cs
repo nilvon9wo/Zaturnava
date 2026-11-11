@@ -39,6 +39,13 @@ public sealed class InMemoryPlayerStore : IPlayerPersisting
                 .ToImmutableDictionary(player => player.Id, player => player.Name)
         );
 
+    public Task<bool> IsNameTaken([Required] string name, PlayerId? except, CancellationToken cancellationToken) =>
+        Task.FromResult(
+            this._players.Values.Any(player =>
+                player.Id != except && string.Equals(player.Name, name, StringComparison.OrdinalIgnoreCase)
+            )
+        );
+
     public Task<ImmutableDictionary<PlayerId, DateTimeOffset>> LastSignedIn(
         [Required] ImmutableList<PlayerId> players,
         CancellationToken cancellationToken
@@ -148,24 +155,6 @@ public sealed class InMemoryPlayerStore : IPlayerPersisting
                 .Where(standing => standing.Game == game)
                 .OrderByDescending(standing => standing.Elo)
                 .ThenByDescending(standing => standing.Experience)
-                .ThenBy(standing => standing.Player.Value, StringComparer.Ordinal)
-                .Take(count),
-        ];
-        return Task.FromResult(leaders);
-    }
-
-    public Task<ImmutableList<Standing>> LeadersAgainstBots(
-        [Required] string game,
-        int count,
-        CancellationToken cancellationToken
-    )
-    {
-        ImmutableList<Standing> leaders =
-        [
-            .. this._standings.Values
-                .Where(standing => standing.Game == game && standing.PlayedAgainstBots > 0)
-                .OrderByDescending(standing => standing.WonAgainstBots)
-                .ThenBy(standing => standing.LostAgainstBots)
                 .ThenBy(standing => standing.Player.Value, StringComparer.Ordinal)
                 .Take(count),
         ];

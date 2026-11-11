@@ -17,8 +17,8 @@ namespace Net.NowhereAtAll.Zaturnava.Application.Players;
 /// (1 won, a half drawn, 0 lost) is from what their team's rating led to expect against the other teams, on average:
 /// only for a game that counts toward Elo (<see cref="CountsTowardElo"/>).
 /// Each time a player is on the winning team, they gain as experience their own points plus their team's; and in every
-/// game, they add their own points to those they have scored. A game against bots alone counts too among a player's
-/// games against bots; and each game counts for the server's bots at it (<see cref="BotStanding"/>), Elo aside.
+/// game, they add their own points to those they have scored. Each game counts for the server's bots at it too
+/// (<see cref="BotStanding"/>), Elo aside.
 /// </summary>
 public sealed class StandingService(
     IRulesetLocating rulesets,
@@ -102,39 +102,32 @@ public sealed class StandingService(
     }
 
     /// <summary>
-    /// The players who have done best at <paramref name="game"/> against bots alone, each by name, most games won so
-    /// first, then fewest lost: at most <see cref="MostLeaders"/> (Proposed).
-    /// </summary>
-    public async Task<ImmutableList<Leader>> LeadersAgainstBots(
-        [Required] string game,
-        CancellationToken cancellationToken
-    )
-    {
-        ImmutableList<Standing> leaders = await this._players.LeadersAgainstBots(game, MostLeaders, cancellationToken);
-        ImmutableDictionary<PlayerId, string> names =
-            await this._players.Names([.. leaders.Select(standing => standing.Player)], cancellationToken);
-        return
-        [
-            .. leaders.Select(standing =>
-                new Leader(names.GetValueOrDefault(standing.Player, PlayerService.Deleted), standing)
-            ),
-        ];
-    }
-
-    /// <summary>
     /// The server's bots standing highest at <paramref name="game"/>, each by name, most games won first, then fewest
-    /// lost: at most <see cref="MostLeaders"/> (Proposed). A bot no longer offered is left out.
+    /// lost: at most <see cref="MostLeaders"/> (Proposed). A bot no longer offered is left out. Each is rated as the
+    /// mean of its ratings at the game's sizes, or, rated at none, <see cref="Standing.FirstElo"/>, as a game rates it.
     /// </summary>
     public async Task<ImmutableList<BotLeader>> BotLeaders([Required] string game, CancellationToken cancellationToken)
     {
         ImmutableList<BotStanding> leaders = await this._players.BotLeaders(game, MostLeaders, cancellationToken);
+        ImmutableHashSet<string> sizes =
+        [
+            .. this._rulesets.All.Where(ruleset => ruleset.GameId == game).Select(ruleset => ruleset.Id),
+        ];
         return
         [
             .. leaders.Join(
                 this._bots.Bots,
                 standing => standing.BotId,
                 profile => profile.Id,
-                (standing, profile) => new BotLeader(profile.Name, standing),
+                (standing, profile) =>
+                    new BotLeader(profile.Name, standing)
+                    {
+                        Elo = profile.Ratings
+                            .Where(rating => sizes.Contains(rating.Key))
+                            .Select(rating => (double)rating.Value)
+                            .DefaultIfEmpty(Standing.FirstElo)
+                            .Average(),
+                    },
                 StringComparer.Ordinal
             ),
         ];
@@ -195,9 +188,7 @@ public sealed class StandingService(
         bool isRated = CountsTowardElo(snapshot.Record);
         ImmutableList<Standing> after =
         [
-            .. before.Select(entry =>
-                After(state, outcome, teams, entry.Key, entry.Value, isRated, IsAgainstOnly(snapshot, entry.Key, IsBot))
-            ),
+            .. before.Select(entry => After(state, outcome, teams, entry.Key, entry.Value, isRated)),
         ];
         await this._players.Keep(after, cancellationToken);
         await this.RateBots(snapshot, outcome, cancellationToken);
@@ -298,8 +289,7 @@ public sealed class StandingService(
 
     /// <summary>
     /// Where the player at <paramref name="seat"/> stands, the game over: their Elo as it was, unless the game
-    /// <paramref name="isRated"/>; counted among their games against bots too, if it
-    /// <paramref name="isAgainstBots"/> alone.
+    /// <paramref name="isRated"/>.
     /// </summary>
     private static Standing After(
         GameState state,
@@ -307,8 +297,7 @@ public sealed class StandingService(
         ImmutableDictionary<int, double> teams,
         SeatId seat,
         Standing before,
-        bool isRated,
-        bool isAgainstBots
+        bool isRated
     )
     {
         int team = state.Teams.TeamOf(seat);
@@ -326,9 +315,6 @@ public sealed class StandingService(
             Won = before.Won + Counted(result, Result.Won),
             Lost = before.Lost + Counted(result, Result.Lost),
             Drawn = before.Drawn + Counted(result, Result.Drawn),
-            WonAgainstBots = before.WonAgainstBots + Counted(result, Result.Won, isAgainstBots),
-            LostAgainstBots = before.LostAgainstBots + Counted(result, Result.Lost, isAgainstBots),
-            DrawnAgainstBots = before.DrawnAgainstBots + Counted(result, Result.Drawn, isAgainstBots),
         };
     }
 

@@ -21,15 +21,6 @@ public interface IGameServing
     Task<ImmutableList<StandingDto>> Leaderboard([Required] string game, CancellationToken cancellationToken);
 
     /// <summary>
-    /// The signed-in players who have done best at <paramref name="game"/> against bots alone, most games won so
-    /// first, then fewest lost: at most 1000.
-    /// </summary>
-    Task<ImmutableList<StandingDto>> AgainstBotsLeaderboard(
-        [Required] string game,
-        CancellationToken cancellationToken
-    );
-
-    /// <summary>
     /// The server's bots standing highest at <paramref name="game"/>, most games won first, then fewest lost: at
     /// most 1000.
     /// </summary>

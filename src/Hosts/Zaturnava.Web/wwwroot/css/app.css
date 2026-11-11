@@ -258,10 +258,18 @@ html { scrollbar-gutter: stable; }
 .choices label { display: contents; }
 /* Each choice a row of its own: its name always starts one, even where the row before left a column free. */
 .choices .choice-name { grid-column: 1; }
-.choices p.rules { grid-column: 1 / -1; margin: 0; }
 .choices select, .panel label.scenario select { width: 100%; min-width: 0; }
-/* With the games it shows, under the Game, above the Size. */
-.choices label.previews { display: block; grid-column: 1 / -1; margin: 0 0 4px; font-size: 0.9em; }
+/* The one choice of game, for the whole lobby, across its top: with whether to show previews beside it. */
+.lobby-games {
+    flex: 1 1 100%;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 16px;
+}
+.lobby-games label.rules { display: flex; gap: 8px; align-items: center; font-weight: 700; }
+.lobby-games p.rules { margin: 0; font-weight: 700; }
+.lobby-games label.previews { font-size: 0.9em; }
 /* Play, at the bottom right of the panel, where the setup ends. */
 .start { display: flex; justify-content: flex-end; margin-top: 8px; }
 /* The lobby's bar stays at the foot of the window, however long or short the panels above it. */
@@ -284,7 +292,10 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
 .bot-guide .bots p { margin: 2px 0; }
 .bot-guide .costs { color: var(--danger, #c0392b); }
 .bot-guide .description, .bot-guide .ai { color: var(--muted); }
+/* A panel of the lobby: its widest board (the bots', eight columns) scrolls within it rather than widening the page. */
+.panel.leaderboard { overflow-x: auto; }
 .leaderboard .choice { display: flex; gap: 8px; align-items: center; margin: 8px 0; }
+.leaderboard .kind { margin-right: 4px; }
 .leaderboard .leaders { border-collapse: collapse; width: 100%; }
 .leaderboard .leaders th, .leaderboard .leaders td {
     text-align: right; padding: 4px 8px; border-bottom: 1px solid var(--panel-edge);

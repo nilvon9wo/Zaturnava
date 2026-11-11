@@ -12,9 +12,9 @@ first.
 - **N2** The database stays as it is through every change, by migrations; never wiped (*Stated*).
 - **N3** A leaderboard, for players to compete for; with each player's Elo and their **experience**: each time
   a player is on the winning team, they gain their own points plus their team's (*Stated*). Each player's
-  statistics also count the games they won, lost, drew and abandoned (*Stated*). *Done*: a **Leaderboard**
-  button in the page's bar lists, game by game (opening at the table's game, else the game last started:
-  *Stated*), the top 100 signed-in players by Elo, with their experience and
+  statistics also count the games they won, lost, drew and abandoned (*Stated*). *Done*: the **Leaderboard**,
+  a panel of the lobby, lists, game by game (opening at the game last started), the signed-in players by Elo,
+  with their experience, points and
   games won, lost, drawn and abandoned. A game is abandoned by a player while it is not over, has no guest at it
   (such games are purged instead), has been untouched for 24 hours, and waits for that player's own move; waiting
   for someone else's, it counts for no one, and once the player moves it counts no more (*Stated* 2026-11-06).
@@ -137,21 +137,28 @@ first.
   outside bot playing by the API or MCP.
 - Leaderboards for bots (*Stated 2026-11-07*): one of the bots alone, and ones showing how people fare against
   the bots. *Done* (*Proposed*: how): the leaderboard offers three boards. **Players** is as before. **Bots** lists
-  the server's bots, most games won first, each seat a bot played counting, with their record against people alone.
-  **People against bots** lists the players by their games against bots alone: every seat not on their team a
-  bot's. Counted from 2026-11-07, not for games before.
+  the server's bots, by Elo (each bot's rating from games between the bots, the mean of its ratings at the game's
+  sizes), each seat a bot played counting, with their record against people alone. **Everyone** *(Stated
+  2026-11-11: not how people fare against bots, which the first try counted, but one board that does not care
+  whether a row is a person or a bot)* lists players and bots together, by Elo, each marked 🧑 or 🤖. Counted
+  from 2026-11-07, not for games before.
+- The leaderboard a panel of the lobby, not a button in the bar (*Stated 2026-11-11*). *Done*: beside New game
+  and Games.
 - Every leaderboard sorts by any of its columns, its header clicked (Elo, experience, won, lost, drawn,
   abandoned), and shows ten at a time, paging for more (*Stated 2026-11-07*). *Done* (*Proposed*: how): a header
   clicked sorts most first, clicked again fewest first; the server sends up to 1000 of each board, and the page
-  sorts and pages them itself (a larger population would want the server to page instead). The Points column is
-  no longer shown, as it said little that experience does not (*Proposed*); the API still gives `points`.
+  sorts and pages them itself (a larger population would want the server to page instead). Points are shown on
+  every board (*Stated 2026-11-11*), explained under the board and in the column's header: the points each scored
+  itself, in every game finished, won or lost.
 - The names on the leaderboards open the player's, or the bot's, profile (*Stated 2026-11-07*). *Done*: as a
   name at a table does.
 - A player's profile filled out (*Stated 2026-11-07*): a description of their own, and a choice of which of the
   services they sign in with others may see.
 - A winning streak on the leaderboard, perhaps: open question [OQ9](open-questions.md#oq9-a-winning-streak).
 - A player's username unique (*Stated 2026-11-07*): no player may take a name another has. The profile's field
-  is called **Username**.
+  is called **Username**. *Done*: a rename to a name another player goes by, capitals or not, is refused (`409`)
+  and the profile says why. A new player whose service's name is taken gets the first of "Ada 2", "Ada 3" and so
+  on that is free (*Proposed*); names shared before this stay as they were (*Proposed*).
 - A signed-in player setting up a game may bar guests from it (*Stated 2026-11-01*). *Done* (*Proposed*: how):
   a custom game set up signed in may be **Players signed in only**; its open seats then refuse a guest, and the
   lobby asks a guest to sign in to join it. Playing such a game again keeps it for players signed in only.

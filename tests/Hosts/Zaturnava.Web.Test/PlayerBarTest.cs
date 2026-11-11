@@ -404,7 +404,7 @@ public sealed class PlayerBarTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ("Countess", "Name saved."),
+            ("Countess", "Username saved."),
             (bar.Find("span.player strong").TextContent, bar.Find("p.saved").TextContent)
         );
     }

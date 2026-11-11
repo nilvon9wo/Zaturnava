@@ -11,6 +11,9 @@ namespace Net.NowhereAtAll.Zaturnava.Persistence.EfCore;
 /// <summary>The players who have signed in, their logins and their sessions, in a relational database.</summary>
 public sealed class EfPlayerStore(GameDbContext context) : IPlayerPersisting
 {
+    /// <summary>What escapes a wildcard in a <c>LIKE</c> pattern.</summary>
+    private const string LikeEscape = "\\";
+
     private readonly GameDbContext _context = context;
 
     public async Task<Player?> ByLogin(Login login, CancellationToken cancellationToken)
@@ -54,6 +57,24 @@ public sealed class EfPlayerStore(GameDbContext context) : IPlayerPersisting
             .Where(entity => ids.Contains(entity.Id))
             .ToListAsync(cancellationToken);
         return known.ToImmutableDictionary(entity => new PlayerId(entity.Id), entity => entity.Name);
+    }
+
+    /// <remarks>
+    /// By <c>LIKE</c>, its wildcards escaped: without regard to capitals in SQLite (for ASCII letters) and in SQL
+    /// Server under its default collation.
+    /// </remarks>
+    public Task<bool> IsNameTaken([Required] string name, PlayerId? except, CancellationToken cancellationToken)
+    {
+        string pattern = name
+            .Replace(LikeEscape, LikeEscape + LikeEscape, StringComparison.Ordinal)
+            .Replace("%", LikeEscape + "%", StringComparison.Ordinal)
+            .Replace("_", LikeEscape + "_", StringComparison.Ordinal)
+            .Replace("[", LikeEscape + "[", StringComparison.Ordinal);
+        string? exception = except?.Value;
+        return this._context.Players.AnyAsync(
+            entity => EF.Functions.Like(entity.Name, pattern, LikeEscape) && entity.Id != exception,
+            cancellationToken
+        );
     }
 
     public async Task<ImmutableDictionary<PlayerId, DateTimeOffset>> LastSignedIn(
@@ -213,32 +234,9 @@ public sealed class EfPlayerStore(GameDbContext context) : IPlayerPersisting
             kept.Won = standing.Won;
             kept.Lost = standing.Lost;
             kept.Drawn = standing.Drawn;
-            kept.WonAgainstBots = standing.WonAgainstBots;
-            kept.LostAgainstBots = standing.LostAgainstBots;
-            kept.DrawnAgainstBots = standing.DrawnAgainstBots;
         }
 
         _ = await this._context.SaveChangesAsync(cancellationToken);
-    }
-
-    public async Task<ImmutableList<Standing>> LeadersAgainstBots(
-        [Required] string game,
-        int count,
-        CancellationToken cancellationToken
-    )
-    {
-        List<StandingEntity> leaders = await this._context.Standings
-            .AsNoTracking()
-            .Where(standing =>
-                standing.Game == game
-                && standing.WonAgainstBots + standing.LostAgainstBots + standing.DrawnAgainstBots > 0
-            )
-            .OrderByDescending(standing => standing.WonAgainstBots)
-            .ThenBy(standing => standing.LostAgainstBots)
-            .ThenBy(standing => standing.PlayerId)
-            .Take(count)
-            .ToListAsync(cancellationToken);
-        return [.. leaders.Select(ToStanding)];
     }
 
     public async Task<ImmutableDictionary<string, BotStanding>> BotStandings(
@@ -333,9 +331,6 @@ public sealed class EfPlayerStore(GameDbContext context) : IPlayerPersisting
             Won = entity.Won,
             Lost = entity.Lost,
             Drawn = entity.Drawn,
-            WonAgainstBots = entity.WonAgainstBots,
-            LostAgainstBots = entity.LostAgainstBots,
-            DrawnAgainstBots = entity.DrawnAgainstBots,
         };
 
     private static Player? ToPlayer(PlayerEntity? entity) =>

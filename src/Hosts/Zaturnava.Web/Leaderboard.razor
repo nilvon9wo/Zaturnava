@@ -1,110 +1,97 @@
-@* Who stands highest at each game, one board at a time: the players signed in, by their Elo rating at it, with their
-   experience and how many of its games they won, lost, drew and abandoned; the server's bots, by games won, with how
-   they did against people alone; or the players who have done best against bots alone. Each board sorts by any of
-   its columns, its header clicked (again, the other way), and shows ten at a time, page by page. One game at a time,
-   chosen among those the server offers: to begin with, at a table, the table's game; else the game the player last
-   started; else the first. Each name opens the player's, or the bot's, profile. Shown over the lobby or the table,
-   from the page's bar, until closed. *@
+@* Who stands highest at each game, one board at a time, as a panel of the lobby: the players signed in, by their Elo
+   rating at it, with their experience, their points and how many of its games they won, lost, drew and abandoned;
+   the server's bots, by their rating, with their points and how they did, all told and against people alone; or
+   everyone, players and bots together, each marked as a person or a bot. Each board sorts by any of its columns,
+   its header clicked (again, the other way), and shows ten at a time, page by page. Of the game the lobby has chosen,
+   at every size. Each name opens the player's, or the bot's, profile. *@
 @inject IGameServing Games
-@inject Browser Browser
 
-<div class="guide-backdrop">
-    <section class="guide leaderboard" role="dialog" aria-modal="true" aria-labelledby="leaderboard-title">
-        <header class="guide-head">
-            <h2 id="leaderboard-title">Leaderboard</h2>
-            <button class="close" @onclick="this.OnClose">Close</button>
-        </header>
+<div class="panel leaderboard">
+    <h2>Leaderboard</h2>
 
-        @if (this._problem is { } problem)
+    @if (this._problem is { } problem)
+    {
+        <p class="problem" role="alert">@problem</p>
+    }
+
+    <label class="choice">
+        <span class="choice-name">Board</span>
+        <select class="leaderboard-board" value="@this._board" @onchange="this.ChooseBoard">
+            <option value="@PlayersBoard">Players</option>
+            <option value="@BotsBoard">Bots</option>
+            <option value="@EveryoneBoard">Everyone</option>
+        </select>
+    </label>
+
+    @if (this._rows is { } rows)
+    {
+        @if (rows.IsEmpty)
         {
-            <p class="problem" role="alert">@problem</p>
+            <p class="no-leaders">@this.Columns.Empty</p>
         }
-
-        <label class="choice">
-            <span class="choice-name">Board</span>
-            <select class="leaderboard-board" value="@this._board" @onchange="this.ChooseBoard">
-                <option value="@PlayersBoard">Players</option>
-                <option value="@BotsBoard">Bots</option>
-                <option value="@AgainstBotsBoard">People against bots</option>
-            </select>
-        </label>
-
-        @if (this._games.Count > 1)
+        else
         {
-            <label class="choice">
-                <span class="choice-name">Game</span>
-                <select class="leaderboard-game" value="@this._game" @onchange="this.Choose">
-                    @foreach (RulesetDto game in this._games)
+            ImmutableList<Row> sorted = this.Sorted(rows);
+            int pages = ((sorted.Count - 1) / PageSize) + 1;
+            <table class="leaders @this.Columns.Class">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>@this.Columns.Who</th>
+                        @foreach (Column column in this.Columns.All)
+                        {
+                            <th title="@column.Title" aria-sort="@this.SortOf(column)">
+                                <button class="sort @column.Key" @onclick="() => this.SortBy(column)">
+                                    @column.Header@this.ArrowOf(column)
+                                </button>
+                            </th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ((Row row, int index) in sorted.Select((row, index) => (row, index))
+                        .Skip(this._page * PageSize)
+                        .Take(PageSize))
                     {
-                        <option value="@game.Game">@game.GameName</option>
-                    }
-                </select>
-            </label>
-        }
-
-        @if (this._rows is { } rows)
-        {
-            @if (rows.IsEmpty)
-            {
-                <p class="no-leaders">@this.Columns.Empty</p>
-            }
-            else
-            {
-                ImmutableList<Row> sorted = this.Sorted(rows);
-                int pages = ((sorted.Count - 1) / PageSize) + 1;
-                <table class="leaders @this.Columns.Class">
-                    <thead>
                         <tr>
-                            <th>#</th>
-                            <th>@this.Columns.Who</th>
-                            @foreach (Column column in this.Columns.All)
+                            <td class="place">@(index + 1)</td>
+                            <td class="name">
+                                @if (this._board == EveryoneBoard)
+                                {
+                                    <span class="kind"
+                                          role="img"
+                                          aria-label="@KindOf(row)"
+                                          title="@KindOf(row)">@(row.BotId is null ? "🧑" : "🤖")</span>
+                                }
+                                <SeatPlayer Text="@row.Name"
+                                            PlayerId="@row.PlayerId"
+                                            BotId="@row.BotId"
+                                            RulesetId="@string.Empty" />
+                            </td>
+                            @foreach ((Column column, int value) in this.Columns.All.Zip(row.Values))
                             {
-                                <th title="@column.Title" aria-sort="@this.SortOf(column)">
-                                    <button class="sort @column.Key" @onclick="() => this.SortBy(column)">
-                                        @column.Header@this.ArrowOf(column)
-                                    </button>
-                                </th>
+                                <td class="@column.Key">@value</td>
                             }
                         </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ((Row row, int index) in sorted.Select((row, index) => (row, index))
-                            .Skip(this._page * PageSize)
-                            .Take(PageSize))
-                        {
-                            <tr>
-                                <td class="place">@(index + 1)</td>
-                                <td class="name">
-                                    <SeatPlayer Text="@row.Name"
-                                                PlayerId="@row.PlayerId"
-                                                BotId="@row.BotId"
-                                                RulesetId="@(this.RulesetId ?? string.Empty)" />
-                                </td>
-                                @foreach ((Column column, int value) in this.Columns.All.Zip(row.Values))
-                                {
-                                    <td class="@column.Key">@value</td>
-                                }
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-                @if (pages > 1)
-                {
-                    <nav class="pager" aria-label="Pages">
-                        <button class="previous" disabled="@(this._page == 0)" @onclick="() => this._page--">
-                            Previous
-                        </button>
-                        <span class="page">Page @(this._page + 1) of @pages</span>
-                        <button class="next" disabled="@(this._page == pages - 1)" @onclick="() => this._page++">
-                            Next
-                        </button>
-                    </nav>
-                }
+                    }
+                </tbody>
+            </table>
+            @if (pages > 1)
+            {
+                <nav class="pager" aria-label="Pages">
+                    <button class="previous" disabled="@(this._page == 0)" @onclick="() => this._page--">
+                        Previous
+                    </button>
+                    <span class="page">Page @(this._page + 1) of @pages</span>
+                    <button class="next" disabled="@(this._page == pages - 1)" @onclick="() => this._page++">
+                        Next
+                    </button>
+                </nav>
             }
         }
+    }
 
-        <p class="about-standings">@this.Columns.About</p>
-    </section>
+    <p class="about-standings">@this.Columns.About</p>
 </div>
 
 @code {
@@ -113,7 +100,9 @@
 
     private const string PlayersBoard = "players";
     private const string BotsBoard = "bots";
-    private const string AgainstBotsBoard = "against-bots";
+    private const string EveryoneBoard = "everyone";
+
+    private const string PointsTitle = "The points scored at the board, in every game finished, won or lost";
 
     private static readonly Board Players = new(
         string.Empty,
@@ -122,11 +111,13 @@
         "Each game finished counts for the players signed in at it, but not for a seat their own AI played. Everyone "
             + "starts at Elo 1500, and gains or loses by how their team did against what the teams' ratings led to "
             + "expect, a bot's team by the bot's own rating. Each win earns as experience your own points plus your "
-            + "team's. A game not over, with no guest at it, counts as abandoned by a player once it has waited a day "
-            + "for their move, and no longer once they make it.",
+            + "team's. Points are the points you scored yourself, taking pieces and earning bonuses, in every game "
+            + "finished, won or lost. A game not over, with no guest at it, counts as abandoned by a player once it has "
+            + "waited a day for their move, and no longer once they make it.",
         [
             new("elo", "Elo", null),
             new("experience", "Experience", "Your own points plus your team's, in each game won"),
+            new("points", "Points", PointsTitle),
             new("won", "Won", null),
             new("lost", "Lost", null),
             new("drawn", "Drawn", null),
@@ -138,10 +129,13 @@
         "bot-leaders",
         "Bot",
         "No bot has finished a game of it yet.",
-        "Every game finished counts for the bots at it, a bot at several seats once for each. Against people counts "
-            + "the games in which every seat not on the bot's team was played by a person, signed in or a guest, "
-            + "rather than a bot or an AI.",
+        "Every game finished counts for the bots at it, a bot at several seats once for each. A bot's Elo is its rating "
+            + "from games against the other bots, averaged over the game's sizes. Points are the points it scored "
+            + "itself, in every game finished, won or lost. Against people counts the games in which every seat not on "
+            + "the bot's team was played by a person, signed in or a guest, rather than a bot or an AI.",
         [
+            new("elo", "Elo", "Its rating from games against the other bots, averaged over the game's sizes"),
+            new("points", "Points", PointsTitle),
             new("won", "Won", null),
             new("lost", "Lost", null),
             new("drawn", "Drawn", null),
@@ -151,17 +145,23 @@
         ]
     );
 
-    private static readonly Board AgainstBots = new(
-        "against-bots",
-        "Player",
-        "No one signed in has finished a game of it against bots alone yet.",
-        "A game counts here when every seat not on the player's team was a bot's. A seat their own AI played does "
-            + "not count.",
-        [new("won", "Won", null), new("lost", "Lost", null), new("drawn", "Drawn", null)]
+    private static readonly Board Everyone = new(
+        "everyone",
+        "Player or bot",
+        "No one has finished a game of it yet.",
+        "Players signed in and the server's bots together, 🧑 a person, 🤖 a bot. A player's Elo comes from the games "
+            + "they finished; a bot's, from its games against the other bots. Points are the points each scored "
+            + "itself, in every game finished, won or lost.",
+        [
+            new("elo", "Elo", null),
+            new("points", "Points", PointsTitle),
+            new("won", "Won", null),
+            new("lost", "Lost", null),
+            new("drawn", "Drawn", null),
+        ]
     );
 
-    private ImmutableList<RulesetDto> _games = [];
-    private string _game = string.Empty;
+    private string? _game;
     private string _board = PlayersBoard;
     private ImmutableList<Row>? _rows;
 
@@ -171,35 +171,21 @@
     private int _page;
     private string? _problem;
 
-    [Parameter]
-    public EventCallback OnClose { get; set; }
-
-    /// <summary>The ruleset of the table the leaderboard is opened over, if any.</summary>
-    [Parameter]
-    public string? RulesetId { get; set; }
+    /// <summary>The game whose leaderboard it is, by its id (<see cref="RulesetDto.Game"/>), as the lobby chose it.</summary>
+    [Parameter, EditorRequired]
+    public string Game { get; set; } = string.Empty;
 
     private Board Columns =>
         this._board switch
         {
             BotsBoard => Bots,
-            AgainstBotsBoard => AgainstBots,
+            EveryoneBoard => Everyone,
             _ => Players,
         };
 
-    protected override async Task OnInitializedAsync() => this._problem = await Requests.Attempt(this.Load);
-
-    private async Task Load()
-    {
-        CatalogDto catalog = await this.Games.Catalog(CancellationToken.None);
-        this._games = [.. catalog.Rulesets.DistinctBy(ruleset => ruleset.Game, StringComparer.Ordinal)];
-        string? preferred = catalog.Rulesets.Find(ruleset => ruleset.Id == this.RulesetId)?.Game
-            ?? await this.Browser.LastGame();
-        await this.Show((this._games.Find(game => game.Game == preferred) ?? this._games[0]).Game);
-    }
-
-    /// <summary>The leaderboard of the game chosen; told why not, if the server cannot give it.</summary>
-    private async Task Choose(ChangeEventArgs change) =>
-        this._problem = await Requests.Attempt(() => this.Show($"{change.Value}"));
+    /// <summary>The leaderboard of the game, once it is another; told why not, if the server cannot give it.</summary>
+    protected override async Task OnParametersSetAsync() =>
+        this._problem = this.Game == this._game ? this._problem : await Requests.Attempt(() => this.Show(this.Game));
 
     /// <summary>The board chosen, of the same game, by its first column; told why not, if the server cannot give it.</summary>
     private async Task ChooseBoard(ChangeEventArgs change)
@@ -207,7 +193,7 @@
         this._board = $"{change.Value}";
         this._sort = 0;
         this._isAscending = false;
-        this._problem = await Requests.Attempt(() => this.Show(this._game));
+        this._problem = await Requests.Attempt(() => this.Show(this.Game));
     }
 
     /// <summary>Sorted by the column, most first; by the same column again, the other way; from the first page.</summary>
@@ -231,6 +217,8 @@
     private string ArrowOf(Column column) =>
         this.Columns.All.IndexOf(column) != this._sort ? string.Empty : this._isAscending ? " ▲" : " ▼";
 
+    private static string KindOf(Row row) => row.BotId is null ? "Person" : "Bot";
+
     private async Task Show(string game)
     {
         this._game = game;
@@ -244,6 +232,8 @@
                     new Row(
                         bot.Name,
                         [
+                            bot.Elo,
+                            bot.Points,
                             bot.Won,
                             bot.Lost,
                             bot.Drawn,
@@ -257,12 +247,18 @@
                     }
                 ),
             ],
-            AgainstBotsBoard =>
+            EveryoneBoard =>
             [
-                .. (await this.Games.AgainstBotsLeaderboard(game, CancellationToken.None)).Select(player =>
-                    new Row(player.Name, [player.WonAgainstBots, player.LostAgainstBots, player.DrawnAgainstBots])
+                .. (await this.Games.Leaderboard(game, CancellationToken.None)).Select(player =>
+                    new Row(player.Name, [player.Elo, player.Points, player.Won, player.Lost, player.Drawn])
                     {
                         PlayerId = player.PlayerId,
+                    }
+                ),
+                .. (await this.Games.BotLeaderboard(game, CancellationToken.None)).Select(bot =>
+                    new Row(bot.Name, [bot.Elo, bot.Points, bot.Won, bot.Lost, bot.Drawn])
+                    {
+                        BotId = bot.BotId,
                     }
                 ),
             ],
@@ -271,7 +267,15 @@
                 .. (await this.Games.Leaderboard(game, CancellationToken.None)).Select(player =>
                     new Row(
                         player.Name,
-                        [player.Elo, player.Experience, player.Won, player.Lost, player.Drawn, player.Abandoned]
+                        [
+                            player.Elo,
+                            player.Experience,
+                            player.Points,
+                            player.Won,
+                            player.Lost,
+                            player.Drawn,
+                            player.Abandoned,
+                        ]
                     )
                     {
                         PlayerId = player.PlayerId,
@@ -291,8 +295,8 @@
     private sealed record Board(string Class, string Who, string Empty, string About, ImmutableList<Column> All);
 
     /// <summary>
-    /// A row of a board: whose, with the player's or bot's id, to see their profile by; and its numbers, one for each
-    /// column.
+    /// A row of a board: whose, with the player's or bot's id, to see their profile by (a bot's, if it has one, else a
+    /// player's); and its numbers, one for each column.
     /// </summary>
     private sealed record Row(string Name, ImmutableList<int> Values)
     {

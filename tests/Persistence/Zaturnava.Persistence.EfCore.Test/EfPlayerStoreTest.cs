@@ -69,9 +69,6 @@ public sealed class EfPlayerStoreTest : IDisposable
             Won = 2,
             Lost = 3,
             Drawn = 4,
-            WonAgainstBots = 1,
-            LostAgainstBots = 2,
-            DrawnAgainstBots = 3,
         };
         await new EfPlayerStore(this._database.NewContext()).Keep([kept], this._cancellation);
 
@@ -110,35 +107,6 @@ public sealed class EfPlayerStoreTest : IDisposable
 
         // Assert
         Assert.Equal("d,b,a,c", string.Join(",", leaders.Select(leader => leader.Player.Value)));
-    }
-
-    [Fact]
-    public async Task LeadersAgainstBots_WhenSomeHaveFacedBotsAlone_ListThemByWinsThenFewestLossesThenId()
-    {
-        // Arrange - "e" has never faced bots alone; "f" stands at another game
-        foreach (string id in new[] { "a", "b", "c", "d", "e", "f" })
-        {
-            await this._store.Add(new Player(new PlayerId(id), id, []), this._cancellation);
-        }
-
-        await this._store.Keep(
-            [
-                new Standing(new PlayerId("c"), "chess") { WonAgainstBots = 2, LostAgainstBots = 1 },
-                new Standing(new PlayerId("b"), "chess") { WonAgainstBots = 2, LostAgainstBots = 1 },
-                new Standing(new PlayerId("a"), "chess") { WonAgainstBots = 2, LostAgainstBots = 4 },
-                new Standing(new PlayerId("d"), "chess") { DrawnAgainstBots = 1 },
-                new Standing(new PlayerId("e"), "chess") { Won = 9 },
-                new Standing(new PlayerId("f"), "go") { WonAgainstBots = 9 },
-            ],
-            this._cancellation
-        );
-
-        // Act
-        ImmutableList<Standing> leaders =
-            await new EfPlayerStore(this._database.NewContext()).LeadersAgainstBots("chess", 3, this._cancellation);
-
-        // Assert
-        Assert.Equal("b,c,a", string.Join(",", leaders.Select(leader => leader.Player.Value)));
     }
 
     [Fact]
@@ -330,6 +298,34 @@ public sealed class EfPlayerStoreTest : IDisposable
 
         // Assert
         Assert.Equal(expected, Described(found));
+    }
+
+    [Theory]
+    [InlineData("ADA", null, true)]
+    [InlineData("ada", "ada", false)]
+    [InlineData("Bea", null, false)]
+    [InlineData("A%", null, false)]
+    [InlineData("A_a", null, false)]
+    [InlineData("[A]da", null, false)]
+    [InlineData("Ad\\a", null, false)]
+    public async Task IsNameTaken_WhenAskedOfANameAndWhoMayHaveIt_SaysWhetherAnotherHasIt(
+        string name,
+        string? except,
+        bool expected
+    )
+    {
+        // Arrange
+        await this._store.Add(Ada, this._cancellation);
+
+        // Act
+        bool isTaken = await new EfPlayerStore(this._database.NewContext()).IsNameTaken(
+            name,
+            except is null ? null : new PlayerId(except),
+            this._cancellation
+        );
+
+        // Assert
+        Assert.Equal(expected, isTaken);
     }
 
     [Fact]

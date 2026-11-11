@@ -620,10 +620,6 @@
     [Parameter]
     public EventCallback OnLeave { get; set; }
 
-    /// <summary>The game's ruleset, told once it is first shown: so that the leaderboard opens at it.</summary>
-    [Parameter]
-    public EventCallback<string> OnRuleset { get; set; }
-
     /// <summary>The player sat at (or watching) another game, started from this one once it is over.</summary>
     [Parameter]
     public EventCallback<Seating> OnSeated { get; set; }
@@ -1246,7 +1242,6 @@
         this._notice = this.NoticeOf(view, isFirst, wasTheirTurn);
         this._heard = view.Log.Count > 0 ? view.Log[^1].Number : this._heard;
         await (!sounds.IsEmpty && this.IsSoundOn ? this.Browser.Play(sounds) : ValueTask.CompletedTask);
-        await (isFirst ? this.OnRuleset.InvokeAsync(view.RulesetId) : Task.CompletedTask);
         _ = this._poll.Change(this.Wait(view), Timeout.InfiniteTimeSpan);
     }
 
