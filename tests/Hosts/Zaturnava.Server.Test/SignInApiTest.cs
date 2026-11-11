@@ -385,7 +385,7 @@ public sealed partial class SignInApiTest(SigningInServer server) : IClassFixtur
         string player = TokenOf(await this.Done("GitHub|mine|Ada", SigningInServer.Page));
         string other = TokenOf(await this.Done("GitHub|not-mine|Cy", SigningInServer.Page));
         _ = await client.Claim(theirs, 0, player, null, this._cancellation);
-        _ = await client.Claim(guests, 0, null, new ClaimSeatRequest("Ada"), this._cancellation);
+        _ = await client.Claim(guests, 0, null, new ClaimSeatRequest("Una"), this._cancellation);
         _ = await client.Claim(others, 0, other, null, this._cancellation);
         string? id = (await this.Me(player))?.Id;
 
@@ -616,6 +616,56 @@ public sealed partial class SignInApiTest(SigningInServer server) : IClassFixtur
 
         // Assert
         Assert.Null(held);
+    }
+
+    [Fact]
+    public async Task Claim_WhenAGuestGivesAPlayersName_IsRefusedAsTaken()
+    {
+        // Arrange
+        _ = await this.Done("GitHub|ulysses|Ulysses", SigningInServer.Page);
+        HttpGameClient client = server.GameClient();
+        GameCreatedDto created = await client.Create(
+            new CreateGameRequest(ZaturnavaServer.Chaturaji2027, ZaturnavaServer.OneOpenSeat),
+            this._cancellation
+        );
+
+        // Act
+        GameRequestRefusedException refused = await Assert.ThrowsAsync<GameRequestRefusedException>(() =>
+            client.Claim(created.GameId, 0, null, new ClaimSeatRequest("ulysses"), this._cancellation)
+        );
+
+        // Assert
+        Assert.Equal(Refusal.Conflict, refused.Refusal);
+    }
+
+    [Fact]
+    public async Task Claim_WhenTheGuestSendsTheTokenTheyHoldTheirAliasBy_ShowsThemByIt()
+    {
+        // Arrange
+        HttpGameClient client = server.GameClient();
+        GuestAliasDto held = await client.TakeAlias("Theodora", null, this._cancellation);
+        GameCreatedDto created = await client.Create(
+            new CreateGameRequest(ZaturnavaServer.Chaturaji2027, ZaturnavaServer.OneOpenSeat),
+            this._cancellation
+        );
+        GameRequestRefusedException refused = await Assert.ThrowsAsync<GameRequestRefusedException>(() =>
+            client.Claim(created.GameId, 0, null, new ClaimSeatRequest("Theodora"), this._cancellation)
+        );
+
+        // Act
+        _ = await client.Claim(
+            created.GameId,
+            0,
+            null,
+            new ClaimSeatRequest("Theodora", AliasToken: held.Token),
+            this._cancellation
+        );
+
+        // Assert
+        Assert.Equal(
+            (Refusal.Conflict, Nicknames.Shown("Theodora")),
+            (refused.Refusal, (await client.Get(created.GameId, this._cancellation)).Seats[0].Player)
+        );
     }
 
     [Fact]

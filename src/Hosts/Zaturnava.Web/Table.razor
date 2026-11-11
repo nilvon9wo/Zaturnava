@@ -924,7 +924,7 @@
                 view.Id,
                 seat,
                 claimant.PlayerToken,
-                new ClaimSeatRequest(claimant.Nickname),
+                claimant.Claim,
                 CancellationToken.None
             );
             return new Seating(view.Id, new SeatClaim(seat, taken.Token));

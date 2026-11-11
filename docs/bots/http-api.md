@@ -19,7 +19,7 @@ server is at `https://zaturnava.runasp.net/`.
 | Claim a seat | `POST api/games/{id}/seats/{seat}`, with a player token or none, and a guest's nickname or none | `{"token": "..."}` |
 | Say anew who holds a seat | `PUT api/games/{id}/seats/{seat}`, with a player token or none, and the seat's token and a guest's nickname or none | `204` |
 | Take back your own seat, from any device | `POST api/games/{id}/seats/{seat}/take-back`, with the token of the player who claimed it (not for a seat their AI plays); the seat's old token holds it no more | `{"token": "..."}` |
-| Take a seat over from a bot | `POST api/games/{id}/seats/{seat}/take-over`, as a claim: with a player's token, or as a guest with `{"nickname": "..."}`; the bot plays it no more, whoever took it does, for the rest of the game | `{"token": "..."}`; `409` if no bot plays it, the game is over, or the player holds a seat there already; `403` for a guest at a game for players signed in only |
+| Take a seat over from a bot | `POST api/games/{id}/seats/{seat}/take-over`, as a claim: with a player's token, or as a guest with `{"nickname": "...", "aliasToken": "..."}`; the bot plays it no more, whoever took it does, for the rest of the game | `{"token": "..."}`; `409` if no bot plays it, the game is over, or the player holds a seat there already; `403` for a guest at a game for players signed in only |
 | A game | `GET api/games/{id}` | The game as it stands ([the view](#the-view)) |
 | Act | `POST api/games/{id}/actions`, with the seat's token | The game after it |
 | Let a bot (or a timer) decide | `POST api/games/{id}/advance` | The game after one decision |
@@ -75,11 +75,14 @@ whole of what a token holds. A player who has [signed in](#signing-in) may send 
 claim, as `Authorization: Bearer {player token}`: the seat then shows their name to everyone at the table. A player
 token that stands for no one (signed out, or the account deleted) is refused (`403`), rather than taken as a guest's.
 Without one, the seat is a guest's, shown as `guest`; or, if the claim's body gives a nickname (at most 20
-characters, `{"nickname": "Ada"}`), as `Ada (guest)`, so that no guest passes for a player who signed in. The
-body may be left out. A guest may read the table's talk, and their team's, but not speak.
+characters, `{"nickname": "Ada"}`), as `Ada (guest)`, so that no guest passes for a player who signed in. A
+nickname a player goes by, or another guest holds as [their name for the visit](#a-guests-name-for-the-visit), is
+refused (`409`); the guest who holds it sends its token too, `{"nickname": "Ada", "aliasToken": "..."}`
+(Proposed). The body may be left out. A guest may read the table's talk, and their team's, but not speak.
 
 Whoever signs in, or chooses a nickname, after taking a seat may say so there: `PUT` to the seat, with the player
-token as above, or none, and the seat's token in the body (`{"token": "...", "nickname": "Ada"}`). The seat is then
+token as above, or none, and the seat's token in the body (`{"token": "...", "nickname": "Ada"}`, with the
+`"aliasToken"` too, as a claim, for a name held). The seat is then
 shown as a claim made so would show it; a token that does not hold the seat is refused (`403`). Whether an AI plays
 the seat stays as claimed.
 
@@ -296,8 +299,9 @@ and no player goes by (Stated):
 Taking a name with the token of one held lets that one go. A name is held for twelve hours from when it was
 last taken or asked after, and kept only in the server's memory, so a restart frees every one. While it is held,
 no player may rename themselves to it either. The game page takes one when the guest chooses a name, and asks
-after it on every visit. The name a seat shows is still the one sent when claiming it: the server does not yet
-check that it is the guest's own (Proposed, backlog N33).
+after it on every visit. A guest claiming a seat, taking one over or saying anew who holds it, by a name someone
+else goes by or holds, is refused (`409`); a name no one holds is anyone's, so a program playing as a guest needs
+no alias (Proposed).
 
 ## Refusals
 

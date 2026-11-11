@@ -358,25 +358,30 @@ public sealed class LobbyTest : IDisposable
     }
 
     [Theory]
-    [InlineData("player-token", "Bea", "player-token")]
-    [InlineData(null, "Bea", null)]
-    [InlineData(null, null, null)]
-    public void Play_WhenSignedInOrNot_ClaimsTheSeatAsThePlayerIfAnyAndByTheNicknameIfAny(
+    [InlineData("player-token", "Bea", null, "player-token")]
+    [InlineData(null, "Bea", "alias-1", null)]
+    [InlineData(null, null, null, null)]
+    public void Play_WhenSignedInOrNot_ClaimsTheSeatAsThePlayerIfAnyAndByTheNicknameAndAliasIfAny(
         string? player,
         string? nickname,
+        string? alias,
         string? expected
     )
     {
         // Arrange
         _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.player").SetResult(player);
         _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.nickname").SetResult(nickname);
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.alias").SetResult(alias);
         IRenderedComponent<Lobby> lobby = this.ByStrength();
 
         // Act
         lobby.Find("button.create").Click();
 
         // Assert
-        Assert.Equal((expected, nickname), (this._page.Server.ClaimedAs, this._page.Server.ClaimedBy));
+        Assert.Equal(
+            (expected, nickname, alias),
+            (this._page.Server.ClaimedAs, this._page.Server.ClaimedBy, this._page.Server.ClaimedWith)
+        );
     }
 
     [Fact]

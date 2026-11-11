@@ -259,7 +259,7 @@ public sealed class HttpGameClientTest
 
         // Assert
         Assert.Equal(
-            ("Bearer player", """{"nickname":"Ada","isAi":true}"""),
+            ("Bearer player", """{"nickname":"Ada","isAi":true,"aliasToken":null}"""),
             (server.Authorization, server.Body)
         );
     }
@@ -315,7 +315,7 @@ public sealed class HttpGameClientTest
                 "POST",
                 "/api/games/g/seats/2/take-over",
                 "Bearer player",
-                """{"nickname":"Ada","isAi":false}""",
+                """{"nickname":"Ada","isAi":false,"aliasToken":null}""",
                 "secret"
             ),
             (server.Method, server.Path, server.Authorization, server.Body, taken.Token)
@@ -333,7 +333,12 @@ public sealed class HttpGameClientTest
 
         // Assert
         Assert.Equal(
-            ("PUT", "/api/games/g/seats/2", "Bearer player", """{"token":"secret","nickname":"Ada"}"""),
+            (
+                "PUT",
+                "/api/games/g/seats/2",
+                "Bearer player",
+                """{"token":"secret","nickname":"Ada","aliasToken":null}"""
+            ),
             (server.Method, server.Path, server.Authorization, server.Body)
         );
     }

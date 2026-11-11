@@ -95,6 +95,9 @@ internal sealed class FakeGameServer : IGameServing
     /// <summary>The nickname the last seat was claimed by; null, if none was given.</summary>
     public string? ClaimedBy { get; private set; }
 
+    /// <summary>The alias token the last seat was claimed with; null, if none was given.</summary>
+    public string? ClaimedWith { get; private set; }
+
     public Task<CatalogDto> Catalog(CancellationToken cancellationToken) =>
         this.Answer(
             "catalog",
@@ -179,6 +182,7 @@ internal sealed class FakeGameServer : IGameServing
     {
         this.ClaimedAs = playerToken;
         this.ClaimedBy = claim?.Nickname;
+        this.ClaimedWith = claim?.AliasToken;
         return this.Answer($"claim {gameId} {seat.ToString(CultureInfo.InvariantCulture)}", new SeatClaimedDto(Token));
     }
 
@@ -196,7 +200,9 @@ internal sealed class FakeGameServer : IGameServing
     ) =>
         this.Answer($"replace {gameId} {token}", this.View);
 
-    /// <summary>Each seat said anew to be held, in order: "{game} {seat} {token} {player token} {nickname}".</summary>
+    /// <summary>
+    /// Each seat said anew to be held, in order: "{game} {seat} {token} {player token} {nickname} {alias token}".
+    /// </summary>
     public ConcurrentQueue<string> Identified { get; } = new();
 
     public Task<SeatClaimedDto> TakeBack(
@@ -218,7 +224,8 @@ internal sealed class FakeGameServer : IGameServing
         CancellationToken cancellationToken
     ) =>
         this.Answer(
-            $"take over {gameId} {seat.ToString(CultureInfo.InvariantCulture)} {playerToken} {claim?.Nickname}",
+            $"take over {gameId} {seat.ToString(CultureInfo.InvariantCulture)} {playerToken} {claim?.Nickname}"
+                + (claim?.AliasToken is { } alias ? " " + alias : string.Empty),
             new SeatClaimedDto(Token)
         );
 
@@ -231,7 +238,8 @@ internal sealed class FakeGameServer : IGameServing
     )
     {
         string held = $"{gameId} {seat.ToString(CultureInfo.InvariantCulture)} {request.Token}";
-        this.Identified.Enqueue($"{held} {playerToken} {request.Nickname}");
+        string alias = request.AliasToken is null ? string.Empty : " " + request.AliasToken;
+        this.Identified.Enqueue($"{held} {playerToken} {request.Nickname}{alias}");
         return this.Answer("identify", true);
     }
 

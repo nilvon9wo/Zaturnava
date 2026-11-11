@@ -158,7 +158,7 @@ public sealed class ChatApiTest(SigningInServer server) : IClassFixture<SigningI
         CreateGameRequest request = new(ZaturnavaServer.Chaturaji2027, ZaturnavaServer.OneOpenSeat);
         GameCreatedDto created = await this._client.Create(request, this._cancellation);
         SeatClaimedDto guest =
-            await this._client.Claim(created.GameId, 0, null, new ClaimSeatRequest("Ada"), this._cancellation);
+            await this._client.Claim(created.GameId, 0, null, new ClaimSeatRequest("Una"), this._cancellation);
 
         // Act
         Task<ChatMessageDto> saying = this._client.Say(
@@ -172,7 +172,7 @@ public sealed class ChatApiTest(SigningInServer server) : IClassFixture<SigningI
         await AssertRefused(Refusal.Forbidden, saying);
         GameViewDto view = await this._client.Get(created.GameId, this._cancellation);
         Assert.Equal(
-            ("Ada (guest)", true, 0),
+            ("Una (guest)", true, 0),
             (
                 view.Seats[0].Player,
                 view.Seats[0].IsGuest,
