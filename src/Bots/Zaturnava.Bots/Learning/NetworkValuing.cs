@@ -12,15 +12,15 @@ namespace Net.NowhereAtAll.Zaturnava.Bots.Learning;
 /// and a little (<see cref="MarginWeight"/>) by how much the team leads: as Sage judges, no position, however good,
 /// is worth more than winning, nor any worse than losing. A game going on
 /// is judged worse by <see cref="Wariness"/> for each point an enemy could win by taking next (as
-/// <see cref="Careful.Exposure"/> counts it): the network, judging where the bot's turn ends, cannot see the reply,
-/// and would take a Pawn with a Raja only to lose the Raja. It is judged too, a little (<see cref="Steadiness"/>),
-/// as Sage would, by <paramref name="weights"/> (<see cref="Appraisal"/>): a network sure of the end judges the moves
-/// that lead there alike, or nearly, and would leave which to the slightest of its errors, a sure taking passed over
-/// for a roll, a guarded piece moved off for nothing; Sage's count of what each side holds settles it. And it is
-/// judged worse by <see cref="Blocking"/> for each of its team's pieces not a leader on a throne not the team's,
-/// which only a leader can hold: one there only keeps the team's leaders off it. That is little, less than a Pawn
-/// to Sage and far less than a piece kept from being taken: a piece goes onto a throne to take, or to escape, but
-/// not to park, and does not linger there.
+/// <see cref="Careful.Exposure(DecisionRequest, GameState)"/> counts it): the network, judging where the bot's
+/// turn ends, cannot see the reply, and would take a Pawn with a Raja only to lose the Raja. It is judged too, a
+/// little (<see cref="Steadiness"/>), as Sage would, by <paramref name="weights"/> (<see cref="Appraisal"/>): a
+/// network sure of the end judges the moves that lead there alike, or nearly, and would leave which to the
+/// slightest of its errors, a sure taking passed over for a roll, a guarded piece moved off for nothing; Sage's
+/// count of what each side holds settles it. And it is judged worse by <see cref="Blocking"/> for each of its
+/// team's pieces not a leader on a throne not the team's, which only a leader can hold: one there only keeps the
+/// team's leaders off it. That is little, less than a Pawn to Sage and far less than a piece kept from being taken:
+/// a piece goes onto a throne to take, or to escape, but not to park, and does not linger there.
 /// </summary>
 public sealed class NetworkValuing(PositionEncoder encoder, ValueNetwork network, SageWeights weights)
     : IPositionValuing

@@ -55,8 +55,8 @@ internal sealed class ByWorth(bool countsPoints) : ITradeJudging
 
 /// <summary>
 /// Argus's way: by worth, as Solomon weighs it, less how much more the worst an enemy could do in reply would be
-/// with the prisoners home (<see cref="Careful.Exposure"/>): a piece back where it can be taken at once is worth
-/// little.
+/// with the prisoners home (<see cref="Careful.Exposure(DecisionRequest, Engine.Rules.GameState)"/>): a piece
+/// back where it can be taken at once is worth little.
 /// </summary>
 internal sealed class ByExposure : ITradeJudging
 {
