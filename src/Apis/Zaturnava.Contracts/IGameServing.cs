@@ -16,13 +16,13 @@ public interface IGameServing
 
     /// <summary>
     /// The signed-in players standing highest at <paramref name="game"/>, at any size, by its id
-    /// (<see cref="RulesetDto.Game"/>), best first: at most 100. Each game over counts within a minute or so.
+    /// (<see cref="RulesetDto.Game"/>), best first: at most 1000. Each game over counts within a minute or so.
     /// </summary>
     Task<ImmutableList<StandingDto>> Leaderboard([Required] string game, CancellationToken cancellationToken);
 
     /// <summary>
     /// The signed-in players who have done best at <paramref name="game"/> against bots alone, most games won so
-    /// first, then fewest lost: at most 100.
+    /// first, then fewest lost: at most 1000.
     /// </summary>
     Task<ImmutableList<StandingDto>> AgainstBotsLeaderboard(
         [Required] string game,
@@ -31,7 +31,7 @@ public interface IGameServing
 
     /// <summary>
     /// The server's bots standing highest at <paramref name="game"/>, most games won first, then fewest lost: at
-    /// most 100.
+    /// most 1000.
     /// </summary>
     Task<ImmutableList<BotStandingDto>> BotLeaderboard([Required] string game, CancellationToken cancellationToken);
 

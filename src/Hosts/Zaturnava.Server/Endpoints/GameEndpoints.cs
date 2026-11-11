@@ -119,6 +119,7 @@ internal static class GameEndpoints
                 WonAgainstPeople = leader.Standing.WonAgainstPeople,
                 LostAgainstPeople = leader.Standing.LostAgainstPeople,
                 DrawnAgainstPeople = leader.Standing.DrawnAgainstPeople,
+                BotId = leader.Standing.BotId,
             }
         ),
     ];
@@ -140,6 +141,7 @@ internal static class GameEndpoints
             WonAgainstBots = leader.Standing.WonAgainstBots,
             LostAgainstBots = leader.Standing.LostAgainstBots,
             DrawnAgainstBots = leader.Standing.DrawnAgainstBots,
+            PlayerId = leader.Standing.Player.Value,
         };
 
     /// <summary>

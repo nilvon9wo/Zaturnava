@@ -140,6 +140,18 @@ first.
   the server's bots, most games won first, each seat a bot played counting, with their record against people alone.
   **People against bots** lists the players by their games against bots alone: every seat not on their team a
   bot's. Counted from 2026-11-07, not for games before.
+- Every leaderboard sorts by any of its columns, its header clicked (Elo, experience, won, lost, drawn,
+  abandoned), and shows ten at a time, paging for more (*Stated 2026-11-07*). *Done* (*Proposed*: how): a header
+  clicked sorts most first, clicked again fewest first; the server sends up to 1000 of each board, and the page
+  sorts and pages them itself (a larger population would want the server to page instead). The Points column is
+  no longer shown, as it said little that experience does not (*Proposed*); the API still gives `points`.
+- The names on the leaderboards open the player's, or the bot's, profile (*Stated 2026-11-07*). *Done*: as a
+  name at a table does.
+- A player's profile filled out (*Stated 2026-11-07*): a description of their own, and a choice of which of the
+  services they sign in with others may see.
+- A winning streak on the leaderboard, perhaps: open question [OQ9](open-questions.md#oq9-a-winning-streak).
+- A player's username unique (*Stated 2026-11-07*): no player may take a name another has. The profile's field
+  is called **Username**.
 - A signed-in player setting up a game may bar guests from it (*Stated 2026-11-01*). *Done* (*Proposed*: how):
   a custom game set up signed in may be **Players signed in only**; its open seats then refuse a guest, and the
   lobby asks a guest to sign in to join it. Playing such a game again keeps it for players signed in only.

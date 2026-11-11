@@ -11,6 +11,13 @@ asked here instead (checked, every *Proposed* in the documents, on 2026-11-06).
 Anything to be built is in the [backlog](backlog.md) or the [roadmap](grand/roadmap.md), and anything left to
 playtesting is marked so where it is written.
 
+## OQ9 A winning streak
+
+Should the leaderboard show a winning streak, the games won since the player last lost? Easily raised by playing
+weak bots, it could count only the games that count toward Elo (no guest, the players the same throughout, no
+player at several seats), or only games against people. Raised by the user on 2026-11-07 as perhaps not worth it:
+not built until asked for.
+
 ## OQ7 A second palace
 
 May a player buy a second palace in Grand Legions, on a board large enough, and at what price? Left open until

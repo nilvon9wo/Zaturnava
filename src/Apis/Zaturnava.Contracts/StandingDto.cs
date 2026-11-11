@@ -28,4 +28,7 @@ public sealed record StandingDto(
     public int LostAgainstBots { get; init; }
 
     public int DrawnAgainstBots { get; init; }
+
+    /// <summary>The player's id, whose profile anyone may see (<see cref="GameRoutes.Profile"/>).</summary>
+    public string? PlayerId { get; init; }
 }
