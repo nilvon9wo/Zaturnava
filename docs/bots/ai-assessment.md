@@ -309,7 +309,7 @@ Then every bot is a pairing, and the arena measures each pairing.
 - Allow resuming from a checkpoint.
 - Size a run in advance and say how long it will take before starting it.
 
-## 6. Proposed next steps (not started; for you to choose)
+## 6. Proposed next steps (2, 3 and 5 begun: see Progress)
 
 1. **A benchmark:** nodes per second for `rules.LegalActions`, `rules.Apply` and `Appraisal.ValueOf` on each board
    size. It decides how ambitious step 2 can be.
@@ -320,6 +320,22 @@ Then every bot is a pairing, and the arena measures each pairing.
 5. **Profile corrections:** fix Athena's description for rulesets where she has no network, now; for instance say
    that she plays as Sage there. Or train her a Grand Legions network only once a better encoder exists.
 6. **MCTS and CNN bots,** after the Tactician shows what search alone is worth.
+
+### Progress (2026-11-11)
+
+- **Tactician v1 is built** (`TacticianBot`, `Tactics`). It is alpha-beta over every seat's decisions: the bot's
+  own are max nodes and its enemies' min nodes. An ally is modelled as choosing for itself, one step ahead, rather
+  than maximised for the bot. Dice nodes average over every outcome. It uses iterative deepening within a budget
+  of positions, not of time, so it plays the same on any machine. It orders actions by Sage's judgement and follows
+  the 6 most promising past the first step. A decision with one thing to do (passing at a turn's end, say) does not
+  shorten the look. A look the budget cuts short keeps what it finished. Leaves are judged by Sage's `Appraisal`,
+  whose exposure term stands in for quiescence for now.
+- **The arena exists** as an on-demand test (`ArenaRun`, [self-play](self-play.md#rating)), since it needs no
+  command beyond the test runner.
+- **First results:** at Chaturaji 2027, Sage 30, Tactician 30, in 60 games. A budget of 4,000 positions reaches
+  little more than Sage's own look, because each turn of the others brings its own 21 dice outcomes. To beat Sage
+  it needs a cheaper evaluation, a transposition table, or sampling the dice deeper in the tree.
+- **Step 5 is done:** Athena's profile says she plays as Sage at any game but Chaturaji 2027.
 
 Uncertain until measured: how fast the engine evaluates, and therefore how deep alpha-beta can reach on 12×12 within
 a move's time. Step 1 settles it before anything is built on it.

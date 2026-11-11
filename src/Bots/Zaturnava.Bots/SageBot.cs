@@ -78,6 +78,17 @@ public sealed class SageBot(
         GameAction? ending,
         IPositionValuing valuing,
         Random random
+    ) =>
+        Play(request, ending, valuing, deciding => new Foresight(valuing, Depth, Beam).Choose(deciding, random));
+
+    /// <summary>
+    /// Sage's play, but for the board, where it plays as <paramref name="choose"/> does (Tactician's search, say).
+    /// </summary>
+    internal static GameAction Play(
+        DecisionRequest request,
+        GameAction? ending,
+        IPositionValuing valuing,
+        Func<DecisionRequest, GameAction> choose
     )
     {
         ByPosition judge = new(valuing);
@@ -86,7 +97,7 @@ public sealed class SageBot(
             ?? BestTrade(request, false, judge)
             ?? Trading.BeforePassing(
                 request,
-                new Foresight(valuing, Depth, Beam).Choose(request, random),
+                choose(request),
                 (passing, isPassing) => BestTrade(passing, isPassing, judge)
             );
     }

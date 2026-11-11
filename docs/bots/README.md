@@ -41,6 +41,7 @@ you can watch it, or play with it.
 ## Our bots
 
 The server's own bots are listed by `GET api/catalog`, and described in the game under "The bots":
-Random, Midas (greedy), Solomon (careful), Argus (watchful) and Sage (looks ahead through the dice,
-its weights tuned by self-play). Their ratings against each other are there too. Beating Sage is a
-fair first goal.
+Random, Midas (greedy), Solomon (careful), Argus (watchful), Sage (looks ahead through the dice,
+its weights tuned by self-play), Tactician (Sage's judgement, but looking past its own turn, through its enemies'
+replies and its allies' turns) and Athena (learned). Their ratings against each other are there too. Beating Sage
+is a fair first goal.

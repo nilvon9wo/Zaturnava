@@ -9,6 +9,14 @@ did them. Questions waiting on an answer are gathered in [open-questions.md](ope
 Numbered **N1**, **N2**... after that playtest's own notes. In the order planned (*Proposed*), most pressing
 first.
 
+- **N33** The sign-in corner, top right, tidied (*Stated* 2026-11-11, near the top of the list): no more "Signed in
+  as ... Profile, Sign out, Delete account" laid out in a row. It shows one of three things:
+  - to a player not yet known, one clear call to say who they are, which leads either to an alias for the session
+    or to signing in;
+  - to a player playing anonymously, the alias taken for the session: always unique, never the same as another
+    anonymous player's at the same time, nor as any username a signed-up player has chosen;
+  - to a signed-in player, their username, with a down arrow beside it opening menus and dialogs to add identity
+    providers, change what their profile shares, sign out, or delete their account.
 - **N2** The database stays as it is through every change, by migrations; never wiped (*Stated*).
 - **N3** A leaderboard, for players to compete for; with each player's Elo and their **experience**: each time
   a player is on the winning team, they gain their own points plus their team's (*Stated*). Each player's

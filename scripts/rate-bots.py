@@ -23,6 +23,7 @@ import os
 import subprocess
 import sys
 import tempfile
+import time
 from concurrent.futures import ThreadPoolExecutor
 
 ANCHOR = "random"
@@ -47,15 +48,16 @@ def play(runner, ruleset, seats, games, max_steps):
 
 
 def results(runner, ruleset, a, b, games, max_steps):
-    """A's wins, losses and draws against B, with each team moving first in half the games."""
+    """A's wins, losses and draws against B, with each team moving first in half the games, and how long they took."""
     won = lost = drawn = 0
+    started = time.monotonic()
     for seats, a_seats in (((a, b, a, b), (0, 2)), ((b, a, b, a), (1, 3))):
         for game in play(runner, ruleset, seats, games, max_steps):
             mine, theirs = margin(game, a_seats)
             won += mine > theirs
             lost += mine < theirs
             drawn += mine == theirs
-    return won, lost, drawn
+    return won, lost, drawn, time.monotonic() - started
 
 
 def margin(game, seats):
@@ -74,7 +76,7 @@ def fit(bots, record):
     """Bradley-Terry strengths by minorization-maximization, a draw counting half a win each way."""
     wins = {bot: 0.0 for bot in bots}
     games = {pair: 0.0 for pair in itertools.combinations(bots, 2)}
-    for (a, b), (won, lost, drawn) in record.items():
+    for (a, b), (won, lost, drawn, _) in record.items():
         wins[a] += won + (drawn + 1) / 2
         wins[b] += lost + (drawn + 1) / 2
         games[(a, b)] = won + lost + drawn + 1
@@ -119,8 +121,8 @@ def main():
             pairs,
         )
         record = dict(zip(pairs, played))
-    for (a, b), (won, lost, drawn) in record.items():
-        print(f"{a} vs {b}: won {won}, lost {lost}, drawn {drawn}", file=sys.stderr)
+    for (a, b), (won, lost, drawn, seconds) in record.items():
+        print(f"{a} vs {b}: won {won}, lost {lost}, drawn {drawn}, in {seconds:.0f} s", file=sys.stderr)
     ratings = fit(bots, record)
     text = json.dumps(dict(sorted(ratings.items(), key=lambda rating: rating[1])), indent=2) + "\n"
     if options.out:

@@ -50,10 +50,25 @@ internal static class Careful
     }
 
     /// <summary>The worst an enemy could do to the bot's team in reply: one exchange, or a throne taken.</summary>
-    internal static int Exposure(DecisionRequest request, GameState after)
+    internal static int Exposure(DecisionRequest request, GameState after) =>
+        Exposure(
+            request,
+            after,
+            AttacksBy(request, after, isAllied: false),
+            AttacksBy(request, after, isAllied: true)
+        );
+
+    /// <summary>
+    /// The worst an enemy could do to the bot's team in reply, the enemies' attacks (<paramref name="threats"/>) and
+    /// the team's (<paramref name="guards"/>) counted already.
+    /// </summary>
+    internal static int Exposure(
+        DecisionRequest request,
+        GameState after,
+        ILookup<CellId, Attack> threats,
+        ILookup<CellId, Attack> guards
+    )
     {
-        ILookup<CellId, Attack> threats = AttacksBy(request, after, isAllied: false);
-        ILookup<CellId, Attack> guards = AttacksBy(request, after, isAllied: true);
         IEnumerable<int> losses = after.Position.Occupants
             .Where(occupant => after.Teams.AreAllied(occupant.Value.Owner, request.Seat))
             .Select(occupant => LossOf(
