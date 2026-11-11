@@ -622,7 +622,7 @@ public sealed partial class SignInApiTest(SigningInServer server) : IClassFixtur
     public async Task Claim_WhenAGuestGivesAPlayersName_IsRefusedAsTaken()
     {
         // Arrange
-        _ = await this.Done("GitHub|32|Ulysses", SigningInServer.Page);
+        _ = await this.Done("GitHub|ulysses|Ulysses", SigningInServer.Page);
         HttpGameClient client = server.GameClient();
         GameCreatedDto created = await client.Create(
             new CreateGameRequest(ZaturnavaServer.Chaturaji2027, ZaturnavaServer.OneOpenSeat),
