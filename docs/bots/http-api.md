@@ -297,11 +297,11 @@ and no player goes by (Stated):
 | The name the token holds | `GET api/aliases/mine`, with the alias token | `{"alias": "...", "token": "..."}`, held anew; or `401`, if it holds none |
 
 Taking a name with the token of one held lets that one go. A name is held for twelve hours from when it was
-last taken or asked after, and kept only in the server's memory, so a restart frees every one. While it is held,
+last taken or asked after (Stated), and kept only in the server's memory, so a restart frees every one. While it is held,
 no player may rename themselves to it either. The game page takes one when the guest chooses a name, and asks
 after it on every visit. A guest claiming a seat, taking one over or saying anew who holds it, by a name someone
 else goes by or holds, is refused (`409`); a name no one holds is anyone's, so a program playing as a guest needs
-no alias (Proposed).
+no alias (Stated).
 
 ## Refusals
 
@@ -316,6 +316,10 @@ A request the server will not do is answered with a [problem](https://www.rfc-ed
 | 409 | `Conflict` | The seat is taken, or the game changed meanwhile |
 | 422 | `Illegal` | The rules do not allow the action now |
 | 429 | `TooBusy` | Too many requests from the same address of late (600 a minute, 60 new games an hour): wait, and ask again |
+
+A `5xx` answer is no refusal: the server failed, or could not be reached. Wait a few seconds and ask again, as the
+sample bots do. Keep the seat's token: a program stopped mid-game plays on by it, as the seat is no longer open to
+claim (the samples keep it in the user's local application data, and play on by it when run again for that seat).
 
 ## From .NET
 

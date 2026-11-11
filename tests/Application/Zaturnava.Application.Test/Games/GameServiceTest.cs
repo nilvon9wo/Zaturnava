@@ -35,6 +35,7 @@ public sealed class GameServiceTest
     private readonly RecordingNotifier _notifier = new();
     private readonly SteppedTime _time = new();
     private readonly InMemoryPlayerStore _players = new();
+    private readonly GameGate _gate = new();
     private readonly GameService _service;
     private readonly GameService _paced;
     private readonly CancellationToken _cancellation = TestContext.Current.CancellationToken;
@@ -1373,6 +1374,23 @@ public sealed class GameServiceTest
     }
 
     [Fact]
+    public async Task Advance_WhenAnotherRequestIsChangingTheGame_WaitsForItToBeDone()
+    {
+        // Arrange
+        GameId id = await this._paced.Create(TinyRules.RulesetId, [Bot, Bot], this._cancellation);
+        IDisposable other = await this._gate.Enter(id);
+
+        // Act
+        Task<GameSnapshot> advancing = this._paced.Advance(id, 0, this._cancellation);
+        bool waited = !advancing.IsCompleted;
+        other.Dispose();
+        GameSnapshot snapshot = await advancing;
+
+        // Assert
+        Assert.Equal((true, 1), (waited, snapshot.Record.Version));
+    }
+
+    [Fact]
     public async Task Advance_WhenAPersonIsDeciding_ChangesNothing()
     {
         // Arrange
@@ -1896,6 +1914,7 @@ public sealed class GameServiceTest
             new LoadedDice(4),
             new DecisionClock(this._time),
             settings,
-            this._players
+            this._players,
+            this._gate
         );
 }

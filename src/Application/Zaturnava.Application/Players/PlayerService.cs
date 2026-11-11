@@ -118,7 +118,7 @@ public sealed class PlayerService(
     /// Refuses a guest the <paramref name="nickname"/> they would be shown by at a seat (<see cref="Nicknames.Of"/>)
     /// if a player goes by it, or a guest holds it as their alias but by another token than
     /// <paramref name="aliasToken"/> (Proposed): no guest passes for a player, nor for another guest. A name no one
-    /// goes by or holds is anyone's, alias or not, so a program playing as a guest needs none.
+    /// goes by or holds is anyone's, alias or not, so a program playing as a guest needs none (Stated 2026-11-12).
     /// </summary>
     /// <exception cref="NameTakenException">Someone else goes by the nickname.</exception>
     public async Task CheckGuestName(string? nickname, string? aliasToken, CancellationToken cancellationToken)

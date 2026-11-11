@@ -174,7 +174,11 @@ fits asynchronous play — there is no session to keep.
 
 Each save increments `GameRecord.Version`, and `IGamePersisting.Replace` only
 overwrites the version one less, so two concurrent changes cannot both win
-(`ConcurrencyConflictException`, answered as 409).
+(`ConcurrencyConflictException`, answered as 409). On one host, `GameGate`
+lets one request at a time change each game, in the order they came, so that
+several bots advancing one game at once wait their turn rather than race
+(Proposed); the version check still guards against another host. SQL Server
+retries what fails for a moment, such as a deadlock (Proposed).
 
 Adapters, chosen by the server's `Storage:Provider` setting:
 

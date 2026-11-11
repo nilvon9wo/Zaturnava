@@ -12,6 +12,9 @@ internal sealed class Player(GameTools tools, IChoosing mind, TimeSpan pause, Te
     /// <summary>How long to wait when the server is too busy: its limits are counted by the minute.</summary>
     private static readonly TimeSpan TooBusyPause = TimeSpan.FromMinutes(1);
 
+    /// <summary>How long to wait when the server fails, or cannot be reached, before trying again.</summary>
+    private static readonly TimeSpan TroublePause = TimeSpan.FromSeconds(5);
+
     private readonly GameTools _tools = tools;
     private readonly IChoosing _mind = mind;
     private readonly TimeSpan _pause = pause;
@@ -36,7 +39,8 @@ internal sealed class Player(GameTools tools, IChoosing mind, TimeSpan pause, Te
     /// <summary>
     /// One step of the game: read it; then the bot's own decision, a server bot's, or none, while a person (or no one
     /// yet) decides. The outcome, once the game is over. A request the game outran (Conflict: someone else moved it
-    /// meanwhile) is simply tried again next step; so is any, after a minute, when the server is too busy.
+    /// meanwhile) is simply tried again next step; so is any, after a minute, when the server is too busy; and after a
+    /// few seconds, when the server fails (an error that is no refusal) or cannot be reached.
     /// </summary>
     private async Task<Outcome?> Step(string gameId, int seat, string seatToken, CancellationToken cancellationToken)
     {
@@ -55,6 +59,11 @@ internal sealed class Player(GameTools tools, IChoosing mind, TimeSpan pause, Te
         {
             await this._log.WriteLineAsync("The server is busy: waiting a minute.");
             await Task.Delay(TooBusyPause, cancellationToken);
+        }
+        catch (Exception trouble) when (trouble is RefusedException { Refusal: "Unknown" } or HttpRequestException)
+        {
+            await this._log.WriteLineAsync($"The server failed ({trouble.Message}): trying again shortly.");
+            await Task.Delay(TroublePause, cancellationToken);
         }
 
         return null;

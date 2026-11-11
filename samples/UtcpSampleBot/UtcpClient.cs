@@ -83,7 +83,10 @@ internal sealed class UtcpClient
     private static string Escaped(object? value) =>
         Uri.EscapeDataString(value is bool flag ? (flag ? "true" : "false") : $"{value}");
 
-    /// <summary>The refusal, as the server words it: its title (Conflict, TooBusy...), and why.</summary>
+    /// <summary>
+    /// The refusal, as the server words it: its title (Conflict, TooBusy...), and why; "ServerTrouble", when the
+    /// server failed (5xx) rather than refused.
+    /// </summary>
     private static async Task<RefusedException> Refusal(
         HttpResponseMessage response,
         CancellationToken cancellationToken
@@ -91,10 +94,12 @@ internal sealed class UtcpClient
     {
         string text = await response.Content.ReadAsStringAsync(cancellationToken);
         Problem? problem = text.StartsWith('{') ? JsonSerializer.Deserialize<Problem>(text, Json) : null;
-        return new RefusedException(
-            problem?.Title ?? (response.StatusCode == HttpStatusCode.TooManyRequests ? "TooBusy" : "Unknown"),
-            $"{problem?.Title}: {problem?.Detail ?? text}"
-        );
+        string refusal = response.StatusCode switch
+        {
+            >= HttpStatusCode.InternalServerError => RefusedException.ServerTrouble,
+            _ => problem?.Title ?? (response.StatusCode == HttpStatusCode.TooManyRequests ? "TooBusy" : "Unknown"),
+        };
+        return new RefusedException(refusal, $"{problem?.Title}: {problem?.Detail ?? text}");
     }
 
     /// <summary>The parts of a manual this client reads.</summary>
@@ -116,5 +121,8 @@ internal sealed class UtcpClient
 /// <summary>A call the server refused: which way (<see cref="Refusal"/>: Conflict, TooBusy...), and why.</summary>
 internal sealed class RefusedException(string refusal, string message) : Exception(message)
 {
+    /// <summary>The server failed (5xx), rather than refused: worth trying again shortly.</summary>
+    public const string ServerTrouble = "ServerTrouble";
+
     public string Refusal { get; } = refusal;
 }
