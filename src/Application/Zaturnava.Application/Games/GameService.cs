@@ -30,7 +30,8 @@ public sealed class GameService(
     IDiceRolling dice,
     DecisionClock clock,
     GameServiceSettings settings,
-    IPlayerPersisting players
+    IPlayerPersisting players,
+    GameGate gate
 )
 {
     private readonly IRulesetLocating _rulesets = rulesets;
@@ -42,6 +43,7 @@ public sealed class GameService(
     private readonly DecisionClock _clock = clock;
     private readonly GameServiceSettings _settings = settings;
     private readonly IPlayerPersisting _players = players;
+    private readonly GameGate _gate = gate;
 
     public ImmutableList<IRulesApplying> Rulesets => this._rulesets.All;
 
@@ -276,6 +278,7 @@ public sealed class GameService(
     /// <exception cref="GameNotFoundException">There is no such game.</exception>
     public async Task<GameSnapshot> Advance(GameId id, int version, CancellationToken cancellationToken)
     {
+        using IDisposable entered = await this._gate.Enter(id);
         GameSnapshot snapshot = await this.Get(id, cancellationToken);
         return snapshot.Record.Version == version
             ? await this.Advanced(snapshot, cancellationToken)
@@ -319,6 +322,7 @@ public sealed class GameService(
         CancellationToken cancellationToken
     )
     {
+        using IDisposable entered = await this._gate.Enter(id);
         GameRecord record = await this.Load(id, cancellationToken);
         string token = (record.Controllers.ElementAtOrDefault(seat.Value), claimant) switch
         {
@@ -362,6 +366,7 @@ public sealed class GameService(
         CancellationToken cancellationToken
     )
     {
+        using IDisposable entered = await this._gate.Enter(id);
         GameRecord record = await this.Load(id, cancellationToken);
         HumanSeat held = record.Controllers.ElementAtOrDefault(seat.Value) is HumanSeat person && person.IsHeldBy(token)
             ? person
@@ -387,6 +392,7 @@ public sealed class GameService(
     /// <exception cref="NotYourSeatException">The player did not claim the seat, or their AI plays it.</exception>
     public async Task<string> TakeBack(GameId id, SeatId seat, PlayerId player, CancellationToken cancellationToken)
     {
+        using IDisposable entered = await this._gate.Enter(id);
         GameRecord record = await this.Load(id, cancellationToken);
         HumanSeat held = record.Controllers.ElementAtOrDefault(seat.Value) is HumanSeat { IsAi: false } person
             && person.Claimant == player
@@ -425,6 +431,7 @@ public sealed class GameService(
         CancellationToken cancellationToken
     )
     {
+        using IDisposable entered = await this._gate.Enter(id);
         GameSnapshot snapshot = await this.Get(id, cancellationToken);
         GameRecord record = snapshot.Record;
         BotSeat bot = record.Controllers.ElementAtOrDefault(seat.Value) is BotSeat seated
@@ -469,6 +476,7 @@ public sealed class GameService(
         CancellationToken cancellationToken
     )
     {
+        using IDisposable entered = await this._gate.Enter(id);
         GameSnapshot snapshot = await this.Get(id, cancellationToken);
         GameRecord record = snapshot.Record;
         int held = record.Controllers.FindIndex(controller => controller.IsHeldBy(token));
@@ -496,6 +504,7 @@ public sealed class GameService(
         CancellationToken cancellationToken
     )
     {
+        using IDisposable entered = await this._gate.Enter(id);
         GameSnapshot snapshot = await this.Get(id, cancellationToken);
         GameRecord record = snapshot.Record;
         int held = record.Controllers.FindIndex(controller => controller.IsHeldBy(token));
@@ -530,6 +539,7 @@ public sealed class GameService(
         CancellationToken cancellationToken
     )
     {
+        using IDisposable entered = await this._gate.Enter(id);
         GameSnapshot snapshot = await this.Get(id, cancellationToken);
         GameAction action = Chosen(snapshot.Rules.Parse(descriptor));
         Transition transition = snapshot.MayAct(action, token)

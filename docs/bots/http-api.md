@@ -317,6 +317,10 @@ A request the server will not do is answered with a [problem](https://www.rfc-ed
 | 422 | `Illegal` | The rules do not allow the action now |
 | 429 | `TooBusy` | Too many requests from the same address of late (600 a minute, 60 new games an hour): wait, and ask again |
 
+A `5xx` answer is no refusal: the server failed, or could not be reached. Wait a few seconds and ask again, as the
+sample bots do. Keep the seat's token: a program stopped mid-game plays on by it, as the seat is no longer open to
+claim (the samples keep it in the user's local application data, and play on by it when run again for that seat).
+
 ## From .NET
 
 `Zaturnava.Client`'s `HttpGameClient` makes every one of these calls, with the contracts as types, and

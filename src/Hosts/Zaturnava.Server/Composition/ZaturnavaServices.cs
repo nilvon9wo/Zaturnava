@@ -91,6 +91,7 @@ internal static class ZaturnavaServices
             .AddSingleton<IGameNotifying, SilentNotifier>()
             .AddSingleton<IDiceRolling>(new RandomDice(Random.Shared))
             .AddSingleton(new DecisionClock(TimeProvider.System))
+            .AddSingleton<GameGate>()
             .AddSingleton(Settings(configuration))
             .AddScoped<GameService>()
             .AddScoped<ChatService>()

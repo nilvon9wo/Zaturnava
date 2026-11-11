@@ -35,7 +35,8 @@ public sealed class ChatServiceTest
             new LoadedDice(4),
             new DecisionClock(this._time),
             GameServiceSettings.Default,
-            new InMemoryPlayerStore()
+            new InMemoryPlayerStore(),
+            new GameGate()
         );
         DecisionClock clock = new(this._time);
         this._chat = new ChatService(

@@ -11,7 +11,8 @@ using UtcpSampleBot;
 // The manual is served at {server}/utcp. Seats go by the names the game gives them (in Chaturaji 2027, Black,
 // Yellow, Green and Red). With ZATURNAVA_AI_TOKEN set in the environment (an AI token, from a signed-in player's
 // profile), it plays as that player's AI; else as an AI guest. A token is never taken on the command line, where
-// others may see it.
+// others may see it. Stopped mid-game and run again with the same --join and --seat, it plays on by the seat's token
+// it kept (SeatKeeper).
 
 Options options = Options.Parse(args);
 using CancellationTokenSource stop = new();
@@ -26,17 +27,23 @@ GameTools tools = new(await UtcpClient.Discover(http, new Uri(options.Server, "u
 (string gameId, int seat) = options.Join is { } joining
     ? (joining, SeatNamed([.. (await tools.Get(joining, stop.Token)).Seats.Select(held => held.Name)], options.Seat))
     : await Create(tools, options, stop.Token);
-string seatToken = await tools.Claim(
-    gameId,
-    seat,
-    options.Nickname,
-    Environment.GetEnvironmentVariable("ZATURNAVA_AI_TOKEN"),
-    stop.Token
+string? kept = SeatKeeper.Kept(gameId, seat);
+string seatToken = kept
+    ?? await tools.Claim(
+        gameId,
+        seat,
+        options.Nickname,
+        Environment.GetEnvironmentVariable("ZATURNAVA_AI_TOKEN"),
+        stop.Token
+    );
+SeatKeeper.Keep(gameId, seat, seatToken);
+Console.WriteLine(
+    $"Playing game {gameId}{(kept is null ? "" : ", on from before")}: watch it in the lobby of the server's page."
 );
-Console.WriteLine($"Playing game {gameId}: watch it in the lobby of the server's page.");
 
 Player player = new(tools, new Greedy(new Random()), options.Pause, Console.Out);
 Outcome outcome = await player.Play(gameId, seat, seatToken, stop.Token);
+SeatKeeper.Forget(gameId, seat);
 Console.WriteLine(outcome.Text);
 return outcome.Winners.Contains(seat) ? 0 : 1;
 
