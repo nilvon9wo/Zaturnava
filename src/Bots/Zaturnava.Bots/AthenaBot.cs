@@ -37,7 +37,8 @@ public sealed class AthenaBot(Random random, ImmutableDictionary<string, ValueNe
             + "each position (who will win, and by how much), and it thinks through the rest of its turn as Sage "
             + "does. It agrees to end a game when ending it now is worth as much as playing on. Trades prisoners when "
             + "the board would be better for it. Uses AI of its own, run on the server at no cost to anyone: "
-            + "no AI service.",
+            + "no AI service. Only Chaturaji 2027 has a network of its own so far; at any other game, it plays as "
+            + "Sage does.",
         UsesAi: true
     );
 

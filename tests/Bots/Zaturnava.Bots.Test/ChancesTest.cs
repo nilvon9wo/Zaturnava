@@ -42,6 +42,7 @@ public sealed class ChancesTest
             { "Midas", new MidasBot(new Random(Seed)) },
             { "Sage", new SageBot(new Random(Seed)) },
             { "Solomon", new SolomonBot(new Random(Seed)) },
+            { "Tactician", new TacticianBot(new Random(Seed)) },
         };
 
     [Theory]
@@ -71,6 +72,7 @@ public sealed class ChancesTest
             { "Random", new RandomBot(new Random(Seed)) },
             { "Sage", new SageBot(new Random(Seed)) },
             { "Solomon", new SolomonBot(new Random(Seed)) },
+            { "Tactician", new TacticianBot(new Random(Seed)) },
         };
 
     [Theory]

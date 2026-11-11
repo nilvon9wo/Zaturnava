@@ -52,6 +52,26 @@ public sealed class SageBotTest
     }
 
     [Fact]
+    public async Task Decide_WhenItForksAHorseAndABoatThatWouldTakeBack_TakesTheBoat()
+    {
+        // Arrange - Sage's Boat between an enemy Horse and an enemy Boat, nothing guarding it: taking the Horse,
+        // worth less, would leave the enemy's Boat to take Sage's back along the line; taking the Boat leaves the
+        // Horse nothing to take
+        DecisionRequest request = LineRules.Request(
+            [LineRules.Move(3, 2), LineRules.Move(3, 4), new PassAction(LineRules.Seat)],
+            (3, LineRules.Boat, LineRules.Seat),
+            (2, LineRules.Horse, LineRules.Enemy),
+            (4, LineRules.Boat, LineRules.Enemy)
+        );
+
+        // Act
+        GameAction action = await new SageBot(new Random(Seed)).Decide(request, this._cancellation);
+
+        // Assert
+        Assert.Equal(LineRules.Move(3, 4), action);
+    }
+
+    [Fact]
     public async Task Decide_WhenAMoveWouldLeaveAPieceToBeTaken_KeepsItSafe()
     {
         // Arrange - stepping to 4 would leave Sage's Horse beside an enemy Pawn

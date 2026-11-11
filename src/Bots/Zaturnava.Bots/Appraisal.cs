@@ -22,14 +22,13 @@ internal static class Appraisal
     public static double ValueOf(DecisionRequest request, GameState state, SageWeights weights) =>
         state.Outcome is { } outcome
             ? ResultOf(request, outcome) + Score(request, state).Net
-            : weights.Score.Weigh(Score(request, state))
-                + weights.Material.Weigh(Material(request, state))
-                + weights.Leaders.Weigh(Leaders(request, state))
-                + weights.Prisoners.Weigh(Prisoners(request, state))
-                + weights.Thrones.Weigh(Thrones(request, state))
-                - (weights.Exposure * Careful.Exposure(request, state))
-                + Reach(request, state, weights)
-                + Measured(request, state, weights);
+            : Judged(
+                request,
+                state,
+                weights,
+                Careful.AttacksBy(request, state, isAllied: true),
+                Careful.AttacksBy(request, state, isAllied: false)
+            );
 
     /// <summary>
     /// What Sage counts in a position, unweighted: the points, pieces, leaders, prisoners and thrones, the
@@ -47,7 +46,7 @@ internal static class Appraisal
         return
         [
             Score(request, state).Net, Material(request, state).Net, Leaders(request, state).Net,
-            Prisoners(request, state).Net, Thrones(request, state).Net, -Careful.Exposure(request, state),
+            Prisoners(request, state).Net, Thrones(request, state).Net, -Careful.Exposure(request, state, theirs, ours),
             Chances(request, state, ours, theirs), Mobility(request, ours, theirs).Net, .. measures,
         ];
     }
@@ -116,16 +115,27 @@ internal static class Appraisal
     }
 
     /// <summary>
-    /// The weighed chances (the most the team could win next, by starting an exchange where an enemy piece
-    /// stands) and mobility (<see cref="Mobility"/>), from one count of what each side attacks.
+    /// A game not over, as the weights weigh it, from one count of what each side attacks: the team's
+    /// (<paramref name="ours"/>) and its enemies' (<paramref name="theirs"/>), which the exposure, the chances (the
+    /// most the team could win next, by starting an exchange where an enemy piece stands) and mobility
+    /// (<see cref="Mobility"/>) all count from.
     /// </summary>
-    private static double Reach(DecisionRequest request, GameState state, SageWeights weights)
-    {
-        ILookup<CellId, Attack> ours = Careful.AttacksBy(request, state, isAllied: true);
-        ILookup<CellId, Attack> theirs = Careful.AttacksBy(request, state, isAllied: false);
-        return (weights.Chances * Chances(request, state, ours, theirs))
-            + weights.Mobility.Weigh(Mobility(request, ours, theirs));
-    }
+    private static double Judged(
+        DecisionRequest request,
+        GameState state,
+        SageWeights weights,
+        ILookup<CellId, Attack> ours,
+        ILookup<CellId, Attack> theirs
+    ) =>
+        weights.Score.Weigh(Score(request, state))
+            + weights.Material.Weigh(Material(request, state))
+            + weights.Leaders.Weigh(Leaders(request, state))
+            + weights.Prisoners.Weigh(Prisoners(request, state))
+            + weights.Thrones.Weigh(Thrones(request, state))
+            - (weights.Exposure * Careful.Exposure(request, state, theirs, ours))
+            + (weights.Chances * Chances(request, state, ours, theirs))
+            + weights.Mobility.Weigh(Mobility(request, ours, theirs))
+            + Measured(request, state, weights);
 
     /// <summary>
     /// The ruleset's own measures, each side's, as the weights weigh them; not measured at all when the weights

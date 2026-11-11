@@ -60,7 +60,7 @@ swapped (`--bots sage,mine,sage,mine`), as moving first is worth something.
 
 | Option | |
 |---|---|
-| `--bots` | One bot id per seat, comma-separated: `random`, `midas`, `solomon`, `argus`, `sage`, `athena`, or yours |
+| `--bots` | A bot id per seat, by commas: `random`, `midas`, `solomon`, `argus`, `sage`, `tactician`, `athena`, or yours |
 | `--games` | How many games (default 100); they play in parallel |
 | `--max-steps` | The most decisions in a game before it is cut off, unfinished (default 1000) |
 | `--out` | The file to write (default the console) |
@@ -76,7 +76,15 @@ python3 scripts/rate-bots.py path/to/Net.NowhereAtAll.Zaturnava.BotRunner \
     --bot-assembly /path/to/MyBots.dll --bots random,sage,mine --games 50
 ```
 
-(The runner is the BotRunner's built executable, in its `bin` folder.)
+(The runner is the BotRunner's built executable, in its `bin` folder.) Each pair's line says how long its games
+took, too.
+
+Or, through the test runner alone: write `artifacts/arena/request.json`, such as
+`{"bots": ["sage", "tactician"], "ruleset": "chaturaji-2027", "games": 10, "maximumSteps": 2000}`, and run the
+BotRunner's tests (`wsl -d Ubuntu -- bash scripts/wsl-test.sh --release Zaturnava.BotRunner.Test`). Its arena
+(`ArenaRun`) plays every pair of the bots that many games with each team moving first, and writes how each pair
+fared, and how long it took, to `artifacts/arena/results.json`, a pair at a time. With no request, it is skipped,
+as on CI.
 
 ## Learning
 
