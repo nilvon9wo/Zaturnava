@@ -297,11 +297,11 @@ and no player goes by (Stated):
 | The name the token holds | `GET api/aliases/mine`, with the alias token | `{"alias": "...", "token": "..."}`, held anew; or `401`, if it holds none |
 
 Taking a name with the token of one held lets that one go. A name is held for twelve hours from when it was
-last taken or asked after, and kept only in the server's memory, so a restart frees every one. While it is held,
+last taken or asked after (Stated), and kept only in the server's memory, so a restart frees every one. While it is held,
 no player may rename themselves to it either. The game page takes one when the guest chooses a name, and asks
 after it on every visit. A guest claiming a seat, taking one over or saying anew who holds it, by a name someone
 else goes by or holds, is refused (`409`); a name no one holds is anyone's, so a program playing as a guest needs
-no alias (Proposed).
+no alias (Stated).
 
 ## Refusals
 

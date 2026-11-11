@@ -7,7 +7,7 @@ namespace Net.NowhereAtAll.Zaturnava.Application.Players;
 /// </summary>
 public sealed class GuestAliases(TimeProvider clock)
 {
-    /// <summary>How long an alias is held without its holder renewing it (Proposed).</summary>
+    /// <summary>How long an alias is held without its holder renewing it (Stated 2026-11-12).</summary>
     public static readonly TimeSpan Kept = TimeSpan.FromHours(12);
 
     private readonly TimeProvider _clock = clock;
