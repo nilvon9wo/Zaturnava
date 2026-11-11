@@ -97,16 +97,6 @@ public interface IPlayerPersisting
     /// </summary>
     Task<ImmutableList<Standing>> Leaders([Required] string game, int count, CancellationToken cancellationToken);
 
-    /// <summary>
-    /// The <paramref name="count"/> players who have done best at <paramref name="game"/> against bots alone, of those
-    /// who have finished any such game: by games won so, then fewest lost, then by id.
-    /// </summary>
-    Task<ImmutableList<Standing>> LeadersAgainstBots(
-        [Required] string game,
-        int count,
-        CancellationToken cancellationToken
-    );
-
     /// <summary>Where each of <paramref name="bots"/> stands at <paramref name="game"/>, if it stands there.</summary>
     Task<ImmutableDictionary<string, BotStanding>> BotStandings(
         [Required] string game,

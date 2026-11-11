@@ -260,9 +260,6 @@ namespace Net.NowhereAtAll.Zaturnava.Persistence.EfCore.SqlServer.Migrations
                     b.Property<int>("Drawn")
                         .HasColumnType("int");
 
-                    b.Property<int>("DrawnAgainstBots")
-                        .HasColumnType("int");
-
                     b.Property<double>("Elo")
                         .HasColumnType("float");
 
@@ -272,16 +269,10 @@ namespace Net.NowhereAtAll.Zaturnava.Persistence.EfCore.SqlServer.Migrations
                     b.Property<int>("Lost")
                         .HasColumnType("int");
 
-                    b.Property<int>("LostAgainstBots")
-                        .HasColumnType("int");
-
                     b.Property<int>("Points")
                         .HasColumnType("int");
 
                     b.Property<int>("Won")
-                        .HasColumnType("int");
-
-                    b.Property<int>("WonAgainstBots")
                         .HasColumnType("int");
 
                     b.HasKey("PlayerId", "Game");

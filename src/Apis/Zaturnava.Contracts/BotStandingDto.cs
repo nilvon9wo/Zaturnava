@@ -15,4 +15,10 @@ public sealed record BotStandingDto(int Place, string Name, int Points, int Won,
 
     /// <summary>The bot's id, as the catalog offers it (<see cref="BotDto.Id"/>).</summary>
     public string? BotId { get; init; }
+
+    /// <summary>
+    /// The bot's Elo rating at the game, rounded, to rank it beside players: the mean of its ratings at the game's
+    /// sizes (<see cref="BotDto.Ratings"/>), or 1500, the rating everyone starts at, if it is rated at none.
+    /// </summary>
+    public int Elo { get; init; } = 1500;
 }

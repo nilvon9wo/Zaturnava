@@ -25,7 +25,6 @@ internal static class GameEndpoints
         _ = routes.MapGet(GameRoutes.Catalog, Catalog);
         _ = routes.MapGet(GameRoutes.Games, List);
         _ = routes.MapGet(GameRoutes.Leaderboards + "/{game}", Leaderboard);
-        _ = routes.MapGet(GameRoutes.Leaderboards + "/{game}/" + GameRoutes.AgainstBotsSegment, AgainstBotsLeaderboard);
         _ = routes.MapGet(GameRoutes.Leaderboards + "/{game}/" + GameRoutes.BotsSegment, BotLeaderboard);
         _ = routes.MapPost(GameRoutes.Games, Create).RequireRateLimiting(RequestLimits.NewGames);
         _ = routes.MapGet(GameRoute, Get);
@@ -92,13 +91,6 @@ internal static class GameEndpoints
         CancellationToken cancellationToken
     ) => [.. (await standings.Leaders(game, cancellationToken)).Select(ToStandingDto)];
 
-    /// <summary>The players who have done best at the game against bots alone, each in their place.</summary>
-    private static async Task<ImmutableList<StandingDto>> AgainstBotsLeaderboard(
-        string game,
-        StandingService standings,
-        CancellationToken cancellationToken
-    ) => [.. (await standings.LeadersAgainstBots(game, cancellationToken)).Select(ToStandingDto)];
-
     /// <summary>The server's bots standing highest at the game, each in its place.</summary>
     private static async Task<ImmutableList<BotStandingDto>> BotLeaderboard(
         string game,
@@ -120,6 +112,7 @@ internal static class GameEndpoints
                 LostAgainstPeople = leader.Standing.LostAgainstPeople,
                 DrawnAgainstPeople = leader.Standing.DrawnAgainstPeople,
                 BotId = leader.Standing.BotId,
+                Elo = (int)Math.Round(leader.Elo, MidpointRounding.AwayFromZero),
             }
         ),
     ];
@@ -138,9 +131,6 @@ internal static class GameEndpoints
         )
         {
             Points = leader.Standing.Points,
-            WonAgainstBots = leader.Standing.WonAgainstBots,
-            LostAgainstBots = leader.Standing.LostAgainstBots,
-            DrawnAgainstBots = leader.Standing.DrawnAgainstBots,
             PlayerId = leader.Standing.Player.Value,
         };
 

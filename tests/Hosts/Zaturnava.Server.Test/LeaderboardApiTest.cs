@@ -47,7 +47,7 @@ public sealed class LeaderboardApiTest(QuickStandingServer server) : IClassFixtu
     }
 
     [Fact]
-    public async Task Leaderboards_WhenAPlayerFinishedAGameAgainstBotsAlone_ListThemAgainstBotsAndTheBotsByName()
+    public async Task BotLeaderboard_WhenABotFinishedAGame_ListsItByNameWithItsRatingAtTheGame()
     {
         // Arrange
         Player bea = new(new PlayerId("leaderboard-bea"), "Leaderboard Bea", []);
@@ -55,21 +55,21 @@ public sealed class LeaderboardApiTest(QuickStandingServer server) : IClassFixtu
         _ = await this.AddEndedGame(bea.Id);
         _ = await this.Eventually(bea.Name);
         string game = new Chaturaji2027Rules().GameId;
+        int rating = (await this._client.Catalog(this._cancellation)).Bots
+            .Single(bot => bot.Id == ArgusBot.BotId)
+            .Ratings[ZaturnavaServer.Chaturaji2027];
 
         // Act
-        ImmutableList<StandingDto> againstBots = await this._client.AgainstBotsLeaderboard(game, this._cancellation);
         ImmutableList<BotStandingDto> bots = await this._client.BotLeaderboard(game, this._cancellation);
 
         // Assert
-        StandingDto standing = Assert.Single(againstBots, standing => standing.Name == bea.Name);
         BotStandingDto argus = Assert.Single(bots, bot => bot.Name == new ArgusBot(new Random(Seed)).Profile.Name);
         Assert.Equal(
-            (bea.Id.Value, ArgusBot.BotId, 1, 1, true),
+            (ArgusBot.BotId, 1, rating, true),
             (
-                standing.PlayerId,
                 argus.BotId,
-                standing.WonAgainstBots + standing.LostAgainstBots + standing.DrawnAgainstBots,
                 argus.Place,
+                argus.Elo,
                 argus.Won + argus.Lost + argus.Drawn >= 3
                     && argus.WonAgainstPeople + argus.LostAgainstPeople + argus.DrawnAgainstPeople == 0
             )

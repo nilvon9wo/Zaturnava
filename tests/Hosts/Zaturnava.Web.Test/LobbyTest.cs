@@ -65,11 +65,11 @@ public sealed class LobbyTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ("Chaturaji 2027", false, "Any|Chaturaji 2027", false),
+            ("Chaturaji 2027", false, "chaturaji-2027", false),
             (
                 lobby.Find("p.rules").TextContent,
                 lobby.Find("input.show-previews").HasAttribute("checked"),
-                string.Join('|', lobby.FindAll("select.filter-game option").Select(option => option.TextContent)),
+                this._page.Server.Listed?.Game,
                 this._page.Server.Listed?.Preview
             )
         );
@@ -110,7 +110,7 @@ public sealed class LobbyTest : IDisposable
     }
 
     [Fact]
-    public void ShowPreviews_WhenAPreviewOfSeveralSizesIsChosen_KeepsTheChoiceWithTheGamesAboveTheSize()
+    public void ShowPreviews_WhenAPreviewOfSeveralSizesIsChosen_KeepsTheChoiceWithTheGameForTheWholeLobby()
     {
         // Arrange
         this._page.Server.MoreRulesets = PreviewSizes;
@@ -122,8 +122,12 @@ public sealed class LobbyTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ["game", "show-previews", "size"],
-            lobby.FindAll(".choices select, .choices input").Select(field => field.ClassName)
+            ("game,show-previews", "size", "grand-legions"),
+            (
+                ClassesOf(lobby, ".lobby-games select, .lobby-games input"),
+                ClassesOf(lobby, ".choices select, .choices input"),
+                this._page.Server.Listed?.Game
+            )
         );
     }
 
@@ -135,7 +139,6 @@ public sealed class LobbyTest : IDisposable
         _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.previews").SetResult("shown");
         _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.last-game").SetResult("grand-legions");
         IRenderedComponent<Lobby> lobby = this.Render();
-        lobby.Find("select.filter-game").Change("grand-legions");
         lobby.Find("select.filter-size").Change("grand-legions-large");
         string chosen = $"{lobby.Find("select.game").GetAttribute("value")}";
 
@@ -156,14 +159,13 @@ public sealed class LobbyTest : IDisposable
         this._page.Server.MoreRulesets = PreviewSizes;
         _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.previews").SetResult("shown");
         IRenderedComponent<Lobby> lobby = this.Render();
-        lobby.Find("select.filter-game").Change("chaturaji-2027");
 
         // Act
         lobby.Find("input.show-previews").Change(false);
 
         // Assert
         Assert.Equal(
-            ("Chaturaji 2027", Waiting() with { Game = "chaturaji-2027" }),
+            ("Chaturaji 2027", Waiting()),
             (lobby.Find("p.rules").TextContent, this._page.Server.Listed)
         );
     }
@@ -1170,7 +1172,7 @@ public sealed class LobbyTest : IDisposable
 
         // Assert
         Assert.Equal(
-            (new GameListQuery(Open: open, Over: false, Preview: false), state),
+            (Waiting() with { Open = open }, state),
             (this._page.Server.Listed, lobby.Find("select.filter-state").GetAttribute("value"))
         );
     }
@@ -1194,8 +1196,8 @@ public sealed class LobbyTest : IDisposable
         Assert.Equal(
             (
                 "Any not over|Waiting for players|In progress|Mine",
-                (new GameListQuery(Over: false, Preview: false, Player: "ada"), "mine"),
-                new GameListQuery(Open: true, Over: false, Preview: false)
+                (Waiting() with { Open = null, Player = "ada" }, "mine"),
+                Waiting()
             ),
             (offered, mine, this._page.Server.Listed)
         );
@@ -1217,7 +1219,7 @@ public sealed class LobbyTest : IDisposable
     }
 
     [Fact]
-    public void FilterGame_WhenRendered_OffersEachGameOnceWhateverItsSizes()
+    public void Game_WhenRendered_OffersEachGameOnceWhateverItsSizesAndListsTheOneChosenWithoutAChoiceOfSize()
     {
         // Arrange
         this._page.Server.MoreRulesets = GrandSizes;
@@ -1227,30 +1229,33 @@ public sealed class LobbyTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ("Any|Chaturaji 2027|Grand Legions", 0),
+            ("Chaturaji 2027|Grand Legions", 0, 1, Waiting()),
             (
-                string.Join('|', lobby.FindAll("select.filter-game option").Select(option => option.TextContent)),
-                lobby.FindAll("select.filter-size").Count
+                string.Join('|', lobby.FindAll("select.game option").Select(option => option.TextContent)),
+                lobby.FindAll("select.filter-size").Count,
+                lobby.FindAll("select.game").Count,
+                this._page.Server.Listed
             )
         );
     }
 
     [Fact]
-    public void FilterGame_WhenAGamePlayedAtSeveralSizesIsChosen_ListsItAtAnySizeAndOffersItsSizes()
+    public void Game_WhenOnePlayedAtSeveralSizesIsChosen_ListsItAtAnySizeAndShowsItsLeaderboard()
     {
         // Arrange
         this._page.Server.MoreRulesets = GrandSizes;
         IRenderedComponent<Lobby> lobby = this.Render();
 
         // Act
-        lobby.Find("select.filter-game").Change("grand-legions");
+        lobby.Find("select.game").Change("grand-legions");
 
         // Assert
         Assert.Equal(
-            (Waiting() with { Game = "grand-legions" }, "Any|small|large"),
+            (Waiting() with { Game = "grand-legions" }, "Any|small|large", "leaderboard grand-legions"),
             (
                 this._page.Server.Listed,
-                string.Join('|', lobby.FindAll("select.filter-size option").Select(option => option.TextContent))
+                string.Join('|', lobby.FindAll("select.filter-size option").Select(option => option.TextContent)),
+                this._page.Server.Calls.Last(call => call.StartsWith("leaderboard", StringComparison.Ordinal))
             )
         );
     }
@@ -1263,7 +1268,7 @@ public sealed class LobbyTest : IDisposable
         // Arrange
         this._page.Server.MoreRulesets = GrandSizes;
         IRenderedComponent<Lobby> lobby = this.Render();
-        lobby.Find("select.filter-game").Change("grand-legions");
+        lobby.Find("select.game").Change("grand-legions");
 
         // Act
         lobby.Find("select.filter-size").Change(chosen);
@@ -1273,36 +1278,19 @@ public sealed class LobbyTest : IDisposable
     }
 
     [Fact]
-    public void FilterGame_WhenAGameOfOneSizeIsChosen_ListsItAndOffersNoSize()
+    public void Game_WhenOneOfOneSizeIsChosenAfterASize_ListsItAndOffersNoSize()
     {
         // Arrange
         this._page.Server.MoreRulesets = GrandSizes;
         IRenderedComponent<Lobby> lobby = this.Render();
-        lobby.Find("select.filter-game").Change("grand-legions");
+        lobby.Find("select.game").Change("grand-legions");
         lobby.Find("select.filter-size").Change("grand-legions-large");
 
         // Act
-        lobby.Find("select.filter-game").Change("chaturaji-2027");
+        lobby.Find("select.game").Change("chaturaji-2027");
 
         // Assert
-        Assert.Equal(
-            (Waiting() with { Game = "chaturaji-2027" }, 0),
-            (this._page.Server.Listed, lobby.FindAll("select.filter-size").Count)
-        );
-    }
-
-    [Fact]
-    public void FilterGame_WhenAnyIsChosen_ListsEveryGame()
-    {
-        // Arrange
-        IRenderedComponent<Lobby> lobby = this.Render();
-        lobby.Find("select.filter-game").Change("chaturaji-2027");
-
-        // Act
-        lobby.Find("select.filter-game").Change(string.Empty);
-
-        // Assert
-        Assert.Equal(Waiting(), this._page.Server.Listed);
+        Assert.Equal((Waiting(), 0), (this._page.Server.Listed, lobby.FindAll("select.filter-size").Count));
     }
 
     [Theory]
@@ -1532,8 +1520,15 @@ public sealed class LobbyTest : IDisposable
 
     private static int Pages(IRenderedComponent<Lobby> lobby) => lobby.FindAll("div.pages").Count;
 
-    /// <summary>What the list asks for until the player filters it otherwise: the games waiting for players.</summary>
-    private static GameListQuery Waiting() => new(Open: true, Over: false, Preview: false);
+    /// <summary>
+    /// What the list asks for until the player filters it otherwise: the games waiting for players, of the game
+    /// chosen, Chaturaji 2027 unless another.
+    /// </summary>
+    private static GameListQuery Waiting() => new(Open: true, Over: false, Game: "chaturaji-2027", Preview: false);
+
+    /// <summary>The classes of the fields <paramref name="selector"/> finds, in order, by commas.</summary>
+    private static string ClassesOf(IRenderedComponent<Lobby> lobby, string selector) =>
+        string.Join(",", lobby.FindAll(selector).Select(field => field.ClassName));
 
     /// <summary>A ruleset that is one size of a game played at several: "Grand Legions (small)".</summary>
     private static RulesetDto Sized(string game, string gameName, string size) =>

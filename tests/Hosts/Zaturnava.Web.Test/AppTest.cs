@@ -104,46 +104,17 @@ public sealed class AppTest : IDisposable
     }
 
     [Fact]
-    public void Leaderboard_WhenClicked_OpensTheLeaderboardUntilClosed()
+    public void Leaderboard_WhenInTheLobbyAndThenAtATable_IsAPanelOfTheLobbyAndNotOfTheTable()
     {
         // Arrange
         IRenderedComponent<App> app = this._page.Render<App>();
+        string inLobby = app.Find(".lobby .panel.leaderboard h2").TextContent;
 
         // Act
-        app.Find("button.leaderboard-open").Click();
-        string title = app.Find(".leaderboard h2").TextContent;
-        app.Find(".leaderboard button.close").Click();
-
-        // Assert
-        Assert.Equal(("Leaderboard", 0), (title, app.FindAll(".leaderboard").Count));
-    }
-
-    [Fact]
-    public void Leaderboard_WhenOpenedAtATableAndThenInTheLobby_BeginsAtTheTablesGameThenTheLastStarted()
-    {
-        // Arrange
-        this._page.Server.MoreRulesets =
-        [
-            new("grand-legions-small", "Grand Legions (small)", 4)
-            {
-                Game = "grand-legions",
-                GameName = "Grand Legions",
-            },
-        ];
-        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.last-game").SetResult("grand-legions");
-        IRenderedComponent<App> app = this._page.Render<App>();
         Play(app);
 
-        // Act
-        app.Find("button.leaderboard-open").Click();
-        string atTable = app.Find("select.leaderboard-game").GetAttribute("value")!;
-        app.Find(".leaderboard button.close").Click();
-        app.Find("button.leave").Click();
-        app.Find("button.leaderboard-open").Click();
-        string inLobby = app.Find("select.leaderboard-game").GetAttribute("value")!;
-
         // Assert
-        Assert.Equal(("chaturaji-2027", "grand-legions"), (atTable, inLobby));
+        Assert.Equal(("Leaderboard", 0), (inLobby, app.FindAll(".leaderboard").Count));
     }
 
     [Fact]
@@ -157,7 +128,7 @@ public sealed class AppTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ("leave,brand,how-to-play,the-bots,leaderboard-open", "safety,theme,pieces,cards,sound"),
+            ("leave,brand,how-to-play,the-bots", "safety,theme,pieces,cards,sound"),
             (
                 string.Join(",", app.FindAll(".table-bar .where > *").Select(part => part.ClassName)),
                 string.Join(",", app.FindAll(".table-bar .settings button").Select(button => button.ClassName))

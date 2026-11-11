@@ -161,24 +161,6 @@ public sealed class InMemoryPlayerStore : IPlayerPersisting
         return Task.FromResult(leaders);
     }
 
-    public Task<ImmutableList<Standing>> LeadersAgainstBots(
-        [Required] string game,
-        int count,
-        CancellationToken cancellationToken
-    )
-    {
-        ImmutableList<Standing> leaders =
-        [
-            .. this._standings.Values
-                .Where(standing => standing.Game == game && standing.PlayedAgainstBots > 0)
-                .OrderByDescending(standing => standing.WonAgainstBots)
-                .ThenBy(standing => standing.LostAgainstBots)
-                .ThenBy(standing => standing.Player.Value, StringComparer.Ordinal)
-                .Take(count),
-        ];
-        return Task.FromResult(leaders);
-    }
-
     public Task<ImmutableDictionary<string, BotStanding>> BotStandings(
         [Required] string game,
         [Required] ImmutableList<string> bots,

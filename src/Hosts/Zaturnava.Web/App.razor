@@ -1,6 +1,6 @@
 @* The whole page: the lobby until the player sits at (or watches) a table, under signing in (at the top right, if
    the server offers it) and over a quiet bar of the page's name, buttons opening the guide to the game and the
-   guide to the bots and the leaderboard, and the page's own settings (the safety, beside
+   guide to the bots, and the page's own settings (the safety, beside
    the table's view buttons; how it looks: theme, and pieces at a table whose pieces that changes; at a table, the
    piece cards on or off; then sound); at a
    table, the table shows the guide's button and the settings in its own bar. No URL routing, so the page works from any address it is served at. A seat the player takes is
@@ -19,7 +19,6 @@
            PageSettings="this.Settings"
            HowToPlay="this.HowToPlay"
            OnLeave="this.Leave"
-           OnRuleset="this.AtRuleset"
            OnSeated="this.Sit" />
 }
 else
@@ -48,21 +47,14 @@ else
     <BotGuide OnClose="this.CloseBotGuide" />
 }
 
-@if (this._isLeaderboardOpen)
-{
-    <Leaderboard OnClose="this.CloseLeaderboard" RulesetId="@(this._seating is null ? null : this._rulesetId)" />
-}
-
 @code {
     private Seating? _seating;
-    private string? _rulesetId;
     private string _theme = Browser.Dark;
     private bool _isSoundOn = true;
     private bool _isSafetyOn = true;
     private bool _areCardsShown = true;
     private bool _isGuideOpen;
     private bool _isBotGuideOpen;
-    private bool _isLeaderboardOpen;
     private PieceSet _pieces;
 
     /// <summary>How many times a player has signed in or out here: the lobby is made anew each time.</summary>
@@ -73,7 +65,6 @@ else
         {
             builder.AddContent(0, this.HowToPlayButton);
             builder.AddContent(1, this.BotsButton);
-            builder.AddContent(2, this.LeaderboardButton);
         };
 
     private RenderFragment HowToPlayButton =>
@@ -81,9 +72,6 @@ else
 
     private RenderFragment BotsButton =>
         @<button class="the-bots" @onclick="this.OpenBotGuide">The bots</button>;
-
-    private RenderFragment LeaderboardButton =>
-        @<button class="leaderboard-open" @onclick="this.OpenLeaderboard">Leaderboard</button>;
 
     /// <summary>The page's settings; the choice of pieces only where it changes them, at a table.</summary>
     private RenderFragment<bool> Settings =>
@@ -136,9 +124,6 @@ else
 
     private void Leave() => this._seating = null;
 
-    /// <summary>The ruleset of the table the player is at, for the leaderboard to open at.</summary>
-    private void AtRuleset(string rulesetId) => this._rulesetId = rulesetId;
-
     /// <summary>
     /// The lobby anew, for whoever is signed in now: the games waiting for them, the seats they may take back; and
     /// the settings they keep.
@@ -156,10 +141,6 @@ else
     private void OpenBotGuide() => this._isBotGuideOpen = true;
 
     private void CloseBotGuide() => this._isBotGuideOpen = false;
-
-    private void OpenLeaderboard() => this._isLeaderboardOpen = true;
-
-    private void CloseLeaderboard() => this._isLeaderboardOpen = false;
 
     private async Task SwitchTheme()
     {

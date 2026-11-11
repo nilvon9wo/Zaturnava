@@ -27,19 +27,15 @@ public sealed class GameRoutesTest
     }
 
     [Fact]
-    public void BotLeaderboards_WhenTheGameNeedsEscaping_EscapeItBeforeTheirLastSegment()
+    public void BotLeaderboard_WhenTheGameNeedsEscaping_EscapesItBeforeItsLastSegment()
     {
         // Arrange - nothing beyond the game
 
         // Act
-        (string bots, string againstBots) =
-            (GameRoutes.BotLeaderboard("a/b c"), GameRoutes.AgainstBotsLeaderboard("a/b c"));
+        string route = GameRoutes.BotLeaderboard("a/b c");
 
         // Assert
-        Assert.Equal(
-            ("api/leaderboards/a%2Fb%20c/bots", "api/leaderboards/a%2Fb%20c/against-bots"),
-            (bots, againstBots)
-        );
+        Assert.Equal("api/leaderboards/a%2Fb%20c/bots", route);
     }
 
     [Fact]

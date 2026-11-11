@@ -152,29 +152,6 @@ public sealed class HttpGameClientTest
     }
 
     [Fact]
-    public async Task AgainstBotsLeaderboard_WhenGivenAGame_GetsWhoHasDoneBestAgainstBotsAtIt()
-    {
-        // Arrange
-        StubServer server = new(
-            HttpStatusCode.OK,
-            """[{"place":1,"name":"Ada","elo":1516,"experience":14,"won":1,"lost":0,"drawn":0,"wonAgainstBots":1}]"""
-        );
-
-        // Act
-        ImmutableList<StandingDto> leaders = await Client(server).AgainstBotsLeaderboard("chess", this._cancellation);
-
-        // Assert
-        Assert.Equal(
-            (
-                "GET",
-                "/api/leaderboards/chess/against-bots",
-                new StandingDto(1, "Ada", 1516, 14, 1, 0, 0) { WonAgainstBots = 1 }
-            ),
-            (server.Method, server.Path, Assert.Single(leaders))
-        );
-    }
-
-    [Fact]
     public async Task BotLeaderboard_WhenGivenAGame_GetsTheBotsStandingHighestAtIt()
     {
         // Arrange

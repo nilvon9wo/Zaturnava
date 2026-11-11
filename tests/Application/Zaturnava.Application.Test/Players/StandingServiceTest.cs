@@ -73,7 +73,7 @@ public sealed class StandingServiceTest
     }
 
     [Fact]
-    public async Task RateFinished_WhenPeopleBeatBotsAlone_CountsItAgainstBotsForThemAndAgainstPeopleForTheBots()
+    public async Task RateFinished_WhenPeopleBeatBotsAlone_CountsItAgainstPeopleForTheBots()
     {
         // Arrange - Ada and Bea beat the first-choice bot (3 points) and one no longer offered
         GameState ended = EndedRules.State([Black]) with
@@ -96,14 +96,8 @@ public sealed class StandingServiceTest
         _ = await service.RateFinished(this._cancellation);
 
         // Assert
-        ImmutableDictionary<PlayerId, Standing> players =
-            await this._players.Standings(EndedRules.RulesetId, [Ada, Bea], this._cancellation);
         ImmutableDictionary<string, BotStanding> bots =
             await this._players.BotStandings(EndedRules.RulesetId, [FirstChoiceBot.BotId, "gone"], this._cancellation);
-        Assert.Equal(
-            (1, 1, 0),
-            (players[Ada].WonAgainstBots, players[Bea].WonAgainstBots, players[Ada].LostAgainstBots)
-        );
         Assert.Equal(
             [
                 new BotStanding(FirstChoiceBot.BotId, EndedRules.RulesetId)
@@ -160,79 +154,30 @@ public sealed class StandingServiceTest
                 standing.Drawn,
                 standing.WonAgainstPeople,
                 standing.LostAgainstPeople + standing.DrawnAgainstPeople,
-                ada.PlayedAgainstBots
+                ada.Played
             )
         );
     }
 
     [Fact]
-    public async Task RateFinished_WhenAPlayerDrawsOrLosesAgainstBotsAlone_CountsItAgainstBots()
+    public async Task BotLeaders_WhenABotIsRatedAtTheGame_GivesItThatRatingAsItsElo()
     {
-        // Arrange - Ada and a bot no longer offered against two first-choice bots: drawn, then lost
-        await this._games.Add(
-            Record(
-                "drawn",
-                new HumanSeat("ada", Ada),
-                new BotSeat(FirstChoiceBot.BotId),
-                new BotSeat("gone"),
-                new BotSeat(FirstChoiceBot.BotId)
-            ),
+        // Arrange - the first-choice bot rated 1700 at the game's one size
+        await this._players.KeepBots(
+            [new BotStanding(FirstChoiceBot.BotId, EndedRules.RulesetId) { Won = 1 }],
             this._cancellation
         );
-        StandingService service = this.Service(new EndedRules(EndedRules.State([])), null);
-        _ = await service.RateFinished(this._cancellation);
-        await this._games.Add(
-            Record(
-                "lost",
-                new HumanSeat("ada", Ada),
-                new BotSeat(FirstChoiceBot.BotId),
-                new BotSeat("gone"),
-                new BotSeat(FirstChoiceBot.BotId)
-            ),
-            this._cancellation
-        );
+        StandingService service = this.Service(new EndedRules(EndedRules.State([])), 1700);
 
         // Act
-        _ = await this.Service(new EndedRules(EndedRules.State([Yellow])), null).RateFinished(this._cancellation);
+        ImmutableList<BotLeader> leaders = await service.BotLeaders(EndedRules.RulesetId, this._cancellation);
 
         // Assert
-        Standing ada = (await this._players.Standings(EndedRules.RulesetId, [Ada], this._cancellation))[Ada];
-        Assert.Equal((0, 1, 1), (ada.WonAgainstBots, ada.LostAgainstBots, ada.DrawnAgainstBots));
+        Assert.Equal(1700, Assert.Single(leaders).Elo);
     }
 
     [Fact]
-    public async Task LeadersAgainstBots_WhenPlayersHaveFacedBotsAlone_NamesThemMostWinsFirstThenFewestLosses()
-    {
-        // Arrange - one standing no longer known, and one who has never faced bots alone
-        await this._players.Add(new Player(Ada, "Ada", []), this._cancellation);
-        await this._players.Add(new Player(Bea, "Bea", []), this._cancellation);
-        await this._players.Add(new Player(new PlayerId("cy"), "Cy", []), this._cancellation);
-        await this._players.Keep(
-            [
-                new Standing(Ada, "chess") { WonAgainstBots = 2, LostAgainstBots = 3 },
-                new Standing(Bea, "chess") { WonAgainstBots = 2, LostAgainstBots = 1 },
-                new Standing(new PlayerId("cy"), "chess") { Won = 9 },
-                new Standing(new PlayerId("ghost"), "chess") { DrawnAgainstBots = 1 },
-            ],
-            this._cancellation
-        );
-        StandingService service = this.Service(new EndedRules(EndedRules.State([])), null);
-
-        // Act
-        ImmutableList<Leader> leaders = await service.LeadersAgainstBots("chess", this._cancellation);
-
-        // Assert
-        Assert.Equal(
-            "Bea 2-1, Ada 2-3, deleted player 0-0",
-            string.Join(
-                ", ",
-                leaders.Select(l => $"{l.Name} {l.Standing.WonAgainstBots}-{l.Standing.LostAgainstBots}")
-            )
-        );
-    }
-
-    [Fact]
-    public async Task BotLeaders_WhenBotsHaveFinishedGames_NamesThoseStillOfferedMostWinsFirst()
+    public async Task BotLeaders_WhenBotsHaveFinishedGames_NamesThoseStillOfferedMostWinsFirstUnratedAtFirstElo()
     {
         // Arrange - the first-choice bot, one no longer offered, and another game's
         await this._players.KeepBots(
@@ -250,8 +195,8 @@ public sealed class StandingServiceTest
 
         // Assert
         Assert.Equal(
-            "First choice 1-4",
-            string.Join(", ", leaders.Select(l => $"{l.Name} {l.Standing.Won}-{l.Standing.Lost}"))
+            "First choice 1-4 1500",
+            string.Join(", ", leaders.Select(l => $"{l.Name} {l.Standing.Won}-{l.Standing.Lost} {l.Elo}"))
         );
     }
 
