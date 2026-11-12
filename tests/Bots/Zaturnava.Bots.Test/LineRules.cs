@@ -28,6 +28,7 @@ internal sealed class LineRules(ImmutableList<GameAction> legalActions) : IRules
     public static readonly PieceKindId Pawn = new("pawn");
     public static readonly PieceKindId Horse = new("horse");
     public static readonly PieceKindId Boat = new("boat");
+    public static readonly PieceKindId Elephant = new("elephant");
     public static readonly PieceKindId Raja = new("raja");
 
     private const int Length = 8;
@@ -106,6 +107,11 @@ internal sealed class LineRules(ImmutableList<GameAction> legalActions) : IRules
     public GameAction Parse([Required] ActionDescriptor descriptor) => throw new NotSupportedException();
 
     public int WorthOf(PieceKindId kind) => ScoringRules.Worth[kind];
+
+    /// <summary>What each kind is worth keeping on the board: what it is worth, unless set.</summary>
+    public ImmutableDictionary<PieceKindId, int> Keeping { get; init; } = ScoringRules.Worth;
+
+    public int KeepingWorthOf(PieceKindId kind) => this.Keeping[kind];
 
     public int RansomPointsOf([Required] GameState state, [Required] RansomOffer offer) => 0;
 

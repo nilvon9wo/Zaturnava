@@ -129,6 +129,14 @@ public interface IRulesApplying
     int WorthOf(PieceKindId kind);
 
     /// <summary>
+    /// What a piece of <paramref name="kind"/> is worth keeping on the board, to one weighing an exchange: what it
+    /// could become, and where it can go, as well as what taking it scores (a Pawn that may yet be promoted, say,
+    /// beside a Boat that reaches few cells); what it is worth (<see cref="WorthOf"/>), unless the ruleset says
+    /// otherwise.
+    /// </summary>
+    int KeepingWorthOf(PieceKindId kind) => this.WorthOf(kind);
+
+    /// <summary>
     /// The points <paramref name="offer"/>'s receiver would score for accepting it, to one weighing the trade:
     /// worth and points alike count toward winning.
     /// </summary>

@@ -25,6 +25,15 @@ public static class Chaturaji2027Pieces
     public static readonly ImmutableDictionary<PieceKindId, int> Points =
         PieceValues.Of(typeof(Chaturaji2027Pieces).Assembly, Chaturaji2027Rules.RulesetId);
 
+    /// <summary>
+    /// What each piece is worth keeping on the board, to one weighing an exchange, as its table has it
+    /// (<c>Values/chaturaji-2027-keeping.json</c>; Proposed, the user's ruling of 2026-11-12, that a Pawn, which may
+    /// yet be promoted, matters more than a Boat, which reaches few cells, whatever taking each scores): a Pawn as
+    /// much as a Horse; every other piece what taking it scores.
+    /// </summary>
+    public static readonly ImmutableDictionary<PieceKindId, int> Keeping =
+        PieceValues.Of(typeof(Chaturaji2027Pieces).Assembly, Chaturaji2027Rules.RulesetId + "-keeping");
+
     public static readonly ImmutableDictionary<PieceKindId, string> ChaturajiNames =
         ImmutableDictionary<PieceKindId, string>.Empty
             .Add(Raja, "Raja")

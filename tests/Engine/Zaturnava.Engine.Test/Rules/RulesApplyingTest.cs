@@ -140,6 +140,23 @@ public sealed class RulesApplyingTest
         Assert.Empty(chances);
     }
 
+    [Fact]
+    public void KeepingWorthOf_WhenTheRulesetSaysNoOther_IsWhatThePieceIsWorth()
+    {
+        // Arrange
+        OneSizeRules rules = new();
+
+        // Act
+        int worth = KeepingWorthOf(rules, new PieceKindId("pawn"));
+
+        // Assert
+        Assert.Equal(4, worth);
+    }
+
+    private static int KeepingWorthOf<TRules>(TRules rules, PieceKindId kind)
+        where TRules : IRulesApplying =>
+        rules.KeepingWorthOf(kind);
+
     private static ImmutableList<GameAction> ChancesOf<TRules>(TRules rules, GameState state)
         where TRules : IRulesApplying =>
         rules.ChancesOf(state, Seat);
@@ -228,7 +245,8 @@ file sealed class OneSizeRules : IRulesApplying
 
     public string NameOf(SeatId seat) => throw new NotSupportedException();
 
-    public int WorthOf(PieceKindId kind) => throw new NotSupportedException();
+    /// <summary>Every piece is worth 4.</summary>
+    public int WorthOf(PieceKindId kind) => 4;
 
     public int RansomPointsOf([Required] GameState state, [Required] RansomOffer offer) =>
         throw new NotSupportedException();

@@ -41,7 +41,18 @@ public sealed record Chaturaji2027Variant(
     )
     {
         Heavies = [Chaturaji2027Pieces.Elephant],
+        Keeping = Chaturaji2027Pieces.Keeping,
     };
+
+    /// <summary>
+    /// What each kind is worth keeping on the board, to one weighing an exchange
+    /// (<see cref="IRulesApplying.KeepingWorthOf"/>): its <see cref="Points"/>, unless set.
+    /// </summary>
+    public ImmutableDictionary<PieceKindId, int> Keeping
+    {
+        get => field ?? this.Points;
+        init;
+    }
 
     /// <summary>
     /// The game this is one size of, if it is played at several; none, for a game of one size, which is its own.

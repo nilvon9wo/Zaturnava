@@ -344,13 +344,17 @@ first.
 
 ## Talking
 
-- **27, 28** Chat, to everyone or to chosen players (a teammate).
+- **27, 28** Chat, to everyone or to chosen players (a teammate). *Done*: beside the log, the table's talk has
+  a **Table** tab, said to everyone at the table, and, for a player, a **Team** tab, said to their team alone;
+  what AIs say can be hidden.
 
 ## Later
 
 - A mechanical bot that likes to roll, rather than always moving without dice (not a priority).
 - Bots should weigh where a ransomed piece lands, not only what it is worth: it may come back between
-  a rook and the piece it guarded or attacked.
+  a rook and the piece it guarded or attacked. *Done*: Argus weighs a trade by what an enemy could take once it
+  is done, Sage and Athena by the whole position then, and every bot refuses one that pens a piece of its team
+  in ([ai-assessment.md](bots/ai-assessment.md)).
 - **3** Variant pieces: two Chinese-chess-like elephants, one confined by two "rivers" that divide
   the board in four, and a dearer one that may cross them; the boat is to be replaced.
 - The grand game, of which Chaturaji 2027 is a part: its [specification](grand/specification.md),
