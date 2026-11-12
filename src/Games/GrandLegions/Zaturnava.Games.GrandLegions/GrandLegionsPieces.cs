@@ -153,7 +153,7 @@ public static class GrandLegionsPieces
         Piece(XiangqiElephant, "Elephant (Xiangqi)", Cavalry, Xiangqi, Leaper(2, 2).Lame())
             .Restricted(
                 Moves("The square between must be empty", 2),
-                Area(Terrain.River, "May not cross a river", 3),
+                Area(Terrain.River, "May not cross a river, nor stand in one", 3),
                 Bound("One cell in eight")
             ),
         Piece(WarEngine, "War Engine", Cavalry, Fairy, Leaper(2, 0))

@@ -250,12 +250,19 @@ public sealed class TableTest : IDisposable
     }
 
     [Fact]
-    public void Click_WhenTheKindHopsOverAPieceDrawn_SaysWhatThatPieceIs()
+    public void Click_WhenTheKindHopsOverAPieceDrawn_SaysWhatThatPieceIsAndTellsItsMovesInWordsToo()
     {
         // Arrange
         this._page.Server.View = FakeGameServer.SeatZeroToMove with
         {
-            Kinds = [new PieceKindDto("raja", "Raja", 5) { Diagram = new MoveDiagramDto(3, [], [], [7]) }],
+            Kinds =
+            [
+                new PieceKindDto("raja", "Raja", 5)
+                {
+                    Captures = ["Hops over the first piece"],
+                    Diagram = new MoveDiagramDto(3, [], [], [7]),
+                },
+            ],
         };
         IRenderedComponent<Table> table = this.Render(SeatZero);
 
@@ -264,8 +271,40 @@ public sealed class TableTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ("square light screen", "a piece to hop over"),
-            (Square(table, 7).ClassName, table.FindAll(".diagram-key .key-item")[^1].TextContent)
+            ("square light screen", "a piece to hop over", "Hops over the first piece"),
+            (
+                Square(table, 7).ClassName,
+                table.FindAll(".diagram-key .key-item")[^1].TextContent,
+                table.Find(".piece-card ul.captures li").TextContent
+            )
+        );
+    }
+
+    [Fact]
+    public void Click_WhenARiverHoldsTheKindBack_DrawsTheRiverAlongTheFirstRowAcrossIt()
+    {
+        // Arrange - on a 3 x 3 diagram, a river just ahead of the Raja, under the top row
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Kinds =
+            [
+                new PieceKindDto("raja", "Raja", 5) { Diagram = new MoveDiagramDto(3, [1], [1], []) { RiverRow = 2 } },
+            ],
+        };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Act
+        Cell(table, 0).Click();
+
+        // Assert
+        Assert.Equal(
+            ("square light river-bank", "square dark", "a river it may not cross", 0),
+            (
+                Square(table, 7).ClassName,
+                Square(table, 4).ClassName,
+                table.FindAll(".diagram-key .key-item")[^1].TextContent,
+                table.FindAll(".piece-card ul.moves").Count
+            )
         );
     }
 

@@ -510,13 +510,41 @@ public sealed class GrandLegionsRulesTest
     }
 
     [Theory]
-    [InlineData("xiangqi-cannon", "4,13,22,31,36,37,38,39,41,42,43,44,49", "67,76")]
-    [InlineData("grasshopper", "67", "67")]
-    [InlineData("janggi-cannon", "67,76", "67,76")]
-    public void GuideOf_WhenAPieceHops_DrawsItWithAPieceToHopTwoSquaresAhead(
+    [InlineData("xiangqi-elephant", "20,24", 5)]
+    [InlineData("alfil", "20,24,56,60", null)]
+    public void GuideOf_WhenARiverMayHoldThePieceBack_DrawsTheRiverJustAheadAndNothingAcrossIt(
+        string elephant,
+        string cells,
+        int? riverRow
+    )
+    {
+        // Arrange
+        Chaturaji2027Rules rules = GrandLegionsRules.RulesOf(QuickGame.Small);
+
+        // Act
+        MoveDiagram diagram = rules.GuideOf(new PieceKindId(elephant)).Diagram;
+
+        // Assert
+        Assert.Equal(
+            (cells, cells, riverRow),
+            (string.Join(",", diagram.Moves), string.Join(",", diagram.Captures), diagram.RiverRow)
+        );
+    }
+
+    [Theory]
+    [InlineData("xiangqi-cannon", "31,39,41,49", "4,13,36,37,43,44,67,76", "22,38,42,58")]
+    [InlineData(
+        "grasshopper",
+        "10,13,16,37,43,64,67,70",
+        "10,13,16,37,43,64,67,70",
+        "20,22,24,38,42,56,58,60"
+    )]
+    [InlineData("janggi-cannon", "4,13,36,37,43,44,67,76", "4,13,36,37,43,44,67,76", "22,38,42,58")]
+    public void GuideOf_WhenAPieceHops_DrawsItWithAPieceToHopTwoSquaresOutOnEachLine(
         string hopper,
         string moves,
-        string captures
+        string captures,
+        string screens
     )
     {
         // Arrange
@@ -527,8 +555,8 @@ public sealed class GrandLegionsRulesTest
 
         // Assert
         Assert.Equal(
-            (moves, captures, 58),
-            (string.Join(",", diagram.Moves), string.Join(",", diagram.Captures), diagram.Screens.Single())
+            (moves, captures, screens),
+            (string.Join(",", diagram.Moves), string.Join(",", diagram.Captures), string.Join(",", diagram.Screens))
         );
     }
 

@@ -137,6 +137,7 @@ public static class GrandLegionsRules
             FaceOffCallers = [GrandLegionsPieces.JanggiGeneral],
             DieNames = dice.Classes.ToImmutableDictionary(face => face.Key, face => NameOf(face.Value)),
             MayMove = RiverCrossing.On(game),
+            RiverBound = [GrandLegionsPieces.XiangqiElephant],
         };
 
     /// <summary>The dice as kinds: each value lets every piece of the classes it names move.</summary>

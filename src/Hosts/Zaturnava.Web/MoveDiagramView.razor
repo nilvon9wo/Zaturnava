@@ -1,7 +1,8 @@
 @* A kind's moves and captures, drawn as the server found them: a small board, the piece on its centre, a dot on each
    square it may move to, as the board marks one, and a ring, in another colour, on each it may capture on; a square
    it may do both on has both. A piece it hops over, for a piece that hops, is drawn as a grey disc. The server draws
-   it forward up; it is shown turned by Angle, as the board shows the piece's own army - its forward, and the board's
+   it forward up; a river the piece may not cross, drawn along the lower edge of the first row across it. It is
+   shown turned by Angle, as the board shows the piece's own army - its forward, and the board's
    turn - with an arrow at its forward edge, the piece itself kept upright, on a square shaded as the one it stands
    on on the board (the centre's row and column always sum to an even number). Under it, what each mark means, each
    mark kept beside its meaning. *@
@@ -33,6 +34,10 @@
     @if (!this.Diagram.Screens.IsEmpty)
     {
         <span class="key-item"><span class="key screen"></span>a piece to hop over</span>
+    }
+    @if (this.Diagram.RiverRow is not null)
+    {
+        <span class="key-item"><span class="key river"></span>a river it may not cross</span>
     }
 </p>
 
@@ -75,6 +80,7 @@
                 this.Diagram.Moves.Contains(cell) ? "move" : null,
                 this.Diagram.Captures.Contains(cell) ? "capture" : null,
                 this.Diagram.Screens.Contains(cell) ? "screen" : null,
+                row == this.Diagram.RiverRow ? "river-bank" : null,
             }.OfType<string>()
         );
 }

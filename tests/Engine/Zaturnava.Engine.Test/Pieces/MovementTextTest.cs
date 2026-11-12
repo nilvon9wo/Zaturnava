@@ -48,8 +48,14 @@ public sealed class MovementTextTest
     [InlineData("leaper-2-2", "Leaps exactly 2 cells diagonally, over anything between")]
     [InlineData("leaper-3-0", "Leaps exactly 3 cells orthogonally, over anything between")]
     [InlineData("leap-diagonal-2", "Leaps exactly 2 cells diagonally, over anything between")]
-    [InlineData("hop-just-beyond", "Hops over one piece in any direction, landing just beyond it")]
-    [InlineData("hop-any-beyond", "Hops over one piece orthogonally, to any cell beyond it up to the next piece")]
+    [InlineData(
+        "hop-just-beyond",
+        "Hops in any direction over the first piece in its line, however far, landing just beyond it"
+    )]
+    [InlineData(
+        "hop-any-beyond",
+        "Hops orthogonally over the first piece in its line, however far, to any cell beyond it up to the next piece"
+    )]
     public void Of_WhenAsked_TellsTheRuleForPeople(string name, string expected)
     {
         // Arrange
@@ -74,8 +80,8 @@ public sealed class MovementTextTest
 
         // Assert
         Assert.Equal(
-            "Hops over one piece orthogonally, to any cell beyond it up to the next piece, never over or onto a "
-                + "CANNON-J or CANNON-X",
+            "Hops orthogonally over the first piece in its line, however far, to any cell beyond it up to the next "
+                + "piece, never over or onto a CANNON-J or CANNON-X",
             text
         );
     }

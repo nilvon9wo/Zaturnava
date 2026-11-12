@@ -179,7 +179,10 @@ internal static class GameViews
                 guide.Diagram.Moves,
                 guide.Diagram.Captures,
                 guide.Diagram.Screens
-            ),
+            )
+            {
+                RiverRow = guide.Diagram.RiverRow,
+            },
         };
     }
 

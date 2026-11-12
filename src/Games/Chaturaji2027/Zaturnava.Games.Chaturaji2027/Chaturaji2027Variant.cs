@@ -96,6 +96,12 @@ public sealed record Chaturaji2027Variant(
     public MoveAllowing? MayMove { get; init; }
 
     /// <summary>
+    /// The kinds a river holds back (<see cref="MayMove"/> says how), drawn with a river just ahead of them that
+    /// they may not cross: none, unless set.
+    /// </summary>
+    public ImmutableHashSet<PieceKindId> RiverBound { get; init; } = [];
+
+    /// <summary>
     /// The kinds with start-row powers, the two-cell first move and <i>en passant</i>, if they start within their
     /// army's <see cref="StartRows"/>: none, unless set.
     /// </summary>
