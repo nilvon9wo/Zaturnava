@@ -85,16 +85,22 @@ internal sealed class ArmyDrafting
         return state.Thrones!.ContainsKey(seat)
             ?
             [
-                .. this._drafting.Offered(state.Terrain)
+                .. this.Offered(state)
                     .Where(kind => this._priceOf(kind) <= left)
-                    .OrderByDescending(this._priceOf)
-                    .ThenBy(kind => kind.Value, StringComparer.Ordinal)
                     .SelectMany(kind => free.Select(cell => (GameAction)new DraftAction(seat, kind, cell))),
                 new FillArmyAction(seat),
                 new PassAction(seat),
             ]
             : [.. kingdom.Select(cell => (GameAction)new ThroneAction(seat, cell)), new FillArmyAction(seat)];
     }
+
+    /// <summary>Every kind offered on the game's terrain, dearest first, then by key.</summary>
+    public ImmutableList<PieceKindId> Offered(GameState state) =>
+    [
+        .. this._drafting.Offered(state.Terrain)
+            .OrderByDescending(this._priceOf)
+            .ThenBy(kind => kind.Value, StringComparer.Ordinal),
+    ];
 
     /// <exception cref="IllegalActionException">The action is not among the seat's choices.</exception>
     public Transition Applied(GameState state, GameAction action)
@@ -104,13 +110,20 @@ internal sealed class ArmyDrafting
             ? action switch
             {
                 ThroneAction throne => state with { Thrones = state.Thrones!.SetItem(seat, throne.Cell) },
-                DraftAction draft => this.Bought(state, seat, draft.Piece, draft.Cell),
+                DraftAction draft => this.DoneIfSpent(this.Bought(state, seat, draft.Piece, draft.Cell), seat),
                 FillArmyAction => Done(this.Filled(state, seat), seat),
                 _ => Done(state, seat),
             }
             : throw new IllegalActionException(action);
         return new Transition(this.Next(acted, seat), []);
     }
+
+    /// <summary>
+    /// The seat done, once it can buy nothing more, for want of points or of a free square: it has no choice left
+    /// to make (Stated, 2026-11-12).
+    /// </summary>
+    private GameState DoneIfSpent(GameState state, SeatId seat) =>
+        this.ChoicesOf(state, seat).OfType<DraftAction>().Any() ? state : Done(state, seat);
 
     private static GameState Done(GameState state, SeatId seat) =>
         state with { Draft = state.Draft! with { Done = state.Draft.Done.Add(seat) } };

@@ -12,6 +12,15 @@ public sealed record PieceKindDto(string Kind, string Name, int Value)
 {
     public string? Class { get; init; }
 
+    /// <summary>Which way it goes, at a glance: "Forward", "Orthogonal", "Diagonal", "Every way" or "Other".</summary>
+    public string? Bearing { get; init; }
+
+    /// <summary>What sort of beast it is, among its class: "Horse"; none, if not told.</summary>
+    public string? Kin { get; init; }
+
+    /// <summary>Which game it comes from: "Shogi"; none, if not told.</summary>
+    public string? Origin { get; init; }
+
     public ImmutableList<string> Moves { get; init; } = [];
 
     public ImmutableList<string> Captures { get; init; } = [];

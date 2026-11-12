@@ -61,6 +61,22 @@ public sealed class ArmyDraftingTest
     }
 
     [Fact]
+    public void DraftOffered_WhileTheArmiesAreDraftedAndNotOtherwise_OffersEveryKindDearestFirst()
+    {
+        // Arrange
+        GameState drafted = this.Begun();
+
+        // Act
+        (string During, int Before) offered = (
+            string.Join(",", this._rules.DraftOffered(drafted).Select(kind => kind.Value)),
+            this._rules.DraftOffered(this._rules.CreateInitialState()).Count
+        );
+
+        // Assert
+        Assert.Equal(("raja,boat,pawn", 0), offered);
+    }
+
+    [Fact]
     public void Drafted_WhenTheVariantLetsNoOneDraft_LeavesTheGameAsDealt()
     {
         // Arrange
@@ -139,6 +155,45 @@ public sealed class ArmyDraftingTest
                 bought.Events.Count
             )
         );
+    }
+
+    [Theory]
+    [InlineData("raja", 0, true)]
+    [InlineData("pawn", 4, false)]
+    public void Apply_WhenASeatCanBuyNothingMore_HasItDoneWithoutAsking(string kind, int left, bool isDone)
+    {
+        // Arrange - 5 left: a Raja spends it all; a Pawn leaves 4, enough for more on b1
+        GameState state = this.Begun() with
+        {
+            Thrones = ImmutableDictionary<SeatId, CellId>.Empty.Add(Black, A1),
+        };
+        state = state with { Draft = state.Draft! with { Left = state.Draft.Left.SetItem(Black, 5) } };
+
+        // Act
+        GameState bought = this._rules.Apply(state, new DraftAction(Black, new PieceKindId(kind), A1)).State;
+
+        // Assert
+        Assert.Equal((left, isDone), (bought.Draft!.Left[Black], bought.Draft.Done.Contains(Black)));
+    }
+
+    [Fact]
+    public void Apply_WhenASeatFillsItsLastFreeSquare_HasItDoneWithoutAsking()
+    {
+        // Arrange - a Pawn on a1 already; a Pawn on b1 leaves 4, but no square
+        GameState state = this.Begun() with
+        {
+            Thrones = ImmutableDictionary<SeatId, CellId>.Empty.Add(Black, A1),
+        };
+        state = this._rules.Apply(state, new DraftAction(Black, Chaturaji2027Pieces.Pawn, A1)).State with
+        {
+            DecidingSeat = Black,
+        };
+
+        // Act
+        GameState bought = this._rules.Apply(state, new DraftAction(Black, Chaturaji2027Pieces.Pawn, B1)).State;
+
+        // Assert
+        Assert.Equal((4, true), (bought.Draft!.Left[Black], bought.Draft.Done.Contains(Black)));
     }
 
     [Fact]

@@ -277,8 +277,25 @@ html { scrollbar-gutter: stable; }
 .choices label { display: contents; }
 /* A game's checkbox options, each a line of its own. */
 label.alike, label.drafted, label.for-players { display: block; margin-top: 6px; }
-/* While the armies are drafted, what each seat has left to spend. */
-.draft-left { font-weight: 600; }
+/* The pieces to draft: filters over a table that scrolls within the turn's panel, its head kept in view. */
+.draft-catalogue h3 { margin: 4px 0 6px; font-size: 1em; }
+.draft-catalogue .filters { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; margin-bottom: 6px; }
+.draft-catalogue .filters select { margin-left: 4px; }
+.draft-table { max-height: 46vh; overflow: auto; border: 1px solid var(--panel-edge); border-radius: 4px; }
+.draft-table table { border-collapse: collapse; width: 100%; font-size: 0.9em; }
+.draft-table th { position: sticky; top: 0; background: var(--panel); text-align: left; padding: 4px 6px; }
+.draft-table td { padding: 3px 6px; border-top: 1px solid var(--panel-edge); vertical-align: top; }
+.draft-table .cost { text-align: right; font-variant-numeric: tabular-nums; }
+.draft-table .moves, .draft-table .held-back { color: var(--muted); }
+.draft-table button.pick {
+    display: flex; align-items: center; gap: 4px; background: none; border: 0; padding: 0;
+    color: inherit; font: inherit; text-align: left; cursor: pointer;
+}
+.draft-table button.pick .piece-icon { width: 1.6em; height: 1.6em; flex: none; }
+.draft-table tr.picked { background: var(--last); }
+.draft-table tr.picked .name { font-weight: 600; }
+.draft-table tr.unaffordable { opacity: 0.45; }
+.draft-table tr.unaffordable button.pick { cursor: not-allowed; }
 /* Each choice a row of its own: its name always starts one, even where the row before left a column free. */
 .choices .choice-name { grid-column: 1; }
 .choices select, .panel label.scenario select { width: 100%; min-width: 0; }
@@ -524,8 +541,8 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
 /* A river the piece may not cross: blue along the lower edge of the first row across it, as the board's are. */
 .move-diagram .river-bank { box-shadow: inset 0 -0.3em 0 #2f7fd8; }
 .diagram-key .key.river { background: linear-gradient(transparent 60%, #2f7fd8 60%); }
-/* A square a piece on which would block a leap: a red cross over it. */
-.move-diagram .blocker, .diagram-key .key.blocker {
+/* A square a piece on which would block a leap: a red cross over it, drawn over the square's own shade. */
+.move-diagram .square.blocker, .diagram-key .key.blocker {
     background-image:
         linear-gradient(45deg, transparent 44%, var(--danger) 44% 56%, transparent 56%),
         linear-gradient(-45deg, transparent 44%, var(--danger) 44% 56%, transparent 56%);

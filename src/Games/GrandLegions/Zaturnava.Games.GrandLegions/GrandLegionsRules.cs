@@ -60,7 +60,8 @@ public static class GrandLegionsRules
 
     /// <summary>
     /// What a player is told of each piece of the catalogue beyond its moves: its class, what its own promotion may
-    /// make it, and what holds it back. How much lifting a restriction costs is not told: quick
+    /// make it, and what holds it back; and, for sorting pieces, which way it goes, what sort of beast a Cavalry
+    /// piece is, and which game it comes from. How much lifting a restriction costs is not told: quick
     /// games lift none.
     /// </summary>
     public static ImmutableDictionary<PieceKindId, PieceGuide> Guides { get; } =
@@ -69,6 +70,9 @@ public static class GrandLegionsRules
             piece => new PieceGuide(GrandLegionsPieces.Kinds[piece.Id])
             {
                 Class = piece.Class.ToString(),
+                Bearing = MovementBearing.Of(piece.Movement),
+                Kin = GrandLegionsPieces.Kins.GetValueOrDefault(piece.Id),
+                Origin = piece.Tradition.ToString(),
                 PromotesTo = [.. piece.PromotesTo],
                 Restrictions = [.. piece.Restrictions.Select(restriction => restriction.Description)],
             }

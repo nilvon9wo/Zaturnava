@@ -69,7 +69,7 @@
                                         <PieceIcon Kind="@prisoner.Kind" Name="@prisoner.Name" Owner="prisoner.Owner" Mark="prisoner.Mark" Pieces="this.PiecesShown" />
                                     }
                                 </span>
-                                <span class="score">@seat.Score</span>
+                                <span class="score" title="@(view.DraftLeft is null ? "Score" : "Points left to spend")">@seat.Score</span>
                                 @if (this.MayTakeOver(view, seat))
                                 {
                                     <button class="take-over"
@@ -88,7 +88,7 @@
         <div class="play">
             <Board View="view"
                    Actions="this.Actions"
-                   Selection="this._selection"
+                   Selection="this.Selection"
                    Turn="this._boardTurn"
                    LastMove="this._lastMove"
                    Pieces="this.PiecesShown"
@@ -228,10 +228,6 @@
                         <button class="dismiss" @onclick="this.Dismiss">OK</button>
                     </p>
                 }
-                @if (view.DraftLeft is { } left)
-                {
-                    <p class="draft-left">@DraftNote(view, left)</p>
-                }
                 @if (this.Countdown() is { } countdown)
                 {
                     <p class="countdown">@countdown</p>
@@ -305,6 +301,37 @@
                                         @this.Named(ActionLabels.LabelOf(action))
                                     </button>
                                 }
+                            }
+                        </div>
+                    }
+                    else if (view.DraftLeft is { } left)
+                    {
+                        @if (view.LegalActions.Any(action => action.Kind == ThroneKind))
+                        {
+                            <p class="hint draft-throne">
+                                Click a marked square of your kingdom to set your throne there.
+                            </p>
+                        }
+                        else
+                        {
+                            <DraftCatalogue Kinds="view.DraftKinds"
+                                            Left="left[turn.Claim.Seat]"
+                                            Picked="@this._draftPick"
+                                            Owner="turn.Claim.Seat"
+                                            Pieces="this.PiecesShown"
+                                            OnPick="this.PickToDraft" />
+                            <p class="hint draft-place">
+                                @(this.Selection.Choice is null
+                                    ? "Pick a piece above, then a marked square of your kingdom for it."
+                                    : "Now click a marked square of your kingdom for it.")
+                            </p>
+                        }
+                        <div class="actions">
+                            @foreach (ActionDto action in turn.Actions.OffBoard)
+                            {
+                                <button class="action" @onclick="() => this.Submit(turn.Claim, action)">
+                                    @this.Named(ActionLabels.LabelOf(action))
+                                </button>
                             }
                         </div>
                     }
@@ -423,7 +450,18 @@
                 </ChildContent>
             </TableTalk>
 
-            @if (this.AreCardsShown && view.Pieces.Find(piece => piece.Id == this._inspected) is { } inspected)
+            @if (this.AreCardsShown && !this._isPlacingCardClosed && this.Placing(view) is { } placing)
+            {
+                <PieceCard Piece="placing.Piece"
+                           Kind="placing.Kind"
+                           Owner="@view.Seats[placing.Piece.Owner].Name"
+                           Cell=""
+                           Pieces="this.PiecesShown"
+                           Forward="view.Seats[placing.Piece.Owner].Forward"
+                           Turn="this._boardTurn"
+                           OnClose="this.ClosePlacingCard" />
+            }
+            else if (this.AreCardsShown && view.Pieces.Find(piece => piece.Id == this._inspected) is { } inspected)
             {
                 <PieceCard Piece="inspected"
                            Kind="view.Kinds.Find(kind => kind.Kind == inspected.Kind)"
@@ -511,6 +549,9 @@
     private const string RollKind = "roll";
     private const string MoveKind = "move";
     private const string EscapeKind = "escape";
+    private const string ThroneKind = "throne";
+    private const string DraftKind = "draft";
+    private const string PieceArgument = "piece";
     private const string Alarm = "alarm";
     private const string Rescued = "rescued";
     private const string Triumph = "triumph";
@@ -532,6 +573,12 @@
     private GameViewDto? _view;
     private Turn? _turn;
     private BoardSelection _selection = BoardSelection.None;
+
+    /// <summary>The kind the player picked to draft next; kept, so that several alike are placed in a row.</summary>
+    private string? _draftPick;
+
+    /// <summary>Whether the player put away the card of the piece they are placing, until they pick another.</summary>
+    private bool _isPlacingCardClosed;
 
     /// <summary>The piece last clicked on, told of beside the board until put away; none, if none was.</summary>
     private int? _inspected;
@@ -721,6 +768,9 @@
             ({ } outcome, _, _, _, _) => outcome.Text,
             _ when OpenSeatsOf(view) is { } open =>
                 $"Waiting for {open} to join: the game begins once every seat is taken.",
+            (_, { } seat, null, _, _) when view.DraftLeft is not null =>
+                $"{Who(view.Seats[seat])} is drafting their army.",
+            (_, { }, _, _, _) when view.DraftLeft is not null => "Your turn to draft your army.",
             (_, { } seat, null, _, _) when view.Proposal is { } proposal =>
                 $"{Who(view.Seats[proposal.Proposer])} proposes ending the game: waiting for {Who(view.Seats[seat])}.",
             (_, { }, _, _, _) when view.Proposal is { } proposal =>
@@ -879,9 +929,62 @@
     /// <summary>
     /// "Drafting armies, points left: Black 120, Yellow 95, Green 125, Red 110": what each seat still has to spend.
     /// </summary>
-    private static string DraftNote(GameViewDto view, ImmutableList<int> left) =>
-        "Drafting armies, points left: "
-        + string.Join(", ", view.Seats.Select(seat => $"{seat.Name} {left[seat.Id]}"));
+    /// <summary>
+    /// What is being placed, as the board shows it: while the player drafts, their throne, chosen at once, as it is the
+    /// only choice; else the piece they picked to draft, while they can still place it; else what they picked.
+    /// </summary>
+    private BoardSelection Selection =>
+        (this._selection, this._view, this._turn) switch
+        {
+            ({ Selected: null, Choice: null }, { DraftLeft: not null } view, not null)
+                when DraftChoiceOf(view, this._draftPick) is { } choice => BoardSelection.Choosing(choice),
+            _ => this._selection,
+        };
+
+    /// <summary>The choice placing the throne, if it is to be set; else placing <paramref name="pick"/>, if it may be.</summary>
+    private static string? DraftChoiceOf(GameViewDto view, string? pick) =>
+        view.LegalActions
+            .FirstOrDefault(action => action.Kind == ThroneKind
+                || (action.Kind == DraftKind && action.Arguments.GetValueOrDefault(PieceArgument) == pick))
+            ?.Choice;
+
+    /// <summary>Picks a kind to draft next, its card shown; picked again, lets it go.</summary>
+    private void PickToDraft(string kind)
+    {
+        this._draftPick = this._draftPick == kind ? null : kind;
+        this._isPlacingCardClosed = false;
+        this._selection = BoardSelection.None;
+    }
+
+    private void ClosePlacingCard() => this._isPlacingCardClosed = true;
+
+    /// <summary>
+    /// The piece the player is placing, and what the ruleset tells of its kind, for its card: the kind they picked to
+    /// draft, while they draft; else their piece going home, ransomed, or the prisoner they chose to escape. None, if
+    /// they are placing nothing.
+    /// </summary>
+    private (PieceDto Piece, PieceKindDto? Kind)? Placing(GameViewDto view) =>
+        (this._turn, view.DraftLeft) switch
+        {
+            (null, _) => null,
+            ({ } turn, not null) => view.DraftKinds.Find(kind => kind.Kind == this._draftPick) is { } drafted
+                ? (new PieceDto(-1, drafted.Kind, drafted.Name, turn.Claim.Seat, -1) { Mark = drafted.Mark }, drafted)
+                : null,
+            _ => (view.Returning ?? EscapingOf(view, this._selection.Choice)) is { } going
+                ? (
+                    new PieceDto(going.Id, going.Kind, going.Name, going.Owner, -1) { Mark = going.Mark },
+                    view.Kinds.Find(kind => kind.Kind == going.Kind)
+                )
+                : null,
+        };
+
+    /// <summary>The prisoner <paramref name="choice"/> lets escape; none, if it chooses none.</summary>
+    private static PrisonerDto? EscapingOf(GameViewDto view, string? choice) =>
+        view.LegalActions.FirstOrDefault(action => action.Kind == EscapeKind && action.Choice == choice) is { } escape
+            ? view.Seats.SelectMany(seat => seat.Prisoners)
+                .FirstOrDefault(prisoner => prisoner.Id.ToString(CultureInfo.InvariantCulture)
+                    == escape.Arguments.GetValueOrDefault(PieceArgument))
+            : null;
 
     /// <summary>
     /// The same game again: its ruleset, its bots in the same seats, the player at the same seat, its seats for people
@@ -1130,7 +1233,7 @@
     private Task Click(int cell)
     {
         this._inspected = this._view!.Pieces.Find(piece => piece.Cell == cell)?.Id ?? this._inspected;
-        (BoardSelection next, ActionDto? chosen) = this._selection.Click(cell, this.Actions);
+        (BoardSelection next, ActionDto? chosen) = this.Selection.Click(cell, this.Actions);
         this._selection = next;
         return this._turn is { } turn && chosen is { } action ? this.Submit(turn.Claim, action) : Task.CompletedTask;
     }

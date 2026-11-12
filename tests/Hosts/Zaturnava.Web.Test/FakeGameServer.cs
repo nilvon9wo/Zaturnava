@@ -452,7 +452,7 @@ internal sealed class FakeGameServer : IGameServing
 
     /// <summary>Black's Boat, held by Yellow, escaping to <paramref name="home"/>.</summary>
     public static ActionDto Escape(int home) =>
-        Action("escape", (ActionArguments.Home, home)) with
+        Action("escape", (ActionArguments.Home, home), ("piece", 7)) with
         {
             Label = $"Escape Black's Boat, held by Yellow, to {home}",
             Choice = "Escape Black's Boat, held by Yellow",

@@ -285,6 +285,24 @@ public static class GrandLegionsPieces
             .Add(JanggiCannon, "CJ")
             .Add(Grasshopper, "G");
 
+    /// <summary>
+    /// What sort of beast each Cavalry piece is, for people sorting them (Proposed): the Knight's kin, horses; the
+    /// elephants; the Camel; any other, other.
+    /// </summary>
+    public static readonly ImmutableDictionary<PieceKindId, string> Kins =
+        ImmutableDictionary<PieceKindId, string>.Empty
+            .Add(Knight, "Horse")
+            .Add(Horse, "Horse")
+            .Add(Knightrider, "Horse")
+            .Add(JanggiElephant, "Elephant")
+            .Add(Alfil, "Elephant")
+            .Add(XiangqiElephant, "Elephant")
+            .Add(Camel, "Camel")
+            .Add(Zebra, "Other")
+            .Add(Giraffe, "Other")
+            .Add(Threeleaper, "Other")
+            .Add(WarEngine, "Other");
+
     /// <summary>The emblem each class's pieces bear beneath their symbols (Stated: so the class is told).</summary>
     public static readonly ImmutableDictionary<PieceClass, string> Emblems =
         ImmutableDictionary<PieceClass, string>.Empty

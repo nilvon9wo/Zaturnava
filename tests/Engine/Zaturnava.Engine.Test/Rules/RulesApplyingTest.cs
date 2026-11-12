@@ -154,21 +154,21 @@ public sealed class RulesApplyingTest
     }
 
     [Fact]
-    public void Drafted_WhenTheRulesetSaysNoOther_IsNotDraftableAndLeavesTheGameAsDealt()
+    public void Drafted_WhenTheRulesetSaysNoOther_IsNotDraftableAndLeavesTheGameAsDealtOfferingNothing()
     {
         // Arrange
         OneSizeRules rules = new();
 
         // Act
-        (bool IsDraftable, GameState Drafted) drafted = DraftedOf(rules, OneSizeRules.State);
+        (bool IsDraftable, GameState Drafted, int Offered) drafted = DraftedOf(rules, OneSizeRules.State);
 
         // Assert
-        Assert.Equal((false, OneSizeRules.State), drafted);
+        Assert.Equal((false, OneSizeRules.State, 0), drafted);
     }
 
-    private static (bool IsDraftable, GameState Drafted) DraftedOf<TRules>(TRules rules, GameState dealt)
+    private static (bool IsDraftable, GameState Drafted, int Offered) DraftedOf<TRules>(TRules rules, GameState dealt)
         where TRules : IRulesApplying =>
-        (rules.IsDraftable, rules.Drafted(dealt, 7));
+        (rules.IsDraftable, rules.Drafted(dealt, 7), rules.DraftOffered(dealt).Count);
 
     private static int KeepingWorthOf<TRules>(TRules rules, PieceKindId kind)
         where TRules : IRulesApplying =>

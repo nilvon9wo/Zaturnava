@@ -81,6 +81,12 @@ public interface IRulesApplying
     GameState Drafted([Required] GameState dealt, int seed) => dealt;
 
     /// <summary>
+    /// Every kind a player may draft, while the armies are drafted, whether or not they can pay for it yet: the
+    /// catalogue they choose from. None, at any other time, or for a ruleset whose players may not draft.
+    /// </summary>
+    ImmutableList<PieceKindId> DraftOffered([Required] GameState state) => [];
+
+    /// <summary>
     /// The lines drawn on the board in the game as it stands, such as its rivers; none, unless the ruleset says
     /// otherwise.
     /// </summary>

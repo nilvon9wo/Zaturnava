@@ -64,6 +64,9 @@ internal sealed class TinyRules(int length, bool isDealt = false, Exception? fai
     /// </summary>
     public bool IsDraftable { get; init; } = isDealt;
 
+    /// <summary>What having a seat's army filled at random makes of the game; unless set, it is not allowed.</summary>
+    public Func<GameState, GameState>? Filled { get; init; }
+
     public GameState Drafted([Required] GameState dealt, int seed) =>
         dealt with { Draft = new ArmyDraft(seed, [], []) };
 
@@ -104,6 +107,7 @@ internal sealed class TinyRules(int length, bool isDealt = false, Exception? fai
             {
                 Position = new Position(state.Position.Occupants.Remove(faceOff.Caller)),
             },
+            (FillArmyAction, _) when this.Filled is { } fill => fill(state),
             (_, true) => this.After(state),
             _ => throw new IllegalActionException(action),
         };
