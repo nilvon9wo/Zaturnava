@@ -109,7 +109,7 @@ public static class GrandLegionsPieces
             ),
         Piece(Minister, "Minister", Infantry, Fairy, OrthogonalStep),
         Piece(Courtier, "Courtier", Infantry, Fairy, DiagonalStep)
-            .Restricted(Bound(OneColour)),
+            .Restricted(ColourBound(OneColour)),
         Piece(MakrukPawn, "Pawn (Makruk)", Infantry, Makruk, PawnMovement())
             .Restricted(Moves(BlockedAhead, 2))
             .Promoting(Courtier),
@@ -132,7 +132,7 @@ public static class GrandLegionsPieces
         Piece(DragonHorse, "Dragon Horse (Shogi)", Heavy, Shogi, DiagonalSlide, OrthogonalStep),
         Piece(Rook, "Rook (Western)", Heavy, Western, OrthogonalSlide),
         Piece(Bishop, "Bishop (Western)", Heavy, Western, DiagonalSlide)
-            .Restricted(Bound(OneColour)),
+            .Restricted(ColourBound(OneColour)),
 
         // Cavalry / Leaper
         Piece(Knightrider, "Knightrider", Cavalry, Fairy, MovementRule.Slide(DirectionSets.Knight))
@@ -140,24 +140,24 @@ public static class GrandLegionsPieces
         Piece(Zebra, "Zebra", Cavalry, Fairy, Leaper(3, 2)),
         Piece(Knight, "Knight (Western)", Cavalry, Western, KnightLeap),
         Piece(Camel, "Camel", Cavalry, Fairy, Leaper(3, 1))
-            .Restricted(Bound(OneColour)),
+            .Restricted(ColourBound(OneColour)),
         Piece(Horse, "Horse (Xiangqi)", Cavalry, Xiangqi, KnightLeap.Lame())
             .Restricted(Moves("The first square of its leg must be empty", 2)),
         Piece(JanggiElephant, "Elephant (Janggi)", Cavalry, Janggi, Leaper(3, 2).Lame())
             .Restricted(Moves("Each cell on the way must be empty", 2)),
         Piece(Giraffe, "Giraffe", Cavalry, Fairy, Leaper(4, 1)),
         Piece(Alfil, "Elephant (Alfil)", Cavalry, Fairy, Leaper(2, 2))
-            .Restricted(Bound("One cell in eight")),
+            .Restricted(ColourBound("One cell in eight")),
         Piece(Threeleaper, "Threeleaper", Cavalry, Fairy, Leaper(3, 0))
             .Restricted(Bound("One cell in nine")),
         Piece(XiangqiElephant, "Elephant (Xiangqi)", Cavalry, Xiangqi, Leaper(2, 2).Lame())
             .Restricted(
                 Moves("The square between must be empty", 2),
                 Area(Terrain.River, "May not cross a river, nor stand in one", 3),
-                Bound("One cell in eight")
+                ColourBound("One cell in eight")
             ),
         Piece(WarEngine, "War Engine", Cavalry, Fairy, Leaper(2, 0))
-            .Restricted(Bound("One cell in four")),
+            .Restricted(ColourBound("One cell in four")),
 
         // Specialty / Artillery
         Piece(
@@ -329,6 +329,10 @@ public static class GrandLegionsPieces
 
     /// <summary>The share of the board the piece's own move keeps it to: nothing lifts it.</summary>
     private static Restriction Bound(string description) => new(RestrictionKind.Binding, description);
+
+    /// <summary>A share of the board within one colour of square, as <see cref="Bound"/>.</summary>
+    private static Restriction ColourBound(string description) =>
+        Bound(description) with { IsColourBinding = true };
 
     private static MovementRule Step(DirectionSet directions) => MovementRule.Step(directions);
 

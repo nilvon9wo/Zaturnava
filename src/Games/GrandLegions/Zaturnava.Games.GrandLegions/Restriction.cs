@@ -11,4 +11,10 @@ public sealed record Restriction(RestrictionKind Kind, string Description, int? 
 
     /// <summary>Whether it keeps the piece within its <see cref="Terrain"/>, as a palace keeps a Guard.</summary>
     public bool IsConfining { get; init; }
+
+    /// <summary>
+    /// Whether it keeps the piece to the colour of square it starts on, as a Bishop's move does; a Threeleaper's
+    /// share of the board, one cell in nine, has squares of both colours.
+    /// </summary>
+    public bool IsColourBinding { get; init; }
 }
