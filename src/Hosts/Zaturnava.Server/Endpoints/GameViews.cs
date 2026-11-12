@@ -140,6 +140,8 @@ internal static class GameViews
             IsDealt = snapshot.Rules.IsDealt,
             AreArmiesAlike = ScenarioStart.AreAlike(snapshot.Record.Actions),
             IsDrafted = ScenarioStart.IsDrafted(snapshot.Record.Actions),
+            DraftBudget = ScenarioStart.DraftingOf(snapshot.Record.Actions)?.Budget,
+            Drafter = ScenarioStart.DraftingOf(snapshot.Record.Actions)?.Drafter?.Value,
             DraftLeft = snapshot.State.Draft is { } draft
                 ? [.. snapshot.State.Seats.Select(seat => draft.Left[seat.Id])]
                 : null,
@@ -264,6 +266,7 @@ internal static class GameViews
             IsPreview = rules.IsPreview,
             IsDealt = rules.IsDealt,
             IsDraftable = rules.IsDraftable,
+            DraftBudget = rules.DraftBudget,
             SeatNames = [.. state.Seats.Select(seat => rules.NameOf(seat.Id))],
             SeatTeams = [.. state.Seats.Select(seat => state.Teams.TeamOf(seat.Id))],
         };

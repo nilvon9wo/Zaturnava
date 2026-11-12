@@ -189,17 +189,30 @@
             }
             @if (this._mode != SetupMode.Quick && this.Ruleset(catalog).IsDealt)
             {
-                <label class="alike">
-                    <input type="checkbox" class="armies-alike" @bind="this._areArmiesAlike" />
-                    Every army alike: one army, picked at random, for every player
+                <label class="armies">
+                    <span class="choice-name">Armies</span>
+                    <select class="armies" @bind="this._armies">
+                        @if (this.Ruleset(catalog).IsDraftable)
+                        {
+                            <option value="@DraftOwn">Each player drafts their own</option>
+                            <option value="@DraftOne">I draft one army for everyone</option>
+                        }
+                        <option value="@RandomEach">Every army at random</option>
+                        <option value="@RandomOne">One army at random for everyone</option>
+                    </select>
                 </label>
-            }
-            @if (this._mode != SetupMode.Quick && this.Ruleset(catalog).IsDraftable)
-            {
-                <label class="drafted">
-                    <input type="checkbox" class="armies-drafted" @bind="this._isDrafted" />
-                    Draft our own armies: each player, in turn, sets a throne and buys pieces within the budget
-                </label>
+                @if (this.IsDrafting)
+                {
+                    <label class="budget">
+                        <span class="choice-name">Points to spend</span>
+                        <input type="number"
+                               class="draft-budget"
+                               min="1"
+                               max="100000"
+                               @bind="this._budget"
+                               placeholder="@this.Ruleset(catalog).DraftBudget" />
+                    </label>
+                }
             }
             @if (this._mode != SetupMode.Quick && this._me is not null)
             {
@@ -386,11 +399,20 @@
     private List<string> _picks = [];
     private string _scenario = string.Empty;
 
-    /// <summary>Whether a game whose armies are dealt deals every seat the same army: not, unless asked.</summary>
-    private bool _areArmiesAlike;
+    private const string DraftOwn = "draft-own";
+    private const string DraftOne = "draft-one";
+    private const string RandomEach = "random-each";
+    private const string RandomOne = "random-one";
 
-    /// <summary>Whether the players draft their own armies, in a game that lets them: not, unless asked.</summary>
-    private bool _isDrafted;
+    /// <summary>
+    /// How a custom game's armies come to be (Stated, 2026-11-12, a choice of its own, not a checkbox): each player
+    /// drafting their own, the default where the game lets them; the player drafting one army for everyone; every army
+    /// at random, the default elsewhere; or one army at random for everyone. Set to the default as each game is chosen.
+    /// </summary>
+    private string _armies = RandomEach;
+
+    /// <summary>What each seat has to spend, if the armies are drafted, one value for everyone; if none, the game's.</summary>
+    private int? _budget;
 
     /// <summary>Whether the game's open seats are for players signed in only, as a player signed in may ask.</summary>
     private bool _isForPlayers;
@@ -741,6 +763,7 @@
         }
 
         this._picks = [.. Enumerable.Repeat(string.Empty, this.Ruleset(catalog).SeatCount)];
+        this._armies = this.Ruleset(catalog).IsDraftable ? DraftOwn : RandomEach;
     }
 
     /// <summary>
@@ -779,10 +802,22 @@
             this._colour,
             this._scenario.Length == 0 ? null : this._scenario,
             await this.Browser.Claimant(),
-            armies: new ArmyDeal(this._areArmiesAlike) { IsDrafted = this._isDrafted },
+            armies: this.ArmiesAsked,
             isForPlayers: this._isForPlayers
         ));
     }
+
+    private bool IsDrafting => this._armies is DraftOwn or DraftOne;
+
+    /// <summary>How the game is asked to have its armies, as chosen; the player drafting for all from their seat.</summary>
+    private ArmyDeal ArmiesAsked =>
+        this._armies switch
+        {
+            DraftOwn => new ArmyDeal(false) { IsDrafted = true, Budget = this._budget },
+            DraftOne => new ArmyDeal(false) { IsDrafted = true, Budget = this._budget, Drafter = this._colour },
+            RandomOne => new ArmyDeal(true),
+            _ => new ArmyDeal(false),
+        };
 
     /// <summary>How each seat set up by strength is played: the player's own, and a person's, by no bot.</summary>
     private IEnumerable<SeatChoice> ChoicesOfSeats() =>

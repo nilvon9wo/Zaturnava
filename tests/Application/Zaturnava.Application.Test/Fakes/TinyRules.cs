@@ -67,8 +67,19 @@ internal sealed class TinyRules(int length, bool isDealt = false, Exception? fai
     /// <summary>What having a seat's army filled at random makes of the game; unless set, it is not allowed.</summary>
     public Func<GameState, GameState>? Filled { get; init; }
 
-    public GameState Drafted([Required] GameState dealt, int seed) =>
-        dealt with { Draft = new ArmyDraft(seed, [], []) };
+    /// <summary>The draft begun: the first seat with the budget set, 0 if none; and the drafter set, if any.</summary>
+    public GameState Drafted([Required] GameState dealt, int seed, DraftSettings? settings = null) =>
+        dealt with
+        {
+            Draft = new ArmyDraft(
+                seed,
+                ImmutableDictionary<SeatId, int>.Empty.Add(new SeatId(0), settings?.Budget ?? 0),
+                []
+            )
+            {
+                Drafter = settings?.Drafter,
+            },
+        };
 
     public GameState Deal([Required] GameState initial, int seed, bool areAlike = false, bool dealsTerrain = false) =>
         initial with

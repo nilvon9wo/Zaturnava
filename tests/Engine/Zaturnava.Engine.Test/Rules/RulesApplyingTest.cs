@@ -160,15 +160,18 @@ public sealed class RulesApplyingTest
         OneSizeRules rules = new();
 
         // Act
-        (bool IsDraftable, GameState Drafted, int Offered) drafted = DraftedOf(rules, OneSizeRules.State);
+        (bool IsDraftable, int? Budget, GameState Drafted, int Offered) drafted = DraftedOf(rules, OneSizeRules.State);
 
         // Assert
-        Assert.Equal((false, OneSizeRules.State, 0), drafted);
+        Assert.Equal((false, (int?)null, OneSizeRules.State, 0), drafted);
     }
 
-    private static (bool IsDraftable, GameState Drafted, int Offered) DraftedOf<TRules>(TRules rules, GameState dealt)
+    private static (bool IsDraftable, int? Budget, GameState Drafted, int Offered) DraftedOf<TRules>(
+        TRules rules,
+        GameState dealt
+    )
         where TRules : IRulesApplying =>
-        (rules.IsDraftable, rules.Drafted(dealt, 7), rules.DraftOffered(dealt).Count);
+        (rules.IsDraftable, rules.DraftBudget, rules.Drafted(dealt, 7), rules.DraftOffered(dealt).Count);
 
     private static int KeepingWorthOf<TRules>(TRules rules, PieceKindId kind)
         where TRules : IRulesApplying =>

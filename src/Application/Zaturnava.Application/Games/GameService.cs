@@ -100,16 +100,17 @@ public sealed class GameService(
         ImmutableList<ActionDescriptor> start = (scenarioId, rules.IsDealt) switch
         {
             ({ } scenario, _) => [ScenarioStart.Describe(this.ScenarioFor(rules, scenario))],
-            (null, true) =>
-            [
-                await this.DealFor(
-                    dealing with { IsDrafted = dealing.IsDrafted && rules.IsDraftable },
-                    cancellationToken
-                ),
-            ],
+            (null, true) => await this.DealFor(
+                rules,
+                dealing with { Drafting = rules.IsDraftable ? Checked(dealing.Drafting, seats.Count) : null },
+                cancellationToken
+            ),
             _ => [],
         };
-        GameState initial = ScenarioStart.StateOf(start, rules);
+        GameState initial = start.Skip(1).Aggregate(
+            ScenarioStart.StateOf(start, rules),
+            (state, action) => rules.Apply(state, rules.Parse(action)).State
+        );
         GameRecord created = new(GameId.New(), rules.Id, this.ControllersFor(initial, seats), start, 0);
         Played played = await this.PlayBots(rules, created, new Played(initial, start), cancellationToken);
         DateTimeOffset now = this._clock.Now;
@@ -123,15 +124,50 @@ public sealed class GameService(
 
     /// <summary>
     /// How a game begins dealt: as the game <see cref="Dealing.ArmiesOf"/> names began, if it was dealt, so that it is
-    /// dealt by the same seed, the same armies again (played again, of the same ruleset); else anew, its armies alike
-    /// as asked.
+    /// dealt by the same seed, the same armies again (played again, of the same ruleset), its draft too, if its armies
+    /// were drafted, so that they stand as they were drafted; else anew, its armies alike or drafted as asked.
     /// </summary>
-    private async Task<ActionDescriptor> DealFor(Dealing dealing, CancellationToken cancellationToken)
+    private async Task<ImmutableList<ActionDescriptor>> DealFor(
+        IRulesApplying rules,
+        Dealing dealing,
+        CancellationToken cancellationToken
+    )
     {
         GameRecord? previous = dealing.ArmiesOf is { } id ? await this._store.Find(id, cancellationToken) : null;
         return previous is { Actions: [{ Kind: ScenarioStart.DealKind } first, ..] }
-            ? first
-            : ScenarioStart.Dealt(this._dice, dealing.AreAlike, dealing.IsDrafted);
+            ? [first, .. DraftOf(previous.Actions, rules)]
+            : [ScenarioStart.Dealt(this._dice, dealing.AreAlike, dealing.Drafting)];
+    }
+
+    /// <summary>The draft as set, if its budget is something to spend and its drafter, if any, a seat.</summary>
+    /// <exception cref="InvalidGameSetupException">It is not.</exception>
+    private static DraftSettings? Checked(DraftSettings? drafting, int seats) =>
+        drafting switch
+        {
+            { Budget: < 1 } => throw new InvalidGameSetupException("A draft's budget is at least 1."),
+            { Drafter: { } drafter } when drafter.Value < 0 || drafter.Value >= seats =>
+                throw new InvalidGameSetupException($"The game has no seat {drafter.Value} to draft."),
+            _ => drafting,
+        };
+
+    /// <summary>
+    /// The actions that drafted the armies of a game that began with <paramref name="actions"/>, as many as it took
+    /// before play began; none, if they were not drafted.
+    /// </summary>
+    private static ImmutableList<ActionDescriptor> DraftOf(
+        ImmutableList<ActionDescriptor> actions,
+        IRulesApplying rules
+    )
+    {
+        GameState state = ScenarioStart.StateOf(actions, rules);
+        int drafted = 1;
+        while (drafted < actions.Count && state.Draft is not null)
+        {
+            state = rules.Apply(state, rules.Parse(actions[drafted])).State;
+            drafted++;
+        }
+
+        return actions.GetRange(1, drafted - 1);
     }
 
     /// <summary>

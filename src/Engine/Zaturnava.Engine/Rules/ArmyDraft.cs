@@ -8,4 +8,11 @@ namespace Net.NowhereAtAll.Zaturnava.Engine.Rules;
 /// seats done drafting (<paramref name="Done"/>), and the seed the game was dealt by, which any army filled at random
 /// is drafted by, so that the game replays alike.
 /// </summary>
-public sealed record ArmyDraft(int Seed, ImmutableDictionary<SeatId, int> Left, ImmutableHashSet<SeatId> Done);
+public sealed record ArmyDraft(int Seed, ImmutableDictionary<SeatId, int> Left, ImmutableHashSet<SeatId> Done)
+{
+    /// <summary>
+    /// The seat that alone drafts, one army for every seat, which each has alike once it is done
+    /// (<see cref="DraftSettings.Drafter"/>); none, if each drafts its own.
+    /// </summary>
+    public SeatId? Drafter { get; init; }
+}

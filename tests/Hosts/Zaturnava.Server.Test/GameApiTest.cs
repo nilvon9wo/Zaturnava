@@ -183,6 +183,22 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
     }
 
     [Fact]
+    public async Task Get_WhenTheDraftsBudgetAndDrafterAreSet_SaysSoAndHasTheDrafterSpendIt()
+    {
+        // Arrange
+        (string gameId, _) = await this.DraftedGame(40, 0);
+
+        // Act
+        GameViewDto view = await this._client.Get(gameId, this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            (true, (int?)40, (int?)0, 40, (int?)0),
+            (view.IsDrafted, view.DraftBudget, view.Drafter, view.DraftLeft![0], view.DecidingSeat)
+        );
+    }
+
+    [Fact]
     public async Task Advance_WhenTheBotsHaveTheirArmiesFilled_LeavesTheThroneSetterPiecesByPriceOrBeingDone()
     {
         // Arrange - a throne set; each bot, in turn, has its army filled
@@ -572,10 +588,15 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
     }
 
     /// <summary>A small Grand Legions game whose armies its players draft, its first seat claimed.</summary>
-    private async Task<(string GameId, string Token)> DraftedGame()
+    private async Task<(string GameId, string Token)> DraftedGame(int? budget = null, int? drafter = null)
     {
         GameCreatedDto created = await this._client.Create(
-            new CreateGameRequest("grand-legions-small", [null, "random", "random", "random"]) { IsDrafted = true },
+            new CreateGameRequest("grand-legions-small", [null, "random", "random", "random"])
+            {
+                IsDrafted = true,
+                DraftBudget = budget,
+                Drafter = drafter,
+            },
             this._cancellation
         );
         SeatClaimedDto claimed = await this._client.Claim(created.GameId, 0, null, null, this._cancellation);

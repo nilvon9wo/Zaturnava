@@ -29,6 +29,8 @@ public static class ScenarioStart
     private const string AlikeArgument = "alike";
     private const string TerrainArgument = "terrain";
     private const string DraftedArgument = "drafted";
+    private const string BudgetArgument = "budget";
+    private const string DrafterArgument = "drafter";
 
     /// <summary>The roll that seeds a game dealt anew: one die of as many sides as a seed may be.</summary>
     private static readonly DiceRequest SeedRoll = new(1, int.MaxValue - 1);
@@ -40,24 +42,56 @@ public static class ScenarioStart
     /// The first action of a game dealt by a seed <paramref name="dice"/> roll, its terrain too: every army alike, if
     /// <paramref name="areAlike"/>, which a game dealt before armies could be alike never says; nor does one dealt
     /// before terrain was say that its terrain is. Its armies drafted by its players, not dealt, if
-    /// <paramref name="isDrafted"/> (<see cref="IRulesApplying.Drafted"/>).
+    /// <paramref name="drafting"/> says how (<see cref="IRulesApplying.Drafted"/>): its budget and its one drafter, if
+    /// it sets them.
     /// </summary>
-    public static ActionDescriptor Dealt([Required] IDiceRolling dice, bool areAlike = false, bool isDrafted = false)
+    public static ActionDescriptor Dealt(
+        [Required] IDiceRolling dice,
+        bool areAlike = false,
+        DraftSettings? drafting = null
+    )
     {
         ImmutableSortedDictionary<string, string> seeded = ImmutableSortedDictionary<string, string>.Empty
             .Add(SeedArgument, dice.Roll(SeedRoll)[0].ToString(CultureInfo.InvariantCulture))
             .Add(TerrainArgument, ActionDescriptor.Flag(true));
         ImmutableSortedDictionary<string, string> alike =
             areAlike ? seeded.Add(AlikeArgument, ActionDescriptor.Flag(true)) : seeded;
-        return new ActionDescriptor(
-            DealKind,
-            isDrafted ? alike.Add(DraftedArgument, ActionDescriptor.Flag(true)) : alike
-        );
+        return new ActionDescriptor(DealKind, drafting is null ? alike : Drafting(alike, drafting));
+    }
+
+    private static ImmutableSortedDictionary<string, string> Drafting(
+        ImmutableSortedDictionary<string, string> arguments,
+        DraftSettings drafting
+    )
+    {
+        ImmutableSortedDictionary<string, string> drafted = arguments.Add(DraftedArgument, ActionDescriptor.Flag(true));
+        ImmutableSortedDictionary<string, string> budgeted = drafting.Budget is { } budget
+            ? drafted.Add(BudgetArgument, budget.ToString(CultureInfo.InvariantCulture))
+            : drafted;
+        return drafting.Drafter is { } drafter
+            ? budgeted.Add(DrafterArgument, drafter.Value.ToString(CultureInfo.InvariantCulture))
+            : budgeted;
     }
 
     /// <summary>Whether the first of <paramref name="actions"/> had the armies drafted by the players.</summary>
     public static bool IsDrafted([Required] ImmutableList<ActionDescriptor> actions) =>
-        actions.FirstOrDefault() is { Kind: DealKind } first && first.Arguments.ContainsKey(DraftedArgument);
+        DraftingOf(actions) is not null;
+
+    /// <summary>
+    /// How the first of <paramref name="actions"/> had the armies drafted, its budget and its one drafter, if it set
+    /// them; none, if they were not drafted.
+    /// </summary>
+    public static DraftSettings? DraftingOf([Required] ImmutableList<ActionDescriptor> actions) =>
+        actions.FirstOrDefault() is { Kind: DealKind } first && first.Arguments.ContainsKey(DraftedArgument)
+            ? new DraftSettings(
+                first.Arguments.TryGetValue(BudgetArgument, out string? budget)
+                    ? int.Parse(budget, CultureInfo.InvariantCulture)
+                    : null,
+                first.Arguments.TryGetValue(DrafterArgument, out string? drafter)
+                    ? new SeatId(int.Parse(drafter, CultureInfo.InvariantCulture))
+                    : null
+            )
+            : null;
 
     /// <summary>Whether the first of <paramref name="actions"/> dealt every army alike.</summary>
     public static bool AreAlike([Required] ImmutableList<ActionDescriptor> actions) =>
@@ -100,7 +134,7 @@ public static class ScenarioStart
             AreAlike(actions),
             actions[0].Arguments.ContainsKey(TerrainArgument)
         );
-        return IsDrafted(actions) ? rules.Drafted(dealt, seed) : dealt;
+        return DraftingOf(actions) is { } drafting ? rules.Drafted(dealt, seed, drafting) : dealt;
     }
 
     /// <summary>
