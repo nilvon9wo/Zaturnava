@@ -1640,6 +1640,26 @@ public sealed class TableTest : IDisposable
         );
     }
 
+    [Theory]
+    [InlineData("Cavalry", 1)]
+    [InlineData("Infantry", 0)]
+    public void Change_WhenTheFiltersHideThePiecePickedToDraft_LetsItGo(string pieceClass, int picked)
+    {
+        // Arrange - the Boat, Cavalry, picked
+        this.Drafting(left: 3, throne: false);
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        table.FindAll("button.pick")[0].Click();
+
+        // Act
+        table.Find("select.draft-class").Change(pieceClass);
+
+        // Assert
+        Assert.Equal(
+            (picked, picked),
+            (table.FindAll("button.pick[aria-pressed=true]").Count, table.FindAll("aside.piece-card").Count)
+        );
+    }
+
     [Fact]
     public void Poll_WhenThePlayersTurnToDraftComesRoundAgain_KeepsTheFiltersAsTheyLeftThem()
     {

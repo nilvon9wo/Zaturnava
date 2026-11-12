@@ -318,7 +318,8 @@
                                             Filtered="this._draftFilters"
                                             Owner="turn.Claim.Seat"
                                             Pieces="this.PiecesShown"
-                                            OnPick="this.PickToDraft" />
+                                            OnPick="this.PickToDraft"
+                                            OnHidden="this.LetGoOfDraftPick" />
                             <p class="hint draft-place">
                                 @(this.Selection.Choice is null
                                     ? "Pick a piece above, then a marked square of your kingdom for it."
@@ -957,6 +958,13 @@
     {
         this._draftPick = this._draftPick == kind ? null : kind;
         this._isPlacingCardClosed = false;
+        this._selection = BoardSelection.None;
+    }
+
+    /// <summary>Lets go of the kind picked to draft, as the filters no longer show it.</summary>
+    private void LetGoOfDraftPick()
+    {
+        this._draftPick = null;
         this._selection = BoardSelection.None;
     }
 

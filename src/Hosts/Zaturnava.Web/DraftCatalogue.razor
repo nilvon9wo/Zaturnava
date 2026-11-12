@@ -11,7 +11,7 @@
     <div class="filters">
         <label>
             Class
-            <select class="draft-class" @bind="this.Filtered.Class">
+            <select class="draft-class" @bind="this.Filtered.Class" @bind:after="this.Refiltered">
                 <option value="">Any</option>
                 @foreach (string pieceClass in this.Classes)
                 {
@@ -23,7 +23,7 @@
         {
             <label>
                 Sort
-                <select class="draft-kin" @bind="this.Filtered.Kin">
+                <select class="draft-kin" @bind="this.Filtered.Kin" @bind:after="this.Refiltered">
                     <option value="">Any</option>
                     @foreach (string kin in this.Kins)
                     {
@@ -36,7 +36,7 @@
         {
             <label>
                 Moves
-                <select class="draft-bearing" @bind="this.Filtered.Bearing">
+                <select class="draft-bearing" @bind="this.Filtered.Bearing" @bind:after="this.Refiltered">
                     <option value="">Any</option>
                     @foreach (string bearing in this.Bearings)
                     {
@@ -46,7 +46,7 @@
             </label>
         }
         <label class="affordable">
-            <input type="checkbox" class="draft-affordable" @bind="this.Filtered.IsAffordableOnly" />
+            <input type="checkbox" class="draft-affordable" @bind="this.Filtered.IsAffordableOnly" @bind:after="this.Refiltered" />
             Only what I can afford
         </label>
     </div>
@@ -130,6 +130,18 @@
 
     [Parameter]
     public EventCallback<string> OnPick { get; set; }
+
+    /// <summary>
+    /// The piece picked is no longer listed, the filters changed: it is let go, so that the player does not place a
+    /// piece they cannot see (Stated, 2026-11-12).
+    /// </summary>
+    [Parameter]
+    public EventCallback OnHidden { get; set; }
+
+    private Task Refiltered() =>
+        this.Picked is { } picked && !this.Shown.Any(kind => kind.Kind == picked)
+            ? this.OnHidden.InvokeAsync()
+            : Task.CompletedTask;
 
     private IEnumerable<string> Classes =>
         ClassOrder.Where(pieceClass => this.Kinds.Any(kind => kind.Class == pieceClass));
