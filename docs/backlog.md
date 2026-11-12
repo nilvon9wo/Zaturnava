@@ -171,7 +171,10 @@ first.
 - The names on the leaderboards open the player's, or the bot's, profile (*Stated 2026-11-07*). *Done*: as a
   name at a table does.
 - A player's profile filled out (*Stated 2026-11-07*): a description of their own, and a choice of which of the
-  services they sign in with others may see.
+  services they sign in with others may see. *Done* (*Proposed*: how): the profile dialog has **About you**, up to
+  500 characters, line breaks kept, and a tick beside each service the player signs in with, to show it; none is
+  shown until ticked (`PUT api/players/me/profile`). A name at a table or on a leaderboard opens the description
+  and the services shown.
 - A winning streak on the leaderboard, perhaps: open question [OQ9](open-questions.md#oq9-a-winning-streak).
 - A player's username unique (*Stated 2026-11-07*): no player may take a name another has. The profile's field
   is called **Username**. *Done*: a rename to a name another player goes by, capitals or not, is refused (`409`)
@@ -207,7 +210,9 @@ first.
   giving up...) matter to what it learns, not only who won.
 - *(Stated 2026-10-29)* Pythia (Sage asking a free AI service which of its three best moves to make)
   was removed: it added lag and spent quota without a reason to think it played better. It is kept
-  in the repository's history, at the tag `archive/pythia`.
+  in the repository's history, at the tag `archive/pythia`. The name now belongs to a different bot (2026-11-12,
+  *Proposed*): Monte Carlo tree search judged by Athena's network, with no AI service
+  ([assessment](bots/ai-assessment.md#progress-2026-11-12)).
 - In order (*Stated 2026-10-29*, the user agreeing to the plan):
   1. **Recorded games**: every game kept with its seats (which bot, or a person), its actions, the
      scores and how it ended, downloadable as data; self-play writing the same records.

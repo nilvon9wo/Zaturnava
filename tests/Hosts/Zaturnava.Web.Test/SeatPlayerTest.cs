@@ -41,6 +41,24 @@ public sealed class SeatPlayerTest : IDisposable
     }
 
     [Fact]
+    public void Open_WhenThePlayerDescribesThemselvesAndShowsServices_ShowsBoth()
+    {
+        // Arrange
+        ProfileDto described = Ada with { Description = "Counts.", Services = ["GitHub", "Google"] };
+        this._page.Server.Profiles = this._page.Server.Profiles.Add("p", described);
+        IRenderedComponent<SeatPlayer> player = this.Rendered("p");
+
+        // Act
+        player.Find("button.player").Click();
+
+        // Assert
+        Assert.Equal(
+            "Ada|Counts.|Signs in with GitHub, Google.",
+            string.Join('|', player.FindAll("[role=dialog] h2, [role=dialog] p").Select(line => line.TextContent))
+        );
+    }
+
+    [Fact]
     public void Open_WhenThePlayerIsGone_SaysSo()
     {
         // Arrange

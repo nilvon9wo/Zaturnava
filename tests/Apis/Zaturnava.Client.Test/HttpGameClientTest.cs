@@ -501,6 +501,32 @@ public sealed class HttpGameClientTest
         );
     }
 
+    [Fact]
+    public async Task Describe_WhenGivenAProfile_PutsItWithTheToken()
+    {
+        // Arrange
+        StubServer server = new(
+            HttpStatusCode.OK,
+            """{"id":"p","name":"Ada","description":"Counts.","shown":["GitHub"]}"""
+        );
+
+        // Act
+        PlayerDto? player = await Client(server).Describe("secret", new("Counts.", ["GitHub"]), this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            (
+                "PUT",
+                "/api/players/me/profile",
+                "Bearer secret",
+                """{"description":"Counts.","shown":["GitHub"]}""",
+                "Counts.",
+                "GitHub"
+            ),
+            (server.Method, server.Path, server.Authorization, server.Body, player?.Description, player?.Shown.Single())
+        );
+    }
+
     [Theory]
     [InlineData(HttpStatusCode.OK, """{"code":"c0de"}""", "c0de")]
     [InlineData(HttpStatusCode.Unauthorized, "", null)]
@@ -562,7 +588,11 @@ public sealed class HttpGameClientTest
     }
 
     [Theory]
-    [InlineData(HttpStatusCode.OK, """{"id":"p 1","name":"Ada","links":[]}""", "Ada")]
+    [InlineData(
+        HttpStatusCode.OK,
+        """{"id":"p 1","name":"Ada","description":"Counts.","services":["GitHub"]}""",
+        "Ada: Counts. GitHub"
+    )]
     [InlineData(HttpStatusCode.NotFound, "", null)]
     public async Task Profile_WhenAnswered_IsThePlayerIfKnown(HttpStatusCode status, string body, string? expected)
     {
@@ -575,7 +605,12 @@ public sealed class HttpGameClientTest
         // Assert
         Assert.Equal(
             ("GET", "/api/players/p%201", null, expected),
-            (server.Method, server.Path, server.Authorization, profile?.Name)
+            (
+                server.Method,
+                server.Path,
+                server.Authorization,
+                profile is null ? null : $"{profile.Name}: {profile.Description} {string.Join(",", profile.Services)}"
+            )
         );
     }
 

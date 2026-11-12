@@ -45,6 +45,9 @@ public static class GameRoutes
     /// <summary>Where a player keeps one of the page's settings (<see cref="PreferRequest"/>).</summary>
     public const string Preferences = Me + "/preferences";
 
+    /// <summary>Where a player says what their profile shows anyone (<see cref="DescribeRequest"/>).</summary>
+    public const string MyProfile = Me + "/profile";
+
     /// <summary>The players by id: each one's profile, as anyone may see it.</summary>
     public const string Players = "api/players";
 

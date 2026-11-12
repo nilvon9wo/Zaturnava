@@ -258,7 +258,8 @@ opens, with a service the server is set up for (Proposed):
 | Link another service | `GET signin/{service}?origin={the page's origin}&link={code}` | As signing in, but the service's account is added to the player the code was given to |
 | Stop signing in with a service | `DELETE api/players/me/logins/{service}`, with the player's token | The player, without it; `409` if it is their only one; or `401` |
 | A token for an AI to play with | `POST api/players/me/ai-token`, with the player's token | `{"token": "ai-..."}`, or `401` |
-| A player's profile, as anyone sees it | `GET api/players/{id}` | `{"id": "...", "name": "..."}`, or `404` |
+| Say what the profile shows | `PUT api/players/me/profile`, with the player's token, and `{"description": "...", "shown": ["GitHub"]}`: a description cut to 500 characters, and which of the services they sign in with to show | The player, with `description` and `shown`; or `401`, also for an AI's token |
+| A player's profile, as anyone sees it | `GET api/players/{id}` | `{"id": "...", "name": "...", "description": "...", "services": ["GitHub"]}`, the services those they chose to show; or `404` |
 | Sign out | `DELETE api/players/me/session`, with the player's token | `204`; the token stands for no one any more |
 | Delete the account | `DELETE api/players/me`, with the player's token | `204`, the player forgotten: name, sign-ins, sessions; or `401` |
 

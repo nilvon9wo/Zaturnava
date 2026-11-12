@@ -179,6 +179,10 @@ namespace Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Sqlite.Migrations
                         .HasMaxLength(32)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime?>("LastSignedIn")
                         .HasColumnType("TEXT");
 
@@ -188,6 +192,9 @@ namespace Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Sqlite.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Preferences")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Shown")
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");

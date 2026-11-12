@@ -135,6 +135,24 @@ public sealed class EfPlayerStore(GameDbContext context) : IPlayerPersisting
             .ExecuteUpdateAsync(setters => setters.SetProperty(entity => entity.Preferences, kept), cancellationToken);
     }
 
+    public async Task Describe(
+        PlayerId player,
+        [Required(AllowEmptyStrings = true)] string description,
+        [Required] ImmutableSortedSet<string> shown,
+        CancellationToken cancellationToken
+    )
+    {
+        string kept = JsonSerializer.Serialize(shown);
+        _ = await this._context.Players
+            .Where(entity => entity.Id == player.Value)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(entity => entity.Description, description)
+                    .SetProperty(entity => entity.Shown, kept),
+                cancellationToken
+            );
+    }
+
     public async Task AddLogin(PlayerId player, Login login, CancellationToken cancellationToken)
     {
         _ = this._context.Set<LoginEntity>()
@@ -343,7 +361,15 @@ public sealed class EfPlayerStore(GameDbContext context) : IPlayerPersisting
             )
             {
                 Preferences = PreferencesOf(entity.Preferences),
+                Description = entity.Description ?? string.Empty,
+                Shown = ShownOf(entity.Shown),
             };
+
+    /// <summary>The services shown, kept as JSON; none, if none were.</summary>
+    private static ImmutableSortedSet<string> ShownOf(string? kept) =>
+        kept is null
+            ? Player.NoneShown
+            : Player.NoneShown.Union(JsonSerializer.Deserialize<List<string>>(kept)!);
 
     /// <summary>The settings kept as JSON; none, if none were.</summary>
     private static ImmutableSortedDictionary<string, string> PreferencesOf(string? kept) =>

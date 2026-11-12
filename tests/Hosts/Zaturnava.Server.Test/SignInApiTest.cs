@@ -800,6 +800,43 @@ public sealed partial class SignInApiTest(SigningInServer server) : IClassFixtur
     }
 
     [Fact]
+    public async Task Describe_WhenAPlayerDescribesThemselves_ShowsItAndTheServicesChosenToAnyone()
+    {
+        // Arrange
+        HttpGameClient client = server.GameClient();
+        string token = TokenOf(await this.Done("GitHub|describes|Ada Describes", SigningInServer.Page));
+
+        // Act
+        PlayerDto? described =
+            await client.Describe(token, new DescribeRequest("Counts.", ["GitHub", "Google"]), this._cancellation);
+
+        // Assert
+        ProfileDto? profile = await client.Profile($"{described?.Id}", this._cancellation);
+        Assert.Equal(
+            ("Counts.", "GitHub", "Counts.", "GitHub"),
+            (
+                described?.Description,
+                string.Join(",", described?.Shown ?? []),
+                profile?.Description,
+                string.Join(",", profile?.Services ?? [])
+            )
+        );
+    }
+
+    [Fact]
+    public async Task Describe_WhenTheTokenStandsForNoOne_IsNoOne()
+    {
+        // Arrange
+        HttpGameClient client = server.GameClient();
+
+        // Act
+        PlayerDto? described = await client.Describe("no one", new DescribeRequest("Hi.", null), this._cancellation);
+
+        // Assert
+        Assert.Null(described);
+    }
+
+    [Fact]
     public async Task Profile_WhenNoSuchPlayerIsKnown_IsNone()
     {
         // Arrange - nothing beyond the server

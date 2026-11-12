@@ -545,6 +545,53 @@ public sealed class PlayerBarTest : IDisposable
     }
 
     [Fact]
+    public void Describe_WhenTheDescriptionIsChanged_SavesItWithTheServicesShown()
+    {
+        // Arrange
+        this._page.Server.Players = this._page.Server.Players.Add("shown", Ada with { Shown = ["GitHub"] });
+        IRenderedComponent<PlayerBar> bar = this.SignedInAsAda(["GitHub"], "shown");
+        Choose(bar, "button.open-profile");
+
+        // Act
+        bar.Find("textarea.description").Change("Counts.");
+
+        // Assert
+        PlayerDto kept = this._page.Server.Players["shown"];
+        Assert.Equal(
+            ("Counts.", "GitHub", "Profile saved.", "Counts."),
+            (
+                kept.Description,
+                string.Join(",", kept.Shown),
+                bar.Find("p.saved").TextContent,
+                bar.Find("textarea.description").GetAttribute("value")
+            )
+        );
+    }
+
+    [Theory]
+    [InlineData(true, "GitHub")]
+    [InlineData(false, "")]
+    public void Show_WhenAServiceIsTickedOrNot_ShowsItOnTheProfileOrNot(bool isTicked, string shown)
+    {
+        // Arrange
+        IRenderedComponent<PlayerBar> bar = this.SignedInAsAda(["GitHub"]);
+        Choose(bar, "button.open-profile");
+        bar.Find("input.shown").Change(true);
+
+        // Act
+        bar.Find("input.shown").Change(isTicked);
+
+        // Assert
+        Assert.Equal(
+            (shown, isTicked),
+            (
+                string.Join(",", this._page.Server.Players["known"].Shown),
+                bar.Find("input.shown").HasAttribute("checked")
+            )
+        );
+    }
+
+    [Fact]
     public void Unlink_WhenClicked_ShowsTheServicesLeft()
     {
         // Arrange
@@ -605,9 +652,20 @@ public sealed class PlayerBarTest : IDisposable
     /// </summary>
     private IRenderedComponent<PlayerBar> SignedInAsAda(ImmutableList<string>? services = null)
     {
+        this._page.Server.Players = this._page.Server.Players.Add("known", Ada);
+        return this.SignedInAsAda(services, "known");
+    }
+
+    /// <summary>
+    /// The bar, with the player the server knows by <paramref name="token"/> signed in on this browser by it, signing
+    /// in with <paramref name="services"/>; GitHub and Discord are offered.
+    /// </summary>
+    private IRenderedComponent<PlayerBar> SignedInAsAda(ImmutableList<string>? services, string token)
+    {
         this._page.Server.Providers = ["GitHub", "Discord"];
-        this._page.Server.Players = this._page.Server.Players.Add("known", Ada with { Services = services });
-        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", PlayerKey).SetResult("known");
+        this._page.Server.Players =
+            this._page.Server.Players.SetItem(token, this._page.Server.Players[token] with { Services = services });
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", PlayerKey).SetResult(token);
         return this._page.Render<PlayerBar>();
     }
 
