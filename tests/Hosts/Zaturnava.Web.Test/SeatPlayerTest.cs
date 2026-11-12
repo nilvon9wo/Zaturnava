@@ -74,10 +74,13 @@ public sealed class SeatPlayerTest : IDisposable
         // Act
         player.Find("button.player").Click();
 
-        // Assert
+        // Assert - laid out as a table, each figure under its heading
         Assert.Equal(
-            "Elo 1516, 450 experience; won 3, lost 2, drawn 1 at this game.",
-            player.Find("[role=dialog] p.player-standing").TextContent
+            ("Elo|Experience|Won|Lost|Drawn", "1516|450|3|2|1"),
+            (
+                string.Join('|', player.FindAll("table.player-standing th").Select(cell => cell.TextContent)),
+                string.Join('|', player.FindAll("table.player-standing td").Select(cell => cell.TextContent))
+            )
         );
     }
 
@@ -95,9 +98,9 @@ public sealed class SeatPlayerTest : IDisposable
     }
 
     [Theory]
-    [InlineData("random", "Random|Any move.", "A plain algorithm: no AI.", "Rated 1000")]
-    [InlineData("oracle", "Oracle|Asks a model.", "Asks an AI.", "Rated 1400")]
-    [InlineData("claude", "Claude|Asks Claude.", "Asks an AI; each use costs tokens.", null)]
+    [InlineData("random", "Random|Any move.", "Plain algorithm", "1000")]
+    [InlineData("oracle", "Oracle|Asks a model.", "AI", "1400")]
+    [InlineData("claude", "Claude|Asks Claude.", "AI, paid per use", null)]
     public void OpenBot_WhenTheBotIsOffered_ShowsWhatItDoesAndItsRatingAtTheGame(
         string botId,
         string about,
@@ -111,13 +114,13 @@ public sealed class SeatPlayerTest : IDisposable
         // Act
         bot.Find("button.bot-profile").Click();
 
-        // Assert
-        string rating = rated is null
-            ? "Not yet rated at this game."
-            : $"{rated} at this game, from games between the bots.";
+        // Assert - each fact by its label
         Assert.Equal(
-            $"{about}|{kind}|{rating}",
-            string.Join('|', bot.FindAll("[role=dialog] h2, [role=dialog] p").Select(line => line.TextContent))
+            (about, $"Plays by|{kind}|Elo at this game|{rated ?? "Not yet rated"}"),
+            (
+                string.Join('|', bot.FindAll("[role=dialog] h2, [role=dialog] p").Select(line => line.TextContent)),
+                string.Join('|', bot.FindAll("dl.bot-facts dt, dl.bot-facts dd").Select(line => line.TextContent))
+            )
         );
     }
 

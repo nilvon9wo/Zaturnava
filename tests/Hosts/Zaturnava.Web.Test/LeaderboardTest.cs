@@ -247,8 +247,14 @@ public sealed class LeaderboardTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ("Ada Lovelace", "Elo 1516, 0 experience; won 1, lost 0, drawn 0 at this game."),
-            (board.Find(".public-profile h2").TextContent, board.Find(".public-profile p.player-standing").TextContent)
+            ("Ada Lovelace", "1516|0|1|0|0"),
+            (
+                board.Find(".public-profile h2").TextContent,
+                string.Join(
+                    '|',
+                    board.FindAll(".public-profile table.player-standing td").Select(cell => cell.TextContent)
+                )
+            )
         );
     }
 

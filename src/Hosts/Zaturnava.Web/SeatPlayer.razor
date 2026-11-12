@@ -2,7 +2,9 @@
    dialog with their profile, as anyone may see it: their description, and the services they chose to show; and how
    they stand at the game, from its leaderboard: their Elo, experience, and games won, lost and drawn (the user's
    request of 2026-11-12). A bot may be looked at too: its name opens its profile, from the server's catalog - what it
-   does, whether it asks an AI (and costs tokens each use), and its rating at this game. *@
+   does, whether it asks an AI (and costs tokens each use), and its rating at this game. Figures are laid out as
+   labelled fields, a table or a list of terms, never run into a sentence (Stated 2026-11-13). *@
+@using System.Globalization
 @inject IGameServing Games
 
 @if (this.PlayerId is { } playerId)
@@ -34,14 +36,39 @@ else
                 {
                     <p class="player-services">Signs in with @string.Join(", ", profile.Services).</p>
                 }
-                <p class="player-standing">@StandingOf(this._standing)</p>
+                @if (this._standing is { } standing)
+                {
+                    <table class="player-standing">
+                        <caption>At this game</caption>
+                        <thead>
+                            <tr><th>Elo</th><th>Experience</th><th>Won</th><th>Lost</th><th>Drawn</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>@standing.Elo</td>
+                                <td>@standing.Experience</td>
+                                <td>@standing.Won</td>
+                                <td>@standing.Lost</td>
+                                <td>@standing.Drawn</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <p class="player-standing">Not yet on this game's leaderboard.</p>
+                }
             }
             else if (this._bot is { } bot)
             {
                 <h2 id="public-profile-title">@bot.Name</h2>
                 <p class="bot-description">@bot.Description</p>
-                <p class="bot-kind">@KindOf(bot)</p>
-                <p class="bot-rating">@this.RatingOf(bot)</p>
+                <dl class="bot-facts">
+                    <dt>Plays by</dt>
+                    <dd class="bot-kind">@KindOf(bot)</dd>
+                    <dt>Elo at this game</dt>
+                    <dd class="bot-rating">@this.RatingOf(bot)</dd>
+                </dl>
             }
             else
             {
@@ -111,14 +138,6 @@ else
         (await this.Games.Catalog(CancellationToken.None)).Rulesets
             .FirstOrDefault(ruleset => ruleset.Id == this.RulesetId)?.Game ?? string.Empty;
 
-    /// <summary>
-    /// "Elo 1032, 450 experience; won 3, lost 2, drawn 0 at this game"; or that they have finished none of it yet.
-    /// </summary>
-    private static string StandingOf(StandingDto? standing) =>
-        standing is { } at
-            ? $"Elo {at.Elo}, {at.Experience} experience; won {at.Won}, lost {at.Lost}, drawn {at.Drawn} at this game."
-            : "Not yet on this game's leaderboard.";
-
     private async Task OpenBot(string botId)
     {
         this._isOpen = true;
@@ -128,18 +147,18 @@ else
         );
     }
 
-    /// <summary>"Asks an AI; each use costs tokens", "Asks an AI", or "A plain algorithm: no AI".</summary>
+    /// <summary>"AI, paid per use", "AI", or "Plain algorithm".</summary>
     private static string KindOf(BotDto bot) =>
         (bot.UsesAi, bot.IsPaid) switch
         {
-            (true, true) => "Asks an AI; each use costs tokens.",
-            (true, false) => "Asks an AI.",
-            _ => "A plain algorithm: no AI.",
+            (true, true) => "AI, paid per use",
+            (true, false) => "AI",
+            _ => "Plain algorithm",
         };
 
-    /// <summary>"Rated 1250 at this game, from games between the bots"; or not yet rated at it.</summary>
+    /// <summary>Its rating at the game, from games between the bots; or "Not yet rated".</summary>
     private string RatingOf(BotDto bot) =>
         bot.Ratings.TryGetValue(this.RulesetId, out int rating)
-            ? $"Rated {rating} at this game, from games between the bots."
-            : "Not yet rated at this game.";
+            ? rating.ToString(CultureInfo.InvariantCulture)
+            : "Not yet rated";
 }
