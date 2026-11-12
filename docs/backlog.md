@@ -388,6 +388,13 @@ first.
   the BotRunner only, rated against the others, before any thought of hosting it. *Begun*: the bot plays,
   see [Fairy-Stockfish, as a bot](bots/self-play.md#fairy-stockfish-as-a-bot); its rating is still to come.
 
+- *(Stated 2026-11-12)* Evaluate an OpenSpiel adapter. UCI and its kin (XBoard, USI) know two sides and no
+  dice, so *(Proposed)*: DeepMind's OpenSpiel, whose games may have any number of players and chance (the dice),
+  and whose algorithms (MCTS, AlphaZero-style self-play, CFR) could make bots without Fairy-Stockfish's blind
+  spots. It is C++ and Python, and we are .NET: weigh porting the rules against a bridge to ours. Like the
+  Fairy-Stockfish adapter, an internal tool for bots, not a public interface. Not our own protocol: no engine
+  would speak it, and the HTTP, MCP and UTCP APIs already serve outside players and bots.
+
 - *(Stated 2026-11-12, not a priority)* Fold into Grand Legions the pieces Fairy-Stockfish's built-in variants have
   that it lacks: go through its variants (xiangqi, janggi, shogi and its kin, makruk, shatranj, capablanca, grand,
   shako, seirawan, courier, and the rest), list each piece not already in `docs/Other Potential Pieces.xlsx` or
