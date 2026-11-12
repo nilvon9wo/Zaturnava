@@ -23,7 +23,7 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
         // Assert
         RulesetDto ruleset = catalog.Rulesets[0];
         Assert.Equal(
-            "chaturaji-2027,grand-legions-small,grand-legions-medium,grand-legions-large",
+            "chaturaji-2027,grand-legions-small,grand-legions-medium,grand-legions-large,grand-legions-custom",
             string.Join(",", catalog.Rulesets.Select(offered => offered.Id))
         );
         Assert.Equal(
@@ -57,11 +57,15 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
         // Assert
         Assert.Equal(
             "chaturaji-2027/Chaturaji 2027//False,grand-legions/Grand Legions/small/True,"
-            + "grand-legions/Grand Legions/medium/True,grand-legions/Grand Legions/large/True",
+            + "grand-legions/Grand Legions/medium/True,grand-legions/Grand Legions/large/True,"
+            + "grand-legions/Grand Legions/custom/True/10x4x3",
             string.Join(
                 ",",
                 catalog.Rulesets.Select(offered =>
                     $"{offered.Game}/{offered.GameName}/{offered.Size}/{offered.IsPreview}"
+                        + (offered.SizableBoard is { } board
+                            ? $"/{board.Side}x{board.KingdomWidth}x{board.KingdomDepth}"
+                            : string.Empty)
                 )
             )
         );
@@ -154,7 +158,7 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
 
         // Assert
         Assert.Equal(
-            "False,True,True,True",
+            "False,True,True,True,True",
             string.Join(",", catalog.Rulesets.Select(offered => offered.IsDraftable))
         );
     }
@@ -180,6 +184,44 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
                 view.LegalActions.Any(action => action.Label == "Fill the rest of my army at random, and be done")
             )
         );
+    }
+
+    [Fact]
+    public async Task Get_WhenTheCreatorSetTheBoardsSize_PlaysItThereAndSaysSo()
+    {
+        // Arrange
+        GameCreatedDto created = await this._client.Create(
+            new CreateGameRequest("grand-legions-custom", [null, "random", "random", "random"])
+            {
+                Board = new BoardSizeDto(12, 4, 4),
+            },
+            this._cancellation
+        );
+
+        // Act
+        GameViewDto view = await this._client.Get(created.GameId, this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            ("grand-legions-custom", "Grand Legions (12 × 12, kingdoms 4 × 4)", 144, new BoardSizeDto(12, 4, 4)),
+            (view.RulesetId, view.RulesetName, view.Cells.Count, view.Board)
+        );
+    }
+
+    [Fact]
+    public async Task Create_WhenTheBoardIsSetTooSmall_RefusesIt()
+    {
+        // Arrange - kingdoms of 4 x 4 overlap on a board 6 cells across
+        CreateGameRequest request = new("grand-legions-custom", [null, "random", "random", "random"])
+        {
+            Board = new BoardSizeDto(6, 4, 4),
+        };
+
+        // Act
+        Task<GameCreatedDto> creating = this._client.Create(request, this._cancellation);
+
+        // Assert
+        _ = await Assert.ThrowsAsync<GameRequestRefusedException>(() => creating);
     }
 
     [Fact]

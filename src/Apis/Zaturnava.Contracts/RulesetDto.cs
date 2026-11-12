@@ -39,6 +39,13 @@ public sealed record RulesetDto(string Id, string Name, int SeatCount)
     /// </summary>
     public int? DraftBudget { get; init; }
 
+    /// <summary>
+    /// For a game whose creator may set its board's size (<see cref="CreateGameRequest.Board"/>): its size, unless they
+    /// do, at which <see cref="DraftBudget"/> is for each army; null, for a game played at its size only. The budget
+    /// grows with the kingdom, cell for cell.
+    /// </summary>
+    public BoardSizeDto? SizableBoard { get; init; }
+
     public ImmutableList<string> SeatNames { get; init; } = [];
 
     /// <summary>Each seat's team, by number: seats of the same number are allies.</summary>

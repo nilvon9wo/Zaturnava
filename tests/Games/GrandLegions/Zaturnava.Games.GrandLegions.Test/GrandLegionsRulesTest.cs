@@ -16,7 +16,7 @@ public sealed class GrandLegionsRulesTest
     private static readonly ImmutableList<int> OpeningSix = [6, 1, 1, 1];
 
     [Fact]
-    public void Quick_WhenRead_IsASmallAMediumAndALargeGame()
+    public void Quick_WhenRead_IsASmallAMediumALargeAndACustomGame()
     {
         // Arrange - nothing beyond the rules
 
@@ -34,8 +34,73 @@ public sealed class GrandLegionsRulesTest
                 ("grand-legions-small", "Grand Legions (small)", "grand-legions", "Grand Legions", "small", 36),
                 ("grand-legions-medium", "Grand Legions (medium)", "grand-legions", "Grand Legions", "medium", 64),
                 ("grand-legions-large", "Grand Legions (large)", "grand-legions", "Grand Legions", "large", 144),
+                ("grand-legions-custom", "Grand Legions (custom)", "grand-legions", "Grand Legions", "custom", 100),
             ],
             games
+        );
+    }
+
+    [Fact]
+    public void Sized_WhenACustomGamesCreatorSetsItsBoard_PlaysItThereUnderTheSameIdAndElseNowhere()
+    {
+        // Arrange
+        Chaturaji2027Rules custom = GrandLegionsRules.RulesOf(QuickGame.Custom);
+        BoardSize board = new(12, 4, 4);
+
+        // Act
+        IRulesApplying sized = custom.Sized(board)!;
+
+        // Assert
+        Assert.Equal(
+            (
+                new BoardSize(10, 4, 3),
+                "grand-legions-custom",
+                "Grand Legions (12 × 12, kingdoms 4 × 4)",
+                144,
+                (int?)192,
+                (BoardSize?)board,
+                true
+            ),
+            (
+                custom.SizableBoard!,
+                sized.Id,
+                sized.Name,
+                sized.Topology.Cells.Count,
+                sized.DraftBudget,
+                sized.SizableBoard,
+                ReferenceEquals(sized, custom.Sized(board))
+            )
+        );
+        Assert.Equal(
+            (true, true, true),
+            (
+                custom.Sized(new BoardSize(5, 3, 3)) is null,
+                GrandLegionsRules.RulesOf(QuickGame.Medium).Sized(board) is null,
+                GrandLegionsRules.RulesOf(QuickGame.Medium).SizableBoard is null
+            )
+        );
+    }
+
+    [Fact]
+    public void CustomOf_WhenTheKingdomsAreSet_AsksForAnArmyAndABudgetToFillThem()
+    {
+        // Arrange - kingdoms of 12 cells, 4 wide
+        BoardSize board = new(10, 4, 3);
+
+        // Act
+        QuickGame game = QuickGame.CustomOf(board)!;
+
+        // Assert
+        Assert.Equal(
+            (144, "Artillery 1, Cavalry 1, Heavy 2, Infantry 4, Leader 1"),
+            (
+                game.Budget,
+                string.Join(
+                    ", ",
+                    game.Minimums.OrderBy(minimum => minimum.Key.ToString(), StringComparer.Ordinal)
+                        .Select(minimum => $"{minimum.Key} {minimum.Value}")
+                )
+            )
         );
     }
 
@@ -85,7 +150,7 @@ public sealed class GrandLegionsRulesTest
         ];
 
         // Assert
-        Assert.Equal(Enumerable.Repeat("leader", 12), thrones);
+        Assert.Equal(Enumerable.Repeat("leader", 16), thrones);
     }
 
     [Fact]
@@ -97,7 +162,7 @@ public sealed class GrandLegionsRulesTest
         ImmutableList<bool> previews = [.. GrandLegionsRules.Quick.Select(rules => rules.IsPreview)];
 
         // Assert
-        Assert.Equal([true, true, true], previews);
+        Assert.Equal([true, true, true, true], previews);
     }
 
     [Fact]
@@ -124,7 +189,7 @@ public sealed class GrandLegionsRulesTest
         ];
 
         // Assert
-        Assert.Equal([Chaturaji2027Endings.Idle, Chaturaji2027Endings.Idle, Chaturaji2027Endings.Idle], endings);
+        Assert.Equal(Enumerable.Repeat<string?>(Chaturaji2027Endings.Idle, 4), endings);
     }
 
     [Fact]

@@ -31,6 +31,9 @@ public static class ScenarioStart
     private const string DraftedArgument = "drafted";
     private const string BudgetArgument = "budget";
     private const string DrafterArgument = "drafter";
+    private const string SideArgument = "side";
+    private const string KingdomWidthArgument = "kingdom-width";
+    private const string KingdomDepthArgument = "kingdom-depth";
 
     /// <summary>The roll that seeds a game dealt anew: one die of as many sides as a seed may be.</summary>
     private static readonly DiceRequest SeedRoll = new(1, int.MaxValue - 1);
@@ -43,12 +46,14 @@ public static class ScenarioStart
     /// <paramref name="areAlike"/>, which a game dealt before armies could be alike never says; nor does one dealt
     /// before terrain was say that its terrain is. Its armies drafted by its players, not dealt, if
     /// <paramref name="drafting"/> says how (<see cref="IRulesApplying.Drafted"/>): its budget and its one drafter, if
-    /// it sets them.
+    /// it sets them. On a board of <paramref name="board"/>'s size, if its creator set one
+    /// (<see cref="IRulesApplying.Sized"/>).
     /// </summary>
     public static ActionDescriptor Dealt(
         [Required] IDiceRolling dice,
         bool areAlike = false,
-        DraftSettings? drafting = null
+        DraftSettings? drafting = null,
+        BoardSize? board = null
     )
     {
         ImmutableSortedDictionary<string, string> seeded = ImmutableSortedDictionary<string, string>.Empty
@@ -56,8 +61,43 @@ public static class ScenarioStart
             .Add(TerrainArgument, ActionDescriptor.Flag(true));
         ImmutableSortedDictionary<string, string> alike =
             areAlike ? seeded.Add(AlikeArgument, ActionDescriptor.Flag(true)) : seeded;
-        return new ActionDescriptor(DealKind, drafting is null ? alike : Drafting(alike, drafting));
+        ImmutableSortedDictionary<string, string> sized = board is null ? alike : Sizing(alike, board);
+        return new ActionDescriptor(DealKind, drafting is null ? sized : Drafting(sized, drafting));
     }
+
+    private static ImmutableSortedDictionary<string, string> Sizing(
+        ImmutableSortedDictionary<string, string> arguments,
+        BoardSize board
+    ) =>
+        arguments
+            .Add(SideArgument, board.Side.ToString(CultureInfo.InvariantCulture))
+            .Add(KingdomWidthArgument, board.KingdomWidth.ToString(CultureInfo.InvariantCulture))
+            .Add(KingdomDepthArgument, board.KingdomDepth.ToString(CultureInfo.InvariantCulture));
+
+    /// <summary>The board's size the first of <paramref name="actions"/> set; none, if it set none.</summary>
+    public static BoardSize? BoardOf([Required] ImmutableList<ActionDescriptor> actions) =>
+        actions.FirstOrDefault() is { Kind: DealKind } first
+        && first.Arguments.TryGetValue(SideArgument, out string? side)
+            ? new BoardSize(
+                int.Parse(side, CultureInfo.InvariantCulture),
+                int.Parse(first.Arguments[KingdomWidthArgument], CultureInfo.InvariantCulture),
+                int.Parse(first.Arguments[KingdomDepthArgument], CultureInfo.InvariantCulture)
+            )
+            : null;
+
+    /// <summary>
+    /// The rules a game of these actions is played by: <paramref name="rules"/> on the board's size its first set, if
+    /// any; else as they are.
+    /// </summary>
+    /// <exception cref="ArgumentException">The rules may not be played at that size.</exception>
+    public static IRulesApplying RulesOf(
+        [Required] ImmutableList<ActionDescriptor> actions,
+        [Required] IRulesApplying rules
+    ) =>
+        BoardOf(actions) is { } board
+            ? rules.Sized(board)
+                ?? throw new ArgumentException($"{rules.Name} is not played on {board}.", nameof(actions))
+            : rules;
 
     private static ImmutableSortedDictionary<string, string> Drafting(
         ImmutableSortedDictionary<string, string> arguments,

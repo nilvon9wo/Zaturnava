@@ -83,6 +83,11 @@ public sealed record GameViewDto(
     public int? Drafter { get; init; }
 
     /// <summary>
+    /// The board's size its creator set (<see cref="CreateGameRequest.Board"/>); null, for the ruleset's own.
+    /// </summary>
+    public BoardSizeDto? Board { get; init; }
+
+    /// <summary>
     /// While the armies are drafted, what each seat has left to spend, seat by seat; null once play has begun, or in a
     /// game never drafted.
     /// </summary>

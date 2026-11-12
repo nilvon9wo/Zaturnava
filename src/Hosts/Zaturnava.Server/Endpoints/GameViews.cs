@@ -142,6 +142,7 @@ internal static class GameViews
             IsDrafted = ScenarioStart.IsDrafted(snapshot.Record.Actions),
             DraftBudget = ScenarioStart.DraftingOf(snapshot.Record.Actions)?.Budget,
             Drafter = ScenarioStart.DraftingOf(snapshot.Record.Actions)?.Drafter?.Value,
+            Board = SizeOf(ScenarioStart.BoardOf(snapshot.Record.Actions)),
             DraftLeft = snapshot.State.Draft is { } draft
                 ? [.. snapshot.State.Seats.Select(seat => draft.Left[seat.Id])]
                 : null,
@@ -267,10 +268,14 @@ internal static class GameViews
             IsDealt = rules.IsDealt,
             IsDraftable = rules.IsDraftable,
             DraftBudget = rules.DraftBudget,
+            SizableBoard = SizeOf(rules.SizableBoard),
             SeatNames = [.. state.Seats.Select(seat => rules.NameOf(seat.Id))],
             SeatTeams = [.. state.Seats.Select(seat => state.Teams.TeamOf(seat.Id))],
         };
     }
+
+    private static BoardSizeDto? SizeOf(BoardSize? board) =>
+        board is null ? null : new BoardSizeDto(board.Side, board.KingdomWidth, board.KingdomDepth);
 
     private static BotDto BotOf(BotProfile bot) =>
         new(bot.Id, bot.Name, bot.Description, bot.UsesAi, bot.IsPaid) { Ratings = bot.Ratings };

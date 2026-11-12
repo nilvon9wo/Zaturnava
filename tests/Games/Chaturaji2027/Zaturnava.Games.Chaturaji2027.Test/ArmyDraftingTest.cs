@@ -61,6 +61,39 @@ public sealed class ArmyDraftingTest
     }
 
     [Fact]
+    public void Sized_WhenTheVariantResizes_PlaysItAtTheSizesItAllowsOnceEachAndElseNowhere()
+    {
+        // Arrange - a variant whose creator may set it to 8 cells a side alone
+        BoardSize eight = new(8, 4, 2);
+        Chaturaji2027Rules rules = new(
+            DiceProfile.WeightedSixSided,
+            Chaturaji2027Rules.DefaultIdleRounds,
+            PawnPromotion.OtherArmies,
+            variant: Chaturaji2027Variant.Standard with
+            {
+                Board = eight,
+                Resized = size => size == eight ? Chaturaji2027Variant.Standard with { Id = "resized" } : null,
+            }
+        );
+
+        // Act
+        IRulesApplying sized = rules.Sized(eight)!;
+
+        // Assert
+        Assert.Equal(
+            ((BoardSize?)eight, "resized", true, true, true, true),
+            (
+                rules.SizableBoard,
+                sized.Id,
+                ReferenceEquals(sized, rules.Sized(eight)),
+                rules.Sized(new BoardSize(9, 4, 2)) is null,
+                new Chaturaji2027Rules().Sized(eight) is null,
+                new Chaturaji2027Rules().SizableBoard is null
+            )
+        );
+    }
+
+    [Fact]
     public void Drafted_WhenTheGamesCreatorSetsABudgetAndADrafter_HasThatSeatAloneDraftWithIt()
     {
         // Arrange

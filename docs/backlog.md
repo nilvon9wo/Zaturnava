@@ -194,7 +194,12 @@ first.
   chose players signed in only. Such a game no longer counts toward Elo.
 - A custom game's board size chosen freely, within limits, rather than only small, medium or large
   (*Stated 2026-11-01*); likely to come with the game setup rework. One of the two most noticeable gaps in
-  custom games (*Stated 2026-11-07*).
+  custom games (*Stated 2026-11-07*). *Done* (2026-11-12): Grand Legions offers a **custom** size, whose board
+  (6 to 26 cells square) and kingdoms (width and depth, at least 3 × 3, not overlapping) the creator sets, the
+  kingdoms' size too (*Stated*). The size is kept in the game's first action and the rules are rebuilt for it on
+  every replay, under the one ruleset id `grand-legions-custom`, so its games are listed and rated together. Each
+  army's budget is 12 points a kingdom cell, and its minimum army grows with the kingdom (*Proposed*, see
+  `QuickGame.CustomOf`). *Gap*: boards that are not square (specification §2).
 - A custom game's pieces chosen by hand and placed into each kingdom, rather than only dealt (*Stated
   2026-11-07*): the other of the two most noticeable gaps.
 - The page's preferences (theme, sound, pieces, the log's highlights) kept with the player's identity

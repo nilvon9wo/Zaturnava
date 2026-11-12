@@ -141,19 +141,29 @@ internal static class GameStarter
 
     /// <summary>
     /// A game of the <paramref name="ruleset"/> at once, as hard as asked (<see cref="QuickBots"/>): the player at a
-    /// seat chosen at random, the bots among the others. The seat is the <paramref name="claimant"/>'s.
+    /// seat chosen at random, the bots among the others. The seat is the <paramref name="claimant"/>'s. On a board of
+    /// <paramref name="board"/>'s size, if set.
     /// </summary>
     public static Task<Seating> Quick(
         IGameServing games,
         CatalogDto catalog,
         RulesetDto ruleset,
         Difficulty difficulty,
-        Claimant claimant
+        Claimant claimant,
+        BoardSizeDto? board = null
     )
     {
         int person = Random.Shared.Next(ruleset.SeatCount);
         IEnumerable<string> bots = QuickBots(catalog, ruleset.Id, difficulty, ruleset.SeatCount - 1);
-        return Start(games, ruleset.Id, BotsOf(Plans(ruleset.SeatCount, person, bots)), person, null, claimant);
+        return Start(
+            games,
+            ruleset.Id,
+            BotsOf(Plans(ruleset.SeatCount, person, bots)),
+            person,
+            null,
+            claimant,
+            armies: board is null ? null : new ArmyDeal(false) { Board = board }
+        );
     }
 
     /// <summary>
@@ -184,6 +194,7 @@ internal static class GameStarter
             IsDrafted = armies?.IsDrafted ?? false,
             DraftBudget = armies?.Budget,
             Drafter = armies?.Drafter,
+            Board = armies?.Board,
             IsForPlayers = isForPlayers,
         };
         GameCreatedDto created = await games.Create(request, CancellationToken.None);

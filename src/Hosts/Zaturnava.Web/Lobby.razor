@@ -119,6 +119,39 @@
                         </select>
                     </label>
                 }
+                @if (this.Ruleset(catalog).SizableBoard is not null)
+                {
+                    <label class="board">
+                        <span class="choice-name">Board</span>
+                        <input type="number"
+                               class="board-side"
+                               aria-label="Cells on each side of the board"
+                               min="6"
+                               max="26"
+                               @bind="this._side"
+                               @bind:after="this.Resized" />
+                        cells square
+                    </label>
+                    <label class="kingdoms">
+                        <span class="choice-name">Kingdoms</span>
+                        <input type="number"
+                               class="kingdom-width"
+                               aria-label="Cells along each kingdom's back rank"
+                               min="3"
+                               max="13"
+                               @bind="this._kingdomWidth"
+                               @bind:after="this.Resized" />
+                        wide,
+                        <input type="number"
+                               class="kingdom-depth"
+                               aria-label="Cells deep each kingdom is"
+                               min="3"
+                               max="13"
+                               @bind="this._kingdomDepth"
+                               @bind:after="this.Resized" />
+                        deep
+                    </label>
+                }
             </div>
             @if (this._mode == SetupMode.Quick)
             {
@@ -416,6 +449,15 @@
     /// chosen, until changed; if cleared, the game's own still.
     /// </summary>
     private int? _budget;
+
+    /// <summary>
+    /// For a game whose board's size its creator may set (Stated, 2026-11-12: the board's and the kingdoms' both): the
+    /// cells on each side of the board, and each kingdom's width and depth; the game's own, as each game is chosen.
+    /// </summary>
+    private int _side;
+
+    private int _kingdomWidth;
+    private int _kingdomDepth;
 
     /// <summary>Whether the game's open seats are for players signed in only, as a player signed in may ask.</summary>
     private bool _isForPlayers;
@@ -768,6 +810,29 @@
         this._picks = [.. Enumerable.Repeat(string.Empty, this.Ruleset(catalog).SeatCount)];
         this._armies = this.Ruleset(catalog).IsDraftable ? DraftOwn : RandomEach;
         this._budget = this.Ruleset(catalog).DraftBudget;
+        if (this.Ruleset(catalog).SizableBoard is { } board)
+        {
+            (this._side, this._kingdomWidth, this._kingdomDepth) = (board.Side, board.KingdomWidth, board.KingdomDepth);
+        }
+    }
+
+    /// <summary>
+    /// The board as set, if the game's creator may set it; none, if not. Its budget grows with the kingdoms, cell for
+    /// cell, from the game's own (<see cref="RulesetDto.SizableBoard"/>).
+    /// </summary>
+    private BoardSizeDto? BoardAsked(CatalogDto catalog) =>
+        this.Ruleset(catalog).SizableBoard is null
+            ? null
+            : new BoardSizeDto(this._side, this._kingdomWidth, this._kingdomDepth);
+
+    /// <summary>The budget again, for kingdoms of the size now set, as the game's grows with them.</summary>
+    private void Resized()
+    {
+        RulesetDto ruleset = this.Ruleset(this._catalog!);
+        BoardSizeDto board = ruleset.SizableBoard!;
+        this._budget = ruleset.DraftBudget is { } budget
+            ? budget * this._kingdomWidth * this._kingdomDepth / (board.KingdomWidth * board.KingdomDepth)
+            : null;
     }
 
     /// <summary>
@@ -806,21 +871,27 @@
             this._colour,
             this._scenario.Length == 0 ? null : this._scenario,
             await this.Browser.Claimant(),
-            armies: this.ArmiesAsked,
+            armies: this.ArmiesAsked(catalog),
             isForPlayers: this._isForPlayers
         ));
     }
 
     private bool IsDrafting => this._armies is DraftOwn or DraftOne;
 
-    /// <summary>How the game is asked to have its armies, as chosen; the player drafting for all from their seat.</summary>
-    private ArmyDeal ArmiesAsked =>
+    /// <summary>
+    /// How the game is asked to have its armies, as chosen, on the board as set; the player drafting for all from their
+    /// seat.
+    /// </summary>
+    private ArmyDeal ArmiesAsked(CatalogDto catalog) =>
         this._armies switch
         {
             DraftOwn => new ArmyDeal(false) { IsDrafted = true, Budget = this._budget },
             DraftOne => new ArmyDeal(false) { IsDrafted = true, Budget = this._budget, Drafter = this._colour },
             RandomOne => new ArmyDeal(true),
             _ => new ArmyDeal(false),
+        } with
+        {
+            Board = this.BoardAsked(catalog),
         };
 
     /// <summary>How each seat set up by strength is played: the player's own, and a person's, by no bot.</summary>
@@ -857,7 +928,8 @@
                 catalog,
                 this.Ruleset(catalog),
                 difficulty,
-                await this.Browser.Claimant()
+                await this.Browser.Claimant(),
+                this.BoardAsked(catalog)
             )
         );
     }

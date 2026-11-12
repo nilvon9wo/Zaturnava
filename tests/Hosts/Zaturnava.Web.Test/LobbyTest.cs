@@ -524,6 +524,67 @@ public sealed class LobbyTest : IDisposable
     }
 
     [Fact]
+    public void Play_WhenTheBoardAndKingdomsAreSet_AsksForThemAndGrowsTheBudgetWithTheKingdoms()
+    {
+        // Arrange - 75 points for kingdoms of 4 x 3, so 112 for 6 x 3
+        this._page.Server.IsDealt = true;
+        this._page.Server.IsDraftable = true;
+        this._page.Server.SizableBoard = new BoardSizeDto(10, 4, 3);
+        IRenderedComponent<Lobby> lobby = this.ByStrength();
+        string before = lobby.Find("input.board-side").GetAttribute("value") ?? string.Empty;
+        lobby.Find("input.board-side").Change("12");
+        lobby.Find("input.kingdom-width").Change("6");
+        lobby.Find("input.kingdom-depth").Change("3");
+        string budget = lobby.Find("input.draft-budget").GetAttribute("value") ?? string.Empty;
+
+        // Act
+        lobby.Find("button.create").Click();
+
+        // Assert
+        CreateGameRequest created = this._page.Server.Created!;
+        Assert.Equal(
+            ("10", "112", new BoardSizeDto(12, 6, 3), (int?)112),
+            (before, budget, created.Board, created.DraftBudget)
+        );
+    }
+
+    [Fact]
+    public void Play_WhenTheKingdomsAreSetInAGameNotDrafted_AsksForNoBudget()
+    {
+        // Arrange - armies dealt at random, never drafted
+        this._page.Server.IsDealt = true;
+        this._page.Server.SizableBoard = new BoardSizeDto(10, 4, 3);
+        IRenderedComponent<Lobby> lobby = this.ByStrength();
+        lobby.Find("input.kingdom-width").Change("5");
+
+        // Act
+        lobby.Find("button.create").Click();
+
+        // Assert
+        CreateGameRequest created = this._page.Server.Created!;
+        Assert.Equal((new BoardSizeDto(10, 5, 3), (int?)null), (created.Board, created.DraftBudget));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Quick_WhenTheBoardMayBeSet_StartsOneOnTheBoardAsSet(bool isSizable)
+    {
+        // Arrange
+        this._page.Server.SizableBoard = isSizable ? new BoardSizeDto(10, 4, 3) : null;
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Act
+        lobby.Find("button.quick.medium").Click();
+
+        // Assert
+        Assert.Equal(
+            (isSizable ? new BoardSizeDto(10, 4, 3) : null, isSizable ? 1 : 0),
+            (this._page.Server.Created!.Board, lobby.FindAll("input.board-side").Count)
+        );
+    }
+
+    [Fact]
     public void Render_WhenTheArmiesAreDrafted_ShowsTheGamesOwnBudgetToSpend()
     {
         // Arrange - the fake server's drafted game gives each seat 75 points

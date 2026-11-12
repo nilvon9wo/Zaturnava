@@ -1,3 +1,5 @@
+using Net.NowhereAtAll.Zaturnava.Contracts;
+
 namespace Net.NowhereAtAll.Zaturnava.Web;
 
 /// <summary>
@@ -14,4 +16,7 @@ internal sealed record ArmyDeal(bool AreAlike, string? Of = null)
 
     /// <summary>For armies drafted, the seat that alone drafts one army for everyone; none, for each its own.</summary>
     public int? Drafter { get; init; }
+
+    /// <summary>The board's size, in a game whose creator may set it; the ruleset's own, if none.</summary>
+    public BoardSizeDto? Board { get; init; }
 }

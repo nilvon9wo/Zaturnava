@@ -166,6 +166,23 @@ public sealed class RulesApplyingTest
         Assert.Equal((false, (int?)null, OneSizeRules.State, 0), drafted);
     }
 
+    [Fact]
+    public void Sized_WhenTheRulesetSaysNoOther_MayNotBeSetToAnotherSize()
+    {
+        // Arrange
+        OneSizeRules rules = new();
+
+        // Act
+        (bool HasBoard, bool IsSized) sized = SizedOf(rules, new BoardSize(10, 4, 3));
+
+        // Assert
+        Assert.Equal((false, false), sized);
+    }
+
+    private static (bool HasBoard, bool IsSized) SizedOf<TRules>(TRules rules, BoardSize board)
+        where TRules : IRulesApplying =>
+        (rules.SizableBoard is not null, rules.Sized(board) is not null);
+
     private static (bool IsDraftable, int? Budget, GameState Drafted, int Offered) DraftedOf<TRules>(
         TRules rules,
         GameState dealt

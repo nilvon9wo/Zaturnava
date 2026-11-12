@@ -33,7 +33,25 @@ internal sealed class TinyRules(int length, bool isDealt = false, Exception? fai
 
     public string Id => RulesetId;
 
-    public string Name => "Tiny";
+    /// <summary>"Tiny"; "Tiny 3", on a board set to 3 cells a side (<see cref="Sized"/>).</summary>
+    public string Name => this.IsSized ? $"Tiny {this.SizableBoard!.Side}" : "Tiny";
+
+    /// <summary>The board a game's creator may set to another size, if set: any of 2 cells a side or more.</summary>
+    public BoardSize? SizableBoard { get; init; }
+
+    private bool IsSized { get; init; }
+
+    /// <summary>The rules on <paramref name="board"/>, named for its side, if it may be set to it.</summary>
+    public IRulesApplying? Sized([Required] BoardSize board) =>
+        this.SizableBoard is null || board.Side < 2
+            ? null
+            : new TinyRules(this._length, this.IsDealt, failure, hasFaceOff)
+            {
+                IsDraftable = this.IsDraftable,
+                Filled = this.Filled,
+                SizableBoard = board,
+                IsSized = true,
+            };
 
     public static readonly PieceKindId Pawn = new("Pawn");
     public static readonly PieceKindId King = new("King");
