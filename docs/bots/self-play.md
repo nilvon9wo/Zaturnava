@@ -127,7 +127,12 @@ bot assembly, its bot's id `fairy-stockfish`. *(Proposed)*:
   that may not hop over some kinds, an uneven leap only some ways round).
 
 With the engine there, the tests `LiveEngineRun` and `LiveBearingRun` play it; without, as on CI, they are
-skipped.
+skipped. To rate it in the arena, add `"botAssembly"` to the request, the path of its built assembly (such as
+`artifacts/wsl/bin/Zaturnava.Bots.FairyStockfish/release/Net.NowhereAtAll.Zaturnava.Bots.FairyStockfish.dll`).
+
+First results (2026-11-12, Chaturaji 2027, 10 games each way): it beat Random 20 to 0, but lost to Athena 7 to
+13. Too few games to be sure, but no sign yet that it is the stronger: it sees neither the dice nor the points,
+only the two sides' pieces and the leaders.
 
 ## Learning
 
