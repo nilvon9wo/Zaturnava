@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.Globalization;
 using Bunit;
+using Microsoft.AspNetCore.Components;
 using Net.NowhereAtAll.Zaturnava.Contracts;
 using Net.NowhereAtAll.Zaturnava.Presentation;
 
@@ -1665,18 +1666,23 @@ public sealed class TableTest : IDisposable
     {
         // Arrange - the player lists Infantry only, then another seat drafts; the filter is found and changed in one
         // go, so that a poll cannot render the table anew in between
-        using PageContext page = new(TimeSpan.FromMilliseconds(10));
+        await using PageContext page = new(TimeSpan.FromMilliseconds(10));
         page.Server.View = DraftingView(left: 3, throne: false);
         IRenderedComponent<Table> table = page.Render<Table>(parameters => parameters.Add(x => x.Seating, SeatZero));
-        await table.InvokeAsync(() => table.Find("select.draft-class").Change("Infantry"));
+        await table.InvokeAsync(
+            () => table.Find("select.draft-class").ChangeAsync(new ChangeEventArgs { Value = "Infantry" })
+        );
         page.Server.View = page.Server.View with { DecidingSeat = 1, Version = 2 };
-        table.WaitForAssertion(() => Assert.Empty(table.FindAll("select.draft-class")), TimeSpan.FromSeconds(10));
+        await table.WaitForAssertionAsync(
+            () => Assert.Empty(table.FindAll("select.draft-class")),
+            TimeSpan.FromSeconds(10)
+        );
 
         // Act
         page.Server.View = DraftingView(left: 3, throne: false) with { Version = 3 };
 
         // Assert
-        table.WaitForAssertion(
+        await table.WaitForAssertionAsync(
             () => Assert.Equal(
                 ("Infantry", "Pawn"),
                 (
