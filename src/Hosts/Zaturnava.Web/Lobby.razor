@@ -395,6 +395,10 @@
     [Parameter]
     public EventCallback<Seating> OnSeated { get; set; }
 
+    /// <summary>Which game the lobby shows, as it is first shown and whenever the player chooses another.</summary>
+    [Parameter]
+    public EventCallback<string?> OnGameChosen { get; set; }
+
     protected override async Task OnInitializedAsync() => this._problem = await Requests.Attempt(this.Load);
 
     /// <summary>The game chosen to set up, at its size (<see cref="Choose"/> chose one before anything asks).</summary>
@@ -527,7 +531,11 @@
     }
 
     /// <summary>The list of the game chosen anew, at any size (Stated: one choice of game for the whole lobby).</summary>
-    private Task ListGame() => this.Filter(this.OfGame(this._filter));
+    private async Task ListGame()
+    {
+        await this.Filter(this.OfGame(this._filter));
+        await this.OnGameChosen.InvokeAsync(this.Game);
+    }
 
     /// <summary>The list kept to the game chosen: at the size it was, if it is still that game, else at any.</summary>
     private GameListQuery OfGame(GameListQuery filter) =>
@@ -619,6 +627,7 @@
         await this.ListGames();
         this._mode = await this.Browser.Setup();
         this._catalog = catalog;
+        await this.OnGameChosen.InvokeAsync(first.Game);
     }
 
     /// <summary>The page of games the filter asks for, and the seats this browser holds at them.</summary>

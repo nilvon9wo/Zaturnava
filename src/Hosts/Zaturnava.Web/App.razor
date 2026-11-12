@@ -19,6 +19,7 @@
            PageSettings="this.Settings"
            HowToPlay="this.HowToPlay"
            OnLeave="this.Leave"
+           OnGameShown="this.ShowGame"
            OnSeated="this.Sit" />
 }
 else
@@ -26,7 +27,7 @@ else
     <header class="account">
         <PlayerBar OnSignedInOrOut="this.Refresh" />
     </header>
-    <Lobby @key="this._signIns" OnSeated="this.Sit" />
+    <Lobby @key="this._signIns" OnSeated="this.Sit" OnGameChosen="this.ShowGame" />
     <footer class="bar">
         <span class="where">
             <span class="brand">Zaturnava</span>
@@ -39,7 +40,7 @@ else
 
 @if (this._isGuideOpen)
 {
-    <Guide OnClose="this.CloseGuide" />
+    <Guide Game="@this._game" OnClose="this.CloseGuide" />
 }
 
 @if (this._isBotGuideOpen)
@@ -56,6 +57,9 @@ else
     private bool _isGuideOpen;
     private bool _isBotGuideOpen;
     private PieceSet _pieces;
+
+    /// <summary>The game the lobby shows, or the table plays: the guide is to it.</summary>
+    private string? _game;
 
     /// <summary>How many times a player has signed in or out here: the lobby is made anew each time.</summary>
     private int _signIns;
@@ -133,6 +137,8 @@ else
         this._signIns++;
         await this.LoadSettings();
     }
+
+    private void ShowGame(string? game) => this._game = game;
 
     private void OpenGuide() => this._isGuideOpen = true;
 
