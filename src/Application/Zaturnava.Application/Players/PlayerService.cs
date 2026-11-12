@@ -42,6 +42,9 @@ public sealed class PlayerService(
     /// <summary>The most settings a player may keep (<see cref="Prefer"/>).</summary>
     public const int MostPreferences = 32;
 
+    /// <summary>The longest a profile's description may be, in characters; a longer one is cut.</summary>
+    public const int MaximumDescriptionLength = 500;
+
     private readonly IPlayerPersisting _store = store;
     private readonly IGamePersisting _games = games;
     private readonly LinkCodes _links = links;
@@ -165,7 +168,10 @@ public sealed class PlayerService(
         return issued;
     }
 
-    /// <summary>The player as anyone may see them: their name; none, if no such player is known.</summary>
+    /// <summary>
+    /// The player as anyone may see them: their name, description and the services they show; none, if no such
+    /// player is known.
+    /// </summary>
     public Task<Player?> Profile(PlayerId id, CancellationToken cancellationToken) =>
         this._store.ById(id, cancellationToken);
 
@@ -288,6 +294,50 @@ public sealed class PlayerService(
             ? this._store.KeepPreferences(player.Id, preferences, cancellationToken)
             : throw new PreferenceRefusedException());
         return player with { Preferences = preferences };
+    }
+
+    /// <summary>
+    /// Says what the profile of the player the token stands for (none, if it stands for no one) shows anyone: a
+    /// description of themselves, without control characters but line breaks, or the spaces around it, cut to
+    /// <see cref="MaximumDescriptionLength"/>; and which of the services they sign in with it names, any other
+    /// left out.
+    /// </summary>
+    /// <exception cref="AiTokenRefusedException">The token is an AI's.</exception>
+    public async Task<Player?> Describe(
+        [Required] string token,
+        string? description,
+        IEnumerable<string>? shown,
+        CancellationToken cancellationToken
+    )
+    {
+        if (await this.Owner(token, cancellationToken) is not { } player)
+        {
+            return null;
+        }
+
+        string described = DescriptionOf(description);
+        ImmutableSortedSet<string> chosen = Player.NoneShown.Union(
+            (shown ?? []).Where(service => player.Logins.Any(login => login.Provider == service))
+        );
+        await this._store.Describe(player.Id, described, chosen, cancellationToken);
+        return player with { Description = described, Shown = chosen };
+    }
+
+    /// <summary>
+    /// The description without control characters but line breaks (each "\r\n" one), or the spaces around it, cut to
+    /// the longest allowed.
+    /// </summary>
+    private static string DescriptionOf(string? description)
+    {
+        string kept = new(
+            [
+                .. (description ?? string.Empty)
+                    .Replace("\r\n", "\n", StringComparison.Ordinal)
+                    .Where(letter => letter == '\n' || !char.IsControl(letter)),
+            ]
+        );
+        string trimmed = kept.Trim();
+        return trimmed[..Math.Min(trimmed.Length, MaximumDescriptionLength)].TrimEnd();
     }
 
     /// <summary>The player the token stands for, if it stands for one.</summary>

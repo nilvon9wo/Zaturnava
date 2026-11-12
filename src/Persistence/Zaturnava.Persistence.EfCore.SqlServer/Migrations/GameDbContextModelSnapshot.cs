@@ -184,6 +184,10 @@ namespace Net.NowhereAtAll.Zaturnava.Persistence.EfCore.SqlServer.Migrations
                         .HasMaxLength(32)
                         .HasColumnType("nvarchar(32)");
 
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
                     b.Property<DateTime?>("LastSignedIn")
                         .HasColumnType("datetime2");
 
@@ -193,6 +197,9 @@ namespace Net.NowhereAtAll.Zaturnava.Persistence.EfCore.SqlServer.Migrations
                         .HasColumnType("nvarchar(40)");
 
                     b.Property<string>("Preferences")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Shown")
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");

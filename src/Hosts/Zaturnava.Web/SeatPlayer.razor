@@ -1,5 +1,5 @@
 @* Who holds a seat, as the table shows them. A player who claimed it signed in may be looked at: their name opens a
-   dialog with their profile, as anyone may see it. A bot may be looked at too: its name opens its profile, from the
+   dialog with their profile, as anyone may see it: their description, and the services they chose to show. A bot may be looked at too: its name opens its profile, from the
    server's catalog - what it does, whether it asks an AI (and costs tokens each use), and its rating at this game. *@
 @inject IGameServing Games
 
@@ -24,6 +24,14 @@ else
             @if (this._profile is { } profile)
             {
                 <h2 id="public-profile-title">@profile.Name</h2>
+                @if (profile.Description.Length > 0)
+                {
+                    <p class="player-description">@profile.Description</p>
+                }
+                @if (!profile.Services.IsEmpty)
+                {
+                    <p class="player-services">Signs in with @string.Join(", ", profile.Services).</p>
+                }
             }
             else if (this._bot is { } bot)
             {

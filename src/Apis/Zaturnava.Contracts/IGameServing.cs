@@ -163,6 +163,16 @@ public interface IGameServing
     );
 
     /// <summary>
+    /// Says what the profile of the player <paramref name="token"/> stands for shows anyone
+    /// (<see cref="DescribeRequest"/>); none, if it stands for no one.
+    /// </summary>
+    Task<PlayerDto?> Describe(
+        [Required] string token,
+        [Required] DescribeRequest request,
+        CancellationToken cancellationToken
+    );
+
+    /// <summary>
     /// A one-time code for the player <paramref name="token"/> stands for to link another service with
     /// (<see cref="LinkCodeDto"/>); none, if it stands for no one.
     /// </summary>

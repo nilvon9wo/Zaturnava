@@ -35,6 +35,7 @@ internal static class SignInEndpoints
         _ = routes.MapGet(GameRoutes.Awaiting, Awaiting);
         _ = routes.MapPut(GameRoutes.Me, Rename);
         _ = routes.MapPut(GameRoutes.Preferences, Prefer);
+        _ = routes.MapPut(GameRoutes.MyProfile, Describe);
         _ = routes.MapDelete(GameRoutes.Me, Delete);
         _ = routes.MapDelete(GameRoutes.Session, SignOut);
         _ = routes.MapPost(GameRoutes.LinkCode, LinkCode);
@@ -72,6 +73,8 @@ internal static class SignInEndpoints
         new(player.Id.Value, player.Name, [.. player.Logins.Select(login => login.Provider).Distinct()])
         {
             Preferences = player.Preferences,
+            Description = player.Description,
+            Shown = player.ShownServices,
         };
 
     /// <summary>
@@ -212,6 +215,18 @@ internal static class SignInEndpoints
             ? TypedResults.Ok(ToDto(player))
             : TypedResults.Unauthorized();
 
+    /// <summary>Says what the profile of the player the token stands for shows anyone.</summary>
+    private static async Task<Results<Ok<PlayerDto>, UnauthorizedHttpResult>> Describe(
+        DescribeRequest describing,
+        HttpRequest request,
+        PlayerService players,
+        CancellationToken cancellationToken
+    ) =>
+        SeatToken.OrNull(request) is { } token
+        && await players.Describe(token, describing.Description, describing.Shown, cancellationToken) is { } player
+            ? TypedResults.Ok(ToDto(player))
+            : TypedResults.Unauthorized();
+
     private static async Task<Results<Ok<LinkCodeDto>, UnauthorizedHttpResult>> LinkCode(
         HttpRequest request,
         PlayerService players,
@@ -241,14 +256,20 @@ internal static class SignInEndpoints
             ? TypedResults.Ok(new AiTokenDto(issued))
             : TypedResults.Unauthorized();
 
-    /// <summary>The player as anyone may see them: their name.</summary>
+    /// <summary>The player as anyone may see them: their name, description and the services they show.</summary>
     private static async Task<Results<Ok<ProfileDto>, NotFound>> Profile(
         string playerId,
         PlayerService players,
         CancellationToken cancellationToken
     ) =>
         await players.Profile(new PlayerId(playerId), cancellationToken) is { } player
-            ? TypedResults.Ok(new ProfileDto(player.Id.Value, player.Name))
+            ? TypedResults.Ok(
+                new ProfileDto(player.Id.Value, player.Name)
+                {
+                    Description = player.Description,
+                    Services = player.ShownServices,
+                }
+            )
             : TypedResults.NotFound();
 
     /// <summary>Forgets the player the token stands for, and everything that says who they were.</summary>

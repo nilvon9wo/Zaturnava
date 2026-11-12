@@ -17,5 +17,11 @@ public sealed class PlayerEntity
     /// <summary>The page's settings the player prefers, by name, as JSON; null for none kept.</summary>
     public string? Preferences { get; set; }
 
+    /// <summary>The description of themselves their profile shows anyone; null for none given.</summary>
+    public string? Description { get; set; }
+
+    /// <summary>The services their profile shows anyone, as a JSON array; null for none chosen.</summary>
+    public string? Shown { get; set; }
+
     public List<LoginEntity> Logins { get; set; } = [];
 }

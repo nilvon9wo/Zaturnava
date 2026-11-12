@@ -79,6 +79,14 @@ public sealed class InMemoryPlayerStore : IPlayerPersisting
     ) =>
         this.Change(player, known => known with { Preferences = preferences });
 
+    public Task Describe(
+        PlayerId player,
+        [Required(AllowEmptyStrings = true)] string description,
+        [Required] ImmutableSortedSet<string> shown,
+        CancellationToken cancellationToken
+    ) =>
+        this.Change(player, known => known with { Description = description, Shown = shown });
+
     public Task AddLogin(PlayerId player, Login login, CancellationToken cancellationToken) =>
         this.Change(player, known => known with { Logins = known.Logins.Add(login) });
 

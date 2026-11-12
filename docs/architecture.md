@@ -290,6 +290,7 @@ base address (`GameRoutes`):
 | Sign in, in a window the page opens | `GET signin/{provider}?origin={the page's origin}` | the service's page; then, from `signin/done`, a page posting a `SignedInDto` to the opener at that origin, which must be the page host's |
 | Who a player's token stands for | `GET api/players/me`, `Authorization: Bearer {token}` | `PlayerDto`, or 401 |
 | Keep a page setting | `PUT api/players/me/preferences`, `Authorization: Bearer {token}`, `PreferRequest` | `PlayerDto`, 400 if refused, or 401 |
+| Say what the profile shows | `PUT api/players/me/profile`, `Authorization: Bearer {token}`, `DescribeRequest` | `PlayerDto`, or 401 |
 | The games waiting for a player's move | `GET api/players/me/awaiting`, `Authorization: Bearer {token}` | `AwaitedGameDto[]`, earliest changed first, or 401 |
 | Sign out | `DELETE api/players/me/session`, `Authorization: Bearer {token}` | 204, the session let go |
 | Delete the account | `DELETE api/players/me`, `Authorization: Bearer {token}` | 204, the player, their logins, sessions and standings forgotten; or 401 |

@@ -361,6 +361,24 @@ public sealed class EfPlayerStoreTest : IDisposable
     }
 
     [Fact]
+    public async Task Describe_WhenThePlayerIsKnown_KeepsTheirProfile()
+    {
+        // Arrange
+        await this._store.Add(Ada, this._cancellation);
+        Player? before = await new EfPlayerStore(this._database.NewContext()).ById(Ada.Id, this._cancellation);
+
+        // Act
+        await this._store.Describe(Ada.Id, "Counts.", Player.NoneShown.Add("GitHub"), this._cancellation);
+
+        // Assert
+        Player? found = await new EfPlayerStore(this._database.NewContext()).ById(Ada.Id, this._cancellation);
+        Assert.Equal(
+            (string.Empty, 0, "Counts.", "GitHub"),
+            (before?.Description, before?.Shown.Count, found?.Description, found?.Shown.Single())
+        );
+    }
+
+    [Fact]
     public async Task AddLogin_WhenTheLoginIsNoOnes_MakesItThePlayersToo()
     {
         // Arrange

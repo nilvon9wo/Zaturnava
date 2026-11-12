@@ -340,6 +340,22 @@ internal sealed class FakeGameServer : IGameServing
             )
         );
 
+    public Task<PlayerDto?> Describe(
+        [Required] string token,
+        [Required] DescribeRequest request,
+        CancellationToken cancellationToken
+    ) =>
+        this.SignedIn(() =>
+            this.Changed(
+                token,
+                player => player with
+                {
+                    Description = request.Description ?? string.Empty,
+                    Shown = request.Shown ?? [],
+                }
+            )
+        );
+
     public Task<string?> LinkCode([Required] string token, CancellationToken cancellationToken) =>
         this.SignedIn(() => this.Players.ContainsKey(token) ? "code-" + token : null);
 

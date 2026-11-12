@@ -643,6 +643,9 @@ button.safety.off {
 .dialog .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
 .sign-in-dialog .nickname { display: flex; align-items: center; gap: 8px; }
 .sign-in-dialog .nickname input { flex: 1; }
+.profile-dialog label.description { display: flex; flex-direction: column; gap: 4px; margin-top: 10px; }
+.profile-dialog textarea.description { font: inherit; resize: vertical; }
+.public-profile .player-description { white-space: pre-wrap; overflow-wrap: anywhere; }
 .dialog .resign { background: var(--danger); color: var(--danger-ink); border-color: var(--danger); }
 
 .turn.yours {

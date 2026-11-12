@@ -610,6 +610,79 @@ public sealed class PlayerServiceTest
     }
 
     [Fact]
+    public async Task Describe_WhenGivenAProfile_KeepsItCleanedAndShowsOnlyServicesTheyUse()
+    {
+        // Arrange - Ada signs in with GitHub alone
+        SignedIn signedIn = await this._service.SignIn(Login, "Ada", this._cancellation);
+        string description = $"  I count.\r\nOften.\u0007{new string('x', PlayerService.MaximumDescriptionLength)}";
+
+        // Act
+        Player? described =
+            await this._service.Describe(signedIn.Token, description, ["Google", Login.Provider], this._cancellation);
+
+        // Assert
+        Player kept = (await this._service.Find(signedIn.Token, this._cancellation))!;
+        Assert.Equal(
+            (
+                PlayerService.MaximumDescriptionLength,
+                "I count.\nOften.x",
+                Login.Provider,
+                described!.Description,
+                Login.Provider
+            ),
+            (
+                described.Description.Length,
+                described.Description[..16],
+                string.Join(",", described.ShownServices),
+                kept.Description,
+                string.Join(",", kept.Shown)
+            )
+        );
+    }
+
+    [Fact]
+    public async Task Describe_WhenGivenNothing_ShowsNothing()
+    {
+        // Arrange
+        SignedIn signedIn = await this._service.SignIn(Login, "Ada", this._cancellation);
+        _ = await this._service.Describe(signedIn.Token, "Hello.", [Login.Provider], this._cancellation);
+
+        // Act
+        Player? described = await this._service.Describe(signedIn.Token, null, null, this._cancellation);
+
+        // Assert
+        Assert.Equal((string.Empty, 0), (described!.Description, described.ShownServices.Count));
+    }
+
+    [Fact]
+    public async Task Describe_WhenTheTokenStandsForNoOne_IsNoOne()
+    {
+        // Arrange - nothing beyond the empty store
+
+        // Act
+        Player? described = await this._service.Describe("not a token", "Hello.", [], this._cancellation);
+
+        // Assert
+        Assert.Null(described);
+    }
+
+    [Fact]
+    public void ShownServices_WhenAServiceShownIsUnlinked_LeavesItOut()
+    {
+        // Arrange
+        Player player = new(new PlayerId("p"), "Ada", [Login])
+        {
+            Shown = Player.NoneShown.Add(Login.Provider).Add("Google"),
+        };
+
+        // Act
+        ImmutableList<string> shown = player.ShownServices;
+
+        // Assert
+        Assert.Equal([Login.Provider], shown);
+    }
+
+    [Fact]
     public async Task LinkCode_WhenTheTokenStandsForNoOne_IsNone()
     {
         // Arrange - nothing beyond the empty store

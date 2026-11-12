@@ -55,6 +55,17 @@ public interface IPlayerPersisting
         CancellationToken cancellationToken
     );
 
+    /// <summary>
+    /// Keeps what the player's profile shows anyone (<see cref="Player.Description"/>, <see cref="Player.Shown"/>),
+    /// as given.
+    /// </summary>
+    Task Describe(
+        PlayerId player,
+        [Required(AllowEmptyStrings = true)] string description,
+        [Required] ImmutableSortedSet<string> shown,
+        CancellationToken cancellationToken
+    );
+
     /// <summary>Makes <paramref name="login"/>, which is no one's, the player's too.</summary>
     Task AddLogin(PlayerId player, Login login, CancellationToken cancellationToken);
 

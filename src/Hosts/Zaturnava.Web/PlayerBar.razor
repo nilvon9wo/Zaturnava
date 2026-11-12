@@ -50,7 +50,9 @@
         <div class="backdrop">
             <div class="dialog profile-dialog" role="dialog" aria-modal="true" aria-labelledby="profile-title">
                 <h2 id="profile-title">Your profile</h2>
-                <p class="autosave">Each change is saved as you make it: your username once you leave its field.</p>
+                <p class="autosave">
+                    Each change is saved as you make it: your username and description once you leave their field.
+                </p>
                 <label class="name">
                     Username
                     <input class="name"
@@ -58,12 +60,26 @@
                            value="@player.Name"
                            @onchange="change => this.Rename(token, change)" />
                 </label>
-                <p>You sign in with:</p>
+                <label class="description">
+                    About you, for anyone who opens your profile
+                    <textarea class="description"
+                              rows="3"
+                              maxlength="@DescribeRequest.MaximumDescriptionLength"
+                              value="@player.Description"
+                              @onchange="change => this.Describe(token, change, player.Shown)"></textarea>
+                </label>
+                <p>You sign in with (ticked: your profile shows anyone that you do):</p>
                 <ul class="services">
                     @foreach (string service in services)
                     {
                         <li>
-                            @service
+                            <label class="shown">
+                                <input type="checkbox"
+                                       class="shown"
+                                       checked="@player.Shown.Contains(service)"
+                                       @onchange="change => this.Show(token, player, service, change)" />
+                                @service
+                            </label>
                             @if (services.Count > 1)
                             {
                                 <button class="unlink" @onclick="() => this.Unlink(token, service)">Unlink</button>
@@ -309,6 +325,27 @@ else
                 "Username saved."
             )
         );
+
+    /// <summary>Has the server keep what the player's profile shows anyone; told why not, if it cannot.</summary>
+    private async Task Describe(string token, string description, ImmutableList<string> shown) =>
+        this._notice = await Requests.Attempt(async () =>
+            await this.Showing(
+                token,
+                this.Games.Describe(token, new DescribeRequest(description, shown), CancellationToken.None),
+                "Profile saved."
+            )
+        );
+
+    /// <summary>Has the server keep the description, as its field is left, and the services shown.</summary>
+    private Task Describe(string token, ChangeEventArgs change, ImmutableList<string> shown) =>
+        this.Describe(token, $"{change.Value}", shown);
+
+    /// <summary>Shows <paramref name="service"/> on the player's profile, ticked, or no longer, unticked.</summary>
+    private Task Show(string token, PlayerDto player, string service, ChangeEventArgs change)
+    {
+        ImmutableList<string> others = player.Shown.Remove(service);
+        return this.Describe(token, player.Description, Equals(change.Value, true) ? others.Add(service) : others);
+    }
 
     private async Task Unlink(string token, string provider) =>
         this._notice = await Requests.Attempt(async () =>
