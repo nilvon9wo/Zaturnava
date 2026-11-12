@@ -232,6 +232,10 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     /// </summary>
     public GameState Drafted([Required] GameState dealt, int seed) => this._drafting?.Begun(dealt, seed) ?? dealt;
 
+    /// <summary>While the armies are drafted, every kind offered on the game's terrain.</summary>
+    public ImmutableList<PieceKindId> DraftOffered([Required] GameState state) =>
+        this.DraftingOf(state)?.Offered(state) ?? [];
+
     public ImmutableList<BoardLine> LinesOf([Required] GameState state) =>
         this._variant.Lines?.Invoke(state, this._grid) ?? [];
 

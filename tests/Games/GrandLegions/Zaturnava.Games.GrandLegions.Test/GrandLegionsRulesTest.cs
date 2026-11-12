@@ -287,6 +287,29 @@ public sealed class GrandLegionsRulesTest
         Assert.Equal("Promoted, on reaching the far edge, into a captured piece.", guide.Powers.Single());
     }
 
+    [Theory]
+    [InlineData("knight", "Other", "Horse", "Western")]
+    [InlineData("xiangqi-elephant", "Other", "Elephant", "Xiangqi")]
+    [InlineData("rook", "Orthogonal", null, "Western")]
+    [InlineData("lance", "Forward", null, "Shogi")]
+    [InlineData("dragon-king", "Every way", null, "Shogi")]
+    public void GuideOf_WhenAsked_TellsWhichWayItGoesWhatSortOfBeastAndWhichGameItComesFrom(
+        string kind,
+        string bearing,
+        string? kin,
+        string origin
+    )
+    {
+        // Arrange
+        Chaturaji2027Rules rules = GrandLegionsRules.RulesOf(QuickGame.Small);
+
+        // Act
+        PieceGuide guide = rules.GuideOf(new PieceKindId(kind));
+
+        // Assert
+        Assert.Equal((bearing, kin, origin), (guide.Bearing, guide.Kin, guide.Origin));
+    }
+
     [Fact]
     public void GuideOf_WhenAWesternPawn_TellsItsClassStartRowPowersAndRestriction()
     {

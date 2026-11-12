@@ -17,8 +17,11 @@
     <dl class="facts">
         <dt>Owner</dt>
         <dd class="owner">@this.Owner</dd>
-        <dt>Square</dt>
-        <dd class="square">@this.Cell</dd>
+        @if (this.Cell.Length > 0)
+        {
+            <dt>Square</dt>
+            <dd class="square">@this.Cell</dd>
+        }
         @if (this.Kind?.Class is { } pieceClass)
         {
             <dt>Class</dt>
@@ -80,7 +83,7 @@
     [Parameter, EditorRequired]
     public string Owner { get; set; } = string.Empty;
 
-    /// <summary>Where it stands: "c3".</summary>
+    /// <summary>Where it stands: "c3"; empty, for a piece not yet on the board, being placed.</summary>
     [Parameter, EditorRequired]
     public string Cell { get; set; } = string.Empty;
 

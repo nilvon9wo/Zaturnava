@@ -143,6 +143,7 @@ internal static class GameViews
             DraftLeft = snapshot.State.Draft is { } draft
                 ? [.. snapshot.State.Seats.Select(seat => draft.Left[seat.Id])]
                 : null,
+            DraftKinds = [.. snapshot.Rules.DraftOffered(snapshot.State).Select(kind => KindOf(snapshot.Rules, kind))],
             IsForPlayers = snapshot.Record.Controllers.Any(controller => controller.IsForPlayers),
         };
     }
@@ -169,6 +170,9 @@ internal static class GameViews
         return new PieceKindDto(kind.Value, rules.NameOf(kind), rules.WorthOf(kind))
         {
             Class = guide.Class,
+            Bearing = guide.Bearing,
+            Kin = guide.Kin,
+            Origin = guide.Origin,
             Moves = TextOf(guide.Kind.Movement.Where(rule => rule.CanMove), rules.NameOf),
             Captures = TextOf(guide.Kind.Movement.Where(rule => rule.CanCapture), rules.NameOf),
             Powers = guide.Powers,
@@ -301,7 +305,7 @@ internal static class GameViews
             seat.Value,
             snapshot.Rules.NameOf(seat),
             snapshot.State.Teams.TeamOf(seat),
-            snapshot.State.Scores.GetValueOrDefault(seat),
+            snapshot.State.Scores.GetValueOrDefault(seat) + (snapshot.State.Draft?.Left.GetValueOrDefault(seat) ?? 0),
             controller.Kind,
             botId is null ? null : BotNameOf(bots, botId),
             [.. snapshot.State.Prisoners.Where(prisoner => prisoner.Holder == seat)

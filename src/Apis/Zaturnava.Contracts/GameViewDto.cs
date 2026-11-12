@@ -77,6 +77,12 @@ public sealed record GameViewDto(
     public ImmutableList<int>? DraftLeft { get; init; }
 
     /// <summary>
+    /// While the armies are drafted, every kind a player may draft, at its price, whether or not they can pay for it
+    /// yet: the catalogue they choose from. Empty at any other time.
+    /// </summary>
+    public ImmutableList<PieceKindDto> DraftKinds { get; init; } = [];
+
+    /// <summary>
     /// Whether its seats for people were only for players signed in (<see cref="CreateGameRequest.IsForPlayers"/>),
     /// whether still open or since taken; so the game played again is too.
     /// </summary>

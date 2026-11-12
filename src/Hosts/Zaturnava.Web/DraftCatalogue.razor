@@ -1,0 +1,161 @@
+@* The pieces a player may draft, while their army is drafted, as a table to choose from (Stated, 2026-11-12): each
+   piece's name, class, the game it comes from, how it moves in words, what holds it back, and its price. Filtered by
+   class; then, among the Cavalry, by sort of beast (horses, elephants, camels, other), and among the rest by which
+   way they go (forward, orthogonally, diagonally, every way, other) - each filter offering only what some piece has.
+   A piece dearer than what is left stays listed, greyed out, unless the player hides those. Picking a piece has it
+   placed next: its squares are then marked on the board; picking it again lets it go. *@
+
+<section class="draft-catalogue" aria-label="Pieces to draft">
+    <h3>Choose a piece to place: @this.Left points left</h3>
+    <div class="filters">
+        <label>
+            Class
+            <select class="draft-class" @bind="this._class">
+                <option value="">Any</option>
+                @foreach (string pieceClass in this.Classes)
+                {
+                    <option value="@pieceClass">@pieceClass</option>
+                }
+            </select>
+        </label>
+        @if (this._class == Cavalry)
+        {
+            <label>
+                Sort
+                <select class="draft-kin" @bind="this._kin">
+                    <option value="">Any</option>
+                    @foreach (string kin in this.Kins)
+                    {
+                        <option value="@kin">@kin</option>
+                    }
+                </select>
+            </label>
+        }
+        else
+        {
+            <label>
+                Moves
+                <select class="draft-bearing" @bind="this._bearing">
+                    <option value="">Any</option>
+                    @foreach (string bearing in this.Bearings)
+                    {
+                        <option value="@bearing">@bearing</option>
+                    }
+                </select>
+            </label>
+        }
+        <label class="affordable">
+            <input type="checkbox" class="draft-affordable" @bind="this._isAffordableOnly" />
+            Only what I can afford
+        </label>
+    </div>
+    <div class="draft-table">
+        <table>
+            <thead>
+                <tr>
+                    <th>Piece</th>
+                    <th>Class</th>
+                    <th>From</th>
+                    <th>Moves</th>
+                    <th>Held back</th>
+                    <th class="cost">Cost</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (PieceKindDto kind in this.Shown)
+                {
+                    bool isAffordable = kind.Value <= this.Left;
+                    <tr class="@RowClass(kind, isAffordable, this.Picked)">
+                        <td>
+                            <button class="pick"
+                                    disabled="@(!isAffordable)"
+                                    aria-pressed="@(kind.Kind == this.Picked ? "true" : "false")"
+                                    @onclick="() => this.OnPick.InvokeAsync(kind.Kind)">
+                                <PieceIcon Kind="@kind.Kind" Name="@kind.Name" Owner="this.Owner" Mark="kind.Mark" Pieces="this.Pieces" />
+                                <span class="name">@kind.Name</span>
+                            </button>
+                        </td>
+                        <td>@kind.Class</td>
+                        <td>@kind.Origin</td>
+                        <td class="moves">@MovesOf(kind)</td>
+                        <td class="held-back">@string.Join("; ", kind.Restrictions)</td>
+                        <td class="cost">@kind.Value</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</section>
+
+@code {
+    private const string Cavalry = "Cavalry";
+
+    /// <summary>The classes in the order a player thinks of an army: leaders first, infantry last.</summary>
+    private static readonly ImmutableList<string> ClassOrder = ["Leader", "Heavy", Cavalry, "Artillery", "Infantry"];
+
+    private string _class = string.Empty;
+    private string _kin = string.Empty;
+    private string _bearing = string.Empty;
+    private bool _isAffordableOnly;
+
+    /// <summary>Every kind offered, dearest first, whether or not the player can pay for it.</summary>
+    [Parameter, EditorRequired]
+    public ImmutableList<PieceKindDto> Kinds { get; set; } = [];
+
+    /// <summary>What the player has left to spend.</summary>
+    [Parameter]
+    public int Left { get; set; }
+
+    /// <summary>The kind picked to be placed next; none, if none is.</summary>
+    [Parameter]
+    public string? Picked { get; set; }
+
+    /// <summary>Whose army it is: its pieces are drawn in its colour.</summary>
+    [Parameter]
+    public int Owner { get; set; }
+
+    [Parameter]
+    public PieceSet Pieces { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnPick { get; set; }
+
+    private IEnumerable<string> Classes =>
+        ClassOrder.Where(pieceClass => this.Kinds.Any(kind => kind.Class == pieceClass));
+
+    private IEnumerable<string> Kins =>
+        this.Kinds.Where(kind => kind.Class == Cavalry).Select(kind => kind.Kin).OfType<string>().Distinct()
+            .OrderBy(kin => kin == "Other").ThenBy(kin => kin, StringComparer.Ordinal);
+
+    private IEnumerable<string> Bearings =>
+        MovementBearings.Where(bearing => this.InClass.Any(kind => kind.Bearing == bearing));
+
+    private static readonly ImmutableList<string> MovementBearings =
+        ["Forward", "Orthogonal", "Diagonal", "Every way", "Other"];
+
+    private IEnumerable<PieceKindDto> InClass =>
+        this.Kinds.Where(kind => this._class.Length == 0 || kind.Class == this._class);
+
+    /// <summary>The kinds the filters let through, classes in order, each dearest first.</summary>
+    private IEnumerable<PieceKindDto> Shown =>
+        this.InClass
+            .Where(kind => this._class != Cavalry || this._kin.Length == 0 || kind.Kin == this._kin)
+            .Where(kind => this._class == Cavalry || this._bearing.Length == 0 || kind.Bearing == this._bearing)
+            .Where(kind => !this._isAffordableOnly || kind.Value <= this.Left)
+            .OrderBy(kind => ClassOrder.IndexOf(kind.Class ?? string.Empty))
+            .ThenByDescending(kind => kind.Value);
+
+    /// <summary>How it moves, in words; how it captures too, where that differs.</summary>
+    private static string MovesOf(PieceKindDto kind) =>
+        (kind.Captures.SequenceEqual(kind.Moves, StringComparer.Ordinal) || kind.Captures.IsEmpty)
+            ? string.Join("; ", kind.Moves)
+            : $"{string.Join("; ", kind.Moves)}; captures: {string.Join("; ", kind.Captures)}";
+
+    private static string? RowClass(PieceKindDto kind, bool isAffordable, string? picked) =>
+        (kind.Kind == picked, isAffordable) switch
+        {
+            (true, _) => "picked",
+            (_, false) => "unaffordable",
+            _ => null,
+        };
+}

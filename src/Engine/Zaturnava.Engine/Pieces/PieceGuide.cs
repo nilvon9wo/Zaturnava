@@ -12,6 +12,15 @@ public sealed record PieceGuide(PieceKind Kind)
 {
     public string? Class { get; init; }
 
+    /// <summary>Which way it goes, at a glance (<see cref="MovementBearing"/>); none, unless told.</summary>
+    public string? Bearing { get; init; }
+
+    /// <summary>What sort of beast it is, among its class, for sorting pieces: "Horse"; none, if not told.</summary>
+    public string? Kin { get; init; }
+
+    /// <summary>Which game it comes from: "Shogi"; none, if not told.</summary>
+    public string? Origin { get; init; }
+
     /// <summary>Where it may move and capture, drawn: none, unless the ruleset draws it.</summary>
     public MoveDiagram Diagram { get; init; } = MoveDiagram.None;
 

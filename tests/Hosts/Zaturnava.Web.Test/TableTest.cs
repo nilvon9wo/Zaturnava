@@ -1512,20 +1512,221 @@ public sealed class TableTest : IDisposable
     }
 
     [Fact]
-    public void Render_WhileTheArmiesAreDrafted_TellsWhatEachSeatHasLeftToSpend()
+    public void Render_WhileTheArmiesAreDrafted_TellsWhoDraftsAndThatTheScoresArePointsLeftToSpend()
     {
         // Arrange
-        this._page.Server.View = this._page.Server.View with { DraftLeft = [10, 20] };
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with { DraftLeft = [10, 20], DecidingSeat = 1 };
 
         // Act
         IRenderedComponent<Table> table = this.Render(SeatZero);
 
         // Assert
         Assert.Equal(
-            "Drafting armies, points left: Black 10, Yellow 20",
-            table.Find("p.draft-left").TextContent
+            ("Random (Yellow) is drafting their army.", "Points left to spend"),
+            (table.Find("p.status").TextContent, table.Find("span.score").GetAttribute("title"))
         );
     }
+
+    [Fact]
+    public void Click_WhenTheThroneIsToBeSet_SetsItOnTheSquareClickedWithoutAChoiceFirst()
+    {
+        // Arrange - the throne may go on cell 1 or 2
+        this.Drafting(left: 3, throne: true);
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Act
+        Cell(table, 2).Click();
+
+        // Assert
+        Assert.Equal(
+            ("Your turn to draft your army.", true, "throne 2"),
+            (
+                table.Find("p.status").TextContent,
+                table.FindAll("p.draft-throne").Count == 1,
+                $"{this._page.Server.Submitted?.Action.Kind} {this._page.Server.Submitted?.Action.Arguments["home"]}"
+            )
+        );
+    }
+
+    [Fact]
+    public void Render_WhenThePlayerDrafts_ListsEveryPieceGreyingWhatTheyCannotAfford()
+    {
+        // Arrange - 3 left: the Raja, at 5, is too dear
+        this.Drafting(left: 3, throne: false);
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Assert
+        Assert.Equal(
+            (
+                "Raja|Boat|Pawn",
+                "unaffordable",
+                true,
+                "Moves forward; captures: diagonally forward",
+                "Pick a piece above, then a marked square of your kingdom for it."
+            ),
+            (
+                string.Join("|", table.FindAll(".draft-table .name").Select(name => name.TextContent)),
+                table.FindAll(".draft-table tbody tr")[0].GetAttribute("class"),
+                table.FindAll("button.pick")[0].HasAttribute("disabled"),
+                table.FindAll(".draft-table td.moves")[2].TextContent,
+                table.Find("p.draft-place").TextContent.Trim()
+            )
+        );
+    }
+
+    [Theory]
+    [InlineData("Cavalry", "", false, "Boat", "draft-kin")]
+    [InlineData("", "Forward", false, "Pawn", "draft-bearing")]
+    [InlineData("", "", true, "Boat|Pawn", "draft-bearing")]
+    public void Change_WhenTheDraftIsFiltered_ListsOnlyThePiecesLetThrough(
+        string pieceClass,
+        string bearing,
+        bool isAffordableOnly,
+        string expected,
+        string subFilter
+    )
+    {
+        // Arrange
+        this.Drafting(left: 3, throne: false);
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Act
+        table.Find("select.draft-class").Change(pieceClass);
+        if (bearing.Length > 0)
+        {
+            table.Find("select.draft-bearing").Change(bearing);
+        }
+
+        table.Find("input.draft-affordable").Change(isAffordableOnly);
+
+        // Assert
+        Assert.Equal(
+            (expected, 1),
+            (
+                string.Join("|", table.FindAll(".draft-table .name").Select(name => name.TextContent)),
+                table.FindAll($"select.{subFilter}").Count
+            )
+        );
+    }
+
+    [Fact]
+    public void Click_WhenAPiecePickedToDraftIsPlaced_DraftsItThereHavingShownItsCard()
+    {
+        // Arrange
+        this.Drafting(left: 3, throne: false);
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        table.FindAll("button.pick")[1].Click();
+        string card = table.Find("aside.piece-card h2").TextContent;
+        string hint = table.Find("p.draft-place").TextContent.Trim();
+
+        // Act
+        Cell(table, 1).Click();
+
+        // Assert
+        Assert.Equal(
+            ("Boat", "Now click a marked square of your kingdom for it.", "draft boat 1"),
+            (
+                card,
+                hint,
+                $"{this._page.Server.Submitted?.Action.Kind} {this._page.Server.Submitted?.Action.Arguments["piece"]} "
+                + this._page.Server.Submitted?.Action.Arguments["home"]
+            )
+        );
+    }
+
+    [Fact]
+    public void Click_WhenThePickedPieceIsPickedAgainOrItsCardClosed_LetsItGoOrHidesTheCard()
+    {
+        // Arrange
+        this.Drafting(left: 3, throne: false);
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        table.FindAll("button.pick")[1].Click();
+        table.Find("aside.piece-card button.close").Click();
+        int cardsClosed = table.FindAll("aside.piece-card").Count;
+
+        // Act
+        table.FindAll("button.pick")[1].Click();
+
+        // Assert
+        Assert.Equal((0, false), (cardsClosed, Cell(table, 1).ClassList.Contains("target")));
+    }
+
+    [Fact]
+    public void Choose_WhenAPrisonerIsChosenToEscape_ShowsItsCard()
+    {
+        // Arrange
+        this.Escapable();
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Act
+        table.Find("button.choose").Click();
+
+        // Assert
+        Assert.Equal(("Boat", 0), (table.Find("aside.piece-card h2").TextContent, table.FindAll("dd.square").Count));
+    }
+
+    [Fact]
+    public void Render_WhenThePlayersPieceIsGoingHome_ShowsItsCard()
+    {
+        // Arrange
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Returning = new PrisonerDto(7, "boat", "Boat", 0),
+            LegalActions = [],
+        };
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Assert
+        Assert.Equal("Boat", table.Find("aside.piece-card h2").TextContent);
+    }
+
+    /// <summary>
+    /// Black drafting, with <paramref name="left"/> to spend, from a Raja (5), a Boat (2) and a Pawn (1): its throne
+    /// to set on cell 1 or 2, if <paramref name="throne"/>; else any it can pay for on cell 1.
+    /// </summary>
+    private void Drafting(int left, bool throne) =>
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            DraftLeft = [left, 0],
+            DraftKinds =
+            [
+                new PieceKindDto("raja", "Raja", 5) { Class = "Leader", Bearing = "Every way", Moves = ["Steps"] },
+                new PieceKindDto("boat", "Boat", 2) { Class = "Cavalry", Kin = "Horse", Moves = ["Leaps"] },
+                new PieceKindDto("pawn", "Pawn", 1)
+                {
+                    Class = "Infantry",
+                    Bearing = "Forward",
+                    Moves = ["Moves forward"],
+                    Captures = ["diagonally forward"],
+                    Restrictions = ["Never back"],
+                },
+            ],
+            LegalActions = throne
+                ? [Placed("throne", null, 1, "Your throne"), Placed("throne", null, 2, "Your throne"), Filling]
+                : [Placed("draft", "boat", 1, "Boat, 2"), Placed("draft", "pawn", 1, "Pawn, 1"), Filling],
+        };
+
+    private static readonly ActionDto Filling =
+        new("fill-army", ImmutableSortedDictionary<string, string>.Empty.Add("actor", "0"))
+        {
+            Label = "Fill the rest of my army at random, and be done",
+        };
+
+    private static ActionDto Placed(string kind, string? piece, int home, string choice) =>
+        new(
+            kind,
+            ImmutableSortedDictionary<string, string>.Empty
+                .Add("actor", "0")
+                .Add("home", home.ToString(CultureInfo.InvariantCulture))
+                .AddRange(piece is null ? [] : [KeyValuePair.Create("piece", piece)])
+        )
+        {
+            Choice = choice,
+        };
 
     [Theory]
     [InlineData("player", null, "player ")]
