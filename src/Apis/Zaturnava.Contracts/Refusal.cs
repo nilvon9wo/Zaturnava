@@ -20,4 +20,7 @@ public enum Refusal
 
     /// <summary>Too many requests from the same address of late: wait, and ask again.</summary>
     TooBusy,
+
+    /// <summary>The game began under rules that have changed since: it can no longer be shown or played.</summary>
+    Gone,
 }

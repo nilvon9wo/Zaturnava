@@ -1,5 +1,5 @@
 @* What a player is told of a piece they clicked on, whether or not they may move it: as labelled facts, whose it
-   is, where it stands, and its kind's class, value (what taking it scores), and what its own promotion may make
+   is, where it stands, and its kind's class, the game it comes from, value (what taking it scores), and what its own promotion may make
    it, if it has one, and where, saying so if the game does not play it yet; then how it moves and captures -
    drawn (MoveDiagramView), turned as the board shows its army, and in words where the ruleset draws nothing or
    the drawing has pieces to hop over, which one drawing cannot tell all of (a hop over any gap, say) - its
@@ -26,6 +26,11 @@
         {
             <dt>Class</dt>
             <dd class="class">@pieceClass</dd>
+        }
+        @if (this.Kind?.Origin is { } origin)
+        {
+            <dt title="The game it comes from">From</dt>
+            <dd class="origin">@origin</dd>
         }
         @if (this.Kind is { } known)
         {

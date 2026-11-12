@@ -7,6 +7,7 @@ public sealed class RefusalStatusTest
     [InlineData(Refusal.NotFound, 404)]
     [InlineData(Refusal.Forbidden, 403)]
     [InlineData(Refusal.Conflict, 409)]
+    [InlineData(Refusal.Gone, 410)]
     [InlineData(Refusal.Illegal, 422)]
     [InlineData(Refusal.TooBusy, 429)]
     public void CodeOf_WhenGivenARefusal_ReturnsItsStatus(Refusal refusal, int expected)
@@ -25,6 +26,7 @@ public sealed class RefusalStatusTest
     [InlineData(Refusal.NotFound)]
     [InlineData(Refusal.Forbidden)]
     [InlineData(Refusal.Conflict)]
+    [InlineData(Refusal.Gone)]
     [InlineData(Refusal.Illegal)]
     [InlineData(Refusal.TooBusy)]
     public void RefusalOf_WhenGivenARefusalsStatus_ReturnsTheRefusal(Refusal refusal)

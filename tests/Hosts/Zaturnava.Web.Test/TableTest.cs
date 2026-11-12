@@ -943,6 +943,27 @@ public sealed class TableTest : IDisposable
     }
 
     [Fact]
+    public void Render_WhenTheGamesRulesHaveChangedSince_SaysSoAndNothingElse()
+    {
+        // Arrange
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        this._page.Server.Failure = new GameRequestRefusedException(Refusal.Gone, "Rules changed: start a new one.");
+
+        // Act
+        table.Find("button.action").Click();
+
+        // Assert
+        Assert.Equal(
+            ("Rules changed: start a new one.", 0, 0),
+            (
+                table.Find(".gone p.problem").TextContent.Trim(),
+                table.FindAll("p.status").Count,
+                table.FindAll(".turn").Count
+            )
+        );
+    }
+
+    [Fact]
     public void ActionButton_WhenTheGameIsGoneMeanwhile_PutsTheBoardAwayAndStopsAsking()
     {
         // Arrange
@@ -1553,17 +1574,20 @@ public sealed class TableTest : IDisposable
     }
 
     [Fact]
-    public void Render_WhenThePlayerDrafts_ListsEveryPieceGreyingWhatTheyCannotAfford()
+    public void Change_WhenThePlayerDraftingAsksForEveryPiece_ListsThemAllGreyingWhatTheyCannotAfford()
     {
-        // Arrange - 3 left: the Raja, at 5, is too dear
+        // Arrange - 3 left: the Raja, at 5, is too dear, and so at first not listed
         this.Drafting(left: 3, throne: false);
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        string affordable = string.Join("|", table.FindAll(".draft-table .name").Select(name => name.TextContent));
 
         // Act
-        IRenderedComponent<Table> table = this.Render(SeatZero);
+        table.Find("input.draft-affordable").Change(false);
 
         // Assert
         Assert.Equal(
             (
+                "Boat|Pawn",
                 "Raja|Boat|Pawn",
                 "unaffordable",
                 true,
@@ -1571,6 +1595,7 @@ public sealed class TableTest : IDisposable
                 "Pick a piece above, then a marked square of your kingdom for it."
             ),
             (
+                affordable,
                 string.Join("|", table.FindAll(".draft-table .name").Select(name => name.TextContent)),
                 table.FindAll(".draft-table tbody tr")[0].GetAttribute("class"),
                 table.FindAll("button.pick")[0].HasAttribute("disabled"),
@@ -1616,13 +1641,39 @@ public sealed class TableTest : IDisposable
     }
 
     [Fact]
+    public void Poll_WhenThePlayersTurnToDraftComesRoundAgain_KeepsTheFiltersAsTheyLeftThem()
+    {
+        // Arrange - the player lists Infantry only, then another seat drafts
+        using PageContext page = new(TimeSpan.FromMilliseconds(10));
+        page.Server.View = DraftingView(left: 3, throne: false);
+        IRenderedComponent<Table> table = page.Render<Table>(parameters => parameters.Add(x => x.Seating, SeatZero));
+        table.Find("select.draft-class").Change("Infantry");
+        page.Server.View = page.Server.View with { DecidingSeat = 1, Version = 2 };
+        table.WaitForAssertion(() => Assert.Empty(table.FindAll("select.draft-class")));
+
+        // Act
+        page.Server.View = DraftingView(left: 3, throne: false) with { Version = 3 };
+
+        // Assert
+        table.WaitForAssertion(
+            () => Assert.Equal(
+                ("Infantry", "Pawn"),
+                (
+                    table.Find("select.draft-class").GetAttribute("value"),
+                    string.Join("|", table.FindAll(".draft-table .name").Select(name => name.TextContent))
+                )
+            )
+        );
+    }
+
+    [Fact]
     public void Click_WhenAPiecePickedToDraftIsPlaced_DraftsItThereHavingShownItsCard()
     {
         // Arrange
         this.Drafting(left: 3, throne: false);
         IRenderedComponent<Table> table = this.Render(SeatZero);
-        table.FindAll("button.pick")[1].Click();
-        string card = table.Find("aside.piece-card h2").TextContent;
+        table.FindAll("button.pick")[0].Click();
+        string card = $"{table.Find("aside.piece-card h2").TextContent} from {table.Find("dd.origin").TextContent}";
         string hint = table.Find("p.draft-place").TextContent.Trim();
 
         // Act
@@ -1630,7 +1681,7 @@ public sealed class TableTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ("Boat", "Now click a marked square of your kingdom for it.", "draft boat 1"),
+            ("Boat from Chaturaji", "Now click a marked square of your kingdom for it.", "draft boat 1"),
             (
                 card,
                 hint,
@@ -1646,12 +1697,12 @@ public sealed class TableTest : IDisposable
         // Arrange
         this.Drafting(left: 3, throne: false);
         IRenderedComponent<Table> table = this.Render(SeatZero);
-        table.FindAll("button.pick")[1].Click();
+        table.FindAll("button.pick")[0].Click();
         table.Find("aside.piece-card button.close").Click();
         int cardsClosed = table.FindAll("aside.piece-card").Count;
 
         // Act
-        table.FindAll("button.pick")[1].Click();
+        table.FindAll("button.pick")[0].Click();
 
         // Assert
         Assert.Equal((0, false), (cardsClosed, Cell(table, 1).ClassList.Contains("target")));
@@ -1692,14 +1743,23 @@ public sealed class TableTest : IDisposable
     /// Black drafting, with <paramref name="left"/> to spend, from a Raja (5), a Boat (2) and a Pawn (1): its throne
     /// to set on cell 1 or 2, if <paramref name="throne"/>; else any it can pay for on cell 1.
     /// </summary>
-    private void Drafting(int left, bool throne) =>
-        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+    private void Drafting(int left, bool throne) => this._page.Server.View = DraftingView(left, throne);
+
+    /// <summary>The game as <see cref="Drafting"/> sets it.</summary>
+    private static GameViewDto DraftingView(int left, bool throne) =>
+        FakeGameServer.SeatZeroToMove with
         {
             DraftLeft = [left, 0],
             DraftKinds =
             [
                 new PieceKindDto("raja", "Raja", 5) { Class = "Leader", Bearing = "Every way", Moves = ["Steps"] },
-                new PieceKindDto("boat", "Boat", 2) { Class = "Cavalry", Kin = "Horse", Moves = ["Leaps"] },
+                new PieceKindDto("boat", "Boat", 2)
+                {
+                    Class = "Cavalry",
+                    Kin = "Horse",
+                    Origin = "Chaturaji",
+                    Moves = ["Leaps"],
+                },
                 new PieceKindDto("pawn", "Pawn", 1)
                 {
                     Class = "Infantry",

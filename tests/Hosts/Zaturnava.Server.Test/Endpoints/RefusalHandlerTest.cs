@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
+using Net.NowhereAtAll.Zaturnava.Application.Games;
 using Net.NowhereAtAll.Zaturnava.Server.Endpoints;
 
 namespace Net.NowhereAtAll.Zaturnava.Server.Test.Endpoints;
@@ -23,5 +24,25 @@ public sealed class RefusalHandlerTest
 
         // Assert
         Assert.False(isHandled);
+    }
+
+    [Fact]
+    public async Task TryHandleAsync_WhenTheGameCanNoLongerBeReplayed_AnswersGone()
+    {
+        // Arrange
+        await using ServiceProvider services =
+            new ServiceCollection().AddOptions().AddProblemDetails().BuildServiceProvider();
+        RefusalHandler handler = new(services.GetRequiredService<IProblemDetailsService>());
+        DefaultHttpContext context = new();
+
+        // Act
+        bool isHandled = await handler.TryHandleAsync(
+            context,
+            new GameUnreplayableException(new GameId("g")),
+            TestContext.Current.CancellationToken
+        );
+
+        // Assert
+        Assert.Equal((true, 410), (isHandled, context.Response.StatusCode));
     }
 }

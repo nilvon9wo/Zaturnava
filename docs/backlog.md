@@ -116,6 +116,8 @@ first.
 
 ## Look and feel
 
+- *(Stated 2026-11-12, low priority, a nice-to-have)* The table's panels (the draft's list of pieces, the turn's
+  panel, the log and talk) resized and placed by each player as they like, as a piece card already may be dragged.
 - **2** Pieces drawn as pictures of their own; for now they are chess glyphs, and the boat a
   drawn sailing boat.
 - **3** A choice between classic chaturanga pieces and "modern" ones (the elephant is effectively

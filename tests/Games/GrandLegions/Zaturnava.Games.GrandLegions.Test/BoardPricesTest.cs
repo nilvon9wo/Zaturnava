@@ -6,9 +6,10 @@ namespace Net.NowhereAtAll.Zaturnava.Games.GrandLegions.Test;
 public sealed class BoardPricesTest
 {
     [Fact]
-    public void On_WhenTheBoardIsEightByEight_IsTheSheetsValues()
+    public void On_WhenTheBoardIsEightByEight_IsTheSheetsValuesButTheLances()
     {
-        // Arrange - the medium game's board, 8 × 8, its kingdoms' front row the sheet's row 2
+        // Arrange - the medium game's board, 8 × 8, its kingdoms' front row the sheet's row 2; the sheet counts the
+        // Lance's promotion from row 1, 5 rows (premium 12 / 5, 2), the board from its front row, 4 (12 / 4, 3)
         GrandBoard board = QuickTerrain.BoardOf(QuickGame.Medium, 0);
 
         // Act
@@ -16,7 +17,8 @@ public sealed class BoardPricesTest
 
         // Assert
         Assert.Equal(
-            GrandLegionsPieces.Catalogue.ToImmutableDictionary(piece => piece.Id, piece => piece.Value),
+            GrandLegionsPieces.Catalogue.ToImmutableDictionary(piece => piece.Id, piece => piece.Value)
+                .SetItem(GrandLegionsPieces.Lance, 57),
             prices
         );
     }

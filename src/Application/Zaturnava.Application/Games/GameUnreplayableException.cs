@@ -10,5 +10,5 @@ public sealed class GameUnreplayableException(GameId id)
             + "Sorry: start a new one."
     )
 {
-    public override GameRequestFailure Failure => GameRequestFailure.Conflict;
+    public override GameRequestFailure Failure => GameRequestFailure.Gone;
 }

@@ -286,7 +286,7 @@ label.alike, label.drafted, label.for-players { display: block; margin-top: 6px;
 .draft-table th { position: sticky; top: 0; background: var(--panel); text-align: left; padding: 4px 6px; }
 .draft-table td { padding: 3px 6px; border-top: 1px solid var(--panel-edge); vertical-align: top; }
 .draft-table .cost { text-align: right; font-variant-numeric: tabular-nums; }
-.draft-table .moves, .draft-table .held-back { color: var(--muted); }
+.draft-table .moves { color: var(--muted); }
 .draft-table button.pick {
     display: flex; align-items: center; gap: 4px; background: none; border: 0; padding: 0;
     color: inherit; font: inherit; text-align: left; cursor: pointer;

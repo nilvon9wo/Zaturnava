@@ -26,12 +26,10 @@
         <p class="problem" role="alert">@problem</p>
     }
 
-    @if (this._isGone)
+    @if (this._gone is { } gone)
     {
         <div class="gone">
-            <p class="problem" role="alert">
-                This game is gone: the server no longer has it, perhaps because it was restarted.
-            </p>
+            <p class="problem" role="alert">@gone</p>
             <button class="action primary back" @onclick="this.OnLeave">Back to the lobby</button>
         </div>
     }
@@ -317,6 +315,7 @@
                             <DraftCatalogue Kinds="view.DraftKinds"
                                             Left="left[turn.Claim.Seat]"
                                             Picked="@this._draftPick"
+                                            Filtered="this._draftFilters"
                                             Owner="turn.Claim.Seat"
                                             Pieces="this.PiecesShown"
                                             OnPick="this.PickToDraft" />
@@ -577,6 +576,9 @@
     /// <summary>The kind the player picked to draft next; kept, so that several alike are placed in a row.</summary>
     private string? _draftPick;
 
+    /// <summary>The draft's filters, as the player last left them, kept from one turn to draft to the next.</summary>
+    private readonly DraftCatalogue.Filters _draftFilters = new();
+
     /// <summary>Whether the player put away the card of the piece they are placing, until they pick another.</summary>
     private bool _isPlacingCardClosed;
 
@@ -602,7 +604,9 @@
     private string? _problem;
     private string? _notice;
     private bool _isBotDeciding;
-    private bool _isGone;
+
+    /// <summary>Why the game can no longer be shown or played, once it cannot; it then shows nothing else.</summary>
+    private string? _gone;
 
     public Table()
     {
@@ -1317,9 +1321,12 @@
         {
             await this.Show(await request());
         }
-        catch (GameRequestRefusedException refused) when (refused.Refusal == Refusal.NotFound)
+        catch (GameRequestRefusedException refused)
+            when (refused.Refusal is Refusal.NotFound or Refusal.Gone)
         {
-            this._isGone = true;
+            this._gone = refused.Refusal == Refusal.Gone
+                ? refused.Message
+                : "This game is gone: the server no longer has it, perhaps because it was restarted.";
             _ = this._poll.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
         }
     }
