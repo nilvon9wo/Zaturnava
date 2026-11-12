@@ -405,6 +405,21 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
     opacity: 0.9;
 }
 
+/* A palace's wall, battlemented (Svg.Battlemented), in stone grey; its lines to the throne, thin and dashed. */
+.line.palace {
+    stroke: #6b5d4f;
+    stroke-width: 0.04;
+    stroke-linejoin: miter;
+    opacity: 0.9;
+}
+
+.line.palace-line {
+    stroke: #6b5d4f;
+    stroke-width: 0.02;
+    stroke-dasharray: 0.06 0.05;
+    opacity: 0.7;
+}
+
 .piece circle { stroke: var(--piece-edge); stroke-width: 0.035; }
 .piece text {
     font-family: "Segoe UI Symbol", "DejaVu Sans", "Noto Sans Symbols 2", serif;

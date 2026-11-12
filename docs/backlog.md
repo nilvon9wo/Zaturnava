@@ -144,6 +144,11 @@ first.
   rules let them, the first trade that suits them, one a turn; each still weighs the trade by the position once
   it is done, not by the moves it opens this turn (*Proposed*).
 
+- *(Stated 2026-11-12)* **Kingdoms placed by the players**, as a setting of the game's creator: today every kingdom
+  stands in a corner of the board, whatever its size; with it, each player would place their kingdom before their
+  palace, throne and pieces. How free to make it is still to be worked out. Placing it anywhere could leave a later
+  player no room for theirs, so kingdoms should probably still keep to the board's corners, more or less.
+
 ## Players and identity
 
 - **29** One person, one identity: a person may play several seats of one team when the game
@@ -230,6 +235,15 @@ first.
   in the repository's history, at the tag `archive/pythia`. The name now belongs to a different bot (2026-11-12,
   *Proposed*): Monte Carlo tree search judged by Athena's network, with no AI service
   ([assessment](bots/ai-assessment.md#progress-2026-11-12)).
+- *(Stated 2026-11-12)* **Weak bots, for beginners.** The bots have grown strong enough that an "easy game" is no
+  longer easy: Random is the only one left that is truly weak. A few more weak bots, somewhere between 800 and 1200
+  Elo, would let a beginner enjoy a game, not just lose it. Their details are mine to choose. *Proposed*:
+  - a bot that takes whatever it can, the most valuable first, and else moves at random;
+  - one that plays one of its top few moves at random, by Sage's or Athena's judgement, with how often it errs
+    as its strength;
+  - one that looks no further than its own move, missing what the enemy can take back.
+
+  Each is rated by the bot-rating job like the rest, so the picker can show which are within reach.
 - In order (*Stated 2026-10-29*, the user agreeing to the plan):
   1. **Recorded games**: every game kept with its seats (which bot, or a person), its actions, the
      scores and how it ended, downloadable as data; self-play writing the same records.

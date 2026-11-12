@@ -10,9 +10,9 @@ namespace Net.NowhereAtAll.Zaturnava.Application.Running;
 /// <summary>
 /// A bot that, while the armies are drafted, drafts its own as the army filled at random would be (Proposed: until
 /// each bot drafts its own way, as the roadmap's Midas by value, Solomon evenly), a step at a time, as a person
-/// does: its throne where that army's would be; then, a turn at a time, the dearest piece of that army, on its square,
-/// or a stronger one there that the budget still pays for; done once that army has nothing more to add. It plays as
-/// itself once play begins.
+/// does: its palace and throne where that army's would be; then, a turn at a time, the dearest piece of that army, on
+/// its square, or a stronger one there that the budget still pays for; done once that army has nothing more to add.
+/// It plays as itself once play begins.
 /// </summary>
 public sealed class FillingArmies([Required] IDeciding bot) : IDeciding
 {
@@ -33,24 +33,29 @@ public sealed class FillingArmies([Required] IDeciding bot) : IDeciding
         this._bot.Seize(request, cancellationToken);
 
     /// <summary>
-    /// The next step toward the army <paramref name="fill"/> would make: its throne; else the first piece offered
-    /// (the dearest) that it would place where it is offered, made better (<see cref="Bettered"/>); else, if it would
-    /// add nothing, being done; else, should the rules offer none of what it would add, the fill itself.
+    /// The next step toward the army <paramref name="fill"/> would make: its palace; its throne; else the first piece
+    /// offered (the dearest) that it would place where it is offered, made better (<see cref="Bettered"/>); else, if it
+    /// would add nothing, being done; else, should the rules offer none of what it would add, the fill itself.
     /// </summary>
     private static GameAction Drafted(DecisionRequest request, FillArmyAction fill)
     {
         GameState now = request.State;
         GameState filled = request.Rules.Apply(now, fill).State;
         bool isAdded = filled.Position.Occupants.Count > now.Position.Occupants.Count;
-        GameAction? throne = request.LegalActions.OfType<ThroneAction>()
-            .FirstOrDefault(action => filled.Thrones![request.Seat] == action.Cell);
+        GameAction? home = request.LegalActions.FirstOrDefault(action => action switch
+        {
+            PalaceAction => request.Rules.Apply(now, action).State.Palaces![request.Seat]
+                .SequenceEqual(filled.Palaces![request.Seat]),
+            ThroneAction throne => filled.Thrones![request.Seat] == throne.Cell,
+            _ => false,
+        });
         DraftAction? piece = request.LegalActions.OfType<DraftAction>()
             .FirstOrDefault(action =>
                 filled.Position.PieceAt(action.Cell) is { } placed
                 && placed.Kind == action.Piece
                 && placed.Owner == request.Seat
             );
-        return (throne ?? Bettered(request, filled, piece), isAdded) switch
+        return (home ?? Bettered(request, filled, piece), isAdded) switch
         {
             ({ } next, _) => next,
             (_, false) => request.LegalActions.OfType<PassAction>().First(),

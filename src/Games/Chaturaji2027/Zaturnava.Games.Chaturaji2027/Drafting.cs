@@ -5,9 +5,10 @@ namespace Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
 
 /// <summary>
 /// How a game's players may draft their own armies before play (specification §3; Proposed: in turn, in view of each
-/// other, palaces still to come): each with <paramref name="Budget"/> to spend, at each kind's worth, on the kinds
-/// <paramref name="Offered"/> on the game's terrain, placed on the squares of its <paramref name="Kingdom"/> (as seat
-/// 0's, from the bottom-left corner); and how the rest of an army is drafted at random (<paramref name="Fill"/>).
+/// other, a palace first where the kingdom has room for one): each with <paramref name="Budget"/> to spend, at each
+/// kind's worth, on the kinds <paramref name="Offered"/> on the game's terrain, placed on the squares of its
+/// <paramref name="Kingdom"/> (as seat 0's, from the bottom-left corner); and how the rest of an army is drafted at
+/// random (<paramref name="Fill"/>).
 /// </summary>
 public sealed record Drafting(
     int Budget,

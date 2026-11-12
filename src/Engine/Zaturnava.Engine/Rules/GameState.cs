@@ -30,6 +30,12 @@ public sealed record GameState(
     public ImmutableDictionary<SeatId, CellId>? Thrones { get; init; }
 
     /// <summary>
+    /// Each seat's palace in this game, its cells, if the game has palaces (<see cref="IRulesApplying.Deal"/>); null,
+    /// if it has none. While the armies are drafted, a seat that has not yet placed its palace has none here.
+    /// </summary>
+    public ImmutableDictionary<SeatId, ImmutableList<CellId>>? Palaces { get; init; }
+
+    /// <summary>
     /// Where every piece started in this game, if it was dealt its own armies; null, if as the rules start them.
     /// </summary>
     public Position? Start { get; init; }

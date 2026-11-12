@@ -172,6 +172,14 @@ to edit, wait for players to sign in and for storage that lasts.
 
 - A palace (3 × 3) and its throne, per army; palace lines drawn, and steps along them;
   confinement to a palace.
+  - Done (2026-11-12): each army's palace, about its throne, in every game dealt from then on whose kingdom has
+    room for one (a small or large game, or a custom one at least 3 × 3; *Proposed*: none in a medium game's
+    4 × 2 until a palace may stand partly outside its kingdom). A dealt army's palace is the one nearest its
+    throne. In a drafted game each player places theirs first, about a square of their kingdom, then their
+    throne in it; where the kingdom has room for one palace only, it is placed for them. The page draws each
+    palace's wall battlemented, and a line from each of its cells to its throne.
+  - Still to come: confinement to a palace, steps along its lines, and the pieces that need them (Janggi's
+    General, Guard and Soldier) in quick armies.
 - Several leaders in one army: throne control, and everything the Chaturaji 2027 rules say of "the Raja",
   said of leaders.
 - Scoring by piece value, with the Chaturaji 2027 bonuses multiplied by 10 until playtesting says
@@ -184,9 +192,10 @@ drawn simply, a shape for its class and a letter for its kind.
 
 ## Stage 4 — The draft
 
-- A setup phase before play: each player places their palace and throne, then drafts within the
-  budget, buying lifts and placing each piece, in secret or in turn as the game is set; a "fill at
-  random" for each step. Points not spent start the player's score.
+- A setup phase before play: each player places their palace and throne (done, in turn:
+  2026-11-12), then drafts within the budget, buying lifts and placing each piece, in secret or in
+  turn as the game is set; a "fill at random" for each step. Points not spent start the player's
+  score.
 - Infantry placed beyond the start rows (2, or as the game is set), without start-row powers.
 - Pieces confined to a palace placed in it.
 - Bots draft too: Random at random, Midas by value, Solomon… evenly.
