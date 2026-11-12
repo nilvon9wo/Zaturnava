@@ -73,6 +73,43 @@ public sealed class AppTest : IDisposable
     }
 
     [Fact]
+    public void HowToPlay_WhenGrandLegionsIsChosenInTheLobby_GuidesToGrandLegions()
+    {
+        // Arrange
+        this._page.Server.MoreRulesets =
+        [
+            new RulesetDto("grand-legions-small", "Grand Legions (small)", 4)
+            {
+                Game = "grand-legions",
+                GameName = "Grand Legions",
+                Size = "small",
+            },
+        ];
+        IRenderedComponent<App> app = this._page.Render<App>();
+        app.Find("select.game").Change("grand-legions");
+
+        // Act
+        app.Find("button.how-to-play").Click();
+
+        // Assert
+        Assert.Equal((1, "The idea"), (app.FindAll(".guide .preview-note").Count, app.Find(".guide h3").TextContent));
+    }
+
+    [Fact]
+    public void HowToPlay_WhenAtAChaturajiTable_GuidesToChaturaji()
+    {
+        // Arrange
+        IRenderedComponent<App> app = this._page.Render<App>();
+        Play(app);
+
+        // Act
+        app.Find("button.how-to-play").Click();
+
+        // Assert
+        Assert.Equal((0, "The aim"), (app.FindAll(".guide .preview-note").Count, app.Find(".guide h3").TextContent));
+    }
+
+    [Fact]
     public void HowToPlay_WhenOpen_LinksToTheFullRulesToBringingYourOwnAiAndToPrivacy()
     {
         // Arrange
