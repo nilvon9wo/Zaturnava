@@ -101,6 +101,7 @@ public sealed class FairyPositionTest
                 (4, 0, "king", 0),
                 (4, 1, "pawn", 0),
                 (7, 1, "pawn", 2),
+                (0, 3, "pawn", 2),
                 (4, 7, "king", 1),
                 (3, 6, "pawn", 1)
             ),
@@ -111,7 +112,7 @@ public sealed class FairyPositionTest
         Assert.NotNull(position);
         Assert.Equal(
             (
-                "4a3/3b4/8/8/8/8/4B2B/4A3 w - - 0 1",
+                "4a3/3b4/8/8/B7/8/4B2B/4A3 w - - 0 1",
                 $"[{position.Name}]\nmaxFile = 8\nmaxRank = 8\n"
                     + "pawn = -\nknight = -\nbishop = -\nrook = -\nqueen = -\nking = -\n"
                     + "castling = false\ndoubleStep = false\nstalemateValue = draw\nextinctionValue = loss\n"
