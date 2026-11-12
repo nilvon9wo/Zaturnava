@@ -99,11 +99,18 @@ internal sealed class TinyRules(int length, bool isDealt = false, Exception? fai
             },
         };
 
-    public GameState Deal([Required] GameState initial, int seed, bool areAlike = false, bool dealsTerrain = false) =>
+    public GameState Deal(
+        [Required] GameState initial,
+        int seed,
+        bool areAlike = false,
+        bool dealsTerrain = false,
+        bool dealsPalaces = false
+    ) =>
         initial with
         {
             Scores = initial.Scores.SetItem(new SeatId(0), seed).SetItem(new SeatId(1), areAlike ? 1 : 0),
             Terrain = dealsTerrain ? 1 : 0,
+            Palaces = dealsPalaces ? [] : null,
         };
 
     public ImmutableList<GameAction> LegalActions([Required] GameState state) =>

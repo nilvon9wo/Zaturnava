@@ -497,6 +497,30 @@ public sealed class TableTest : IDisposable
     }
 
     [Fact]
+    public void Render_WhenTheBoardHasAPalace_DrawsItsWallBattlementedOutward()
+    {
+        // Arrange - the wall along the bottom of the first cell, left to right: two gaps and two merlons, which stand
+        // out below it, outside the palace
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Lines = [new LineDto("palace", -0.5, -0.5, 0.5, -0.5)],
+        };
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Assert
+        AngleSharp.Dom.IElement line = table.Find("path.line");
+        Assert.Equal(
+            (
+                "line palace",
+                "M-0.5 0.5L-0.5 0.5L-0.25 0.5L-0.25 0.58L0 0.58L0 0.5L0.25 0.5L0.25 0.58L0.5 0.58L0.5 0.5"
+            ),
+            (line.GetAttribute("class"), line.GetAttribute("d"))
+        );
+    }
+
+    [Fact]
     public void Render_WhenTheBoardHasALineOfAnotherKind_DrawsItStraight()
     {
         // Arrange - a line along the top of the first cell
@@ -1620,6 +1644,35 @@ public sealed class TableTest : IDisposable
             (
                 table.Find("p.status").TextContent,
                 table.FindAll("p.draft-throne").Count == 1,
+                $"{this._page.Server.Submitted?.Action.Kind} {this._page.Server.Submitted?.Action.Arguments["home"]}"
+            )
+        );
+    }
+
+    [Fact]
+    public void Click_WhenThePalaceIsToBePlaced_PlacesItAboutTheSquareClickedWithoutAChoiceFirst()
+    {
+        // Arrange - the palace may stand about cell 1 or 2
+        this._page.Server.View = DraftingView(3, throne: false) with
+        {
+            LegalActions =
+            [
+                Placed("palace", null, 1, "Your palace"),
+                Placed("palace", null, 2, "Your palace"),
+                Filling,
+            ],
+        };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Act
+        Cell(table, 1).Click();
+
+        // Assert
+        Assert.Equal(
+            (1, 0, "palace 1"),
+            (
+                table.FindAll("p.draft-palace").Count,
+                table.FindAll("p.draft-throne").Count,
                 $"{this._page.Server.Submitted?.Action.Kind} {this._page.Server.Submitted?.Action.Arguments["home"]}"
             )
         );

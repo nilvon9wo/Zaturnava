@@ -73,10 +73,17 @@ public interface IRulesApplying
     /// The new game <paramref name="initial"/>, dealt by <paramref name="seed"/>: the same seed always deals the same
     /// game, so that a game replays from the seed it began with; every army alike, laid out alike, if
     /// <paramref name="areAlike"/>; its terrain too (<see cref="GameState.Terrain"/>: its rivers, say), if
-    /// <paramref name="dealsTerrain"/>, which a game dealt before terrain was never does. As it is, for a ruleset
-    /// that is not dealt.
+    /// <paramref name="dealsTerrain"/>, which a game dealt before terrain was never does; and its palaces
+    /// (<see cref="GameState.Palaces"/>), if <paramref name="dealsPalaces"/>, which one dealt before palaces were never
+    /// does. As it is, for a ruleset that is not dealt.
     /// </summary>
-    GameState Deal([Required] GameState initial, int seed, bool areAlike = false, bool dealsTerrain = false) =>
+    GameState Deal(
+        [Required] GameState initial,
+        int seed,
+        bool areAlike = false,
+        bool dealsTerrain = false,
+        bool dealsPalaces = false
+    ) =>
         initial;
 
     /// <summary>

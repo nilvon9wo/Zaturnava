@@ -228,9 +228,17 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     /// <summary>
     /// The game dealt its own armies by <paramref name="seed"/> - or one army, the same for every seat, if
     /// <paramref name="areAlike"/> - if the variant deals them: each leader's start its throne, and every piece's its
-    /// home; on its own terrain too, if <paramref name="dealsTerrain"/> and the variant deals terrain; else as it is.
+    /// home; on its own terrain too, if <paramref name="dealsTerrain"/> and the variant deals terrain; each army with
+    /// its palace about its throne, if <paramref name="dealsPalaces"/> and its kingdom has room for one
+    /// (<see cref="ArmyDrafting.HasPalaces"/>); else as it is.
     /// </summary>
-    public GameState Deal([Required] GameState initial, int seed, bool areAlike = false, bool dealsTerrain = false)
+    public GameState Deal(
+        [Required] GameState initial,
+        int seed,
+        bool areAlike = false,
+        bool dealsTerrain = false,
+        bool dealsPalaces = false
+    )
     {
         if (this._variant.Dealer is not { } dealer)
         {
@@ -240,10 +248,14 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         int terrain = dealsTerrain && this._variant.TerrainDealer is { } terrains ? terrains(seed) : 0;
         Chaturaji2027Variant dealt = this._variant with { Start = dealer(seed, areAlike, terrain) };
         Position position = dealt.InitialPosition(this._grid);
+        ImmutableDictionary<SeatId, CellId> thrones = dealt.Thrones(this._grid);
         return initial with
         {
             Position = position,
-            Thrones = dealt.Thrones(this._grid),
+            Thrones = thrones,
+            Palaces = dealsPalaces && this._drafting is { HasPalaces: true } drafting
+                ? drafting.PalacesAround(thrones)
+                : null,
             Start = position,
             Terrain = terrain,
         };
@@ -266,8 +278,12 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     public ImmutableList<PieceKindId> DraftOffered([Required] GameState state) =>
         this.DraftingOf(state)?.Offered(state) ?? [];
 
+    /// <summary>The variant's lines, such as its rivers; then each palace's (<see cref="PalaceLines"/>).</summary>
     public ImmutableList<BoardLine> LinesOf([Required] GameState state) =>
-        this._variant.Lines?.Invoke(state, this._grid) ?? [];
+    [
+        .. this._variant.Lines?.Invoke(state, this._grid) ?? [],
+        .. PalaceLines.Of(state, this._grid),
+    ];
 
     public string? TerrainOf([Required] GameState state) => this._variant.Terrain?.Invoke(state);
 

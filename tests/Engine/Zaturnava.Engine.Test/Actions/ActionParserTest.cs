@@ -78,6 +78,7 @@ public sealed class ActionParserTest
         new PassAwayAction(new SeatId(2)),
         new RetireAction(new SeatId(1)),
         new FaceOffAction(new SeatId(2), new CellId(3), new CellId(43)),
+        new PalaceAction(new SeatId(1), new CellId(9)),
         new ThroneAction(new SeatId(1), new CellId(2)),
         new DraftAction(new SeatId(1), new PieceKindId("rook"), new CellId(3)),
         new FillArmyAction(new SeatId(3)),

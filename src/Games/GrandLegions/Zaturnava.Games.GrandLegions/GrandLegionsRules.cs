@@ -11,7 +11,8 @@ namespace Net.NowhereAtAll.Zaturnava.Games.GrandLegions;
 /// start its seat's throne; the Western, Makruk and Shogi Pawns are their Pawns, swapping back to back; every
 /// Infantry piece is promoted at the far edge into a captured piece; a die names a class, so moves any piece of
 /// it; taking a piece scores its value, priced on the game's board (<see cref="BoardPrices"/>); and each piece's
-/// own promotion is played. Palaces are still to come.
+/// own promotion is played. Each army has a palace about its throne, where its kingdom has room for one, drawn on the
+/// board; confinement to it, and steps along its lines, are still to come.
 /// </summary>
 public static class GrandLegionsRules
 {

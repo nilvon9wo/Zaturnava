@@ -310,7 +310,13 @@
                     }
                     else if (view.DraftLeft is { } left)
                     {
-                        @if (view.LegalActions.Any(action => action.Kind == ThroneKind))
+                        @if (view.LegalActions.Any(action => action.Kind == PalaceKind))
+                        {
+                            <p class="hint draft-palace">
+                                Click a marked square of your kingdom to build your palace around it.
+                            </p>
+                        }
+                        else if (view.LegalActions.Any(action => action.Kind == ThroneKind))
                         {
                             <p class="hint draft-throne">
                                 Click a marked square of your kingdom to set your throne there.
@@ -549,6 +555,7 @@
     private const string MoveKind = "move";
     private const string EscapeKind = "escape";
     private const string ThroneKind = "throne";
+    private const string PalaceKind = "palace";
     private const string DraftKind = "draft";
     private const string PieceArgument = "piece";
     private const string Alarm = "alarm";
@@ -945,10 +952,13 @@
             _ => this._selection,
         };
 
-    /// <summary>The choice placing the throne, if it is to be set; else placing <paramref name="pick"/>, if it may be.</summary>
+    /// <summary>
+    /// The choice placing the palace or the throne, if it is to be set; else placing <paramref name="pick"/>, if it may
+    /// be.
+    /// </summary>
     private static string? DraftChoiceOf(GameViewDto view, string? pick) =>
         view.LegalActions
-            .FirstOrDefault(action => action.Kind == ThroneKind
+            .FirstOrDefault(action => action.Kind is PalaceKind or ThroneKind
                 || (action.Kind == DraftKind && action.Arguments.GetValueOrDefault(PieceArgument) == pick))
             ?.Choice;
 

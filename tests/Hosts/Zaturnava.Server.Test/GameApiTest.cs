@@ -187,6 +187,28 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
     }
 
     [Fact]
+    public async Task Get_WhenTheKingdomHasRoomForSeveralPalaces_OffersEachForOneBeforeAnyThrone()
+    {
+        // Arrange - a large game's kingdom, 6 × 3, has room for a palace about any of 4 squares of its middle row
+        (string gameId, _) = await this.DraftedGame(rulesetId: "grand-legions-large");
+
+        // Act
+        GameViewDto view = await this._client.Get(gameId, this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            ("Your palace,Your palace,Your palace,Your palace", false),
+            (
+                string.Join(
+                    ",",
+                    view.LegalActions.Where(action => action.Kind == "palace").Select(action => action.Choice)
+                ),
+                view.LegalActions.Any(action => action.Kind == "throne")
+            )
+        );
+    }
+
+    [Fact]
     public async Task Get_WhenTheCreatorSetTheBoardsSize_PlaysItThereAndSaysSo()
     {
         // Arrange
@@ -630,10 +652,14 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
     }
 
     /// <summary>A small Grand Legions game whose armies its players draft, its first seat claimed.</summary>
-    private async Task<(string GameId, string Token)> DraftedGame(int? budget = null, int? drafter = null)
+    private async Task<(string GameId, string Token)> DraftedGame(
+        int? budget = null,
+        int? drafter = null,
+        string rulesetId = "grand-legions-small"
+    )
     {
         GameCreatedDto created = await this._client.Create(
-            new CreateGameRequest("grand-legions-small", [null, "random", "random", "random"])
+            new CreateGameRequest(rulesetId, [null, "random", "random", "random"])
             {
                 IsDrafted = true,
                 DraftBudget = budget,

@@ -421,6 +421,7 @@ internal static class GameViews
             Choice = action switch
             {
                 EscapeAction escape => PrisonerOf(snapshot, escape),
+                PalaceAction => "Your palace",
                 ThroneAction => "Your throne",
                 DraftAction draft => $"{snapshot.Rules.NameOf(draft.Piece)}, {snapshot.Rules.WorthOf(draft.Piece)}",
                 _ => null,
