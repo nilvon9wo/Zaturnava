@@ -599,7 +599,11 @@ available (via a future capture, by anyone).
   - The same offer may not be made twice in one turn.
   - Bots answer at once, and offer whenever the rules let them, during their
     turn as well as once it is over *(Stated 2026-11-07)*: one offer a turn at
-    most, the first that suits them.
+    most, the first that suits them. Of an enemy they ask no more worth than
+    they give back, and once a seat declines one of their offers they offer it
+    nothing for three rounds, unless the board changes by a tenth
+    *(Proposed)*, so that nearly every offer a player sees is worth reading
+    *(Stated 2026-11-12: at least nine in ten)*.
 
 ### Raja Return
 

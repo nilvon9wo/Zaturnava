@@ -113,8 +113,9 @@ public sealed class MidasBotTest
     [Fact]
     public async Task Decide_WhenATradeGainsDuringItsTurn_OffersItBeforeMoving()
     {
-        // Arrange - its turn, with an escape to roll for; it holds Yellow's Horse 11 for its own Horse 20
-        DecisionRequest request = Ransoms.Escaping();
+        // Arrange - its turn, with an escape to roll for; accepting scores Yellow nothing, and costs it 2 points a
+        // prisoner, so that the Horse 11 for its own Horse 20, even in worth, gains Midas
+        DecisionRequest request = Ransoms.ScoringRansoms(Ransoms.Escaping(), -2);
 
         // Act
         ImmutableHashSet<GameAction> chosen = await Choices(request);
@@ -236,29 +237,30 @@ public sealed class MidasBotTest
     }
 
     [Fact]
-    public async Task Decide_WhenItWouldPassItsTurn_OffersTheTradeThatGainsTheMostFirst()
+    public async Task Decide_WhenEveryGainfulTradeAsksMoreThanItGives_PassesWithoutOffering()
     {
-        // Arrange - passing, it gets no window to offer after
+        // Arrange - the Minister 10 (2) for its Horse 20 (3) gains it the most, but Yellow would lose by it
         DecisionRequest request = Ransoms.Passing();
 
         // Act
         GameAction action = await new MidasBot(new Random(1)).Decide(request, this._cancellation);
 
         // Assert
-        Assert.Equal(new OfferAction(Seat, Ransoms.Yellow, [new PieceId(10)], [new PieceId(20)]), action);
+        Assert.Equal(Ransoms.Done, action);
     }
 
     [Fact]
     public async Task Decide_WhenItsTurnIsOver_OffersTheTradeThatGainsTheMost()
     {
-        // Arrange - its Pawn for its own Horse back gains 2
-        DecisionRequest request = Ransoms.Window();
+        // Arrange - accepting costs Yellow 2 points a prisoner: of the trades even or better for Yellow in worth,
+        // the Horse 11 for its own Horse 20 gains Midas the most
+        DecisionRequest request = Ransoms.ScoringRansoms(Ransoms.Window(), -2);
 
         // Act
         GameAction action = await new MidasBot(new Random(1)).Decide(request, this._cancellation);
 
         // Assert
-        Assert.Equal(new OfferAction(Seat, Ransoms.Yellow, [new PieceId(10)], [new PieceId(20)]), action);
+        Assert.Equal(new OfferAction(Seat, Ransoms.Yellow, [new PieceId(11)], [new PieceId(20)]), action);
     }
 
     [Fact]
@@ -296,16 +298,16 @@ public sealed class MidasBotTest
         bool isBoardChanged
     )
     {
-        // Arrange - twelve turns ago, or with a Horse on the board since taken
+        // Arrange - twelve turns ago, or with a Horse on the board since taken; accepting costs Yellow 2 points
         Position board = isBoardChanged ? Ransoms.YellowsHorse() : Position.Empty;
-        DecisionRequest request =
-            Ransoms.Declined(Ransoms.Window(), Ransoms.Offer(Ransoms.Yellow, [10], [20]), turn, board);
+        DecisionRequest window = Ransoms.ScoringRansoms(Ransoms.Window(), -2);
+        DecisionRequest request = Ransoms.Declined(window, Ransoms.Offer(Ransoms.Yellow, [11], [20]), turn, board);
 
         // Act
         GameAction action = await new MidasBot(new Random(1)).Decide(request, this._cancellation);
 
         // Assert
-        Assert.Equal(new OfferAction(Seat, Ransoms.Yellow, [new PieceId(10)], [new PieceId(20)]), action);
+        Assert.Equal(new OfferAction(Seat, Ransoms.Yellow, [new PieceId(11)], [new PieceId(20)]), action);
     }
 
     [Fact]
@@ -336,16 +338,17 @@ public sealed class MidasBotTest
     }
 
     [Fact]
-    public async Task Decide_WhenATradeAsksMoreThanThreeTimesWhatItGives_DoesNotOfferIt()
+    public async Task Decide_WhenATradeAsksMoreWorthThanItGives_DoesNotOfferIt()
     {
-        // Arrange - the Minister (2) for Green's Raja (5) would gain the most, but no enemy would take it
-        DecisionRequest request = Ransoms.YellowHoldingGreensRaja(Ransoms.Window());
+        // Arrange - the Minister (2) for Green's Raja (5) would gain the most, but Yellow would lose by it; accepting
+        // costs Yellow 2 points a prisoner, so the Horse 11 for its own Horse 20 gains Midas too
+        DecisionRequest request = Ransoms.YellowHoldingGreensRaja(Ransoms.ScoringRansoms(Ransoms.Window(), -2));
 
         // Act
         GameAction action = await new MidasBot(new Random(1)).Decide(request, this._cancellation);
 
         // Assert
-        Assert.Equal(new OfferAction(Seat, Ransoms.Yellow, [new PieceId(10)], [new PieceId(20)]), action);
+        Assert.Equal(new OfferAction(Seat, Ransoms.Yellow, [new PieceId(11)], [new PieceId(20)]), action);
     }
 
     [Fact]

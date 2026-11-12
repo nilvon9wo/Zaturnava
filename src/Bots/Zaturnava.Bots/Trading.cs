@@ -11,24 +11,22 @@ namespace Net.NowhereAtAll.Zaturnava.Bots;
 /// <summary>
 /// Ransoms as a bot deals in them, each weighing them its own way (<see cref="ITradeJudging"/>): the offer it is
 /// answering, and the offers it could make whenever the rules let it, during its turn as well as once it is over
-/// (Stated 2026-11-07: offered before moving, a trade may bring a piece home to where it can take something at
-/// once, and gives less away of how the bot means to use it) - one prisoner it holds for one its team lost to
-/// that prisoner's owner, or, to an ally, one back for nothing. A bot makes one offer a turn at most, and
-/// does not make again one declined, nor another asking the same back, until three rounds have passed, the worth
-/// on the board has changed by a tenth, or the seat that declined has made an offer of its own; so that an answer
-/// is not asked of its opponents over and over. Of an enemy it asks at most half again the worth of what it gives
-/// back, an offer the enemy might take. With an enemy, a bot weighs whether its team can afford the trade: it
-/// gives a leader or a heavy piece (a Rook, say) back only for as much as it gains, and makes no trade that leaves
-/// its team weaker against that enemy's team, counting what each has on the board; so an even trade suits a team
-/// that is behind, and nothing given back revives a team that has nothing left. A team ahead on points gives no
-/// leader nor heavy piece back at all, nor more worth than it gets back.
+/// (Stated 2026-11-07: offered before moving, a trade may bring a piece home to where it can take something at once,
+/// and gives less away of how the bot means to use it) - one prisoner it holds for one its team lost to that prisoner's
+/// owner, or, to an ally, one back for nothing. A bot makes one offer a turn at most, and, once a seat has declined one
+/// of its offers, makes that seat none at all until three rounds have passed or the worth on the board has changed by a
+/// tenth (Proposed); so that an answer is not asked of its opponents over and over. Of an enemy it asks no more worth
+/// than it gives back (Proposed), so that nearly every offer a person sees is one they might reasonably take (Stated
+/// 2026-11-12: at least nine in ten), rather than one to decline unread. With an enemy, a bot weighs whether its team
+/// can afford the trade: it gives a leader or a heavy piece (a Rook, say) back only for as much as it gains, and makes
+/// no trade that leaves its team weaker against that enemy's team, counting what each has on the board; so an even
+/// trade suits a team that is behind, and nothing given back revives a team that has nothing left. A team ahead on
+/// points gives no leader nor heavy piece back at all, nor more worth than it gets back.
 /// </summary>
 internal static class Trading
 {
     private const int TurnsToForget = 12;
     private const int ChangeToForget = 10;
-    private const int MostAskedPerGiven = 3;
-    private const int GivenPerMostAsked = 2;
 
     /// <summary>
     /// The answer to the offer waiting, if one is: accepted if, as <paramref name="judge"/> weighs it, it gains
@@ -146,18 +144,18 @@ internal static class Trading
         state.Scores.Where(score => state.Teams.AreAllied(score.Key, seat)).Sum(score => score.Value);
 
     /// <summary>
-    /// Whether the offer is one the receiver might take: anything to an ally; to an enemy, one asking at most half
-    /// again the worth of what it gives back (a Boat for a Horse, but not a Pawn for an Elephant or a Raja): a
-    /// person weighs what is on the board more than points, so does not give much for little.
+    /// Whether the offer is one the receiver might reasonably take: anything to an ally; to an enemy, one asking no
+    /// more worth than it gives back (a Horse for a Horse, or a Pawn for a Boat, but not a Boat for a Pawn): a person
+    /// weighs what is on the board more than points, so takes no trade that leaves them worse off on it.
     /// </summary>
     private static bool IsSane(DecisionRequest request, OfferAction offer) =>
         request.State.Teams.AreAllied(offer.Receiver, request.Seat)
-        || WorthOf(request, offer.Asked) * GivenPerMostAsked <= MostAskedPerGiven * WorthOf(request, offer.Given);
+        || WorthOf(request, offer.Asked) <= WorthOf(request, offer.Given);
 
     /// <summary>
-    /// Whether the receiver declined <paramref name="offer"/>, or one like it, lately: fewer than three rounds of
-    /// four seats ago, with the worth on the board changed by less than a tenth since. An offer asking the same
-    /// pieces back is like it, whatever it gives; so a declined trade is not offered again for other small change.
+    /// Whether the receiver declined <paramref name="offer"/>, or any other of the bot's, lately: fewer than three
+    /// rounds of four seats ago, with the worth on the board changed by less than a tenth since. So a seat that
+    /// declined is left alone for a while, rather than asked again for other small change.
     /// </summary>
     private static bool IsStillDeclined(DecisionRequest request, RansomOffer offer)
     {
@@ -169,12 +167,9 @@ internal static class Trading
         );
     }
 
-    /// <summary>The same offer; or, asking something back, one asking the same of the same seat.</summary>
+    /// <summary>An offer from the same seat to the same seat.</summary>
     private static bool IsLike(RansomOffer declined, RansomOffer offer) =>
-        declined == offer
-        || ((declined.From, declined.To) == (offer.From, offer.To)
-            && !offer.Asked.IsEmpty
-            && declined.Asked.SequenceEqual(offer.Asked));
+        (declined.From, declined.To) == (offer.From, offer.To);
 
     private static int WorthOf(DecisionRequest request, Position board) =>
         board.Occupants.Values.Sum(request.WorthOf);

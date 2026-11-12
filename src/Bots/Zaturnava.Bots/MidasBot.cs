@@ -24,7 +24,8 @@ public sealed class MidasBot(Random random) : IBotPlaying
         BotId,
         "Midas",
         "Greedy and short-sighted: grabs whatever scores the most right now, and otherwise moves at random. "
-            + "Trades prisoners only at a profit. A plain algorithm: no AI.",
+            + "Trades prisoners only at a profit, and only in trades the other side might take, so seldom. "
+            + "A plain algorithm: no AI.",
         UsesAi: false
     );
 

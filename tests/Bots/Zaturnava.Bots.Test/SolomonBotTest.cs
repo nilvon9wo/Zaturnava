@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Decisions;
 using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
+using Net.NowhereAtAll.Zaturnava.Engine.Positions;
 using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 
 namespace Net.NowhereAtAll.Zaturnava.Bots.Test;
@@ -128,6 +129,60 @@ public sealed class SolomonBotTest
 
         // Assert
         Assert.Equal(new OfferAction(Ransoms.Black, Ransoms.Yellow, [new PieceId(11)], [new PieceId(20)]), action);
+    }
+
+    [Fact]
+    public async Task Decide_WhenTheEnemyDeclinedAnyOfferLately_OffersItNothingElse()
+    {
+        // Arrange - Yellow declined the Minister 10 for Green's Pawn 21: the even Horse for Horse is not asked either
+        DecisionRequest request = Ransoms.Declined(
+            Ransoms.WindowWithout(30),
+            Ransoms.Offer(Ransoms.Yellow, [10], [21]),
+            1,
+            Position.Empty
+        );
+
+        // Act
+        GameAction action = await new SolomonBot(new Random(1)).Decide(request, this._cancellation);
+
+        // Assert
+        Assert.Equal(Ransoms.Done, action);
+    }
+
+    [Fact]
+    public async Task Decide_WhenItDeclinedTheEnemysOfferLately_StillOffersTheEnemyAnEvenTrade()
+    {
+        // Arrange - it declined Yellow's Horse 20 for its Minister 10: its own offers to Yellow were not declined
+        DecisionRequest request = Ransoms.Declined(
+            Ransoms.WindowWithout(30),
+            new RansomOffer(Ransoms.Yellow, Ransoms.Black, [new PieceId(20)], [new PieceId(10)]),
+            1,
+            Position.Empty
+        );
+
+        // Act
+        GameAction action = await new SolomonBot(new Random(1)).Decide(request, this._cancellation);
+
+        // Assert
+        Assert.Equal(new OfferAction(Ransoms.Black, Ransoms.Yellow, [new PieceId(11)], [new PieceId(20)]), action);
+    }
+
+    [Fact]
+    public async Task Decide_WhenAnEnemyDeclinedLately_StillGivesItsAllyBackItsPiece()
+    {
+        // Arrange
+        DecisionRequest request = Ransoms.Declined(
+            Ransoms.Window(),
+            Ransoms.Offer(Ransoms.Yellow, [11], [20]),
+            1,
+            Position.Empty
+        );
+
+        // Act
+        GameAction action = await new SolomonBot(new Random(1)).Decide(request, this._cancellation);
+
+        // Assert
+        Assert.Equal(new OfferAction(Ransoms.Black, Ransoms.Green, [new PieceId(30)], []), action);
     }
 
     [Fact]
