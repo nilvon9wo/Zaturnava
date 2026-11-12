@@ -10,8 +10,9 @@ namespace Net.NowhereAtAll.Zaturnava.Bots;
 
 /// <summary>
 /// Ransoms as a bot deals in them, each weighing them its own way (<see cref="ITradeJudging"/>): the offer it is
-/// answering, and the offers it could make once its turn is over, or as it passes (passing, it gets no window to
-/// offer after) - one prisoner it holds for one its team lost to
+/// answering, and the offers it could make whenever the rules let it, during its turn as well as once it is over
+/// (Stated 2026-11-07: offered before moving, a trade may bring a piece home to where it can take something at
+/// once, and gives less away of how the bot means to use it) - one prisoner it holds for one its team lost to
 /// that prisoner's owner, or, to an ally, one back for nothing. A bot makes one offer a turn at most, and
 /// does not make again one declined, nor another asking the same back, until three rounds have passed, the worth
 /// on the board has changed by a tenth, or the seat that declined has made an offer of its own; so that an answer
@@ -40,28 +41,14 @@ internal static class Trading
             : null;
 
     /// <summary>
-    /// What the bot chose on the board, unless that is passing while it may still offer: then the offer
-    /// <paramref name="offering"/> would make, if any.
-    /// </summary>
-    public static GameAction BeforePassing(
-        DecisionRequest request,
-        GameAction chosen,
-        Func<DecisionRequest, bool, OfferAction?> offering
-    ) =>
-        chosen is PassAction
-            ? offering(request, true) ?? chosen
-            : chosen;
-
-    /// <summary>
     /// The offers the bot may make now, each with what it would gain as <paramref name="judge"/> weighs it; none
-    /// during its turn, unless it <paramref name="isPassing"/>, nor once it has made one this turn. Only prisoners
-    /// that may go home now are traded, and none to a seat that has retired.
+    /// once it has made one this turn. Only prisoners that may go home now are traded, and none to a seat that has
+    /// retired.
     /// </summary>
-    public static ImmutableList<Trade> TradesOf(DecisionRequest request, bool isPassing, ITradeJudging judge)
+    public static ImmutableList<Trade> TradesOf(DecisionRequest request, ITradeJudging judge)
     {
         GameState state = request.State;
-        bool mayOffer = (state.IsRansomWindow || isPassing)
-            && state.OffersMade.All(offer => offer.From != request.Seat)
+        bool mayOffer = state.OffersMade.All(offer => offer.From != request.Seat)
             && request.Rules.MayOffer(state);
         ImmutableList<Prisoner> held =
         [

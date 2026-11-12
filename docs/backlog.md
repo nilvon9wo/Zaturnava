@@ -125,10 +125,12 @@ first.
 
 - **21, 22, 26** (rest) The idle-rounds safety net as a per-game setting.
 - Boat triumph (§9): a nice-to-have; the condition is so unlikely that no one may miss it.
-- Ransom (§8): bots that offer during their turn (they offer as they pass, or once it is over). Worth doing
-  (*Stated 2026-11-07*): offered at the start or in the middle of a turn, a trade may bring back a piece of one's
-  own to where it can take something at once, or send an enemy's home to where it can be taken at once; and a
-  trade made before moving gives less away of how the player means to use what comes back.
+- Ransom (§8): bots that offer during their turn. Worth doing (*Stated 2026-11-07*): offered at the start or in
+  the middle of a turn, a trade may bring back a piece of one's own to where it can take something at once, or
+  send an enemy's home to where it can be taken at once; and a trade made before moving gives less away of how
+  the player means to use what comes back. *Done*: Midas, Solomon, Argus, Sage and Tactician offer whenever the
+  rules let them, the first trade that suits them, one a turn; each still weighs the trade by the position once
+  it is done, not by the moves it opens this turn (*Proposed*).
 
 ## Players and identity
 

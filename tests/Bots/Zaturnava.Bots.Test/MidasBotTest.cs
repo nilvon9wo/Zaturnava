@@ -93,14 +93,34 @@ public sealed class MidasBotTest
     [Fact]
     public async Task Decide_WhenItsPieceMayEscape_LetsItEscape()
     {
-        // Arrange - Yellow holds its Horse 20
-        DecisionRequest request = Ransoms.Escaping();
+        // Arrange - Yellow holds its Horse 20, and it holds none of Yellow's to trade for it
+        DecisionRequest escaping = Ransoms.Escaping();
+        DecisionRequest request = escaping with
+        {
+            State = escaping.State with
+            {
+                Prisoners = escaping.State.Prisoners.RemoveAll(held => held.Piece.Owner == Ransoms.Yellow),
+            },
+        };
 
         // Act
         ImmutableHashSet<GameAction> chosen = await Choices(request);
 
         // Assert
         Assert.Equal([new EscapeAction(Seat, new PieceId(20), new CellId(7))], chosen);
+    }
+
+    [Fact]
+    public async Task Decide_WhenATradeGainsDuringItsTurn_OffersItBeforeMoving()
+    {
+        // Arrange - its turn, with an escape to roll for; it holds Yellow's Horse 11 for its own Horse 20
+        DecisionRequest request = Ransoms.Escaping();
+
+        // Act
+        ImmutableHashSet<GameAction> chosen = await Choices(request);
+
+        // Assert
+        Assert.All(chosen, action => Assert.Equal(Ransoms.Yellow, Assert.IsType<OfferAction>(action).Receiver));
     }
 
     [Fact]

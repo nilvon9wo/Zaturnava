@@ -41,16 +41,16 @@ public sealed class ArgusBot(Random random) : IBotPlaying
             : Task.FromResult(
                 Ending.AnswerTo(request)
                     ?? Trading.AnswerTo(request, Leeway, ByExposure.Instance)
-                    ?? SafeTrade(request, false)
-                    ?? Trading.BeforePassing(request, Careful.Choose(request, this._random), SafeTrade)
+                    ?? SafeTrade(request)
+                    ?? Careful.Choose(request, this._random)
             );
 
     /// <summary>
     /// A gift to an ally, if one may be made; else, of the trades that lose nothing, the most even, then the one
     /// that gains the most.
     /// </summary>
-    private static OfferAction? SafeTrade(DecisionRequest request, bool isPassing) =>
-        Trading.TradesOf(request, isPassing, ByExposure.Instance)
+    private static OfferAction? SafeTrade(DecisionRequest request) =>
+        Trading.TradesOf(request, ByExposure.Instance)
             .Where(trade => trade.IsGift || trade.Gain >= 0)
             .OrderByDescending(trade => trade.IsGift)
             .ThenBy(trade => trade.Imbalance)

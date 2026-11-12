@@ -67,8 +67,8 @@ public sealed class SageBot(
     /// <summary>
     /// Sage's play, with positions judged by <paramref name="valuing"/>: <paramref name="ending"/>, if it has
     /// answered a proposal to end the game; else its answer to an offer, or an offer of its own, if it would
-    /// make one; else what it would most expect of the rest of its turn, as <see cref="Foresight"/> sees it,
-    /// trading before it passes. It weighs a ransom by the whole position once it is done
+    /// make one, during its turn or once it is over; else what it would most expect of the rest of its turn, as
+    /// <see cref="Foresight"/> sees it. It weighs a ransom by the whole position once it is done
     /// (<see cref="ByPosition"/>), the points accepting scores left out, and only if its team can afford it
     /// (<see cref="Trading"/>): it accepts an offer that leaves it no worse off, and offers its allies' pieces
     /// back, then the trade that would leave it best off, if any leaves it better.
@@ -94,20 +94,16 @@ public sealed class SageBot(
         ByPosition judge = new(valuing);
         return ending
             ?? Trading.AnswerTo(request, 0, judge)
-            ?? BestTrade(request, false, judge)
-            ?? Trading.BeforePassing(
-                request,
-                choose(request),
-                (passing, isPassing) => BestTrade(passing, isPassing, judge)
-            );
+            ?? BestTrade(request, judge)
+            ?? choose(request);
     }
 
     /// <summary>
     /// A gift to an ally, if one may be made; else, of the trades that gain anything, the most even, then the one
     /// that gains the most.
     /// </summary>
-    private static OfferAction? BestTrade(DecisionRequest request, bool isPassing, ByPosition judge) =>
-        Trading.TradesOf(request, isPassing, judge)
+    private static OfferAction? BestTrade(DecisionRequest request, ByPosition judge) =>
+        Trading.TradesOf(request, judge)
             .Where(trade => trade.IsGift || trade.Gain > 0)
             .OrderByDescending(trade => trade.IsGift)
             .ThenBy(trade => trade.Imbalance)

@@ -10,7 +10,7 @@ namespace Net.NowhereAtAll.Zaturnava.Bots;
 /// legal action scores the most at once, choosing at random among equals. When nothing scores, it moves
 /// or rolls at random, passing only when it can do nothing else. It never looks past its own action, so
 /// it walks into every trap. In ransom it counts worth and points alike (<see cref="ByWorth.AndPoints"/>): it
-/// accepts an offer that gives it back at least as much as it costs, and, once its turn is over, offers the
+/// accepts an offer that gives it back at least as much as it costs, and, whenever the rules let it, offers the
 /// trade that gains it the most, if any gains it anything, was not declined lately, and asks no more than an
 /// enemy might give. It never gives anything away.
 /// </summary>
@@ -38,13 +38,13 @@ public sealed class MidasBot(Random random) : IBotPlaying
             : Task.FromResult(
                 Ending.AnswerTo(request)
                     ?? Trading.AnswerTo(request, 0, ByWorth.AndPoints)
-                    ?? BestTrade(request, false)
-                    ?? Trading.BeforePassing(request, Greedy.Choose(request, this._random), BestTrade)
+                    ?? BestTrade(request)
+                    ?? Greedy.Choose(request, this._random)
             );
 
     /// <summary>The offer that gains the most, worth and points together, if any gains anything.</summary>
-    private static OfferAction? BestTrade(DecisionRequest request, bool isPassing) =>
-        Trading.TradesOf(request, isPassing, ByWorth.AndPoints)
+    private static OfferAction? BestTrade(DecisionRequest request) =>
+        Trading.TradesOf(request, ByWorth.AndPoints)
             .Where(trade => trade.Gain > 0)
             .MaxBy(trade => trade.Gain)?.Offer;
 
