@@ -105,6 +105,35 @@ people's games go first. *(Proposed)*:
   shipped ratings.
 - A game that fails is let go, and the next goes on.
 
+## Fairy-Stockfish, as a bot
+
+[Fairy-Stockfish](https://github.com/fairy-stockfish/Fairy-Stockfish), a strong engine for many chess
+variants, can be asked for its move (*Stated 2026-11-12*: "Let's try it"). It is an experiment, for the
+BotRunner and the tests only, not the server: the engine is GPL-3, so it is never kept in the repository nor
+shipped, but run as a program of its own, spoken to over UCI. `src/Bots/Zaturnava.Bots.FairyStockfish` is a
+bot assembly, its bot's id `fairy-stockfish`. *(Proposed)*:
+
+- It looks for the engine where `FAIRY_STOCKFISH_PATH` says, else for a file named `fairy-stockfish*` in
+  `artifacts/fairy-stockfish` (gitignored) or any folder in it, from the nearest folder up that has one. The
+  large-board build (`largeboard`) is needed for boards over 8 by 8; a Windows build runs from WSL too.
+- Fairy-Stockfish plays two sides, not four seats: the seat's team is White, to move, and every other team
+  Black. Each piece is defined in Betza notation (`BetzaNotation`) facing as its seat faces, so a Pawn facing
+  east is a kind of its own; a side that loses every leader has lost. Each position's variant is written to
+  `variants` beside the engine, named for a hash of its definition, and loaded once.
+- Of the moves the dice allow, it plays the one the engine names (searching only those), thinking 200 ms.
+- Athena decides everything else: drafting, ransom, ending a game, a single move or none; and any game the
+  engine cannot see: a board over 12 by 10 or not a rectangle, more than 25 kinds of piece, or a piece the
+  notation cannot say (a slide that must go some distance first, a hop that may land some way beyond, a piece
+  that may not hop over some kinds, an uneven leap only some ways round).
+
+With the engine there, the tests `LiveEngineRun` and `LiveBearingRun` play it; without, as on CI, they are
+skipped. To rate it in the arena, add `"botAssembly"` to the request, the path of its built assembly (such as
+`artifacts/wsl/bin/Zaturnava.Bots.FairyStockfish/release/Net.NowhereAtAll.Zaturnava.Bots.FairyStockfish.dll`).
+
+First results (2026-11-12, Chaturaji 2027, 10 games each way): it beat Random 20 to 0, but lost to Athena 7 to
+13. Too few games to be sure, but no sign yet that it is the stronger: it sees neither the dice nor the points,
+only the two sides' pieces and the leaders.
+
 ## Learning
 
 Self-play makes data as fast as you can use it: play your bot against itself and ours, learn from the

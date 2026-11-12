@@ -27,6 +27,9 @@ public sealed class DependencyRulesTest
             ["Games.GrandLegions"] = ["Engine", "Topology.SquareGrid", "Games.Chaturaji2027"],
             ["Bots"] = ["Engine"],
 
+            // a bot asking an engine of another licence, run apart: no other project may know of it
+            ["Bots.FairyStockfish"] = ["Bots", "Engine"],
+
             // the use cases, and the adapters plugged into their ports
             ["Application"] = ["Engine"],
             ["Persistence.InMemory"] = ["Application", "Engine"],

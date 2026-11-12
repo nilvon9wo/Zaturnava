@@ -9,8 +9,8 @@ namespace Net.NowhereAtAll.Zaturnava.BotRunner.Test;
 /// allowed to run them: when <c>artifacts/arena/request.json</c> asks for an arena (<see cref="ArenaRequest"/>),
 /// every pair of its bots plays as many games with each team moving first, and how each pair fared, and how long it
 /// took, is written to <c>artifacts/arena/results.json</c>; a game won counts for its team, one that ran out of
-/// steps for the team ahead on points, if either is. With no request, or one of fewer than two bots, it is skipped,
-/// as on CI.
+/// steps for the team ahead on points, if either is. With <c>botAssembly</c>, the bots of that assembly may play too.
+/// With no request, or one of fewer than two bots, it is skipped, as on CI.
 /// </summary>
 public sealed class ArenaRun
 {
@@ -78,6 +78,9 @@ public sealed class ArenaRun
         [
             "--ruleset", request.Ruleset, "--bots", string.Join(',', bots), "--games", $"{request.Games}",
             "--max-steps", $"{request.MaximumSteps}",
+            .. request.BotAssembly is { } assembly
+                ? (string[])["--bot-assembly", Path.Combine(Root(), assembly)]
+                : [],
         ];
         _ = await SelfPlayCommand.Run(args, output, TextWriter.Null, TestContext.Current.CancellationToken);
         return
@@ -117,11 +120,15 @@ public sealed class ArenaRun
         return folder.FullName;
     }
 
-    /// <summary>The bots to play one another, the ruleset, the games each way, and the most steps in each.</summary>
+    /// <summary>
+    /// The bots to play one another, the ruleset, the games each way, and the most steps in each; and an assembly of
+    /// more bots to seat beside ours, if any, from the repository's root or anywhere (as Fairy-Stockfish's).
+    /// </summary>
     private sealed record ArenaRequest(
         ImmutableList<string> Bots,
         string Ruleset = "chaturaji-2027",
         int Games = 10,
-        int MaximumSteps = 2000
+        int MaximumSteps = 2000,
+        string? BotAssembly = null
     );
 }
