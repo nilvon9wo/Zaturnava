@@ -178,6 +178,61 @@ public sealed class QuickArmyTest
     }
 
     [Fact]
+    public void Layout_WhenManyPiecesAreKeptToOneColour_SpreadsThemOverBothColoursEvenly()
+    {
+        // Arrange - eight pieces kept to one colour of square, five behind and three among the infantry
+        QuickGame game = QuickGame.Large;
+        ImmutableList<GrandPiece> army =
+        [
+            .. new[]
+            {
+                GrandLegionsPieces.WesternKing, GrandLegionsPieces.Bishop, GrandLegionsPieces.Bishop,
+                GrandLegionsPieces.Camel, GrandLegionsPieces.Alfil, GrandLegionsPieces.WarEngine,
+                GrandLegionsPieces.Rook, GrandLegionsPieces.Knight, GrandLegionsPieces.Queen,
+                GrandLegionsPieces.Zebra, GrandLegionsPieces.Giraffe, GrandLegionsPieces.Chancellor,
+                GrandLegionsPieces.Courtier, GrandLegionsPieces.Courtier, GrandLegionsPieces.Courtier,
+                GrandLegionsPieces.WesternPawn, GrandLegionsPieces.WesternPawn, GrandLegionsPieces.Minister,
+            }.Select(kind => ById[kind]),
+        ];
+
+        // Act
+        ImmutableList<int> darkLessLight =
+        [
+            .. Seeds.Select(seed => QuickArmy.Layout(game, army, new(seed)))
+                .Select(laid => laid.Where(piece => ById[piece.Kind].Restrictions.Any(rule => rule.IsColourBinding)))
+                .Select(bound => bound.Sum(piece => int.IsEvenInteger(piece.Column + piece.Row) ? 1 : -1)),
+        ];
+
+        // Assert
+        Assert.All(darkLessLight, difference => Assert.InRange(difference, -1, 1));
+    }
+
+    [Fact]
+    public void Layout_WhenNoPieceOfItsPartCanMakeWay_LeavesAPieceKeptToOneColourWhereItIs()
+    {
+        // Arrange - the small game's leader in its corner, a dark square; a Bishop and a Knight beside it, on a light
+        // square and a dark one; the Courtier, alone among the infantry, on a dark square at the front
+        QuickGame game = QuickGame.Small;
+        ImmutableList<GrandPiece> army =
+        [
+            ById[GrandLegionsPieces.WesternKing],
+            ById[GrandLegionsPieces.Bishop],
+            ById[GrandLegionsPieces.Knight],
+            ById[GrandLegionsPieces.Courtier],
+        ];
+
+        // Act
+        ImmutableList<ArmyPiece> courtiers =
+        [
+            .. Seeds.Select(seed => QuickArmy.Layout(game, army, new(seed)))
+                .Select(laid => laid.Single(piece => piece.Kind == GrandLegionsPieces.Courtier)),
+        ];
+
+        // Assert
+        Assert.All(courtiers, courtier => Assert.Equal((2, 2), (courtier.Column, courtier.Row)));
+    }
+
+    [Fact]
     public void Layout_WhereTheKingdomsTouch_PutsTheLeaderInTheOuterCorner()
     {
         // Arrange - only the small game's kingdoms touch: 3 + 3 cells fill its side of 6

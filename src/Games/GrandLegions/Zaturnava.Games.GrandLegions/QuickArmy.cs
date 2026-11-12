@@ -17,7 +17,8 @@ namespace Net.NowhereAtAll.Zaturnava.Games.GrandLegions;
 /// yet, are not bought. The leader
 /// and the other non-infantry fill the back ranks in a random order, the leader's start its throne; infantry the
 /// front ones, in a random order too. Where the kingdoms touch, with no neutral ground between them (the small
-/// game), the leader takes the outer corner, as far as can be from the neighbours (Stated).
+/// game), the leader takes the outer corner, as far as can be from the neighbours (Stated). Pieces kept to one colour
+/// of square are then spread over both colours, as evenly as may be (Proposed).
 /// </summary>
 public static class QuickArmy
 {
@@ -105,12 +106,47 @@ public static class QuickArmy
             : 0;
         ImmutableList<GrandPiece> rear = others.Insert(throne, army.Single(piece => piece.Class == Leader));
         ImmutableList<GrandPiece> infantry = Shuffled(army.Where(piece => piece.Class == Infantry), random);
-        return
+        ImmutableList<ArmyPiece> laid =
         [
             .. rear.Select((piece, index) => At(piece, backToFront[index])),
             .. infantry.Select((piece, index) => At(piece, backToFront[backToFront.Count - 1 - index])),
         ];
+        return Enumerable.Range(0, laid.Count).Aggregate(laid, Balanced);
     }
+
+    /// <summary>
+    /// The army with the piece at <paramref name="index"/>, if one kept to the colour of square it starts on, moved
+    /// to the other colour should more such pieces before it stand on its colour than on the other: so that they are
+    /// spread over both colours as evenly as may be (Proposed; the user's report of 2026-11-12, of an army mostly
+    /// bound to dark squares). It changes places with the first piece of its own part of the army - the rear, or the
+    /// infantry - on the other colour, neither the leader nor kept to one colour itself; it stays, if there is none.
+    /// </summary>
+    private static ImmutableList<ArmyPiece> Balanced(ImmutableList<ArmyPiece> army, int index)
+    {
+        ArmyPiece piece = army[index];
+        ImmutableList<ArmyPiece> before = [.. army.Take(index).Where(IsColourBound)];
+        int same = before.Count(other => IsDark(other) == IsDark(piece));
+        int? partner = IsColourBound(piece) && same > before.Count - same
+            ? Enumerable.Range(0, army.Count)
+                .Where(other => IsDark(army[other]) != IsDark(piece))
+                .Where(other => !IsColourBound(army[other]) && ClassOf(army[other]) != Leader)
+                .Where(other => IsInfantry(army[other]) == IsInfantry(piece))
+                .Select(other => (int?)other)
+                .FirstOrDefault()
+            : null;
+        return partner is { } at
+            ? army.SetItem(index, piece with { Kind = army[at].Kind }).SetItem(at, army[at] with { Kind = piece.Kind })
+            : army;
+    }
+
+    private static bool IsColourBound(ArmyPiece piece) =>
+        GrandLegionsPieces.ById[piece.Kind].Restrictions.Any(restriction => restriction.IsColourBinding);
+
+    private static bool IsDark(ArmyPiece piece) => int.IsEvenInteger(piece.Column + piece.Row);
+
+    private static PieceClass ClassOf(ArmyPiece piece) => GrandLegionsPieces.ById[piece.Kind].Class;
+
+    private static bool IsInfantry(ArmyPiece piece) => ClassOf(piece) == Infantry;
 
     private static GrandPiece Drawn(IEnumerable<GrandPiece> pieces, Random random)
     {
