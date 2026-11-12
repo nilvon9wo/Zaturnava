@@ -40,14 +40,17 @@ public class ZaturnavaServer : WebApplicationFactory<Program>
     /// <summary>
     /// The dice loaded; the hosted MCP server's tools calling this server in the test process; games kept in memory,
     /// not in the file local play keeps them in; and no service to sign in with, whatever this machine's user
-    /// secrets set up, so that a test sees only what it sets up itself.
+    /// secrets set up, so that a test sees only what it sets up itself; and the bots not playing each other to be
+    /// rated, unless a test turns that on.
     /// </summary>
     protected override void ConfigureWebHost(IWebHostBuilder builder) =>
         SignInServices.Known
             .Select(provider => provider.Name)
             .Concat(SignInServices.KnownByToken.Select(provider => provider.Name))
             .Aggregate(
-                builder.UseSetting(GameStorage.ProviderKey, GameStorage.InMemory),
+                builder
+                    .UseSetting(GameStorage.ProviderKey, GameStorage.InMemory)
+                    .UseSetting(ZaturnavaServices.BotRatingOnKey, "false"),
                 (configured, provider) =>
                     configured.UseSetting(
                         $"{SignInServices.ProvidersKey}:{provider}:{SignInServices.ClientIdKey}",

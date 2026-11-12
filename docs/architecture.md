@@ -310,6 +310,9 @@ base address (`GameRoutes`):
   deciding seat, as replayed, is a signed-in player's who has not signed in
   for as long. A game saved before its last change was kept, or a player not
   signed in since when they last signed in was kept, is never let go this way.
+- **Bot ratings** are fitted anew by the `BotRater`, while `BotRating:IsOn`, from games the server's bots play
+  each other, kept pairing by pairing (`IBotMatchupPersisting`); see
+  [the rating job](bots/self-play.md#the-servers-rating-job).
 - **Seat tokens** are what a seat is played by. One is issued when a seat is
   claimed, shown once, and stored only as a hash. **Player tokens**, issued on
   signing in (optional, Proposed), are kept the same way; the provider vouches
