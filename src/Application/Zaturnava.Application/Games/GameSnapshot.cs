@@ -32,11 +32,13 @@ public sealed record GameSnapshot(
     public Vacancy? Vacancy { get; init; }
 
     /// <summary>
-    /// The game <paramref name="record"/> describes, replayed by <paramref name="rules"/>: from the scenario it
-    /// started from, if any (<see cref="ScenarioStart"/>), else from a new game.
+    /// The game <paramref name="record"/> describes, replayed by <paramref name="offered"/> on the board's size it was
+    /// set to, if any (<see cref="ScenarioStart.RulesOf"/>): from the scenario it started from, if any
+    /// (<see cref="ScenarioStart"/>), else from a new game.
     /// </summary>
-    public static GameSnapshot Of([Required] GameRecord record, [Required] IRulesApplying rules)
+    public static GameSnapshot Of([Required] GameRecord record, [Required] IRulesApplying offered)
     {
+        IRulesApplying rules = ScenarioStart.RulesOf(record.Actions, offered);
         Transition replayed = record.Actions
             .Where(descriptor => !ScenarioStart.IsStart(descriptor))
             .Aggregate(

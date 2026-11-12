@@ -46,6 +46,15 @@ public sealed record GameState(
     /// </summary>
     public ArmyDraft? Draft { get; init; }
 
+    /// <summary>
+    /// What each seat kept of its draft's budget unspent, which began its score (Stated, 2026-11-12): part of its score
+    /// in the game, but not earned in play, so counted in no one's points or experience. None, for a game not drafted.
+    /// </summary>
+    public ImmutableDictionary<SeatId, int> Unspent { get; init; } = [];
+
+    /// <summary>What <paramref name="seat"/> scored in play: its score, less what it kept of its draft.</summary>
+    public int EarnedBy(SeatId seat) => this.Scores.GetValueOrDefault(seat) - this.Unspent.GetValueOrDefault(seat);
+
     /// <summary>The dice the game waits on, rolled for <see cref="DecidingSeat"/>; null if none.</summary>
     public DiceRequest? AwaitedDice { get; init; }
 

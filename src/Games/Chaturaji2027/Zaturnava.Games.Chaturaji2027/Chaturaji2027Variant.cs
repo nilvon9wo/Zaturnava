@@ -138,6 +138,15 @@ public sealed record Chaturaji2027Variant(
     /// <summary>How a game's players may draft their own armies, not dealt them; null, if they may not.</summary>
     public Drafting? Drafting { get; init; }
 
+    /// <summary>The board's size as a game's creator may set it, if they may (<see cref="Resized"/>).</summary>
+    public BoardSize? Board { get; init; }
+
+    /// <summary>
+    /// The variant on a board of another size, as a game's creator may set it; none, for a size it may not be played
+    /// at. Null, if every game is played at the variant's own size.
+    /// </summary>
+    public Func<BoardSize, Chaturaji2027Variant?>? Resized { get; init; }
+
     /// <summary>The lines drawn on the board, as its rivers, in the game as it stands; none, if null.</summary>
     public Func<GameState, SquareGridTopology, ImmutableList<BoardLine>>? Lines { get; init; }
 

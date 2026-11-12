@@ -177,7 +177,7 @@ first.
   500 characters, line breaks kept, and a tick beside each service the player signs in with, to show it; none is
   shown until ticked (`PUT api/players/me/profile`). A name at a table or on a leaderboard opens the description
   and the services shown.
-- A winning streak on the leaderboard, perhaps: open question [OQ9](open-questions.md#oq9-a-winning-streak).
+- A winning streak on the leaderboard (*Stated 2026-11-12*), three ways, as written under Bots below.
 - A player's username unique (*Stated 2026-11-07*): no player may take a name another has. The profile's field
   is called **Username**. *Done*: a rename to a name another player goes by, capitals or not, is refused (`409`)
   and the profile says why. A new player whose service's name is taken gets the first of "Ada 2", "Ada 3" and so
@@ -194,7 +194,12 @@ first.
   chose players signed in only. Such a game no longer counts toward Elo.
 - A custom game's board size chosen freely, within limits, rather than only small, medium or large
   (*Stated 2026-11-01*); likely to come with the game setup rework. One of the two most noticeable gaps in
-  custom games (*Stated 2026-11-07*).
+  custom games (*Stated 2026-11-07*). *Done* (2026-11-12): Grand Legions offers a **custom** size, whose board
+  (6 to 26 cells square) and kingdoms (width and depth, at least 3 × 3, not overlapping) the creator sets, the
+  kingdoms' size too (*Stated*). The size is kept in the game's first action and the rules are rebuilt for it on
+  every replay, under the one ruleset id `grand-legions-custom`, so its games are listed and rated together. Each
+  army's budget is 12 points a kingdom cell, and its minimum army grows with the kingdom (*Proposed*, see
+  `QuickGame.CustomOf`). *Gap*: boards that are not square (specification §2).
 - A custom game's pieces chosen by hand and placed into each kingdom, rather than only dealt (*Stated
   2026-11-07*): the other of the two most noticeable gaps.
 - The page's preferences (theme, sound, pieces, the log's highlights) kept with the player's identity
@@ -349,6 +354,19 @@ first.
   *(Proposed)*: each bot drafts by a plan of its own (many cheap pieces, a few dear ones, a balance across the
   classes), rather than all following the random fill. Ideally *(Stated 2026-11-12)*, in an open draft, the
   stronger bots look at what the others are drafting, and choose and place their pieces in answer.
+  *(Stated 2026-11-12)* Given a large budget, bots bought cheap pieces rather than use it. *Done (Proposed)*:
+  a bot still follows the random fill, but on any square but its throne it buys the dearest piece it can pay
+  for while keeping enough for the rest of that army, so a budget left over goes into stronger pieces.
+
+- *(Stated 2026-11-12)* Rate the bots not yet rated, in the background, without a command anyone has to
+  approve: every bot, over a good mix of rulesets, for as long as it runs, each result saved as it comes, so
+  that whatever was gathered counts however and whenever the run stops. *(Proposed)*: a job the server runs
+  itself, when its settings turn it on, playing the bots against each other and keeping each game's ratings as
+  it ends, rather than `scripts/wsl-rate.sh`.
+
+- *(Stated 2026-11-12)* The leaderboard shows each player's winning streak, the games won since they last lost,
+  three ways: over every game, over the games that count toward Elo only, and over the games against people
+  only; each with the mean Elo of the opponents beaten in it.
 
 ## Talking
 

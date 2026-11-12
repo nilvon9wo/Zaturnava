@@ -57,6 +57,41 @@ public sealed class FillingArmiesTest
         Assert.Equal(expected, action is DraftAction draft ? $"draft {draft.Piece.Value}" : action.Describe().Kind);
     }
 
+    [Theory]
+    [InlineData(5, false, "King")]
+    [InlineData(4, false, "Pawn")]
+    [InlineData(5, true, "Pawn")]
+    public async Task Decide_WhenTheBudgetLeavesMoreThanTheFillSpends_BuysTheDearestItPaysForThereButOnTheThrone(
+        int budget,
+        bool isOnThrone,
+        string expected
+    )
+    {
+        // Arrange - the fill would add a Pawn (1); a King (5) and a Pawn are offered where it would
+        CellId cell = isOnThrone ? Left : Free;
+        TinyRules rules = new(5)
+        {
+            Filled = state => state with
+            {
+                Position = state.Position.Place(cell, new Piece(new PieceId(9), TinyRules.Pawn, First)),
+            },
+            KingWorth = 5,
+        };
+        ImmutableList<GameAction> choices =
+        [
+            new DraftAction(First, TinyRules.King, cell),
+            new DraftAction(First, TinyRules.Pawn, cell),
+            new FillArmyAction(First),
+            new PassAction(First),
+        ];
+
+        // Act
+        GameAction action = await this.Decided(rules, Throned(rules, budget), choices);
+
+        // Assert
+        Assert.Equal(expected, ((DraftAction)action).Piece.Value);
+    }
+
     [Fact]
     public async Task Decide_WhenTheArmyFilledAtRandomWouldAddNothing_IsDone()
     {
@@ -97,8 +132,13 @@ public sealed class FillingArmiesTest
     private static GameState Throneless(TinyRules rules) =>
         rules.CreateInitialState() with { Thrones = [] };
 
-    private static GameState Throned(TinyRules rules) =>
-        rules.CreateInitialState() with { Thrones = ImmutableDictionary<SeatId, CellId>.Empty.Add(First, Left) };
+    /// <summary>The first seat's throne set on the left cell, with <paramref name="budget"/> left to spend.</summary>
+    private static GameState Throned(TinyRules rules, int budget = 1) =>
+        rules.CreateInitialState() with
+        {
+            Thrones = ImmutableDictionary<SeatId, CellId>.Empty.Add(First, Left),
+            Draft = new ArmyDraft(0, ImmutableDictionary<SeatId, int>.Empty.Add(First, budget), []),
+        };
 
     private Task<GameAction> Decided(TinyRules rules, GameState state, ImmutableList<GameAction> choices) =>
         new FillingArmies(new Choosing()).Decide(new DecisionRequest(rules, state, First, choices), this._cancellation);

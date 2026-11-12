@@ -96,17 +96,22 @@ public sealed class GameService(
         CancellationToken cancellationToken
     )
     {
-        IRulesApplying rules = this._rulesets.Find(rulesetId);
-        ImmutableList<ActionDescriptor> start = (scenarioId, rules.IsDealt) switch
+        IRulesApplying offered = this._rulesets.Find(rulesetId);
+        ImmutableList<ActionDescriptor> start = (scenarioId, offered.IsDealt) switch
         {
-            ({ } scenario, _) => [ScenarioStart.Describe(this.ScenarioFor(rules, scenario))],
+            ({ } scenario, _) => [ScenarioStart.Describe(this.ScenarioFor(offered, scenario))],
             (null, true) => await this.DealFor(
-                rules,
-                dealing with { Drafting = rules.IsDraftable ? Checked(dealing.Drafting, seats.Count) : null },
+                offered,
+                dealing with
+                {
+                    Drafting = offered.IsDraftable ? Checked(dealing.Drafting, seats.Count) : null,
+                    Board = dealing.Board is { } board ? Sizable(offered, board) : null,
+                },
                 cancellationToken
             ),
             _ => [],
         };
+        IRulesApplying rules = ScenarioStart.RulesOf(start, offered);
         GameState initial = start.Skip(1).Aggregate(
             ScenarioStart.StateOf(start, rules),
             (state, action) => rules.Apply(state, rules.Parse(action)).State
@@ -128,16 +133,26 @@ public sealed class GameService(
     /// were drafted, so that they stand as they were drafted; else anew, its armies alike or drafted as asked.
     /// </summary>
     private async Task<ImmutableList<ActionDescriptor>> DealFor(
-        IRulesApplying rules,
+        IRulesApplying offered,
         Dealing dealing,
         CancellationToken cancellationToken
     )
     {
         GameRecord? previous = dealing.ArmiesOf is { } id ? await this._store.Find(id, cancellationToken) : null;
         return previous is { Actions: [{ Kind: ScenarioStart.DealKind } first, ..] }
-            ? [first, .. DraftOf(previous.Actions, rules)]
-            : [ScenarioStart.Dealt(this._dice, dealing.AreAlike, dealing.Drafting)];
+            ? [first, .. DraftOf(previous.Actions, ScenarioStart.RulesOf(previous.Actions, offered))]
+            : [ScenarioStart.Dealt(this._dice, dealing.AreAlike, dealing.Drafting, dealing.Board)];
     }
+
+    /// <summary>The board's size, if the ruleset may be played on it.</summary>
+    /// <exception cref="InvalidGameSetupException">It may not.</exception>
+    private static BoardSize Sizable(IRulesApplying rules, BoardSize board) =>
+        rules.Sized(board) is not null
+            ? board
+            : throw new InvalidGameSetupException(
+                $"{rules.Name} is not played on a board of {board.Side} × {board.Side} with kingdoms of "
+                    + $"{board.KingdomWidth} × {board.KingdomDepth}."
+            );
 
     /// <summary>The draft as set, if its budget is something to spend and its drafter, if any, a seat.</summary>
     /// <exception cref="InvalidGameSetupException">It is not.</exception>

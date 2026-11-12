@@ -51,6 +51,12 @@ public sealed record CreateGameRequest([Required] string RulesetId, [Required] I
     public int? Drafter { get; init; }
 
     /// <summary>
+    /// For a game whose creator may set its board's size (<see cref="RulesetDto.SizableBoard"/>), and whose armies are
+    /// dealt: the size they set; null, for the ruleset's own.
+    /// </summary>
+    public BoardSizeDto? Board { get; init; }
+
+    /// <summary>
     /// Whether the seats left open are only for players signed in: a guest may not take one
     /// (<see cref="GameSummaryDto.IsForPlayers"/>). Open to anyone, unless asked.
     /// </summary>

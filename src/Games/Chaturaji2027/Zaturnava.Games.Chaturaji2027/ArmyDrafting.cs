@@ -37,6 +37,8 @@ internal sealed class ArmyDrafting
         this._drafting = drafting;
         this._priceOf = priceOf;
         this._rollOff = rollOff;
+        this.Limit = drafting.Kingdom.Count
+            * drafting.Terrains.SelectMany(drafting.Offered).Select(priceOf).DefaultIfEmpty().Max();
         ImmutableList<ArmyPiece> squares =
             [.. drafting.Kingdom.Select(square => new ArmyPiece(Square, square.Column, square.Row))];
         this._kingdoms = Enumerable.Range(0, Pinwheel.SeatCount).ToImmutableDictionary(
@@ -52,10 +54,16 @@ internal sealed class ArmyDrafting
     }
 
     /// <summary>
+    /// The most any army may have to spend (Stated, 2026-11-12): every square of its kingdom filled with the dearest
+    /// kind offered on any terrain, so that a game's points are earned in play, none given away unspendable.
+    /// </summary>
+    public int Limit { get; }
+
+    /// <summary>
     /// The game <paramref name="dealt"/> (its terrain), its board emptied for its armies to be drafted, every seat with
-    /// the whole budget to spend, the settings' or the variant's, the first seat to draft first; any army filled at
-    /// random drawn by <paramref name="seed"/>. If the settings name a drafter, it alone drafts, the others done
-    /// already.
+    /// the whole budget to spend, the settings' or the variant's, but never above <see cref="Limit"/>; the first seat
+    /// to draft first; any army filled at random drawn by <paramref name="seed"/>. If the settings name a drafter, it
+    /// alone drafts, the others done already.
     /// </summary>
     public GameState Begun(GameState dealt, int seed, DraftSettings settings) =>
         dealt with
@@ -65,7 +73,10 @@ internal sealed class ArmyDrafting
             Start = null,
             Draft = new ArmyDraft(
                 seed,
-                dealt.Seats.ToImmutableDictionary(seat => seat.Id, _ => settings.Budget ?? this._drafting.Budget),
+                dealt.Seats.ToImmutableDictionary(
+                    seat => seat.Id,
+                    _ => Math.Min(settings.Budget ?? this._drafting.Budget, this.Limit)
+                ),
                 settings.Drafter is { } drafter
                     ? [.. dealt.Seats.Select(seat => seat.Id).Where(seat => seat != drafter)]
                     : []
@@ -238,8 +249,8 @@ internal sealed class ArmyDrafting
     }
 
     /// <summary>
-    /// The game begun from the armies drafted: where they stand, where it starts; what each seat kept, its score; and
-    /// the seats rolling for who goes first.
+    /// The game begun from the armies drafted: where they stand, where it starts; what each seat kept, its score, as
+    /// unspent, earned by no one; and the seats rolling for who goes first.
     /// </summary>
     private GameState Started(GameState drafted) =>
         drafted with
@@ -248,6 +259,7 @@ internal sealed class ArmyDrafting
             Scores = drafted.Scores.SetItems(
                 drafted.Draft!.Left.Select(left => KeyValuePair.Create(left.Key, drafted.Scores[left.Key] + left.Value))
             ),
+            Unspent = drafted.Draft.Left,
             Draft = null,
             DecidingSeat = drafted.Seats[0].Id,
             RollOff = [.. drafted.Seats.Select(seat => seat.Id)],

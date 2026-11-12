@@ -89,6 +89,9 @@ internal sealed class FakeGameServer : IGameServing
     /// </summary>
     public bool IsDraftable { get; set; }
 
+    /// <summary>The board Chaturaji 2027's creator may set to another size, as if they might; none, if unset.</summary>
+    public BoardSizeDto? SizableBoard { get; set; }
+
     /// <summary>The scenarios the catalog offers: none, unless a test sets some.</summary>
     public ImmutableList<ScenarioDto> Scenarios { get; set; } = [];
 
@@ -118,6 +121,8 @@ internal sealed class FakeGameServer : IGameServing
                         IsDealt = this.IsDealt,
                         IsDraftable = this.IsDraftable,
                         DraftBudget = this.IsDraftable ? 75 : null,
+                        DraftBudgetLimit = this.IsDraftable ? 600 : null,
+                        SizableBoard = this.SizableBoard,
                     },
                     .. this.MoreRulesets,
                 ],

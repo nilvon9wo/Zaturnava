@@ -164,7 +164,11 @@ public sealed class WireFormatTest
     public void CreateGameRequest_WhenSentAsJson_KeepsItsOpenSeats()
     {
         // Arrange
-        CreateGameRequest request = new("chaturaji-2027", [null, "random", null, "random"]) { Scenario = "s" };
+        CreateGameRequest request = new("chaturaji-2027", [null, "random", null, "random"])
+        {
+            Scenario = "s",
+            Board = new BoardSizeDto(12, 4, 3),
+        };
 
         // Act
         CreateGameRequest? arrived = RoundTrip(request);

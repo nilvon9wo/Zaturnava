@@ -230,6 +230,59 @@ public sealed class GameServiceTest
     }
 
     [Fact]
+    public async Task Create_WhenTheBoardIsSet_PlaysTheGameOnItAndAgainWithTheSameArmies()
+    {
+        // Arrange - a game drafted on a board 3 cells a side
+        GameService service = this.Service(GameServiceSettings.Default, isDealt: true, sizable: new BoardSize(4, 1, 1));
+        ImmutableList<SeatPlan> seats = [SeatPlan.Open, SeatPlan.Open];
+        GameId first = await service.Create(
+            TinyRules.RulesetId,
+            seats,
+            null,
+            new Dealing { Drafting = DraftSettings.Default, Board = new BoardSize(3, 1, 1) },
+            this._cancellation
+        );
+
+        // Act
+        GameId again =
+            await service.Create(TinyRules.RulesetId, seats, null, new Dealing(ArmiesOf: first), this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            ("Tiny 3", "Tiny 3"),
+            (
+                (await service.Get(first, this._cancellation)).Rules.Name,
+                (await service.Get(again, this._cancellation)).Rules.Name
+            )
+        );
+    }
+
+    [Theory]
+    [InlineData(false, 3)]
+    [InlineData(true, 1)]
+    public async Task Create_WhenTheBoardMayNotBeSetSo_ThrowsInvalidGameSetupException(bool isSizable, int side)
+    {
+        // Arrange - the tiny rules are played on boards of 2 cells a side or more, if at all
+        GameService service = this.Service(
+            GameServiceSettings.Default,
+            isDealt: true,
+            sizable: isSizable ? new BoardSize(4, 1, 1) : null
+        );
+        Dealing dealing = new() { Board = new BoardSize(side, 1, 1) };
+
+        // Act
+        Task<GameId> creating =
+            service.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], null, dealing, this._cancellation);
+
+        // Assert
+        InvalidGameSetupException exception = await Assert.ThrowsAsync<InvalidGameSetupException>(() => creating);
+        Assert.Equal(
+            $"Tiny is not played on a board of {side} × {side} with kingdoms of 1 × 1.",
+            exception.Message
+        );
+    }
+
+    [Fact]
     public async Task Create_WhenOneSeatDraftsForAll_HoldsTheOthersBackUntilItIsDone()
     {
         // Arrange - the first seat drafts for both; its draft is over once it has its army filled
@@ -2018,7 +2071,8 @@ public sealed class GameServiceTest
         bool isDealt = false,
         bool hasFaceOff = false,
         bool isDraftable = true,
-        Func<GameState, GameState>? filled = null
+        Func<GameState, GameState>? filled = null,
+        BoardSize? sizable = null
     ) =>
         new(
             new RulesetCatalog(
@@ -2027,6 +2081,7 @@ public sealed class GameServiceTest
                     {
                         IsDraftable = isDealt && isDraftable,
                         Filled = filled,
+                        SizableBoard = sizable,
                     },
                     new RollingRules(GameLength),
                 ]

@@ -30,13 +30,15 @@ public sealed class StandingServiceTest
     [Fact]
     public async Task RateFinished_WhenTwoPlayersBeatTwoBots_RatesEachAgainstTheTeamsMeanAndAddsTheirPoints()
     {
-        // Arrange - Ada (5 points) and Bea (4) beat a bot rated 1700 (3) and one no longer offered, so unrated (0)
+        // Arrange - Ada (5 points, 2 of them kept from her draft, so 3 earned) and Bea (4) beat a bot rated 1700 (3)
+        // and one no longer offered, so unrated (0)
         GameState ended = EndedRules.State([Black]) with
         {
             Scores = ImmutableDictionary<SeatId, int>.Empty
                 .Add(Black, 5)
                 .Add(Yellow, 3)
                 .Add(new SeatId(2), 4),
+            Unspent = ImmutableDictionary<SeatId, int>.Empty.Add(Black, 2),
         };
         GameRecord game = Record(
             "g",
@@ -56,7 +58,7 @@ public sealed class StandingServiceTest
         ImmutableDictionary<PlayerId, Standing> standings =
             await this._players.Standings(EndedRules.RulesetId, [Ada, Bea], this._cancellation);
         Assert.Equal(
-            (1, 5 + 9, 4 + 9, 5, 4, 1, 1, 0),
+            (1, 3 + 7, 4 + 7, 3, 4, 1, 1, 0),
             (
                 rated,
                 standings[Ada].Experience,
@@ -75,10 +77,11 @@ public sealed class StandingServiceTest
     [Fact]
     public async Task RateFinished_WhenPeopleBeatBotsAlone_CountsItAgainstPeopleForTheBots()
     {
-        // Arrange - Ada and Bea beat the first-choice bot (3 points) and one no longer offered
+        // Arrange - Ada and Bea beat the first-choice bot (4 points, 1 kept from its draft) and one no longer offered
         GameState ended = EndedRules.State([Black]) with
         {
-            Scores = ImmutableDictionary<SeatId, int>.Empty.Add(Yellow, 3),
+            Scores = ImmutableDictionary<SeatId, int>.Empty.Add(Yellow, 4),
+            Unspent = ImmutableDictionary<SeatId, int>.Empty.Add(Yellow, 1),
         };
         await this._games.Add(
             Record(

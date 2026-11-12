@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.ComponentModel.DataAnnotations;
 using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
+using Net.NowhereAtAll.Zaturnava.Engine.Rules;
 using Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
 
 namespace Net.NowhereAtAll.Zaturnava.Games.GrandLegions;
@@ -84,7 +85,7 @@ public static class GrandLegionsRules
     /// </summary>
     public static Scoring Scoring { get; } = Scoring.Of(typeof(GrandLegionsRules).Assembly, QuickGame.GameId);
 
-    /// <summary>The rules of each quick game, small, medium and large.</summary>
+    /// <summary>The rules of each quick game, small, medium and large, and of a game sized by its creator.</summary>
     public static ImmutableList<Chaturaji2027Rules> Quick { get; } = QuickWith(SafetyNets.Default);
 
     /// <summary>The rules of each quick game, each ending on points at the limits of <paramref name="nets"/>.</summary>
@@ -126,6 +127,10 @@ public static class GrandLegionsRules
                 QuickArmy.Dealt(game with { Rivers = QuickTerrain.RiversOf(terrain) }, seed, areAlike),
             TerrainDealer = QuickTerrain.Dealt,
             Drafting = QuickDraft.Of(game),
+            Board = new BoardSize(game.Side, game.KingdomWidth, game.KingdomDepth),
+            Resized = game.Size == QuickGame.CustomSize
+                ? size => QuickGame.CustomOf(size) is { } sized ? VariantOf(sized, dice) : null
+                : null,
             Lines = (state, _) => QuickTerrain.LinesOf(game, state.Terrain),
             Terrain = state => QuickTerrain.Described(state.Terrain),
             Game = game.Game,

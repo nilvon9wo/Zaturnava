@@ -1538,6 +1538,20 @@ public sealed class TableTest : IDisposable
     }
 
     [Fact]
+    public void PlayAgain_WhenTheBoardWasSet_PlaysOnTheSameBoard()
+    {
+        // Arrange
+        this._page.Server.View = Over() with { IsDealt = true, Board = new BoardSizeDto(12, 4, 4) };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Act
+        table.Find("button.same-armies").Click();
+
+        // Assert
+        Assert.Equal(new BoardSizeDto(12, 4, 4), this._page.Server.Created!.Board);
+    }
+
+    [Fact]
     public void Render_WhileTheArmiesAreDrafted_TellsWhoDraftsAndThatTheScoresArePointsLeftToSpend()
     {
         // Arrange

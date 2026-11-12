@@ -135,8 +135,13 @@ What the program does so far (2026-11-04), and the gaps against the above:
   player drafting their own (the default where the game is draftable), the creator drafting one army that every
   seat then has, laid out alike in its own kingdom, every army at random (the default elsewhere), or one army at
   random for everyone. A drafted game may set the points each seat spends (`DraftBudget`; the box starts at the
-  ruleset's own). While the creator drafts for everyone, the other open seats are held back (`HeldSeat`): no one
-  may claim them, and the lobby does not list the game as waiting for players, until the draft is over.
+  ruleset's own). *Stated* (2026-11-12): no army may have more to spend than its kingdom's squares, each filled
+  with the dearest piece on offer (`DraftBudgetLimit`); a budget set higher is held to it, and the lobby's box
+  goes no higher. What a seat keeps unspent starts its score in the game, but counts in no one's points or
+  experience (`GameState.Unspent`, `EarnedBy`). The standings were counted again from the games themselves
+  (migration `RecountStandings`, *Proposed*): every standing cleared and every game over rated again, in the
+  order the games ended, so that the points and experience given away before are gone. While the creator
+  drafts for everyone, the other open seats are held back (`HeldSeat`): no one may claim them, and the lobby does not list the game as waiting for players, until the draft is over.
 - The Chaturaji 2027 bonuses are × 10, as is the lead a team needs to win by giving up its turns
   (*Proposed*: 100), each read from a table (`Scoring/grand-legions.json`; Chaturaji 2027's own in
   `Scoring/chaturaji-2027.json`) that can be changed apart from the code. Piece values, each piece's

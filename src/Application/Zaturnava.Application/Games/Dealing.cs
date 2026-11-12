@@ -14,6 +14,12 @@ public sealed record Dealing(bool AreAlike = false, GameId? ArmiesOf = null)
     /// </summary>
     public DraftSettings? Drafting { get; init; }
 
+    /// <summary>
+    /// The board's size its creator set, for a ruleset that lets them (<see cref="IRulesApplying.SizableBoard"/>);
+    /// none, for the ruleset's own.
+    /// </summary>
+    public BoardSize? Board { get; init; }
+
     /// <summary>Each seat its own army, dealt anew.</summary>
     public static Dealing Anew { get; } = new();
 }

@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using System.ComponentModel.DataAnnotations;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
@@ -81,6 +82,9 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     private readonly FaceOff _faceOff;
     private readonly MoveDiagrams _diagrams;
     private readonly ArmyDrafting? _drafting;
+
+    /// <summary>The rules on each board size a game has been set to, made once each.</summary>
+    private readonly ConcurrentDictionary<BoardSize, Chaturaji2027Rules?> _sized = new();
 
     public Chaturaji2027Rules()
         : this(SafetyNets.Default)
@@ -178,6 +182,27 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
 
     public ICellNavigating Topology => this._grid;
 
+    public BoardSize? SizableBoard => this._variant.Resized is null ? null : this._variant.Board;
+
+    /// <summary>The rules on a board of <paramref name="board"/>'s size, as the variant resizes, alike else.</summary>
+    public IRulesApplying? Sized([Required] BoardSize board) =>
+        this._variant.Resized is { } resized
+            ? this._sized.GetOrAdd(
+                board,
+                size => resized(size) is { } variant
+                    ? new Chaturaji2027Rules(
+                        this._dice,
+                        this._idleRounds,
+                        this._pawnPromotion,
+                        this._awayTurns,
+                        variant,
+                        this._quietRounds,
+                        this._repeatRounds
+                    )
+                    : null
+            )
+            : null;
+
     public ImmutableDictionary<SeatId, CellId> Thrones { get; }
 
     /// <summary>Every seat rolls a die, in seat order, to see who goes first.</summary>
@@ -227,6 +252,8 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     public bool IsDraftable => this._drafting is not null;
 
     public int? DraftBudget => this._variant.Drafting?.Budget;
+
+    public int? DraftBudgetLimit => this._drafting?.Limit;
 
     /// <summary>
     /// The game <paramref name="dealt"/>, its armies to be drafted by its players (<see cref="ArmyDrafting"/>) as

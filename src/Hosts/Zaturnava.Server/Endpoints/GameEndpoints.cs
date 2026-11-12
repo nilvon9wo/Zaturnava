@@ -191,6 +191,9 @@ internal static class GameEndpoints
             Drafting = request.IsDrafted
                 ? new DraftSettings(request.DraftBudget, request.Drafter is { } drafter ? new SeatId(drafter) : null)
                 : null,
+            Board = request.Board is { } board
+                ? new BoardSize(board.Side, board.KingdomWidth, board.KingdomDepth)
+                : null,
         };
         GameId id = await games.Create(request.RulesetId, seats, request.Scenario, dealing, cancellationToken);
         if (request.Continuing is { } previous)

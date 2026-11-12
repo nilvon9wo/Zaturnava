@@ -61,6 +61,39 @@ public sealed class ArmyDraftingTest
     }
 
     [Fact]
+    public void Sized_WhenTheVariantResizes_PlaysItAtTheSizesItAllowsOnceEachAndElseNowhere()
+    {
+        // Arrange - a variant whose creator may set it to 8 cells a side alone
+        BoardSize eight = new(8, 4, 2);
+        Chaturaji2027Rules rules = new(
+            DiceProfile.WeightedSixSided,
+            Chaturaji2027Rules.DefaultIdleRounds,
+            PawnPromotion.OtherArmies,
+            variant: Chaturaji2027Variant.Standard with
+            {
+                Board = eight,
+                Resized = size => size == eight ? Chaturaji2027Variant.Standard with { Id = "resized" } : null,
+            }
+        );
+
+        // Act
+        IRulesApplying sized = rules.Sized(eight)!;
+
+        // Assert
+        Assert.Equal(
+            ((BoardSize?)eight, "resized", true, true, true, true),
+            (
+                rules.SizableBoard,
+                sized.Id,
+                ReferenceEquals(sized, rules.Sized(eight)),
+                rules.Sized(new BoardSize(9, 4, 2)) is null,
+                new Chaturaji2027Rules().Sized(eight) is null,
+                new Chaturaji2027Rules().SizableBoard is null
+            )
+        );
+    }
+
+    [Fact]
     public void Drafted_WhenTheGamesCreatorSetsABudgetAndADrafter_HasThatSeatAloneDraftWithIt()
     {
         // Arrange
@@ -80,6 +113,19 @@ public sealed class ArmyDraftingTest
                 string.Join(",", drafted.Draft.Done.Select(seat => seat.Value).Order())
             )
         );
+    }
+
+    [Fact]
+    public void Drafted_WhenTheGamesCreatorSetsMoreThanAnArmyCouldSpend_HoldsEachToItsKingdomFullOfTheDearest()
+    {
+        // Arrange - two squares, the dearest kind a Raja (5)
+        GameState dealt = this._rules.CreateInitialState();
+
+        // Act
+        GameState drafted = this._rules.Drafted(dealt, 7, new DraftSettings(1_000_000));
+
+        // Assert
+        Assert.Equal(((int?)10, 10), (this._rules.DraftBudgetLimit, drafted.Draft!.Left[Red]));
     }
 
     [Fact]
@@ -134,7 +180,10 @@ public sealed class ArmyDraftingTest
         GameState drafted = rules.Drafted(dealt, 7);
 
         // Assert
-        Assert.Equal((false, dealt, (int?)null), (rules.IsDraftable, drafted, rules.DraftBudget));
+        Assert.Equal(
+            (false, dealt, (int?)null, (int?)null),
+            (rules.IsDraftable, drafted, rules.DraftBudget, rules.DraftBudgetLimit)
+        );
     }
 
     [Fact]
@@ -310,12 +359,14 @@ public sealed class ArmyDraftingTest
 
         // Assert
         Assert.Equal(
-            (null as ArmyDraft, started.Position, 6, 5, 4, Black, true),
+            (null as ArmyDraft, started.Position, 6, 5, 6, 0, 4, Black, true),
             (
                 started.Draft,
                 started.Start,
                 started.Scores[Black],
                 started.Scores[Red],
+                started.Unspent[Black],
+                started.EarnedBy(Red),
                 started.RollOff.Count,
                 started.DecidingSeat!.Value,
                 started.AwaitedDice is not null

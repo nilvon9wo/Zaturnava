@@ -40,6 +40,18 @@ public interface IRulesApplying
 
     ICellNavigating Topology { get; }
 
+    /// <summary>
+    /// The board the ruleset is played on, if a game's creator may set it to another size (<see cref="Sized"/>); none,
+    /// if they may not.
+    /// </summary>
+    BoardSize? SizableBoard => null;
+
+    /// <summary>
+    /// The ruleset played on a board of <paramref name="board"/>'s size, of the same id, so that its games are listed
+    /// and rated together; none, if it may not be set to that size, or to any (<see cref="SizableBoard"/>).
+    /// </summary>
+    IRulesApplying? Sized([Required] BoardSize board) => null;
+
     /// <summary>Each seat's throne, if the ruleset has thrones; empty if it has none.</summary>
     ImmutableDictionary<SeatId, CellId> Thrones { get; }
 
@@ -78,6 +90,12 @@ public interface IRulesApplying
     /// (<see cref="DraftSettings.Budget"/>); none, for a ruleset whose players may not draft.
     /// </summary>
     int? DraftBudget => null;
+
+    /// <summary>
+    /// The most each seat may have to spend on its army, if its players draft it, whatever the game's creator sets:
+    /// a budget above it is held to it; none, for a ruleset whose players may not draft.
+    /// </summary>
+    int? DraftBudgetLimit => null;
 
     /// <summary>
     /// The game <paramref name="dealt"/> (its terrain, say), but with its armies to be drafted by its players before

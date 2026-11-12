@@ -1,4 +1,6 @@
 using System.Collections.Immutable;
+using System.ComponentModel.DataAnnotations;
+using Net.NowhereAtAll.Zaturnava.Engine.Rules;
 using Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
 using static Net.NowhereAtAll.Zaturnava.Games.GrandLegions.PieceClass;
 
@@ -53,7 +55,22 @@ public sealed record QuickGame(
         Counts((Leader, 1), (Heavy, 3), (Cavalry, 2), (Artillery, 2), (Infantry, 8))
     );
 
-    public static ImmutableList<QuickGame> All { get; } = [Small, Medium, Large];
+    /// <summary>
+    /// What a custom game's creator spends on each army for each cell of its kingdom, unless they set another budget
+    /// (Proposed, 2026-11-12: about what the small and large games give, 110 for 9 cells and 200 for 18).
+    /// </summary>
+    public const int BudgetPerKingdomCell = 12;
+
+    /// <summary>The size of a game whose board its creator sets (<see cref="CustomOf"/>).</summary>
+    public const string CustomSize = "custom";
+
+    /// <summary>
+    /// A game whose board and kingdoms its creator sets (Stated, 2026-11-12), as offered before they set them
+    /// (Proposed): a 10 × 10 board, with kingdoms 4 × 3.
+    /// </summary>
+    public static QuickGame Custom { get; } = CustomOf(new BoardSize(10, 4, 3))! with { IsSet = false };
+
+    public static ImmutableList<QuickGame> All { get; } = [Small, Medium, Large, Custom];
 
     /// <summary>
     /// Whether the game is a preview (Stated: until its own pieces' symbols, thrones and Elephants are done).
@@ -66,11 +83,54 @@ public sealed record QuickGame(
     /// </summary>
     public Rivers Rivers { get; init; } = Rivers.None;
 
+    /// <summary>Whether its creator set the board's size (<see cref="CustomOf"/>).</summary>
+    public bool IsSet { get; init; }
+
     /// <summary>The game and its size, as the rules tell them.</summary>
     public GameSize Game => new(GameId, GameName, this.Size, IsPreview);
 
-    /// <summary>What a game of this size is called: "Grand Legions (small)".</summary>
-    public string Name => $"{GameName} ({this.Size})";
+    /// <summary>
+    /// What a game of this size is called: "Grand Legions (small)"; "Grand Legions (12 × 12, kingdoms 4 × 3)", if its
+    /// creator set its size.
+    /// </summary>
+    public string Name => this.IsSet
+        ? $"{GameName} ({this.Side} × {this.Side}, kingdoms {this.KingdomWidth} × {this.KingdomDepth})"
+        : $"{GameName} ({this.Size})";
+
+    /// <summary>The game's board, with no rivers.</summary>
+    public GrandBoard Board => new(this.Side, this.Side, this.KingdomWidth, this.KingdomDepth);
+
+    /// <summary>
+    /// A custom game on a board of <paramref name="size"/>, if it may be played on it
+    /// (<see cref="GrandBoard.IsPlayable"/>: no side over 26, kingdoms at least 3 × 3, none overlapping); none, if
+    /// not. Each army's budget is <see cref="BudgetPerKingdomCell"/> for each cell of its kingdom; it has at least
+    /// (Proposed, 2026-11-12) a leader, a front row of Infantry, a Heavy piece for each six cells, and Cavalry and
+    /// Artillery for each nine, one of each at least, as the quick games have about so.
+    /// </summary>
+    public static QuickGame? CustomOf([Required] BoardSize size)
+    {
+        int cells = size.KingdomWidth * size.KingdomDepth;
+        int nines = Math.Max(1, cells / 9);
+        QuickGame game = new(
+            QuickGame.GameId + "-" + CustomSize,
+            CustomSize,
+            size.Side,
+            size.KingdomWidth,
+            size.KingdomDepth,
+            BudgetPerKingdomCell * cells,
+            Counts(
+                (Leader, 1),
+                (Heavy, Math.Max(1, cells / 6)),
+                (Cavalry, nines),
+                (Artillery, nines),
+                (Infantry, size.KingdomWidth)
+            )
+        )
+        {
+            IsSet = true,
+        };
+        return game.Board.IsPlayable ? game : null;
+    }
 
     /// <summary>How many cells each kingdom has, for an army to start on.</summary>
     public int Cells => this.KingdomWidth * this.KingdomDepth;

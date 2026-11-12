@@ -160,18 +160,42 @@ public sealed class RulesApplyingTest
         OneSizeRules rules = new();
 
         // Act
-        (bool IsDraftable, int? Budget, GameState Drafted, int Offered) drafted = DraftedOf(rules, OneSizeRules.State);
+        (bool IsDraftable, int? Budget, int? Limit, GameState Drafted, int Offered) drafted =
+            DraftedOf(rules, OneSizeRules.State);
 
         // Assert
-        Assert.Equal((false, (int?)null, OneSizeRules.State, 0), drafted);
+        Assert.Equal((false, (int?)null, (int?)null, OneSizeRules.State, 0), drafted);
     }
 
-    private static (bool IsDraftable, int? Budget, GameState Drafted, int Offered) DraftedOf<TRules>(
+    [Fact]
+    public void Sized_WhenTheRulesetSaysNoOther_MayNotBeSetToAnotherSize()
+    {
+        // Arrange
+        OneSizeRules rules = new();
+
+        // Act
+        (bool HasBoard, bool IsSized) sized = SizedOf(rules, new BoardSize(10, 4, 3));
+
+        // Assert
+        Assert.Equal((false, false), sized);
+    }
+
+    private static (bool HasBoard, bool IsSized) SizedOf<TRules>(TRules rules, BoardSize board)
+        where TRules : IRulesApplying =>
+        (rules.SizableBoard is not null, rules.Sized(board) is not null);
+
+    private static (bool IsDraftable, int? Budget, int? Limit, GameState Drafted, int Offered) DraftedOf<TRules>(
         TRules rules,
         GameState dealt
     )
         where TRules : IRulesApplying =>
-        (rules.IsDraftable, rules.DraftBudget, rules.Drafted(dealt, 7), rules.DraftOffered(dealt).Count);
+    (
+        rules.IsDraftable,
+        rules.DraftBudget,
+        rules.DraftBudgetLimit,
+        rules.Drafted(dealt, 7),
+        rules.DraftOffered(dealt).Count
+    );
 
     private static int KeepingWorthOf<TRules>(TRules rules, PieceKindId kind)
         where TRules : IRulesApplying =>
