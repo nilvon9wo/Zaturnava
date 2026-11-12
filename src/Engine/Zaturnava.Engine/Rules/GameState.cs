@@ -40,6 +40,12 @@ public sealed record GameState(
     /// </summary>
     public int Terrain { get; init; }
 
+    /// <summary>
+    /// The armies being drafted, if the game began so (<see cref="IRulesApplying.Deal"/>) and play has not yet begun;
+    /// null otherwise.
+    /// </summary>
+    public ArmyDraft? Draft { get; init; }
+
     /// <summary>The dice the game waits on, rolled for <see cref="DecidingSeat"/>; null if none.</summary>
     public DiceRequest? AwaitedDice { get; init; }
 

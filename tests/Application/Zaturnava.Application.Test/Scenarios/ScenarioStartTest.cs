@@ -141,6 +141,38 @@ public sealed class ScenarioStartTest
     }
 
     [Fact]
+    public void StateOf_WhenTheGameIsDrafted_DealsItThenHasItsArmiesDraftedBySeed()
+    {
+        // Arrange
+        ImmutableList<ActionDescriptor> actions = [ScenarioStart.Dealt(new LoadedDice(4), isDrafted: true)];
+
+        // Act
+        GameState state = ScenarioStart.StateOf(actions, new TinyRules(6, isDealt: true));
+
+        // Assert
+        Assert.Equal((4, 4, 1), (state.Draft!.Seed, state.Scores[First], state.Terrain));
+    }
+
+    [Fact]
+    public void IsDrafted_WhenTheGameWasNotDrafted_IsFalseElseTrue()
+    {
+        // Arrange
+        ImmutableList<ImmutableList<ActionDescriptor>> games =
+        [
+            [],
+            [ScenarioStart.Describe(Tiny())],
+            [ScenarioStart.Dealt(new LoadedDice(4), areAlike: true)],
+            [ScenarioStart.Dealt(new LoadedDice(4), isDrafted: true)],
+        ];
+
+        // Act
+        ImmutableList<bool> drafted = [.. games.Select(ScenarioStart.IsDrafted)];
+
+        // Assert
+        Assert.Equal([false, false, false, true], drafted);
+    }
+
+    [Fact]
     public void AreAlike_WhenTheGameWasNotDealtAlike_IsFalseElseTrue()
     {
         // Arrange

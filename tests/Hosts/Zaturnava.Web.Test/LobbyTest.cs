@@ -503,6 +503,30 @@ public sealed class LobbyTest : IDisposable
         );
     }
 
+    [Theory]
+    [InlineData(false, false, 0)]
+    [InlineData(true, false, 1)]
+    [InlineData(true, true, 1)]
+    public void Play_WhenTheArmiesMayBeDrafted_OffersToDraftThem(bool isDraftable, bool isDrafted, int offered)
+    {
+        // Arrange
+        this._page.Server.IsDraftable = isDraftable;
+        IRenderedComponent<Lobby> lobby = this.ByStrength();
+        if (isDrafted)
+        {
+            lobby.Find("input.armies-drafted").Change(true);
+        }
+
+        // Act
+        lobby.Find("button.create").Click();
+
+        // Assert
+        Assert.Equal(
+            (offered, isDrafted),
+            (lobby.FindAll("input.armies-drafted").Count, this._page.Server.Created!.IsDrafted)
+        );
+    }
+
     [Fact]
     public void Render_WhenTheServerOffersNoScenarios_OffersNoChoiceOfStart()
     {

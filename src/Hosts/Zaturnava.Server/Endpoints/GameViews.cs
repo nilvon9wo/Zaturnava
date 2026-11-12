@@ -139,6 +139,10 @@ internal static class GameViews
             Terrain = snapshot.Rules.TerrainOf(snapshot.State),
             IsDealt = snapshot.Rules.IsDealt,
             AreArmiesAlike = ScenarioStart.AreAlike(snapshot.Record.Actions),
+            IsDrafted = ScenarioStart.IsDrafted(snapshot.Record.Actions),
+            DraftLeft = snapshot.State.Draft is { } draft
+                ? [.. snapshot.State.Seats.Select(seat => draft.Left[seat.Id])]
+                : null,
             IsForPlayers = snapshot.Record.Controllers.Any(controller => controller.IsForPlayers),
         };
     }
@@ -255,6 +259,7 @@ internal static class GameViews
             Size = rules.Size,
             IsPreview = rules.IsPreview,
             IsDealt = rules.IsDealt,
+            IsDraftable = rules.IsDraftable,
             SeatNames = [.. state.Seats.Select(seat => rules.NameOf(seat.Id))],
             SeatTeams = [.. state.Seats.Select(seat => state.Teams.TeamOf(seat.Id))],
         };
@@ -399,7 +404,13 @@ internal static class GameViews
         return new ActionDto(descriptor.Kind, descriptor.Arguments)
         {
             Label = LabelOf(snapshot, action),
-            Choice = action is EscapeAction escape ? PrisonerOf(snapshot, escape) : null,
+            Choice = action switch
+            {
+                EscapeAction escape => PrisonerOf(snapshot, escape),
+                ThroneAction => "Your throne",
+                DraftAction draft => $"{snapshot.Rules.NameOf(draft.Piece)}, {snapshot.Rules.WorthOf(draft.Piece)}",
+                _ => null,
+            },
         };
     }
 
@@ -419,6 +430,9 @@ internal static class GameViews
             (HandOverAction handOver, _, _) => $"Let {snapshot.Rules.NameOf(handOver.Regent)} take over",
             (AnswerEndAction { Agrees: true }, _, _) => "Agree to end the game",
             (AnswerEndAction, _, _) => "Keep playing",
+            (FillArmyAction, _, _) => "Fill the rest of my army at random, and be done",
+            (PassAction, _, _) when snapshot.State.Draft is { } draft =>
+                $"Done drafting: keep the {draft.Left[action.Actor]} points left as my score",
             (PassAction, true, _) => "Done offering",
             (PassAction, _, { }) => "Promote later",
             (MoveAction move, _, _) => SwapOf(snapshot, move),

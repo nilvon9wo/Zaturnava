@@ -121,6 +121,7 @@ public static class GrandLegionsRules
             Dealer = (seed, areAlike, terrain) =>
                 QuickArmy.Dealt(game with { Rivers = QuickTerrain.RiversOf(terrain) }, seed, areAlike),
             TerrainDealer = QuickTerrain.Dealt,
+            Drafting = QuickDraft.Of(game),
             Lines = (state, _) => QuickTerrain.LinesOf(game, state.Terrain),
             Terrain = state => QuickTerrain.Described(state.Terrain),
             Game = game.Game,

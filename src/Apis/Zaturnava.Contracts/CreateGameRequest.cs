@@ -31,6 +31,12 @@ public sealed record CreateGameRequest([Required] string RulesetId, [Required] I
     public string? ArmiesOf { get; init; }
 
     /// <summary>
+    /// For a game whose players may draft their own armies (<see cref="RulesetDto.IsDraftable"/>): whether they do, in
+    /// turn, before play begins, rather than be dealt them. Dealt, unless asked.
+    /// </summary>
+    public bool IsDrafted { get; init; }
+
+    /// <summary>
     /// Whether the seats left open are only for players signed in: a guest may not take one
     /// (<see cref="GameSummaryDto.IsForPlayers"/>). Open to anyone, unless asked.
     /// </summary>

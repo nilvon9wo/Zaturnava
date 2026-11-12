@@ -78,6 +78,9 @@ public sealed class ActionParserTest
         new PassAwayAction(new SeatId(2)),
         new RetireAction(new SeatId(1)),
         new FaceOffAction(new SeatId(2), new CellId(3), new CellId(43)),
+        new ThroneAction(new SeatId(1), new CellId(2)),
+        new DraftAction(new SeatId(1), new PieceKindId("rook"), new CellId(3)),
+        new FillArmyAction(new SeatId(3)),
     ];
 
     [Theory]
@@ -109,6 +112,24 @@ public sealed class ActionParserTest
 
         // Assert
         Assert.Equal("The 'promote-own' action needs a kind for 'becomes'.", exception.Message);
+    }
+
+    [Fact]
+    public void Parse_WhenADraftNamesNoPiece_ThrowsMalformedActionException()
+    {
+        // Arrange
+        ActionDescriptor descriptor = new(
+            DraftAction.Kind,
+            ImmutableSortedDictionary<string, string>.Empty.Add("actor", "1").Add("home", "7")
+        );
+
+        // Act
+        MalformedActionException exception = Assert.Throws<MalformedActionException>(
+            () => ActionParser.Standard.Parse(descriptor)
+        );
+
+        // Assert
+        Assert.Equal("The 'draft' action needs a kind for 'piece'.", exception.Message);
     }
 
     [Fact]

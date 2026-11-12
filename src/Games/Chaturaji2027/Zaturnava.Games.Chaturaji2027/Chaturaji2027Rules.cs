@@ -80,6 +80,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     private readonly FlyingCapture _flying;
     private readonly FaceOff _faceOff;
     private readonly MoveDiagrams _diagrams;
+    private readonly ArmyDrafting? _drafting;
 
     public Chaturaji2027Rules()
         : this(SafetyNets.Default)
@@ -158,6 +159,9 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         );
         this._flying = new FlyingCapture(this._grid, this._variant.FlyingCapturers, this._variant.Leaders);
         this._faceOff = new FaceOff(this._grid, this._variant.FaceOffCallers, this._variant.Leaders);
+        this._drafting = this._variant.Drafting is { } drafting
+            ? new ArmyDrafting(drafting, this._grid, this._variant.Side, this.WorthOf, this.RollOffDie)
+            : null;
     }
 
     public string Id => this._variant.Id;
@@ -220,17 +224,39 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         };
     }
 
+    public bool IsDraftable => this._drafting is not null;
+
+    /// <summary>
+    /// The game <paramref name="dealt"/>, its armies to be drafted by its players (<see cref="ArmyDrafting"/>), if the
+    /// variant lets them; else as it is.
+    /// </summary>
+    public GameState Drafted([Required] GameState dealt, int seed) => this._drafting?.Begun(dealt, seed) ?? dealt;
+
     public ImmutableList<BoardLine> LinesOf([Required] GameState state) =>
         this._variant.Lines?.Invoke(state, this._grid) ?? [];
 
     public string? TerrainOf([Required] GameState state) => this._variant.Terrain?.Invoke(state);
 
+    /// <summary>The deciding seat's choices: while the armies are drafted, those of the draft.</summary>
     public ImmutableList<GameAction> LegalActions([Required] GameState state) =>
-        (state.DecidingSeat, state.AwaitedDice) is ({ } seat, null)
-            ? this.ChoicesOf(state, seat)
-            : [];
+        (state.DecidingSeat, state.AwaitedDice, this.DraftingOf(state)) switch
+        {
+            ({ } seat, _, { } drafting) => drafting.ChoicesOf(state, seat),
+            ({ } seat, null, _) => this.ChoicesOf(state, seat),
+            _ => [],
+        };
 
+    /// <summary>
+    /// The action, and what follows from it; while the armies are drafted, the draft's, before any game is played to
+    /// end or count.
+    /// </summary>
     public Transition Apply([Required] GameState state, [Required] GameAction action) =>
+        this.DraftingOf(state) is { } drafting ? drafting.Applied(state, action) : this.Played(state, action);
+
+    /// <summary>The draft, while the game's armies are being drafted.</summary>
+    private ArmyDrafting? DraftingOf(GameState state) => state.Draft is null ? null : this._drafting;
+
+    private Transition Played(GameState state, GameAction action) =>
         this._command.Told(
             state,
             this._everyPiece.Scored(
@@ -273,7 +299,9 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     public bool MayGoBack([Required] GameState state, [Required] Prisoner prisoner) =>
         Ransom.MayGoBack(state, prisoner);
 
-    public bool MayProposeEnd([Required] GameState state, SeatId seat) => Agreement.MayPropose(state, seat);
+    /// <summary>As <see cref="Agreement.MayPropose"/> says; never while the armies are drafted.</summary>
+    public bool MayProposeEnd([Required] GameState state, SeatId seat) =>
+        state.Draft is null && Agreement.MayPropose(state, seat);
 
     /// <summary>
     /// A seat may rejoin as <see cref="Agreement.MayRejoin"/> says; and a retired one, once it has a piece besides
@@ -298,6 +326,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     /// </summary>
     public ImmutableList<GameAction> ChancesOf([Required] GameState state, SeatId seat) =>
         state.Outcome is null
+        && state.Draft is null
         && state.AwaitedDice is null
         && state.PromotionDue is null
         && state.Returning is null

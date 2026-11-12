@@ -28,6 +28,11 @@ public sealed record RulesetDto(string Id, string Name, int SeatCount)
     /// </summary>
     public bool IsDealt { get; init; }
 
+    /// <summary>
+    /// Whether a game's players may draft their own armies (<see cref="CreateGameRequest.IsDrafted"/>).
+    /// </summary>
+    public bool IsDraftable { get; init; }
+
     public ImmutableList<string> SeatNames { get; init; } = [];
 
     /// <summary>Each seat's team, by number: seats of the same number are allies.</summary>

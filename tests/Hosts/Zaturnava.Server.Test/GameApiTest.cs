@@ -144,6 +144,71 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
         );
     }
 
+    [Fact]
+    public async Task Catalog_WhenAsked_TellsWhichGamesMayHaveTheirArmiesDrafted()
+    {
+        // Arrange - nothing beyond the server
+
+        // Act
+        CatalogDto catalog = await this._client.Catalog(this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            "False,True,True,True",
+            string.Join(",", catalog.Rulesets.Select(offered => offered.IsDraftable))
+        );
+    }
+
+    [Fact]
+    public async Task Get_WhenTheArmiesAreToBeDrafted_OffersAThroneOrAnArmyFilledWithTheBudgetLeft()
+    {
+        // Arrange
+        (string gameId, _) = await this.DraftedGame();
+
+        // Act
+        GameViewDto view = await this._client.Get(gameId, this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            (true, 4, true, true, true),
+            (
+                view.IsDrafted,
+                view.DraftLeft!.Count,
+                view.DraftLeft.All(left => left > 0),
+                view.LegalActions.Where(action => action.Kind == "throne")
+                    .All(action => action.Choice == "Your throne"),
+                view.LegalActions.Any(action => action.Label == "Fill the rest of my army at random, and be done")
+            )
+        );
+    }
+
+    [Fact]
+    public async Task Advance_WhenTheBotsHaveTheirArmiesFilled_LeavesTheThroneSetterPiecesByPriceOrBeingDone()
+    {
+        // Arrange - a throne set; each bot, in turn, has its army filled
+        (string gameId, string token) = await this.DraftedGame();
+        GameViewDto view = await this._client.Get(gameId, this._cancellation);
+        ActionDto throne = view.LegalActions.First(action => action.Kind == "throne");
+        GameViewDto set = await this._client.Submit(gameId, token, throne, this._cancellation);
+        GameViewDto first = await this._client.Advance(gameId, set.Version, this._cancellation);
+        GameViewDto second = await this._client.Advance(gameId, first.Version, this._cancellation);
+
+        // Act
+        GameViewDto after = await this._client.Advance(gameId, second.Version, this._cancellation);
+
+        // Assert
+        ActionDto draft = after.LegalActions.First(action => action.Kind == "draft");
+        Assert.Equal(
+            (true, true),
+            (
+                draft.Choice!.Contains(", ", StringComparison.Ordinal),
+                after.LegalActions.Any(action =>
+                    action.Label == $"Done drafting: keep the {after.DraftLeft![0]} points left as my score"
+                )
+            )
+        );
+    }
+
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
@@ -504,6 +569,17 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
         CreateGameRequest request = new(ZaturnavaServer.Chaturaji2027, ZaturnavaServer.OneOpenSeat);
         GameCreatedDto created = await this._client.Create(request, this._cancellation);
         return created.GameId;
+    }
+
+    /// <summary>A small Grand Legions game whose armies its players draft, its first seat claimed.</summary>
+    private async Task<(string GameId, string Token)> DraftedGame()
+    {
+        GameCreatedDto created = await this._client.Create(
+            new CreateGameRequest("grand-legions-small", [null, "random", "random", "random"]) { IsDrafted = true },
+            this._cancellation
+        );
+        SeatClaimedDto claimed = await this._client.Claim(created.GameId, 0, null, null, this._cancellation);
+        return (created.GameId, claimed.Token);
     }
 
     private async Task<(string GameId, string Token, GameViewDto View)> ClaimedGame()

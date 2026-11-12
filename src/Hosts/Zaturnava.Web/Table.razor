@@ -228,6 +228,10 @@
                         <button class="dismiss" @onclick="this.Dismiss">OK</button>
                     </p>
                 }
+                @if (view.DraftLeft is { } left)
+                {
+                    <p class="draft-left">@DraftNote(view, left)</p>
+                }
                 @if (this.Countdown() is { } countdown)
                 {
                     <p class="countdown">@countdown</p>
@@ -873,6 +877,13 @@
         [.. view.Seats.Where(seat => seat.IsPaidBot).Select(seat => seat.Bot).OfType<string>()];
 
     /// <summary>
+    /// "Drafting armies, points left: Black 120, Yellow 95, Green 125, Red 110": what each seat still has to spend.
+    /// </summary>
+    private static string DraftNote(GameViewDto view, ImmutableList<int> left) =>
+        "Drafting armies, points left: "
+        + string.Join(", ", view.Seats.Select(seat => $"{seat.Name} {left[seat.Id]}"));
+
+    /// <summary>
     /// The same game again: its ruleset, its bots in the same seats, the player at the same seat, its seats for people
     /// only for players signed in if they were; for a game dealt its armies, armies alike if they were, and the very
     /// same armies if <paramref name="isSameArmies"/>.
@@ -886,7 +897,7 @@
             null,
             await this.Browser.Claimant(),
             view.Id,
-            new ArmyDeal(view.AreArmiesAlike, isSameArmies ? view.Id : null),
+            new ArmyDeal(view.AreArmiesAlike, isSameArmies ? view.Id : null) { IsDrafted = view.IsDrafted },
             view.IsForPlayers
         ));
 
