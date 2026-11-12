@@ -14,4 +14,8 @@ public sealed record Drafting(
     ImmutableList<ArmySquare> Kingdom,
     Func<int, ImmutableHashSet<PieceKindId>> Offered,
     Func<ArmyFill, ArmyFilled> Fill
-);
+)
+{
+    /// <summary>Every terrain a game may be dealt, as the ruleset numbers them: its own (0) alone, if unset.</summary>
+    public ImmutableList<int> Terrains { get; init; } = [0];
+}

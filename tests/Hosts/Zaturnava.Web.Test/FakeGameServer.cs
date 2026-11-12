@@ -121,6 +121,7 @@ internal sealed class FakeGameServer : IGameServing
                         IsDealt = this.IsDealt,
                         IsDraftable = this.IsDraftable,
                         DraftBudget = this.IsDraftable ? 75 : null,
+                        DraftBudgetLimit = this.IsDraftable ? 600 : null,
                         SizableBoard = this.SizableBoard,
                     },
                     .. this.MoreRulesets,

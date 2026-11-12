@@ -268,6 +268,7 @@ internal static class GameViews
             IsDealt = rules.IsDealt,
             IsDraftable = rules.IsDraftable,
             DraftBudget = rules.DraftBudget,
+            DraftBudgetLimit = rules.DraftBudgetLimit,
             SizableBoard = SizeOf(rules.SizableBoard),
             SeatNames = [.. state.Seats.Select(seat => rules.NameOf(seat.Id))],
             SeatTeams = [.. state.Seats.Select(seat => state.Teams.TeamOf(seat.Id))],

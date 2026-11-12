@@ -40,6 +40,13 @@ public sealed record RulesetDto(string Id, string Name, int SeatCount)
     public int? DraftBudget { get; init; }
 
     /// <summary>
+    /// For a game whose players may draft: the most each may have to spend, whatever its creator sets, every square of
+    /// the kingdom filled with the dearest piece; on a board sized otherwise, as many times more as its kingdom has
+    /// squares. Null, for a game whose players may not.
+    /// </summary>
+    public int? DraftBudgetLimit { get; init; }
+
+    /// <summary>
     /// For a game whose creator may set its board's size (<see cref="CreateGameRequest.Board"/>): its size, unless they
     /// do, at which <see cref="DraftBudget"/> is for each army; null, for a game played at its size only. The budget
     /// grows with the kingdom, cell for cell.

@@ -241,7 +241,7 @@
                         <input type="number"
                                class="draft-budget"
                                min="1"
-                               max="100000"
+                               max="@this.BudgetLimit(catalog)"
                                @bind="this._budget"
                                placeholder="@this.Ruleset(catalog).DraftBudget" />
                     </label>
@@ -824,6 +824,19 @@
         this.Ruleset(catalog).SizableBoard is null
             ? null
             : new BoardSizeDto(this._side, this._kingdomWidth, this._kingdomDepth);
+
+    /// <summary>
+    /// The most an army may have to spend, the game's own limit, grown with the kingdoms as they are set; any more is
+    /// held to it.
+    /// </summary>
+    private int BudgetLimit(CatalogDto catalog)
+    {
+        RulesetDto ruleset = this.Ruleset(catalog);
+        int limit = ruleset.DraftBudgetLimit.GetValueOrDefault();
+        return ruleset.SizableBoard is { } board
+            ? limit * this._kingdomWidth * this._kingdomDepth / (board.KingdomWidth * board.KingdomDepth)
+            : limit;
+    }
 
     /// <summary>The budget again, for kingdoms of the size now set, as the game's grows with them.</summary>
     private void Resized()

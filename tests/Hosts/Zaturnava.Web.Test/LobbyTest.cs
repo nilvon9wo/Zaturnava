@@ -526,7 +526,7 @@ public sealed class LobbyTest : IDisposable
     [Fact]
     public void Play_WhenTheBoardAndKingdomsAreSet_AsksForThemAndGrowsTheBudgetWithTheKingdoms()
     {
-        // Arrange - 75 points for kingdoms of 4 x 3, so 112 for 6 x 3
+        // Arrange - 75 points for kingdoms of 4 x 3, at most 600, so 112 for 6 x 3, at most 900
         this._page.Server.IsDealt = true;
         this._page.Server.IsDraftable = true;
         this._page.Server.SizableBoard = new BoardSizeDto(10, 4, 3);
@@ -536,6 +536,7 @@ public sealed class LobbyTest : IDisposable
         lobby.Find("input.kingdom-width").Change("6");
         lobby.Find("input.kingdom-depth").Change("3");
         string budget = lobby.Find("input.draft-budget").GetAttribute("value") ?? string.Empty;
+        string most = lobby.Find("input.draft-budget").GetAttribute("max") ?? string.Empty;
 
         // Act
         lobby.Find("button.create").Click();
@@ -543,8 +544,8 @@ public sealed class LobbyTest : IDisposable
         // Assert
         CreateGameRequest created = this._page.Server.Created!;
         Assert.Equal(
-            ("10", "112", new BoardSizeDto(12, 6, 3), (int?)112),
-            (before, budget, created.Board, created.DraftBudget)
+            ("10", "112", "900", new BoardSizeDto(12, 6, 3), (int?)112),
+            (before, budget, most, created.Board, created.DraftBudget)
         );
     }
 
@@ -585,9 +586,9 @@ public sealed class LobbyTest : IDisposable
     }
 
     [Fact]
-    public void Render_WhenTheArmiesAreDrafted_ShowsTheGamesOwnBudgetToSpend()
+    public void Render_WhenTheArmiesAreDrafted_ShowsTheGamesOwnBudgetToSpendAndTheMostAllowed()
     {
-        // Arrange - the fake server's drafted game gives each seat 75 points
+        // Arrange - the fake server's drafted game gives each seat 75 points, and at most 600
         this._page.Server.IsDealt = true;
         this._page.Server.IsDraftable = true;
 
@@ -595,7 +596,8 @@ public sealed class LobbyTest : IDisposable
         IRenderedComponent<Lobby> lobby = this.ByStrength();
 
         // Assert
-        Assert.Equal("75", lobby.Find("input.draft-budget").GetAttribute("value"));
+        AngleSharp.Dom.IElement box = lobby.Find("input.draft-budget");
+        Assert.Equal(("75", "600"), (box.GetAttribute("value"), box.GetAttribute("max")));
     }
 
     [Fact]

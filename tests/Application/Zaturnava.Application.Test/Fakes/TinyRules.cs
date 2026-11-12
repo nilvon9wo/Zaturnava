@@ -170,7 +170,10 @@ internal sealed class TinyRules(int length, bool isDealt = false, Exception? fai
 
     public string NameOf(SeatId seat) => $"Seat {seat.Value}";
 
-    public int WorthOf(PieceKindId kind) => 1;
+    /// <summary>What a King is worth; every other kind is worth 1.</summary>
+    public int KingWorth { get; init; } = 1;
+
+    public int WorthOf(PieceKindId kind) => kind == King ? this.KingWorth : 1;
 
     public int RansomPointsOf([Required] GameState state, [Required] RansomOffer offer) => 0;
 

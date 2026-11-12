@@ -253,6 +253,8 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
 
     public int? DraftBudget => this._variant.Drafting?.Budget;
 
+    public int? DraftBudgetLimit => this._drafting?.Limit;
+
     /// <summary>
     /// The game <paramref name="dealt"/>, its armies to be drafted by its players (<see cref="ArmyDrafting"/>) as
     /// <paramref name="settings"/> set, if the variant lets them; else as it is.

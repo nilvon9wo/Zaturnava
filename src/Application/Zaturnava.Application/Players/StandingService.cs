@@ -230,7 +230,7 @@ public sealed class StandingService(
         bool isAgainstPeople = IsAgainstOnly(snapshot, seat, IsPerson);
         return before with
         {
-            Points = before.Points + snapshot.State.Scores.GetValueOrDefault(seat),
+            Points = before.Points + snapshot.State.EarnedBy(seat),
             Won = before.Won + Counted(result, Result.Won),
             Lost = before.Lost + Counted(result, Result.Lost),
             Drawn = before.Drawn + Counted(result, Result.Drawn),
@@ -305,13 +305,13 @@ public sealed class StandingService(
             .Where(other => other.Key != team)
             .Average(other => 1 / (1 + Math.Pow(10, (other.Value - teams[team]) / EloSpread)));
         Result result = ResultOf(state, outcome, seat);
-        int points = state.Scores.GetValueOrDefault(seat)
-            + state.Scores.Where(score => state.Teams.AreAllied(score.Key, seat)).Sum(score => score.Value);
+        int points = state.EarnedBy(seat)
+            + state.Scores.Keys.Where(other => state.Teams.AreAllied(other, seat)).Sum(state.EarnedBy);
         return before with
         {
             Elo = isRated ? before.Elo + (K * (((double)result / 2) - expected)) : before.Elo,
             Experience = before.Experience + (result == Result.Won ? points : 0),
-            Points = before.Points + state.Scores.GetValueOrDefault(seat),
+            Points = before.Points + state.EarnedBy(seat),
             Won = before.Won + Counted(result, Result.Won),
             Lost = before.Lost + Counted(result, Result.Lost),
             Drawn = before.Drawn + Counted(result, Result.Drawn),

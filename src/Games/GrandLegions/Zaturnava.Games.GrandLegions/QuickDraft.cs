@@ -24,7 +24,10 @@ public static class QuickDraft
             ],
             terrain => [.. QuickArmy.Eligible(GameOn(game, terrain)).Select(piece => piece.Id)],
             fill => Filled(game, fill)
-        );
+        )
+        {
+            Terrains = [.. Enumerable.Range(0, (int)Rivers.Both + 1)],
+        };
 
     /// <summary>
     /// The rest of an army, drafted at random. From nothing (a throne is set before any piece), as the program deals

@@ -177,7 +177,7 @@ first.
   500 characters, line breaks kept, and a tick beside each service the player signs in with, to show it; none is
   shown until ticked (`PUT api/players/me/profile`). A name at a table or on a leaderboard opens the description
   and the services shown.
-- A winning streak on the leaderboard, perhaps: open question [OQ9](open-questions.md#oq9-a-winning-streak).
+- A winning streak on the leaderboard (*Stated 2026-11-12*), three ways, as written under Bots below.
 - A player's username unique (*Stated 2026-11-07*): no player may take a name another has. The profile's field
   is called **Username**. *Done*: a rename to a name another player goes by, capitals or not, is refused (`409`)
   and the profile says why. A new player whose service's name is taken gets the first of "Ada 2", "Ada 3" and so
@@ -354,6 +354,19 @@ first.
   *(Proposed)*: each bot drafts by a plan of its own (many cheap pieces, a few dear ones, a balance across the
   classes), rather than all following the random fill. Ideally *(Stated 2026-11-12)*, in an open draft, the
   stronger bots look at what the others are drafting, and choose and place their pieces in answer.
+  *(Stated 2026-11-12)* Given a large budget, bots bought cheap pieces rather than use it. *Done (Proposed)*:
+  a bot still follows the random fill, but on any square but its throne it buys the dearest piece it can pay
+  for while keeping enough for the rest of that army, so a budget left over goes into stronger pieces.
+
+- *(Stated 2026-11-12)* Rate the bots not yet rated, in the background, without a command anyone has to
+  approve: every bot, over a good mix of rulesets, for as long as it runs, each result saved as it comes, so
+  that whatever was gathered counts however and whenever the run stops. *(Proposed)*: a job the server runs
+  itself, when its settings turn it on, playing the bots against each other and keeping each game's ratings as
+  it ends, rather than `scripts/wsl-rate.sh`.
+
+- *(Stated 2026-11-12)* The leaderboard shows each player's winning streak, the games won since they last lost,
+  three ways: over every game, over the games that count toward Elo only, and over the games against people
+  only; each with the mean Elo of the opponents beaten in it.
 
 ## Talking
 

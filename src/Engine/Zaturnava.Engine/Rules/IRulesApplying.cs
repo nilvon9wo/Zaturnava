@@ -92,6 +92,12 @@ public interface IRulesApplying
     int? DraftBudget => null;
 
     /// <summary>
+    /// The most each seat may have to spend on its army, if its players draft it, whatever the game's creator sets:
+    /// a budget above it is held to it; none, for a ruleset whose players may not draft.
+    /// </summary>
+    int? DraftBudgetLimit => null;
+
+    /// <summary>
     /// The game <paramref name="dealt"/> (its terrain, say), but with its armies to be drafted by its players before
     /// play begins (<see cref="GameState.Draft"/>), as <paramref name="settings"/> set
     /// (<see cref="DraftSettings.Default"/>, if none), any army filled at random drafted by <paramref name="seed"/>. As
