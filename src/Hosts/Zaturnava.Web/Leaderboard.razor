@@ -110,13 +110,14 @@
         "No one signed in has finished a game of it yet.",
         "Each game finished counts for the players signed in at it, but not for a seat their own AI played. Everyone "
             + "starts at Elo 1500, and gains or loses by how their team did against what the teams' ratings led to "
-            + "expect, a bot's team by the bot's own rating. Each win earns as experience your own points plus your "
-            + "team's. Points are the points you scored yourself, taking pieces and earning bonuses, in every game "
+            + "expect, a bot's team by the bot's own rating. Each win earns as experience your own points, and as "
+            + "much again times your share of your team's: carrying a weak ally earns more than being carried by a "
+            + "strong one. Points are the points you scored yourself, taking pieces and earning bonuses, in every game "
             + "finished, won or lost. A game not over, with no guest at it, counts as abandoned by a player once it has "
             + "waited a day for their move, and no longer once they make it.",
         [
             new("elo", "Elo", null),
-            new("experience", "Experience", "Your own points plus your team's, in each game won"),
+            new("experience", "Experience", "In each game won, your own points, and as much again times your share of your team's"),
             new("points", "Points", PointsTitle),
             new("won", "Won", null),
             new("lost", "Lost", null),

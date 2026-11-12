@@ -58,7 +58,7 @@ public sealed class StandingServiceTest
         ImmutableDictionary<PlayerId, Standing> standings =
             await this._players.Standings(EndedRules.RulesetId, [Ada, Bea], this._cancellation);
         Assert.Equal(
-            (1, 3 + 7, 4 + 7, 3, 4, 1, 1, 0),
+            (1, 3 + (3 * 3 / 7), 4 + (4 * 4 / 7), 3, 4, 1, 1, 0),
             (
                 rated,
                 standings[Ada].Experience,
@@ -72,6 +72,44 @@ public sealed class StandingServiceTest
         );
         Assert.Equal(elo, standings[Ada].Elo, 9);
         Assert.Equal(elo, standings[Bea].Elo, 9);
+    }
+
+    [Theory]
+    [InlineData(0, 9, 0, 18)]
+    [InlineData(1, 9, 1, 17)]
+    [InlineData(9, 1, 17, 1)]
+    [InlineData(-2, 9, 0, 18)]
+    public async Task RateFinished_WhenAllyCarriesTheTeamToAWin_GivesItMoreExperienceThanTheOneCarried(
+        int adaPoints,
+        int beaPoints,
+        int adaExperience,
+        int beaExperience
+    )
+    {
+        // Arrange - Ada and Bea win together: each gains their points, and as much again times their share
+        GameState ended = EndedRules.State([Black]) with
+        {
+            Scores = ImmutableDictionary<SeatId, int>.Empty.Add(Black, adaPoints).Add(new SeatId(2), beaPoints),
+        };
+        await this._games.Add(
+            Record(
+                "g",
+                new HumanSeat("ada", Ada),
+                new BotSeat(FirstChoiceBot.BotId),
+                new HumanSeat("bea", Bea),
+                new BotSeat("gone")
+            ),
+            this._cancellation
+        );
+        StandingService service = this.Service(new EndedRules(ended), null);
+
+        // Act
+        _ = await service.RateFinished(this._cancellation);
+
+        // Assert
+        ImmutableDictionary<PlayerId, Standing> standings =
+            await this._players.Standings(EndedRules.RulesetId, [Ada, Bea], this._cancellation);
+        Assert.Equal((adaExperience, beaExperience), (standings[Ada].Experience, standings[Bea].Experience));
     }
 
     [Fact]

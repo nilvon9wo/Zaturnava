@@ -170,6 +170,15 @@ internal sealed class TinyRules(int length, bool isDealt = false, Exception? fai
 
     public string NameOf(SeatId seat) => $"Seat {seat.Value}";
 
+    /// <summary>How many squares each kind's card shows it reaching; none, for a kind not here.</summary>
+    public ImmutableDictionary<PieceKindId, int> Reaches { get; init; } = [];
+
+    public PieceGuide GuideOf(PieceKindId kind) =>
+        new(new PieceKind(kind, []))
+        {
+            Diagram = new MoveDiagram(9, [.. Enumerable.Range(0, this.Reaches.GetValueOrDefault(kind))], [], []),
+        };
+
     /// <summary>What a King is worth; every other kind is worth 1.</summary>
     public int KingWorth { get; init; } = 1;
 

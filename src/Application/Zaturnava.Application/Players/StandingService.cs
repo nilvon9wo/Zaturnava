@@ -10,14 +10,15 @@ using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 namespace Net.NowhereAtAll.Zaturnava.Application.Players;
 
 /// <summary>
-/// Where the players stand, game by game (Proposed but for experience, which is as asked): each game over counts
+/// Where the players stand, game by game (Proposed but for experience, which is as stated): each game over counts
 /// once, in the order the games ended, for every signed-in player at it, but not a seat their own AI played. Each
 /// team is rated as the mean of its seats': a player's, their Elo at the game; a bot's, its rating at the ruleset;
 /// anyone else's, <see cref="Standing.FirstElo"/>. A player's Elo moves by <see cref="K"/> times how far their result
 /// (1 won, a half drawn, 0 lost) is from what their team's rating led to expect against the other teams, on average:
 /// only for a game that counts toward Elo (<see cref="CountsTowardElo"/>).
-/// Each time a player is on the winning team, they gain as experience their own points plus their team's; and in every
-/// game, they add their own points to those they have scored. Each game counts for the server's bots at it too
+/// Each time a player is on the winning team, they gain as experience their own points, and as much again times their
+/// share of their team's (<see cref="ExperienceOf"/>); and in every game, they add their own points to those they have
+/// scored. Each game counts for the server's bots at it too
 /// (<see cref="BotStanding"/>), Elo aside.
 /// </summary>
 public sealed class StandingService(
@@ -305,17 +306,30 @@ public sealed class StandingService(
             .Where(other => other.Key != team)
             .Average(other => 1 / (1 + Math.Pow(10, (other.Value - teams[team]) / EloSpread)));
         Result result = ResultOf(state, outcome, seat);
-        int points = state.EarnedBy(seat)
-            + state.Scores.Keys.Where(other => state.Teams.AreAllied(other, seat)).Sum(state.EarnedBy);
         return before with
         {
             Elo = isRated ? before.Elo + (K * (((double)result / 2) - expected)) : before.Elo,
-            Experience = before.Experience + (result == Result.Won ? points : 0),
+            Experience = before.Experience + (result == Result.Won ? ExperienceOf(state, seat) : 0),
             Points = before.Points + state.EarnedBy(seat),
             Won = before.Won + Counted(result, Result.Won),
             Lost = before.Lost + Counted(result, Result.Lost),
             Drawn = before.Drawn + Counted(result, Result.Drawn),
         };
+    }
+
+    /// <summary>
+    /// The experience the seat gains for its team's win (Stated, 2026-11-12; the user's report that a stronger ally
+    /// gave more): its own points earned, and as much again times its share of its team's, so that carrying a
+    /// weak ally to a win gains more than being carried by a strong one. A seat with no ally has the whole share,
+    /// twice its points, as before; a seat that earned nothing, or less, gains nothing.
+    /// </summary>
+    private static int ExperienceOf(GameState state, SeatId seat)
+    {
+        int own = Math.Max(0, state.EarnedBy(seat));
+        int team = state.Scores.Keys
+            .Where(other => state.Teams.AreAllied(other, seat))
+            .Sum(other => Math.Max(0, state.EarnedBy(other)));
+        return own + (own == 0 ? 0 : own * own / team);
     }
 
     /// <summary>How the game ended for the seat: drawn, if no one won; else won, if its team did, or lost.</summary>

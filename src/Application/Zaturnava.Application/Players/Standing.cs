@@ -4,9 +4,9 @@ namespace Net.NowhereAtAll.Zaturnava.Application.Players;
 
 /// <summary>
 /// Where a signed-in player stands at one game, whatever its size (<see cref="Game"/>, as a ruleset's game id): their
-/// Elo rating, from <see cref="FirstElo"/>; their experience, gained in each game they won: their own points plus
-/// their team's (all its seats', theirs too); the points they scored themselves, in every game they finished, won or
-/// not; and how many games they won, lost and drew.
+/// Elo rating, from <see cref="FirstElo"/>; their experience, gained in each game they won: their own points, and as
+/// much again times their share of their team's (<see cref="StandingService"/>); the points they scored themselves,
+/// in every game they finished, won or not; and how many games they won, lost and drew.
 /// </summary>
 public sealed record Standing(PlayerId Player, string Game)
 {
