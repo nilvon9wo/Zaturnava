@@ -142,6 +142,34 @@ public sealed class GameServiceTest
         );
     }
 
+    [Theory]
+    [InlineData(true, true)]
+    [InlineData(false, false)]
+    public async Task Create_WhenTheArmiesAreAskedToBeDrafted_DraftsThemIfTheRulesLetPlayers(
+        bool isDraftable,
+        bool isDrafted
+    )
+    {
+        // Arrange
+        GameService service = this.Service(GameServiceSettings.Default, isDealt: true, isDraftable: isDraftable);
+        GameId id = await service.Create(
+            TinyRules.RulesetId,
+            [SeatPlan.Open, SeatPlan.Open],
+            null,
+            new Dealing { IsDrafted = true },
+            this._cancellation
+        );
+
+        // Act
+        GameSnapshot snapshot = await service.Get(id, this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            (isDrafted, isDrafted),
+            (ScenarioStart.IsDrafted(snapshot.Record.Actions), snapshot.State.Draft is not null)
+        );
+    }
+
     [Fact]
     public async Task Create_WhenTheArmiesOfAnotherGameAreAskedFor_DealsAsItWasDealt()
     {
@@ -1892,11 +1920,15 @@ public sealed class GameServiceTest
         InMemoryGameStore? store = null,
         ImmutableList<IBotPlaying>? bots = null,
         bool isDealt = false,
-        bool hasFaceOff = false
+        bool hasFaceOff = false,
+        bool isDraftable = true
     ) =>
         new(
             new RulesetCatalog(
-                [new TinyRules(GameLength, isDealt, hasFaceOff: hasFaceOff), new RollingRules(GameLength)]
+                [
+                    new TinyRules(GameLength, isDealt, hasFaceOff: hasFaceOff) { IsDraftable = isDealt && isDraftable },
+                    new RollingRules(GameLength),
+                ]
             ),
             new BotCatalog(bots ?? [new FirstChoiceBot()]),
             new ScenarioCatalog(

@@ -276,7 +276,9 @@ html { scrollbar-gutter: stable; }
 }
 .choices label { display: contents; }
 /* A game's checkbox options, each a line of its own. */
-label.alike, label.for-players { display: block; margin-top: 6px; }
+label.alike, label.drafted, label.for-players { display: block; margin-top: 6px; }
+/* While the armies are drafted, what each seat has left to spend. */
+.draft-left { font-weight: 600; }
 /* Each choice a row of its own: its name always starts one, even where the row before left a column free. */
 .choices .choice-name { grid-column: 1; }
 .choices select, .panel label.scenario select { width: 100%; min-width: 0; }

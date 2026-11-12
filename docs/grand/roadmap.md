@@ -184,6 +184,11 @@ drawn simply, a shape for its class and a letter for its kind.
 - Prices for each game, from its own board's actual dimensions and kingdoms (*Stated* 2026-11-06;
   [pieces.md](pieces.md#prices-for-each-game)). *Done* for the quick games, in their armies and scores;
   the draft, when it comes, shows the same prices.
+- *Done* (2026-11-12, #225), a first step: in turn and in view, for the quick games, without
+  palaces or lifts. Each player sets a throne in their kingdom, then buys pieces one at a time at the
+  game's prices, placing each on a free square, until done or the rest is filled at random; points
+  left start their score. Bots have their armies filled at random for now. Still to come: drafting
+  in secret, palaces, lifts, infantry beyond the start rows, and bots drafting their own way.
 
 ## Stage 5 — Points to spend
 

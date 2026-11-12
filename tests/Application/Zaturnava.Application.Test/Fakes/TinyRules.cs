@@ -58,6 +58,15 @@ internal sealed class TinyRules(int length, bool isDealt = false, Exception? fai
 
     public bool IsDealt { get; } = isDealt;
 
+    /// <summary>
+    /// Whether its players may draft their armies, as every game dealt may, unless <see cref="IsDraftable"/> is set:
+    /// a game drafted is told by its draft, kept by the seed it was dealt by, and nothing else.
+    /// </summary>
+    public bool IsDraftable { get; init; } = isDealt;
+
+    public GameState Drafted([Required] GameState dealt, int seed) =>
+        dealt with { Draft = new ArmyDraft(seed, [], []) };
+
     public GameState Deal([Required] GameState initial, int seed, bool areAlike = false, bool dealsTerrain = false) =>
         initial with
         {

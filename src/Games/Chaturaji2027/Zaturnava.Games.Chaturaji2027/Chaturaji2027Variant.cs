@@ -135,6 +135,9 @@ public sealed record Chaturaji2027Variant(
     /// </summary>
     public Func<int, int>? TerrainDealer { get; init; }
 
+    /// <summary>How a game's players may draft their own armies, not dealt them; null, if they may not.</summary>
+    public Drafting? Drafting { get; init; }
+
     /// <summary>The lines drawn on the board, as its rivers, in the game as it stands; none, if null.</summary>
     public Func<GameState, SquareGridTopology, ImmutableList<BoardLine>>? Lines { get; init; }
 

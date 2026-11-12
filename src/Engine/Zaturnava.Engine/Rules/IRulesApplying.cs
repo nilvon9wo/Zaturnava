@@ -68,6 +68,19 @@ public interface IRulesApplying
         initial;
 
     /// <summary>
+    /// Whether a game's players may draft their own armies (<see cref="Drafted"/>), rather than have them dealt. None
+    /// may, unless the ruleset says so.
+    /// </summary>
+    bool IsDraftable => false;
+
+    /// <summary>
+    /// The game <paramref name="dealt"/> (its terrain, say), but with its armies to be drafted by its players before
+    /// play begins (<see cref="GameState.Draft"/>), any army filled at random drafted by <paramref name="seed"/>. As it
+    /// is, for a ruleset whose players may not.
+    /// </summary>
+    GameState Drafted([Required] GameState dealt, int seed) => dealt;
+
+    /// <summary>
     /// The lines drawn on the board in the game as it stands, such as its rivers; none, unless the ruleset says
     /// otherwise.
     /// </summary>

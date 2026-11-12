@@ -67,6 +67,15 @@ public sealed record GameViewDto(
     /// <summary>Whether every seat was dealt the same army (<see cref="CreateGameRequest.AreArmiesAlike"/>).</summary>
     public bool AreArmiesAlike { get; init; }
 
+    /// <summary>Whether its players drafted their own armies (<see cref="CreateGameRequest.IsDrafted"/>).</summary>
+    public bool IsDrafted { get; init; }
+
+    /// <summary>
+    /// While the armies are drafted, what each seat has left to spend, seat by seat; null once play has begun, or in a
+    /// game never drafted.
+    /// </summary>
+    public ImmutableList<int>? DraftLeft { get; init; }
+
     /// <summary>
     /// Whether its seats for people were only for players signed in (<see cref="CreateGameRequest.IsForPlayers"/>),
     /// whether still open or since taken; so the game played again is too.

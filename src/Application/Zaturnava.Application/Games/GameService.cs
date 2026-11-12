@@ -100,7 +100,13 @@ public sealed class GameService(
         ImmutableList<ActionDescriptor> start = (scenarioId, rules.IsDealt) switch
         {
             ({ } scenario, _) => [ScenarioStart.Describe(this.ScenarioFor(rules, scenario))],
-            (null, true) => [await this.DealFor(dealing, cancellationToken)],
+            (null, true) =>
+            [
+                await this.DealFor(
+                    dealing with { IsDrafted = dealing.IsDrafted && rules.IsDraftable },
+                    cancellationToken
+                ),
+            ],
             _ => [],
         };
         GameState initial = ScenarioStart.StateOf(start, rules);
@@ -125,7 +131,7 @@ public sealed class GameService(
         GameRecord? previous = dealing.ArmiesOf is { } id ? await this._store.Find(id, cancellationToken) : null;
         return previous is { Actions: [{ Kind: ScenarioStart.DealKind } first, ..] }
             ? first
-            : ScenarioStart.Dealt(this._dice, dealing.AreAlike);
+            : ScenarioStart.Dealt(this._dice, dealing.AreAlike, dealing.IsDrafted);
     }
 
     /// <summary>
@@ -849,7 +855,7 @@ public sealed class GameService(
                 .Select(held => new SeatId(held.seat)),
         ];
         return seat => record.Controllers[seat.Value].DeciderFrom(this._bots) is { } bot
-            ? new AmongPeople(bot, people)
+            ? new AmongPeople(new FillingArmies(bot), people)
             : null;
     }
 

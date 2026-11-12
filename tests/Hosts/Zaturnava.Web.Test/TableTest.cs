@@ -1497,6 +1497,36 @@ public sealed class TableTest : IDisposable
         );
     }
 
+    [Fact]
+    public void PlayAgain_WhenTheArmiesWereDrafted_HasThemDraftedAgain()
+    {
+        // Arrange
+        this._page.Server.View = Over() with { IsDealt = true, IsDrafted = true };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Act
+        table.Find("button.same-armies").Click();
+
+        // Assert
+        Assert.True(this._page.Server.Created!.IsDrafted);
+    }
+
+    [Fact]
+    public void Render_WhileTheArmiesAreDrafted_TellsWhatEachSeatHasLeftToSpend()
+    {
+        // Arrange
+        this._page.Server.View = this._page.Server.View with { DraftLeft = [10, 20] };
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Assert
+        Assert.Equal(
+            "Drafting armies, points left: Black 10, Yellow 20",
+            table.Find("p.draft-left").TextContent
+        );
+    }
+
     [Theory]
     [InlineData("player", null, "player ")]
     [InlineData(null, "Gus", " Gus")]

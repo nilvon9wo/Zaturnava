@@ -186,7 +186,10 @@ internal static class GameEndpoints
     {
         ImmutableList<SeatPlan> seats =
             [.. request.Bots.Select(bot => new SeatPlan(bot) { IsForPlayers = request.IsForPlayers })];
-        Dealing dealing = new(request.AreArmiesAlike, request.ArmiesOf is { } armies ? new GameId(armies) : null);
+        Dealing dealing = new(request.AreArmiesAlike, request.ArmiesOf is { } armies ? new GameId(armies) : null)
+        {
+            IsDrafted = request.IsDrafted,
+        };
         GameId id = await games.Create(request.RulesetId, seats, request.Scenario, dealing, cancellationToken);
         if (request.Continuing is { } previous)
         {

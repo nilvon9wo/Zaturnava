@@ -181,6 +181,7 @@ internal static class GameStarter
             Continuing = continuing,
             AreArmiesAlike = armies?.AreAlike ?? false,
             ArmiesOf = armies?.Of,
+            IsDrafted = armies?.IsDrafted ?? false,
             IsForPlayers = isForPlayers,
         };
         GameCreatedDto created = await games.Create(request, CancellationToken.None);

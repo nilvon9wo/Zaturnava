@@ -194,6 +194,13 @@
                     Every army alike: one army, picked at random, for every player
                 </label>
             }
+            @if (this._mode != SetupMode.Quick && this.Ruleset(catalog).IsDraftable)
+            {
+                <label class="drafted">
+                    <input type="checkbox" class="armies-drafted" @bind="this._isDrafted" />
+                    Draft our own armies: each player, in turn, sets a throne and buys pieces within the budget
+                </label>
+            }
             @if (this._mode != SetupMode.Quick && this._me is not null)
             {
                 <label class="for-players">
@@ -381,6 +388,9 @@
 
     /// <summary>Whether a game whose armies are dealt deals every seat the same army: not, unless asked.</summary>
     private bool _areArmiesAlike;
+
+    /// <summary>Whether the players draft their own armies, in a game that lets them: not, unless asked.</summary>
+    private bool _isDrafted;
 
     /// <summary>Whether the game's open seats are for players signed in only, as a player signed in may ask.</summary>
     private bool _isForPlayers;
@@ -769,7 +779,7 @@
             this._colour,
             this._scenario.Length == 0 ? null : this._scenario,
             await this.Browser.Claimant(),
-            armies: new ArmyDeal(this._areArmiesAlike),
+            armies: new ArmyDeal(this._areArmiesAlike) { IsDrafted = this._isDrafted },
             isForPlayers: this._isForPlayers
         ));
     }

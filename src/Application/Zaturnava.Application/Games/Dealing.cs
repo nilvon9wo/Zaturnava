@@ -6,6 +6,12 @@ namespace Net.NowhereAtAll.Zaturnava.Application.Games;
 /// </summary>
 public sealed record Dealing(bool AreAlike = false, GameId? ArmiesOf = null)
 {
+    /// <summary>
+    /// Whether the players draft their own armies, if the ruleset lets them (<see cref="IsDrafted"/> is ignored by
+    /// one that does not); the terrain is dealt all the same.
+    /// </summary>
+    public bool IsDrafted { get; init; }
+
     /// <summary>Each seat its own army, dealt anew.</summary>
     public static Dealing Anew { get; } = new();
 }
