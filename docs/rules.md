@@ -597,8 +597,13 @@ available (via a future capture, by anyone).
     When the window runs out, it closes; when the answer runs out, the offer
     is declined.
   - The same offer may not be made twice in one turn.
-  - Bots answer at once, and offer only once their turn is over, or *(Proposed)*
-    as they pass, since passing they get no window: one offer a turn at most.
+  - Bots answer at once, and offer whenever the rules let them, during their
+    turn as well as once it is over *(Stated 2026-11-07)*: one offer a turn at
+    most, the first that suits them. Of an enemy they ask no more worth than
+    they give back, and once a seat declines one of their offers they offer it
+    nothing for three rounds, unless the board changes by a tenth
+    *(Proposed)*, so that nearly every offer a player sees is worth reading
+    *(Stated 2026-11-12: at least nine in ten)*.
 
 ### Raja Return
 
