@@ -532,6 +532,22 @@ public sealed class GrandLegionsRulesTest
     }
 
     [Theory]
+    [InlineData("xiangqi-horse", "31,39,41,49")]
+    [InlineData("xiangqi-elephant", "30,32")]
+    [InlineData("alfil", "")]
+    public void GuideOf_WhenAPieceInTheWayBlocksALeap_MarksWhereSuchAPieceWouldStand(string leaper, string blockers)
+    {
+        // Arrange - the Xiangqi Horse's leg, and the Xiangqi Elephant's eye short of the river; the Alfil leaps over
+        Chaturaji2027Rules rules = GrandLegionsRules.RulesOf(QuickGame.Small);
+
+        // Act
+        MoveDiagram diagram = rules.GuideOf(new PieceKindId(leaper)).Diagram;
+
+        // Assert
+        Assert.Equal(blockers, string.Join(",", diagram.Blockers));
+    }
+
+    [Theory]
     [InlineData("xiangqi-cannon", "31,39,41,49", "4,13,36,37,43,44,67,76", "22,38,42,58")]
     [InlineData(
         "grasshopper",

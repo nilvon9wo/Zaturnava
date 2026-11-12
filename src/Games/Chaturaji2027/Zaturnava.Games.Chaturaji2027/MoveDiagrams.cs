@@ -48,16 +48,10 @@ internal sealed class MoveDiagrams(
             (position, screen) => position.Place(screen, new Piece(new PieceId(1), Stand, Facing.Id))
         );
         int? riverRow = riverBound.Contains(kind) ? Middle + 1 : null;
+        ImmutableHashSet<CellId> reached = this.ReachedOn(alone, riverRow);
         return new MoveDiagram(
             Side,
-            [
-                .. this.MovesOn(alone)
-                    .Where(move => move.Captured is null)
-                    .Select(move => move.To)
-                    .Where(cell => IsOnNearBank(cell, riverRow))
-                    .Select(cell => cell.Value)
-                    .Order(),
-            ],
+            [.. reached.Select(cell => cell.Value).Order()],
             [
                 .. Grid.Cells
                     .Where(cell => alone.PieceAt(cell) is null)
@@ -69,8 +63,35 @@ internal sealed class MoveDiagrams(
         )
         {
             RiverRow = riverRow,
+            Blockers = this._kinds[kind].Movement.Any(rule => rule.IsLame)
+                ? [.. this.BlockersOf(alone, riverRow, reached).Select(cell => cell.Value).Order()]
+                : [],
         };
     }
+
+    /// <summary>The empty cells the piece may move to, short of the river, if any.</summary>
+    private ImmutableHashSet<CellId> ReachedOn(Position position, int? riverRow) =>
+    [
+        .. this.MovesOn(position)
+            .Where(move => move.Captured is null)
+            .Select(move => move.To)
+            .Where(cell => IsOnNearBank(cell, riverRow)),
+    ];
+
+    /// <summary>
+    /// For a kind whose leaps a piece in the way blocks, as a Xiangqi Horse's leg is (the user's report of
+    /// 2026-11-12, of cards not showing what stops a leap): each empty cell a piece on which would stop some move to
+    /// another cell.
+    /// </summary>
+    private IEnumerable<CellId> BlockersOf(Position alone, int? riverRow, ImmutableHashSet<CellId> reached) =>
+        Grid.Cells
+            .Where(cell => alone.PieceAt(cell) is null)
+            .Where(cell =>
+                !reached.Remove(cell)
+                    .IsSubsetOf(
+                        this.ReachedOn(alone.Place(cell, new Piece(new PieceId(3), Stand, Facing.Id)), riverRow)
+                    )
+            );
 
     /// <summary>Whether <paramref name="cell"/> is short of the river at <paramref name="riverRow"/>, if any.</summary>
     private static bool IsOnNearBank(CellId cell, int? riverRow) => Grid.RowOf(cell) < (riverRow ?? Side);

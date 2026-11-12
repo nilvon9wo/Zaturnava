@@ -275,6 +275,8 @@ html { scrollbar-gutter: stable; }
     margin: 6px 0;
 }
 .choices label { display: contents; }
+/* A game's checkbox options, each a line of its own. */
+label.alike, label.for-players { display: block; margin-top: 6px; }
 /* Each choice a row of its own: its name always starts one, even where the row before left a column free. */
 .choices .choice-name { grid-column: 1; }
 .choices select, .panel label.scenario select { width: 100%; min-width: 0; }
@@ -520,6 +522,12 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
 /* A river the piece may not cross: blue along the lower edge of the first row across it, as the board's are. */
 .move-diagram .river-bank { box-shadow: inset 0 -0.3em 0 #2f7fd8; }
 .diagram-key .key.river { background: linear-gradient(transparent 60%, #2f7fd8 60%); }
+/* A square a piece on which would block a leap: a red cross over it. */
+.move-diagram .blocker, .diagram-key .key.blocker {
+    background-image:
+        linear-gradient(45deg, transparent 44%, var(--danger) 44% 56%, transparent 56%),
+        linear-gradient(-45deg, transparent 44%, var(--danger) 44% 56%, transparent 56%);
+}
 /* Each mark kept beside its meaning: a line breaks between them, never within one. */
 .diagram-key { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; color: var(--muted); }
 .diagram-key .key-item { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
