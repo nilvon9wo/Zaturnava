@@ -22,4 +22,13 @@ public sealed record StandingDto(
 
     /// <summary>The player's id, whose profile anyone may see (<see cref="GameRoutes.Profile"/>).</summary>
     public string? PlayerId { get; init; }
+
+    /// <summary>Their winning streak now, of every game.</summary>
+    public StreakDto Streak { get; init; } = new(0);
+
+    /// <summary>Their winning streak now, of the games that count toward Elo.</summary>
+    public StreakDto RatedStreak { get; init; } = new(0);
+
+    /// <summary>Their winning streak now, of the games played against people alone.</summary>
+    public StreakDto PeopleStreak { get; init; } = new(0);
 }

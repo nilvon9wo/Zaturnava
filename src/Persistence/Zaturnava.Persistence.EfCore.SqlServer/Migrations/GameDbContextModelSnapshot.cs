@@ -276,8 +276,26 @@ namespace Net.NowhereAtAll.Zaturnava.Persistence.EfCore.SqlServer.Migrations
                     b.Property<int>("Lost")
                         .HasColumnType("int");
 
+                    b.Property<int>("PeopleStreak")
+                        .HasColumnType("int");
+
+                    b.Property<double>("PeopleStreakOpponentElo")
+                        .HasColumnType("float");
+
                     b.Property<int>("Points")
                         .HasColumnType("int");
+
+                    b.Property<int>("RatedStreak")
+                        .HasColumnType("int");
+
+                    b.Property<double>("RatedStreakOpponentElo")
+                        .HasColumnType("float");
+
+                    b.Property<int>("Streak")
+                        .HasColumnType("int");
+
+                    b.Property<double>("StreakOpponentElo")
+                        .HasColumnType("float");
 
                     b.Property<int>("Won")
                         .HasColumnType("int");

@@ -52,13 +52,6 @@ public sealed class StandingService(
     private readonly IPlayerPersisting _players = players;
     private readonly TimeProvider _time = time;
 
-    private enum Result
-    {
-        Lost,
-        Drawn,
-        Won,
-    }
-
     /// <summary>
     /// Counts the games over, not yet counted, in their players' standings, up to <see cref="MostRatedAtOnce"/>: a
     /// game of a ruleset no longer offered, or that its rules no longer replay, counts for no one. How many there were.
@@ -189,7 +182,7 @@ public sealed class StandingService(
         bool isRated = CountsTowardElo(snapshot.Record);
         ImmutableList<Standing> after =
         [
-            .. before.Select(entry => After(state, outcome, teams, entry.Key, entry.Value, isRated)),
+            .. before.Select(entry => After(snapshot, outcome, teams, entry.Key, entry.Value, isRated)),
         ];
         await this._players.Keep(after, cancellationToken);
         await this.RateBots(snapshot, outcome, cancellationToken);
@@ -227,17 +220,17 @@ public sealed class StandingService(
     /// <summary>Where the bot at <paramref name="seat"/> stands, the game over.</summary>
     private static BotStanding BotAfter(GameSnapshot snapshot, GameOutcome outcome, SeatId seat, BotStanding before)
     {
-        Result result = ResultOf(snapshot.State, outcome, seat);
+        GameResult result = ResultOf(snapshot.State, outcome, seat);
         bool isAgainstPeople = IsAgainstOnly(snapshot, seat, IsPerson);
         return before with
         {
             Points = before.Points + snapshot.State.EarnedBy(seat),
-            Won = before.Won + Counted(result, Result.Won),
-            Lost = before.Lost + Counted(result, Result.Lost),
-            Drawn = before.Drawn + Counted(result, Result.Drawn),
-            WonAgainstPeople = before.WonAgainstPeople + Counted(result, Result.Won, isAgainstPeople),
-            LostAgainstPeople = before.LostAgainstPeople + Counted(result, Result.Lost, isAgainstPeople),
-            DrawnAgainstPeople = before.DrawnAgainstPeople + Counted(result, Result.Drawn, isAgainstPeople),
+            Won = before.Won + Counted(result, GameResult.Won),
+            Lost = before.Lost + Counted(result, GameResult.Lost),
+            Drawn = before.Drawn + Counted(result, GameResult.Drawn),
+            WonAgainstPeople = before.WonAgainstPeople + Counted(result, GameResult.Won, isAgainstPeople),
+            LostAgainstPeople = before.LostAgainstPeople + Counted(result, GameResult.Lost, isAgainstPeople),
+            DrawnAgainstPeople = before.DrawnAgainstPeople + Counted(result, GameResult.Drawn, isAgainstPeople),
         };
     }
 
@@ -252,7 +245,7 @@ public sealed class StandingService(
     /// <summary>A person's seat: someone signed in, or a guest, playing it themselves, not their AI.</summary>
     private static bool IsPerson(SeatController seat) => seat is HumanSeat { IsAi: false };
 
-    private static int Counted(Result result, Result counted, bool counts = true) =>
+    private static int Counted(GameResult result, GameResult counted, bool counts = true) =>
         counts && result == counted ? 1 : 0;
 
     /// <summary>
@@ -290,10 +283,12 @@ public sealed class StandingService(
 
     /// <summary>
     /// Where the player at <paramref name="seat"/> stands, the game over: their Elo as it was, unless the game
-    /// <paramref name="isRated"/>.
+    /// <paramref name="isRated"/>. Their winning streaks go on (Stated, 2026-11-12): over every game; over the games
+    /// that count toward Elo alone, if this one does; and over the games against people alone, if every seat they
+    /// played against was a person's; each with the mean rating of the opposing teams.
     /// </summary>
     private static Standing After(
-        GameState state,
+        GameSnapshot snapshot,
         GameOutcome outcome,
         ImmutableDictionary<int, double> teams,
         SeatId seat,
@@ -301,19 +296,25 @@ public sealed class StandingService(
         bool isRated
     )
     {
+        GameState state = snapshot.State;
         int team = state.Teams.TeamOf(seat);
-        double expected = teams
-            .Where(other => other.Key != team)
-            .Average(other => 1 / (1 + Math.Pow(10, (other.Value - teams[team]) / EloSpread)));
-        Result result = ResultOf(state, outcome, seat);
+        ImmutableList<double> opponents = [.. teams.Where(other => other.Key != team).Select(other => other.Value)];
+        double expected = opponents.Average(other => 1 / (1 + Math.Pow(10, (other - teams[team]) / EloSpread)));
+        double opposing = opponents.Average();
+        GameResult result = ResultOf(state, outcome, seat);
         return before with
         {
             Elo = isRated ? before.Elo + (K * (((double)result / 2) - expected)) : before.Elo,
-            Experience = before.Experience + (result == Result.Won ? ExperienceOf(state, seat) : 0),
+            Experience = before.Experience + (result == GameResult.Won ? ExperienceOf(state, seat) : 0),
             Points = before.Points + state.EarnedBy(seat),
-            Won = before.Won + Counted(result, Result.Won),
-            Lost = before.Lost + Counted(result, Result.Lost),
-            Drawn = before.Drawn + Counted(result, Result.Drawn),
+            Won = before.Won + Counted(result, GameResult.Won),
+            Lost = before.Lost + Counted(result, GameResult.Lost),
+            Drawn = before.Drawn + Counted(result, GameResult.Drawn),
+            WinningStreak = before.WinningStreak.After(result, opposing),
+            RatedStreak = isRated ? before.RatedStreak.After(result, opposing) : before.RatedStreak,
+            PeopleStreak = IsAgainstOnly(snapshot, seat, IsPerson)
+                ? before.PeopleStreak.After(result, opposing)
+                : before.PeopleStreak,
         };
     }
 
@@ -333,10 +334,10 @@ public sealed class StandingService(
     }
 
     /// <summary>How the game ended for the seat: drawn, if no one won; else won, if its team did, or lost.</summary>
-    private static Result ResultOf(GameState state, GameOutcome outcome, SeatId seat) =>
+    private static GameResult ResultOf(GameState state, GameOutcome outcome, SeatId seat) =>
         outcome.Winners.IsEmpty
-            ? Result.Drawn
+            ? GameResult.Drawn
             : outcome.Winners.Any(winner => state.Teams.AreAllied(winner, seat))
-                ? Result.Won
-                : Result.Lost;
+                ? GameResult.Won
+                : GameResult.Lost;
 }

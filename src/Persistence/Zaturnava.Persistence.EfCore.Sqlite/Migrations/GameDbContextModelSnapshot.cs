@@ -271,8 +271,26 @@ namespace Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Sqlite.Migrations
                     b.Property<int>("Lost")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int>("PeopleStreak")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<double>("PeopleStreakOpponentElo")
+                        .HasColumnType("REAL");
+
                     b.Property<int>("Points")
                         .HasColumnType("INTEGER");
+
+                    b.Property<int>("RatedStreak")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<double>("RatedStreakOpponentElo")
+                        .HasColumnType("REAL");
+
+                    b.Property<int>("Streak")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<double>("StreakOpponentElo")
+                        .HasColumnType("REAL");
 
                     b.Property<int>("Won")
                         .HasColumnType("INTEGER");

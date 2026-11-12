@@ -336,6 +336,7 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
 .panel.leaderboard { overflow-x: auto; }
 .leaderboard .choice { display: flex; gap: 8px; align-items: center; margin: 8px 0; }
 .leaderboard .kind { margin-right: 4px; }
+.leaderboard .against { color: var(--muted); font-size: 0.85em; margin-left: 4px; white-space: nowrap; }
 .leaderboard .leaders { border-collapse: collapse; width: 100%; }
 .leaderboard .leaders th, .leaderboard .leaders td {
     text-align: right; padding: 4px 8px; border-bottom: 1px solid var(--panel-edge);

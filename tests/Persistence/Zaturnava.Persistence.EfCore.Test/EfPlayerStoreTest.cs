@@ -190,8 +190,15 @@ public sealed class EfPlayerStoreTest : IDisposable
         await this._store.AddSession(bea.Id, "bea", this._cancellation);
         await this._store.Keep(
             [
-                new Standing(Ada.Id, "chess") { Elo = 1600, Won = 1 },
-                new Standing(bea.Id, "chess") { Elo = 1300, Lost = 2 },
+                new Standing(Ada.Id, "chess") { Elo = 1600, Won = 1, WinningStreak = new Streak(1, 1500) },
+                new Standing(bea.Id, "chess")
+                {
+                    Elo = 1300,
+                    Lost = 2,
+                    WinningStreak = new Streak(2, 2900),
+                    RatedStreak = new Streak(2, 2900),
+                    PeopleStreak = new Streak(1, 1400),
+                },
                 new Standing(bea.Id, "go") { Elo = 1550, Drawn = 1 },
             ],
             this._cancellation
@@ -212,7 +219,15 @@ public sealed class EfPlayerStoreTest : IDisposable
         );
         Assert.Equal(
             [
-                new Standing(Ada.Id, "chess") { Elo = 1400, Won = 1, Lost = 2 },
+                new Standing(Ada.Id, "chess")
+                {
+                    Elo = 1400,
+                    Won = 1,
+                    Lost = 2,
+                    WinningStreak = new Streak(2, 2900),
+                    RatedStreak = new Streak(2, 2900),
+                    PeopleStreak = new Streak(1, 1400),
+                },
                 new Standing(Ada.Id, "go") { Elo = 1550, Drawn = 1 },
             ],
             [

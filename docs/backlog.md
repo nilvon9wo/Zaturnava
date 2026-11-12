@@ -187,7 +187,7 @@ first.
   500 characters, line breaks kept, and a tick beside each service the player signs in with, to show it; none is
   shown until ticked (`PUT api/players/me/profile`). A name at a table or on a leaderboard opens the description
   and the services shown.
-- A winning streak on the leaderboard (*Stated 2026-11-12*), three ways, as written under Bots below.
+- A winning streak on the leaderboard (*Stated 2026-11-12*), three ways, as written under Bots below. *Done*.
 - A player's username unique (*Stated 2026-11-07*): no player may take a name another has. The profile's field
   is called **Username**. *Done*: a rename to a name another player goes by, capitals or not, is refused (`409`)
   and the profile says why. A new player whose service's name is taken gets the first of "Ada 2", "Ada 3" and so
@@ -380,9 +380,21 @@ first.
   itself, when its settings turn it on, playing the bots against each other and keeping each game's ratings as
   it ends, rather than `scripts/wsl-rate.sh`.
 
+- *(Stated 2026-11-12)* Midas, at Green, blundered a piece: Black's Rook attacked a Pawn with Red's Raja
+  behind it, so only a double Rook roll could take both, and Green moved a Horse between them, shielding
+  Red's Raja but leaving the Horse where that Raja could take it for nothing, without making any threat of
+  its own. Greed does not explain the move. *Found*: Midas, as written, takes the action that scores most at
+  once and, when none scores, moves at random, never looking past its own action; the block was chance, not
+  a choice. Whether Midas should, when nothing scores, avoid leaving a piece newly hanging is
+  [OQ11](open-questions.md#oq11-a-less-careless-midas).
+
 - *(Stated 2026-11-12)* The leaderboard shows each player's winning streak, the games won since they last lost,
   three ways: over every game, over the games that count toward Elo only, and over the games against people
-  only; each with the mean Elo of the opponents beaten in it.
+  only; each with the mean Elo of the opponents beaten in it. *Done*: the players' board has **Streak**,
+  **Rated streak** and **People streak** columns, each with "vs" and the mean Elo of the opposing teams beaten.
+  *(Proposed)*: a draw neither adds to a streak nor ends it; against people means every seat not on the
+  player's team was played by a person, signed in or a guest; merged players keep the longer of each streak.
+  Every standing was counted again from the games themselves, so the streaks start from the whole history.
 
 ## Talking
 

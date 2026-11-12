@@ -132,7 +132,17 @@ internal static class GameEndpoints
         {
             Points = leader.Standing.Points,
             PlayerId = leader.Standing.Player.Value,
+            Streak = ToStreakDto(leader.Standing.WinningStreak),
+            RatedStreak = ToStreakDto(leader.Standing.RatedStreak),
+            PeopleStreak = ToStreakDto(leader.Standing.PeopleStreak),
         };
+
+    /// <summary>A winning streak, the mean opposing Elo rounded.</summary>
+    private static StreakDto ToStreakDto(Streak streak) =>
+        new(
+            streak.Wins,
+            streak.MeanOpponentElo is { } mean ? (int)Math.Round(mean, MidpointRounding.AwayFromZero) : null
+        );
 
     /// <summary>
     /// The page asked for of the games everyone <paramref name="wanted"/> is at, and <paramref name="player"/> too, if
