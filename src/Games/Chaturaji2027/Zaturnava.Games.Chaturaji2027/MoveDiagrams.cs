@@ -66,7 +66,27 @@ internal sealed class MoveDiagrams(
             Blockers = this._kinds[kind].Movement.Any(rule => rule.IsLame)
                 ? [.. this.BlockersOf(alone, riverRow, reached).Select(cell => cell.Value).Order()]
                 : [],
+            Leaps =
+            [
+                .. reached.Where(cell => IsFar(cell) && this.IsLeapt(alone, cell)).Select(cell => cell.Value).Order(),
+            ],
         };
+    }
+
+    /// <summary>Whether <paramref name="cell"/> is farther from the centre than the cells around it.</summary>
+    private static bool IsFar(CellId cell) =>
+        Math.Max(Math.Abs(Grid.ColumnOf(cell) - Middle), Math.Abs(Grid.RowOf(cell) - Middle)) > 1;
+
+    /// <summary>
+    /// Whether the piece reaches <paramref name="target"/> by leaping: still, with every other cell filled, so that
+    /// nothing it could slide through is left empty.
+    /// </summary>
+    private bool IsLeapt(Position alone, CellId target)
+    {
+        Position crowded = Grid.Cells
+            .Where(cell => cell != target && alone.PieceAt(cell) is null)
+            .Aggregate(alone, (position, cell) => position.Place(cell, new Piece(new PieceId(4), Stand, Facing.Id)));
+        return this.MovesOn(crowded).Any(move => move.To == target);
     }
 
     /// <summary>The empty cells the piece may move to, short of the river, if any.</summary>

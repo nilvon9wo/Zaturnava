@@ -29,4 +29,10 @@ public sealed record MoveDiagram(
     /// a Xiangqi Horse's leg does; none, for any other.
     /// </summary>
     public ImmutableList<int> Blockers { get; init; } = [];
+
+    /// <summary>
+    /// The cells it moves to farther than the next cell by leaping, over anything between, as a Knight does, rather
+    /// than sliding, stopped by the first piece in the way (the user's report of 2026-11-12, of not knowing which).
+    /// </summary>
+    public ImmutableList<int> Leaps { get; init; } = [];
 }

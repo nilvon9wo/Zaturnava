@@ -118,6 +118,12 @@ first.
 
 - *(Stated 2026-11-12, low priority, a nice-to-have)* The table's panels (the draft's list of pieces, the turn's
   panel, the log and talk) resized and placed by each player as they like, as a piece card already may be dragged.
+- *(Stated 2026-11-12)* A piece card makes plain how each move is made. *Done*: a square the piece leaps to, over
+  anything between (a Knight's move, say), has a hollow dot, a ring, and the key says so; any other dot farther
+  off, it slides to, up to the first piece in the way; a step to the next square is neither. The Shogi Pawn
+  takes the piece directly ahead, as it moves, as in Shogi: it is no longer said to be blocked straight ahead
+  (the pieces spreadsheet too). The Dragon Horse (Shogi) is a Bishop that may also step one square
+  orthogonally: never a Knight's leap, despite its name, as in Shogi.
 - **2** Pieces drawn as pictures of their own; for now they are chess glyphs, and the boat a
   drawn sailing boat.
 - **3** A choice between classic chaturanga pieces and "modern" ones (the elephant is effectively

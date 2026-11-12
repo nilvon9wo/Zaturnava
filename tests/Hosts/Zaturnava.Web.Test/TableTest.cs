@@ -337,6 +337,39 @@ public sealed class TableTest : IDisposable
     }
 
     [Fact]
+    public void Click_WhenTheKindLeapsToASquare_RingsItAndSaysItLeapsThereAndSlidesElsewhere()
+    {
+        // Arrange - on a 3 x 3 diagram, the Raja moves to 6 and 7, leaping to 6
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Kinds =
+            [
+                new PieceKindDto("raja", "Raja", 5) { Diagram = new MoveDiagramDto(3, [6, 7], [], []) { Leaps = [6] } },
+            ],
+        };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Act
+        Cell(table, 0).Click();
+
+        // Assert
+        Assert.Equal(
+            (
+                "square dark move leap",
+                "square light move",
+                "leaps there, over anything between",
+                "any other dot farther off: slides there, up to the first piece in the way"
+            ),
+            (
+                Square(table, 6).ClassName,
+                Square(table, 7).ClassName,
+                table.FindAll(".diagram-key .key-item")[^2].TextContent,
+                table.FindAll(".diagram-key .key-item")[^1].TextContent
+            )
+        );
+    }
+
+    [Fact]
     public void Click_WhenTheKindIsNotDrawn_TellsItsMovesInWords()
     {
         // Arrange
