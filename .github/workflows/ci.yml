@@ -16,7 +16,11 @@ jobs:
       - name: Set up .NET
         uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: 10.0.x
+          dotnet-version: 10.0.403
+
+      # The SDK the code is checked with locally, not the newest the runner has (scripts/pin-sdk.py).
+      - name: Pin the SDK
+        run: python3 scripts/pin-sdk.py
 
       - name: Restore
         run: dotnet restore Zaturnava.slnx
@@ -92,7 +96,10 @@ jobs:
       - name: Set up .NET
         uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: 10.0.x
+          dotnet-version: 10.0.403
+
+      - name: Pin the SDK
+        run: python scripts/pin-sdk.py
 
       # The weavers (Stipulate, ConfigureAwait.Fody) run with Windows paths and
       # quoting, which the Linux job never exercises.

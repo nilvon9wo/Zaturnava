@@ -20,7 +20,7 @@ public sealed class IndexApiTest(ZaturnavaServer server) : IClassFixture<Zaturna
         string body = await this._client.GetStringAsync(new Uri(path, UriKind.Relative), this._cancellation);
 
         // Assert
-        JsonElement index = JsonDocument.Parse(body).RootElement;
+        JsonElement index = JsonElement.Parse(body);
         Assert.Equal(
             ("Zaturnava", "api/catalog", "openapi/v1.json"),
             (
@@ -36,7 +36,7 @@ public sealed class IndexApiTest(ZaturnavaServer server) : IClassFixture<Zaturna
     {
         // Arrange - the address the index points to, followed by hand
         string body = await this._client.GetStringAsync(new Uri("/api", UriKind.Relative), this._cancellation);
-        string privacy = JsonDocument.Parse(body).RootElement.GetProperty("privacy").GetString()!;
+        string privacy = JsonElement.Parse(body).GetProperty("privacy").GetString()!;
         using HttpClient client = server.CreateClient(new() { AllowAutoRedirect = false });
 
         // Act
@@ -62,7 +62,7 @@ public sealed class IndexApiTest(ZaturnavaServer server) : IClassFixture<Zaturna
         );
 
         // Assert
-        JsonElement paths = JsonDocument.Parse(body).RootElement.GetProperty("paths");
+        JsonElement paths = JsonElement.Parse(body).GetProperty("paths");
         Assert.True(paths.TryGetProperty("/api/catalog", out _), body);
     }
 
@@ -71,7 +71,7 @@ public sealed class IndexApiTest(ZaturnavaServer server) : IClassFixture<Zaturna
     {
         // Arrange - the page the index points to
         string body = await this._client.GetStringAsync(new Uri("/api", UriKind.Relative), this._cancellation);
-        string reference = JsonDocument.Parse(body).RootElement.GetProperty("reference").GetString()!;
+        string reference = JsonElement.Parse(body).GetProperty("reference").GetString()!;
 
         // Act
         using HttpResponseMessage response = await this._client.GetAsync(

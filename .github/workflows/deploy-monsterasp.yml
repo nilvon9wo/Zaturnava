@@ -38,7 +38,11 @@ jobs:
       - name: Set up .NET
         uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: 10.0.x
+          dotnet-version: 10.0.403
+
+      # The SDK CI checks the code with (scripts/pin-sdk.py).
+      - name: Pin the SDK
+        run: python scripts/pin-sdk.py
 
       - name: Publish the server
         run: dotnet publish src/Hosts/Zaturnava.Server -c Release -o publish

@@ -38,7 +38,7 @@ public sealed class McpApiTest(ZaturnavaServer server) : IClassFixture<Zaturnava
             (false, ZaturnavaServer.Chaturaji2027),
             (
                 result.IsError == true,
-                JsonDocument.Parse(text).RootElement.GetProperty("rulesets")[0].GetProperty("id").GetString()
+                JsonElement.Parse(text).GetProperty("rulesets")[0].GetProperty("id").GetString()
             )
         );
     }
