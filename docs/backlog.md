@@ -347,7 +347,8 @@ first.
 - *(Stated 2026-11-12)* Bots budget their drafted armies badly: on a large board they averaged about 8 pieces a
   kingdom. A few strong pieces can be a fair plan, and some bots may lean that way, but not every bot every time.
   *(Proposed)*: each bot drafts by a plan of its own (many cheap pieces, a few dear ones, a balance across the
-  classes), rather than all following the random fill.
+  classes), rather than all following the random fill. Ideally *(Stated 2026-11-12)*, in an open draft, the
+  stronger bots look at what the others are drafting, and choose and place their pieces in answer.
 
 ## Talking
 
