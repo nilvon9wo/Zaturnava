@@ -84,7 +84,9 @@ internal sealed class FakeGameServer : IGameServing
     /// <summary>Whether Chaturaji 2027 is dealt, as if its armies were picked at random.</summary>
     public bool IsDealt { get; set; }
 
-    /// <summary>Whether Chaturaji 2027's players may draft their armies, as if its armies were drafted.</summary>
+    /// <summary>
+    /// Whether Chaturaji 2027's players may draft their armies, as if its armies were drafted, with 75 points each.
+    /// </summary>
     public bool IsDraftable { get; set; }
 
     /// <summary>The scenarios the catalog offers: none, unless a test sets some.</summary>
@@ -115,6 +117,7 @@ internal sealed class FakeGameServer : IGameServing
                         IsPreview = this.ArePreviewsOnly,
                         IsDealt = this.IsDealt,
                         IsDraftable = this.IsDraftable,
+                        DraftBudget = this.IsDraftable ? 75 : null,
                     },
                     .. this.MoreRulesets,
                 ],

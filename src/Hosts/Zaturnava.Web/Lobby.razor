@@ -411,7 +411,10 @@
     /// </summary>
     private string _armies = RandomEach;
 
-    /// <summary>What each seat has to spend, if the armies are drafted, one value for everyone; if none, the game's.</summary>
+    /// <summary>
+    /// What each seat has to spend, if the armies are drafted, one value for everyone: the game's own, as each game is
+    /// chosen, until changed; if cleared, the game's own still.
+    /// </summary>
     private int? _budget;
 
     /// <summary>Whether the game's open seats are for players signed in only, as a player signed in may ask.</summary>
@@ -764,6 +767,7 @@
 
         this._picks = [.. Enumerable.Repeat(string.Empty, this.Ruleset(catalog).SeatCount)];
         this._armies = this.Ruleset(catalog).IsDraftable ? DraftOwn : RandomEach;
+        this._budget = this.Ruleset(catalog).DraftBudget;
     }
 
     /// <summary>

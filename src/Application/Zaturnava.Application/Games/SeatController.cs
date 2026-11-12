@@ -41,6 +41,7 @@ public abstract record SeatController
         kind switch
         {
             OpenSeat.KindName => OpenSeat.From(detail),
+            HeldSeat.KindName => HeldSeat.From(detail),
             HumanSeat.KindName => HumanSeat.From(detail!),
             BotSeat.KindName => BotSeat.From(detail!),
             _ => throw new ArgumentException($"There is no '{kind}' seat controller.", nameof(kind)),

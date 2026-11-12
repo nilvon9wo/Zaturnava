@@ -111,7 +111,7 @@ public sealed class GameService(
             ScenarioStart.StateOf(start, rules),
             (state, action) => rules.Apply(state, rules.Parse(action)).State
         );
-        GameRecord created = new(GameId.New(), rules.Id, this.ControllersFor(initial, seats), start, 0);
+        GameRecord created = new(GameId.New(), rules.Id, Held(this.ControllersFor(initial, seats), initial), start, 0);
         Played played = await this.PlayBots(rules, created, new Played(initial, start), cancellationToken);
         DateTimeOffset now = this._clock.Now;
         GameRecord record = Summarized(
@@ -656,7 +656,27 @@ public sealed class GameService(
         {
             IsOver = state.Outcome is not null,
             Away = [.. state.Absence.Away.Where(seat => record.Controllers[seat.Value] is not BotSeat)],
+            Controllers = state.Draft is null ? [.. record.Controllers.Select(Opened)] : record.Controllers,
         };
+
+    /// <summary>The seat, opened to people if it was held back while one seat drafted for all.</summary>
+    private static SeatController Opened(SeatController controller) =>
+        controller is HeldSeat held ? held.Opened() : controller;
+
+    /// <summary>
+    /// The seats, those left open held back (<see cref="HeldSeat"/>) while one seat drafts for all, as
+    /// <paramref name="initial"/> has it, so that the game waits for no one, nor is listed as waiting, till it is done.
+    /// </summary>
+    private static ImmutableList<SeatController> Held(ImmutableList<SeatController> controllers, GameState initial) =>
+        initial.Draft?.Drafter is { } drafter
+            ? [
+                .. controllers.Select((controller, seat) =>
+                    controller is OpenSeat open && seat != drafter.Value
+                        ? new HeldSeat { IsForPlayers = open.IsForPlayers }
+                        : controller
+                ),
+            ]
+            : controllers;
 
     /// <summary>
     /// The snapshot with the time its deciding seat has left, if its decision is timed; else, with who may

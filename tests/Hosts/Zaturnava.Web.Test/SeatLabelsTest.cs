@@ -8,6 +8,7 @@ public sealed class SeatLabelsTest
     [InlineData("bot", "Argus", null, "Argus")]
     [InlineData("human", null, "Ada", "Ada")]
     [InlineData("open", null, null, "open")]
+    [InlineData("held", null, null, "open after the draft")]
     public void Person_WhenAsked_NamesTheBotOrThePersonOrSaysTheSeatIsOpen(
         string controller,
         string? bot,

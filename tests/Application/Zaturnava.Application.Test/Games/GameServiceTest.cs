@@ -229,6 +229,39 @@ public sealed class GameServiceTest
         );
     }
 
+    [Fact]
+    public async Task Create_WhenOneSeatDraftsForAll_HoldsTheOthersBackUntilItIsDone()
+    {
+        // Arrange - the first seat drafts for both; its draft is over once it has its army filled
+        InMemoryGameStore store = new();
+        GameService service = this.Service(
+            GameServiceSettings.Default,
+            store,
+            isDealt: true,
+            filled: state => state with { Draft = null }
+        );
+        GameId id = await service.Create(
+            TinyRules.RulesetId,
+            [SeatPlan.Open, SeatPlan.Open with { IsForPlayers = true }],
+            null,
+            new Dealing { Drafting = new DraftSettings(Drafter: First) },
+            this._cancellation
+        );
+        string token = await service.Claim(id, First, this._cancellation);
+        GameRecord drafting = (await store.Find(id, this._cancellation))!;
+        Task<string> claiming = service.Claim(id, Second, this._cancellation);
+
+        // Act
+        GameSnapshot done = await service.Submit(id, token, new FillArmyAction(First).Describe(), this._cancellation);
+
+        // Assert
+        _ = await Assert.ThrowsAsync<SeatUnavailableException>(() => claiming);
+        Assert.Equal(
+            (new HeldSeat { IsForPlayers = true }, false, new OpenSeat { IsForPlayers = true }, true),
+            (drafting.Controllers[1], drafting.IsWaiting, done.Record.Controllers[1], done.Record.IsWaiting)
+        );
+    }
+
     [Theory]
     [InlineData(0, null, "A draft's budget is at least 1.")]
     [InlineData(null, -1, "The game has no seat -1 to draft.")]

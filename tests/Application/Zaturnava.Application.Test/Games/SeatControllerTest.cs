@@ -15,6 +15,8 @@ public sealed class SeatControllerTest
     {
         { new OpenSeat(), "open", null },
         { new OpenSeat { IsForPlayers = true }, "open", "players" },
+        { new HeldSeat(), "held", null },
+        { new HeldSeat { IsForPlayers = true }, "held", "players" },
         { new HumanSeat("HASH"), "human", "HASH" },
         { new HumanSeat("HASH", new PlayerId("ada")), "human", "HASH ada" },
         { new HumanSeat("HASH", Nickname: "Ada ~ Lovelace"), "human", "HASH ~Ada ~ Lovelace" },
@@ -63,6 +65,7 @@ public sealed class SeatControllerTest
     public static TheoryData<SeatController, string> Players => new()
     {
         { new OpenSeat(), "open" },
+        { new HeldSeat(), "open" },
         { new HumanSeat("HASH"), "person" },
         { new BotSeat("first"), "first" },
     };
