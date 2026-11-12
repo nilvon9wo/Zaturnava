@@ -167,14 +167,23 @@ internal static class Ransoms
 
     /// <summary>
     /// The request, under rules where <paramref name="accepter"/> accepting a ransom puts seat 0's Horse 20 back
-    /// on cell 5, where a Pawn of Yellow's on cell 6 may take it, and scores <paramref name="points"/>.
+    /// on cell 5, where a Pawn of Yellow's on cell 6 may take it, and scores <paramref name="points"/>; the turn then
+    /// <paramref name="turn"/>'s (as it was, unless given), played by <paramref name="regent"/>, if given.
     /// </summary>
-    public static DecisionRequest Exposing(DecisionRequest request, SeatId accepter, int points = 0)
+    public static DecisionRequest Exposing(
+        DecisionRequest request,
+        SeatId accepter,
+        int points = 0,
+        SeatId? turn = null,
+        SeatId? regent = null
+    )
     {
         GameState after = request.State with
         {
             Seats = [.. Enumerable.Range(0, 4).Select(seat => new Seat(new SeatId(seat), new Direction(1, 0)))],
             Position = Position.Empty.Place(new CellId(5), new Piece(Id(20), new PieceKindId("horse"), Black)),
+            DecidingSeat = regent ?? turn ?? request.State.DecidingSeat,
+            ActingFor = regent is null ? null : turn,
         };
         Attack attack = new(new Piece(Id(60), new PieceKindId("pawn"), Yellow), new CellId(6), new CellId(5));
         ImmutableDictionary<GameAction, int> scoring =
@@ -185,6 +194,39 @@ internal static class Ransoms
             {
                 Results = ImmutableDictionary<GameAction, GameState>.Empty.Add(new AcceptAction(accepter), after),
                 Attacks = [attack],
+            },
+        };
+    }
+
+    /// <summary>
+    /// The request, with Green's Boat 70 in the corner, cell 0, able to go to cells 1 and 2, and Yellow's Raja 71 on
+    /// cell 7, under rules where seat 0 accepting a ransom puts its Horse 20 back on cell <paramref name="home"/>: on
+    /// cell 1, it pens the Boat in, which may then go to cell 2 alone.
+    /// </summary>
+    public static DecisionRequest Trapping(DecisionRequest request, int home)
+    {
+        Piece boat = new(Id(70), new PieceKindId("boat"), Green);
+        GameState before = request.State with
+        {
+            Seats = [.. Enumerable.Range(0, 4).Select(seat => new Seat(new SeatId(seat), new Direction(1, 0)))],
+            Position = Position.Empty
+                .Place(new CellId(0), boat)
+                .Place(new CellId(7), new Piece(Id(71), new PieceKindId("raja"), Yellow)),
+        };
+        GameState after = before with
+        {
+            Position = before.Position.Place(new CellId(home), new Piece(Id(20), new PieceKindId("horse"), Black)),
+        };
+        AcceptAction accept = new(Black);
+        return request with
+        {
+            State = before,
+            Rules = new ScoringRules(ImmutableDictionary<GameAction, int>.Empty.Add(Done, 0).Add(accept, 0))
+            {
+                Results = ImmutableDictionary<GameAction, GameState>.Empty.Add(accept, after),
+                AttacksIn = (_, seat) => seat == Green
+                    ? [new Attack(boat, new CellId(0), new CellId(1)), new Attack(boat, new CellId(0), new CellId(2))]
+                    : [],
             },
         };
     }

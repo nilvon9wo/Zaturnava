@@ -105,7 +105,35 @@ internal static class Trading
             offer.From == request.Seat ? offer.To : offer.From,
             [.. offer.Given, .. offer.Asked],
             gain
-        );
+        )
+        && !Traps(request, After(request, offer));
+
+    /// <summary>
+    /// Whether the trade, done (<paramref name="after"/>), all but traps a piece of the bot's team (Proposed; the
+    /// user's play of 2026-11-12, a Pawn sent home penning its ally's Rook in a corner): leaves it with at most one
+    /// cell to go to, empty or an enemy's, where it had more. The cells a piece attacks stand for where it may go.
+    /// </summary>
+    private static bool Traps(DecisionRequest request, GameState after)
+    {
+        GameState before = request.State;
+        ImmutableDictionary<PieceId, int> was = ReachOfTeam(request, before);
+        ImmutableDictionary<PieceId, int> now = ReachOfTeam(request, after);
+        return now.Any(reach => reach.Value <= 1 && was.GetValueOrDefault(reach.Key) > reach.Value);
+    }
+
+    /// <summary>How many cells, empty or an enemy's, each piece of the bot's team on the board attacks.</summary>
+    private static ImmutableDictionary<PieceId, int> ReachOfTeam(DecisionRequest request, GameState state) =>
+        state.Seats
+            .Where(seat => state.Teams.AreAllied(seat.Id, request.Seat))
+            .SelectMany(seat => request.Rules.AttacksOf(state, seat.Id))
+            .GroupBy(attack => attack.Attacker.Id)
+            .ToImmutableDictionary(
+                attacks => attacks.Key,
+                attacks => attacks.Count(attack =>
+                    state.Position.PieceAt(attack.Target) is not { } there
+                    || !state.Teams.AreAllied(there.Owner, request.Seat)
+                )
+            );
 
     /// <summary>
     /// Whether a trade with <paramref name="other"/>, sending <paramref name="returning"/> home, and gaining the

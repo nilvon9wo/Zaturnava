@@ -3,6 +3,7 @@ using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Boards;
 using Net.NowhereAtAll.Zaturnava.Engine.Decisions;
 using Net.NowhereAtAll.Zaturnava.Engine.Moves;
+using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
 using Net.NowhereAtAll.Zaturnava.Engine.Rules;
 using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 
@@ -15,10 +16,10 @@ namespace Net.NowhereAtAll.Zaturnava.Bots;
 /// the team's pieces stands, if both sides go on taking while it pays, or, if the bot's throne is
 /// empty, what the enemy leader who could step onto it is worth. A piece on the bot's throne does not
 /// keep an enemy leader off it, but only makes it take that piece to get there: such a taking wins the
-/// piece and the throne both. The dice and whose turn comes next
-/// are left aside: any enemy might reply, with any piece. Half of what the action leaves its allies to
-/// win next, or takes from them (<see cref="Teamwork"/>), counts too. Among actions worth the same, it
-/// would rather do something than pass, and picks at random.
+/// piece and the throne both. The dice are left aside, but not whose turn comes next: a seat of the team
+/// that moves before an enemy saves the piece it would lose most to it (<see cref="LossOfSeat"/>). Half
+/// of what the action leaves its allies to win next, or takes from them (<see cref="Teamwork"/>), counts
+/// too. Among actions worth the same, it would rather do something than pass, and picks at random.
 /// </summary>
 internal static class Careful
 {
@@ -69,16 +70,68 @@ internal static class Careful
         ILookup<CellId, Attack> guards
     )
     {
+        ImmutableDictionary<SeatId, int> turns = TurnsOf(request, after);
         IEnumerable<int> losses = after.Position.Occupants
             .Where(occupant => after.Teams.AreAllied(occupant.Value.Owner, request.Seat))
-            .Select(occupant => LossOf(
-                request,
-                request.Rules.WorthOf(occupant.Value.Kind),
-                [.. threats[occupant.Key]],
-                WorthsOf(request, guards[occupant.Key]),
-                IsThroneOf(request, after, occupant.Key)
-            ));
+            .GroupBy(occupant => occupant.Value.Owner)
+            .Select(pieces => LossOfSeat(request, after, turns, pieces, threats, guards));
         return losses.Append(0).Max() + ThroneThreat(request, after, threats);
+    }
+
+    /// <summary>
+    /// The worst an enemy could do to the pieces of one seat of the bot's team (<paramref name="pieces"/>), its turn
+    /// coming as <paramref name="turns"/> has it (Proposed; the user's play of 2026-11-12, a Rook sent home beside an
+    /// enemy Raja whose seat plays after its own): an enemy whose turn comes first may start any exchange; but against
+    /// one whose turn comes later, the seat moves first, and saves the piece it would lose most (by moving it, or by
+    /// taking its attacker), so only its second-worst counts.
+    /// </summary>
+    private static int LossOfSeat(
+        DecisionRequest request,
+        GameState after,
+        ImmutableDictionary<SeatId, int> turns,
+        IGrouping<SeatId, KeyValuePair<CellId, Piece>> pieces,
+        ILookup<CellId, Attack> threats,
+        ILookup<CellId, Attack> guards
+    )
+    {
+        int turn = turns.GetValueOrDefault(pieces.Key, int.MaxValue);
+        ImmutableList<(int First, int All)> losses =
+        [
+            .. pieces.Select(occupant =>
+            {
+                ImmutableList<Attack> all = [.. threats[occupant.Key]];
+                int worth = request.Rules.WorthOf(occupant.Value.Kind);
+                ImmutableList<int> retakers = WorthsOf(request, guards[occupant.Key]);
+                bool isOnThrone = IsThroneOf(request, after, occupant.Key);
+                ImmutableList<Attack> first =
+                    [.. all.Where(attack => turns.GetValueOrDefault(attack.Attacker.Owner) < turn)];
+                return (
+                    LossOf(request, worth, first, retakers, isOnThrone),
+                    LossOf(request, worth, all, retakers, isOnThrone)
+                );
+            }),
+        ];
+        return losses.Select(loss => loss.First)
+            .Concat(losses.Select(loss => loss.All).OrderDescending().Skip(1))
+            .Max();
+    }
+
+    /// <summary>
+    /// When each seat moves next, from the state's: first, the seat whose turn it is (or whose decision the game
+    /// waits on), unless it is of the bot's team, which has had its turn, and so moves last; then each after it, in
+    /// the order they sit (Proposed: the turn goes round the seats in their order, as every ruleset so far has it).
+    /// </summary>
+    private static ImmutableDictionary<SeatId, int> TurnsOf(DecisionRequest request, GameState state)
+    {
+        SeatId? now = state.ActingFor ?? state.DecidingSeat;
+        int count = state.Seats.Count;
+        int at = state.Seats.FindIndex(seat => seat.Id == now);
+        return state.Seats
+            .Select((seat, index) => (seat.Id, Turn: seat.Id == now && state.Teams.AreAllied(seat.Id, request.Seat)
+                ? count
+                : (index - at + count) % count
+            ))
+            .ToImmutableDictionary(seat => seat.Id, seat => seat.Turn);
     }
 
     /// <summary>

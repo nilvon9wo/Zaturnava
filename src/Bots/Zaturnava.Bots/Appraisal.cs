@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using Net.NowhereAtAll.Zaturnava.Engine.Boards;
 using Net.NowhereAtAll.Zaturnava.Engine.Decisions;
 using Net.NowhereAtAll.Zaturnava.Engine.Moves;
+using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
 using Net.NowhereAtAll.Zaturnava.Engine.Rules;
 using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 
@@ -11,7 +12,8 @@ namespace Net.NowhereAtAll.Zaturnava.Bots;
 /// What a position is worth to the bot's team, as Sage sees it: a weighted sum (<see cref="SageWeights"/>)
 /// of what any ruleset lets it count - points, pieces, leaders, prisoners and thrones, each the bot's own, its
 /// allies' and its enemies', weighed apart (<see cref="Sided"/>) - less the worst an enemy could win next (as
-/// <see cref="Careful"/> counts it), plus the most the team could, and how many cells its pieces attack, and its
+/// <see cref="Careful"/> counts it), plus what the team could still win once its enemies have moved (each saving
+/// what it can: <see cref="Threats"/>), and how many cells its pieces attack, and its
 /// enemies'; and of the ruleset's own measures (<see cref="IPositionMeasuring"/>), each side's, as far as the
 /// weights weigh them. A game over is worth its result, by far more than any of that.
 /// </summary>
@@ -133,7 +135,7 @@ internal static class Appraisal
             + weights.Prisoners.Weigh(Prisoners(request, state))
             + weights.Thrones.Weigh(Thrones(request, state))
             - (weights.Exposure * Careful.Exposure(request, state, theirs, ours))
-            + (weights.Chances * Chances(request, state, ours, theirs))
+            + (weights.Chances * Threats(request, state, ours, theirs))
             + weights.Mobility.Weigh(Mobility(request, ours, theirs))
             + Measured(request, state, weights);
 
@@ -160,6 +162,10 @@ internal static class Appraisal
         );
     }
 
+    /// <summary>
+    /// The most the team could win next by starting an exchange where an enemy piece stands, as if no enemy moved
+    /// first: what a learner was taught to weigh (<see cref="FeaturesOf"/>), and so kept as it was.
+    /// </summary>
     private static int Chances(
         DecisionRequest request,
         GameState state,
@@ -175,6 +181,42 @@ internal static class Appraisal
             ))
             .Append(0)
             .Max();
+
+    /// <summary>
+    /// What the team may still win, once its enemies have moved, by starting an exchange where an enemy piece stands
+    /// (Proposed; the user's ruling of 2026-11-12, that threatened pieces move before they can be taken). Every enemy
+    /// moves before the team's next turn, so: a piece threatened that could itself take one of the team's will take
+    /// it and be gone, and wins the team nothing; and each enemy saves the piece it would lose most, so only its
+    /// second-worst threat counts (a fork). The most of that over the enemies.
+    /// </summary>
+    private static int Threats(
+        DecisionRequest request,
+        GameState state,
+        ILookup<CellId, Attack> ours,
+        ILookup<CellId, Attack> theirs
+    )
+    {
+        ImmutableHashSet<PieceId> takers =
+        [
+            .. state.Position.Occupants
+                .Where(occupant => state.Teams.AreAllied(occupant.Value.Owner, request.Seat))
+                .SelectMany(occupant => theirs[occupant.Key])
+                .Select(attack => attack.Attacker.Id),
+        ];
+        return state.Position.Occupants
+            .Where(occupant => !state.Teams.AreAllied(occupant.Value.Owner, request.Seat)
+                && !takers.Contains(occupant.Value.Id)
+            )
+            .Select(occupant => (occupant.Value.Owner, Won: Careful.Exchange(
+                request.Rules.WorthOf(occupant.Value.Kind),
+                Careful.WorthsOf(request, ours[occupant.Key]),
+                Careful.WorthsOf(request, theirs[occupant.Key])
+            )))
+            .GroupBy(threat => threat.Owner, threat => threat.Won)
+            .Select(threats => threats.OrderDescending().Skip(1).Append(0).Max())
+            .Append(0)
+            .Max();
+    }
 
     /// <summary>How much of something each side has: the bot's own seat, its allies, its enemies.</summary>
     private static Sided Tally(

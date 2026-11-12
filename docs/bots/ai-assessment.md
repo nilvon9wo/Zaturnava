@@ -348,6 +348,24 @@ Then every bot is a pairing, and the arena measures each pairing.
   It plays the action tried most. It is not yet the hybrid of row 4: it has no policy network to say which actions
   to try first, so untried actions are tried in random order. A CNN (row 3) is still to come.
 - **Not yet rated:** its rating waits for an arena run, which needs the user's machine.
+- **Threats now expect the reply** (the user's play of 2026-11-12). Sage's appraisal counted any enemy piece
+  the team attacked as half-won, as if no enemy moved first. So a Boat would threaten a Horse that was about to take
+  a stuck Pawn and leave, rather than guard the Pawn to take the Horse back. And it would chase a Raja it had
+  forked rather than take the Pawn left behind. The appraisal now counts nothing for an enemy piece that could
+  itself take one of the team's (it will take and be gone). Of each enemy's other threatened pieces, it counts only
+  the second most it could lose, since the enemy saves the dearest (a fork) (*Proposed*). Athena's network inputs
+  keep the old count, which it learned from. Sage's tuned weight for this term was tuned on the old count, so a
+  re-tune may move it.
+- **No trade pens a piece in** (the user's play of 2026-11-12). Green accepted an even trade that sent Black's Pawn
+  home beside Green's Rook in Black's corner, trapping it. Every bot now refuses to offer or accept a trade that
+  would leave any piece of its team with at most one cell to go to, where it had more (*Proposed*). The cells a
+  piece attacks stand in for where it may go.
+- **Exposure follows the turn order** (the user's play of 2026-11-12). Green declined its Rook back on its home
+  cell, beside Red's Raja, although Green plays before Red and the Rook could take the Raja first. Exposure, which
+  Careful, Argus, Sage and so Athena and Pythia's fallback all count, once let any enemy reply first. Now a seat of
+  the team whose turn comes before an enemy's saves the piece it would lose most to that enemy, by moving it or
+  taking its attacker, so only its second-worst such loss counts (*Proposed*). The turn is taken to go round the
+  seats in their order, as both rulesets have it.
 
 Uncertain until measured: how fast the engine evaluates, and therefore how deep alpha-beta can reach on 12×12 within
 a move's time. Step 1 settles it before anything is built on it.
