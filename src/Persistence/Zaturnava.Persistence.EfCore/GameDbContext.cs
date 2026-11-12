@@ -32,8 +32,12 @@ public sealed class GameDbContext(DbContextOptions<GameDbContext> options) : DbC
     // where each of the server's bots stands at each game
     public DbSet<BotStandingEntity> BotStandings => this.Set<BotStandingEntity>();
 
+    // how the server's bots have done against each other, in the games played to rate them
+    public DbSet<BotMatchupEntity> BotMatchups => this.Set<BotMatchupEntity>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        _ = modelBuilder.Entity<BotMatchupEntity>(MapBotMatchup);
         _ = modelBuilder.Entity<GameEntity>(MapGame);
         _ = modelBuilder.Entity<SeatEntity>(MapSeat);
         _ = modelBuilder.Entity<ActionEntity>(MapAction);
@@ -43,6 +47,14 @@ public sealed class GameDbContext(DbContextOptions<GameDbContext> options) : DbC
         _ = modelBuilder.Entity<SessionEntity>(MapSession);
         _ = modelBuilder.Entity<StandingEntity>(MapStanding);
         _ = modelBuilder.Entity<BotStandingEntity>(MapBotStanding);
+    }
+
+    private static void MapBotMatchup(EntityTypeBuilder<BotMatchupEntity> matchup)
+    {
+        _ = matchup.HasKey(entity => new { entity.Ruleset, entity.First, entity.Second });
+        _ = matchup.Property(entity => entity.Ruleset).HasMaxLength(GameIdLength);
+        _ = matchup.Property(entity => entity.First).HasMaxLength(BotIdLength);
+        _ = matchup.Property(entity => entity.Second).HasMaxLength(BotIdLength);
     }
 
     private static void MapBotStanding(EntityTypeBuilder<BotStandingEntity> standing)

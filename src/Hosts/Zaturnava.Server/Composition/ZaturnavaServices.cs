@@ -77,6 +77,16 @@ internal static class ZaturnavaServices
     /// </summary>
     public const string SafetyNetsKey = "Games:SafetyNets";
 
+    /// <summary>
+    /// The configuration keys for whether the server's bots play each other to be rated, how long to pause, in
+    /// seconds, between their games, the most decisions a game of theirs may take, and how many games each pair must
+    /// play at a ruleset before its ratings are fitted anew (<see cref="BotRater"/>, <see cref="BotRatingSettings"/>).
+    /// </summary>
+    public const string BotRatingOnKey = "BotRating:IsOn";
+    public const string BotRatingPauseKey = "BotRating:PauseSeconds";
+    public const string BotRatingStepsKey = "BotRating:MaximumSteps";
+    public const string BotRatingGamesKey = "BotRating:MinimumGames";
+
     private const string DefaultTimerKey = "Default";
 
     public static IServiceCollection AddZaturnava(this IServiceCollection services, IConfiguration configuration) =>
@@ -86,7 +96,8 @@ internal static class ZaturnavaServices
             .AddSignIn(configuration)
             .AddRequestLimits(configuration)
             .AddSingleton<IRulesetLocating>(Rulesets(SafetyNetsOf(configuration)))
-            .AddSingleton<IBotLocating>(Bots())
+            .AddSingleton(Bots())
+            .AddSingleton<IBotLocating>(provider => provider.GetRequiredService<BotCatalog>())
             .AddSingleton(Scenarios(configuration))
             .AddSingleton<IGameNotifying, SilentNotifier>()
             .AddSingleton<IDiceRolling>(new RandomDice(Random.Shared))
@@ -119,6 +130,17 @@ internal static class ZaturnavaServices
                 )
             )
             .AddHostedService<StandingSweeper>()
+            .AddSingleton(BotRatingOf(configuration))
+            .AddScoped<BotRatingService>()
+            .AddSingleton(
+                new BotRater.Pace(
+                    configuration.GetValue(BotRatingOnKey, false),
+                    TimeSpan.FromSeconds(
+                        configuration.GetValue(BotRatingPauseKey, BotRater.Pace.DefaultBetween.TotalSeconds)
+                    )
+                )
+            )
+            .AddHostedService<BotRater>()
             .AddProblemDetails()
             .AddExceptionHandler<RefusalHandler>();
 
@@ -158,6 +180,17 @@ internal static class ZaturnavaServices
             ],
             BotRatings.Rated
         );
+
+    /// <summary>How the bots are rated, as configured, anchored by Random's rating.</summary>
+    private static BotRatingSettings BotRatingOf(IConfiguration configuration)
+    {
+        BotRatingSettings defaults = new(RandomBot.BotId);
+        return defaults with
+        {
+            MaximumSteps = configuration.GetValue(BotRatingStepsKey, defaults.MaximumSteps),
+            MinimumGames = configuration.GetValue(BotRatingGamesKey, defaults.MinimumGames),
+        };
+    }
 
     private static ChatSettings ChatSettingsOf(IConfiguration configuration) =>
         new(

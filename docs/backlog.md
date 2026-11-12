@@ -378,7 +378,14 @@ first.
   approve: every bot, over a good mix of rulesets, for as long as it runs, each result saved as it comes, so
   that whatever was gathered counts however and whenever the run stops. *(Proposed)*: a job the server runs
   itself, when its settings turn it on, playing the bots against each other and keeping each game's ratings as
-  it ends, rather than `scripts/wsl-rate.sh`.
+  it ends, rather than `scripts/wsl-rate.sh`. *Done*: see [the rating job](bots/self-play.md#the-servers-rating-job).
+
+- *(Stated 2026-11-12)* Try Fairy-Stockfish as a bot. It plays two sides without dice, so *(Proposed)* it
+  advises one seat at a time: the four seats folded into the seat's team against the rest, its pieces defined
+  in Betza notation, and its choice limited to the seat's legal moves for the roll (`go searchmoves`), with a
+  short time limit; anything it cannot weigh (drafting, ransom, ending early) goes to another bot. It runs as
+  its own process over UCI, in an adapter project of its own, so its GPL-3 licence stays with it. First in
+  the BotRunner only, rated against the others, before any thought of hosting it.
 
 - *(Stated 2026-11-12)* Midas, at Green, blundered a piece: Black's Rook attacked a Pawn with Red's Raja
   behind it, so only a double Rook roll could take both, and Green moved a Horse between them, shielding

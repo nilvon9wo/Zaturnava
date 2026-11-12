@@ -45,6 +45,34 @@ namespace Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Sqlite.Migrations
                     b.ToTable("ActionEntity");
                 });
 
+            modelBuilder.Entity("Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Entities.BotMatchupEntity", b =>
+                {
+                    b.Property<string>("Ruleset")
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("First")
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Second")
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Drawn")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Lost")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Won")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Ruleset", "First", "Second");
+
+                    b.ToTable("BotMatchups");
+                });
+
             modelBuilder.Entity("Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Entities.BotStandingEntity", b =>
                 {
                     b.Property<string>("BotId")

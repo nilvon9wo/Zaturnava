@@ -86,6 +86,25 @@ BotRunner's tests (`wsl -d Ubuntu -- bash scripts/wsl-test.sh --release Zaturnav
 fared, and how long it took, to `artifacts/arena/results.json`, a pair at a time. With no request, it is skipped,
 as on CI.
 
+### The server's rating job
+
+The server rates its own bots too, in the background, with no command to run (*Stated 2026-11-12*: every bot,
+a good mix of rulesets, each result kept as it comes). While `BotRating:IsOn` (on in `appsettings.json`), its
+`BotRater` plays one game after another, pausing `BotRating:PauseSeconds` (default 10) between them so that
+people's games go first. *(Proposed)*:
+
+- Each game is the pairing of two bots, at a ruleset, played least so far, so every pair at every ruleset is
+  played about as often; the two take the even and the odd seats, and change sides each game.
+- A game that reaches `BotRating:MaximumSteps` decisions (default 2000) goes to the side with more points, as
+  the script counts it.
+- Each game is added to its pairing's wins, losses and draws (the `BotMatchups` table) as soon as it ends, so a
+  run stopped at any time still counts.
+- Once every pair at a ruleset has played `BotRating:MinimumGames` (default 2), the ratings fitted to all of the
+  ruleset's games, as the script fits them, replace those the server shipped with, and are fitted anew after
+  each game; and again, from the games kept, whenever the server starts. Until then, that ruleset keeps the
+  shipped ratings.
+- A game that fails is let go, and the next goes on.
+
 ## Learning
 
 Self-play makes data as fast as you can use it: play your bot against itself and ours, learn from the
