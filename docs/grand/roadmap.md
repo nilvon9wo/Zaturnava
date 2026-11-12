@@ -134,8 +134,9 @@ What the program does so far (2026-11-04), and the gaps against the above:
   *Done* (2026-11-12): the custom set-up asks how the armies come to be, one choice of four (*Stated*): each
   player drafting their own (the default where the game is draftable), the creator drafting one army that every
   seat then has, laid out alike in its own kingdom, every army at random (the default elsewhere), or one army at
-  random for everyone. A drafted game may set the points each seat spends (`DraftBudget`, the ruleset's own if
-  none). *Gap*: the lobby still lists a game drafted by its creator as waiting for players while they draft.
+  random for everyone. A drafted game may set the points each seat spends (`DraftBudget`; the box starts at the
+  ruleset's own). While the creator drafts for everyone, the other open seats are held back (`HeldSeat`): no one
+  may claim them, and the lobby does not list the game as waiting for players, until the draft is over.
 - The Chaturaji 2027 bonuses are × 10, as is the lead a team needs to win by giving up its turns
   (*Proposed*: 100), each read from a table (`Scoring/grand-legions.json`; Chaturaji 2027's own in
   `Scoring/chaturaji-2027.json`) that can be changed apart from the code. Piece values, each piece's

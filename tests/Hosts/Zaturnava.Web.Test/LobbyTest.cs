@@ -479,9 +479,10 @@ public sealed class LobbyTest : IDisposable
     [InlineData(false, false, null, null, "0 0 0 False False  ")]
     [InlineData(true, false, null, null, "1 2 0 False False  ")]
     [InlineData(true, false, "random-one", null, "1 2 0 True False  ")]
-    [InlineData(true, true, null, null, "1 4 1 False True  ")]
+    [InlineData(true, true, null, null, "1 4 1 False True 75 ")]
     [InlineData(true, true, "draft-own", "30", "1 4 1 False True 30 ")]
     [InlineData(true, true, "draft-one", "30", "1 4 1 False True 30 0")]
+    [InlineData(true, true, "draft-own", "", "1 4 1 False True  ")]
     [InlineData(true, true, "random-each", null, "1 4 0 False False  ")]
     public void Play_WhenTheArmiesAreDealt_AsksHowTheyComeToBe(
         bool isDealt,
@@ -520,6 +521,20 @@ public sealed class LobbyTest : IDisposable
                 created.ArmiesOf
             )
         );
+    }
+
+    [Fact]
+    public void Render_WhenTheArmiesAreDrafted_ShowsTheGamesOwnBudgetToSpend()
+    {
+        // Arrange - the fake server's drafted game gives each seat 75 points
+        this._page.Server.IsDealt = true;
+        this._page.Server.IsDraftable = true;
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.ByStrength();
+
+        // Assert
+        Assert.Equal("75", lobby.Find("input.draft-budget").GetAttribute("value"));
     }
 
     [Fact]

@@ -9,8 +9,15 @@ namespace Net.NowhereAtAll.Zaturnava.Web;
 /// </summary>
 internal static class SeatLabels
 {
-    /// <summary>The bot, or the person, playing the seat; "open", if no one does yet.</summary>
-    public static string Person(SeatDto seat) => seat.Bot ?? seat.Player ?? seat.Controller;
+    /// <summary>How the server says a seat is held back while one seat drafts for all.</summary>
+    private const string Held = "held";
+
+    /// <summary>
+    /// The bot, or the person, playing the seat; "open", if no one does yet; "open after the draft", while it is held
+    /// back as one seat drafts for all.
+    /// </summary>
+    public static string Person(SeatDto seat) =>
+        seat.Bot ?? seat.Player ?? (seat.Controller == Held ? "open after the draft" : seat.Controller);
 
     /// <summary>"Ada (Black)", "Argus (Yellow)"; "Red", for a seat no one has taken yet.</summary>
     public static string Of(SeatDto seat) =>
