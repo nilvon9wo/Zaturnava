@@ -139,7 +139,7 @@
     public EventCallback OnHidden { get; set; }
 
     private Task Refiltered() =>
-        this.Picked is { } picked && !this.Shown.Any(kind => kind.Kind == picked)
+        this.Picked is { } picked && this.Shown.All(kind => kind.Kind != picked)
             ? this.OnHidden.InvokeAsync()
             : Task.CompletedTask;
 

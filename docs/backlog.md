@@ -344,6 +344,11 @@ first.
   player's own joins instead: in a custom game, a seat may be left for "Your own AI", which takes it by MCP or
   the HTTP API with an AI token, and the table shows the game's id while seats are open.
 
+- *(Stated 2026-11-12)* Bots budget their drafted armies badly: on a large board they averaged about 8 pieces a
+  kingdom. A few strong pieces can be a fair plan, and some bots may lean that way, but not every bot every time.
+  *(Proposed)*: each bot drafts by a plan of its own (many cheap pieces, a few dear ones, a balance across the
+  classes), rather than all following the random fill.
+
 ## Talking
 
 - **27, 28** Chat, to everyone or to chosen players (a teammate). *Done*: beside the log, the table's talk has
