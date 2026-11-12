@@ -197,8 +197,8 @@ public sealed class PalaceTest
     [Fact]
     public void LinesOf_WithPalaces_DrawsEachWallCounterClockwiseAndEachLineToItsThroneOnceSet()
     {
-        // Arrange - Black's palace about b2, its throne a1; Yellow's placed, with no throne yet. Black's walls go row by
-        // row, cell by cell: a1's bottom and left, b1's bottom, then c1's bottom and right
+        // Arrange - Black's palace about b2, its throne a1; Yellow's placed, with no throne yet. Black's walls go row
+        // by row, cell by cell: a1's bottom and left, b1's bottom, then c1's bottom and right
         GameState placed = this._rules.Apply(this.Begun(), new PalaceAction(Black, B2)).State;
         placed = this._rules.Apply(placed, this._rules.LegalActions(placed).OfType<PalaceAction>().First()).State with
         {
