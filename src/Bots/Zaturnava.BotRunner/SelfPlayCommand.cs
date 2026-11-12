@@ -30,6 +30,7 @@ internal static class SelfPlayCommand
     private static readonly ImmutableList<IBotPlaying> Bots =
     [
         new AthenaBot(Random.Shared),
+        new PythiaBot(Random.Shared),
         new TacticianBot(Random.Shared),
         new SageBot(Random.Shared),
         new ArgusBot(Random.Shared),

@@ -337,5 +337,17 @@ Then every bot is a pairing, and the arena measures each pairing.
   it needs a cheaper evaluation, a transposition table, or sampling the dice deeper in the tree.
 - **Step 5 is done:** Athena's profile says she plays as Sage at any game but Chaturaji 2027.
 
+### Progress (2026-11-12)
+
+- **Pythia, the MCTS bot (row 2), is built** (`PythiaBot`, `MonteCarlo`). It is open-loop UCT. Each of 1,000
+  passes per decision rolls the dice afresh wherever the game waits on them, so the tree holds actions alone, and
+  each way the dice may fall is sampled as often as it is likely. A pass stops at the first action not tried yet, or
+  8 decisions deep, or at the game's end. It judges the position there by Athena's network (Sage's `Appraisal` where
+  there is no network), with no random rollouts, as AlphaZero does. Its team maximises and its enemies minimise.
+  Values are scaled to those seen so far, so the exploration constant (√2, *Proposed*) means the same at any game.
+  It plays the action tried most. It is not yet the hybrid of row 4: it has no policy network to say which actions
+  to try first, so untried actions are tried in random order. A CNN (row 3) is still to come.
+- **Not yet rated:** its rating waits for an arena run, which needs the user's machine.
+
 Uncertain until measured: how fast the engine evaluates, and therefore how deep alpha-beta can reach on 12×12 within
 a move's time. Step 1 settles it before anything is built on it.
