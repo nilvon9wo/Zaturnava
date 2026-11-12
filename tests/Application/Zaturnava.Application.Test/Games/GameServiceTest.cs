@@ -541,7 +541,7 @@ public sealed class GameServiceTest
 
         // Assert
         GameUnreplayableException refused = await Assert.ThrowsAsync<GameUnreplayableException>(() => getting);
-        Assert.Equal(GameRequestFailure.Conflict, refused.Failure);
+        Assert.Equal(GameRequestFailure.Gone, refused.Failure);
     }
 
     [Fact]

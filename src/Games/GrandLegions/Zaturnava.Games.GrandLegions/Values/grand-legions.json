@@ -6,7 +6,7 @@
   "janggi-general": 68,
   "gold-general": 66,
   "silver-general": 65,
-  "shogi-pawn": 54,
+  "shogi-pawn": 55,
   "western-pawn": 9,
   "janggi-guard": 7,
   "noble": 7,
@@ -33,9 +33,9 @@
   "giraffe": 4,
   "alfil": 2,
   "threeleaper": 2,
-  "xiangqi-elephant": 2,
+  "xiangqi-elephant": 1,
   "war-engine": 2,
   "xiangqi-cannon": 10,
   "janggi-cannon": 8,
-  "grasshopper": 7
+  "grasshopper": 8
 }

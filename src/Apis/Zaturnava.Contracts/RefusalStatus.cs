@@ -12,6 +12,7 @@ public static class RefusalStatus
     public const int Forbidden = 403;
     public const int NotFound = 404;
     public const int Conflict = 409;
+    public const int Gone = 410;
     public const int Illegal = 422;
     public const int TooBusy = 429;
 
@@ -21,6 +22,7 @@ public static class RefusalStatus
             Refusal.NotFound => NotFound,
             Refusal.Forbidden => Forbidden,
             Refusal.Conflict => Conflict,
+            Refusal.Gone => Gone,
             Refusal.Illegal => Illegal,
             Refusal.TooBusy => TooBusy,
             _ => Invalid,
@@ -34,6 +36,7 @@ public static class RefusalStatus
             Forbidden => Refusal.Forbidden,
             NotFound => Refusal.NotFound,
             Conflict => Refusal.Conflict,
+            Gone => Refusal.Gone,
             Illegal => Refusal.Illegal,
             TooBusy => Refusal.TooBusy,
             _ => null,

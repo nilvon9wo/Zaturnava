@@ -6,4 +6,7 @@ public enum GameRequestFailure
     Invalid,
     Forbidden,
     Conflict,
+
+    /// <summary>The game is there, but can no longer be shown or played.</summary>
+    Gone,
 }

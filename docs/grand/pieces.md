@@ -35,6 +35,22 @@ piece is worth about its parts (Chancellor 22 = Rook 14 + Knight 8).
 - The sheet counts reach on 8 × 8; a game on another board adjusts it, as
   [Prices for each game](#prices-for-each-game) says.
 
+### Limitation devaluation
+
+A restriction is devalued only for what reach does not already count (*Stated* 2026-11-12, after the
+Xiangqi Elephant was found priced as the Alfil though it is the weaker piece; *Proposed*: the points):
+
+- a [binding](#binding): −1 for half the board, −2 for a quarter or less;
+- a palace: −2;
+- a leap that a piece on the way can block: −1;
+- a move or area restriction that takes something away: −1 (a Western or Makruk Pawn cannot take
+  straight ahead, so a piece there stops it dead; a Soldier may not go back).
+
+A restriction that only restates how the piece moves costs nothing, as for the Rook or the
+Knightrider: a slider blocked by a piece in its path (the Lance), a piece that takes what is straight
+ahead (the Shogi Pawn), a hopper that must hop (the Grasshopper, whose reach is already counted with
+pieces to hop). Each had −1 before, now gone.
+
 ### Promotion premium
 
 A piece that may promote is bought, in part, for what it may become: its price carries a premium,
@@ -53,8 +69,8 @@ and has no such premium.
 
 | Piece | Promotes to | Premium | Value |
 |---|---|---|---|
-| Lance (Shogi) | Gold General, 13 over 5 rows | 3 | 56 |
-| Pawn (Shogi) | Gold General, 16 over 4 rows | 4 | 54 |
+| Lance (Shogi) | Gold General, 12 over 5 rows | 2 | 56 |
+| Pawn (Shogi) | Gold General, 15 over 4 rows | 4 | 55 |
 | Pawn (Western) | Queen, 22 over 6 rows | 4 | 9 |
 | Silver General (Shogi) | Gold General, 1 over 5 rows | 0 | 65 |
 | Pawn (Makruk) | Courtier, 3 over 4 rows; the far edge pays more | 2 | 4 |
@@ -71,8 +87,8 @@ as for any piece, so two such pieces need not be worth the same. The premium alo
 them: it assumes the piece has the whole distance to cross, but how far that is depends on how its
 owner arranges the kingdom, and a Lance with an open file may slide into the far three ranks on its
 first move and promote into a Gold General, a leader, at once. With the bonus, promotion gains less,
-so the premium shrinks: the Lance is worth 56 (50 + reach 4 + premium 3 − 1), the Shogi Pawn 54
-(50 + 1 + 4 − 1). The Silver General is a leader already. The value is what capturing the piece
+so the premium shrinks: the Lance is worth 56 (50 + reach 4 + premium 2), the Shogi Pawn 55
+(50 + 1 + 4). The Silver General is a leader already. The value is what capturing the piece
 scores too.
 
 ### Prices for each game
@@ -94,7 +110,9 @@ prices shown in the draft; the sheet stays the reference, on 8 × 8.
 *Done*: a piece's price on a game's board is its sheet value, plus the cells it reaches there less
 those it reaches on 8 × 8, plus its premium there less its sheet premium (kept, as the sheet has it, in
 `Values/grand-legions-premiums.json`). On the medium game's 8 × 8 board, kingdoms 2 deep, the prices are
-the sheet's. *Proposed*: a price is never below 1, as a piece that reaches nothing from the centre of a
+the sheet's, but the Lance's: 57, not 56, as the sheet counts its promotion from row 1 (5 rows, premium 2) and
+the board from its kingdom's front row (4 rows, premium 3). *Proposed*: kept, the board's count being the one a
+player can use. *Proposed*: a price is never below 1, as a piece that reaches nothing from the centre of a
 small board (the Giraffe on 6 × 6) would otherwise be free, and an army could fill its kingdom with it.
 The price is what the piece costs in a quick army and what taking it scores.
 
@@ -118,8 +136,10 @@ reach, apart from any other restriction it has:
 | a half | −1 | Bishop, Camel, Courtier |
 | a quarter or less | −2 | War Engine, Alfil, Threeleaper |
 
-The Xiangqi Elephant has −2 in all: −1 for its blocked leg, and −1 for the river and its binding
-together, which overlap (the river keeps it in its own half, where it reaches seven cells). The
+The Xiangqi Elephant has −3 in all: −2 for its binding, as the Alfil, and −1 for its blocked leg.
+The river binds it further (it keeps to its own half, where it reaches seven cells), but a quarter or
+less already costs the most a binding costs, so the river adds nothing. It was −2, priced as the
+Alfil, though it is the weaker piece (2026-11-12). The
 Advisor has −2 for its palace, which binds it more than its colour does. A bound piece is not
 worthless: two Bishops on opposite colours cover the board between them, which is why the
 devaluation is a point or two, and not a fraction of the value.
@@ -151,7 +171,7 @@ The dice name a class, not a piece ([specification §6.1](specification.md#61-th
 
 | Piece | Moves | Restrictions | Powers / promotion | Value | Lifts |
 |---|---|---|---|---|---|
-| Pawn (Shogi) | One square forward | Move: blocked straight ahead | → Gold General in the far three ranks | 54 | 2 / — |
+| Pawn (Shogi) | One square forward | Move: blocked straight ahead | → Gold General in the far three ranks | 55 | 2 / — |
 | Pawn (Western) | One square forward; captures one square diagonally forward | Move: blocked straight ahead | First move two squares; *en passant*, of any enemy piece moving two squares or more against it, past it, from two squares away; → Queen, Rook, Bishop or Knight on the last rank | 9 | 2 / — |
 | Guard (Janggi) | One square orthogonally, or diagonally along palace lines | Area: its 3 × 3 palace | Palace lines | 7 | — / 5 |
 | Noble (Makruk) | One square diagonally, or straight forward | — | — | 7 | — / — |
@@ -191,7 +211,7 @@ Chaturaji 2027.
 | Giraffe | Leaps 4+1 | — | 4 | — / — |
 | Elephant (Alfil) | Leaps 2+2 diagonally | One cell in eight (by its move) | 2 | — / — |
 | Threeleaper | Leaps three squares orthogonally | One cell in nine (by its move) | 2 | — / — |
-| Elephant (Xiangqi) | Two squares diagonally | Move: the square between must be empty; Area: may not cross the river; one cell in eight (by its move) | 2 | 2 / 3 |
+| Elephant (Xiangqi) | Two squares diagonally | Move: the square between must be empty; Area: may not cross the river; one cell in eight (by its move) | 1 | 2 / 3 |
 | War Engine | Leaps two squares orthogonally | One cell in four (by its move) | 2 | — / — |
 
 ### Specialty / Artillery
@@ -200,7 +220,7 @@ Chaturaji 2027.
 |---|---|---|---|---|---|
 | Cannon (Xiangqi) | Any distance orthogonally | By hopping one piece, at any distance beyond | — | 10 | — / — |
 | Cannon (Janggi) | Over exactly one piece, to any cell beyond, orthogonally | Same | Move: must hop exactly one piece; may neither hop nor capture a Cannon of either kind | 8 | 3 / — |
-| Grasshopper | Along any line, over the first piece met, to the cell just beyond | Same | Move: must hop, landing just beyond | 7 | 3 / — |
+| Grasshopper | Along any line, over the first piece met, to the cell just beyond | Same | Move: must hop, landing just beyond | 8 | 3 / — |
 
 ## Review notes
 
@@ -256,7 +276,7 @@ What was found, and what is made of it:
   leader. Both are the Shogi Pawn's case: the price is mostly the option to promote (into a Queen; into a Gold
   General, a leader). *Proposed*: intended, by the same reasoning as the Shogi Pawn's.
 - **What taking such a piece scores.** A piece's value is also what taking it scores, so taking a Lance (56)
-  or a Shogi Pawn (54) scores more than taking a Queen (27). *Proposed*: intended, as it follows from two
+  or a Shogi Pawn (55) scores more than taking a Queen (27). *Proposed*: intended, as it follows from two
   Stated rules (price is value; value is the score); a player who buys the option puts it at risk.
 - **The Dragon Bishop was the Archbishop.** Both moved any distance diagonally or leapt 2+1, and both were
   worth 21, perhaps one piece under two games' names. *Stated*: the Dragon Bishop stays, in keeping with the
@@ -269,8 +289,8 @@ What was found, and what is made of it:
   into one, and on the others only by taking aside. *Done*:
   [Prices for each game](#prices-for-each-game) settles it, each game's pieces priced on its own board.
 - **Hoppers are counted at their best.** A hopper's reach is counted with a piece on every cell next to it, the
-  most it could reach; on an emptying board it may have nothing to hop, so the Grasshopper (7) and the Janggi
-  Cannon (8) may be dear beside the Knight (8). *Proposed*: kept as it is, for playtesting to settle.
+  most it could reach; on an emptying board it may have nothing to hop, so the Grasshopper (8 since 2026-11-12; 7
+  then) and the Janggi Cannon (8) may be dear beside the Knight (8). *Proposed*: kept as it is, for playtesting to settle.
 - Nothing else stands out: leaders differ by their reach and powers (the Dragon King 78 above the Fairy
   General 76 above the Western King 70), compound pieces are about the sum of their parts, and the bound
   pieces lose a point or two, as [Binding](#binding) sets.

@@ -41,6 +41,7 @@ internal sealed class RefusalHandler(IProblemDetailsService problems) : IExcepti
             GameRequestFailure.NotFound => Refusal.NotFound,
             GameRequestFailure.Forbidden => Refusal.Forbidden,
             GameRequestFailure.Conflict => Refusal.Conflict,
+            GameRequestFailure.Gone => Refusal.Gone,
             _ => Refusal.Invalid,
         };
 

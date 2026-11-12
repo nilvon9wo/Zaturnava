@@ -198,7 +198,7 @@ The rules refuse any of these that may not be made, as they refuse any illegal a
 
 ## The view
 
-`GET api/games/{id}` returns the game as any client shows it (or `409`, saying so, for a game begun under rules
+`GET api/games/{id}` returns the game as any client shows it (or `410`, saying so, for a game begun under rules
 that have changed since, so that its actions no longer replay: a preview's, most often):
 
 | Field | |
@@ -315,6 +315,7 @@ A request the server will not do is answered with a [problem](https://www.rfc-ed
 | 403 | `Forbidden` | The token does not hold the seat that must decide; or, to speak, holds a guest's seat; or is an AI's, asked to change its player's account; or a guest claims a seat for players signed in only |
 | 404 | `NotFound` | There is no such game |
 | 409 | `Conflict` | The seat is taken, or the game changed meanwhile |
+| 410 | `Gone` | The game began under rules that have changed since: it can no longer be shown or played |
 | 422 | `Illegal` | The rules do not allow the action now |
 | 429 | `TooBusy` | Too many requests from the same address of late (600 a minute, 60 new games an hour): wait, and ask again |
 

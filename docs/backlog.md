@@ -116,6 +116,8 @@ first.
 
 ## Look and feel
 
+- *(Stated 2026-11-12, low priority, a nice-to-have)* The table's panels (the draft's list of pieces, the turn's
+  panel, the log and talk) resized and placed by each player as they like, as a piece card already may be dragged.
 - **2** Pieces drawn as pictures of their own; for now they are chess glyphs, and the boat a
   drawn sailing boat.
 - **3** A choice between classic chaturanga pieces and "modern" ones (the elephant is effectively
@@ -341,6 +343,12 @@ first.
   random player. The plumbing for a bot paid for each use (`BotProfile.IsPaid`) stays, unused. An AI of a
   player's own joins instead: in a custom game, a seat may be left for "Your own AI", which takes it by MCP or
   the HTTP API with an AI token, and the table shows the game's id while seats are open.
+
+- *(Stated 2026-11-12)* Bots budget their drafted armies badly: on a large board they averaged about 8 pieces a
+  kingdom. A few strong pieces can be a fair plan, and some bots may lean that way, but not every bot every time.
+  *(Proposed)*: each bot drafts by a plan of its own (many cheap pieces, a few dear ones, a balance across the
+  classes), rather than all following the random fill. Ideally *(Stated 2026-11-12)*, in an open draft, the
+  stronger bots look at what the others are drafting, and choose and place their pieces in answer.
 
 ## Talking
 

@@ -1,8 +1,9 @@
 @* The pieces a player may draft, while their army is drafted, as a table to choose from (Stated, 2026-11-12): each
-   piece's name, class, the game it comes from, how it moves in words, what holds it back, and its price. Filtered by
-   class; then, among the Cavalry, by sort of beast (horses, elephants, camels, other), and among the rest by which
-   way they go (forward, orthogonally, diagonally, every way, other) - each filter offering only what some piece has.
-   A piece dearer than what is left stays listed, greyed out, unless the player hides those. Picking a piece has it
+   piece's name, class, how it moves in words, and its price; where it comes from and what holds it back are on its
+   card (Stated, 2026-11-12, to keep the table narrow). Filtered by class; then, among the Cavalry, by sort of beast
+   (horses, elephants, camels, other), and among the rest by which way they go (forward, orthogonally, diagonally,
+   every way, other) - each filter offering only what some piece has. Only what the player can afford is listed, unless
+   they ask for all (Stated, 2026-11-12); a piece dearer than what is left is then greyed out. Picking a piece has it
    placed next: its squares are then marked on the board; picking it again lets it go. *@
 
 <section class="draft-catalogue" aria-label="Pieces to draft">
@@ -10,7 +11,7 @@
     <div class="filters">
         <label>
             Class
-            <select class="draft-class" @bind="this._class">
+            <select class="draft-class" @bind="this.Filtered.Class" @bind:after="this.Refiltered">
                 <option value="">Any</option>
                 @foreach (string pieceClass in this.Classes)
                 {
@@ -18,11 +19,11 @@
                 }
             </select>
         </label>
-        @if (this._class == Cavalry)
+        @if (this.Filtered.Class == Cavalry)
         {
             <label>
                 Sort
-                <select class="draft-kin" @bind="this._kin">
+                <select class="draft-kin" @bind="this.Filtered.Kin" @bind:after="this.Refiltered">
                     <option value="">Any</option>
                     @foreach (string kin in this.Kins)
                     {
@@ -35,7 +36,7 @@
         {
             <label>
                 Moves
-                <select class="draft-bearing" @bind="this._bearing">
+                <select class="draft-bearing" @bind="this.Filtered.Bearing" @bind:after="this.Refiltered">
                     <option value="">Any</option>
                     @foreach (string bearing in this.Bearings)
                     {
@@ -45,7 +46,7 @@
             </label>
         }
         <label class="affordable">
-            <input type="checkbox" class="draft-affordable" @bind="this._isAffordableOnly" />
+            <input type="checkbox" class="draft-affordable" @bind="this.Filtered.IsAffordableOnly" @bind:after="this.Refiltered" />
             Only what I can afford
         </label>
     </div>
@@ -55,9 +56,7 @@
                 <tr>
                     <th>Piece</th>
                     <th>Class</th>
-                    <th>From</th>
                     <th>Moves</th>
-                    <th>Held back</th>
                     <th class="cost">Cost</th>
                 </tr>
             </thead>
@@ -76,9 +75,7 @@
                             </button>
                         </td>
                         <td>@kind.Class</td>
-                        <td>@kind.Origin</td>
                         <td class="moves">@MovesOf(kind)</td>
-                        <td class="held-back">@string.Join("; ", kind.Restrictions)</td>
                         <td class="cost">@kind.Value</td>
                     </tr>
                 }
@@ -93,10 +90,24 @@
     /// <summary>The classes in the order a player thinks of an army: leaders first, infantry last.</summary>
     private static readonly ImmutableList<string> ClassOrder = ["Leader", "Heavy", Cavalry, "Artillery", "Infantry"];
 
-    private string _class = string.Empty;
-    private string _kin = string.Empty;
-    private string _bearing = string.Empty;
-    private bool _isAffordableOnly;
+    /// <summary>
+    /// How the player last left the filters: kept by whoever shows the catalogue, so that the player finds them as
+    /// they were when their turn to draft comes round again (Stated, 2026-11-12).
+    /// </summary>
+    public sealed class Filters
+    {
+        public string Class { get; set; } = string.Empty;
+
+        public string Kin { get; set; } = string.Empty;
+
+        public string Bearing { get; set; } = string.Empty;
+
+        public bool IsAffordableOnly { get; set; } = true;
+    }
+
+    /// <summary>The filters, as the player last left them; as at first, unless given.</summary>
+    [Parameter]
+    public Filters Filtered { get; set; } = new();
 
     /// <summary>Every kind offered, dearest first, whether or not the player can pay for it.</summary>
     [Parameter, EditorRequired]
@@ -120,6 +131,18 @@
     [Parameter]
     public EventCallback<string> OnPick { get; set; }
 
+    /// <summary>
+    /// The piece picked is no longer listed, the filters changed: it is let go, so that the player does not place a
+    /// piece they cannot see (Stated, 2026-11-12).
+    /// </summary>
+    [Parameter]
+    public EventCallback OnHidden { get; set; }
+
+    private Task Refiltered() =>
+        this.Picked is { } picked && this.Shown.All(kind => kind.Kind != picked)
+            ? this.OnHidden.InvokeAsync()
+            : Task.CompletedTask;
+
     private IEnumerable<string> Classes =>
         ClassOrder.Where(pieceClass => this.Kinds.Any(kind => kind.Class == pieceClass));
 
@@ -134,14 +157,16 @@
         ["Forward", "Orthogonal", "Diagonal", "Every way", "Other"];
 
     private IEnumerable<PieceKindDto> InClass =>
-        this.Kinds.Where(kind => this._class.Length == 0 || kind.Class == this._class);
+        this.Kinds.Where(kind => this.Filtered.Class.Length == 0 || kind.Class == this.Filtered.Class);
 
     /// <summary>The kinds the filters let through, classes in order, each dearest first.</summary>
     private IEnumerable<PieceKindDto> Shown =>
         this.InClass
-            .Where(kind => this._class != Cavalry || this._kin.Length == 0 || kind.Kin == this._kin)
-            .Where(kind => this._class == Cavalry || this._bearing.Length == 0 || kind.Bearing == this._bearing)
-            .Where(kind => !this._isAffordableOnly || kind.Value <= this.Left)
+            .Where(kind => this.Filtered.Class != Cavalry || this.Filtered.Kin.Length == 0
+                || kind.Kin == this.Filtered.Kin)
+            .Where(kind => this.Filtered.Class == Cavalry || this.Filtered.Bearing.Length == 0
+                || kind.Bearing == this.Filtered.Bearing)
+            .Where(kind => !this.Filtered.IsAffordableOnly || kind.Value <= this.Left)
             .OrderBy(kind => ClassOrder.IndexOf(kind.Class ?? string.Empty))
             .ThenByDescending(kind => kind.Value);
 
