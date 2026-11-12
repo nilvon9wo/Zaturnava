@@ -1,6 +1,8 @@
 @* Who holds a seat, as the table shows them. A player who claimed it signed in may be looked at: their name opens a
-   dialog with their profile, as anyone may see it: their description, and the services they chose to show. A bot may be looked at too: its name opens its profile, from the
-   server's catalog - what it does, whether it asks an AI (and costs tokens each use), and its rating at this game. *@
+   dialog with their profile, as anyone may see it: their description, and the services they chose to show; and how
+   they stand at the game, from its leaderboard: their Elo, experience, and games won, lost and drawn (the user's
+   request of 2026-11-12). A bot may be looked at too: its name opens its profile, from the server's catalog - what it
+   does, whether it asks an AI (and costs tokens each use), and its rating at this game. *@
 @inject IGameServing Games
 
 @if (this.PlayerId is { } playerId)
@@ -32,6 +34,7 @@ else
                 {
                     <p class="player-services">Signs in with @string.Join(", ", profile.Services).</p>
                 }
+                <p class="player-standing">@StandingOf(this._standing)</p>
             }
             else if (this._bot is { } bot)
             {
@@ -72,8 +75,16 @@ else
     [Parameter]
     public string RulesetId { get; set; } = string.Empty;
 
+    /// <summary>
+    /// The game a player's standing is at, by its id (<see cref="RulesetDto.Game"/>); if unset, the game of
+    /// <see cref="RulesetId"/>, as the catalog says.
+    /// </summary>
+    [Parameter]
+    public string Game { get; set; } = string.Empty;
+
     private bool _isOpen;
     private ProfileDto? _profile;
+    private StandingDto? _standing;
     private BotDto? _bot;
     private string? _problem;
 
@@ -83,10 +94,30 @@ else
     {
         this._isOpen = true;
         this._profile = null;
+        this._standing = null;
         this._problem = await Requests.Attempt(async () =>
-            this._profile = await this.Games.Profile(playerId, CancellationToken.None)
-        );
+        {
+            this._profile = await this.Games.Profile(playerId, CancellationToken.None);
+            string game = this.Game.Length > 0 ? this.Game : await this.GameOfRuleset();
+            this._standing = game.Length > 0
+                ? (await this.Games.Leaderboard(game, CancellationToken.None))
+                    .FirstOrDefault(standing => standing.PlayerId == playerId)
+                : null;
+        });
     }
+
+    /// <summary>The game <see cref="RulesetId"/> plays, by its id; none, if the catalog no longer offers it.</summary>
+    private async Task<string> GameOfRuleset() =>
+        (await this.Games.Catalog(CancellationToken.None)).Rulesets
+            .FirstOrDefault(ruleset => ruleset.Id == this.RulesetId)?.Game ?? string.Empty;
+
+    /// <summary>
+    /// "Elo 1032, 450 experience; won 3, lost 2, drawn 0 at this game"; or that they have finished none of it yet.
+    /// </summary>
+    private static string StandingOf(StandingDto? standing) =>
+        standing is { } at
+            ? $"Elo {at.Elo}, {at.Experience} experience; won {at.Won}, lost {at.Lost}, drawn {at.Drawn} at this game."
+            : "Not yet on this game's leaderboard.";
 
     private async Task OpenBot(string botId)
     {

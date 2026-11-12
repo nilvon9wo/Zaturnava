@@ -67,7 +67,8 @@
                                 <SeatPlayer Text="@row.Name"
                                             PlayerId="@row.PlayerId"
                                             BotId="@row.BotId"
-                                            RulesetId="@string.Empty" />
+                                            RulesetId="@string.Empty"
+                                            Game="@this.Game" />
                             </td>
                             @foreach ((Column column, int at) in this.Columns.All.Select((column, at) => (column, at)))
                             {
