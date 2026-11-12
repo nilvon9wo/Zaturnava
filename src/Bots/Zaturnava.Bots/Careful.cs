@@ -100,7 +100,7 @@ internal static class Careful
             .. pieces.Select(occupant =>
             {
                 ImmutableList<Attack> all = [.. threats[occupant.Key]];
-                int worth = request.Rules.WorthOf(occupant.Value.Kind);
+                int worth = request.Rules.KeepingWorthOf(occupant.Value.Kind);
                 ImmutableList<int> retakers = WorthsOf(request, guards[occupant.Key]);
                 bool isOnThrone = IsThroneOf(request, after, occupant.Key);
                 ImmutableList<Attack> first =
@@ -135,7 +135,7 @@ internal static class Careful
     }
 
     /// <summary>
-    /// What an enemy could win by starting an exchange for a piece worth <paramref name="target"/>; on the
+    /// What an enemy could win by starting an exchange for a piece worth keeping <paramref name="target"/>; on the
     /// bot's throne, an enemy leader taking it first also wins the throne, worth as much as that leader (as
     /// an empty throne's threat counts it).
     /// </summary>
@@ -151,7 +151,7 @@ internal static class Careful
         IEnumerable<int> entries = isOnThrone
             ? threats
                 .Where(attack => request.Rules.IsLeader(attack.Attacker.Kind))
-                .Select(attack => request.Rules.WorthOf(attack.Attacker.Kind))
+                .Select(attack => request.Rules.KeepingWorthOf(attack.Attacker.Kind))
                 .Select(leader => Math.Max(0, target + leader - Exchange(leader, retakers, takers.Remove(leader))))
             : [];
         return entries.Append(Exchange(target, takers, retakers)).Max();
@@ -191,7 +191,10 @@ internal static class Careful
             .SelectMany(seat => request.Rules.AttacksOf(after, seat.Id))
             .ToLookup(attack => attack.Target);
 
-    /// <summary>What the attackers are worth, the cheapest first.</summary>
+    /// <summary>
+    /// What the attackers are worth keeping (<see cref="IRulesApplying.KeepingWorthOf"/>), as each may be lost
+    /// taking: the cheapest first.
+    /// </summary>
     internal static ImmutableList<int> WorthsOf(DecisionRequest request, IEnumerable<Attack> attacks) =>
-        [.. attacks.Select(attack => request.Rules.WorthOf(attack.Attacker.Kind)).Order()];
+        [.. attacks.Select(attack => request.Rules.KeepingWorthOf(attack.Attacker.Kind)).Order()];
 }

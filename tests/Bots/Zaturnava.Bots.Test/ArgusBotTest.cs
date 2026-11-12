@@ -29,6 +29,38 @@ public sealed class ArgusBotTest
         Assert.Equal(new OfferAction(Ransoms.Black, Ransoms.Green, [new PieceId(30)], []), action);
     }
 
+    [Theory]
+    [InlineData(1, true)]
+    [InlineData(5, false)]
+    public async Task Decide_WhenTakingABoatLeavesAPawnToBeTaken_TakesOnlyIfThePawnIsWorthKeepingLess(
+        int pawn,
+        bool takes
+    )
+    {
+        // Arrange - the Elephant on 3 guards the Pawn on 4 from the enemy Raja; it may take the enemy Boat (1),
+        // scoring 4, but leaving the Pawn to the Raja
+        DecisionRequest request = LineRules.Request(
+            [Pass, LineRules.Move(3, 1)],
+            (3, LineRules.Elephant, Mine),
+            (4, LineRules.Pawn, Mine),
+            (1, LineRules.Boat, Theirs),
+            (5, LineRules.Raja, Theirs)
+        );
+        DecisionRequest weighed = request with
+        {
+            Rules = new LineRules(request.LegalActions)
+            {
+                Keeping = ScoringRules.Worth.SetItem(LineRules.Pawn, pawn),
+            },
+        };
+
+        // Act
+        ImmutableHashSet<GameAction> chosen = await Choices(weighed);
+
+        // Assert
+        Assert.Equal([takes ? LineRules.Move(3, 1) : Pass], chosen);
+    }
+
     [Fact]
     public async Task Decide_WhenTakingWouldLoseMoreThanItGains_DoesNotTake()
     {

@@ -366,6 +366,14 @@ Then every bot is a pairing, and the arena measures each pairing.
   the team whose turn comes before an enemy's saves the piece it would lose most to that enemy, by moving it or
   taking its attacker, so only its second-worst such loss counts (*Proposed*). The turn is taken to go round the
   seats in their order, as both rulesets have it.
+- **A Pawn is worth keeping** (the user's play of 2026-11-12). Green, commanding Black's army, moved Black's Rook
+  off guarding Black's Pawn to take Yellow's Boat, and the Pawn was lost: the Boat scores 2 and the Pawn 1. But a
+  Pawn may yet be promoted, and a Boat reaches few cells. A ruleset now says what each piece is worth keeping
+  (`IRulesApplying.KeepingWorthOf`), apart from what taking it scores; Chaturaji 2027's, from its table
+  `Values/chaturaji-2027-keeping.json`, counts a Pawn as a Horse, 3, and every other piece as it scores
+  (*Proposed*). Exposure weighs the team's pieces, and every piece that might take or be taken in an exchange, so;
+  what a taking scores is still its points. Grand Legions keeps its prices. Whether a bot should move a person's
+  pieces at all is [OQ10](../open-questions.md#oq10-a-bot-moving-a-persons-pieces).
 
 Uncertain until measured: how fast the engine evaluates, and therefore how deep alpha-beta can reach on 12×12 within
 a move's time. Step 1 settles it before anything is built on it.

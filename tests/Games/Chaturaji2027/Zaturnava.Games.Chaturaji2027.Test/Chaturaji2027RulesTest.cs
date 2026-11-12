@@ -2137,6 +2137,51 @@ public sealed class Chaturaji2027RulesTest
     }
 
     [Fact]
+    public void KeepingWorthOf_WhenAsked_IsMoreForAPawnThanForABoat()
+    {
+        // Arrange - a Pawn scores 1 and a Boat 2, but the Pawn may yet be promoted, and the Boat reaches few cells
+
+        // Act
+        (int Pawn, int Boat) worth = (
+            this._rules.KeepingWorthOf(Chaturaji2027Pieces.Pawn),
+            this._rules.KeepingWorthOf(Chaturaji2027Pieces.Boat)
+        );
+
+        // Assert
+        Assert.Equal((3, 2), worth);
+    }
+
+    [Fact]
+    public void KeepingWorthOf_WhenTheVariantSetsNone_IsWhatTakingThePieceScores()
+    {
+        // Arrange
+        Chaturaji2027Variant standard = Chaturaji2027Variant.Standard;
+        Chaturaji2027Variant variant = new(
+            standard.Id,
+            standard.Name,
+            standard.Side,
+            standard.Kinds,
+            standard.Points,
+            standard.Names,
+            standard.Leaders,
+            standard.Pawns,
+            standard.Start
+        );
+        Chaturaji2027Rules rules = new(
+            DiceProfile.WeightedSixSided,
+            Chaturaji2027Rules.DefaultIdleRounds,
+            PawnPromotion.OtherArmies,
+            variant: variant
+        );
+
+        // Act
+        int worth = rules.KeepingWorthOf(Chaturaji2027Pieces.Pawn);
+
+        // Assert
+        Assert.Equal(1, worth);
+    }
+
+    [Fact]
     public void MovesPerTurn_WhenAsked_IsHowOftenTheTwoDiceShowTheKind()
     {
         // Arrange - an Elephant moves on two faces of six, a Boat on one
