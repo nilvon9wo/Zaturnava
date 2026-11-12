@@ -53,8 +53,31 @@ public sealed class SeatPlayerTest : IDisposable
 
         // Assert
         Assert.Equal(
-            "Ada|Counts.|Signs in with GitHub, Google.",
+            "Ada|Counts.|Signs in with GitHub, Google.|Not yet on this game's leaderboard.",
             string.Join('|', player.FindAll("[role=dialog] h2, [role=dialog] p").Select(line => line.TextContent))
+        );
+    }
+
+    [Fact]
+    public void Open_WhenThePlayerStandsAtTheTablesGame_ShowsTheirEloExperienceAndRecordThere()
+    {
+        // Arrange - Ada stands on Chaturaji 2027's leaderboard, the game of the table's ruleset
+        this._page.Server.Profiles = this._page.Server.Profiles.Add("p", Ada);
+        this._page.Server.Leaderboards = this._page.Server.Leaderboards.Add(
+            "chaturaji-2027",
+            [new StandingDto(1, "Ada", 1516, 450, 3, 2, 1) { PlayerId = "p" }]
+        );
+        IRenderedComponent<SeatPlayer> player = this._page.Render<SeatPlayer>(parameters =>
+            parameters.Add(x => x.Text, "Ada").Add(x => x.PlayerId, "p").Add(x => x.RulesetId, "chaturaji-2027")
+        );
+
+        // Act
+        player.Find("button.player").Click();
+
+        // Assert
+        Assert.Equal(
+            "Elo 1516, 450 experience; won 3, lost 2, drawn 1 at this game.",
+            player.Find("[role=dialog] p.player-standing").TextContent
         );
     }
 

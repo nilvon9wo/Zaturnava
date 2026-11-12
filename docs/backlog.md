@@ -25,6 +25,10 @@ first.
   claiming a seat sends their alias token too, and a guest's name that a player goes by, or another guest holds,
   is refused (*Proposed*): no guest can sit under another's alias or a player's username. A name no one holds is
   anyone's, so a program playing as a guest needs no alias (*Stated* 2026-11-12).
+- *(Stated 2026-11-12)* A player's card: clicking a player's name shows what is useful to know of them, their Elo
+  and experience among it. *Done* in part: the dialog a name opens, at the table or on the leaderboard, adds how
+  they stand at the game, from its leaderboard: Elo, experience, and games won, lost and drawn there; or that they
+  are not on it yet. More may follow (their other games, their streaks).
 - **N2** The database stays as it is through every change, by migrations; never wiped (*Stated*).
 - **N3** A leaderboard, for players to compete for; with each player's Elo and their **experience**: each time
   a player is on the winning team, they gain their own points plus their team's (*Stated*), changed
@@ -244,6 +248,10 @@ first.
   - one that looks no further than its own move, missing what the enemy can take back.
 
   Each is rated by the bot-rating job like the rest, so the picker can show which are within reach.
+
+  *Done* in part (2026-11-12): **Echo** and **Icarus**, which play as Midas one decision in four and one in two,
+  and as Random the rest. The server's rating job rates them; if they land too near Random or Midas, their shares
+  are what to change.
 - In order (*Stated 2026-10-29*, the user agreeing to the plan):
   1. **Recorded games**: every game kept with its seats (which bot, or a person), its actions, the
      scores and how it ended, downloadable as data; self-play writing the same records.

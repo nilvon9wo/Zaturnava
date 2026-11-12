@@ -246,7 +246,10 @@ public sealed class LeaderboardTest : IDisposable
         board.Find(".leaders td.name button.profile").Click();
 
         // Assert
-        Assert.Equal("Ada Lovelace", board.Find(".public-profile h2").TextContent);
+        Assert.Equal(
+            ("Ada Lovelace", "Elo 1516, 0 experience; won 1, lost 0, drawn 0 at this game."),
+            (board.Find(".public-profile h2").TextContent, board.Find(".public-profile p.player-standing").TextContent)
+        );
     }
 
     [Fact]
