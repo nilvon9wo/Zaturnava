@@ -348,6 +348,14 @@ Then every bot is a pairing, and the arena measures each pairing.
   It plays the action tried most. It is not yet the hybrid of row 4: it has no policy network to say which actions
   to try first, so untried actions are tried in random order. A CNN (row 3) is still to come.
 - **Not yet rated:** its rating waits for an arena run, which needs the user's machine.
+- **Threats now expect the reply** (the user's play of 2026-11-12). Sage's appraisal counted any enemy piece
+  the team attacked as half-won, as if no enemy moved first. So a Boat would threaten a Horse that was about to take
+  a stuck Pawn and leave, rather than guard the Pawn to take the Horse back. And it would chase a Raja it had
+  forked rather than take the Pawn left behind. The appraisal now counts nothing for an enemy piece that could
+  itself take one of the team's (it will take and be gone). Of each enemy's other threatened pieces, it counts only
+  the second most it could lose, since the enemy saves the dearest (a fork) (*Proposed*). Athena's network inputs
+  keep the old count, which it learned from. Sage's tuned weight for this term was tuned on the old count, so a
+  re-tune may move it.
 
 Uncertain until measured: how fast the engine evaluates, and therefore how deep alpha-beta can reach on 12×12 within
 a move's time. Step 1 settles it before anything is built on it.
