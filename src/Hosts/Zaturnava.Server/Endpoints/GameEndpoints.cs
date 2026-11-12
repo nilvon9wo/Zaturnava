@@ -188,7 +188,9 @@ internal static class GameEndpoints
             [.. request.Bots.Select(bot => new SeatPlan(bot) { IsForPlayers = request.IsForPlayers })];
         Dealing dealing = new(request.AreArmiesAlike, request.ArmiesOf is { } armies ? new GameId(armies) : null)
         {
-            IsDrafted = request.IsDrafted,
+            Drafting = request.IsDrafted
+                ? new DraftSettings(request.DraftBudget, request.Drafter is { } drafter ? new SeatId(drafter) : null)
+                : null,
         };
         GameId id = await games.Create(request.RulesetId, seats, request.Scenario, dealing, cancellationToken);
         if (request.Continuing is { } previous)

@@ -74,11 +74,18 @@ public interface IRulesApplying
     bool IsDraftable => false;
 
     /// <summary>
-    /// The game <paramref name="dealt"/> (its terrain, say), but with its armies to be drafted by its players before
-    /// play begins (<see cref="GameState.Draft"/>), any army filled at random drafted by <paramref name="seed"/>. As it
-    /// is, for a ruleset whose players may not.
+    /// What each seat has to spend on its army, if its players draft it, unless the game's creator sets another
+    /// (<see cref="DraftSettings.Budget"/>); none, for a ruleset whose players may not draft.
     /// </summary>
-    GameState Drafted([Required] GameState dealt, int seed) => dealt;
+    int? DraftBudget => null;
+
+    /// <summary>
+    /// The game <paramref name="dealt"/> (its terrain, say), but with its armies to be drafted by its players before
+    /// play begins (<see cref="GameState.Draft"/>), as <paramref name="settings"/> set
+    /// (<see cref="DraftSettings.Default"/>, if none), any army filled at random drafted by <paramref name="seed"/>. As
+    /// it is, for a ruleset whose players may not.
+    /// </summary>
+    GameState Drafted([Required] GameState dealt, int seed, DraftSettings? settings = null) => dealt;
 
     /// <summary>
     /// Every kind a player may draft, while the armies are drafted, whether or not they can pay for it yet: the

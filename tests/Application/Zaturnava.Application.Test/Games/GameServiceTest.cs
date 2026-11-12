@@ -156,7 +156,7 @@ public sealed class GameServiceTest
             TinyRules.RulesetId,
             [SeatPlan.Open, SeatPlan.Open],
             null,
-            new Dealing { IsDrafted = true },
+            new Dealing { Drafting = DraftSettings.Default },
             this._cancellation
         );
 
@@ -187,6 +187,69 @@ public sealed class GameServiceTest
         // Assert
         GameSnapshot original = await service.Get(first, this._cancellation);
         Assert.Equal(original.Record.Actions[0], snapshot.Record.Actions[0]);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Create_WhenTheArmiesOfADraftedGameAreAskedFor_DraftsThemAgainAsFarAsItDid(bool isOver)
+    {
+        // Arrange - a game drafted, its draft over once the first seat had its army filled, then played on; or left
+        // before it was over
+        InMemoryGameStore store = new();
+        GameService service = this.Service(
+            GameServiceSettings.Default,
+            store,
+            isDealt: true,
+            filled: state => state with { Draft = null }
+        );
+        ImmutableList<SeatPlan> seats = [SeatPlan.Open, SeatPlan.Open];
+        GameId first = await service.Create(
+            TinyRules.RulesetId,
+            seats,
+            null,
+            new Dealing { Drafting = DraftSettings.Default },
+            this._cancellation
+        );
+        GameRecord kept = (await store.Find(first, this._cancellation))!;
+        ActionDescriptor fill = new FillArmyAction(First).Describe();
+        await store.Remove([first], this._cancellation);
+        ImmutableList<ActionDescriptor> played = isOver ? [fill, new PassAction(First).Describe()] : [];
+        await store.Add(kept with { Actions = [kept.Actions[0], .. played] }, this._cancellation);
+
+        // Act
+        GameId again =
+            await service.Create(TinyRules.RulesetId, seats, null, new Dealing(ArmiesOf: first), this._cancellation);
+
+        // Assert
+        GameSnapshot snapshot = await service.Get(again, this._cancellation);
+        Assert.Equal(
+            (isOver ? "deal,fill-army" : "deal", isOver),
+            (string.Join(",", snapshot.Record.Actions.Select(action => action.Kind)), snapshot.State.Draft is null)
+        );
+    }
+
+    [Theory]
+    [InlineData(0, null, "A draft's budget is at least 1.")]
+    [InlineData(null, -1, "The game has no seat -1 to draft.")]
+    [InlineData(5, 2, "The game has no seat 2 to draft.")]
+    public async Task Create_WhenTheDraftIsSetAmiss_ThrowsInvalidGameSetupException(
+        int? budget,
+        int? drafter,
+        string expected
+    )
+    {
+        // Arrange
+        GameService service = this.Service(GameServiceSettings.Default, isDealt: true);
+        Dealing dealing = new() { Drafting = new DraftSettings(budget, drafter is { } seat ? new SeatId(seat) : null) };
+
+        // Act
+        Task<GameId> creating =
+            service.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], null, dealing, this._cancellation);
+
+        // Assert
+        InvalidGameSetupException exception = await Assert.ThrowsAsync<InvalidGameSetupException>(() => creating);
+        Assert.Equal(expected, exception.Message);
     }
 
     [Fact]
@@ -1921,12 +1984,17 @@ public sealed class GameServiceTest
         ImmutableList<IBotPlaying>? bots = null,
         bool isDealt = false,
         bool hasFaceOff = false,
-        bool isDraftable = true
+        bool isDraftable = true,
+        Func<GameState, GameState>? filled = null
     ) =>
         new(
             new RulesetCatalog(
                 [
-                    new TinyRules(GameLength, isDealt, hasFaceOff: hasFaceOff) { IsDraftable = isDealt && isDraftable },
+                    new TinyRules(GameLength, isDealt, hasFaceOff: hasFaceOff)
+                    {
+                        IsDraftable = isDealt && isDraftable,
+                        Filled = filled,
+                    },
                     new RollingRules(GameLength),
                 ]
             ),

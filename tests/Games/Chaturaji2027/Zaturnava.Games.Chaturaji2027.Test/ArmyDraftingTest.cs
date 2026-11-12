@@ -61,6 +61,53 @@ public sealed class ArmyDraftingTest
     }
 
     [Fact]
+    public void Drafted_WhenTheGamesCreatorSetsABudgetAndADrafter_HasThatSeatAloneDraftWithIt()
+    {
+        // Arrange
+        GameState dealt = this._rules.CreateInitialState();
+
+        // Act
+        GameState drafted = this._rules.Drafted(dealt, 7, new DraftSettings(9, Yellow));
+
+        // Assert
+        Assert.Equal(
+            (6, 9, Yellow, Yellow, "0,2,3"),
+            (
+                this._rules.DraftBudget,
+                drafted.Draft!.Left[Red],
+                drafted.Draft.Drafter,
+                drafted.DecidingSeat!.Value,
+                string.Join(",", drafted.Draft.Done.Select(seat => seat.Value).Order())
+            )
+        );
+    }
+
+    [Fact]
+    public void Apply_WhenTheOneDrafterIsDone_GivesEverySeatItsArmyAliveAndBeginsTheGame()
+    {
+        // Arrange - Yellow drafts for all, and has its army filled: a Pawn on its second square, throne on its first
+        GameState state = this._rules.Drafted(this._rules.CreateInitialState(), 7, new DraftSettings(Drafter: Yellow));
+
+        // Act
+        GameState started = this._rules.Apply(state, new FillArmyAction(Yellow)).State;
+
+        // Assert
+        Piece black = started.Position.PieceAt(B1)!;
+        Assert.Equal(
+            (Chaturaji2027Pieces.Pawn, Black, A1, 5, 4, 4, true),
+            (
+                black.Kind,
+                black.Owner,
+                started.Thrones![Black],
+                started.Scores[Black],
+                started.Position.Occupants.Count,
+                started.Thrones.Count,
+                started.Draft is null
+            )
+        );
+    }
+
+    [Fact]
     public void DraftOffered_WhileTheArmiesAreDraftedAndNotOtherwise_OffersEveryKindDearestFirst()
     {
         // Arrange
@@ -87,7 +134,7 @@ public sealed class ArmyDraftingTest
         GameState drafted = rules.Drafted(dealt, 7);
 
         // Assert
-        Assert.Equal((false, dealt), (rules.IsDraftable, drafted));
+        Assert.Equal((false, dealt, (int?)null), (rules.IsDraftable, drafted, rules.DraftBudget));
     }
 
     [Fact]

@@ -144,13 +144,33 @@ public sealed class ScenarioStartTest
     public void StateOf_WhenTheGameIsDrafted_DealsItThenHasItsArmiesDraftedBySeed()
     {
         // Arrange
-        ImmutableList<ActionDescriptor> actions = [ScenarioStart.Dealt(new LoadedDice(4), isDrafted: true)];
+        ImmutableList<ActionDescriptor> actions =
+            [ScenarioStart.Dealt(new LoadedDice(4), drafting: DraftSettings.Default)];
 
         // Act
         GameState state = ScenarioStart.StateOf(actions, new TinyRules(6, isDealt: true));
 
         // Assert
         Assert.Equal((4, 4, 1), (state.Draft!.Seed, state.Scores[First], state.Terrain));
+    }
+
+    [Theory]
+    [InlineData(null, null)]
+    [InlineData(30, 1)]
+    public void DraftingOf_WhenTheGameWasDraftedAsSet_ReplaysItSoAndSaysHow(int? budget, int? drafter)
+    {
+        // Arrange
+        DraftSettings set = new(budget, drafter is { } seat ? new SeatId(seat) : null);
+        ImmutableList<ActionDescriptor> actions = [ScenarioStart.Dealt(new LoadedDice(4), drafting: set)];
+
+        // Act
+        GameState state = ScenarioStart.StateOf(actions, new TinyRules(6, isDealt: true));
+
+        // Assert
+        Assert.Equal(
+            (set, budget ?? 0, set.Drafter),
+            (ScenarioStart.DraftingOf(actions), state.Draft!.Left[First], state.Draft.Drafter)
+        );
     }
 
     [Fact]
@@ -162,7 +182,7 @@ public sealed class ScenarioStartTest
             [],
             [ScenarioStart.Describe(Tiny())],
             [ScenarioStart.Dealt(new LoadedDice(4), areAlike: true)],
-            [ScenarioStart.Dealt(new LoadedDice(4), isDrafted: true)],
+            [ScenarioStart.Dealt(new LoadedDice(4), drafting: DraftSettings.Default)],
         ];
 
         // Act

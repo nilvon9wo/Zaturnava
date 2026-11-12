@@ -476,54 +476,49 @@ public sealed class LobbyTest : IDisposable
     }
 
     [Theory]
-    [InlineData(false, false, 0)]
-    [InlineData(true, false, 1)]
-    [InlineData(true, true, 1)]
-    public void Play_WhenTheGameIsDealt_OffersEveryArmyAlike(bool isDealt, bool areAlike, int offered)
+    [InlineData(false, false, null, null, "0 0 0 False False  ")]
+    [InlineData(true, false, null, null, "1 2 0 False False  ")]
+    [InlineData(true, false, "random-one", null, "1 2 0 True False  ")]
+    [InlineData(true, true, null, null, "1 4 1 False True  ")]
+    [InlineData(true, true, "draft-own", "30", "1 4 1 False True 30 ")]
+    [InlineData(true, true, "draft-one", "30", "1 4 1 False True 30 0")]
+    [InlineData(true, true, "random-each", null, "1 4 0 False False  ")]
+    public void Play_WhenTheArmiesAreDealt_AsksHowTheyComeToBe(
+        bool isDealt,
+        bool isDraftable,
+        string? armies,
+        string? budget,
+        string expected
+    )
     {
-        // Arrange
+        // Arrange - expected: selects, options, budget boxes, alike, drafted, budget, drafter
         this._page.Server.IsDealt = isDealt;
-        IRenderedComponent<Lobby> lobby = this.ByStrength();
-        if (areAlike)
-        {
-            lobby.Find("input.armies-alike").Change(true);
-        }
-
-        // Act
-        lobby.Find("button.create").Click();
-
-        // Assert
-        Assert.Equal(
-            (offered, areAlike, (string?)null),
-            (
-                lobby.FindAll("input.armies-alike").Count,
-                this._page.Server.Created!.AreArmiesAlike,
-                this._page.Server.Created.ArmiesOf
-            )
-        );
-    }
-
-    [Theory]
-    [InlineData(false, false, 0)]
-    [InlineData(true, false, 1)]
-    [InlineData(true, true, 1)]
-    public void Play_WhenTheArmiesMayBeDrafted_OffersToDraftThem(bool isDraftable, bool isDrafted, int offered)
-    {
-        // Arrange
         this._page.Server.IsDraftable = isDraftable;
         IRenderedComponent<Lobby> lobby = this.ByStrength();
-        if (isDrafted)
+        if (armies is not null)
         {
-            lobby.Find("input.armies-drafted").Change(true);
+            lobby.Find("select.armies").Change(armies);
         }
+
+        if (budget is not null)
+        {
+            lobby.Find("input.draft-budget").Change(budget);
+        }
+
+        int boxes = lobby.FindAll("input.draft-budget").Count;
 
         // Act
         lobby.Find("button.create").Click();
 
         // Assert
+        CreateGameRequest created = this._page.Server.Created!;
         Assert.Equal(
-            (offered, isDrafted),
-            (lobby.FindAll("input.armies-drafted").Count, this._page.Server.Created!.IsDrafted)
+            (expected, (string?)null),
+            (
+                $"{lobby.FindAll("select.armies").Count} {lobby.FindAll("select.armies option").Count} {boxes} "
+                    + $"{created.AreArmiesAlike} {created.IsDrafted} {created.DraftBudget} {created.Drafter}",
+                created.ArmiesOf
+            )
         );
     }
 

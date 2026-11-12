@@ -226,11 +226,14 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
 
     public bool IsDraftable => this._drafting is not null;
 
+    public int? DraftBudget => this._variant.Drafting?.Budget;
+
     /// <summary>
-    /// The game <paramref name="dealt"/>, its armies to be drafted by its players (<see cref="ArmyDrafting"/>), if the
-    /// variant lets them; else as it is.
+    /// The game <paramref name="dealt"/>, its armies to be drafted by its players (<see cref="ArmyDrafting"/>) as
+    /// <paramref name="settings"/> set, if the variant lets them; else as it is.
     /// </summary>
-    public GameState Drafted([Required] GameState dealt, int seed) => this._drafting?.Begun(dealt, seed) ?? dealt;
+    public GameState Drafted([Required] GameState dealt, int seed, DraftSettings? settings = null) =>
+        this._drafting?.Begun(dealt, seed, settings ?? DraftSettings.Default) ?? dealt;
 
     /// <summary>While the armies are drafted, every kind offered on the game's terrain.</summary>
     public ImmutableList<PieceKindId> DraftOffered([Required] GameState state) =>

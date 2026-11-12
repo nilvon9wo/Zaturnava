@@ -37,6 +37,20 @@ public sealed record CreateGameRequest([Required] string RulesetId, [Required] I
     public bool IsDrafted { get; init; }
 
     /// <summary>
+    /// For armies drafted: what each seat has to spend, one value for everyone; the ruleset's own
+    /// (<see cref="RulesetDto.DraftBudget"/>), if null.
+    /// </summary>
+    [Range(1, 100_000)]
+    public int? DraftBudget { get; init; }
+
+    /// <summary>
+    /// For armies drafted: the seat that alone drafts, one army that every seat then has alike (the game's creator's,
+    /// as the lobby asks it); null, for each seat to draft its own.
+    /// </summary>
+    [Range(0, 25)]
+    public int? Drafter { get; init; }
+
+    /// <summary>
     /// Whether the seats left open are only for players signed in: a guest may not take one
     /// (<see cref="GameSummaryDto.IsForPlayers"/>). Open to anyone, unless asked.
     /// </summary>

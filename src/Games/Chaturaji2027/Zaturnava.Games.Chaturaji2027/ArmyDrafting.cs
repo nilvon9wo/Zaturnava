@@ -53,10 +53,11 @@ internal sealed class ArmyDrafting
 
     /// <summary>
     /// The game <paramref name="dealt"/> (its terrain), its board emptied for its armies to be drafted, every seat with
-    /// the whole budget to spend, the first seat to draft first; any army filled at random drawn by
-    /// <paramref name="seed"/>.
+    /// the whole budget to spend, the settings' or the variant's, the first seat to draft first; any army filled at
+    /// random drawn by <paramref name="seed"/>. If the settings name a drafter, it alone drafts, the others done
+    /// already.
     /// </summary>
-    public GameState Begun(GameState dealt, int seed) =>
+    public GameState Begun(GameState dealt, int seed, DraftSettings settings) =>
         dealt with
         {
             Position = Position.Empty,
@@ -64,10 +65,15 @@ internal sealed class ArmyDrafting
             Start = null,
             Draft = new ArmyDraft(
                 seed,
-                dealt.Seats.ToImmutableDictionary(seat => seat.Id, _ => this._drafting.Budget),
-                []
-            ),
-            DecidingSeat = dealt.Seats[0].Id,
+                dealt.Seats.ToImmutableDictionary(seat => seat.Id, _ => settings.Budget ?? this._drafting.Budget),
+                settings.Drafter is { } drafter
+                    ? [.. dealt.Seats.Select(seat => seat.Id).Where(seat => seat != drafter)]
+                    : []
+            )
+            {
+                Drafter = settings.Drafter,
+            },
+            DecidingSeat = settings.Drafter ?? dealt.Seats[0].Id,
             RollOff = [],
             AwaitedDice = null,
         };
@@ -175,7 +181,60 @@ internal sealed class ArmyDrafting
             .Where(each => !state.Draft!.Done.Contains(each))
             .Select(each => (SeatId?)each)
             .FirstOrDefault();
-        return next is { } drafting ? state with { DecidingSeat = drafting } : this.Started(state);
+        return next is { } drafting ? state with { DecidingSeat = drafting } : this.Started(this.Copied(state));
+    }
+
+    /// <summary>
+    /// If one seat drafted for all, its army, throne and what it kept, given alike to every other seat, each in its
+    /// own kingdom; else the armies as drafted.
+    /// </summary>
+    private GameState Copied(GameState drafted)
+    {
+        if (drafted.Draft!.Drafter is not { } drafter)
+        {
+            return drafted;
+        }
+
+        ImmutableDictionary<CellId, ArmySquare> own = this._kingdoms[drafter];
+        ImmutableList<(ArmySquare Square, PieceKindId Kind)> army =
+        [
+            .. own.OrderBy(entry => entry.Key.Value)
+                .Where(entry => drafted.Position.PieceAt(entry.Key) is not null)
+                .Select(entry => (entry.Value, drafted.Position.PieceAt(entry.Key)!.Kind)),
+        ];
+        ArmySquare throne = own[drafted.Thrones![drafter]];
+        int left = drafted.Draft.Left[drafter];
+        return drafted.Seats
+            .Select(seat => seat.Id)
+            .Where(seat => seat != drafter)
+            .Aggregate(drafted, (copied, seat) => this.Given(copied, seat, army, throne, left));
+    }
+
+    /// <summary><paramref name="seat"/> given the army, its throne, and what was kept, in its own kingdom.</summary>
+    private GameState Given(
+        GameState state,
+        SeatId seat,
+        ImmutableList<(ArmySquare Square, PieceKindId Kind)> army,
+        ArmySquare throne,
+        int left
+    )
+    {
+        ImmutableDictionary<ArmySquare, CellId> cells =
+            this._kingdoms[seat].ToImmutableDictionary(entry => entry.Value, entry => entry.Key);
+        return army.Aggregate(
+            state with
+            {
+                Thrones = state.Thrones!.SetItem(seat, cells[throne]),
+                Draft = state.Draft! with { Left = state.Draft.Left.SetItem(seat, left) },
+            },
+            (given, piece) => given with
+            {
+                Position = given.Position.Place(
+                    cells[piece.Square],
+                    new Piece(new PieceId(given.Position.Occupants.Count), piece.Kind, seat)
+                ),
+            }
+        );
     }
 
     /// <summary>

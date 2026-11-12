@@ -128,11 +128,14 @@ What the program does so far (2026-11-04), and the gaps against the above:
   whether it confines the piece to it, `IsConfining`).
 - *Gap*: lifts are not bought with what is left of the budget, as nothing plays a lifted restriction yet.
 - Done: all four armies alike, one picked at random for every seat and laid out as each seat's own, so
-  symmetrically. A checkbox of the custom game set-up, for a dealt game; a game over offers to play again with
-  the same armies (dealt by the same seed, alike if they were) or, as before, new ones. *Stated* (2026-11-06):
-  it may be an option of a game set up by hand too, the creator then crafting all four kingdoms as they craft
-  their own; and the lobby does not list such a game as waiting for players until the creator has finished.
-  Still to come, with games set up by hand.
+  symmetrically. A game over offers to play again with the same armies (dealt by the same seed, alike if they
+  were; drafted again as they were drafted) or, as before, new ones. *Stated* (2026-11-06): it may be an
+  option of a game set up by hand too, the creator then crafting all four kingdoms as they craft their own.
+  *Done* (2026-11-12): the custom set-up asks how the armies come to be, one choice of four (*Stated*): each
+  player drafting their own (the default where the game is draftable), the creator drafting one army that every
+  seat then has, laid out alike in its own kingdom, every army at random (the default elsewhere), or one army at
+  random for everyone. A drafted game may set the points each seat spends (`DraftBudget`, the ruleset's own if
+  none). *Gap*: the lobby still lists a game drafted by its creator as waiting for players while they draft.
 - The Chaturaji 2027 bonuses are × 10, as is the lead a team needs to win by giving up its turns
   (*Proposed*: 100), each read from a table (`Scoring/grand-legions.json`; Chaturaji 2027's own in
   `Scoring/chaturaji-2027.json`) that can be changed apart from the code. Piece values, each piece's

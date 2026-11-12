@@ -71,6 +71,18 @@ public sealed record GameViewDto(
     public bool IsDrafted { get; init; }
 
     /// <summary>
+    /// For a game whose players drafted: the budget its creator set (<see cref="CreateGameRequest.DraftBudget"/>);
+    /// null, for the ruleset's own.
+    /// </summary>
+    public int? DraftBudget { get; init; }
+
+    /// <summary>
+    /// For a game whose players drafted: the seat that alone drafted one army for everyone
+    /// (<see cref="CreateGameRequest.Drafter"/>); null, if each drafted their own.
+    /// </summary>
+    public int? Drafter { get; init; }
+
+    /// <summary>
     /// While the armies are drafted, what each seat has left to spend, seat by seat; null once play has begun, or in a
     /// game never drafted.
     /// </summary>

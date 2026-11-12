@@ -33,6 +33,12 @@ public sealed record RulesetDto(string Id, string Name, int SeatCount)
     /// </summary>
     public bool IsDraftable { get; init; }
 
+    /// <summary>
+    /// For a game whose players may draft: what each has to spend, unless the game's creator sets another
+    /// (<see cref="CreateGameRequest.DraftBudget"/>); null, for a game whose players may not.
+    /// </summary>
+    public int? DraftBudget { get; init; }
+
     public ImmutableList<string> SeatNames { get; init; } = [];
 
     /// <summary>Each seat's team, by number: seats of the same number are allies.</summary>

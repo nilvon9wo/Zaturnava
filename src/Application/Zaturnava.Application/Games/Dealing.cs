@@ -1,3 +1,5 @@
+using Net.NowhereAtAll.Zaturnava.Engine.Rules;
+
 namespace Net.NowhereAtAll.Zaturnava.Application.Games;
 
 /// <summary>
@@ -7,10 +9,10 @@ namespace Net.NowhereAtAll.Zaturnava.Application.Games;
 public sealed record Dealing(bool AreAlike = false, GameId? ArmiesOf = null)
 {
     /// <summary>
-    /// Whether the players draft their own armies, if the ruleset lets them (<see cref="IsDrafted"/> is ignored by
-    /// one that does not); the terrain is dealt all the same.
+    /// How the players draft their own armies, if they do and the ruleset lets them (it is ignored by one that does
+    /// not): their budget and their one drafter, if set; the terrain is dealt all the same. None, if they do not.
     /// </summary>
-    public bool IsDrafted { get; init; }
+    public DraftSettings? Drafting { get; init; }
 
     /// <summary>Each seat its own army, dealt anew.</summary>
     public static Dealing Anew { get; } = new();

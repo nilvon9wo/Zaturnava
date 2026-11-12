@@ -93,7 +93,8 @@ public sealed class HttpGameClientTest
                 "POST",
                 "/api/games",
                 """{"rulesetId":"chaturaji-2027","bots":[null,"random"],"scenario":null,"continuing":null,"""
-                    + "\"areArmiesAlike\":false,\"armiesOf\":null,\"isDrafted\":false,\"isForPlayers\":false}",
+                    + "\"areArmiesAlike\":false,\"armiesOf\":null,\"isDrafted\":false,"
+                    + "\"draftBudget\":null,\"drafter\":null,\"isForPlayers\":false}",
                 "g"
             ),
             (server.Method, server.Path, server.Body, created.GameId)
