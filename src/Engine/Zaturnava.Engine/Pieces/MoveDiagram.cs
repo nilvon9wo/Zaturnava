@@ -17,4 +17,10 @@ public sealed record MoveDiagram(
 )
 {
     public static MoveDiagram None { get; } = new(0, [], [], []);
+
+    /// <summary>
+    /// The first row across a river the piece may not cross, the river drawn along its lower edge; none, for a piece
+    /// no river holds back.
+    /// </summary>
+    public int? RiverRow { get; init; }
 }

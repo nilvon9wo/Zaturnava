@@ -21,7 +21,10 @@ public static class MovementText
             _ => SlideOf(rule),
         };
 
-    /// <summary>"Hops over one piece orthogonally, to any cell beyond it up to the next piece".</summary>
+    /// <summary>
+    /// "Hops orthogonally over the first piece in its line, however far, to any cell beyond it up to the next piece":
+    /// saying that empty cells may come before the piece it hops (the user's report of 2026-11-12, of not knowing).
+    /// </summary>
     private static string HopOf(MovementRule rule, Func<PieceKindId, string> nameOf)
     {
         string landing = rule.MaximumBeyond == 1
@@ -31,7 +34,7 @@ public static class MovementText
             ? string.Empty
             : ", never over or onto a "
                 + string.Join(" or ", rule.Shunned.Select(nameOf).Order(StringComparer.Ordinal));
-        return $"Hops over one piece {DirectionOf(rule.Directions)}, {landing}{shunned}";
+        return $"Hops {DirectionOf(rule.Directions)} over the first piece in its line, however far, {landing}{shunned}";
     }
 
     /// <summary>"Leaps as a Knight: two cells one way and one square to it".</summary>

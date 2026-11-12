@@ -12,4 +12,11 @@ public sealed record MoveDiagramDto(
     ImmutableList<int> Moves,
     ImmutableList<int> Captures,
     ImmutableList<int> Screens
-);
+)
+{
+    /// <summary>
+    /// The first row across a river the piece may not cross, the river drawn along its lower edge; none, for a piece
+    /// no river holds back.
+    /// </summary>
+    public int? RiverRow { get; init; }
+}

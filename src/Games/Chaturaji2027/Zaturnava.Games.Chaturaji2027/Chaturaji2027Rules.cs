@@ -120,7 +120,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         this._grid = new SquareGridTopology(this._variant.Side, this._variant.Side);
         this._awayTurns = awayTurns;
         this._moves = new MoveGenerator(this._grid, this._variant.Kinds);
-        this._diagrams = new MoveDiagrams(this._variant.Kinds);
+        this._diagrams = new MoveDiagrams(this._variant.Kinds, this._variant.RiverBound);
         this._dice = dice;
         this._idleRounds = idleRounds;
         this._pawnPromotion = pawnPromotion;

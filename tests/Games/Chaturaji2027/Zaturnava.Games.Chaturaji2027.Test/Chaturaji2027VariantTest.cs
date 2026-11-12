@@ -164,7 +164,28 @@ public sealed class Chaturaji2027VariantTest
     }
 
     [Fact]
-    public void GuideOf_WhenAKindHops_DrawsAPieceTwoSquaresAheadToHopOver()
+    public void GuideOf_WhenARiverHoldsTheKindBack_DrawsTheRiverJustAheadAndNothingAcrossIt()
+    {
+        // Arrange - a Raja no river lets across
+        Chaturaji2027Rules rules = new(
+            DiceProfile.WeightedSixSided,
+            Chaturaji2027Rules.DefaultIdleRounds,
+            PawnPromotion.OtherArmies,
+            variant: Fenced with { RiverBound = [Chaturaji2027Pieces.Raja] }
+        );
+
+        // Act
+        MoveDiagram diagram = rules.GuideOf(Chaturaji2027Pieces.Raja).Diagram;
+
+        // Assert
+        Assert.Equal(
+            ("30,31,32,39,41", "30,31,32,39,41", 5),
+            (string.Join(",", diagram.Moves), string.Join(",", diagram.Captures), diagram.RiverRow)
+        );
+    }
+
+    [Fact]
+    public void GuideOf_WhenAKindHops_DrawsAPieceTwoSquaresOutOnEachLineToHopOver()
     {
         // Arrange - a Boat that hops along rows and columns, landing just beyond what it hops
         Chaturaji2027Rules rules = new(
@@ -185,8 +206,8 @@ public sealed class Chaturaji2027VariantTest
 
         // Assert
         Assert.Equal(
-            ("67", "67", 58),
-            (string.Join(",", diagram.Moves), string.Join(",", diagram.Captures), diagram.Screens.Single())
+            ("13,37,43,67", "13,37,43,67", "22,38,42,58"),
+            (string.Join(",", diagram.Moves), string.Join(",", diagram.Captures), string.Join(",", diagram.Screens))
         );
     }
 
