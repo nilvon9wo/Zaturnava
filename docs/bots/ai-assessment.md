@@ -372,8 +372,10 @@ Then every bot is a pairing, and the arena measures each pairing.
   (`IRulesApplying.KeepingWorthOf`), apart from what taking it scores; Chaturaji 2027's, from its table
   `Values/chaturaji-2027-keeping.json`, counts a Pawn as a Horse, 3, and every other piece as it scores
   (*Proposed*). Exposure weighs the team's pieces, and every piece that might take or be taken in an exchange, so;
-  what a taking scores is still its points. Grand Legions keeps its prices. Whether a bot should move a person's
-  pieces at all is [OQ10](../open-questions.md#oq10-a-bot-moving-a-persons-pieces).
+  what a taking scores is still its points. Grand Legions keeps its prices. A bot commanding a person's army moves
+  its pieces as a person would (*Stated* 2026-11-12): no rule keeps it off them; a good player should be able to
+  count on a good bot to move a piece when it should be moved and leave it where it is when it should be left,
+  the piece, the position and everything else weighed. So the cleverer the bot, the better a partner.
 
 Uncertain until measured: how fast the engine evaluates, and therefore how deep alpha-beta can reach on 12×12 within
 a move's time. Step 1 settles it before anything is built on it.

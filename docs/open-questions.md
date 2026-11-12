@@ -11,15 +11,6 @@ asked here instead (checked, every *Proposed* in the documents, on 2026-11-06).
 Anything to be built is in the [backlog](backlog.md) or the [roadmap](grand/roadmap.md), and anything left to
 playtesting is marked so where it is written.
 
-## OQ10 A bot moving a person's pieces
-
-With its Raja on a person's throne, an allied bot commands the person's army, and moves its pieces as it judges
-best: on 2026-11-12 Green moved the user's Rook off guarding the user's Pawn to take a Boat, and the Pawn was lost.
-The bots now count a Chaturaji 2027 Pawn as worth keeping as much as a Horse, so that one would no longer happen
-(*Proposed*). But should a bot move a person's pieces at all, or leave them to their player, moving only its own
-and those of seats bots play? Or move them only to save one, or to take something left unguarded? The bots know
-which seats people play, so any of these can be built.
-
 ## OQ9 A winning streak
 
 Should the leaderboard show a winning streak, the games won since the player last lost? Easily raised by playing
