@@ -71,6 +71,20 @@ public sealed class FairyStockfishBotTest
     }
 
     [Fact]
+    public async Task Decide_WhenTheEngineNamesAMoveLater_MakesIt()
+    {
+        // Arrange
+        ScriptedChannel channel = new("uciok", "readyok", "bestmove e1e2") { IsYielding = true };
+        FairyStockfishBot bot = new(new UciEngine(channel, Path.GetTempPath()), new StubBot());
+
+        // Act
+        GameAction action = await bot.Decide(Request(new GridRules(Kinds), KingMoves), Cancellation);
+
+        // Assert
+        Assert.Equal(KingMoves[0], action);
+    }
+
+    [Fact]
     public async Task Decide_WhenTheEngineNamesNone_LeavesItToTheFallback()
     {
         // Arrange

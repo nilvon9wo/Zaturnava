@@ -40,6 +40,28 @@ public sealed class UciEngineTest
     }
 
     [Fact]
+    public async Task BestMove_WhenAskedTwiceAtOnceOfAnEngineThatAnswersLater_AnswersOneAfterTheOther()
+    {
+        // Arrange
+        ScriptedChannel channel = new("uciok", "readyok", "bestmove a1a2", "readyok", "bestmove a1b1")
+        {
+            IsYielding = true,
+        };
+        using UciEngine engine = new(channel, Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N")));
+        TimeSpan thinking = TimeSpan.FromMilliseconds(50);
+        CancellationToken cancellation = TestContext.Current.CancellationToken;
+
+        // Act
+        string?[] best = await Task.WhenAll(
+            engine.BestMove(Position, ["a1a2", "a1b1"], thinking, cancellation),
+            engine.BestMove(Position, ["a1a2", "a1b1"], thinking, cancellation)
+        );
+
+        // Assert
+        Assert.Equal(["a1a2", "a1b1"], best);
+    }
+
+    [Fact]
     public async Task BestMove_WhenTheEngineNamesAnotherMove_NamesNone()
     {
         // Arrange

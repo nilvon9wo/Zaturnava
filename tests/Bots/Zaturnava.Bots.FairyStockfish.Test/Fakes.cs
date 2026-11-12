@@ -16,6 +16,9 @@ internal sealed class ScriptedChannel(params string[] replies) : IUciChannel
 
     public bool IsDisposed { get; private set; }
 
+    /// <summary>Whether it answers later, as a program does, rather than at once.</summary>
+    public bool IsYielding { get; init; }
+
     /// <summary>Says more, after what it was to say.</summary>
     public void Reply(params string[] replies)
     {
@@ -25,16 +28,27 @@ internal sealed class ScriptedChannel(params string[] replies) : IUciChannel
         }
     }
 
-    public Task Send([Required] string line, CancellationToken cancellationToken)
+    public async Task Send([Required] string line, CancellationToken cancellationToken)
     {
+        await this.Later();
         this.Sent = this.Sent.Add(line);
-        return Task.CompletedTask;
     }
 
-    public Task<string?> Receive(CancellationToken cancellationToken) =>
-        Task.FromResult(this._replies.TryDequeue(out string? line) ? line : null);
+    public async Task<string?> Receive(CancellationToken cancellationToken)
+    {
+        await this.Later();
+        return this._replies.TryDequeue(out string? line) ? line : null;
+    }
 
     public void Dispose() => this.IsDisposed = true;
+
+    private async Task Later()
+    {
+        if (this.IsYielding)
+        {
+            await Task.Delay(1);
+        }
+    }
 }
 
 /// <summary>
