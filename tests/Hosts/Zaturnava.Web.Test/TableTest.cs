@@ -1661,13 +1661,14 @@ public sealed class TableTest : IDisposable
     }
 
     [Fact]
-    public void Poll_WhenThePlayersTurnToDraftComesRoundAgain_KeepsTheFiltersAsTheyLeftThem()
+    public async Task Poll_WhenThePlayersTurnToDraftComesRoundAgain_KeepsTheFiltersAsTheyLeftThem()
     {
-        // Arrange - the player lists Infantry only, then another seat drafts
+        // Arrange - the player lists Infantry only, then another seat drafts; the filter is found and changed in one
+        // go, so that a poll cannot render the table anew in between
         using PageContext page = new(TimeSpan.FromMilliseconds(10));
         page.Server.View = DraftingView(left: 3, throne: false);
         IRenderedComponent<Table> table = page.Render<Table>(parameters => parameters.Add(x => x.Seating, SeatZero));
-        table.Find("select.draft-class").Change("Infantry");
+        await table.InvokeAsync(() => table.Find("select.draft-class").Change("Infantry"));
         page.Server.View = page.Server.View with { DecidingSeat = 1, Version = 2 };
         table.WaitForAssertion(() => Assert.Empty(table.FindAll("select.draft-class")), TimeSpan.FromSeconds(10));
 
