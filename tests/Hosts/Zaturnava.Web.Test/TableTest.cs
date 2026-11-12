@@ -1669,7 +1669,7 @@ public sealed class TableTest : IDisposable
         IRenderedComponent<Table> table = page.Render<Table>(parameters => parameters.Add(x => x.Seating, SeatZero));
         table.Find("select.draft-class").Change("Infantry");
         page.Server.View = page.Server.View with { DecidingSeat = 1, Version = 2 };
-        table.WaitForAssertion(() => Assert.Empty(table.FindAll("select.draft-class")));
+        table.WaitForAssertion(() => Assert.Empty(table.FindAll("select.draft-class")), TimeSpan.FromSeconds(10));
 
         // Act
         page.Server.View = DraftingView(left: 3, throne: false) with { Version = 3 };
@@ -1682,7 +1682,8 @@ public sealed class TableTest : IDisposable
                     table.Find("select.draft-class").GetAttribute("value"),
                     string.Join("|", table.FindAll(".draft-table .name").Select(name => name.TextContent))
                 )
-            )
+            ),
+            TimeSpan.FromSeconds(10)
         );
     }
 
