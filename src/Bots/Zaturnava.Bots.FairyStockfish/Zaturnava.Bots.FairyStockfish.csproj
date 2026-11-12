@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    A bot that asks Fairy-Stockfish (GPL-3, never part of this repository) what to play, by UCI, as a separate
+    program: an adapter of its own, so that nothing else knows the engine is there. The engine is found where
+    FAIRY_STOCKFISH_PATH says, else at artifacts/fairy-stockfish/fairy-stockfish.
+  -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Engine\Zaturnava.Engine\Zaturnava.Engine.csproj" />
+    <ProjectReference Include="..\Zaturnava.Bots\Zaturnava.Bots.csproj" />
+  </ItemGroup>
+
+</Project>

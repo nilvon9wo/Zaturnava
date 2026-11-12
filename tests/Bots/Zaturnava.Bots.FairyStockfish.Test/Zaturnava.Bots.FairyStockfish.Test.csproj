@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Bots\Zaturnava.Bots.FairyStockfish\Zaturnava.Bots.FairyStockfish.csproj" />
+    <ProjectReference Include="..\..\..\src\Games\Chaturaji2027\Zaturnava.Games.Chaturaji2027\Zaturnava.Games.Chaturaji2027.csproj" />
+    <ProjectReference Include="..\..\..\src\Application\Zaturnava.Application\Zaturnava.Application.csproj" />
+  </ItemGroup>
+
+</Project>

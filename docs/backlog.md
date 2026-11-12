@@ -385,7 +385,13 @@ first.
   in Betza notation, and its choice limited to the seat's legal moves for the roll (`go searchmoves`), with a
   short time limit; anything it cannot weigh (drafting, ransom, ending early) goes to another bot. It runs as
   its own process over UCI, in an adapter project of its own, so its GPL-3 licence stays with it. First in
-  the BotRunner only, rated against the others, before any thought of hosting it.
+  the BotRunner only, rated against the others, before any thought of hosting it. *Begun*: the bot plays,
+  see [Fairy-Stockfish, as a bot](bots/self-play.md#fairy-stockfish-as-a-bot); its rating is still to come.
+
+- *(Stated 2026-11-12, not a priority)* Fold into Grand Legions the pieces Fairy-Stockfish's built-in variants have
+  that it lacks: go through its variants (xiangqi, janggi, shogi and its kin, makruk, shatranj, capablanca, grand,
+  shako, seirawan, courier, and the rest), list each piece not already in `docs/Other Potential Pieces.xlsx` or
+  the game, and add them there and to the game, each with its own symbol.
 
 - *(Stated 2026-11-12)* Midas, at Green, blundered a piece: Black's Rook attacked a Pawn with Red's Raja
   behind it, so only a double Rook roll could take both, and Green moved a Horse between them, shielding
