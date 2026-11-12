@@ -309,6 +309,29 @@ public sealed class TableTest : IDisposable
     }
 
     [Fact]
+    public void Click_WhenAPieceInTheWayWouldBlockALeap_MarksItsSquareAndSaysWhatTheMarkMeans()
+    {
+        // Arrange - on a 3 x 3 diagram, a piece on 7, just ahead of the Raja, would block a leap
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Kinds =
+            [
+                new PieceKindDto("raja", "Raja", 5) { Diagram = new MoveDiagramDto(3, [], [], []) { Blockers = [7] } },
+            ],
+        };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Act
+        Cell(table, 0).Click();
+
+        // Assert
+        Assert.Equal(
+            ("square light blocker", "a piece here blocks a leap"),
+            (Square(table, 7).ClassName, table.FindAll(".diagram-key .key-item")[^1].TextContent)
+        );
+    }
+
+    [Fact]
     public void Click_WhenTheKindIsNotDrawn_TellsItsMovesInWords()
     {
         // Arrange

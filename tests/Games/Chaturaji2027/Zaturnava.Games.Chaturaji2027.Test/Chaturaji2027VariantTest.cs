@@ -185,6 +185,30 @@ public sealed class Chaturaji2027VariantTest
     }
 
     [Fact]
+    public void GuideOf_WhenAPieceInTheWayBlocksALeap_MarksWhereSuchAPieceWouldStand()
+    {
+        // Arrange - a Horse whose leg a piece blocks, as a Xiangqi Horse's is
+        Chaturaji2027Rules rules = new(
+            DiceProfile.WeightedSixSided,
+            Chaturaji2027Rules.DefaultIdleRounds,
+            PawnPromotion.OtherArmies,
+            variant: Fenced with
+            {
+                Kinds = Fenced.Kinds.SetItem(
+                    Chaturaji2027Pieces.Horse,
+                    new PieceKind(Chaturaji2027Pieces.Horse, [MovementRule.Leap(DirectionSets.Knight, 1).Lame()])
+                ),
+            }
+        );
+
+        // Act
+        MoveDiagram diagram = rules.GuideOf(Chaturaji2027Pieces.Horse).Diagram;
+
+        // Assert
+        Assert.Equal("31,39,41,49", string.Join(",", diagram.Blockers));
+    }
+
+    [Fact]
     public void GuideOf_WhenAKindHops_DrawsAPieceTwoSquaresOutOnEachLineToHopOver()
     {
         // Arrange - a Boat that hops along rows and columns, landing just beyond what it hops

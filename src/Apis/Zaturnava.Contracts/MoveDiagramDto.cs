@@ -19,4 +19,10 @@ public sealed record MoveDiagramDto(
     /// no river holds back.
     /// </summary>
     public int? RiverRow { get; init; }
+
+    /// <summary>
+    /// The cells a piece on which would block one of its leaps, as a Xiangqi Horse's leg does; none, for a piece
+    /// nothing blocks so.
+    /// </summary>
+    public ImmutableList<int> Blockers { get; init; } = [];
 }

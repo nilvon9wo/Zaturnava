@@ -182,6 +182,7 @@ internal static class GameViews
             )
             {
                 RiverRow = guide.Diagram.RiverRow,
+                Blockers = guide.Diagram.Blockers,
             },
         };
     }
