@@ -15,6 +15,9 @@ internal static class GameStarter
     /// </summary>
     public const int OwnAiLevel = -2;
 
+    /// <summary>The strength of the bots not yet rated at the ruleset, offered apart from the rest.</summary>
+    public const string UnratedName = "Unrated";
+
     private static readonly string[] StrengthNames = ["Easy", "Medium", "Hard"];
 
     /// <summary>
@@ -55,42 +58,64 @@ internal static class GameStarter
         [.. plans.Select(plan => plan.Length == 0 ? null : plan)];
 
     /// <summary>
-    /// The bots a quick game seats, <paramref name="count"/> of them, shuffled: the easiest at the ruleset, by
-    /// their ratings, for an easy game; the hardest, for a hard one; any, for a medium one. Never one paid for
-    /// each use; one not rated counts as easiest.
+    /// The bots a quick game seats, <paramref name="count"/> of them, shuffled: of those rated at the ruleset, the
+    /// easiest, by their ratings, for an easy game; the hardest, for a hard one; any, for a medium one; and only if
+    /// too few are rated, any of those not yet rated, whose strength no one knows (Proposed; the user's report of
+    /// 2026-11-12, of new bots offered as easy at Elo 0). Never one paid for each use.
     /// </summary>
     public static IEnumerable<string> QuickBots(CatalogDto catalog, string rulesetId, Difficulty difficulty, int count)
     {
-        ImmutableList<BotDto> unpaid = [.. catalog.Bots.Where(bot => !bot.IsPaid)];
-        ImmutableList<BotDto> easiestFirst = [.. unpaid.OrderBy(bot => bot.Ratings.GetValueOrDefault(rulesetId))];
-        IEnumerable<BotDto> chosen = difficulty switch
+        (ImmutableList<BotDto> rated, ImmutableList<BotDto> unrated) = Ranked(catalog, rulesetId);
+        IEnumerable<BotDto> ranked = difficulty switch
         {
-            Difficulty.Easy => easiestFirst.Take(count),
-            Difficulty.Hard => Enumerable.Reverse(easiestFirst).Take(count),
-            _ => unpaid.OrderBy(_ => Random.Shared.Next()).Take(count),
+            Difficulty.Easy => rated,
+            Difficulty.Hard => Enumerable.Reverse(rated),
+            _ => rated.OrderBy(_ => Random.Shared.Next()),
         };
-        return chosen.Select(bot => bot.Id).OrderBy(_ => Random.Shared.Next());
+        return ranked
+            .Concat(unrated.OrderBy(_ => Random.Shared.Next()))
+            .Take(count)
+            .Select(bot => bot.Id)
+            .OrderBy(_ => Random.Shared.Next());
     }
 
     /// <summary>
-    /// The bots at the ruleset, never one paid for each use, in three strengths - easy, medium and hard - of
-    /// as nearly as may be the same number of bots, easiest first; fewer, if there are fewer than three bots.
+    /// The bots at the ruleset, never one paid for each use: those rated at it in three strengths - easy, medium and
+    /// hard - of as nearly as may be the same number of bots, easiest first, fewer if fewer than three are rated; then
+    /// those not yet rated, apart, as <see cref="UnratedName"/> (Proposed), their strength unknown. If none is rated,
+    /// every bot is split into the three strengths as it comes.
     /// </summary>
     public static ImmutableList<Strength> Strengths(CatalogDto catalog, string rulesetId)
     {
-        ImmutableList<BotDto> easiestFirst =
-            [.. catalog.Bots.Where(bot => !bot.IsPaid).OrderBy(bot => bot.Ratings.GetValueOrDefault(rulesetId))];
-        int count = easiestFirst.Count;
+        (ImmutableList<BotDto> rated, ImmutableList<BotDto> unrated) = Ranked(catalog, rulesetId);
+        ImmutableList<BotDto> banded = rated.IsEmpty ? unrated : rated;
+        int count = banded.Count;
         int bands = StrengthNames.Length;
         return
         [
             .. StrengthNames
                 .Select((name, band) => new Strength(name, rulesetId, BandOf(band)))
+                .Append(new Strength(UnratedName, rulesetId, rated.IsEmpty ? [] : unrated))
                 .Where(strength => !strength.Bots.IsEmpty),
         ];
 
         ImmutableList<BotDto> BandOf(int band) =>
-            [.. easiestFirst.Take((band * count / bands)..((band + 1) * count / bands))];
+            [.. banded.Take((band * count / bands)..((band + 1) * count / bands))];
+    }
+
+    /// <summary>
+    /// The bots never paid for each use: those rated at the ruleset, easiest first; and those not, as they come.
+    /// </summary>
+    private static (ImmutableList<BotDto> Rated, ImmutableList<BotDto> Unrated) Ranked(
+        CatalogDto catalog,
+        string rulesetId
+    )
+    {
+        ImmutableList<BotDto> unpaid = [.. catalog.Bots.Where(bot => !bot.IsPaid)];
+        return (
+            [.. unpaid.Where(bot => bot.Ratings.ContainsKey(rulesetId)).OrderBy(bot => bot.Ratings[rulesetId])],
+            [.. unpaid.Where(bot => !bot.Ratings.ContainsKey(rulesetId))]
+        );
     }
 
     /// <summary>

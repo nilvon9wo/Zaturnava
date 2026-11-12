@@ -12,6 +12,8 @@ public sealed class GameStarterTest
     private static readonly BotDto Solomon = Bot("solomon", 1250);
     private static readonly BotDto Oracle = Bot("oracle", 1400);
     private static readonly BotDto Claude = new("claude", "Claude", "Asks Claude.", UsesAi: true, IsPaid: true);
+    private static readonly BotDto Pythia = Unrated("pythia");
+    private static readonly BotDto Tactician = Unrated("tactician");
 
     [Fact]
     public void Strengths_WhenThereAreEnoughBots_SplitsThemEasiestFirstLeavingOutThosePaidFor()
@@ -40,6 +42,60 @@ public sealed class GameStarterTest
 
         // Assert
         Assert.Equal("Medium|Hard", string.Join("|", strengths.Select(strength => strength.Name)));
+    }
+
+    [Fact]
+    public void Strengths_WhenSomeBotsAreNotRated_OffersThemApartAsUnratedRatherThanAsEasiest()
+    {
+        // Arrange
+        CatalogDto catalog = Catalog(Pythia, Random, Solomon, Midas, Tactician);
+
+        // Act
+        ImmutableList<Strength> strengths = GameStarter.Strengths(catalog, Ruleset);
+
+        // Assert
+        Assert.Equal(
+            ("Easy bot (Elo 1000)|Medium bot (Elo 1100)|Hard bot (Elo 1250)|Unrated bot", "pythia,tactician"),
+            (
+                string.Join("|", strengths.Select(strength => strength.Label)),
+                string.Join(",", strengths[3].Bots.Select(bot => bot.Id).Order(StringComparer.Ordinal))
+            )
+        );
+    }
+
+    [Fact]
+    public void Strengths_WhenNoBotIsRated_SplitsThemAllWithoutRatings()
+    {
+        // Arrange
+        CatalogDto catalog = Catalog(Pythia, Tactician, Unrated("sage"));
+
+        // Act
+        ImmutableList<Strength> strengths = GameStarter.Strengths(catalog, Ruleset);
+
+        // Assert
+        Assert.Equal("Easy bot|Medium bot|Hard bot", string.Join("|", strengths.Select(strength => strength.Label)));
+    }
+
+    [Theory]
+    [InlineData("Easy", 2, "midas,random")]
+    [InlineData("Hard", 2, "midas,solomon")]
+    [InlineData("Medium", 3, "midas,random,solomon")]
+    [InlineData("Hard", 4, "midas,pythia,random,solomon")]
+    public void QuickBots_WhenSomeBotsAreNotRated_SeatsThemOnlyIfTooFewAreRated(
+        string difficulty,
+        int count,
+        string expected
+    )
+    {
+        // Arrange
+        CatalogDto catalog = Catalog(Pythia, Random, Solomon, Midas);
+
+        // Act
+        IEnumerable<string> bots =
+            GameStarter.QuickBots(catalog, Ruleset, Enum.Parse<Difficulty>(difficulty), count);
+
+        // Assert
+        Assert.Equal(expected, string.Join(",", bots.Order(StringComparer.Ordinal)));
     }
 
     [Fact]
@@ -137,6 +193,8 @@ public sealed class GameStarterTest
 
     private static BotDto Bot(string id, int rating) =>
         new(id, id, "Plays.", UsesAi: false) { Ratings = Rated(rating) };
+
+    private static BotDto Unrated(string id) => new(id, id, "Plays.", UsesAi: true);
 
     private static ImmutableDictionary<string, int> Rated(int rating) =>
         ImmutableDictionary<string, int>.Empty.Add(Ruleset, rating);
