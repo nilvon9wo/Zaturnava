@@ -148,6 +148,7 @@ internal static class ZaturnavaServices
         new(
             [
                 new AthenaBot(Random.Shared),
+                new PythiaBot(Random.Shared),
                 new TacticianBot(Random.Shared),
                 new SageBot(Random.Shared),
                 new ArgusBot(Random.Shared),

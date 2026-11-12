@@ -60,7 +60,7 @@ swapped (`--bots sage,mine,sage,mine`), as moving first is worth something.
 
 | Option | |
 |---|---|
-| `--bots` | A bot id per seat, by commas: `random`, `midas`, `solomon`, `argus`, `sage`, `tactician`, `athena`, or yours |
+| `--bots` | A bot id per seat, by commas: `random`, `midas`, `solomon`, `argus`, `sage`, `tactician`, `athena`, `pythia`, or yours |
 | `--games` | How many games (default 100); they play in parallel |
 | `--max-steps` | The most decisions in a game before it is cut off, unfinished (default 1000) |
 | `--out` | The file to write (default the console) |
