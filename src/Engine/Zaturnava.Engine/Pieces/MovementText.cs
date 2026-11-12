@@ -22,8 +22,9 @@ public static class MovementText
         };
 
     /// <summary>
-    /// "Hops orthogonally over the first piece in its line, however far, to any cell beyond it up to the next piece":
-    /// saying that empty cells may come before the piece it hops (the user's report of 2026-11-12, of not knowing).
+    /// "Hops orthogonally over the first piece in its line, whether next to it or any number of empty cells away, to
+    /// any cell beyond it up to the next piece": saying plainly that no empty cell is needed before the piece it hops,
+    /// and that any number may come before it (the user's reports of 2026-11-12, of not knowing).
     /// </summary>
     private static string HopOf(MovementRule rule, Func<PieceKindId, string> nameOf)
     {
@@ -34,7 +35,8 @@ public static class MovementText
             ? string.Empty
             : ", never over or onto a "
                 + string.Join(" or ", rule.Shunned.Select(nameOf).Order(StringComparer.Ordinal));
-        return $"Hops {DirectionOf(rule.Directions)} over the first piece in its line, however far, {landing}{shunned}";
+        return $"Hops {DirectionOf(rule.Directions)} over the first piece in its line, "
+            + $"whether next to it or any number of empty cells away, {landing}{shunned}";
     }
 
     /// <summary>"Leaps as a Knight: two cells one way and one square to it".</summary>

@@ -271,7 +271,11 @@ public sealed class TableTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ("square light screen", "a piece to hop over", "Hops over the first piece"),
+            (
+                "square light screen",
+                "a piece to hop over: next to it, or further along its line",
+                "Hops over the first piece"
+            ),
             (
                 Square(table, 7).ClassName,
                 table.FindAll(".diagram-key .key-item")[^1].TextContent,
