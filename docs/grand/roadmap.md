@@ -139,7 +139,7 @@ What the program does so far (2026-11-04), and the gaps against the above:
   with the dearest piece on offer (`DraftBudgetLimit`); a budget set higher is held to it, and the lobby's box
   goes no higher. What a seat keeps unspent starts its score in the game, but counts in no one's points or
   experience (`GameState.Unspent`, `EarnedBy`). The standings were counted again from the games themselves
-  (migration `RecountStandings`, *Proposed*): every standing cleared and every game over rated again, in the
+  (migration `RecountStandings`, *Proposed*, accepted by the user 2026-11-12): every standing cleared and every game over rated again, in the
   order the games ended, so that the points and experience given away before are gone. While the creator
   drafts for everyone, the other open seats are held back (`HeldSeat`): no one may claim them, and the lobby does not list the game as waiting for players, until the draft is over.
 - The Chaturaji 2027 bonuses are × 10, as is the lead a team needs to win by giving up its turns

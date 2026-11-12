@@ -84,7 +84,7 @@ public sealed class ArenaRun
         [
             .. output.ToString()
                 .Split('\n', StringSplitOptions.RemoveEmptyEntries)
-                .Select(line => MarginOf(JsonDocument.Parse(line).RootElement, seats)),
+                .Select(line => MarginOf(JsonElement.Parse(line), seats)),
         ];
     }
 

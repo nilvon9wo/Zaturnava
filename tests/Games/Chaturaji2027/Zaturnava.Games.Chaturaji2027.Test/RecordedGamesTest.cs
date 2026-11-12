@@ -16,7 +16,7 @@ public sealed class RecordedGamesTest
     private static readonly ImmutableList<JsonElement> Games =
     [
         .. File.ReadLines(Path.Combine(AppContext.BaseDirectory, "RecordedGames.jsonl"))
-            .Select(line => JsonDocument.Parse(line).RootElement),
+            .Select(line => JsonElement.Parse(line)),
     ];
 
     public static TheoryData<int> Numbers => [.. Enumerable.Range(0, Games.Count)];

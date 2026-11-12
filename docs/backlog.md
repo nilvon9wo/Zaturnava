@@ -382,6 +382,10 @@ first.
 
 ## Later
 
+- *(Stated 2026-11-12, not a priority)* Upgrade to .NET 11, once MonsterASP hosts it (itch.io serves only the
+  page's static files, so its side is the WebAssembly build). The SDK CI and the deploys build with is pinned
+  (`scripts/pin-sdk.py`, and each workflow's setup-dotnet version): moving to a newer SDK means moving the pin.
+
 - A mechanical bot that likes to roll, rather than always moving without dice (not a priority).
 - Bots should weigh where a ransomed piece lands, not only what it is worth: it may come back between
   a rook and the piece it guarded or attacked. *Done*: Argus weighs a trade by what an enemy could take once it

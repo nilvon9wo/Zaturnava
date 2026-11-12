@@ -22,7 +22,7 @@ public sealed class SelfPlayCommandTest
 
         // Assert
         string[] lines = this._output.ToString().Split('\n', StringSplitOptions.RemoveEmptyEntries);
-        JsonElement first = JsonDocument.Parse(lines[0]).RootElement;
+        JsonElement first = JsonElement.Parse(lines[0]);
         Assert.Equal(
             (SelfPlayCommand.Succeeded, 3, "chaturaji-2027", 4, "random", 5, JsonValueKind.Null),
             (
@@ -50,7 +50,7 @@ public sealed class SelfPlayCommandTest
         // Assert
         JsonElement outcome = this._output.ToString()
             .Split('\n', StringSplitOptions.RemoveEmptyEntries)
-            .Select(line => JsonDocument.Parse(line).RootElement.GetProperty("outcome"))
+            .Select(line => JsonElement.Parse(line).GetProperty("outcome"))
             .First(ended => ended.ValueKind != JsonValueKind.Null);
         int winners = outcome.GetProperty("winners").GetArrayLength();
         Assert.Equal((true, true), (winners is 0 or 2, outcome.GetProperty("ending").GetString()!.Length > 0));
@@ -70,7 +70,7 @@ public sealed class SelfPlayCommandTest
         int exitCode = await SelfPlayCommand.Run(args, this._output, this._errors, this._cancellation);
 
         // Assert
-        JsonElement game = JsonDocument.Parse(this._output.ToString()).RootElement;
+        JsonElement game = JsonElement.Parse(this._output.ToString());
         Assert.Equal(
             (SelfPlayCommand.Succeeded, "seeded-own,sage,plain-own,random"),
             (exitCode, string.Join(',', game.GetProperty("seats").EnumerateArray().Select(Player)))
@@ -193,7 +193,7 @@ public sealed class SelfPlayCommandTest
 
         // Assert
         File.Delete(file);
-        JsonElement game = JsonDocument.Parse(this._output.ToString()).RootElement;
+        JsonElement game = JsonElement.Parse(this._output.ToString());
         Assert.Equal(
             (SelfPlayCommand.Succeeded, "athena,sage,athena,sage"),
             (exitCode, string.Join(',', game.GetProperty("seats").EnumerateArray().Select(Player)))
