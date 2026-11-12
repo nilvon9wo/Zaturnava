@@ -619,6 +619,43 @@ public sealed class GrandLegionsRulesTest
         );
     }
 
+    [Fact]
+    public void GuideOf_TheShogiPawn_TakesStraightAheadAsItMovesAndIsNotSaidToBeBlockedThere()
+    {
+        // Arrange
+        Chaturaji2027Rules rules = GrandLegionsRules.RulesOf(QuickGame.Small);
+
+        // Act
+        PieceGuide guide = rules.GuideOf(GrandLegionsPieces.ShogiPawn);
+
+        // Assert - one square ahead, 49, to move and to take
+        Assert.Equal(
+            ("49", "49", 0),
+            (string.Join(",", guide.Diagram.Moves), string.Join(",", guide.Diagram.Captures), guide.Restrictions.Count)
+        );
+    }
+
+    [Theory]
+    [InlineData("chancellor", "21,23,29,33,47,51,57,59")]
+    [InlineData("dragon-horse", "")]
+    [InlineData("xiangqi-horse", "")]
+    [InlineData("alfil", "20,24,56,60")]
+    public void GuideOf_WhenAKindLeapsFartherThanTheNextSquare_SaysWhichSquaresItLeapsToRatherThanSlides(
+        string kind,
+        string leaps
+    )
+    {
+        // Arrange - the Chancellor slides as a Rook, and leaps as a Knight; the Dragon Horse slides as a Bishop and
+        // steps as a King; the Xiangqi Horse's leaps a piece blocks; the Alfil leaps two squares diagonally
+        Chaturaji2027Rules rules = GrandLegionsRules.RulesOf(QuickGame.Small);
+
+        // Act
+        MoveDiagram diagram = rules.GuideOf(new PieceKindId(kind)).Diagram;
+
+        // Assert
+        Assert.Equal(leaps, string.Join(",", diagram.Leaps));
+    }
+
     [Theory]
     [InlineData("xiangqi-horse", "31,39,41,49")]
     [InlineData("xiangqi-elephant", "30,32")]

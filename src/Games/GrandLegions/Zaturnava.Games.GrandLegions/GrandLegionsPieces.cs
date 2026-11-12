@@ -93,8 +93,9 @@ public static class GrandLegionsPieces
             .Promoting(GoldGeneral),
 
         // Infantry
+        // Unlike the Western Pawn, it takes the piece directly ahead, as it moves (Stated, 2026-11-12): nothing ahead
+        // blocks it but its own side's pieces.
         Piece(ShogiPawn, "Pawn (Shogi)", Infantry, Shogi, ForwardStep)
-            .Restricted(Moves(BlockedAhead, 2))
             .Promoting(GoldGeneral),
         Piece(WesternPawn, "Pawn (Western)", Infantry, Western, PawnMovement())
             .Restricted(Moves(BlockedAhead, 2))

@@ -25,4 +25,10 @@ public sealed record MoveDiagramDto(
     /// nothing blocks so.
     /// </summary>
     public ImmutableList<int> Blockers { get; init; } = [];
+
+    /// <summary>
+    /// The cells it moves to farther than the next cell by leaping, over anything between, as a Knight does; every
+    /// other cell farther off, it slides to, stopped by the first piece in the way.
+    /// </summary>
+    public ImmutableList<int> Leaps { get; init; } = [];
 }
