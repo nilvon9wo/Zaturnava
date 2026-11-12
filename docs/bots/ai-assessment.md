@@ -360,6 +360,12 @@ Then every bot is a pairing, and the arena measures each pairing.
   home beside Green's Rook in Black's corner, trapping it. Every bot now refuses to offer or accept a trade that
   would leave any piece of its team with at most one cell to go to, where it had more (*Proposed*). The cells a
   piece attacks stand in for where it may go.
+- **Exposure follows the turn order** (the user's play of 2026-11-12). Green declined its Rook back on its home
+  cell, beside Red's Raja, although Green plays before Red and the Rook could take the Raja first. Exposure, which
+  Careful, Argus, Sage and so Athena and Pythia's fallback all count, once let any enemy reply first. Now a seat of
+  the team whose turn comes before an enemy's saves the piece it would lose most to that enemy, by moving it or
+  taking its attacker, so only its second-worst such loss counts (*Proposed*). The turn is taken to go round the
+  seats in their order, as both rulesets have it.
 
 Uncertain until measured: how fast the engine evaluates, and therefore how deep alpha-beta can reach on 12×12 within
 a move's time. Step 1 settles it before anything is built on it.

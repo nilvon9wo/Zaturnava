@@ -215,6 +215,32 @@ public sealed class ArgusBotTest
     }
 
     [Theory]
+    [InlineData(3, null, "accept")]
+    [InlineData(1, null, "decline")]
+    [InlineData(1, 3, "decline")]
+    public async Task Decide_WhenOfferedAPieceBackThatMovesBeforeItsAttacker_Accepts(
+        int turn,
+        int? regent,
+        string answer
+    )
+    {
+        // Arrange - its Horse back where Yellow's Pawn may take it: but, on seat 3's turn, seat 0 moves next and saves
+        // it; not so on Yellow's, whoever plays it
+        DecisionRequest request = Ransoms.Exposing(
+            Ransoms.Offered([20], [11]),
+            Ransoms.Black,
+            turn: new SeatId(turn),
+            regent: regent is { } seat ? new SeatId(seat) : null
+        );
+
+        // Act
+        GameAction action = await new ArgusBot(new Random(1)).Decide(request, this._cancellation);
+
+        // Assert
+        Assert.Equal(answer, action.Describe().Kind);
+    }
+
+    [Theory]
     [InlineData(false, true)]
     [InlineData(true, false)]
     public async Task Decide_WhenNoGiftIsLeft_OffersTheBestTradeUnlessItLeavesAPieceToBeTaken(
