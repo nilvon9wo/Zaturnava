@@ -211,6 +211,8 @@ They may be added later. The program keeps their keys apart from the grand piece
   for 3 × 3, and the second the board's rectangle, which rivers and drawing assume.
 - **Stated.** Later still, palaces may be turned off, leaving bare thrones. The pieces bound to a
   palace (confined to it, or with powers in it) are then left out of the draft.
+- **Stated (2026-11-12).** The palace is seen on the board, as the river and the throne are: its edge
+  drawn with lines reminiscent of crenellation, a castle wall's battlements.
 - **Stated.** Every palace has a line from each of its cells to its throne, and the page draws
   them. A piece with the power "can move diagonally along marked palace lines" may follow them,
   even in a direction it could not otherwise take.

@@ -9,8 +9,9 @@
    game is over, the player may play it again, the same seats played the same way, or start a quick game.
    If the server no longer has the game (restarted, say), it says so, stops asking, and offers the lobby.
    Shown again after being hidden (when the browser may have slowed its asking), it asks at once.
-   Under it all, a quiet bar: the game's name and the way back to the lobby, the buttons that turn the
-   board, and the page's own settings. Beside the log, by tabs, the players' talk (TableTalk). Any piece clicked
+   Above it all, the way back to the lobby and the game's name (Proposed 2026-11-12: not in the lower left, as
+   the user asked; the board shows any river, so no words for the terrain). Under it all, a quiet bar: how to
+   play, the buttons that turn the board, and the page's own settings. Beside the log, by tabs, the players' talk (TableTalk). Any piece clicked
    on, the player's or not, is told of at the side (PieceCard) until put away. *@
 @using Microsoft.JSInterop
 @implements IDisposable
@@ -21,6 +22,11 @@
 @using System.Globalization
 
 <section class="table">
+    <nav class="table-nav">
+        <button class="leave" title="Back to the lobby" @onclick="this.OnLeave">&#x2190; Lobby</button>
+        <span class="brand">@(this._view?.RulesetName ?? "Zaturnava")</span>
+    </nav>
+
     @if (this._problem is { } problem && this._view is null)
     {
         <p class="problem" role="alert">@problem</p>
@@ -520,13 +526,6 @@
 
     <footer class="bar table-bar">
         <span class="where">
-            @* first, so that no long name or terrain ever pushes it out of sight *@
-            <button class="leave" @onclick="this.OnLeave">Lobby</button>
-            <span class="brand">@(this._view?.RulesetName ?? "Zaturnava")</span>
-            @if (this._view?.Terrain is { } terrain)
-            {
-                <span class="terrain">@terrain</span>
-            }
             @this.HowToPlay
         </span>
         @if (this._view is { } shown)
