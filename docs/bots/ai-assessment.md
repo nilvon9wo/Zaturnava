@@ -356,6 +356,10 @@ Then every bot is a pairing, and the arena measures each pairing.
   the second most it could lose, since the enemy saves the dearest (a fork) (*Proposed*). Athena's network inputs
   keep the old count, which it learned from. Sage's tuned weight for this term was tuned on the old count, so a
   re-tune may move it.
+- **No trade pens a piece in** (the user's play of 2026-11-12). Green accepted an even trade that sent Black's Pawn
+  home beside Green's Rook in Black's corner, trapping it. Every bot now refuses to offer or accept a trade that
+  would leave any piece of its team with at most one cell to go to, where it had more (*Proposed*). The cells a
+  piece attacks stand in for where it may go.
 
 Uncertain until measured: how fast the engine evaluates, and therefore how deep alpha-beta can reach on 12×12 within
 a move's time. Step 1 settles it before anything is built on it.

@@ -113,10 +113,14 @@ internal sealed class ScoringRules(ImmutableDictionary<GameAction, int> points) 
     /// <summary>Seat 1's attacks, whatever the state; none, unless set. No other seat attacks.</summary>
     public ImmutableList<Attack> Attacks { get; init; } = [];
 
+    /// <summary>Each seat's attacks in each state, in place of <see cref="Attacks"/>; none, unless set.</summary>
+    public Func<GameState, SeatId, ImmutableList<Attack>>? AttacksIn { get; init; }
+
     public ImmutableList<Attack> AttacksOf([Required] GameState state, SeatId seat) =>
-        seat == new SeatId(1)
+        this.AttacksIn?.Invoke(state, seat)
+        ?? (seat == new SeatId(1)
             ? this.Attacks
-            : [];
+            : []);
 
     public bool IsLeader(PieceKindId kind) => kind == new PieceKindId("raja");
 

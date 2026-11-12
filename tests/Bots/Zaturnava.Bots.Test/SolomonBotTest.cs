@@ -57,6 +57,21 @@ public sealed class SolomonBotTest
         Assert.Equal("decline", action.Describe().Kind);
     }
 
+    [Theory]
+    [InlineData(1, "decline")]
+    [InlineData(5, "accept")]
+    public async Task Decide_WhenAnEvenTradeWouldSendAPieceHomeToPenInItsAllysBoat_DeclinesIt(int home, string answer)
+    {
+        // Arrange - Black's Horse for Yellow's, even; home on cell 1, the Horse leaves Green's Boat one cell to go to
+        DecisionRequest offered = Ransoms.Trapping(Ransoms.Offered([20], [11]), home);
+
+        // Act
+        GameAction action = await new SolomonBot(new Random(1)).Decide(offered, this._cancellation);
+
+        // Assert
+        Assert.Equal(answer, action.Describe().Kind);
+    }
+
     [Fact]
     public async Task Decide_WhenAnEnemyLeadersTradeIsEvenOnlyWithPoints_DeclinesForItWeighsWorthAlone()
     {
