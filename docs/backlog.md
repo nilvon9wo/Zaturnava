@@ -427,8 +427,9 @@ first.
   Red's Raja but leaving the Horse where that Raja could take it for nothing, without making any threat of
   its own. Greed does not explain the move. *Found*: Midas, as written, takes the action that scores most at
   once and, when none scores, moves at random, never looking past its own action; the block was chance, not
-  a choice. Whether Midas should, when nothing scores, avoid leaving a piece newly hanging is
-  [OQ11](open-questions.md#oq11-a-less-careless-midas).
+  a choice. *Stated 2026-11-13* (was OQ11): Midas stays as careless as it is; a less careless Midas, one that
+  when nothing scores prefers a move leaving none of its own pieces newly open to capture, might be an
+  additional bot. Not a priority.
 
 - *(Stated 2026-11-12)* The leaderboard shows each player's winning streak, the games won since they last lost,
   three ways: over every game, over the games that count toward Elo only, and over the games against people
