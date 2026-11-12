@@ -183,13 +183,22 @@ internal static class Appraisal
             .Max();
 
     /// <summary>
-    /// What the team may still win, once its enemies have moved, by starting an exchange where an enemy piece stands
-    /// (Proposed; the user's ruling of 2026-11-12, that threatened pieces move before they can be taken). Every enemy
-    /// moves before the team's next turn, so: a piece threatened that could itself take one of the team's will take
-    /// it and be gone, and wins the team nothing; and each enemy saves the piece it would lose most, so only its
-    /// second-worst threat counts (a fork). The most of that over the enemies.
+    /// What fleeing costs an enemy, as a share of what the piece it saves is worth: its turn, spent saving the piece
+    /// rather than on its own plans (Proposed).
     /// </summary>
-    private static int Threats(
+    private const double Tempo = 0.25;
+
+    /// <summary>
+    /// What the team may still win, once its enemies have moved, by starting an exchange where an enemy piece stands
+    /// (Proposed; the user's rulings of 2026-11-12, that threatened pieces move before they can be taken, and that a
+    /// fork of two enemies' pieces is worth making). Every enemy moves before the team's next turn, so: a piece
+    /// threatened that could itself take one of the team's will take it and be gone, and wins the team nothing; and
+    /// each enemy saves the piece it would lose most that has somewhere safe to flee to (<see cref="Threat"/>), so
+    /// its other threats count in full, the most of them over the enemies; but saving it costs the enemy its turn,
+    /// so each piece saved counts for <see cref="Tempo"/> of its worth besides. A fork of one enemy's pieces wins
+    /// one of them; one of two enemies' wins only their turns, but both.
+    /// </summary>
+    private static double Threats(
         DecisionRequest request,
         GameState state,
         ILookup<CellId, Attack> ours,
@@ -203,20 +212,50 @@ internal static class Appraisal
                 .SelectMany(occupant => theirs[occupant.Key])
                 .Select(attack => attack.Attacker.Id),
         ];
-        return state.Position.Occupants
-            .Where(occupant => !state.Teams.AreAllied(occupant.Value.Owner, request.Seat)
-                && !takers.Contains(occupant.Value.Id)
-            )
-            .Select(occupant => (occupant.Value.Owner, Won: Careful.Exchange(
-                request.Rules.WorthOf(occupant.Value.Kind),
-                Careful.WorthsOf(request, ours[occupant.Key]),
-                Careful.WorthsOf(request, theirs[occupant.Key])
-            )))
-            .GroupBy(threat => threat.Owner, threat => threat.Won)
-            .Select(threats => threats.OrderDescending().Skip(1).Append(0).Max())
-            .Append(0)
-            .Max();
+        ILookup<PieceId, CellId> reach =
+            theirs.SelectMany(cell => cell).ToLookup(attack => attack.Attacker.Id, attack => attack.Target);
+        ImmutableHashSet<CellId> blocked = [.. ours.Select(cell => cell.Key), .. state.Position.Occupants.Keys];
+        ImmutableList<(int Left, int Saved)> enemies =
+        [
+            .. state.Position.Occupants
+                .Where(occupant => !state.Teams.AreAllied(occupant.Value.Owner, request.Seat)
+                    && !takers.Contains(occupant.Value.Id)
+                )
+                .Select(occupant => (occupant.Value.Owner, Threat: new Threat(
+                    Careful.Exchange(
+                        request.Rules.WorthOf(occupant.Value.Kind),
+                        Careful.WorthsOf(request, ours[occupant.Key]),
+                        Careful.WorthsOf(request, theirs[occupant.Key])
+                    ),
+                    reach[occupant.Value.Id].Any(cell => !blocked.Contains(cell))
+                )))
+                .Where(threat => threat.Threat.Won > 0)
+                .GroupBy(threat => threat.Owner, threat => threat.Threat)
+                .Select(Saving),
+        ];
+        return enemies.Select(enemy => enemy.Left).Append(0).Max() + (Tempo * enemies.Sum(enemy => enemy.Saved));
     }
+
+    /// <summary>
+    /// What one enemy's threatened pieces leave the team once it saves the dearest that can flee: the most it may win
+    /// of the others, and what the one saved is worth.
+    /// </summary>
+    private static (int Left, int Saved) Saving(IEnumerable<Threat> threats)
+    {
+        ImmutableList<Threat> dearestFirst = [.. threats.OrderByDescending(threat => threat.Won)];
+        int saved = dearestFirst.FindIndex(threat => threat.CanFlee);
+        return (
+            dearestFirst.Where((_, index) => index != saved).Select(threat => threat.Won).Append(0).Max(),
+            saved < 0 ? 0 : dearestFirst[saved].Won
+        );
+    }
+
+    /// <summary>
+    /// What the team could win by starting an exchange where an enemy piece stands, and whether the piece may flee:
+    /// whether it attacks (as where it may go) an empty cell the team does not attack. A cell a piece of the team
+    /// stands on is no refuge: a piece that could take one is not counted at all.
+    /// </summary>
+    private sealed record Threat(int Won, bool CanFlee);
 
     /// <summary>How much of something each side has: the bot's own seat, its allies, its enemies.</summary>
     private static Sided Tally(

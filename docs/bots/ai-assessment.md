@@ -376,6 +376,11 @@ Then every bot is a pairing, and the arena measures each pairing.
   its pieces as a person would (*Stated* 2026-11-12): no rule keeps it off them; a good player should be able to
   count on a good bot to move a piece when it should be moved and leave it where it is when it should be left,
   the piece, the position and everything else weighed. So the cleverer the bot, the better a partner.
+- **A fork of two enemies is worth making** (the user's play of 2026-11-12). Green's Rook could fork Yellow's King
+  and Red's Boat, but moved a Pawn instead: each enemy, moving before Green, was counted as saving its piece, so the
+  fork counted for nothing. Now each enemy saves only the dearest of its threatened pieces that has an empty cell
+  to flee to that the team does not attack; one cornered counts in full. And a piece saved still costs its enemy
+  its turn, so it counts for a quarter of its worth besides, for every enemy that must flee (*Proposed*).
 
 Uncertain until measured: how fast the engine evaluates, and therefore how deep alpha-beta can reach on 12×12 within
 a move's time. Step 1 settles it before anything is built on it.

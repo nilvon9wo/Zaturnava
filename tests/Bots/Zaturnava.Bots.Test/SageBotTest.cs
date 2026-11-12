@@ -96,8 +96,29 @@ public sealed class SageBotTest
     public async Task Decide_WhenTheRajaItForkedHasMovedAway_TakesThePawnLeftRatherThanChaseTheRaja()
     {
         // Arrange - the enemy Raja it forked with a Pawn has stepped away: Sage's Boat may take the Pawn (1), or go
-        // where it threatens the Raja again (5), which the enemy would only move once more; weighed so that a threat
-        // on the Raja counts for more than the Pawn taken
+        // where it threatens the Raja again (4), which the enemy would only move once more, to 7; weighed so that a
+        // threat on the Raja counts for more than the Pawn taken
+        DecisionRequest request = LineRules.Request(
+            [LineRules.Move(2, 1), LineRules.Move(2, 4)],
+            (2, LineRules.Boat, LineRules.Seat),
+            (3, LineRules.Pawn, LineRules.Seat),
+            (1, LineRules.Pawn, LineRules.Enemy),
+            (6, LineRules.Raja, LineRules.Enemy)
+        );
+        SageWeights weights = Nothing with { Score = 1, Chances = 0.5 };
+
+        // Act
+        GameAction action = await new SageBot(new Random(Seed), weights).Decide(request, this._cancellation);
+
+        // Assert
+        Assert.Equal(LineRules.Move(2, 1), action);
+    }
+
+    [Fact]
+    public async Task Decide_WhenTheRajaItCanThreatenHasNowhereToFlee_ThreatensItRatherThanTakeAPawn()
+    {
+        // Arrange - Sage's Boat may take a Pawn (1), or go where it threatens the enemy Raja (5), cornered at the end
+        // of the line, the one cell it could go to one the Boat attacks too
         DecisionRequest request = LineRules.Request(
             [LineRules.Move(3, 1), LineRules.Move(3, 5)],
             (3, LineRules.Boat, LineRules.Seat),
@@ -111,7 +132,27 @@ public sealed class SageBotTest
         GameAction action = await new SageBot(new Random(Seed), weights).Decide(request, this._cancellation);
 
         // Assert
-        Assert.Equal(LineRules.Move(3, 1), action);
+        Assert.Equal(LineRules.Move(3, 5), action);
+    }
+
+    [Fact]
+    public async Task Decide_WhenItCanForkPiecesOfTwoEnemies_ForksThemRatherThanThreatenOne()
+    {
+        // Arrange - Sage's Boat may go between seat 1's Raja and seat 3's Horse (4), threatening both, each enemy then
+        // spending its turn to flee; or beside the Raja alone (1), which would take the Boat
+        DecisionRequest request = LineRules.Request(
+            [LineRules.Move(0, 4), LineRules.Move(0, 1)],
+            (0, LineRules.Boat, LineRules.Seat),
+            (2, LineRules.Raja, LineRules.Enemy),
+            (6, LineRules.Horse, new SeatId(3))
+        );
+        SageWeights weights = Nothing with { Chances = 1 };
+
+        // Act
+        GameAction action = await new SageBot(new Random(Seed), weights).Decide(request, this._cancellation);
+
+        // Assert
+        Assert.Equal(LineRules.Move(0, 4), action);
     }
 
     [Fact]
