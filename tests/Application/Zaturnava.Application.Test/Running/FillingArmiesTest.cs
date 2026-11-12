@@ -58,39 +58,69 @@ public sealed class FillingArmiesTest
     }
 
     [Theory]
-    [InlineData(5, false, "King")]
-    [InlineData(4, false, "Pawn")]
-    [InlineData(5, true, "Pawn")]
-    public async Task Decide_WhenTheBudgetLeavesMoreThanTheFillSpends_BuysTheDearestItPaysForThereButOnTheThrone(
+    [InlineData(5, false, 8, 1, "King")]
+    [InlineData(5, false, 1, 8, "Pawn")]
+    [InlineData(4, false, 8, 1, "Pawn")]
+    [InlineData(5, true, 8, 1, "Pawn")]
+    public async Task Decide_WhenTheBudgetLeavesMoreThanTheFillSpends_BuysTheStrongestItPaysForThereButOnTheThrone(
         int budget,
         bool isOnThrone,
+        int kingReach,
+        int pawnReach,
         string expected
     )
     {
-        // Arrange - the fill would add a Pawn (1); a King (5) and a Pawn are offered where it would
+        // Arrange - the fill would add a Pawn (1); a King (5) and a Pawn are offered where it would, each reaching
+        // as many squares as given: the dearer is not always the stronger
         CellId cell = isOnThrone ? Left : Free;
-        TinyRules rules = new(5)
+        TinyRules rules = Strengths(cell, kingReach, pawnReach);
+
+        // Act
+        GameAction action = await this.Decided(rules, Throned(rules, budget), Offered(cell));
+
+        // Assert
+        Assert.Equal(expected, ((DraftAction)action).Piece.Value);
+    }
+
+    [Fact]
+    public async Task Decide_WhenSeveralItPaysForAreNearlyAsStrong_DraftsNowOneNowAnother()
+    {
+        // Arrange - a King (5) reaching 8 squares, a Pawn (1) reaching 7: nearly as strong
+        TinyRules rules = Strengths(Free, 8, 7);
+
+        // Act
+        ImmutableHashSet<string> drafted = [.. await Task.WhenAll(
+            Enumerable.Range(0, 20).Select(async seed =>
+                ((DraftAction)await this.Decided(rules, Throned(rules, 5, seed), Offered(Free))).Piece.Value
+            )
+        )];
+
+        // Assert
+        Assert.Equal(["King", "Pawn"], drafted.Order(StringComparer.Ordinal));
+    }
+
+    /// <summary>The fill adding a Pawn on <paramref name="cell"/>, a King worth 5, each reaching as given.</summary>
+    private static TinyRules Strengths(CellId cell, int kingReach, int pawnReach) =>
+        new(5)
         {
             Filled = state => state with
             {
                 Position = state.Position.Place(cell, new Piece(new PieceId(9), TinyRules.Pawn, First)),
             },
             KingWorth = 5,
+            Reaches = ImmutableDictionary<PieceKindId, int>.Empty
+                .Add(TinyRules.King, kingReach)
+                .Add(TinyRules.Pawn, pawnReach),
         };
-        ImmutableList<GameAction> choices =
-        [
-            new DraftAction(First, TinyRules.King, cell),
-            new DraftAction(First, TinyRules.Pawn, cell),
-            new FillArmyAction(First),
-            new PassAction(First),
-        ];
 
-        // Act
-        GameAction action = await this.Decided(rules, Throned(rules, budget), choices);
-
-        // Assert
-        Assert.Equal(expected, ((DraftAction)action).Piece.Value);
-    }
+    /// <summary>A King and a Pawn offered on <paramref name="cell"/>, the fill, and being done.</summary>
+    private static ImmutableList<GameAction> Offered(CellId cell) =>
+    [
+        new DraftAction(First, TinyRules.King, cell),
+        new DraftAction(First, TinyRules.Pawn, cell),
+        new FillArmyAction(First),
+        new PassAction(First),
+    ];
 
     [Fact]
     public async Task Decide_WhenTheArmyFilledAtRandomWouldAddNothing_IsDone()
@@ -132,12 +162,15 @@ public sealed class FillingArmiesTest
     private static GameState Throneless(TinyRules rules) =>
         rules.CreateInitialState() with { Thrones = [] };
 
-    /// <summary>The first seat's throne set on the left cell, with <paramref name="budget"/> left to spend.</summary>
-    private static GameState Throned(TinyRules rules, int budget = 1) =>
+    /// <summary>
+    /// The first seat's throne set on the left cell, with <paramref name="budget"/> left to spend, the draft drawn by
+    /// <paramref name="seed"/>.
+    /// </summary>
+    private static GameState Throned(TinyRules rules, int budget = 1, int seed = 0) =>
         rules.CreateInitialState() with
         {
             Thrones = ImmutableDictionary<SeatId, CellId>.Empty.Add(First, Left),
-            Draft = new ArmyDraft(0, ImmutableDictionary<SeatId, int>.Empty.Add(First, budget), []),
+            Draft = new ArmyDraft(seed, ImmutableDictionary<SeatId, int>.Empty.Add(First, budget), []),
         };
 
     private Task<GameAction> Decided(TinyRules rules, GameState state, ImmutableList<GameAction> choices) =>

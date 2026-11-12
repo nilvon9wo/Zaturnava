@@ -1,6 +1,8 @@
+using System.Collections.Immutable;
 using System.ComponentModel.DataAnnotations;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Decisions;
+using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
 using Net.NowhereAtAll.Zaturnava.Engine.Rules;
 
 namespace Net.NowhereAtAll.Zaturnava.Application.Running;
@@ -9,11 +11,17 @@ namespace Net.NowhereAtAll.Zaturnava.Application.Running;
 /// A bot that, while the armies are drafted, drafts its own as the army filled at random would be (Proposed: until
 /// each bot drafts its own way, as the roadmap's Midas by value, Solomon evenly), a step at a time, as a person
 /// does: its throne where that army's would be; then, a turn at a time, the dearest piece of that army, on its square,
-/// or a dearer one there, should the budget leave more than that army spends; done once that army has nothing more to
-/// add. It plays as itself once play begins.
+/// or a stronger one there that the budget still pays for; done once that army has nothing more to add. It plays as
+/// itself once play begins.
 /// </summary>
 public sealed class FillingArmies([Required] IDeciding bot) : IDeciding
 {
+    /// <summary>
+    /// How strong, as a percentage of the strongest piece it can pay for, a piece must be for a bot to draft it in
+    /// place of the fill's (Proposed).
+    /// </summary>
+    public const int NearlyStrongest = 75;
+
     private readonly IDeciding _bot = bot;
 
     public Task<GameAction> Decide([Required] DecisionRequest request, CancellationToken cancellationToken) =>
@@ -51,10 +59,12 @@ public sealed class FillingArmies([Required] IDeciding bot) : IDeciding
     }
 
     /// <summary>
-    /// The <paramref name="piece"/> the fill would buy, or, on any square but the throne (its leader's), the dearest
-    /// kind offered there that the budget can pay for, keeping enough for the rest of the fill's army: what is left
-    /// over, a person spends on stronger pieces, not keeps, nor spreads over cheap ones (Proposed; the user's report
-    /// of 2026-11-12, of bots buying cheap pieces with a large budget).
+    /// The <paramref name="piece"/> the fill would buy, or, on any square but the throne (its leader's), a stronger
+    /// one there that the budget can pay for, keeping enough for the rest of the fill's army (Proposed; the user's
+    /// reports of 2026-11-12, of bots buying cheap pieces with a large budget, and that the dearest piece is not
+    /// always the strongest: a Shogi Pawn is dear for the leader it may become). Strength is what the piece does on
+    /// the board, its reach (<see cref="ReachOf"/>), not its price; and, so that armies differ, it is drawn at random
+    /// among those it can pay for nearly as strong as the strongest (<see cref="NearlyStrongest"/>).
     /// </summary>
     private static DraftAction? Bettered(DecisionRequest request, GameState filled, DraftAction? piece)
     {
@@ -68,8 +78,25 @@ public sealed class FillingArmies([Required] IDeciding bot) : IDeciding
             .Where(entry => entry.Value.Owner == request.Seat && request.State.Position.PieceAt(entry.Key) is null)
             .Sum(entry => rules.WorthOf(entry.Value.Kind));
         int most = rules.WorthOf(piece.Piece) + request.State.Draft!.Left[request.Seat] - spent;
-        return request.LegalActions.OfType<DraftAction>()
-            .Where(action => action.Cell == piece.Cell && rules.WorthOf(action.Piece) <= most)
-            .MaxBy(action => rules.WorthOf(action.Piece));
+        ImmutableList<(DraftAction Action, int Reach)> affordable =
+        [
+            .. request.LegalActions.OfType<DraftAction>()
+                .Where(action => action.Cell == piece.Cell && rules.WorthOf(action.Piece) <= most)
+                .Select(action => (action, ReachOf(rules, action.Piece))),
+        ];
+        int strongest = affordable.Max(each => each.Reach);
+        ImmutableList<DraftAction> strong =
+        [
+            .. affordable.Where(each => each.Reach * 100 >= strongest * NearlyStrongest).Select(each => each.Action),
+        ];
+        Random random = new(request.State.Draft.Seed + request.State.Position.Occupants.Count);
+        return strong[random.Next(strong.Count)];
+    }
+
+    /// <summary>How many squares a <paramref name="kind"/> reaches, to move or capture, as its card draws.</summary>
+    private static int ReachOf(IRulesApplying rules, PieceKindId kind)
+    {
+        MoveDiagram diagram = rules.GuideOf(kind).Diagram;
+        return diagram.Moves.Union(diagram.Captures).Count();
     }
 }

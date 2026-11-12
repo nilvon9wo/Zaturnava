@@ -27,7 +27,11 @@ first.
   anyone's, so a program playing as a guest needs no alias (*Stated* 2026-11-12).
 - **N2** The database stays as it is through every change, by migrations; never wiped (*Stated*).
 - **N3** A leaderboard, for players to compete for; with each player's Elo and their **experience**: each time
-  a player is on the winning team, they gain their own points plus their team's (*Stated*). Each player's
+  a player is on the winning team, they gain their own points plus their team's (*Stated*), changed
+  (*Stated 2026-11-12*, as a stronger ally gave more): their own points earned, and as much again times their
+  share of their team's, so that carrying a weak ally gains more than being carried by a strong one; alone, it
+  is twice their points, as before (`StandingService.ExperienceOf`; past games recounted by the migration
+  `RecountExperience`). Each player's
   statistics also count the games they won, lost, drew and abandoned (*Stated*). *Done*: the **Leaderboard**,
   a panel of the lobby, lists, game by game (opening at the game last started), the signed-in players by Elo,
   with their experience, points and
@@ -361,8 +365,14 @@ first.
   classes), rather than all following the random fill. Ideally *(Stated 2026-11-12)*, in an open draft, the
   stronger bots look at what the others are drafting, and choose and place their pieces in answer.
   *(Stated 2026-11-12)* Given a large budget, bots bought cheap pieces rather than use it. *Done (Proposed)*:
-  a bot still follows the random fill, but on any square but its throne it buys the dearest piece it can pay
-  for while keeping enough for the rest of that army, so a budget left over goes into stronger pieces.
+  a bot still follows the random fill, but on any square but its throne it may buy a stronger piece there,
+  one it can pay for while keeping enough for the rest of that army. *(Stated 2026-11-12)*: price is not
+  strength (a Shogi Pawn is dear for the leader it may become), and bots all buying alike leaves little variety.
+  So strength is the piece's reach, the squares its card shows it moving to or capturing on, and the bot draws
+  at random among the pieces it can pay for within 75% of the strongest's reach (`FillingArmies`).
+  *(Stated 2026-11-12, later, once the game is more settled)*: bots of their own leanings, such as one
+  preferring pieces of one origin (Western, Shogi...), or sliders, or infantry; an army of different bots to
+  play against.
 
 - *(Stated 2026-11-12)* Rate the bots not yet rated, in the background, without a command anyone has to
   approve: every bot, over a good mix of rulesets, for as long as it runs, each result saved as it comes, so
