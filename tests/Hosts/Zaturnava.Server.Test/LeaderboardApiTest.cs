@@ -77,6 +77,36 @@ public sealed class LeaderboardApiTest(QuickStandingServer server) : IClassFixtu
     }
 
     [Fact]
+    public async Task Leaderboard_WhenAPlayerIsOnStreaks_GivesEachWithTheMeanEloItBeatRoundedNoneForNoStreak()
+    {
+        // Arrange - Cy on a streak of two, against teams rated 1600 and 1601, one of them rated; none against people
+        IPlayerPersisting players = this._server.Services.GetRequiredService<IPlayerPersisting>();
+        Player cy = new(new PlayerId("leaderboard-cy"), "Leaderboard Cy", []);
+        await players.Add(cy, this._cancellation);
+        await players.Keep(
+            [
+                new Standing(cy.Id, "streaks")
+                {
+                    Won = 2,
+                    WinningStreak = new Streak(2, 3201),
+                    RatedStreak = new Streak(1, 1600),
+                },
+            ],
+            this._cancellation
+        );
+
+        // Act
+        ImmutableList<StandingDto> leaders = await this._client.Leaderboard("streaks", this._cancellation);
+
+        // Assert
+        StandingDto standing = Assert.Single(leaders);
+        Assert.Equal(
+            (new StreakDto(2, 1601), new StreakDto(1, 1600), new StreakDto(0)),
+            (standing.Streak, standing.RatedStreak, standing.PeopleStreak)
+        );
+    }
+
+    [Fact]
     public async Task Leaderboard_WhenNoOneHasPlayedTheGame_ListsNoOne()
     {
         // Arrange - nothing beyond the server

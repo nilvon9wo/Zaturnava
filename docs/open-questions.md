@@ -15,3 +15,10 @@ playtesting is marked so where it is written.
 
 May a player buy a second palace in Grand Legions, on a board large enough, and at what price? Left open until
 the rest of the game is playable ([specification Q5](grand/specification.md#9-open-questions)).
+
+## OQ11 A less careless Midas
+
+Midas takes whatever scores most at once and, when nothing scores, moves at random; so it hangs pieces, as
+its Horse did on 2026-11-12. Should it stay that careless, as the bot that walks into every trap, or should
+it, when nothing scores, prefer a move that leaves none of its own pieces newly open to capture? Either way
+it stays greedy and never looks past its own action ([backlog](backlog.md#bots)).

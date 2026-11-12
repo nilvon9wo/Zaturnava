@@ -252,6 +252,11 @@ public sealed class EfPlayerStore(GameDbContext context) : IPlayerPersisting
             kept.Won = standing.Won;
             kept.Lost = standing.Lost;
             kept.Drawn = standing.Drawn;
+            (kept.Streak, kept.StreakOpponentElo) = (standing.WinningStreak.Wins, standing.WinningStreak.OpponentElo);
+            (kept.RatedStreak, kept.RatedStreakOpponentElo) =
+                (standing.RatedStreak.Wins, standing.RatedStreak.OpponentElo);
+            (kept.PeopleStreak, kept.PeopleStreakOpponentElo) =
+                (standing.PeopleStreak.Wins, standing.PeopleStreak.OpponentElo);
         }
 
         _ = await this._context.SaveChangesAsync(cancellationToken);
@@ -349,6 +354,9 @@ public sealed class EfPlayerStore(GameDbContext context) : IPlayerPersisting
             Won = entity.Won,
             Lost = entity.Lost,
             Drawn = entity.Drawn,
+            WinningStreak = new Streak(entity.Streak, entity.StreakOpponentElo),
+            RatedStreak = new Streak(entity.RatedStreak, entity.RatedStreakOpponentElo),
+            PeopleStreak = new Streak(entity.PeopleStreak, entity.PeopleStreakOpponentElo),
         };
 
     private static Player? ToPlayer(PlayerEntity? entity) =>

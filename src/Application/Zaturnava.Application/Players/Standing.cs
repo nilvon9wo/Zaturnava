@@ -6,7 +6,7 @@ namespace Net.NowhereAtAll.Zaturnava.Application.Players;
 /// Where a signed-in player stands at one game, whatever its size (<see cref="Game"/>, as a ruleset's game id): their
 /// Elo rating, from <see cref="FirstElo"/>; their experience, gained in each game they won: their own points, and as
 /// much again times their share of their team's (<see cref="StandingService"/>); the points they scored themselves,
-/// in every game they finished, won or not; and how many games they won, lost and drew.
+/// in every game they finished, won or not; how many games they won, lost and drew; and their winning streaks.
 /// </summary>
 public sealed record Standing(PlayerId Player, string Game)
 {
@@ -26,12 +26,25 @@ public sealed record Standing(PlayerId Player, string Game)
 
     public int Drawn { get; init; }
 
+    /// <summary>The games they have won in a row since they last lost, of every game.</summary>
+    public Streak WinningStreak { get; init; } = Streak.None;
+
+    /// <summary>
+    /// The games they have won in a row since they last lost, of those that count toward Elo: no guest, the players
+    /// the same throughout, no player at several seats.
+    /// </summary>
+    public Streak RatedStreak { get; init; } = Streak.None;
+
+    /// <summary>The games they have won in a row since they last lost, of those played against people alone.</summary>
+    public Streak PeopleStreak { get; init; } = Streak.None;
+
     /// <summary>How many games of it they finished.</summary>
     public int Played => this.Won + this.Lost + this.Drawn;
 
     /// <summary>
     /// Where they stand with <paramref name="other"/>'s games too, as one player (Proposed): games, experience and
-    /// points added up, and the Elo ratings averaged, each weighed by the games behind it.
+    /// points added up, and the Elo ratings averaged, each weighed by the games behind it; each streak the longer of
+    /// the two.
     /// </summary>
     public Standing Merged([Required] Standing other)
     {
@@ -44,6 +57,9 @@ public sealed record Standing(PlayerId Player, string Game)
             Won = this.Won + other.Won,
             Lost = this.Lost + other.Lost,
             Drawn = this.Drawn + other.Drawn,
+            WinningStreak = Streak.Longer(this.WinningStreak, other.WinningStreak),
+            RatedStreak = Streak.Longer(this.RatedStreak, other.RatedStreak),
+            PeopleStreak = Streak.Longer(this.PeopleStreak, other.PeopleStreak),
         };
     }
 }

@@ -23,6 +23,41 @@ public sealed class StandingTest
     }
 
     [Fact]
+    public void Merged_WhenEachIsOnStreaks_KeepsTheLongerOfEachTheFirstIfNeitherIs()
+    {
+        // Arrange
+        Standing ada = new(Ada, "chess")
+        {
+            Won = 4,
+            WinningStreak = new Streak(3, 4500),
+            RatedStreak = new Streak(1, 1600),
+            PeopleStreak = new Streak(2, 3000),
+        };
+        Standing bea = new(Bea, "chess")
+        {
+            Won = 5,
+            WinningStreak = new Streak(2, 3200),
+            RatedStreak = new Streak(2, 2800),
+            PeopleStreak = new Streak(2, 3400),
+        };
+
+        // Act
+        Standing merged = ada.Merged(bea);
+
+        // Assert
+        Assert.Equal(
+            (new Streak(3, 4500), new Streak(2, 2800), new Streak(2, 3000), (double?)1500, (double?)null),
+            (
+                merged.WinningStreak,
+                merged.RatedStreak,
+                merged.PeopleStreak,
+                merged.WinningStreak.MeanOpponentElo,
+                Streak.None.MeanOpponentElo
+            )
+        );
+    }
+
+    [Fact]
     public void Merged_WhenNeitherHasPlayed_KeepsTheirOwnRating()
     {
         // Arrange

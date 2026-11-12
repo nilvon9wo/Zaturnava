@@ -26,8 +26,41 @@ public sealed class LeaderboardTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ("1 Ada 1516 14 9 1 0 0 2|2 Bea 1484 0 3 0 1 0 0", 0),
+            ("1 Ada 1516 14 9 1 0 0 2 0 0 0|2 Bea 1484 0 3 0 1 0 0 0 0 0", 0),
             (Rows(board), board.FindAll(".leaderboard select:not(.leaderboard-board)").Count)
+        );
+    }
+
+    [Fact]
+    public void Render_WhenAPlayerIsOnAStreak_ShowsEachStreakWithTheMeanEloItBeat()
+    {
+        // Arrange
+        this._page.Server.Leaderboards = this._page.Server.Leaderboards.Add(
+            "chaturaji-2027",
+            [
+                new StandingDto(1, "Ada", 1600, 30, 3, 0, 0)
+                {
+                    Streak = new StreakDto(3, 1580),
+                    RatedStreak = new StreakDto(2, 1610),
+                    PeopleStreak = new StreakDto(0),
+                },
+            ]
+        );
+
+        // Act
+        IRenderedComponent<Leaderboard> board = this.Render();
+
+        // Assert
+        Assert.Equal(
+            ("3", "vs 1580", "2", "vs 1610", "0", 2),
+            (
+                board.Find("td.streak").FirstChild!.TextContent.Trim(),
+                board.Find("td.streak .against").TextContent,
+                board.Find("td.rated-streak").FirstChild!.TextContent.Trim(),
+                board.Find("td.rated-streak .against").TextContent,
+                board.Find("td.people-streak").TextContent.Trim(),
+                board.FindAll(".leaders .against").Count
+            )
         );
     }
 

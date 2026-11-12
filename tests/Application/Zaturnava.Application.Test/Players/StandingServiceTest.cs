@@ -330,6 +330,72 @@ public sealed class StandingServiceTest
     }
 
     [Theory]
+    [InlineData("people", "won", 3, 4500, 3, 4500, 2, 2900)]
+    [InlineData("bots", "won", 3, 4600, 3, 4600, 1, 1400)]
+    [InlineData("a guest", "won", 3, 4500, 2, 3000, 2, 2900)]
+    [InlineData("bots", "lost", 0, 0, 0, 0, 1, 1400)]
+    [InlineData("people", "lost", 0, 0, 0, 0, 0, 0)]
+    [InlineData("bots", "drawn", 2, 3000, 2, 3000, 1, 1400)]
+    public async Task RateFinished_WhenAPlayerOnAStreakFinishes_GoesOnWithEachStreakTheGameCountsIn(
+        string against,
+        string result,
+        int wins,
+        double opponentElo,
+        int ratedWins,
+        double ratedOpponentElo,
+        int peopleWins,
+        double peopleOpponentElo
+    )
+    {
+        // Arrange - Ada, on a streak of two (against 1500 each) and one against people (1400), with a bot no longer
+        // offered, against people (Bea and Cy), against bots (one rated 1700, one unrated), or against a guest and Bea
+        await this._players.Keep(
+            [
+                new Standing(Ada, EndedRules.RulesetId)
+                {
+                    Won = 2,
+                    WinningStreak = new Streak(2, 3000),
+                    RatedStreak = new Streak(2, 3000),
+                    PeopleStreak = new Streak(1, 1400),
+                },
+            ],
+            this._cancellation
+        );
+        (SeatController Second, SeatController Fourth) opponents = against switch
+        {
+            "people" => (new HumanSeat("bea", Bea), new HumanSeat("cy", new PlayerId("cy"))),
+            "a guest" => (new HumanSeat("guest"), new HumanSeat("bea", Bea)),
+            _ => (new BotSeat(FirstChoiceBot.BotId), new BotSeat("gone")),
+        };
+        (SeatController second, SeatController fourth) = opponents;
+        await this._games.Add(
+            Record("g", new HumanSeat("ada", Ada), second, new BotSeat("gone"), fourth),
+            this._cancellation
+        );
+        ImmutableList<SeatId> winners = result switch
+        {
+            "won" => [Black],
+            "lost" => [Yellow],
+            _ => [],
+        };
+        StandingService service = this.Service(new EndedRules(EndedRules.State(winners)), 1700);
+
+        // Act
+        _ = await service.RateFinished(this._cancellation);
+
+        // Assert
+        Standing standing = (await this._players.Standings(EndedRules.RulesetId, [Ada], this._cancellation))[Ada];
+        Assert.Equal(
+            (
+                new Streak(wins, opponentElo),
+                new Streak(ratedWins, ratedOpponentElo),
+                new Streak(peopleWins, peopleOpponentElo)
+            ),
+            (standing.WinningStreak, standing.RatedStreak, standing.PeopleStreak)
+        );
+    }
+
+    [Theory]
     [InlineData("retired", true)]
     [InlineData(EndedRules.RulesetId, false)]
     public async Task RateFinished_WhenAGameCannotBeReplayedToItsEnd_CountsItForNoOneButLetsItBe(

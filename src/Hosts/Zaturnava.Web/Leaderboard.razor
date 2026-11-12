@@ -1,5 +1,6 @@
 @* Who stands highest at each game, one board at a time, as a panel of the lobby: the players signed in, by their Elo
-   rating at it, with their experience, their points and how many of its games they won, lost, drew and abandoned;
+   rating at it, with their experience, their points, how many of its games they won, lost, drew and abandoned, and
+   their winning streaks, of every game, of rated games and of games against people, each with the mean Elo beaten;
    the server's bots, by their rating, with their points and how they did, all told and against people alone; or
    everyone, players and bots together, each marked as a person or a bot. Each board sorts by any of its columns,
    its header clicked (again, the other way), and shows ten at a time, page by page. Of the game the lobby has chosen,
@@ -68,9 +69,15 @@
                                             BotId="@row.BotId"
                                             RulesetId="@string.Empty" />
                             </td>
-                            @foreach ((Column column, int value) in this.Columns.All.Zip(row.Values))
+                            @foreach ((Column column, int at) in this.Columns.All.Select((column, at) => (column, at)))
                             {
-                                <td class="@column.Key">@value</td>
+                                <td class="@column.Key">
+                                    @row.Values[at]
+                                    @if (row.Against.ElementAtOrDefault(at) is { } against)
+                                    {
+                                        <span class="against" title="@AgainstTitle">vs @against</span>
+                                    }
+                                </td>
                             }
                         </tr>
                     }
@@ -104,6 +111,8 @@
 
     private const string PointsTitle = "The points scored at the board, in every game finished, won or lost";
 
+    private const string AgainstTitle = "The mean Elo of the opposing teams the streak was won against";
+
     private static readonly Board Players = new(
         string.Empty,
         "Player",
@@ -114,7 +123,9 @@
             + "much again times your share of your team's: carrying a weak ally earns more than being carried by a "
             + "strong one. Points are the points you scored yourself, taking pieces and earning bonuses, in every game "
             + "finished, won or lost. A game not over, with no guest at it, counts as abandoned by a player once it has "
-            + "waited a day for their move, and no longer once they make it.",
+            + "waited a day for their move, and no longer once they make it. A streak counts the games won in a row "
+            + "since the last loss, a draw neither adding to it nor ending it, beside the mean Elo of the teams it beat: "
+            + "of every game; of the rated ones, counting toward Elo; and of those against people alone.",
         [
             new("elo", "Elo", null),
             new("experience", "Experience", "In each game won, your own points, and as much again times your share of your team's"),
@@ -123,6 +134,9 @@
             new("lost", "Lost", null),
             new("drawn", "Drawn", null),
             new("abandoned", "Abandoned", "Games not over that have waited a day or more for their move"),
+            new("streak", "Streak", "Games won in a row since the last loss, of every game"),
+            new("rated-streak", "Rated streak", "Games won in a row since the last loss, of those counting toward Elo"),
+            new("people-streak", "People streak", "Games won in a row since the last loss, against people alone"),
         ]
     );
 
@@ -276,10 +290,26 @@
                             player.Lost,
                             player.Drawn,
                             player.Abandoned,
+                            player.Streak.Wins,
+                            player.RatedStreak.Wins,
+                            player.PeopleStreak.Wins,
                         ]
                     )
                     {
                         PlayerId = player.PlayerId,
+                        Against =
+                        [
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            player.Streak.OpponentElo,
+                            player.RatedStreak.OpponentElo,
+                            player.PeopleStreak.OpponentElo,
+                        ],
                     }
                 ),
             ],
@@ -304,5 +334,8 @@
         public string? PlayerId { get; init; }
 
         public string? BotId { get; init; }
+
+        /// <summary>Beside each number, by column, the mean Elo it was won against, if it is a streak with one.</summary>
+        public ImmutableList<int?> Against { get; init; } = [];
     }
 }
