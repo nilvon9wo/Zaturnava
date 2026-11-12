@@ -468,7 +468,7 @@ public sealed class TableTest : IDisposable
     }
 
     [Fact]
-    public void Render_WhenTheBoardHasARiver_DrawsItWavingAndTellsWhereItRuns()
+    public void Render_WhenTheBoardHasARiver_DrawsItWavingWithNoWordsForIt()
     {
         // Arrange - a river between the first two cells, up the board, a cell long: four bends
         this._page.Server.View = FakeGameServer.SeatZeroToMove with
@@ -486,9 +486,13 @@ public sealed class TableTest : IDisposable
             (
                 "line river",
                 "M0.5 0.5Q0.62 0.375 0.5 0.25Q0.38 0.125 0.5 0Q0.62 -0.125 0.5 -0.25Q0.38 -0.375 0.5 -0.5",
-                "A river runs north to south."
+                false
             ),
-            (line.GetAttribute("class"), line.GetAttribute("d"), table.Find(".terrain").TextContent)
+            (
+                line.GetAttribute("class"),
+                line.GetAttribute("d"),
+                table.Markup.Contains("A river runs", StringComparison.Ordinal)
+            )
         );
     }
 
@@ -509,7 +513,7 @@ public sealed class TableTest : IDisposable
     }
 
     [Fact]
-    public void Render_WhenTheBoardHasNoTerrain_TellsNone()
+    public void Render_WhenTheBoardHasNoTerrain_DrawsNoLines()
     {
         // Arrange - nothing beyond the board
 
@@ -517,7 +521,7 @@ public sealed class TableTest : IDisposable
         IRenderedComponent<Table> table = this.Render(SeatZero);
 
         // Assert
-        Assert.Equal((0, 0), (table.FindAll("path.line").Count, table.FindAll(".terrain").Count));
+        Assert.Empty(table.FindAll("path.line"));
     }
 
     [Theory]

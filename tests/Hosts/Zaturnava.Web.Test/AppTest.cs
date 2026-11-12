@@ -155,7 +155,7 @@ public sealed class AppTest : IDisposable
     }
 
     [Fact]
-    public void Play_WhenSeated_ShowsTheLobbyFirstThenHowToPlayBesideTheGamesNameAndTheLooksBeforeTheSound()
+    public void Play_WhenSeated_ShowsTheLobbyAndTheGamesNameAboveAndHowToPlayAndTheLooksBeforeTheSoundBelow()
     {
         // Arrange
         IRenderedComponent<App> app = this._page.Render<App>();
@@ -165,8 +165,9 @@ public sealed class AppTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ("leave,brand,how-to-play,the-bots", "safety,theme,pieces,cards,sound"),
+            ("leave,brand", "how-to-play,the-bots", "safety,theme,pieces,cards,sound"),
             (
+                string.Join(",", app.FindAll(".table-nav > *").Select(part => part.ClassName)),
                 string.Join(",", app.FindAll(".table-bar .where > *").Select(part => part.ClassName)),
                 string.Join(",", app.FindAll(".table-bar .settings button").Select(button => button.ClassName))
             )

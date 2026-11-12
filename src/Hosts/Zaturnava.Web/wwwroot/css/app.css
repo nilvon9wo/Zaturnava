@@ -123,17 +123,22 @@ select {
     color: var(--muted);
 }
 
-.bar .brand { font-weight: 700; letter-spacing: 0.04em; }
-.bar .terrain { font-size: 0.85em; color: var(--muted); }
+.bar .brand, .table-nav .brand { font-weight: 700; letter-spacing: 0.04em; }
 .bar .build { font-family: ui-monospace, monospace; font-size: 0.8em; }
 .bar .settings { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
-.bar button { font-size: 0.85rem; padding: 2px 10px; }
+.bar button, .table-nav button { font-size: 0.85rem; padding: 2px 10px; }
 
-/* At a table, the safety stays in the bar, among the settings; on a wide screen (below), moved along it to under
-   the player's corner of the board (bottom left), clear of the bar's other buttons. A browser without anchor
-   positioning leaves it among the settings. */
-.board { anchor-name: --board; }
-.table-bar button.safety { left: anchor(--board left); }
+/* At a table, the way back to the lobby and the game's name, above it all, at the top left. */
+.table-nav {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 12px;
+    margin-top: 8px;
+    font-size: 0.85rem;
+    color: var(--muted);
+}
+.table-nav + .seats, .table-nav + .gone { margin-top: 8px; }
 
 /* How to play: a scrolling panel over the page, until closed. */
 .guide-backdrop {
@@ -166,7 +171,7 @@ select {
 .guide-pieces th, .guide-pieces td { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--panel-edge); }
 .guide-pieces td:last-child, .guide-pieces th:last-child { text-align: right; white-space: nowrap; }
 .bar .where, .table-bar .turns { display: flex; align-items: center; gap: 6px; }
-/* A long ruleset name or terrain wraps within its column, never over the next one or off the page. */
+/* Whatever it holds wraps within its column, never over the next one or off the page. */
 .bar .where { flex-wrap: wrap; min-width: 0; }
 /* Signing in, at the top right of the lobby, where pages keep it. */
 .account {
@@ -967,9 +972,7 @@ button.safety.off {
         grid-template-areas: "turn board" "log board";
     }
     .board { grid-area: board; width: min(100cqh, 100cqw - 416px); }
-    /* The bar's buttons in a row, wrapping if they must, the safety among the settings: with the board on one
-       side, there is no room for the safety under its corner and the buttons that turn it beside, clear of
-       the settings. */
+    /* The bar's buttons in a row, wrapping if they must. */
     .table-bar { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; }
     .turn { grid-area: turn; overflow-y: auto; }
     .log { grid-area: log; max-height: none; }
@@ -982,15 +985,17 @@ button.safety.off {
         grid-template-areas: "turn board log";
     }
     .board { width: min(100cqh, 100cqw - 712px); }
-    /* Here the bar's middle is the board's own width: the buttons that turn it centred in it, and the safety
-       under the board's corner, clear of them. */
+    /* Here the bar is in three, as the play above it is: how to play under the turn, the buttons that turn the
+       board centred under it, and the settings under the log; each wraps within its own column, never over the
+       next. */
     .table-bar {
         display: grid;
         grid-template-columns: minmax(340px, 1fr) auto minmax(340px, 1fr);
         column-gap: 16px;
+        align-items: start;
     }
     .table-bar .turns { justify-self: center; }
-    .table-bar button.safety { position: absolute; }
+    .table-bar .settings { min-width: 0; justify-content: flex-end; }
 }
 
 /* Where the log's older events were let go. */
