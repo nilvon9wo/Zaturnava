@@ -249,16 +249,23 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
     [Fact]
     public async Task Get_WhenTheDraftsBudgetAndDrafterAreSet_SaysSoAndHasTheDrafterSpendIt()
     {
-        // Arrange
-        (string gameId, _) = await this.DraftedGame(40, 0);
+        // Arrange - asked in secret too, which one drafting for all has no need of
+        (string gameId, _) = await this.DraftedGame(40, 0, isSecret: true);
 
         // Act
         GameViewDto view = await this._client.Get(gameId, this._cancellation);
 
         // Assert
         Assert.Equal(
-            (true, (int?)40, (int?)0, 40, (int?)0),
-            (view.IsDrafted, view.DraftBudget, view.Drafter, view.DraftLeft![0], view.DecidingSeat)
+            (true, (int?)40, (int?)0, (int?)40, (int?)0, false),
+            (
+                view.IsDrafted,
+                view.DraftBudget,
+                view.Drafter,
+                view.DraftLeft![0],
+                view.DecidingSeat,
+                view.IsDraftSecret
+            )
         );
     }
 
@@ -285,6 +292,103 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
                 after.LegalActions.Any(action =>
                     action.Label == $"Done drafting: keep the {after.DraftLeft![0]} points left as my score"
                 )
+            )
+        );
+    }
+
+    [Fact]
+    public async Task Get_WhenTheArmiesAreDraftedInSecret_ShowsASeatsHolderOnlyWhatItsTeamDrafted()
+    {
+        // Arrange - Black and Yellow, people, each set a throne; so do Green, Black's ally, and Red; then Black and
+        // Yellow have their armies filled
+        GameCreatedDto created = await this._client.Create(
+            new CreateGameRequest("grand-legions-small", [null, null, "random", "random"])
+            {
+                IsDrafted = true,
+                IsDraftSecret = true,
+            },
+            this._cancellation
+        );
+        string gameId = created.GameId;
+        string black = (await this._client.Claim(gameId, 0, null, null, this._cancellation)).Token;
+        string yellow = (await this._client.Claim(gameId, 1, null, null, this._cancellation)).Token;
+        _ = await this.Decided(gameId, black, action => action.Kind == "throne");
+        GameViewDto thrones = await this.Decided(gameId, yellow, action => action.Kind == "throne");
+        GameViewDto green = await this._client.Advance(gameId, thrones.Version, black, this._cancellation);
+        _ = await this._client.Advance(gameId, green.Version, black, this._cancellation);
+        _ = await this.Decided(gameId, black, action => action.Kind == "fill-army");
+        _ = await this.Decided(gameId, yellow, action => action.Kind == "fill-army");
+
+        // Act
+        GameViewDto seen = await this._client.Get(gameId, black, this._cancellation);
+        GameViewDto other = await this._client.Get(gameId, yellow, this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            (true, "0", "1", "False,True,False,True", "0,2", "0,2"),
+            (
+                seen.IsDraftSecret,
+                string.Join(",", seen.Pieces.Select(piece => piece.Owner).Distinct()),
+                string.Join(",", other.Pieces.Select(piece => piece.Owner).Distinct()),
+                string.Join(",", seen.DraftLeft!.Select(left => left is null)),
+                string.Join(",", seen.Cells.Select(cell => cell.Throne).OfType<int>().Order()),
+                string.Join(
+                    ",",
+                    seen.Log.Where(told => told.Kind == EventDto.Drafted)
+                        .Select(told => told.Seat)
+                        .Distinct()
+                        .Order()
+                )
+            )
+        );
+    }
+
+    [Fact]
+    public async Task Get_WhenTheArmiesAreDraftedInSecret_ShowsOneHoldingNoSeatNoArmyNorChoicesNorHistory()
+    {
+        // Arrange - Black's throne set
+        (string gameId, string token) = await this.DraftedGame(isSecret: true);
+        GameViewDto view = await this._client.Get(gameId, token, this._cancellation);
+        ActionDto throne = view.LegalActions.First(action => action.Kind == "throne");
+        _ = await this._client.Submit(gameId, token, throne, this._cancellation);
+
+        // Act
+        GameViewDto seen = await this._client.Get(gameId, this._cancellation);
+        GameHistoryDto history = await this._client.History(gameId, this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            (0, true, 0, 0, 0, 1),
+            (
+                seen.Pieces.Count,
+                seen.DraftLeft!.All(left => left is null),
+                seen.Cells.Count(cell => cell.Throne is not null),
+                seen.LegalActions.Count,
+                seen.Log.Count(told => told.Kind == EventDto.Drafted),
+                history.Actions.Count
+            )
+        );
+    }
+
+    [Fact]
+    public async Task Get_WhenTheArmiesAreDraftedInSecretWithPalaces_ShowsOnlyTheTeamsPalaces()
+    {
+        // Arrange - a large game: Black's palace built
+        (string gameId, string token) = await this.DraftedGame(rulesetId: "grand-legions-large", isSecret: true);
+        GameViewDto view = await this._client.Get(gameId, token, this._cancellation);
+        ActionDto palace = view.LegalActions.First(action => action.Kind == "palace");
+        _ = await this._client.Submit(gameId, token, palace, this._cancellation);
+
+        // Act
+        GameViewDto seen = await this._client.Get(gameId, token, this._cancellation);
+        GameViewDto unseen = await this._client.Get(gameId, this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            (true, false),
+            (
+                seen.Lines.Count > unseen.Lines.Count,
+                unseen.Lines.Count > view.Lines.Count
             )
         );
     }
@@ -655,7 +759,8 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
     private async Task<(string GameId, string Token)> DraftedGame(
         int? budget = null,
         int? drafter = null,
-        string rulesetId = "grand-legions-small"
+        string rulesetId = "grand-legions-small",
+        bool isSecret = false
     )
     {
         GameCreatedDto created = await this._client.Create(
@@ -664,11 +769,21 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
                 IsDrafted = true,
                 DraftBudget = budget,
                 Drafter = drafter,
+                IsDraftSecret = isSecret,
             },
             this._cancellation
         );
         SeatClaimedDto claimed = await this._client.Claim(created.GameId, 0, null, null, this._cancellation);
         return (created.GameId, claimed.Token);
+    }
+
+    /// <summary>
+    /// The game after the seat <paramref name="token"/> holds takes the first of its choices that is wanted.
+    /// </summary>
+    private async Task<GameViewDto> Decided(string gameId, string token, Func<ActionDto, bool> isWanted)
+    {
+        GameViewDto view = await this._client.Get(gameId, token, this._cancellation);
+        return await this._client.Submit(gameId, token, view.LegalActions.First(isWanted), this._cancellation);
     }
 
     private async Task<(string GameId, string Token, GameViewDto View)> ClaimedGame()

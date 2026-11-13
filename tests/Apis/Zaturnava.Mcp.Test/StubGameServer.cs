@@ -75,8 +75,8 @@ internal sealed class StubGameServer : IGameServing
     public Task<GameCreatedDto> Create([Required] CreateGameRequest request, CancellationToken cancellationToken) =>
         this.Answer(new GameCreatedDto(GameId), request);
 
-    public Task<GameViewDto> Get([Required] string gameId, CancellationToken cancellationToken) =>
-        this.Answer(View, gameId);
+    public Task<GameViewDto> Get([Required] string gameId, string? token, CancellationToken cancellationToken) =>
+        this.Answer(View, token is null ? gameId : (gameId, token));
 
     public Task<GameHistoryDto> History([Required] string gameId, CancellationToken cancellationToken) =>
         this.Answer(
@@ -94,8 +94,13 @@ internal sealed class StubGameServer : IGameServing
     public Task<ImmutableList<GameHistoryDto>> Histories(CancellationToken cancellationToken) =>
         throw new NotSupportedException("The tools offer no histories in bulk.");
 
-    public Task<GameViewDto> Advance([Required] string gameId, int version, CancellationToken cancellationToken) =>
-        this.Answer(View, (gameId, version));
+    public Task<GameViewDto> Advance(
+        [Required] string gameId,
+        int version,
+        string? token,
+        CancellationToken cancellationToken
+    ) =>
+        this.Answer(View, token is null ? (gameId, version) : (gameId, version, token));
 
     public Task<SeatClaimedDto> Claim(
         [Required] string gameId,

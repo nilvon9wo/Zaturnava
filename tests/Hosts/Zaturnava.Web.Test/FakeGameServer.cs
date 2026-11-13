@@ -172,8 +172,8 @@ internal sealed class FakeGameServer : IGameServing
         return this.Answer("create", new GameCreatedDto(GameId));
     }
 
-    public Task<GameViewDto> Get([Required] string gameId, CancellationToken cancellationToken) =>
-        this.Answer("get " + gameId, this.View);
+    public Task<GameViewDto> Get([Required] string gameId, string? token, CancellationToken cancellationToken) =>
+        this.Answer("get " + gameId + (token is null ? string.Empty : " as " + token), this.View);
 
     public Task<GameHistoryDto> History([Required] string gameId, CancellationToken cancellationToken) =>
         throw new NotSupportedException("The page asks for no history.");
@@ -181,8 +181,17 @@ internal sealed class FakeGameServer : IGameServing
     public Task<ImmutableList<GameHistoryDto>> Histories(CancellationToken cancellationToken) =>
         throw new NotSupportedException("The page asks for no histories.");
 
-    public Task<GameViewDto> Advance([Required] string gameId, int version, CancellationToken cancellationToken) =>
-        this.Answer($"advance {gameId} {version.ToString(CultureInfo.InvariantCulture)}", this.View);
+    public Task<GameViewDto> Advance(
+        [Required] string gameId,
+        int version,
+        string? token,
+        CancellationToken cancellationToken
+    ) =>
+        this.Answer(
+            $"advance {gameId} {version.ToString(CultureInfo.InvariantCulture)}"
+                + (token is null ? string.Empty : " as " + token),
+            this.View
+        );
 
     public Task<SeatClaimedDto> Claim(
         [Required] string gameId,

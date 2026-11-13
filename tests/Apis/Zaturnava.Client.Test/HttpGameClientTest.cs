@@ -94,7 +94,8 @@ public sealed class HttpGameClientTest
                 "/api/games",
                 """{"rulesetId":"chaturaji-2027","bots":[null,"random"],"scenario":null,"continuing":null,"""
                     + "\"areArmiesAlike\":false,\"armiesOf\":null,\"isDrafted\":false,"
-                    + "\"draftBudget\":null,\"drafter\":null,\"board\":null,\"isForPlayers\":false}",
+                    + "\"draftBudget\":null,\"drafter\":null,\"isDraftSecret\":false,\"board\":null,"
+                    + "\"isForPlayers\":false}",
                 "g"
             ),
             (server.Method, server.Path, server.Body, created.GameId)
@@ -233,6 +234,35 @@ public sealed class HttpGameClientTest
         Assert.Equal(
             ("POST", "/api/games/g/advance", null, """{"version":7}"""),
             (server.Method, server.Path, server.Authorization, server.Body)
+        );
+    }
+
+    [Fact]
+    public async Task Get_WhenGivenASeatsToken_GetsTheViewWithIt()
+    {
+        // Arrange
+        StubServer server = new(HttpStatusCode.OK, ViewJson);
+
+        // Act
+        _ = await Client(server).Get("g", "secret", this._cancellation);
+
+        // Assert
+        Assert.Equal(("GET", "/api/games/g", "Bearer secret"), (server.Method, server.Path, server.Authorization));
+    }
+
+    [Fact]
+    public async Task Advance_WhenGivenASeatsToken_PostsWithIt()
+    {
+        // Arrange
+        StubServer server = new(HttpStatusCode.OK, ViewJson);
+
+        // Act
+        _ = await Client(server).Advance("g", 7, "secret", this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            ("POST", "/api/games/g/advance", "Bearer secret"),
+            (server.Method, server.Path, server.Authorization)
         );
     }
 

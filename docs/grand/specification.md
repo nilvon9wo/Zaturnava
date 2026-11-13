@@ -131,7 +131,9 @@ and placed knowing where they stand.)
 - **Stated.** Points not spent on the army are kept: the player starts the game with them as their
   score.
 - **Stated.** Whether players draft and place in secret and all at once, or in turn and in view of
-  each other, is a setting of the game (§2).
+  each other, is a setting of the game (§2). **Proposed (2026-11-13):** in secret, a team drafts
+  together, its allies shown each other's armies; and the seats still take their steps in turn, which
+  shows when another has finished, but not what it drafted, until every army is drafted.
 - **Stated.** An infantry piece's **forward** is toward the enemy; with the kingdoms in a pinwheel,
   its place on the pinwheel sets it, as in Chaturaji 2027 (rules.md §3). That is, forward is away
   from its kingdom's back rank.

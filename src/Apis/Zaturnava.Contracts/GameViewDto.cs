@@ -83,15 +83,23 @@ public sealed record GameViewDto(
     public int? Drafter { get; init; }
 
     /// <summary>
+    /// For a game whose players drafted: whether in secret (<see cref="CreateGameRequest.IsDraftSecret"/>). While the
+    /// armies are drafted, the game is shown to the holder of a seat's token as that seat's team sees it: no other
+    /// team's pieces, throne, palace or points left (null in <see cref="DraftLeft"/>), nor what it drafted in the log,
+    /// nor its choices while it drafts. Asked for without a token, no seat's.
+    /// </summary>
+    public bool IsDraftSecret { get; init; }
+
+    /// <summary>
     /// The board's size its creator set (<see cref="CreateGameRequest.Board"/>); null, for the ruleset's own.
     /// </summary>
     public BoardSizeDto? Board { get; init; }
 
     /// <summary>
-    /// While the armies are drafted, what each seat has left to spend, seat by seat; null once play has begun, or in a
-    /// game never drafted.
+    /// While the armies are drafted, what each seat has left to spend, seat by seat (null for a seat drafting in
+    /// secret from the one asking, <see cref="IsDraftSecret"/>); null once play has begun, or in a game never drafted.
     /// </summary>
-    public ImmutableList<int>? DraftLeft { get; init; }
+    public ImmutableList<int?>? DraftLeft { get; init; }
 
     /// <summary>
     /// While the armies are drafted, every kind a player may draft, at its price, whether or not they can pay for it

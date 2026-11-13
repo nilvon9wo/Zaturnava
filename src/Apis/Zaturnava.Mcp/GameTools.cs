@@ -79,10 +79,16 @@ public sealed class GameTools(IGameServing games)
         "A game as it stands: the cells (with where each is drawn), the pieces and their cells, the seats and "
         + "scores, whose decision it is (decidingSeat, null once over), that seat's legal actions, the dice "
         + "it has rolled this turn and not used yet (with what each lets it move), and a log of what has "
-        + "happened lately."
+        + "happened lately. While armies are drafted in secret (isDraftSecret), give your token to see what your "
+        + "team drafted; no other team's is shown."
     )]
-    public Task<GameViewDto> GetGame(string gameId, CancellationToken cancellationToken) =>
-        Explained(() => this._games.Get(gameId, cancellationToken));
+    public Task<GameViewDto> GetGame(
+        string gameId,
+        [Description("The token claim_seat returned, or null to see the game as anyone does.")]
+            string? token = null,
+        CancellationToken cancellationToken = default
+    ) =>
+        Explained(() => this._games.Get(gameId, token, cancellationToken));
 
     [McpServerTool(Name = "game_history", ReadOnly = true)]
     [Description(
@@ -101,9 +107,11 @@ public sealed class GameTools(IGameServing games)
     public Task<GameViewDto> AdvanceGame(
         string gameId,
         [Description("The game's version, as get_game gave it.")] int version,
-        CancellationToken cancellationToken
+        [Description("The token claim_seat returned, or null to see the game after it as anyone does.")]
+            string? token = null,
+        CancellationToken cancellationToken = default
     ) =>
-        Explained(() => this._games.Advance(gameId, version, cancellationToken));
+        Explained(() => this._games.Advance(gameId, version, token, cancellationToken));
 
     [McpServerTool(Name = "submit_action")]
     [Description(

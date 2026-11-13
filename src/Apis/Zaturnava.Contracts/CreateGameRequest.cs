@@ -51,6 +51,12 @@ public sealed record CreateGameRequest([Required] string RulesetId, [Required] I
     public int? Drafter { get; init; }
 
     /// <summary>
+    /// For armies each seat drafts its own: whether in secret, no one shown another team's palace, throne, pieces or
+    /// points left until every army is drafted (<see cref="GameViewDto.IsDraftSecret"/>).
+    /// </summary>
+    public bool IsDraftSecret { get; init; }
+
+    /// <summary>
     /// For a game whose creator may set its board's size (<see cref="RulesetDto.SizableBoard"/>), and whose armies are
     /// dealt: the size they set; null, for the ruleset's own.
     /// </summary>

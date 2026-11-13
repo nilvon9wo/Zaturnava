@@ -1308,8 +1308,10 @@ public sealed class TableTest : IDisposable
         // Act
         IRenderedComponent<Table> table = page.Render<Table>(parameters => parameters.Add(x => x.Seating, SeatZero));
 
-        // Assert
-        table.WaitForAssertion(() => Assert.Contains($"advance {FakeGameServer.GameId} 4", server.Calls));
+        // Assert - as the seat it holds sees the game, should its armies be drafted in secret
+        table.WaitForAssertion(() =>
+            Assert.Contains($"advance {FakeGameServer.GameId} 4 as {FakeGameServer.Token}", server.Calls)
+        );
     }
 
     [Fact]
@@ -1625,6 +1627,30 @@ public sealed class TableTest : IDisposable
         Assert.Equal(
             ("Random (Yellow) is drafting their army.", "Points left to spend"),
             (table.Find("p.status").TextContent, table.Find("span.score").GetAttribute("title"))
+        );
+    }
+
+    [Fact]
+    public void Render_WhileTheArmiesAreDraftedInSecret_ShowsNoPointsLeftOfAnotherTeam()
+    {
+        // Arrange - Yellow's points left are hidden from Black
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            DraftLeft = [10, null],
+            DecidingSeat = 1,
+            IsDraftSecret = true,
+        };
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Assert
+        Assert.Equal(
+            "Points left to spend: 0|Drafting in secret: ?",
+            string.Join(
+                "|",
+                table.FindAll("span.score").Select(score => $"{score.GetAttribute("title")}: {score.TextContent}")
+            )
         );
     }
 
@@ -3305,7 +3331,9 @@ public sealed class TableTest : IDisposable
         IRenderedComponent<Table> table = page.Render<Table>(parameters => parameters.Add(x => x.Seating, SeatZero));
 
         // Assert
-        table.WaitForAssertion(() => Assert.Contains($"advance {FakeGameServer.GameId} 4", server.Calls));
+        table.WaitForAssertion(() =>
+            Assert.Contains($"advance {FakeGameServer.GameId} 4 as {FakeGameServer.Token}", server.Calls)
+        );
     }
 
     [Fact]

@@ -246,6 +246,13 @@
                                placeholder="@this.Ruleset(catalog).DraftBudget" />
                     </label>
                 }
+                @if (this._armies == DraftOwn)
+                {
+                    <label class="secret">
+                        <input type="checkbox" class="draft-secret" @bind="this._isSecret" />
+                        Draft in secret: no one sees another team's army until all are drafted
+                    </label>
+                }
             }
             @if (this._mode != SetupMode.Quick && this._me is not null)
             {
@@ -461,6 +468,7 @@
 
     /// <summary>Whether the game's open seats are for players signed in only, as a player signed in may ask.</summary>
     private bool _isForPlayers;
+    private bool _isSecret;
     private string? _problem;
 
     /// <summary>How the player last started each game, by the game, as the browser remembers.</summary>
@@ -898,7 +906,7 @@
     private ArmyDeal ArmiesAsked(CatalogDto catalog) =>
         this._armies switch
         {
-            DraftOwn => new ArmyDeal(false) { IsDrafted = true, Budget = this._budget },
+            DraftOwn => new ArmyDeal(false) { IsDrafted = true, Budget = this._budget, IsSecret = this._isSecret },
             DraftOne => new ArmyDeal(false) { IsDrafted = true, Budget = this._budget, Drafter = this._colour },
             RandomOne => new ArmyDeal(true),
             _ => new ArmyDeal(false),

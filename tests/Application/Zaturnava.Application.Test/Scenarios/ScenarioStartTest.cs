@@ -191,12 +191,13 @@ public sealed class ScenarioStartTest
     }
 
     [Theory]
-    [InlineData(null, null)]
-    [InlineData(30, 1)]
-    public void DraftingOf_WhenTheGameWasDraftedAsSet_ReplaysItSoAndSaysHow(int? budget, int? drafter)
+    [InlineData(null, null, false)]
+    [InlineData(30, 1, false)]
+    [InlineData(null, null, true)]
+    public void DraftingOf_WhenTheGameWasDraftedAsSet_ReplaysItSoAndSaysHow(int? budget, int? drafter, bool isSecret)
     {
         // Arrange
-        DraftSettings set = new(budget, drafter is { } seat ? new SeatId(seat) : null);
+        DraftSettings set = new(budget, drafter is { } seat ? new SeatId(seat) : null) { IsSecret = isSecret };
         ImmutableList<ActionDescriptor> actions = [ScenarioStart.Dealt(new LoadedDice(4), drafting: set)];
 
         // Act

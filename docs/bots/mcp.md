@@ -60,9 +60,9 @@ claude mcp add zaturnava --env ZATURNAVA_SERVER_URL=http://localhost:5164/ \
 | `list_games` | A page of the games, last changed first, with their open seats; of one game at any size, or of one ruleset (one game at one size), or only those waiting for players (or under way), if asked |
 | `create_game` | A game, each seat given a bot's id or left open |
 | `claim_seat` | Claim an open seat for the AI, by a nickname if given (shown as "Nickname (AI guest)"), or for a player whose token is given (shown as "Name (AI)", or "Nickname (Name's AI)" with a nickname, so that one player's AIs in a game can be told apart); returns the token every action for it needs |
-| `get_game` | The game as it stands: the board, the seats and scores, whose decision it is, and its legal actions |
+| `get_game` | The game as it stands: the board, the seats and scores, whose decision it is, and its legal actions; with the seat's token, as that seat sees it while armies are drafted in secret |
 | `submit_action` | Take one of the legal actions, with the seat's token |
-| `advance_game` | Let the bot whose turn it is make one decision |
+| `advance_game` | Let the bot whose turn it is make one decision; with the seat's token, the game after it is as that seat sees it |
 | `game_history` | The game as data: every action, the scores, and how it ended |
 | `read_chat` | What was said at the table, and, with the seat's token, by its team |
 | `say` | Say something to the table or to the team, with the seat's token |

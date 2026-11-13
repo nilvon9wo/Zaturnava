@@ -174,9 +174,13 @@ internal static class GameEndpoints
         player is null
         || game.Controllers.Any(seat => seat is HumanSeat { Claimant: { } claimant } && claimant.Value == player);
 
-    /// <summary>The game as its seats see it, naming the bots and whoever holds each person's seat.</summary>
+    /// <summary>
+    /// The game as the seat <paramref name="token"/> holds sees it, if any (as anyone does, else), naming the bots and
+    /// whoever holds each person's seat.
+    /// </summary>
     private static async Task<GameViewDto> ViewOf(
         GameSnapshot snapshot,
+        string? token,
         GameService games,
         PlayerService players,
         CancellationToken cancellationToken
@@ -184,7 +188,8 @@ internal static class GameEndpoints
         GameViews.ViewOf(
             snapshot,
             games.Bots,
-            await players.NamesOf(snapshot.Record.Controllers, cancellationToken)
+            await players.NamesOf(snapshot.Record.Controllers, cancellationToken),
+            token
         );
 
     private static async Task<Created<GameCreatedDto>> Create(
@@ -200,6 +205,9 @@ internal static class GameEndpoints
         {
             Drafting = request.IsDrafted
                 ? new DraftSettings(request.DraftBudget, request.Drafter is { } drafter ? new SeatId(drafter) : null)
+                {
+                    IsSecret = request is { IsDraftSecret: true, Drafter: null },
+                }
                 : null,
             Board = request.Board is { } board
                 ? new BoardSize(board.Side, board.KingdomWidth, board.KingdomDepth)
@@ -216,15 +224,17 @@ internal static class GameEndpoints
 
     private static async Task<GameViewDto> Get(
         string gameId,
+        HttpRequest request,
         GameService games,
         PlayerService players,
         CancellationToken cancellationToken
     )
     {
         GameSnapshot snapshot = await games.Get(new GameId(gameId), cancellationToken);
-        return await ViewOf(snapshot, games, players, cancellationToken);
+        return await ViewOf(snapshot, SeatToken.OrNull(request), games, players, cancellationToken);
     }
 
+    /// <summary>The game's history; while its armies are drafted in secret, only how it began.</summary>
     private static async Task<GameHistoryDto> History(
         string gameId,
         GameService games,
@@ -232,7 +242,10 @@ internal static class GameEndpoints
     )
     {
         GameSnapshot snapshot = await games.Get(new GameId(gameId), cancellationToken);
-        return GameViews.HistoryOf(GameHistory.Of(snapshot));
+        GameHistoryDto history = GameViews.HistoryOf(GameHistory.Of(snapshot));
+        return GameViews.IsDraftingInSecret(snapshot)
+            ? history with { Actions = [.. history.Actions.Take(1)] }
+            : history;
     }
 
     private static async Task<ImmutableList<GameHistoryDto>> Histories(
@@ -251,14 +264,15 @@ internal static class GameEndpoints
 
     private static async Task<GameViewDto> Advance(
         string gameId,
-        AdvanceRequest request,
+        AdvanceRequest advance,
+        HttpRequest request,
         GameService games,
         PlayerService players,
         CancellationToken cancellationToken
     )
     {
-        GameSnapshot snapshot = await games.Advance(new GameId(gameId), request.Version, cancellationToken);
-        return await ViewOf(snapshot, games, players, cancellationToken);
+        GameSnapshot snapshot = await games.Advance(new GameId(gameId), advance.Version, cancellationToken);
+        return await ViewOf(snapshot, SeatToken.OrNull(request), games, players, cancellationToken);
     }
 
     /// <summary>Has bots take the open seats, for whoever holds the request token's seat, when they may.</summary>
@@ -271,8 +285,9 @@ internal static class GameEndpoints
     )
     {
         GameId id = new(gameId);
-        GameSnapshot snapshot = await games.FillOpenSeats(id, SeatToken.From(request, id), cancellationToken);
-        return await ViewOf(snapshot, games, players, cancellationToken);
+        string token = SeatToken.From(request, id);
+        GameSnapshot snapshot = await games.FillOpenSeats(id, token, cancellationToken);
+        return await ViewOf(snapshot, token, games, players, cancellationToken);
     }
 
     /// <summary>Has a bot take the seat of one away, for whoever holds the request token's seat, if they may.</summary>
@@ -285,8 +300,9 @@ internal static class GameEndpoints
     )
     {
         GameId id = new(gameId);
-        GameSnapshot snapshot = await games.ReplaceAway(id, SeatToken.From(request, id), cancellationToken);
-        return await ViewOf(snapshot, games, players, cancellationToken);
+        string token = SeatToken.From(request, id);
+        GameSnapshot snapshot = await games.ReplaceAway(id, token, cancellationToken);
+        return await ViewOf(snapshot, token, games, players, cancellationToken);
     }
 
     /// <summary>
@@ -433,7 +449,7 @@ internal static class GameEndpoints
         ActionDescriptor descriptor = new(action.Kind, action.Arguments);
         string token = SeatToken.From(request, id);
         GameSnapshot snapshot = await games.Submit(id, token, descriptor, cancellationToken);
-        return await ViewOf(snapshot, games, players, cancellationToken);
+        return await ViewOf(snapshot, token, games, players, cancellationToken);
     }
 
     private static async Task<ImmutableList<ChatMessageDto>> Chat(

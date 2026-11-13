@@ -73,7 +73,14 @@
                                         <PieceIcon Kind="@prisoner.Kind" Name="@prisoner.Name" Owner="prisoner.Owner" Mark="prisoner.Mark" Pieces="this.PiecesShown" />
                                     }
                                 </span>
-                                <span class="score" title="@(view.DraftLeft is null ? "Score" : "Points left to spend")">@seat.Score</span>
+                                @if (view.DraftLeft is { } drafting && drafting[seat.Id] is null)
+                                {
+                                    <span class="score secret" title="Drafting in secret">?</span>
+                                }
+                                else
+                                {
+                                    <span class="score" title="@(view.DraftLeft is null ? "Score" : "Points left to spend")">@seat.Score</span>
+                                }
                                 @if (this.MayTakeOver(view, seat))
                                 {
                                     <button class="take-over"
@@ -339,7 +346,7 @@
                         else
                         {
                             <DraftCatalogue Kinds="view.DraftKinds"
-                                            Left="left[turn.Claim.Seat]"
+                                            Left="left[turn.Claim.Seat].GetValueOrDefault()"
                                             Picked="@this._draftPick"
                                             Filtered="this._draftFilters"
                                             Owner="turn.Claim.Seat"
@@ -1048,6 +1055,7 @@
                 IsDrafted = view.IsDrafted,
                 Budget = view.DraftBudget,
                 Drafter = view.Drafter,
+                IsSecret = view.IsDraftSecret,
                 Board = view.Board,
             },
             view.IsForPlayers
@@ -1259,7 +1267,12 @@
         await ((isDue, this._turn, this._deadline) switch
         {
             (true, _, _) => this.Request(
-                () => this.Games.Advance(this.Seating.GameId, view.Version, CancellationToken.None)
+                () => this.Games.Advance(
+                    this.Seating.GameId,
+                    view.Version,
+                    this.Seating.Claim?.Token,
+                    CancellationToken.None
+                )
             ),
             (_, { }, { }) => this.CountDown(view),
             _ => this.Refresh(),
@@ -1273,7 +1286,8 @@
         return Task.CompletedTask;
     }
 
-    private Task Refresh() => this.Request(() => this.Games.Get(this.Seating.GameId, CancellationToken.None));
+    private Task Refresh() =>
+        this.Request(() => this.Games.Get(this.Seating.GameId, this.Seating.Claim?.Token, CancellationToken.None));
 
     /// <summary>
     /// A cell clicked on: the piece on it, if any, is told of, whether or not it may be moved; and the move being

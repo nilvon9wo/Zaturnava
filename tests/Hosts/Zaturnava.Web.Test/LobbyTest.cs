@@ -523,6 +523,31 @@ public sealed class LobbyTest : IDisposable
         );
     }
 
+    [Theory]
+    [InlineData("draft-own", true, "1 True")]
+    [InlineData("draft-own", false, "1 False")]
+    [InlineData("draft-one", null, "0 False")]
+    public void Play_WhenEachDraftsTheirOwnArmy_AsksWhetherInSecret(string armies, bool? isSecret, string expected)
+    {
+        // Arrange - expected: secret boxes, drafted in secret
+        this._page.Server.IsDealt = true;
+        this._page.Server.IsDraftable = true;
+        IRenderedComponent<Lobby> lobby = this.ByStrength();
+        lobby.Find("select.armies").Change(armies);
+        if (isSecret is { } secret)
+        {
+            lobby.Find("input.draft-secret").Change(secret);
+        }
+
+        int boxes = lobby.FindAll("input.draft-secret").Count;
+
+        // Act
+        lobby.Find("button.create").Click();
+
+        // Assert
+        Assert.Equal(expected, $"{boxes} {this._page.Server.Created!.IsDraftSecret}");
+    }
+
     [Fact]
     public void Play_WhenTheBoardAndKingdomsAreSet_AsksForThemAndGrowsTheBudgetWithTheKingdoms()
     {
