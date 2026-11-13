@@ -233,13 +233,14 @@ public sealed class GameServiceTest
     public async Task Create_WhenTheBoardIsSet_PlaysTheGameOnItAndAgainWithTheSameArmies()
     {
         // Arrange - a game drafted on a board 3 cells a side
-        GameService service = this.Service(GameServiceSettings.Default, isDealt: true, sizable: new BoardSize(4, 1, 1));
+        GameService service =
+            this.Service(GameServiceSettings.Default, isDealt: true, sizable: new BoardSize(4, 4, 1, 1));
         ImmutableList<SeatPlan> seats = [SeatPlan.Open, SeatPlan.Open];
         GameId first = await service.Create(
             TinyRules.RulesetId,
             seats,
             null,
-            new Dealing { Drafting = DraftSettings.Default, Board = new BoardSize(3, 1, 1) },
+            new Dealing { Drafting = DraftSettings.Default, Board = new BoardSize(3, 3, 1, 1) },
             this._cancellation
         );
 
@@ -249,7 +250,7 @@ public sealed class GameServiceTest
 
         // Assert
         Assert.Equal(
-            ("Tiny 3", "Tiny 3"),
+            ("Tiny 3 × 3", "Tiny 3 × 3"),
             (
                 (await service.Get(first, this._cancellation)).Rules.Name,
                 (await service.Get(again, this._cancellation)).Rules.Name
@@ -266,9 +267,9 @@ public sealed class GameServiceTest
         GameService service = this.Service(
             GameServiceSettings.Default,
             isDealt: true,
-            sizable: isSizable ? new BoardSize(4, 1, 1) : null
+            sizable: isSizable ? new BoardSize(4, 4, 1, 1) : null
         );
-        Dealing dealing = new() { Board = new BoardSize(side, 1, 1) };
+        Dealing dealing = new() { Board = new BoardSize(side, side + 1, 1, 1) };
 
         // Act
         Task<GameId> creating =
@@ -277,7 +278,7 @@ public sealed class GameServiceTest
         // Assert
         InvalidGameSetupException exception = await Assert.ThrowsAsync<InvalidGameSetupException>(() => creating);
         Assert.Equal(
-            $"Tiny is not played on a board of {side} × {side} with kingdoms of 1 × 1.",
+            $"Tiny is not played on a board of {side} × {side + 1} with kingdoms of 1 × 1.",
             exception.Message
         );
     }

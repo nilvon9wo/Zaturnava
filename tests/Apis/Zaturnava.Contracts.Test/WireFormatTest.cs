@@ -167,7 +167,7 @@ public sealed class WireFormatTest
         CreateGameRequest request = new("chaturaji-2027", [null, "random", null, "random"])
         {
             Scenario = "s",
-            Board = new BoardSizeDto(12, 4, 3),
+            Board = new BoardSizeDto(12, 10, 4, 3),
         };
 
         // Act

@@ -12,8 +12,8 @@ public sealed record ArmyDealing(int Seed, bool AreAlike, int Terrain, bool HasP
 {
     /// <summary>
     /// Whether a kingdom too small for a palace has one standing partly outside it
-    /// (<see cref="PalaceSquares.EdgeCentres(System.Collections.Immutable.ImmutableList{ArmySquare}, int)"/>): never,
-    /// in a game dealt before it could, or without palaces.
+    /// (<see cref="PalaceSquares.EdgeCentres(System.Collections.Immutable.ImmutableList{ArmySquare}, int, int)"/>):
+    /// never, in a game dealt before it could, or without palaces.
     /// </summary>
     public bool HasEdgePalaces { get; init; }
 

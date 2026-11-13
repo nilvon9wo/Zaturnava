@@ -187,7 +187,7 @@ public sealed class RulesApplyingTest
         OneSizeRules rules = new();
 
         // Act
-        (bool HasBoard, bool IsSized, bool IsTold) sized = SizedOf(rules, new BoardSize(10, 4, 3));
+        (bool HasBoard, bool IsSized, bool IsTold) sized = SizedOf(rules, new BoardSize(10, 10, 4, 3));
 
         // Assert
         Assert.Equal((false, false, false), sized);

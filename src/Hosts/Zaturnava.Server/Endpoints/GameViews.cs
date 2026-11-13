@@ -379,7 +379,7 @@ internal static class GameViews
     }
 
     private static BoardSizeDto? SizeOf(BoardSize? board) =>
-        board is null ? null : new BoardSizeDto(board.Side, board.KingdomWidth, board.KingdomDepth);
+        board is null ? null : new BoardSizeDto(board.Width, board.Height, board.KingdomWidth, board.KingdomDepth);
 
     private static BotDto BotOf(BotProfile bot) =>
         new(bot.Id, bot.Name, bot.Description, bot.UsesAi, bot.IsPaid) { Ratings = bot.Ratings };

@@ -212,7 +212,7 @@ internal static class GameEndpoints
                 }
                 : null,
             Board = request.Board is { } board
-                ? new BoardSize(board.Side, board.KingdomWidth, board.KingdomDepth)
+                ? new BoardSize(board.Width, board.Height, board.KingdomWidth, board.KingdomDepth)
                 : null,
         };
         GameId id = await games.Create(request.RulesetId, seats, request.Scenario, dealing, cancellationToken);

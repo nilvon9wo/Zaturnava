@@ -123,7 +123,7 @@ public static class GrandLegionsRules
         new(
             game.Id,
             game.Name,
-            game.Side,
+            game.Width,
             GrandLegionsPieces.Kinds,
             BoardPrices.On(QuickTerrain.BoardOf(game, 0)),
             GrandLegionsPieces.Catalogue.ToImmutableDictionary(piece => piece.Id, piece => piece.Name),
@@ -145,7 +145,8 @@ public static class GrandLegionsRules
             ),
             TerrainDealer = QuickTerrain.Dealt,
             Drafting = QuickDraft.Of(game),
-            Board = new BoardSize(game.Side, game.KingdomWidth, game.KingdomDepth),
+            Height = game.Height,
+            Board = new BoardSize(game.Width, game.Height, game.KingdomWidth, game.KingdomDepth),
             Resized = game.Size == QuickGame.CustomSize
                 ? size => QuickGame.CustomOf(size) is { } sized ? VariantOf(sized, dice) : null
                 : null,

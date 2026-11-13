@@ -43,14 +43,15 @@ internal sealed class ArmyDrafting
 
     /// <summary>
     /// Every square of the kingdom a palace may stand about, if it may stand partly outside a kingdom too small for it
-    /// (<see cref="PalaceSquares.EdgeCentres(ImmutableList{ArmySquare}, int)"/>).
+    /// (<see cref="PalaceSquares.EdgeCentres(ImmutableList{ArmySquare}, int, int)"/>).
     /// </summary>
     private readonly ImmutableList<ArmySquare> _edgeCentres;
 
     public ArmyDrafting(
         Drafting drafting,
         SquareGridTopology grid,
-        int side,
+        int width,
+        int height,
         Func<int, PieceKindId, int> priceOf,
         DiceRequest rollOff
     )
@@ -66,15 +67,15 @@ internal sealed class ArmyDrafting
                 .Max();
         this._kingdoms = Enumerable.Range(0, Pinwheel.SeatCount).ToImmutableDictionary(
             seat => new SeatId(seat),
-            seat => CellsOf(grid, side, seat, drafting.Kingdom)
+            seat => CellsOf(grid, (width, height), seat, drafting.Kingdom)
         );
         this._centres = PalaceSquares.Centres(drafting.Kingdom);
-        this._edgeCentres = PalaceSquares.EdgeCentres(drafting.Kingdom, side);
+        this._edgeCentres = PalaceSquares.EdgeCentres(drafting.Kingdom, width, height);
         ImmutableList<ArmySquare> reached =
             [.. drafting.Kingdom.Union(this._edgeCentres.SelectMany(PalaceSquares.Window))];
         this._squares = Enumerable.Range(0, Pinwheel.SeatCount).ToImmutableDictionary(
             seat => new SeatId(seat),
-            seat => CellsOf(grid, side, seat, reached)
+            seat => CellsOf(grid, (width, height), seat, reached)
         );
         this._cells = this._squares.ToImmutableDictionary(
             kingdom => kingdom.Key,
@@ -85,27 +86,25 @@ internal sealed class ArmyDrafting
     /// <summary>Where each of <paramref name="squares"/>, as seat 0 sees them, is for the seat.</summary>
     private static ImmutableDictionary<CellId, ArmySquare> CellsOf(
         SquareGridTopology grid,
-        int side,
+        (int Width, int Height) board,
         int seat,
         ImmutableList<ArmySquare> squares
-    )
+    ) =>
+        squares.ToImmutableDictionary(square => CellOf(grid, board, seat, square), square => square);
+
+    /// <summary>Where <paramref name="square"/>, as the seat sees its kingdom, is on the board.</summary>
+    private static CellId CellOf(SquareGridTopology grid, (int Width, int Height) board, int seat, ArmySquare square)
     {
-        ImmutableList<ArmyPiece> placed =
-            [.. squares.Select(square => new ArmyPiece(Square, square.Column, square.Row))];
-        return Pinwheel
-            .EachOwn(side, [.. Enumerable.Range(0, seat + 1).Select(own => own == seat ? placed : [])])
-            .Zip(squares)
-            .ToImmutableDictionary(
-                turned => grid.CellAt(turned.First.Column, turned.First.Row),
-                turned => turned.Second
-            );
+        ArmyPiece piece = new(Square, square.Column, square.Row);
+        Placement placed = Pinwheel.At(board.Width, board.Height, seat, piece);
+        return grid.CellAt(placed.Column, placed.Row);
     }
 
     /// <summary>
     /// Whether each army has a palace (specification §5): a 3 × 3 of its kingdom, holding its throne. Only a kingdom
     /// with room for one has (Proposed); one too small (Chaturaji 2027's 4 × 2) has one standing partly outside it, if
-    /// <paramref name="atEdge"/> and it may (<see cref="PalaceSquares.EdgeCentres(ImmutableList{ArmySquare}, int)"/>),
-    /// else none.
+    /// <paramref name="atEdge"/> and it may
+    /// (<see cref="PalaceSquares.EdgeCentres(ImmutableList{ArmySquare}, int, int)"/>), else none.
     /// </summary>
     public bool HasPalaces(bool atEdge) => !this.Centres(atEdge).IsEmpty;
 

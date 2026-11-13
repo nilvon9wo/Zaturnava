@@ -4,10 +4,11 @@
    piece picked up can go, or, with none picked up, wherever a piece coming onto the board can be
    dropped, or wherever the piece chosen to come back (a prisoner escaping) can be placed, those marks blinking
    so that the player sees the board waits for them to pick one. Each cell's name is written small in its top left corner, as the board is turned, so that
-   the log's "from c2 to c3" can be found. The whole board turns by Turn; the pieces' symbols and the names stay upright.
+   the log's "from c2 to c3" can be found. The whole board turns by Turn, a board other than square framed on its side as it turns a quarter; the pieces'
+   symbols and the names stay upright.
    Hovering over a piece names it, its owner and its class: the cell under it, which takes the clicks, says so. *@
 
-<svg class="board" viewBox="@this._frame.ViewBox" role="grid">
+<svg class="board" viewBox="@this.Turn.Framing(this._frame).ViewBox" role="grid">
     <g transform="@this.Turn.Transform(this._frame)">
         @foreach (CellDto cell in this.View.Cells)
         {

@@ -252,18 +252,29 @@ public sealed class ScenarioStartTest
     public void RulesOf_WhenTheGamesBoardWasSet_PlaysItOnThatBoardAndElseAsTheRulesetIs()
     {
         // Arrange
-        TinyRules rules = new(6, isDealt: true) { SizableBoard = new BoardSize(4, 1, 1) };
-        ImmutableList<ActionDescriptor> sized = [ScenarioStart.Dealt(new LoadedDice(4), board: new BoardSize(3, 1, 1))];
+        TinyRules rules = new(6, isDealt: true) { SizableBoard = new BoardSize(4, 4, 1, 1) };
+        ImmutableList<ActionDescriptor> sized =
+            [ScenarioStart.Dealt(new LoadedDice(4), board: new BoardSize(3, 5, 1, 1))];
+        ImmutableList<ActionDescriptor> square =
+            [ScenarioStart.Dealt(new LoadedDice(4), board: new BoardSize(3, 3, 1, 1))];
         ImmutableList<ActionDescriptor> unsized = [ScenarioStart.Dealt(new LoadedDice(4))];
 
         // Act
-        (string Sized, string Unsized) names =
-            (ScenarioStart.RulesOf(sized, rules).Name, ScenarioStart.RulesOf(unsized, rules).Name);
+        (string Sized, string Square, string Unsized) names = (
+            ScenarioStart.RulesOf(sized, rules).Name,
+            ScenarioStart.RulesOf(square, rules).Name,
+            ScenarioStart.RulesOf(unsized, rules).Name
+        );
 
         // Assert
         Assert.Equal(
-            (("Tiny 3", "Tiny"), (BoardSize?)new BoardSize(3, 1, 1), (BoardSize?)null),
-            (names, ScenarioStart.BoardOf(sized), ScenarioStart.BoardOf(unsized))
+            (("Tiny 3 × 5", "Tiny 3 × 3", "Tiny"), (BoardSize?)new BoardSize(3, 5, 1, 1), (BoardSize?)null, false),
+            (
+                names,
+                ScenarioStart.BoardOf(sized),
+                ScenarioStart.BoardOf(unsized),
+                square[0].Arguments.ContainsKey("height")
+            )
         );
     }
 
@@ -272,15 +283,15 @@ public sealed class ScenarioStartTest
     {
         // Arrange - a board of one cell a side, which the tiny rules are never played on
         ImmutableList<ActionDescriptor> actions =
-            [ScenarioStart.Dealt(new LoadedDice(4), board: new BoardSize(1, 1, 1))];
-        TinyRules rules = new(6, isDealt: true) { SizableBoard = new BoardSize(4, 1, 1) };
+            [ScenarioStart.Dealt(new LoadedDice(4), board: new BoardSize(1, 1, 1, 1))];
+        TinyRules rules = new(6, isDealt: true) { SizableBoard = new BoardSize(4, 4, 1, 1) };
 
         // Act
         ArgumentException exception = Assert.Throws<ArgumentException>(() => ScenarioStart.RulesOf(actions, rules));
 
         // Assert
         Assert.StartsWith(
-            "Tiny is not played on BoardSize { Side = 1, KingdomWidth = 1, KingdomDepth = 1 }.",
+            "Tiny is not played on BoardSize { Width = 1, Height = 1, KingdomWidth = 1, KingdomDepth = 1 }.",
             exception.Message,
             StringComparison.Ordinal
         );

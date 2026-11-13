@@ -37,6 +37,20 @@ public sealed record BoardTurn(int QuarterTurns)
 
     public BoardTurn Anticlockwise() => new((this.QuarterTurns + Full - 1) % Full);
 
+    /// <summary>
+    /// The rectangle <paramref name="frame"/> fills once turned about its centre: itself, turned a half turn or none;
+    /// on its side, its width and height swapped, turned a quarter, as a board other than square shows.
+    /// </summary>
+    public BoardFrame Framing([Required] BoardFrame frame) =>
+        int.IsEvenInteger(this.QuarterTurns)
+            ? frame
+            : new BoardFrame(
+                frame.Left + ((frame.Width - frame.Height) / 2),
+                frame.Top + ((frame.Height - frame.Width) / 2),
+                frame.Height,
+                frame.Width
+            );
+
     /// <summary>The SVG <c>transform</c> turning the board about the centre of <paramref name="frame"/>.</summary>
     public string Transform([Required] BoardFrame frame) =>
         string.Create(

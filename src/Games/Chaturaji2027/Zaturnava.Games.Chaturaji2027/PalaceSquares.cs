@@ -28,24 +28,30 @@ public static class PalaceSquares
     /// (specification §5, Stated): about a square of its, as <see cref="Centres"/> says, if any; else about one of the
     /// row next to the board's edge, its back row along that edge, so long as most of it is in the kingdom (with a
     /// 4 × 2 kingdom, 6 squares in, 3 out), none of it beside the kingdom's sides, and none of it in another army's
-    /// kingdom, each seat's turned about the centre of a board <paramref name="side"/> squares wide, as the pinwheel
-    /// turns them.
+    /// kingdom, each seat's placed on a board <paramref name="width"/> squares across and <paramref name="height"/>
+    /// up, as the pinwheel places them: where a palace may stand for every seat, each seeing the board from its own
+    /// corner (<see cref="Pinwheel.FrameOf"/>), so that every army has the same choice.
     /// </summary>
-    public static ImmutableList<ArmySquare> EdgeCentres([Required] ImmutableList<ArmySquare> kingdom, int side)
+    public static ImmutableList<ArmySquare> EdgeCentres(
+        [Required] ImmutableList<ArmySquare> kingdom,
+        int width,
+        int height
+    )
     {
         ImmutableList<ArmyPiece> squares =
             [.. kingdom.Select(square => new ArmyPiece(Square, square.Column, square.Row))];
-        ImmutableHashSet<ArmySquare> others =
+        ImmutableHashSet<ArmySquare> OthersOn(int across, int up) =>
         [
             .. Pinwheel
-                .EachOwn(side, [[], .. Enumerable.Repeat(squares, Pinwheel.SeatCount - 1)])
+                .EachOwn(across, up, [[], .. Enumerable.Repeat(squares, Pinwheel.SeatCount - 1)])
                 .Select(placed => new ArmySquare(placed.Column, placed.Row)),
         ];
+        ImmutableHashSet<ArmySquare> others = OthersOn(width, height).Union(OthersOn(height, width));
         return EdgeCentres(kingdom, square => !others.Contains(square));
     }
 
     /// <summary>
-    /// As <see cref="EdgeCentres(ImmutableList{ArmySquare}, int)"/> says, a square outside the kingdom free if
+    /// As <see cref="EdgeCentres(ImmutableList{ArmySquare}, int, int)"/> says, a square outside the kingdom free if
     /// <paramref name="isFree"/> says so.
     /// </summary>
     public static ImmutableList<ArmySquare> EdgeCentres(

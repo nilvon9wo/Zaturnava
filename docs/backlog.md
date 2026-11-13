@@ -215,11 +215,16 @@ first.
 - A custom game's board size chosen freely, within limits, rather than only small, medium or large
   (*Stated 2026-11-01*); likely to come with the game setup rework. One of the two most noticeable gaps in
   custom games (*Stated 2026-11-07*). *Done* (2026-11-12): Grand Legions offers a **custom** size, whose board
-  (6 to 26 cells square) and kingdoms (width and depth, at least 3 × 3, not overlapping) the creator sets, the
+  (6 to 26 cells) and kingdoms (width and depth, at least 3 × 3, not overlapping) the creator sets, the
   kingdoms' size too (*Stated*). The size is kept in the game's first action and the rules are rebuilt for it on
   every replay, under the one ruleset id `grand-legions-custom`, so its games are listed and rated together. Each
   army's budget is 12 points a kingdom cell, and its minimum army grows with the kingdom (*Proposed*, see
-  `QuickGame.CustomOf`). *Gap*: boards that are not square (specification §2).
+  `QuickGame.CustomOf`). *Done* (2026-11-13): the board need not be square (*Stated*: "Boards don't need to be
+  square!"), its width and height set apart, in a table with the kingdom's, the board and the kingdom its rows,
+  the width and the height its columns (*Stated*). Each seat's army stands in its own corner, facing across the
+  board or up it (`Pinwheel.At`); a game set before keeps its square board. A palace that may stand partly outside
+  a kingdom too small for one stands only where it may for every seat (*Proposed*). Bots are rated as at the
+  game's own size nearest in width and height together (*Proposed*).
 - A custom game's pieces chosen by hand and placed into each kingdom, rather than only dealt (*Stated
   2026-11-07*): the other of the two most noticeable gaps.
 - The page's preferences (theme, sound, pieces, the log's highlights) kept with the player's identity

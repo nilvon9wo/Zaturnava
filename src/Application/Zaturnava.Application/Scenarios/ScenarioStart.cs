@@ -49,6 +49,7 @@ public static class ScenarioStart
     private const string HiddenFromAlliesArgument = "hidden-from-allies";
     private const string AllAtOnceArgument = "all-at-once";
     private const string SideArgument = "side";
+    private const string HeightArgument = "height";
     private const string KingdomWidthArgument = "kingdom-width";
     private const string KingdomDepthArgument = "kingdom-depth";
 
@@ -92,18 +93,27 @@ public static class ScenarioStart
     private static ImmutableSortedDictionary<string, string> Sizing(
         ImmutableSortedDictionary<string, string> arguments,
         BoardSize board
-    ) =>
-        arguments
-            .Add(SideArgument, board.Side.ToString(CultureInfo.InvariantCulture))
+    )
+    {
+        ImmutableSortedDictionary<string, string> sized = arguments
+            .Add(SideArgument, board.Width.ToString(CultureInfo.InvariantCulture))
             .Add(KingdomWidthArgument, board.KingdomWidth.ToString(CultureInfo.InvariantCulture))
             .Add(KingdomDepthArgument, board.KingdomDepth.ToString(CultureInfo.InvariantCulture));
+        return board.Height == board.Width
+            ? sized
+            : sized.Add(HeightArgument, board.Height.ToString(CultureInfo.InvariantCulture));
+    }
 
-    /// <summary>The board's size the first of <paramref name="actions"/> set; none, if it set none.</summary>
+    /// <summary>
+    /// The board's size the first of <paramref name="actions"/> set; none, if it set none. Its side is its width, and
+    /// its height too, unless it says another (as a game set before boards could be other than square never does).
+    /// </summary>
     public static BoardSize? BoardOf([Required] ImmutableList<ActionDescriptor> actions) =>
         actions.FirstOrDefault() is { Kind: DealKind } first
         && first.Arguments.TryGetValue(SideArgument, out string? side)
             ? new BoardSize(
                 int.Parse(side, CultureInfo.InvariantCulture),
+                int.Parse(first.Arguments.GetValueOrDefault(HeightArgument, side), CultureInfo.InvariantCulture),
                 int.Parse(first.Arguments[KingdomWidthArgument], CultureInfo.InvariantCulture),
                 int.Parse(first.Arguments[KingdomDepthArgument], CultureInfo.InvariantCulture)
             )

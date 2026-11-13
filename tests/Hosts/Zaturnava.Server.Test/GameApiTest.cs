@@ -56,9 +56,9 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
 
         // Assert
         Assert.Equal(
-            "chaturaji-2027/Chaturaji 2027//False,grand-legions/Grand Legions/small/True/6x3x3,"
-            + "grand-legions/Grand Legions/medium/True/8x4x2,grand-legions/Grand Legions/large/True/12x6x3,"
-            + "grand-legions/Grand Legions/custom/True/10x4x3/10x4x3",
+            "chaturaji-2027/Chaturaji 2027//False,grand-legions/Grand Legions/small/True/6x6x3x3,"
+            + "grand-legions/Grand Legions/medium/True/8x8x4x2,grand-legions/Grand Legions/large/True/12x12x6x3,"
+            + "grand-legions/Grand Legions/custom/True/10x10x4x3/10x10x4x3",
             string.Join(
                 ",",
                 catalog.Rulesets.Select(offered =>
@@ -70,7 +70,7 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
     }
 
     private static string SizeOf(BoardSizeDto? board) =>
-        board is null ? string.Empty : $"/{board.Side}x{board.KingdomWidth}x{board.KingdomDepth}";
+        board is null ? string.Empty : $"/{board.Width}x{board.Height}x{board.KingdomWidth}x{board.KingdomDepth}";
 
     [Fact]
     public async Task List_WhenAskedForOneGame_ListsItsGamesAtEverySizeAndNoOther()
@@ -216,7 +216,7 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
         GameCreatedDto created = await this._client.Create(
             new CreateGameRequest("grand-legions-custom", [null, "random", "random", "random"])
             {
-                Board = new BoardSizeDto(12, 4, 4),
+                Board = new BoardSizeDto(12, 9, 4, 4),
             },
             this._cancellation
         );
@@ -226,7 +226,7 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
 
         // Assert
         Assert.Equal(
-            ("grand-legions-custom", "Grand Legions (12 × 12, kingdoms 4 × 4)", 144, new BoardSizeDto(12, 4, 4)),
+            ("grand-legions-custom", "Grand Legions (12 × 9, kingdoms 4 × 4)", 108, new BoardSizeDto(12, 9, 4, 4)),
             (view.RulesetId, view.RulesetName, view.Cells.Count, view.Board)
         );
     }
@@ -237,7 +237,7 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
         // Arrange - kingdoms of 4 x 4 overlap on a board 6 cells across
         CreateGameRequest request = new("grand-legions-custom", [null, "random", "random", "random"])
         {
-            Board = new BoardSizeDto(6, 4, 4),
+            Board = new BoardSizeDto(6, 6, 4, 4),
         };
 
         // Act
