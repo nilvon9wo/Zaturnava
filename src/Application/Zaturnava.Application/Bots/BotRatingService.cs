@@ -17,10 +17,9 @@ namespace Net.NowhereAtAll.Zaturnava.Application.Bots;
 /// every ruleset is played about as often (Proposed); the two bots take turns at the seats, one at the even seats and
 /// the other at the odd, and change sides each game. A game that ends goes to the team that won it, or is drawn; one
 /// that reaches <see cref="BotRatingSettings.MaximumSteps"/> goes to the side with more points, or is drawn, as the
-/// rating script counts them. A bot whose every pair at a ruleset has played
-/// <see cref="BotRatingSettings.MinimumGames"/> is rated there by the ratings fitted to its games
-/// (<see cref="BotRatingFit"/>), in place of those the server shipped with; pairings with a bot not yet rated there
-/// are played first.
+/// rating script counts them. A bot not rated at a ruleset, once it has played each rated bot there
+/// <see cref="BotRatingSettings.MinimumGames"/> times, is rated by those games against their ratings
+/// (<see cref="BotRatingFit.Against"/>); those pairings are played first. A rated bot keeps the rating it has.
 /// </summary>
 public sealed class BotRatingService(
     IRulesetLocating rulesets,
@@ -37,9 +36,11 @@ public sealed class BotRatingService(
     private readonly BotRatingSettings _settings = settings;
 
     /// <summary>
-    /// Rates, at each ruleset, the bots whose every pair has played enough there, by all the games kept at it, and
-    /// leaves the others' ratings as they were (Proposed, 2026-11-13: so that a new bot is rated once its own games are
-    /// in, not only when every pair of every bot has played); which rulesets any bot was rated at.
+    /// Rates, at each ruleset, each bot not rated there yet whose every pair with a rated bot has played enough, by
+    /// those games, against the rated bots' ratings held as they are (<see cref="BotRatingFit.Against"/>); the anchor,
+    /// if not rated, at <see cref="BotRatingFit.AnchorRating"/>. A rated bot keeps its rating (Proposed, 2026-11-13:
+    /// every rating on one scale, the one the server shipped with, a new bot rated once its own games are in). Which
+    /// rulesets any bot was rated at.
     /// </summary>
     public async Task<ImmutableList<string>> Apply(CancellationToken cancellationToken)
     {
@@ -47,22 +48,28 @@ public sealed class BotRatingService(
         ImmutableList<string> rated = [];
         foreach (string ruleset in this._rulesets.All.Select(ruleset => ruleset.Id))
         {
+            ImmutableDictionary<string, int> shown = this._bots.Bots
+                .Where(bot => bot.Ratings.ContainsKey(ruleset))
+                .ToImmutableDictionary(bot => bot.Id, bot => bot.Ratings[ruleset]);
+            ImmutableDictionary<string, int> anchor = shown.ContainsKey(this._settings.Anchor)
+                ? []
+                : ImmutableDictionary<string, int>.Empty.Add(this._settings.Anchor, (int)BotRatingFit.AnchorRating);
+            ImmutableDictionary<string, int> known = shown.AddRange(anchor);
             ImmutableList<BotMatchup> pairings = this.Pairings(ruleset);
-            ImmutableHashSet<string> settled =
-            [
-                .. this._bots.Bots
+            ImmutableList<BotMatchup> games = kept.RemoveAll(matchup => matchup.Ruleset != ruleset);
+            bool IsAgainstKnown(BotMatchup pairing, string bot) =>
+                pairing.First == bot ? known.ContainsKey(pairing.Second)
+                : pairing.Second == bot && known.ContainsKey(pairing.First);
+            bool IsReady(string bot) =>
+                pairings
+                    .Where(pairing => IsAgainstKnown(pairing, bot))
+                    .All(pairing => PlayedOf(kept, pairing) >= this._settings.MinimumGames);
+            ImmutableDictionary<string, int> fitted = anchor.AddRange(
+                this._bots.Bots
                     .Select(bot => bot.Id)
-                    .Where(bot => pairings
-                        .Where(pairing => pairing.First == bot || pairing.Second == bot)
-                        .All(pairing => PlayedOf(kept, pairing) >= this._settings.MinimumGames)
-                    ),
-            ];
-            ImmutableDictionary<string, int> fitted = BotRatingFit.Fitted(
-                    this._settings.Anchor,
-                    [.. kept.Where(matchup => pairings.Any(matchup.IsPairing))]
-                )
-                .Where(rating => settled.Contains(rating.Key))
-                .ToImmutableDictionary();
+                    .Where(bot => !known.ContainsKey(bot) && IsReady(bot))
+                    .Select(bot => KeyValuePair.Create(bot, BotRatingFit.Against(bot, known, games)!.Value))
+            );
             if (!fitted.IsEmpty)
             {
                 this._bots.Rate(ruleset, fitted);
@@ -74,19 +81,20 @@ public sealed class BotRatingService(
     }
 
     /// <summary>
-    /// Plays the pairing played least, those with a bot not yet rated at its ruleset first (Proposed), and keeps how
-    /// it went; that game, counted for the first bot.
+    /// Plays the pairing played least, those of a bot not yet rated at its ruleset with one that is first, as only
+    /// those rate it (Proposed), and keeps how it went; that game, counted for the first bot.
     /// </summary>
     public async Task<BotMatchup> PlayNext(CancellationToken cancellationToken)
     {
         ImmutableList<BotMatchup> kept = await this._matchups.Matchups(cancellationToken);
         ImmutableDictionary<string, BotProfile> profiles = this._bots.Bots.ToImmutableDictionary(bot => bot.Id);
-        bool IsRated(BotMatchup pairing) =>
-            profiles[pairing.First].Ratings.ContainsKey(pairing.Ruleset)
-            && profiles[pairing.Second].Ratings.ContainsKey(pairing.Ruleset);
+        bool IsRated(string bot, string ruleset) =>
+            bot == this._settings.Anchor || profiles[bot].Ratings.ContainsKey(ruleset);
+        bool RatesANewBot(BotMatchup pairing) =>
+            IsRated(pairing.First, pairing.Ruleset) != IsRated(pairing.Second, pairing.Ruleset);
         BotMatchup next = this._rulesets.All
             .SelectMany(ruleset => this.Pairings(ruleset.Id))
-            .OrderBy(IsRated)
+            .OrderBy(pairing => !RatesANewBot(pairing))
             .ThenBy(pairing => PlayedOf(kept, pairing))
             .First();
         IRulesApplying rules = this._rulesets.Find(next.Ruleset);
