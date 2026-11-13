@@ -122,6 +122,12 @@ public sealed record Chaturaji2027Variant(
     /// <summary>The kinds that take by custody (the Tafl King, the Swede): none, unless set.</summary>
     public ImmutableHashSet<PieceKindId> Custodians { get; init; } = [];
 
+    /// <summary>
+    /// The kinds that may flee the board from their own army's far corner (the Tafl King): none, unless set
+    /// (<see cref="Flight"/>).
+    /// </summary>
+    public ImmutableHashSet<PieceKindId> Fleers { get; init; } = [];
+
     /// <summary>The kinds that may call a leader face-off (a Janggi General): none, unless set.</summary>
     public ImmutableHashSet<PieceKindId> FaceOffCallers { get; init; } = [];
 

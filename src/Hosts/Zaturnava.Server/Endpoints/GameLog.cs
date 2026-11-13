@@ -173,6 +173,13 @@ file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bo
             ),
             PieceReturned returned => this.Returned(number, returned),
             PieceEscaped escaped => this.Escaped(number, escaped),
+            PieceFled fled => this.Add(
+                number,
+                EventDto.Escaped,
+                fled.FledBy,
+                $"{this.Name(fled.Piece.Owner)}'s {this.Rules.NameOf(fled.Piece.Kind)} escaped the board from "
+                    + $"{this.Rules.Topology.NameOf(fled.Cell)}: no one can take it until it comes back."
+            ),
             RajaCapturedOnThrone onThrone => this.Add(
                 number,
                 EventDto.Bonus,
@@ -438,7 +445,7 @@ file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bo
         Piece piece = escaped.Piece;
         string kind = this.Rules.NameOf(piece.Kind);
         string cell = this.Rules.Topology.NameOf(escaped.Cell);
-        string from = escaped.HeldBy is { } holder ? $" from {this.Name(holder)}" : "";
+        string from = escaped.HeldBy is { } holder ? $" from {this.Name(holder)}" : string.Empty;
         string taking = escaped.Took is { } took
             ? $", taking {this.Name(took.Owner)}'s {this.Rules.NameOf(took.Kind)}!"
             : ".";

@@ -264,8 +264,13 @@ Their values, by the sheet's columns:
 - The Man may promote into the Checkers King, a leader, so it starts from the
   [leader promotion bonus](#leader-promotion-bonus) (50). Its premium is the 12 that promotion would gain
   (64 less 52), over 7 rows: 2.
-- The sheet also says the Tafl King "can permanently escape the game", unpriced and not yet played: what
-  escaping means is an [open question](../open-questions.md).
+- The sheet also says the Tafl King "can permanently escape the game". **Escape**, *Stated* (2026-11-13): on its
+  own army's far corner (the right-hand corner of the far row, as the army faces; z26 for Black on the largest board),
+  and only there, the Tafl King may leave the board, by a deliberate move or on a die that moves it. Off the board
+  no one can take it. It comes back only as a prisoner escapes, on doubles that move it, to its home.
+  *Proposed*: while it is away its army plays on as one whose leader was taken, and a fled King, like a prisoner,
+  holds no ground: if it was its team's last piece on the board, the game ends as when a team is left alone.
+  The escape is unpriced: its worth is an [open question](../open-questions.md).
 
 ### Editions
 

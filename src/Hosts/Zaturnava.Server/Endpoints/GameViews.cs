@@ -560,8 +560,18 @@ internal static class GameViews
             (MoveAction move, _, _) => SwapOf(snapshot, move),
             (RetireAction, _, _) => "Retire from the game: taking your Raja will score no one",
             (FaceOffAction faceOff, _, _) => FaceOffOf(snapshot, faceOff),
+            (FleeAction flee, _, _) => FleeOf(snapshot, flee),
             _ => null,
         };
+
+    /// <summary>"Escape the board with Black's King (Tafl), from z26: no one can take it until it comes back"</summary>
+    private static string FleeOf(GameSnapshot snapshot, FleeAction flee)
+    {
+        IRulesApplying rules = snapshot.Rules;
+        Piece piece = snapshot.State.Position.PieceAt(flee.Cell)!; // a flight is offered only from a piece's cell
+        return $"Escape the board with {rules.NameOf(piece.Owner)}'s {rules.NameOf(piece.Kind)}, from "
+            + $"{rules.Topology.NameOf(flee.Cell)}: no one can take it until it comes back";
+    }
 
     /// <summary>"Face-off: your General (Janggi) on e1 and Yellow's Raja on e8, each taken by the other's side".
     /// </summary>
@@ -586,14 +596,21 @@ internal static class GameViews
     private static string EscapeOf(GameSnapshot snapshot, EscapeAction escape) =>
         $"{PrisonerOf(snapshot, escape)}, to {snapshot.Rules.Topology.NameOf(escape.Home)}";
 
-    /// <summary>"Escape Green's Raja, held by Red": the escape, wherever to.</summary>
+    /// <summary>
+    /// "Escape Green's Raja, held by Red": the escape, wherever to; "Bring back Black's King (Tafl), which fled the
+    /// board", for a piece no one holds.
+    /// </summary>
     private static string PrisonerOf(GameSnapshot snapshot, EscapeAction escape)
     {
         IRulesApplying rules = snapshot.Rules;
-        Prisoner prisoner = snapshot.State.Prisoners.First(held => held.Piece.Id == escape.Piece);
-        return $"Escape {rules.NameOf(prisoner.Piece.Owner)}'s {rules.NameOf(prisoner.Piece.Kind)}, "
-            + $"held by {rules.NameOf(prisoner.Holder)}";
+        return snapshot.State.Prisoners.FirstOrDefault(held => held.Piece.Id == escape.Piece) is { } prisoner
+            ? $"Escape {rules.NameOf(prisoner.Piece.Owner)}'s {rules.NameOf(prisoner.Piece.Kind)}, "
+                + $"held by {rules.NameOf(prisoner.Holder)}"
+            : FledOf(rules, snapshot.State.Fled.First(fled => fled.Id == escape.Piece));
     }
+
+    private static string FledOf(IRulesApplying rules, Piece piece) =>
+        $"Bring back {rules.NameOf(piece.Owner)}'s {rules.NameOf(piece.Kind)}, which fled the board";
 
     /// <summary>"Promote the Pawn (Western) on c8 to a Queen (Western)", by its own promotion.</summary>
     private static string OwnPromotionOf(GameSnapshot snapshot, PromoteOwnAction promote)

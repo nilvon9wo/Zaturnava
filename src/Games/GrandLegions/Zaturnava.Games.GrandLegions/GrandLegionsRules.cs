@@ -157,6 +157,7 @@ public static class GrandLegionsRules
             FlyingCapturers = [GrandLegionsPieces.XiangqiGeneral],
             FaceOffCallers = [GrandLegionsPieces.JanggiGeneral],
             Custodians = [GrandLegionsPieces.TaflKing, GrandLegionsPieces.Swede],
+            Fleers = [GrandLegionsPieces.TaflKing],
             PalaceSteppers =
             [
                 GrandLegionsPieces.JanggiGeneral,

@@ -612,8 +612,24 @@ public sealed class GrandLegionsRulesTest
             (
                 guide.Class,
                 guide.Powers.Single()[..14],
-                guide.SpecialPowers.Single().StartsWith(power, StringComparison.Ordinal)
+                guide.SpecialPowers[0].StartsWith(power, StringComparison.Ordinal)
             )
+        );
+    }
+
+    [Fact]
+    public void GuideOf_WhenTheTaflKing_TellsItMayEscapeTheBoardFromItsFarCorner()
+    {
+        // Arrange
+        Chaturaji2027Rules rules = GrandLegionsRules.RulesOf(QuickGame.Small);
+
+        // Act
+        PieceGuide guide = rules.GuideOf(new PieceKindId("tafl-king"));
+
+        // Assert
+        Assert.Equal(
+            [false, true],
+            guide.SpecialPowers.Select(power => power.StartsWith("Escape: ", StringComparison.Ordinal))
         );
     }
 

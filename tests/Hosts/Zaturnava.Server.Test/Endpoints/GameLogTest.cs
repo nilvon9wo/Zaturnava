@@ -485,6 +485,22 @@ public sealed class GameLogTest
         Assert.Equal((Cell("a7").Value, Yellow.Value), (log[2].To, log[2].Owner));
     }
 
+    [Fact]
+    public void LatestOf_WhenALeaderFleesTheBoard_TellsOfItsEscape()
+    {
+        // Arrange
+        GameSnapshot snapshot = Snapshot(new PieceFled(RedRaja, Cell("a8"), Red));
+
+        // Act
+        ImmutableList<EventDto> log = GameLog.LatestOf(snapshot);
+
+        // Assert
+        Assert.Equal(
+            ["escaped 3: Red's Raja escaped the board from a8: no one can take it until it comes back."],
+            log.Select(Told)
+        );
+    }
+
     [Theory]
     [InlineData(new[] { 0, 2 }, "ended 0: Black and Green won: only one team has pieces left.")]
     [InlineData(new[] { 1 }, "ended 1: Yellow won: only one team has pieces left.")]
