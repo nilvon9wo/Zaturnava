@@ -1,7 +1,7 @@
 @* Who holds a seat, as the table shows them. A player who claimed it signed in may be looked at: their name opens a
    dialog with their profile, as anyone may see it: their description, and the services they chose to show; and how
    they stand at the game, from its leaderboard: their Elo, experience, and games won, lost and drawn (the user's
-   request of 2026-11-12). A bot may be looked at too: its name opens its profile, from the server's catalog - what it
+   request of 2026-11-12), and their three winning streaks, each with the mean Elo it beat (Proposed). A bot may be looked at too: its name opens its profile, from the server's catalog - what it
    does, whether it asks an AI (and costs tokens each use), and its rating at this game. Figures are laid out as
    labelled fields, a table or a list of terms, never run into a sentence (Stated 2026-11-13). *@
 @using System.Globalization
@@ -51,6 +51,22 @@ else
                                 <td>@standing.Lost</td>
                                 <td>@standing.Drawn</td>
                             </tr>
+                        </tbody>
+                    </table>
+                    <table class="player-streaks">
+                        <caption>Winning streaks at this game</caption>
+                        <thead>
+                            <tr><th>Of</th><th>Won in a row</th><th>Mean Elo beaten</th></tr>
+                        </thead>
+                        <tbody>
+                            @foreach ((string of, StreakDto streak) in StreaksOf(standing))
+                            {
+                                <tr>
+                                    <th scope="row">@of</th>
+                                    <td>@streak.Wins</td>
+                                    <td>@(streak.OpponentElo?.ToString(CultureInfo.InvariantCulture) ?? "—")</td>
+                                </tr>
+                            }
                         </tbody>
                     </table>
                 }
@@ -146,6 +162,17 @@ else
             this._bot = (await this.Games.Catalog(CancellationToken.None)).Bots.FirstOrDefault(bot => bot.Id == botId)
         );
     }
+
+    /// <summary>
+    /// The player's three winning streaks, as the leaderboard counts them: over every game, over the games that count
+    /// toward Elo, and over the games against people.
+    /// </summary>
+    private static (string Of, StreakDto Streak)[] StreaksOf(StandingDto standing) =>
+    [
+        ("Every game", standing.Streak),
+        ("Rated games", standing.RatedStreak),
+        ("Games against people", standing.PeopleStreak),
+    ];
 
     /// <summary>"AI, paid per use", "AI", or "Plain algorithm".</summary>
     private static string KindOf(BotDto bot) =>
