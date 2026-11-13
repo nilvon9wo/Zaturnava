@@ -412,19 +412,19 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
     opacity: 0.9;
 }
 
-/* A palace's wall, battlemented (Svg.Battlemented), in stone grey; its lines to the throne, thin and dashed. */
+/* A palace's wall, battlemented (Svg.Battlemented), in sandstone; its lines to the throne, dashed. Bold enough to be
+   seen on dark squares and light alike (the user's request of 2026-11-13: the stone grey was too faint). */
 .line.palace {
-    stroke: #6b5d4f;
-    stroke-width: 0.04;
+    stroke: #c9a063;
+    stroke-width: 0.065;
     stroke-linejoin: miter;
-    opacity: 0.9;
 }
 
 .line.palace-line {
-    stroke: #6b5d4f;
-    stroke-width: 0.02;
-    stroke-dasharray: 0.06 0.05;
-    opacity: 0.7;
+    stroke: #c9a063;
+    stroke-width: 0.04;
+    stroke-dasharray: 0.1 0.06;
+    opacity: 0.9;
 }
 
 .piece circle { stroke: var(--piece-edge); stroke-width: 0.035; }
