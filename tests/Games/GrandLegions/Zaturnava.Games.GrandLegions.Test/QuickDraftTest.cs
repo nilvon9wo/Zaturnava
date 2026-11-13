@@ -20,8 +20,11 @@ public sealed class QuickDraftTest
         // Act
         Drafting drafting = QuickDraft.Of(game);
 
-        // Assert
-        Assert.Equal((110, 9), (drafting.Budget, drafting.Kingdom.Count));
+        // Assert - a palace's pieces offered apart, for the game's palaces
+        Assert.Equal(
+            (110, 9, true),
+            (drafting.Budget, drafting.Kingdom.Count, drafting.PalaceBound.SetEquals(PalaceConfinement.Confined))
+        );
     }
 
     [Theory]

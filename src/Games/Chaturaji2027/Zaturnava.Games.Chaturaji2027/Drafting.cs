@@ -19,4 +19,10 @@ public sealed record Drafting(
 {
     /// <summary>Every terrain a game may be dealt, as the ruleset numbers them: its own (0) alone, if unset.</summary>
     public ImmutableList<int> Terrains { get; init; } = [0];
+
+    /// <summary>
+    /// The kinds a palace holds (specification §5): offered too, but only in a game with palaces, and placed only in
+    /// the drafting seat's own palace. None, if unset.
+    /// </summary>
+    public ImmutableHashSet<PieceKindId> PalaceBound { get; init; } = [];
 }

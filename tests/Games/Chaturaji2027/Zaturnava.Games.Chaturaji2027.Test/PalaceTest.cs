@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Boards;
+using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
 using Net.NowhereAtAll.Zaturnava.Engine.Rules;
 using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 
@@ -228,6 +229,61 @@ public sealed class PalaceTest
         );
     }
 
+    [Fact]
+    public void LegalActions_WhenAKindIsPalaceBound_OffersItOnlyOnTheFreeSquaresOfTheSeatsPalace()
+    {
+        // Arrange - a palace holds the Horse; Black's palace about b2, its throne a1, a Pawn bought on b1
+        Chaturaji2027Rules rules = RulesOf(3, 4, [Chaturaji2027Pieces.Horse]);
+        GameState begun = rules.Drafted(rules.Deal(rules.CreateInitialState(), 4, dealsPalaces: true), 7);
+        GameState placed = rules.Apply(begun, new PalaceAction(Black, B2)).State with { DecidingSeat = Black };
+        GameState throned = rules.Apply(placed, new ThroneAction(Black, new CellId(0))).State with
+        {
+            DecidingSeat = Black,
+        };
+        DraftAction pawn = new(Black, Chaturaji2027Pieces.Pawn, new CellId(1));
+        GameState bought = rules.Apply(throned, pawn).State with { DecidingSeat = Black };
+
+        // Act
+        ImmutableList<GameAction> choices = rules.LegalActions(bought);
+
+        // Assert - every square of the palace but b1, a Pawn anywhere free in the kingdom
+        Assert.Equal(
+            ("0,2,8,9,10,16,17,18", 11),
+            (
+                Text(
+                    choices.OfType<DraftAction>()
+                        .Where(draft => draft.Piece == Chaturaji2027Pieces.Horse)
+                        .Select(draft => draft.Cell)
+                ),
+                choices.OfType<DraftAction>().Count(draft => draft.Piece == Chaturaji2027Pieces.Pawn)
+            )
+        );
+    }
+
+    [Fact]
+    public void LegalActions_WhenTheGameHasNoPalaces_DoesNotOfferAPalaceBoundKind()
+    {
+        // Arrange
+        Chaturaji2027Rules rules = RulesOf(3, 4, [Chaturaji2027Pieces.Horse]);
+        GameState drafted = rules.Drafted(rules.Deal(rules.CreateInitialState(), 4), 7);
+        GameState throned = rules.Apply(drafted, new ThroneAction(Black, new CellId(0))).State with
+        {
+            DecidingSeat = Black,
+        };
+
+        // Act
+        ImmutableList<GameAction> choices = rules.LegalActions(throned);
+
+        // Assert
+        Assert.Equal(
+            (false, true),
+            (
+                choices.OfType<DraftAction>().Any(draft => draft.Piece == Chaturaji2027Pieces.Horse),
+                choices.OfType<DraftAction>().Any()
+            )
+        );
+    }
+
     private GameState Begun() =>
         this._rules.Drafted(this._rules.Deal(this._rules.CreateInitialState(), 4, dealsPalaces: true), 7);
 
@@ -235,8 +291,15 @@ public sealed class PalaceTest
 
     private static string Text(IEnumerable<GameAction> actions) => string.Join(";", actions);
 
-    /// <summary>Rules whose kingdoms are <paramref name="width"/> wide and <paramref name="depth"/> deep.</summary>
-    private static Chaturaji2027Rules RulesOf(int depth, int width) =>
+    /// <summary>
+    /// Rules whose kingdoms are <paramref name="width"/> wide and <paramref name="depth"/> deep; a palace holding
+    /// <paramref name="palaceBound"/>, if any.
+    /// </summary>
+    private static Chaturaji2027Rules RulesOf(
+        int depth,
+        int width,
+        ImmutableHashSet<PieceKindId>? palaceBound = null
+    ) =>
         new(
             DiceProfile.WeightedSixSided,
             Chaturaji2027Rules.DefaultIdleRounds,
@@ -256,7 +319,10 @@ public sealed class PalaceTest
                         [new ArmyPiece(Chaturaji2027Pieces.Pawn, 0, 0)],
                         fill.Throne ?? new ArmySquare(width - 1, 0)
                     )
-                ),
+                )
+                {
+                    PalaceBound = palaceBound ?? [],
+                },
             }
         );
 }
