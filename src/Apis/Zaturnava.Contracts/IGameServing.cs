@@ -28,9 +28,16 @@ public interface IGameServing
 
     Task<GameCreatedDto> Create([Required] CreateGameRequest request, CancellationToken cancellationToken);
 
-    Task<GameViewDto> Get([Required] string gameId, CancellationToken cancellationToken);
+    /// <summary>
+    /// The game as the seat <paramref name="token"/> holds sees it, if it holds one; as anyone does, else. Only a game
+    /// drafted in secret differs (<see cref="GameViewDto.IsDraftSecret"/>).
+    /// </summary>
+    Task<GameViewDto> Get([Required] string gameId, string? token, CancellationToken cancellationToken);
 
-    /// <summary>The game as data to learn from: every action so far, and how it ended, if it has.</summary>
+    /// <summary>
+    /// The game as data to learn from: every action so far, and how it ended, if it has; while its armies are drafted
+    /// in secret, only how it began (<see cref="GameViewDto.IsDraftSecret"/>).
+    /// </summary>
     Task<GameHistoryDto> History([Required] string gameId, CancellationToken cancellationToken);
 
     /// <summary>The history of every finished game the server keeps.</summary>
@@ -40,7 +47,15 @@ public interface IGameServing
     /// Lets the bot whose turn it is make one decision, if the game is still at <paramref name="version"/>;
     /// otherwise, or when no bot is deciding, changes nothing. Either way, returns the game as it is then.
     /// </summary>
-    Task<GameViewDto> Advance([Required] string gameId, int version, CancellationToken cancellationToken);
+    /// <remarks>
+    /// The game returned is as the seat <paramref name="token"/> holds sees it, if it holds one, as <c>Get</c> says.
+    /// </remarks>
+    Task<GameViewDto> Advance(
+        [Required] string gameId,
+        int version,
+        string? token,
+        CancellationToken cancellationToken
+    );
 
     /// <summary>
     /// Claims an open seat; the token returned is the only way to act for it. With a signed-in player's token

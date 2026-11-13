@@ -20,9 +20,9 @@ server is at `https://zaturnava.runasp.net/`.
 | Say anew who holds a seat | `PUT api/games/{id}/seats/{seat}`, with a player token or none, and the seat's token and a guest's nickname or none | `204` |
 | Take back your own seat, from any device | `POST api/games/{id}/seats/{seat}/take-back`, with the token of the player who claimed it (not for a seat their AI plays); the seat's old token holds it no more | `{"token": "..."}` |
 | Take a seat over from a bot | `POST api/games/{id}/seats/{seat}/take-over`, as a claim: with a player's token, or as a guest with `{"nickname": "...", "aliasToken": "..."}`; the bot plays it no more, whoever took it does, for the rest of the game | `{"token": "..."}`; `409` if no bot plays it, the game is over, or the player holds a seat there already; `403` for a guest at a game for players signed in only |
-| A game | `GET api/games/{id}` | The game as it stands ([the view](#the-view)) |
+| A game | `GET api/games/{id}`, with a seat's token or none | The game as it stands ([the view](#the-view)), as that seat sees it |
 | Act | `POST api/games/{id}/actions`, with the seat's token | The game after it |
-| Let a bot (or a timer) decide | `POST api/games/{id}/advance` | The game after one decision |
+| Let a bot (or a timer) decide | `POST api/games/{id}/advance`, with a seat's token or none | The game after one decision |
 | Fill the open seats with bots | `POST api/games/{id}/fill`, with a seat's token | The game, begun if a bot was free for each seat |
 | Have a bot play for someone away | `POST api/games/{id}/replace`, with a seat's token | The game, the seat a bot's if one was free |
 | A game's history | `GET api/games/{id}/history` | [Game histories](game-histories.md) |
@@ -199,7 +199,10 @@ The rules refuse any of these that may not be made, as they refuse any illegal a
 ## The view
 
 `GET api/games/{id}` returns the game as any client shows it (or `410`, saying so, for a game begun under rules
-that have changed since, so that its actions no longer replay: a preview's, most often):
+that have changed since, so that its actions no longer replay: a preview's, most often). While its armies are
+drafted in secret (`isDraftSecret`), it shows only what the team of the seat whose token comes with it drafted:
+no other team's pieces, throne, palace or points left (`null` in `draftLeft`), nor its drafting in the log, nor
+its choices while it drafts; without a token, no team's. Its history, until then, holds only how it began.
 
 | Field | |
 |---|---|

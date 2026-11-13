@@ -7,6 +7,7 @@ using Net.NowhereAtAll.Zaturnava.Engine.Boards;
 using Net.NowhereAtAll.Zaturnava.Engine.Decisions;
 using Net.NowhereAtAll.Zaturnava.Engine.Events;
 using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
+using Net.NowhereAtAll.Zaturnava.Engine.Positions;
 using Net.NowhereAtAll.Zaturnava.Engine.Rules;
 using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 
@@ -89,19 +90,34 @@ internal static class GameViews
         );
 
     /// <summary>
-    /// The game as its seats see it, naming each bot as <paramref name="bots"/> do, and whoever holds each person's
-    /// seat as <paramref name="names"/> do.
+    /// Whether the game's armies are being drafted, in secret (<see cref="DraftSettings.IsSecret"/>); a game being
+    /// drafted was begun so.
+    /// </summary>
+    public static bool IsDraftingInSecret(GameSnapshot snapshot) =>
+        snapshot.State.Draft is not null && ScenarioStart.DraftingOf(snapshot.Record.Actions)!.IsSecret;
+
+    /// <summary>
+    /// The game as the seat <paramref name="token"/> holds sees it, if it holds one, else as anyone does, naming each
+    /// bot as <paramref name="bots"/> do, and whoever holds each person's seat as <paramref name="names"/> do. While
+    /// the armies are drafted in secret, it shows no other team's pieces, throne, palace, points left, drafting in the
+    /// log or choices (Proposed: a team drafts together, so allies see each other's).
     /// </summary>
     public static GameViewDto ViewOf(
         GameSnapshot snapshot,
         ImmutableList<BotProfile> bots,
-        ImmutableDictionary<HumanSeat, string>? names = null
+        ImmutableDictionary<HumanSeat, string>? names = null,
+        string? token = null
     )
     {
+        ImmutableHashSet<SeatId> hidden = HiddenFrom(snapshot, token);
+        GameState shown = hidden.IsEmpty ? snapshot.State : Masked(snapshot.State, hidden);
         ImmutableDictionary<CellId, SeatId> thrones =
             snapshot.Rules
                 .ThronesOf(snapshot.State)
+                .Where(throne => !hidden.Contains(throne.Key))
                 .ToImmutableDictionary(throne => throne.Value, throne => throne.Key);
+        ImmutableList<GameAction> legal =
+            snapshot.State.DecidingSeat is { } deciding && hidden.Contains(deciding) ? [] : snapshot.LegalActions;
         return new GameViewDto(
             snapshot.Record.Id.Value,
             snapshot.Rules.Id,
@@ -111,12 +127,15 @@ internal static class GameViews
             snapshot.State.DecidingSeat?.Value,
             snapshot.State.ActingFor?.Value,
             [.. snapshot.Rules.Topology.Cells.Select(cell => CellOf(snapshot.Rules.Topology, thrones, cell))],
-            [.. snapshot.State.Position.Occupants.OrderBy(entry => entry.Key.Value)
+            [.. shown.Position.Occupants.OrderBy(entry => entry.Key.Value)
                 .Select(entry => PieceOf(snapshot.Rules, entry.Key, entry.Value))],
-            [.. snapshot.State.Seats.Select(seat => SeatOf(snapshot, bots, seat.Id, names))],
-            [.. snapshot.LegalActions.Select(action => ActionOf(snapshot, action))],
+            [.. snapshot.State.Seats.Select(seat => SeatOf(snapshot, bots, seat.Id, names, shown))],
+            [.. legal.Select(action => ActionOf(snapshot, action))],
             [.. snapshot.State.Dice.Select(value => DieOf(snapshot, value))],
-            GameLog.LatestOf(snapshot),
+            [
+                .. GameLog.LatestOf(snapshot)
+                    .Where(told => told.Kind != EventDto.Drafted || !hidden.Contains(new SeatId(told.Seat))),
+            ],
             OutcomeOf(snapshot.Rules, snapshot.State.Outcome),
             snapshot.Rules.MayOffer(snapshot.State),
             OfferOf(snapshot),
@@ -130,10 +149,10 @@ internal static class GameViews
             VacancyOf(snapshot.Vacancy)
         )
         {
-            Kinds = KindsOf(snapshot.Rules, snapshot.State),
+            Kinds = KindsOf(snapshot.Rules, shown),
             Lines =
             [
-                .. snapshot.Rules.LinesOf(snapshot.State)
+                .. snapshot.Rules.LinesOf(shown)
                     .Select(line => new LineDto(line.Kind, line.FromX, line.FromY, line.ToX, line.ToY)),
             ],
             Terrain = snapshot.Rules.TerrainOf(snapshot.State),
@@ -142,14 +161,57 @@ internal static class GameViews
             IsDrafted = ScenarioStart.IsDrafted(snapshot.Record.Actions),
             DraftBudget = ScenarioStart.DraftingOf(snapshot.Record.Actions)?.Budget,
             Drafter = ScenarioStart.DraftingOf(snapshot.Record.Actions)?.Drafter?.Value,
+            IsDraftSecret = ScenarioStart.DraftingOf(snapshot.Record.Actions)?.IsSecret ?? false,
             Board = SizeOf(ScenarioStart.BoardOf(snapshot.Record.Actions)),
-            DraftLeft = snapshot.State.Draft is { } draft
-                ? [.. snapshot.State.Seats.Select(seat => draft.Left[seat.Id])]
+            DraftLeft = shown.Draft is { } draft
+                ? [.. snapshot.State.Seats.Select(seat => LeftOf(draft, seat.Id))]
                 : null,
             DraftKinds = [.. snapshot.Rules.DraftOffered(snapshot.State).Select(kind => KindOf(snapshot.Rules, kind))],
             IsForPlayers = snapshot.Record.Controllers.Any(controller => controller.IsForPlayers),
         };
     }
+
+    /// <summary>What the seat has left to spend; null, if it is hidden.</summary>
+    private static int? LeftOf(ArmyDraft draft, SeatId seat) =>
+        draft.Left.TryGetValue(seat, out int left) ? left : null;
+
+    /// <summary>
+    /// The seats whose drafting the holder of <paramref name="token"/> may not see: while the armies are drafted in
+    /// secret, those of every team but the teams of the seats it holds (every seat, if it holds none); else none.
+    /// </summary>
+    private static ImmutableHashSet<SeatId> HiddenFrom(GameSnapshot snapshot, string? token)
+    {
+        if (!IsDraftingInSecret(snapshot))
+        {
+            return [];
+        }
+
+        ImmutableList<SeatId> seats = [.. snapshot.State.Seats.Select(seat => seat.Id)];
+        ImmutableList<SeatId> held =
+            token is null ? [] : [.. seats.Where(seat => snapshot.Record.Controllers[seat.Value].IsHeldBy(token))];
+        return [.. seats.Where(seat => !held.Any(holder => snapshot.State.Teams.AreAllied(holder, seat)))];
+    }
+
+    /// <summary>
+    /// The state without the <paramref name="hidden"/> seats' pieces, thrones, palaces or points left: of a game
+    /// drafted in secret, so dealt since thrones and palaces were drafted too, both of which a draft begins with none
+    /// of.
+    /// </summary>
+    private static GameState Masked(GameState state, ImmutableHashSet<SeatId> hidden) =>
+        state with
+        {
+            Position = new Position(
+                state.Position.Occupants
+                    .Where(occupant => !hidden.Contains(occupant.Value.Owner))
+                    .ToImmutableDictionary()
+            ),
+            Thrones = state.Thrones!.Where(throne => !hidden.Contains(throne.Key)).ToImmutableDictionary(),
+            Palaces = state.Palaces!.Where(palace => !hidden.Contains(palace.Key)).ToImmutableDictionary(),
+            Draft = state.Draft! with
+            {
+                Left = state.Draft.Left.Where(left => !hidden.Contains(left.Key)).ToImmutableDictionary(),
+            },
+        };
 
     /// <summary>
     /// Each kind of piece on the board or held prisoner, and each its own promotion may make it, by name, as one
@@ -306,7 +368,8 @@ internal static class GameViews
         GameSnapshot snapshot,
         ImmutableList<BotProfile> bots,
         SeatId seat,
-        ImmutableDictionary<HumanSeat, string>? names
+        ImmutableDictionary<HumanSeat, string>? names,
+        GameState shown
     )
     {
         SeatController controller = snapshot.Record.Controllers[seat.Value];
@@ -315,7 +378,7 @@ internal static class GameViews
             seat.Value,
             snapshot.Rules.NameOf(seat),
             snapshot.State.Teams.TeamOf(seat),
-            snapshot.State.Scores.GetValueOrDefault(seat) + (snapshot.State.Draft?.Left.GetValueOrDefault(seat) ?? 0),
+            snapshot.State.Scores.GetValueOrDefault(seat) + (shown.Draft?.Left.GetValueOrDefault(seat) ?? 0),
             controller.Kind,
             botId is null ? null : BotNameOf(bots, botId),
             [.. snapshot.State.Prisoners.Where(prisoner => prisoner.Holder == seat)

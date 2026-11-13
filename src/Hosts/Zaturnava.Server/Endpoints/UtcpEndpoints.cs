@@ -116,9 +116,12 @@ internal static class UtcpEndpoints
                     "get_game",
                     "A game as it stands: the cells, the pieces, the seats and scores, whose decision it is "
                         + "(decidingSeat, null once over), that seat's legal actions, the dice, and what happened "
-                        + "lately.",
-                    Inputs(Input("gameId", Text("The game's id."), isRequired: true)),
-                    new HttpCallTemplate("http", "GET", game)
+                        + "lately. While armies are drafted in secret, a seat's token shows what its team drafted.",
+                    Inputs(
+                        Input("gameId", Text("The game's id."), isRequired: true),
+                        Input(Authorization, Text("\"Bearer {seat token}\", to see it as that seat does; else none."))
+                    ),
+                    new HttpCallTemplate("http", "GET", game) { HeaderFields = [Authorization] }
                 ),
                 Tool(
                     "game_history",
@@ -137,9 +140,10 @@ internal static class UtcpEndpoints
                             Body,
                             Inputs(Input("version", Typed("integer", "The game's version, as get_game gave it."))),
                             isRequired: true
-                        )
+                        ),
+                        Input(Authorization, Text("\"Bearer {seat token}\", to see it as that seat does; else none."))
                     ),
-                    Posting(game + "/advance")
+                    Posting(game + "/advance", Authorization)
                 ),
                 Tool(
                     "submit_action",

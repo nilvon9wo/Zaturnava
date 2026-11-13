@@ -226,6 +226,11 @@ drawn simply, a shape for its class and a letter for its kind.
   game's prices, placing each on a free square, until done or the rest is filled at random; points
   left start their score. Bots have their armies filled at random for now. Still to come: drafting
   in secret, palaces, lifts, infantry beyond the start rows, and bots drafting their own way.
+- *Done* (2026-11-13): drafting in secret, a choice in the lobby when each player drafts their own army.
+  Until every army is drafted, each player is shown only their own team's palaces, thrones, pieces, points
+  left and drafting in the log; the API and MCP show it so to the holder of a seat's token, and no army at
+  all to anyone else. Still in turn: the seats draft a step each in seat order, as in view; all at once is
+  still to come. The server's own bots see everything, as they always do.
 
 ## Stage 5 — Points to spend
 

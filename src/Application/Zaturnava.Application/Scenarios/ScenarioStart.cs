@@ -34,6 +34,7 @@ public static class ScenarioStart
     private const string DraftedArgument = "drafted";
     private const string BudgetArgument = "budget";
     private const string DrafterArgument = "drafter";
+    private const string SecretArgument = "secret";
     private const string SideArgument = "side";
     private const string KingdomWidthArgument = "kingdom-width";
     private const string KingdomDepthArgument = "kingdom-depth";
@@ -116,9 +117,11 @@ public static class ScenarioStart
         ImmutableSortedDictionary<string, string> budgeted = drafting.Budget is { } budget
             ? drafted.Add(BudgetArgument, budget.ToString(CultureInfo.InvariantCulture))
             : drafted;
+        ImmutableSortedDictionary<string, string> secret =
+            drafting.IsSecret ? budgeted.Add(SecretArgument, ActionDescriptor.Flag(true)) : budgeted;
         return drafting.Drafter is { } drafter
-            ? budgeted.Add(DrafterArgument, drafter.Value.ToString(CultureInfo.InvariantCulture))
-            : budgeted;
+            ? secret.Add(DrafterArgument, drafter.Value.ToString(CultureInfo.InvariantCulture))
+            : secret;
     }
 
     /// <summary>Whether the first of <paramref name="actions"/> had the armies drafted by the players.</summary>
@@ -127,7 +130,7 @@ public static class ScenarioStart
 
     /// <summary>
     /// How the first of <paramref name="actions"/> had the armies drafted, its budget and its one drafter, if it set
-    /// them; none, if they were not drafted.
+    /// them, and whether in secret; none, if they were not drafted.
     /// </summary>
     public static DraftSettings? DraftingOf([Required] ImmutableList<ActionDescriptor> actions) =>
         actions.FirstOrDefault() is { Kind: DealKind } first && first.Arguments.ContainsKey(DraftedArgument)
@@ -139,6 +142,9 @@ public static class ScenarioStart
                     ? new SeatId(int.Parse(drafter, CultureInfo.InvariantCulture))
                     : null
             )
+            {
+                IsSecret = first.Arguments.ContainsKey(SecretArgument),
+            }
             : null;
 
     /// <summary>Whether the first of <paramref name="actions"/> dealt every army alike.</summary>

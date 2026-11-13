@@ -60,7 +60,10 @@ public sealed class HttpGameClient(HttpClient http) : IGameServing
         this.Send<GameCreatedDto>(HttpMethod.Post, GameRoutes.Games, request, null, cancellationToken);
 
     public Task<GameViewDto> Get([Required] string gameId, CancellationToken cancellationToken) =>
-        this.Send<GameViewDto>(HttpMethod.Get, GameRoutes.Game(gameId), null, null, cancellationToken);
+        this.Get(gameId, null, cancellationToken);
+
+    public Task<GameViewDto> Get([Required] string gameId, string? token, CancellationToken cancellationToken) =>
+        this.Send<GameViewDto>(HttpMethod.Get, GameRoutes.Game(gameId), null, token, cancellationToken);
 
     public Task<GameHistoryDto> History([Required] string gameId, CancellationToken cancellationToken) =>
         this.Send<GameHistoryDto>(HttpMethod.Get, GameRoutes.History(gameId), null, null, cancellationToken);
@@ -69,11 +72,19 @@ public sealed class HttpGameClient(HttpClient http) : IGameServing
         this.Send<ImmutableList<GameHistoryDto>>(HttpMethod.Get, GameRoutes.Histories, null, null, cancellationToken);
 
     public Task<GameViewDto> Advance([Required] string gameId, int version, CancellationToken cancellationToken) =>
+        this.Advance(gameId, version, null, cancellationToken);
+
+    public Task<GameViewDto> Advance(
+        [Required] string gameId,
+        int version,
+        string? token,
+        CancellationToken cancellationToken
+    ) =>
         this.Send<GameViewDto>(
             HttpMethod.Post,
             GameRoutes.Advance(gameId),
             new AdvanceRequest(version),
-            null,
+            token,
             cancellationToken
         );
 

@@ -9,6 +9,13 @@ namespace Net.NowhereAtAll.Zaturnava.Engine.Rules;
 /// </summary>
 public sealed record DraftSettings(int? Budget = null, SeatId? Drafter = null)
 {
+    /// <summary>
+    /// Whether each seat drafts in secret (Stated, 2026-11-13: the user asked that drafting in secret be possible): no
+    /// one sees another team's palace, throne, pieces or points left until every army is drafted (Proposed). The
+    /// rules play alike either way; only what each seat is shown differs.
+    /// </summary>
+    public bool IsSecret { get; init; }
+
     /// <summary>Every seat drafts its own army, with the ruleset's budget.</summary>
     public static DraftSettings Default { get; } = new();
 }

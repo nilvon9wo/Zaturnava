@@ -179,6 +179,41 @@ public sealed class GameToolsTest : IAsyncLifetime
     }
 
     [Fact]
+    public async Task GetGame_WhenGivenASeatsToken_AsksForTheGameAsThatSeatSeesIt()
+    {
+        // Arrange
+        Dictionary<string, object?> arguments = new()
+        {
+            ["gameId"] = StubGameServer.GameId,
+            ["token"] = StubGameServer.Token,
+        };
+
+        // Act
+        _ = await this._session.Call("get_game", arguments, this._cancellation);
+
+        // Assert
+        Assert.Equal((StubGameServer.GameId, StubGameServer.Token), this._session.Server.Received);
+    }
+
+    [Fact]
+    public async Task AdvanceGame_WhenGivenASeatsToken_AsksForTheGameAfterAsThatSeatSeesIt()
+    {
+        // Arrange
+        Dictionary<string, object?> arguments = new()
+        {
+            ["gameId"] = StubGameServer.GameId,
+            ["version"] = 3,
+            ["token"] = StubGameServer.Token,
+        };
+
+        // Act
+        _ = await this._session.Call("advance_game", arguments, this._cancellation);
+
+        // Assert
+        Assert.Equal((StubGameServer.GameId, 3, StubGameServer.Token), this._session.Server.Received);
+    }
+
+    [Fact]
     public async Task ReadChat_WhenGivenAToken_ReadsWhatItsHolderMay()
     {
         // Arrange
