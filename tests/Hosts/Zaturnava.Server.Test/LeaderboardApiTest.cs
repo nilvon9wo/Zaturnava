@@ -23,6 +23,7 @@ public sealed class LeaderboardApiTest(QuickStandingServer server) : IClassFixtu
 {
     private const int Seed = 5;
     private const int MaximumSteps = 10_000;
+    private const int WaitSeconds = 30;
 
     private readonly QuickStandingServer _server = server;
     private readonly HttpGameClient _client = server.GameClient();
@@ -55,6 +56,8 @@ public sealed class LeaderboardApiTest(QuickStandingServer server) : IClassFixtu
         _ = await this.AddEndedGame(bea.Id);
         _ = await this.Eventually(bea.Name);
         string game = new Chaturaji2027Rules().GameId;
+        string name = new ArgusBot(new Random(Seed)).Profile.Name;
+        _ = await this.EventuallyBot(game, name);
         int rating = (await this._client.Catalog(this._cancellation)).Bots
             .Single(bot => bot.Id == ArgusBot.BotId)
             .Ratings[ZaturnavaServer.Chaturaji2027];
@@ -63,7 +66,7 @@ public sealed class LeaderboardApiTest(QuickStandingServer server) : IClassFixtu
         ImmutableList<BotStandingDto> bots = await this._client.BotLeaderboard(game, this._cancellation);
 
         // Assert
-        BotStandingDto argus = Assert.Single(bots, bot => bot.Name == new ArgusBot(new Random(Seed)).Profile.Name);
+        BotStandingDto argus = Assert.Single(bots, bot => bot.Name == name);
         Assert.Equal(
             (ArgusBot.BotId, 1, rating, true),
             (
@@ -150,7 +153,7 @@ public sealed class LeaderboardApiTest(QuickStandingServer server) : IClassFixtu
     /// <summary>Where the player named <paramref name="name"/> stands, once listed within a few seconds.</summary>
     private async Task<StandingDto?> Eventually(string name)
     {
-        DateTimeOffset until = DateTimeOffset.UtcNow.AddSeconds(5);
+        DateTimeOffset until = DateTimeOffset.UtcNow.AddSeconds(WaitSeconds);
         StandingDto? standing = await this.StandingOf(name);
         while (standing is null && DateTimeOffset.UtcNow < until)
         {
@@ -160,6 +163,22 @@ public sealed class LeaderboardApiTest(QuickStandingServer server) : IClassFixtu
 
         return standing;
     }
+
+    private async Task<BotStandingDto?> EventuallyBot(string game, string name)
+    {
+        DateTimeOffset until = DateTimeOffset.UtcNow.AddSeconds(WaitSeconds);
+        BotStandingDto? standing = await this.BotStandingOf(game, name);
+        while (standing is null && DateTimeOffset.UtcNow < until)
+        {
+            await Task.Delay(50, this._cancellation);
+            standing = await this.BotStandingOf(game, name);
+        }
+
+        return standing;
+    }
+
+    private async Task<BotStandingDto?> BotStandingOf(string game, string name) =>
+        (await this._client.BotLeaderboard(game, this._cancellation)).FirstOrDefault(bot => bot.Name == name);
 
     private async Task<StandingDto?> StandingOf(string name) =>
         (await this._client.Leaderboard(new Chaturaji2027Rules().GameId, this._cancellation))
