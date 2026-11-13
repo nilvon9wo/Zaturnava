@@ -13,6 +13,10 @@ public sealed class QuickArmyTest
 
     public static TheoryData<string> Games => [.. QuickGame.All.Select(game => game.Id)];
 
+    /// <summary>The quick games whose kingdoms have room for a palace: all but the medium, 4 × 2.</summary>
+    public static TheoryData<string> PalacedGames =>
+        [.. QuickGame.All.Where(game => !PalaceSquares.Centres(game.Kingdom).IsEmpty).Select(game => game.Id)];
+
     [Theory]
     [MemberData(nameof(Games))]
     public void Pick_ForEachQuickGame_MeetsTheMinimumsWithinTheBudgetAndTheKingdom(string id)
@@ -88,6 +92,79 @@ public sealed class QuickArmyTest
     }
 
     [Fact]
+    public void Eligible_WithPalacePieces_LetsInWhatAPalaceHoldsWhereTheKingdomHasRoomForAPalace()
+    {
+        // Arrange - the large game's kingdoms have room for a palace; one 3 wide and 1 deep has none
+        QuickGame game = QuickGame.Large with { HasPalacePieces = true };
+        QuickGame shallow = Roomy with { HasPalacePieces = true };
+
+        // Act
+        ImmutableList<PieceKindId> eligible = [.. QuickArmy.Eligible(game).Select(piece => piece.Id)];
+        ImmutableList<PieceKindId> cramped = [.. QuickArmy.Eligible(shallow).Select(piece => piece.Id)];
+
+        // Assert
+        Assert.Equal(
+            (true, true, true, false),
+            (
+                eligible.Contains(XiangqiGeneral),
+                eligible.Contains(JanggiGuard),
+                eligible.Contains(XiangqiAdvisor),
+                cramped.Contains(JanggiGuard)
+            )
+        );
+    }
+
+    [Theory]
+    [MemberData(nameof(PalacedGames))]
+    public void Layout_WithPalacePieces_PutsThoseButTheLeaderInThePalaceAboutTheThrone(string id)
+    {
+        // Arrange
+        QuickGame game = QuickGame.All.Single(quick => quick.Id == id) with { HasPalacePieces = true };
+
+        // Act
+        ImmutableList<ImmutableList<ArmyPiece>> armies =
+            [.. Seeds.Select(seed => QuickArmy.Layout(game, QuickArmy.Pick(game, new(seed)), new(seed)))];
+
+        // Assert - some army holds such a piece; each stands in its palace, and no two share a square
+        Assert.Contains(armies, army => army.Any(IsHeld));
+        Assert.All(armies, army =>
+        {
+            ArmyPiece leader = army.Single(piece => GrandLegionsRules.Leaders.Contains(piece.Kind));
+            ImmutableList<ArmySquare> palace = PalaceSquares.Window(
+                PalaceSquares.CentreAbout(PalaceSquares.Centres(game.Kingdom), new ArmySquare(leader.Column, 0))
+            );
+            Assert.Equal(0, leader.Row);
+            Assert.All(army.Where(IsHeld), held => Assert.Contains(new ArmySquare(held.Column, held.Row), palace));
+            Assert.Equal(army.Count, army.Select(piece => (piece.Column, piece.Row)).Distinct().Count());
+        });
+    }
+
+    [Fact]
+    public void Pick_WithPalacePiecesAndRoomForMany_GivesNoMoreThanThePalaceHasRoomFor()
+    {
+        // Arrange - a kingdom of a hundred squares, sixty of them infantry, the budget no bound
+        QuickGame game = new(
+            "crowded",
+            "Crowded",
+            26,
+            10,
+            10,
+            1_000_000,
+            ImmutableDictionary<PieceClass, int>.Empty.Add(Leader, 1).Add(Infantry, 60)
+        )
+        {
+            HasPalacePieces = true,
+        };
+
+        // Act
+        ImmutableList<int> held =
+            [.. Seeds.Select(seed => QuickArmy.Pick(game, new(seed)).Count(piece => IsHeld(piece.Id)))];
+
+        // Assert - a palace's nine squares, but its throne
+        Assert.Equal(8, held.Max());
+    }
+
+    [Fact]
     public void Pick_WhenTheBudgetIsTight_DrawsOnlyWhatLeavesEnoughForTheRestOfTheMinimum()
     {
         // Arrange - the cheapest leader and heavy cost 65 and 12: the budget allows nothing dearer
@@ -137,15 +214,7 @@ public sealed class QuickArmyTest
     public void Pick_WhenTheKingdomHasRoomAndBudgetIsLeft_AddsPiecesUntilItIsFullButNoLeader()
     {
         // Arrange - a leader and one infantry required, 400 to spend, room for three
-        QuickGame game = new(
-            "roomy",
-            "Roomy",
-            6,
-            3,
-            1,
-            400,
-            ImmutableDictionary<PieceClass, int>.Empty.Add(Leader, 1).Add(Infantry, 1)
-        );
+        QuickGame game = Roomy;
 
         // Act
         ImmutableList<GrandPiece> army = QuickArmy.Pick(game, new(5));
@@ -297,6 +366,23 @@ public sealed class QuickArmyTest
             Enumerable.Range(0, Pinwheel.SeatCount).Select(seat => ArmyOf(dealt, seat))
         );
     }
+
+    /// <summary>A kingdom of 3 × 1: a leader and one infantry required, 400 to spend.</summary>
+    private static QuickGame Roomy =>
+        new(
+            "roomy",
+            "Roomy",
+            6,
+            3,
+            1,
+            400,
+            ImmutableDictionary<PieceClass, int>.Empty.Add(Leader, 1).Add(Infantry, 1)
+        );
+
+    private static bool IsHeld(PieceKindId kind) =>
+        PalaceConfinement.Confined.Contains(kind) && !GrandLegionsRules.Leaders.Contains(kind);
+
+    private static bool IsHeld(ArmyPiece piece) => IsHeld(piece.Kind);
 
     private static string Name(PieceKindId kind) => kind.Value;
 

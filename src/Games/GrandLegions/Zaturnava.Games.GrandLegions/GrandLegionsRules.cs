@@ -125,8 +125,15 @@ public static class GrandLegionsRules
             QuickArmy.Dealt(game, 0)
         )
         {
-            Dealer = (seed, areAlike, terrain) =>
-                QuickArmy.Dealt(game with { Rivers = QuickTerrain.RiversOf(terrain) }, seed, areAlike),
+            Dealer = dealing => QuickArmy.Dealt(
+                game with
+                {
+                    Rivers = QuickTerrain.RiversOf(dealing.Terrain),
+                    HasPalacePieces = dealing.HasPalacePieces,
+                },
+                dealing.Seed,
+                dealing.AreAlike
+            ),
             TerrainDealer = QuickTerrain.Dealt,
             Drafting = QuickDraft.Of(game),
             Board = new BoardSize(game.Side, game.KingdomWidth, game.KingdomDepth),

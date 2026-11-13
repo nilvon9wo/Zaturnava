@@ -56,7 +56,7 @@ public sealed class PalaceTest
             DiceProfile.WeightedSixSided,
             Chaturaji2027Rules.DefaultIdleRounds,
             PawnPromotion.OtherArmies,
-            variant: Chaturaji2027Variant.Standard with { Dealer = (_, _, _) => Chaturaji2027Setup.Start }
+            variant: Chaturaji2027Variant.Standard with { Dealer = _ => Chaturaji2027Setup.Start }
         );
 
         // Act
@@ -284,6 +284,58 @@ public sealed class PalaceTest
         );
     }
 
+    [Fact]
+    public void Deal_WhenDealtWithPalacePieces_HasThemOnlyWhereThereArePalaces()
+    {
+        // Arrange - kingdoms with room for a palace, and too narrow for one
+        List<ArmyDealing> dealt = [];
+        Chaturaji2027Rules rules = RulesOf(3, 4, dealt: dealt);
+        Chaturaji2027Rules narrow = RulesOf(2, 4, dealt: dealt);
+
+        // Act
+        (bool Palaced, bool Unpalaced, bool Narrow, bool Unasked) held = (
+            rules.Deal(rules.CreateInitialState(), 4, dealsPalaces: true, dealsPalacePieces: true).HasPalacePieces,
+            rules.Deal(rules.CreateInitialState(), 4, dealsPalacePieces: true).HasPalacePieces,
+            narrow.Deal(narrow.CreateInitialState(), 4, dealsPalaces: true, dealsPalacePieces: true).HasPalacePieces,
+            rules.Deal(rules.CreateInitialState(), 4, dealsPalaces: true).HasPalacePieces
+        );
+
+        // Assert - each deal asked for the armies as it has them
+        Assert.Equal(
+            ((true, false, false, false), "True,False,False,False"),
+            (held, string.Join(",", dealt.Select(dealing => dealing.HasPalacePieces)))
+        );
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Apply_WhenASeatWithAPalaceIsFilled_FillsItKnowingItsPalaceAndWhetherItMayHoldPalacePieces(
+        bool dealsPalacePieces
+    )
+    {
+        // Arrange
+        List<ArmyFill> filled = [];
+        Chaturaji2027Rules rules = RulesOf(3, 4, filled: filled);
+        GameState begun = rules.Drafted(
+            rules.Deal(rules.CreateInitialState(), 4, dealsPalaces: true, dealsPalacePieces: dealsPalacePieces),
+            7
+        );
+        GameState placed = rules.Apply(begun, new PalaceAction(Black, B2)).State with { DecidingSeat = Black };
+
+        // Act
+        _ = rules.Apply(placed, new FillArmyAction(Black)).State;
+
+        // Assert - Black's palace about b2: a1 to c3, as seat 0 sees it
+        Assert.Equal(
+            (dealsPalacePieces, "0 0,1 0,2 0,0 1,1 1,2 1,0 2,1 2,2 2"),
+            (
+                filled.Single().HasPalacePieces,
+                string.Join(",", filled.Single().Palace!.Select(square => $"{square.Column} {square.Row}"))
+            )
+        );
+    }
+
     private GameState Begun() =>
         this._rules.Drafted(this._rules.Deal(this._rules.CreateInitialState(), 4, dealsPalaces: true), 7);
 
@@ -293,12 +345,15 @@ public sealed class PalaceTest
 
     /// <summary>
     /// Rules whose kingdoms are <paramref name="width"/> wide and <paramref name="depth"/> deep; a palace holding
-    /// <paramref name="palaceBound"/>, if any.
+    /// <paramref name="palaceBound"/>, if any; each deal asked kept in <paramref name="dealt"/>, and each army filled
+    /// at random in <paramref name="filled"/>, if given.
     /// </summary>
     private static Chaturaji2027Rules RulesOf(
         int depth,
         int width,
-        ImmutableHashSet<PieceKindId>? palaceBound = null
+        ImmutableHashSet<PieceKindId>? palaceBound = null,
+        List<ArmyDealing>? dealt = null,
+        List<ArmyFill>? filled = null
     ) =>
         new(
             DiceProfile.WeightedSixSided,
@@ -306,7 +361,11 @@ public sealed class PalaceTest
             PawnPromotion.OtherArmies,
             variant: Chaturaji2027Variant.Standard with
             {
-                Dealer = (_, _, _) => Chaturaji2027Setup.Start,
+                Dealer = dealing =>
+                {
+                    dealt?.Add(dealing);
+                    return Chaturaji2027Setup.Start;
+                },
                 Drafting = new Drafting(
                     6,
                     [
@@ -315,10 +374,14 @@ public sealed class PalaceTest
                         ),
                     ],
                     _ => [Chaturaji2027Pieces.Pawn, Chaturaji2027Pieces.Boat, Chaturaji2027Pieces.Raja],
-                    fill => new ArmyFilled(
-                        [new ArmyPiece(Chaturaji2027Pieces.Pawn, 0, 0)],
-                        fill.Throne ?? new ArmySquare(width - 1, 0)
-                    )
+                    fill =>
+                    {
+                        filled?.Add(fill);
+                        return new ArmyFilled(
+                            [new ArmyPiece(Chaturaji2027Pieces.Pawn, 0, 0)],
+                            fill.Throne ?? new ArmySquare(width - 1, 0)
+                        );
+                    }
                 )
                 {
                     PalaceBound = palaceBound ?? [],

@@ -28,7 +28,7 @@ public sealed class DealtGameTest
         DiceProfile.WeightedSixSided,
         Chaturaji2027Rules.DefaultIdleRounds,
         PawnPromotion.OtherArmies,
-        variant: Chaturaji2027Variant.Standard with { Dealer = (_, _, _) => Swapped }
+        variant: Chaturaji2027Variant.Standard with { Dealer = _ => Swapped }
     );
 
     /// <summary>
@@ -41,7 +41,7 @@ public sealed class DealtGameTest
         PawnPromotion.OtherArmies,
         variant: Chaturaji2027Variant.Standard with
         {
-            Dealer = (_, _, terrain) => terrain == 0 ? Chaturaji2027Setup.Start : Swapped,
+            Dealer = dealing => dealing.Terrain == 0 ? Chaturaji2027Setup.Start : Swapped,
             TerrainDealer = seed => seed + 1,
             Lines = (state, grid) => [new BoardLine("river", state.Terrain, 0, state.Terrain, grid.Cells.Count)],
             Terrain = state => $"terrain {state.Terrain}",

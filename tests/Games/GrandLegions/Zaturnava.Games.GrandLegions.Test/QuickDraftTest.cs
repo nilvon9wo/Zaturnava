@@ -120,6 +120,72 @@ public sealed class QuickDraftTest
     }
 
     [Fact]
+    public void Filled_WithPalacePieces_PutsThoseItAddsOnFreeSquaresOfThePalaceButTheThrone()
+    {
+        // Arrange - the large game; a palace about b2, its throne b1, a Rook bought on a1
+        QuickGame game = QuickGame.Large;
+        ImmutableList<ArmySquare> palace = PalaceSquares.Window(new ArmySquare(1, 1));
+        ArmySquare throne = new(1, 0);
+
+        // Act
+        ImmutableList<ArmyFilled> filled =
+        [
+            .. Seeds.Select(seed => QuickDraft.Filled(
+                game,
+                new ArmyFill(0, game.Budget, [new ArmyPiece(Rook, 0, 0)], throne, new(seed))
+                {
+                    Palace = palace,
+                    HasPalacePieces = true,
+                }
+            )),
+        ];
+
+        // Assert
+        ImmutableList<ArmyPiece> held = [.. filled.SelectMany(army => army.Added).Where(IsHeld)];
+        Assert.NotEmpty(held);
+        Assert.All(
+            held,
+            piece => Assert.Contains(
+                new ArmySquare(piece.Column, piece.Row),
+                palace.Remove(throne).Remove(new ArmySquare(0, 0))
+            )
+        );
+    }
+
+    [Fact]
+    public void Filled_WithPalacePiecesWhenThePalaceIsFull_AddsNoneButOthers()
+    {
+        // Arrange - the large game; a palace about b2, every square of it bought, a King on its throne b1
+        QuickGame game = QuickGame.Large;
+        ImmutableList<ArmySquare> palace = PalaceSquares.Window(new ArmySquare(1, 1));
+        ImmutableList<ArmyPiece> army =
+        [
+            .. palace.Select(square => new ArmyPiece(
+                square == new ArmySquare(1, 0) ? WesternKing : Courtier,
+                square.Column,
+                square.Row
+            )),
+        ];
+
+        // Act
+        ImmutableList<ArmyFilled> filled =
+        [
+            .. Seeds.Select(seed => QuickDraft.Filled(
+                game,
+                new ArmyFill(0, game.Budget, army, new ArmySquare(1, 0), new(seed))
+                {
+                    Palace = palace,
+                    HasPalacePieces = true,
+                }
+            )),
+        ];
+
+        // Assert
+        Assert.All(filled, each => Assert.NotEmpty(each.Added));
+        Assert.DoesNotContain(filled.SelectMany(each => each.Added), IsHeld);
+    }
+
+    [Fact]
     public void Filled_WhenNothingIsLeftToSpend_AddsNothing()
     {
         // Arrange
@@ -157,4 +223,7 @@ public sealed class QuickDraftTest
             )
         );
     }
+
+    private static bool IsHeld(ArmyPiece piece) =>
+        PalaceConfinement.Confined.Contains(piece.Kind) && ById[piece.Kind].Class != Leader;
 }

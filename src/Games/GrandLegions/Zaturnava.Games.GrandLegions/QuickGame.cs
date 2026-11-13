@@ -83,6 +83,21 @@ public sealed record QuickGame(
     /// </summary>
     public Rivers Rivers { get; init; } = Rivers.None;
 
+    /// <summary>
+    /// Whether the armies picked for it may hold the pieces a palace holds, in their palace: not unless a game is
+    /// dealt them (<see cref="ArmyDealing.HasPalacePieces"/>).
+    /// </summary>
+    public bool HasPalacePieces { get; init; }
+
+    /// <summary>
+    /// Every square of its kingdom, as seat 0 sees it, from the bottom-left corner, row by row from the back.
+    /// </summary>
+    public ImmutableList<ArmySquare> Kingdom =>
+    [
+        .. Enumerable.Range(0, this.KingdomDepth)
+            .SelectMany(row => Enumerable.Range(0, this.KingdomWidth).Select(column => new ArmySquare(column, row))),
+    ];
+
     /// <summary>Whether its creator set the board's size (<see cref="CustomOf"/>).</summary>
     public bool IsSet { get; init; }
 

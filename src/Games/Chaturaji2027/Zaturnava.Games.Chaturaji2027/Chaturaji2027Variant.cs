@@ -134,11 +134,10 @@ public sealed record Chaturaji2027Variant(
     public ImmutableHashSet<PieceKindId> ForwardPalaceSteppers { get; init; } = [];
 
     /// <summary>
-    /// Where every piece of a game dealt by a seed starts, each game its own armies - each seat's the same, if asked
-    /// for alike - on the terrain dealt it (<see cref="TerrainDealer"/>); null, if every game starts as
-    /// <see cref="Start"/> has it.
+    /// Where every piece of a game dealt by a seed starts, each game its own armies, as <see cref="ArmyDealing"/>
+    /// asks; null, if every game starts as <see cref="Start"/> has it.
     /// </summary>
-    public Func<int, bool, int, ImmutableList<Placement>>? Dealer { get; init; }
+    public Func<ArmyDealing, ImmutableList<Placement>>? Dealer { get; init; }
 
     /// <summary>
     /// The terrain a game dealt by a seed is dealt (<see cref="GameState.Terrain"/>), as the variant numbers its
