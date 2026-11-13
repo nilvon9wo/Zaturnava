@@ -26,4 +26,13 @@ public sealed record Drafting(
     /// the drafting seat's own palace. None, if unset.
     /// </summary>
     public ImmutableHashSet<PieceKindId> PalaceBound { get; init; } = [];
+
+    /// <summary>
+    /// What each army may spend in a game of an edition (<see cref="Engine.Rules.GameState.Edition"/>), where that
+    /// changed since, so that a game stored before is drafted as it was; <see cref="Budget"/>, if unset.
+    /// </summary>
+    public Func<int, int>? BudgetAt { get; init; }
+
+    /// <summary>What each army may spend in a game of <paramref name="edition"/> (<see cref="BudgetAt"/>).</summary>
+    public int BudgetIn(int edition) => this.BudgetAt?.Invoke(edition) ?? this.Budget;
 }

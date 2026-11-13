@@ -177,7 +177,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             this._grid,
             this._variant.Mercenaries,
             this._variant.Leaders,
-            this._variant.Points,
+            this._variant.PointsIn,
             this._variant.InitialPosition(this._grid),
             this._control
         );
@@ -188,7 +188,13 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         );
         this._faceOff = new FaceOff(this._grid, this._variant.FaceOffCallers, this._variant.Leaders);
         this._drafting = this._variant.Drafting is { } drafting
-            ? new ArmyDrafting(drafting, this._grid, this._variant.Side, this.WorthOf, this.RollOffDie)
+            ? new ArmyDrafting(
+                drafting,
+                this._grid,
+                this._variant.Side,
+                (edition, kind) => this._variant.PointsIn(edition)[kind],
+                this.RollOffDie
+            )
             : null;
     }
 
@@ -308,7 +314,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
 
     public bool IsDraftable => this._drafting is not null;
 
-    public int? DraftBudget => this._variant.Drafting?.Budget;
+    public int? DraftBudget => this._variant.Drafting?.BudgetIn(int.MaxValue);
 
     public int? DraftBudgetLimit => this._drafting?.Limit;
 
@@ -705,7 +711,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             .Concat(state.Fled.Select(piece => new Prisoner(piece, piece.Owner)))
             .Where(prisoner => armies.Contains(prisoner.Piece.Owner) && kinds.Contains(prisoner.Piece.Kind))
             .DistinctBy(prisoner => (prisoner.Piece.Owner, prisoner.Piece.Kind, prisoner.Holder))
-            .OrderByDescending(prisoner => this._variant.Points[prisoner.Piece.Kind])
+            .OrderByDescending(prisoner => this._variant.PointsIn(state.Edition)[prisoner.Piece.Kind])
             .ThenBy(prisoner => prisoner.Piece.Owner.Value)
             .ThenBy(prisoner => prisoner.Holder.Value)
             .SelectMany(prisoner => this._ransom.EscapesFor(state, prisoner)
@@ -807,7 +813,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         [
             .. state.Prisoners
                 .DistinctBy(prisoner => (prisoner.Piece.Owner, prisoner.Piece.Kind, prisoner.Holder))
-                .OrderByDescending(prisoner => this._variant.Points[prisoner.Piece.Kind])
+                .OrderByDescending(prisoner => this._variant.PointsIn(state.Edition)[prisoner.Piece.Kind])
                 .ThenBy(prisoner => prisoner.Piece.Owner.Value)
                 .ThenBy(prisoner => prisoner.Holder.Value)
                 .Select(prisoner => prisoner.Piece),
@@ -1584,7 +1590,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         bool isEnemy = !moved.State.Teams.AreAllied(captured.Owner, captor)
             && !moved.State.Retired.Contains(captured.Owner);
         int points = isEnemy
-            ? this._variant.Points[captured.Kind]
+            ? this._variant.PointsIn(moved.State.Edition)[captured.Kind]
             : 0;
         bool isEnemyRaja = isEnemy && this.IsLeader(captured.Kind);
         bool isOnThrone = isEnemyRaja && this._control.IsThroneOf(moved.State, cell, captured.Owner);

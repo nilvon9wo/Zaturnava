@@ -131,7 +131,7 @@ public sealed class GrandLegionsPiecesTest
     [InlineData("xiangqi-cannon", "cannon", "CX", "artillery")]
     [InlineData("berolina-pawn", "pawn", "Be", "infantry")]
     [InlineData("manchu-chariot", "manchu-chariot", "MC", "artillery")]
-    [InlineData("courier", "letter", "Co", "infantry")]
+    [InlineData("courier", "winged-hat", "Co", "infantry")]
     public void Marks_WhenAPieceIsMarked_AreItsSymbolAnyLettersAndItsClass(
         string kind,
         string emblem,
@@ -331,6 +331,32 @@ public sealed class GrandLegionsPiecesTest
                 values[GrandLegionsPieces.XiangqiAdvisor]
             )
         );
+    }
+
+    [Theory]
+    [InlineData("tafl-king", 71, 74)]
+    [InlineData("swede", 11, 14)]
+    [InlineData("checkers-king", 64, 67)]
+    [InlineData("man", 54, 56)]
+    [InlineData("rook", 14, 14)]
+    public void ValueAt_WhenThePieceWasRepricedOrNot_IsItsEarlierValueInAnEarlierGame(
+        string kind,
+        int before,
+        int since
+    )
+    {
+        // Arrange - the pieces that take several in one move, repriced in edition 5; the Rook, never
+        GrandPiece piece = GrandLegionsPieces.ById[new PieceKindId(kind)];
+
+        // Act
+        (int Before, int Since, int Later) values = (
+            piece.ValueAt(GrandLegionsPieces.MultipleCapturesRepriced - 1),
+            piece.ValueAt(GrandLegionsPieces.MultipleCapturesRepriced),
+            piece.ValueAt(int.MaxValue)
+        );
+
+        // Assert
+        Assert.Equal((before, since, since), values);
     }
 
     /// <summary>The cells the piece on d4 could move or capture on, each once.</summary>

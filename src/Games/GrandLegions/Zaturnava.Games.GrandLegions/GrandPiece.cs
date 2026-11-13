@@ -28,7 +28,26 @@ public sealed record GrandPiece(
     /// </summary>
     public int Edition { get; init; }
 
+    /// <summary>
+    /// What it was worth before a repricing: by the edition it was repriced in, its value in a game of an edition
+    /// before that; so that a game stored before scores and buys it as it did.
+    /// </summary>
+    public ImmutableSortedDictionary<int, int> EarlierValues { get; init; } = ImmutableSortedDictionary<int, int>.Empty;
+
     public PieceKind Kind => new(this.Id, this.Movement);
+
+    /// <summary>
+    /// What it is worth in a game of <paramref name="edition"/>: its earlier value, if it was repriced since.
+    /// </summary>
+    public int ValueAt(int edition) =>
+        this.EarlierValues.Where(earlier => edition < earlier.Key).Select(earlier => (int?)earlier.Value)
+            .FirstOrDefault() ?? this.Value;
+
+    /// <summary>
+    /// The same piece, worth <paramref name="value"/> in a game of an edition before <paramref name="edition"/>.
+    /// </summary>
+    public GrandPiece ValuedBefore(int edition, int value) =>
+        this with { EarlierValues = this.EarlierValues.SetItem(edition, value) };
 
     /// <summary>Whether its own promotion is on the last row, as a Western or a Checkers piece's is.</summary>
     public bool PromotesOnLastRow => this.Tradition is Tradition.Western or Tradition.Checkers;

@@ -55,6 +55,15 @@ public sealed record Chaturaji2027Variant(
     }
 
     /// <summary>
+    /// What each kind is worth in a game of an edition (<see cref="GameState.Edition"/>), where a kind was repriced
+    /// since, so that a game stored before scores, buys and hires as it did; its <see cref="Points"/>, if unset.
+    /// </summary>
+    public Func<int, ImmutableDictionary<PieceKindId, int>>? PointsAt { get; init; }
+
+    /// <summary>What each kind is worth in a game of <paramref name="edition"/> (<see cref="PointsAt"/>).</summary>
+    public ImmutableDictionary<PieceKindId, int> PointsIn(int edition) => this.PointsAt?.Invoke(edition) ?? this.Points;
+
+    /// <summary>
     /// The game this is one size of, if it is played at several; none, for a game of one size, which is its own.
     /// </summary>
     public GameSize? Game { get; init; }

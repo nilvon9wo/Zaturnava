@@ -122,6 +122,18 @@ What the program does so far (2026-11-04), and the gaps against the above:
   but every class has its turn to draw first, and no piece comes the more for being next cheaper.
   (Making the dearest piece one step cheaper, as before, turned every Shogi Pawn into a Western Pawn,
   so that Western Pawns came twice as often as any other infantry.)
+  From edition 3, each slot may spend only an even share of what is left. From edition 5 (*Stated*, 2026-11-13),
+  the budget is the designer's formula, each class's average price times the least an army has of it, summed,
+  with a tenth more left over (*Proposed*). Pieces that may promote into a leader (the Shogi Pawn, the Lance, the
+  Man) are left out of the averages, as no other piece of their class costs nearly as much. Each slot may then
+  spend its class's share of what is left, in proportion to the class's average price. Pieces added past the
+  minimums cost no more than their class's average and a tenth. Measured over 2,000 armies of each size:
+
+  | Size | Budget before | Budget from edition 5 | Average heavy before | Average heavy from edition 5 |
+  |---|---|---|---|---|
+  | Small | 110 | 127 | 9.0 | 12.4 |
+  | Medium | 125 | 151 | 13.0 | 17.6 |
+  | Large | 200 | 288 | 20.4 | 26.5 |
 - Pieces confined to a palace are left out, as quick games have no palaces; a piece with powers along
   palace lines, such as the Janggi Soldier, is not (Stated, 2026-11-05). River pieces are left out
   unless the game has rivers (each area restriction says which terrain it is about, `Terrain`, and

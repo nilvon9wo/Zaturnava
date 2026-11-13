@@ -83,6 +83,13 @@ public static class GrandLegionsPieces
     public const int BerolinaManchuAndCourier = 4;
 
     /// <summary>
+    /// The edition from which the pieces that may take several pieces in one move are priced for it (2026-11-13;
+    /// pieces.md, What taking several is worth): the Tafl King and the Swede, by custody, before it 71 and 11; the
+    /// Checkers King and the Man, by a chain of jumps, before it 64 and 54.
+    /// </summary>
+    public const int MultipleCapturesRepriced = 5;
+
+    /// <summary>
     /// What each piece is worth, its price and what taking it scores, as the game's table of values has it
     /// (<c>Values/grand-legions.json</c>), which can be changed apart from the code.
     /// </summary>
@@ -110,7 +117,8 @@ public static class GrandLegionsPieces
         Piece(SilverGeneral, "Silver General (Shogi)", Leader, Shogi, DiagonalStep, ForwardStep)
             .Promoting(GoldGeneral),
         Piece(TaflKing, "King (Tafl)", Leader, Tafl, OrthogonalSlide.MoveOnly())
-            .Since(CheckersAndTafl),
+            .Since(CheckersAndTafl)
+            .ValuedBefore(MultipleCapturesRepriced, 71),
         Piece(
                 CheckersKing,
                 "King (Checkers)",
@@ -120,7 +128,8 @@ public static class GrandLegionsPieces
                 MovementRule.Jump(DirectionSets.Diagonal)
             )
             .Restricted(ColourBound(OneColour))
-            .Since(CheckersAndTafl),
+            .Since(CheckersAndTafl)
+            .ValuedBefore(MultipleCapturesRepriced, 64),
 
         // Infantry
         // Unlike the Western Pawn, it takes the piece directly ahead, as it moves (Stated, 2026-11-12): nothing ahead
@@ -164,7 +173,7 @@ public static class GrandLegionsPieces
             .Restricted(Moves("Blocked diagonally ahead", 2))
             .Promoting(Queen, Rook, Bishop, Knight)
             .Since(BerolinaManchuAndCourier),
-        // Courier chess's King-like walker, as the designer's sheet has it (2026-11-13).
+        // Moves exactly as the King does, without a leader's standing (Stated, 2026-11-13).
         Piece(Courier, "Courier", Infantry, Western, Step(DirectionSets.Any))
             .Since(BerolinaManchuAndCourier),
 
@@ -181,7 +190,8 @@ public static class GrandLegionsPieces
         Piece(Bishop, "Bishop (Western)", Heavy, Western, DiagonalSlide)
             .Restricted(ColourBound(OneColour)),
         Piece(Swede, "Swede", Heavy, Tafl, OrthogonalSlide.MoveOnly())
-            .Since(CheckersAndTafl),
+            .Since(CheckersAndTafl)
+            .ValuedBefore(MultipleCapturesRepriced, 11),
 
         // Cavalry / Leaper
         Piece(Knightrider, "Knightrider", Cavalry, Fairy, MovementRule.Slide(DirectionSets.Knight))
@@ -237,7 +247,8 @@ public static class GrandLegionsPieces
             )
             .Restricted(ColourBound(OneColour))
             .Promoting(CheckersKing)
-            .Since(CheckersAndTafl),
+            .Since(CheckersAndTafl)
+            .ValuedBefore(MultipleCapturesRepriced, 54),
         // Manchu chess's Chariot (its Banner): the Chariot's slide, a Knight's leap (unblocked, Proposed, as the
         // designer's sheet has it), and the Cannon's capture, hopping one piece.
         Piece(
@@ -315,7 +326,7 @@ public static class GrandLegionsPieces
             .Add(Swede, "viking-helmet")
             .Add(BerolinaPawn, "pawn")
             .Add(ManchuChariot, "manchu-chariot")
-            .Add(Courier, "letter");
+            .Add(Courier, "winged-hat");
 
     /// <summary>
     /// The abbreviation every piece bears beneath its symbol, beside its class's emblem, each its own (Stated: an

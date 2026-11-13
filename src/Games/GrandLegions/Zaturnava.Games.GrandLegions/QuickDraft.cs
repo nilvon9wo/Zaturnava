@@ -27,6 +27,7 @@ public static class QuickDraft
         {
             Terrains = [.. Enumerable.Range(0, (int)Rivers.Both + 1)],
             PalaceBound = PalaceConfinement.Confined,
+            BudgetAt = edition => QuickArmy.BudgetOf(game with { Edition = edition }),
         };
 
     /// <summary>
