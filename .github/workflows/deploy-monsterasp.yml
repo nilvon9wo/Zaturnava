@@ -102,7 +102,9 @@ jobs:
           if (-not (Test-Path $msdeploy)) { choco install webdeploy --no-progress -y }
           if (-not (Test-Path $msdeploy)) { throw "Web Deploy could not be installed." }
 
-      # The site is taken offline while its files change (app_offline.htm), so a running server lets go of them.
+      # The site is taken offline while its files change (app_offline.htm), so a running server lets go of them. A
+      # server slow to stop (a bot's game in hand) may still hold a file at first: Web Deploy tries again, every 6 s
+      # for a minute, rather than failing and leaving the site offline (it did on 2026-11-13).
       - name: Deploy
         shell: pwsh
         env:
@@ -119,5 +121,7 @@ jobs:
             "-source:contentPath=$source" `
             "-dest:contentPath=$env:SITE,computerName=https://$hostName/msdeploy.axd?site=$env:SITE,userName=$env:USER,password=$env:PASSWORD,authType=Basic" `
             -allowUntrusted `
-            -enableRule:AppOffline
+            -enableRule:AppOffline `
+            -retryAttempts:10 `
+            -retryInterval:6000
           if ($LASTEXITCODE -ne 0) { throw "Web Deploy failed with exit code $LASTEXITCODE." }
