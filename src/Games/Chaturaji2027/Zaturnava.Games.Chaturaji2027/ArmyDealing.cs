@@ -1,3 +1,5 @@
+using Net.NowhereAtAll.Zaturnava.Engine.Rules;
+
 namespace Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
 
 /// <summary>
@@ -14,4 +16,7 @@ public sealed record ArmyDealing(int Seed, bool AreAlike, int Terrain, bool HasP
     /// in a game dealt before it could, or without palaces.
     /// </summary>
     public bool HasEdgePalaces { get; init; }
+
+    /// <summary>The edition of the pieces its armies are drawn from (<see cref="GameState.Edition"/>).</summary>
+    public int Edition { get; init; }
 }

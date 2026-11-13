@@ -11,7 +11,9 @@ Each argument is one change to docs/Other Potential Pieces.xlsx, on its first sh
   sees stays true;
 - `name:Name=Sheet1!$A$1` defines (or redefines) a name;
 - `row-:14` deletes row 14, moving the rows below it up one, and every reference to them with them (in cells,
-  formulas, ranges, comments and names). A range the row was inside shrinks by one.
+  formulas, ranges, comments and names). A range the row was inside shrinks by one;
+- `@artifacts/changes.txt` reads changes from that file (relative to the repository), one to a line, so that long
+  formulas need no quoting in the shell.
 
 The file is edited as the XML it is, by text, so that nothing it holds is lost; a cell keeps its style, and a new
 cell takes the style of the cell to its left. Excel recalculates everything when the file is next opened. Needs
@@ -151,7 +153,20 @@ def recalculate_on_load(workbook: str) -> str:
     return workbook.replace("<calcPr", '<calcPr fullCalcOnLoad="1"', 1)
 
 
+def expanded(arguments: list[str]) -> list[str]:
+    """Each `@path` argument replaced by the changes in that file, one to a line (blank lines skipped)."""
+    changes: list[str] = []
+    for argument in arguments:
+        if argument.startswith("@"):
+            lines = (ROOT / argument[1:]).read_text(encoding="utf-8").splitlines()
+            changes.extend(line for line in lines if line.strip())
+        else:
+            changes.append(argument)
+    return changes
+
+
 def main(changes: list[str]) -> None:
+    changes = expanded(changes)
     with zipfile.ZipFile(BOOK) as book:
         parts = {item.filename: book.read(item.filename) for item in book.infolist()}
         infos = book.infolist()

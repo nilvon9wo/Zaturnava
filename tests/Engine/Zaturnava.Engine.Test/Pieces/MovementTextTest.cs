@@ -26,7 +26,8 @@ public sealed class MovementTextTest
             .Add("leaper-3-0", MovementRule.Leap(DirectionSets.Leaper(3, 0), 1))
             .Add("leap-diagonal-2", MovementRule.Leap(DirectionSets.Diagonal, 2))
             .Add("hop-just-beyond", MovementRule.Hop(DirectionSets.Any, 1))
-            .Add("hop-any-beyond", MovementRule.Hop(DirectionSets.Orthogonal, int.MaxValue));
+            .Add("hop-any-beyond", MovementRule.Hop(DirectionSets.Orthogonal, int.MaxValue))
+            .Add("jump-diagonal", MovementRule.Jump(DirectionSets.Diagonal));
 
     [Theory]
     [InlineData("step-orthogonal", "One cell orthogonally")]
@@ -57,6 +58,11 @@ public sealed class MovementTextTest
         "hop-any-beyond",
         "Hops orthogonally over the first piece in its line, whether next to it or any number of empty cells away, "
             + "to any cell beyond it up to the next piece"
+    )]
+    [InlineData(
+        "jump-diagonal",
+        "Jumps diagonally over a piece next to it, taking it, to the empty cell just beyond; and on from there, as "
+            + "often as it can, or stops"
     )]
     public void Of_WhenAsked_TellsTheRuleForPeople(string name, string expected)
     {

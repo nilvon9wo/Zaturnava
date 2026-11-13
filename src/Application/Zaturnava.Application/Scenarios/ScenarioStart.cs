@@ -24,6 +24,12 @@ public static class ScenarioStart
     /// <summary>The kind of the first action of a game dealt anew.</summary>
     public const string DealKind = "deal";
 
+    /// <summary>
+    /// The edition of a ruleset's pieces a game dealt now is dealt from (<see cref="GameState.Edition"/>): 1, since
+    /// Grand Legions gained the Checkers and Tafl pieces (2026-11-13). A game dealt before says none, and is 0.
+    /// </summary>
+    public const int Edition = 1;
+
     private const string Argument = "scenario";
     private const string SeedArgument = "seed";
     private const string AlikeArgument = "alike";
@@ -31,6 +37,7 @@ public static class ScenarioStart
     private const string PalacesArgument = "palaces";
     private const string PalacePiecesArgument = "palace-pieces";
     private const string EdgePalacesArgument = "edge-palaces";
+    private const string EditionArgument = "edition";
     private const string DraftedArgument = "drafted";
     private const string BudgetArgument = "budget";
     private const string DrafterArgument = "drafter";
@@ -50,7 +57,8 @@ public static class ScenarioStart
     /// alike, if <paramref name="areAlike"/>, which a game dealt before armies could be alike never says; nor does one
     /// dealt before terrain was say that its terrain is, nor one dealt before palaces were that its palaces are, nor
     /// one dealt before they could be that its armies may hold the pieces a palace holds, nor one dealt before they
-    /// could that a palace may stand partly outside a kingdom too small for it. Its
+    /// could that a palace may stand partly outside a kingdom too small for it; and the edition of the pieces it is
+    /// dealt from (<see cref="Edition"/>), which one dealt before there was another never says. Its
     /// armies drafted by its players, not dealt, if <paramref name="drafting"/> says how
     /// (<see cref="IRulesApplying.Drafted"/>): its budget and its one drafter, if it sets them. On a board of
     /// <paramref name="board"/>'s size, if its creator set one (<see cref="IRulesApplying.Sized"/>).
@@ -67,7 +75,8 @@ public static class ScenarioStart
             .Add(TerrainArgument, ActionDescriptor.Flag(true))
             .Add(PalacesArgument, ActionDescriptor.Flag(true))
             .Add(PalacePiecesArgument, ActionDescriptor.Flag(true))
-            .Add(EdgePalacesArgument, ActionDescriptor.Flag(true));
+            .Add(EdgePalacesArgument, ActionDescriptor.Flag(true))
+            .Add(EditionArgument, Edition.ToString(CultureInfo.InvariantCulture));
         ImmutableSortedDictionary<string, string> alike =
             areAlike ? seeded.Add(AlikeArgument, ActionDescriptor.Flag(true)) : seeded;
         ImmutableSortedDictionary<string, string> sized = board is null ? alike : Sizing(alike, board);
@@ -189,7 +198,10 @@ public static class ScenarioStart
             actions[0].Arguments.ContainsKey(TerrainArgument),
             actions[0].Arguments.ContainsKey(PalacesArgument),
             actions[0].Arguments.ContainsKey(PalacePiecesArgument),
-            actions[0].Arguments.ContainsKey(EdgePalacesArgument)
+            actions[0].Arguments.ContainsKey(EdgePalacesArgument),
+            actions[0].Arguments.TryGetValue(EditionArgument, out string? edition)
+                ? int.Parse(edition, CultureInfo.InvariantCulture)
+                : 0
         );
         return DraftingOf(actions) is { } drafting ? rules.Drafted(dealt, seed, drafting) : dealt;
     }

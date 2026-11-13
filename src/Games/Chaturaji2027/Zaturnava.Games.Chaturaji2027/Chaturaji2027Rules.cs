@@ -79,6 +79,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     private readonly StartRowMoves _startRows;
     private readonly Castling _castling;
     private readonly FlyingCapture _flying;
+    private readonly Custody _custody;
     private readonly PalaceSteps _palaceSteps;
     private readonly FaceOff _faceOff;
     private readonly MoveDiagrams _diagrams;
@@ -163,6 +164,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             this.AttackedAgainst
         );
         this._flying = new FlyingCapture(this._grid, this._variant.FlyingCapturers, this._variant.Leaders);
+        this._custody = new Custody(this._grid, this._variant.Custodians);
         this._palaceSteps = new PalaceSteps(
             this._grid,
             this._variant.PalaceSteppers,
@@ -237,8 +239,8 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     /// home; on its own terrain too, if <paramref name="dealsTerrain"/> and the variant deals terrain; each army with
     /// its palace about its throne, if <paramref name="dealsPalaces"/> and its kingdom has room for one
     /// (<see cref="ArmyDrafting.HasPalaces"/>), or, if <paramref name="dealsEdgePalaces"/>, room for one standing
-    /// partly outside it; and the pieces a palace holds in it, if <paramref name="dealsPalacePieces"/> too; else as it
-    /// is.
+    /// partly outside it; and the pieces a palace holds in it, if <paramref name="dealsPalacePieces"/> too; from the
+    /// pieces as they were at <paramref name="edition"/>; else as it is.
     /// </summary>
     public GameState Deal(
         [Required] GameState initial,
@@ -247,7 +249,8 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         bool dealsTerrain = false,
         bool dealsPalaces = false,
         bool dealsPalacePieces = false,
-        bool dealsEdgePalaces = false
+        bool dealsEdgePalaces = false,
+        int edition = 0
     )
     {
         if (this._variant.Dealer is not { } dealer)
@@ -266,6 +269,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
                 new ArmyDealing(seed, areAlike, terrain, hasPalacePieces)
                 {
                     HasEdgePalaces = palaced is not null && dealsEdgePalaces,
+                    Edition = edition,
                 }
             ),
         };
@@ -278,6 +282,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             Palaces = palaced?.PalacesAround(thrones, dealsEdgePalaces),
             HasPalacePieces = hasPalacePieces,
             HasEdgePalaces = palaced is not null && dealsEdgePalaces,
+            Edition = edition,
             Start = position,
             Terrain = terrain,
         };
@@ -585,6 +590,9 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
                 (this._variant.FaceOffCallers.Contains(kind),
                     "Face-off: facing an enemy leader along an open straight line, may call both leaders taken at "
                     + "once, even out of turn."),
+                (this._variant.Custodians.Contains(kind),
+                    "Takes by custody: moving next to an enemy piece, along a straight line, with a piece of its own "
+                    + "just beyond it, takes it; as many such pieces at once as it holds so."),
             }
             .Where(power => power.Has)
             .Select(power => power.Power);
@@ -1422,16 +1430,12 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
 
     /// <summary>
     /// The piece moves, taking what stands where it goes, or what it takes <i>en passant</i>; or castles, its rook
-    /// moving too.
+    /// moving too; and takes what it jumps over, and what it then holds in custody.
     /// </summary>
     private Transition Displaced(GameState state, MoveAction move, Piece mover)
     {
-        Passage? passing = this._startRows.TakenBy(
-            state,
-            move,
-            mover,
-            target => this.IsCapturable(state, target, move.Actor)
-        );
+        bool MayTake(Piece target) => this.IsCapturable(state, target, move.Actor);
+        Passage? passing = this._startRows.TakenBy(state, move, mover, MayTake);
         Piece? captured = state.Position.PieceAt(move.To) ?? passing?.Piece;
         (CellId From, CellId To)? castled = captured is null ? this._castling.RookOf(state, move, mover) : null;
         Position relocated = state.Position.Relocate(move.From, move.To);
@@ -1440,16 +1444,38 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             : castled is { } rook
                 ? relocated.Relocate(rook.From, rook.To)
                 : relocated;
+        ImmutableList<CellId> taken =
+        [
+            .. this.JumpedBy(state, move, mover, MayTake),
+            .. this._custody.TakenBy(
+                position,
+                move.To,
+                mover,
+                target => !state.Teams.AreAllied(target.Owner, move.Actor) && MayTake(target),
+                holder => this._control.ArmiesOf(state, move.Actor).Contains(holder.Owner)
+            ),
+        ];
         PieceMoved went = new(mover, move.From, move.To, move.Actor);
         ImmutableList<GameEvent> events = castled is { } rookMove
             ? [went, new PieceMoved(state.Position.PieceAt(rookMove.From)!, rookMove.From, rookMove.To, move.Actor)]
             : [went];
-        Transition moved = new(state with { Position = position }, events);
-        Transition taken = captured is null
+        Transition moved = new(state with { Position = new Position(position.Occupants.RemoveRange(taken)) }, events);
+        Transition onArrival = captured is null
             ? moved
             : this.Captured(moved, captured, move.Actor, passing?.To ?? move.To);
-        return this.EnteredThrone(taken, mover, move.To);
+        Transition all = taken.Aggregate(
+            onArrival,
+            (sofar, cell) => this.Captured(sofar, position.PieceAt(cell)!, move.Actor, cell)
+        );
+        return this.EnteredThrone(all, mover, move.To);
     }
+
+    /// <summary>The cells of the pieces the move jumps over, and takes, in order; none unless it jumps.</summary>
+    private ImmutableList<CellId> JumpedBy(GameState state, MoveAction move, Piece mover, Func<Piece, bool> mayTake) =>
+        this._variant.Kinds[mover.Kind].Movement.Any(rule => rule.IsJumping)
+            ? this._moves.MovesFrom(state.Position, move.From, state.SeatOf(mover.Owner), mayTake)
+                .FirstOrDefault(jump => jump.To == move.To && !jump.Jumped.IsEmpty)?.Jumped ?? []
+            : [];
 
     /// <summary>
     /// A capture by <paramref name="captor"/> on <paramref name="cell"/> scores by piece, but taking a piece of

@@ -77,8 +77,8 @@ public static class BoardPrices
 
     /// <summary>
     /// Each piece's reach from the centre of an empty board (from d4, on 8 × 8), its own player facing up the board:
-    /// the cells it could move or capture on; for a hopper, which needs a piece to hop, with a piece on every cell
-    /// next to it, if that reaches more.
+    /// the cells it could move or capture on, a jump capturing on the cell it jumps; for a hopper, which needs a piece
+    /// to hop, with a piece on every cell next to it, if that reaches more.
     /// </summary>
     private static ImmutableDictionary<PieceKindId, int> ReachesOn(int width, int length)
     {
@@ -98,7 +98,7 @@ public static class BoardPrices
                 );
         int Reach(Position position) =>
             generator.MovesFrom(position, centre, Upward, _ => true)
-                .Select(move => move.To)
+                .Select(move => move.Jumped.IsEmpty ? move.To : move.Jumped[0])
                 .Concat(generator.AttacksFrom(position, centre, Upward).Select(attack => attack.Target))
                 .Distinct()
                 .Count();
@@ -125,16 +125,16 @@ public static class BoardPrices
     }
 
     /// <summary>
-    /// How far a piece starting on its kingdom's front row has to go to its own promotion's zone: a Western
-    /// piece's, the last row; a Shogi piece's, the far three rows; a Makruk Pawn's, the kingdom ahead.
+    /// How far a piece starting on its kingdom's front row has to go to its own promotion's zone: a Western or
+    /// Checkers piece's, the last row; a Shogi piece's, the far three rows; a Makruk Pawn's, the kingdom ahead.
     /// </summary>
     private static int OwnDistance(GrandPiece piece, GrandBoard board)
     {
         int front = board.KingdomDepth - 1;
-        return (piece.Id == GrandLegionsPieces.MakrukPawn, piece.Tradition) switch
+        return (piece.Id == GrandLegionsPieces.MakrukPawn, piece.PromotesOnLastRow) switch
         {
             (true, _) => board.Kingdoms[1].Row - front,
-            (_, Tradition.Western) => board.Length - 1 - front,
+            (_, true) => board.Length - 1 - front,
             _ => board.Length - ShogiZoneRows - front,
         };
     }

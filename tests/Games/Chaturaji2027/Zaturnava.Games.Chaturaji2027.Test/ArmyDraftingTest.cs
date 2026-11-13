@@ -25,7 +25,7 @@ public sealed class ArmyDraftingTest
     private static readonly Drafting Drafting = new(
         6,
         [new ArmySquare(0, 0), new ArmySquare(1, 0)],
-        _ => [Chaturaji2027Pieces.Pawn, Chaturaji2027Pieces.Boat, Chaturaji2027Pieces.Raja],
+        (_, _) => [Chaturaji2027Pieces.Pawn, Chaturaji2027Pieces.Boat, Chaturaji2027Pieces.Raja],
         fill => new ArmyFilled([new ArmyPiece(Chaturaji2027Pieces.Pawn, 1, 0)], fill.Throne ?? new ArmySquare(0, 0))
     );
 

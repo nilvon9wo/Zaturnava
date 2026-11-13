@@ -20,7 +20,8 @@ public static class QuickDraft
         new(
             game.Budget,
             game.Kingdom,
-            terrain => [.. QuickArmy.Eligible(GameOn(game, terrain)).Select(piece => piece.Id)],
+            (terrain, edition) =>
+                [.. QuickArmy.Eligible(GameOn(game, terrain) with { Edition = edition }).Select(piece => piece.Id)],
             fill => Filled(game, fill)
         )
         {
@@ -43,6 +44,7 @@ public static class QuickDraft
             Budget = fill.Left,
             HasPalacePieces = fill.HasPalacePieces,
             HasEdgePalaces = fill.HasEdgePalaces,
+            Edition = fill.Edition,
         };
         if (fill.Throne is not { } throne)
         {

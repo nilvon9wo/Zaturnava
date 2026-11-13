@@ -48,6 +48,13 @@ public sealed record GameState(
     public bool HasEdgePalaces { get; init; }
 
     /// <summary>
+    /// The edition of the ruleset's pieces the armies the program deals this game, fills at random, or offers in a
+    /// draft, are drawn from (<see cref="IRulesApplying.Deal"/>): 0, in a game dealt before there was another, so that
+    /// it replays as it was dealt.
+    /// </summary>
+    public int Edition { get; init; }
+
+    /// <summary>
     /// Where every piece started in this game, if it was dealt its own armies; null, if as the rules start them.
     /// </summary>
     public Position? Start { get; init; }

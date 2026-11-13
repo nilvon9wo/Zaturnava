@@ -596,6 +596,7 @@ public sealed class GrandLegionsRulesTest
     [InlineData("western-king", "Castles with its own Rook (Western): two cells towards it")]
     [InlineData("xiangqi-general", "Flying general: ")]
     [InlineData("janggi-general", "Face-off: ")]
+    [InlineData("tafl-king", "Takes by custody: ")]
     public void GuideOf_WhenALeaderWithAPowerOfItsOwn_TellsItAsSpecialApartFromLeading(string leader, string power)
     {
         // Arrange
@@ -825,7 +826,7 @@ public sealed class GrandLegionsRulesTest
 
         // Assert
         Assert.Equal(
-            (6, 3),
+            (6, 4),
             (dice.Sides, dice.KindsOf(1).Count)
         );
         Assert.Contains(GrandLegionsPieces.Grasshopper, dice.KindsOf(1));

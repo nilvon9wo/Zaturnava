@@ -37,5 +37,9 @@
   "war-engine": 2,
   "xiangqi-cannon": 10,
   "janggi-cannon": 8,
-  "grasshopper": 8
+  "grasshopper": 8,
+  "checkers-king": 64,
+  "man": 54,
+  "tafl-king": 71,
+  "swede": 11
 }

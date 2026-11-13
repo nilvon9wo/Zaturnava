@@ -119,6 +119,9 @@ public sealed record Chaturaji2027Variant(
     /// <summary>The kinds with the flying-general capture (a Xiangqi General): none, unless set.</summary>
     public ImmutableHashSet<PieceKindId> FlyingCapturers { get; init; } = [];
 
+    /// <summary>The kinds that take by custody (the Tafl King, the Swede): none, unless set.</summary>
+    public ImmutableHashSet<PieceKindId> Custodians { get; init; } = [];
+
     /// <summary>The kinds that may call a leader face-off (a Janggi General): none, unless set.</summary>
     public ImmutableHashSet<PieceKindId> FaceOffCallers { get; init; } = [];
 

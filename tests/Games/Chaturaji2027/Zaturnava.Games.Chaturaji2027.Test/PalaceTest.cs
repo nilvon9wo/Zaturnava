@@ -488,7 +488,7 @@ public sealed class PalaceTest
                             Enumerable.Range(0, width).Select(column => new ArmySquare(column, row))
                         ),
                     ],
-                    _ => [Chaturaji2027Pieces.Pawn, Chaturaji2027Pieces.Boat, Chaturaji2027Pieces.Raja],
+                    (_, _) => [Chaturaji2027Pieces.Pawn, Chaturaji2027Pieces.Boat, Chaturaji2027Pieces.Raja],
                     fill =>
                     {
                         filled?.Add(fill);

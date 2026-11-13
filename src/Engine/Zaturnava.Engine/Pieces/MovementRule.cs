@@ -36,6 +36,12 @@ public sealed record MovementRule(
     /// <summary>The kinds it may not hop over, nor capture: as a Janggi Cannon may not, a Cannon.</summary>
     public ImmutableHashSet<PieceKindId> Shunned { get; init; } = [];
 
+    /// <summary>
+    /// Whether it jumps, as a piece of Checkers does: over a piece next to it, which it takes, to the empty cell just
+    /// beyond; and on from there, over another, as often as it can.
+    /// </summary>
+    public bool IsJumping { get; init; }
+
     /// <summary>One step, moving or capturing.</summary>
     public static MovementRule Step([Required] DirectionSet directions) =>
         new(directions, 1, 1, false, true, true);
@@ -54,6 +60,13 @@ public sealed record MovementRule(
     /// </summary>
     public static MovementRule Hop([Required] DirectionSet directions, [Range(1, int.MaxValue)] int beyond) =>
         Slide(directions) with { IsHopping = true, MaximumBeyond = beyond };
+
+    /// <summary>
+    /// Along each direction, over a piece next to it, which it takes, to the empty cell just beyond; and on from there
+    /// (<see cref="IsJumping"/>). It only ever captures.
+    /// </summary>
+    public static MovementRule Jump([Required] DirectionSet directions) =>
+        new(directions, 2, 2, true, false, true) { IsJumping = true };
 
     public MovementRule MoveOnly() => this with { CanCapture = false };
 

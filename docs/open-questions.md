@@ -15,3 +15,16 @@ playtesting is marked so where it is written.
 
 May a player buy a second palace in Grand Legions, on a board large enough, and at what price? Left open until
 the rest of the game is playable ([specification Q5](grand/specification.md#9-open-questions)).
+
+## OQ8 The Tafl King's escape
+
+The sheet (row 43) says the Tafl King "can permanently escape the game". In Tafl the king escapes by reaching a
+corner (or an edge) and wins the game. What should escaping mean in Grand Legions:
+
+- where may it escape from (a corner, any edge cell, the far edge only)?
+- what happens then: does its army win, score points (how many), or leave play with its King safe, so that it can
+  no longer be taken nor lost?
+- and what should the power cost?
+
+Until answered, the Tafl King cannot escape, and its value (71, [Jumping and custody](grand/pieces.md#jumping-and-custody))
+has nothing for it.

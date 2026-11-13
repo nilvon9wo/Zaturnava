@@ -13,7 +13,7 @@ namespace Net.NowhereAtAll.Zaturnava.Games.GrandLegions;
 /// it; taking a piece scores its value, priced on the game's board (<see cref="BoardPrices"/>); and each piece's
 /// own promotion is played. Each army has a palace about its throne, where its kingdom has room for one, drawn on the
 /// board, which holds the pieces confined to one (<see cref="PalaceConfinement"/>), and along whose lines the Janggi
-/// General, Guard and Soldier step (the Soldier only forward).
+/// General, Guard and Soldier step (the Soldier only forward). The Tafl King and the Swede take by custody.
 /// </summary>
 public static class GrandLegionsRules
 {
@@ -30,8 +30,8 @@ public static class GrandLegionsRules
 
     /// <summary>
     /// Each piece's own promotion on <paramref name="board"/>, as the catalogue names it (specification §6.2): a
-    /// Western piece's on the last row; a Shogi piece's in the far three rows; a Makruk Pawn's in an enemy kingdom
-    /// (<see cref="EnemyKingdoms"/>).
+    /// Western or Checkers piece's on the last row; a Shogi piece's in the far three rows; a Makruk Pawn's in an enemy
+    /// kingdom (<see cref="EnemyKingdoms"/>).
     /// </summary>
     public static ImmutableDictionary<PieceKindId, OwnPromotion> OwnPromotionsOn([Required] GrandBoard board) =>
         GrandLegionsPieces.Catalogue
@@ -44,7 +44,7 @@ public static class GrandLegionsRules
                         Zone = EnemyKingdoms.On(board),
                         Where = EnemyKingdoms.Where,
                     }
-                    : new OwnPromotion([.. piece.PromotesTo], piece.Tradition == Tradition.Western ? 1 : 3)
+                    : new OwnPromotion([.. piece.PromotesTo], piece.PromotesOnLastRow ? 1 : 3)
             );
 
     public static ImmutableHashSet<PieceKindId> Leaders { get; } =
@@ -131,6 +131,7 @@ public static class GrandLegionsRules
                     Rivers = QuickTerrain.RiversOf(dealing.Terrain),
                     HasPalacePieces = dealing.HasPalacePieces,
                     HasEdgePalaces = dealing.HasEdgePalaces,
+                    Edition = dealing.Edition,
                 },
                 dealing.Seed,
                 dealing.AreAlike
@@ -155,6 +156,7 @@ public static class GrandLegionsRules
             CastlingRooks = [GrandLegionsPieces.Rook],
             FlyingCapturers = [GrandLegionsPieces.XiangqiGeneral],
             FaceOffCallers = [GrandLegionsPieces.JanggiGeneral],
+            Custodians = [GrandLegionsPieces.TaflKing, GrandLegionsPieces.Swede],
             PalaceSteppers =
             [
                 GrandLegionsPieces.JanggiGeneral,

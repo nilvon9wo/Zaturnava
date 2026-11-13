@@ -55,7 +55,11 @@ internal sealed class ArmyDrafting
         this._priceOf = priceOf;
         this._rollOff = rollOff;
         this.Limit = drafting.Kingdom.Count
-            * drafting.Terrains.SelectMany(drafting.Offered).Select(priceOf).DefaultIfEmpty().Max();
+            * drafting.Terrains
+                .SelectMany(terrain => drafting.Offered(terrain, int.MaxValue))
+                .Select(priceOf)
+                .DefaultIfEmpty()
+                .Max();
         this._kingdoms = Enumerable.Range(0, Pinwheel.SeatCount).ToImmutableDictionary(
             seat => new SeatId(seat),
             seat => CellsOf(grid, side, seat, drafting.Kingdom)
@@ -241,7 +245,7 @@ internal sealed class ArmyDrafting
     /// </summary>
     public ImmutableList<PieceKindId> Offered(GameState state) =>
     [
-        .. this._drafting.Offered(state.Terrain)
+        .. this._drafting.Offered(state.Terrain, state.Edition)
             .Union(state.Palaces is null ? [] : this._drafting.PalaceBound)
             .OrderByDescending(this._priceOf)
             .ThenBy(kind => kind.Value, StringComparer.Ordinal),
@@ -354,6 +358,7 @@ internal sealed class ArmyDrafting
                 Palace = placed is { } own ? [.. own.Where(kingdom.ContainsKey).Select(cell => kingdom[cell])] : null,
                 HasPalacePieces = state.HasPalacePieces,
                 HasEdgePalaces = state.HasEdgePalaces,
+                Edition = state.Edition,
             }
         );
         GameState thrones = state with

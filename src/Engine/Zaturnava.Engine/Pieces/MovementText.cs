@@ -16,6 +16,8 @@ public static class MovementText
     public static string Of([Required] MovementRule rule, [Required] Func<PieceKindId, string> nameOf) =>
         (rule.IsHopping, rule.IsLeaping) switch
         {
+            _ when rule.IsJumping => $"Jumps {DirectionOf(rule.Directions)} over a piece next to it, taking it, to the "
+                + "empty cell just beyond; and on from there, as often as it can, or stops",
             (true, _) => HopOf(rule, nameOf),
             (_, true) => LeapOf(rule) + (rule.IsLame ? ", unless a piece blocks the way" : OverAnything),
             _ => SlideOf(rule),
