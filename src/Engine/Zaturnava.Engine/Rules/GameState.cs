@@ -159,6 +159,13 @@ public sealed record GameState(
     /// </summary>
     public ReturnsDue? Returning { get; init; }
 
+    /// <summary>
+    /// The pieces that fled the board of their own accord, as the King of Tafl escapes at a corner
+    /// (<see cref="Actions.FleeAction"/>): no one holds them, nor may take them, until they come back as a prisoner
+    /// escapes.
+    /// </summary>
+    public ImmutableList<Piece> Fled { get; init; } = [];
+
     /// <summary>A proposal to end the game, waiting on the deciding seat's answer; null if none is.</summary>
     public EndProposal? Proposal { get; init; }
 

@@ -80,6 +80,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     private readonly Castling _castling;
     private readonly FlyingCapture _flying;
     private readonly Custody _custody;
+    private readonly Flight _flight;
     private readonly PalaceSteps _palaceSteps;
     private readonly FaceOff _faceOff;
     private readonly MoveDiagrams _diagrams;
@@ -165,6 +166,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         );
         this._flying = new FlyingCapture(this._grid, this._variant.FlyingCapturers, this._variant.Leaders);
         this._custody = new Custody(this._grid, this._variant.Custodians);
+        this._flight = new Flight(this._grid, this._variant.Side, this._variant.Fleers);
         this._palaceSteps = new PalaceSteps(
             this._grid,
             this._variant.PalaceSteppers,
@@ -601,6 +603,10 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
                 (this._variant.Custodians.Contains(kind),
                     "Takes by custody: moving next to an enemy piece, along a straight line, with a piece of its own "
                     + "just beyond it, takes it; as many such pieces at once as it holds so."),
+                (this._variant.Fleers.Contains(kind),
+                    "Escape: on its own far corner, the board's corner across from its army's, it may leave the board "
+                    + "as its move, where no one can take it. It comes back only on doubles that let a captured "
+                    + "piece of its kind escape, as one would."),
             }
             .Where(power => power.Has)
             .Select(power => power.Power);
@@ -633,6 +639,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             [
                 new PassAction(seat),
                 .. this.MovesOf(state, seat, this.RolledKinds(state).Contains),
+                .. this.FleesOf(state, seat, this.RolledKinds(state).Contains),
                 .. this.PromotionsOf(state, seat),
                 .. this.EscapesOf(state, seat),
                 .. this.HandOversOf(state, seat),
@@ -652,7 +659,8 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     /// On doubles, not yet used, instead of moving: a captured piece of the kind they show, of an army the
     /// seat commands, whoever holds it, may escape (rules.md §7) - to each square it may go to. Pieces alike
     /// held by the same seat are offered once, the highest-scoring first, then by owner, then by holder. Never to
-    /// an enemy moving for the seat whose throne it holds, on dice that seat rolled (Stated 2026-11-06).
+    /// an enemy moving for the seat whose throne it holds, on dice that seat rolled (Stated 2026-11-06). A piece that
+    /// fled the board comes back so too, as though its own army held it (<see cref="Flight"/>).
     /// </summary>
     private IEnumerable<EscapeAction> EscapesOf(GameState state, SeatId seat)
     {
@@ -664,6 +672,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             ? [.. this._dice.KindsOf(state.Dice[0])]
             : [];
         return state.Prisoners
+            .Concat(state.Fled.Select(piece => new Prisoner(piece, piece.Owner)))
             .Where(prisoner => armies.Contains(prisoner.Piece.Owner) && kinds.Contains(prisoner.Piece.Kind))
             .DistinctBy(prisoner => (prisoner.Piece.Owner, prisoner.Piece.Kind, prisoner.Holder))
             .OrderByDescending(prisoner => this._variant.Points[prisoner.Piece.Kind])
@@ -686,6 +695,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
                 new PassAction(seat),
                 new RollAction(seat),
                 .. this.MovesOf(state, seat, _ => true),
+                .. this.FleesOf(state, seat, _ => true),
                 .. this.PromotionsOf(state, seat),
                 .. this.HandOversOf(state, seat),
                 .. this.RetirementsOf(state, seat),
@@ -697,6 +707,20 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
                 .. this.HandOversOf(state, seat),
                 .. this.RetirementsOf(state, seat),
             ];
+
+    /// <summary>The flights from the far corner the seat may make (<see cref="Flight"/>), as moves of a kind.</summary>
+    private IEnumerable<FleeAction> FleesOf(GameState state, SeatId seat, Func<PieceKindId, bool> isMovable) =>
+        this._flight.FleesOf(state, seat, this._control.ArmiesOf(state, seat), isMovable);
+
+    /// <summary>
+    /// The piece flees, using a die that moves it, if any was rolled; the turn goes on, unless the game is over.
+    /// </summary>
+    private Transition AfterFlight(GameState state, FleeAction flee)
+    {
+        PieceKindId kind = state.Position.PieceAt(flee.Cell)!.Kind; // the flight is legal, so a piece stands there
+        Transition used = this.WithoutDieFor(Flight.Fled(state, flee), kind);
+        return GameEnd.AfterMove(used, this._variant) ?? this.GoneOn(used);
+    }
 
     /// <summary>
     /// A seat left with only its Raja on the board may, at the start of its own turn, end its part in the
@@ -906,6 +930,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             PromoteAction promote => this.Promoted(state, promote, FromPrisoner(state, promote)),
             PromoteOwnAction promote => this.Promoted(state, promote, Become(state, promote)),
             EscapeAction escape => this.Escaped(state, escape),
+            FleeAction flee => this.AfterFlight(state, flee),
             HandOverAction handOver => HandedToRegent(state, handOver),
             RetireAction retire => this.Retired(state, retire),
             AnswerEndAction answer => Agreement.Answered(state, answer),
@@ -1100,21 +1125,23 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
 
     /// <summary>
     /// The prisoner goes back onto the board for its own army, taking whatever stands there, and uses up
-    /// both dice: the turn is over.
+    /// both dice: the turn is over. So does a piece that fled, held by no one.
     /// </summary>
     private Transition Escaped(GameState state, EscapeAction escape)
     {
-        Prisoner prisoner = state.Prisoners.First(held => held.Piece.Id == escape.Piece);
+        Prisoner? prisoner = state.Prisoners.FirstOrDefault(held => held.Piece.Id == escape.Piece);
+        Piece piece = prisoner?.Piece ?? state.Fled.First(fled => fled.Id == escape.Piece);
         Piece? captured = state.Position.PieceAt(escape.Home);
         GameState escaped = Farming.Stopped(state, escape.Actor) with
         {
-            Position = state.Position.Place(escape.Home, prisoner.Piece),
-            Prisoners = state.Prisoners.Remove(prisoner),
+            Position = state.Position.Place(escape.Home, piece),
+            Prisoners = prisoner is null ? state.Prisoners : state.Prisoners.Remove(prisoner),
+            Fled = state.Fled.Remove(piece),
             Dice = [],
         };
         Transition transition = new(
             escaped,
-            [new PieceEscaped(prisoner.Piece, escape.Home, escape.Actor, captured, prisoner.Holder)]
+            [new PieceEscaped(piece, escape.Home, escape.Actor, captured, prisoner?.Holder)]
         );
         Transition taken = captured is null
             ? transition

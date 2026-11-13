@@ -346,6 +346,45 @@ public sealed class GameViewsTest
     }
 
     [Fact]
+    public void ViewOf_WhenALeaderMayFleeOrComeBack_LabelsEach()
+    {
+        // Arrange - Raja may flee; Black's Raja 3 stands on its far corner, h8, and Black rolled two 5s, while its
+        // ally Green's Raja fled the board earlier
+        Chaturaji2027Rules rules = new(
+            DiceProfile.WeightedSixSided,
+            Chaturaji2027Rules.DefaultIdleRounds,
+            PawnPromotion.OtherArmies,
+            variant: Chaturaji2027Variant.Standard with { Fleers = [Chaturaji2027Pieces.Raja] }
+        );
+        Piece raja = new(new PieceId(3), Chaturaji2027Pieces.Raja, new SeatId(0));
+        Piece fled = new(new PieceId(19), Chaturaji2027Pieces.Raja, new SeatId(2));
+        GameState start = rules.CreateInitialState();
+        GameState state = start with
+        {
+            RollOff = [],
+            AwaitedDice = null,
+            Dice = [5, 5],
+            Position = Position.Empty.Place(new CellId(63), raja)
+                .Place(new CellId(0), start.Position.PieceAt(new CellId(0))!),
+            Fled = [fled],
+        };
+
+        // Act
+        GameViewDto view = GameViews.ViewOf(Snapshot(rules, state), Bots);
+
+        // Assert
+        Assert.Equal(
+            [
+                "Bring back Green's Raja, which fled the board, to e8",
+                "Escape the board with Black's Raja, from h8: no one can take it until it comes back",
+            ],
+            view.LegalActions.Where(action => action.Kind is "flee" or "escape")
+                .Select(action => action.Label)
+                .Order(StringComparer.Ordinal)
+        );
+    }
+
+    [Fact]
     public void ViewOf_WhenAnAllyMayTakeTheTurn_LabelsHandingItOver()
     {
         // Arrange - Black's Raja is gone, so Green, which has its own, may take Black's turn

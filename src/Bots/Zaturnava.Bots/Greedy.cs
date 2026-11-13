@@ -77,8 +77,11 @@ internal static class Greedy
         return SideOf(request, piece with { Kind = promotion.Becomes }) - SideOf(request, piece);
     }
 
+    /// <summary>The captured piece; or one that fled the board, which comes back as a prisoner escapes.</summary>
     private static Piece PrisonerOf(DecisionRequest request, PieceId piece) =>
-        request.State.Prisoners.First(prisoner => prisoner.Piece.Id == piece).Piece;
+        request.State.Prisoners.Select(prisoner => prisoner.Piece)
+            .Concat(request.State.Fled)
+            .First(held => held.Id == piece);
 
     /// <summary>A piece's worth, for the bot's team; less than nothing, for an enemy's.</summary>
     private static int SideOf(DecisionRequest request, Piece piece) =>

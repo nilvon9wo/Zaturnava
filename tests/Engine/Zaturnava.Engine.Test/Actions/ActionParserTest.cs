@@ -70,6 +70,7 @@ public sealed class ActionParserTest
         new DeclineAction(new SeatId(2)),
         new PlaceAction(new SeatId(2), new CellId(9)),
         new EscapeAction(new SeatId(3), new PieceId(11), new CellId(32)),
+        new FleeAction(new SeatId(3), new CellId(63)),
         new HandOverAction(new SeatId(1), new SeatId(3)),
         new ProposeEndAction(new SeatId(2), Resigns: true),
         new AnswerEndAction(new SeatId(0), Agrees: false),

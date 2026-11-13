@@ -111,6 +111,24 @@ public sealed class MidasBotTest
     }
 
     [Fact]
+    public async Task Decide_WhenItsPieceThatFledMayComeBack_BringsItBack()
+    {
+        // Arrange - its Horse 20 fled the board, rather than being held
+        DecisionRequest escaping = Ransoms.Escaping();
+        Piece horse = escaping.State.Prisoners.Single(held => held.Piece.Id == new PieceId(20)).Piece;
+        DecisionRequest request = escaping with
+        {
+            State = escaping.State with { Prisoners = [], Fled = [horse] },
+        };
+
+        // Act
+        ImmutableHashSet<GameAction> chosen = await Choices(request);
+
+        // Assert
+        Assert.Equal([new EscapeAction(Seat, new PieceId(20), new CellId(7))], chosen);
+    }
+
+    [Fact]
     public async Task Decide_WhenATradeGainsDuringItsTurn_OffersItBeforeMoving()
     {
         // Arrange - its turn, with an escape to roll for; accepting scores Yellow nothing, and costs it 2 points a
