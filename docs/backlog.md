@@ -28,7 +28,8 @@ first.
 - *(Stated 2026-11-12)* A player's card: clicking a player's name shows what is useful to know of them, their Elo
   and experience among it. *Done* in part: the dialog a name opens, at the table or on the leaderboard, adds how
   they stand at the game, from its leaderboard: Elo, experience, and games won, lost and drawn there; or that they
-  are not on it yet. More may follow (their other games, their streaks).
+  are not on it yet; and, since 2026-11-13, their three winning streaks there (of every game, of rated games, of
+  games against people), each with the mean Elo it beat, a row each. More may follow (their other games).
 - **N2** The database stays as it is through every change, by migrations; never wiped (*Stated*).
 - **N3** A leaderboard, for players to compete for; with each player's Elo and their **experience**: each time
   a player is on the winning team, they gain their own points plus their team's (*Stated*), changed

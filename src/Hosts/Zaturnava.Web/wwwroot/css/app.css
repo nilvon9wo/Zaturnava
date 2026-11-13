@@ -710,12 +710,19 @@ button.safety.off {
 .profile-dialog label.description { display: flex; flex-direction: column; gap: 4px; margin-top: 10px; }
 .profile-dialog textarea.description { font: inherit; resize: vertical; }
 .public-profile .player-description { white-space: pre-wrap; overflow-wrap: anywhere; }
-/* A player's standing at the game, one row under its headings; a bot's facts, each by its label. */
-.public-profile table.player-standing { border-collapse: collapse; margin: 10px 0 0; }
-.public-profile table.player-standing caption { text-align: left; color: var(--muted); padding-bottom: 4px; }
-.public-profile table.player-standing th { color: var(--muted); font-weight: 400; text-align: right; }
+/* A player's standing at the game, one row under its headings, and their streaks, a row each, named on the left;
+   a bot's facts, each by its label. */
+.public-profile table.player-standing,
+.public-profile table.player-streaks { border-collapse: collapse; margin: 10px 0 0; }
+.public-profile table.player-standing caption,
+.public-profile table.player-streaks caption { text-align: left; color: var(--muted); padding-bottom: 4px; }
 .public-profile table.player-standing th,
-.public-profile table.player-standing td { padding: 2px 8px; text-align: right; font-variant-numeric: tabular-nums; }
+.public-profile table.player-streaks th { color: var(--muted); font-weight: 400; text-align: right; }
+.public-profile table.player-standing th,
+.public-profile table.player-standing td,
+.public-profile table.player-streaks th,
+.public-profile table.player-streaks td { padding: 2px 8px; text-align: right; font-variant-numeric: tabular-nums; }
+.public-profile table.player-streaks th[scope=row] { text-align: left; }
 .public-profile .bot-facts { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; margin: 10px 0 0; }
 .public-profile .bot-facts dt { color: var(--muted); }
 .public-profile .bot-facts dd { margin: 0; }

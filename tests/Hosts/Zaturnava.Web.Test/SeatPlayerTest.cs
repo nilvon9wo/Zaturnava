@@ -85,6 +85,46 @@ public sealed class SeatPlayerTest : IDisposable
     }
 
     [Fact]
+    public void Open_WhenThePlayerStandsAtTheTablesGame_ShowsTheirStreaksEachWithTheMeanEloBeaten()
+    {
+        // Arrange - Ada on a streak of 4, 3 of them rated, against teams of a mean 1612; none against people
+        this._page.Server.Profiles = this._page.Server.Profiles.Add("p", Ada);
+        this._page.Server.Leaderboards = this._page.Server.Leaderboards.Add(
+            "chaturaji-2027",
+            [
+                new StandingDto(1, "Ada", 1516, 450, 6, 2, 1)
+                {
+                    PlayerId = "p",
+                    Streak = new StreakDto(4, 1580),
+                    RatedStreak = new StreakDto(3, 1612),
+                },
+            ]
+        );
+        IRenderedComponent<SeatPlayer> player = this._page.Render<SeatPlayer>(parameters =>
+            parameters.Add(x => x.Text, "Ada").Add(x => x.PlayerId, "p").Add(x => x.RulesetId, "chaturaji-2027")
+        );
+
+        // Act
+        player.Find("button.player").Click();
+
+        // Assert - a row for each streak, the figures under their headings
+        Assert.Equal(
+            (
+                "Of|Won in a row|Mean Elo beaten",
+                "Every game|4|1580;Rated games|3|1612;Games against people|0|—"
+            ),
+            (
+                string.Join('|', player.FindAll("table.player-streaks thead th").Select(cell => cell.TextContent)),
+                string.Join(
+                    ';',
+                    player.FindAll("table.player-streaks tbody tr")
+                        .Select(row => string.Join('|', row.Children.Select(cell => cell.TextContent)))
+                )
+            )
+        );
+    }
+
+    [Fact]
     public void Open_WhenThePlayerIsGone_SaysSo()
     {
         // Arrange
