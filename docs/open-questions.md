@@ -15,15 +15,3 @@ playtesting is marked so where it is written.
 
 May a player buy a second palace in Grand Legions, on a board large enough, and at what price? Left open until
 the rest of the game is playable ([specification Q5](grand/specification.md#9-open-questions)).
-
-## OQ12 The worth of palace lines
-
-The Guard (Janggi) moves as the Minister does, one cell orthogonally, but only in its palace, where it also steps
-diagonally along the palace's lines. It is priced above the Minister for those lines:
-
-| Piece | Moves | Kept to | Value |
-|---|---|---|---|
-| Minister | One cell orthogonally | — | 6 |
-| Guard (Janggi) | One cell orthogonally; diagonally along palace lines | its palace | 7 |
-
-Is moving along a palace's diagonals really worth more than being free to go anywhere on the board?

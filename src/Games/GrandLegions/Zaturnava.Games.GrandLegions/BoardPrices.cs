@@ -22,6 +22,12 @@ public static class BoardPrices
     private const int ReferenceSide = 8;
 
     /// <summary>
+    /// The edition (<see cref="Engine.Rules.GameState.Edition"/>) from which a premium is counted both ways on a board
+    /// not square (<see cref="PremiumAcross"/>), boards having been allowed so the same day (2026-11-13).
+    /// </summary>
+    public const int BothWaysEdition = GrandLegionsPieces.GuardRepriced;
+
+    /// <summary>
     /// The least a piece costs (Proposed): one that reaches nothing from the centre of a small board, as the Giraffe
     /// on 6 × 6, is still never free, which would let an army fill its kingdom with it.
     /// </summary>
@@ -75,11 +81,26 @@ public static class BoardPrices
                 piece.ValueAt(edition)
                     + reaches[piece.Id]
                     - ReferenceReaches[piece.Id]
-                    + PremiumOn(piece, board, edition)
+                    + PremiumAcross(piece, board, edition)
                     - Premiums.GetValueOrDefault(piece.Id)
             )
         );
     }
+
+    /// <summary>
+    /// The premium on <paramref name="board"/> as every seat has it: on a board not square, from
+    /// <see cref="BothWaysEdition"/> on, the mean, to the nearest point, of what it is up the board, as seats 0 and 2
+    /// face, and across it, as seats 1 and 3 do (Proposed), so that one price is fair to every army; before it, up the
+    /// board alone.
+    /// </summary>
+    private static int PremiumAcross(GrandPiece piece, GrandBoard board, int edition) =>
+        edition >= BothWaysEdition
+            ? (int)Math.Round(
+                (PremiumOn(piece, board, edition)
+                    + PremiumOn(piece, board with { Width = board.Length, Length = board.Width }, edition)) / 2.0,
+                MidpointRounding.AwayFromZero
+            )
+            : PremiumOn(piece, board, edition);
 
     /// <summary>
     /// Each piece's reach from the centre of an empty board (from d4, on 8 × 8), its own player facing up the board:
