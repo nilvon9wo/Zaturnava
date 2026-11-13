@@ -178,6 +178,26 @@ public sealed class JumpAndCustodyTest
         Assert.Contains(guide.SpecialPowers, power => power.StartsWith("Takes by custody", StringComparison.Ordinal));
     }
 
+    [Fact]
+    public void GuideOf_WhenTheKindJumps_DrawsItLandingBeyondEachPieceItTakesAndJumpingOnAgain()
+    {
+        // Arrange - the Boat, from the centre, 40, of a diagram 9 squares across: steps diagonally; an enemy one and
+        // three squares out along each diagonal
+
+        // Act
+        MoveDiagram diagram = this._rules.GuideOf(Chaturaji2027Pieces.Boat).Diagram;
+
+        // Assert
+        Assert.Equal(
+            ("30,32,48,50", "10,16,30,32,48,50,64,70", "0,8,20,24,56,60,72,80"),
+            (
+                string.Join(",", diagram.Moves),
+                string.Join(",", diagram.Captures),
+                string.Join(",", diagram.Jumps)
+            )
+        );
+    }
+
     private static CellId Cell(int column, int row) => Grid.CellAt(column, row);
 
     /// <summary>Black to move, the die rolled, its Raja on h1 and Yellow's on h8, with the pieces placed.</summary>

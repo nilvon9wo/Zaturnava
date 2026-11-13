@@ -63,7 +63,7 @@
                              Angle="this.Turn.AngleOf(this.Forward)"
                              IsOnDark="this.IsOnDark" />
         }
-        @if (kind.Diagram is not { Side: > 0 } || !kind.Diagram.Screens.IsEmpty)
+        @if (kind.Diagram is not { Side: > 0 } || !kind.Diagram.Screens.IsEmpty || !kind.Diagram.Jumps.IsEmpty)
         {
             @this.Listed("moves", "Moves", kind.Moves)
             @this.Listed("captures", "Captures", kind.Captures)

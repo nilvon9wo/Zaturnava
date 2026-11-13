@@ -42,6 +42,10 @@
         <span class="key-item"><span class="key move leap"></span>leaps there, over anything between</span>
         <span class="key-item">any other dot farther off: slides there, up to the first piece in the way</span>
     }
+    @if (!this.Diagram.Jumps.IsEmpty)
+    {
+        <span class="key-item"><span class="key jump"></span>lands here, empty, having jumped and taken the piece before it; and may jump on again</span>
+    }
     @if (!this.Diagram.Blockers.IsEmpty)
     {
         <span class="key-item"><span class="key blocker"></span>a piece here blocks a leap</span>
@@ -94,6 +98,7 @@
                 row == this.Diagram.RiverRow ? "river-bank" : null,
                 this.Diagram.Blockers.Contains(cell) ? "blocker" : null,
                 this.Diagram.Leaps.Contains(cell) ? "leap" : null,
+                this.Diagram.Jumps.Contains(cell) ? "jump" : null,
             }.OfType<string>()
         );
 }

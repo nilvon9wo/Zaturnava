@@ -577,6 +577,14 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
     background: transparent;
     border: 2px solid var(--mark);
 }
+/* A square it lands on after a jump, as a piece of Checkers does: a dashed square, unlike any dot or ring. */
+.move-diagram .jump::before, .diagram-key .jump::before {
+    content: "";
+    position: absolute;
+    inset: 22%;
+    border: 2px dashed var(--mark);
+    border-radius: 2px;
+}
 /* A river the piece may not cross: blue along the lower edge of the first row across it, as the board's are. */
 .move-diagram .river-bank { box-shadow: inset 0 -0.3em 0 #2f7fd8; }
 .diagram-key .key.river { background: linear-gradient(transparent 60%, #2f7fd8 60%); }

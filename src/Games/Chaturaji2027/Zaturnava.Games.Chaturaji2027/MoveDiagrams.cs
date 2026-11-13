@@ -49,6 +49,7 @@ internal sealed class MoveDiagrams(
         );
         int? riverRow = riverBound.Contains(kind) ? Middle + 1 : null;
         ImmutableHashSet<CellId> reached = this.ReachedOn(alone, riverRow);
+        ImmutableList<Move> jumps = this.JumpsOn(alone, this._kinds[kind]);
         return new MoveDiagram(
             Side,
             [.. reached.Select(cell => cell.Value).Order()],
@@ -57,11 +58,15 @@ internal sealed class MoveDiagrams(
                     .Where(cell => alone.PieceAt(cell) is null)
                     .Where(cell => IsOnNearBank(cell, riverRow))
                     .Where(cell => this.MayCapture(alone, cell))
-                    .Select(cell => cell.Value),
+                    .Concat(jumps.SelectMany(jump => jump.Jumped))
+                    .Select(cell => cell.Value)
+                    .Distinct()
+                    .Order(),
             ],
             [.. screens.Select(screen => screen.Value)]
         )
         {
+            Jumps = [.. jumps.Select(jump => jump.To.Value).Distinct().Order()],
             RiverRow = riverRow,
             Blockers = this._kinds[kind].Movement.Any(rule => rule.IsLame)
                 ? [.. this.BlockersOf(alone, riverRow, reached).Select(cell => cell.Value).Order()]
@@ -129,6 +134,28 @@ internal sealed class MoveDiagrams(
             .Select(direction => Grid.CellAt(Middle + (2 * direction.First), Middle + (2 * direction.Second)))
             .OrderBy(cell => cell.Value),
     ];
+
+    /// <summary>
+    /// For a kind that jumps: its jumps with an enemy one and three cells out along each line it jumps on, so that it
+    /// is drawn landing beyond the first, and then, jumping again, beyond the second; none, for any other kind.
+    /// </summary>
+    private ImmutableList<Move> JumpsOn(Position alone, PieceKind kind)
+    {
+        ImmutableList<Direction> lines =
+        [
+            .. kind.Movement
+                .Where(rule => rule.IsJumping)
+                .SelectMany(rule => Grid.Resolve(rule.Directions, Facing.Forward))
+                .Distinct(),
+        ];
+        Position victims = lines
+            .SelectMany(line => ((int[])[1, 3]).Select(distance => Grid.CellAt(
+                Middle + (distance * line.First),
+                Middle + (distance * line.Second)
+            )))
+            .Aggregate(alone, (position, cell) => position.Place(cell, new Piece(new PieceId(5), Stand, Enemy)));
+        return lines.IsEmpty ? [] : [.. this.MovesOn(victims).Where(move => !move.Jumped.IsEmpty)];
+    }
 
     /// <summary>Whether the piece may capture on <paramref name="cell"/>, the only enemy put there.</summary>
     private bool MayCapture(Position alone, CellId cell) =>

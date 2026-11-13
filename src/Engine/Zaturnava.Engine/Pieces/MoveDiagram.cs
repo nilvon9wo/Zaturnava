@@ -35,4 +35,11 @@ public sealed record MoveDiagram(
     /// than sliding, stopped by the first piece in the way (the user's report of 2026-11-12, of not knowing which).
     /// </summary>
     public ImmutableList<int> Leaps { get; init; } = [];
+
+    /// <summary>
+    /// For a piece that jumps, as a piece of Checkers does (<see cref="MovementRule.IsJumping"/>): the empty cells it
+    /// lands on, having jumped and taken the piece on the capture cell before each, the first jump and then a second
+    /// from there (the user's report of 2026-11-13, of its card showing it take where it steps); none, for any other.
+    /// </summary>
+    public ImmutableList<int> Jumps { get; init; } = [];
 }
