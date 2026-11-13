@@ -64,6 +64,14 @@ public sealed record Chaturaji2027Variant(
     public ImmutableDictionary<PieceKindId, int> PointsIn(int edition) => this.PointsAt?.Invoke(edition) ?? this.Points;
 
     /// <summary>
+    /// The edition (<see cref="GameState.Edition"/>) from which a chain of jumps is played jump by jump, each picked
+    /// apart, the piece going on with no die or stopping, so that its player picks which pieces it takes where two
+    /// ways end on one cell (Stated 2026-11-13); before it, a chain is one move, ending wherever it may stop. Never,
+    /// if unset.
+    /// </summary>
+    public int JumpByJumpEdition { get; init; } = int.MaxValue;
+
+    /// <summary>
     /// The game this is one size of, if it is played at several; none, for a game of one size, which is its own.
     /// </summary>
     public GameSize? Game { get; init; }

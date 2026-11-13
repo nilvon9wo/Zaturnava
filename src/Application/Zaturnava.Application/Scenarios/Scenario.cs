@@ -27,4 +27,10 @@ public sealed record Scenario(string RulesetId, string Name, string Description)
 
     /// <summary>The dice the turn has rolled and not used yet; none, if it is still to roll.</summary>
     public ImmutableList<int> Dice { get; init; } = [];
+
+    /// <summary>
+    /// The edition of the ruleset's pieces and rules it is played by (<see cref="ScenarioStart.Edition"/>): the
+    /// first, 0, if it says none, as every scenario written before it could.
+    /// </summary>
+    public int Edition { get; init; }
 }

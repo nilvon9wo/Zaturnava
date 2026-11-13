@@ -1,0 +1,17 @@
+{
+  "rulesetId": "grand-legions-medium",
+  "name": "Tafl King's escape",
+  "description": "Black has rolled 5 and 6 (leader). Black's Tafl King stands on its army's far corner, h8: it may leave the board, where no one can take it, coming back only as a prisoner escapes, on doubles.",
+  "turn": "Black",
+  "edition": 6,
+  "dice": [5, 6],
+  "pieces": {
+    "h8": "Black King (Tafl)",
+    "c1": "Black Rook (Western)",
+    "h1": "Green Gold General (Shogi)",
+    "e8": "Yellow King (Western)",
+    "a8": "Red Silver General (Shogi)",
+    "e6": "Yellow Pawn (Western)",
+    "b6": "Red Pawn (Western)"
+  }
+}

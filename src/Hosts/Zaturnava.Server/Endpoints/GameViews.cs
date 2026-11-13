@@ -557,6 +557,7 @@ internal static class GameViews
             (FillArmyAction, _, _) => "Fill the rest of my army at random, and be done",
             (PassAction, _, _) when snapshot.State.Draft is { } draft =>
                 $"Done drafting: keep the {draft.Left[action.Actor]} points left as my score",
+            (PassAction, _, _) when snapshot.State.Jumping is not null => "Stop jumping",
             (PassAction, true, _) => "Done offering",
             (PassAction, _, { }) => "Promote later",
             (MoveAction move, _, _) => SwapOf(snapshot, move),

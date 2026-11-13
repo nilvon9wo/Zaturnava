@@ -41,6 +41,19 @@ public sealed class RulesApplyingTest
     }
 
     [Fact]
+    public void Kinds_WhenTheRulesetSaysNoOther_AreNone()
+    {
+        // Arrange
+        OneSizeRules rules = new();
+
+        // Act
+        ImmutableList<PieceKindId> kinds = KindsOf(rules);
+
+        // Assert
+        Assert.Empty(kinds);
+    }
+
+    [Fact]
     public void ClearLead_WhenTheRulesetSaysNoOther_IsChaturajis()
     {
         // Arrange
@@ -216,6 +229,10 @@ public sealed class RulesApplyingTest
     private static PieceMark? MarkOf<TRules>(TRules rules, PieceKindId kind)
         where TRules : IRulesApplying =>
         rules.MarkOf(kind);
+
+    private static ImmutableList<PieceKindId> KindsOf<TRules>(TRules rules)
+        where TRules : IRulesApplying =>
+        rules.Kinds;
 
     private static int ClearLeadOf<TRules>(TRules rules)
         where TRules : IRulesApplying =>

@@ -149,6 +149,12 @@ public sealed record GameState(
     public CellId? PromotionDue { get; init; }
 
     /// <summary>
+    /// The cell of a piece part-way through a chain of jumps, jump by jump, which the deciding seat may jump on with,
+    /// using no die, or stop; null if none.
+    /// </summary>
+    public CellId? Jumping { get; init; }
+
+    /// <summary>
     /// The moves straight ahead of two cells or more that may still be taken <i>en passant</i>: each by a seat until
     /// its own turn ends (<see cref="Passage.Closed"/>), or the piece moves on.
     /// </summary>

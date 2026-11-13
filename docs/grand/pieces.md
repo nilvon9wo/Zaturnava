@@ -237,10 +237,15 @@ by the program's rules, *Proposed*), come from Checkers and Tafl and take in way
 **Jumping** (the Checkers King and the Man). The piece takes a piece next to it, diagonally, by jumping over it
 to the empty cell just beyond; from there it may jump again, as often as it can. *Proposed*:
 
-- each jump of the chain is a move of its own, so the piece may stop after any of them; it need not take all
-  it could, nor take at all;
-- of the chains that end on the same cell, the one that takes the most is played (the first found, among
-  those that take as many); a chain may not end where it began;
+- nothing forces a capture (*Stated*, 2026-11-13): the piece may stop after any jump; it need not take all it
+  could, nor take at all;
+- from [edition 6](#editions) (*Stated*, 2026-11-13: "The player needs to pick each jump individually"), each
+  jump is picked apart: the first uses a die, as any move does; then, while the piece can jump on, its player
+  picks the next jump, using no die, or stops (*Stop jumping*). So where two ways end on one cell, the player
+  picks which pieces are taken;
+- before edition 6, a chain was one move, ending wherever it may stop: of the chains that end on the same
+  cell, the one that takes the most was played (the first found, among those that take as many); a chain may
+  not end where it began;
 - the Man jumps only diagonally forward, as it steps; the King, either way.
 
 **Custody** (the Tafl King and the Swede). The piece takes nothing where it lands. Moving next to an enemy
@@ -342,7 +347,7 @@ latest edition.
 A piece repriced since keeps its old value for a game of an earlier edition, in the draft, in a quick army's
 budget and in what capturing it scores. Edition 5 repriced the four pieces that take several at once
 ([above](#jumping-and-custody)). From it, a quick army's budget is the designer's formula
-([roadmap](roadmap.md)).
+([roadmap](roadmap.md)). From edition 6, a chain of jumps is played jump by jump.
 
 ## Review notes
 

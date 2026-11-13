@@ -1,0 +1,24 @@
+{
+  "rulesetId": "grand-legions-medium",
+  "name": "Tafl custody",
+  "description": "Black has rolled 5 (leader) and 3 (heavy). Black's Tafl King on d1, moving up to d5, holds three enemies at once against Black pieces beyond them: c5 (Rook on b5), e5 (Bishop on f5) and d6 (Rook on d7). Black's Swede on h3, moving to f3, holds f4 (Bishop on f5) and f2 (Pawn on f1). A piece that moves between two of Black's is not taken.",
+  "turn": "Black",
+  "edition": 6,
+  "dice": [5, 3],
+  "pieces": {
+    "d1": "Black King (Tafl)",
+    "h3": "Black Swede",
+    "b5": "Black Rook (Western)",
+    "f5": "Black Bishop (Western)",
+    "d7": "Black Rook (Western)",
+    "f1": "Black Pawn (Western)",
+    "a1": "Green Gold General (Shogi)",
+    "h8": "Yellow King (Western)",
+    "a8": "Red Silver General (Shogi)",
+    "c5": "Yellow Knight (Western)",
+    "e5": "Red Knight (Western)",
+    "d6": "Yellow Pawn (Western)",
+    "f4": "Yellow Pawn (Western)",
+    "f2": "Red Pawn (Western)"
+  }
+}

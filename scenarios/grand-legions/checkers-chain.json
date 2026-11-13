@@ -1,0 +1,21 @@
+{
+  "rulesetId": "grand-legions-medium",
+  "name": "Checkers jump chains",
+  "description": "Black has rolled 5 (leader) and 1 (artillery). Black's Checkers King on b2 jumps c3 to d4; then, one jump at a time and with no more dice, it may go on over e5 to f6 and over e7 to d8, or turn at d4 over c5 to b6, or stop after any jump (Stop jumping): nothing forces a capture. Black's Man on h2 jumps g3 to f4, then may go on over g5 to h6, or over e5 to d6.",
+  "turn": "Black",
+  "edition": 6,
+  "dice": [5, 1],
+  "pieces": {
+    "b2": "Black King (Checkers)",
+    "h2": "Black Man",
+    "a1": "Green Gold General (Shogi)",
+    "h8": "Yellow King (Western)",
+    "a8": "Red Silver General (Shogi)",
+    "c3": "Yellow Knight (Western)",
+    "e5": "Red Rook (Western)",
+    "e7": "Yellow Bishop (Western)",
+    "c5": "Red Knight (Western)",
+    "g3": "Yellow Pawn (Western)",
+    "g5": "Red Pawn (Western)"
+  }
+}

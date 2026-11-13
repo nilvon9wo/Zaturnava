@@ -302,6 +302,26 @@ public sealed class MoveGeneratorTest
     }
 
     [Fact]
+    public void MovesFrom_WhenJumpByJumpAndEnemiesStandOneAfterAnother_OffersOnlyTheFirstJump()
+    {
+        // Arrange
+        Position position = Position.Empty
+            .Place(new CellId(0), Friend(Jumper))
+            .Place(new CellId(1), Enemy(Stepper))
+            .Place(new CellId(3), Enemy(Stepper));
+
+        // Act
+        ImmutableList<Move> moves =
+            this._generator.MovesFrom(position, new CellId(0), MySeat, IsEnemy, isJumpByJump: true);
+
+        // Assert
+        Assert.Equal(
+            ["2 over 1"],
+            moves.Select(move => $"{move.To.Value} over {string.Join(',', move.Jumped.Select(cell => cell.Value))}")
+        );
+    }
+
+    [Fact]
     public void MovesFrom_WhenAJumpersNeighboursAreFriendsOrHaveNoEmptyCellBeyond_CannotMove()
     {
         // Arrange - a friend to the right; to the left, an enemy, with a friend beyond it

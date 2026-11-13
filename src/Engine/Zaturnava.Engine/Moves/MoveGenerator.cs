@@ -16,16 +16,24 @@ public sealed class MoveGenerator(ICellNavigating topology, ImmutableDictionary<
     private readonly ICellNavigating _topology = topology;
     private readonly ImmutableDictionary<PieceKindId, PieceKind> _pieceKinds = pieceKinds;
 
+    /// <summary>
+    /// The moves of the piece on <paramref name="from"/>: a jump, a chain of them, ending wherever it may stop; or, if
+    /// <paramref name="isJumpByJump"/>, one jump alone, as each is played apart.
+    /// </summary>
     /// <exception cref="ArgumentException">No piece stands on <paramref name="from"/>.</exception>
     public ImmutableList<Move> MovesFrom(
         [Required] Position position,
         CellId from,
         [Required] Seat ownerSeat,
-        [Required] Func<Piece, bool> isCapturable
+        [Required] Func<Piece, bool> isCapturable,
+        bool isJumpByJump = false
     )
     {
         Piece mover = PieceOn(position, from);
-        MoveSearch search = new(new Reach(this._topology, position, from, ownerSeat), mover, isCapturable);
+        MoveSearch search = new(new Reach(this._topology, position, from, ownerSeat), mover, isCapturable)
+        {
+            IsJumpByJump = isJumpByJump,
+        };
         return [.. this._pieceKinds[mover.Kind].Movement.SelectMany(search.MovesFor)];
     }
 
@@ -54,6 +62,9 @@ public sealed class MoveGenerator(ICellNavigating topology, ImmutableDictionary<
 
 file sealed record MoveSearch(Reach Reach, Piece Mover, Func<Piece, bool> IsCapturable)
 {
+    /// <summary>Whether a jump is a move alone, not the first of a chain the move goes on with.</summary>
+    public bool IsJumpByJump { get; init; }
+
     public IEnumerable<Move> MovesFor(MovementRule rule) =>
         rule.IsJumping
             ? this.JumpsFor(rule)
@@ -91,8 +102,9 @@ file sealed record MoveSearch(Reach Reach, Piece Mover, Func<Piece, bool> IsCapt
             .Resolve(rule.Directions, this.Reach.OwnerSeat.Forward)
             .Select(direction => this.JumpOf(rule, position, from, direction, jumped))
             .OfType<Chain>()
-            .SelectMany(chain =>
-                (IEnumerable<Chain>)[chain, .. this.ChainsFrom(rule, chain.Position, chain.Landing, chain.Jumped)]
+            .SelectMany(chain => this.IsJumpByJump
+                ? (IEnumerable<Chain>)[chain]
+                : (IEnumerable<Chain>)[chain, .. this.ChainsFrom(rule, chain.Position, chain.Landing, chain.Jumped)]
             );
 
     /// <summary>

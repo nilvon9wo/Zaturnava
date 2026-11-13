@@ -235,6 +235,12 @@ public interface IRulesApplying
     /// </summary>
     bool IsHeavy(PieceKindId kind);
 
+    /// <summary>
+    /// Every kind of piece the ruleset plays, whether or not a new game holds it: for a scenario to set up. None,
+    /// unless the ruleset says.
+    /// </summary>
+    ImmutableList<PieceKindId> Kinds => [];
+
     string NameOf(PieceKindId kind);
 
     /// <summary>

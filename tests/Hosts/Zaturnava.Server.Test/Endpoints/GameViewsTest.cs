@@ -642,6 +642,29 @@ public sealed class GameViewsTest
     }
 
     [Fact]
+    public void ViewOf_WhenAPieceIsPartWayThroughAChainOfJumps_LabelsPassingAsStopping()
+    {
+        // Arrange - Black's Raja, on its throne, stands where a chain of jumps stopped
+        GameState initial = Rules.CreateInitialState();
+        SeatId black = new(0);
+        GameState state = initial with
+        {
+            RollOff = [],
+            AwaitedDice = null,
+            Dice = [1],
+            Jumping = initial.Position.Occupants
+                .First(occupant => occupant.Value.Owner == black && occupant.Value.Kind == Chaturaji2027Pieces.Raja)
+                .Key,
+        };
+
+        // Act
+        GameViewDto view = GameViews.ViewOf(Snapshot(state), Bots);
+
+        // Assert
+        Assert.Equal("pass: Stop jumping", $"{view.LegalActions.Single().Kind}: {view.LegalActions.Single().Label}");
+    }
+
+    [Fact]
     public void ViewOf_WhenATurnIsOverButItsSeatMayStillOffer_LabelsPassingAsDone()
     {
         // Arrange

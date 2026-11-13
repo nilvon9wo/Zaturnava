@@ -1,0 +1,21 @@
+{
+  "rulesetId": "grand-legions-medium",
+  "name": "Blocked leaps and the Grasshopper",
+  "description": "Black has rolled 2 (cavalry) and 1 (artillery). Black's Xiangqi Horse on b1 is blocked forward by its own Pawn on b2, so it may leap only sideways first, to d2. Black's Janggi Elephant on e1, blocked by the Pawn on e2, may go only sideways first, to b3 or h3. Black's Grasshopper on g1 hops Yellow's Pawn on g4 to land just beyond, on g5, or the Elephant on e1 to land on d1.",
+  "turn": "Black",
+  "edition": 6,
+  "dice": [2, 1],
+  "pieces": {
+    "b1": "Black Horse (Xiangqi)",
+    "b2": "Black Pawn (Western)",
+    "e1": "Black Elephant (Janggi)",
+    "e2": "Black Pawn (Western)",
+    "g1": "Black Grasshopper",
+    "a1": "Black Gold General (Shogi)",
+    "h1": "Green Gold General (Shogi)",
+    "g4": "Yellow Pawn (Western)",
+    "h8": "Yellow King (Western)",
+    "a8": "Red Silver General (Shogi)",
+    "b7": "Red Pawn (Western)"
+  }
+}

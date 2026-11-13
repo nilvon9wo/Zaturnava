@@ -1,0 +1,17 @@
+{
+  "rulesetId": "grand-legions-medium",
+  "name": "Castling",
+  "description": "Black has rolled 5 (leader) and 3 (heavy). Black's Western King on d1 may castle with its Rook on a1: two squares towards it, to b1, the Rook jumping over to c1.",
+  "turn": "Black",
+  "edition": 6,
+  "dice": [5, 3],
+  "pieces": {
+    "d1": "Black King (Western)",
+    "a1": "Black Rook (Western)",
+    "h1": "Green Gold General (Shogi)",
+    "h8": "Yellow King (Western)",
+    "a8": "Red Silver General (Shogi)",
+    "e7": "Yellow Pawn (Western)",
+    "b7": "Red Pawn (Western)"
+  }
+}

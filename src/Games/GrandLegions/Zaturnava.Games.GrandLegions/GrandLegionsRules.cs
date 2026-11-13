@@ -17,6 +17,13 @@ namespace Net.NowhereAtAll.Zaturnava.Games.GrandLegions;
 /// </summary>
 public static class GrandLegionsRules
 {
+    /// <summary>
+    /// The edition from which the Checkers pieces' chains of jumps are played jump by jump, each picked apart (Stated
+    /// 2026-11-13: "The player needs to pick each jump individually"); a game of an edition before plays a chain as
+    /// one move, as it was played.
+    /// </summary>
+    public const int JumpByJumpEdition = 6;
+
     public static ImmutableHashSet<PieceKindId> Pawns { get; } =
         [GrandLegionsPieces.WesternPawn, GrandLegionsPieces.MakrukPawn, GrandLegionsPieces.ShogiPawn];
 
@@ -145,6 +152,7 @@ public static class GrandLegionsRules
             Lines = (state, _) => QuickTerrain.LinesOf(game, state.Terrain),
             Terrain = state => QuickTerrain.Described(state.Terrain),
             PointsAt = edition => BoardPrices.On(QuickTerrain.BoardOf(game, 0), edition),
+            JumpByJumpEdition = JumpByJumpEdition,
             Game = game.Game,
             Heavies = Heavies,
             Promotables = Promotables,
