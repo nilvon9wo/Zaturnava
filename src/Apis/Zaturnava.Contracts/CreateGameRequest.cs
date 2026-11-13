@@ -57,6 +57,12 @@ public sealed record CreateGameRequest([Required] string RulesetId, [Required] I
     public bool IsDraftSecret { get; init; }
 
     /// <summary>
+    /// For armies drafted in secret: whether from allies too, each seat shown no army but its own until every army is
+    /// drafted (<see cref="GameViewDto.IsDraftHiddenFromAllies"/>); else allies see each other's.
+    /// </summary>
+    public bool IsDraftHiddenFromAllies { get; init; }
+
+    /// <summary>
     /// For a game whose creator may set its board's size (<see cref="RulesetDto.SizableBoard"/>), and whose armies are
     /// dealt: the size they set; null, for the ruleset's own.
     /// </summary>

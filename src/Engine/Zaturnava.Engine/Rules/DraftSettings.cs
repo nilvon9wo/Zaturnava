@@ -16,6 +16,13 @@ public sealed record DraftSettings(int? Budget = null, SeatId? Drafter = null)
     /// </summary>
     public bool IsSecret { get; init; }
 
+    /// <summary>
+    /// Whether, drafting in secret, each seat's army is hidden from its allies too (Stated, 2026-11-13: whether allies
+    /// see each other's armies is an option of the game). Unless so, a team drafts together, and allies see each
+    /// other's. Of no effect unless <see cref="IsSecret"/>.
+    /// </summary>
+    public bool IsHiddenFromAllies { get; init; }
+
     /// <summary>Every seat drafts its own army, with the ruleset's budget.</summary>
     public static DraftSettings Default { get; } = new();
 }

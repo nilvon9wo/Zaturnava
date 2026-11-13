@@ -195,6 +195,7 @@ internal static class GameStarter
             DraftBudget = armies?.Budget,
             Drafter = armies?.Drafter,
             IsDraftSecret = armies?.IsSecret ?? false,
+            IsDraftHiddenFromAllies = armies?.IsHiddenFromAllies ?? false,
             Board = armies?.Board,
             IsForPlayers = isForPlayers,
         };

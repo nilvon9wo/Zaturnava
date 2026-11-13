@@ -252,6 +252,13 @@
                         <input type="checkbox" class="draft-secret" @bind="this._isSecret" />
                         Draft in secret: no one sees another team's army until all are drafted
                     </label>
+                    @if (this._isSecret)
+                    {
+                        <label class="secret-from-allies">
+                            <input type="checkbox" class="draft-hidden-from-allies" @bind="this._isHiddenFromAllies" />
+                            From allies too: each player sees only their own army until all are drafted
+                        </label>
+                    }
                 }
             }
             @if (this._mode != SetupMode.Quick && this._me is not null)
@@ -469,6 +476,7 @@
     /// <summary>Whether the game's open seats are for players signed in only, as a player signed in may ask.</summary>
     private bool _isForPlayers;
     private bool _isSecret;
+    private bool _isHiddenFromAllies;
     private string? _problem;
 
     /// <summary>How the player last started each game, by the game, as the browser remembers.</summary>
@@ -906,7 +914,13 @@
     private ArmyDeal ArmiesAsked(CatalogDto catalog) =>
         this._armies switch
         {
-            DraftOwn => new ArmyDeal(false) { IsDrafted = true, Budget = this._budget, IsSecret = this._isSecret },
+            DraftOwn => new ArmyDeal(false)
+            {
+                IsDrafted = true,
+                Budget = this._budget,
+                IsSecret = this._isSecret,
+                IsHiddenFromAllies = this._isSecret && this._isHiddenFromAllies,
+            },
             DraftOne => new ArmyDeal(false) { IsDrafted = true, Budget = this._budget, Drafter = this._colour },
             RandomOne => new ArmyDeal(true),
             _ => new ArmyDeal(false),

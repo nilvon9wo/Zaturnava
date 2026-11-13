@@ -202,7 +202,9 @@ The rules refuse any of these that may not be made, as they refuse any illegal a
 that have changed since, so that its actions no longer replay: a preview's, most often). While its armies are
 drafted in secret (`isDraftSecret`), it shows only what the team of the seat whose token comes with it drafted:
 no other team's pieces, throne, palace or points left (`null` in `draftLeft`), nor its drafting in the log, nor
-its choices while it drafts; without a token, no team's. Its history, until then, holds only how it began.
+its choices while it drafts; without a token, no team's. If the game hides the armies from allies too
+(`isDraftHiddenFromAllies`), only what that seat itself drafted. Its history, until then, holds only how it
+began.
 
 | Field | |
 |---|---|

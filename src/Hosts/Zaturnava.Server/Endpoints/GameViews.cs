@@ -100,7 +100,8 @@ internal static class GameViews
     /// The game as the seat <paramref name="token"/> holds sees it, if it holds one, else as anyone does, naming each
     /// bot as <paramref name="bots"/> do, and whoever holds each person's seat as <paramref name="names"/> do. While
     /// the armies are drafted in secret, it shows no other team's pieces, throne, palace, points left, drafting in the
-    /// log or choices (Proposed: a team drafts together, so allies see each other's).
+    /// log or choices; nor an ally's, if the game hides them from allies too (Stated, 2026-11-13: an option of the
+    /// game; else a team drafts together, and allies see each other's).
     /// </summary>
     public static GameViewDto ViewOf(
         GameSnapshot snapshot,
@@ -162,6 +163,7 @@ internal static class GameViews
             DraftBudget = ScenarioStart.DraftingOf(snapshot.Record.Actions)?.Budget,
             Drafter = ScenarioStart.DraftingOf(snapshot.Record.Actions)?.Drafter?.Value,
             IsDraftSecret = ScenarioStart.DraftingOf(snapshot.Record.Actions)?.IsSecret ?? false,
+            IsDraftHiddenFromAllies = ScenarioStart.DraftingOf(snapshot.Record.Actions)?.IsHiddenFromAllies ?? false,
             Board = SizeOf(ScenarioStart.BoardOf(snapshot.Record.Actions)),
             DraftLeft = shown.Draft is { } draft
                 ? [.. snapshot.State.Seats.Select(seat => LeftOf(draft, seat.Id))]
@@ -177,7 +179,8 @@ internal static class GameViews
 
     /// <summary>
     /// The seats whose drafting the holder of <paramref name="token"/> may not see: while the armies are drafted in
-    /// secret, those of every team but the teams of the seats it holds (every seat, if it holds none); else none.
+    /// secret, those of every team but the teams of the seats it holds, or every seat but those it holds, if hidden
+    /// from allies too (every seat, if it holds none); else none.
     /// </summary>
     private static ImmutableHashSet<SeatId> HiddenFrom(GameSnapshot snapshot, string? token)
     {
@@ -186,10 +189,16 @@ internal static class GameViews
             return [];
         }
 
+        bool isFromAllies = ScenarioStart.DraftingOf(snapshot.Record.Actions)!.IsHiddenFromAllies;
         ImmutableList<SeatId> seats = [.. snapshot.State.Seats.Select(seat => seat.Id)];
         ImmutableList<SeatId> held =
             token is null ? [] : [.. seats.Where(seat => snapshot.Record.Controllers[seat.Value].IsHeldBy(token))];
-        return [.. seats.Where(seat => !held.Any(holder => snapshot.State.Teams.AreAllied(holder, seat)))];
+        return
+        [
+            .. seats.Where(seat =>
+                !held.Any(holder => isFromAllies ? holder == seat : snapshot.State.Teams.AreAllied(holder, seat))
+            ),
+        ];
     }
 
     /// <summary>

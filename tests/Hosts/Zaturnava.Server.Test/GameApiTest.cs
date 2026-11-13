@@ -344,6 +344,41 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
     }
 
     [Fact]
+    public async Task Get_WhenTheArmiesAreDraftedInSecretFromAlliesToo_ShowsASeatsHolderOnlyItsOwn()
+    {
+        // Arrange - Black and Yellow, people, each set a throne; so do Green, Black's ally, and Red
+        GameCreatedDto created = await this._client.Create(
+            new CreateGameRequest("grand-legions-small", [null, null, "random", "random"])
+            {
+                IsDrafted = true,
+                IsDraftSecret = true,
+                IsDraftHiddenFromAllies = true,
+            },
+            this._cancellation
+        );
+        string gameId = created.GameId;
+        string black = (await this._client.Claim(gameId, 0, null, null, this._cancellation)).Token;
+        string yellow = (await this._client.Claim(gameId, 1, null, null, this._cancellation)).Token;
+        _ = await this.Decided(gameId, black, action => action.Kind == "throne");
+        GameViewDto thrones = await this.Decided(gameId, yellow, action => action.Kind == "throne");
+        GameViewDto green = await this._client.Advance(gameId, thrones.Version, black, this._cancellation);
+        _ = await this._client.Advance(gameId, green.Version, black, this._cancellation);
+
+        // Act
+        GameViewDto seen = await this._client.Get(gameId, black, this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            (true, "False,True,True,True", "0"),
+            (
+                seen.IsDraftHiddenFromAllies,
+                string.Join(",", seen.DraftLeft!.Select(left => left is null)),
+                string.Join(",", seen.Cells.Select(cell => cell.Throne).OfType<int>().Order())
+            )
+        );
+    }
+
+    [Fact]
     public async Task Get_WhenTheArmiesAreDraftedInSecret_ShowsOneHoldingNoSeatNoArmyNorChoicesNorHistory()
     {
         // Arrange - Black's throne set

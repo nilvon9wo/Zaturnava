@@ -548,6 +548,33 @@ public sealed class LobbyTest : IDisposable
         Assert.Equal(expected, $"{boxes} {this._page.Server.Created!.IsDraftSecret}");
     }
 
+    [Theory]
+    [InlineData(true, true, "1 True True")]
+    [InlineData(true, false, "1 True False")]
+    [InlineData(false, null, "0 False False")]
+    public void Play_WhenDraftingInSecret_AsksWhetherFromAlliesToo(bool isSecret, bool? fromAllies, string expected)
+    {
+        // Arrange - expected: allies boxes, drafted in secret, from allies too
+        this._page.Server.IsDealt = true;
+        this._page.Server.IsDraftable = true;
+        IRenderedComponent<Lobby> lobby = this.ByStrength();
+        lobby.Find("select.armies").Change("draft-own");
+        lobby.Find("input.draft-secret").Change(isSecret);
+        if (fromAllies is { } hidden)
+        {
+            lobby.Find("input.draft-hidden-from-allies").Change(hidden);
+        }
+
+        int boxes = lobby.FindAll("input.draft-hidden-from-allies").Count;
+
+        // Act
+        lobby.Find("button.create").Click();
+
+        // Assert
+        CreateGameRequest created = this._page.Server.Created!;
+        Assert.Equal(expected, $"{boxes} {created.IsDraftSecret} {created.IsDraftHiddenFromAllies}");
+    }
+
     [Fact]
     public void Play_WhenTheBoardAndKingdomsAreSet_AsksForThemAndGrowsTheBudgetWithTheKingdoms()
     {
