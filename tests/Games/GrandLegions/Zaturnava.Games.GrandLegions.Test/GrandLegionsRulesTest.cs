@@ -655,6 +655,29 @@ public sealed class GrandLegionsRulesTest
         );
     }
 
+    [Theory]
+    [InlineData("janggi-guard", "30,31,32,39,41,48,49,50", "30,31,32,39,40,41,48,49,50")]
+    [InlineData("janggi-soldier", "39,41,48,49,50", "30,31,32,39,40,41,48,49,50")]
+    [InlineData("minister", "31,39,41,49", "")]
+    public void GuideOf_WhenThePieceStepsAlongPalaceLines_DrawsItOnTheThroneOfAPalaceSteppingAndTakingAlongThem(
+        string kind,
+        string reached,
+        string palace
+    )
+    {
+        // Arrange - the diagram is 9 cells square, its centre 40; the palace about it, 30 to 50
+        Chaturaji2027Rules rules = GrandLegionsRules.RulesOf(QuickGame.Small);
+
+        // Act
+        MoveDiagram diagram = rules.GuideOf(new PieceKindId(kind)).Diagram;
+
+        // Assert
+        Assert.Equal(
+            (reached, reached, palace),
+            (string.Join(",", diagram.Moves), string.Join(",", diagram.Captures), string.Join(",", diagram.Palace))
+        );
+    }
+
     [Fact]
     public void GuideOf_TheShogiPawn_TakesStraightAheadAsItMovesAndIsNotSaidToBeBlockedThere()
     {

@@ -42,4 +42,11 @@ public sealed record MoveDiagram(
     /// from there (the user's report of 2026-11-13, of its card showing it take where it steps); none, for any other.
     /// </summary>
     public ImmutableList<int> Jumps { get; init; } = [];
+
+    /// <summary>
+    /// For a piece that steps along a palace's lines: the cells of a palace about it, the piece on its throne, drawn
+    /// with the lines from each of them to the throne, which <see cref="Moves"/> and <see cref="Captures"/> include
+    /// the steps along (the user's report of 2026-11-13, of the Guard's card not showing them); none, for any other.
+    /// </summary>
+    public ImmutableList<int> Palace { get; init; } = [];
 }

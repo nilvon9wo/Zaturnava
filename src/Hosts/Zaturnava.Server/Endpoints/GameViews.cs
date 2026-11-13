@@ -295,6 +295,7 @@ internal static class GameViews
                 Blockers = guide.Diagram.Blockers,
                 Leaps = guide.Diagram.Leaps,
                 Jumps = guide.Diagram.Jumps,
+                Palace = guide.Diagram.Palace,
             },
         };
     }

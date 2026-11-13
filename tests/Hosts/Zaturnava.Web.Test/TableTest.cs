@@ -322,6 +322,48 @@ public sealed class TableTest : IDisposable
     }
 
     [Fact]
+    public void Click_WhenTheKindStepsAlongPalaceLines_DrawsThePalaceAboutItWithItsLinesToTheThrone()
+    {
+        // Arrange - on a 5 x 5 diagram, the Raja on 12, the throne of a palace from 6 to 18
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Kinds =
+            [
+                new PieceKindDto("raja", "Raja", 5)
+                {
+                    Diagram = new MoveDiagramDto(5, [6, 7, 8], [6, 7, 8], [])
+                    {
+                        Palace = [6, 7, 8, 11, 12, 13, 16, 17, 18],
+                    },
+                },
+            ],
+        };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Act
+        Cell(table, 0).Click();
+
+        // Assert
+        AngleSharp.Dom.IElement wall = table.Find(".move-diagram .palace-lines rect");
+        AngleSharp.Dom.IElement line = table.FindAll(".move-diagram .palace-lines line")[0];
+        Assert.Equal(
+            (
+                "1 1 3 3",
+                8,
+                "1.5 3.5 2.5 2.5",
+                "in a palace, standing on its throne: along each line to the throne it moves and captures, "
+                    + "diagonally too"
+            ),
+            (
+                string.Join(' ', ((string[])["x", "y", "width", "height"]).Select(wall.GetAttribute)),
+                table.FindAll(".move-diagram .palace-lines line").Count,
+                string.Join(' ', ((string[])["x1", "y1", "x2", "y2"]).Select(line.GetAttribute)),
+                table.FindAll(".diagram-key .key-item")[^1].TextContent
+            )
+        );
+    }
+
+    [Fact]
     public void Click_WhenARiverHoldsTheKindBack_DrawsTheRiverAlongTheFirstRowAcrossIt()
     {
         // Arrange - on a 3 x 3 diagram, a river just ahead of the Raja, under the top row
