@@ -38,7 +38,7 @@ public sealed class GrandLegionsPiecesTest
         { "minister", 4 },
         { "courtier", 4 },
         { "makruk-pawn", 3 },
-        { "xiangqi-soldier", 1 },
+        { "xiangqi-soldier", 3 },
         { "xiangqi-advisor", 4 },
         { "amazon", 35 },
         { "queen", 27 },

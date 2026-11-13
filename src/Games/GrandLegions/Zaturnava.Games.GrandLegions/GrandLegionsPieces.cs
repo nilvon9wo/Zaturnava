@@ -114,7 +114,7 @@ public static class GrandLegionsPieces
         Piece(MakrukPawn, "Pawn (Makruk)", Infantry, Makruk, PawnMovement())
             .Restricted(Moves(BlockedAhead, 2))
             .Promoting(Courtier),
-        Piece(XiangqiSoldier, "Soldier (Xiangqi)", Infantry, Xiangqi, ForwardStep)
+        Piece(XiangqiSoldier, "Soldier (Xiangqi)", Infantry, Xiangqi, ForwardStep, Sideways())
             .Restricted(
                 Moves(NeverBack, 2),
                 Area(Terrain.River, "Sideways only once across a river", 3)
