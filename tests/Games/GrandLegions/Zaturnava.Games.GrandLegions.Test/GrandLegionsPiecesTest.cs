@@ -62,6 +62,9 @@ public sealed class GrandLegionsPiecesTest
         { "xiangqi-cannon", 14 },
         { "janggi-cannon", 0 },
         { "grasshopper", 0 },
+        { "berolina-pawn", 3 },
+        { "manchu-chariot", 22 },
+        { "courier", 8 },
     };
 
     [Fact]
@@ -126,6 +129,9 @@ public sealed class GrandLegionsPiecesTest
     [InlineData("xiangqi-horse", "xiangqi-horse", "HX", "cavalry")]
     [InlineData("alfil", "elephant", "Al", "cavalry")]
     [InlineData("xiangqi-cannon", "cannon", "CX", "artillery")]
+    [InlineData("berolina-pawn", "pawn", "Be", "infantry")]
+    [InlineData("manchu-chariot", "manchu-chariot", "MC", "artillery")]
+    [InlineData("courier", "letter", "Co", "infantry")]
     public void Marks_WhenAPieceIsMarked_AreItsSymbolAnyLettersAndItsClass(
         string kind,
         string emblem,
@@ -226,6 +232,49 @@ public sealed class GrandLegionsPiecesTest
     }
 
     [Fact]
+    public void MovesFrom_WhenABerolinaPawnHasPiecesAhead_MovesDiagonallyAndTakesOnlyStraightAhead()
+    {
+        // Arrange - enemies on d5, straight ahead, and on e5, diagonally ahead; c5 empty
+        Position position = Position.Empty
+            .Place(D4, Mine(GrandLegionsPieces.BerolinaPawn))
+            .Place(Board.CellAt(3, 4), Theirs(GrandLegionsPieces.Rook, 2))
+            .Place(Board.CellAt(4, 4), Theirs(GrandLegionsPieces.Rook, 3));
+
+        // Act
+        ImmutableList<Move> moves = Generator.MovesFrom(position, D4, MySeat, _ => true);
+
+        // Assert
+        Assert.Equal(
+            "c5,d5x",
+            string.Join(
+                ',',
+                moves.Select(move => Board.NameOf(move.To) + (move.Captured is null ? "" : "x"))
+                    .Order(StringComparer.Ordinal)
+            )
+        );
+    }
+
+    [Fact]
+    public void MovesFrom_WhenAManchuChariotHasAScreen_TakesBeyondItAsACannonAndBeforeItAsARook()
+    {
+        // Arrange - an enemy screen on d5, and another enemy beyond it on d7
+        Position position = Position.Empty
+            .Place(D4, Mine(GrandLegionsPieces.ManchuChariot))
+            .Place(Board.CellAt(3, 4), Theirs(GrandLegionsPieces.Rook, 2))
+            .Place(Board.CellAt(3, 6), Theirs(GrandLegionsPieces.Rook, 3));
+
+        // Act
+        ImmutableList<Move> captures =
+            [.. Generator.MovesFrom(position, D4, MySeat, _ => true).Where(move => move.Captured is not null)];
+
+        // Assert
+        Assert.Equal(
+            "d5,d7",
+            string.Join(',', captures.Select(move => Board.NameOf(move.To)).Order(StringComparer.Ordinal))
+        );
+    }
+
+    [Fact]
     public void Catalogue_WhenListed_HasEveryPieceOnceInItsClass()
     {
         // Arrange - nothing beyond the catalogue
@@ -237,7 +286,7 @@ public sealed class GrandLegionsPiecesTest
 
         // Assert
         Assert.Equal(
-            (43, 9, 10, 9, 11, 4),
+            (46, 9, 12, 9, 11, 5),
             (
                 GrandLegionsPieces.ById.Count,
                 counts[PieceClass.Leader],

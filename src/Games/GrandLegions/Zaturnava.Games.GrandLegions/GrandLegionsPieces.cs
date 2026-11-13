@@ -69,8 +69,18 @@ public static class GrandLegionsPieces
     public static readonly PieceKindId TaflKing = new("tafl-king");
     public static readonly PieceKindId Swede = new("swede");
 
+    public static readonly PieceKindId BerolinaPawn = new("berolina-pawn");
+    public static readonly PieceKindId ManchuChariot = new("manchu-chariot");
+    public static readonly PieceKindId Courier = new("courier");
+
     /// <summary>The edition of the catalogue the Checkers and Tafl pieces came with (2026-11-13).</summary>
     private const int CheckersAndTafl = 1;
+
+    /// <summary>
+    /// The edition of the catalogue the Berolina Pawn, the Manchu Chariot and the Courier came with (2026-11-13),
+    /// after the even spread of quick armies' budgets (<see cref="QuickArmy.EvenSpreadEdition"/>).
+    /// </summary>
+    public const int BerolinaManchuAndCourier = 4;
 
     /// <summary>
     /// What each piece is worth, its price and what taking it scores, as the game's table of values has it
@@ -141,6 +151,22 @@ public static class GrandLegionsPieces
             ),
         Piece(XiangqiAdvisor, "Advisor (Xiangqi)", Infantry, Xiangqi, DiagonalStep)
             .Restricted(Confined(5)),
+        // As in Berolina chess, the Western Pawn turned about: it moves diagonally forward and takes straight ahead,
+        // and promotes as the Western Pawn does; without its double first step or en passant (Proposed).
+        Piece(
+                BerolinaPawn,
+                "Pawn (Berolina)",
+                Infantry,
+                Western,
+                Step(DirectionSets.ForwardDiagonals).MoveOnly(),
+                ForwardStep.CaptureOnly()
+            )
+            .Restricted(Moves("Blocked diagonally ahead", 2))
+            .Promoting(Queen, Rook, Bishop, Knight)
+            .Since(BerolinaManchuAndCourier),
+        // Courier chess's King-like walker, as the designer's sheet has it (2026-11-13).
+        Piece(Courier, "Courier", Infantry, Western, Step(DirectionSets.Any))
+            .Since(BerolinaManchuAndCourier),
 
         // Heavy / Slider
         Piece(Lance, "Lance (Shogi)", Heavy, Shogi, MovementRule.Slide(DirectionSets.Forward))
@@ -212,6 +238,18 @@ public static class GrandLegionsPieces
             .Restricted(ColourBound(OneColour))
             .Promoting(CheckersKing)
             .Since(CheckersAndTafl),
+        // Manchu chess's Chariot (its Banner): the Chariot's slide, a Knight's leap (unblocked, Proposed, as the
+        // designer's sheet has it), and the Cannon's capture, hopping one piece.
+        Piece(
+                ManchuChariot,
+                "Manchu Chariot",
+                Artillery,
+                Xiangqi,
+                OrthogonalSlide,
+                KnightLeap,
+                MovementRule.Hop(DirectionSets.Orthogonal, int.MaxValue).CaptureOnly()
+            )
+            .Since(BerolinaManchuAndCourier),
     ];
 
     /// <summary>Every piece of the catalogue, by its key.</summary>
@@ -274,7 +312,10 @@ public static class GrandLegionsPieces
             .Add(CheckersKing, "king")
             .Add(Man, "checker")
             .Add(TaflKing, "king")
-            .Add(Swede, "viking-helmet");
+            .Add(Swede, "viking-helmet")
+            .Add(BerolinaPawn, "pawn")
+            .Add(ManchuChariot, "manchu-chariot")
+            .Add(Courier, "letter");
 
     /// <summary>
     /// The abbreviation every piece bears beneath its symbol, beside its class's emblem, each its own (Stated: an
@@ -326,7 +367,10 @@ public static class GrandLegionsPieces
             .Add(CheckersKing, "KC")
             .Add(Man, "Ma")
             .Add(TaflKing, "KT")
-            .Add(Swede, "Sw");
+            .Add(Swede, "Sw")
+            .Add(BerolinaPawn, "Be")
+            .Add(ManchuChariot, "MC")
+            .Add(Courier, "Co");
 
     /// <summary>
     /// What sort of beast each Cavalry piece is, for people sorting them (Proposed): the Knight's kin, horses; the
