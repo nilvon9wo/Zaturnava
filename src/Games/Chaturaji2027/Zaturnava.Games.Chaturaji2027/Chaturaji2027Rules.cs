@@ -533,20 +533,26 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
 
     /// <summary>
     /// The powers these rules give every piece of the sort a piece of <paramref name="kind"/> is, for people: every
-    /// leader's, every Pawn's.
+    /// leader's, every Pawn's. A piece a palace holds is promoted at the far edge as any of its sort, but only if it
+    /// ever gets out (the user's word of 2026-11-13), so its card says so.
     /// </summary>
-    private IEnumerable<string> PowersOf(PieceKindId kind) =>
-        new (bool Has, string Power)[]
+    private IEnumerable<string> PowersOf(PieceKindId kind)
+    {
+        bool isHeld = this._variant.Drafting?.PalaceBound.Contains(kind) ?? false;
+        return new (bool Has, string Power)[]
             {
                 (this._variant.Leaders.Contains(kind),
                     "Leads its army; standing on another army's throne, it takes command of that army too."),
-                (this._variant.Promotables.Contains(kind),
+                (this._variant.Promotables.Contains(kind) && !isHeld,
                     "Promoted, on reaching the far edge, into a captured piece."),
+                (this._variant.Promotables.Contains(kind) && isHeld,
+                    "Promoted, should it ever leave its palace and reach the far edge, into a captured piece."),
                 (this._variant.Pawns.Contains(kind),
                     "Swaps places with an allied Pawn straight ahead of it, the two back to back."),
             }
             .Where(power => power.Has)
             .Select(power => power.Power);
+    }
 
     /// <summary>The powers these rules give <paramref name="kind"/> alone among its sort, for people.</summary>
     private IEnumerable<string> SpecialPowersOf(PieceKindId kind)

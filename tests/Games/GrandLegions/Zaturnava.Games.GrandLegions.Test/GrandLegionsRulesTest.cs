@@ -353,6 +353,24 @@ public sealed class GrandLegionsRulesTest
     }
 
     [Theory]
+    [InlineData("janggi-guard")]
+    [InlineData("xiangqi-advisor")]
+    public void GuideOf_WhenAnInfantryPieceAPalaceHolds_TellsItsFarEdgePromotionOnlyShouldItLeaveThePalace(string kind)
+    {
+        // Arrange
+        Chaturaji2027Rules rules = GrandLegionsRules.RulesOf(QuickGame.Small);
+
+        // Act
+        PieceGuide guide = rules.GuideOf(new PieceKindId(kind));
+
+        // Assert
+        Assert.Equal(
+            "Promoted, should it ever leave its palace and reach the far edge, into a captured piece.",
+            guide.Powers.Single()
+        );
+    }
+
+    [Theory]
     [InlineData("knight", "Other", "Horse", "Western")]
     [InlineData("xiangqi-elephant", "Other", "Elephant", "Xiangqi")]
     [InlineData("rook", "Orthogonal", null, "Western")]

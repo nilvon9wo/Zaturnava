@@ -136,6 +136,33 @@ public sealed class Chaturaji2027VariantTest
     }
 
     [Fact]
+    public void GuideOf_WhenAPawnAPalaceHolds_TellsOfPromotionOnlyShouldItLeaveThePalace()
+    {
+        // Arrange - a draft whose palaces hold the Pawn
+        Chaturaji2027Rules rules = new(
+            DiceProfile.WeightedSixSided,
+            Chaturaji2027Rules.DefaultIdleRounds,
+            PawnPromotion.OtherArmies,
+            variant: Chaturaji2027Variant.Standard with
+            {
+                Drafting = new Drafting(6, [], _ => [], _ => new ArmyFilled([], new ArmySquare(0, 0)))
+                {
+                    PalaceBound = [Chaturaji2027Pieces.Pawn],
+                },
+            }
+        );
+
+        // Act
+        PieceGuide guide = rules.GuideOf(Chaturaji2027Pieces.Pawn);
+
+        // Assert
+        Assert.Equal(
+            "Promoted, should it ever leave its palace and reach the far edge, into a captured piece.",
+            guide.Powers[0]
+        );
+    }
+
+    [Fact]
     public void GuideOf_WhenALeader_DrawsItMovingAndCapturingOneSquareAnyWay()
     {
         // Arrange - the Raja on the centre of a 9 x 9 board, cell 40
