@@ -82,14 +82,16 @@ public sealed class ArmyDraftingTest
 
         // Assert
         Assert.Equal(
-            ((BoardSize?)eight, "resized", true, true, true, true),
+            ((BoardSize?)eight, "resized", true, true, true, true, (BoardSize?)eight, true),
             (
                 rules.SizableBoard,
                 sized.Id,
                 ReferenceEquals(sized, rules.Sized(eight)),
                 rules.Sized(new BoardSize(9, 4, 2)) is null,
                 new Chaturaji2027Rules().Sized(eight) is null,
-                new Chaturaji2027Rules().SizableBoard is null
+                new Chaturaji2027Rules().SizableBoard is null,
+                rules.Board,
+                new Chaturaji2027Rules().Board is null
             )
         );
     }

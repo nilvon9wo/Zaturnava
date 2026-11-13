@@ -58,7 +58,8 @@
                                 <SeatPlayer Text="@this.Player(seat)"
                                             PlayerId="@seat.PlayerId"
                                             BotId="@seat.BotId"
-                                            RulesetId="@view.RulesetId" />
+                                            RulesetId="@view.RulesetId"
+                                            Board="view.Board" />
                                 @if (seat.IsRetired)
                                 {
                                     <span class="retired">retired</span>

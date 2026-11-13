@@ -53,6 +53,12 @@ public sealed record RulesetDto(string Id, string Name, int SeatCount)
     /// </summary>
     public BoardSizeDto? SizableBoard { get; init; }
 
+    /// <summary>
+    /// The board's size, for a game played at several (<see cref="Size"/>), so that a lobby may liken a board set to
+    /// another size to the nearest of them; null, if it is not told.
+    /// </summary>
+    public BoardSizeDto? Board { get; init; }
+
     public ImmutableList<string> SeatNames { get; init; } = [];
 
     /// <summary>Each seat's team, by number: seats of the same number are allies.</summary>

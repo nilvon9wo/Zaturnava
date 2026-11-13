@@ -174,15 +174,15 @@ public sealed class RulesApplyingTest
         OneSizeRules rules = new();
 
         // Act
-        (bool HasBoard, bool IsSized) sized = SizedOf(rules, new BoardSize(10, 4, 3));
+        (bool HasBoard, bool IsSized, bool IsTold) sized = SizedOf(rules, new BoardSize(10, 4, 3));
 
         // Assert
-        Assert.Equal((false, false), sized);
+        Assert.Equal((false, false, false), sized);
     }
 
-    private static (bool HasBoard, bool IsSized) SizedOf<TRules>(TRules rules, BoardSize board)
+    private static (bool HasBoard, bool IsSized, bool IsTold) SizedOf<TRules>(TRules rules, BoardSize board)
         where TRules : IRulesApplying =>
-        (rules.SizableBoard is not null, rules.Sized(board) is not null);
+        (rules.SizableBoard is not null, rules.Sized(board) is not null, rules.Board is not null);
 
     private static (bool IsDraftable, int? Budget, int? Limit, GameState Drafted, int Offered) DraftedOf<TRules>(
         TRules rules,

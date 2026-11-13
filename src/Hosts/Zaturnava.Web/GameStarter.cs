@@ -80,6 +80,30 @@ internal static class GameStarter
     }
 
     /// <summary>
+    /// The ruleset whose bot ratings stand for a game of <paramref name="rulesetId"/> on <paramref name="board"/>: for
+    /// a board its creator set, as best guess, the same game's at the size nearest it, by side, then by kingdom
+    /// (Stated, 2026-11-13: "make a best guess as to Elo from the board with the closest dimension"), as one size set
+    /// is rated with every other; else the ruleset itself.
+    /// </summary>
+    public static string RatedAs(CatalogDto catalog, string rulesetId, BoardSizeDto? board) =>
+        catalog.Rulesets.FirstOrDefault(offered => offered.Id == rulesetId) is { SizableBoard: { } own } ruleset
+            ? NearestTo(catalog, ruleset, board ?? own)
+            : rulesetId;
+
+    /// <summary>The ruleset of the same game, at a size of its own, nearest <paramref name="size"/>.</summary>
+    private static string NearestTo(CatalogDto catalog, RulesetDto ruleset, BoardSizeDto size) =>
+        catalog.Rulesets
+            .Where(offered => offered.Game == ruleset.Game)
+            .Select(offered => (offered.Id, Board: offered.SizableBoard is null ? offered.Board : null))
+            .Where(offered => offered.Board is not null)
+            .OrderBy(offered => Math.Abs(offered.Board!.Side - size.Side))
+            .ThenBy(offered => Math.Abs(CellsOf(offered.Board!) - CellsOf(size)))
+            .Select(offered => offered.Id)
+            .FirstOrDefault(ruleset.Id);
+
+    private static int CellsOf(BoardSizeDto board) => board.KingdomWidth * board.KingdomDepth;
+
+    /// <summary>
     /// The bots at the ruleset, never one paid for each use: those rated at it in three strengths - easy, medium and
     /// hard - of as nearly as may be the same number of bots, easiest first, fewer if fewer than three are rated; then
     /// those not yet rated, apart, as <see cref="UnratedName"/> (Proposed), their strength unknown. If none is rated,

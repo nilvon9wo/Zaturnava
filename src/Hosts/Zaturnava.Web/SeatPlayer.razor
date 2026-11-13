@@ -125,10 +125,18 @@ else
     [Parameter]
     public string Game { get; set; } = string.Empty;
 
+    /// <summary>
+    /// The board, if the game's creator set its size: a bot's rating is then at the size nearest it, as best guess
+    /// (<see cref="GameStarter.RatedAs"/>).
+    /// </summary>
+    [Parameter]
+    public BoardSizeDto? Board { get; set; }
+
     private bool _isOpen;
     private ProfileDto? _profile;
     private StandingDto? _standing;
     private BotDto? _bot;
+    private string _ratedAs = string.Empty;
     private string? _problem;
 
     private string Gone => this.BotId is null ? GonePlayer : GoneBot;
@@ -159,8 +167,11 @@ else
         this._isOpen = true;
         this._bot = null;
         this._problem = await Requests.Attempt(async () =>
-            this._bot = (await this.Games.Catalog(CancellationToken.None)).Bots.FirstOrDefault(bot => bot.Id == botId)
-        );
+        {
+            CatalogDto catalog = await this.Games.Catalog(CancellationToken.None);
+            this._ratedAs = GameStarter.RatedAs(catalog, this.RulesetId, this.Board);
+            this._bot = catalog.Bots.FirstOrDefault(bot => bot.Id == botId);
+        });
     }
 
     /// <summary>
@@ -185,7 +196,7 @@ else
 
     /// <summary>Its rating at the game, from games between the bots; or "Not yet rated".</summary>
     private string RatingOf(BotDto bot) =>
-        bot.Ratings.TryGetValue(this.RulesetId, out int rating)
+        bot.Ratings.TryGetValue(this._ratedAs, out int rating)
             ? rating.ToString(CultureInfo.InvariantCulture)
             : "Not yet rated";
 }
