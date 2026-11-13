@@ -159,6 +159,24 @@ public sealed class ScenarioStartTest
     }
 
     [Fact]
+    public void StateOf_WhenTheGameWasDealtBeforeEdgePalacesWere_DealsItNone()
+    {
+        // Arrange - a deal of seed 4 as games were dealt before a palace could stand partly outside a kingdom
+        ActionDescriptor now = ScenarioStart.Dealt(new LoadedDice(4));
+        ActionDescriptor before = now with { Arguments = now.Arguments.Remove("edge-palaces") };
+        TinyRules rules = new(6, isDealt: true);
+
+        // Act
+        (bool Before, bool Now) atEdge = (
+            ScenarioStart.StateOf([before], rules).HasEdgePalaces,
+            ScenarioStart.StateOf([now], rules).HasEdgePalaces
+        );
+
+        // Assert
+        Assert.Equal((false, true), atEdge);
+    }
+
+    [Fact]
     public void StateOf_WhenTheGameIsDrafted_DealsItThenHasItsArmiesDraftedBySeed()
     {
         // Arrange

@@ -208,7 +208,9 @@ They may be added later. The program keeps their keys apart from the grand piece
   partly outside it, on the open board, if the palace lies along the board's edge and most of it
   is inside (with a 4 × 2 kingdom: 6 cells in, 3 out). Shrinking the palace, or letting it stand off
   the board, were the other choices: the first would break palace lines and confinement, written
-  for 3 × 3, and the second the board's rectangle, which rivers and drawing assume.
+  for 3 × 3, and the second the board's rectangle, which rivers and drawing assume. *Done* (2026-11-13).
+  *Proposed*: the palace's back row along the edge the kingdom's back row lies on, never standing on another
+  army's kingdom; a throne, and any piece drafted, only on its cells inside the kingdom.
 - **Stated.** Later still, palaces may be turned off, leaving bare thrones. The pieces bound to a
   palace (confined to it, or with powers in it) are then left out of the draft.
 - **Stated (2026-11-12).** The palace is seen on the board, as the river and the throne are: its edge
