@@ -69,9 +69,9 @@ public static partial class PieceStyle
     /// with its pennant; a camel, an elephant, a giraffe, three dots for the Threeleaper, a catapult for the War
     /// Engine; a cannon on its wheel, and a grasshopper; a draughtsman for the Man of Checkers, a horned helmet for
     /// the Swede; a messenger's winged hat for the Courier. A piece drawn as a chess piece with more to it has here
-    /// what it adds (<see cref="SymbolGlyphs"/>): a Dragon its wings; the Amazon and Chancellor a small horseshoe, as they
-    /// leap as a Knight does too, and the Manchu Chariot a small cannon besides, as it also takes as a Cannon does;
-    /// and the Knight's kin the mark of how they differ: the Knightrider speed lines,
+    /// what it adds (<see cref="SymbolGlyphs"/>): a Dragon its wings; the Amazon and Chancellor a small horseshoe, as
+    /// they leap as a Knight does too, and the Manchu Chariot a small cannon besides, as it also takes as a Cannon
+    /// does; and the Knight's kin the mark of how they differ: the Knightrider speed lines,
     /// as it rides on, the Zebra stripes, and the Xiangqi Horse a block, as its leap may be blocked.
     /// </summary>
     private static readonly ImmutableDictionary<string, string> Symbols =
