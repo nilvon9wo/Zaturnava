@@ -124,6 +124,56 @@ public sealed class BotRatingServiceTest
         );
     }
 
+    [Fact]
+    public async Task PlayNext_WhenAPairingHasABotNotYetRatedAtItsRuleset_PlaysItBeforeThoseAlreadyRated()
+    {
+        // Arrange - a and b played once at the first ruleset, where b has no rating; at other, both have, none played
+        await this.Keep(new BotMatchup(EndedRules.RulesetId, "a", "b") { Won = 1 });
+        BotRatingService service = this.Service(
+            [new EndedRules(EndedRules.State([Black]), "other"), new EndedRules(EndedRules.State([Black]))],
+            ImmutableDictionary<string, ImmutableDictionary<string, int>>.Empty
+                .Add(EndedRules.RulesetId, ImmutableDictionary<string, int>.Empty.Add("a", 1200))
+                .Add("other", ImmutableDictionary<string, int>.Empty.Add("a", 1300).Add("b", 1400))
+        );
+
+        // Act
+        BotMatchup game = await service.PlayNext(this._cancellation);
+
+        // Assert
+        Assert.Equal(EndedRules.RulesetId, game.Ruleset);
+    }
+
+    [Fact]
+    public async Task Apply_WhenOnlySomeBotsHavePlayedEveryPairEnough_RatesThoseAndLeavesTheOthersAsTheyWere()
+    {
+        // Arrange - a, the anchor, played b and c enough; b and c never played each other
+        await this.Keep(new BotMatchup(EndedRules.RulesetId, "a", "b") { Lost = 3 });
+        await this.Keep(new BotMatchup(EndedRules.RulesetId, "a", "c") { Won = 2 });
+        BotCatalog bots = new(
+            [new FirstChoiceBot("a"), new FirstChoiceBot("b"), new FirstChoiceBot("c")],
+            ImmutableDictionary<string, ImmutableDictionary<string, int>>.Empty
+                .Add(EndedRules.RulesetId, ImmutableDictionary<string, int>.Empty.Add("a", 1200).Add("b", 1500))
+        );
+        BotRatingService service = this.Service([new EndedRules(EndedRules.State([]))], bots);
+
+        // Act
+        ImmutableList<string> rated = await service.Apply(this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            (EndedRules.RulesetId, "a ended 1000; b ended 1500; c "),
+            (
+                string.Join(",", rated),
+                string.Join(
+                    "; ",
+                    bots.Bots.Select(bot =>
+                        $"{bot.Id} " + string.Join(", ", bot.Ratings.Select(rating => $"{rating.Key} {rating.Value}"))
+                    )
+                )
+            )
+        );
+    }
+
     private static BotCatalog Catalog(ImmutableDictionary<string, ImmutableDictionary<string, int>> ratings) =>
         new([new FirstChoiceBot("a"), new FirstChoiceBot("b")], ratings);
 

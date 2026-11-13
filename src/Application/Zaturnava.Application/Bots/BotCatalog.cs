@@ -33,9 +33,18 @@ public sealed class BotCatalog(
     public IDeciding Find([Required] string botId) =>
         this._bots.GetValueOrDefault(botId) ?? throw new UnknownBotException(botId);
 
-    /// <summary>Rates the bots at <paramref name="ruleset"/> anew, as <paramref name="ratings"/> say.</summary>
+    /// <summary>
+    /// Rates the bots <paramref name="ratings"/> name at <paramref name="ruleset"/> anew, as it says; the others keep
+    /// theirs.
+    /// </summary>
     public void Rate([Required] string ruleset, [Required] ImmutableDictionary<string, int> ratings) =>
-        _ = ImmutableInterlocked.Update(ref this._ratings, rated => rated.SetItem(ruleset, ratings));
+        _ = ImmutableInterlocked.Update(
+            ref this._ratings,
+            rated => rated.SetItem(
+                ruleset,
+                rated.GetValueOrDefault(ruleset, []).SetItems(ratings)
+            )
+        );
 
     private BotProfile Rated(BotProfile profile) =>
         profile with
