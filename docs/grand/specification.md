@@ -355,6 +355,28 @@ commanding every piece, a ransom's point for each prisoner, 2 for a Raja) were r
     could capture on. Castling is the King's move, so a Leader die allows it, or a move made without
     rolling.
 
+### 6.5 Mercenaries
+
+- **Stated (2026-11-13).** Every Shogi piece is a mercenary, except the leaders the armies start
+  with. A player who holds a mercenary prisoner may, on their turn, spend points to hire it: it
+  becomes their own piece. Then, on a later step, they place it on a free square of their own
+  palace.
+- **Stated.** Hiring costs 110% of what the piece cost last: the first time, 110% of its value (a
+  Dragon Horse of 17 costs 19); the next, 110% of that (21); and so on. *Proposed*: rounded up.
+  The cost is the piece's own: another of its kind costs what its own past makes it.
+- **Stated.** Taking a mercenary still scores its kind's value, whatever it was hired for.
+- **Stated.** A mercenary stays one when promoted, whatever it becomes: a leader, another game's
+  piece, a piece of another army. Promotion never lowers its cost; promoted into a piece worth
+  more than what it last cost, it costs 110% of that piece's value next.
+- **Stated.** Hiring and placing are two steps, not necessarily in the same turn. Each is a turn's
+  deliberate action, or uses a die that moves the piece's kind: two dice for its class hire and
+  place it in one turn.
+- *Proposed*: hiring lowers the hirer's score, as any spending does (§6.2), and is open only to
+  the prisoner's holder, playing for themselves. A hired piece waiting to be placed can be taken by
+  no one. A player with no palace places it on a free square of the 3 × 3 square about their
+  throne. A mercenary once hired goes home, if ransomed or escaping, as any piece does: to where it
+  started.
+
 ## 7. Upgrades and restrictions
 
 - **Stated.** A restriction may be lifted at draft time, at its listed cost, and later in play,

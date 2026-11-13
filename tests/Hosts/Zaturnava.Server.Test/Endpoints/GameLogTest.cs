@@ -501,6 +501,28 @@ public sealed class GameLogTest
         );
     }
 
+    [Fact]
+    public void LatestOf_WhenAMercenaryIsHiredThenPlaced_TellsOfEach()
+    {
+        // Arrange
+        GameSnapshot snapshot = Snapshot(
+            new PieceHired(Horse, Red, 4),
+            new PieceDeployed(Horse with { Owner = Red }, Cell("h4"))
+        );
+
+        // Act
+        ImmutableList<EventDto> log = GameLog.LatestOf(snapshot);
+
+        // Assert
+        Assert.Equal(
+            [
+                "escaped 3: Red hired Black's Horse, a mercenary, paying 4 points.",
+                "escaped 3: Red placed their hired Horse on h4.",
+            ],
+            log.Select(Told)
+        );
+    }
+
     [Theory]
     [InlineData(new[] { 0, 2 }, "ended 0: Black and Green won: only one team has pieces left.")]
     [InlineData(new[] { 1 }, "ended 1: Yellow won: only one team has pieces left.")]

@@ -385,6 +385,50 @@ public sealed class GameViewsTest
     }
 
     [Fact]
+    public void ViewOf_WhenAMercenaryMayBeHiredOrPlaced_LabelsEachWithItsCostAndWhere()
+    {
+        // Arrange - Horses are mercenaries; Black holds Yellow's Horse 9 (3, so 4 to hire), with 10 points, and hired
+        // Green's Horse 17, to place about its throne, d1
+        Chaturaji2027Rules rules = new(
+            DiceProfile.WeightedSixSided,
+            Chaturaji2027Rules.DefaultIdleRounds,
+            PawnPromotion.OtherArmies,
+            variant: Chaturaji2027Variant.Standard with { Mercenaries = [Chaturaji2027Pieces.Horse] }
+        );
+        GameState start = rules.CreateInitialState();
+        GameState state = start with
+        {
+            RollOff = [],
+            AwaitedDice = null,
+            Edition = 2,
+            Scores = start.Scores.SetItem(new SeatId(0), 10),
+            Position = Position.Empty.Place(new CellId(3), start.Position.PieceAt(new CellId(3))!),
+            Prisoners =
+            [
+                new Prisoner(new Piece(new PieceId(9), Chaturaji2027Pieces.Horse, new SeatId(1)), new SeatId(0)),
+            ],
+            Hired = [new Piece(new PieceId(17), Chaturaji2027Pieces.Horse, new SeatId(0))],
+        };
+
+        // Act
+        GameViewDto view = GameViews.ViewOf(Snapshot(rules, state), Bots);
+
+        // Assert
+        Assert.Equal(
+            (
+                "Hire Yellow's Horse, your prisoner, for 4 points: it becomes yours",
+                ("Place your hired Horse, to c1", "Place your hired Horse")
+            ),
+            (
+                view.LegalActions.Single(action => action.Kind == "hire").Label,
+                view.LegalActions.Where(action => action.Kind == "deploy")
+                    .Select(action => (action.Label, action.Choice))
+                    .First()
+            )
+        );
+    }
+
+    [Fact]
     public void ViewOf_WhenAnAllyMayTakeTheTurn_LabelsHandingItOver()
     {
         // Arrange - Black's Raja is gone, so Green, which has its own, may take Black's turn

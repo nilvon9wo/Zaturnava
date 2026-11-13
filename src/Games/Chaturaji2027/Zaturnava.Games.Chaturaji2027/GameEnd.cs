@@ -233,7 +233,8 @@ internal static class GameEnd
         !state.Retired.Contains(seat)
         && (state.Position.Occupants.Values.Any(piece => piece.Owner == seat)
             || state.Prisoners.Any(prisoner => prisoner.Piece.Owner == seat || prisoner.Holder == seat)
-            || state.Fled.Any(piece => piece.Owner == seat));
+            || state.Fled.Any(piece => piece.Owner == seat)
+            || state.Hired.Any(piece => piece.Owner == seat));
 
     /// <summary>Whether giving up its turns ends the game for the team: it trails, or leads by far.</summary>
     private static bool MayGiveUp(GameState state, int team, Chaturaji2027Variant variant)

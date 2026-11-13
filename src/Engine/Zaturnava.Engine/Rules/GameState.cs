@@ -49,8 +49,9 @@ public sealed record GameState(
 
     /// <summary>
     /// The edition of the ruleset's pieces the armies the program deals this game, fills at random, or offers in a
-    /// draft, are drawn from (<see cref="IRulesApplying.Deal"/>): 0, in a game dealt before there was another, so that
-    /// it replays as it was dealt.
+    /// draft, are drawn from (<see cref="IRulesApplying.Deal"/>), and of the rules it is played by, a ruleset's later
+    /// rules applying from the edition that brought them: 0, in a game dealt before there was another, so that it
+    /// replays as it was dealt and played.
     /// </summary>
     public int Edition { get; init; }
 
@@ -165,6 +166,18 @@ public sealed record GameState(
     /// escapes.
     /// </summary>
     public ImmutableList<Piece> Fled { get; init; } = [];
+
+    /// <summary>
+    /// The mercenaries hired (<see cref="Actions.HireAction"/>), their hirer's own now, waiting to be placed on the
+    /// board (<see cref="Actions.DeployAction"/>): no one may take them meanwhile.
+    /// </summary>
+    public ImmutableList<Piece> Hired { get; init; } = [];
+
+    /// <summary>
+    /// What each mercenary cost last, where that is not its starting kind's value: once hired, or promoted into a
+    /// dearer piece. Its next hire costs 110% of it.
+    /// </summary>
+    public ImmutableDictionary<PieceId, int> MercenaryCosts { get; init; } = [];
 
     /// <summary>A proposal to end the game, waiting on the deciding seat's answer; null if none is.</summary>
     public EndProposal? Proposal { get; init; }

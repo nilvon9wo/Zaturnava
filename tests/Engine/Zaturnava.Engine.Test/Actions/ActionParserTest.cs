@@ -71,6 +71,8 @@ public sealed class ActionParserTest
         new PlaceAction(new SeatId(2), new CellId(9)),
         new EscapeAction(new SeatId(3), new PieceId(11), new CellId(32)),
         new FleeAction(new SeatId(3), new CellId(63)),
+        new HireAction(new SeatId(2), new PieceId(9)),
+        new DeployAction(new SeatId(2), new PieceId(9), new CellId(10)),
         new HandOverAction(new SeatId(1), new SeatId(3)),
         new ProposeEndAction(new SeatId(2), Resigns: true),
         new AnswerEndAction(new SeatId(0), Agrees: false),
