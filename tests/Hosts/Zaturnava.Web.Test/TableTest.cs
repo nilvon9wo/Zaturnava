@@ -1816,6 +1816,44 @@ public sealed class TableTest : IDisposable
     }
 
     [Theory]
+    [InlineData("Piece", "Boat|Pawn|Raja", "ascending", "Piece ▲")]
+    [InlineData("Piece,Piece", "Raja|Pawn|Boat", "descending", "Piece ▼")]
+    [InlineData("Class,Class", "Pawn|Boat|Raja", "descending", "Class ▼")]
+    [InlineData("Moves,Moves", "Raja|Pawn|Boat", "descending", "Moves ▼")]
+    [InlineData("Piece,Cost", "Pawn|Boat|Raja", "ascending", "Cost ▲")]
+    public void Click_WhenAColumnHeadingOfTheDraftIsClicked_SortsByItTheOtherWayOnASecondClick(
+        string clicks,
+        string expected,
+        string sort,
+        string heading
+    )
+    {
+        // Arrange - every piece listed: the Raja (Leader, 5, Steps), the Boat (Cavalry, 2, Leaps), the Pawn
+        // (Infantry, 1, Moves forward)
+        this.Drafting(left: 3, throne: false);
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        table.Find("input.draft-affordable").Change(false);
+
+        // Act
+        foreach (string column in clicks.Split(','))
+        {
+            table.Find($"button.sort[data-column={column}]").Click();
+        }
+
+        // Assert - the column last clicked sorted, the others not
+        string last = clicks.Split(',')[^1];
+        Assert.Equal(
+            (expected, sort, 3, heading),
+            (
+                string.Join("|", table.FindAll(".draft-table .name").Select(name => name.TextContent)),
+                table.Find($"button.sort[data-column={last}]").ParentElement!.GetAttribute("aria-sort"),
+                table.FindAll(".draft-table th[aria-sort=none]").Count,
+                table.Find($"button.sort[data-column={last}]").TextContent.Trim()
+            )
+        );
+    }
+
+    [Theory]
     [InlineData("Cavalry", 1)]
     [InlineData("Infantry", 0)]
     public void Change_WhenTheFiltersHideThePiecePickedToDraft_LetsItGo(string pieceClass, int picked)
