@@ -79,6 +79,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     private readonly StartRowMoves _startRows;
     private readonly Castling _castling;
     private readonly FlyingCapture _flying;
+    private readonly PalaceSteps _palaceSteps;
     private readonly FaceOff _faceOff;
     private readonly MoveDiagrams _diagrams;
     private readonly ArmyDrafting? _drafting;
@@ -162,6 +163,11 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             this.AttackedAgainst
         );
         this._flying = new FlyingCapture(this._grid, this._variant.FlyingCapturers, this._variant.Leaders);
+        this._palaceSteps = new PalaceSteps(
+            this._grid,
+            this._variant.PalaceSteppers,
+            this._variant.ForwardPalaceSteppers
+        );
         this._faceOff = new FaceOff(this._grid, this._variant.FaceOffCallers, this._variant.Leaders);
         this._drafting = this._variant.Drafting is { } drafting
             ? new ArmyDrafting(drafting, this._grid, this._variant.Side, this.WorthOf, this.RollOffDie)
@@ -441,6 +447,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             .Where(occupant => occupant.Value.Owner == seat)
             .SelectMany(occupant => this._moves.AttacksFrom(state.Position, occupant.Key, state.SeatOf(seat))
                 .Concat(this._flying.AttacksFrom(state, occupant.Key, occupant.Value))
+                .Concat(this._palaceSteps.AttacksFrom(state, occupant.Key, occupant.Value))
             )
             .Distinct()
             .Where(attack => this.MayGo(state, new Move(attack.Attacker, attack.From, attack.Target, null))),
@@ -769,8 +776,8 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     }
 
     /// <summary>
-    /// A piece moves the way its own army faces, as the board lets it, with its start-row powers, castling and the
-    /// flying-general capture, if it has them; a Pawn may also swap with one back to back.
+    /// A piece moves the way its own army faces, as the board lets it, with its start-row powers, castling, the
+    /// flying-general capture and steps along palace lines, if it has them; a Pawn may also swap with one back to back.
     /// </summary>
     private IEnumerable<Move> MovesFrom(GameState state, CellId cell, Piece piece, SeatId mover)
     {
@@ -779,6 +786,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             .Concat(this._startRows.MovesFrom(state, cell, piece, mover, MayTake))
             .Concat(this._castling.MovesFrom(state, cell, piece))
             .Concat(this._flying.MovesFrom(state, cell, piece, MayTake))
+            .Concat(this._palaceSteps.MovesFrom(state, cell, piece, MayTake))
             .Distinct()
             .Where(move => this.MayGo(state, move))
             .Concat(this.SwapsFrom(state, cell, piece));

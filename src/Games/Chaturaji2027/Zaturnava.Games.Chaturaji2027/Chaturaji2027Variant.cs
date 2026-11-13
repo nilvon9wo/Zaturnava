@@ -123,6 +123,17 @@ public sealed record Chaturaji2027Variant(
     public ImmutableHashSet<PieceKindId> FaceOffCallers { get; init; } = [];
 
     /// <summary>
+    /// The kinds that may step along a palace's lines (the Janggi General, Guard and Soldier): none, unless set.
+    /// </summary>
+    public ImmutableHashSet<PieceKindId> PalaceSteppers { get; init; } = [];
+
+    /// <summary>
+    /// Those of <see cref="PalaceSteppers"/> that step along them only toward their army's front (the Janggi Soldier):
+    /// none, unless set.
+    /// </summary>
+    public ImmutableHashSet<PieceKindId> ForwardPalaceSteppers { get; init; } = [];
+
+    /// <summary>
     /// Where every piece of a game dealt by a seed starts, each game its own armies - each seat's the same, if asked
     /// for alike - on the terrain dealt it (<see cref="TerrainDealer"/>); null, if every game starts as
     /// <see cref="Start"/> has it.
