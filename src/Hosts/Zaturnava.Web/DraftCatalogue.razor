@@ -54,10 +54,14 @@
         <table>
             <thead>
                 <tr>
-                    <th>Piece</th>
-                    <th>Class</th>
-                    <th>Moves</th>
-                    <th class="cost">Cost</th>
+                    @foreach ((Column column, string heading) in Headings)
+                    {
+                        <th class="@(column == Column.Cost ? "cost" : null)" aria-sort="@this.AriaSortOf(column)">
+                            <button class="sort" data-column="@column" @onclick="() => this.SortBy(column)">
+                                @heading<span class="sort-mark" aria-hidden="true">@this.MarkOf(column)</span>
+                            </button>
+                        </th>
+                    }
                 </tr>
             </thead>
             <tbody>
@@ -103,7 +107,38 @@
         public string Bearing { get; set; } = string.Empty;
 
         public bool IsAffordableOnly { get; set; } = true;
+
+        /// <summary>The column the list is sorted by; none, until the player picks one, classes then in order.</summary>
+        public Column SortedBy { get; set; } = Column.None;
+
+        public bool IsDescending { get; set; }
     }
+
+    /// <summary>A column of the list, which the player may sort it by (Stated, 2026-11-13).</summary>
+    public enum Column
+    {
+        None,
+        Piece,
+        Class,
+        Moves,
+        Cost,
+    }
+
+    private static readonly ImmutableList<(Column Column, string Heading)> Headings =
+        [(Column.Piece, "Piece"), (Column.Class, "Class"), (Column.Moves, "Moves"), (Column.Cost, "Cost")];
+
+    /// <summary>Sorts by the column, the other way round if it already is (Stated, 2026-11-13).</summary>
+    private void SortBy(Column column)
+    {
+        this.Filtered.IsDescending = this.Filtered.SortedBy == column && !this.Filtered.IsDescending;
+        this.Filtered.SortedBy = column;
+    }
+
+    private string AriaSortOf(Column column) =>
+        column != this.Filtered.SortedBy ? "none" : this.Filtered.IsDescending ? "descending" : "ascending";
+
+    private string MarkOf(Column column) =>
+        column != this.Filtered.SortedBy ? string.Empty : this.Filtered.IsDescending ? " ▼" : " ▲";
 
     /// <summary>The filters, as the player last left them; as at first, unless given.</summary>
     [Parameter]
@@ -159,16 +194,34 @@
     private IEnumerable<PieceKindDto> InClass =>
         this.Kinds.Where(kind => this.Filtered.Class.Length == 0 || kind.Class == this.Filtered.Class);
 
-    /// <summary>The kinds the filters let through, classes in order, each dearest first.</summary>
+    /// <summary>
+    /// The kinds the filters let through, sorted by the column picked, those alike by name; until one is, classes in
+    /// order, each dearest first.
+    /// </summary>
     private IEnumerable<PieceKindDto> Shown =>
-        this.InClass
-            .Where(kind => this.Filtered.Class != Cavalry || this.Filtered.Kin.Length == 0
-                || kind.Kin == this.Filtered.Kin)
-            .Where(kind => this.Filtered.Class == Cavalry || this.Filtered.Bearing.Length == 0
-                || kind.Bearing == this.Filtered.Bearing)
-            .Where(kind => !this.Filtered.IsAffordableOnly || kind.Value <= this.Left)
-            .OrderBy(kind => ClassOrder.IndexOf(kind.Class ?? string.Empty))
-            .ThenByDescending(kind => kind.Value);
+        this.Sorted(
+            this.InClass
+                .Where(kind => this.Filtered.Class != Cavalry || this.Filtered.Kin.Length == 0
+                    || kind.Kin == this.Filtered.Kin)
+                .Where(kind => this.Filtered.Class == Cavalry || this.Filtered.Bearing.Length == 0
+                    || kind.Bearing == this.Filtered.Bearing)
+                .Where(kind => !this.Filtered.IsAffordableOnly || kind.Value <= this.Left)
+        );
+
+    private IEnumerable<PieceKindDto> Sorted(IEnumerable<PieceKindDto> kinds) =>
+        this.Filtered.SortedBy switch
+        {
+            Column.Piece => this.By(kinds, kind => kind.Name),
+            Column.Class => this.By(kinds, kind => ClassOrder.IndexOf(kind.Class ?? string.Empty)),
+            Column.Moves => this.By(kinds, MovesOf),
+            Column.Cost => this.By(kinds, kind => kind.Value),
+            _ => kinds.OrderBy(kind => ClassOrder.IndexOf(kind.Class ?? string.Empty))
+                .ThenByDescending(kind => kind.Value),
+        };
+
+    private IEnumerable<PieceKindDto> By<TKey>(IEnumerable<PieceKindDto> kinds, Func<PieceKindDto, TKey> key) =>
+        (this.Filtered.IsDescending ? kinds.OrderByDescending(key) : kinds.OrderBy(key))
+            .ThenBy(kind => kind.Name, StringComparer.OrdinalIgnoreCase);
 
     /// <summary>How it moves, in words; how it captures too, where that differs.</summary>
     private static string MovesOf(PieceKindDto kind) =>
