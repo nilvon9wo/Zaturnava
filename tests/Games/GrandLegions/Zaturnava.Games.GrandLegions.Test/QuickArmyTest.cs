@@ -42,6 +42,22 @@ public sealed class QuickArmyTest
     }
 
     [Theory]
+    [InlineData(QuickArmy.EvenSpreadEdition - 1, true)]
+    [InlineData(QuickArmy.EvenSpreadEdition, false)]
+    public void Pick_WhenTheSpareBudgetIsSpreadEvenlyOrNot_GivesTheAmazonOnlyWhenNot(int edition, bool hasAmazon)
+    {
+        // Arrange - the large game, whose first slots could once spend what the last needed
+        QuickGame game = QuickGame.Large with { Edition = edition };
+
+        // Act
+        bool dealt = Enumerable.Range(0, 200)
+            .Any(seed => QuickArmy.Pick(game, new(seed)).Any(piece => piece.Id == GrandLegionsPieces.Amazon));
+
+        // Assert
+        Assert.Equal(hasAmazon, dealt);
+    }
+
+    [Theory]
     [MemberData(nameof(Games))]
     public void Pick_ForEachQuickGame_PicksArmiesThatDiffer(string id)
     {
