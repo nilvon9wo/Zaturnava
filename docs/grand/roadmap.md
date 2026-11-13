@@ -213,7 +213,9 @@ drawn simply, a shape for its class and a letter for its kind.
   2026-11-12), then drafts within the budget, buying lifts and placing each piece, in secret or in
   turn as the game is set; a "fill at random" for each step. Points not spent start the player's
   score.
-- Infantry placed beyond the start rows (2, or as the game is set), without start-row powers.
+- Infantry placed beyond the start rows (2, or as the game is set), without start-row powers. *Done*: a piece
+  drafted anywhere in its kingdom has its two-square first move only if it starts within its army's start rows
+  (`StartRowMoves`), so not on the Large kingdom's third row.
 - Pieces confined to a palace placed in it.
 - Bots draft too: Random at random, Midas by value, Solomon… evenly.
 - Prices for each game, from its own board's actual dimensions and kingdoms (*Stated* 2026-11-06;
