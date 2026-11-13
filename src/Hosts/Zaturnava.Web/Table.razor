@@ -90,7 +90,7 @@
         </div>
 
         <div class="play">
-            <Board View="view"
+            <Board View="this.Drawn(view)"
                    Actions="this.Actions"
                    Selection="this.Selection"
                    Turn="this._boardTurn"
@@ -310,10 +310,24 @@
                     }
                     else if (view.DraftLeft is { } left)
                     {
-                        @if (view.LegalActions.Any(action => action.Kind == PalaceKind))
+                        @if (view.LegalActions.Any(action => action.Kind == PalaceKind)
+                             && this._palace is { } palace)
+                        {
+                            string centre = view.Cells.First(cell => cell.Id == palace.Cell).Name;
+                            <p class="hint draft-palace">
+                                Your palace would stand here, three squares by three about @centre. Click another
+                                marked square to move it, or:
+                            </p>
+                            <button class="action primary build-palace"
+                                    @onclick="() => this.BuildPalace(turn.Claim, palace.Action)">
+                                Build the palace here
+                            </button>
+                        }
+                        else if (view.LegalActions.Any(action => action.Kind == PalaceKind))
                         {
                             <p class="hint draft-palace">
-                                Click a marked square of your kingdom to build your palace around it.
+                                Click a marked square of your kingdom: your palace would stand three squares by three
+                                about it, that square at its centre. You may move it before you build it.
                             </p>
                         }
                         else if (view.LegalActions.Any(action => action.Kind == ThroneKind))
@@ -582,6 +596,13 @@
 
     /// <summary>The kind the player picked to draft next; kept, so that several alike are placed in a row.</summary>
     private string? _draftPick;
+
+    /// <summary>
+    /// The palace the player is placing, until they build it: the square at its centre, and the choice building it
+    /// there. Drawn on the board meanwhile; another marked square clicked moves it (the user's request of 2026-11-13:
+    /// a square clicked alone did not make plain that the palace would stand about it).
+    /// </summary>
+    private (int Cell, ActionDto Action)? _palace;
 
     /// <summary>The draft's filters, as the player last left them, kept from one turn to draft to the next.</summary>
     private readonly DraftCatalogue.Filters _draftFilters = new();
@@ -1263,7 +1284,55 @@
         this._inspected = this._view!.Pieces.Find(piece => piece.Cell == cell)?.Id ?? this._inspected;
         (BoardSelection next, ActionDto? chosen) = this.Selection.Click(cell, this.Actions);
         this._selection = next;
-        return this._turn is { } turn && chosen is { } action ? this.Submit(turn.Claim, action) : Task.CompletedTask;
+        this._palace = chosen is { Kind: PalaceKind } palace ? (cell, palace) : this._palace;
+        return this._turn is { } turn && chosen is { Kind: not PalaceKind } action
+            ? this.Submit(turn.Claim, action)
+            : Task.CompletedTask;
+    }
+
+    /// <summary>Builds the palace where the player placed it.</summary>
+    private Task BuildPalace(SeatClaim claim, ActionDto palace)
+    {
+        this._palace = null;
+        return this.Submit(claim, palace);
+    }
+
+    /// <summary>The board as the game has it; and, while the player places their palace, its wall.</summary>
+    private GameViewDto Drawn(GameViewDto view) =>
+        this._palace is { } palace ? view with { Lines = view.Lines.AddRange(PalaceWalls(view, palace.Cell)) } : view;
+
+    /// <summary>
+    /// The wall of a palace about <paramref name="centre"/>, as the server draws one: every edge of its squares (those
+    /// of the board within a step of the centre) that no other of them shares, each going counter-clockwise about it.
+    /// </summary>
+    private static IEnumerable<LineDto> PalaceWalls(GameViewDto view, int centre)
+    {
+        CellDto at = view.Cells.First(cell => cell.Id == centre);
+        ImmutableHashSet<(double X, double Y)> squares =
+        [
+            .. view.Cells
+                .Where(cell => Math.Abs(cell.X - at.X) <= 1 && Math.Abs(cell.Y - at.Y) <= 1)
+                .Select(cell => (cell.X, cell.Y)),
+        ];
+        return squares
+            .OrderBy(square => square.Y)
+            .ThenBy(square => square.X)
+            .SelectMany(square => WallsOf(square, squares));
+    }
+
+    private static IEnumerable<LineDto> WallsOf((double X, double Y) square, ImmutableHashSet<(double X, double Y)> all)
+    {
+        const double half = 0.5;
+        (double x, double y) = square;
+        return new (double Dx, double Dy, LineDto Wall)[]
+            {
+                (0, -1, new LineDto(PalaceKind, x - half, y - half, x + half, y - half)),
+                (1, 0, new LineDto(PalaceKind, x + half, y - half, x + half, y + half)),
+                (0, 1, new LineDto(PalaceKind, x + half, y + half, x - half, y + half)),
+                (-1, 0, new LineDto(PalaceKind, x - half, y + half, x - half, y - half)),
+            }
+            .Where(side => !all.Contains((x + side.Dx, y + side.Dy)))
+            .Select(side => side.Wall);
     }
 
     /// <summary>Whether the player may fill the open seats with bots now: first to arrive, or after twice the wait.</summary>
@@ -1366,6 +1435,7 @@
                 .Concat(view.Seats.SelectMany(holder => holder.Prisoners).Select(prisoner => prisoner.Kind))
         );
         this._deadline = view.SecondsLeft is { } seconds ? this.Clock.GetUtcNow().AddSeconds(seconds) : null;
+        this._palace = isNew ? null : this._palace;
         this._receiver = isNew ? null : this._receiver;
         this._given = isNew ? [] : this._given;
         this._asked = isNew ? [] : this._asked;

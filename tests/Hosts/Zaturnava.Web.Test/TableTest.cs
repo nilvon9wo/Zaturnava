@@ -1650,9 +1650,68 @@ public sealed class TableTest : IDisposable
     }
 
     [Fact]
-    public void Click_WhenThePalaceIsToBePlaced_PlacesItAboutTheSquareClickedWithoutAChoiceFirst()
+    public void Click_WhenThePalaceIsToBePlaced_DrawsItAboutTheSquareClickedButDoesNotBuildIt()
     {
-        // Arrange - the palace may stand about cell 1 or 2
+        // Arrange - the palace may stand about cell 1 or 2; the board, two squares by two, lies within a step of either
+        this.PlacingPalace();
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Act
+        Cell(table, 1).Click();
+
+        // Assert - its wall is the board's edge, eight sides of squares; nothing is submitted yet
+        Assert.Equal(
+            (8, 1, true, false),
+            (
+                table.FindAll("path.line.palace").Count,
+                table.FindAll("button.build-palace").Count,
+                table.Find("p.draft-palace").TextContent.Contains("about c1", StringComparison.Ordinal),
+                this._page.Server.Submitted is not null
+            )
+        );
+    }
+
+    [Fact]
+    public void Click_WhenAnotherMarkedSquareIsClickedBeforeBuilding_MovesThePalaceThere()
+    {
+        // Arrange
+        this.PlacingPalace();
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        Cell(table, 1).Click();
+
+        // Act
+        Cell(table, 2).Click();
+        table.Find("button.build-palace").Click();
+
+        // Assert
+        Assert.Equal(
+            "palace 2",
+            $"{this._page.Server.Submitted?.Action.Kind} {this._page.Server.Submitted?.Action.Arguments["home"]}"
+        );
+    }
+
+    [Fact]
+    public void Render_WhenThePalaceIsToBePlacedAndNoneIsYet_SaysHowAndDrawsNoWall()
+    {
+        // Arrange
+        this.PlacingPalace();
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Assert
+        Assert.Equal(
+            (true, 0, 0),
+            (
+                table.Find("p.draft-palace").TextContent.Contains("at its centre", StringComparison.Ordinal),
+                table.FindAll("path.line.palace").Count,
+                table.FindAll("button.build-palace").Count
+            )
+        );
+    }
+
+    /// <summary>The player drafting, their palace to be placed about cell 1 or 2.</summary>
+    private void PlacingPalace() =>
         this._page.Server.View = DraftingView(3, throne: false) with
         {
             LegalActions =
@@ -1662,21 +1721,6 @@ public sealed class TableTest : IDisposable
                 Filling,
             ],
         };
-        IRenderedComponent<Table> table = this.Render(SeatZero);
-
-        // Act
-        Cell(table, 1).Click();
-
-        // Assert
-        Assert.Equal(
-            (1, 0, "palace 1"),
-            (
-                table.FindAll("p.draft-palace").Count,
-                table.FindAll("p.draft-throne").Count,
-                $"{this._page.Server.Submitted?.Action.Kind} {this._page.Server.Submitted?.Action.Arguments["home"]}"
-            )
-        );
-    }
 
     [Fact]
     public void Change_WhenThePlayerDraftingAsksForEveryPiece_ListsThemAllGreyingWhatTheyCannotAfford()
