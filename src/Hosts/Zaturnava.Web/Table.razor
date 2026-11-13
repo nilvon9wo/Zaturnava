@@ -317,8 +317,32 @@
                     }
                     else if (view.DraftLeft is { } left)
                     {
-                        @if (view.LegalActions.Any(action => action.Kind == PalaceKind)
-                             && this._palace is { } palace)
+                        @if (IsBuying(view))
+                        {
+                            <DraftCatalogue Kinds="view.DraftKinds"
+                                            Left="left[turn.Claim.Seat].GetValueOrDefault()"
+                                            Picked="@this._draftPick"
+                                            Filtered="this._draftFilters"
+                                            Owner="turn.Claim.Seat"
+                                            Pieces="this.PiecesShown"
+                                            OnPick="this.PickToDraft"
+                                            OnHidden="this.LetGoOfDraftPick" />
+                            <p class="hint draft-place">
+                                @(this.Selection.Choice is null
+                                    ? "Pick a piece above, then a marked square of your kingdom for it."
+                                    : "Now click a marked square of your kingdom for it.")
+                            </p>
+                            @foreach (string change in ChangesOf(view))
+                            {
+                                <button class="action choose draft-change"
+                                        aria-pressed="@(this._selection.Choice == change ? "true" : "false")"
+                                        @onclick="() => this.ChooseChange(change)">
+                                    @change
+                                </button>
+                            }
+                        }
+                        else if (view.LegalActions.Any(action => action.Kind == PalaceKind)
+                                 && this._palace is { } palace)
                         {
                             string centre = view.Cells.First(cell => cell.Id == palace.Cell).Name;
                             <p class="hint draft-palace">
@@ -337,26 +361,10 @@
                                 about it, that square at its centre. You may move it before you build it.
                             </p>
                         }
-                        else if (view.LegalActions.Any(action => action.Kind == ThroneKind))
+                        else
                         {
                             <p class="hint draft-throne">
                                 Click a marked square of your kingdom to set your throne there.
-                            </p>
-                        }
-                        else
-                        {
-                            <DraftCatalogue Kinds="view.DraftKinds"
-                                            Left="left[turn.Claim.Seat].GetValueOrDefault()"
-                                            Picked="@this._draftPick"
-                                            Filtered="this._draftFilters"
-                                            Owner="turn.Claim.Seat"
-                                            Pieces="this.PiecesShown"
-                                            OnPick="this.PickToDraft"
-                                            OnHidden="this.LetGoOfDraftPick" />
-                            <p class="hint draft-place">
-                                @(this.Selection.Choice is null
-                                    ? "Pick a piece above, then a marked square of your kingdom for it."
-                                    : "Now click a marked square of your kingdom for it.")
                             </p>
                         }
                         <div class="actions">
@@ -578,6 +586,7 @@
     private const string ThroneKind = "throne";
     private const string PalaceKind = "palace";
     private const string DraftKind = "draft";
+    private const string PassKind = "pass";
     private const string PieceArgument = "piece";
     private const string Alarm = "alarm";
     private const string Rescued = "rescued";
@@ -986,9 +995,36 @@
     /// </summary>
     private static string? DraftChoiceOf(GameViewDto view, string? pick) =>
         view.LegalActions
-            .FirstOrDefault(action => action.Kind is PalaceKind or ThroneKind
+            .FirstOrDefault(action => (action.Kind is PalaceKind or ThroneKind && !IsBuying(view))
                 || (action.Kind == DraftKind && action.Arguments.GetValueOrDefault(PieceArgument) == pick))
             ?.Choice;
+
+    /// <summary>
+    /// Whether the player, drafting, has their palace and throne, and buys pieces now: they may buy one, or be done. A
+    /// palace or throne they are offered then moves it, drafting all at once.
+    /// </summary>
+    private static bool IsBuying(GameViewDto view) =>
+        view.LegalActions.Any(action => action.Kind is DraftKind or PassKind);
+
+    /// <summary>
+    /// How the player, buying pieces while drafting all at once, may change their mind: take back a piece, move their
+    /// throne or palace; each a choice, then a square.
+    /// </summary>
+    private static ImmutableList<string> ChangesOf(GameViewDto view) =>
+    [
+        .. view.LegalActions
+            .Where(action => action.Kind != DraftKind)
+            .Select(action => action.Choice)
+            .OfType<string>()
+            .Distinct(StringComparer.Ordinal),
+    ];
+
+    /// <summary>Chooses a change of mind, its squares then marked on the board, letting go of any piece picked.</summary>
+    private void ChooseChange(string choice)
+    {
+        this._draftPick = null;
+        this.Choose(choice);
+    }
 
     /// <summary>Picks a kind to draft next, its card shown; picked again, lets it go.</summary>
     private void PickToDraft(string kind)

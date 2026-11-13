@@ -451,8 +451,63 @@ public sealed class PalaceTest
         Assert.Equal(Text(expected), Text(palaces));
     }
 
+    [Theory]
+    [InlineData(2, "1")]
+    [InlineData(0, "")]
+    public void LegalActions_WhenDraftingAllAtOnce_OffersMovingThePalaceOnlyWhereItStillHoldsTheThroneAndItsPieces(
+        int horse,
+        string expected
+    )
+    {
+        // Arrange - a palace holds the Horse; Black's palace about b2, its throne b1, a Horse bought on a1 or c1: about
+        // c2 the palace would hold b1 and c1, but not a1
+        Chaturaji2027Rules rules = RulesOf(3, 4, [Chaturaji2027Pieces.Horse]);
+        GameState bought = Throned(rules) with { DecidingSeat = Black };
+        bought = rules.Apply(bought, new DraftAction(Black, Chaturaji2027Pieces.Horse, new CellId(horse))).State with
+        {
+            DecidingSeat = Black,
+        };
+
+        // Act
+        ImmutableList<GameAction> choices = rules.LegalActions(bought);
+
+        // Assert
+        Assert.Equal(
+            expected,
+            string.Join(",", choices.OfType<PalaceAction>().Select(palace => palace.Cell == C2 ? "1" : "?"))
+        );
+    }
+
+    [Fact]
+    public void Apply_WhenASeatDraftingAllAtOnceMovesItsPalace_SetsItThereKeepingItsThrone()
+    {
+        // Arrange - Black's palace about b2, its throne b1
+        GameState throned = Throned(this._rules) with { DecidingSeat = Black };
+
+        // Act
+        Transition moved = this._rules.Apply(throned, new PalaceAction(Black, C2));
+
+        // Assert
+        Assert.Equal(
+            (AboutC2, 1, (GameEvent)new PalacePlaced(Black, C2)),
+            (Text(moved.State.Palaces![Black]), moved.State.Thrones![Black].Value, Assert.Single(moved.Events))
+        );
+    }
+
     private GameState Begun() =>
         this._rules.Drafted(this._rules.Deal(this._rules.CreateInitialState(), 4, dealsPalaces: true), 7);
+
+    /// <summary>Drafting all at once, Black's palace about b2, its throne on b1.</summary>
+    private static GameState Throned(Chaturaji2027Rules rules)
+    {
+        GameState begun = rules.Drafted(
+            rules.Deal(rules.CreateInitialState(), 4, dealsPalaces: true),
+            7,
+            new DraftSettings { IsSimultaneous = true }
+        );
+        GameState placed = rules.Apply(begun, new PalaceAction(Black, B2)).State;
+        return rules.Apply(placed, new ThroneAction(Black, new CellId(1))).State;
+    }
 
     private static string Text(IEnumerable<CellId> cells) => string.Join(",", cells.Select(cell => cell.Value));
 

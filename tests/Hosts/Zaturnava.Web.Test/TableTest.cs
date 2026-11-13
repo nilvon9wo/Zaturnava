@@ -1894,6 +1894,35 @@ public sealed class TableTest : IDisposable
     }
 
     [Fact]
+    public void Click_WhenThePlayerDraftingAllAtOnceChoosesToTakeBackAPiece_TakesBackTheOneClicked()
+    {
+        // Arrange - a Boat picked, then taking back the piece on cell 2 chosen instead
+        this._page.Server.View = DraftingView(3, throne: false) with
+        {
+            LegalActions = DraftingView(3, throne: false).LegalActions
+                .Add(Placed("undraft", null, 2, "Take back a piece"))
+                .Add(Placed("throne", null, 1, "Move your throne")),
+        };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        table.FindAll("button.pick")[0].Click();
+        string changes =
+            string.Join("|", table.FindAll("button.draft-change").Select(button => button.TextContent.Trim()));
+        table.FindAll("button.draft-change")[0].Click();
+
+        // Act
+        Cell(table, 2).Click();
+
+        // Assert
+        Assert.Equal(
+            ("Take back a piece|Move your throne", "undraft 2"),
+            (
+                changes,
+                $"{this._page.Server.Submitted?.Action.Kind} {this._page.Server.Submitted?.Action.Arguments["home"]}"
+            )
+        );
+    }
+
+    [Fact]
     public void Click_WhenThePickedPieceIsPickedAgainOrItsCardClosed_LetsItGoOrHidesTheCard()
     {
         // Arrange

@@ -117,15 +117,21 @@ internal static class GameViews
                 .ThronesOf(snapshot.State)
                 .Where(throne => !hidden.Contains(throne.Key))
                 .ToImmutableDictionary(throne => throne.Value, throne => throne.Key);
-        ImmutableList<GameAction> legal =
-            snapshot.State.DecidingSeat is { } deciding && hidden.Contains(deciding) ? [] : snapshot.LegalActions;
+        SeatId? deciding = DecidingFor(snapshot, token);
+        ImmutableList<GameAction> legal = deciding switch
+        {
+            { } seat when hidden.Contains(seat) => [],
+            { } seat when seat != snapshot.State.DecidingSeat!.Value =>
+                snapshot.Rules.ChancesOf(snapshot.State, seat),
+            _ => snapshot.LegalActions,
+        };
         return new GameViewDto(
             snapshot.Record.Id.Value,
             snapshot.Rules.Id,
             snapshot.Rules.Name,
             snapshot.Record.Version,
             snapshot.State.TurnNumber,
-            snapshot.State.DecidingSeat?.Value,
+            deciding?.Value,
             snapshot.State.ActingFor?.Value,
             [.. snapshot.Rules.Topology.Cells.Select(cell => CellOf(snapshot.Rules.Topology, thrones, cell))],
             [.. shown.Position.Occupants.OrderBy(entry => entry.Key.Value)
@@ -171,6 +177,28 @@ internal static class GameViews
             DraftKinds = [.. snapshot.Rules.DraftOffered(snapshot.State).Select(kind => KindOf(snapshot.Rules, kind))],
             IsForPlayers = snapshot.Record.Controllers.Any(controller => controller.IsForPlayers),
         };
+    }
+
+    /// <summary>
+    /// The seat shown deciding to the holder of <paramref name="token"/>: while the armies are drafted all at once, the
+    /// seat it holds that is deciding, if any, else the first it holds still drafting, which may take its steps
+    /// whenever it likes, as if it were its turn; else the deciding seat.
+    /// </summary>
+    private static SeatId? DecidingFor(GameSnapshot snapshot, string? token)
+    {
+        GameState state = snapshot.State;
+        if (state.Draft is not { IsSimultaneous: true } draft || token is null)
+        {
+            return state.DecidingSeat;
+        }
+
+        ImmutableList<SeatId> drafting =
+        [
+            .. state.Seats.Select(seat => seat.Id)
+                .Where(seat => !draft.Done.Contains(seat) && snapshot.Record.Controllers[seat.Value].IsHeldBy(token))
+                .OrderBy(seat => seat == state.DecidingSeat ? 0 : 1),
+        ];
+        return drafting.IsEmpty ? state.DecidingSeat : drafting[0];
     }
 
     /// <summary>What the seat has left to spend; null, if it is hidden.</summary>
@@ -408,7 +436,9 @@ internal static class GameViews
             controller is HumanSeat { Claimant: { } claimant } ? claimant.Value : null
         )
         {
-            Chances = [.. snapshot.Rules.ChancesOf(snapshot.State, seat).Select(chance => ChanceOf(snapshot, chance))],
+            Chances = snapshot.State.Draft is null
+                ? [.. snapshot.Rules.ChancesOf(snapshot.State, seat).Select(chance => ChanceOf(snapshot, chance))]
+                : [],
             Forward = new DirectionDto(
                 snapshot.State.SeatOf(seat).Forward.First,
                 snapshot.State.SeatOf(seat).Forward.Second
@@ -493,8 +523,11 @@ internal static class GameViews
             Choice = action switch
             {
                 EscapeAction escape => PrisonerOf(snapshot, escape),
+                PalaceAction palace when snapshot.State.Palaces!.ContainsKey(palace.Actor) => "Move your palace",
                 PalaceAction => "Your palace",
+                ThroneAction throne when snapshot.State.Thrones!.ContainsKey(throne.Actor) => "Move your throne",
                 ThroneAction => "Your throne",
+                UndraftAction => "Take back a piece",
                 DraftAction draft => $"{snapshot.Rules.NameOf(draft.Piece)}, {snapshot.Rules.WorthOf(draft.Piece)}",
                 _ => null,
             },

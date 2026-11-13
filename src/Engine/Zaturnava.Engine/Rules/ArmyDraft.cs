@@ -15,4 +15,10 @@ public sealed record ArmyDraft(int Seed, ImmutableDictionary<SeatId, int> Left, 
     /// (<see cref="DraftSettings.Drafter"/>); none, if each drafts its own.
     /// </summary>
     public SeatId? Drafter { get; init; }
+
+    /// <summary>
+    /// Whether the seats draft all at once, not in turn (<see cref="DraftSettings.IsSimultaneous"/>): any seat not
+    /// done may take its next step whenever it likes, take back a piece it drafted, or move its throne or palace.
+    /// </summary>
+    public bool IsSimultaneous { get; init; }
 }

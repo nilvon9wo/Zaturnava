@@ -474,5 +474,178 @@ public sealed class ArmyDraftingTest
         Assert.Equal((0, false), (chances, mayPropose));
     }
 
+    [Theory]
+    [InlineData(null, true)]
+    [InlineData(1, false)]
+    public void Drafted_WhenTheGamesCreatorSetsItAllAtOnce_SaysSoUnlessOneSeatDraftsForAll(int? drafter, bool expected)
+    {
+        // Arrange
+        DraftSettings settings = new(Drafter: drafter is { } seat ? new SeatId(seat) : null) { IsSimultaneous = true };
+
+        // Act
+        GameState drafted = this._rules.Drafted(this._rules.CreateInitialState(), 7, settings);
+
+        // Assert
+        Assert.Equal(expected, drafted.Draft!.IsSimultaneous);
+    }
+
+    [Fact]
+    public void ChancesOf_WhileDraftedAllAtOnce_OffersEverySeatButTheDecidingOneItsChoices()
+    {
+        // Arrange - Black decides
+        GameState state = this.BegunAllAtOnce();
+
+        // Act
+        (ImmutableList<GameAction> yellow, int black) =
+            (this._rules.ChancesOf(state, Yellow), this._rules.ChancesOf(state, Black).Count);
+
+        // Assert - a throne on either square of Yellow's kingdom, or filling its army
+        Assert.Equal(
+            ("throne,throne,fill-army", true, 0),
+            (
+                string.Join(",", yellow.Select(chance => chance.Describe().Kind)),
+                yellow.All(chance => chance.Actor == Yellow),
+                black
+            )
+        );
+    }
+
+    [Fact]
+    public void Apply_WhenASeatDraftsOutOfTurnAllAtOnce_DoesSoLeavingTheTurnWhereItWas()
+    {
+        // Arrange - Black decides
+        GameState state = this.BegunAllAtOnce();
+        ThroneAction throne = (ThroneAction)this._rules.ChancesOf(state, Yellow)[0];
+
+        // Act
+        GameState acted = this._rules.Apply(state, throne).State;
+
+        // Assert
+        Assert.Equal((throne.Cell, Black), (acted.Thrones![Yellow], acted.DecidingSeat!.Value));
+    }
+
+    [Fact]
+    public void Apply_WhenASeatDraftsOutOfTurnInTurn_ThrowsIllegalActionException()
+    {
+        // Arrange - Black decides
+        GameState state = this.Begun();
+        GameAction throne = this._rules.ChancesOf(this.BegunAllAtOnce(), Yellow)[0];
+
+        // Act
+        IllegalActionException exception = Assert.Throws<IllegalActionException>(
+            () => this._rules.Apply(state, throne)
+        );
+
+        // Assert
+        Assert.Equal("That throne is not allowed now.", exception.Message);
+    }
+
+    [Fact]
+    public void LegalActions_OnceTheSeatHasAThroneAllAtOnce_OffersTakingBackEachPieceAndMovingTheThroneToo()
+    {
+        // Arrange - Black's throne on a1, a Pawn bought there
+        GameState state = this.BegunAllAtOnce() with
+        {
+            Thrones = ImmutableDictionary<SeatId, CellId>.Empty.Add(Black, A1),
+        };
+        state = this._rules.Apply(state, new DraftAction(Black, Chaturaji2027Pieces.Pawn, A1)).State with
+        {
+            DecidingSeat = Black,
+        };
+
+        // Act
+        ImmutableList<GameAction> choices = this._rules.LegalActions(state);
+
+        // Assert
+        ImmutableList<GameAction> expected =
+        [
+            new DraftAction(Black, Chaturaji2027Pieces.Raja, B1),
+            new DraftAction(Black, Chaturaji2027Pieces.Boat, B1),
+            new DraftAction(Black, Chaturaji2027Pieces.Pawn, B1),
+            new UndraftAction(Black, A1),
+            new ThroneAction(Black, B1),
+            new FillArmyAction(Black),
+            new PassAction(Black),
+        ];
+        Assert.Equal(expected, choices);
+    }
+
+    [Fact]
+    public void Apply_WhenASeatTakesBackAPiece_RefundsItsPriceAndTellsSo()
+    {
+        // Arrange - Black's Boat on b1, leaving 4
+        GameState state = this.BegunAllAtOnce() with
+        {
+            Thrones = ImmutableDictionary<SeatId, CellId>.Empty.Add(Black, A1),
+        };
+        state = this._rules.Apply(state, new DraftAction(Black, Chaturaji2027Pieces.Boat, B1)).State with
+        {
+            DecidingSeat = Black,
+        };
+
+        // Act
+        Transition taken = this._rules.Apply(state, new UndraftAction(Black, B1));
+
+        // Assert
+        Assert.Equal(
+            (6, null, new PieceUndrafted(Black, Chaturaji2027Pieces.Boat, B1, 2)),
+            (taken.State.Draft!.Left[Black], taken.State.Position.PieceAt(B1), Assert.Single(taken.Events))
+        );
+    }
+
+    [Fact]
+    public void Apply_WhenASeatSpendsAllItHasAllAtOnce_LeavesItDraftingUntilItSaysItIsDone()
+    {
+        // Arrange - 5 left: a Raja spends it all
+        GameState state = this.BegunAllAtOnce() with
+        {
+            Thrones = ImmutableDictionary<SeatId, CellId>.Empty.Add(Black, A1),
+        };
+        state = state with { Draft = state.Draft! with { Left = state.Draft.Left.SetItem(Black, 5) } };
+
+        // Act
+        GameState bought = this._rules.Apply(state, new DraftAction(Black, Chaturaji2027Pieces.Raja, A1)).State;
+
+        // Assert
+        Assert.Equal((0, false), (bought.Draft!.Left[Black], bought.Draft.Done.Contains(Black)));
+    }
+
+    [Fact]
+    public void Apply_WhenAPieceIsBoughtOnceAnotherIsTakenBack_GivesItAnIdNoOtherHas()
+    {
+        // Arrange - Pawns bought on a1 (id 0) and b1 (id 1), the one on a1 taken back
+        GameState state = this.BegunAllAtOnce() with
+        {
+            Thrones = ImmutableDictionary<SeatId, CellId>.Empty.Add(Black, A1),
+        };
+        state = this._rules.Apply(state, new DraftAction(Black, Chaturaji2027Pieces.Pawn, A1)).State;
+        state = this._rules.Apply(state, new DraftAction(Black, Chaturaji2027Pieces.Pawn, B1)).State;
+        state = this._rules.Apply(state, new UndraftAction(Black, A1)).State;
+
+        // Act
+        GameState bought = this._rules.Apply(state, new DraftAction(Black, Chaturaji2027Pieces.Pawn, A1)).State;
+
+        // Assert
+        Assert.Equal(2, bought.Position.PieceAt(A1)!.Id.Value);
+    }
+
+    [Fact]
+    public void ChancesOf_WhenASeatDraftingAllAtOnceIsDone_OffersItNothingMore()
+    {
+        // Arrange - Yellow sets its throne, then is done, out of turn
+        GameState state = this.BegunAllAtOnce();
+        state = this._rules.Apply(state, this._rules.ChancesOf(state, Yellow)[0]).State;
+        state = this._rules.Apply(state, new PassAction(Yellow)).State;
+
+        // Act
+        ImmutableList<GameAction> chances = this._rules.ChancesOf(state, Yellow);
+
+        // Assert
+        Assert.Equal((true, 0), (state.Draft!.Done.Contains(Yellow), chances.Count));
+    }
+
     private GameState Begun() => this._rules.Drafted(this._rules.CreateInitialState(), 7);
+
+    private GameState BegunAllAtOnce() =>
+        this._rules.Drafted(this._rules.CreateInitialState(), 7, new DraftSettings { IsSimultaneous = true });
 }
