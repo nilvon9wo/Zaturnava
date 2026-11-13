@@ -36,6 +36,8 @@ public sealed class ActionParser(ImmutableDictionary<string, Func<ActionDescript
             .Add(UndraftAction.Kind, UndraftAction.Parse)
             .Add(FillArmyAction.Kind, FillArmyAction.Parse)
             .Add(FleeAction.Kind, FleeAction.Parse)
+            .Add(HireAction.Kind, HireAction.Parse)
+            .Add(DeployAction.Kind, DeployAction.Parse)
     );
 
     /// <exception cref="MalformedActionException">The kind is unknown, or an argument is malformed.</exception>

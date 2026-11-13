@@ -158,6 +158,12 @@ public static class GrandLegionsRules
             FaceOffCallers = [GrandLegionsPieces.JanggiGeneral],
             Custodians = [GrandLegionsPieces.TaflKing, GrandLegionsPieces.Swede],
             Fleers = [GrandLegionsPieces.TaflKing],
+            Mercenaries =
+            [
+                .. GrandLegionsPieces.Catalogue
+                    .Where(piece => piece.Tradition == Tradition.Shogi)
+                    .Select(piece => piece.Id),
+            ],
             PalaceSteppers =
             [
                 GrandLegionsPieces.JanggiGeneral,

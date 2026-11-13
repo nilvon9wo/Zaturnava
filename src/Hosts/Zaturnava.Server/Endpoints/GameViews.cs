@@ -526,6 +526,7 @@ internal static class GameViews
             Choice = action switch
             {
                 EscapeAction escape => PrisonerOf(snapshot, escape),
+                DeployAction deploy => HiredOf(snapshot, deploy),
                 PalaceAction palace when snapshot.State.Palaces!.ContainsKey(palace.Actor) => "Move your palace",
                 PalaceAction => "Your palace",
                 ThroneAction throne when snapshot.State.Thrones!.ContainsKey(throne.Actor) => "Move your throne",
@@ -562,8 +563,25 @@ internal static class GameViews
             (RetireAction, _, _) => "Retire from the game: taking your Raja will score no one",
             (FaceOffAction faceOff, _, _) => FaceOffOf(snapshot, faceOff),
             (FleeAction flee, _, _) => FleeOf(snapshot, flee),
+            (HireAction hire, _, _) => HireOf(snapshot, hire),
+            (DeployAction deploy, _, _) =>
+                $"{HiredOf(snapshot, deploy)}, to {snapshot.Rules.Topology.NameOf(deploy.Home)}",
             _ => null,
         };
+
+    /// <summary>"Hire Yellow's Dragon Horse (Shogi), your prisoner, for 19 points: it becomes yours".</summary>
+    private static string HireOf(GameSnapshot snapshot, HireAction hire)
+    {
+        IRulesApplying rules = snapshot.Rules;
+        Piece piece = snapshot.State.Prisoners.First(held => held.Piece.Id == hire.Piece).Piece; // a hire is of one
+        int cost = rules.Apply(snapshot.State, hire).Events.OfType<PieceHired>().First().Cost;
+        return $"Hire {rules.NameOf(piece.Owner)}'s {rules.NameOf(piece.Kind)}, your prisoner, for {cost} points: it "
+            + "becomes yours";
+    }
+
+    /// <summary>"Place your hired Dragon Horse (Shogi)": the placing, wherever to.</summary>
+    private static string HiredOf(GameSnapshot snapshot, DeployAction deploy) =>
+        $"Place your hired {snapshot.Rules.NameOf(snapshot.State.Hired.First(hired => hired.Id == deploy.Piece).Kind)}";
 
     /// <summary>"Escape the board with Black's King (Tafl), from z26: no one can take it until it comes back"</summary>
     private static string FleeOf(GameSnapshot snapshot, FleeAction flee)

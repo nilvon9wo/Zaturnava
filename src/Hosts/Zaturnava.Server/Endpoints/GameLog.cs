@@ -180,6 +180,20 @@ file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bo
                 $"{this.Name(fled.Piece.Owner)}'s {this.Rules.NameOf(fled.Piece.Kind)} escaped the board from "
                     + $"{this.Rules.Topology.NameOf(fled.Cell)}: no one can take it until it comes back."
             ),
+            PieceHired hired => this.Add(
+                number,
+                EventDto.Escaped,
+                hired.HiredBy,
+                $"{this.Name(hired.HiredBy)} hired {this.Name(hired.Piece.Owner)}'s "
+                    + $"{this.Rules.NameOf(hired.Piece.Kind)}, a mercenary, paying {Text(hired.Cost)} points."
+            ),
+            PieceDeployed deployed => this.Add(
+                number,
+                EventDto.Escaped,
+                deployed.Piece.Owner,
+                $"{this.Name(deployed.Piece.Owner)} placed their hired {this.Rules.NameOf(deployed.Piece.Kind)} on "
+                    + $"{this.Rules.Topology.NameOf(deployed.Cell)}."
+            ),
             RajaCapturedOnThrone onThrone => this.Add(
                 number,
                 EventDto.Bonus,

@@ -81,6 +81,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     private readonly FlyingCapture _flying;
     private readonly Custody _custody;
     private readonly Flight _flight;
+    private readonly Mercenaries _mercenaries;
     private readonly PalaceSteps _palaceSteps;
     private readonly FaceOff _faceOff;
     private readonly MoveDiagrams _diagrams;
@@ -172,6 +173,14 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         this._flying = new FlyingCapture(this._grid, this._variant.FlyingCapturers, this._variant.Leaders);
         this._custody = new Custody(this._grid, this._variant.Custodians);
         this._flight = new Flight(this._grid, this._variant.Side, this._variant.Fleers);
+        this._mercenaries = new Mercenaries(
+            this._grid,
+            this._variant.Mercenaries,
+            this._variant.Leaders,
+            this._variant.Points,
+            this._variant.InitialPosition(this._grid),
+            this._control
+        );
         this._palaceSteps = new PalaceSteps(
             this._grid,
             this._variant.PalaceSteppers,
@@ -618,6 +627,11 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
                     + "is taken: held between the two. For example, an enemy on d4 and your Pawn on d5: moving to "
                     + "d3, it takes the enemy. Every enemy held so on its other sides is taken in the same move, "
                     + "up to three at once."),
+                (this._variant.Mercenaries.Contains(kind) && !this._variant.Leaders.Contains(kind),
+                    "Mercenary: whoever holds it prisoner may hire it on their turn, for 110% of what it cost last "
+                    + "(its value, the first time), paid from their points: it becomes theirs. On a later step they "
+                    + "place it on a free square of their palace. Each step is a turn's move, or uses a die that "
+                    + "moves it. It stays a mercenary whatever it is promoted into, and never gets cheaper."),
                 (this._variant.Fleers.Contains(kind),
                     "Escape: on its own far corner, the board's corner across from its army's, it may leave the board "
                     + "as its move, where no one can take it. It comes back only on doubles that let a captured "
@@ -655,6 +669,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
                 new PassAction(seat),
                 .. this.MovesOf(state, seat, this.RolledKinds(state).Contains),
                 .. this.FleesOf(state, seat, this.RolledKinds(state).Contains),
+                .. this.HiringsOf(state, seat, this.RolledKinds(state).Contains),
                 .. this.PromotionsOf(state, seat),
                 .. this.EscapesOf(state, seat),
                 .. this.HandOversOf(state, seat),
@@ -711,6 +726,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
                 new RollAction(seat),
                 .. this.MovesOf(state, seat, _ => true),
                 .. this.FleesOf(state, seat, _ => true),
+                .. this.HiringsOf(state, seat, _ => true),
                 .. this.PromotionsOf(state, seat),
                 .. this.HandOversOf(state, seat),
                 .. this.RetirementsOf(state, seat),
@@ -726,6 +742,35 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     /// <summary>The flights from the far corner the seat may make (<see cref="Flight"/>), as moves of a kind.</summary>
     private IEnumerable<FleeAction> FleesOf(GameState state, SeatId seat, Func<PieceKindId, bool> isMovable) =>
         this._flight.FleesOf(state, seat, this._control.ArmiesOf(state, seat), isMovable);
+
+    /// <summary>
+    /// The mercenaries the seat may hire, and those hired it may place (<see cref="Mercenaries"/>), each as a move of
+    /// its kind.
+    /// </summary>
+    private IEnumerable<GameAction> HiringsOf(GameState state, SeatId seat, Func<PieceKindId, bool> isMovable) =>
+    [
+        .. this._mercenaries.HiresOf(state, seat, isMovable),
+        .. this._mercenaries.DeploysOf(state, seat, isMovable),
+    ];
+
+    /// <summary>
+    /// The mercenary is hired, or placed, using a die that moves its kind, if any was rolled; the turn goes on.
+    /// </summary>
+    private Transition AfterHiring(GameState state, GameAction hiring)
+    {
+        (Transition done, PieceKindId kind) = hiring switch
+        {
+            HireAction hire => (
+                this._mercenaries.Hired(state, hire),
+                state.Prisoners.First(held => held.Piece.Id == hire.Piece).Piece.Kind
+            ),
+            _ => (
+                Mercenaries.Deployed(state, (DeployAction)hiring),
+                state.Hired.First(hired => hired.Id == ((DeployAction)hiring).Piece).Kind
+            ),
+        };
+        return this.GoneOn(this.WithoutDieFor(done, kind));
+    }
 
     /// <summary>
     /// The piece flees, using a die that moves it, if any was rolled; the turn goes on, unless the game is over.
@@ -946,6 +991,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             PromoteOwnAction promote => this.Promoted(state, promote, Become(state, promote)),
             EscapeAction escape => this.Escaped(state, escape),
             FleeAction flee => this.AfterFlight(state, flee),
+            HireAction or DeployAction => this.AfterHiring(state, action),
             HandOverAction handOver => HandedToRegent(state, handOver),
             RetireAction retire => this.Retired(state, retire),
             AnswerEndAction answer => Agreement.Answered(state, answer),
@@ -1120,7 +1166,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     private Transition Promoted(GameState state, PromotionAction promote, (Piece Into, GameState State) becoming)
     {
         Piece pawn = state.Position.PieceAt(promote.Cell)!; // the promotion is legal, so the piece stands there
-        GameState promoted = becoming.State with
+        GameState promoted = this._mercenaries.Promoted(becoming.State, pawn, becoming.Into) with
         {
             Position = state.Position.Place(promote.Cell, becoming.Into),
             PromotionDue = null,
@@ -1337,10 +1383,12 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
 
     /// <summary>
     /// Whether the deciding seat may move a piece of a kind <paramref name="isRolled"/> lets move, promote
-    /// an enemy Pawn with such a die, or let a piece escape.
+    /// an enemy Pawn with such a die, let a piece escape, or hire or place a mercenary of such a kind.
     /// </summary>
     private bool MayUse(GameState state, Func<PieceKindId, bool> isRolled) =>
-        this.MayMove(state, isRolled) || this.EscapesOf(state, state.DecidingSeat!.Value).Any();
+        this.MayMove(state, isRolled)
+        || this.EscapesOf(state, state.DecidingSeat!.Value).Any()
+        || this.HiringsOf(state, state.DecidingSeat!.Value, isRolled).Any();
 
     /// <summary>
     /// Whether the deciding seat may move a piece of a kind <paramref name="isRolled"/> lets move, or promote

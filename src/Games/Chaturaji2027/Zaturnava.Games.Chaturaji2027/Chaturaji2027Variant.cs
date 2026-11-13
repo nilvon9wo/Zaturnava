@@ -128,6 +128,12 @@ public sealed record Chaturaji2027Variant(
     /// </summary>
     public ImmutableHashSet<PieceKindId> Fleers { get; init; } = [];
 
+    /// <summary>
+    /// The kinds whose pieces, but leaders, start as mercenaries (the Shogi pieces): none, unless set
+    /// (<see cref="Mercenaries"/>).
+    /// </summary>
+    public ImmutableHashSet<PieceKindId> Mercenaries { get; init; } = [];
+
     /// <summary>The kinds that may call a leader face-off (a Janggi General): none, unless set.</summary>
     public ImmutableHashSet<PieceKindId> FaceOffCallers { get; init; } = [];
 
