@@ -22,8 +22,9 @@ public sealed record GrandPiece(
     public IReadOnlyList<PieceKindId> PromotesTo { get; init; } = [];
 
     /// <summary>
-    /// The edition of the catalogue it came with: 0, the first; 1, the Checkers and Tafl pieces (2026-11-13). A game
-    /// dealt from an edition before it never holds it, so that it replays as it was dealt.
+    /// The edition of the catalogue it came with: 0, the first; 1, the Checkers and Tafl pieces (2026-11-13); 4, the
+    /// Berolina Pawn, the Manchu Chariot and the Courier (the same day). A game dealt from an edition before it never
+    /// holds it, so that it replays as it was dealt.
     /// </summary>
     public int Edition { get; init; }
 

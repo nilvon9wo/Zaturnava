@@ -183,6 +183,8 @@ The dice name a class, not a piece ([specification §6.1](specification.md#61-th
 | Pawn (Makruk) | One square forward; captures one square diagonally forward | Move: blocked straight ahead | → Courtier on the sixth rank | 4 | 2 / — |
 | Soldier (Xiangqi) | One square forward, or sideways | Move: no sideways before crossing the river, never back | — | 4 | 2 / 3 |
 | Advisor (Xiangqi) | One square diagonally | Area: its 3 × 3 palace | — | 2 | — / 5 |
+| Courier | One square in any direction | — | — | 9 | — / — |
+| Pawn (Berolina) | One square diagonally forward; captures one square straight forward | Move: blocked diagonally ahead | → Queen, Rook, Bishop or Knight on the last rank | 6 | 2 / — |
 
 Any Infantry piece that reaches the far edge may also be promoted into any captured piece, as in
 Chaturaji 2027.
@@ -222,6 +224,7 @@ Chaturaji 2027.
 | Piece | Moves | Captures | Restrictions | Value | Lifts |
 |---|---|---|---|---|---|
 | Man (Checkers) | One square diagonally forward | By [jumping](#jumping-and-custody), diagonally forward; → King (Checkers) on the last rank | One colour (by its move) | 54 | — / — |
+| Manchu Chariot | Any distance orthogonally, or leaps 2+1 | Same, or by hopping one piece, at any distance beyond, orthogonally | — | 24 | — / — |
 | Cannon (Xiangqi) | Any distance orthogonally | By hopping one piece, at any distance beyond | — | 10 | — / — |
 | Cannon (Janggi) | Over exactly one piece, to any cell beyond, orthogonally | Same | Move: must hop exactly one piece; may neither hop nor capture a Cannon of either kind | 8 | 3 / — |
 | Grasshopper | Along any line, over the first piece met, to the cell just beyond | Same | Move: must hop, landing just beyond | 8 | 3 / — |
@@ -272,11 +275,40 @@ Their values, by the sheet's columns:
   holds no ground: if it was its team's last piece on the board, the game ends as when a team is left alone.
   The escape is unpriced: its worth is an [open question](../open-questions.md).
 
+### The Berolina Pawn, the Manchu Chariot and the Courier
+
+Three pieces, rows 45 to 47 of the sheet (added by the designer, 2026-11-13, with their names, classes and
+moves; the columns they left open filled in by the program, *Proposed*):
+
+- **Pawn (Berolina)**, from Berolina chess: the Western Pawn turned about, moving one square diagonally forward
+  and taking one square straight forward. It promotes as the Western Pawn does, on the last rank. Without its
+  double first step or *en passant*, which Berolina chess also has.
+- **Manchu Chariot**, from Manchu chess, where it is the one piece of its side that combines three: it moves as a
+  Rook, leaps as a Knight (not as a Xiangqi Horse, whose leap may be blocked: the sheet says "Knight-like"), and
+  also takes as the Xiangqi Cannon does, by hopping one piece. Artillery, as the sheet has it.
+- **Courier**: moves one square in any direction, as a King does, but is not a leader. The sheet marks it as
+  jumping too; a single step jumps nothing, so that changes nothing.
+
+Their values, by the sheet's columns:
+
+| Piece | Leader | Reach | Premium | Powers | Limits | Value |
+|---|---|---|---|---|---|---|
+| Manchu Chariot | 0 | 22 | 0 | +2 | 0 | 24 |
+| Courier | 0 | 8 | 1 | 0 | 0 | 9 |
+| Pawn (Berolina) | 0 | 3 | 4 | 0 | −1 | 6 |
+
+- The Chariot's reach is the Chancellor's; the Cannon's capture adds +2.
+- The Berolina Pawn's premium is the Western Pawn's, a Queen over 6 rows (25 ÷ 6, about 4); unlike that Pawn,
+  it has no first-move powers (the Western Pawn's +3). Its move is blocked diagonally, as the Western Pawn's is
+  straight ahead (−1).
+- The Courier's premium is the far edge's, a Rook, over 6 rows ((14 − 8) ÷ 6 = 1).
+
 ### Editions
 
 A game stored before these pieces came must replay as it was played, and an army is dealt or offered from
 the pieces there are. So every piece carries the edition it came in (0 for the catalogue as it was, 1 for
-these four), and every game records the edition it was started in. A game deals and offers only the pieces of
+the four Checkers and Tafl pieces, 4 for the Berolina Pawn, the Manchu Chariot and the Courier), and every
+game records the edition it was started in. A game deals and offers only the pieces of
 its edition or before; a game started before editions were recorded is of edition 0. New games are of the
 latest edition.
 

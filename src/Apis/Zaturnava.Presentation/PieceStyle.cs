@@ -57,15 +57,21 @@ public static partial class PieceStyle
     private const string KnightsLeap =
         "M0.27 0.06V0.14A0.09 0.09 0 0 0 0.45 0.14V0.06H0.41V0.14A0.05 0.05 0 0 1 0.31 0.14V0.06Z";
 
+    /// <summary>A small cannon, at the left of a piece that also takes as a Cannon does, by hopping a piece.</summary>
+    private const string CannonsHop =
+        "M-0.46 0.02L-0.3 -0.08L-0.27 -0.03L-0.43 0.07Z"
+            + "M-0.46 0.08A0.04 0.04 0 1 1 -0.38 0.08A0.04 0.04 0 1 1 -0.46 0.08Z";
+
     /// <summary>
     /// SVG path data for each symbol a marked piece is drawn with (Proposed), about the piece's centre as a shape is,
     /// alike for pieces alike (Stated): a star for every General; a shield for the Guard, a fan for the Advisor, a
     /// scroll for the Minister, a tiara for the Noble, a plumed cap for the Courtier, a sword for a Soldier; a lance
     /// with its pennant; a camel, an elephant, a giraffe, three dots for the Threeleaper, a catapult for the War
     /// Engine; a cannon on its wheel, and a grasshopper; a draughtsman for the Man of Checkers, a horned helmet for
-    /// the Swede. A piece drawn as a chess piece with more to it has here what
+    /// the Swede; a sealed letter for the Courier. A piece drawn as a chess piece with more to it has here what
     /// it adds (<see cref="SymbolGlyphs"/>): a Dragon its wings; the Amazon and Chancellor a small horseshoe, as they
-    /// leap as a Knight does too; and the Knight's kin the mark of how they differ: the Knightrider speed lines,
+    /// leap as a Knight does too, and the Manchu Chariot a small cannon besides, as it also takes as a Cannon does;
+    /// and the Knight's kin the mark of how they differ: the Knightrider speed lines,
     /// as it rides on, the Zebra stripes, and the Xiangqi Horse a block, as its leap may be blocked.
     /// </summary>
     private static readonly ImmutableDictionary<string, string> Symbols =
@@ -80,6 +86,7 @@ public static partial class PieceStyle
             .Add("dragon-horse", Wings)
             .Add("amazon", KnightsLeap)
             .Add("chancellor", KnightsLeap)
+            .Add("manchu-chariot", KnightsLeap + CannonsHop)
             .Add(
                 "knightrider",
                 "M-0.46 -0.14H-0.26V-0.1H-0.46Z" + "M-0.42 -0.02H-0.26V0.02H-0.42Z" + "M-0.46 0.1H-0.26V0.14H-0.46Z"
@@ -154,6 +161,7 @@ public static partial class PieceStyle
                     + "M-0.2 0.14A0.12 0.12 0 1 1 0.04 0.14A0.12 0.12 0 1 1 -0.2 0.14Z"
             )
             .Add("checker", "M-0.28 -0.06A0.28 0.12 0 0 1 0.28 -0.06V0.1A0.28 0.12 0 0 1 -0.28 0.1Z")
+            .Add("letter", "M-0.28 -0.18H0.28V0.18H-0.28Z" + "M-0.22 -0.12L0 0.04L0.22 -0.12Z" + Circle(0, 0.04, 0.06))
             .Add(
                 "viking-helmet",
                 "M-0.2 0.1Q-0.2 -0.2 0 -0.2Q0.2 -0.2 0.2 0.1Z"
@@ -226,6 +234,7 @@ public static partial class PieceStyle
             .Add("dragon-horse", "♞")
             .Add("amazon", "♛")
             .Add("chancellor", "♜")
+            .Add("manchu-chariot", "♜")
             .Add("knightrider", "♞")
             .Add("zebra", "♞")
             .Add("xiangqi-horse", "♞");

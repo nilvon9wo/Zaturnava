@@ -895,7 +895,7 @@ public sealed class GrandLegionsRulesTest
 
         // Assert
         Assert.Equal(
-            (6, 4),
+            (6, 5),
             (dice.Sides, dice.KindsOf(1).Count)
         );
         Assert.Contains(GrandLegionsPieces.Grasshopper, dice.KindsOf(1));
