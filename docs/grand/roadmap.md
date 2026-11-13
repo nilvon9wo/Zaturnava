@@ -178,8 +178,11 @@ to edit, wait for players to sign in and for storage that lasts.
     throne. In a drafted game each player places theirs first, about a square of their kingdom, then their
     throne in it; where the kingdom has room for one palace only, it is placed for them. The page draws each
     palace's wall battlemented, and a line from each of its cells to its throne.
-  - Still to come: confinement to a palace, steps along its lines, and the pieces that need them (Janggi's
-    General, Guard and Soldier) in quick armies.
+  - Done (2026-11-13): confinement (`PalaceConfinement`). A confined piece in a palace stays in that palace, whosever
+    it is; one outside every palace moves freely until it enters one; only the Xiangqi General's flying-general
+    capture, onto a leader, takes it out.
+  - Still to come: steps along its lines, and the pieces that need palaces (the Generals, Guard and Advisor, and the
+    Janggi Soldier's palace powers) in drafted and quick armies, a confined piece placed only in its palace.
 - Several leaders in one army: throne control, and everything the Chaturaji 2027 rules say of "the Raja",
   said of leaders.
 - Scoring by piece value, with the Chaturaji 2027 bonuses multiplied by 10 until playtesting says
