@@ -147,8 +147,10 @@ What the program does so far (2026-11-04), and the gaps against the above:
   `Scoring/chaturaji-2027.json`) that can be changed apart from the code. Piece values, each piece's
   price and what taking it scores, are read from tables too (`Values/grand-legions.json`,
   `Values/chaturaji-2027.json`), as specification §6.3 asks.
-- A river keeps a Xiangqi Elephant on its own side (`RiverCrossing`). The Xiangqi Soldier's
-  sideways step once across is still to come. *Stated* (2026-11-06), *done*: a quick game's rivers
+- A river keeps a Xiangqi Elephant on its own side (`RiverCrossing`). *Done* (2026-11-13): the Xiangqi Soldier
+  steps sideways once it stands across a river from its kingdom, either river where there are two
+  (specification §2); never before, nor where there is no river. Prices are unchanged: its sideways reach counts
+  alike on every board. *Stated* (2026-11-06), *done*: a quick game's rivers
   are decided at random, each layout equally likely (none, north–south, east–west, both), through
   the kingdoms or around them equally likely (`QuickTerrain`, kept as the game's terrain); they are
   drawn in blue on the board and told beside the game's name, the armies are picked for them (river
