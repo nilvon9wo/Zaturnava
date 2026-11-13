@@ -429,7 +429,9 @@ first.
   once and, when none scores, moves at random, never looking past its own action; the block was chance, not
   a choice. *Stated 2026-11-13* (was OQ11): Midas stays as careless as it is; a less careless Midas, one that
   when nothing scores prefers a move leaving none of its own pieces newly open to capture, might be an
-  additional bot. Not a priority.
+  additional bot. Not a priority. *Done* (2026-11-13): **Croesus**, Midas but for that; "newly open" *(Proposed)*
+  is the team no more exposed, as Argus weighs the worst an enemy could do in reply, than before the move. The
+  server's rating job rates it.
 
 - *(Stated 2026-11-12)* The leaderboard shows each player's winning streak, the games won since they last lost,
   three ways: over every game, over the games that count toward Elo only, and over the games against people

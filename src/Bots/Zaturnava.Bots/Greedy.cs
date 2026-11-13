@@ -24,14 +24,20 @@ internal static class Greedy
     }
 
     /// <summary>The best scoring actions, if any score; otherwise every action that does something.</summary>
-    internal static ImmutableList<GameAction> Choices(DecisionRequest request)
+    internal static ImmutableList<GameAction> Choices(DecisionRequest request) => Weighed(request).Choices;
+
+    /// <summary>
+    /// The best scoring actions, if any score (<paramref name="request"/>'s <c>Scores</c>); otherwise every action
+    /// that does something.
+    /// </summary>
+    internal static (ImmutableList<GameAction> Choices, bool Scores) Weighed(DecisionRequest request)
     {
         ImmutableList<(GameAction Action, int Gain)> gains =
             [.. Playable.Of(request).Select(action => (action, Gain(request, action, After(request, action))))];
         int best = gains.Max(gain => gain.Gain);
         return best > 0
-            ? [.. gains.Where(gain => gain.Gain == best).Select(gain => gain.Action)]
-            : Active(gains);
+            ? ([.. gains.Where(gain => gain.Gain == best).Select(gain => gain.Action)], true)
+            : (Active(gains), false);
     }
 
     /// <summary>Anything but passing that loses nothing, if there is anything such; else passing.</summary>
