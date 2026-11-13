@@ -86,10 +86,10 @@ public sealed class BotRatingServiceTest
     }
 
     [Fact]
-    public async Task Apply_WhenANewBotHasPlayedEachRatedBotEnough_RatesItAgainstTheirRatingsAndKeepsTheirs()
+    public async Task Apply_WhenANewBotHasPlayedEachShippedBotEnough_RatesItAnewAgainstTheirRatingsAndKeepsTheirs()
     {
-        // Arrange - c, not rated, won 3 of 3 against a (1000) and 1 of 2 against b (1400); at other, 1 game only;
-        // a bot no longer offered played too
+        // Arrange - c, not shipped rated, though rated by fewer games before, won 3 of 3 against a (1000) and 1 of 2
+        // against b (1400); at other, 1 game only; a bot no longer offered played too
         await this.Keep(new BotMatchup(EndedRules.RulesetId, "a", "c") { Lost = 3 });
         await this.Keep(new BotMatchup(EndedRules.RulesetId, "b", "c") { Won = 1, Lost = 1 });
         await this.Keep(new BotMatchup(EndedRules.RulesetId, "c", "gone") { Won = 9 });
@@ -100,6 +100,7 @@ public sealed class BotRatingServiceTest
                 .Add(EndedRules.RulesetId, shipped)
                 .Add("other", shipped)
         );
+        bots.Rate(EndedRules.RulesetId, ImmutableDictionary<string, int>.Empty.Add("c", 2000));
         BotRatingService service = this.Service(
             [new EndedRules(EndedRules.State([])), new EndedRules(EndedRules.State([]), "other")],
             bots
@@ -115,11 +116,22 @@ public sealed class BotRatingServiceTest
         );
     }
 
-    [Fact]
-    public async Task Apply_WhenTheAnchorIsNotRated_RatesItAtTheAnchorsRatingAndTheOthersAgainstIt()
+    [Theory]
+    [InlineData(2, "a ended 1000; b ended 1207; c ended 1103")]
+    [InlineData(0, "a ended 1000; b ; c ")]
+    public async Task Apply_WhenOnlyTheAnchorIsShipped_RatesItAtTheAnchorsRatingAndFitsTheOthersTogetherOnceReady(
+        int drawnByBAndC,
+        string expected
+    )
     {
-        // Arrange - b won 3 of 3 against a, the anchor, neither rated
+        // Arrange - b won 3 of 3 against a, the anchor; c won 1 of 2 against a; b and c drew so many; none shipped
         await this.Keep(new BotMatchup(EndedRules.RulesetId, "a", "b") { Lost = 3 });
+        await this.Keep(new BotMatchup(EndedRules.RulesetId, "a", "c") { Won = 1, Lost = 1 });
+        if (drawnByBAndC > 0)
+        {
+            await this.Keep(new BotMatchup(EndedRules.RulesetId, "b", "c") { Drawn = drawnByBAndC });
+        }
+
         BotCatalog bots = Catalog([]);
         BotRatingService service = this.Service([new EndedRules(EndedRules.State([]))], bots);
 
@@ -127,10 +139,7 @@ public sealed class BotRatingServiceTest
         ImmutableList<string> rated = await service.Apply(this._cancellation);
 
         // Assert
-        Assert.Equal(
-            (EndedRules.RulesetId, "a ended 1000; b ended 1338; c "),
-            (string.Join(",", rated), Listed(bots))
-        );
+        Assert.Equal((EndedRules.RulesetId, expected), (string.Join(",", rated), Listed(bots)));
     }
 
     [Fact]
