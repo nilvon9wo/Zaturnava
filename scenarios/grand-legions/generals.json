@@ -1,0 +1,17 @@
+{
+  "rulesetId": "grand-legions-medium",
+  "name": "Flying general and face-off",
+  "description": "Black has rolled 5 and 6 (leader). Black's Xiangqi General on b1 sees Yellow's King on b8 down an empty file: it may fly the whole way and take it. Black's Janggi General on g1 faces Red's Silver General on g8: either side may call a face-off.",
+  "turn": "Black",
+  "edition": 6,
+  "dice": [5, 6],
+  "pieces": {
+    "b1": "Black General (Xiangqi)",
+    "g1": "Black General (Janggi)",
+    "h1": "Green Gold General (Shogi)",
+    "b8": "Yellow King (Western)",
+    "g8": "Red Silver General (Shogi)",
+    "d7": "Yellow Pawn (Western)",
+    "e7": "Red Pawn (Western)"
+  }
+}

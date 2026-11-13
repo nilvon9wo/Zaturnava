@@ -407,6 +407,27 @@ public sealed class LobbyTest : IDisposable
     }
 
     [Fact]
+    public void Lobby_WhenScenariosAreOfSeveralGames_OffersThoseOfTheChosenGameAndThoseUnreadable()
+    {
+        // Arrange
+        this._page.Server.Scenarios =
+        [
+            new ScenarioDto("escape", "chaturaji-2027", "Escape", "Doubles."),
+            new ScenarioDto("chain", "grand-legions-medium", "Chain", "Jumps."),
+            new ScenarioDto("broken", string.Empty, "broken", "broken.json cannot be read."),
+        ];
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.ByStrength();
+
+        // Assert
+        Assert.Equal(
+            ",escape,broken",
+            string.Join(",", lobby.FindAll("select.scenario option").Select(option => option.GetAttribute("value")))
+        );
+    }
+
+    [Fact]
     public void Play_WhenNoScenarioIsChosen_StartsFromTheBeginning()
     {
         // Arrange

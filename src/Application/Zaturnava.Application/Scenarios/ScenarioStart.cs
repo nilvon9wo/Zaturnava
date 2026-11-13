@@ -29,10 +29,10 @@ public static class ScenarioStart
     /// since Grand Legions gained the Checkers and Tafl pieces (2026-11-13); 2, since it gained mercenaries (the same
     /// day); 3, since its quick armies spread their budget evenly (the same day); 4, since it gained the Berolina
     /// Pawn, the Manchu Chariot and the Courier (the same day); 5, since its armies' budgets follow the designer's
-    /// formula, and the Tafl King and the Swede are priced for custody (the same day). A game dealt before says none,
-    /// and is 0.
+    /// formula, and the pieces that take several at once are priced for it (the same day); 6, since a chain of jumps
+    /// is played jump by jump (the same day). A game dealt before says none, and is 0.
     /// </summary>
-    public const int Edition = 5;
+    public const int Edition = 6;
 
     private const string Argument = "scenario";
     private const string SeedArgument = "seed";
@@ -261,6 +261,7 @@ public static class ScenarioStart
             RollOff = [],
             AwaitedDice = null,
             Dice = scenario.Dice,
+            Edition = scenario.Edition,
         };
     }
 

@@ -438,6 +438,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         state.Outcome is null
         && state.AwaitedDice is null
         && state.PromotionDue is null
+        && state.Jumping is null
         && state.Returning is null
         && state.Offer is null
         && state.Proposal is null
@@ -528,6 +529,8 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         this._measures.Of(state, seat);
 
     public string NameOf(PieceKindId kind) => this._variant.Names[kind];
+
+    public ImmutableList<PieceKindId> Kinds => [.. this._variant.Kinds.Keys.OrderBy(kind => kind.Value)];
 
     public PieceMark? MarkOf(PieceKindId kind) => this._variant.Marks.GetValueOrDefault(kind);
 
@@ -659,6 +662,20 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             : [new AnswerEndAction(seat, true), new AnswerEndAction(seat, false)];
 
     private ImmutableList<GameAction> PlayChoicesOf(GameState state, SeatId seat) =>
+        state.Jumping is { } jumping
+            ? [new PassAction(seat), .. this.JumpsOn(state, jumping, seat)]
+            : this.TurnPlayChoicesOf(state, seat);
+
+    /// <summary>Whether a chain of jumps is played jump by jump in the game.</summary>
+    private bool IsJumpByJump(GameState state) => state.Edition >= this._variant.JumpByJumpEdition;
+
+    /// <summary>The jumps the piece on <paramref name="cell"/> may go on with, each a move of its own.</summary>
+    private IEnumerable<MoveAction> JumpsOn(GameState state, CellId cell, SeatId seat) =>
+        this.MovesFrom(state, cell, state.Position.PieceAt(cell)!, seat)
+            .Where(move => !move.Jumped.IsEmpty)
+            .Select(move => new MoveAction(seat, move.From, move.To));
+
+    private ImmutableList<GameAction> TurnPlayChoicesOf(GameState state, SeatId seat) =>
         (state.Returning, state.Offer, state.IsRansomWindow, state.PromotionDue, state.Dice.IsEmpty) switch
         {
             ({ }, _, _, _, _) => [.. this._ransom.PlacesOf(state)],
@@ -910,7 +927,8 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     private IEnumerable<Move> MovesFrom(GameState state, CellId cell, Piece piece, SeatId mover)
     {
         bool MayTake(Piece target) => this.IsCapturable(state, target, mover);
-        return this._moves.MovesFrom(state.Position, cell, state.SeatOf(piece.Owner), MayTake)
+        bool isJumpByJump = this.IsJumpByJump(state);
+        return this._moves.MovesFrom(state.Position, cell, state.SeatOf(piece.Owner), MayTake, isJumpByJump)
             .Concat(this._startRows.MovesFrom(state, cell, piece, mover, MayTake))
             .Concat(this._castling.MovesFrom(state, cell, piece))
             .Concat(this._flying.MovesFrom(state, cell, piece, MayTake))
@@ -1004,6 +1022,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             AcceptAction accept => this.Accepted(state, accept),
             PlaceAction place => this._ransom.Placed(state, place),
             DeclineAction => Ransom.Declined(state),
+            _ when state.Jumping is not null => this.GoneOn(new Transition(state with { Jumping = null }, [])),
             _ when state.PromotionDue is not null =>
                 this.GoneOn(new Transition(state with { PromotionDue = null }, [])),
             _ when state.IsRansomWindow => this.Handed(new Transition(state, [])),
@@ -1277,19 +1296,26 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
 
     /// <summary>
     /// A deliberate move ends the turn; a rolled one uses up its die. A Pawn come to the far edge, if it
-    /// may be promoted, waits on that first (rules.md §8).
+    /// may be promoted, waits on that first (rules.md §8). A piece that has jumped, where a chain is played jump by
+    /// jump, may go on jumping, with no die, while it can, or stop; a jump that goes on from one uses no die either.
     /// </summary>
     private Transition AfterMove(GameState state, MoveAction move)
     {
-        PieceKindId kind = state.Position.PieceAt(move.From)!.Kind; // the move is legal, so a piece stands there
-        Transition moved = this._farming.Tallied(state, move, this.Moved(state, move));
-        Transition used = this.WithoutDieFor(moved, kind);
+        Piece mover = state.Position.PieceAt(move.From)!; // the move is legal, so a piece stands there
+        bool hasJumped = this.IsJumpByJump(state)
+            && !this.JumpedBy(state, move, mover, target => this.IsCapturable(state, target, move.Actor)).IsEmpty;
+        GameState free = state with { Jumping = null };
+        Transition moved = this._farming.Tallied(free, move, this.Moved(free, move));
+        Transition used = state.Jumping is null ? this.WithoutDieFor(moved, mover.Kind) : moved;
         GameState due = used.State with { PromotionDue = move.To };
         bool isDue = this.PromotionsOf(due, move.Actor).Any(promotion => promotion.Cell == move.To);
-        return (GameEnd.AfterMove(moved, this._variant), isDue) switch
+        GameState jumping = used.State with { Jumping = move.To };
+        bool goesOn = hasJumped && this.JumpsOn(jumping, move.To, move.Actor).Any();
+        return (GameEnd.AfterMove(moved, this._variant), isDue, goesOn) switch
         {
-            ({ } over, _) => over,
-            (_, true) => used with { State = due },
+            ({ } over, _, _) => over,
+            (_, true, _) => used with { State = due },
+            (_, _, true) => used with { State = jumping },
             _ => this.GoneOn(used),
         };
     }
@@ -1577,7 +1603,13 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     /// <summary>The cells of the pieces the move jumps over, and takes, in order; none unless it jumps.</summary>
     private ImmutableList<CellId> JumpedBy(GameState state, MoveAction move, Piece mover, Func<Piece, bool> mayTake) =>
         this._variant.Kinds[mover.Kind].Movement.Any(rule => rule.IsJumping)
-            ? this._moves.MovesFrom(state.Position, move.From, state.SeatOf(mover.Owner), mayTake)
+            ? this._moves.MovesFrom(
+                    state.Position,
+                    move.From,
+                    state.SeatOf(mover.Owner),
+                    mayTake,
+                    this.IsJumpByJump(state)
+                )
                 .FirstOrDefault(jump => jump.To == move.To && !jump.Jumped.IsEmpty)?.Jumped ?? []
             : [];
 

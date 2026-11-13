@@ -42,10 +42,16 @@ internal sealed class Mercenaries(
     public bool IsMercenary(GameState state, Piece piece) =>
         state.Edition >= Edition && (state.MercenaryCosts.ContainsKey(piece.Id) || this.StartedAsOne(state, piece));
 
-    private bool StartedAsOne(GameState state, Piece piece) =>
-        (state.Start ?? this._initial).Occupants.Values.FirstOrDefault(start => start.Id == piece.Id) is { } started
-        && this._kinds.Contains(started.Kind)
-        && !this._leaders.Contains(started.Kind);
+    /// <summary>
+    /// Whether the piece started as a mercenary kind; one that started nowhere, as a scenario may add (no game dealt
+    /// has any), is judged as it is.
+    /// </summary>
+    private bool StartedAsOne(GameState state, Piece piece)
+    {
+        Piece started =
+            (state.Start ?? this._initial).Occupants.Values.FirstOrDefault(start => start.Id == piece.Id) ?? piece;
+        return this._kinds.Contains(started.Kind) && !this._leaders.Contains(started.Kind);
+    }
 
     /// <summary>What hiring the mercenary costs now: 110% of what it cost last, rounded up.</summary>
     public int CostOf(GameState state, Piece piece) => ((this.LastCostOf(state, piece) * 11) + 9) / 10;

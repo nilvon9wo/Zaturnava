@@ -122,34 +122,31 @@
                 @if (this.Ruleset(catalog).SizableBoard is not null)
                 {
                     <label class="board">
-                        <span class="choice-name">Board</span>
+                        <span class="choice-name">Board side</span>
                         <input type="number"
                                class="board-side"
-                               aria-label="Cells on each side of the board"
                                min="6"
                                max="26"
                                @bind="this._side"
                                @bind:after="this.Resized" />
-                        cells square
                     </label>
-                    <label class="kingdoms">
-                        <span class="choice-name">Kingdoms</span>
+                    <label class="kingdom-width">
+                        <span class="choice-name">Kingdom width</span>
                         <input type="number"
                                class="kingdom-width"
-                               aria-label="Cells along each kingdom's back rank"
                                min="3"
                                max="13"
                                @bind="this._kingdomWidth"
                                @bind:after="this.Resized" />
-                        wide,
+                    </label>
+                    <label class="kingdom-height">
+                        <span class="choice-name">Kingdom height</span>
                         <input type="number"
                                class="kingdom-depth"
-                               aria-label="Cells deep each kingdom is"
                                min="3"
                                max="13"
                                @bind="this._kingdomDepth"
                                @bind:after="this.Resized" />
-                        deep
                     </label>
                 }
             </div>
@@ -222,30 +219,32 @@
             }
             @if (this._mode != SetupMode.Quick && this.Ruleset(catalog).IsDealt)
             {
-                <label class="armies">
-                    <span class="choice-name">Armies</span>
-                    <select class="armies" @bind="this._armies">
-                        @if (this.Ruleset(catalog).IsDraftable)
-                        {
-                            <option value="@DraftOwn">Each player drafts their own</option>
-                            <option value="@DraftOne">I draft one army for everyone</option>
-                        }
-                        <option value="@RandomEach">Every army at random</option>
-                        <option value="@RandomOne">One army at random for everyone</option>
-                    </select>
-                </label>
-                @if (this.IsDrafting)
-                {
-                    <label class="budget">
-                        <span class="choice-name">Points to spend</span>
-                        <input type="number"
-                               class="draft-budget"
-                               min="1"
-                               max="@this.BudgetLimit(catalog)"
-                               @bind="this._budget"
-                               placeholder="@this.Ruleset(catalog).DraftBudget" />
+                <div class="army-choices">
+                    <label class="armies">
+                        <span class="choice-name">Armies</span>
+                        <select class="armies" @bind="this._armies">
+                            @if (this.Ruleset(catalog).IsDraftable)
+                            {
+                                <option value="@DraftOwn">Each player drafts their own</option>
+                                <option value="@DraftOne">I draft one army for everyone</option>
+                            }
+                            <option value="@RandomEach">Every army at random</option>
+                            <option value="@RandomOne">One army at random for everyone</option>
+                        </select>
                     </label>
-                }
+                    @if (this.IsDrafting)
+                    {
+                        <label class="budget">
+                            <span class="choice-name">Points to spend</span>
+                            <input type="number"
+                                   class="draft-budget"
+                                   min="1"
+                                   max="@this.BudgetLimit(catalog)"
+                                   @bind="this._budget"
+                                   placeholder="@this.Ruleset(catalog).DraftBudget" />
+                        </label>
+                    }
+                </div>
                 @if (this._armies == DraftOwn)
                 {
                     <label class="secret">
@@ -269,19 +268,19 @@
                     Players signed in only: no guests at the open seats, nor taking over a bot's
                 </label>
             }
-            @if (this._mode != SetupMode.Quick && !catalog.Scenarios.IsEmpty)
+            @if (this._mode != SetupMode.Quick && !this.ScenariosFor(catalog).IsEmpty)
             {
                 <label class="scenario">
                     <span class="choice-name">Start from</span>
                     <select class="scenario" @bind="this._scenario">
                         <option value="">The beginning</option>
-                        @foreach (ScenarioDto scenario in catalog.Scenarios)
+                        @foreach (ScenarioDto scenario in this.ScenariosFor(catalog))
                         {
                             <option value="@scenario.Id">Scenario: @scenario.Name</option>
                         }
                     </select>
                 </label>
-                @if (catalog.Scenarios.FirstOrDefault(scenario => scenario.Id == this._scenario) is { } chosen)
+                @if (this.ScenariosFor(catalog).FirstOrDefault(scenario => scenario.Id == this._scenario) is { } chosen)
                 {
                     <p class="scenario-description">@chosen.Description</p>
                 }
@@ -915,12 +914,23 @@
             this.Ruleset(catalog).Id,
             GameStarter.ByStrength(this.ChoicesOfSeats(), this._strengths),
             this._colour,
-            this._scenario.Length == 0 ? null : this._scenario,
+            this.ScenariosFor(catalog).Any(scenario => scenario.Id == this._scenario) ? this._scenario : null,
             await this.Browser.Claimant(),
             armies: this.ArmiesAsked(catalog),
             isForPlayers: this._isForPlayers
         ));
     }
+
+    /// <summary>
+    /// The scenarios the chosen game may start from: those of its ruleset, and any that cannot be read, which are of
+    /// none, so that whoever wrote one sees what to fix.
+    /// </summary>
+    private ImmutableList<ScenarioDto> ScenariosFor(CatalogDto catalog) =>
+    [
+        .. catalog.Scenarios.Where(scenario =>
+            scenario.RulesetId == this.Ruleset(catalog).Id || scenario.RulesetId.Length == 0
+        ),
+    ];
 
     private bool IsDrafting => this._armies is DraftOwn or DraftOne;
 

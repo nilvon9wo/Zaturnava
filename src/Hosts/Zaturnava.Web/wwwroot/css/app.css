@@ -279,16 +279,26 @@ html { scrollbar-gutter: stable; }
 .plans.strengths select { width: 100%; min-width: 0; }
 /* The game, its size and where to start from, in the same columns as the seats below them: each choice's name in
    the first, its dropdown in the second, so that every dropdown lines up. */
-.choices, .panel label.scenario {
+.choices, .army-choices, .panel label.scenario {
     display: grid;
     grid-template-columns: 9.5em minmax(0, 1fr) minmax(0, 1fr);
     gap: 6px;
     align-items: center;
     margin: 6px 0;
 }
-.choices label { display: contents; }
+.choices label, .army-choices label { display: contents; }
+.army-choices .choice-name { grid-column: 1; }
+.army-choices select, .army-choices input[type="number"] {
+    grid-column: 2;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
 /* A game's checkbox options, each a line of its own. */
-label.alike, label.drafted, label.for-players { display: block; margin-top: 6px; }
+label.alike, label.drafted, label.for-players, label.secret, label.secret-from-allies {
+    display: block;
+    margin-top: 6px;
+}
 /* The pieces to draft: filters over a table that scrolls within the turn's panel, its head kept in view. */
 .draft-catalogue h3 { margin: 4px 0 6px; font-size: 1em; }
 .draft-catalogue .filters { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; margin-bottom: 6px; }
@@ -315,6 +325,8 @@ label.alike, label.drafted, label.for-players { display: block; margin-top: 6px;
 .draft-table tr.unaffordable button.pick { cursor: not-allowed; }
 /* Each choice a row of its own: its name always starts one, even where the row before left a column free. */
 .choices .choice-name { grid-column: 1; }
+/* The board's and the kingdoms' sizes: each a number of its own, in the column of the choices. */
+.choices input[type="number"] { grid-column: 2; width: 100%; min-width: 0; box-sizing: border-box; }
 .choices select, .panel label.scenario select { width: 100%; min-width: 0; }
 /* The one choice of game, for the whole lobby, across its top: with whether to show previews beside it. */
 .lobby-games {

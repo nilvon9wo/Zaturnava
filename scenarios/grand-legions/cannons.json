@@ -1,0 +1,23 @@
+{
+  "rulesetId": "grand-legions-medium",
+  "name": "Cannons and the Manchu Chariot",
+  "description": "Black has rolled 1 and 1 (artillery). Black's Xiangqi Cannon on a1 takes Red's Rook on a6 by hopping its own Pawn on a3. Black's Janggi Cannon on h1 must hop Yellow's Pawn on h3, landing on h4 or h5, and may not take Yellow's Janggi Cannon on h6. Black's Manchu Chariot on d1 moves as a Rook up to d3, leaps as a Knight, and takes Red's Knight on d7 by hopping Green's Pawn on d4.",
+  "turn": "Black",
+  "edition": 6,
+  "dice": [1, 1],
+  "pieces": {
+    "a1": "Black Cannon (Xiangqi)",
+    "a3": "Black Pawn (Western)",
+    "h1": "Black Cannon (Janggi)",
+    "d1": "Black Manchu Chariot",
+    "c1": "Black Gold General (Shogi)",
+    "e1": "Green Gold General (Shogi)",
+    "d4": "Green Pawn (Western)",
+    "a6": "Red Rook (Western)",
+    "a8": "Red Silver General (Shogi)",
+    "d7": "Red Knight (Western)",
+    "h3": "Yellow Pawn (Western)",
+    "h6": "Yellow Cannon (Janggi)",
+    "f8": "Yellow King (Western)"
+  }
+}

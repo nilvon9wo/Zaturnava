@@ -1,0 +1,19 @@
+{
+  "rulesetId": "grand-legions-medium",
+  "name": "Pawns",
+  "description": "Black has rolled 5 and 6 (infantry). Black's Berolina Pawn on c2 steps diagonally forward, to b3 or d3, and takes straight ahead, Yellow's Knight on c3. Black's Western Pawn on f3 and Green's on f4 stand back to back, and may swap places.",
+  "turn": "Black",
+  "edition": 6,
+  "dice": [5, 6],
+  "pieces": {
+    "c2": "Black Pawn (Berolina)",
+    "f3": "Black Pawn (Western)",
+    "f4": "Green Pawn (Western)",
+    "d1": "Black Gold General (Shogi)",
+    "h1": "Green Gold General (Shogi)",
+    "c3": "Yellow Knight (Western)",
+    "h8": "Yellow King (Western)",
+    "a8": "Red Silver General (Shogi)",
+    "b7": "Red Pawn (Western)"
+  }
+}

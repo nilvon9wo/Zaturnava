@@ -7,8 +7,8 @@ using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 namespace Net.NowhereAtAll.Zaturnava.Application.Scenarios;
 
 /// <summary>
-/// A ruleset's cells, seats and kinds of piece - those a new game of it has - by what people call them, in
-/// any case.
+/// A ruleset's cells, seats and kinds of piece - those a new game of it has, and any other the ruleset plays
+/// (<see cref="IRulesApplying.Kinds"/>) - by what people call them, in any case.
 /// </summary>
 internal sealed class ScenarioNames(IRulesApplying rules, GameState initial)
 {
@@ -23,6 +23,7 @@ internal sealed class ScenarioNames(IRulesApplying rules, GameState initial)
 
     private readonly ImmutableDictionary<string, PieceKindId> _kinds = initial.Position.Occupants.Values
         .Select(piece => piece.Kind)
+        .Concat(rules.Kinds)
         .Distinct()
         .ToImmutableDictionary(rules.NameOf, StringComparer.OrdinalIgnoreCase);
 

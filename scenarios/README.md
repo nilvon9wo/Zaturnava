@@ -1,10 +1,11 @@
 # Scenarios
 
 Games set up part-way, to try a corner of the rules without playing up to it:
-a back-to-back swap, a promotion, an escape, every Raja on a throne... A server
-in development (`appsettings.Development.json`, `Scenarios:Folder`) offers each
-`.json` file in this folder, and those below it, in the lobby's **Start from**
-list. No other server offers any.
+a back-to-back swap, a promotion, an escape, every Raja on a throne, a Checkers
+jump chain, Tafl custody... A server in development
+(`appsettings.Development.json`, `Scenarios:Folder`) offers each `.json` file in
+this folder, and those below it, in the lobby's **Start from** list, under
+**Custom**: those of the game and size chosen. No other server offers any.
 
 The files are read whenever the lobby asks, so a new or changed file shows up
 on reloading the lobby, without restarting the server. A game keeps the
@@ -41,10 +42,41 @@ any case: cells as `d4`, seats as `Black`, pieces as the seat then the kind,
   with its roll. The dice are otherwise random.
 - `prisoners`: pieces captured, and who holds them.
 - `scores`: points so far; none for a seat left out.
+- `edition`: the edition of the ruleset's pieces and rules it is played by
+  (Grand Legions: 6 plays a chain of jumps jump by jump); the first, 0, if left
+  out.
 
-Each piece takes the identity of a piece of its seat and kind in a new game,
-in turn, so that it goes home where that piece started (a ransom, an escape).
-Pieces beyond what a new game has get identities of their own.
+A piece may be of any kind the ruleset plays, whether or not a new game has
+one. Each piece takes the identity of a piece of its seat and kind in a new
+game, in turn, so that it goes home where that piece started (a ransom, an
+escape). Pieces beyond what a new game has get identities of their own: they
+start nowhere, so a Western Pawn among them has no two-square first step, and
+a Shogi piece among them is a mercenary by its own kind.
+
+## Grand Legions' medium board
+
+`grand-legions-medium`: 8 × 8, columns `a` to `h` left to right, rows `1` to
+`8` bottom to top. Black's army faces up, as in Chaturaji 2027; Black and
+Green are a team, and so are Yellow and Red. Pieces are named as the game
+names them: `Black King (Checkers)`, `Red Rook (Western)`, `Black Man`. Dice:
+1 artillery, 2 cavalry, 3 or 4 heavy, 5 or 6 infantry or leader.
+
+| Scenario | What it tries |
+|---|---|
+| `castling` | The Western King castling |
+| `generals` | The flying general's capture, and the face-off |
+| `cannons` | The Xiangqi and Janggi Cannons, and the Manchu Chariot |
+| `checkers-chain` | Jump chains, jump by jump, stopping after any |
+| `tafl-custody` | Custody: three pieces taken at once |
+| `tafl-escape` | The Tafl King leaving the board from its far corner |
+| `promotions` | A Pawn's own promotion, the far edge's, and the Shogi far three rows |
+| `mercenaries` | Hiring a captured Shogi piece |
+| `leapers` | Blocked leaps (Xiangqi Horse, Janggi Elephant) and the Grasshopper |
+| `pawns` | The Berolina Pawn, and Pawns back to back swapping |
+
+None has palaces or rivers, which a scenario cannot set yet: the palace powers
+(palace lines, pieces confined to a palace) and the river pieces are left to a
+dealt game.
 
 ## Chaturaji 2027's board
 
