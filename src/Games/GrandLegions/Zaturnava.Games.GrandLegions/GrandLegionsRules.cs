@@ -12,8 +12,8 @@ namespace Net.NowhereAtAll.Zaturnava.Games.GrandLegions;
 /// Infantry piece is promoted at the far edge into a captured piece; a die names a class, so moves any piece of
 /// it; taking a piece scores its value, priced on the game's board (<see cref="BoardPrices"/>); and each piece's
 /// own promotion is played. Each army has a palace about its throne, where its kingdom has room for one, drawn on the
-/// board, which holds the pieces confined to one (<see cref="PalaceConfinement"/>); steps along its lines are still
-/// to come.
+/// board, which holds the pieces confined to one (<see cref="PalaceConfinement"/>), and along whose lines the Janggi
+/// General, Guard and Soldier step (the Soldier only forward).
 /// </summary>
 public static class GrandLegionsRules
 {
@@ -147,6 +147,13 @@ public static class GrandLegionsRules
             CastlingRooks = [GrandLegionsPieces.Rook],
             FlyingCapturers = [GrandLegionsPieces.XiangqiGeneral],
             FaceOffCallers = [GrandLegionsPieces.JanggiGeneral],
+            PalaceSteppers =
+            [
+                GrandLegionsPieces.JanggiGeneral,
+                GrandLegionsPieces.JanggiGuard,
+                GrandLegionsPieces.JanggiSoldier,
+            ],
+            ForwardPalaceSteppers = [GrandLegionsPieces.JanggiSoldier],
             DieNames = dice.Classes.ToImmutableDictionary(face => face.Key, face => NameOf(face.Value)),
             MayMove = MayMoveOn(game),
             RiverBound = [GrandLegionsPieces.XiangqiElephant],

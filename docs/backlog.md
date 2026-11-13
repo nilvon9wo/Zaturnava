@@ -148,6 +148,10 @@ first.
   rules let them, the first trade that suits them, one a turn; each still weighs the trade by the position once
   it is done, not by the moves it opens this turn (*Proposed*).
 
+- *(Found 2026-11-13)* The piece card of a piece confined to a palace (the Janggi Guard, the Xiangqi Advisor) says,
+  as for all Infantry, that it is promoted on reaching the far edge, which it never can while confined. The card
+  might leave that out for a confined piece, or say it applies only once its confinement is bought off.
+
 - *(Stated 2026-11-12)* **Kingdoms placed by the players**, as a setting of the game's creator: today every kingdom
   stands in a corner of the board, whatever its size; with it, each player would place their kingdom before their
   palace, throne and pieces. How free to make it is still to be worked out. Placing it anywhere could leave a later
