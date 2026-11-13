@@ -91,6 +91,13 @@ public sealed record GameViewDto(
     public bool IsDraftSecret { get; init; }
 
     /// <summary>
+    /// For a game whose players drafted in secret: whether from allies too
+    /// (<see cref="CreateGameRequest.IsDraftHiddenFromAllies"/>), each seat shown, while the armies are drafted, as
+    /// it alone sees the game, not as its team does.
+    /// </summary>
+    public bool IsDraftHiddenFromAllies { get; init; }
+
+    /// <summary>
     /// The board's size its creator set (<see cref="CreateGameRequest.Board"/>); null, for the ruleset's own.
     /// </summary>
     public BoardSizeDto? Board { get; init; }

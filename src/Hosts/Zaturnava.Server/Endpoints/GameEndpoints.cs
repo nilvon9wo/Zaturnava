@@ -207,6 +207,7 @@ internal static class GameEndpoints
                 ? new DraftSettings(request.DraftBudget, request.Drafter is { } drafter ? new SeatId(drafter) : null)
                 {
                     IsSecret = request is { IsDraftSecret: true, Drafter: null },
+                    IsHiddenFromAllies = request.IsDraftHiddenFromAllies,
                 }
                 : null,
             Board = request.Board is { } board

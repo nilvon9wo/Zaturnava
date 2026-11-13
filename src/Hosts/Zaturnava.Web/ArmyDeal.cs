@@ -20,6 +20,9 @@ internal sealed record ArmyDeal(bool AreAlike, string? Of = null)
     /// <summary>For armies each seat drafts its own, whether in secret from the other teams.</summary>
     public bool IsSecret { get; init; }
 
+    /// <summary>For armies drafted in secret, whether from allies too.</summary>
+    public bool IsHiddenFromAllies { get; init; }
+
     /// <summary>The board's size, in a game whose creator may set it; the ruleset's own, if none.</summary>
     public BoardSizeDto? Board { get; init; }
 }

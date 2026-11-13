@@ -80,7 +80,8 @@ public sealed class GameTools(IGameServing games)
         + "scores, whose decision it is (decidingSeat, null once over), that seat's legal actions, the dice "
         + "it has rolled this turn and not used yet (with what each lets it move), and a log of what has "
         + "happened lately. While armies are drafted in secret (isDraftSecret), give your token to see what your "
-        + "team drafted; no other team's is shown."
+        + "team drafted; no other team's is shown, nor an ally's if the game hides them from allies too "
+        + "(isDraftHiddenFromAllies)."
     )]
     public Task<GameViewDto> GetGame(
         string gameId,

@@ -42,6 +42,7 @@ public static class ScenarioStart
     private const string BudgetArgument = "budget";
     private const string DrafterArgument = "drafter";
     private const string SecretArgument = "secret";
+    private const string HiddenFromAlliesArgument = "hidden-from-allies";
     private const string SideArgument = "side";
     private const string KingdomWidthArgument = "kingdom-width";
     private const string KingdomDepthArgument = "kingdom-depth";
@@ -126,8 +127,14 @@ public static class ScenarioStart
         ImmutableSortedDictionary<string, string> budgeted = drafting.Budget is { } budget
             ? drafted.Add(BudgetArgument, budget.ToString(CultureInfo.InvariantCulture))
             : drafted;
-        ImmutableSortedDictionary<string, string> secret =
-            drafting.IsSecret ? budgeted.Add(SecretArgument, ActionDescriptor.Flag(true)) : budgeted;
+        ImmutableSortedDictionary<string, string> secret = drafting switch
+        {
+            { IsSecret: true, IsHiddenFromAllies: true } => budgeted
+                .Add(SecretArgument, ActionDescriptor.Flag(true))
+                .Add(HiddenFromAlliesArgument, ActionDescriptor.Flag(true)),
+            { IsSecret: true } => budgeted.Add(SecretArgument, ActionDescriptor.Flag(true)),
+            _ => budgeted,
+        };
         return drafting.Drafter is { } drafter
             ? secret.Add(DrafterArgument, drafter.Value.ToString(CultureInfo.InvariantCulture))
             : secret;
@@ -139,7 +146,7 @@ public static class ScenarioStart
 
     /// <summary>
     /// How the first of <paramref name="actions"/> had the armies drafted, its budget and its one drafter, if it set
-    /// them, and whether in secret; none, if they were not drafted.
+    /// them, and whether in secret, from allies too; none, if they were not drafted.
     /// </summary>
     public static DraftSettings? DraftingOf([Required] ImmutableList<ActionDescriptor> actions) =>
         actions.FirstOrDefault() is { Kind: DealKind } first && first.Arguments.ContainsKey(DraftedArgument)
@@ -153,6 +160,7 @@ public static class ScenarioStart
             )
             {
                 IsSecret = first.Arguments.ContainsKey(SecretArgument),
+                IsHiddenFromAllies = first.Arguments.ContainsKey(HiddenFromAlliesArgument),
             }
             : null;
 

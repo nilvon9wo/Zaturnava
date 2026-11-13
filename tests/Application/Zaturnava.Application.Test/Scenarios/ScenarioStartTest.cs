@@ -209,13 +209,24 @@ public sealed class ScenarioStartTest
     }
 
     [Theory]
-    [InlineData(null, null, false)]
-    [InlineData(30, 1, false)]
-    [InlineData(null, null, true)]
-    public void DraftingOf_WhenTheGameWasDraftedAsSet_ReplaysItSoAndSaysHow(int? budget, int? drafter, bool isSecret)
+    [InlineData(null, null, false, false)]
+    [InlineData(30, 1, false, false)]
+    [InlineData(null, null, true, false)]
+    [InlineData(null, null, true, true)]
+    [InlineData(null, null, false, true)]
+    public void DraftingOf_WhenTheGameWasDraftedAsSet_ReplaysItSoAndSaysHow(
+        int? budget,
+        int? drafter,
+        bool isSecret,
+        bool isHiddenFromAllies
+    )
     {
-        // Arrange
-        DraftSettings set = new(budget, drafter is { } seat ? new SeatId(seat) : null) { IsSecret = isSecret };
+        // Arrange - hidden from allies only if in secret
+        DraftSettings set = new(budget, drafter is { } seat ? new SeatId(seat) : null)
+        {
+            IsSecret = isSecret,
+            IsHiddenFromAllies = isHiddenFromAllies,
+        };
         ImmutableList<ActionDescriptor> actions = [ScenarioStart.Dealt(new LoadedDice(4), drafting: set)];
 
         // Act
@@ -223,7 +234,7 @@ public sealed class ScenarioStartTest
 
         // Assert
         Assert.Equal(
-            (set, budget ?? 0, set.Drafter),
+            (set with { IsHiddenFromAllies = isSecret && isHiddenFromAllies }, budget ?? 0, set.Drafter),
             (ScenarioStart.DraftingOf(actions), state.Draft!.Left[First], state.Draft.Drafter)
         );
     }

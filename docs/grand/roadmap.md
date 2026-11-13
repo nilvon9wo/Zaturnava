@@ -231,6 +231,8 @@ drawn simply, a shape for its class and a letter for its kind.
   left and drafting in the log; the API and MCP show it so to the holder of a seat's token, and no army at
   all to anyone else. Still in turn: the seats draft a step each in seat order, as in view; all at once is
   still to come. The server's own bots see everything, as they always do.
+- *Done* (2026-11-13): whether allies see each other's armies while drafting in secret, a choice in the lobby
+  (and `isDraftHiddenFromAllies` in the API); hidden from allies too, each player is shown only their own.
 
 ## Stage 5 — Points to spend
 
