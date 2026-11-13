@@ -161,7 +161,8 @@ What the program does so far (2026-11-04), and the gaps against the above:
   on (its first action says so: `edge-palaces`), its palace stands partly outside it, as specification §5 states:
   its back row along the board's edge, 6 squares in the kingdom and 3 on the open board in front
   (`PalaceSquares.EdgeCentres`), never on another army's kingdom. A throne, and any piece drafted, stands only on
-  the palace's squares in the kingdom. Still to come: the pieces a palace holds in the Medium game's dealt armies.
+  the palace's squares in the kingdom; so do the pieces a palace holds in dealt armies and fills at random, no more
+  than its five squares in the kingdom besides the throne.
 - Every Infantry piece, not only the three Pawns, may be promoted into a captured piece at the far
   edge (2026-11-06), as specification §6.1 states. Only the Pawns swap back to back; the bots' measure
   of how far an army's pawns have come counts every piece promoted at the far edge.

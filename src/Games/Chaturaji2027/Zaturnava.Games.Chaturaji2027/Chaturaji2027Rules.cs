@@ -262,7 +262,12 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         bool hasPalacePieces = dealsPalacePieces && palaced is not null;
         Chaturaji2027Variant dealt = this._variant with
         {
-            Start = dealer(new ArmyDealing(seed, areAlike, terrain, hasPalacePieces)),
+            Start = dealer(
+                new ArmyDealing(seed, areAlike, terrain, hasPalacePieces)
+                {
+                    HasEdgePalaces = palaced is not null && dealsEdgePalaces,
+                }
+            ),
         };
         Position position = dealt.InitialPosition(this._grid);
         ImmutableDictionary<SeatId, CellId> thrones = dealt.Thrones(this._grid);

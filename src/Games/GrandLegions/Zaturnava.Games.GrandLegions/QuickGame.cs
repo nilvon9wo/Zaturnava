@@ -90,6 +90,12 @@ public sealed record QuickGame(
     public bool HasPalacePieces { get; init; }
 
     /// <summary>
+    /// Whether, its kingdom too small for a palace, its palace stands partly outside it: not unless a game is dealt
+    /// so (<see cref="ArmyDealing.HasEdgePalaces"/>).
+    /// </summary>
+    public bool HasEdgePalaces { get; init; }
+
+    /// <summary>
     /// Every square of its kingdom, as seat 0 sees it, from the bottom-left corner, row by row from the back.
     /// </summary>
     public ImmutableList<ArmySquare> Kingdom =>

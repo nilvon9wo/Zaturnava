@@ -39,7 +39,7 @@ internal sealed class ArmyDrafting
 
     /// <summary>
     /// Every square of the kingdom a palace may stand about, if it may stand partly outside a kingdom too small for it
-    /// (<see cref="PalaceSquares.EdgeCentres"/>).
+    /// (<see cref="PalaceSquares.EdgeCentres(ImmutableList{ArmySquare}, int)"/>).
     /// </summary>
     private readonly ImmutableList<ArmySquare> _edgeCentres;
 
@@ -61,11 +61,7 @@ internal sealed class ArmyDrafting
             seat => CellsOf(grid, side, seat, drafting.Kingdom)
         );
         this._centres = PalaceSquares.Centres(drafting.Kingdom);
-        ImmutableHashSet<CellId> kingdoms = [.. this._kingdoms.Values.SelectMany(kingdom => kingdom.Keys)];
-        this._edgeCentres = PalaceSquares.EdgeCentres(
-            drafting.Kingdom,
-            square => !kingdoms.Contains(grid.CellAt(square.Column, square.Row))
-        );
+        this._edgeCentres = PalaceSquares.EdgeCentres(drafting.Kingdom, side);
         ImmutableList<ArmySquare> reached =
             [.. drafting.Kingdom.Union(this._edgeCentres.SelectMany(PalaceSquares.Window))];
         this._squares = Enumerable.Range(0, Pinwheel.SeatCount).ToImmutableDictionary(
@@ -100,7 +96,8 @@ internal sealed class ArmyDrafting
     /// <summary>
     /// Whether each army has a palace (specification §5): a 3 × 3 of its kingdom, holding its throne. Only a kingdom
     /// with room for one has (Proposed); one too small (Chaturaji 2027's 4 × 2) has one standing partly outside it, if
-    /// <paramref name="atEdge"/> and it may (<see cref="PalaceSquares.EdgeCentres"/>), else none.
+    /// <paramref name="atEdge"/> and it may (<see cref="PalaceSquares.EdgeCentres(ImmutableList{ArmySquare}, int)"/>),
+    /// else none.
     /// </summary>
     public bool HasPalaces(bool atEdge) => !this.Centres(atEdge).IsEmpty;
 
@@ -356,6 +353,7 @@ internal sealed class ArmyDrafting
             {
                 Palace = placed is { } own ? [.. own.Where(kingdom.ContainsKey).Select(cell => kingdom[cell])] : null,
                 HasPalacePieces = state.HasPalacePieces,
+                HasEdgePalaces = state.HasEdgePalaces,
             }
         );
         GameState thrones = state with
