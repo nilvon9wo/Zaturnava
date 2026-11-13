@@ -94,15 +94,18 @@ a good mix of rulesets, each result kept as it comes). While `BotRating:IsOn` (o
 people's games go first. *(Proposed)*:
 
 - Each game is the pairing of two bots, at a ruleset, played least so far, so every pair at every ruleset is
-  played about as often; the two take the even and the odd seats, and change sides each game.
+  played about as often; the two take the even and the odd seats, and change sides each game. A pairing of a bot
+  not yet rated at its ruleset with one that is (Random, the anchor, always counting as rated) goes first, as
+  only those games rate it.
 - A game that reaches `BotRating:MaximumSteps` decisions (default 2000) goes to the side with more points, as
   the script counts it.
 - Each game is added to its pairing's wins, losses and draws (the `BotMatchups` table) as soon as it ends, so a
   run stopped at any time still counts.
-- Once every pair at a ruleset has played `BotRating:MinimumGames` (default 2), the ratings fitted to all of the
-  ruleset's games, as the script fits them, replace those the server shipped with, and are fitted anew after
-  each game; and again, from the games kept, whenever the server starts. Until then, that ruleset keeps the
-  shipped ratings.
+- A bot not rated at a ruleset, once it has played each rated bot there `BotRating:MinimumGames` times
+  (default 2), is rated by those games against the rated bots' ratings, held as they are (*Proposed
+  2026-11-13*: one scale, the one the server shipped with; a fit of every bot to a few games each draws every
+  rating toward Random's). This is checked after each game, and from the games kept whenever the server starts.
+  A bot already rated keeps its rating; Random, if not rated, is rated 1000.
 - A game that fails is let go, and the next goes on.
 
 ## Fairy-Stockfish, as a bot
