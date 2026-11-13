@@ -46,11 +46,11 @@
             {
                 <section class="team @(this.IsMine(team) ? "mine" : null) @(HasWon(view, team) ? "won" : null)">
                     <header class="team-head">
-                        <span class="team-name">@string.Join(" & ", team.Select(seat => seat.Name))</span>
+                        <span class="team-name">@string.Join(" & ", this.SeatsOf(team).Select(seat => seat.Name))</span>
                         <span class="team-score" title="Team score">@team.Sum(seat => seat.Score)</span>
                     </header>
                     <ol class="team-seats">
-                        @foreach (SeatDto seat in team)
+                        @foreach (SeatDto seat in this.SeatsOf(team))
                         {
                             <li class="seat seat-@seat.Id @(seat.Id == view.DecidingSeat ? "deciding" : null)">
                                 <span class="swatch"></span>
@@ -1279,6 +1279,13 @@
         view.Seats.GroupBy(seat => seat.Team).OrderByDescending(this.IsMine).ThenBy(team => team.Key);
 
     private bool IsMine(IGrouping<int, SeatDto> team) => team.Any(seat => seat.Id == this.Seating.Claim?.Seat);
+
+    /// <summary>
+    /// The team's seats, the player's own first, so that they always find themselves at the top left (Stated,
+    /// 2026-11-13); the rest in order.
+    /// </summary>
+    private IEnumerable<SeatDto> SeatsOf(IGrouping<int, SeatDto> team) =>
+        team.OrderByDescending(seat => seat.Id == this.Seating.Claim?.Seat);
 
     /// <summary>Who plays the seat: you, by name; the bot; the player by name (or a guest); or no one yet ("open").</summary>
     private string Player(SeatDto seat) =>
