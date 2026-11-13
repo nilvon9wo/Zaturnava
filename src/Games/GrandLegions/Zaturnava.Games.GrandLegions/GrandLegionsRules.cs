@@ -130,6 +130,7 @@ public static class GrandLegionsRules
                 {
                     Rivers = QuickTerrain.RiversOf(dealing.Terrain),
                     HasPalacePieces = dealing.HasPalacePieces,
+                    HasEdgePalaces = dealing.HasEdgePalaces,
                 },
                 dealing.Seed,
                 dealing.AreAlike

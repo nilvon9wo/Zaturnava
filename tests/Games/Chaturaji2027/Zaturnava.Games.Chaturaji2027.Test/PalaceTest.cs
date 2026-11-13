@@ -351,6 +351,106 @@ public sealed class PalaceTest
         );
     }
 
+    [Fact]
+    public void Deal_WhenPalacesMayStandAtTheEdge_SetsOnePartlyOutsideAKingdomTooSmallAndNoneElseDifferently()
+    {
+        // Arrange - kingdoms 4 × 2, too small for a palace, and 4 × 3
+        Chaturaji2027Rules narrow = RulesOf(2, 4);
+
+        // Act
+        GameState atEdge = narrow.Deal(narrow.CreateInitialState(), 4, dealsPalaces: true, dealsEdgePalaces: true);
+        GameState roomy =
+            this._rules.Deal(this._rules.CreateInitialState(), 4, dealsPalaces: true, dealsEdgePalaces: true);
+
+        // Assert - about c2, nearest the throne on d1: b1 to d3, d3's row outside the kingdom
+        Assert.Equal(
+            (AboutC2, 4, true, AboutC2, true),
+            (
+                Text(atEdge.Palaces![Black]),
+                atEdge.Palaces.Count,
+                atEdge.HasEdgePalaces,
+                Text(roomy.Palaces![Black]),
+                roomy.HasEdgePalaces
+            )
+        );
+    }
+
+    [Fact]
+    public void LegalActions_WhenAPalaceStandsPartlyOutsideTheKingdom_OffersItsThroneOnlyInTheKingdom()
+    {
+        // Arrange
+        Chaturaji2027Rules narrow = RulesOf(2, 4);
+        GameState begun = narrow.Drafted(
+            narrow.Deal(narrow.CreateInitialState(), 4, dealsPalaces: true, dealsEdgePalaces: true),
+            7
+        );
+        ImmutableList<GameAction> palaces = narrow.LegalActions(begun);
+        GameState placed = narrow.Apply(begun, new PalaceAction(Black, B2)).State with { DecidingSeat = Black };
+
+        // Act
+        ImmutableList<GameAction> thrones = narrow.LegalActions(placed);
+
+        // Assert - about b2 or c2; about b2, a1 to c3, its throne on a1 to c2 alone
+        ImmutableList<GameAction> offered =
+            [new PalaceAction(Black, B2), new PalaceAction(Black, C2), new FillArmyAction(Black)];
+        Assert.Equal(
+            (Text(offered), AboutB2, "0,1,2,8,9,10"),
+            (
+                Text(palaces),
+                Text(placed.Palaces![Black]),
+                Text(thrones.OfType<ThroneAction>().Select(throne => throne.Cell))
+            )
+        );
+    }
+
+    [Fact]
+    public void Apply_WhenASeatWithAPalacePartlyOutsideIsFilled_FillsItKnowingOnlyThePalacesSquaresInTheKingdom()
+    {
+        // Arrange
+        List<ArmyFill> filled = [];
+        Chaturaji2027Rules narrow = RulesOf(2, 4, filled: filled);
+        GameState begun = narrow.Drafted(
+            narrow.Deal(narrow.CreateInitialState(), 4, dealsPalaces: true, dealsEdgePalaces: true),
+            7
+        );
+        GameState placed = narrow.Apply(begun, new PalaceAction(Black, B2)).State with { DecidingSeat = Black };
+
+        // Act
+        GameState done = narrow.Apply(placed, new FillArmyAction(Black)).State;
+
+        // Assert - its throne in the palace's middle, b2
+        Assert.Equal(
+            ("0 0,1 0,2 0,0 1,1 1,2 1", B2),
+            (
+                string.Join(",", filled.Single().Palace!.Select(square => $"{square.Column} {square.Row}")),
+                done.Thrones![Black]
+            )
+        );
+    }
+
+    [Fact]
+    public void Deal_WhenAnEdgePalaceWouldStandInAnotherArmysKingdom_SetsItElsewhere()
+    {
+        // Arrange - kingdoms 6 × 2: a palace about b2 or c2 would stand partly in Yellow's kingdom, up the left edge
+        Chaturaji2027Rules wide = RulesOf(2, 6);
+        GameState begun = wide.Drafted(
+            wide.Deal(wide.CreateInitialState(), 4, dealsPalaces: true, dealsEdgePalaces: true),
+            7
+        );
+
+        // Act
+        ImmutableList<GameAction> palaces = wide.LegalActions(begun);
+
+        // Assert - about d2 or e2 alone
+        ImmutableList<GameAction> expected =
+        [
+            new PalaceAction(Black, new CellId(11)),
+            new PalaceAction(Black, new CellId(12)),
+            new FillArmyAction(Black),
+        ];
+        Assert.Equal(Text(expected), Text(palaces));
+    }
+
     private GameState Begun() =>
         this._rules.Drafted(this._rules.Deal(this._rules.CreateInitialState(), 4, dealsPalaces: true), 7);
 

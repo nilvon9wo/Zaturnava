@@ -24,4 +24,10 @@ public sealed record ArmyFill(
     /// game dealt before it could be.
     /// </summary>
     public bool HasPalacePieces { get; init; }
+
+    /// <summary>
+    /// Whether, if its kingdom is too small for a palace, its palace stands partly outside it
+    /// (<see cref="GameState.HasEdgePalaces"/>): never, in a game dealt before it could.
+    /// </summary>
+    public bool HasEdgePalaces { get; init; }
 }

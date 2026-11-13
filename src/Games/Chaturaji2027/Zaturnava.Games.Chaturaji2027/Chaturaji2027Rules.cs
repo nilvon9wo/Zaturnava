@@ -236,8 +236,9 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     /// <paramref name="areAlike"/> - if the variant deals them: each leader's start its throne, and every piece's its
     /// home; on its own terrain too, if <paramref name="dealsTerrain"/> and the variant deals terrain; each army with
     /// its palace about its throne, if <paramref name="dealsPalaces"/> and its kingdom has room for one
-    /// (<see cref="ArmyDrafting.HasPalaces"/>), and the pieces a palace holds in it, if
-    /// <paramref name="dealsPalacePieces"/> too; else as it is.
+    /// (<see cref="ArmyDrafting.HasPalaces"/>), or, if <paramref name="dealsEdgePalaces"/>, room for one standing
+    /// partly outside it; and the pieces a palace holds in it, if <paramref name="dealsPalacePieces"/> too; else as it
+    /// is.
     /// </summary>
     public GameState Deal(
         [Required] GameState initial,
@@ -245,7 +246,8 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         bool areAlike = false,
         bool dealsTerrain = false,
         bool dealsPalaces = false,
-        bool dealsPalacePieces = false
+        bool dealsPalacePieces = false,
+        bool dealsEdgePalaces = false
     )
     {
         if (this._variant.Dealer is not { } dealer)
@@ -254,11 +256,18 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         }
 
         int terrain = dealsTerrain && this._variant.TerrainDealer is { } terrains ? terrains(seed) : 0;
-        ArmyDrafting? palaced = dealsPalaces && this._drafting is { HasPalaces: true } drafting ? drafting : null;
+        ArmyDrafting? palaced = dealsPalaces && this._drafting is { } drafting && drafting.HasPalaces(dealsEdgePalaces)
+            ? drafting
+            : null;
         bool hasPalacePieces = dealsPalacePieces && palaced is not null;
         Chaturaji2027Variant dealt = this._variant with
         {
-            Start = dealer(new ArmyDealing(seed, areAlike, terrain, hasPalacePieces)),
+            Start = dealer(
+                new ArmyDealing(seed, areAlike, terrain, hasPalacePieces)
+                {
+                    HasEdgePalaces = palaced is not null && dealsEdgePalaces,
+                }
+            ),
         };
         Position position = dealt.InitialPosition(this._grid);
         ImmutableDictionary<SeatId, CellId> thrones = dealt.Thrones(this._grid);
@@ -266,8 +275,9 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         {
             Position = position,
             Thrones = thrones,
-            Palaces = palaced?.PalacesAround(thrones),
+            Palaces = palaced?.PalacesAround(thrones, dealsEdgePalaces),
             HasPalacePieces = hasPalacePieces,
+            HasEdgePalaces = palaced is not null && dealsEdgePalaces,
             Start = position,
             Terrain = terrain,
         };

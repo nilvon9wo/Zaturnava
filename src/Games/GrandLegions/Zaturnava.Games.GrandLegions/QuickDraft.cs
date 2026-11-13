@@ -42,6 +42,7 @@ public static class QuickDraft
         {
             Budget = fill.Left,
             HasPalacePieces = fill.HasPalacePieces,
+            HasEdgePalaces = fill.HasEdgePalaces,
         };
         if (fill.Throne is not { } throne)
         {

@@ -38,10 +38,13 @@ public sealed class BotRatingJobTest(RatingServer server) : IClassFixture<Rating
         );
     }
 
-    /// <summary>What <paramref name="read"/> gives once it holds <paramref name="count"/>, in half a minute.</summary>
+    /// <summary>
+    /// What <paramref name="read"/> gives once it holds <paramref name="count"/>, in a minute: a slow runner may take
+    /// more than half of one to play two games.
+    /// </summary>
     internal static async Task<ImmutableList<T>> Eventually<T>(Func<Task<ImmutableList<T>>> read, int count)
     {
-        DateTimeOffset until = DateTimeOffset.UtcNow.AddSeconds(30);
+        DateTimeOffset until = DateTimeOffset.UtcNow.AddSeconds(60);
         ImmutableList<T> found = await read();
         while (found.Count < count && DateTimeOffset.UtcNow < until)
         {

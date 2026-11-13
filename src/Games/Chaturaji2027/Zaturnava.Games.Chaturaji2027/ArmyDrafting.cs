@@ -27,10 +27,21 @@ internal sealed class ArmyDrafting
     private readonly Func<PieceKindId, int> _priceOf;
     private readonly DiceRequest _rollOff;
     private readonly ImmutableDictionary<SeatId, ImmutableDictionary<CellId, ArmySquare>> _kingdoms;
+
+    /// <summary>Each seat's kingdom, and every square a palace of its may stand on outside it, by cell.</summary>
+    private readonly ImmutableDictionary<SeatId, ImmutableDictionary<CellId, ArmySquare>> _squares;
+
+    /// <summary>Each seat's kingdom, and every square a palace of its may stand on outside it, by square.</summary>
     private readonly ImmutableDictionary<SeatId, ImmutableDictionary<ArmySquare, CellId>> _cells;
 
     /// <summary>Every square of the kingdom a palace may stand about: one whose 3 × 3 is all in the kingdom.</summary>
     private readonly ImmutableList<ArmySquare> _centres;
+
+    /// <summary>
+    /// Every square of the kingdom a palace may stand about, if it may stand partly outside a kingdom too small for it
+    /// (<see cref="PalaceSquares.EdgeCentres(ImmutableList{ArmySquare}, int)"/>).
+    /// </summary>
+    private readonly ImmutableList<ArmySquare> _edgeCentres;
 
     public ArmyDrafting(
         Drafting drafting,
@@ -45,44 +56,75 @@ internal sealed class ArmyDrafting
         this._rollOff = rollOff;
         this.Limit = drafting.Kingdom.Count
             * drafting.Terrains.SelectMany(drafting.Offered).Select(priceOf).DefaultIfEmpty().Max();
-        ImmutableList<ArmyPiece> squares =
-            [.. drafting.Kingdom.Select(square => new ArmyPiece(Square, square.Column, square.Row))];
         this._kingdoms = Enumerable.Range(0, Pinwheel.SeatCount).ToImmutableDictionary(
             seat => new SeatId(seat),
-            seat => Pinwheel
-                .EachOwn(side, [.. Enumerable.Range(0, seat + 1).Select(own => own == seat ? squares : [])])
-                .Zip(drafting.Kingdom)
-                .ToImmutableDictionary(
-                    placed => grid.CellAt(placed.First.Column, placed.First.Row),
-                    placed => placed.Second
-                )
+            seat => CellsOf(grid, side, seat, drafting.Kingdom)
         );
-        this._cells = this._kingdoms.ToImmutableDictionary(
+        this._centres = PalaceSquares.Centres(drafting.Kingdom);
+        this._edgeCentres = PalaceSquares.EdgeCentres(drafting.Kingdom, side);
+        ImmutableList<ArmySquare> reached =
+            [.. drafting.Kingdom.Union(this._edgeCentres.SelectMany(PalaceSquares.Window))];
+        this._squares = Enumerable.Range(0, Pinwheel.SeatCount).ToImmutableDictionary(
+            seat => new SeatId(seat),
+            seat => CellsOf(grid, side, seat, reached)
+        );
+        this._cells = this._squares.ToImmutableDictionary(
             kingdom => kingdom.Key,
             kingdom => kingdom.Value.ToImmutableDictionary(entry => entry.Value, entry => entry.Key)
         );
-        this._centres = PalaceSquares.Centres(drafting.Kingdom);
+    }
+
+    /// <summary>Where each of <paramref name="squares"/>, as seat 0 sees them, is for the seat.</summary>
+    private static ImmutableDictionary<CellId, ArmySquare> CellsOf(
+        SquareGridTopology grid,
+        int side,
+        int seat,
+        ImmutableList<ArmySquare> squares
+    )
+    {
+        ImmutableList<ArmyPiece> placed =
+            [.. squares.Select(square => new ArmyPiece(Square, square.Column, square.Row))];
+        return Pinwheel
+            .EachOwn(side, [.. Enumerable.Range(0, seat + 1).Select(own => own == seat ? placed : [])])
+            .Zip(squares)
+            .ToImmutableDictionary(
+                turned => grid.CellAt(turned.First.Column, turned.First.Row),
+                turned => turned.Second
+            );
     }
 
     /// <summary>
     /// Whether each army has a palace (specification §5): a 3 × 3 of its kingdom, holding its throne. Only a kingdom
-    /// with room for one has (Proposed): one too small (Chaturaji 2027's 4 × 2) has none, until a palace may stand
-    /// partly outside it.
+    /// with room for one has (Proposed); one too small (Chaturaji 2027's 4 × 2) has one standing partly outside it, if
+    /// <paramref name="atEdge"/> and it may (<see cref="PalaceSquares.EdgeCentres(ImmutableList{ArmySquare}, int)"/>),
+    /// else none.
     /// </summary>
-    public bool HasPalaces => !this._centres.IsEmpty;
+    public bool HasPalaces(bool atEdge) => !this.Centres(atEdge).IsEmpty;
 
-    /// <summary>Each seat's palace about its throne in <paramref name="thrones"/> (<see cref="Around"/>).</summary>
+    /// <summary>
+    /// Each seat's palace about its throne in <paramref name="thrones"/> (<see cref="Around"/>), standing partly
+    /// outside a kingdom too small for one, if <paramref name="atEdge"/>.
+    /// </summary>
     public ImmutableDictionary<SeatId, ImmutableList<CellId>> PalacesAround(
-        ImmutableDictionary<SeatId, CellId> thrones
+        ImmutableDictionary<SeatId, CellId> thrones,
+        bool atEdge
     ) =>
         thrones.ToImmutableDictionary(
             throne => throne.Key,
-            throne => this.Around(throne.Key, this._kingdoms[throne.Key][throne.Value])
+            throne => this.Around(throne.Key, this._kingdoms[throne.Key][throne.Value], this.Centres(atEdge))
         );
 
-    /// <summary>The seat's palace holding <paramref name="throne"/>, as <see cref="PalaceSquares"/> finds it.</summary>
-    private ImmutableList<CellId> Around(SeatId seat, ArmySquare throne) =>
-        this.PalaceOf(seat, PalaceSquares.CentreAbout(this._centres, throne));
+    private ImmutableList<ArmySquare> Centres(bool atEdge) => atEdge ? this._edgeCentres : this._centres;
+
+    /// <summary>The squares a palace may stand about in the game.</summary>
+    private ImmutableList<ArmySquare> CentresIn(GameState state) => this.Centres(state.HasEdgePalaces);
+
+    /// <summary>
+    /// The seat's palace holding <paramref name="throne"/>, about one of <paramref name="centres"/>, as
+    /// <see cref="PalaceSquares"/> finds it.
+    /// </summary>
+    private ImmutableList<CellId> Around(SeatId seat, ArmySquare throne, ImmutableList<ArmySquare> centres) =>
+        this.PalaceOf(seat, PalaceSquares.CentreAbout(centres, throne));
 
     /// <summary>The seat's palace about <paramref name="centre"/>: its cells, in order.</summary>
     private ImmutableList<CellId> PalaceOf(SeatId seat, ArmySquare centre) =>
@@ -91,7 +133,7 @@ internal sealed class ArmyDrafting
     /// <summary>The centre of the seat's <paramref name="palace"/>, as seat 0 sees its kingdom.</summary>
     private ArmySquare CentreOf(SeatId seat, ImmutableList<CellId> palace)
     {
-        ImmutableList<ArmySquare> squares = [.. palace.Select(cell => this._kingdoms[seat][cell])];
+        ImmutableList<ArmySquare> squares = [.. palace.Select(cell => this._squares[seat][cell])];
         return new ArmySquare(squares.Min(square => square.Column) + 1, squares.Min(square => square.Row) + 1);
     }
 
@@ -137,8 +179,8 @@ internal sealed class ArmyDrafting
     /// none yet, each to be placed in the draft.
     /// </summary>
     private ImmutableDictionary<SeatId, ImmutableList<CellId>> SolePalaces(GameState dealt) =>
-        this._centres.Count == 1
-            ? dealt.Seats.ToImmutableDictionary(seat => seat.Id, seat => this.PalaceOf(seat.Id, this._centres[0]))
+        this.CentresIn(dealt) is [var sole]
+            ? dealt.Seats.ToImmutableDictionary(seat => seat.Id, seat => this.PalaceOf(seat.Id, sole))
             : [];
 
     /// <summary>
@@ -155,7 +197,7 @@ internal sealed class ArmyDrafting
             (true, _) => this.BuyingOf(state, seat, kingdom),
             (false, { } palaces) when !palaces.ContainsKey(seat) =>
             [
-                .. this._centres
+                .. this.CentresIn(state)
                     .Select(centre => this._cells[seat][centre])
                     .OrderBy(cell => cell.Value)
                     .Select(cell => (GameAction)new PalaceAction(seat, cell)),
@@ -163,7 +205,9 @@ internal sealed class ArmyDrafting
             ],
             (false, var palaces) =>
             [
-                .. (palaces?[seat] ?? kingdom).Select(cell => (GameAction)new ThroneAction(seat, cell)),
+                .. (palaces?[seat] ?? kingdom)
+                    .Where(this._kingdoms[seat].ContainsKey)
+                    .Select(cell => (GameAction)new ThroneAction(seat, cell)),
                 new FillArmyAction(seat),
             ],
         };
@@ -289,6 +333,7 @@ internal sealed class ArmyDrafting
     {
         ImmutableDictionary<CellId, ArmySquare> kingdom = this._kingdoms[seat];
         ImmutableDictionary<ArmySquare, CellId> cells = this._cells[seat];
+        ImmutableList<CellId>? placed = state.Palaces?.GetValueOrDefault(seat);
         ImmutableList<ArmyPiece> army =
         [
             .. kingdom
@@ -299,24 +344,23 @@ internal sealed class ArmyDrafting
         ];
         ArmySquare? throne = state.Thrones!.TryGetValue(seat, out CellId set)
             ? kingdom[set]
-            : state.Palaces?.GetValueOrDefault(seat) is { } palace
+            : placed is { } palace
                 ? this.CentreOf(seat, palace)
                 : null;
         Random random = new(state.Draft!.Seed + (seat.Value * Pinwheel.SeatCount) + army.Count);
         ArmyFilled filled = this._drafting.Fill(
             new ArmyFill(state.Terrain, state.Draft.Left[seat], army, throne, random)
             {
-                Palace = state.Palaces?.GetValueOrDefault(seat) is { } own
-                    ? [.. own.Select(cell => kingdom[cell])]
-                    : null,
+                Palace = placed is { } own ? [.. own.Where(kingdom.ContainsKey).Select(cell => kingdom[cell])] : null,
                 HasPalacePieces = state.HasPalacePieces,
+                HasEdgePalaces = state.HasEdgePalaces,
             }
         );
         GameState thrones = state with
         {
             Thrones = state.Thrones.SetItem(seat, cells[filled.Throne]),
             Palaces = state.Palaces is { } palaces && !palaces.ContainsKey(seat)
-                ? palaces.SetItem(seat, this.Around(seat, filled.Throne))
+                ? palaces.SetItem(seat, this.Around(seat, filled.Throne, this.CentresIn(state)))
                 : state.Palaces,
         };
         return filled.Added.Aggregate(

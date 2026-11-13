@@ -157,9 +157,12 @@ What the program does so far (2026-11-04), and the gaps against the above:
   pieces only with a river), and playing again with the same armies keeps them (specification §2).
   *Proposed*: they are dealt by the same seed as the armies, so a game replays with them; a game
   dealt before rivers were has none.
-- The Medium kingdom, 4 × 2, is below the 3 × 3 a palace needs; quick games have no palace, so it
-  plays, but a Medium game with palaces will need the palace to stand partly outside the kingdom
-  (specification §5), or none.
+- The Medium kingdom, 4 × 2, is below the 3 × 3 a palace needs. *Done* (2026-11-13): in every game dealt from then
+  on (its first action says so: `edge-palaces`), its palace stands partly outside it, as specification §5 states:
+  its back row along the board's edge, 6 squares in the kingdom and 3 on the open board in front
+  (`PalaceSquares.EdgeCentres`), never on another army's kingdom. A throne, and any piece drafted, stands only on
+  the palace's squares in the kingdom; so do the pieces a palace holds in dealt armies and fills at random, no more
+  than its five squares in the kingdom besides the throne.
 - Every Infantry piece, not only the three Pawns, may be promoted into a captured piece at the far
   edge (2026-11-06), as specification §6.1 states. Only the Pawns swap back to back; the bots' measure
   of how far an army's pawns have come counts every piece promoted at the far edge.
@@ -175,8 +178,8 @@ to edit, wait for players to sign in and for storage that lasts.
 - A palace (3 × 3) and its throne, per army; palace lines drawn, and steps along them;
   confinement to a palace.
   - Done (2026-11-12): each army's palace, about its throne, in every game dealt from then on whose kingdom has
-    room for one (a small or large game, or a custom one at least 3 × 3; *Proposed*: none in a medium game's
-    4 × 2 until a palace may stand partly outside its kingdom). A dealt army's palace is the one nearest its
+    room for one (a small or large game, or a custom one at least 3 × 3; a medium game's 4 × 2 too, since
+    2026-11-13, its palace partly outside the kingdom). A dealt army's palace is the one nearest its
     throne. In a drafted game each player places theirs first, about a square of their kingdom, then their
     throne in it; where the kingdom has room for one palace only, it is placed for them. The page draws each
     palace's wall battlemented, and a line from each of its cells to its throne.
@@ -210,7 +213,9 @@ drawn simply, a shape for its class and a letter for its kind.
   2026-11-12), then drafts within the budget, buying lifts and placing each piece, in secret or in
   turn as the game is set; a "fill at random" for each step. Points not spent start the player's
   score.
-- Infantry placed beyond the start rows (2, or as the game is set), without start-row powers.
+- Infantry placed beyond the start rows (2, or as the game is set), without start-row powers. *Done*: a piece
+  drafted anywhere in its kingdom has its two-square first move only if it starts within its army's start rows
+  (`StartRowMoves`), so not on the Large kingdom's third row.
 - Pieces confined to a palace placed in it.
 - Bots draft too: Random at random, Midas by value, Solomon… evenly.
 - Prices for each game, from its own board's actual dimensions and kingdoms (*Stated* 2026-11-06;
@@ -303,5 +308,5 @@ drawn simply, a shape for its class and a letter for its kind.
 - More kingdoms than four, or of unequal size.
 - More pieces.
 - A second palace, if one may be bought (**Q5**).
-- Kingdoms smaller than 3 × 3, with the palace partly outside the kingdom.
+- Kingdoms smaller than 3 × 3, with the palace partly outside the kingdom. *Done* for kingdoms 2 deep (see Stage 2).
 - Games without palaces: bare thrones, and no palace-bound pieces in the draft.

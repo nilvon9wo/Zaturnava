@@ -42,6 +42,12 @@ public sealed record GameState(
     public bool HasPalacePieces { get; init; }
 
     /// <summary>
+    /// Whether a kingdom too small for a palace has one standing partly outside it, along the board's edge
+    /// (<see cref="IRulesApplying.Deal"/>): never, in a game without palaces, nor one dealt before it could.
+    /// </summary>
+    public bool HasEdgePalaces { get; init; }
+
+    /// <summary>
     /// Where every piece started in this game, if it was dealt its own armies; null, if as the rules start them.
     /// </summary>
     public Position? Start { get; init; }

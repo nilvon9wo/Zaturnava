@@ -165,6 +165,61 @@ public sealed class QuickArmyTest
     }
 
     [Fact]
+    public void Layout_WithPalacePiecesAndAPalacePartlyOutside_PutsThemInItsSquaresInTheKingdom()
+    {
+        // Arrange - the medium game's 4 × 2 kingdom, its palace about b2 or c2, its front row outside
+        QuickGame game = QuickGame.Medium with { HasPalacePieces = true, HasEdgePalaces = true };
+        QuickGame unpalaced = QuickGame.Medium with { HasPalacePieces = true };
+
+        // Act
+        ImmutableList<ImmutableList<ArmyPiece>> armies =
+            [.. Seeds.Select(seed => QuickArmy.Layout(game, QuickArmy.Pick(game, new(seed)), new(seed)))];
+        bool isEligibleWithout = QuickArmy.Eligible(unpalaced).Any(piece => piece.Id == JanggiGuard);
+
+        // Assert - some army holds such a piece; each stands in its palace, in the kingdom
+        Assert.False(isEligibleWithout);
+        Assert.Contains(armies, army => army.Any(IsHeld));
+        Assert.All(armies, army =>
+        {
+            ArmyPiece leader = army.Single(piece => GrandLegionsRules.Leaders.Contains(piece.Kind));
+            ImmutableList<ArmySquare> centres = PalaceSquares.EdgeCentres(game.Kingdom, game.Side);
+            ImmutableList<ArmySquare> palace =
+                PalaceSquares.Window(PalaceSquares.CentreAbout(centres, new ArmySquare(leader.Column, 0)));
+            Assert.All(
+                army.Where(IsHeld),
+                held => Assert.True(palace.Contains(new ArmySquare(held.Column, held.Row)) && held.Row < 2)
+            );
+            Assert.Equal(army.Count, army.Select(piece => (piece.Column, piece.Row)).Distinct().Count());
+        });
+    }
+
+    [Fact]
+    public void Pick_WithPalacePiecesAndAPalacePartlyOutside_GivesNoMoreThanItsSquaresInTheKingdomHaveRoomFor()
+    {
+        // Arrange - a 4 × 2 kingdom, all infantry but the leader, the budget no bound
+        QuickGame game = new(
+            "edge",
+            "Edge",
+            8,
+            4,
+            2,
+            1_000_000,
+            ImmutableDictionary<PieceClass, int>.Empty.Add(Leader, 1).Add(Infantry, 7)
+        )
+        {
+            HasPalacePieces = true,
+            HasEdgePalaces = true,
+        };
+
+        // Act
+        ImmutableList<int> held =
+            [.. Seeds.Select(seed => QuickArmy.Pick(game, new(seed)).Count(piece => IsHeld(piece.Id)))];
+
+        // Assert - six of the palace's squares in the kingdom, but its throne
+        Assert.InRange(held.Max(), 1, 5);
+    }
+
+    [Fact]
     public void Pick_WhenTheBudgetIsTight_DrawsOnlyWhatLeavesEnoughForTheRestOfTheMinimum()
     {
         // Arrange - the cheapest leader and heavy cost 65 and 12: the budget allows nothing dearer

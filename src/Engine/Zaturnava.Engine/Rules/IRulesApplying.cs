@@ -76,8 +76,10 @@ public interface IRulesApplying
     /// <paramref name="dealsTerrain"/>, which a game dealt before terrain was never does; and its palaces
     /// (<see cref="GameState.Palaces"/>), if <paramref name="dealsPalaces"/>, which one dealt before palaces were never
     /// does; with the pieces a palace holds in its armies (<see cref="GameState.HasPalacePieces"/>), if
-    /// <paramref name="dealsPalacePieces"/> too, which one dealt before they could be never does. As it is, for a
-    /// ruleset that is not dealt.
+    /// <paramref name="dealsPalacePieces"/> too, which one dealt before they could be never does; and, where a kingdom
+    /// is too small for a palace, one standing partly outside it (<see cref="GameState.HasEdgePalaces"/>), if
+    /// <paramref name="dealsEdgePalaces"/> too, which one dealt before they could never does. As it is, for a ruleset
+    /// that is not dealt.
     /// </summary>
     GameState Deal(
         [Required] GameState initial,
@@ -85,7 +87,8 @@ public interface IRulesApplying
         bool areAlike = false,
         bool dealsTerrain = false,
         bool dealsPalaces = false,
-        bool dealsPalacePieces = false
+        bool dealsPalacePieces = false,
+        bool dealsEdgePalaces = false
     ) =>
         initial;
 

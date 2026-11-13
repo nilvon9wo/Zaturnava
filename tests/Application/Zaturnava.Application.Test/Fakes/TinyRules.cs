@@ -105,7 +105,8 @@ internal sealed class TinyRules(int length, bool isDealt = false, Exception? fai
         bool areAlike = false,
         bool dealsTerrain = false,
         bool dealsPalaces = false,
-        bool dealsPalacePieces = false
+        bool dealsPalacePieces = false,
+        bool dealsEdgePalaces = false
     ) =>
         initial with
         {
@@ -113,6 +114,7 @@ internal sealed class TinyRules(int length, bool isDealt = false, Exception? fai
             Terrain = dealsTerrain ? 1 : 0,
             Palaces = dealsPalaces ? [] : null,
             HasPalacePieces = dealsPalacePieces,
+            HasEdgePalaces = dealsEdgePalaces,
         };
 
     public ImmutableList<GameAction> LegalActions([Required] GameState state) =>
