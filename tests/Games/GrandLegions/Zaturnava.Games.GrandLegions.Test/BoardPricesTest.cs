@@ -67,6 +67,23 @@ public sealed class BoardPricesTest
     }
 
     [Fact]
+    public void On_WhenTheBoardIsNotSquare_PricesPromotionAsEverySeatFacesSinceBothWaysCame()
+    {
+        // Arrange - the Western Pawn's Queen 6 rows up a board 9 high, kingdoms 3 deep, but 9 rows across it, 12 wide
+        GrandBoard wide = new(12, 9, 4, 3);
+        GrandBoard tall = new(9, 12, 4, 3);
+        int before = BoardPrices.BothWaysEdition - 1;
+        PieceKindId pawn = GrandLegionsPieces.WesternPawn;
+
+        // Act
+        bool isSameSince = BoardPrices.On(wide)[pawn] == BoardPrices.On(tall)[pawn];
+        bool wasSameBefore = BoardPrices.On(wide, before)[pawn] == BoardPrices.On(tall, before)[pawn];
+
+        // Assert
+        Assert.Equal((true, false), (isSameSince, wasSameBefore));
+    }
+
+    [Fact]
     public void On_WhenTheBoardHasRivers_PricesAsWithout()
     {
         // Arrange

@@ -106,6 +106,9 @@ prices shown in the draft; the sheet stays the reference, on 8 × 8.
   start, to the zone: placing a piece well forward cannot buy its premium cheap. A Western piece's
   zone is the last row, a Shogi piece's the far three, a Makruk Pawn's the enemy kingdom ahead; the
   far edge is the last row.
+- On a board that is not square, two seats promote up it and two across it, over different distances. From
+  edition 7 a premium is the mean of the two, to the nearest point, so that one price is fair to every army
+  (*Proposed*); before it, up the board alone.
 
 *Done*: a piece's price on a game's board is its sheet value, plus the cells it reaches there less
 those it reaches on 8 × 8, plus its premium there less its sheet premium (kept, as the sheet has it, in
@@ -175,7 +178,7 @@ The dice name a class, not a piece ([specification §6.1](specification.md#61-th
 |---|---|---|---|---|---|
 | Pawn (Shogi) | One square forward | Move: blocked straight ahead | → Gold General in the far three ranks | 55 | 2 / — |
 | Pawn (Western) | One square forward; captures one square diagonally forward | Move: blocked straight ahead | First move two squares; *en passant*, of any enemy piece moving two squares or more against it, past it, from two squares away; → Queen, Rook, Bishop or Knight on the last rank | 9 | 2 / — |
-| Guard (Janggi) | One square orthogonally, or diagonally along palace lines | Area: its 3 × 3 palace | Palace lines | 7 | — / 5 |
+| Guard (Janggi) | One square orthogonally, or diagonally along palace lines | Area: its 3 × 3 palace | Palace lines | 6 | — / 5 |
 | Noble (Makruk) | One square diagonally, or straight forward | — | — | 7 | — / — |
 | Soldier (Janggi) | One square forward or sideways (diagonally forward along palace lines) | Move: may not go back; Area: palace diagonals only | Palace lines | 7 | 2 / 2 |
 | Minister | One square orthogonally | — | — | 6 | — / — |
@@ -347,7 +350,23 @@ latest edition.
 A piece repriced since keeps its old value for a game of an earlier edition, in the draft, in a quick army's
 budget and in what capturing it scores. Edition 5 repriced the four pieces that take several at once
 ([above](#jumping-and-custody)). From it, a quick army's budget is the designer's formula
-([roadmap](roadmap.md)). From edition 6, a chain of jumps is played jump by jump.
+([roadmap](roadmap.md)). From edition 6, a chain of jumps is played jump by jump. Edition 7 repriced the Guard
+([below](#the-guards-palace-lines)).
+
+### The Guard's palace lines
+
+The Guard (Janggi) steps as the Minister does, one square orthogonally, but only in its palace, where it also
+steps diagonally along the palace's lines. The sheet had priced those lines at +1 (its special powers), so the
+Guard at 7 and the Minister at 6. Whether they are worth more than the Minister's freedom to leave the palace was
+tried in play (*Proposed*, 2026-11-13): Sage bots, on the medium board with palaces at the edge, armies with
+Guards against armies with Ministers.
+
+| Games | Guards won | Ministers won | Drawn |
+|---|---|---|---|
+| 80 | 39 | 41 | 0 |
+
+They are worth the same. From edition 7 the lines add nothing (the sheet's R28, 0), and the Guard is worth 6,
+as the Minister is; a game of an earlier edition still prices and scores it at 7.
 
 ## Review notes
 

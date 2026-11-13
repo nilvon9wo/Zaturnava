@@ -90,6 +90,14 @@ public static class GrandLegionsPieces
     public const int MultipleCapturesRepriced = 5;
 
     /// <summary>
+    /// The edition from which the Guard (Janggi) is priced as the Minister is, 6, its palace lines worth nothing more
+    /// than freedom to leave the palace (Proposed 2026-11-13: of 80 games between Sage bots, on the medium board with
+    /// palaces at the edge, armies with Guards against armies with Ministers, the Guards won 39, the Ministers 41;
+    /// pieces.md, The Guard's palace lines); before it, 7.
+    /// </summary>
+    public const int GuardRepriced = 7;
+
+    /// <summary>
     /// What each piece is worth, its price and what taking it scores, as the game's table of values has it
     /// (<c>Values/grand-legions.json</c>), which can be changed apart from the code.
     /// </summary>
@@ -140,7 +148,8 @@ public static class GrandLegionsPieces
             .Restricted(Moves(BlockedAhead, 2))
             .Promoting(Queen, Rook, Bishop, Knight),
         Piece(JanggiGuard, "Guard (Janggi)", Infantry, Janggi, OrthogonalStep)
-            .Restricted(Confined(5)),
+            .Restricted(Confined(5))
+            .ValuedBefore(GuardRepriced, 7),
         Piece(Noble, "Noble (Makruk)", Infantry, Makruk, DiagonalStep, ForwardStep),
         Piece(JanggiSoldier, "Soldier (Janggi)", Infantry, Janggi, ForwardStep, Sideways())
             .Restricted(

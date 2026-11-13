@@ -359,6 +359,21 @@ public sealed class GrandLegionsPiecesTest
         Assert.Equal((before, since, since), values);
     }
 
+    [Fact]
+    public void ValueAt_WhenTheGuardIsPricedInAGameBeforeEditionSevenOrSince_IsSevenThenTheMinistersSix()
+    {
+        // Arrange
+        GrandPiece guard = GrandLegionsPieces.ById[GrandLegionsPieces.JanggiGuard];
+        GrandPiece minister = GrandLegionsPieces.ById[GrandLegionsPieces.Minister];
+
+        // Act
+        (int Before, int Since) values =
+            (guard.ValueAt(GrandLegionsPieces.GuardRepriced - 1), guard.ValueAt(GrandLegionsPieces.GuardRepriced));
+
+        // Assert
+        Assert.Equal((7, minister.Value), values);
+    }
+
     /// <summary>The cells the piece on d4 could move or capture on, each once.</summary>
     private static int Reach(Position position) =>
         Generator.MovesFrom(position, D4, MySeat, _ => true)
