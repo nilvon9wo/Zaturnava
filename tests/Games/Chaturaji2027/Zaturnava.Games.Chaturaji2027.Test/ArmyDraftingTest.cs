@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Boards;
 using Net.NowhereAtAll.Zaturnava.Engine.Chance;
+using Net.NowhereAtAll.Zaturnava.Engine.Events;
 using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
 using Net.NowhereAtAll.Zaturnava.Engine.Rules;
 using Net.NowhereAtAll.Zaturnava.Engine.Seats;
@@ -242,14 +243,8 @@ public sealed class ArmyDraftingTest
         // Assert
         Piece boat = bought.State.Position.PieceAt(B1)!;
         Assert.Equal(
-            (Chaturaji2027Pieces.Boat, Black, 4, Yellow, 0),
-            (
-                boat.Kind,
-                boat.Owner,
-                bought.State.Draft!.Left[Black],
-                bought.State.DecidingSeat!.Value,
-                bought.Events.Count
-            )
+            (Chaturaji2027Pieces.Boat, Black, 4, Yellow),
+            (boat.Kind, boat.Owner, bought.State.Draft!.Left[Black], bought.State.DecidingSeat!.Value)
         );
     }
 
@@ -372,6 +367,82 @@ public sealed class ArmyDraftingTest
                 started.AwaitedDice is not null
             )
         );
+    }
+
+    [Fact]
+    public void Apply_WhenASeatSetsItsThroneOrBuysAPiece_TellsWhatItDidAndWhere()
+    {
+        // Arrange
+        GameState state = this.Begun();
+
+        // Act
+        GameState throned = this._rules.Apply(state, new ThroneAction(Black, A1)).State with { DecidingSeat = Black };
+        ImmutableList<GameEvent> told =
+        [
+            .. this._rules.Apply(state, new ThroneAction(Black, A1)).Events,
+            .. this._rules.Apply(throned, new DraftAction(Black, Chaturaji2027Pieces.Boat, B1)).Events,
+        ];
+
+        // Assert
+        ImmutableList<GameEvent> expected =
+            [new ThroneSet(Black, A1), new PieceDrafted(Black, Chaturaji2027Pieces.Boat, B1, 2)];
+        Assert.Equal(expected, told);
+    }
+
+    [Fact]
+    public void Apply_WhenASeatSpendsAllItHas_TellsItIsDoneKeepingNothing()
+    {
+        // Arrange
+        GameState state = this.Begun() with
+        {
+            Thrones = ImmutableDictionary<SeatId, CellId>.Empty.Add(Black, A1),
+        };
+        state = state with { Draft = state.Draft! with { Left = state.Draft.Left.SetItem(Black, 5) } };
+
+        // Act
+        Transition bought = this._rules.Apply(state, new DraftAction(Black, Chaturaji2027Pieces.Raja, A1));
+
+        // Assert
+        ImmutableList<GameEvent> expected =
+            [new PieceDrafted(Black, Chaturaji2027Pieces.Raja, A1, 5), new DraftFinished(Black, 0)];
+        Assert.Equal(expected, bought.Events);
+    }
+
+    [Fact]
+    public void Apply_WhenASeatIsDoneOrFilledAtRandom_TellsHowManyPiecesItGainedAndWhatItKept()
+    {
+        // Arrange - Black has its throne, so may be done
+        GameState state = this.Begun() with
+        {
+            Thrones = ImmutableDictionary<SeatId, CellId>.Empty.Add(Black, A1),
+        };
+
+        // Act
+        ImmutableList<GameEvent> told =
+        [
+            .. this._rules.Apply(state, new PassAction(Black)).Events,
+            .. this._rules.Apply(this.Begun(), new FillArmyAction(Black)).Events,
+        ];
+
+        // Assert
+        ImmutableList<GameEvent> expected =
+            [new DraftFinished(Black, 6), new ArmyFilledAtRandom(Black, 1), new DraftFinished(Black, 5)];
+        Assert.Equal(expected, told);
+    }
+
+    [Fact]
+    public void Apply_WhenTheOneDrafterIsDone_TellsThatEveryOtherArmyIsDraftedAlike()
+    {
+        // Arrange
+        GameState state = this._rules.Drafted(this._rules.CreateInitialState(), 7, new DraftSettings(Drafter: Yellow));
+
+        // Act
+        Transition started = this._rules.Apply(state, new FillArmyAction(Yellow));
+
+        // Assert
+        ImmutableList<GameEvent> expected =
+            [new ArmyFilledAtRandom(Yellow, 1), new DraftFinished(Yellow, 5), new ArmiesCopied(Yellow)];
+        Assert.Equal(expected, started.Events);
     }
 
     [Fact]

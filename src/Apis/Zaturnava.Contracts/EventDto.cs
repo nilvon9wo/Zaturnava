@@ -41,6 +41,9 @@ public sealed record EventDto(
     public const string Passed = "passed";
     public const string Ended = "ended";
 
+    /// <summary>A step of drafting an army: a palace placed, a throne set, a piece bought, an army done.</summary>
+    public const string Drafted = "drafted";
+
     /// <summary>
     /// The kinds worth keeping in a short log: points scored, pieces brought back, who controls whose army,
     /// and how the game ended.
