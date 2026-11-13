@@ -37,4 +37,10 @@ public sealed record MoveDiagramDto(
     /// piece on the capture cell before each, and then again from there; none, for any other.
     /// </summary>
     public ImmutableList<int> Jumps { get; init; } = [];
+
+    /// <summary>
+    /// For a piece that steps along a palace's lines: the cells of a palace about it, the piece on its throne, to draw
+    /// with a line from each to the throne; its moves and captures include the steps along them. None, for any other.
+    /// </summary>
+    public ImmutableList<int> Palace { get; init; } = [];
 }

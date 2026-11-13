@@ -211,6 +211,37 @@ public sealed class Chaturaji2027VariantTest
         );
     }
 
+    [Theory]
+    [InlineData("pawn", "48,49,50")]
+    [InlineData("raja", "30,31,32,39,41,48,49,50")]
+    public void GuideOf_WhenTheKindStepsAlongPalaceLines_DrawsItsStepsAlongThemForwardOnlyIfSoHeld(
+        string kind,
+        string reached
+    )
+    {
+        // Arrange - a Pawn that steps along palace lines only forward, and a Raja that steps along them every way, each
+        // on the throne of a palace from 30 to 50 about the centre, 40
+        Chaturaji2027Rules rules = new(
+            DiceProfile.WeightedSixSided,
+            Chaturaji2027Rules.DefaultIdleRounds,
+            PawnPromotion.OtherArmies,
+            variant: Chaturaji2027Variant.Standard with
+            {
+                PalaceSteppers = [Chaturaji2027Pieces.Pawn, Chaturaji2027Pieces.Raja],
+                ForwardPalaceSteppers = [Chaturaji2027Pieces.Pawn],
+            }
+        );
+
+        // Act
+        MoveDiagram diagram = rules.GuideOf(new PieceKindId(kind)).Diagram;
+
+        // Assert
+        Assert.Equal(
+            (reached, reached, "30,31,32,39,40,41,48,49,50"),
+            (string.Join(",", diagram.Moves), string.Join(",", diagram.Captures), string.Join(",", diagram.Palace))
+        );
+    }
+
     [Fact]
     public void GuideOf_WhenAPieceInTheWayBlocksALeap_MarksWhereSuchAPieceWouldStand()
     {

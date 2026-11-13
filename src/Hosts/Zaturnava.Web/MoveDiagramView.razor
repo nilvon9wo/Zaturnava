@@ -7,7 +7,9 @@
    piece's own army - its forward, and the board's
    turn - with an arrow at its forward edge, the piece itself kept upright, on a square shaded as the one it stands
    on on the board (the centre's row and column always sum to an even number). Under it, what each mark means, each
-   mark kept beside its meaning. *@
+   mark kept beside its meaning. For a piece that steps along a palace's lines, a palace about it, as the board draws
+   one: its wall, and a dashed line from each of its squares to the throne the piece stands on. *@
+@using System.Globalization
 
 <div class="move-diagram-turn" style="transform: rotate(@(this.Angle)deg)">
     <span class="forward-arrow" aria-hidden="true">&#x25B2;</span>
@@ -26,6 +28,16 @@
                     }
                 </span>
             }
+        }
+        @if (!this.Diagram.Palace.IsEmpty)
+        {
+            <svg class="palace-lines" viewBox="0 0 @this.Diagram.Side @this.Diagram.Side" aria-hidden="true">
+                <rect class="line palace" x="@this.Wall.X" y="@this.Wall.Y" width="@this.Wall.Width" height="@this.Wall.Height" />
+                @foreach (int cell in this.Diagram.Palace.Where(cell => cell != this.Centre))
+                {
+                    <line class="line palace-line" x1="@this.XOf(cell)" y1="@this.YOf(cell)" x2="@this.XOf(this.Centre)" y2="@this.YOf(this.Centre)" />
+                }
+            </svg>
         }
     </div>
 </div>
@@ -54,6 +66,10 @@
     {
         <span class="key-item"><span class="key river"></span>a river it may not cross</span>
     }
+    @if (!this.Diagram.Palace.IsEmpty)
+    {
+        <span class="key-item"><span class="key palace"></span>in a palace, standing on its throne: along each line to the throne it moves and captures, diagonally too</span>
+    }
 </p>
 
 @code {
@@ -79,6 +95,31 @@
     public bool IsOnDark { get; set; }
 
     private int Centre => (this.Diagram.Side * this.Diagram.Side) / 2;
+
+    /// <summary>The palace's wall: the box about its cells, in cells, from the top-left, as the SVG draws.</summary>
+    private (int X, int Y, int Width, int Height) Wall
+    {
+        get
+        {
+            ImmutableList<int> columns = [.. this.Diagram.Palace.Select(cell => cell % this.Diagram.Side)];
+            ImmutableList<int> rows = [.. this.Diagram.Palace.Select(cell => cell / this.Diagram.Side)];
+            return (
+                columns.Min(),
+                this.Diagram.Side - 1 - rows.Max(),
+                columns.Max() - columns.Min() + 1,
+                rows.Max() - rows.Min() + 1
+            );
+        }
+    }
+
+    private string XOf(int cell) =>
+        ((cell % this.Diagram.Side) + 0.5).ToString(CultureInfo.InvariantCulture);
+
+    private string YOf(int cell)
+    {
+        int row = cell / this.Diagram.Side;
+        return (this.Diagram.Side - row - 0.5).ToString(CultureInfo.InvariantCulture);
+    }
 
     /// <summary>For one who cannot see it: how many squares it may move to and capture on.</summary>
     private string Described =>

@@ -128,7 +128,12 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         this._grid = new SquareGridTopology(this._variant.Side, this._variant.Side);
         this._awayTurns = awayTurns;
         this._moves = new MoveGenerator(this._grid, this._variant.Kinds);
-        this._diagrams = new MoveDiagrams(this._variant.Kinds, this._variant.RiverBound);
+        this._diagrams = new MoveDiagrams(
+            this._variant.Kinds,
+            this._variant.RiverBound,
+            this._variant.PalaceSteppers,
+            this._variant.ForwardPalaceSteppers
+        );
         this._dice = dice;
         this._idleRounds = idleRounds;
         this._pawnPromotion = pawnPromotion;
@@ -598,13 +603,21 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
                 (this._variant.Castlers.Contains(kind),
                     $"Castles with its own {rooks}: two cells towards it, the {rooks} jumping over to its other side."),
                 (this._variant.FlyingCapturers.Contains(kind),
-                    "Flying general: takes an enemy leader along an open straight line, nothing between them."),
+                    "Flying general: when it and an enemy leader stand in the same row or column, with nothing "
+                    + "between them, however far apart, it may fly the whole way and take that leader, as its move. "
+                    + "For example, from e1 it takes a leader on e9 if e2 to e8 are empty."),
                 (this._variant.FaceOffCallers.Contains(kind),
-                    "Face-off: facing an enemy leader along an open straight line, may call both leaders taken at "
-                    + "once, even out of turn."),
+                    "Face-off: when it and an enemy leader stand in the same row or column, with nothing between "
+                    + "them, its player may call a face-off, even out of turn, for as long as they so face each "
+                    + "other: both leaders are taken at once, each by the other's side, and both sides score. "
+                    + "Neither piece moves."),
                 (this._variant.Custodians.Contains(kind),
-                    "Takes by custody: moving next to an enemy piece, along a straight line, with a piece of its own "
-                    + "just beyond it, takes it; as many such pieces at once as it holds so."),
+                    "Takes by custody: it takes nothing where it lands. Instead, when it moves next to an enemy "
+                    + "piece, in the same row or column, and just beyond that enemy, on the same line, stands any "
+                    + "piece its player commands then (one of their own, or of an army they command), that enemy "
+                    + "is taken: held between the two. For example, an enemy on d4 and your Pawn on d5: moving to "
+                    + "d3, it takes the enemy. Every enemy held so on its other sides is taken in the same move, "
+                    + "up to three at once."),
                 (this._variant.Fleers.Contains(kind),
                     "Escape: on its own far corner, the board's corner across from its army's, it may leave the board "
                     + "as its move, where no one can take it. It comes back only on doubles that let a captured "

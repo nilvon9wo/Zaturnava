@@ -237,6 +237,14 @@ They may be added later. The program keeps their keys apart from the grand piece
 - **Stated.** A confined piece is confined to the palace it is in. Only one that has left its
   palace (the Xiangqi General, by its flying-general capture) or bought off its confinement can
   ever be in another, and one that bought it off is not confined in any palace.
+- **Stated (2026-11-13).** A piece moving along a palace line takes along it too, as it moves: a
+  step onto an enemy takes it. (So it already was played.) Its card draws it on the throne of a
+  palace, with the palace's lines and the steps along them.
+- **Stated (2026-11-13).** A confined piece that comes back to the board (ransomed, or escaping on
+  doubles) while its palace has no free square is put elsewhere: as any piece coming back is, on
+  the free square nearest its own starting square. Outside every palace it moves freely until it
+  enters one, which then holds it. *Proposed*: that nearest square is not kept to its kingdom, so
+  that the squares offered for a stored game's returns do not change.
 
 ## 6. Play
 

@@ -15,12 +15,16 @@ namespace Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
 /// where it may capture, an enemy put on each cell in turn. A kind that hops is drawn with a piece of its own two
 /// cells out along each line it hops on, to hop over; one a river holds back (<paramref name="riverBound"/>), with a
 /// river just ahead of it, and nothing across it (the user's report of 2026-11-12: "Pictures speak 1000 words!").
-/// What else the board or the game's rules add (the two-cell first move) is not drawn: the kind's powers and
-/// restrictions tell of it.
+/// One that steps along a palace's lines (<paramref name="palaceSteppers"/>) stands on the throne of a palace about it,
+/// stepping along each line to the next cell, as <see cref="PalaceSteps"/> lets it, those of
+/// <paramref name="forwardPalaceSteppers"/> only forward. What else the board or the game's rules add (the two-cell
+/// first move) is not drawn: the kind's powers and restrictions tell of it.
 /// </summary>
 internal sealed class MoveDiagrams(
     ImmutableDictionary<PieceKindId, PieceKind> kinds,
-    ImmutableHashSet<PieceKindId> riverBound
+    ImmutableHashSet<PieceKindId> riverBound,
+    ImmutableHashSet<PieceKindId> palaceSteppers,
+    ImmutableHashSet<PieceKindId> forwardPalaceSteppers
 )
 {
     /// <summary>As wide as the farthest leap of the catalogue, four cells, either side of the centre.</summary>
@@ -33,6 +37,13 @@ internal sealed class MoveDiagrams(
     private static readonly Seat Facing = new(new SeatId(0), new Direction(0, 1));
     private static readonly SeatId Enemy = new(1);
     private static readonly PieceKindId Stand = new("diagram-stand");
+
+    /// <summary>The 3 × 3 palace about the centre, its throne, row by row from the bottom.</summary>
+    private static readonly ImmutableList<CellId> Palace =
+    [
+        .. Enumerable.Range(Middle - 1, 3)
+            .SelectMany(row => Enumerable.Range(Middle - 1, 3).Select(column => Grid.CellAt(column, row))),
+    ];
 
     private readonly ImmutableDictionary<PieceKindId, PieceKind> _kinds = kinds;
     private readonly MoveGenerator _moves = new(Grid, kinds);
@@ -50,15 +61,23 @@ internal sealed class MoveDiagrams(
         int? riverRow = riverBound.Contains(kind) ? Middle + 1 : null;
         ImmutableHashSet<CellId> reached = this.ReachedOn(alone, riverRow);
         ImmutableList<Move> jumps = this.JumpsOn(alone, this._kinds[kind]);
+        ImmutableList<CellId> palace = palaceSteppers.Contains(kind) ? Palace : [];
+        ImmutableList<CellId> palaceSteps =
+        [
+            .. palace
+                .Where(cell => cell != Centre)
+                .Where(cell => !forwardPalaceSteppers.Contains(kind) || Grid.RowOf(cell) > Middle),
+        ];
         return new MoveDiagram(
             Side,
-            [.. reached.Select(cell => cell.Value).Order()],
+            [.. reached.Concat(palaceSteps).Select(cell => cell.Value).Distinct().Order()],
             [
                 .. Grid.Cells
                     .Where(cell => alone.PieceAt(cell) is null)
                     .Where(cell => IsOnNearBank(cell, riverRow))
                     .Where(cell => this.MayCapture(alone, cell))
                     .Concat(jumps.SelectMany(jump => jump.Jumped))
+                    .Concat(palaceSteps)
                     .Select(cell => cell.Value)
                     .Distinct()
                     .Order(),
@@ -67,6 +86,7 @@ internal sealed class MoveDiagrams(
         )
         {
             Jumps = [.. jumps.Select(jump => jump.To.Value).Distinct().Order()],
+            Palace = [.. palace.Select(cell => cell.Value)],
             RiverRow = riverRow,
             Blockers = this._kinds[kind].Movement.Any(rule => rule.IsLame)
                 ? [.. this.BlockersOf(alone, riverRow, reached).Select(cell => cell.Value).Order()]
