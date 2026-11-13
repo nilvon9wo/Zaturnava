@@ -23,7 +23,7 @@ internal sealed class Mercenaries(
     SquareGridTopology grid,
     ImmutableHashSet<PieceKindId> kinds,
     ImmutableHashSet<PieceKindId> leaders,
-    ImmutableDictionary<PieceKindId, int> points,
+    Func<int, ImmutableDictionary<PieceKindId, int>> points,
     Position initial,
     ThroneControl control
 )
@@ -34,7 +34,7 @@ internal sealed class Mercenaries(
     private readonly SquareGridTopology _grid = grid;
     private readonly ImmutableHashSet<PieceKindId> _kinds = kinds;
     private readonly ImmutableHashSet<PieceKindId> _leaders = leaders;
-    private readonly ImmutableDictionary<PieceKindId, int> _points = points;
+    private readonly Func<int, ImmutableDictionary<PieceKindId, int>> _points = points;
     private readonly Position _initial = initial;
     private readonly ThroneControl _control = control;
 
@@ -118,7 +118,7 @@ internal sealed class Mercenaries(
                     new[]
                     {
                         this.LastCostOf(state, from),
-                        this._points.GetValueOrDefault(into.Kind),
+                        this._points(state.Edition).GetValueOrDefault(into.Kind),
                         this.IsMercenary(state, into) ? this.LastCostOf(state, into) : 0,
                     }.Max()
                 ),
@@ -126,7 +126,9 @@ internal sealed class Mercenaries(
             : state;
 
     private int LastCostOf(GameState state, Piece piece) =>
-        state.MercenaryCosts.TryGetValue(piece.Id, out int cost) ? cost : this._points.GetValueOrDefault(piece.Kind);
+        state.MercenaryCosts.TryGetValue(piece.Id, out int cost)
+            ? cost
+            : this._points(state.Edition).GetValueOrDefault(piece.Kind);
 
     /// <summary>Where the seat's mercenaries are placed: its palace, or the 3 × 3 square about its throne.</summary>
     private IEnumerable<CellId> BarracksOf(GameState state, SeatId seat) =>

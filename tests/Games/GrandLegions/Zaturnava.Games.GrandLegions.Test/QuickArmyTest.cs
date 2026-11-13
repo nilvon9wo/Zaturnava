@@ -58,6 +58,50 @@ public sealed class QuickArmyTest
     }
 
     [Theory]
+    [InlineData("grand-legions-small", 110, 127)]
+    [InlineData("grand-legions-medium", 125, 151)]
+    [InlineData("grand-legions-large", 200, 288)]
+    public void BudgetOf_BeforeTheFormulaEditionOrFromIt_IsTheGamesOwnOrTheFormulas(string id, int before, int since)
+    {
+        // Arrange
+        QuickGame game = QuickGame.All.Single(quick => quick.Id == id);
+
+        // Act
+        (int Before, int Since, int Formula) budgets = (
+            QuickArmy.BudgetOf(game with { Edition = QuickArmy.FormulaEdition - 1 }),
+            QuickArmy.BudgetOf(game with { Edition = QuickArmy.FormulaEdition }),
+            QuickArmy.FormulaBudget(game with { Edition = QuickArmy.FormulaEdition })
+        );
+
+        // Assert
+        Assert.Equal((before, since, since), budgets);
+    }
+
+    [Theory]
+    [MemberData(nameof(Games))]
+    public void Pick_FromTheFormulaEdition_MeetsTheMinimumsWithinTheFormulasBudget(string id)
+    {
+        // Arrange
+        QuickGame game = QuickGame.All.Single(quick => quick.Id == id) with { Edition = QuickArmy.FormulaEdition };
+        int budget = QuickArmy.BudgetOf(game);
+
+        // Act
+        ImmutableList<ImmutableList<GrandPiece>> armies =
+            [.. Seeds.Select(seed => QuickArmy.Pick(game with { Budget = budget }, new(seed)))];
+
+        // Assert
+        Assert.All(armies, army =>
+        {
+            Assert.All(
+                game.Minimums,
+                minimum => Assert.True(army.Count(piece => piece.Class == minimum.Key) >= minimum.Value)
+            );
+            Assert.True(army.Sum(piece => piece.Value) <= budget);
+            _ = Assert.Single(army, piece => piece.Class == Leader);
+        });
+    }
+
+    [Theory]
     [MemberData(nameof(Games))]
     public void Pick_ForEachQuickGame_PicksArmiesThatDiffer(string id)
     {

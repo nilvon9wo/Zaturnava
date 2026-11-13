@@ -382,6 +382,41 @@ public sealed class Chaturaji2027VariantTest
     }
 
     [Fact]
+    public void PointsIn_WhenTheVariantPricesByEditionOrNot_IsThatEditionsPricesElseItsOwn()
+    {
+        // Arrange - a variant whose Horse was worth 1 before edition 5
+        Chaturaji2027Variant byEdition = Fenced with
+        {
+            PointsAt = edition => edition < 5 ? Fenced.Points.SetItem(Chaturaji2027Pieces.Horse, 1) : Fenced.Points,
+        };
+
+        // Act
+        (int Unset, int Before, int Since) horse = (
+            Fenced.PointsIn(0)[Chaturaji2027Pieces.Horse],
+            byEdition.PointsIn(4)[Chaturaji2027Pieces.Horse],
+            byEdition.PointsIn(5)[Chaturaji2027Pieces.Horse]
+        );
+
+        // Assert
+        Assert.Equal((Fenced.Points[Chaturaji2027Pieces.Horse], 1, Fenced.Points[Chaturaji2027Pieces.Horse]), horse);
+    }
+
+    [Fact]
+    public void BudgetIn_WhenTheDraftBudgetsByEditionOrNot_IsThatEditionsBudgetElseItsOwn()
+    {
+        // Arrange
+        Drafting drafting = new(6, [], (_, _) => [], _ => new ArmyFilled([], new ArmySquare(0, 0)));
+        Drafting byEdition = drafting with { BudgetAt = edition => edition < 5 ? 6 : 9 };
+
+        // Act
+        (int Unset, int Before, int Since) budgets =
+            (drafting.BudgetIn(0), byEdition.BudgetIn(4), byEdition.BudgetIn(5));
+
+        // Assert
+        Assert.Equal((6, 6, 9), budgets);
+    }
+
+    [Fact]
     public void Thrones_WhenRead_AreWhereEachSeatsFirstLeaderStarts()
     {
         // Arrange

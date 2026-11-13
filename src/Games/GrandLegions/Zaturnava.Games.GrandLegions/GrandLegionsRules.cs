@@ -144,6 +144,7 @@ public static class GrandLegionsRules
                 : null,
             Lines = (state, _) => QuickTerrain.LinesOf(game, state.Terrain),
             Terrain = state => QuickTerrain.Described(state.Terrain),
+            PointsAt = edition => BoardPrices.On(QuickTerrain.BoardOf(game, 0), edition),
             Game = game.Game,
             Heavies = Heavies,
             Promotables = Promotables,

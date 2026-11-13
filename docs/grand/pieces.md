@@ -161,13 +161,13 @@ The dice name a class, not a piece ([specification §6.1](specification.md#61-th
 |---|---|---|---|---|---|
 | Dragon King (Shogi) | Any distance orthogonally, or one square diagonally | — | — | 78 | — / — |
 | Fairy General (custom) | One square in any direction, or leaps 2+1 | — | — | 76 | — / — |
-| King (Tafl) | Any distance orthogonally; takes only by custody | — | [Custody](#jumping-and-custody) | 71 | — / — |
+| King (Tafl) | Any distance orthogonally; takes only by custody | — | [Custody](#jumping-and-custody) | 74 | — / — |
 | King (Western) | One square in any direction | — | Castling | 70 | — / — |
 | General (Xiangqi) | One square orthogonally | Area: its 3 × 3 palace | Flying-general capture | 69 | — / 5 |
 | General (Janggi) | One square orthogonally, or diagonally along palace lines | Area: its 3 × 3 palace | Leader face-off; palace lines | 68 | — / 5 |
 | Gold General (Shogi) | One square orthogonally, or diagonally forward | — | — | 66 | — / — |
 | Silver General (Shogi) | One square diagonally, or straight forward | — | → Gold General in the far three ranks | 65 | — / — |
-| King (Checkers) | One square diagonally; takes only by jumping | One colour (by its move) | [Jump chains](#jumping-and-custody) | 64 | — / — |
+| King (Checkers) | One square diagonally; takes only by jumping | One colour (by its move) | [Jump chains](#jumping-and-custody) | 67 | — / — |
 
 ### Infantry
 
@@ -201,7 +201,7 @@ Chaturaji 2027.
 | Dragon Horse (Shogi) | Any distance diagonally, or one square orthogonally | — | — | 17 | — / — |
 | Rook (Western) | Any distance orthogonally | — | — | 14 | — / — |
 | Bishop (Western) | Any distance diagonally | One colour (by its move) | — | 12 | — / — |
-| Swede (Tafl) | Any distance orthogonally; takes only by custody | — | [Custody](#jumping-and-custody) | 11 | — / — |
+| Swede (Tafl) | Any distance orthogonally; takes only by custody | — | [Custody](#jumping-and-custody) | 14 | — / — |
 
 ### Cavalry / Leaper
 
@@ -223,7 +223,7 @@ Chaturaji 2027.
 
 | Piece | Moves | Captures | Restrictions | Value | Lifts |
 |---|---|---|---|---|---|
-| Man (Checkers) | One square diagonally forward | By [jumping](#jumping-and-custody), diagonally forward; → King (Checkers) on the last rank | One colour (by its move) | 54 | — / — |
+| Man (Checkers) | One square diagonally forward | By [jumping](#jumping-and-custody), diagonally forward; → King (Checkers) on the last rank | One colour (by its move) | 56 | — / — |
 | Manchu Chariot | Any distance orthogonally, or leaps 2+1 | Same, or by hopping one piece, at any distance beyond, orthogonally | — | 24 | — / — |
 | Cannon (Xiangqi) | Any distance orthogonally | By hopping one piece, at any distance beyond | — | 10 | — / — |
 | Cannon (Janggi) | Over exactly one piece, to any cell beyond, orthogonally | Same | Move: must hop exactly one piece; may neither hop nor capture a Cannon of either kind | 8 | 3 / — |
@@ -252,21 +252,22 @@ Their values, by the sheet's columns:
 
 | Piece | Leader | Reach | Premium | Powers | Limits | Value |
 |---|---|---|---|---|---|---|
-| King (Tafl) | 60 | 14 | 0 | +1 | −4 | 71 |
-| King (Checkers) | 60 | 4 | 0 | +2 | −2 | 64 |
-| Man | 50 | 2 | 2 | +2 | −2 | 54 |
-| Swede | 0 | 14 | 0 | +1 | −4 | 11 |
+| King (Tafl) | 60 | 14 | 0 | +4 | −4 | 74 |
+| King (Checkers) | 60 | 4 | 0 | +5 | −2 | 67 |
+| Man | 50 | 2 | 2 | +4 | −2 | 56 |
+| Swede | 0 | 14 | 0 | +4 | −4 | 14 |
 
 - Reach counts the cells a piece moves to or takes on. A jump takes on the cell next to the jumper, which its
   step reaches already, so a jump adds no reach.
-- Powers: taking several pieces in one move. A jump chain can go on and on (+2). Custody takes at most the
-  three pieces about the cell (+1).
+- Powers: taking several pieces in one move, whose worth is guessed below. A jump chain can go on and on: +5
+  for the King, +4 for the Man, which jumps only forward. Custody takes up to the three pieces about the cell
+  (+4).
 - Limits: a Checkers piece keeps to one colour (−1, [Binding](#binding)) and takes only by jumping, which
   needs the cell beyond empty (−1). A custodian takes only by custody, which needs a second piece. That costs
   what taking only by hopping costs the Xiangqi Cannon (−4).
 - The Man may promote into the Checkers King, a leader, so it starts from the
-  [leader promotion bonus](#leader-promotion-bonus) (50). Its premium is the 12 that promotion would gain
-  (64 less 52), over 7 rows: 2.
+  [leader promotion bonus](#leader-promotion-bonus) (50). Its premium is the 13 that promotion would gain
+  (67 less 54), over 7 rows: 2.
 - The sheet also says the Tafl King "can permanently escape the game". **Escape**, *Stated* (2026-11-13): on its
   own army's far corner (the right-hand corner of the far row, as the army faces; z26 for Black on the largest board),
   and only there, the Tafl King may leave the board, by a deliberate move or on a die that moves it. Off the board
@@ -274,6 +275,32 @@ Their values, by the sheet's columns:
   *Proposed*: while it is away its army plays on as one whose leader was taken, and a fled King, like a prisoner,
   holds no ground: if it was its team's last piece on the board, the game ends as when a team is left alone.
   The escape is unpriced: its worth is an [open question](../open-questions.md).
+
+**What taking several is worth**, *Proposed* (2026-11-13). The designer asked for a guess, first for custody,
+noting that both its pieces are held back by not taking alone, then for the jump chain. Custody was first priced
+at +1, as taking at most three pieces at once, and the jump chain at +2. Both undervalue it. A guess at what each
+adds, over the one piece a move takes:
+
+| Factor | Custody | Jump chain (King) | Jump chain (Man) |
+|---|---|---|---|
+| A chance, in a move, of a capture of two or more pieces | 1 in 10 | 1 in 10 | 1 in 15 (forward only) |
+| The dice letting the piece move then | 1 in 2 | 1 in 2 | 1 in 2 |
+| The player seeing it and choosing it | 4 in 5 | 9 in 10 (a chain is plain to see) | 9 in 10 |
+| The worth of the extra pieces taken, on average | 10 points | 12 points (a chain may take more than two) | 12 points |
+| Times it may happen in a game | 10 | 10 | 10 |
+| Product | 4.0 | 5.4 | 3.6 |
+| Powers | +4 | +5 | +4 |
+
+From [edition 5](#editions):
+
+| Piece | Value before | Value from edition 5 |
+|---|---|---|
+| King (Tafl) | 71 | 74 |
+| Swede | 11 | 14 |
+| King (Checkers) | 64 | 67 |
+| Man | 54 | 56 |
+
+A game of an earlier edition still prices and scores them as before.
 
 ### The Berolina Pawn, the Manchu Chariot and the Courier
 
@@ -286,8 +313,8 @@ moves; the columns they left open filled in by the program, *Proposed*):
 - **Manchu Chariot**, from Manchu chess, where it is the one piece of its side that combines three: it moves as a
   Rook, leaps as a Knight (not as a Xiangqi Horse, whose leap may be blocked: the sheet says "Knight-like"), and
   also takes as the Xiangqi Cannon does, by hopping one piece. Artillery, as the sheet has it.
-- **Courier**: moves one square in any direction, as a King does, but is not a leader. The sheet marks it as
-  jumping too; a single step jumps nothing, so that changes nothing.
+- **Courier**: moves exactly as the Western King does, one square in any direction, without a leader's standing
+  (*Stated*, 2026-11-13). Its symbol is a winged hat.
 
 Their values, by the sheet's columns:
 
@@ -311,6 +338,11 @@ the four Checkers and Tafl pieces, 4 for the Berolina Pawn, the Manchu Chariot a
 game records the edition it was started in. A game deals and offers only the pieces of
 its edition or before; a game started before editions were recorded is of edition 0. New games are of the
 latest edition.
+
+A piece repriced since keeps its old value for a game of an earlier edition, in the draft, in a quick army's
+budget and in what capturing it scores. Edition 5 repriced the four pieces that take several at once
+([above](#jumping-and-custody)). From it, a quick army's budget is the designer's formula
+([roadmap](roadmap.md)).
 
 ## Review notes
 

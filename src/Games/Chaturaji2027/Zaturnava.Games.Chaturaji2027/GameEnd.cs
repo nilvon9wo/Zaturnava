@@ -252,7 +252,7 @@ internal static class GameEnd
     private static int BoardLead(GameState state, int team, Chaturaji2027Variant variant) =>
         state.Position.Occupants.Values
             .Where(piece => !state.Retired.Contains(piece.Owner))
-            .Sum(piece => Side(state, team, piece.Owner) * variant.Points[piece.Kind]);
+            .Sum(piece => Side(state, team, piece.Owner) * variant.PointsIn(state.Edition)[piece.Kind]);
 
     private static int Side(GameState state, int team, SeatId seat) => state.Teams.TeamOf(seat) == team ? 1 : -1;
 

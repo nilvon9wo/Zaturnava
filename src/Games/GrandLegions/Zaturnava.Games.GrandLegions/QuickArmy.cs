@@ -29,6 +29,60 @@ public static class QuickArmy
     /// </summary>
     public const int EvenSpreadEdition = 3;
 
+    /// <summary>
+    /// The edition (<see cref="QuickGame.Edition"/>) from which an army's budget is what the designer's formula gives
+    /// (<see cref="FormulaBudget"/>), and each slot may spend its share of what is left in proportion to its class's
+    /// average price, not an even share (Stated 2026-11-13: "the budget ... was intended to reflect the sum of the
+    /// average cost of [each] class of piece ... multiplied by the minimum frequency ..., with a bit of extra points
+    /// left over"). A game dealt before replays as it was dealt.
+    /// </summary>
+    public const int FormulaEdition = GrandLegionsPieces.MultipleCapturesRepriced;
+
+    /// <summary>The bit left over, past the formula's sum, in hundredths of it (Proposed: a tenth).</summary>
+    public const int LeftOverPercent = 10;
+
+    /// <summary>
+    /// What each army of the game may spend: from <see cref="FormulaEdition"/> on, <see cref="FormulaBudget"/>;
+    /// before, the game's own budget.
+    /// </summary>
+    public static int BudgetOf([Required] QuickGame game) =>
+        game.Edition >= FormulaEdition ? FormulaBudget(game) : game.Budget;
+
+    /// <summary>
+    /// The designer's formula: for each class, the average price of the pieces a quick army of the game may have of it
+    /// (with no rivers, nor pieces a palace holds; at the board's prices), times the least the army has of the class;
+    /// summed, and <see cref="LeftOverPercent"/> more, to the nearest point.
+    /// </summary>
+    public static int FormulaBudget([Required] QuickGame game)
+    {
+        ImmutableList<GrandPiece> eligible =
+            Eligible(game with { Rivers = Rivers.None, HasPalacePieces = false, HasEdgePalaces = false });
+        double sum = game.Minimums.Sum(minimum => minimum.Value * Average(eligible, minimum.Key));
+        return (int)Math.Round(sum * (100 + LeftOverPercent) / 100, MidpointRounding.AwayFromZero);
+    }
+
+    /// <summary>
+    /// The average price of the pieces of the class among <paramref name="eligible"/>, but those that may promote into
+    /// a leader, priced as nearly one (the Shogi Pawn, the Lance, the Man; Proposed: they would make a class's average
+    /// what almost none of its pieces costs); 0, if none.
+    /// </summary>
+    private static double Average(ImmutableList<GrandPiece> eligible, PieceClass pieceClass) =>
+        eligible
+            .Where(piece => piece.Class == pieceClass && !IsLeaderBound(piece))
+            .Select(piece => (double)piece.Value)
+            .DefaultIfEmpty()
+            .Average();
+
+    private static bool IsLeaderBound(GrandPiece piece) =>
+        piece.PromotesTo.Any(into => GrandLegionsPieces.ById[into].Class == Leader);
+
+    /// <summary>
+    /// The most a piece added past the minimums may cost, from <see cref="FormulaEdition"/> on: its class's average
+    /// and the bit left over (Proposed), so that the dearest pieces, as the Amazon, come very seldom.
+    /// </summary>
+    private static double MostAdded(ImmutableList<GrandPiece> eligible, PieceClass pieceClass) =>
+        Average(eligible, pieceClass) * (100 + LeftOverPercent) / 100;
+
     private static readonly ImmutableList<PieceClass> Classes = [Leader, Heavy, Artillery, Cavalry, Infantry];
 
     /// <summary>
@@ -44,7 +98,7 @@ public static class QuickArmy
         bool palaced = game.HasPalacePieces && !Centres(game).IsEmpty;
         return
         [
-            .. BoardPrices.Catalogue(QuickTerrain.BoardOf(game, 0)).Where(piece =>
+            .. BoardPrices.Catalogue(QuickTerrain.BoardOf(game, 0), game.Edition).Where(piece =>
                 piece.Edition <= game.Edition
                 && piece.Restrictions.All(restriction => restriction.Terrain switch
                 {
@@ -63,6 +117,7 @@ public static class QuickArmy
     /// </summary>
     public static ImmutableList<Placement> Dealt([Required] QuickGame game, int seed, bool areAlike = false)
     {
+        game = game with { Budget = BudgetOf(game) };
         Random random = new(seed);
         ImmutableList<ImmutableList<ArmyPiece>> armies =
         [
@@ -115,16 +170,25 @@ public static class QuickArmy
         ImmutableList<PieceClass> later
     )
     {
-        int left = game.Budget
-            - army.Sum(piece => piece.Value)
-            - later.Sum(each => Cheapest(eligible, each).Value);
-        if (game.Edition < EvenSpreadEdition)
-        {
-            return left;
-        }
-
+        int spent = army.Sum(piece => piece.Value);
+        int left = game.Budget - spent - later.Sum(each => Cheapest(eligible, each).Value);
         int cheapest = Cheapest(eligible, pieceClass).Value;
-        return cheapest + (Math.Max(0, left - cheapest) / (later.Count + 1));
+        return game.Edition switch
+        {
+            < EvenSpreadEdition => left,
+            < FormulaEdition => cheapest + (Math.Max(0, left - cheapest) / (later.Count + 1)),
+            _ => Math.Min(
+                left,
+                Math.Max(
+                    cheapest,
+                    (int)Math.Round(
+                        (game.Budget - spent) * Average(eligible, pieceClass)
+                            / later.Add(pieceClass).Sum(each => Average(eligible, each)),
+                        MidpointRounding.AwayFromZero
+                    )
+                )
+            ),
+        };
     }
 
     /// <summary>Every square of the game's kingdom a palace may stand about.</summary>
@@ -289,7 +353,12 @@ public static class QuickArmy
     {
         int left = game.Budget - army.Sum(piece => piece.Value);
         ImmutableList<GrandPiece> affordable = army.Count < game.Cells
-            ? [.. Fitting(eligible, army, RoomOf(game)).Where(piece => piece.Class != Leader && piece.Value <= left)]
+            ?
+            [
+                .. Fitting(eligible, army, RoomOf(game))
+                    .Where(piece => piece.Class != Leader && piece.Value <= left)
+                    .Where(piece => game.Edition < FormulaEdition || piece.Value <= MostAdded(eligible, piece.Class)),
+            ]
             : [];
         return affordable.IsEmpty ? army : Filled(eligible, army.Add(Drawn(affordable, random)), game, random);
     }

@@ -27,7 +27,8 @@ internal sealed class ArmyDrafting
     private static readonly PieceKindId Square = new("kingdom-square");
 
     private readonly Drafting _drafting;
-    private readonly Func<PieceKindId, int> _priceOf;
+    /// <summary>What a kind costs in a game of an edition (<see cref="GameState.Edition"/>).</summary>
+    private readonly Func<int, PieceKindId, int> _priceOf;
     private readonly DiceRequest _rollOff;
     private readonly ImmutableDictionary<SeatId, ImmutableDictionary<CellId, ArmySquare>> _kingdoms;
 
@@ -50,7 +51,7 @@ internal sealed class ArmyDrafting
         Drafting drafting,
         SquareGridTopology grid,
         int side,
-        Func<PieceKindId, int> priceOf,
+        Func<int, PieceKindId, int> priceOf,
         DiceRequest rollOff
     )
     {
@@ -60,7 +61,7 @@ internal sealed class ArmyDrafting
         this.Limit = drafting.Kingdom.Count
             * drafting.Terrains
                 .SelectMany(terrain => drafting.Offered(terrain, int.MaxValue))
-                .Select(priceOf)
+                .Select(kind => priceOf(int.MaxValue, kind))
                 .DefaultIfEmpty()
                 .Max();
         this._kingdoms = Enumerable.Range(0, Pinwheel.SeatCount).ToImmutableDictionary(
@@ -167,7 +168,7 @@ internal sealed class ArmyDrafting
                 seed,
                 dealt.Seats.ToImmutableDictionary(
                     seat => seat.Id,
-                    _ => Math.Min(settings.Budget ?? this._drafting.Budget, this.Limit)
+                    _ => Math.Min(settings.Budget ?? this._drafting.BudgetIn(dealt.Edition), this.Limit)
                 ),
                 settings.Drafter is { } drafter
                     ? [.. dealt.Seats.Select(seat => seat.Id).Where(seat => seat != drafter)]
@@ -236,7 +237,7 @@ internal sealed class ArmyDrafting
         return
         [
             .. this.Offered(state)
-                .Where(kind => this._priceOf(kind) <= left)
+                .Where(kind => this._priceOf(state.Edition, kind) <= left)
                 .SelectMany(kind => (this._drafting.PalaceBound.Contains(kind) ? freeInPalace : free)
                     .Select(cell => (GameAction)new DraftAction(seat, kind, cell))
                 ),
@@ -289,7 +290,7 @@ internal sealed class ArmyDrafting
     [
         .. this._drafting.Offered(state.Terrain, state.Edition)
             .Union(state.Palaces is null ? [] : this._drafting.PalaceBound)
-            .OrderByDescending(this._priceOf)
+            .OrderByDescending(kind => this._priceOf(state.Edition, kind))
             .ThenBy(kind => kind.Value, StringComparer.Ordinal),
     ];
 
@@ -322,7 +323,7 @@ internal sealed class ArmyDrafting
                 ),
                 DraftAction draft => Told(
                     this.DoneIfSpent(this.Bought(state, seat, draft.Piece, draft.Cell), seat),
-                    new PieceDrafted(seat, draft.Piece, draft.Cell, this._priceOf(draft.Piece))
+                    new PieceDrafted(seat, draft.Piece, draft.Cell, this._priceOf(state.Edition, draft.Piece))
                 ),
                 UndraftAction undraft => this.RefundedAndTold(state, seat, undraft.Cell),
                 FillArmyAction => this.FilledAndTold(state, seat),
@@ -359,7 +360,7 @@ internal sealed class ArmyDrafting
     private (GameState State, ImmutableList<GameEvent> Told) RefundedAndTold(GameState state, SeatId seat, CellId cell)
     {
         PieceKindId kind = state.Position.PieceAt(cell)!.Kind;
-        int price = this._priceOf(kind);
+        int price = this._priceOf(state.Edition, kind);
         return Told(
             state with
             {
@@ -397,7 +398,7 @@ internal sealed class ArmyDrafting
             Position = state.Position.Place(cell, new Piece(NextId(state.Position), kind, seat)),
             Draft = state.Draft! with
             {
-                Left = state.Draft.Left.SetItem(seat, state.Draft.Left[seat] - this._priceOf(kind)),
+                Left = state.Draft.Left.SetItem(seat, state.Draft.Left[seat] - this._priceOf(state.Edition, kind)),
             },
         };
 

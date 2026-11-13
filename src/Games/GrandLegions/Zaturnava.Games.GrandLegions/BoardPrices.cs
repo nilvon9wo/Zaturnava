@@ -40,36 +40,42 @@ public static class BoardPrices
     private static readonly ImmutableDictionary<PieceKindId, int> Premiums =
         PieceValues.Of(typeof(BoardPrices).Assembly, QuickGame.GameId + "-premiums");
 
-    private static readonly ImmutableDictionary<PieceKindId, int> Values =
-        GrandLegionsPieces.Catalogue.ToImmutableDictionary(piece => piece.Id, piece => piece.Value);
-
     private static readonly ImmutableDictionary<PieceKindId, int> ReferenceReaches =
         ReachesOn(ReferenceSide, ReferenceSide);
 
-    private static readonly ConcurrentDictionary<GrandBoard, ImmutableDictionary<PieceKindId, int>> Priced = new();
+    private static readonly ConcurrentDictionary<(GrandBoard Board, int Edition), ImmutableDictionary<PieceKindId, int>>
+        Priced = new();
 
-    /// <summary>Each piece's price on <paramref name="board"/>; its rivers change none.</summary>
-    public static ImmutableDictionary<PieceKindId, int> On([Required] GrandBoard board) =>
-        Priced.GetOrAdd(board with { Rivers = Rivers.None, Course = RiverCourse.ThroughKingdoms }, PricesOn);
+    /// <summary>
+    /// Each piece's price on <paramref name="board"/>, as it is valued in a game of <paramref name="edition"/>
+    /// (<see cref="GrandPiece.ValueAt"/>; as it is now, if none is given); its rivers change none.
+    /// </summary>
+    public static ImmutableDictionary<PieceKindId, int> On([Required] GrandBoard board, int edition = int.MaxValue) =>
+        Priced.GetOrAdd(
+            (board with { Rivers = Rivers.None, Course = RiverCourse.ThroughKingdoms }, edition),
+            priced => PricesOn(priced.Board, priced.Edition)
+        );
 
-    /// <summary>The catalogue, each piece at its price on <paramref name="board"/>.</summary>
-    public static ImmutableList<GrandPiece> Catalogue([Required] GrandBoard board)
+    /// <summary>
+    /// The catalogue, each piece at its price on <paramref name="board"/>, in a game of <paramref name="edition"/>.
+    /// </summary>
+    public static ImmutableList<GrandPiece> Catalogue([Required] GrandBoard board, int edition = int.MaxValue)
     {
-        ImmutableDictionary<PieceKindId, int> prices = On(board);
+        ImmutableDictionary<PieceKindId, int> prices = On(board, edition);
         return [.. GrandLegionsPieces.Catalogue.Select(piece => piece with { Value = prices[piece.Id] })];
     }
 
-    private static ImmutableDictionary<PieceKindId, int> PricesOn(GrandBoard board)
+    private static ImmutableDictionary<PieceKindId, int> PricesOn(GrandBoard board, int edition)
     {
         ImmutableDictionary<PieceKindId, int> reaches = ReachesOn(board.Width, board.Length);
         return GrandLegionsPieces.Catalogue.ToImmutableDictionary(
             piece => piece.Id,
             piece => Math.Max(
                 MinimumPrice,
-                piece.Value
+                piece.ValueAt(edition)
                     + reaches[piece.Id]
                     - ReferenceReaches[piece.Id]
-                    + PremiumOn(piece, board)
+                    + PremiumOn(piece, board, edition)
                     - Premiums.GetValueOrDefault(piece.Id)
             )
         );
@@ -112,14 +118,15 @@ public static class BoardPrices
     /// The premium on <paramref name="board"/>: the higher of its own promotion's and, for Infantry not confined to
     /// a palace, the far edge's, a promotion into a stand-in, the Rook (pieces.md, Promotion premium).
     /// </summary>
-    private static int PremiumOn(GrandPiece piece, GrandBoard board)
+    private static int PremiumOn(GrandPiece piece, GrandBoard board, int edition)
     {
-        int unpromoted = piece.Value - Premiums.GetValueOrDefault(piece.Id);
+        int ValueOf(PieceKindId kind) => GrandLegionsPieces.ById[kind].ValueAt(edition);
+        int unpromoted = piece.ValueAt(edition) - Premiums.GetValueOrDefault(piece.Id);
         int own = piece.PromotesTo.Count == 0
             ? 0
-            : Over(piece.PromotesTo.Max(into => Values[into]) - unpromoted, OwnDistance(piece, board));
+            : Over(piece.PromotesTo.Max(ValueOf) - unpromoted, OwnDistance(piece, board));
         int farEdge = piece.Class == PieceClass.Infantry && !piece.Restrictions.Any(limit => limit.IsConfining)
-            ? Over(Values[GrandLegionsPieces.Rook] - unpromoted, board.Length - board.KingdomDepth)
+            ? Over(ValueOf(GrandLegionsPieces.Rook) - unpromoted, board.Length - board.KingdomDepth)
             : 0;
         return Math.Max(own, farEdge);
     }
