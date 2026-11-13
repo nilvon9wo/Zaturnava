@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using System.Globalization;
 using Net.NowhereAtAll.Zaturnava.Application.Games;
 using Net.NowhereAtAll.Zaturnava.Contracts;
+using Net.NowhereAtAll.Zaturnava.Engine.Boards;
 using Net.NowhereAtAll.Zaturnava.Engine.Events;
 using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
 using Net.NowhereAtAll.Zaturnava.Engine.Rules;
@@ -310,6 +311,44 @@ file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bo
             TurnPassed passed => this.Add(number, EventDto.Passed, passed.To, $"{this.Name(passed.To)} to play.")
                 with
             { HasRolled = false, SharedFor = null },
+            PalacePlaced placed => this.Drafted(
+                number,
+                placed.Seat,
+                $"{this.Name(placed.Seat)} placed their palace about {this.Rules.Topology.NameOf(placed.Centre)}.",
+                placed.Centre
+            ),
+            ThroneSet throne => this.Drafted(
+                number,
+                throne.Seat,
+                $"{this.Name(throne.Seat)} set their throne on {this.Rules.Topology.NameOf(throne.Cell)}.",
+                throne.Cell
+            ),
+            PieceDrafted bought => this.Drafted(
+                number,
+                bought.Seat,
+                $"{this.Name(bought.Seat)} placed their new {this.Rules.NameOf(bought.Kind)} on "
+                    + $"{this.Rules.Topology.NameOf(bought.Cell)}, paying {Points(bought.Price)}.",
+                bought.Cell
+            ),
+            ArmyFilledAtRandom filled => this.Drafted(
+                number,
+                filled.Seat,
+                $"{this.Name(filled.Seat)} had the rest of their army filled at random, "
+                    + (filled.Added == 0 ? "gaining no more pieces." : $"gaining {Pieces(filled.Added)}."),
+                null
+            ),
+            DraftFinished finished => this.Drafted(
+                number,
+                finished.Seat,
+                $"{this.Name(finished.Seat)} is done drafting, and keeps {Points(finished.Kept)} to start with.",
+                null
+            ),
+            ArmiesCopied copied => this.Drafted(
+                number,
+                copied.Drafter,
+                $"{this.Name(copied.Drafter)} drafted for everyone: every other army is drafted alike.",
+                null
+            ),
             GameEnded ended => this.Add(
                 number,
                 EventDto.Ended,
@@ -331,6 +370,16 @@ file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bo
         count == 1
             ? "a prisoner"
             : $"{Text(count)} prisoners";
+
+    private static string Points(int count) =>
+        count == 1
+            ? "1 point"
+            : $"{Text(count)} points";
+
+    private static string Pieces(int count) =>
+        count == 1
+            ? "1 piece"
+            : $"{Text(count)} pieces";
 
     private static string Asking(int count) =>
         count == 0
@@ -461,6 +510,13 @@ file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bo
 
     private Teller Add(int number, string kind, SeatId seat, string text) =>
         this with { Told = this.Told.Add(new EventDto(number, kind, seat.Value, text, null, null)) };
+
+    /// <summary>A step of drafting an army, marking <paramref name="cell"/>, if it has one.</summary>
+    private Teller Drafted(int number, SeatId seat, string text, CellId? cell) =>
+        this with
+        {
+            Told = this.Told.Add(new EventDto(number, EventDto.Drafted, seat.Value, text, null, cell?.Value)),
+        };
 
     /// <summary>A command or an empire over.</summary>
     private Teller Ended(int number, string kind, SeatId seat, string text) =>

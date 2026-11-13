@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Boards;
 using Net.NowhereAtAll.Zaturnava.Engine.Chance;
+using Net.NowhereAtAll.Zaturnava.Engine.Events;
 using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
 using Net.NowhereAtAll.Zaturnava.Engine.Positions;
 using Net.NowhereAtAll.Zaturnava.Engine.Rules;
@@ -202,24 +203,61 @@ internal sealed class ArmyDrafting
             .ThenBy(kind => kind.Value, StringComparer.Ordinal),
     ];
 
+    /// <summary>
+    /// The action applied, telling what the seat did: placed its palace, set its throne, bought a piece, had its army
+    /// filled at random; that it is done, if it is, and what it kept; and, once one seat has drafted for all, that the
+    /// others are given its army.
+    /// </summary>
     /// <exception cref="IllegalActionException">The action is not among the seat's choices.</exception>
     public Transition Applied(GameState state, GameAction action)
     {
         SeatId seat = state.DecidingSeat!.Value;
-        GameState acted = this.ChoicesOf(state, seat).Contains(action)
+        (GameState acted, ImmutableList<GameEvent> told) = this.ChoicesOf(state, seat).Contains(action)
             ? action switch
             {
-                PalaceAction palace => state with
-                {
-                    Palaces = state.Palaces!.SetItem(seat, this.PalaceOf(seat, this._kingdoms[seat][palace.Cell])),
-                },
-                ThroneAction throne => state with { Thrones = state.Thrones!.SetItem(seat, throne.Cell) },
-                DraftAction draft => this.DoneIfSpent(this.Bought(state, seat, draft.Piece, draft.Cell), seat),
-                FillArmyAction => Done(this.Filled(state, seat), seat),
-                _ => Done(state, seat),
+                PalaceAction palace => Told(
+                    state with
+                    {
+                        Palaces = state.Palaces!.SetItem(seat, this.PalaceOf(seat, this._kingdoms[seat][palace.Cell])),
+                    },
+                    new PalacePlaced(seat, palace.Cell)
+                ),
+                ThroneAction throne => Told(
+                    state with { Thrones = state.Thrones!.SetItem(seat, throne.Cell) },
+                    new ThroneSet(seat, throne.Cell)
+                ),
+                DraftAction draft => Told(
+                    this.DoneIfSpent(this.Bought(state, seat, draft.Piece, draft.Cell), seat),
+                    new PieceDrafted(seat, draft.Piece, draft.Cell, this._priceOf(draft.Piece))
+                ),
+                FillArmyAction => this.FilledAndTold(state, seat),
+                _ => Told(Done(state, seat)),
             }
             : throw new IllegalActionException(action);
-        return new Transition(this.Next(acted, seat), []);
+        GameState next = this.Next(acted, seat);
+        ImmutableList<GameEvent> finished = acted.Draft!.Done.Contains(seat)
+            ? told.Add(new DraftFinished(seat, acted.Draft.Left[seat]))
+            : told;
+        return new Transition(
+            next,
+            next.Draft is null && state.Draft!.Drafter is { } drafter
+                ? finished.Add(new ArmiesCopied(drafter))
+                : finished
+        );
+    }
+
+    private static (GameState State, ImmutableList<GameEvent> Told) Told(
+        GameState state,
+        params ImmutableList<GameEvent> told
+    ) =>
+        (state, told);
+
+    /// <summary>The seat's army filled at random, and done, telling how many pieces it gained.</summary>
+    private (GameState State, ImmutableList<GameEvent> Told) FilledAndTold(GameState state, SeatId seat)
+    {
+        GameState filled = this.Filled(state, seat);
+        int added = filled.Position.Occupants.Count - state.Position.Occupants.Count;
+        return Told(Done(filled, seat), new ArmyFilledAtRandom(seat, added));
     }
 
     /// <summary>

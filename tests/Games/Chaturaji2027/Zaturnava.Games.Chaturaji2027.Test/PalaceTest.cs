@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Boards;
+using Net.NowhereAtAll.Zaturnava.Engine.Events;
 using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
 using Net.NowhereAtAll.Zaturnava.Engine.Rules;
 using Net.NowhereAtAll.Zaturnava.Engine.Seats;
@@ -105,6 +106,20 @@ public sealed class PalaceTest
             (AboutB2, Yellow, Text(thrones)),
             (Text(placed.Palaces[Black]), placed.DecidingSeat!.Value, Text(next))
         );
+    }
+
+    [Fact]
+    public void Apply_WhenASeatPlacesItsPalace_TellsWhere()
+    {
+        // Arrange
+        GameState drafted = this.Begun();
+
+        // Act
+        Transition placed = this._rules.Apply(drafted, new PalaceAction(Black, B2));
+
+        // Assert
+        ImmutableList<GameEvent> expected = [new PalacePlaced(Black, B2)];
+        Assert.Equal(expected, placed.Events);
     }
 
     [Fact]

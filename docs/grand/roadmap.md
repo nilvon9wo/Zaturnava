@@ -261,7 +261,7 @@ drawn simply, a shape for its class and a letter for its kind.
 - The flying-general capture (specification §6.4). *Done* (2026-11-05) for the Xiangqi General
   (`FlyingCapture`): it may take a leader along an open orthogonal line of any length, nothing
   between, moving onto its cell; bots see it as an attack, and a King may not castle across such a
-  line. Still to come with palaces: the General's confinement, suspended outside every palace.
+  line. *Done* with palaces: the General's confinement, suspended outside every palace.
 - The leader face-off: a decision out of turn, open for as long as the two leaders face each other;
   a flashing button while it is open, and optionally a pause when it first opens (specification §6.4).
   *Done* (2026-11-05) for the Janggi General (`FaceOff`), but for the pause: the rules offer each

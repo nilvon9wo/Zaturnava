@@ -53,6 +53,47 @@ public sealed class GameLogTest
     }
 
     [Fact]
+    public void LatestOf_WhileTheArmiesAreDrafted_TellsOfEachStepMarkingTheSquareItWasOn()
+    {
+        // Arrange
+        GameSnapshot snapshot = Snapshot(
+            new PalacePlaced(Black, Cell("b2")),
+            new ThroneSet(Black, Cell("a1")),
+            new PieceDrafted(Black, Chaturaji2027Pieces.Horse, Cell("b1"), 3),
+            new PieceDrafted(Black, Chaturaji2027Pieces.Pawn, Cell("c1"), 1),
+            new DraftFinished(Black, 1),
+            new ArmyFilledAtRandom(Yellow, 1),
+            new DraftFinished(Yellow, 0),
+            new ArmyFilledAtRandom(Green, 3),
+            new ArmyFilledAtRandom(Red, 0),
+            new ArmiesCopied(Red)
+        );
+
+        // Act
+        ImmutableList<EventDto> log = GameLog.LatestOf(snapshot);
+
+        // Assert
+        Assert.Equal(
+            [
+                "drafted 0: Black placed their palace about b2. at b2",
+                "drafted 0: Black set their throne on a1. at a1",
+                "drafted 0: Black placed their new Horse on b1, paying 3 points. at b1",
+                "drafted 0: Black placed their new Pawn on c1, paying 1 point. at c1",
+                "drafted 0: Black is done drafting, and keeps 1 point to start with.",
+                "drafted 1: Yellow had the rest of their army filled at random, gaining 1 piece.",
+                "drafted 1: Yellow is done drafting, and keeps 0 points to start with.",
+                "drafted 2: Green had the rest of their army filled at random, gaining 3 pieces.",
+                "drafted 3: Red had the rest of their army filled at random, gaining no more pieces.",
+                "drafted 3: Red drafted for everyone: every other army is drafted alike.",
+            ],
+            log.Select(happened => happened.To is { } to
+                ? $"{Told(happened)} at {Rules.Topology.NameOf(new CellId(to))}"
+                : Told(happened)
+            )
+        );
+    }
+
+    [Fact]
     public void LatestOf_WhenAFaceOffIsCalled_TellsWhoCalledItAndWhichLeadersTookEachOther()
     {
         // Arrange
