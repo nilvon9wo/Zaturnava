@@ -29,6 +29,7 @@ public static class ScenarioStart
     private const string AlikeArgument = "alike";
     private const string TerrainArgument = "terrain";
     private const string PalacesArgument = "palaces";
+    private const string PalacePiecesArgument = "palace-pieces";
     private const string DraftedArgument = "drafted";
     private const string BudgetArgument = "budget";
     private const string DrafterArgument = "drafter";
@@ -45,7 +46,8 @@ public static class ScenarioStart
     /// <summary>
     /// The first action of a game dealt by a seed <paramref name="dice"/> roll, its terrain and palaces too: every army
     /// alike, if <paramref name="areAlike"/>, which a game dealt before armies could be alike never says; nor does one
-    /// dealt before terrain was say that its terrain is, nor one dealt before palaces were that its palaces are. Its
+    /// dealt before terrain was say that its terrain is, nor one dealt before palaces were that its palaces are, nor
+    /// one dealt before they could be that its armies may hold the pieces a palace holds. Its
     /// armies drafted by its players, not dealt, if <paramref name="drafting"/> says how
     /// (<see cref="IRulesApplying.Drafted"/>): its budget and its one drafter, if it sets them. On a board of
     /// <paramref name="board"/>'s size, if its creator set one (<see cref="IRulesApplying.Sized"/>).
@@ -60,7 +62,8 @@ public static class ScenarioStart
         ImmutableSortedDictionary<string, string> seeded = ImmutableSortedDictionary<string, string>.Empty
             .Add(SeedArgument, dice.Roll(SeedRoll)[0].ToString(CultureInfo.InvariantCulture))
             .Add(TerrainArgument, ActionDescriptor.Flag(true))
-            .Add(PalacesArgument, ActionDescriptor.Flag(true));
+            .Add(PalacesArgument, ActionDescriptor.Flag(true))
+            .Add(PalacePiecesArgument, ActionDescriptor.Flag(true));
         ImmutableSortedDictionary<string, string> alike =
             areAlike ? seeded.Add(AlikeArgument, ActionDescriptor.Flag(true)) : seeded;
         ImmutableSortedDictionary<string, string> sized = board is null ? alike : Sizing(alike, board);
@@ -175,7 +178,8 @@ public static class ScenarioStart
             seed,
             AreAlike(actions),
             actions[0].Arguments.ContainsKey(TerrainArgument),
-            actions[0].Arguments.ContainsKey(PalacesArgument)
+            actions[0].Arguments.ContainsKey(PalacesArgument),
+            actions[0].Arguments.ContainsKey(PalacePiecesArgument)
         );
         return DraftingOf(actions) is { } drafting ? rules.Drafted(dealt, seed, drafting) : dealt;
     }

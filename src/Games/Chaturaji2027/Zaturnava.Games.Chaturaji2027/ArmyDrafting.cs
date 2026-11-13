@@ -60,8 +60,7 @@ internal sealed class ArmyDrafting
             kingdom => kingdom.Key,
             kingdom => kingdom.Value.ToImmutableDictionary(entry => entry.Value, entry => entry.Key)
         );
-        ImmutableHashSet<ArmySquare> all = [.. drafting.Kingdom];
-        this._centres = [.. drafting.Kingdom.Where(square => Window(square).All(all.Contains))];
+        this._centres = PalaceSquares.Centres(drafting.Kingdom);
     }
 
     /// <summary>
@@ -80,26 +79,13 @@ internal sealed class ArmyDrafting
             throne => this.Around(throne.Key, this._kingdoms[throne.Key][throne.Value])
         );
 
-    /// <summary>
-    /// The seat's palace holding <paramref name="throne"/>, about the centre nearest it (Proposed): the lowest, then
-    /// leftmost, of those as near, as seat 0 sees its kingdom.
-    /// </summary>
+    /// <summary>The seat's palace holding <paramref name="throne"/>, as <see cref="PalaceSquares"/> finds it.</summary>
     private ImmutableList<CellId> Around(SeatId seat, ArmySquare throne) =>
-        this.PalaceOf(
-            seat,
-            this._centres
-                .OrderBy(centre => Math.Max(
-                    Math.Abs(centre.Column - throne.Column),
-                    Math.Abs(centre.Row - throne.Row)
-                ))
-                .ThenBy(centre => centre.Row)
-                .ThenBy(centre => centre.Column)
-                .First()
-        );
+        this.PalaceOf(seat, PalaceSquares.CentreAbout(this._centres, throne));
 
     /// <summary>The seat's palace about <paramref name="centre"/>: its cells, in order.</summary>
     private ImmutableList<CellId> PalaceOf(SeatId seat, ArmySquare centre) =>
-        [.. Window(centre).Select(square => this._cells[seat][square]).OrderBy(cell => cell.Value)];
+        [.. PalaceSquares.Window(centre).Select(square => this._cells[seat][square]).OrderBy(cell => cell.Value)];
 
     /// <summary>The centre of the seat's <paramref name="palace"/>, as seat 0 sees its kingdom.</summary>
     private ArmySquare CentreOf(SeatId seat, ImmutableList<CellId> palace)
@@ -107,13 +93,6 @@ internal sealed class ArmyDrafting
         ImmutableList<ArmySquare> squares = [.. palace.Select(cell => this._kingdoms[seat][cell])];
         return new ArmySquare(squares.Min(square => square.Column) + 1, squares.Min(square => square.Row) + 1);
     }
-
-    private static ImmutableList<ArmySquare> Window(ArmySquare centre) =>
-    [
-        .. Enumerable.Range(-1, 3).SelectMany(row =>
-            Enumerable.Range(-1, 3).Select(column => new ArmySquare(centre.Column + column, centre.Row + row))
-        ),
-    ];
 
     /// <summary>
     /// The most any army may have to spend (Stated, 2026-11-12): every square of its kingdom filled with the dearest
@@ -288,6 +267,12 @@ internal sealed class ArmyDrafting
         Random random = new(state.Draft!.Seed + (seat.Value * Pinwheel.SeatCount) + army.Count);
         ArmyFilled filled = this._drafting.Fill(
             new ArmyFill(state.Terrain, state.Draft.Left[seat], army, throne, random)
+            {
+                Palace = state.Palaces?.GetValueOrDefault(seat) is { } own
+                    ? [.. own.Select(cell => kingdom[cell])]
+                    : null,
+                HasPalacePieces = state.HasPalacePieces,
+            }
         );
         GameState thrones = state with
         {

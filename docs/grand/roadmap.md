@@ -182,13 +182,16 @@ to edit, wait for players to sign in and for storage that lasts.
     it is; one outside every palace moves freely until it enters one; only the Xiangqi General's flying-general
     capture, onto a leader, takes it out.
   - Done (2026-11-13): a drafted game offers the pieces a palace holds (the Generals, the Guard and the Advisor),
-    each placed only on a free square of the player's own palace (`Drafting.PalaceBound`). An army filled at random
-    takes none of them yet (*Proposed*).
+    each placed only on a free square of the player's own palace (`Drafting.PalaceBound`).
   - Done (2026-11-13): steps along its lines (`PalaceSteps`), once its throne is set: the Janggi General, Guard and
     Soldier, in a palace, may step along any line through their cell to the next cell it passes through, toward the
     throne or away; the Soldier only toward its front. A line from a knight's move off the throne passes two cells on
     the way, so takes three steps (specification §5).
-  - Still to come: the pieces a palace holds in quick armies dealt by the program and in armies filled at random.
+  - Done (2026-11-13, *Stated*): the pieces a palace holds in quick armies dealt by the program and in armies filled
+    at random, in every game dealt from then on (its first action says so: `palace-pieces`), so that games begun
+    before replay as they were dealt. A leader confined to one stands on its throne, as any leader; the others, no
+    more than the palace's eight squares besides the throne, on its squares furthest back, then nearest the throne's
+    file (*Proposed*). A pinned digest of earlier deals and fills (`QuickArmyReplayTest`) guards the replays.
 - Several leaders in one army: throne control, and everything the Chaturaji 2027 rules say of "the Raja",
   said of leaders.
 - Scoring by piece value, with the Chaturaji 2027 bonuses multiplied by 10 until playtesting says

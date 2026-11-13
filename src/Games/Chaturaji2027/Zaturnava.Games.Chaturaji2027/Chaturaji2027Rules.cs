@@ -236,14 +236,16 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     /// <paramref name="areAlike"/> - if the variant deals them: each leader's start its throne, and every piece's its
     /// home; on its own terrain too, if <paramref name="dealsTerrain"/> and the variant deals terrain; each army with
     /// its palace about its throne, if <paramref name="dealsPalaces"/> and its kingdom has room for one
-    /// (<see cref="ArmyDrafting.HasPalaces"/>); else as it is.
+    /// (<see cref="ArmyDrafting.HasPalaces"/>), and the pieces a palace holds in it, if
+    /// <paramref name="dealsPalacePieces"/> too; else as it is.
     /// </summary>
     public GameState Deal(
         [Required] GameState initial,
         int seed,
         bool areAlike = false,
         bool dealsTerrain = false,
-        bool dealsPalaces = false
+        bool dealsPalaces = false,
+        bool dealsPalacePieces = false
     )
     {
         if (this._variant.Dealer is not { } dealer)
@@ -252,16 +254,20 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         }
 
         int terrain = dealsTerrain && this._variant.TerrainDealer is { } terrains ? terrains(seed) : 0;
-        Chaturaji2027Variant dealt = this._variant with { Start = dealer(seed, areAlike, terrain) };
+        ArmyDrafting? palaced = dealsPalaces && this._drafting is { HasPalaces: true } drafting ? drafting : null;
+        bool hasPalacePieces = dealsPalacePieces && palaced is not null;
+        Chaturaji2027Variant dealt = this._variant with
+        {
+            Start = dealer(new ArmyDealing(seed, areAlike, terrain, hasPalacePieces)),
+        };
         Position position = dealt.InitialPosition(this._grid);
         ImmutableDictionary<SeatId, CellId> thrones = dealt.Thrones(this._grid);
         return initial with
         {
             Position = position,
             Thrones = thrones,
-            Palaces = dealsPalaces && this._drafting is { HasPalaces: true } drafting
-                ? drafting.PalacesAround(thrones)
-                : null,
+            Palaces = palaced?.PalacesAround(thrones),
+            HasPalacePieces = hasPalacePieces,
             Start = position,
             Terrain = terrain,
         };

@@ -12,9 +12,9 @@ namespace Net.NowhereAtAll.Zaturnava.Games.GrandLegions;
 /// cheapest (Proposed); so that dear pieces come seldom, as they seldom fit, but no class is always left what the
 /// others did not spend, and no piece comes the more for being the next cheaper than another. The class's cheapest,
 /// if even that does not fit. Then, while the kingdom has
-/// room and the budget allows, more pieces at random, never another leader. Pieces a palace holds are left out, as
-/// quick games have none yet; pieces a river holds, unless the game has rivers (Stated); lifts, which nothing plays
-/// yet, are not bought. The leader
+/// room and the budget allows, more pieces at random, never another leader. Pieces a palace holds are left out unless
+/// the game's armies may hold them, and then no more than its palace has room for; pieces a river holds, unless the
+/// game has rivers (Stated); lifts, which nothing plays yet, are not bought. The leader
 /// and the other non-infantry fill the back ranks in a random order, the leader's start its throne; infantry the
 /// front ones, in a random order too. Where the kingdoms touch, with no neutral ground between them (the small
 /// game), the leader takes the outer corner, as far as can be from the neighbours (Stated). Pieces kept to one colour
@@ -24,22 +24,30 @@ public static class QuickArmy
 {
     private static readonly ImmutableList<PieceClass> Classes = [Leader, Heavy, Artillery, Cavalry, Infantry];
 
+    /// <summary>A palace's squares but its throne: the most pieces a palace holds an army may have.</summary>
+    private const int PalaceRoom = 8;
+
     /// <summary>
-    /// The pieces a quick army may have: any not confined to a palace, as quick games have none yet, though one
-    /// may have powers along palace lines (Stated); and any a river holds only if the game has rivers. Each at its
-    /// price on the game's board (<see cref="BoardPrices"/>).
+    /// The pieces a quick army may have: any not confined to a palace, though one may have powers along palace lines
+    /// (Stated); those confined to one too, if the game's armies may hold them
+    /// (<see cref="QuickGame.HasPalacePieces"/>, Stated 2026-11-13) and its kingdoms have room for a palace; and any a
+    /// river holds only if the game has rivers. Each at its price on the game's board (<see cref="BoardPrices"/>).
     /// </summary>
-    public static ImmutableList<GrandPiece> Eligible([Required] QuickGame game) =>
-    [
-        .. BoardPrices.Catalogue(QuickTerrain.BoardOf(game, 0)).Where(piece =>
-            piece.Restrictions.All(restriction => restriction.Terrain switch
-            {
-                Terrain.Palace => !restriction.IsConfining,
-                Terrain.River => game.Rivers != Rivers.None,
-                _ => true,
-            })
-        ),
-    ];
+    public static ImmutableList<GrandPiece> Eligible([Required] QuickGame game)
+    {
+        bool palaced = game.HasPalacePieces && !PalaceSquares.Centres(game.Kingdom).IsEmpty;
+        return
+        [
+            .. BoardPrices.Catalogue(QuickTerrain.BoardOf(game, 0)).Where(piece =>
+                piece.Restrictions.All(restriction => restriction.Terrain switch
+                {
+                    Terrain.Palace => !restriction.IsConfining || palaced,
+                    Terrain.River => game.Rivers != Rivers.None,
+                    _ => true,
+                })
+            ),
+        ];
+    }
 
     /// <summary>
     /// Every seat's army, as <paramref name="seed"/> deals them, seat by seat; or, if <paramref name="areAlike"/>
@@ -74,7 +82,7 @@ public static class QuickArmy
                 (army, slot) => army.Add(
                     Drawn(
                         Within(
-                            eligible,
+                            Fitting(eligible, army),
                             slot.Class,
                             game.Budget
                                 - army.Sum(piece => piece.Value)
@@ -87,32 +95,74 @@ public static class QuickArmy
         return Filled(eligible, drawn, game, random);
     }
 
-    /// <summary>The army, as seat 0 lays it out in its kingdom, from the bottom-left corner.</summary>
+    /// <summary>
+    /// The army, as seat 0 lays it out in its kingdom, from the bottom-left corner. The pieces a palace holds, but the
+    /// leader, stand in the palace about its throne (<see cref="PalaceSquares.CentreAbout"/>), as the draft would
+    /// place it: on its squares furthest back, then nearest the throne's file, then leftmost (Proposed).
+    /// </summary>
     public static ImmutableList<ArmyPiece> Layout(
         [Required] QuickGame game,
         [Required] ImmutableList<GrandPiece> army,
         [Required] Random random
     )
     {
-        ImmutableList<(int Column, int Row)> backToFront =
-        [
-            .. Enumerable.Range(0, game.KingdomDepth)
-                .SelectMany(row => Enumerable.Range(0, game.KingdomWidth).Select(column => (column, row))),
-        ];
+        ImmutableList<ArmySquare> backToFront = game.Kingdom;
         ImmutableList<GrandPiece> others =
-            Shuffled(army.Where(piece => piece.Class is not Infantry and not Leader), random);
+            Shuffled(army.Where(piece => piece.Class is not Infantry and not Leader && !IsHeld(piece)), random);
         int throne = game.HasNeutralZone
             ? random.Next(Math.Min(game.KingdomWidth - 1, others.Count) + 1)
             : 0;
         ImmutableList<GrandPiece> rear = others.Insert(throne, army.Single(piece => piece.Class == Leader));
-        ImmutableList<GrandPiece> infantry = Shuffled(army.Where(piece => piece.Class == Infantry), random);
+        ImmutableList<GrandPiece> infantry =
+            Shuffled(army.Where(piece => piece.Class == Infantry && !IsHeld(piece)), random);
+        ImmutableList<GrandPiece> held = Shuffled(army.Where(IsHeld), random);
+        ArmySquare seat = backToFront[throne];
+        ImmutableList<ArmySquare> palace = held.IsEmpty ? [] : PalaceAbout(backToFront, seat, held.Count);
+        ImmutableList<ArmySquare> squares =
+        [
+            .. backToFront.Where(square => square != seat && !palace.Contains(square)).Take(throne),
+            seat,
+            .. backToFront.Where(square => square != seat && !palace.Contains(square)).Skip(throne),
+        ];
         ImmutableList<ArmyPiece> laid =
         [
-            .. rear.Select((piece, index) => At(piece, backToFront[index])),
-            .. infantry.Select((piece, index) => At(piece, backToFront[backToFront.Count - 1 - index])),
+            .. rear.Select((piece, index) => At(piece, squares[index])),
+            .. infantry.Select((piece, index) => At(piece, squares[squares.Count - 1 - index])),
+            .. held.Zip(palace).Select(placed => At(placed.First, placed.Second)),
         ];
         return Enumerable.Range(0, laid.Count).Aggregate(laid, Balanced);
     }
+
+    /// <summary>
+    /// The first <paramref name="count"/> squares of the palace about <paramref name="seat"/>, the throne aside: those
+    /// furthest back, then nearest the throne's file, then leftmost.
+    /// </summary>
+    private static ImmutableList<ArmySquare> PalaceAbout(
+        ImmutableList<ArmySquare> kingdom,
+        ArmySquare seat,
+        int count
+    ) =>
+    [
+        .. PalaceSquares.Window(PalaceSquares.CentreAbout(PalaceSquares.Centres(kingdom), seat))
+            .Where(square => square != seat)
+            .OrderBy(square => square.Row)
+            .ThenBy(square => Math.Abs(square.Column - seat.Column))
+            .ThenBy(square => square.Column)
+            .Take(count),
+    ];
+
+    /// <summary>Whether the piece is one a palace holds, and not the leader, who holds the throne.</summary>
+    internal static bool IsHeld(GrandPiece piece) =>
+        piece.Class != Leader && PalaceConfinement.Confined.Contains(piece.Id);
+
+    /// <summary>
+    /// The pieces <paramref name="army"/> may still be given: those a palace holds only while its palace has room.
+    /// </summary>
+    private static ImmutableList<GrandPiece> Fitting(
+        ImmutableList<GrandPiece> eligible,
+        ImmutableList<GrandPiece> army
+    ) =>
+        army.Count(IsHeld) < PalaceRoom ? eligible : [.. eligible.Where(piece => !IsHeld(piece))];
 
     /// <summary>
     /// The army with the piece at <paramref name="index"/>, if one kept to the colour of square it starts on, moved
@@ -124,12 +174,13 @@ public static class QuickArmy
     private static ImmutableList<ArmyPiece> Balanced(ImmutableList<ArmyPiece> army, int index)
     {
         ArmyPiece piece = army[index];
-        ImmutableList<ArmyPiece> before = [.. army.Take(index).Where(IsColourBound)];
+        ImmutableList<ArmyPiece> before = [.. army.Take(index).Where(IsSpread)];
         int same = before.Count(other => IsDark(other) == IsDark(piece));
-        int? partner = IsColourBound(piece) && same > before.Count - same
+        int? partner = IsSpread(piece) && same > before.Count - same
             ? Enumerable.Range(0, army.Count)
                 .Where(other => IsDark(army[other]) != IsDark(piece))
                 .Where(other => !IsColourBound(army[other]) && ClassOf(army[other]) != Leader)
+                .Where(other => !IsHeld(GrandLegionsPieces.ById[army[other].Kind]))
                 .Where(other => IsInfantry(army[other]) == IsInfantry(piece))
                 .Select(other => (int?)other)
                 .FirstOrDefault()
@@ -138,6 +189,10 @@ public static class QuickArmy
             ? army.SetItem(index, piece with { Kind = army[at].Kind }).SetItem(at, army[at] with { Kind = piece.Kind })
             : army;
     }
+
+    /// <summary>Whether the piece is kept to one colour of square, and not one a palace holds.</summary>
+    private static bool IsSpread(ArmyPiece piece) =>
+        IsColourBound(piece) && !IsHeld(GrandLegionsPieces.ById[piece.Kind]);
 
     private static bool IsColourBound(ArmyPiece piece) =>
         GrandLegionsPieces.ById[piece.Kind].Restrictions.Any(restriction => restriction.IsColourBinding);
@@ -189,10 +244,10 @@ public static class QuickArmy
     {
         int left = game.Budget - army.Sum(piece => piece.Value);
         ImmutableList<GrandPiece> affordable = army.Count < game.Cells
-            ? [.. eligible.Where(piece => piece.Class != Leader && piece.Value <= left)]
+            ? [.. Fitting(eligible, army).Where(piece => piece.Class != Leader && piece.Value <= left)]
             : [];
         return affordable.IsEmpty ? army : Filled(eligible, army.Add(Drawn(affordable, random)), game, random);
     }
 
-    private static ArmyPiece At(GrandPiece piece, (int Column, int Row) cell) => new(piece.Id, cell.Column, cell.Row);
+    private static ArmyPiece At(GrandPiece piece, ArmySquare square) => new(piece.Id, square.Column, square.Row);
 }

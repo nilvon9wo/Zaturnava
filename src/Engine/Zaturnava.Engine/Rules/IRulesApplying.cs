@@ -75,14 +75,17 @@ public interface IRulesApplying
     /// <paramref name="areAlike"/>; its terrain too (<see cref="GameState.Terrain"/>: its rivers, say), if
     /// <paramref name="dealsTerrain"/>, which a game dealt before terrain was never does; and its palaces
     /// (<see cref="GameState.Palaces"/>), if <paramref name="dealsPalaces"/>, which one dealt before palaces were never
-    /// does. As it is, for a ruleset that is not dealt.
+    /// does; with the pieces a palace holds in its armies (<see cref="GameState.HasPalacePieces"/>), if
+    /// <paramref name="dealsPalacePieces"/> too, which one dealt before they could be never does. As it is, for a
+    /// ruleset that is not dealt.
     /// </summary>
     GameState Deal(
         [Required] GameState initial,
         int seed,
         bool areAlike = false,
         bool dealsTerrain = false,
-        bool dealsPalaces = false
+        bool dealsPalaces = false,
+        bool dealsPalacePieces = false
     ) =>
         initial;
 

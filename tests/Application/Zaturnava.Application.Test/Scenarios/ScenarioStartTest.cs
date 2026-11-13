@@ -141,6 +141,24 @@ public sealed class ScenarioStartTest
     }
 
     [Fact]
+    public void StateOf_WhenTheGameWasDealtBeforePalacePiecesWere_DealsItsArmiesNone()
+    {
+        // Arrange - a deal of seed 4 as games were dealt before armies held palace pieces, and one dealt now
+        ActionDescriptor now = ScenarioStart.Dealt(new LoadedDice(4));
+        ActionDescriptor before = now with { Arguments = now.Arguments.Remove("palace-pieces") };
+        TinyRules rules = new(6, isDealt: true);
+
+        // Act
+        (bool Before, bool Now) held = (
+            ScenarioStart.StateOf([before], rules).HasPalacePieces,
+            ScenarioStart.StateOf([now], rules).HasPalacePieces
+        );
+
+        // Assert
+        Assert.Equal((false, true), held);
+    }
+
+    [Fact]
     public void StateOf_WhenTheGameIsDrafted_DealsItThenHasItsArmiesDraftedBySeed()
     {
         // Arrange

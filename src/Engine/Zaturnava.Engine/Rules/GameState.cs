@@ -36,6 +36,12 @@ public sealed record GameState(
     public ImmutableDictionary<SeatId, ImmutableList<CellId>>? Palaces { get; init; }
 
     /// <summary>
+    /// Whether the armies the program deals this game, or fills at random, may hold the pieces a palace holds, in their
+    /// palace (<see cref="IRulesApplying.Deal"/>): never, in a game without palaces, nor one dealt before they could.
+    /// </summary>
+    public bool HasPalacePieces { get; init; }
+
+    /// <summary>
     /// Where every piece started in this game, if it was dealt its own armies; null, if as the rules start them.
     /// </summary>
     public Position? Start { get; init; }
