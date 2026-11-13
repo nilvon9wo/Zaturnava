@@ -95,17 +95,20 @@ people's games go first. *(Proposed)*:
 
 - Each game is the pairing of two bots, at a ruleset, played least so far, so every pair at every ruleset is
   played about as often; the two take the even and the odd seats, and change sides each game. A pairing of a bot
-  not yet rated at its ruleset with one that is (Random, the anchor, always counting as rated) goes first, as
-  only those games rate it.
+  not shipped rated at its ruleset (in `src/Bots/Zaturnava.Bots/Ratings/`) with one that is (Random, the anchor,
+  always counting as shipped) goes first, as only those games rate it; where only Random is, any pairing does.
 - A game that reaches `BotRating:MaximumSteps` decisions (default 2000) goes to the side with more points, as
   the script counts it.
 - Each game is added to its pairing's wins, losses and draws (the `BotMatchups` table) as soon as it ends, so a
   run stopped at any time still counts.
-- A bot not rated at a ruleset, once it has played each rated bot there `BotRating:MinimumGames` times
-  (default 2), is rated by those games against the rated bots' ratings, held as they are (*Proposed
+- A bot not shipped rated at a ruleset, once it has played each shipped bot there `BotRating:MinimumGames`
+  times (default 2), is rated by all those games against the shipped ratings, held as they are (*Proposed
   2026-11-13*: one scale, the one the server shipped with; a fit of every bot to a few games each draws every
-  rating toward Random's). This is checked after each game, and from the games kept whenever the server starts.
-  A bot already rated keeps its rating; Random, if not rated, is rated 1000.
+  rating toward Random's). Where only Random is shipped (the custom ruleset), every bot is fitted with the
+  others, once each of its pairs has played enough, as against Random alone every bot that beats it would rate
+  alike (two wins of two give 1280). This is done anew after each game, so a new bot's rating sharpens as its
+  games come in rather than staying what its first few gave, and from the games kept whenever the server
+  starts. A shipped bot keeps its rating; Random, if not shipped, is rated 1000.
 - A game that fails is let go, and the next goes on.
 
 ## Fairy-Stockfish, as a bot

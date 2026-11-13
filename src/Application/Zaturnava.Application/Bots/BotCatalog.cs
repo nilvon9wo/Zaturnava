@@ -23,6 +23,9 @@ public sealed class BotCatalog(
     {
     }
 
+    /// <summary>The ratings the catalog began with, by ruleset, then bot: those shipped, never rated anew.</summary>
+    public ImmutableDictionary<string, ImmutableDictionary<string, int>> Shipped { get; } = ratings;
+
     public ImmutableList<BotProfile> Bots =>
         [
             .. this._bots.Values
