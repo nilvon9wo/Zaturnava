@@ -12,7 +12,8 @@ namespace Net.NowhereAtAll.Zaturnava.Games.GrandLegions;
 /// Infantry piece is promoted at the far edge into a captured piece; a die names a class, so moves any piece of
 /// it; taking a piece scores its value, priced on the game's board (<see cref="BoardPrices"/>); and each piece's
 /// own promotion is played. Each army has a palace about its throne, where its kingdom has room for one, drawn on the
-/// board; confinement to it, and steps along its lines, are still to come.
+/// board, which holds the pieces confined to one (<see cref="PalaceConfinement"/>); steps along its lines are still
+/// to come.
 /// </summary>
 public static class GrandLegionsRules
 {
@@ -147,9 +148,16 @@ public static class GrandLegionsRules
             FlyingCapturers = [GrandLegionsPieces.XiangqiGeneral],
             FaceOffCallers = [GrandLegionsPieces.JanggiGeneral],
             DieNames = dice.Classes.ToImmutableDictionary(face => face.Key, face => NameOf(face.Value)),
-            MayMove = RiverCrossing.On(game),
+            MayMove = MayMoveOn(game),
             RiverBound = [GrandLegionsPieces.XiangqiElephant],
         };
+
+    /// <summary>What the board lets a piece do in <paramref name="game"/>: cross a river, and leave a palace.</summary>
+    private static MoveAllowing MayMoveOn(QuickGame game)
+    {
+        MoveAllowing river = RiverCrossing.On(game);
+        return (state, grid, move) => river(state, grid, move) && PalaceConfinement.MayMove(state, move);
+    }
 
     /// <summary>The dice as kinds: each value lets every piece of the classes it names move.</summary>
     public static DiceProfile DiceOf([Required] ClassDice dice) =>
