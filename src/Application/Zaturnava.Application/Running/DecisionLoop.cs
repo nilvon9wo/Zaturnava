@@ -93,7 +93,9 @@ public static class DecisionLoop
 
     /// <summary>
     /// A whole game in which every seat is played by the decider at its index; dealt anew first, by a seed
-    /// <paramref name="dice"/> roll, if the ruleset deals each game its own armies.
+    /// <paramref name="dice"/> roll, if the ruleset deals each game its own armies. It stops between any two
+    /// decisions once <paramref name="cancellationToken"/> is cancelled, as when the server stops while rating its
+    /// bots (Proposed, 2026-11-13: a deploy found the server still playing, its files held), however its bots decide.
     /// </summary>
     public static Task<Played> PlayAll(
         [Required] IRulesApplying rules,
@@ -105,7 +107,13 @@ public static class DecisionLoop
     {
         ImmutableList<ActionDescriptor> dealt = rules.IsDealt ? [ScenarioStart.Dealt(dice)] : [];
         Played start = new(ScenarioStart.StateOf(dealt, rules), dealt);
-        return PlayWhile(rules, start, seat => players[seat.Value], dice, maximumSteps, cancellationToken);
+        IDeciding PlayerOf(SeatId seat)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return players[seat.Value];
+        }
+
+        return PlayWhile(rules, start, PlayerOf, dice, maximumSteps, cancellationToken);
     }
 
     /// <summary>The dice roller while the game waits on dice; otherwise whoever plays the seat.</summary>

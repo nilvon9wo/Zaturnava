@@ -174,17 +174,39 @@ public sealed class DecisionLoopTest
     }
 
     [Fact]
-    public async Task PlayAll_WhenCancelledWhileDiceAreAwaited_StopsWithoutRolling()
+    public async Task PlayWhile_WhenCancelledWhileDiceAreAwaited_StopsWithoutRolling()
     {
         // Arrange
         RollingRules rules = new(2);
+        Played start = new(rules.CreateInitialState(), []);
         using CancellationTokenSource cancelled = new();
         await cancelled.CancelAsync();
 
         // Act
-        Task<Played> playing = DecisionLoop.PlayAll(rules, this._players, this._dice, 100, cancelled.Token);
+        Task<Played> playing = DecisionLoop.PlayWhile(
+            rules,
+            start,
+            seat => this._players[seat.Value],
+            this._dice,
+            100,
+            cancelled.Token
+        );
 
         // Assert
         _ = await Assert.ThrowsAsync<TaskCanceledException>(() => playing);
+    }
+
+    [Fact]
+    public async Task PlayAll_WhenCancelledWhileBotsDecide_StopsBeforeTheNextDecision()
+    {
+        // Arrange - rules with no dice, played by bots that never look at the token
+        using CancellationTokenSource cancelled = new();
+        await cancelled.CancelAsync();
+
+        // Act
+        Task<Played> playing = DecisionLoop.PlayAll(this._rules, this._players, this._dice, 100, cancelled.Token);
+
+        // Assert
+        _ = await Assert.ThrowsAsync<OperationCanceledException>(() => playing);
     }
 }
