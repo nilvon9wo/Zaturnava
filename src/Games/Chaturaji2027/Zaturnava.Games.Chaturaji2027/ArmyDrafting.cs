@@ -189,24 +189,36 @@ internal sealed class ArmyDrafting
         };
     }
 
+    /// <summary>
+    /// Every kind offered that the seat can pay for, on any free square of its kingdom; a kind a palace holds, on a
+    /// free square of its palace only.
+    /// </summary>
     private ImmutableList<GameAction> BuyingOf(GameState state, SeatId seat, ImmutableList<CellId> kingdom)
     {
         ImmutableList<CellId> free = [.. kingdom.Where(cell => state.Position.PieceAt(cell) is null)];
+        ImmutableList<CellId> palace = state.Palaces?.GetValueOrDefault(seat) ?? [];
+        ImmutableList<CellId> freeInPalace = [.. free.Where(palace.Contains)];
         int left = state.Draft!.Left[seat];
         return
         [
             .. this.Offered(state)
                 .Where(kind => this._priceOf(kind) <= left)
-                .SelectMany(kind => free.Select(cell => (GameAction)new DraftAction(seat, kind, cell))),
+                .SelectMany(kind => (this._drafting.PalaceBound.Contains(kind) ? freeInPalace : free)
+                    .Select(cell => (GameAction)new DraftAction(seat, kind, cell))
+                ),
             new FillArmyAction(seat),
             new PassAction(seat),
         ];
     }
 
-    /// <summary>Every kind offered on the game's terrain, dearest first, then by key.</summary>
+    /// <summary>
+    /// Every kind offered on the game's terrain, and, in a game with palaces, those a palace holds; dearest first, then
+    /// by key.
+    /// </summary>
     public ImmutableList<PieceKindId> Offered(GameState state) =>
     [
         .. this._drafting.Offered(state.Terrain)
+            .Union(state.Palaces is null ? [] : this._drafting.PalaceBound)
             .OrderByDescending(this._priceOf)
             .ThenBy(kind => kind.Value, StringComparer.Ordinal),
     ];

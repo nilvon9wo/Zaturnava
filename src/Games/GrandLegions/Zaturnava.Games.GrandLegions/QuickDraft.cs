@@ -8,8 +8,10 @@ namespace Net.NowhereAtAll.Zaturnava.Games.GrandLegions;
 /// <summary>
 /// A quick game's armies drafted by its players (specification §3; Proposed: in turn, in view, each palace placed
 /// first): the game's budget each, any piece a quick army may have (<see cref="QuickArmy.Eligible"/>) at its price,
-/// placed anywhere in the kingdom. An army filled at random from nothing is one the program would deal; one partly
-/// drafted gains what it can still pay for, as <see cref="Filled"/> says.
+/// placed anywhere in the kingdom; and, in a game with palaces, the pieces a palace holds
+/// (<see cref="PalaceConfinement.Confined"/>), placed in the player's own palace. An army filled at random from nothing
+/// is one the program would deal; one partly drafted gains what it can still pay for, as <see cref="Filled"/> says,
+/// never a piece a palace holds (Proposed, for now).
 /// </summary>
 public static class QuickDraft
 {
@@ -27,6 +29,7 @@ public static class QuickDraft
         )
         {
             Terrains = [.. Enumerable.Range(0, (int)Rivers.Both + 1)],
+            PalaceBound = PalaceConfinement.Confined,
         };
 
     /// <summary>
