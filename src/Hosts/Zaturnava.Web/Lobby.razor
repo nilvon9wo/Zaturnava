@@ -816,7 +816,12 @@
     private void Prepare(CatalogDto catalog)
     {
         this._colour = 0;
-        this._strengths = GameStarter.Strengths(catalog, this.Ruleset(catalog).Id);
+        if (this.Ruleset(catalog).SizableBoard is { } board)
+        {
+            (this._side, this._kingdomWidth, this._kingdomDepth) = (board.Side, board.KingdomWidth, board.KingdomDepth);
+        }
+
+        this._strengths = this.StrengthsOf(catalog);
         this._levels = [.. Enumerable.Repeat(PersonLevel, this.Ruleset(catalog).SeatCount)];
         foreach (int seat in OthersOf(this.Ruleset(catalog), this._colour).Append(this._colour))
         {
@@ -827,11 +832,17 @@
         this._picks = [.. Enumerable.Repeat(string.Empty, this.Ruleset(catalog).SeatCount)];
         this._armies = this.Ruleset(catalog).IsDraftable ? DraftOwn : RandomEach;
         this._budget = this.Ruleset(catalog).DraftBudget;
-        if (this.Ruleset(catalog).SizableBoard is { } board)
-        {
-            (this._side, this._kingdomWidth, this._kingdomDepth) = (board.Side, board.KingdomWidth, board.KingdomDepth);
-        }
     }
+
+    /// <summary>
+    /// The bots' strengths at the game, rated, for a board set to another size, as at the nearest of the game's own
+    /// (<see cref="GameStarter.RatedAs"/>).
+    /// </summary>
+    private ImmutableList<Strength> StrengthsOf(CatalogDto catalog) =>
+        GameStarter.Strengths(
+            catalog,
+            GameStarter.RatedAs(catalog, this.Ruleset(catalog).Id, this.BoardAsked(catalog))
+        );
 
     /// <summary>
     /// The board as set, if the game's creator may set it; none, if not. Its budget grows with the kingdoms, cell for
@@ -855,7 +866,10 @@
             : limit;
     }
 
-    /// <summary>The budget again, for kingdoms of the size now set, as the game's grows with them.</summary>
+    /// <summary>
+    /// The budget again, for kingdoms of the size now set, as the game's grows with them; and the bots' strengths, as
+    /// rated at the size nearest it, each seat keeping its strength where it still may.
+    /// </summary>
     private void Resized()
     {
         RulesetDto ruleset = this.Ruleset(this._catalog!);
@@ -863,6 +877,8 @@
         this._budget = ruleset.DraftBudget is { } budget
             ? budget * this._kingdomWidth * this._kingdomDepth / (board.KingdomWidth * board.KingdomDepth)
             : null;
+        this._strengths = this.StrengthsOf(this._catalog!);
+        this._levels = [.. this._levels.Select(level => Math.Min(level, this._strengths.Count - 1))];
     }
 
     /// <summary>

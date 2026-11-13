@@ -47,6 +47,12 @@ public interface IRulesApplying
     BoardSize? SizableBoard => null;
 
     /// <summary>
+    /// The board's size, for a game played at several (each size its own ruleset, or set by a game's creator), so
+    /// that a board of one may be likened to another's; none, if it is not told.
+    /// </summary>
+    BoardSize? Board => null;
+
+    /// <summary>
     /// The ruleset played on a board of <paramref name="board"/>'s size, of the same id, so that its games are listed
     /// and rated together; none, if it may not be set to that size, or to any (<see cref="SizableBoard"/>).
     /// </summary>

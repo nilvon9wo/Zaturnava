@@ -56,20 +56,21 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
 
         // Assert
         Assert.Equal(
-            "chaturaji-2027/Chaturaji 2027//False,grand-legions/Grand Legions/small/True,"
-            + "grand-legions/Grand Legions/medium/True,grand-legions/Grand Legions/large/True,"
-            + "grand-legions/Grand Legions/custom/True/10x4x3",
+            "chaturaji-2027/Chaturaji 2027//False,grand-legions/Grand Legions/small/True/6x3x3,"
+            + "grand-legions/Grand Legions/medium/True/8x4x2,grand-legions/Grand Legions/large/True/12x6x3,"
+            + "grand-legions/Grand Legions/custom/True/10x4x3/10x4x3",
             string.Join(
                 ",",
                 catalog.Rulesets.Select(offered =>
                     $"{offered.Game}/{offered.GameName}/{offered.Size}/{offered.IsPreview}"
-                        + (offered.SizableBoard is { } board
-                            ? $"/{board.Side}x{board.KingdomWidth}x{board.KingdomDepth}"
-                            : string.Empty)
+                        + SizeOf(offered.Board) + SizeOf(offered.SizableBoard)
                 )
             )
         );
     }
+
+    private static string SizeOf(BoardSizeDto? board) =>
+        board is null ? string.Empty : $"/{board.Side}x{board.KingdomWidth}x{board.KingdomDepth}";
 
     [Fact]
     public async Task List_WhenAskedForOneGame_ListsItsGamesAtEverySizeAndNoOther()

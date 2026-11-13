@@ -192,6 +192,8 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
 
     public BoardSize? SizableBoard => this._variant.Resized is null ? null : this._variant.Board;
 
+    public BoardSize? Board => this._variant.Board;
+
     /// <summary>The rules on a board of <paramref name="board"/>'s size, as the variant resizes, alike else.</summary>
     public IRulesApplying? Sized([Required] BoardSize board) =>
         this._variant.Resized is { } resized

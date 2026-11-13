@@ -72,11 +72,12 @@ public sealed class GrandLegionsRulesTest
             )
         );
         Assert.Equal(
-            (true, true, true),
+            (true, true, true, (BoardSize?)new BoardSize(8, 4, 2)),
             (
                 custom.Sized(new BoardSize(5, 3, 3)) is null,
                 GrandLegionsRules.RulesOf(QuickGame.Medium).Sized(board) is null,
-                GrandLegionsRules.RulesOf(QuickGame.Medium).SizableBoard is null
+                GrandLegionsRules.RulesOf(QuickGame.Medium).SizableBoard is null,
+                GrandLegionsRules.RulesOf(QuickGame.Medium).Board
             )
         );
     }

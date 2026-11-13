@@ -199,6 +199,45 @@ public sealed class GameStarterTest
     private static ImmutableDictionary<string, int> Rated(int rating) =>
         ImmutableDictionary<string, int>.Empty.Add(Ruleset, rating);
 
+    [Theory]
+    [InlineData("chaturaji-2027", 0, "chaturaji-2027")]
+    [InlineData("gone", 0, "gone")]
+    [InlineData("grand-custom", 0, "grand-medium")]
+    [InlineData("grand-custom", 20, "grand-large")]
+    [InlineData("grand-custom", 6, "grand-small")]
+    [InlineData("lone-custom", 9, "lone-custom")]
+    public void RatedAs_WhenTheBoardIsSetOrNot_RatesAsTheSameGamesNearestSizeIfAny(
+        string rulesetId,
+        int side,
+        string expected
+    )
+    {
+        // Arrange - the custom board 10 × 10, kingdoms 4 × 3, as near the medium (8, 4 × 2) as the large (12, 6 × 3)
+        // by side, but nearer it by kingdom; one of Grand's own sizes tells no board; another game has no other size
+        BoardSizeDto own = new(10, 4, 3);
+        CatalogDto catalog = new(
+            [
+                new RulesetDto(Ruleset, "Chaturaji 2027", 4) { Game = Ruleset },
+                SizeOf("grand-small", new BoardSizeDto(6, 3, 3)),
+                SizeOf("grand-medium", new BoardSizeDto(8, 4, 2)),
+                SizeOf("grand-large", new BoardSizeDto(12, 6, 3)),
+                SizeOf("grand-odd", null),
+                SizeOf("grand-custom", own) with { SizableBoard = own },
+                new RulesetDto("lone-custom", "Lone", 4) { Game = "lone", SizableBoard = own, Board = own },
+            ],
+            []
+        );
+
+        // Act
+        string rated = GameStarter.RatedAs(catalog, rulesetId, side == 0 ? null : new BoardSizeDto(side, 3, 3));
+
+        // Assert
+        Assert.Equal(expected, rated);
+
+        static RulesetDto SizeOf(string id, BoardSizeDto? board) =>
+            new(id, id, 4) { Game = "grand", Board = board };
+    }
+
     private static CatalogDto Catalog(params BotDto[] bots) =>
         new([new RulesetDto(Ruleset, "Chaturaji 2027", 4)], [.. bots]);
 }
