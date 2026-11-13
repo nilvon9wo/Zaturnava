@@ -233,6 +233,9 @@ drawn simply, a shape for its class and a letter for its kind.
   still to come. The server's own bots see everything, as they always do.
 - *Done* (2026-11-13): whether allies see each other's armies while drafting in secret, a choice in the lobby
   (and `isDraftHiddenFromAllies` in the API); hidden from allies too, each player is shown only their own.
+- *Done* (2026-11-13): drafting in secret is all at once. Each player takes their steps whenever they like, and
+  until done may take a piece back (its points refunded) or move their throne or palace; the server's bots draft
+  theirs at once. A secret game begun before this replays in turn, as it was played.
 
 ## Stage 5 — Points to spend
 

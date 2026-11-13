@@ -330,6 +330,13 @@ file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bo
                     + $"{this.Rules.Topology.NameOf(bought.Cell)}, paying {Points(bought.Price)}.",
                 bought.Cell
             ),
+            PieceUndrafted returned => this.Drafted(
+                number,
+                returned.Seat,
+                $"{this.Name(returned.Seat)} took back their {this.Rules.NameOf(returned.Kind)} from "
+                    + $"{this.Rules.Topology.NameOf(returned.Cell)}, getting back {Points(returned.Price)}.",
+                returned.Cell
+            ),
             ArmyFilledAtRandom filled => this.Drafted(
                 number,
                 filled.Seat,

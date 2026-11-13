@@ -33,6 +33,7 @@ public sealed class ActionParser(ImmutableDictionary<string, Func<ActionDescript
             .Add(PalaceAction.Kind, PalaceAction.Parse)
             .Add(ThroneAction.Kind, ThroneAction.Parse)
             .Add(DraftAction.Kind, DraftAction.Parse)
+            .Add(UndraftAction.Kind, UndraftAction.Parse)
             .Add(FillArmyAction.Kind, FillArmyAction.Parse)
     );
 

@@ -23,6 +23,13 @@ public sealed record DraftSettings(int? Budget = null, SeatId? Drafter = null)
     /// </summary>
     public bool IsHiddenFromAllies { get; init; }
 
+    /// <summary>
+    /// Whether each seat drafts its own army all at once, not in turn, free to change its mind until it is done
+    /// (Stated, 2026-11-13: drafting in secret need not be bound to turns; a player may take pieces off, getting their
+    /// points back, and move the palace and throne). Of no effect if one seat drafts for all.
+    /// </summary>
+    public bool IsSimultaneous { get; init; }
+
     /// <summary>Every seat drafts its own army, with the ruleset's budget.</summary>
     public static DraftSettings Default { get; } = new();
 }

@@ -299,8 +299,8 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
     [Fact]
     public async Task Get_WhenTheArmiesAreDraftedInSecret_ShowsASeatsHolderOnlyWhatItsTeamDrafted()
     {
-        // Arrange - Black and Yellow, people, each set a throne; so do Green, Black's ally, and Red; then Black and
-        // Yellow have their armies filled
+        // Arrange - Black and Yellow, people, each set a throne and buy a piece; Green, Black's ally, and Red, bots,
+        // draft theirs all at once
         GameCreatedDto created = await this._client.Create(
             new CreateGameRequest("grand-legions-small", [null, null, "random", "random"])
             {
@@ -313,11 +313,9 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
         string black = (await this._client.Claim(gameId, 0, null, null, this._cancellation)).Token;
         string yellow = (await this._client.Claim(gameId, 1, null, null, this._cancellation)).Token;
         _ = await this.Decided(gameId, black, action => action.Kind == "throne");
-        GameViewDto thrones = await this.Decided(gameId, yellow, action => action.Kind == "throne");
-        GameViewDto green = await this._client.Advance(gameId, thrones.Version, black, this._cancellation);
-        _ = await this._client.Advance(gameId, green.Version, black, this._cancellation);
-        _ = await this.Decided(gameId, black, action => action.Kind == "fill-army");
-        _ = await this.Decided(gameId, yellow, action => action.Kind == "fill-army");
+        _ = await this.Decided(gameId, yellow, action => action.Kind == "throne");
+        _ = await this.Decided(gameId, black, action => action.Kind == "draft");
+        _ = await this.Decided(gameId, yellow, action => action.Kind == "draft");
 
         // Act
         GameViewDto seen = await this._client.Get(gameId, black, this._cancellation);
@@ -325,11 +323,11 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
 
         // Assert
         Assert.Equal(
-            (true, "0", "1", "False,True,False,True", "0,2", "0,2"),
+            (true, "0,2", "1,3", "False,True,False,True", "0,2", "0,2"),
             (
                 seen.IsDraftSecret,
-                string.Join(",", seen.Pieces.Select(piece => piece.Owner).Distinct()),
-                string.Join(",", other.Pieces.Select(piece => piece.Owner).Distinct()),
+                string.Join(",", seen.Pieces.Select(piece => piece.Owner).Distinct().Order()),
+                string.Join(",", other.Pieces.Select(piece => piece.Owner).Distinct().Order()),
                 string.Join(",", seen.DraftLeft!.Select(left => left is null)),
                 string.Join(",", seen.Cells.Select(cell => cell.Throne).OfType<int>().Order()),
                 string.Join(
@@ -339,6 +337,55 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
                         .Distinct()
                         .Order()
                 )
+            )
+        );
+    }
+
+    [Fact]
+    public async Task Get_WhileTheArmiesAreDraftedAllAtOnce_ShowsEachHolderTheirOwnStepsAndHowToChangeTheirMind()
+    {
+        // Arrange - Black decides; Yellow places its palace, sets its throne in its middle and buys a piece, out of
+        // turn
+        GameCreatedDto created = await this._client.Create(
+            new CreateGameRequest("grand-legions-large", [null, null, "random", "random"])
+            {
+                IsDrafted = true,
+                IsDraftSecret = true,
+            },
+            this._cancellation
+        );
+        string gameId = created.GameId;
+        _ = await this._client.Claim(gameId, 0, null, null, this._cancellation);
+        string yellow = (await this._client.Claim(gameId, 1, null, null, this._cancellation)).Token;
+        GameViewDto first = await this._client.Get(gameId, yellow, this._cancellation);
+        ActionDto palace = first.LegalActions.First(action => action.Kind == "palace");
+        _ = await this._client.Submit(gameId, yellow, palace, this._cancellation);
+        _ = await this.Decided(
+            gameId,
+            yellow,
+            action => action.Kind == "throne" && action.Arguments["home"] == palace.Arguments["home"]
+        );
+        _ = await this.Decided(gameId, yellow, action => action.Kind == "draft");
+
+        // Act
+        GameViewDto buying = await this._client.Get(gameId, yellow, this._cancellation);
+        GameViewDto done = await this.Decided(gameId, yellow, action => action.Kind == "pass");
+
+        // Assert
+        Assert.Equal(
+            (1, "Move your palace,Move your throne,Take back a piece", true, 0),
+            (
+                first.DecidingSeat,
+                string.Join(
+                    ",",
+                    buying.LegalActions.Where(action => action.Kind != "draft")
+                        .Select(action => action.Choice)
+                        .OfType<string>()
+                        .Distinct()
+                        .Order(StringComparer.Ordinal)
+                ),
+                buying.Seats.All(seat => seat.Chances.IsEmpty),
+                done.DecidingSeat
             )
         );
     }

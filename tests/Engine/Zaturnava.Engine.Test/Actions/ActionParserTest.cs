@@ -81,6 +81,7 @@ public sealed class ActionParserTest
         new PalaceAction(new SeatId(1), new CellId(9)),
         new ThroneAction(new SeatId(1), new CellId(2)),
         new DraftAction(new SeatId(1), new PieceKindId("rook"), new CellId(3)),
+        new UndraftAction(new SeatId(2), new CellId(4)),
         new FillArmyAction(new SeatId(3)),
     ];
 

@@ -72,8 +72,9 @@ public sealed record GameSnapshot(
     /// <summary>
     /// Whether <paramref name="token"/> holds the seat that acts, and it may act now: the game is not waiting for
     /// its seats to be taken, and the seat is deciding, or it proposes ending the game, rejoins it, votes on
-    /// waiting for another, or takes a chance it has, which a seat may do whoever decides, if the rules let it -
-    /// voting to stop waiting only once the vote on that seat is open.
+    /// waiting for another, or takes a chance it has, which a seat may do whoever decides, if the rules let it (a
+    /// face-off, <i>en passant</i>, or any step of a draft taken all at once) - voting to stop waiting only once the
+    /// vote on that seat is open.
     /// </summary>
     public bool MayAct([Required] GameAction action, [Required] string token) =>
         !this.Record.IsWaiting
@@ -87,8 +88,7 @@ public sealed record GameSnapshot(
             RejoinAction => this.Rules.MayRejoin(this.State, action.Actor),
             VoteAwayAction { Stops: false } vote => this.Rules.MayVoteAway(this.State, vote.Actor, vote.Absent),
             VoteAwayAction vote => this.Away is { IsOpen: true } away && away.Absent == vote.Absent,
-            FaceOffAction or MoveAction => this.Rules.ChancesOf(this.State, action.Actor).Contains(action),
-            _ => false,
+            _ => this.Rules.ChancesOf(this.State, action.Actor).Contains(action),
         };
 
     private static Transition Replayed(IRulesApplying rules, Transition sofar, ActionDescriptor descriptor)

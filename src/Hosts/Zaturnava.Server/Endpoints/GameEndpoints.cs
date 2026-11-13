@@ -208,6 +208,7 @@ internal static class GameEndpoints
                 {
                     IsSecret = request is { IsDraftSecret: true, Drafter: null },
                     IsHiddenFromAllies = request.IsDraftHiddenFromAllies,
+                    IsSimultaneous = request is { IsDraftSecret: true, Drafter: null },
                 }
                 : null,
             Board = request.Board is { } board

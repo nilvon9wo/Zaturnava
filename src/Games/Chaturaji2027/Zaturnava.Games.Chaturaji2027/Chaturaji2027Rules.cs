@@ -399,11 +399,19 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     /// commands; and, while it does not decide, each <i>en passant</i> it may take with a piece of such an army, for
     /// no die (Stated 2026-11-06), as on its own turn it would be an ordinary move. None while the game waits on
     /// something else first (Proposed): dice, a promotion, prisoners going home, an offer, a proposal to end, or the
-    /// roll for who goes first; nor once it is over, or the seat retired.
+    /// roll for who goes first; nor once it is over, or the seat retired. While the armies are drafted all at once, a
+    /// seat whose turn it is not has its choices of the draft (<see cref="ArmyDrafting.ChoicesOf"/>), and only those.
     /// </summary>
     public ImmutableList<GameAction> ChancesOf([Required] GameState state, SeatId seat) =>
+        state.Draft switch
+        {
+            { IsSimultaneous: true } when seat != state.DecidingSeat!.Value => this._drafting!.ChoicesOf(state, seat),
+            null => this.PlayChancesOf(state, seat),
+            _ => [],
+        };
+
+    private ImmutableList<GameAction> PlayChancesOf(GameState state, SeatId seat) =>
         state.Outcome is null
-        && state.Draft is null
         && state.AwaitedDice is null
         && state.PromotionDue is null
         && state.Returning is null

@@ -133,8 +133,11 @@ and placed knowing where they stand.)
 - **Stated.** Whether players draft and place in secret and all at once, or in turn and in view of
   each other, is a setting of the game (§2). **Stated (2026-11-13):** in secret, whether allies are
   shown each other's armies is a setting of the game too; unless it hides them, a team drafts
-  together. **Proposed (2026-11-13):** the seats still take their steps in turn, which shows when
-  another has finished, but not what it drafted, until every army is drafted.
+  together. **Stated (2026-11-13):** in secret, the seats draft all at once, not in turn, and may
+  change their minds until done: take a piece back, its points refunded, or move their palace and
+  throne. **Proposed (2026-11-13):** a palace may move only where it still holds the throne and every
+  piece that only a palace may hold; a seat is done only once it says so, never for having spent
+  everything; a game drafted in secret before this was drafted in turn, and replays so.
 - **Stated.** An infantry piece's **forward** is toward the enemy; with the kingdoms in a pinwheel,
   its place on the pinwheel sets it, as in Chaturaji 2027 (rules.md §3). That is, forward is away
   from its kingdom's back rank.

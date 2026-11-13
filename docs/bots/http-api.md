@@ -204,7 +204,9 @@ drafted in secret (`isDraftSecret`), it shows only what the team of the seat who
 no other team's pieces, throne, palace or points left (`null` in `draftLeft`), nor its drafting in the log, nor
 its choices while it drafts; without a token, no team's. If the game hides the armies from allies too
 (`isDraftHiddenFromAllies`), only what that seat itself drafted. Its history, until then, holds only how it
-began.
+began. A secret draft is taken all at once: with a token, a seat still drafting is shown as deciding, with its own
+steps as `legalActions`, whoever's turn it is, and may submit any of them; among them, `undraft` takes back the
+piece on its `home` cell, and `throne` or `palace` moves the one already set.
 
 | Field | |
 |---|---|

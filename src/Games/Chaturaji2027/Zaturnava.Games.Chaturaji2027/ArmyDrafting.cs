@@ -17,7 +17,10 @@ namespace Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
 /// its kingdom, if not), then, a turn at a time, buys a piece at its worth and places it on a free square of its
 /// kingdom, until it is done, keeping what is left, or has the rest of its army filled at random, which leaves it done
 /// too. Once every seat is done, where the pieces stand is where the
-/// game starts, what each seat kept starts its score, and the seats roll for who goes first.
+/// game starts, what each seat kept starts its score, and the seats roll for who goes first. Drafted all at once
+/// (<see cref="ArmyDraft.IsSimultaneous"/>), any seat not done may take its next step whenever it likes, the turn
+/// passing on only when the seat whose turn it is takes one; and, until it is done, it may change its mind: take back
+/// a piece, its price refunded, or move its throne or palace (Stated, 2026-11-13).
 /// </summary>
 internal sealed class ArmyDrafting
 {
@@ -172,6 +175,7 @@ internal sealed class ArmyDrafting
             )
             {
                 Drafter = settings.Drafter,
+                IsSimultaneous = settings is { IsSimultaneous: true, Drafter: null },
             },
             DecidingSeat = settings.Drafter ?? dealt.Seats[0].Id,
             RollOff = [],
@@ -191,15 +195,17 @@ internal sealed class ArmyDrafting
     /// What <paramref name="seat"/> may do in its turn of the draft: in a game with palaces, place its palace about a
     /// square of its kingdom, if it has none; set its throne on a square of its palace, or of its kingdom where there
     /// are none, if it has no throne; else buy any kind offered that it can pay for, on any free square of its
-    /// kingdom, or be done. Whichever, it may have the rest filled at random.
+    /// kingdom, or be done; and, drafting all at once, take back any piece it drafted, or move its throne or palace
+    /// (<see cref="ChangesOf"/>). Whichever, it may have the rest filled at random. Nothing, once it is done.
     /// </summary>
     public ImmutableList<GameAction> ChoicesOf(GameState state, SeatId seat)
     {
         ImmutableList<CellId> kingdom = [.. this._kingdoms[seat].Keys.OrderBy(cell => cell.Value)];
-        return (state.Thrones!.ContainsKey(seat), state.Palaces) switch
+        return (state.Draft!.Done.Contains(seat), state.Thrones!.ContainsKey(seat), state.Palaces) switch
         {
-            (true, _) => this.BuyingOf(state, seat, kingdom),
-            (false, { } palaces) when !palaces.ContainsKey(seat) =>
+            (true, _, _) => [],
+            (_, true, _) => this.BuyingOf(state, seat, kingdom),
+            (_, _, { } palaces) when !palaces.ContainsKey(seat) =>
             [
                 .. this.CentresIn(state)
                     .Select(centre => this._cells[seat][centre])
@@ -207,7 +213,7 @@ internal sealed class ArmyDrafting
                     .Select(cell => (GameAction)new PalaceAction(seat, cell)),
                 new FillArmyAction(seat),
             ],
-            (false, var palaces) =>
+            var (_, _, palaces) =>
             [
                 .. (palaces?[seat] ?? kingdom)
                     .Where(this._kingdoms[seat].ContainsKey)
@@ -234,8 +240,44 @@ internal sealed class ArmyDrafting
                 .SelectMany(kind => (this._drafting.PalaceBound.Contains(kind) ? freeInPalace : free)
                     .Select(cell => (GameAction)new DraftAction(seat, kind, cell))
                 ),
+            .. state.Draft.IsSimultaneous ? this.ChangesOf(state, seat, kingdom) : [],
             new FillArmyAction(seat),
             new PassAction(seat),
+        ];
+    }
+
+    /// <summary>
+    /// How the seat, drafting all at once, may change its mind: take back any piece it drafted; move its throne to any
+    /// other square it might have set it on; move its palace about any other square, if the palace there would still
+    /// hold its throne and every piece of its that a palace holds.
+    /// </summary>
+    private ImmutableList<GameAction> ChangesOf(GameState state, SeatId seat, ImmutableList<CellId> kingdom)
+    {
+        ImmutableList<CellId> own = [.. kingdom.Where(cell => state.Position.PieceAt(cell) is not null)];
+        CellId throne = state.Thrones![seat];
+        ImmutableList<CellId>? palace = state.Palaces?.GetValueOrDefault(seat);
+        ImmutableList<CellId> held =
+        [
+            .. own.Where(cell => this._drafting.PalaceBound.Contains(state.Position.PieceAt(cell)!.Kind)),
+            throne,
+        ];
+        return
+        [
+            .. own.Select(cell => (GameAction)new UndraftAction(seat, cell)),
+            .. (palace ?? kingdom)
+                .Where(cell => this._kingdoms[seat].ContainsKey(cell) && cell != throne)
+                .Select(cell => (GameAction)new ThroneAction(seat, cell)),
+            .. palace is null
+                ? []
+                : this.CentresIn(state)
+                    .Select(centre => this._cells[seat][centre])
+                    .OrderBy(cell => cell.Value)
+                    .Where(centre =>
+                    {
+                        ImmutableList<CellId> moved = this.PalaceOf(seat, this._kingdoms[seat][centre]);
+                        return !moved.SequenceEqual(palace) && held.All(moved.Contains);
+                    })
+                    .Select(centre => (GameAction)new PalaceAction(seat, centre)),
         ];
     }
 
@@ -256,11 +298,15 @@ internal sealed class ArmyDrafting
     /// filled at random; that it is done, if it is, and what it kept; and, once one seat has drafted for all, that the
     /// others are given its army.
     /// </summary>
-    /// <exception cref="IllegalActionException">The action is not among the seat's choices.</exception>
+    /// <exception cref="IllegalActionException">
+    /// The action is not among the seat's choices, or not the deciding seat's in a draft taken in turn.
+    /// </exception>
     public Transition Applied(GameState state, GameAction action)
     {
-        SeatId seat = state.DecidingSeat!.Value;
-        (GameState acted, ImmutableList<GameEvent> told) = this.ChoicesOf(state, seat).Contains(action)
+        SeatId seat = action.Actor;
+        (GameState acted, ImmutableList<GameEvent> told) =
+            (seat == state.DecidingSeat!.Value || state.Draft!.IsSimultaneous)
+            && this.ChoicesOf(state, seat).Contains(action)
             ? action switch
             {
                 PalaceAction palace => Told(
@@ -278,11 +324,12 @@ internal sealed class ArmyDrafting
                     this.DoneIfSpent(this.Bought(state, seat, draft.Piece, draft.Cell), seat),
                     new PieceDrafted(seat, draft.Piece, draft.Cell, this._priceOf(draft.Piece))
                 ),
+                UndraftAction undraft => this.RefundedAndTold(state, seat, undraft.Cell),
                 FillArmyAction => this.FilledAndTold(state, seat),
                 _ => Told(Done(state, seat)),
             }
             : throw new IllegalActionException(action);
-        GameState next = this.Next(acted, seat);
+        GameState next = seat == state.DecidingSeat!.Value ? this.Next(acted, seat) : acted;
         ImmutableList<GameEvent> finished = acted.Draft!.Done.Contains(seat)
             ? told.Add(new DraftFinished(seat, acted.Draft.Left[seat]))
             : told;
@@ -308,21 +355,46 @@ internal sealed class ArmyDrafting
         return Told(Done(filled, seat), new ArmyFilledAtRandom(seat, added));
     }
 
+    /// <summary>The piece on <paramref name="cell"/> taken back, its price refunded, telling so.</summary>
+    private (GameState State, ImmutableList<GameEvent> Told) RefundedAndTold(GameState state, SeatId seat, CellId cell)
+    {
+        PieceKindId kind = state.Position.PieceAt(cell)!.Kind;
+        int price = this._priceOf(kind);
+        return Told(
+            state with
+            {
+                Position = new Position(state.Position.Occupants.Remove(cell)),
+                Draft = state.Draft! with { Left = state.Draft.Left.SetItem(seat, state.Draft.Left[seat] + price) },
+            },
+            new PieceUndrafted(seat, kind, cell, price)
+        );
+    }
+
     /// <summary>
     /// The seat done, once it can buy nothing more, for want of points or of a free square: it has no choice left
-    /// to make (Stated, 2026-11-12).
+    /// to make (Stated, 2026-11-12). Drafting all at once, it may still change its mind, so it is done only once it
+    /// says so.
     /// </summary>
     private GameState DoneIfSpent(GameState state, SeatId seat) =>
-        this.ChoicesOf(state, seat).OfType<DraftAction>().Any() ? state : Done(state, seat);
+        state.Draft!.IsSimultaneous || this.ChoicesOf(state, seat).OfType<DraftAction>().Any()
+            ? state
+            : Done(state, seat);
 
     private static GameState Done(GameState state, SeatId seat) =>
         state with { Draft = state.Draft! with { Done = state.Draft.Done.Add(seat) } };
+
+    /// <summary>
+    /// The id a new piece takes: one past the highest of any on the board, so that none is taken twice once a piece
+    /// is taken back; as many as there are, while none has been (every id below it taken, in order).
+    /// </summary>
+    private static PieceId NextId(Position position) =>
+        new(position.Occupants.Values.Select(piece => piece.Id.Value).DefaultIfEmpty(-1).Max() + 1);
 
     /// <summary>The piece bought and placed, its price spent.</summary>
     private GameState Bought(GameState state, SeatId seat, PieceKindId kind, CellId cell) =>
         state with
         {
-            Position = state.Position.Place(cell, new Piece(new PieceId(state.Position.Occupants.Count), kind, seat)),
+            Position = state.Position.Place(cell, new Piece(NextId(state.Position), kind, seat)),
             Draft = state.Draft! with
             {
                 Left = state.Draft.Left.SetItem(seat, state.Draft.Left[seat] - this._priceOf(kind)),
@@ -439,7 +511,7 @@ internal sealed class ArmyDrafting
             {
                 Position = given.Position.Place(
                     cells[piece.Square],
-                    new Piece(new PieceId(given.Position.Occupants.Count), piece.Kind, seat)
+                    new Piece(NextId(given.Position), piece.Kind, seat)
                 ),
             }
         );

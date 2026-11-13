@@ -29,8 +29,14 @@ public sealed class FillingArmies([Required] IDeciding bot) : IDeciding
             ? Task.FromResult(Drafted(request, fill))
             : this._bot.Decide(request, cancellationToken);
 
+    /// <summary>
+    /// While the armies are drafted all at once, its next step, whoever's turn it is, as on its own turn
+    /// (<see cref="Decide"/>); otherwise whatever chance the bot itself takes.
+    /// </summary>
     public Task<GameAction?> Seize([Required] DecisionRequest request, CancellationToken cancellationToken) =>
-        this._bot.Seize(request, cancellationToken);
+        request.LegalActions.OfType<FillArmyAction>().FirstOrDefault() is { } fill
+            ? Task.FromResult<GameAction?>(Drafted(request, fill))
+            : this._bot.Seize(request, cancellationToken);
 
     /// <summary>
     /// The next step toward the army <paramref name="fill"/> would make: its palace; its throne; else the first piece

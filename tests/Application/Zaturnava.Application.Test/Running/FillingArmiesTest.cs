@@ -157,6 +157,24 @@ public sealed class FillingArmiesTest
         Assert.Equal((rules.LegalActions(state)[0], chances[0]), (decided, seized));
     }
 
+    [Fact]
+    public async Task Seize_WhileTheArmiesAreDraftedAllAtOnce_TakesItsNextStepAsOnItsOwnTurn()
+    {
+        // Arrange - nothing more to add, a chance to draft whoever decides
+        TinyRules rules = Filling(state => state);
+        ImmutableList<GameAction> chances =
+            [new DraftAction(First, TinyRules.Pawn, Free), new FillArmyAction(First), new PassAction(First)];
+
+        // Act
+        GameAction? seized = await new FillingArmies(new Choosing()).Seize(
+            new DecisionRequest(rules, Throned(rules), First, chances),
+            this._cancellation
+        );
+
+        // Assert
+        Assert.Equal(new PassAction(First), seized);
+    }
+
     private static TinyRules Filling(Func<GameState, GameState> filled) => new(5) { Filled = filled };
 
     private static GameState Throneless(TinyRules rules) =>

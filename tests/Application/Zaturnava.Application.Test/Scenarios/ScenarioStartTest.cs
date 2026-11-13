@@ -209,23 +209,27 @@ public sealed class ScenarioStartTest
     }
 
     [Theory]
-    [InlineData(null, null, false, false)]
-    [InlineData(30, 1, false, false)]
-    [InlineData(null, null, true, false)]
-    [InlineData(null, null, true, true)]
-    [InlineData(null, null, false, true)]
+    [InlineData(null, null, false, false, false)]
+    [InlineData(30, 1, false, false, false)]
+    [InlineData(null, null, true, false, false)]
+    [InlineData(null, null, true, true, false)]
+    [InlineData(null, null, false, true, false)]
+    [InlineData(null, null, true, false, true)]
+    [InlineData(30, 1, false, false, true)]
     public void DraftingOf_WhenTheGameWasDraftedAsSet_ReplaysItSoAndSaysHow(
         int? budget,
         int? drafter,
         bool isSecret,
-        bool isHiddenFromAllies
+        bool isHiddenFromAllies,
+        bool isSimultaneous
     )
     {
-        // Arrange - hidden from allies only if in secret
+        // Arrange - hidden from allies only if in secret; all at once only if each drafts their own
         DraftSettings set = new(budget, drafter is { } seat ? new SeatId(seat) : null)
         {
             IsSecret = isSecret,
             IsHiddenFromAllies = isHiddenFromAllies,
+            IsSimultaneous = isSimultaneous,
         };
         ImmutableList<ActionDescriptor> actions = [ScenarioStart.Dealt(new LoadedDice(4), drafting: set)];
 
@@ -233,8 +237,13 @@ public sealed class ScenarioStartTest
         GameState state = ScenarioStart.StateOf(actions, new TinyRules(6, isDealt: true));
 
         // Assert
+        DraftSettings replayed = set with
+        {
+            IsHiddenFromAllies = isSecret && isHiddenFromAllies,
+            IsSimultaneous = isSimultaneous && drafter is null,
+        };
         Assert.Equal(
-            (set with { IsHiddenFromAllies = isSecret && isHiddenFromAllies }, budget ?? 0, set.Drafter),
+            (replayed, budget ?? 0, set.Drafter),
             (ScenarioStart.DraftingOf(actions), state.Draft!.Left[First], state.Draft.Drafter)
         );
     }
