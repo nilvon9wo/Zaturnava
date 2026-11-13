@@ -214,13 +214,13 @@ public sealed class GameStarterTest
     {
         // Arrange - the custom board 10 × 10, kingdoms 4 × 3, as near the medium (8, 4 × 2) as the large (12, 6 × 3)
         // by side, but nearer it by kingdom; one of Grand's own sizes tells no board; another game has no other size
-        BoardSizeDto own = new(10, 4, 3);
+        BoardSizeDto own = new(10, 10, 4, 3);
         CatalogDto catalog = new(
             [
                 new RulesetDto(Ruleset, "Chaturaji 2027", 4) { Game = Ruleset },
-                SizeOf("grand-small", new BoardSizeDto(6, 3, 3)),
-                SizeOf("grand-medium", new BoardSizeDto(8, 4, 2)),
-                SizeOf("grand-large", new BoardSizeDto(12, 6, 3)),
+                SizeOf("grand-small", new BoardSizeDto(6, 6, 3, 3)),
+                SizeOf("grand-medium", new BoardSizeDto(8, 8, 4, 2)),
+                SizeOf("grand-large", new BoardSizeDto(12, 12, 6, 3)),
                 SizeOf("grand-odd", null),
                 SizeOf("grand-custom", own) with { SizableBoard = own },
                 new RulesetDto("lone-custom", "Lone", 4) { Game = "lone", SizableBoard = own, Board = own },
@@ -229,7 +229,7 @@ public sealed class GameStarterTest
         );
 
         // Act
-        string rated = GameStarter.RatedAs(catalog, rulesetId, side == 0 ? null : new BoardSizeDto(side, 3, 3));
+        string rated = GameStarter.RatedAs(catalog, rulesetId, side == 0 ? null : new BoardSizeDto(side, side, 3, 3));
 
         // Assert
         Assert.Equal(expected, rated);

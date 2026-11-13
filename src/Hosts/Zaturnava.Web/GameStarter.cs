@@ -81,9 +81,9 @@ internal static class GameStarter
 
     /// <summary>
     /// The ruleset whose bot ratings stand for a game of <paramref name="rulesetId"/> on <paramref name="board"/>: for
-    /// a board its creator set, as best guess, the same game's at the size nearest it, by side, then by kingdom
-    /// (Stated, 2026-11-13: "make a best guess as to Elo from the board with the closest dimension"), as one size set
-    /// is rated with every other; else the ruleset itself.
+    /// a board its creator set, as best guess, the same game's at the size nearest it, by its width and height
+    /// together, then by kingdom (Stated, 2026-11-13: "make a best guess as to Elo from the board with the closest
+    /// dimension"), as one size set is rated with every other; else the ruleset itself.
     /// </summary>
     public static string RatedAs(CatalogDto catalog, string rulesetId, BoardSizeDto? board) =>
         catalog.Rulesets.FirstOrDefault(offered => offered.Id == rulesetId) is { SizableBoard: { } own } ruleset
@@ -96,7 +96,9 @@ internal static class GameStarter
             .Where(offered => offered.Game == ruleset.Game)
             .Select(offered => (offered.Id, Board: offered.SizableBoard is null ? offered.Board : null))
             .Where(offered => offered.Board is not null)
-            .OrderBy(offered => Math.Abs(offered.Board!.Side - size.Side))
+            .OrderBy(offered =>
+                Math.Abs(offered.Board!.Width - size.Width) + Math.Abs(offered.Board!.Height - size.Height)
+            )
             .ThenBy(offered => Math.Abs(CellsOf(offered.Board!) - CellsOf(size)))
             .Select(offered => offered.Id)
             .FirstOrDefault(ruleset.Id);

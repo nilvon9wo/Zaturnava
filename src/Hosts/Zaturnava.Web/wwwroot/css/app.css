@@ -325,8 +325,14 @@ label.alike, label.drafted, label.for-players, label.secret, label.secret-from-a
 .draft-table tr.unaffordable button.pick { cursor: not-allowed; }
 /* Each choice a row of its own: its name always starts one, even where the row before left a column free. */
 .choices .choice-name { grid-column: 1; }
-/* The board's and the kingdoms' sizes: each a number of its own, in the column of the choices. */
-.choices input[type="number"] { grid-column: 2; width: 100%; min-width: 0; box-sizing: border-box; }
+/* The board's and the kingdoms' sizes: a table under the choices, the board and the kingdom its rows, the width and
+   the height its columns, the rows' names in the column of the choices' names. */
+.choices table.board-size { grid-column: 1 / -1; border-collapse: collapse; }
+.choices table.board-size th { font-weight: 600; text-align: left; padding: 2px 6px 2px 0; }
+.choices table.board-size th[scope="row"] { width: 9.5em; padding-right: 6px; box-sizing: border-box; }
+.choices table.board-size th[scope="col"] { font-weight: 400; opacity: 0.8; }
+.choices table.board-size td { padding: 2px 6px 2px 0; }
+.choices table.board-size input[type="number"] { width: 5em; box-sizing: border-box; }
 .choices select, .panel label.scenario select { width: 100%; min-width: 0; }
 /* The one choice of game, for the whole lobby, across its top: with whether to show previews beside it. */
 .lobby-games {

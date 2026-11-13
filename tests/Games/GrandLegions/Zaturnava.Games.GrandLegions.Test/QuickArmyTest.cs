@@ -242,7 +242,7 @@ public sealed class QuickArmyTest
         Assert.All(armies, army =>
         {
             ArmyPiece leader = army.Single(piece => GrandLegionsRules.Leaders.Contains(piece.Kind));
-            ImmutableList<ArmySquare> centres = PalaceSquares.EdgeCentres(game.Kingdom, game.Side);
+            ImmutableList<ArmySquare> centres = PalaceSquares.EdgeCentres(game.Kingdom, game.Width, game.Height);
             ImmutableList<ArmySquare> palace =
                 PalaceSquares.Window(PalaceSquares.CentreAbout(centres, new ArmySquare(leader.Column, 0)));
             Assert.All(

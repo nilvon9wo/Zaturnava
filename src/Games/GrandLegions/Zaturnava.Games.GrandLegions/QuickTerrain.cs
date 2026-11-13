@@ -29,8 +29,8 @@ public static class QuickTerrain
     /// <summary>The board of <paramref name="game"/> on <paramref name="terrain"/>.</summary>
     public static GrandBoard BoardOf([Required] QuickGame game, int terrain) =>
         new(
-            game.Side,
-            game.Side,
+            game.Width,
+            game.Height,
             game.KingdomWidth,
             game.KingdomDepth,
             Rivers: RiversOf(terrain),

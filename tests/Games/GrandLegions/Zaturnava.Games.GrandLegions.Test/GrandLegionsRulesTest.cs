@@ -45,7 +45,7 @@ public sealed class GrandLegionsRulesTest
     {
         // Arrange
         Chaturaji2027Rules custom = GrandLegionsRules.RulesOf(QuickGame.Custom);
-        BoardSize board = new(12, 4, 4);
+        BoardSize board = new(12, 10, 4, 4);
 
         // Act
         IRulesApplying sized = custom.Sized(board)!;
@@ -53,11 +53,11 @@ public sealed class GrandLegionsRulesTest
         // Assert
         Assert.Equal(
             (
-                new BoardSize(10, 4, 3),
+                new BoardSize(10, 10, 4, 3),
                 "grand-legions-custom",
-                "Grand Legions (12 × 12, kingdoms 4 × 4)",
-                144,
-                (int?)203,
+                "Grand Legions (12 × 10, kingdoms 4 × 4)",
+                120,
+                (int?)197,
                 (BoardSize?)board,
                 true
             ),
@@ -72,9 +72,9 @@ public sealed class GrandLegionsRulesTest
             )
         );
         Assert.Equal(
-            (true, true, true, (BoardSize?)new BoardSize(8, 4, 2)),
+            (true, true, true, (BoardSize?)new BoardSize(8, 8, 4, 2)),
             (
-                custom.Sized(new BoardSize(5, 3, 3)) is null,
+                custom.Sized(new BoardSize(5, 5, 3, 3)) is null,
                 GrandLegionsRules.RulesOf(QuickGame.Medium).Sized(board) is null,
                 GrandLegionsRules.RulesOf(QuickGame.Medium).SizableBoard is null,
                 GrandLegionsRules.RulesOf(QuickGame.Medium).Board
@@ -86,7 +86,7 @@ public sealed class GrandLegionsRulesTest
     public void CustomOf_WhenTheKingdomsAreSet_AsksForAnArmyAndABudgetToFillThem()
     {
         // Arrange - kingdoms of 12 cells, 4 wide
-        BoardSize board = new(10, 4, 3);
+        BoardSize board = new(10, 10, 4, 3);
 
         // Act
         QuickGame game = QuickGame.CustomOf(board)!;
@@ -101,6 +101,26 @@ public sealed class GrandLegionsRulesTest
                     game.Minimums.OrderBy(minimum => minimum.Key.ToString(), StringComparer.Ordinal)
                         .Select(minimum => $"{minimum.Key} {minimum.Value}")
                 )
+            )
+        );
+    }
+
+    [Fact]
+    public void CustomOf_WhenTheBoardIsNotSquare_DealsEachArmyIntoItsOwnKingdom()
+    {
+        // Arrange - a board 12 across and 9 up, kingdoms 4 x 3, with neutral ground between them
+        QuickGame game = QuickGame.CustomOf(new BoardSize(12, 9, 4, 3))!;
+
+        // Act
+        ImmutableList<Placement> dealt = QuickArmy.Dealt(game, 7);
+
+        // Assert
+        Assert.Equal(
+            (true, true, 4),
+            (
+                game.HasNeutralZone,
+                dealt.All(placed => game.Board.Kingdoms[placed.Owner.Value].Contains(placed.Column, placed.Row)),
+                dealt.Select(placed => placed.Owner).Distinct().Count()
             )
         );
     }
@@ -483,9 +503,9 @@ public sealed class GrandLegionsRulesTest
         // Arrange - Black's Makruk Pawn amid a seat's kingdom: its own, Yellow's, Green's (its ally's) or Red's
         QuickGame game = QuickGame.Small;
         Chaturaji2027Rules rules = GrandLegionsRules.RulesOf(game);
-        Kingdom kingdom = new GrandBoard(game.Side, game.Side, game.KingdomWidth, game.KingdomDepth).Kingdoms[seat];
+        Kingdom kingdom = game.Board.Kingdoms[seat];
         CellId amid = new(
-            ((kingdom.Row + (kingdom.Height / 2)) * game.Side) + kingdom.Column + (kingdom.Width / 2)
+            ((kingdom.Row + (kingdom.Height / 2)) * game.Width) + kingdom.Column + (kingdom.Width / 2)
         );
         GameState state = BlackDeciding(rules, (amid, BlackPiece(GrandLegionsPieces.MakrukPawn)));
 

@@ -10,16 +10,16 @@ using Net.NowhereAtAll.Zaturnava.Topology.SquareGrid;
 namespace Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
 
 /// <summary>
-/// What a game played by these rules is played with (Proposed): its board, <paramref name="Side"/> cells square,
-/// with four seats in a pinwheel; its pieces, how they move, what taking each scores, and their names; which
-/// kinds lead an army - a leader is what Chaturaji 2027 calls a Raja, and its start is its seat's throne - and
-/// which are Pawns, promoted at the far edge, swapping back to back; and where every piece starts.
+/// What a game played by these rules is played with (Proposed): its board, <paramref name="Width"/> cells across and
+/// <see cref="Height"/> up, with four seats in a pinwheel; its pieces, how they move, what taking each scores, and
+/// their names; which kinds lead an army - a leader is what Chaturaji 2027 calls a Raja, and its start is its seat's
+/// throne - and which are Pawns, promoted at the far edge, swapping back to back; and where every piece starts.
 /// <see cref="Standard"/> is Chaturaji 2027's own; Grand Legions plays others.
 /// </summary>
 public sealed record Chaturaji2027Variant(
     string Id,
     string Name,
-    int Side,
+    int Width,
     ImmutableDictionary<PieceKindId, PieceKind> Kinds,
     ImmutableDictionary<PieceKindId, int> Points,
     ImmutableDictionary<PieceKindId, string> Names,
@@ -43,6 +43,13 @@ public sealed record Chaturaji2027Variant(
         Heavies = [Chaturaji2027Pieces.Elephant],
         Keeping = Chaturaji2027Pieces.Keeping,
     };
+
+    /// <summary>How many cells up the board is: as many as across, a square, unless set.</summary>
+    public int Height
+    {
+        get => field > 0 ? field : this.Width;
+        init;
+    }
 
     /// <summary>
     /// What each kind is worth keeping on the board, to one weighing an exchange

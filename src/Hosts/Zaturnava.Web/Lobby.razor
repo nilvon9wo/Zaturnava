@@ -121,33 +121,59 @@
                 }
                 @if (this.Ruleset(catalog).SizableBoard is not null)
                 {
-                    <label class="board">
-                        <span class="choice-name">Board side</span>
-                        <input type="number"
-                               class="board-side"
-                               min="6"
-                               max="26"
-                               @bind="this._side"
-                               @bind:after="this.Resized" />
-                    </label>
-                    <label class="kingdom-width">
-                        <span class="choice-name">Kingdom width</span>
-                        <input type="number"
-                               class="kingdom-width"
-                               min="3"
-                               max="13"
-                               @bind="this._kingdomWidth"
-                               @bind:after="this.Resized" />
-                    </label>
-                    <label class="kingdom-height">
-                        <span class="choice-name">Kingdom height</span>
-                        <input type="number"
-                               class="kingdom-depth"
-                               min="3"
-                               max="13"
-                               @bind="this._kingdomDepth"
-                               @bind:after="this.Resized" />
-                    </label>
+                    <table class="board-size">
+                        <thead>
+                            <tr>
+                                <td></td>
+                                <th scope="col">Width</th>
+                                <th scope="col">Height</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <th scope="row">Board</th>
+                                <td>
+                                    <input type="number"
+                                           class="board-width"
+                                           aria-label="Board width"
+                                           min="6"
+                                           max="26"
+                                           @bind="this._width"
+                                           @bind:after="this.Resized" />
+                                </td>
+                                <td>
+                                    <input type="number"
+                                           class="board-height"
+                                           aria-label="Board height"
+                                           min="6"
+                                           max="26"
+                                           @bind="this._height"
+                                           @bind:after="this.Resized" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Kingdom</th>
+                                <td>
+                                    <input type="number"
+                                           class="kingdom-width"
+                                           aria-label="Kingdom width"
+                                           min="3"
+                                           max="13"
+                                           @bind="this._kingdomWidth"
+                                           @bind:after="this.Resized" />
+                                </td>
+                                <td>
+                                    <input type="number"
+                                           class="kingdom-depth"
+                                           aria-label="Kingdom height"
+                                           min="3"
+                                           max="13"
+                                           @bind="this._kingdomDepth"
+                                           @bind:after="this.Resized" />
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
                 }
             </div>
             @if (this._mode == SetupMode.Quick)
@@ -465,10 +491,13 @@
     private int? _budget;
 
     /// <summary>
-    /// For a game whose board's size its creator may set (Stated, 2026-11-12: the board's and the kingdoms' both): the
-    /// cells on each side of the board, and each kingdom's width and depth; the game's own, as each game is chosen.
+    /// For a game whose board's size its creator may set (Stated, 2026-11-12: the board's and the kingdoms' both; and
+    /// 2026-11-13, a board need not be square): the board's width and height, in cells, and each kingdom's width and
+    /// depth; the game's own, as each game is chosen.
     /// </summary>
-    private int _side;
+    private int _width;
+
+    private int _height;
 
     private int _kingdomWidth;
     private int _kingdomDepth;
@@ -817,7 +846,8 @@
         this._colour = 0;
         if (this.Ruleset(catalog).SizableBoard is { } board)
         {
-            (this._side, this._kingdomWidth, this._kingdomDepth) = (board.Side, board.KingdomWidth, board.KingdomDepth);
+            (this._width, this._height) = (board.Width, board.Height);
+            (this._kingdomWidth, this._kingdomDepth) = (board.KingdomWidth, board.KingdomDepth);
         }
 
         this._strengths = this.StrengthsOf(catalog);
@@ -850,7 +880,7 @@
     private BoardSizeDto? BoardAsked(CatalogDto catalog) =>
         this.Ruleset(catalog).SizableBoard is null
             ? null
-            : new BoardSizeDto(this._side, this._kingdomWidth, this._kingdomDepth);
+            : new BoardSizeDto(this._width, this._height, this._kingdomWidth, this._kingdomDepth);
 
     /// <summary>
     /// The most an army may have to spend, the game's own limit, grown with the kingdoms as they are set; any more is

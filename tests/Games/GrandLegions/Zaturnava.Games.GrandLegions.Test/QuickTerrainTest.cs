@@ -63,8 +63,8 @@ public sealed class QuickTerrainTest
 
         // Assert
         Assert.Equal(
-            (game.Side, game.KingdomWidth, rivers, course, described),
-            (board.Width, board.KingdomWidth, board.Rivers, board.Course, QuickTerrain.Described(terrain))
+            (game.Width, game.Height, game.KingdomWidth, rivers, course, described),
+            (board.Width, board.Length, board.KingdomWidth, board.Rivers, board.Course, QuickTerrain.Described(terrain))
         );
     }
 

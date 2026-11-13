@@ -25,7 +25,7 @@ public sealed class RiverCrossingTest
     )
     {
         // Arrange - seat 0's piece, in the west, goes to the column given, in a game dealt a north-south river
-        QuickGame game = QuickGame.Medium with { Side = side, KingdomWidth = 3, KingdomDepth = 3 };
+        QuickGame game = QuickGame.Medium with { Width = side, KingdomWidth = 3, KingdomDepth = 3 };
         GameState state = new(Position.Empty, [], TeamGraph.FromTeams([]), null, 0, [], []) { Terrain = 1 };
         SquareGridTopology grid = new(side, side);
         Piece piece = new(new PieceId(1), new PieceKindId(kind), new SeatId(0));

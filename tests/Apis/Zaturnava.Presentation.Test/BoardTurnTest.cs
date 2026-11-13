@@ -52,6 +52,26 @@ public sealed class BoardTurnTest
         Assert.Equal(expected, angle);
     }
 
+    [Theory]
+    [InlineData(0, "-0.5 -3.5 6 4")]
+    [InlineData(1, "0.5 -4.5 4 6")]
+    [InlineData(2, "-0.5 -3.5 6 4")]
+    [InlineData(3, "0.5 -4.5 4 6")]
+    public void Framing_WhenABoardNotSquareIsTurned_LiesOnItsSideAboutTheSameCentreAtAQuarterTurn(
+        int turns,
+        string expected
+    )
+    {
+        // Arrange - a board 6 cells across and 4 up
+        BoardFrame frame = new(-0.5, -3.5, 6, 4);
+
+        // Act
+        BoardFrame framed = new BoardTurn(turns).Framing(frame);
+
+        // Assert
+        Assert.Equal(expected, framed.ViewBox);
+    }
+
     [Fact]
     public void HomeOf_WhenTheSeatHasNoThroneButPieces_TurnsTheirMiddleToTheBottomLeft()
     {

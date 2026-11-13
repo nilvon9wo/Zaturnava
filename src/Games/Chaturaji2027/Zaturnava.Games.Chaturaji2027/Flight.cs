@@ -19,7 +19,7 @@ namespace Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
 /// prisoner, so none may ransom it, nor take it, nor promote into it, and it scores nothing; it comes back as a
 /// prisoner escapes, on doubles that free its kind.
 /// </summary>
-internal sealed class Flight(SquareGridTopology grid, int side, ImmutableHashSet<PieceKindId> fleers)
+internal sealed class Flight(SquareGridTopology grid, int width, int height, ImmutableHashSet<PieceKindId> fleers)
 {
     private static readonly PieceKindId Corner = new("far-corner");
 
@@ -28,11 +28,8 @@ internal sealed class Flight(SquareGridTopology grid, int side, ImmutableHashSet
     /// <summary>Each seat's far corner, by seat: seat 0's the top right, turned for each next seat.</summary>
     private readonly ImmutableList<CellId> _corners =
     [
-        .. Pinwheel
-            .EachOwn(
-                side,
-                [.. Enumerable.Range(0, Pinwheel.SeatCount).Select(_ => ImmutableList.Create(Far(side)))]
-            )
+        .. Enumerable.Range(0, Pinwheel.SeatCount)
+            .Select(seat => Pinwheel.At(width, height, seat, Far(Pinwheel.FrameOf(width, height, seat))))
             .Select(corner => grid.CellAt(corner.Column, corner.Row)),
     ];
 
@@ -64,5 +61,5 @@ internal sealed class Flight(SquareGridTopology grid, int side, ImmutableHashSet
         return new Transition(fled, [new PieceFled(piece, flee.Cell, flee.Actor)]);
     }
 
-    private static ArmyPiece Far(int side) => new(Corner, side - 1, side - 1);
+    private static ArmyPiece Far((int Width, int Height) frame) => new(Corner, frame.Width - 1, frame.Height - 1);
 }

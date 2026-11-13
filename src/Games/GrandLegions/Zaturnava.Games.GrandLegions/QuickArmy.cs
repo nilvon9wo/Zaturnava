@@ -123,7 +123,7 @@ public static class QuickArmy
         [
             .. Enumerable.Range(0, Pinwheel.SeatCount).Select(_ => Layout(game, Pick(game, random), random)),
         ];
-        return Pinwheel.EachOwn(game.Side, areAlike ? [.. armies.Select(_ => armies[0])] : armies);
+        return Pinwheel.EachOwn(game.Width, game.Height, areAlike ? [.. armies.Select(_ => armies[0])] : armies);
     }
 
     public static ImmutableList<GrandPiece> Pick([Required] QuickGame game, [Required] Random random)
@@ -194,7 +194,7 @@ public static class QuickArmy
     /// <summary>Every square of the game's kingdom a palace may stand about.</summary>
     private static ImmutableList<ArmySquare> Centres(QuickGame game) =>
         game.HasEdgePalaces
-            ? PalaceSquares.EdgeCentres(game.Kingdom, game.Side)
+            ? PalaceSquares.EdgeCentres(game.Kingdom, game.Width, game.Height)
             : PalaceSquares.Centres(game.Kingdom);
 
     /// <summary>

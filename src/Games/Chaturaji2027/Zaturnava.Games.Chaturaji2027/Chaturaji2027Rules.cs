@@ -126,7 +126,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         this._variant = variant ?? Chaturaji2027Variant.Standard;
         this._quietRounds = quietRounds;
         this._repeatRounds = repeatRounds;
-        this._grid = new SquareGridTopology(this._variant.Side, this._variant.Side);
+        this._grid = new SquareGridTopology(this._variant.Width, this._variant.Height);
         this._awayTurns = awayTurns;
         this._moves = new MoveGenerator(this._grid, this._variant.Kinds);
         this._diagrams = new MoveDiagrams(
@@ -172,7 +172,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         );
         this._flying = new FlyingCapture(this._grid, this._variant.FlyingCapturers, this._variant.Leaders);
         this._custody = new Custody(this._grid, this._variant.Custodians);
-        this._flight = new Flight(this._grid, this._variant.Side, this._variant.Fleers);
+        this._flight = new Flight(this._grid, this._variant.Width, this._variant.Height, this._variant.Fleers);
         this._mercenaries = new Mercenaries(
             this._grid,
             this._variant.Mercenaries,
@@ -191,7 +191,8 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             ? new ArmyDrafting(
                 drafting,
                 this._grid,
-                this._variant.Side,
+                this._variant.Width,
+                this._variant.Height,
                 (edition, kind) => this._variant.PointsIn(edition)[kind],
                 this.RollOffDie
             )

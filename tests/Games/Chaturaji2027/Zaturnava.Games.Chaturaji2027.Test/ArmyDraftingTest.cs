@@ -65,7 +65,7 @@ public sealed class ArmyDraftingTest
     public void Sized_WhenTheVariantResizes_PlaysItAtTheSizesItAllowsOnceEachAndElseNowhere()
     {
         // Arrange - a variant whose creator may set it to 8 cells a side alone
-        BoardSize eight = new(8, 4, 2);
+        BoardSize eight = new(8, 8, 4, 2);
         Chaturaji2027Rules rules = new(
             DiceProfile.WeightedSixSided,
             Chaturaji2027Rules.DefaultIdleRounds,
@@ -87,7 +87,7 @@ public sealed class ArmyDraftingTest
                 rules.SizableBoard,
                 sized.Id,
                 ReferenceEquals(sized, rules.Sized(eight)),
-                rules.Sized(new BoardSize(9, 4, 2)) is null,
+                rules.Sized(new BoardSize(9, 9, 4, 2)) is null,
                 new Chaturaji2027Rules().Sized(eight) is null,
                 new Chaturaji2027Rules().SizableBoard is null,
                 rules.Board,

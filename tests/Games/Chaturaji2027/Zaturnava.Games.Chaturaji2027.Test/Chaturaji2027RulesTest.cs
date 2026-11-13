@@ -2159,7 +2159,7 @@ public sealed class Chaturaji2027RulesTest
         Chaturaji2027Variant variant = new(
             standard.Id,
             standard.Name,
-            standard.Side,
+            standard.Width,
             standard.Kinds,
             standard.Points,
             standard.Names,

@@ -150,7 +150,7 @@ public sealed class GameService(
         rules.Sized(board) is not null
             ? board
             : throw new InvalidGameSetupException(
-                $"{rules.Name} is not played on a board of {board.Side} × {board.Side} with kingdoms of "
+                $"{rules.Name} is not played on a board of {board.Width} × {board.Height} with kingdoms of "
                     + $"{board.KingdomWidth} × {board.KingdomDepth}."
             );
 

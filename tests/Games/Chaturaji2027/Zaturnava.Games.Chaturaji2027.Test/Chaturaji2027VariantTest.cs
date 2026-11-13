@@ -41,6 +41,24 @@ public sealed class Chaturaji2027VariantTest
     }
 
     [Fact]
+    public void Topology_WhenTheVariantSetsItsHeight_IsThatHighAndElseSquare()
+    {
+        // Arrange - a board 8 cells across and 9 up
+        Chaturaji2027Variant tall = Chaturaji2027Variant.Standard with { Height = 9 };
+
+        // Act
+        Chaturaji2027Rules rules = new(
+            DiceProfile.WeightedSixSided,
+            Chaturaji2027Rules.DefaultIdleRounds,
+            PawnPromotion.OtherArmies,
+            variant: tall
+        );
+
+        // Assert
+        Assert.Equal((72, 8), (rules.Topology.Cells.Count, Chaturaji2027Variant.Standard.Height));
+    }
+
+    [Fact]
     public void Promotables_WhenSetOrNot_AreThoseSetElseThePawns()
     {
         // Arrange
