@@ -2597,6 +2597,34 @@ public sealed class TableTest : IDisposable
     }
 
     [Fact]
+    public void Seats_WhenThePlayersSeatComesAfterTheirAllysInOrder_ListsTheirOwnFirst()
+    {
+        // Arrange - Yellow (1) and Red (3) against Black (0) and Green (2); the player is Red
+        ImmutableList<SeatDto> seats = FakeGameServer.SeatZeroToMove.Seats;
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Seats =
+            [
+                .. seats,
+                new SeatDto(2, "Green", 0, 3, "bot", "Random", []),
+                new SeatDto(3, "Red", 1, 2, "bot", "Random", []),
+            ],
+        };
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(new Seating(FakeGameServer.GameId, new SeatClaim(3, "t")));
+
+        // Assert - the player at the top left: their team first, their seat first in it
+        Assert.Equal(
+            ("Red & Yellow", "Red|Yellow|Black|Green"),
+            (
+                table.Find("section.team .team-name").TextContent,
+                string.Join("|", table.FindAll("li.seat > .name").Select(name => name.TextContent))
+            )
+        );
+    }
+
+    [Fact]
     public void Seats_WhenTheyHoldPrisoners_ShowEachAsItsPiece()
     {
         // Arrange
