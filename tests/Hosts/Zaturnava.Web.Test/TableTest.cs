@@ -286,6 +286,42 @@ public sealed class TableTest : IDisposable
     }
 
     [Fact]
+    public void Click_WhenTheKindJumps_MarksWhereItLandsAndTellsItsJumpsInWordsToo()
+    {
+        // Arrange - on a 3 x 3 diagram, the Raja takes the piece on 7, just ahead, and lands on... 7 standing for the
+        // square beyond, as the diagram is small: it lands on 6
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Kinds =
+            [
+                new PieceKindDto("raja", "Raja", 5)
+                {
+                    Captures = ["Jumps over a piece, and on"],
+                    Diagram = new MoveDiagramDto(3, [], [7], []) { Jumps = [6] },
+                },
+            ],
+        };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Act
+        Cell(table, 0).Click();
+
+        // Assert
+        Assert.Equal(
+            (
+                "square dark jump",
+                "lands here, empty, having jumped and taken the piece before it; and may jump on again",
+                "Jumps over a piece, and on"
+            ),
+            (
+                Square(table, 6).ClassName,
+                table.FindAll(".diagram-key .key-item")[^1].TextContent,
+                table.Find(".piece-card ul.captures li").TextContent
+            )
+        );
+    }
+
+    [Fact]
     public void Click_WhenARiverHoldsTheKindBack_DrawsTheRiverAlongTheFirstRowAcrossIt()
     {
         // Arrange - on a 3 x 3 diagram, a river just ahead of the Raja, under the top row

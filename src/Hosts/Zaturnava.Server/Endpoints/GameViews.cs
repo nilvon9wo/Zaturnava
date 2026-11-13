@@ -294,6 +294,7 @@ internal static class GameViews
                 RiverRow = guide.Diagram.RiverRow,
                 Blockers = guide.Diagram.Blockers,
                 Leaps = guide.Diagram.Leaps,
+                Jumps = guide.Diagram.Jumps,
             },
         };
     }

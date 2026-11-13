@@ -656,6 +656,35 @@ public sealed class GrandLegionsRulesTest
     }
 
     [Theory]
+    [InlineData("man", "48,50", "48,50,64,70", "56,60,72,80")]
+    [InlineData("checkers-king", "30,32,48,50", "10,16,30,32,48,50,64,70", "0,8,20,24,56,60,72,80")]
+    [InlineData("western-king", "30,31,32,39,41,48,49,50", "30,31,32,39,41,48,49,50", "")]
+    public void GuideOf_WhenAKindJumps_DrawsItLandingBeyondEachPieceItTakesAndJumpingOnAgain(
+        string kind,
+        string moves,
+        string captures,
+        string jumps
+    )
+    {
+        // Arrange - from the centre, 40: the Man steps and jumps diagonally forward only, the Checkers King every way
+        // diagonally, an enemy one and three squares out along each line it jumps; the Western King never jumps
+        Chaturaji2027Rules rules = GrandLegionsRules.RulesOf(QuickGame.Small);
+
+        // Act
+        MoveDiagram diagram = rules.GuideOf(new PieceKindId(kind)).Diagram;
+
+        // Assert
+        Assert.Equal(
+            (moves, captures, jumps),
+            (
+                string.Join(",", diagram.Moves),
+                string.Join(",", diagram.Captures),
+                string.Join(",", diagram.Jumps)
+            )
+        );
+    }
+
+    [Theory]
     [InlineData("chancellor", "21,23,29,33,47,51,57,59")]
     [InlineData("dragon-horse", "")]
     [InlineData("xiangqi-horse", "")]

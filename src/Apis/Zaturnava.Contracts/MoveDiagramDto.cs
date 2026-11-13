@@ -31,4 +31,10 @@ public sealed record MoveDiagramDto(
     /// other cell farther off, it slides to, stopped by the first piece in the way.
     /// </summary>
     public ImmutableList<int> Leaps { get; init; } = [];
+
+    /// <summary>
+    /// For a piece that jumps, as a piece of Checkers does: the empty cells it lands on, having jumped and taken the
+    /// piece on the capture cell before each, and then again from there; none, for any other.
+    /// </summary>
+    public ImmutableList<int> Jumps { get; init; } = [];
 }
