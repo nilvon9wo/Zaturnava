@@ -42,7 +42,7 @@ public sealed class MoveGenerator(ICellNavigating topology, ImmutableDictionary<
         [
             .. this._pieceKinds[attacker.Kind].Movement
                 .Where(rule => rule.CanCapture)
-                .SelectMany(reach.CellsFor)
+                .SelectMany(rule => rule.IsJumping ? reach.JumpedFor(rule) : reach.CellsFor(rule))
                 .Distinct()
                 .Select(target => new Attack(attacker, from, target)),
         ];
@@ -55,7 +55,65 @@ public sealed class MoveGenerator(ICellNavigating topology, ImmutableDictionary<
 file sealed record MoveSearch(Reach Reach, Piece Mover, Func<Piece, bool> IsCapturable)
 {
     public IEnumerable<Move> MovesFor(MovementRule rule) =>
-        this.Reach.CellsFor(rule).Select(cell => this.MoveTo(cell, rule)).OfType<Move>();
+        rule.IsJumping
+            ? this.JumpsFor(rule)
+            : this.Reach.CellsFor(rule).Select(cell => this.MoveTo(cell, rule)).OfType<Move>();
+
+    /// <summary>
+    /// Every chain of jumps the rule allows, each a move of its own, so that it may stop after any jump (Proposed,
+    /// 2026-11-13): over a piece it may take, next to it, to the empty cell beyond; then on from there, each piece
+    /// jumped gone. Of the chains that end on one cell, the one that takes the most, the first found among those
+    /// alike, as a move names only where it ends; none that ends where it began.
+    /// </summary>
+    private IEnumerable<Move> JumpsFor(MovementRule rule)
+    {
+        Position lifted = new(this.Reach.Position.Occupants.Remove(this.Reach.From));
+        return this.ChainsFrom(rule, lifted, this.Reach.From, [])
+            .Where(chain => chain.Landing != this.Reach.From)
+            .GroupBy(chain => chain.Landing)
+            .Select(ends => ends.MaxBy(chain => chain.Jumped.Count)!)
+            .Select(chain =>
+                new Move(this.Mover, this.Reach.From, chain.Landing, this.Reach.Position.PieceAt(chain.Jumped[0]))
+                {
+                    Jumped = chain.Jumped,
+                }
+            );
+    }
+
+    /// <summary>Each chain of one jump or more from <paramref name="from"/>, after those already made.</summary>
+    private IEnumerable<Chain> ChainsFrom(
+        MovementRule rule,
+        Position position,
+        CellId from,
+        ImmutableList<CellId> jumped
+    ) =>
+        this.Reach.Topology
+            .Resolve(rule.Directions, this.Reach.OwnerSeat.Forward)
+            .Select(direction => this.JumpOf(rule, position, from, direction, jumped))
+            .OfType<Chain>()
+            .SelectMany(chain =>
+                (IEnumerable<Chain>)[chain, .. this.ChainsFrom(rule, chain.Position, chain.Landing, chain.Jumped)]
+            );
+
+    /// <summary>
+    /// The jump along <paramref name="direction"/>: over a piece it may take, to the empty cell beyond, that piece
+    /// gone; none, if there is no such piece, or no such cell.
+    /// </summary>
+    private Chain? JumpOf(
+        MovementRule rule,
+        Position position,
+        CellId from,
+        Direction direction,
+        ImmutableList<CellId> jumped
+    ) =>
+        this.Reach.Topology.Step(from, direction) is { } over
+        && position.PieceAt(over) is { } piece
+        && !rule.Shunned.Contains(piece.Kind)
+        && this.IsCapturable(piece)
+        && this.Reach.Topology.Step(over, direction) is { } landing
+        && position.PieceAt(landing) is null
+            ? new Chain(landing, jumped.Add(over), new Position(position.Occupants.Remove(over)))
+            : null;
 
     private Move? MoveTo(CellId target, MovementRule rule)
     {
@@ -79,6 +137,22 @@ file sealed record Reach(ICellNavigating Topology, Position Position, CellId Fro
         this.Topology
             .Resolve(rule.Directions, this.OwnerSeat.Forward)
             .SelectMany(direction => this.CellsAlong(rule, direction));
+
+    /// <summary>
+    /// The cells a jump could take a piece on, were one there: each next to it whose cell beyond is on the board and
+    /// empty.
+    /// </summary>
+    public IEnumerable<CellId> JumpedFor(MovementRule rule) =>
+        this.Topology
+            .Resolve(rule.Directions, this.OwnerSeat.Forward)
+            .Select(direction =>
+                this.Topology.Step(this.From, direction) is { } over
+                && this.Topology.Step(over, direction) is { } landing
+                && this.Position.PieceAt(landing) is null
+                    ? over
+                    : (CellId?)null
+            )
+            .OfType<CellId>();
 
     private IEnumerable<CellId> CellsAlong(MovementRule rule, Direction direction)
     {
@@ -124,6 +198,9 @@ file sealed record Reach(ICellNavigating Topology, Position Position, CellId Fro
 
     private bool IsClear(IEnumerable<CellId> path) => path.All(cell => this.Position.PieceAt(cell) is null);
 }
+
+/// <summary>Jumps made one after another: where the last landed, the cells jumped, and what is left standing.</summary>
+file sealed record Chain(CellId Landing, ImmutableList<CellId> Jumped, Position Position);
 
 /// <summary>A cell on a ray: how far along it is, the cells before it, and where each step to it began.</summary>
 file sealed record RayStep(CellId Cell, int Distance, IEnumerable<CellId> PathBefore, ImmutableList<CellId> LegStarts);

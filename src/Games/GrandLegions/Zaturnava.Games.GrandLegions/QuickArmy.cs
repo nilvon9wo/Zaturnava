@@ -29,7 +29,8 @@ public static class QuickArmy
     /// (Stated); those confined to one too, if the game's armies may hold them
     /// (<see cref="QuickGame.HasPalacePieces"/>, Stated 2026-11-13) and its kingdoms have room for a palace, or for one
     /// partly outside, if it may stand so (<see cref="QuickGame.HasEdgePalaces"/>); and any a river holds only if the
-    /// game has rivers. Each at its price on the game's board (<see cref="BoardPrices"/>).
+    /// game has rivers; and none come with an edition of the catalogue after the game's. Each at its price on the
+    /// game's board (<see cref="BoardPrices"/>).
     /// </summary>
     public static ImmutableList<GrandPiece> Eligible([Required] QuickGame game)
     {
@@ -37,7 +38,8 @@ public static class QuickArmy
         return
         [
             .. BoardPrices.Catalogue(QuickTerrain.BoardOf(game, 0)).Where(piece =>
-                piece.Restrictions.All(restriction => restriction.Terrain switch
+                piece.Edition <= game.Edition
+                && piece.Restrictions.All(restriction => restriction.Terrain switch
                 {
                     Terrain.Palace => !restriction.IsConfining || palaced,
                     Terrain.River => game.Rivers != Rivers.None,

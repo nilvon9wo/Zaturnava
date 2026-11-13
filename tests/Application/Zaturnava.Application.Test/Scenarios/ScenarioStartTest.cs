@@ -177,6 +177,24 @@ public sealed class ScenarioStartTest
     }
 
     [Fact]
+    public void StateOf_WhenTheGameWasDealtBeforeThereWasAnotherEditionOfThePieces_DealsItFromTheFirst()
+    {
+        // Arrange - a deal of seed 4 as games were dealt before the Checkers and Tafl pieces, and one dealt now
+        ActionDescriptor now = ScenarioStart.Dealt(new LoadedDice(4));
+        ActionDescriptor before = now with { Arguments = now.Arguments.Remove("edition") };
+        TinyRules rules = new(6, isDealt: true);
+
+        // Act
+        (int Before, int Now) editions = (
+            ScenarioStart.StateOf([before], rules).Edition,
+            ScenarioStart.StateOf([now], rules).Edition
+        );
+
+        // Assert
+        Assert.Equal((0, ScenarioStart.Edition), editions);
+    }
+
+    [Fact]
     public void StateOf_WhenTheGameIsDrafted_DealsItThenHasItsArmiesDraftedBySeed()
     {
         // Arrange

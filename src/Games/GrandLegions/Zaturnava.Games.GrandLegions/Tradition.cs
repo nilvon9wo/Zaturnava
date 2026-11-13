@@ -1,8 +1,8 @@
 namespace Net.NowhereAtAll.Zaturnava.Games.GrandLegions;
 
 /// <summary>
-/// The game a piece comes from: Western chess, Xiangqi, Janggi, Shogi or Makruk; or none of them, a fairy
-/// piece (old, or made up). A bot may prefer the pieces of one.
+/// The game a piece comes from: Western chess, Xiangqi, Janggi, Shogi, Makruk, Checkers or Tafl; or none of them, a
+/// fairy piece (old, or made up). A bot may prefer the pieces of one.
 /// </summary>
 public enum Tradition
 {
@@ -12,4 +12,6 @@ public enum Tradition
     Shogi,
     Makruk,
     Fairy,
+    Checkers,
+    Tafl,
 }

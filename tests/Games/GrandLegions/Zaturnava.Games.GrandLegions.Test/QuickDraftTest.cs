@@ -36,7 +36,7 @@ public sealed class QuickDraftTest
         Drafting drafting = QuickDraft.Of(QuickGame.Medium);
 
         // Act
-        ImmutableHashSet<PieceKindId> offered = drafting.Offered(terrain);
+        ImmutableHashSet<PieceKindId> offered = drafting.Offered(terrain, 0);
 
         // Assert
         Assert.Equal((isOffered, true), (offered.Contains(XiangqiElephant), offered.Contains(Rook)));

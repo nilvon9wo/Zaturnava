@@ -64,6 +64,14 @@ public static class GrandLegionsPieces
     public static readonly PieceKindId JanggiCannon = new("janggi-cannon");
     public static readonly PieceKindId Grasshopper = new("grasshopper");
 
+    public static readonly PieceKindId CheckersKing = new("checkers-king");
+    public static readonly PieceKindId Man = new("man");
+    public static readonly PieceKindId TaflKing = new("tafl-king");
+    public static readonly PieceKindId Swede = new("swede");
+
+    /// <summary>The edition of the catalogue the Checkers and Tafl pieces came with (2026-11-13).</summary>
+    private const int CheckersAndTafl = 1;
+
     /// <summary>
     /// What each piece is worth, its price and what taking it scores, as the game's table of values has it
     /// (<c>Values/grand-legions.json</c>), which can be changed apart from the code.
@@ -91,6 +99,18 @@ public static class GrandLegionsPieces
         Piece(GoldGeneral, "Gold General (Shogi)", Leader, Shogi, OrthogonalStep, Step(DirectionSets.ForwardDiagonals)),
         Piece(SilverGeneral, "Silver General (Shogi)", Leader, Shogi, DiagonalStep, ForwardStep)
             .Promoting(GoldGeneral),
+        Piece(TaflKing, "King (Tafl)", Leader, Tafl, OrthogonalSlide.MoveOnly())
+            .Since(CheckersAndTafl),
+        Piece(
+                CheckersKing,
+                "King (Checkers)",
+                Leader,
+                Checkers,
+                DiagonalStep.MoveOnly(),
+                MovementRule.Jump(DirectionSets.Diagonal)
+            )
+            .Restricted(ColourBound(OneColour))
+            .Since(CheckersAndTafl),
 
         // Infantry
         // Unlike the Western Pawn, it takes the piece directly ahead, as it moves (Stated, 2026-11-12): nothing ahead
@@ -134,6 +154,8 @@ public static class GrandLegionsPieces
         Piece(Rook, "Rook (Western)", Heavy, Western, OrthogonalSlide),
         Piece(Bishop, "Bishop (Western)", Heavy, Western, DiagonalSlide)
             .Restricted(ColourBound(OneColour)),
+        Piece(Swede, "Swede", Heavy, Tafl, OrthogonalSlide.MoveOnly())
+            .Since(CheckersAndTafl),
 
         // Cavalry / Leaper
         Piece(Knightrider, "Knightrider", Cavalry, Fairy, MovementRule.Slide(DirectionSets.Knight))
@@ -179,6 +201,17 @@ public static class GrandLegionsPieces
             .Restricted(Moves("Must hop exactly one piece, and never a Cannon", 3)),
         Piece(Grasshopper, "Grasshopper", Artillery, Fairy, MovementRule.Hop(DirectionSets.Any, 1))
             .Restricted(Moves("Must hop, landing just beyond", 3)),
+        Piece(
+                Man,
+                "Man",
+                Artillery,
+                Checkers,
+                Step(DirectionSets.ForwardDiagonals).MoveOnly(),
+                MovementRule.Jump(DirectionSets.ForwardDiagonals)
+            )
+            .Restricted(ColourBound(OneColour))
+            .Promoting(CheckersKing)
+            .Since(CheckersAndTafl),
     ];
 
     /// <summary>Every piece of the catalogue, by its key.</summary>
@@ -191,7 +224,8 @@ public static class GrandLegionsPieces
 
     /// <summary>
     /// The symbol each piece is drawn with, so that it is known at a glance (Stated: the chess symbols for the pieces
-    /// named as chess's, the elephant for the elephants; pieces alike drawn alike, the Pawns sharing one and the
+    /// named as chess's, the Kings of Checkers and Tafl too, told apart by their abbreviations; the elephant for the
+    /// elephants; pieces alike drawn alike, the Pawns sharing one and the
     /// Generals the star, their abbreviations telling them apart; a Dragon as its piece between dragon's wings; the
     /// Knight's kin as the Knight, marked). The Amazon and Chancellor as the Queen and Rook with a Knight's leap, and
     /// the other pieces' symbols, are Proposed.
@@ -236,7 +270,11 @@ public static class GrandLegionsPieces
             .Add(WarEngine, "catapult")
             .Add(XiangqiCannon, "cannon")
             .Add(JanggiCannon, "cannon")
-            .Add(Grasshopper, "grasshopper");
+            .Add(Grasshopper, "grasshopper")
+            .Add(CheckersKing, "king")
+            .Add(Man, "checker")
+            .Add(TaflKing, "king")
+            .Add(Swede, "viking-helmet");
 
     /// <summary>
     /// The abbreviation every piece bears beneath its symbol, beside its class's emblem, each its own (Stated: an
@@ -284,7 +322,11 @@ public static class GrandLegionsPieces
             .Add(WarEngine, "WE")
             .Add(XiangqiCannon, "CX")
             .Add(JanggiCannon, "CJ")
-            .Add(Grasshopper, "G");
+            .Add(Grasshopper, "G")
+            .Add(CheckersKing, "KC")
+            .Add(Man, "Ma")
+            .Add(TaflKing, "KT")
+            .Add(Swede, "Sw");
 
     /// <summary>
     /// What sort of beast each Cavalry piece is, for people sorting them (Proposed): the Knight's kin, horses; the

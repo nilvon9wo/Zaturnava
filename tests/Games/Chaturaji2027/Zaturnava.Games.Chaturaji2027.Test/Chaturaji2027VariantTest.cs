@@ -145,7 +145,7 @@ public sealed class Chaturaji2027VariantTest
             PawnPromotion.OtherArmies,
             variant: Chaturaji2027Variant.Standard with
             {
-                Drafting = new Drafting(6, [], _ => [], _ => new ArmyFilled([], new ArmySquare(0, 0)))
+                Drafting = new Drafting(6, [], (_, _) => [], _ => new ArmyFilled([], new ArmySquare(0, 0)))
                 {
                     PalaceBound = [Chaturaji2027Pieces.Pawn],
                 },

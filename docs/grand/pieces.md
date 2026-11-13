@@ -133,7 +133,7 @@ reach, apart from any other restriction it has:
 
 | Reaches | Devaluation | Pieces |
 |---|---|---|
-| a half | −1 | Bishop, Camel, Courtier |
+| a half | −1 | Bishop, Camel, Courtier, King (Checkers), Man |
 | a quarter or less | −2 | War Engine, Alfil, Threeleaper |
 
 The Xiangqi Elephant has −3 in all: −2 for its binding, as the Alfil, and −1 for its blocked leg.
@@ -161,11 +161,13 @@ The dice name a class, not a piece ([specification §6.1](specification.md#61-th
 |---|---|---|---|---|---|
 | Dragon King (Shogi) | Any distance orthogonally, or one square diagonally | — | — | 78 | — / — |
 | Fairy General (custom) | One square in any direction, or leaps 2+1 | — | — | 76 | — / — |
+| King (Tafl) | Any distance orthogonally; takes only by custody | — | [Custody](#jumping-and-custody) | 71 | — / — |
 | King (Western) | One square in any direction | — | Castling | 70 | — / — |
 | General (Xiangqi) | One square orthogonally | Area: its 3 × 3 palace | Flying-general capture | 69 | — / 5 |
 | General (Janggi) | One square orthogonally, or diagonally along palace lines | Area: its 3 × 3 palace | Leader face-off; palace lines | 68 | — / 5 |
 | Gold General (Shogi) | One square orthogonally, or diagonally forward | — | — | 66 | — / — |
 | Silver General (Shogi) | One square diagonally, or straight forward | — | → Gold General in the far three ranks | 65 | — / — |
+| King (Checkers) | One square diagonally; takes only by jumping | One colour (by its move) | [Jump chains](#jumping-and-custody) | 64 | — / — |
 
 ### Infantry
 
@@ -197,6 +199,7 @@ Chaturaji 2027.
 | Dragon Horse (Shogi) | Any distance diagonally, or one square orthogonally | — | — | 17 | — / — |
 | Rook (Western) | Any distance orthogonally | — | — | 14 | — / — |
 | Bishop (Western) | Any distance diagonally | One colour (by its move) | — | 12 | — / — |
+| Swede (Tafl) | Any distance orthogonally; takes only by custody | — | [Custody](#jumping-and-custody) | 11 | — / — |
 
 ### Cavalry / Leaper
 
@@ -218,9 +221,59 @@ Chaturaji 2027.
 
 | Piece | Moves | Captures | Restrictions | Value | Lifts |
 |---|---|---|---|---|---|
+| Man (Checkers) | One square diagonally forward | By [jumping](#jumping-and-custody), diagonally forward; → King (Checkers) on the last rank | One colour (by its move) | 54 | — / — |
 | Cannon (Xiangqi) | Any distance orthogonally | By hopping one piece, at any distance beyond | — | 10 | — / — |
 | Cannon (Janggi) | Over exactly one piece, to any cell beyond, orthogonally | Same | Move: must hop exactly one piece; may neither hop nor capture a Cannon of either kind | 8 | 3 / — |
 | Grasshopper | Along any line, over the first piece met, to the cell just beyond | Same | Move: must hop, landing just beyond | 8 | 3 / — |
+
+### Jumping and custody
+
+Four pieces, rows 41 to 44 of the sheet (added by the designer, 2026-11-13; the columns they left open filled in
+by the program's rules, *Proposed*), come from Checkers and Tafl and take in ways no other piece does.
+
+**Jumping** (the Checkers King and the Man). The piece takes a piece next to it, diagonally, by jumping over it
+to the empty cell just beyond; from there it may jump again, as often as it can. *Proposed*:
+
+- each jump of the chain is a move of its own, so the piece may stop after any of them; it need not take all
+  it could, nor take at all;
+- of the chains that end on the same cell, the one that takes the most is played (the first found, among
+  those that take as many); a chain may not end where it began;
+- the Man jumps only diagonally forward, as it steps; the King, either way.
+
+**Custody** (the Tafl King and the Swede). The piece takes nothing where it lands. Moving next to an enemy
+piece, orthogonally, with a piece its mover commands just beyond that one, it takes it; every piece so held
+about it at once. *Proposed*: only the custodian's own move takes; a piece that moves between two others is
+not taken, nor is one that another of the mover's pieces comes to stand beyond; an ally's piece is never taken.
+
+Their values, by the sheet's columns:
+
+| Piece | Leader | Reach | Premium | Powers | Limits | Value |
+|---|---|---|---|---|---|---|
+| King (Tafl) | 60 | 14 | 0 | +1 | −4 | 71 |
+| King (Checkers) | 60 | 4 | 0 | +2 | −2 | 64 |
+| Man | 50 | 2 | 2 | +2 | −2 | 54 |
+| Swede | 0 | 14 | 0 | +1 | −4 | 11 |
+
+- Reach counts the cells a piece moves to or takes on. A jump takes on the cell next to the jumper, which its
+  step reaches already, so a jump adds no reach.
+- Powers: taking several pieces in one move. A jump chain can go on and on (+2). Custody takes at most the
+  three pieces about the cell (+1).
+- Limits: a Checkers piece keeps to one colour (−1, [Binding](#binding)) and takes only by jumping, which
+  needs the cell beyond empty (−1). A custodian takes only by custody, which needs a second piece. That costs
+  what taking only by hopping costs the Xiangqi Cannon (−4).
+- The Man may promote into the Checkers King, a leader, so it starts from the
+  [leader promotion bonus](#leader-promotion-bonus) (50). Its premium is the 12 that promotion would gain
+  (64 less 52), over 7 rows: 2.
+- The sheet also says the Tafl King "can permanently escape the game", unpriced and not yet played: what
+  escaping means is an [open question](../open-questions.md).
+
+### Editions
+
+A game stored before these pieces came must replay as it was played, and an army is dealt or offered from
+the pieces there are. So every piece carries the edition it came in (0 for the catalogue as it was, 1 for
+these four), and every game records the edition it was started in. A game deals and offers only the pieces of
+its edition or before; a game started before editions were recorded is of edition 0. New games are of the
+latest edition.
 
 ## Review notes
 
@@ -298,8 +351,8 @@ What was found, and what is made of it:
 ### Names the program keeps apart
 
 The grand **Horse** (blockable) and **Elephants** move differently from the Chaturaji 2027 Horse (a
-Knight) and Elephant (a Rook), and there are four Pawns. The program gives each its own key
+Knight) and Elephant (a Rook), and there are four Pawns and four Kings (`checkers-king`, `tafl-king`…). The program gives each its own key
 (`western-pawn`, `xiangqi-elephant`…), whatever the page calls it: `GrandLegionsPieces`, in
 `Zaturnava.Games.GrandLegions`, holds the whole catalogue, each piece with its class, its tradition
-(Western, Xiangqi, Janggi, Shogi, Makruk, or fairy), its value, its moves, its restrictions and their
+(Western, Xiangqi, Janggi, Shogi, Makruk, Checkers, Tafl, or fairy), its edition, its value, its moves, its restrictions and their
 lifts, and its promotions.

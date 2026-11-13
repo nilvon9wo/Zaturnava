@@ -23,6 +23,8 @@ public sealed class MoveGeneratorTest
     private static readonly PieceKindId Cannon = new("cannon");
     private static readonly PieceKindId Grasshopper = new("grasshopper");
     private static readonly PieceKindId Wary = new("wary");
+    private static readonly PieceKindId Jumper = new("jumper");
+    private static readonly PieceKindId Choosy = new("choosy");
 
     private readonly MoveGenerator _generator = new(
         new LineTopology(BoardLength),
@@ -37,6 +39,8 @@ public sealed class MoveGeneratorTest
             .Add(Walker, Kind(Walker, MovementRule.Step(DirectionSets.Forward).MoveOnly()))
             .Add(Striker, Kind(Striker, MovementRule.Step(DirectionSets.Forward).CaptureOnly()))
             .Add(Wanderer, Kind(Wanderer, MovementRule.Step(DirectionSets.Diagonal)))
+            .Add(Jumper, Kind(Jumper, MovementRule.Jump(DirectionSets.Orthogonal)))
+            .Add(Choosy, Kind(Choosy, MovementRule.Jump(DirectionSets.Orthogonal).Shunning([Cannon])))
     );
 
     [Fact]
@@ -271,6 +275,91 @@ public sealed class MoveGeneratorTest
 
         // Assert
         Assert.Equal([2], Targets(moves));
+    }
+
+    [Fact]
+    public void MovesFrom_WhenAJumperHasEnemiesToJumpOneAfterAnother_MayStopAfterEachTakingThoseItJumped()
+    {
+        // Arrange
+        Piece first = Enemy(Stepper);
+        Position position = Position.Empty
+            .Place(new CellId(0), Friend(Jumper))
+            .Place(new CellId(1), first)
+            .Place(new CellId(3), Enemy(Stepper));
+
+        // Act
+        ImmutableList<Move> moves = this._generator.MovesFrom(position, new CellId(0), MySeat, IsEnemy);
+
+        // Assert
+        Assert.Equal(
+            ["2 over 1 taking stepper", "4 over 1,3 taking stepper"],
+            moves.Select(move =>
+                $"{move.To.Value} over {string.Join(',', move.Jumped.Select(cell => cell.Value))} taking "
+                + move.Captured?.Kind.Value
+            )
+        );
+        Assert.Same(first, moves[0].Captured);
+    }
+
+    [Fact]
+    public void MovesFrom_WhenAJumpersNeighboursAreFriendsOrHaveNoEmptyCellBeyond_CannotMove()
+    {
+        // Arrange - a friend to the right; to the left, an enemy, with a friend beyond it
+        Position position = Position.Empty
+            .Place(new CellId(2), Friend(Jumper))
+            .Place(new CellId(3), Friend(Stepper))
+            .Place(new CellId(1), Enemy(Stepper))
+            .Place(new CellId(0), Friend(Stepper));
+
+        // Act
+        ImmutableList<Move> moves = this._generator.MovesFrom(position, new CellId(2), MySeat, IsEnemy);
+
+        // Assert
+        Assert.Empty(moves);
+    }
+
+    [Fact]
+    public void MovesFrom_WhenAJumpersEnemyIsShunnedOrAtTheEdge_CannotJumpIt()
+    {
+        // Arrange - to the right, an enemy on the last cell; to the left, an enemy Cannon, which it shuns
+        Position position = Position.Empty
+            .Place(new CellId(4), Friend(Choosy))
+            .Place(new CellId(5), Enemy(Stepper))
+            .Place(new CellId(3), Enemy(Cannon));
+
+        // Act
+        ImmutableList<Move> moves = this._generator.MovesFrom(position, new CellId(4), MySeat, IsEnemy);
+
+        // Assert
+        Assert.Empty(moves);
+    }
+
+    [Fact]
+    public void AttacksFrom_WhenAJumperHasAnEmptyCellBeyondANeighbour_AttacksThatNeighbour()
+    {
+        // Arrange - on the second cell, with nothing beyond the first
+        Position position = Position.Empty.Place(new CellId(1), Friend(Jumper));
+
+        // Act
+        ImmutableList<Attack> attacks = this._generator.AttacksFrom(position, new CellId(1), MySeat);
+
+        // Assert
+        Assert.Equal(2, Assert.Single(attacks).Target.Value);
+    }
+
+    [Fact]
+    public void AttacksFrom_WhenAJumpersOnlyCellBeyondIsTaken_AttacksNothing()
+    {
+        // Arrange - on the last cell, a friend two cells to the left
+        Position position = Position.Empty
+            .Place(new CellId(5), Friend(Jumper))
+            .Place(new CellId(3), Friend(Stepper));
+
+        // Act
+        ImmutableList<Attack> attacks = this._generator.AttacksFrom(position, new CellId(5), MySeat);
+
+        // Assert
+        Assert.Empty(attacks);
     }
 
     [Fact]

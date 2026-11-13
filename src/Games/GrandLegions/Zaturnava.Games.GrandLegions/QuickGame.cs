@@ -96,6 +96,12 @@ public sealed record QuickGame(
     public bool HasEdgePalaces { get; init; }
 
     /// <summary>
+    /// The edition of the catalogue its armies are picked from (<see cref="GrandPiece.Edition"/>): the first, 0,
+    /// unless a game is dealt another (<see cref="ArmyDealing.Edition"/>).
+    /// </summary>
+    public int Edition { get; init; }
+
+    /// <summary>
     /// Every square of its kingdom, as seat 0 sees it, from the bottom-left corner, row by row from the back.
     /// </summary>
     public ImmutableList<ArmySquare> Kingdom =>

@@ -30,4 +30,7 @@ public sealed record ArmyFill(
     /// (<see cref="GameState.HasEdgePalaces"/>): never, in a game dealt before it could.
     /// </summary>
     public bool HasEdgePalaces { get; init; }
+
+    /// <summary>The edition of the pieces it is filled from (<see cref="GameState.Edition"/>).</summary>
+    public int Edition { get; init; }
 }

@@ -97,7 +97,7 @@ public sealed class GrandLegionsPiecesTest
 
         // Assert
         Assert.Equal(
-            "cannon:Cannon,elephant:Elephant,pawn:Pawn,star:Fairy/General/Gold/Silver,sword:Soldier",
+            "cannon:Cannon,elephant:Elephant,king:King,pawn:Pawn,star:Fairy/General/Gold/Silver,sword:Soldier",
             string.Join(
                 ',',
                 shared
@@ -237,7 +237,7 @@ public sealed class GrandLegionsPiecesTest
 
         // Assert
         Assert.Equal(
-            (39, 7, 10, 8, 11, 3),
+            (43, 9, 10, 9, 11, 4),
             (
                 GrandLegionsPieces.ById.Count,
                 counts[PieceClass.Leader],

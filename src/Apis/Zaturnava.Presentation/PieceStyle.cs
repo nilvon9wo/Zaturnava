@@ -62,7 +62,8 @@ public static partial class PieceStyle
     /// alike for pieces alike (Stated): a star for every General; a shield for the Guard, a fan for the Advisor, a
     /// scroll for the Minister, a tiara for the Noble, a plumed cap for the Courtier, a sword for a Soldier; a lance
     /// with its pennant; a camel, an elephant, a giraffe, three dots for the Threeleaper, a catapult for the War
-    /// Engine; a cannon on its wheel, and a grasshopper. A piece drawn as a chess piece with more to it has here what
+    /// Engine; a cannon on its wheel, and a grasshopper; a draughtsman for the Man of Checkers, a horned helmet for
+    /// the Swede. A piece drawn as a chess piece with more to it has here what
     /// it adds (<see cref="SymbolGlyphs"/>): a Dragon its wings; the Amazon and Chancellor a small horseshoe, as they
     /// leap as a Knight does too; and the Knight's kin the mark of how they differ: the Knightrider speed lines,
     /// as it rides on, the Zebra stripes, and the Xiangqi Horse a block, as its leap may be blocked.
@@ -151,6 +152,14 @@ public static partial class PieceStyle
                 "cannon",
                 "M-0.28 0.02L0.2 -0.22L0.26 -0.1L-0.2 0.14Z"
                     + "M-0.2 0.14A0.12 0.12 0 1 1 0.04 0.14A0.12 0.12 0 1 1 -0.2 0.14Z"
+            )
+            .Add("checker", "M-0.28 -0.06A0.28 0.12 0 0 1 0.28 -0.06V0.1A0.28 0.12 0 0 1 -0.28 0.1Z")
+            .Add(
+                "viking-helmet",
+                "M-0.2 0.1Q-0.2 -0.2 0 -0.2Q0.2 -0.2 0.2 0.1Z"
+                    + "M-0.24 0.1H0.24V0.18H-0.24Z"
+                    + "M-0.18 -0.02Q-0.36 -0.08 -0.34 -0.3Q-0.28 -0.12 -0.14 -0.1Z"
+                    + "M0.14 -0.1Q0.28 -0.12 0.34 -0.3Q0.36 -0.08 0.18 -0.02Z"
             )
             .Add(
                 "grasshopper",
