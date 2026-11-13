@@ -34,6 +34,7 @@ internal static class SelfPlayCommand
         new TacticianBot(Random.Shared),
         new SageBot(Random.Shared),
         new ArgusBot(Random.Shared),
+        new CroesusBot(Random.Shared),
         new MidasBot(Random.Shared),
         new SolomonBot(Random.Shared),
         NoviceBot.Icarus(Random.Shared),
