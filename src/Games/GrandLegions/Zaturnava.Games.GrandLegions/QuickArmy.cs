@@ -10,7 +10,8 @@ namespace Net.NowhereAtAll.Zaturnava.Games.GrandLegions;
 /// minimum of each class, the one leader among them, slot by slot in a random order, each piece drawn evenly from
 /// those of its class the budget can still pay for, leaving enough for the slots still to fill at their classes'
 /// cheapest (Proposed); so that dear pieces come seldom, as they seldom fit, but no class is always left what the
-/// others did not spend, and no piece comes the more for being the next cheaper than another. The class's cheapest,
+/// others did not spend, and no piece comes the more for being the next cheaper than another; from
+/// <see cref="EvenSpreadEdition"/> on, within the slot's even share of what is left (Stated). The class's cheapest,
 /// if even that does not fit. Then, while the kingdom has
 /// room and the budget allows, more pieces at random, never another leader. Pieces a palace holds are left out unless
 /// the game's armies may hold them, and then no more than its palace has room for; pieces a river holds, unless the
@@ -22,6 +23,12 @@ namespace Net.NowhereAtAll.Zaturnava.Games.GrandLegions;
 /// </summary>
 public static class QuickArmy
 {
+    /// <summary>
+    /// The edition (<see cref="QuickGame.Edition"/>) from which each slot may spend only its even share of what the
+    /// budget leaves; a game dealt before replays as it was dealt.
+    /// </summary>
+    public const int EvenSpreadEdition = 3;
+
     private static readonly ImmutableList<PieceClass> Classes = [Leader, Heavy, Artillery, Cavalry, Infantry];
 
     /// <summary>
@@ -85,15 +92,39 @@ public static class QuickArmy
                         Within(
                             Fitting(eligible, army, room),
                             slot.Class,
-                            game.Budget
-                                - army.Sum(piece => piece.Value)
-                                - slot.Later.Sum(later => Cheapest(eligible, later).Value)
+                            LeftFor(game, eligible, army, slot.Class, [.. slot.Later])
                         ),
                         random
                     )
                 )
             );
         return Filled(eligible, drawn, game, random);
+    }
+
+    /// <summary>
+    /// The most a slot may spend: what the budget leaves once the slots still to fill are paid for at their classes'
+    /// cheapest. From <see cref="EvenSpreadEdition"/> on, only the slot's even share of that, past its class's
+    /// cheapest (Stated 2026-11-13, the user's answer to OQ13: so that the first slots do not spend what the last
+    /// needed, and dear pieces, like the Amazon, come very seldom).
+    /// </summary>
+    private static int LeftFor(
+        QuickGame game,
+        ImmutableList<GrandPiece> eligible,
+        ImmutableList<GrandPiece> army,
+        PieceClass pieceClass,
+        ImmutableList<PieceClass> later
+    )
+    {
+        int left = game.Budget
+            - army.Sum(piece => piece.Value)
+            - later.Sum(each => Cheapest(eligible, each).Value);
+        if (game.Edition < EvenSpreadEdition)
+        {
+            return left;
+        }
+
+        int cheapest = Cheapest(eligible, pieceClass).Value;
+        return cheapest + (Math.Max(0, left - cheapest) / (later.Count + 1));
     }
 
     /// <summary>Every square of the game's kingdom a palace may stand about.</summary>

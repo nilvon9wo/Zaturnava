@@ -27,9 +27,10 @@ public static class ScenarioStart
     /// <summary>
     /// The edition of a ruleset's pieces and rules a game dealt now is dealt from (<see cref="GameState.Edition"/>): 1,
     /// since Grand Legions gained the Checkers and Tafl pieces (2026-11-13); 2, since it gained mercenaries (the same
-    /// day). A game dealt before says none, and is 0.
+    /// day); 3, since its quick armies spread their budget evenly (the same day). A game dealt before says none, and
+    /// is 0.
     /// </summary>
-    public const int Edition = 2;
+    public const int Edition = 3;
 
     private const string Argument = "scenario";
     private const string SeedArgument = "seed";

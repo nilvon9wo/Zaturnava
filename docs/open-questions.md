@@ -19,8 +19,12 @@ the rest of the game is playable ([specification Q5](grand/specification.md#9-op
 ## OQ8 The price of the Tafl King's escape
 
 The Tafl King now escapes the board from its far corner, and comes back on doubles
-([Jumping and custody](grand/pieces.md#jumping-and-custody)). What should that power add to its value (71)?
-Until answered, it adds nothing.
+([Custody](grand/pieces.md#jumping-and-custody): the section that also tells of the Checkers pieces' jumps; the
+Tafl King itself does not jump). What should that power add to its value (71)? Until answered, it adds nothing.
+
+The designer's view (2026-11-13): the escape gives no move or capture of its own; it is an insurance policy. But
+71 may underrate how fast the Tafl King moves, and that it may capture up to three pieces at once by custody.
+Still open: whether its value should rise for those, and by how much.
 
 ## OQ12 The worth of palace lines
 
@@ -37,24 +41,34 @@ designer's question of 2026-11-13)? Until answered, the prices stand.
 
 ## OQ13 Quick armies full of the cheapest pieces
 
-Quick armies come with Advisors and Swedes far more often than other pieces (the designer's report of
-2026-11-13). Measured over 2,000 armies of each size, in games whose armies may hold palace pieces:
+Quick armies came with Advisors and Swedes far more often than other pieces (the designer's report of
+2026-11-13). Answered in part (*Stated*, 2026-11-13): what the budget leaves past the minimums is now shared evenly
+between the slots, so that Amazons are very rare. Games dealt from edition 3 on are dealt so; games dealt before
+replay as they were. Measured over 2,000 armies of each size, without palace pieces:
 
-| Size | Budget | Least army meeting the minimums | Left for choice | Advisor (2) in | Swede in | Makruk Pawn in |
+| Size | Dealing | Swede in | Amazon in | Pieces | Spent | Slots at their class's cheapest |
 |---|---|---|---|---|---|---|
-| Small | 110 | about 78 | about 32, over 6 slots | 56% | 18% | 35% |
-| Medium | 125 | about 93 | about 32, over 8 slots | 60% | 20% | 44% |
-| Large | 200 | about 157 | about 43, over 16 slots | 96% (3.4 each) | 82% (1.3 each) | 64% |
+| Small | before | 22% | 0% | 7.4 | 109.8 | 28% |
+| Small | even | 32% | 0% | 8.4 | 109.4 | 27% |
+| Medium | before | 22% | 0% | 8.0 | 121.9 | 33% |
+| Medium | even | 29% | 0% | 8.0 | 115.1 | 32% |
+| Large | before | 85% | 3.1% | 16.1 | 199.9 | 51% |
+| Large | even | 77% | 0% | 17.8 | 196.7 | 43% |
 
-The dealing is working as written ([QuickArmy](../src/Games/GrandLegions/Zaturnava.Games.GrandLegions/QuickArmy.cs)):
-slot by slot, each piece is drawn from those its class can still pay for, leaving enough for the cheapest piece
-of every slot still to fill. With so little left for choice, most slots can pay only for their class's cheapest:
-the Advisor (2) among infantry, the Swede (19 on the large board) among heavy pieces, the Grasshopper among
-artillery. A slot drawn early may spend most of what is left, so the slots after it get the cheapest.
+On the small and medium boards, the Swede, the cheapest heavy piece, now comes a little more often: a heavy slot's
+even share often reaches only the Swede.
 
-Which should change?
+Still open: the budgets. The designer meant each to be the sum, over the classes, of the class's average price
+times its minimum, with a little left over. At today's prices (each board its own), the sum, counted with and
+without the three pieces priced for promoting into a leader (the Shogi Pawn, the Lance, the Man, each 50 or more),
+is:
 
-- the large game's budget (the minimums cost about 157 of its 200, at the large board's prices), or its minimums;
-- the dealing: share what is left more evenly between the slots, so that later ones are not left the cheapest,
-  at the cost of the dearest pieces (the Queen, the Amazon) coming hardly ever;
-- or nothing: an army of many cheap pieces is what such a budget buys.
+| Size | Budget | Sum, every piece | Sum, without those three |
+|---|---|---|---|
+| Small | 110 | 142 | 112 |
+| Medium | 125 | 173 | 130 |
+| Large | 200 | 330 | 246 |
+
+So the small and medium budgets match the sum without those three pieces, with nothing left over. The large budget
+falls about 46 short: its board's prices are higher. Should the budgets be raised to the sum, plus how much left
+over, and should those three pieces count in the averages?
