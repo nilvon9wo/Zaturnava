@@ -93,6 +93,16 @@ public sealed record Chaturaji2027Variant(
     }
 
     /// <summary>
+    /// The kinds that swap back to back with an ally's piece of these kinds directly ahead, facing them (rules.md §3):
+    /// the <see cref="Pawns"/>, unless set.
+    /// </summary>
+    public ImmutableHashSet<PieceKindId> Swappers
+    {
+        get => field ?? this.Pawns;
+        init;
+    }
+
+    /// <summary>
     /// Whether a game's creator may have the <see cref="Promotables"/> promoted at the edge to their right too, as at
     /// the far edge (<see cref="GameState.PromotesAtSide"/>): not, unless set.
     /// </summary>

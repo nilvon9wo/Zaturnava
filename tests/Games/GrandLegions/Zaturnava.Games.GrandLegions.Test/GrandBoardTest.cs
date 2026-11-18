@@ -166,6 +166,32 @@ public sealed class GrandBoardTest
     }
 
     [Theory]
+    [InlineData(Rivers.None, 1, 1, 7, 7, false)]
+    [InlineData(Rivers.EastWest, 1, 1, 1, 7, true)]
+    [InlineData(Rivers.EastWest, 1, 1, 7, 2, false)]
+    [InlineData(Rivers.EastWest, 1, 4, 1, 7, false)]
+    [InlineData(Rivers.NorthSouth, 1, 1, 7, 1, true)]
+    [InlineData(Rivers.Both, 7, 1, 7, 7, true)]
+    public void Crosses_WhenTwoCellsLieOnOppositeSidesOfARiver_IsTrue(
+        Rivers rivers,
+        int fromColumn,
+        int fromRow,
+        int toColumn,
+        int toRow,
+        bool expected
+    )
+    {
+        // Arrange - a 9 × 9 board, its rivers through the middle cells, column and row 4
+        GrandBoard board = new(9, 9, 3, 3, Rivers: rivers);
+
+        // Act
+        bool crosses = board.Crosses((fromColumn, fromRow), (toColumn, toRow));
+
+        // Assert
+        Assert.Equal(expected, crosses);
+    }
+
+    [Theory]
     [InlineData(0, false)]
     [InlineData(4, true)]
     public void IsInRiver_WhenTheRiverIsAroundAKingdomAcrossTheMiddle_IsFalseOfTheKingdomsCells(

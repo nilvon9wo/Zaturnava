@@ -43,6 +43,42 @@ public sealed class RiverCrossingTest
     }
 
     [Theory]
+    [InlineData(8, 16, 18, true)]
+    [InlineData(8, 16, 10, false)]
+    [InlineData(8, 10, 12, true)]
+    [InlineData(8, 10, 14, false)]
+    [InlineData(7, 16, 18, false)]
+    [InlineData(7, 16, 10, true)]
+    public void On_WhenAXiangqiElephantStandsAcrossARiverRunningThroughItsKingdom_KeepsItWhereItStands(
+        int edition,
+        int fromColumn,
+        int toColumn,
+        bool mayMove
+    )
+    {
+        // Arrange - seat 0's kingdom 23 wide on a 26 × 26 board, a north-south river through it between columns 12 and
+        // 13 (playtest 2026-11-15); before edition 8, nowhere across from the kingdom's corner
+        QuickGame game = QuickGame.Medium with { Width = 26, Height = 26, KingdomWidth = 23, KingdomDepth = 3 };
+        GameState state = new(Position.Empty, [], TeamGraph.FromTeams([]), null, 0, [], [])
+        {
+            Terrain = 1,
+            Edition = edition,
+        };
+        SquareGridTopology grid = new(26, 26);
+        Piece elephant = new(new PieceId(1), GrandLegionsPieces.XiangqiElephant, new SeatId(0));
+
+        // Act
+        bool isAllowed = RiverCrossing.On(game)(
+            state,
+            grid,
+            new Move(elephant, grid.CellAt(fromColumn, 0), grid.CellAt(toColumn, 2), null)
+        );
+
+        // Assert
+        Assert.Equal(mayMove, isAllowed);
+    }
+
+    [Theory]
     [InlineData(1, 5, 6, 3, true)]
     [InlineData(1, 5, 4, 3, true)]
     [InlineData(1, 2, 3, 3, false)]

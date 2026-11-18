@@ -15,6 +15,13 @@ namespace Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
 /// </summary>
 internal sealed class Custody(SquareGridTopology grid, ImmutableHashSet<PieceKindId> custodians)
 {
+    /// <summary>
+    /// The edition from which an ally's piece holds for the custodian as well as any its mover commands, and a
+    /// custodian whose throne an enemy holds is berserk, taking any piece, friend or foe, held between it and any other
+    /// (Stated, playtest 2026-11-15, B7). Before it, only pieces the mover commanded held, and none was berserk.
+    /// </summary>
+    public const int AlliedAndBerserkEdition = 8;
+
     private static readonly ImmutableList<Direction> Orthogonal = [new(1, 0), new(-1, 0), new(0, 1), new(0, -1)];
 
     private readonly SquareGridTopology _grid = grid;

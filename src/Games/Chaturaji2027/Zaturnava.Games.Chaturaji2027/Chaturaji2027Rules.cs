@@ -147,7 +147,8 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             this._grid,
             this._variant.InitialPosition(this._grid),
             this._variant.Leaders,
-            this._variant.Scoring
+            this._variant.Scoring,
+            this._variant.Drafting?.PalaceBound ?? []
         );
         this._measures = new ArmyMeasures(
             this._grid,
@@ -600,8 +601,11 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
                     "Promoted, on reaching the far edge, into a captured piece."),
                 (this._variant.Promotables.Contains(kind) && isHeld,
                     "Promoted, should it ever leave its palace and reach the far edge, into a captured piece."),
-                (this._variant.Pawns.Contains(kind),
+                (this._variant.Swappers.Contains(kind) && this._variant.Swappers.SetEquals(this._variant.Pawns),
                     "Swaps places with an allied Pawn straight ahead of it, the two back to back."),
+                (this._variant.Swappers.Contains(kind) && !this._variant.Swappers.SetEquals(this._variant.Pawns),
+                    "Swaps places with an ally's piece straight ahead of it that moves only forward too, the two back "
+                        + "to back."),
             }
             .Where(power => power.Has)
             .Select(power => power.Power);
@@ -635,10 +639,11 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
                 (this._variant.Custodians.Contains(kind),
                     "Takes by custody: it takes nothing where it lands. Instead, when it moves next to an enemy "
                     + "piece, in the same row or column, and just beyond that enemy, on the same line, stands any "
-                    + "piece its player commands then (one of their own, or of an army they command), that enemy "
-                    + "is taken: held between the two. For example, an enemy on d4 and your Pawn on d5: moving to "
-                    + "d3, it takes the enemy. Every enemy held so on its other sides is taken in the same move, "
-                    + "up to three at once."),
+                    + "piece of its player's team or of an army they command, that enemy is taken: held between "
+                    + "the two. For example, an enemy on d4 and your Pawn on d5: moving to d3, it takes the enemy. "
+                    + "Every enemy held so on its other sides is taken in the same move, up to three at once. "
+                    + "Berserk while an enemy holds its throne: it takes any piece, friend or foe, so held between "
+                    + "it and any other piece."),
                 (this._variant.Mercenaries.Contains(kind) && !this._variant.Leaders.Contains(kind),
                     "Mercenary: whoever holds it prisoner may hire it on their turn, for 110% of what it cost last "
                     + "(its value, the first time), paid from their points: it becomes theirs. On a later step they "
@@ -997,9 +1002,9 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     private bool IsSwap(GameState state, CellId cell, Piece piece, CellId? target)
     {
         Piece? other = target is { } ahead ? state.Position.PieceAt(ahead) : null;
-        return this.IsPawn(piece)
+        return this._variant.Swappers.Contains(piece.Kind)
             && other is { } facing
-            && this.IsPawn(facing)
+            && this._variant.Swappers.Contains(facing.Kind)
             && facing.Owner != piece.Owner
             && state.Teams.AreAllied(facing.Owner, piece.Owner)
             && this.Ahead(state, target.GetValueOrDefault(), facing) is { } behind
@@ -1589,6 +1594,8 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             : castled is { } rook
                 ? relocated.Relocate(rook.From, rook.To)
                 : relocated;
+        bool isBerserk = state.Edition >= Custody.AlliedAndBerserkEdition
+            && this._control.OccupierOf(state, mover.Owner) is not null;
         ImmutableList<CellId> taken =
         [
             .. this.JumpedBy(state, move, mover, MayTake),
@@ -1596,8 +1603,8 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
                 position,
                 move.To,
                 mover,
-                target => !state.Teams.AreAllied(target.Owner, move.Actor) && MayTake(target),
-                holder => this._control.ArmiesOf(state, move.Actor).Contains(holder.Owner)
+                target => isBerserk || (!state.Teams.AreAllied(target.Owner, move.Actor) && MayTake(target)),
+                holder => isBerserk || this.MayHoldInCustody(state, holder, move.Actor)
             ),
         ];
         PieceMoved went = new(mover, move.From, move.To, move.Actor);
@@ -1614,6 +1621,14 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         );
         return this.EnteredThrone(all, mover, move.To);
     }
+
+    /// <summary>
+    /// Whether <paramref name="holder"/> holds a piece in custody for <paramref name="mover"/>: a piece of an army the
+    /// mover commands, or, from <see cref="Custody.AlliedAndBerserkEdition"/>, of the mover's team.
+    /// </summary>
+    private bool MayHoldInCustody(GameState state, Piece holder, SeatId mover) =>
+        this._control.ArmiesOf(state, mover).Contains(holder.Owner)
+        || (state.Edition >= Custody.AlliedAndBerserkEdition && state.Teams.AreAllied(holder.Owner, mover));
 
     /// <summary>The cells of the pieces the move jumps over, and takes, in order; none unless it jumps.</summary>
     private ImmutableList<CellId> JumpedBy(GameState state, MoveAction move, Piece mover, Func<Piece, bool> mayTake) =>

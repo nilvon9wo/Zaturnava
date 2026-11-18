@@ -13,12 +13,12 @@ Statuses (the specification's P1): **Done** (implemented and tested), **Done, pa
 | Id | Item | Status | Notes |
 |---|---|---|---|
 | B1 | Promotion at the right-hand edge, a game option, off by default | Done | Lobby checkbox for Grand Legions, remembered as last set; the far edge's promotion into a captured piece, at the edge to the piece's right as its army faces (Proposed: a piece's own promotion still needs the far edge). Scenario field `promotesAtSide`. |
-| B2 | Back-to-back: Black d2 cannot swap with Green d3 | To do | |
-| B3 | Janggi General captured scores nothing, is never ransomed | To do | Only the Tafl King leaves by escape. |
-| B4 | Janggi Elephant beside a river cannot move right | To do | |
-| B5 | Xiangqi Elephant across the river on a 26 × 26 board, 23 × 3 kingdoms | To do | Relative to the actual river. |
+| B2 | Back-to-back: Black d2 cannot swap with Green d3 | Done | Only Pawns could swap in Grand Legions. Now any two allied pieces that move only forward swap: Pawns of every kind, the Lance, the Berolina Pawn and the Man (`Swappers`). Guide text says so. Tests: `GrandLegionsRulesTest` back-to-back theories; scenario `forward-only-swaps`. |
+| B3 | Janggi General captured scores nothing, is never ransomed | Investigated | A plain capture by an enemy scores 68 and takes the General prisoner (test `Apply_WhenAThreeleaperTakesAnEnemyJanggiGeneral_ScoresItAndHoldsItPrisoner`). The rules give 0 and no ransom only when an ally takes it (§6.4: given back) or its seat has retired. The game id is asked in open-questions.md. |
+| B4 | Janggi Elephant beside a river cannot move right | Investigated | Rivers do not hold it back: a test leaps it over a river to its right. It is blocked only by a piece on its leg (one step, then the first diagonal). The game id is asked in open-questions.md. |
+| B5 | Xiangqi Elephant across the river on a 26 × 26 board, 23 × 3 kingdoms | Done | From edition 8 the Elephant may not cross the river between where it stands and where it would go, nor enter a cell the river cuts; one standing across from its kingdom's corner moves on that side. Tests: `RiverCrossingTest`, `GrandBoardTest.Crosses_*`. |
 | B6 | Guard card shows general diagonals | To do | With C2. |
-| B7 | Tafl King and Swede: custody with allies and pieces controlled; berserk when their throne is enemy-held | To do | |
+| B7 | Tafl King and Swede: custody with allies and pieces controlled; berserk when their throne is enemy-held | Done | From edition 8 an ally's piece holds as well as any piece the mover commands. While an enemy holds the custodian's throne it is berserk and takes any piece, friend or foe, held between it and any other piece, several at once. Guide text updated. Tests: `JumpAndCustodyTest` (ordinary, with allies, berserk on and off, friend and foe at once). |
 
 ## C. Piece cards
 
@@ -82,12 +82,12 @@ Statuses (the specification's P1): **Done** (implemented and tested), **Done, pa
 | Id | Item | Status | Notes |
 |---|---|---|---|
 | X1 | Face-off flashy; Pass neutral, left of End game; Let Green take over left of Pass, in the ally's colour | To do | |
-| X2 | Palace-bound pieces put back outside a palace not full | To do | |
+| X2 | Palace-bound pieces put back outside a palace not full | Done | From edition 8, a palace-bound piece going home (ransom, gift or escape), with its own and its kind's squares taken, goes to the free palace squares nearest its own; outside only when the palace is full. Tests: `PalaceTest`, `GrandLegionsRulesTest`. |
 | X3 | Meandering on near-empty boards | To do | |
 | X4 | Ransoms offered and accepted when hopeless or harmful | To do | |
 | X5 | Safe captures of leaders and strong pieces ignored | To do | |
 | X6 | Rooks sacrificed for Pawns | To do | |
-| X7 | Dice: doubles favouring enemy bots, in streaks | To do | |
+| X7 | Dice: doubles favouring enemy bots, in streaks | Investigated | Every seat's dice, people's and bots', come from one `RandomDice` over `Random.Shared`, each face equally likely; doubles are by face (3 + 4 is not doubles), so 1 roll in 6. A 60,000-roll test finds doubles 1 in 6, and 1 in 6 just after doubles too (no streaks). The roll-off for first turn rerolls ties, which can look like a run of doubles. No change. |
 
 ## Said while playing (2026-11-13)
 

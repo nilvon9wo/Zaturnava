@@ -145,6 +145,73 @@ public sealed class JumpAndCustodyTest
         );
     }
 
+    [Theory]
+    [InlineData(8, "6")]
+    [InlineData(7, "")]
+    public void Apply_WhenACustodianHoldsAnEnemyAgainstAnAlly_TakesItFromEditionEight(int edition, string expected)
+    {
+        // Arrange - the Elephant goes a1 to a3: Yellow's Horse on b3, Green's Pawn, Black's ally, on c3 beyond it;
+        // Green's Raja on f8, so that Green is Black's ally, not an army it commands (playtest 2026-11-15, B7: "able
+        // to use allies")
+        GameState state = BlackToMove(
+            ElephantDie,
+            (Cell(0, 0), BlackElephant),
+            (Cell(1, 2), FirstHorse),
+            (Cell(2, 2), GreenPawn),
+            (Cell(5, 7), new Piece(new PieceId(12), Chaturaji2027Pieces.Raja, Green))
+        ) with
+        {
+            Edition = edition,
+        };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new MoveAction(Black, Cell(0, 0), Cell(0, 2)));
+
+        // Assert
+        Assert.Equal(expected, Captured(transition));
+    }
+
+    [Theory]
+    [InlineData(8, true, "6,9")]
+    [InlineData(8, false, "")]
+    [InlineData(7, true, "")]
+    public void Apply_WhenACustodiansThroneIsHeldByAnEnemy_TakesFriendAndFoeAlikeHeldAgainstAnyPiece(
+        int edition,
+        bool isThroneHeld,
+        string expected
+    )
+    {
+        // Arrange - the Elephant goes a1 to a3: Green's Pawn, Black's ally, on b3, with Yellow's Horse on c3 beyond;
+        // Yellow's Horse on a4, with another of Yellow's on a5 beyond. Its throne, d1, held by Yellow's Raja, Yellow
+        // moves it for Black (rules.md §6.3); else Black moves it (B7: berserk)
+        GameState placed = BlackToMove(
+            ElephantDie,
+            (Cell(0, 0), BlackElephant),
+            (Cell(1, 2), GreenPawn),
+            (Cell(2, 2), SecondHorse),
+            (Cell(0, 3), FirstHorse),
+            (Cell(0, 4), ThirdHorse)
+        ) with
+        {
+            Edition = edition,
+        };
+        GameState state = isThroneHeld
+            ? placed with
+            {
+                Position = new Position(placed.Position.Occupants.Remove(Cell(7, 7))).Place(Cell(3, 0), YellowRaja),
+                DecidingSeat = Yellow,
+                ActingFor = Black,
+            }
+            : placed;
+        SeatId mover = isThroneHeld ? Yellow : Black;
+
+        // Act
+        Transition transition = this._rules.Apply(state, new MoveAction(mover, Cell(0, 0), Cell(0, 2)));
+
+        // Assert
+        Assert.Equal(expected, Captured(transition));
+    }
+
     [Fact]
     public void Apply_WhenNoEnemyNextToTheCustodianHasOneOfItsOwnBeyond_TakesNothing()
     {
@@ -199,6 +266,13 @@ public sealed class JumpAndCustodyTest
     }
 
     private static CellId Cell(int column, int row) => Grid.CellAt(column, row);
+
+    /// <summary>The ids of the pieces taken, in order of id.</summary>
+    private static string Captured(Transition transition) =>
+        string.Join(
+            ',',
+            transition.Events.OfType<PieceCaptured>().Select(captured => captured.Piece.Id.Value).Order()
+        );
 
     /// <summary>Black to move, the die rolled, its Raja on h1 and Yellow's on h8, with the pieces placed.</summary>
     private static GameState BlackToMove(int die, params (CellId Cell, Piece Piece)[] placements) =>

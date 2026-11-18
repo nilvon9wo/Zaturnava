@@ -585,6 +585,162 @@ public sealed class GrandLegionsRulesTest
         Assert.Equal(1d, near, 6);
     }
 
+    [Fact]
+    public void Apply_WhenAThreeleaperTakesAnEnemyJanggiGeneral_ScoresItAndHoldsItPrisoner()
+    {
+        // Arrange - Black's Threeleaper on c1 leaps three up onto Yellow's Janggi General on c4 (playtest 2026-11-15)
+        Chaturaji2027Rules rules = GrandLegionsRules.RulesOf(QuickGame.Medium);
+        int side = (int)Math.Sqrt(rules.Topology.Cells.Count);
+        CellId from = new(2);
+        CellId to = new((3 * side) + 2);
+        Piece general = new(new PieceId(7), GrandLegionsPieces.JanggiGeneral, new SeatId(1));
+        GameState state = BlackDeciding(rules, (from, BlackPiece(GrandLegionsPieces.Threeleaper)), (to, general));
+
+        // Act
+        GameState taken = rules.Apply(state, new MoveAction(new SeatId(0), from, to)).State;
+
+        // Assert
+        Assert.Equal(
+            (68, true),
+            (taken.Scores[new SeatId(0)], taken.Prisoners.Contains(new Prisoner(general, new SeatId(0))))
+        );
+    }
+
+    [Theory]
+    [InlineData("western-pawn", "western-pawn")]
+    [InlineData("lance", "shogi-pawn")]
+    [InlineData("makruk-pawn", "western-pawn")]
+    [InlineData("berolina-pawn", "man")]
+    public void Apply_WhenBlacksPieceMovesOntoGreensBackToBack_SwapsThemIfBothMoveOnlyForward(
+        string black,
+        string green
+    )
+    {
+        // Arrange - Black's piece on d2, facing up, and Green's on d3, facing down (playtest 2026-11-15)
+        (Chaturaji2027Rules rules, GameState state, CellId d2, CellId d3) = BackToBack(black, green);
+
+        // Act
+        GameState moved = rules.Apply(state, new MoveAction(new SeatId(0), d2, d3)).State;
+
+        // Assert
+        Assert.Equal(
+            (new PieceKindId(green), new PieceKindId(black)),
+            (moved.Position.PieceAt(d2)?.Kind, moved.Position.PieceAt(d3)?.Kind)
+        );
+    }
+
+    [Fact]
+    public void Apply_WhenAJanggiElephantLeapsOverARiverToItsRight_LetsItAsNoRiverHoldsItBack()
+    {
+        // Arrange - on the large board, a river north to south between f and g; Black's Janggi Elephant on f2 leaps
+        // one right and two diagonally on, to i4 (playtest 2026-11-15: it "cannot move anywhere to its right")
+        Chaturaji2027Rules rules = GrandLegionsRules.RulesOf(QuickGame.Large);
+        int side = (int)Math.Sqrt(rules.Topology.Cells.Count);
+        CellId f2 = new(side + 5);
+        CellId i4 = new((3 * side) + 8);
+        GameState state = BlackDeciding(rules, (f2, BlackPiece(GrandLegionsPieces.JanggiElephant))) with
+        {
+            Terrain = 1,
+        };
+
+        // Act
+        GameState moved = rules.Apply(state, new MoveAction(new SeatId(0), f2, i4)).State;
+
+        // Assert
+        Assert.Equal(GrandLegionsPieces.JanggiElephant, moved.Position.PieceAt(i4)?.Kind);
+    }
+
+    [Theory]
+    [InlineData(8, 18, true)]
+    [InlineData(7, 18, false)]
+    public void Apply_WhenAPalaceBoundPieceGoesHomeWithItsSquareTaken_StaysInThePalaceWhileItHasRoom(
+        int edition,
+        int expectedCell,
+        bool isPlaced
+    )
+    {
+        // Arrange - Black's Advisor started on b1, now taken by a Rook; its palace a1-c3 full but for c3, which is
+        // as near b1 as d1, d2 and d3 outside it (playtest 2026-11-15: Advisors escaping a palace not full)
+        Chaturaji2027Rules rules = GrandLegionsRules.RulesOf(QuickGame.Medium);
+        Piece advisor = new(new PieceId(5), GrandLegionsPieces.XiangqiAdvisor, new SeatId(0));
+        int[] palace = [0, 1, 2, 8, 9, 10, 16, 17, 18];
+        (CellId, Piece)[] occupied =
+        [
+            .. palace
+                .Where(cell => cell is not (9 or 18))
+                .Select(cell =>
+                    (new CellId(cell), new Piece(new PieceId(20 + cell), GrandLegionsPieces.Rook, new SeatId(0)))
+                ),
+        ];
+        GameState state = BlackDeciding(rules, occupied) with
+        {
+            Edition = edition,
+            Start = Position.Empty.Place(new CellId(1), advisor),
+            Prisoners = [new Prisoner(advisor, new SeatId(0))],
+            Palaces = ImmutableDictionary<SeatId, ImmutableList<CellId>>.Empty.Add(
+                new SeatId(0),
+                [.. palace.Select(cell => new CellId(cell))]
+            ),
+        };
+
+        // Act
+        GameState given = rules.Apply(state, new OfferAction(new SeatId(0), new SeatId(0), [advisor.Id], [])).State;
+
+        // Assert
+        Assert.Equal(isPlaced, given.Position.PieceAt(new CellId(expectedCell)) == advisor);
+    }
+
+    [Theory]
+    [InlineData("lance", true)]
+    [InlineData("man", true)]
+    [InlineData("rook", false)]
+    public void GuideOf_WhenAPieceMovesOnlyForward_TellsOfTheSwap(string kind, bool isTold)
+    {
+        // Arrange
+        Chaturaji2027Rules rules = GrandLegionsRules.RulesOf(QuickGame.Medium);
+
+        // Act
+        PieceGuide guide = rules.GuideOf(new PieceKindId(kind));
+
+        // Assert
+        Assert.Equal(isTold, guide.Powers.Any(power => power.StartsWith("Swaps places", StringComparison.Ordinal)));
+    }
+
+    [Theory]
+    [InlineData("rook", "western-pawn")]
+    [InlineData("western-pawn", "xiangqi-soldier")]
+    public void Apply_WhenEitherPieceBackToBackMayMoveSidewaysOrBack_RefusesTheSwap(string black, string green)
+    {
+        // Arrange
+        (Chaturaji2027Rules rules, GameState state, CellId d2, CellId d3) = BackToBack(black, green);
+
+        // Act
+        Exception? refused = Record.Exception(() => rules.Apply(state, new MoveAction(new SeatId(0), d2, d3)));
+
+        // Assert
+        _ = Assert.IsType<IllegalActionException>(refused);
+    }
+
+    /// <summary>
+    /// Black's <paramref name="black"/> on d2 of the medium board, Green's <paramref name="green"/> on d3.
+    /// </summary>
+    private static (Chaturaji2027Rules Rules, GameState State, CellId D2, CellId D3) BackToBack(
+        string black,
+        string green
+    )
+    {
+        Chaturaji2027Rules rules = GrandLegionsRules.RulesOf(QuickGame.Medium);
+        int side = (int)Math.Sqrt(rules.Topology.Cells.Count);
+        CellId d2 = new(side + 3);
+        CellId d3 = new((2 * side) + 3);
+        GameState state = BlackDeciding(
+            rules,
+            (d2, new Piece(new PieceId(1), new PieceKindId(black), new SeatId(0))),
+            (d3, new Piece(new PieceId(2), new PieceKindId(green), new SeatId(2)))
+        );
+        return (rules, state, d2, d3);
+    }
+
     /// <summary>The cell of the c-file <paramref name="rows"/> rows short of Black's far edge.</summary>
     private static CellId Ahead(Chaturaji2027Rules rules, int rows)
     {
