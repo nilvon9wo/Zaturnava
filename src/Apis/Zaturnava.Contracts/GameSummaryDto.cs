@@ -43,6 +43,12 @@ public sealed record GameSummaryDto(
     /// </summary>
     public ImmutableList<int> AwaySeats { get; init; } = [];
 
+    /// <summary>
+    /// The seat to decide next, as the game was last saved; none, for a game over, or one not saved since this was
+    /// kept.
+    /// </summary>
+    public int? DecidingSeat { get; init; }
+
     /// <summary>Whether its open seats are only for players signed in: no guest may take one.</summary>
     public bool IsForPlayers { get; init; }
 }

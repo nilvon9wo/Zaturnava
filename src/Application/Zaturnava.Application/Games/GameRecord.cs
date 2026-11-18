@@ -32,6 +32,12 @@ public sealed record GameRecord(
     /// </summary>
     public bool? IsOver { get; init; }
 
+    /// <summary>
+    /// The seat to decide next, as last saved; none, for a game over, or one not saved or summarized since this was
+    /// kept.
+    /// </summary>
+    public SeatId? Deciding { get; init; }
+
     /// <summary>When the game was created; none, for a game created before this was kept.</summary>
     public DateTimeOffset? Created { get; init; }
 

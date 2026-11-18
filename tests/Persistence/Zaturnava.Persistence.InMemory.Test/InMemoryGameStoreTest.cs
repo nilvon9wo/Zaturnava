@@ -3,6 +3,7 @@ using Net.NowhereAtAll.Zaturnava.Application.Games;
 using Net.NowhereAtAll.Zaturnava.Application.Players;
 using Net.NowhereAtAll.Zaturnava.Application.Ports;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
+using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 
 namespace Net.NowhereAtAll.Zaturnava.Persistence.InMemory.Test;
 
@@ -108,16 +109,17 @@ public sealed class InMemoryGameStoreTest
     }
 
     [Fact]
-    public async Task MarkOver_WhenTheGameIsStored_KeepsWhetherItIsOver()
+    public async Task MarkSummarized_WhenTheGameIsStored_KeepsWhetherItIsOverAndWhoDecidesNext()
     {
         // Arrange
         await this.AddListed();
 
         // Act
-        await this._store.MarkOver(new GameId("a"), true, this._cancellation);
+        await this._store.MarkSummarized(new GameId("a"), false, new SeatId(2), this._cancellation);
 
         // Assert
-        Assert.Equal(true, (await this._store.Find(new GameId("a"), this._cancellation))?.IsOver);
+        GameRecord? found = await this._store.Find(new GameId("a"), this._cancellation);
+        Assert.Equal((false, new SeatId(2)), (found?.IsOver, found?.Deciding));
     }
 
     [Fact]

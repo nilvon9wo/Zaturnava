@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using Net.NowhereAtAll.Zaturnava.Application.Games;
 using Net.NowhereAtAll.Zaturnava.Application.Players;
 using Net.NowhereAtAll.Zaturnava.Application.Ports;
+using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 
 namespace Net.NowhereAtAll.Zaturnava.Persistence.InMemory;
 
@@ -51,9 +52,9 @@ public sealed class InMemoryGameStore : IGamePersisting
         return Task.FromResult(games);
     }
 
-    public Task MarkOver(GameId id, bool isOver, CancellationToken cancellationToken)
+    public Task MarkSummarized(GameId id, bool isOver, SeatId? deciding, CancellationToken cancellationToken)
     {
-        this._games[id] = this._games[id] with { IsOver = isOver };
+        this._games[id] = this._games[id] with { IsOver = isOver, Deciding = deciding };
         return Task.CompletedTask;
     }
 

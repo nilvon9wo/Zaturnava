@@ -1253,7 +1253,7 @@ public sealed class GameServiceTest
     }
 
     [Fact]
-    public async Task Summarize_WhenGamesWereSavedBeforeItWasKeptWhetherTheyAreOver_WorksItOut()
+    public async Task Summarize_WhenGamesWereSavedBeforeItWasKeptWhetherTheyAreOver_WorksItOutAndWhoDecidesNext()
     {
         // Arrange
         InMemoryGameStore store = new();
@@ -1266,7 +1266,7 @@ public sealed class GameServiceTest
         ActionDescriptor move = new MoveAction(First, new CellId(0), new CellId(1)).Describe();
         GameRecord[] unsummarized =
         [
-            kept with { Id = new GameId("going"), IsOver = null },
+            kept with { Id = new GameId("going"), IsOver = null, Deciding = null },
             (await store.Find(over, this._cancellation))! with { Id = new GameId("over"), IsOver = null },
             kept with { Id = new GameId("retired"), RulesetId = "retired", IsOver = null },
             kept with { Id = new GameId("broken"), Actions = [move], IsOver = null },
@@ -1280,13 +1280,14 @@ public sealed class GameServiceTest
         await service.Summarize(this._cancellation);
 
         // Assert
-        bool?[] summaries =
+        (bool? IsOver, SeatId? Deciding)[] summaries =
         [
             .. await Task.WhenAll(
-                unsummarized.Select(async record => (await store.Find(record.Id, this._cancellation))?.IsOver)
+                unsummarized.Select(async record => (await store.Find(record.Id, this._cancellation))!)
+                    .Select(async found => ((await found).IsOver, (await found).Deciding))
             ),
         ];
-        Assert.Equal([false, true, true, true], summaries);
+        Assert.Equal([(false, First), (true, null), (true, null), (true, null)], summaries);
     }
 
     [Fact]

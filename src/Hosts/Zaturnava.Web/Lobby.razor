@@ -332,8 +332,6 @@
 
         }
 
-        <Leaderboard Game="@this.Game" />
-
         <div class="games-column">
         @if (this._me is { } me && !this._awaited.IsEmpty)
         {
@@ -343,21 +341,12 @@
                     End the games you no longer play (<strong>End game</strong>, at the table), and resume the oldest of
                     the rest: the others are waiting for you.
                 </p>
-                <ul class="games">
-                    @foreach (AwaitedGameDto awaited in this._awaited)
-                    {
-                        GameSummaryDto game = awaited.Game;
-                        <li>
-                            <span class="ruleset">@NameOf(catalog, game.RulesetId)</span>
-                            <span class="players">@Players(game)</span>
-                            <span class="state">@this.StateOf(game)</span>
-                            <button class="awaited-resume primary"
-                                    @onclick="() => this.BackTo(game.Id, awaited.Seat, me.Token)">
-                                Back to @SeatName(game.SeatNames, awaited.Seat)
-                            </button>
-                        </li>
-                    }
-                </ul>
+                @this.GamesTable(
+                    catalog,
+                    [.. this._awaited.Select(awaited => awaited.Game)],
+                    isSortable: false,
+                    game => this.AwaitedActions(game, me.Token)
+                )
             </div>
         }
         <div class="panel games-panel">
@@ -421,77 +410,7 @@
             }
             else
             {
-                <table class="games-table">
-                    <thead>
-                        <tr>
-                            @foreach ((GameColumn column, string heading) in Columns)
-                            {
-                                <th scope="col" aria-sort="@this.AriaSortOf(column)">
-                                    <button class="sort @column.ToString().ToLowerInvariant()"
-                                            @onclick="() => this.SortBy(column)">
-                                        @heading@this.ArrowOf(column)
-                                    </button>
-                                </th>
-                            }
-                            <th scope="col">Status</th>
-                            <th scope="col"><span class="visually-hidden">Actions</span></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                @foreach (GameSummaryDto game in this.Sorted(catalog))
-                {
-                    <tr>
-                        <td><span class="game">@game.Id[..Math.Min(8, game.Id.Length)]</span></td>
-                        <td><span class="ruleset">@NameOf(catalog, game.RulesetId)</span></td>
-                        <td><span class="players">@Players(game)</span></td>
-                        <td><span class="moves">@game.Moves</span></td>
-                        <td>
-                            <span class="waiting" title="Since the last move or seat taken">
-                                @(game.LastChanged is { } last ? TimeAgo.Since(last, this.Clock.GetUtcNow()) : "-")
-                            </span>
-                        </td>
-                        <td><span class="state">@this.StateOf(game)</span></td>
-                        <td class="game-actions">
-                        @if (game.IsOver)
-                        {
-                            <span class="over">Over</span>
-                        }
-                        else
-                        {
-                            @if (this._held.GetValueOrDefault(game.Id) is { } claim)
-                            {
-                                <button class="resume primary" @onclick="() => this.Resume(game.Id, claim)">Back to @SeatName(game.SeatNames, claim.Seat)</button>
-                            }
-                            else if (this.MySeat(game) is { } mine)
-                            {
-                                <button class="take-back primary"
-                                        title="Your seat, taken from another device: take it back here"
-                                        @onclick="() => this.TakeBack(game.Id, mine.Seat, mine.Token)">
-                                    Back to @SeatName(game.SeatNames, mine.Seat)
-                                </button>
-                            }
-                            @if (game.IsForPlayers && this._me is null)
-                            {
-                                <span class="for-players" title="Whoever set it up barred guests from its open seats">
-                                    Sign in to join
-                                </span>
-                            }
-                            else
-                            {
-                                @foreach (int seat in game.OpenSeats)
-                                {
-                                    <button class="join" @onclick="() => this.Join(game.Id, seat)">Join as @SeatName(game.SeatNames, seat)</button>
-                                }
-                            }
-                            <button class="watch" @onclick="() => this.OnSeated.InvokeAsync(Seating.Watching(game.Id))">
-                                Watch
-                            </button>
-                        }
-                        </td>
-                    </tr>
-                }
-                    </tbody>
-                </table>
+                @this.GamesTable(catalog, this.Sorted(), isSortable: true, this.GameActions)
             }
             @if (this._pages > 1)
             {
@@ -507,6 +426,8 @@
             }
         </div>
         </div>
+
+        <Leaderboard Game="@this.Game" />
     }
 </section>
 
@@ -799,10 +720,6 @@
     private static ImmutableList<RulesetDto> SizesOf(CatalogDto catalog, string game) =>
         [.. catalog.Rulesets.Where(ruleset => ruleset.Game == game)];
 
-    /// <summary>What the catalog calls a game's ruleset, "Grand Legions (small)"; its id, if one no longer offered.</summary>
-    private static string NameOf(CatalogDto catalog, string rulesetId) =>
-        catalog.Rulesets.FirstOrDefault(ruleset => ruleset.Id == rulesetId)?.Name ?? rulesetId;
-
     /// <summary>
     /// The seats other than <paramref name="you"/>, in the order they play after it: allies first, then enemies.
     /// </summary>
@@ -817,41 +734,216 @@
     private static string RoleOf(RulesetDto ruleset, int you, int seat) =>
         IsAlly(ruleset, you, seat) ? "Your ally" : "Enemy";
 
+    /// <summary>
+    /// The games, one a row and one fact a cell (playtest 2026-11-15, H4): its size, if the games listed differ in
+    /// size; who holds each seat, a column a seat, an open one to join; which seat decides next; how many moves; when it
+    /// was created and last changed; then what the player may do. Its headings sort it, if <paramref name="isSortable"/>.
+    /// </summary>
+    private RenderFragment GamesTable(
+        CatalogDto catalog,
+        ImmutableList<GameSummaryDto> games,
+        bool isSortable,
+        Func<GameSummaryDto, RenderFragment> actions
+    ) =>
+        @<div class="games-scroll">
+            <table class="games-table">
+                <thead>
+                    <tr>
+                        @if (HasSizes(games))
+                        {
+                            <th scope="col" class="size">Size</th>
+                        }
+                        @foreach ((string name, int seat) in SeatsOf(games))
+                        {
+                            <th scope="col" class="seat seat-@seat">@name</th>
+                        }
+                        @foreach ((GameColumn column, string heading) in Columns)
+                        {
+                            <th scope="col" aria-sort="@(isSortable ? this.AriaSortOf(column) : null)">
+                                @if (isSortable)
+                                {
+                                    <button class="sort sort-@column.ToString().ToLowerInvariant()"
+                                            @onclick="() => this.SortBy(column)">
+                                        @heading@this.ArrowOf(column)
+                                    </button>
+                                }
+                                else
+                                {
+                                    @heading
+                                }
+                            </th>
+                        }
+                        <th scope="col"><span class="visually-hidden">Actions</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (GameSummaryDto game in games)
+                    {
+                        <tr data-game="@game.Id">
+                            @if (HasSizes(games))
+                            {
+                                <td class="size">@SizeOf(catalog, game.RulesetId)</td>
+                            }
+                            @foreach ((string _, int seat) in SeatsOf(games))
+                            {
+                                <td class="seat seat-@seat">@this.SeatCell(game, seat)</td>
+                            }
+                            <td class="next">
+                                @if (NextOf(game) is { } next)
+                                {
+                                    <span class="seat-@next">@SeatName(game.SeatNames, next)</span>
+                                }
+                                else
+                                {
+                                    @("-")
+                                }
+                            </td>
+                            <td class="moves">@game.Moves</td>
+                            <td class="created">@this.Ago(game.Created)</td>
+                            <td class="changed">@this.Ago(game.LastChanged)</td>
+                            <td class="game-actions">@actions(game)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>;
+
+    /// <summary>
+    /// Who holds the seat: their name, and whether they are away; open, a button to join it (or, for players only, a
+    /// word to sign in); nothing, if the game has no such seat.
+    /// </summary>
+    private RenderFragment SeatCell(GameSummaryDto game, int seat) =>
+        @<text>
+            @if (seat >= game.Players.Count)
+            {
+            }
+            else if (!game.IsOver && game.OpenSeats.Contains(seat))
+            {
+                @if (game.IsForPlayers && this._me is null)
+                {
+                    <span class="for-players" title="Whoever set it up barred guests from its open seats">
+                        Sign in to join
+                    </span>
+                }
+                else
+                {
+                    <button class="join"
+                            aria-label="Join as @SeatName(game.SeatNames, seat)"
+                            @onclick="() => this.Join(game.Id, seat)">Join</button>
+                }
+            }
+            else
+            {
+                <span class="player">@game.Players[seat]</span>
+                @if (!game.IsOver && game.AwaySeats.Contains(seat))
+                {
+                    @(" ")<span class="away" title="Their turns pass until they come back">away</span>
+                }
+            }
+        </text>;
+
+    /// <summary>What the player may do at a game listed: go back to their seat, watch; or, over, nothing.</summary>
+    private RenderFragment GameActions(GameSummaryDto game) =>
+        @<text>
+            @if (game.IsOver)
+            {
+                <span class="over">Over</span>
+            }
+            else
+            {
+                @if (this._held.GetValueOrDefault(game.Id) is { } claim)
+                {
+                    <button class="resume primary" @onclick="() => this.Resume(game.Id, claim)">
+                        Back to @SeatName(game.SeatNames, claim.Seat)
+                    </button>
+                }
+                else if (this.MySeat(game) is { } mine)
+                {
+                    <button class="take-back primary"
+                            title="Your seat, taken from another device: take it back here"
+                            @onclick="() => this.TakeBack(game.Id, mine.Seat, mine.Token)">
+                        Back to @SeatName(game.SeatNames, mine.Seat)
+                    </button>
+                }
+                <button class="watch" @onclick="() => this.OnSeated.InvokeAsync(Seating.Watching(game.Id))">
+                    Watch
+                </button>
+            }
+        </text>;
+
+    /// <summary>Back to the seat at a game waiting for the player's move.</summary>
+    private RenderFragment AwaitedActions(GameSummaryDto game, string token) =>
+        @<text>
+            @if (this._awaited.FirstOrDefault(waiting => waiting.Game.Id == game.Id) is { } awaited)
+            {
+                <button class="awaited-resume primary" @onclick="() => this.BackTo(game.Id, awaited.Seat, token)">
+                    Back to @SeatName(game.SeatNames, awaited.Seat)
+                </button>
+            }
+        </text>;
+
+    /// <summary>"5 min ago"; "-", for a time not kept.</summary>
+    private string Ago(DateTimeOffset? time) =>
+        time is { } then ? TimeAgo.Since(then, this.Clock.GetUtcNow()) : "-";
+
+    /// <summary>Whether the games listed are of more than one size, so that each says its own.</summary>
+    private static bool HasSizes(ImmutableList<GameSummaryDto> games) =>
+        games.Select(game => game.RulesetId).Distinct().Skip(1).Any();
+
+    /// <summary>The size the catalog gives the ruleset; else its name; else, one no longer offered, its id.</summary>
+    private static string SizeOf(CatalogDto catalog, string rulesetId) =>
+        catalog.Rulesets.FirstOrDefault(offered => offered.Id == rulesetId) is { } ruleset
+            ? ruleset.Size ?? ruleset.Name
+            : rulesetId;
+
+    /// <summary>The seats as the game with the most of them names them, a column each.</summary>
+    private static ImmutableList<(string Name, int Seat)> SeatsOf(ImmutableList<GameSummaryDto> games)
+    {
+        GameSummaryDto widest = games.MaxBy(game => game.Players.Count)!;
+        return [.. widest.Players.Select((_, seat) => (SeatName(widest.SeatNames, seat), seat))];
+    }
+
+    /// <summary>The seat to decide next; none while the game is over or waits for players.</summary>
+    private static int? NextOf(GameSummaryDto game) =>
+        game.IsOver || !game.OpenSeats.IsEmpty ? null : game.DecidingSeat;
+
     /// <summary>The games list's sortable columns, by their headings (playtest 2026-11-15, H4).</summary>
     private static readonly ImmutableList<(GameColumn Column, string Heading)> Columns =
     [
-        (GameColumn.Game, "Game"),
-        (GameColumn.Ruleset, "Ruleset"),
-        (GameColumn.Players, "Players"),
+        (GameColumn.Next, "Next"),
         (GameColumn.Moves, "Moves"),
-        (GameColumn.Waiting, "Waiting"),
+        (GameColumn.Created, "Created"),
+        (GameColumn.Changed, "Last change"),
     ];
 
     /// <summary>
     /// The games on this page in the order chosen: by a column, either way; else, until a heading is clicked, the
     /// player's own first, then those waiting longest.
     /// </summary>
-    private IEnumerable<GameSummaryDto> Sorted(CatalogDto catalog)
+    private ImmutableList<GameSummaryDto> Sorted()
     {
         Func<GameSummaryDto, string>? key = this._sortBy switch
         {
-            GameColumn.Game => game => game.Id,
-            GameColumn.Ruleset => game => NameOf(catalog, game.RulesetId),
-            GameColumn.Players => Players,
+            GameColumn.Next => game => NextOf(game) is { } next ? next.ToString("D3", CultureInfo.InvariantCulture) : "~",
             GameColumn.Moves => game => game.Moves.ToString("D9", CultureInfo.InvariantCulture),
-            GameColumn.Waiting => WaitingKeyOf,
+            GameColumn.Created => game => TimeKeyOf(game.Created),
+            GameColumn.Changed => game => TimeKeyOf(game.LastChanged),
             _ => null,
         };
         return key is null
-            ? this._games.OrderBy(game => this.IsMine(game) ? 0 : 1).ThenBy(WaitingKeyOf, StringComparer.Ordinal)
+            ?
+            [
+                .. this._games.OrderBy(game => this.IsMine(game) ? 0 : 1)
+                    .ThenBy(game => TimeKeyOf(game.LastChanged), StringComparer.Ordinal),
+            ]
             : this._isDescending
-                ? this._games.OrderByDescending(key, StringComparer.Ordinal)
-                : this._games.OrderBy(key, StringComparer.Ordinal);
+                ? [.. this._games.OrderByDescending(key, StringComparer.Ordinal)]
+                : [.. this._games.OrderBy(key, StringComparer.Ordinal)];
     }
 
-    /// <summary>When the game last changed, to order by: the longest waiting first; one never told of, last.</summary>
-    private static string WaitingKeyOf(GameSummaryDto game) =>
-        game.LastChanged is { } last ? last.UtcDateTime.ToString("o", CultureInfo.InvariantCulture) : "~";
+    /// <summary>A time, to order by: the earliest first; one not kept, last.</summary>
+    private static string TimeKeyOf(DateTimeOffset? time) =>
+        time is { } then ? then.UtcDateTime.ToString("o", CultureInfo.InvariantCulture) : "~";
 
     /// <summary>Whether the player holds a seat at the game, in this browser or signed in.</summary>
     private bool IsMine(GameSummaryDto game) => this._held.ContainsKey(game.Id) || this.MySeat(game) is not null;
@@ -873,44 +965,15 @@
     private enum GameColumn
     {
         Default,
-        Game,
-        Ruleset,
-        Players,
+        Next,
         Moves,
-        Waiting,
-    }
-
-    /// <summary>
-    /// "Waiting for a player; created 3 h ago, last change 5 min ago", "Yellow away; ...": whether it waits for a seat
-    /// to be taken or has not started, who is away (their turns passing until they come back), and when it was created
-    /// and last changed, if those were kept.
-    /// </summary>
-    private string StateOf(GameSummaryDto game)
-    {
-        DateTimeOffset now = this.Clock.GetUtcNow();
-        string? progress = (game.IsOver, game.OpenSeats.Count, game.Moves) switch
-        {
-            (false, 1, _) => "Waiting for a player",
-            (false, > 1, _) => "Waiting for players",
-            (false, _, 0) => "Not started",
-            _ => null,
-        };
-        string away = game.AwaySeats.IsEmpty || game.IsOver
-            ? string.Empty
-            : $"{string.Join(" and ", game.AwaySeats.Select(seat => SeatName(game.SeatNames, seat)))} away";
-        string? created = game.Created is { } time ? $"created {TimeAgo.Since(time, now)}" : null;
-        string? changed = game.LastChanged is { } last ? $"last change {TimeAgo.Since(last, now)}" : null;
-        string times = string.Join(", ", new[] { created, changed }.OfType<string>());
-        return string.Join("; ", new[] { progress, away, times }.Where(part => !string.IsNullOrEmpty(part)));
+        Created,
+        Changed,
     }
 
     /// <summary>What the ruleset calls the seat, "Black"; "seat 2" if it names none.</summary>
     private static string SeatName(ImmutableList<string> names, int seat) =>
         names.ElementAtOrDefault(seat) ?? $"seat {seat + 1}";
-
-    /// <summary>"Black: person, Yellow: random, ...".</summary>
-    private static string Players(GameSummaryDto game) =>
-        string.Join(", ", game.Players.Select((player, seat) => $"{SeatName(game.SeatNames, seat)}: {player}"));
 
     private async Task Load()
     {

@@ -19,12 +19,15 @@ internal static class GameRecordMapping
         return new GameRecord(new GameId(entity.Id), entity.RulesetId, controllers, actions, entity.Version)
         {
             IsOver = entity.IsOver,
+            Deciding = ToSeatId(entity.Deciding),
             Created = ToOffset(entity.Created),
             LastChanged = ToOffset(entity.LastChanged),
             Away = AwayOf(entity.Seats),
             HasChangedHands = entity.HasChangedHands,
         };
     }
+
+    private static SeatId? ToSeatId(int? seat) => seat is { } value ? new SeatId(value) : null;
 
     /// <summary>The seats away, in seat order.</summary>
     private static ImmutableList<SeatId> AwayOf(IReadOnlyCollection<SeatEntity> seats) =>
@@ -37,6 +40,7 @@ internal static class GameRecordMapping
             RulesetId = record.RulesetId,
             Version = record.Version,
             IsOver = record.IsOver,
+            Deciding = record.Deciding?.Value,
             Created = ToUtc(record.Created),
             LastChanged = ToUtc(record.LastChanged),
             HasChangedHands = record.HasChangedHands,
@@ -101,6 +105,7 @@ internal static class GameRecordMapping
             Created = ToOffset(entity.Created),
             LastChanged = ToOffset(entity.LastChanged),
             Away = AwayOf(seats),
+            Deciding = ToSeatId(entity.Deciding),
         };
 
     private static DateTimeOffset? ToOffset(DateTime? utc) =>

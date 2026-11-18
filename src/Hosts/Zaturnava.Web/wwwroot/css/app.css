@@ -248,10 +248,10 @@ html { scrollbar-gutter: stable; }
 
 .panel h2 { margin-top: 0; }
 
-/* The games, rightmost: those waiting for the player above the rest (playtest H1). */
+/* The games, the leaderboard to their right: those waiting for the player above the rest (playtest H1). */
 .games-column {
-    flex: 2 1 420px;
-    min-width: 280px;
+    flex: 3 1 520px;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     gap: 16px;
@@ -390,14 +390,25 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
     background: none; border: none; padding: 0; color: inherit; font: inherit; cursor: pointer;
 }
 .leaderboard .pager { display: flex; gap: 8px; align-items: center; justify-content: center; margin: 8px 0; }
-/* The games list: one row a game, sortable by its headings (playtest H4). */
+/* The games list: one line a game, one fact a cell, sortable by its headings (playtest H4). */
+.games-scroll { overflow-x: auto; }
 .games-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
 .games-table th, .games-table td {
     padding: 4px 6px;
     border-bottom: 1px solid var(--panel-edge);
     text-align: left;
     vertical-align: middle;
+    white-space: nowrap;
 }
+.games-table th.seat { border-bottom: 3px solid var(--seat-edge); }
+.games-table .seat-0 { --seat-edge: var(--seat-0); }
+.games-table .seat-1 { --seat-edge: var(--seat-1); }
+.games-table .seat-2 { --seat-edge: var(--seat-2); }
+.games-table .seat-3 { --seat-edge: var(--seat-3); }
+.games-table td.next span { border-left: 4px solid var(--seat-edge); padding-left: 4px; }
+.games-table .away { color: var(--muted); font-size: 0.8rem; margin-left: 4px; }
+.games-table button.join { padding: 2px 8px; font-size: 0.85rem; }
+.games-table .created, .games-table .changed { color: var(--muted); }
 .games-table th button.sort {
     background: none;
     border: none;
@@ -407,8 +418,6 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
     color: inherit;
     cursor: pointer;
 }
-.games-table .game { font-family: ui-monospace, monospace; }
-.games-table .players, .games-table .state, .games-table .waiting { color: var(--muted); }
 .games-table .moves { font-variant-numeric: tabular-nums; }
 .games-table .game-actions { white-space: nowrap; }
 .games-table .game-actions button { padding: 2px 8px; font-size: 0.85rem; }
