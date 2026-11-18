@@ -62,32 +62,9 @@
                 </label>
             }
         </div>
-        @if (this._me is { } me && !this._awaited.IsEmpty)
+        @if (this.IsNewGameShown)
         {
-            <div class="panel awaited">
-                <h2>Waiting for your move</h2>
-                <p class="awaited-hint">
-                    End the games you no longer play (<strong>End game</strong>, at the table), and resume the oldest of
-                    the rest: the others are waiting for you.
-                </p>
-                <ul class="games">
-                    @foreach (AwaitedGameDto awaited in this._awaited)
-                    {
-                        GameSummaryDto game = awaited.Game;
-                        <li>
-                            <span class="ruleset">@NameOf(catalog, game.RulesetId)</span>
-                            <span class="players">@Players(game)</span>
-                            <span class="state">@this.StateOf(game)</span>
-                            <button class="awaited-resume primary"
-                                    @onclick="() => this.BackTo(game.Id, awaited.Seat, me.Token)">
-                                Back to @SeatName(game.SeatNames, awaited.Seat)
-                            </button>
-                        </li>
-                    }
-                </ul>
-            </div>
-        }
-        <div class="panel">
+        <div class="panel new-game">
             <h2>New game</h2>
             @{
                 ImmutableList<RulesetDto> sizes = SizesOf(catalog, this.Ruleset(catalog).Game);
@@ -353,8 +330,45 @@
             }
         </div>
 
-        <div class="panel">
-            <h2>Games</h2>
+        }
+
+        <Leaderboard Game="@this.Game" />
+
+        <div class="games-column">
+        @if (this._me is { } me && !this._awaited.IsEmpty)
+        {
+            <div class="panel awaited">
+                <h2>Waiting for your move</h2>
+                <p class="awaited-hint">
+                    End the games you no longer play (<strong>End game</strong>, at the table), and resume the oldest of
+                    the rest: the others are waiting for you.
+                </p>
+                <ul class="games">
+                    @foreach (AwaitedGameDto awaited in this._awaited)
+                    {
+                        GameSummaryDto game = awaited.Game;
+                        <li>
+                            <span class="ruleset">@NameOf(catalog, game.RulesetId)</span>
+                            <span class="players">@Players(game)</span>
+                            <span class="state">@this.StateOf(game)</span>
+                            <button class="awaited-resume primary"
+                                    @onclick="() => this.BackTo(game.Id, awaited.Seat, me.Token)">
+                                Back to @SeatName(game.SeatNames, awaited.Seat)
+                            </button>
+                        </li>
+                    }
+                </ul>
+            </div>
+        }
+        <div class="panel games-panel">
+            <div class="games-head">
+                <h2>Games</h2>
+                <button class="new-game-toggle"
+                        aria-expanded="@(this.IsNewGameShown ? "true" : "false")"
+                        @onclick="() => this._isNewGameShown = !this.IsNewGameShown">
+                    New game
+                </button>
+            </div>
             <div class="game-filters">
                 @{
                     ImmutableList<RulesetDto> filteredSizes = SizesOf(catalog, this.Game);
@@ -492,8 +506,7 @@
                 </div>
             }
         </div>
-
-        <Leaderboard Game="@this.Game" />
+        </div>
     }
 </section>
 
@@ -508,6 +521,19 @@
     private ImmutableList<GameSummaryDto> _games = [];
     private GameColumn _sortBy = GameColumn.Default;
     private bool _isDescending;
+
+    /// <summary>Whether the player chose to show the New game panel, or to hide it; none, until they choose.</summary>
+    private bool? _isNewGameShown;
+
+    /// <summary>
+    /// Whether the New game panel shows: as the player chose; else, only if there is no game they could join on this
+    /// page (playtest 2026-11-15, H1), so that joining comes first.
+    /// </summary>
+    private bool IsNewGameShown => this._isNewGameShown ?? !this._games.Any(this.IsJoinable);
+
+    /// <summary>Whether the player could join the game: not over, with an open seat they may take.</summary>
+    private bool IsJoinable(GameSummaryDto game) =>
+        game is { IsOver: false, OpenSeats.IsEmpty: false } && (!game.IsForPlayers || this._me is not null);
 
     /// <summary>Which games the list shows: those waiting for players, until the player asks otherwise.</summary>
     private GameListQuery _filter = new(Open: true, Over: false);

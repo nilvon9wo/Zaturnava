@@ -247,6 +247,18 @@ html { scrollbar-gutter: stable; }
 }
 
 .panel h2 { margin-top: 0; }
+
+/* The games, rightmost: those waiting for the player above the rest (playtest H1). */
+.games-column {
+    flex: 2 1 420px;
+    min-width: 280px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+.games-column .panel { flex: none; }
+.games-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.games-head .new-game-toggle[aria-expanded="true"] { opacity: 0.7; }
 /* Seat by seat, or by strength: the way chosen filled in, as the log's tabs are. */
 .setup-modes { display: flex; gap: 6px; margin-bottom: 4px; }
 .setup-modes .mode {

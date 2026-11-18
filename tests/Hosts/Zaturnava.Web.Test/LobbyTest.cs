@@ -1828,6 +1828,69 @@ public sealed class LobbyTest : IDisposable
         );
     }
 
+    [Theory]
+    [InlineData("open", false, false)]
+    [InlineData("for players", false, true)]
+    [InlineData("over", false, true)]
+    [InlineData("full", false, true)]
+    [InlineData("open", true, true)]
+    public void Render_WhenThereAreGamesToJoinOrNot_HidesNewGameUntilAskedOrShowsIt(
+        string listed,
+        bool isToggled,
+        bool isShown
+    )
+    {
+        // Arrange - the game listed, with open seats, or for players only, over, or full (playtest 2026-11-15, H1)
+        this._page.Server.Games =
+        [
+            this._page.Server.Games[0] with
+            {
+                OpenSeats = listed == "full" ? [] : [1, 3],
+                IsForPlayers = listed == "for players",
+                IsOver = listed == "over",
+            },
+        ];
+        IRenderedComponent<Lobby> lobby = this.RenderAsIs();
+
+        // Act
+        if (isToggled)
+        {
+            lobby.Find("button.new-game-toggle").Click();
+        }
+
+        // Assert
+        Assert.Equal(
+            (isShown, isShown ? "true" : "false"),
+            (
+                lobby.FindAll(".panel.new-game").Count == 1,
+                lobby.Find("button.new-game-toggle").GetAttribute("aria-expanded")
+            )
+        );
+    }
+
+    [Fact]
+    public void Render_WhenGamesWaitForThePlayer_ListsThemAboveTheGamesInTheRightmostColumn()
+    {
+        // Arrange - Ada signed in, the game waiting on her
+        this.SignInAsAdaAtYellow();
+        this._page.Server.Awaited = this._page.Server.Awaited.SetItem(
+            "player",
+            [new AwaitedGameDto(this._page.Server.Games[0], 1)]
+        );
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Assert
+        Assert.Equal(
+            ("panel awaited|panel games-panel", true),
+            (
+                string.Join('|', lobby.FindAll(".games-column > .panel").Select(panel => panel.ClassName)),
+                lobby.Find(".lobby").LastElementChild!.ClassList.Contains("games-column")
+            )
+        );
+    }
+
     [Fact]
     public void Render_WhenAWaitingGameWasCreatedJustNow_SaysBoth()
     {
@@ -1994,7 +2057,19 @@ public sealed class LobbyTest : IDisposable
         return lobby;
     }
 
-    private IRenderedComponent<Lobby> Render() =>
+    /// <summary>The lobby, its New game panel shown, as a player opens it when there are games to join.</summary>
+    private IRenderedComponent<Lobby> Render()
+    {
+        IRenderedComponent<Lobby> lobby = this.RenderAsIs();
+        if (lobby.FindAll(".panel.new-game").Count == 0 && lobby.FindAll("button.new-game-toggle").Count == 1)
+        {
+            lobby.Find("button.new-game-toggle").Click();
+        }
+
+        return lobby;
+    }
+
+    private IRenderedComponent<Lobby> RenderAsIs() =>
         this._page.Render<Lobby>(parameters => parameters.Add(x => x.OnSeated, seating => this._seated = seating));
 
     /// <summary>Ada signed in, by the token "player", playing Yellow themselves at the game listed.</summary>
