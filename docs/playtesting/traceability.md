@@ -18,7 +18,7 @@ Statuses (the specification's P1): **Done** (implemented and tested), **Done, pa
 | B4 | Janggi Elephant beside a river cannot move right | Investigated | Rivers do not hold it back: a test leaps it over a river to its right. It is blocked only by a piece on its leg (one step, then the first diagonal). The game id is asked in open-questions.md. |
 | B5 | Xiangqi Elephant across the river on a 26 × 26 board, 23 × 3 kingdoms | Done | From edition 8 the Elephant may not cross the river between where it stands and where it would go, nor enter a cell the river cuts; one standing across from its kingdom's corner moves on that side. Tests: `RiverCrossingTest`, `GrandBoardTest.Crosses_*`. |
 | B6 | Guard card shows general diagonals | To do | With C2. |
-| B7 | Tafl King and Swede: custody with allies and pieces controlled; berserk when their throne is enemy-held | To do | |
+| B7 | Tafl King and Swede: custody with allies and pieces controlled; berserk when their throne is enemy-held | Done | From edition 8 an ally's piece holds as well as any piece the mover commands. While an enemy holds the custodian's throne it is berserk and takes any piece, friend or foe, held between it and any other piece, several at once. Guide text updated. Tests: `JumpAndCustodyTest` (ordinary, with allies, berserk on and off, friend and foe at once). |
 
 ## C. Piece cards
 

@@ -31,7 +31,8 @@ public static class ScenarioStart
     /// Pawn, the Manchu Chariot and the Courier (the same day); 5, since its armies' budgets follow the designer's
     /// formula, and the pieces that take several at once are priced for it (the same day); 6, since a chain of jumps
     /// is played jump by jump (the same day); 7, since the Guard is priced as the Minister (the same day); 8, since a
-    /// Xiangqi Elephant's river is the one where it stands (2026-11-18). A game dealt before says none, and is 0.
+    /// Xiangqi Elephant's river is the one where it stands, palace-bound pieces go home within their palace, and the
+    /// Tafl custodians hold with allies and go berserk (2026-11-18). A game dealt before says none, and is 0.
     /// </summary>
     public const int Edition = 8;
 
