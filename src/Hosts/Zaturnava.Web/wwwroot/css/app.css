@@ -363,12 +363,6 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
 }
 .quick-games { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; }
 .quick-hint { color: var(--muted); font-size: 0.9em; }
-.bot-guide .bots { padding-left: 20px; }
-.bot-guide .bots h3 { display: flex; gap: 12px; align-items: baseline; margin-bottom: 2px; }
-.bot-guide .rating { color: var(--muted); font-weight: normal; font-size: 0.9em; }
-.bot-guide .bots p { margin: 2px 0; }
-.bot-guide .costs { color: var(--danger, #c0392b); }
-.bot-guide .description, .bot-guide .ai { color: var(--muted); }
 /* A panel of the lobby: its widest board (the bots', eight columns) scrolls within it rather than widening the page. */
 .panel.leaderboard { overflow-x: auto; }
 .leaderboard .choice { display: flex; gap: 8px; align-items: center; margin: 8px 0; }
@@ -799,16 +793,18 @@ button.safety.off {
 .ransom { margin-top: 10px; border-top: 1px solid var(--panel-edge); padding-top: 6px; }
 .ransom-to, .ransom-ask { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin: 4px 0; }
 .ransom-to .name { min-width: 80px; }
-.ransom .prisoner {
+.coming { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin: 4px 0; }
+.coming .name { margin-right: 4px; }
+.ransom .prisoner, .coming .prisoner {
     padding: 2px;
     background: transparent;
     border: 2px solid transparent;
     border-radius: 6px;
     cursor: pointer;
 }
-.ransom .prisoner.chosen { border-color: var(--accent); }
+.ransom .prisoner.chosen, .coming .prisoner.chosen { border-color: var(--accent); }
 .ransom .prisoner.waiting { opacity: 0.4; filter: grayscale(1); cursor: not-allowed; }
-.ransom .prisoner .piece-icon { width: 26px; height: 26px; }
+.ransom .prisoner .piece-icon, .coming .prisoner .piece-icon { width: 26px; height: 26px; }
 .ransom .all { font-size: 0.85rem; }
 .ransom .action.offer { margin-top: 6px; }
 

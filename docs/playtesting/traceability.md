@@ -65,14 +65,14 @@ Statuses (the specification's P1): **Done** (implemented and tested), **Done, pa
 | G | Evangelist, as the spreadsheet defines it | To do | |
 | H1 | Lobby layout: games right, waiting games above, New game hidden behind a button when there are games to join | To do | |
 | H2 | Shareable link to a game with open seats | To do | |
-| H3 | Kingdom sizes checked before a game is made | To do | |
+| H3 | Kingdom sizes checked before a game is made | Done | As the sizes are typed, the lobby says what is wrong: a board side over 26, a kingdom under 3 × 3, a kingdom longer than the board's shorter side (those at the sides lie turned), or neighbouring kingdoms overlapping (width and depth together over the shorter side). Play and the quick-game buttons are disabled until it fits; the server still refuses any board it cannot play. Tests: `BoardFitTest`, `LobbyTest`. |
 | H4 | Games list as a sortable table, one row each, who is next and how long | To do | |
 | I | Placement previews, desaturated and blinking | To do | |
-| J1 | Escape and hire as a list, as ransom is | To do | |
-| J2 | Clicking a listed piece shows its card | To do | |
+| J1 | Escape and hire as a list, as ransom is | Done | Pieces that may escape, come back from fleeing, or be placed once hired show as a row of piece icons ("Onto the board"), and prisoners for hire as another ("Hire"). They look like the ransom list, each named in its tooltip; the large yellow buttons are gone for them. The server says which piece each such action brings (`ActionDto.Coming`). Tests: `TableTest`, `GameViewsTest`. |
+| J2 | Clicking a listed piece shows its card | Done | With cards on, choosing a piece to escape, to give back or to ask for in a ransom shows its card. A prisoner for hire is now picked first, showing its card, then hired with a button that names the price; picking it again lets it go. Tests: `TableTest`. |
 | J3 | Promotion choices inspectable | To do | |
 | K | Loading progress on itch.io | To do | |
-| L | Remove "The bots" button | To do | |
+| L | Remove "The bots" button | Done | Gone, with its dialog. A bot's name opens its profile, on the leaderboard and at a table; "How to play" still links to the bots' documentation for developers. The quick-game hint points to the leaderboard. Test: `AppTest`. |
 | M1–M5 | Offline tournaments, resumable, ratings for every bot, results into the repository | To do | |
 | N1–N5 | Secondary palaces | Roadmap | Not to be built yet (OQ7). |
 | O1–O5 | Article on AI in Zaturnava | To do | |

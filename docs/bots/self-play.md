@@ -69,7 +69,7 @@ swapped (`--bots sage,mine,sage,mine`), as moving first is worth something.
 ## Rating
 
 `scripts/rate-bots.py` plays every pair of bots against each other, both ways round, and fits Elo
-ratings to the results, anchored at Random's 1000, the same ratings "The bots" shows in the game:
+ratings to the results, anchored at Random's 1000, the same ratings each bot's profile shows in the game:
 
 ```shell
 python3 scripts/rate-bots.py path/to/Net.NowhereAtAll.Zaturnava.BotRunner \

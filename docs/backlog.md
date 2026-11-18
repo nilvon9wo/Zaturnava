@@ -372,7 +372,7 @@ first.
      and reachable from the game itself.
      - Done: [docs/bots/](bots/README.md), for developers: MCP, the HTTP API, game histories, and
        self-play, the BotRunner seating bots from an assembly of one's own (`--bot-assembly`, also
-       taken by `rate-bots.py`). "How to play" and "The bots" link to it, on GitHub.
+       taken by `rate-bots.py`). "How to play" links to it, on GitHub ("The bots" did too, until it was removed, 2026-11-18).
      - Done: [a sample bot over the HTTP API](../samples/HttpApiSampleBot/README.md), standing alone, mechanical, playing the live server
        through the HTTP API, with notes on putting an AI in it.
      - Done: [a sample bot over MCP](../samples/McpSampleBot/README.md), its twin: the same loop and
@@ -530,7 +530,7 @@ first.
   skipped from then on, and taking their Raja scores no one (rules.md §10).
 - A "How to play" guide opens from the settings bar, in the lobby or at the table: the aim, the pieces,
   turns and dice, points, thrones and command, prisoners and how the game ends.
-- "The bots" opens beside it: each bot, easiest first, with its Elo rating at the ruleset, from games
+- "The bots" opened beside it (removed 2026-11-18: a bot's name opens its profile): each bot, easiest first, with its Elo rating at the ruleset, from games
   between every pair of them (`scripts/rate-bots.py`, Random at 1000). The lobby's quick game is easy
   (the three easiest bots), medium (any three) or hard (the three hardest).
 - A development server offers scenarios, games set up part-way, to start from (`scenarios/`).

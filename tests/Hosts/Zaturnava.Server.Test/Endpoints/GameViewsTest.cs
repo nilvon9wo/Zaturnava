@@ -429,6 +429,82 @@ public sealed class GameViewsTest
     }
 
     [Fact]
+    public void ViewOf_WhenPiecesMayComeOntoTheBoard_SaysWhichPieceEachBrings()
+    {
+        // Arrange - Horses are mercenaries; Black holds Yellow's Horse 9 and has hired Green's Horse 17 (playtest
+        // 2026-11-15, J1)
+        Chaturaji2027Rules rules = new(
+            DiceProfile.WeightedSixSided,
+            Chaturaji2027Rules.DefaultIdleRounds,
+            PawnPromotion.OtherArmies,
+            variant: Chaturaji2027Variant.Standard with { Mercenaries = [Chaturaji2027Pieces.Horse] }
+        );
+        GameState start = rules.CreateInitialState();
+        GameState state = start with
+        {
+            RollOff = [],
+            AwaitedDice = null,
+            Edition = 2,
+            Scores = start.Scores.SetItem(new SeatId(0), 10),
+            Position = Position.Empty.Place(new CellId(3), start.Position.PieceAt(new CellId(3))!),
+            Prisoners =
+            [
+                new Prisoner(new Piece(new PieceId(9), Chaturaji2027Pieces.Horse, new SeatId(1)), new SeatId(0)),
+            ],
+            Hired = [new Piece(new PieceId(17), Chaturaji2027Pieces.Horse, new SeatId(0))],
+        };
+
+        // Act
+        GameViewDto view = GameViews.ViewOf(Snapshot(rules, state), Bots);
+
+        // Assert
+        Assert.Equal(
+            "deploy 17 Horse 0|hire 9 Horse 1",
+            string.Join(
+                '|',
+                view.LegalActions.Where(action => action.Kind is "deploy" or "hire")
+                    .DistinctBy(action => action.Kind)
+                    .Select(action => $"{action.Kind} {action.Coming?.Id} {action.Coming?.Name} {action.Coming?.Owner}")
+                    .Order(StringComparer.Ordinal)
+            )
+        );
+    }
+
+    [Fact]
+    public void ViewOf_WhenAPieceFledMayComeBack_SaysWhichPieceItBrings()
+    {
+        // Arrange - Black's Raja 3 on h8; Black rolled two 5s, and its ally Green's Raja 19 fled the board
+        Chaturaji2027Rules rules = new(
+            DiceProfile.WeightedSixSided,
+            Chaturaji2027Rules.DefaultIdleRounds,
+            PawnPromotion.OtherArmies,
+            variant: Chaturaji2027Variant.Standard with { Fleers = [Chaturaji2027Pieces.Raja] }
+        );
+        GameState start = rules.CreateInitialState();
+        GameState state = start with
+        {
+            RollOff = [],
+            AwaitedDice = null,
+            Dice = [5, 5],
+            Position = Position.Empty
+                .Place(new CellId(63), new Piece(new PieceId(3), Chaturaji2027Pieces.Raja, new SeatId(0)))
+                .Place(new CellId(0), start.Position.PieceAt(new CellId(0))!),
+            Fled = [new Piece(new PieceId(19), Chaturaji2027Pieces.Raja, new SeatId(2))],
+        };
+
+        // Act
+        GameViewDto view = GameViews.ViewOf(Snapshot(rules, state), Bots);
+
+        // Assert
+        Assert.Equal(
+            "19 Raja 2",
+            view.LegalActions.First(action => action.Kind == "escape").Coming is { } piece
+                ? $"{piece.Id} {piece.Name} {piece.Owner}"
+                : null
+        );
+    }
+
+    [Fact]
     public void ViewOf_WhenAnAllyMayTakeTheTurn_LabelsHandingItOver()
     {
         // Arrange - Black's Raja is gone, so Green, which has its own, may take Black's turn

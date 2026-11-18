@@ -204,19 +204,29 @@
                             </tr>
                         </tbody>
                     </table>
+                    @if (this.BoardProblem(catalog) is { } boardProblem)
+                    {
+                        <p class="problem board-problem" role="alert">@boardProblem</p>
+                    }
                 }
             </div>
             @if (mode == SetupMode.Quick)
             {
                 <div class="quick-games">
                     <span class="quick-label">At any seat, against bots:</span>
-                    <button class="quick easy primary" @onclick="() => this.Quick(catalog, Difficulty.Easy)">Easy</button>
-                    <button class="quick medium primary" @onclick="() => this.Quick(catalog, Difficulty.Medium)">Medium</button>
-                    <button class="quick hard primary" @onclick="() => this.Quick(catalog, Difficulty.Hard)">Hard</button>
+                    <button class="quick easy primary"
+                            disabled="@this.IsBoardWrong(catalog)"
+                            @onclick="() => this.Quick(catalog, Difficulty.Easy)">Easy</button>
+                    <button class="quick medium primary"
+                            disabled="@this.IsBoardWrong(catalog)"
+                            @onclick="() => this.Quick(catalog, Difficulty.Medium)">Medium</button>
+                    <button class="quick hard primary"
+                            disabled="@this.IsBoardWrong(catalog)"
+                            @onclick="() => this.Quick(catalog, Difficulty.Hard)">Hard</button>
                 </div>
                 <p class="quick-hint">
-                    Easy seats the three easiest bots; medium, any three; hard, the three hardest. Who they are is under
-                    <strong>The bots</strong>, below.
+                    Easy seats the three easiest bots; medium, any three; hard, the three hardest. Click a bot's name
+                    on the leaderboard to see who it is.
                 </p>
             }
             else if (mode == SetupMode.Custom)
@@ -335,7 +345,9 @@
             @if (mode == SetupMode.Custom)
             {
                 <div class="start">
-                    <button class="create primary" @onclick="() => this.Create(catalog)">Play</button>
+                    <button class="create primary"
+                            disabled="@this.IsBoardWrong(catalog)"
+                            @onclick="() => this.Create(catalog)">Play</button>
                 </div>
             }
         </div>
@@ -943,6 +955,13 @@
         this.Ruleset(catalog).SizableBoard is null
             ? null
             : new BoardSizeDto(this._width, this._height, this._kingdomWidth, this._kingdomDepth);
+
+    /// <summary>What is wrong with the board as set, before a game is asked for (H3); none, if nothing, or not set.</summary>
+    private string? BoardProblem(CatalogDto catalog) =>
+        this.BoardAsked(catalog) is { } board ? BoardFit.ProblemOf(board) : null;
+
+    /// <summary>Whether the board as set cannot hold its kingdoms, so that no game is asked for on it.</summary>
+    private bool IsBoardWrong(CatalogDto catalog) => this.BoardProblem(catalog) is not null;
 
     /// <summary>
     /// The most an army may have to spend, the game's own limit, grown with the kingdoms as they are set; any more is

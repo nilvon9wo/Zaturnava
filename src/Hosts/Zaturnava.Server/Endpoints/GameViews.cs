@@ -490,14 +490,36 @@ internal static class GameViews
         bots.Find(bot => bot.Id == id)?.Name ?? id;
 
     private static PrisonerDto PrisonerOf(IRulesApplying rules, Prisoner prisoner) =>
-        new(
-            prisoner.Piece.Id.Value,
-            prisoner.Piece.Kind.Value,
-            rules.NameOf(prisoner.Piece.Kind),
-            prisoner.Piece.Owner.Value
-        )
+        OffBoardOf(rules, prisoner.Piece);
+
+    /// <summary>A piece off the board, as a prisoner is shown: held, fled, or hired.</summary>
+    private static PrisonerDto OffBoardOf(IRulesApplying rules, Piece piece) =>
+        new(piece.Id.Value, piece.Kind.Value, rules.NameOf(piece.Kind), piece.Owner.Value)
         {
-            Mark = MarkOf(rules, prisoner.Piece.Kind),
+            Mark = MarkOf(rules, piece.Kind),
+        };
+
+    /// <summary>
+    /// The piece an escape, a hire or placing one hired brings onto the board, for its icon (playtest 2026-11-15, J1);
+    /// none, for any other action.
+    /// </summary>
+    private static PrisonerDto? ComingOf(GameSnapshot snapshot, GameAction action) =>
+        action switch
+        {
+            EscapeAction escape => OffBoardOf(
+                snapshot.Rules,
+                snapshot.State.Prisoners.FirstOrDefault(held => held.Piece.Id == escape.Piece)?.Piece
+                    ?? snapshot.State.Fled.First(fled => fled.Id == escape.Piece)
+            ),
+            HireAction hire => OffBoardOf(
+                snapshot.Rules,
+                snapshot.State.Prisoners.First(held => held.Piece.Id == hire.Piece).Piece
+            ),
+            DeployAction deploy => OffBoardOf(
+                snapshot.Rules,
+                snapshot.State.Hired.First(hired => hired.Id == deploy.Piece)
+            ),
+            _ => null,
         };
 
     /// <summary>The ransom waiting on its answer, naming its prisoners, who are held until it is answered.</summary>
@@ -544,6 +566,7 @@ internal static class GameViews
                 DraftAction draft => $"{snapshot.Rules.NameOf(draft.Piece)}, {snapshot.Rules.WorthOf(draft.Piece)}",
                 _ => null,
             },
+            Coming = ComingOf(snapshot, action),
         };
     }
 
