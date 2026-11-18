@@ -378,6 +378,36 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
     background: none; border: none; padding: 0; color: inherit; font: inherit; cursor: pointer;
 }
 .leaderboard .pager { display: flex; gap: 8px; align-items: center; justify-content: center; margin: 8px 0; }
+/* The games list: one row a game, sortable by its headings (playtest H4). */
+.games-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+.games-table th, .games-table td {
+    padding: 4px 6px;
+    border-bottom: 1px solid var(--panel-edge);
+    text-align: left;
+    vertical-align: middle;
+}
+.games-table th button.sort {
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    font-weight: bold;
+    color: inherit;
+    cursor: pointer;
+}
+.games-table .game { font-family: ui-monospace, monospace; }
+.games-table .players, .games-table .state, .games-table .waiting { color: var(--muted); }
+.games-table .moves { font-variant-numeric: tabular-nums; }
+.games-table .game-actions { white-space: nowrap; }
+.games-table .game-actions button { padding: 2px 8px; font-size: 0.85rem; }
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
 .games { list-style: none; padding: 0; }
 .games li { padding: 6px 0; border-bottom: 1px solid var(--panel-edge); }
 .games .game { font-family: ui-monospace, monospace; margin-right: 8px; }
