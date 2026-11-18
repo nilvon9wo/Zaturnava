@@ -69,6 +69,13 @@ public sealed record CreateGameRequest([Required] string RulesetId, [Required] I
     public BoardSizeDto? Board { get; init; }
 
     /// <summary>
+    /// For a game whose creator may say so (<see cref="RulesetDto.MayPromoteAtSide"/>), and whose armies are dealt:
+    /// whether pieces promoted at the far edge are promoted at the edge to their right too, as their army faces
+    /// (<see cref="GameViewDto.PromotesAtSide"/>). Not, unless asked.
+    /// </summary>
+    public bool PromotesAtSide { get; init; }
+
+    /// <summary>
     /// Whether the seats left open are only for players signed in: a guest may not take one
     /// (<see cref="GameSummaryDto.IsForPlayers"/>). Open to anyone, unless asked.
     /// </summary>

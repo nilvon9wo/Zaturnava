@@ -101,6 +101,12 @@ public interface IRulesApplying
         initial;
 
     /// <summary>
+    /// Whether a game's creator may have its pieces promoted at the far edge promoted at the edge to their right too
+    /// (<see cref="GameState.PromotesAtSide"/>). None may, unless the ruleset says so.
+    /// </summary>
+    bool MayPromoteAtSide => false;
+
+    /// <summary>
     /// Whether a game's players may draft their own armies (<see cref="Drafted"/>), rather than have them dealt. None
     /// may, unless the ruleset says so.
     /// </summary>

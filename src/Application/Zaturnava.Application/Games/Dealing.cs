@@ -20,6 +20,12 @@ public sealed record Dealing(bool AreAlike = false, GameId? ArmiesOf = null)
     /// </summary>
     public BoardSize? Board { get; init; }
 
+    /// <summary>
+    /// Whether pieces promoted at the far edge are promoted at the edge to their right too, for a ruleset that lets
+    /// its creator say so (<see cref="IRulesApplying.MayPromoteAtSide"/>; it is ignored by one that does not).
+    /// </summary>
+    public bool PromotesAtSide { get; init; }
+
     /// <summary>Each seat its own army, dealt anew.</summary>
     public static Dealing Anew { get; } = new();
 }

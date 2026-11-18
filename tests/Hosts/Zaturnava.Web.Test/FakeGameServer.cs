@@ -92,6 +92,9 @@ internal sealed class FakeGameServer : IGameServing
     /// <summary>The board Chaturaji 2027's creator may set to another size, as if they might; none, if unset.</summary>
     public BoardSizeDto? SizableBoard { get; set; }
 
+    /// <summary>Whether Chaturaji 2027's creator may have pieces promote at the right-hand edge too.</summary>
+    public bool MayPromoteAtSide { get; set; }
+
     /// <summary>The scenarios the catalog offers: none, unless a test sets some.</summary>
     public ImmutableList<ScenarioDto> Scenarios { get; set; } = [];
 
@@ -123,6 +126,7 @@ internal sealed class FakeGameServer : IGameServing
                         DraftBudget = this.IsDraftable ? 75 : null,
                         DraftBudgetLimit = this.IsDraftable ? 600 : null,
                         SizableBoard = this.SizableBoard,
+                        MayPromoteAtSide = this.MayPromoteAtSide,
                     },
                     .. this.MoreRulesets,
                 ],

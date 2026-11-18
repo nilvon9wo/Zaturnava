@@ -40,6 +40,7 @@ internal sealed class Browser(IJSRuntime js, IGameServing games)
     private const string SetupOfKey = "zaturnava.setup-of.";
     private const string Custom = "strength";
     private const string SeatBySeat = "seats";
+    private const string Scenarios = "scenarios";
     private const string Everything = "everything";
     private const string OldestFirst = "oldest";
     private const string ChessPieces = "chess";
@@ -156,9 +157,23 @@ internal sealed class Browser(IJSRuntime js, IGameServing games)
     /// <summary>How the lobby last set up a new game: a quick game, unless the player chose otherwise.</summary>
     /// <remarks>Seat by seat, no longer offered, is set up as the player chooses too.</remarks>
     public async ValueTask<SetupMode> Setup() =>
-        await this.Load(SetupKey) is Custom or SeatBySeat ? SetupMode.Custom : SetupMode.Quick;
+        await this.Load(SetupKey) switch
+        {
+            Custom or SeatBySeat => SetupMode.Custom,
+            Scenarios => SetupMode.Scenarios,
+            _ => SetupMode.Quick,
+        };
 
-    public ValueTask SetSetup(SetupMode mode) => this.Save(SetupKey, mode == SetupMode.Custom ? Custom : "quick");
+    public ValueTask SetSetup(SetupMode mode) =>
+        this.Save(
+            SetupKey,
+            mode switch
+            {
+                SetupMode.Custom => Custom,
+                SetupMode.Scenarios => Scenarios,
+                _ => "quick",
+            }
+        );
 
     /// <summary>Whether the lobby shows preview games: only if the player chose so.</summary>
     public async ValueTask<bool> ArePreviewsShown() => await this.Load(PreviewKey) == Shown;

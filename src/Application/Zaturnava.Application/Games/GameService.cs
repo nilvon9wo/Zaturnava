@@ -106,6 +106,7 @@ public sealed class GameService(
                 {
                     Drafting = offered.IsDraftable ? Checked(dealing.Drafting, seats.Count) : null,
                     Board = dealing.Board is { } board ? Sizable(offered, board) : null,
+                    PromotesAtSide = dealing.PromotesAtSide && offered.MayPromoteAtSide,
                 },
                 cancellationToken
             ),
@@ -141,7 +142,16 @@ public sealed class GameService(
         GameRecord? previous = dealing.ArmiesOf is { } id ? await this._store.Find(id, cancellationToken) : null;
         return previous is { Actions: [{ Kind: ScenarioStart.DealKind } first, ..] }
             ? [first, .. DraftOf(previous.Actions, ScenarioStart.RulesOf(previous.Actions, offered))]
-            : [ScenarioStart.Dealt(this._dice, dealing.AreAlike, dealing.Drafting, dealing.Board)];
+            :
+            [
+                ScenarioStart.Dealt(
+                    this._dice,
+                    dealing.AreAlike,
+                    dealing.Drafting,
+                    dealing.Board,
+                    dealing.PromotesAtSide
+                ),
+            ];
     }
 
     /// <summary>The board's size, if the ruleset may be played on it.</summary>

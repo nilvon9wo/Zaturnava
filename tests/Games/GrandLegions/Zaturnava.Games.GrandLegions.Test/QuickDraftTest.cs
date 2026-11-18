@@ -214,9 +214,10 @@ public sealed class QuickDraftTest
 
         // Assert
         Assert.Equal(
-            (true, null as ArmyDraft, 4, 4),
+            (true, true, null as ArmyDraft, 4, 4),
             (
                 rules.IsDraftable,
+                rules.MayPromoteAtSide,
                 started.Draft,
                 started.Thrones!.Count,
                 started.Position.Occupants.Values.Count(piece => rules.IsLeader(piece.Kind))

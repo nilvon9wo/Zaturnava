@@ -193,6 +193,23 @@ public sealed class RulesApplyingTest
         Assert.Equal((false, false, false), sized);
     }
 
+    [Fact]
+    public void MayPromoteAtSide_WhenTheRulesSayNothing_IsNot()
+    {
+        // Arrange
+        OneSizeRules rules = new();
+
+        // Act
+        bool mayPromoteAtSide = MayPromoteAtSideOf(rules);
+
+        // Assert
+        Assert.False(mayPromoteAtSide);
+    }
+
+    private static bool MayPromoteAtSideOf<TRules>(TRules rules)
+        where TRules : IRulesApplying =>
+        rules.MayPromoteAtSide;
+
     private static (bool HasBoard, bool IsSized, bool IsTold) SizedOf<TRules>(TRules rules, BoardSize board)
         where TRules : IRulesApplying =>
         (rules.SizableBoard is not null, rules.Sized(board) is not null, rules.Board is not null);

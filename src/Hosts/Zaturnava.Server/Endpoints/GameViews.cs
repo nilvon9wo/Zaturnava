@@ -34,7 +34,10 @@ internal static class GameViews
                     scenario.RulesetId,
                     scenario.Name,
                     scenario.Description
-                )),
+                )
+                {
+                    Turn = scenario.Turn,
+                }),
             ],
         };
 
@@ -171,6 +174,7 @@ internal static class GameViews
             IsDraftSecret = ScenarioStart.DraftingOf(snapshot.Record.Actions)?.IsSecret ?? false,
             IsDraftHiddenFromAllies = ScenarioStart.DraftingOf(snapshot.Record.Actions)?.IsHiddenFromAllies ?? false,
             Board = SizeOf(ScenarioStart.BoardOf(snapshot.Record.Actions)),
+            PromotesAtSide = snapshot.State.PromotesAtSide,
             DraftLeft = shown.Draft is { } draft
                 ? [.. snapshot.State.Seats.Select(seat => LeftOf(draft, seat.Id))]
                 : null,
@@ -369,6 +373,7 @@ internal static class GameViews
             IsPreview = rules.IsPreview,
             IsDealt = rules.IsDealt,
             IsDraftable = rules.IsDraftable,
+            MayPromoteAtSide = rules.MayPromoteAtSide,
             DraftBudget = rules.DraftBudget,
             DraftBudgetLimit = rules.DraftBudgetLimit,
             SizableBoard = SizeOf(rules.SizableBoard),

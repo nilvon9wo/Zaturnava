@@ -277,6 +277,14 @@ on, with what follows in place of the Raja-and-dice parts.
   that ally, as in rules.md §6.1.
 - **Stated — promotion at the far edge.** Any Infantry piece that reaches the far edge may be
   promoted into any captured piece, as a Chaturaji 2027 Pawn is (rules.md §8).
+  - **Stated (2026-11-13) — at the right-hand edge too, if asked.** A game's creator may choose,
+    in the lobby, that infantry is promoted on reaching the edge to its right, as its army faces,
+    "similar to getting to the top". Off by default; the lobby remembers it as last set, as it
+    does the game's other choices.
+  - **Proposed.** At the right-hand edge, only the far edge's promotion into a captured piece is
+    offered; a piece's own promotion (the Western Pawn's Queen, the Shogi far three rows) still
+    needs the far edge. Prices are unchanged by the option (BoardPrices's promotion premium counts
+    the far edge alone).
 - **Stated — the end.** The game ends as Chaturaji 2027 does (rules.md §10). Points decide it,
   unless the end itself does: a team with no opposition left wins.
 

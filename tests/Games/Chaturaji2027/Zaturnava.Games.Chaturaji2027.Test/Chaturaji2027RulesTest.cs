@@ -1729,6 +1729,38 @@ public sealed class Chaturaji2027RulesTest
         );
     }
 
+    [Theory]
+    [InlineData(false, 0)]
+    [InlineData(true, 5)]
+    public void LegalActions_WhenAPawnStandsOnTheEdgeToItsRight_IsPromotedThereOnlyIfTheGameSaysSo(
+        bool promotesAtSide,
+        int expected
+    )
+    {
+        // Arrange - Black's pawns face up, so their right is the right-hand edge; one stands on it, one on the left
+        GameState state = PromotionPool(this.StateWith(
+            (Grid.CellAt(7, 3), Piece(1, Chaturaji2027Pieces.Pawn, Black)),
+            (Grid.CellAt(0, 4), Piece(2, Chaturaji2027Pieces.Pawn, Black)),
+            (Grid.CellAt(4, 0), Piece(3, Chaturaji2027Pieces.Raja, Yellow))
+        )) with
+        {
+            PromotesAtSide = promotesAtSide,
+        };
+
+        // Act
+        ImmutableList<GameAction> actions = this._rules.LegalActions(state);
+
+        // Assert - the game's own rules never offer it; the far edge's promotions, at the right-hand one alone
+        Assert.Equal(
+            (false, expected, expected),
+            (
+                this._rules.MayPromoteAtSide,
+                actions.OfType<PromoteAction>().Count(),
+                actions.OfType<PromoteAction>().Count(promotion => promotion.Cell == Grid.CellAt(7, 3))
+            )
+        );
+    }
+
     [Fact]
     public void LegalActions_WhenPawnsMayNeverBePromotedIntoPawns_OffersNoPawn()
     {

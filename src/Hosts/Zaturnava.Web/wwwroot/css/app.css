@@ -295,7 +295,7 @@ html { scrollbar-gutter: stable; }
     box-sizing: border-box;
 }
 /* A game's checkbox options, each a line of its own. */
-label.alike, label.drafted, label.for-players, label.secret, label.secret-from-allies {
+label.alike, label.drafted, label.for-players, label.secret, label.secret-from-allies, label.side-promotion {
     display: block;
     margin-top: 6px;
 }
@@ -334,6 +334,8 @@ label.alike, label.drafted, label.for-players, label.secret, label.secret-from-a
 .choices table.board-size td { padding: 2px 6px 2px 0; }
 .choices table.board-size input[type="number"] { width: 5em; box-sizing: border-box; }
 .choices select, .panel label.scenario select { width: 100%; min-width: 0; }
+/* A scenario's name is long ("Checkers chain (medium)"): its choice spans both columns after its label. */
+.panel label.scenario select { grid-column: 2 / 4; }
 /* The one choice of game, for the whole lobby, across its top: with whether to show previews beside it. */
 .lobby-games {
     flex: 1 1 100%;

@@ -33,4 +33,10 @@ public sealed record Scenario(string RulesetId, string Name, string Description)
     /// first, 0, if it says none, as every scenario written before it could.
     /// </summary>
     public int Edition { get; init; }
+
+    /// <summary>
+    /// Whether a piece promoted at the far edge is promoted at the edge to its right too
+    /// (<see cref="Engine.Rules.GameState.PromotesAtSide"/>); not, if it says not.
+    /// </summary>
+    public bool PromotesAtSide { get; init; }
 }

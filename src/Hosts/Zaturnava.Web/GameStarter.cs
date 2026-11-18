@@ -193,6 +193,28 @@ internal static class GameStarter
     }
 
     /// <summary>
+    /// The <paramref name="scenario"/> at once, at its own ruleset and size, the player at the seat to move, bots of
+    /// medium strength at the others (Proposed). A scenario that cannot be read, of no ruleset, is asked for at the
+    /// <paramref name="chosen"/> one, for the server to say what is wrong with it.
+    /// </summary>
+    public static Task<Seating> TryOut(
+        IGameServing games,
+        CatalogDto catalog,
+        ScenarioDto scenario,
+        RulesetDto chosen,
+        Claimant claimant
+    )
+    {
+        RulesetDto ruleset = catalog.Rulesets.FirstOrDefault(offered => offered.Id == scenario.RulesetId) ?? chosen;
+        int person = Math.Max(
+            0,
+            ruleset.SeatNames.FindIndex(name => string.Equals(name, scenario.Turn, StringComparison.OrdinalIgnoreCase))
+        );
+        IEnumerable<string> bots = QuickBots(catalog, ruleset.Id, Difficulty.Medium, ruleset.SeatCount - 1);
+        return Start(games, ruleset.Id, BotsOf(Plans(ruleset.SeatCount, person, bots)), person, scenario.Id, claimant);
+    }
+
+    /// <summary>
     /// Starts a game of the ruleset with <paramref name="bots"/> in their seats, from the start or the
     /// <paramref name="scenario"/>, and sits the <paramref name="claimant"/> at <paramref name="person"/>; or has
     /// them watch, if that is no seat. A game played again after another (<paramref name="continuing"/>) is at its
@@ -223,6 +245,7 @@ internal static class GameStarter
             IsDraftSecret = armies?.IsSecret ?? false,
             IsDraftHiddenFromAllies = armies?.IsHiddenFromAllies ?? false,
             Board = armies?.Board,
+            PromotesAtSide = armies?.PromotesAtSide ?? false,
             IsForPlayers = isForPlayers,
         };
         GameCreatedDto created = await games.Create(request, CancellationToken.None);

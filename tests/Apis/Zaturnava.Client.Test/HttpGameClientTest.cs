@@ -95,7 +95,7 @@ public sealed class HttpGameClientTest
                 """{"rulesetId":"chaturaji-2027","bots":[null,"random"],"scenario":null,"continuing":null,"""
                     + "\"areArmiesAlike\":false,\"armiesOf\":null,\"isDrafted\":false,"
                     + "\"draftBudget\":null,\"drafter\":null,\"isDraftSecret\":false,"
-                    + "\"isDraftHiddenFromAllies\":false,\"board\":null,"
+                    + "\"isDraftHiddenFromAllies\":false,\"board\":null,\"promotesAtSide\":false,"
                     + "\"isForPlayers\":false}",
                 "g"
             ),

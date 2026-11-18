@@ -4,6 +4,10 @@ What the first playtest (2026-10-24) asked for, sorted by kind. Numbers are the 
 that each item can be traced to the note it came from. Items move to "Done" with the change that
 did them. Questions waiting on an answer are gathered in [open-questions.md](open-questions.md).
 
+The playtest of 2026-11-15 came as one consolidated specification, kept as given in
+[playtesting/2026-11-15-specification.md](playtesting/2026-11-15-specification.md); what is done about
+each of its items is tracked in [playtesting/traceability.md](playtesting/traceability.md).
+
 ## Going public (playtest of 2026-11-04)
 
 Numbered **N1**, **N2**... after that playtest's own notes. In the order planned (*Proposed*), most pressing

@@ -385,24 +385,83 @@ public sealed class LobbyTest : IDisposable
     }
 
     [Fact]
-    public void Play_WhenAScenarioIsChosen_StartsFromItAndDescribesIt()
+    public void Play_WhenAScenarioIsChosen_StartsItWithThePlayerToMoveAndBotsElsewhere()
     {
         // Arrange
         this._page.Server.Scenarios =
         [
-            new ScenarioDto("back-to-back", "chaturaji-2027", "Back to back", "Two Pawns face each other."),
+            new ScenarioDto("back-to-back", "chaturaji-2027", "Back to back", "Two Pawns face each other.")
+            {
+                Turn = "green",
+            },
             new ScenarioDto("escape", "chaturaji-2027", "Escape", "Doubles."),
         ];
-        IRenderedComponent<Lobby> lobby = this.ByStrength();
+        IRenderedComponent<Lobby> lobby = this.Render();
+        lobby.Find("button.scenarios").Click();
         lobby.Find("select.scenario").Change("back-to-back");
 
         // Act
         lobby.Find("button.create").Click();
 
         // Assert
+        CreateGameRequest? created = this._page.Server.Created;
         Assert.Equal(
-            ("back-to-back", "Two Pawns face each other."),
-            (this._page.Server.Created?.Scenario, lobby.Find("p.scenario-description").TextContent)
+            ("back-to-back", "chaturaji-2027", "bot|bot|person|bot", "Two Pawns face each other."),
+            (
+                created?.Scenario,
+                created?.RulesetId,
+                string.Join('|', created?.Bots.Select(bot => bot is null ? "person" : "bot") ?? []),
+                lobby.Find("p.scenario-description").TextContent
+            )
+        );
+    }
+
+    [Fact]
+    public void Play_WhenTheScenarioIsOfAnotherSize_StartsItAtThatSize()
+    {
+        // Arrange - a game of two sizes, the scenario at the one not chosen
+        this._page.Server.MoreRulesets =
+        [
+            new RulesetDto("chaturaji-big", "Chaturaji 2027 (big)", 4)
+            {
+                Game = "chaturaji-2027",
+                Size = "big",
+                SeatNames = ["Black", "Yellow", "Green", "Red"],
+            },
+        ];
+        this._page.Server.Scenarios = [new ScenarioDto("wide", "chaturaji-big", "Wide", "Room.")];
+        IRenderedComponent<Lobby> lobby = this.Render();
+        lobby.Find("button.scenarios").Click();
+
+        // Act
+        lobby.Find("button.create").Click();
+
+        // Assert
+        Assert.Equal(
+            ("Wide (big)", "chaturaji-big", null),
+            (
+                lobby.Find("select.scenario option").TextContent,
+                this._page.Server.Created?.RulesetId,
+                this._page.Server.Created?.Bots[0]
+            )
+        );
+    }
+
+    [Fact]
+    public void Play_WhenTheScenarioCannotBeRead_AsksForItAtTheGameChosen()
+    {
+        // Arrange
+        this._page.Server.Scenarios = [new ScenarioDto("broken", string.Empty, "broken", "broken.json is broken.")];
+        IRenderedComponent<Lobby> lobby = this.Render();
+        lobby.Find("button.scenarios").Click();
+
+        // Act
+        lobby.Find("button.create").Click();
+
+        // Assert
+        Assert.Equal(
+            ("broken", "chaturaji-2027"),
+            (this._page.Server.Created?.Scenario, this._page.Server.Created?.RulesetId)
         );
     }
 
@@ -416,14 +475,129 @@ public sealed class LobbyTest : IDisposable
             new ScenarioDto("chain", "grand-legions-medium", "Chain", "Jumps."),
             new ScenarioDto("broken", string.Empty, "broken", "broken.json cannot be read."),
         ];
+        IRenderedComponent<Lobby> lobby = this.Render();
 
         // Act
-        IRenderedComponent<Lobby> lobby = this.ByStrength();
+        lobby.Find("button.scenarios").Click();
 
         // Assert
         Assert.Equal(
-            ",escape,broken",
-            string.Join(",", lobby.FindAll("select.scenario option").Select(option => option.GetAttribute("value")))
+            ("escape,broken", 0, 0),
+            (
+                string.Join(
+                    ",",
+                    lobby.FindAll("select.scenario option").Select(option => option.GetAttribute("value"))
+                ),
+                lobby.FindAll("select.colour").Count,
+                lobby.FindAll("button.quick").Count
+            )
+        );
+    }
+
+    [Fact]
+    public void Lobby_WhenScenariosWereLastChosenButTheGameHasNone_SetsUpQuickGames()
+    {
+        // Arrange
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.setup").SetResult("scenarios");
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Assert
+        Assert.Equal((0, 3), (lobby.FindAll("button.scenarios").Count, lobby.FindAll("button.quick").Count));
+    }
+
+    [Theory]
+    [InlineData(false, false, 0, false)]
+    [InlineData(true, false, 1, false)]
+    [InlineData(true, true, 1, true)]
+    public void Play_WhenTheGameOffersPromotionAtTheSide_AsksForItIfChecked(
+        bool isOffered,
+        bool isChecked,
+        int shown,
+        bool expected
+    )
+    {
+        // Arrange
+        this._page.Server.MayPromoteAtSide = isOffered;
+        IRenderedComponent<Lobby> lobby = this.ByStrength();
+        if (isChecked)
+        {
+            lobby.Find("input.promotes-at-side").Change(true);
+        }
+
+        // Act
+        lobby.Find("button.create").Click();
+
+        // Assert
+        Assert.Equal(
+            (shown, expected),
+            (lobby.FindAll("input.promotes-at-side").Count, this._page.Server.Created?.PromotesAtSide)
+        );
+    }
+
+    [Fact]
+    public void Render_WhenTheGamesOtherChoicesWereMadeBefore_MakesThemAgain()
+    {
+        // Arrange - drafted in secret, from allies too, for 150; at the side; on a 12 by 10 board
+        this._page.Server.IsDealt = true;
+        this._page.Server.IsDraftable = true;
+        this._page.Server.MayPromoteAtSide = true;
+        this._page.Server.SizableBoard = new BoardSizeDto(8, 8, 4, 2);
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.setup").SetResult("strength");
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.setup-of.chaturaji-2027")
+            .SetResult(
+                "chaturaji-2027;0;-1,1,1,1;,,,;armies=draft-own,budget=150,secret=1,hidden=1,side=1,board=12x10x4x3"
+            );
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.Render();
+        lobby.Find("button.create").Click();
+
+        // Assert
+        CreateGameRequest? created = this._page.Server.Created;
+        Assert.Equal(
+            (true, 150, true, true, true, new BoardSizeDto(12, 10, 4, 3)),
+            (
+                created?.IsDrafted,
+                created?.DraftBudget,
+                created?.IsDraftSecret,
+                created?.IsDraftHiddenFromAllies,
+                created?.PromotesAtSide,
+                created?.Board
+            )
+        );
+    }
+
+    [Theory]
+    [InlineData("armies=draft-one,budget=9999,side=1", "random-each", 0)]
+    [InlineData("armies=random-one", "random-one", 0)]
+    [InlineData("armies=nonsense,players=1", "random-each", 0)]
+    public void Render_WhenAChoiceRememberedIsNoLongerOffered_LeavesItAsTheGameHasIt(
+        string choices,
+        string armies,
+        int sides
+    )
+    {
+        // Arrange - dealt, but not drafted, nor promoting at the side; a guest, so not for players only
+        this._page.Server.IsDealt = true;
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.setup").SetResult("strength");
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.setup-of.chaturaji-2027")
+            .SetResult("chaturaji-2027;0;-1,1,1,1;,,,;" + choices);
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.Render();
+        lobby.Find("button.create").Click();
+
+        // Assert
+        Assert.Equal(
+            (armies, sides, false, false),
+            (
+                lobby.Find("select.armies").GetAttribute("value"),
+                lobby.FindAll("input.promotes-at-side").Count,
+                this._page.Server.Created?.PromotesAtSide,
+                this._page.Server.Created?.IsForPlayers
+            )
         );
     }
 

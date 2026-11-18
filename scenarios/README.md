@@ -4,8 +4,12 @@ Games set up part-way, to try a corner of the rules without playing up to it:
 a back-to-back swap, a promotion, an escape, every Raja on a throne, a Checkers
 jump chain, Tafl custody... A server in development
 (`appsettings.Development.json`, `Scenarios:Folder`) offers each `.json` file in
-this folder, and those below it, in the lobby's **Start from** list, under
-**Custom**: those of the game and size chosen. No other server offers any.
+this folder, and those below it, under the lobby's **Scenarios**, a mode of its
+own beside **Quick game** and **Custom**: those of the game chosen, whatever
+their size. Choosing one and **Play** starts it at once at its own ruleset and
+size, the player at the seat whose turn it is, bots of medium strength at the
+others (Stated, 2026-11-13: "everything else will be configured as necessary
+to test the scenarios"). No other server offers any, nor the mode.
 
 The files are read whenever the lobby asks, so a new or changed file shows up
 on reloading the lobby, without restarting the server. A game keeps the
@@ -45,6 +49,9 @@ any case: cells as `d4`, seats as `Black`, pieces as the seat then the kind,
 - `edition`: the edition of the ruleset's pieces and rules it is played by
   (Grand Legions: 6 plays a chain of jumps jump by jump); the first, 0, if left
   out.
+- `promotesAtSide`: `true` for pieces promoted at the far edge to be promoted
+  at the edge to their right too, as a Grand Legions game's creator may ask;
+  not, if left out.
 
 A piece may be of any kind the ruleset plays, whether or not a new game has
 one. Each piece takes the identity of a piece of its seat and kind in a new
@@ -73,6 +80,7 @@ names them: `Black King (Checkers)`, `Red Rook (Western)`, `Black Man`. Dice:
 | `mercenaries` | Hiring a captured Shogi piece |
 | `leapers` | Blocked leaps (Xiangqi Horse, Janggi Elephant) and the Grasshopper |
 | `pawns` | The Berolina Pawn, and Pawns back to back swapping |
+| `forward-only-swaps` | Forward-only pieces of different kinds swapping back to back |
 
 None has palaces or rivers, which a scenario cannot set yet: the palace powers
 (palace lines, pieces confined to a palace) and the river pieces are left to a

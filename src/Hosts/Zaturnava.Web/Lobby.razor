@@ -90,6 +90,8 @@
             <h2>New game</h2>
             @{
                 ImmutableList<RulesetDto> sizes = SizesOf(catalog, this.Ruleset(catalog).Game);
+                ImmutableList<ScenarioDto> scenarios = this.ScenariosFor(catalog);
+                SetupMode mode = this.ModeFor(catalog);
             }
             <div class="setup-modes">
                 <button class="mode quick-game"
@@ -102,12 +104,40 @@
                         @onclick="() => this.SetUp(SetupMode.Custom)">
                     Custom
                 </button>
+                @if (!scenarios.IsEmpty)
+                {
+                    <button class="mode scenarios"
+                            aria-pressed="@this.IsPressed(SetupMode.Scenarios)"
+                            @onclick="() => this.SetUp(SetupMode.Scenarios)">
+                        Scenarios
+                    </button>
+                }
             </div>
             <p class="hint setup-hint">
                 Click <strong>Custom</strong> to play other people.
             </p>
+            @if (mode == SetupMode.Scenarios)
+            {
+                <label class="scenario">
+                    <span class="choice-name">Scenario</span>
+                    <select class="scenario" @bind="this._scenario">
+                        @foreach (ScenarioDto scenario in scenarios)
+                        {
+                            <option value="@scenario.Id">@ScenarioName(catalog, scenario)</option>
+                        }
+                    </select>
+                </label>
+                ScenarioDto chosen = this.ScenarioChosen(scenarios);
+                <p class="scenario-description">@chosen.Description</p>
+                <p class="hint scenario-hint">
+                    You play the side whose turn it is; bots play the others.
+                </p>
+                <div class="start">
+                    <button class="create primary" @onclick="() => this.TryOut(catalog, chosen)">Play</button>
+                </div>
+            }
             <div class="choices">
-                @if (sizes.Count > 1)
+                @if (mode != SetupMode.Scenarios && sizes.Count > 1)
                 {
                     <label class="size">
                         <span class="choice-name">Size</span>
@@ -119,7 +149,7 @@
                         </select>
                     </label>
                 }
-                @if (this.Ruleset(catalog).SizableBoard is not null)
+                @if (mode != SetupMode.Scenarios && this.Ruleset(catalog).SizableBoard is not null)
                 {
                     <table class="board-size">
                         <thead>
@@ -176,7 +206,7 @@
                     </table>
                 }
             </div>
-            @if (this._mode == SetupMode.Quick)
+            @if (mode == SetupMode.Quick)
             {
                 <div class="quick-games">
                     <span class="quick-label">At any seat, against bots:</span>
@@ -189,7 +219,7 @@
                     <strong>The bots</strong>, below.
                 </p>
             }
-            else
+            else if (mode == SetupMode.Custom)
             {
                 <ol class="plans strengths">
                     <li>
@@ -243,7 +273,7 @@
                     </p>
                 }
             }
-            @if (this._mode != SetupMode.Quick && this.Ruleset(catalog).IsDealt)
+            @if (mode == SetupMode.Custom && this.Ruleset(catalog).IsDealt)
             {
                 <div class="army-choices">
                     <label class="armies">
@@ -287,31 +317,22 @@
                     }
                 }
             }
-            @if (this._mode != SetupMode.Quick && this._me is not null)
+            @if (mode == SetupMode.Custom && this.Ruleset(catalog).MayPromoteAtSide)
+            {
+                <label class="side-promotion">
+                    <input type="checkbox" class="promotes-at-side" @bind="this._promotesAtSide" />
+                    Promote at the right-hand edge too: a piece that would promote on reaching the far edge also
+                    promotes on reaching the edge to its right
+                </label>
+            }
+            @if (mode == SetupMode.Custom && this._me is not null)
             {
                 <label class="for-players">
                     <input type="checkbox" class="players-only" @bind="this._isForPlayers" />
                     Players signed in only: no guests at the open seats, nor taking over a bot's
                 </label>
             }
-            @if (this._mode != SetupMode.Quick && !this.ScenariosFor(catalog).IsEmpty)
-            {
-                <label class="scenario">
-                    <span class="choice-name">Start from</span>
-                    <select class="scenario" @bind="this._scenario">
-                        <option value="">The beginning</option>
-                        @foreach (ScenarioDto scenario in this.ScenariosFor(catalog))
-                        {
-                            <option value="@scenario.Id">Scenario: @scenario.Name</option>
-                        }
-                    </select>
-                </label>
-                @if (this.ScenariosFor(catalog).FirstOrDefault(scenario => scenario.Id == this._scenario) is { } chosen)
-                {
-                    <p class="scenario-description">@chosen.Description</p>
-                }
-            }
-            @if (this._mode != SetupMode.Quick)
+            @if (mode == SetupMode.Custom)
             {
                 <div class="start">
                     <button class="create primary" @onclick="() => this.Create(catalog)">Play</button>
@@ -506,6 +527,12 @@
     private bool _isForPlayers;
     private bool _isSecret;
     private bool _isHiddenFromAllies;
+
+    /// <summary>
+    /// For a game that offers it, whether pieces promoted at the far edge are promoted at the edge to their right too
+    /// (Stated, 2026-11-13: off by default, and remembered as last set).
+    /// </summary>
+    private bool _promotesAtSide;
     private string? _problem;
 
     /// <summary>How the player last started each game, by the game, as the browser remembers.</summary>
@@ -554,7 +581,16 @@
 
     /// <summary>The game as it is set up now.</summary>
     private GameSetup SetupNow(CatalogDto catalog) =>
-        new(this.Ruleset(catalog).Id, this._colour, [.. this._levels], [.. this._picks]);
+        new(this.Ruleset(catalog).Id, this._colour, [.. this._levels], [.. this._picks])
+        {
+            Armies = this.Ruleset(catalog).IsDealt ? this._armies : null,
+            Budget = this.IsDrafting ? this._budget : null,
+            IsSecret = this._isSecret,
+            IsHiddenFromAllies = this._isHiddenFromAllies,
+            IsForPlayers = this._isForPlayers,
+            PromotesAtSide = this._promotesAtSide,
+            Board = this.BoardAsked(catalog),
+        };
 
     /// <summary>
     /// <paramref name="game"/> set up as the player last started it, if they have, and it still can be; else
@@ -567,6 +603,18 @@
         RulesetDto? remembered = sizes.FirstOrDefault(size => size.Id == setup?.RulesetId);
         this._rulesetId = (remembered ?? sizes[(sizes.Count - 1) / 2]).Id;
         this.Prepare(catalog);
+        if (remembered is not null && setup!.Board is { } board && remembered.SizableBoard is not null)
+        {
+            (this._width, this._height) = (board.Width, board.Height);
+            (this._kingdomWidth, this._kingdomDepth) = (board.KingdomWidth, board.KingdomDepth);
+            this.Resized(catalog);
+        }
+
+        if (remembered is not null)
+        {
+            this.RestoreChoices(catalog, setup!);
+        }
+
         if (remembered is not null && this.Fits(setup!))
         {
             this.Restore(setup!);
@@ -595,6 +643,20 @@
                     setup.Levels[seat]
                 )
             );
+    }
+
+    /// <summary>The choices but the seats as <paramref name="setup"/> has them, those the game still offers.</summary>
+    private void RestoreChoices(CatalogDto catalog, GameSetup setup)
+    {
+        RulesetDto ruleset = this.Ruleset(catalog);
+        bool isOffered = setup.Armies is RandomEach or RandomOne
+            || (setup.Armies is DraftOwn or DraftOne && ruleset.IsDraftable);
+        this._armies = isOffered ? setup.Armies! : this._armies;
+        this._budget = setup.Budget is { } budget && budget <= this.BudgetLimit(catalog) ? budget : this._budget;
+        this._isSecret = setup.IsSecret;
+        this._isHiddenFromAllies = setup.IsHiddenFromAllies;
+        this._isForPlayers = setup.IsForPlayers;
+        this._promotesAtSide = setup.PromotesAtSide && ruleset.MayPromoteAtSide;
     }
 
     /// <summary>The seats as <paramref name="setup"/> has them; a bot it chose that is no longer offered, any.</summary>
@@ -861,6 +923,7 @@
         this._picks = [.. Enumerable.Repeat(string.Empty, this.Ruleset(catalog).SeatCount)];
         this._armies = this.Ruleset(catalog).IsDraftable ? DraftOwn : RandomEach;
         this._budget = this.Ruleset(catalog).DraftBudget;
+        this._promotesAtSide = false;
     }
 
     /// <summary>
@@ -899,14 +962,16 @@
     /// The budget again, for kingdoms of the size now set, as the game's grows with them; and the bots' strengths, as
     /// rated at the size nearest it, each seat keeping its strength where it still may.
     /// </summary>
-    private void Resized()
+    private void Resized() => this.Resized(this._catalog!);
+
+    private void Resized(CatalogDto catalog)
     {
-        RulesetDto ruleset = this.Ruleset(this._catalog!);
+        RulesetDto ruleset = this.Ruleset(catalog);
         BoardSizeDto board = ruleset.SizableBoard!;
         this._budget = ruleset.DraftBudget is { } budget
             ? budget * this._kingdomWidth * this._kingdomDepth / (board.KingdomWidth * board.KingdomDepth)
             : null;
-        this._strengths = this.StrengthsOf(this._catalog!);
+        this._strengths = this.StrengthsOf(catalog);
         this._levels = [.. this._levels.Select(level => Math.Min(level, this._strengths.Count - 1))];
     }
 
@@ -944,23 +1009,51 @@
             this.Ruleset(catalog).Id,
             GameStarter.ByStrength(this.ChoicesOfSeats(), this._strengths),
             this._colour,
-            this.ScenariosFor(catalog).Any(scenario => scenario.Id == this._scenario) ? this._scenario : null,
+            null,
             await this.Browser.Claimant(),
             armies: this.ArmiesAsked(catalog),
-            isForPlayers: this._isForPlayers
+            isForPlayers: this._isForPlayers && this._me is not null
         ));
     }
 
     /// <summary>
-    /// The scenarios the chosen game may start from: those of its ruleset, and any that cannot be read, which are of
-    /// none, so that whoever wrote one sees what to fix.
+    /// The scenarios of the chosen game, whatever the size each is set up at, each started at its own (Stated,
+    /// 2026-11-13: a mode of its own, "everything else will be configured as necessary"); and any that cannot be read,
+    /// which are of none, so that whoever wrote one sees what to fix.
     /// </summary>
     private ImmutableList<ScenarioDto> ScenariosFor(CatalogDto catalog) =>
     [
         .. catalog.Scenarios.Where(scenario =>
-            scenario.RulesetId == this.Ruleset(catalog).Id || scenario.RulesetId.Length == 0
+            scenario.RulesetId.Length == 0
+            || catalog.Rulesets.Any(ruleset => ruleset.Id == scenario.RulesetId && ruleset.Game == this.Game)
         ),
     ];
+
+    /// <summary>How new games are set up: as the player chose, but for scenarios, where the game has none.</summary>
+    private SetupMode ModeFor(CatalogDto catalog) =>
+        this._mode == SetupMode.Scenarios && this.ScenariosFor(catalog).IsEmpty ? SetupMode.Quick : this._mode;
+
+    /// <summary>The scenario chosen of <paramref name="scenarios"/>, never none; the first, until the player chooses.</summary>
+    private ScenarioDto ScenarioChosen(ImmutableList<ScenarioDto> scenarios) =>
+        scenarios.FirstOrDefault(scenario => scenario.Id == this._scenario) ?? scenarios[0];
+
+    /// <summary>A scenario's name, and its size, for a game of several: "Cannons (medium)".</summary>
+    private static string ScenarioName(CatalogDto catalog, ScenarioDto scenario) =>
+        catalog.Rulesets.FirstOrDefault(ruleset => ruleset.Id == scenario.RulesetId)?.Size is { } size
+            ? $"{scenario.Name} ({size})"
+            : scenario.Name;
+
+    /// <summary>Starts the <paramref name="scenario"/> as it is set up, the player at the seat to move.</summary>
+    private async Task TryOut(CatalogDto catalog, ScenarioDto scenario) =>
+        await this.Sit(async () =>
+            await GameStarter.TryOut(
+                this.Games,
+                catalog,
+                scenario,
+                this.Ruleset(catalog),
+                await this.Browser.Claimant()
+            )
+        );
 
     private bool IsDrafting => this._armies is DraftOwn or DraftOne;
 
@@ -984,6 +1077,7 @@
         } with
         {
             Board = this.BoardAsked(catalog),
+            PromotesAtSide = this._promotesAtSide && this.Ruleset(catalog).MayPromoteAtSide,
         };
 
     /// <summary>How each seat set up by strength is played: the player's own, and a person's, by no bot.</summary>
