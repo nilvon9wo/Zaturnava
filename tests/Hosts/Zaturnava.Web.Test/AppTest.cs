@@ -344,6 +344,11 @@ public sealed class AppTest : IDisposable
     /// <summary>Plays a custom game, at the first seat, as the lobby offers it.</summary>
     private static void Play(IRenderedComponent<App> app)
     {
+        if (app.FindAll(".panel.new-game").Count == 0)
+        {
+            app.Find("button.new-game-toggle").Click();
+        }
+
         app.Find("button.custom").Click();
         app.Find("button.create").Click();
     }
