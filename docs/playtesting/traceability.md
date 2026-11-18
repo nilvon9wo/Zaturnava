@@ -69,7 +69,7 @@ Statuses (the specification's P1): **Done** (implemented and tested), **Done, pa
 | H4 | Games list as a sortable table, one row each, who is next and how long | To do | |
 | I | Placement previews, desaturated and blinking | To do | |
 | J1 | Escape and hire as a list, as ransom is | Done | Pieces that may escape, come back from fleeing, or be placed once hired show as a row of piece icons ("Onto the board"), and prisoners for hire as another ("Hire"). They look like the ransom list, each named in its tooltip; the large yellow buttons are gone for them. The server says which piece each such action brings (`ActionDto.Coming`). Tests: `TableTest`, `GameViewsTest`. |
-| J2 | Clicking a listed piece shows its card | To do | |
+| J2 | Clicking a listed piece shows its card | Done | With cards on, choosing a piece to escape, to give back or to ask for in a ransom shows its card. A prisoner for hire is now picked first, showing its card, then hired with a button that names the price; picking it again lets it go. Tests: `TableTest`. |
 | J3 | Promotion choices inspectable | To do | |
 | K | Loading progress on itch.io | To do | |
 | L | Remove "The bots" button | Done | Gone, with its dialog. A bot's name opens its profile, on the leaderboard and at a table; "How to play" still links to the bots' documentation for developers. The quick-game hint points to the leaderboard. Test: `AppTest`. |

@@ -2070,26 +2070,72 @@ public sealed class TableTest : IDisposable
     }
 
     [Fact]
-    public void Click_WhenAPrisonerMayBeHired_ListsItAsAPieceAndHiresIt()
+    public void Click_WhenAPrisonerForHireIsPickedThenHired_ShowsItsCardThenHiresIt()
     {
-        // Arrange - Yellow's Horse 9, Black's prisoner, for hire (playtest 2026-11-15, J1)
-        ActionDto hire = new(
-            "hire",
-            ImmutableSortedDictionary<string, string>.Empty.Add(ActionArguments.Actor, "0").Add("piece", "9")
-        )
-        {
-            Label = "Hire Yellow's Horse, your prisoner, for 4 points: it becomes yours",
-            Coming = new PrisonerDto(9, "horse", "Horse", 1),
-        };
+        // Arrange - Yellow's Horse 9, Black's prisoner, for hire, listed as a piece (playtest 2026-11-15, J1, J2)
+        ActionDto hire = Hire();
         this._page.Server.View = FakeGameServer.SeatZeroToMove with { LegalActions = [hire, FakeGameServer.Pass] };
         IRenderedComponent<Table> table = this.Render(SeatZero);
         int buttons = table.FindAll(".actions button").Count;
+        table.Find(".hiring button.prisoner").Click();
+        string card = table.Find("aside.piece-card h2").TextContent;
+        (string?, string?) before = (table.Find(".hiring button.prisoner").GetAttribute("aria-pressed"),
+            this._page.Server.Submitted?.Action.Label);
+
+        // Act
+        table.Find("button.action.hire").Click();
+
+        // Assert
+        Assert.Equal(
+            (1, "Horse", ("true", (string?)null), hire.Label),
+            (buttons, card, before, this._page.Server.Submitted?.Action.Label)
+        );
+    }
+
+    [Fact]
+    public void Click_WhenAPrisonerForHireIsPickedAgain_LetsItGo()
+    {
+        // Arrange
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with { LegalActions = [Hire(), FakeGameServer.Pass] };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        table.Find(".hiring button.prisoner").Click();
 
         // Act
         table.Find(".hiring button.prisoner").Click();
 
         // Assert
-        Assert.Equal((1, hire.Label), (buttons, this._page.Server.Submitted?.Action.Label));
+        Assert.Equal(
+            ("false", 0, 0),
+            (
+                table.Find(".hiring button.prisoner").GetAttribute("aria-pressed"),
+                table.FindAll("button.action.hire").Count,
+                table.FindAll("aside.piece-card").Count
+            )
+        );
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Click_WhenAPrisonerForHireIsShownAndItsCardClosed_KeepsItPickedOrHidesNoCardWhenCardsAreOff(
+        bool areCardsShown
+    )
+    {
+        // Arrange
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with { LegalActions = [Hire(), FakeGameServer.Pass] };
+        IRenderedComponent<Table> table = this._page.Render<Table>(parameters =>
+            parameters.Add(x => x.Seating, SeatZero).Add(x => x.AreCardsShown, areCardsShown)
+        );
+        table.Find(".hiring button.prisoner").Click();
+
+        // Act
+        foreach (AngleSharp.Dom.IElement close in table.FindAll("aside.piece-card button.close"))
+        {
+            close.Click();
+        }
+
+        // Assert
+        Assert.Equal((0, 1), (table.FindAll("aside.piece-card").Count, table.FindAll("button.action.hire").Count));
     }
 
     [Theory]
@@ -2370,6 +2416,14 @@ public sealed class TableTest : IDisposable
 
     private static IEnumerable<string> Played(PageContext page) =>
         page.JSInterop.Invocations["zaturnava.play"].SelectMany(call => call.Arguments.Select(sound => (string)sound!));
+
+    /// <summary>Black hiring Yellow's Horse 9, its prisoner.</summary>
+    private static ActionDto Hire() =>
+        new("hire", ImmutableSortedDictionary<string, string>.Empty.Add(ActionArguments.Actor, "0").Add("piece", "9"))
+        {
+            Label = "Hire Yellow's Horse, your prisoner, for 4 points: it becomes yours",
+            Coming = new PrisonerDto(9, "horse", "Horse", 1),
+        };
 
     /// <summary>The button choosing a piece to bring onto the board.</summary>
     private const string ComingPiece = ".coming button.prisoner";
@@ -2877,6 +2931,30 @@ public sealed class TableTest : IDisposable
 
         // Assert
         Assert.Equal(("offer", "1", "9", "7"), Offered(this._page.Server));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Click_WhenAPrisonerIsChosenToGiveOrAskFor_ShowsItsCard(bool isAsked)
+    {
+        // Arrange - piece cards on (playtest 2026-11-15, J2)
+        this._page.Server.View = Ransoms();
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        AngleSharp.Dom.IElement given = table.FindAll(".ransom-to")[0].QuerySelector("button.prisoner")!;
+        string expected = (isAsked ? null : given.GetAttribute("title")) ?? string.Empty;
+        given.Click();
+
+        // Act
+        if (isAsked)
+        {
+            AngleSharp.Dom.IElement asked = table.Find(".ransom-ask button.prisoner");
+            expected = asked.GetAttribute("title") ?? string.Empty;
+            asked.Click();
+        }
+
+        // Assert
+        Assert.Equal(expected, table.Find("aside.piece-card h2").TextContent);
     }
 
     [Fact]

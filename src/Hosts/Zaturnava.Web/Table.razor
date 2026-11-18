@@ -389,13 +389,20 @@
                                 @foreach (ActionDto hire in hires)
                                 {
                                     PrisonerDto piece = hire.Coming!;
-                                    <button class="prisoner"
+                                    <button class="@(this._hireChosen == piece.Id ? "prisoner chosen" : "prisoner")"
                                             title="@this.Named(ActionLabels.LabelOf(hire))"
-                                            @onclick="() => this.Submit(turn.Claim, hire)">
+                                            aria-pressed="@(this._hireChosen == piece.Id ? "true" : "false")"
+                                            @onclick="() => this.ChooseHire(piece)">
                                         <PieceIcon Kind="@piece.Kind" Name="@piece.Name" Owner="piece.Owner" Mark="piece.Mark" Pieces="this.PiecesShown" />
                                     </button>
                                 }
                             </div>
+                            @if (hires.Find(hire => hire.Coming!.Id == this._hireChosen) is { } chosen)
+                            {
+                                <button class="action hire" @onclick="() => this.Submit(turn.Claim, chosen)">
+                                    @this.Named(ActionLabels.LabelOf(chosen))
+                                </button>
+                            }
                         }
                         @if (!coming.IsEmpty)
                         {
@@ -444,7 +451,7 @@
                                         <button class="@ClassOf(prisoner, this._given)"
                                                 title="@TitleOf(prisoner)"
                                                 disabled="@(!prisoner.MayGoBack)"
-                                                @onclick="() => this.Give(receiver.Id, [prisoner.Id])">
+                                                @onclick="() => this.GiveOne(receiver.Id, prisoner)">
                                             <PieceIcon Kind="@prisoner.Kind" Name="@prisoner.Name" Owner="prisoner.Owner" Mark="prisoner.Mark" Pieces="this.PiecesShown" />
                                         </button>
                                     }
@@ -464,7 +471,7 @@
                                         <button class="@ClassOf(prisoner, this._asked)"
                                                 title="@TitleOf(prisoner)"
                                                 disabled="@(!prisoner.MayGoBack)"
-                                                @onclick="() => this.Ask(prisoner.Id)">
+                                                @onclick="() => this.AskOne(prisoner)">
                                             <PieceIcon Kind="@prisoner.Kind" Name="@prisoner.Name" Owner="prisoner.Owner" Mark="prisoner.Mark" Pieces="this.PiecesShown" />
                                         </button>
                                     }
@@ -547,6 +554,17 @@
                            Forward="view.Seats[inspected.Owner].Forward"
                            Turn="this._boardTurn"
                            OnClose="this.PutAway" />
+            }
+            else if (this.AreCardsShown && this._offBoardShown is { } offBoard)
+            {
+                <PieceCard Piece="new PieceDto(offBoard.Id, offBoard.Kind, offBoard.Name, offBoard.Owner, -1) { Mark = offBoard.Mark }"
+                           Kind="view.Kinds.Find(kind => kind.Kind == offBoard.Kind)"
+                           Owner="@view.Seats[offBoard.Owner].Name"
+                           Cell=""
+                           Pieces="this.PiecesShown"
+                           Forward="view.Seats[offBoard.Owner].Forward"
+                           Turn="this._boardTurn"
+                           OnClose="this.PutAwayOffBoard" />
             }
         </div>
     }
@@ -662,6 +680,12 @@
 
     /// <summary>The piece last clicked on, told of beside the board until put away; none, if none was.</summary>
     private int? _inspected;
+
+    /// <summary>A piece off the board whose card is shown: a prisoner picked to give back, ask for, or hire (J2).</summary>
+    private PrisonerDto? _offBoardShown;
+
+    /// <summary>The prisoner picked to hire, by id, hired with its own button once the player has seen the piece.</summary>
+    private int? _hireChosen;
     private BoardTurn _boardTurn = BoardTurn.None;
     private ImmutableHashSet<int> _lastMove = [];
     private bool _isHighlightsOnly = true;
@@ -1102,7 +1126,9 @@
     /// hired (J1); none, if it brings none.
     /// </summary>
     private static PrisonerDto? ComingOf(GameViewDto view, string? choice) =>
-        view.LegalActions.FirstOrDefault(action => action.Choice == choice && action.Coming is not null)?.Coming;
+        view.LegalActions.FirstOrDefault(action => action.Choice is { } chooses
+            && chooses == choice
+            && action.Coming is not null)?.Coming;
 
     /// <summary>
     /// The same game again: its ruleset, its bots in the same seats, the player at the same seat, its seats for people
@@ -1258,6 +1284,33 @@
     }
 
     private void Ask(int prisoner) => this._asked = this._asked.SymmetricExcept([prisoner]);
+
+    /// <summary>Chooses a prisoner to give back, or no longer, showing its card (J2).</summary>
+    private void GiveOne(int receiver, PrisonerDto prisoner)
+    {
+        this._offBoardShown = prisoner;
+        this.Give(receiver, [prisoner.Id]);
+    }
+
+    /// <summary>Chooses a prisoner to ask for, or no longer, showing its card (J2).</summary>
+    private void AskOne(PrisonerDto prisoner)
+    {
+        this._offBoardShown = prisoner;
+        this.Ask(prisoner.Id);
+    }
+
+    /// <summary>
+    /// Chooses a prisoner to hire, showing its card and the price, for the player to hire it then (J2); chosen again,
+    /// lets it go.
+    /// </summary>
+    private void ChooseHire(PrisonerDto prisoner)
+    {
+        bool isSame = this._hireChosen == prisoner.Id;
+        this._hireChosen = isSame ? null : prisoner.Id;
+        this._offBoardShown = isSame ? null : prisoner;
+    }
+
+    private void PutAwayOffBoard() => this._offBoardShown = null;
 
     private void AskToEnd() => this._isProposing = true;
 
@@ -1531,6 +1584,8 @@
         this._receiver = isNew ? null : this._receiver;
         this._given = isNew ? [] : this._given;
         this._asked = isNew ? [] : this._asked;
+        this._offBoardShown = isNew ? null : this._offBoardShown;
+        this._hireChosen = isNew ? null : this._hireChosen;
         this._offersMade = view.TurnNumber == this._offersTurn ? this._offersMade : [];
         this._offersTurn = view.TurnNumber;
         this._turn = view.DecidingSeat is { } deciding && this.Seating.Claim is { } claim && claim.Seat == deciding
