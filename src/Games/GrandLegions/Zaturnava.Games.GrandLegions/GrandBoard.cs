@@ -67,9 +67,9 @@ public sealed record GrandBoard(
     /// </summary>
     public bool Crosses((int Column, int Row) from, (int Column, int Row) to) =>
         (this.Rivers.HasFlag(Rivers.NorthSouth)
-            && (this.WestEastOf(from.Column, from.Row) * this.WestEastOf(to.Column, to.Row)) < 0)
+            && this.WestEastOf(from.Column, from.Row) * this.WestEastOf(to.Column, to.Row) < 0)
         || (this.Rivers.HasFlag(Rivers.EastWest)
-            && (this.SouthNorthOf(from.Column, from.Row) * this.SouthNorthOf(to.Column, to.Row)) < 0);
+            && this.SouthNorthOf(from.Column, from.Row) * this.SouthNorthOf(to.Column, to.Row) < 0);
 
     /// <summary>
     /// Whether a river cuts (<paramref name="column"/>, <paramref name="row"/>) in half: only on an odd side, and
