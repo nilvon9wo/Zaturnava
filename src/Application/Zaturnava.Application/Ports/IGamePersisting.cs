@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using System.ComponentModel.DataAnnotations;
 using Net.NowhereAtAll.Zaturnava.Application.Games;
 using Net.NowhereAtAll.Zaturnava.Application.Players;
+using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 
 namespace Net.NowhereAtAll.Zaturnava.Application.Ports;
 
@@ -22,11 +23,14 @@ public interface IGamePersisting
         CancellationToken cancellationToken
     );
 
-    /// <summary>The games saved before whether each is over was kept.</summary>
+    /// <summary>The games saved before whether each is over, and who decides next, was kept.</summary>
     Task<ImmutableList<GameRecord>> Unsummarized(CancellationToken cancellationToken);
 
-    /// <summary>Keeps whether the game is over, as worked out, leaving its version as it is.</summary>
-    Task MarkOver(GameId id, bool isOver, CancellationToken cancellationToken);
+    /// <summary>
+    /// Keeps whether the game is over, and which seat decides next (none, if it is over), as worked out, leaving its
+    /// version as it is.
+    /// </summary>
+    Task MarkSummarized(GameId id, bool isOver, SeatId? deciding, CancellationToken cancellationToken);
 
     /// <summary>
     /// The games not over, as last saved, that have not changed since <paramref name="since"/>; none from before when

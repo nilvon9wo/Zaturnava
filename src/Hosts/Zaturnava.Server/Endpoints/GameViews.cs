@@ -72,6 +72,7 @@ internal static class GameViews
             Created = game.Created,
             LastChanged = game.LastChanged,
             AwaySeats = [.. game.Away.Select(seat => seat.Value)],
+            DecidingSeat = game.Deciding?.Value,
             IsForPlayers = game.Controllers.Any(controller => controller is OpenSeat { IsForPlayers: true }),
         };
 

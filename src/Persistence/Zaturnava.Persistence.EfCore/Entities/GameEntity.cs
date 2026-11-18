@@ -17,6 +17,12 @@ public sealed class GameEntity
     /// <summary>Whether the game is over, as last saved; null for a game saved before this was kept.</summary>
     public bool? IsOver { get; set; }
 
+    /// <summary>
+    /// The seat to decide next, as last saved; null for a game over, or one not saved or summarized since this was
+    /// kept.
+    /// </summary>
+    public int? Deciding { get; set; }
+
     /// <summary>When the game was created, in UTC; null for a game created before this was kept.</summary>
     public DateTime? Created { get; set; }
 

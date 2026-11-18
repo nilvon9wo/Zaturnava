@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Net.NowhereAtAll.Zaturnava.Application.Games;
 using Net.NowhereAtAll.Zaturnava.Application.Players;
 using Net.NowhereAtAll.Zaturnava.Application.Ports;
+using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 using Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Entities;
 
 namespace Net.NowhereAtAll.Zaturnava.Persistence.EfCore;
@@ -69,10 +70,21 @@ public sealed class EfGameStore(GameDbContext context) : IGamePersisting
         return [.. entities.Select(GameRecordMapping.ToRecord)];
     }
 
-    public async Task MarkOver(GameId id, bool isOver, CancellationToken cancellationToken) =>
+    public async Task MarkSummarized(
+        GameId id,
+        bool isOver,
+        SeatId? deciding,
+        CancellationToken cancellationToken
+    )
+    {
+        int? seat = deciding?.Value;
         _ = await this._context.Games
             .Where(game => game.Id == id.Value)
-            .ExecuteUpdateAsync(set => set.SetProperty(game => game.IsOver, isOver), cancellationToken);
+            .ExecuteUpdateAsync(
+                set => set.SetProperty(game => game.IsOver, isOver).SetProperty(game => game.Deciding, seat),
+                cancellationToken
+            );
+    }
 
     public async Task<ImmutableList<GameRecord>> Idle(DateTimeOffset since, CancellationToken cancellationToken)
     {
@@ -158,6 +170,7 @@ public sealed class EfGameStore(GameDbContext context) : IGamePersisting
             : throw new ConcurrencyConflictException(record.Id);
         current.Version = record.Version;
         current.IsOver = record.IsOver;
+        current.Deciding = record.Deciding?.Value;
         current.HasChangedHands = record.HasChangedHands;
         current.LastChanged = GameRecordMapping.ToUtc(record.LastChanged);
         foreach (SeatEntity seat in current.Seats)

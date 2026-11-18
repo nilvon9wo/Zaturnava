@@ -509,7 +509,10 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
         // Assert
         GameSummaryDto game = page.Games.Single(listed => listed.Id == gameId);
         Assert.Equal([0], game.OpenSeats);
-        Assert.Equal(("Black,Yellow,Green,Red", false), (string.Join(",", game.SeatNames), game.IsOver));
+        Assert.Equal(
+            ("Black,Yellow,Green,Red", false, 0),
+            (string.Join(",", game.SeatNames), game.IsOver, game.DecidingSeat)
+        );
         Assert.Equal((true, game.Created), (game.Created is not null, game.LastChanged));
     }
 

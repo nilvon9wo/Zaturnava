@@ -160,18 +160,27 @@ public sealed class EfGameStoreTest : IDisposable
         Assert.Equal("a", Assert.Single(games).Id.Value);
     }
 
-    [Fact]
-    public async Task MarkOver_WhenTheGameIsStored_KeepsWhetherItIsOver()
+    [Theory]
+    [InlineData(true, null)]
+    [InlineData(false, 2)]
+    public async Task MarkSummarized_WhenTheGameIsStored_KeepsWhetherItIsOverAndWhoDecidesNext(
+        bool isOver,
+        int? deciding
+    )
     {
         // Arrange
         await this.AddListed();
+        SeatId? seat = deciding is { } value ? new SeatId(value) : null;
 
         // Act
-        await this._store.MarkOver(new GameId("a"), true, this._cancellation);
+        await this._store.MarkSummarized(new GameId("a"), isOver, seat, this._cancellation);
 
         // Assert
         EfGameStore rereading = new(this._database.NewContext());
-        Assert.Equal(true, (await rereading.Find(new GameId("a"), this._cancellation))?.IsOver);
+        GameRecord? found = await rereading.Find(new GameId("a"), this._cancellation);
+        GameListing listed = (await rereading.Page(new GameQuery(), Offered, this._cancellation)).Games
+            .Single(game => game.Id.Value == "a");
+        Assert.Equal((isOver, seat, seat), (found?.IsOver, found?.Deciding, listed.Deciding));
     }
 
     [Fact]
@@ -238,6 +247,24 @@ public sealed class EfGameStoreTest : IDisposable
         // Assert
         GameRecord? reread = await new EfGameStore(this._database.NewContext()).Find(record.Id, this._cancellation);
         Assert.True(reread?.HasChangedHands);
+    }
+
+    [Fact]
+    public async Task Replace_WhenAnotherSeatDecides_KeepsWhoDecidesFromTheFirstSaveToTheNext()
+    {
+        // Arrange - Yellow deciding as the game is added, then Red
+        GameRecord record = Record("deciding") with { Deciding = new SeatId(1) };
+        await this._store.Add(record, this._cancellation);
+        SeatId? added = (await new EfGameStore(this._database.NewContext()).Find(record.Id, this._cancellation))
+            ?.Deciding;
+
+        // Act
+        await new EfGameStore(this._database.NewContext())
+            .Replace(record.Next() with { Deciding = new SeatId(3) }, this._cancellation);
+
+        // Assert
+        GameRecord? reread = await new EfGameStore(this._database.NewContext()).Find(record.Id, this._cancellation);
+        Assert.Equal((new SeatId(1), new SeatId(3)), (added, reread?.Deciding));
     }
 
     [Fact]

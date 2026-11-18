@@ -205,7 +205,7 @@ public sealed class WireFormatTest
     {
         // Arrange
         ImmutableList<string> players = [GameSummaryDto.Guest, GameSummaryDto.Open, "midas"];
-        GameSummaryDto summary = new("g", "chaturaji-2027", 4, [1, 3], players, 9);
+        GameSummaryDto summary = new("g", "chaturaji-2027", 4, [1, 3], players, 9) { DecidingSeat = 2 };
 
         // Act
         GameSummaryDto? arrived = RoundTrip(summary);

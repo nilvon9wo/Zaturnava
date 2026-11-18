@@ -48,6 +48,25 @@ public sealed class GameViewsTest
         );
     }
 
+    [Theory]
+    [InlineData(2)]
+    [InlineData(null)]
+    public void SummaryOf_WhenListed_SaysWhoDecidesNextIfAnyone(int? deciding)
+    {
+        // Arrange - a game whose Green decides next, or one over, where no one does
+        ImmutableList<SeatController> seats = [new OpenSeat(), new OpenSeat(), new OpenSeat(), new OpenSeat()];
+        GameListing listing = new(new GameId("g"), Rules.Id, 3, seats, 9, deciding is null)
+        {
+            Deciding = deciding is { } seat ? new SeatId(seat) : null,
+        };
+
+        // Act
+        GameSummaryDto summary = GameViews.SummaryOf(listing, Rules);
+
+        // Assert
+        Assert.Equal(deciding, summary.DecidingSeat);
+    }
+
     [Fact]
     public void ViewOf_WhenTheGameIsOver_ShowsNoDecidingSeatAndHowItEnded()
     {

@@ -25,6 +25,9 @@ public sealed record GameListing(
     /// <summary>The seats away, as <see cref="GameRecord.Away"/> says.</summary>
     public ImmutableList<SeatId> Away { get; init; } = [];
 
+    /// <summary>The seat to decide next, as <see cref="GameRecord.Deciding"/> says.</summary>
+    public SeatId? Deciding { get; init; }
+
     /// <summary>The game as a lobby lists it, from the game as stored.</summary>
     public static GameListing Of([Required] GameRecord game) =>
         new(game.Id, game.RulesetId, game.Version, game.Controllers, game.Actions.Count, game.IsOver ?? false)
@@ -32,5 +35,6 @@ public sealed record GameListing(
             Created = game.Created,
             LastChanged = game.LastChanged,
             Away = game.Away,
+            Deciding = game.Deciding,
         };
 }

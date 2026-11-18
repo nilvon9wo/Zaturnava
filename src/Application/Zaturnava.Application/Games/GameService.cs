@@ -231,8 +231,9 @@ public sealed class GameService(
     ];
 
     /// <summary>
-    /// Works out, once, whether each game saved before that was kept is over, by replaying it; a game of a ruleset
-    /// no longer offered, or one its rules no longer replay, can no longer be played, so counts as over.
+    /// Works out, once, whether each game saved before that was kept is over, and who decides next, by replaying it; a
+    /// game of a ruleset no longer offered, or one its rules no longer replay, can no longer be played, so counts as
+    /// over.
     /// </summary>
     public async Task Summarize(CancellationToken cancellationToken)
     {
@@ -243,7 +244,8 @@ public sealed class GameService(
                 ? Replayable(record, rules)
                 : null;
             bool isOver = snapshot is null || snapshot.State.Outcome is not null;
-            await this._store.MarkOver(record.Id, isOver, cancellationToken);
+            SeatId? deciding = isOver ? null : snapshot!.State.DecidingSeat;
+            await this._store.MarkSummarized(record.Id, isOver, deciding, cancellationToken);
         }
     }
 
@@ -680,13 +682,14 @@ public sealed class GameService(
     }
 
     /// <summary>
-    /// The record with what a lobby lists it by, kept so that it need not replay it: whether the game is over, and
-    /// which seats a person (or no one yet) plays are away.
+    /// The record with what a lobby lists it by, kept so that it need not replay it: whether the game is over, which
+    /// seat decides next, and which seats a person (or no one yet) plays are away.
     /// </summary>
     private static GameRecord Summarized(GameRecord record, GameState state) =>
         record with
         {
             IsOver = state.Outcome is not null,
+            Deciding = state.Outcome is null ? state.DecidingSeat : null,
             Away = [.. state.Absence.Away.Where(seat => record.Controllers[seat.Value] is not BotSeat)],
             Controllers = state.Draft is null ? [.. record.Controllers.Select(Opened)] : record.Controllers,
         };

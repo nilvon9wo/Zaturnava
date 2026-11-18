@@ -31,13 +31,13 @@ public sealed class LobbyTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ("Chaturaji 2027", 0, 3, "Join as Yellow", "game-000"),
+            ("Chaturaji 2027", 0, 3, "Join as Yellow", FakeGameServer.GameId),
             (
                 lobby.Find("p.rules").TextContent,
                 lobby.FindAll("select.size, button.seat-by-seat").Count,
                 lobby.FindAll("select.strength").Count,
-                lobby.Find("button.join").TextContent,
-                lobby.Find("span.game").TextContent
+                lobby.Find("button.join").GetAttribute("aria-label"),
+                lobby.Find(".games-table tbody tr").GetAttribute("data-game")
             )
         );
     }
@@ -644,8 +644,8 @@ public sealed class LobbyTest : IDisposable
     }
 
     [Theory]
-    [InlineData(false, true, "Join as Yellow")]
-    [InlineData(true, false, "Join as Yellow")]
+    [InlineData(false, true, "Join")]
+    [InlineData(true, false, "Join")]
     [InlineData(true, true, "Sign in to join")]
     public void Render_WhenAGameIsForPlayersOnly_AsksAGuestToSignInToJoin(bool isForPlayers, bool isGuest, string shown)
     {
@@ -1273,22 +1273,45 @@ public sealed class LobbyTest : IDisposable
         Assert.Equal(Seating.Watching(FakeGameServer.GameId), this._seated);
     }
 
-    [Theory]
-    [InlineData(12, "12")]
-    [InlineData(1, "1")]
-    public void Render_WhenGamesAreListed_SaysWhoPlaysAndHowFarAlongEachIs(int moves, string expected)
+    [Fact]
+    public void Render_WhenGamesAreListed_GivesEachSeatAColumnAndEachFactACell()
     {
-        // Arrange
-        this._page.Server.Games = [this._page.Server.Games[0] with { Moves = moves }];
+        // Arrange - Ada away at Black, Yellow and Red open, a bot at Green (playtest 2026-11-15, H4)
+        this._page.Server.Games = [this._page.Server.Games[0] with { Moves = 12, AwaySeats = [0] }];
 
         // Act
         IRenderedComponent<Lobby> lobby = this.Render();
 
         // Assert
         Assert.Equal(
-            ("Black: Ada, Yellow: open, Green: random, Red: open", expected),
-            (lobby.Find("span.players").TextContent, lobby.Find("span.moves").TextContent)
+            (
+                "Black|Yellow|Green|Red|Next|Moves|Created|Last change|Actions",
+                "Ada away|Join|random|Join|-|12|-|-"
+            ),
+            (
+                string.Join('|', lobby.FindAll(".games-table th").Select(heading => heading.TextContent.Trim())),
+                Cells(lobby, ".games-table tbody td:not(.game-actions)")
+            )
         );
+    }
+
+    [Theory]
+    [InlineData(false, 2, "Green")]
+    [InlineData(true, 2, "-")]
+    [InlineData(false, null, "-")]
+    public void Render_WhenAGameIsUnderWay_SaysWhichSeatDecidesNext(bool isOver, int? deciding, string expected)
+    {
+        // Arrange - every seat taken, Green to decide, or the game over, or who decides not kept
+        this._page.Server.Games =
+        [
+            this._page.Server.Games[0] with { OpenSeats = [], IsOver = isOver, DecidingSeat = deciding },
+        ];
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Assert
+        Assert.Equal(expected, lobby.Find(".games-table td.next").TextContent.Trim());
     }
 
     [Fact]
@@ -1453,7 +1476,7 @@ public sealed class LobbyTest : IDisposable
         IRenderedComponent<Lobby> lobby = this.Render();
 
         // Assert
-        Assert.Equal("Back to Green", lobby.Find("button.resume").TextContent);
+        Assert.Equal("Back to Green", lobby.Find("button.resume").TextContent.Trim());
     }
 
     [Fact]
@@ -1487,7 +1510,10 @@ public sealed class LobbyTest : IDisposable
         IRenderedComponent<Lobby> lobby = this.Render();
 
         // Assert
-        Assert.Equal("Join as seat 2", lobby.Find("button.join").TextContent);
+        Assert.Equal(
+            ("Join as seat 2", "seat 1"),
+            (lobby.Find("button.join").GetAttribute("aria-label"), lobby.Find(".games-table th.seat").TextContent)
+        );
     }
 
     [Fact]
@@ -1669,66 +1695,51 @@ public sealed class LobbyTest : IDisposable
     }
 
     [Theory]
-    [InlineData("chaturaji-2027", "Chaturaji 2027")]
-    [InlineData("retired", "retired")]
-    public void Render_WhenGamesAreListed_NamesEachOnesGameAndSize(string rulesetId, string expected)
+    [InlineData("chaturaji-2027", "")]
+    [InlineData("retired", "Chaturaji 2027|retired")]
+    [InlineData("chaturaji-2027-large", "Chaturaji 2027|large")]
+    public void Render_WhenTheGamesListedDifferInSize_GivesEachItsSizeElseNone(string other, string expected)
     {
-        // Arrange
-        this._page.Server.Games = [this._page.Server.Games[0] with { RulesetId = rulesetId }];
-
-        // Act
-        IRenderedComponent<Lobby> lobby = this.Render();
-
-        // Assert
-        Assert.Equal(expected, lobby.Find("span.ruleset").TextContent);
-    }
-
-    [Theory]
-    [InlineData("1", 12, false, "Waiting for a player")]
-    [InlineData("1,3", 12, false, "Waiting for players")]
-    [InlineData("", 0, false, "Not started")]
-    [InlineData("", 12, false, "")]
-    [InlineData("1", 0, true, "")]
-    public void Render_WhenGamesAreListed_SaysWhetherEachWaitsOrHasNotStarted(
-        string open,
-        int moves,
-        bool isOver,
-        string expected
-    )
-    {
-        // Arrange
-        this._page.Server.Games =
+        // Arrange - a second game of the same ruleset, of one no longer offered, or of a larger size
+        this._page.Server.MoreRulesets =
         [
-            this._page.Server.Games[0] with
+            new RulesetDto("chaturaji-2027-large", "Chaturaji 2027 (large)", 4)
             {
-                OpenSeats = [.. open.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(int.Parse)],
-                Moves = moves,
-                IsOver = isOver,
+                Game = "chaturaji-2027",
+                GameName = "Chaturaji 2027",
+                Size = "large",
             },
         ];
+        GameSummaryDto game = this._page.Server.Games[0];
+        this._page.Server.Games = [game, game with { Id = "other", RulesetId = other }];
 
         // Act
         IRenderedComponent<Lobby> lobby = this.Render();
 
         // Assert
-        Assert.Equal(expected, lobby.Find("span.state").TextContent);
+        Assert.Equal(
+            (expected, expected.Length > 0),
+            (
+                string.Join('|', lobby.FindAll(".games-table td.size").Select(cell => cell.TextContent)),
+                lobby.FindAll(".games-table th.size").Count == 1
+            )
+        );
     }
 
     [Theory]
-    [InlineData("1", false, "Yellow away")]
-    [InlineData("1,3", false, "Yellow and Red away")]
-    [InlineData("1", true, "")]
-    public void Render_WhenSeatsAtAGameAreAway_SaysWhoUnlessItIsOver(string away, bool isOver, string expected)
+    [InlineData(false, "Ada away|Yellow away")]
+    [InlineData(true, "Ada|Yellow")]
+    public void Render_WhenSeatsAtAGameAreAway_MarksThemUnlessItIsOver(bool isOver, string expected)
     {
-        // Arrange
+        // Arrange - Black and Yellow away, Yellow a person too
         this._page.Server.Games =
         [
             this._page.Server.Games[0] with
             {
                 OpenSeats = [],
-                Moves = 12,
+                Players = ["Ada", "Yellow", "random", "Bo"],
                 IsOver = isOver,
-                AwaySeats = [.. away.Split(',').Select(int.Parse)],
+                AwaySeats = [0, 1],
             },
         ];
 
@@ -1736,11 +1747,11 @@ public sealed class LobbyTest : IDisposable
         IRenderedComponent<Lobby> lobby = this.Render();
 
         // Assert
-        Assert.Equal(expected, lobby.Find("span.state").TextContent);
+        Assert.Equal(expected, Cells(lobby, ".games-table td.seat-0, .games-table td.seat-1"));
     }
 
     [Fact]
-    public void Render_WhenAGamesTimesWereKept_SaysWhenItWasCreatedAndLastChanged()
+    public void Render_WhenAGamesTimesWereKept_SaysWhenItWasCreatedAndLastChangedEachInItsColumn()
     {
         // Arrange - well inside the hour and the minute they round down to, however slow the test
         DateTimeOffset now = DateTimeOffset.UtcNow;
@@ -1758,17 +1769,21 @@ public sealed class LobbyTest : IDisposable
         IRenderedComponent<Lobby> lobby = this.Render();
 
         // Assert
-        Assert.Equal("created 3 h ago, last change 5 min ago", lobby.Find("span.state").TextContent);
+        Assert.Equal(
+            ("3 h ago", "5 min ago"),
+            (lobby.Find(".games-table td.created").TextContent, lobby.Find(".games-table td.changed").TextContent)
+        );
     }
 
     [Fact]
     public void Render_WhenGamesAreListed_ShowsThePlayersOwnFirstThenTheLongestWaitingEachInARow()
     {
-        // Arrange - Ada's game changed last; of the others, one waited an hour, one ten minutes, one never told
-        // (playtest 2026-11-15, H4)
+        // Arrange - Ada's game, signed in, changed last; one held in this browser, ten minutes ago; of the others, one
+        // waited an hour, one never told (playtest 2026-11-15, H4)
         DateTimeOffset now = DateTimeOffset.UtcNow;
         GameSummaryDto game = this._page.Server.Games[0];
         this.SignInAsAdaAtYellow();
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.seat.recent").SetResult("2 kept");
         this._page.Server.Games =
         [
             game with { Id = "recent", PlayerIds = [], LastChanged = now.AddMinutes(-10) },
@@ -1782,49 +1797,45 @@ public sealed class LobbyTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ("adas|oldest|recent|untold", "1 h ago"),
-            (
-                string.Join('|', lobby.FindAll(".games-table tbody span.game").Select(id => id.TextContent)),
-                lobby.FindAll(".games-table tbody span.waiting")[1].TextContent.Trim()
-            )
+            ("recent|adas|oldest|untold", "1 h ago"),
+            (GameIds(lobby), lobby.FindAll(".games-table tbody td.changed")[2].TextContent.Trim())
         );
     }
 
     [Theory]
-    [InlineData(new[] { "game" }, "a|b|c", "ascending")]
-    [InlineData(new[] { "game", "game" }, "c|b|a", "descending")]
     [InlineData(new[] { "moves" }, "c|a|b", "ascending")]
-    [InlineData(new[] { "ruleset", "players" }, "b|a|c", "ascending")]
-    [InlineData(new[] { "waiting", "moves" }, "c|a|b", "ascending")]
+    [InlineData(new[] { "moves", "moves" }, "b|a|c", "descending")]
+    [InlineData(new[] { "next" }, "c|b|a", "ascending")]
+    [InlineData(new[] { "created" }, "b|c|a", "ascending")]
+    [InlineData(new[] { "next", "changed" }, "b|a|c", "ascending")]
     public void Sort_WhenAHeadingIsClicked_SortsByItAndAgainTheOtherWay(
         string[] clicked,
         string expected,
         string sort
     )
     {
-        // Arrange - three games, a with 5 moves, b with 9, c with 1, alike otherwise, so kept in order on a tie
-        GameSummaryDto game = this._page.Server.Games[0];
+        // Arrange - every seat taken at three games: b with 9 moves, Yellow next, created first; a with 5, Red next,
+        // created last; c with 1, Black next; none told when it last changed, so kept in order on that tie
+        DateTimeOffset now = DateTimeOffset.UtcNow;
+        GameSummaryDto game = this._page.Server.Games[0] with { OpenSeats = [], LastChanged = null };
         this._page.Server.Games =
         [
-            game with { Id = "b", Moves = 9 },
-            game with { Id = "a", Moves = 5 },
-            game with { Id = "c", Moves = 1 },
+            game with { Id = "b", Moves = 9, DecidingSeat = 1, Created = now.AddHours(-3) },
+            game with { Id = "a", Moves = 5, DecidingSeat = 3, Created = now },
+            game with { Id = "c", Moves = 1, DecidingSeat = 0, Created = now.AddHours(-1) },
         ];
         IRenderedComponent<Lobby> lobby = this.Render();
 
         // Act
         foreach (string column in clicked)
         {
-            lobby.Find($"th button.sort.{column}").Click();
+            lobby.Find($"th button.sort-{column}").Click();
         }
 
         // Assert
         Assert.Equal(
             (expected, sort),
-            (
-                string.Join('|', lobby.FindAll(".games-table tbody span.game").Select(id => id.TextContent)),
-                lobby.Find($"th:has(button.sort.{clicked[^1]})").GetAttribute("aria-sort")
-            )
+            (GameIds(lobby), lobby.Find($"th:has(button.sort-{clicked[^1]})").GetAttribute("aria-sort"))
         );
     }
 
@@ -1869,9 +1880,9 @@ public sealed class LobbyTest : IDisposable
     }
 
     [Fact]
-    public void Render_WhenGamesWaitForThePlayer_ListsThemAboveTheGamesInTheRightmostColumn()
+    public void Render_WhenGamesWaitForThePlayer_ListsThemAboveTheGamesAsTheyAreListedAndTheLeaderboardRightmost()
     {
-        // Arrange - Ada signed in, the game waiting on her
+        // Arrange - Ada signed in, the game waiting on her at Yellow
         this.SignInAsAdaAtYellow();
         this._page.Server.Awaited = this._page.Server.Awaited.SetItem(
             "player",
@@ -1883,28 +1894,33 @@ public sealed class LobbyTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ("panel awaited|panel games-panel", true),
+            ("panel awaited|panel games-panel", "Back to Yellow", 1, true),
             (
                 string.Join('|', lobby.FindAll(".games-column > .panel").Select(panel => panel.ClassName)),
-                lobby.Find(".lobby").LastElementChild!.ClassList.Contains("games-column")
+                lobby.Find(".awaited .games-table button.awaited-resume").TextContent.Trim(),
+                lobby.FindAll(".awaited .games-table th button.sort").Count == 0 ? 1 : 0,
+                lobby.Find(".lobby").LastElementChild!.ClassList.Contains("leaderboard")
             )
         );
     }
 
     [Fact]
-    public void Render_WhenAWaitingGameWasCreatedJustNow_SaysBoth()
+    public void Render_WhenAWaitingGameWasCreatedJustNow_SaysSoAndThatItWaitsOnNoOneToMove()
     {
         // Arrange
         this._page.Server.Games =
         [
-            this._page.Server.Games[0] with { Created = DateTimeOffset.UtcNow },
+            this._page.Server.Games[0] with { Created = DateTimeOffset.UtcNow, DecidingSeat = 0 },
         ];
 
         // Act
         IRenderedComponent<Lobby> lobby = this.Render();
 
         // Assert
-        Assert.Equal("Waiting for players; created just now", lobby.Find("span.state").TextContent);
+        Assert.Equal(
+            ("just now", "-"),
+            (lobby.Find("td.created").TextContent, lobby.Find("td.next").TextContent.Trim())
+        );
     }
 
     [Theory]
@@ -2068,6 +2084,23 @@ public sealed class LobbyTest : IDisposable
 
         return lobby;
     }
+
+    /// <summary>The text of each cell <paramref name="selector"/> finds, single-spaced, joined by "|".</summary>
+    private static string Cells(IRenderedComponent<Lobby> lobby, string selector) =>
+        string.Join(
+            '|',
+            lobby.FindAll(selector)
+                .Select(cell =>
+                    string.Join(' ', cell.TextContent.Split(' ', '\n').Where(word => word.Length > 0))
+                )
+        );
+
+    /// <summary>The games listed, by id, in the order shown.</summary>
+    private static string GameIds(IRenderedComponent<Lobby> lobby) =>
+        string.Join(
+            '|',
+            lobby.FindAll(".games-panel .games-table tbody tr").Select(row => row.GetAttribute("data-game"))
+        );
 
     private IRenderedComponent<Lobby> RenderAsIs() =>
         this._page.Render<Lobby>(parameters => parameters.Add(x => x.OnSeated, seating => this._seated = seating));
