@@ -2138,10 +2138,16 @@ public sealed class TableTest : IDisposable
         Assert.Equal((0, 1), (table.FindAll("aside.piece-card").Count, table.FindAll("button.action.hire").Count));
     }
 
-    [Fact]
-    public void Render_WhenThePlayerMayHandOverOrPass_ShowsThemBesideEndGameTheAllyInItsColourThenPassingPlainly()
+    [Theory]
+    [InlineData(false, "action hand-over seat-2|action pass primary urged|end-game")]
+    [InlineData(true, "action hand-over seat-2|action pass|end-game")]
+    public void Render_WhenThePlayerMayHandOverOrPass_ShowsThemBesideEndGamePassingTheCallToActionIfNothingElseIs(
+        bool mayMove,
+        string expected
+    )
     {
-        // Arrange - Black may let Green take over, or pass (playtest 2026-11-15, X1)
+        // Arrange - Black may let Green take over, or pass, and perhaps move too (playtest 2026-11-15, X1; and
+        // 2026-11-19: one clear call to action)
         ActionDto handOver = new(
             "hand-over",
             ImmutableSortedDictionary<string, string>.Empty.Add(ActionArguments.Actor, "0").Add("regent", "2")
@@ -2151,7 +2157,12 @@ public sealed class TableTest : IDisposable
         };
         this._page.Server.View = FakeGameServer.SeatZeroToMove with
         {
-            LegalActions = [FakeGameServer.Pass, handOver],
+            LegalActions =
+            [
+                .. FakeGameServer.SeatZeroToMove.LegalActions.Where(action => mayMove && action.Kind == "move"),
+                FakeGameServer.Pass,
+                handOver,
+            ],
             Seats =
             [
                 FakeGameServer.SeatZeroToMove.Seats[0] with { MayProposeEnd = true },
@@ -2164,7 +2175,7 @@ public sealed class TableTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ("action hand-over seat-2|action pass|end-game", 0),
+            (expected, 0),
             (
                 string.Join('|', table.FindAll(".end-area button").Select(button => button.ClassName)),
                 table.FindAll(".actions button").Count
@@ -2603,7 +2614,7 @@ public sealed class TableTest : IDisposable
         // Assert
         Assert.Equal(
             (expected, urged),
-            (table.Find("p.status").TextContent, table.FindAll("button.urged").Count)
+            (table.Find("p.status").TextContent, table.FindAll(".actions button.urged").Count)
         );
     }
 
@@ -2968,13 +2979,20 @@ public sealed class TableTest : IDisposable
     }
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void Click_WhenAPrisonerIsChosenToGiveOrAskFor_ShowsItsCard(bool isAsked)
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    public void Click_WhenAPrisonerIsChosenToGiveOrAskFor_ShowsItsCard(bool isAsked, bool wasAPieceLookedAt)
     {
-        // Arrange - piece cards on (playtest 2026-11-15, J2)
+        // Arrange - piece cards on (playtest 2026-11-15, J2); perhaps a piece on the board looked at first, as the one
+        // just moved is (2026-11-19, T3)
         this._page.Server.View = Ransoms();
         IRenderedComponent<Table> table = this.Render(SeatZero);
+        if (wasAPieceLookedAt)
+        {
+            table.Find("svg.board rect[data-cell='0']").Click();
+        }
+
         AngleSharp.Dom.IElement given = table.FindAll(".ransom-to")[0].QuerySelector("button.prisoner")!;
         string expected = (isAsked ? null : given.GetAttribute("title")) ?? string.Empty;
         given.Click();

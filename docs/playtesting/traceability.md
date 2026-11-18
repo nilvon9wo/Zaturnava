@@ -14,8 +14,8 @@ Statuses (the specification's P1): **Done** (implemented and tested), **Done, pa
 |---|---|---|---|
 | B1 | Promotion at the right-hand edge, a game option, off by default | Done | Lobby checkbox for Grand Legions, remembered as last set; the far edge's promotion into a captured piece, at the edge to the piece's right as its army faces (Proposed: a piece's own promotion still needs the far edge). Scenario field `promotesAtSide`. |
 | B2 | Back-to-back: Black d2 cannot swap with Green d3 | Done | Only Pawns could swap in Grand Legions. Now any two allied pieces that move only forward swap: Pawns of every kind, the Lance, the Berolina Pawn and the Man (`Swappers`). Guide text says so. Tests: `GrandLegionsRulesTest` back-to-back theories; scenario `forward-only-swaps`. |
-| B3 | Janggi General captured scores nothing, is never ransomed | Investigated | A plain capture by an enemy scores 68 and takes the General prisoner (test `Apply_WhenAThreeleaperTakesAnEnemyJanggiGeneral_ScoresItAndHoldsItPrisoner`). The rules give 0 and no ransom only when an ally takes it (§6.4: given back) or its seat has retired. The game id is asked in open-questions.md. |
-| B4 | Janggi Elephant beside a river cannot move right | Investigated | Rivers do not hold it back: a test leaps it over a river to its right. It is blocked only by a piece on its leg (one step, then the first diagonal). The game id is asked in open-questions.md. |
+| B3 | Janggi General captured scores nothing, is never ransomed | Investigated | A plain capture by an enemy scores 68 and takes the General prisoner (test `Apply_WhenAThreeleaperTakesAnEnemyJanggiGeneral_ScoresItAndHoldsItPrisoner`). The rules give 0 and no ransom only when an ally takes it (§6.4: given back) or its seat has retired. Not reproduced; the designer has no game id (OQ8, closed) and will say if it happens again: the bug-report button (T4) is for that. |
+| B4 | Janggi Elephant beside a river cannot move right | Investigated | Rivers do not hold it back: a test leaps it over a river to its right. It is blocked only by a piece on its leg (one step, then the first diagonal). Not reproduced, no game id (OQ8, closed); to be reported with T4 if seen again. |
 | B5 | Xiangqi Elephant across the river on a 26 × 26 board, 23 × 3 kingdoms | Done | From edition 8 the Elephant may not cross the river between where it stands and where it would go, nor enter a cell the river cuts; one standing across from its kingdom's corner moves on that side. Tests: `RiverCrossingTest`, `GrandBoardTest.Crosses_*`. |
 | B6 | Guard card shows general diagonals | To do | With C2. |
 | B7 | Tafl King and Swede: custody with allies and pieces controlled; berserk when their throne is enemy-held | Done | From edition 8 an ally's piece holds as well as any piece the mover commands. While an enemy holds the custodian's throne it is berserk and takes any piece, friend or foe, held between it and any other piece, several at once. Guide text updated. Tests: `JumpAndCustodyTest` (ordinary, with allies, berserk on and off, friend and foe at once). |
@@ -74,7 +74,7 @@ Statuses (the specification's P1): **Done** (implemented and tested), **Done, pa
 | K | Loading progress on itch.io | To do | |
 | L | Remove "The bots" button | Done | Gone, with its dialog. A bot's name opens its profile, on the leaderboard and at a table; "How to play" still links to the bots' documentation for developers. The quick-game hint points to the leaderboard. Test: `AppTest`. |
 | M1–M5 | Offline tournaments, resumable, ratings for every bot, results into the repository | To do | |
-| N1–N5 | Secondary palaces | Roadmap | Not to be built yet (OQ7). |
+| N1–N5 | Secondary palaces | Roadmap | Not to be built yet. In the [roadmap](../grand/roadmap.md#later), as detailed; OQ7 closed (2026-11-19), the price *Proposed*: the settler and as many points again as it was worth. |
 | O1–O5 | Article on AI in Zaturnava | To do | |
 
 ## Other defects
@@ -88,6 +88,16 @@ Statuses (the specification's P1): **Done** (implemented and tested), **Done, pa
 | X5 | Safe captures of leaders and strong pieces ignored | To do | |
 | X6 | Rooks sacrificed for Pawns | To do | |
 | X7 | Dice: doubles favouring enemy bots, in streaks | Investigated | Every seat's dice, people's and bots', come from one `RandomDice` over `Random.Shared`, each face equally likely; doubles are by face (3 + 4 is not doubles), so 1 roll in 6. A 60,000-roll test finds doubles 1 in 6, and 1 in 6 just after doubles too (no streaks). The roll-off for first turn rerolls ties, which can look like a run of doubles. No change. |
+
+## Said while playing (2026-11-19)
+
+| Id | Item | Status | Notes |
+|---|---|---|---|
+| T1 | Exactly one clear call to action: "Done offering", and often Pass | Done | Passing ("Done offering" after a move, among others) is the call to action, large and glowing, whenever it is the way on: nothing to move on the board, nothing to choose, nothing else to do but hand the turn over or offer prisoners. Otherwise it stays plain. Tests: `TableTest`. |
+| T2 | End game a desaturated red: plain to see, not a call to action | Done | A muted red, ordinary weight. |
+| T3 | Clicking a prisoner in the ransom dialog does not always show its card; it seems to stop near the end of the turn | Done | The card of a piece on the board, looked at (the one just moved, most often), took precedence over the prisoner's. Choosing a prisoner to give, ask for or hire now shows its card in place of it. Tests: `TableTest`. |
+| T4 | A "Report a bug" button for players signed in, saving the game and its context as structured data | To do | |
+| T5 | Cards still a mess | To do | C1 to C4. |
 
 ## Said while playing (2026-11-13)
 

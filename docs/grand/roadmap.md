@@ -5,8 +5,7 @@ least tested, on their own. As with Chaturaji 2027, it is played locally against
 is hosted. Chaturaji 2027 stays playable, and its tests passing, at every stage.
 
 The order is agreed (2026-10-26); nothing is scheduled. The design's questions are answered, but
-for a second palace (**Q5**, for later), versions of saved settings (**Q26**, for later) and what
-playtesting is to settle (**Q14**)
+for versions of saved settings (**Q26**, for later) and what playtesting is to settle (**Q14**)
 ([specification §9](specification.md#9-open-questions)).
 
 ## Stage 0 — Finish what the grand game inherits
@@ -329,6 +328,12 @@ drawn simply, a shape for its class and a letter for its kind.
 
 - More kingdoms than four, or of unequal size.
 - More pieces.
-- A second palace, if one may be bought (**Q5**).
+- Secondary palaces (**Q5**), as the playtest of 2026-11-15 details them
+  ([N1 to N5](../playtesting/2026-11-15-specification.md#n-future-roadmap-secondary-palaces-oq7)): a game
+  option; a piece settles, consumed, at the centre of a free 3 × 3 footprint, the player choosing where in it the
+  local throne, plainer than a primary throne, stands; recruiting into it, perhaps at a premium; all but mercenary
+  placement needing its throne held, a Raja there commanding only its pieces; razing, perhaps, later. Not before
+  promotions and lifts can be bought. *Proposed* price: the settler and as many points again as it was worth.
+  Which pieces may settle, and whether friendly neighbours may stand round the footprint, are left to that time.
 - Kingdoms smaller than 3 × 3, with the palace partly outside the kingdom. *Done* for kingdoms 2 deep (see Stage 2).
 - Games without palaces: bare thrones, and no palace-bound pieces in the draft.
