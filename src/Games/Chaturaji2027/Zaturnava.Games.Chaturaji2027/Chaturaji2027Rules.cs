@@ -315,6 +315,8 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
 
     public bool IsDraftable => this._drafting is not null;
 
+    public bool MayPromoteAtSide => this._variant.MayPromoteAtSide;
+
     public int? DraftBudget => this._variant.Drafting?.BudgetIn(int.MaxValue);
 
     public int? DraftBudgetLimit => this._drafting?.Limit;
@@ -871,7 +873,10 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     /// Each Pawn (each piece of the variant's <see cref="Chaturaji2027Variant.Promotables"/>) that stands on the far
     /// edge - with nowhere forward left to go - may become any captured piece, whoever holds it: the piece goes back
     /// to its own army (rules.md §8). Pieces alike held by the same seat are offered once - the first taken - the
-    /// highest-scoring first, then by owner, then by holder.
+    /// highest-scoring first, then by owner, then by holder. In a game whose creator chose so
+    /// (<see cref="GameState.PromotesAtSide"/>), on the edge to its right too, as its army faces (Stated 2026-11-13:
+    /// "allowing infantry to be promoted when they get to the right side of the board"; Proposed: as at the far
+    /// edge, into a captured piece, its own promotion still at the far edge alone).
     /// </summary>
     private IEnumerable<PromoteAction> FarEdgePromotionsOf(
         GameState state,
@@ -880,10 +885,19 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         Piece piece,
         ImmutableList<Piece> pool
     ) =>
-        this._variant.Promotables.Contains(piece.Kind)
-        && this._grid.Step(cell, state.SeatOf(piece.Owner).Forward) is null
+        this._variant.Promotables.Contains(piece.Kind) && this.IsAtPromotingEdge(state, cell, piece)
             ? pool.Where(into => this.MayBecome(piece, into)).Select(into => new PromoteAction(seat, cell, into.Id))
             : [];
+
+    /// <summary>
+    /// Whether the piece has nowhere forward left to go; or, in a game promoting at the side, nowhere to its right.
+    /// </summary>
+    private bool IsAtPromotingEdge(GameState state, CellId cell, Piece piece)
+    {
+        Direction forward = state.SeatOf(piece.Owner).Forward;
+        return this._grid.Step(cell, forward) is null
+            || (state.PromotesAtSide && this._grid.Step(cell, new Direction(forward.Second, -forward.First)) is null);
+    }
 
     /// <summary>How many rows lie ahead of <paramref name="cell"/>, facing <paramref name="forward"/>: 0 on the edge.
     /// </summary>

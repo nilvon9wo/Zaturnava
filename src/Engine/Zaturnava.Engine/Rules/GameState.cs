@@ -48,6 +48,12 @@ public sealed record GameState(
     public bool HasEdgePalaces { get; init; }
 
     /// <summary>
+    /// Whether a piece promoted at the far edge may be promoted at the edge to its right too, as its army faces
+    /// (<see cref="IRulesApplying.MayPromoteAtSide"/>): only if the game's creator chose so.
+    /// </summary>
+    public bool PromotesAtSide { get; init; }
+
+    /// <summary>
     /// The edition of the ruleset's pieces the armies the program deals this game, fills at random, or offers in a
     /// draft, are drawn from (<see cref="IRulesApplying.Deal"/>), and of the rules it is played by, a ruleset's later
     /// rules applying from the edition that brought them: 0, in a game dealt before there was another, so that it

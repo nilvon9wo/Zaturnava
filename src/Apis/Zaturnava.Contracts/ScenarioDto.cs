@@ -4,4 +4,8 @@ namespace Net.NowhereAtAll.Zaturnava.Contracts;
 /// A game set up part-way, to start from when trying out a corner of the rules: <see cref="Id"/> to start it
 /// by, its ruleset, and a name and description for people choosing. Offered only by a server in development.
 /// </summary>
-public sealed record ScenarioDto(string Id, string RulesetId, string Name, string Description);
+public sealed record ScenarioDto(string Id, string RulesetId, string Name, string Description)
+{
+    /// <summary>The seat whose turn it is as it starts, by name ("Black"); the ruleset's first seat, if none.</summary>
+    public string? Turn { get; init; }
+}

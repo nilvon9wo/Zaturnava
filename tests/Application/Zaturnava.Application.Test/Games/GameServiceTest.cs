@@ -143,6 +143,40 @@ public sealed class GameServiceTest
     }
 
     [Theory]
+    [InlineData(true, true, true)]
+    [InlineData(false, true, false)]
+    [InlineData(true, false, false)]
+    public async Task Create_WhenPromotionAtTheSideIsAsked_DealsItSoIfTheRulesLetTheCreator(
+        bool mayPromoteAtSide,
+        bool isAsked,
+        bool expected
+    )
+    {
+        // Arrange
+        GameService service = this.Service(
+            GameServiceSettings.Default,
+            isDealt: true,
+            mayPromoteAtSide: mayPromoteAtSide
+        );
+        GameId id = await service.Create(
+            TinyRules.RulesetId,
+            [SeatPlan.Open, SeatPlan.Open],
+            null,
+            new Dealing { PromotesAtSide = isAsked },
+            this._cancellation
+        );
+
+        // Act
+        GameSnapshot snapshot = await service.Get(id, this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            (expected, expected),
+            (ScenarioStart.PromotesAtSide(snapshot.Record.Actions), snapshot.State.PromotesAtSide)
+        );
+    }
+
+    [Theory]
     [InlineData(true, true)]
     [InlineData(false, false)]
     public async Task Create_WhenTheArmiesAreAskedToBeDrafted_DraftsThemIfTheRulesLetPlayers(
@@ -2073,7 +2107,8 @@ public sealed class GameServiceTest
         bool hasFaceOff = false,
         bool isDraftable = true,
         Func<GameState, GameState>? filled = null,
-        BoardSize? sizable = null
+        BoardSize? sizable = null,
+        bool mayPromoteAtSide = false
     ) =>
         new(
             new RulesetCatalog(
@@ -2083,6 +2118,7 @@ public sealed class GameServiceTest
                         IsDraftable = isDealt && isDraftable,
                         Filled = filled,
                         SizableBoard = sizable,
+                        MayPromoteAtSide = mayPromoteAtSide,
                     },
                     new RollingRules(GameLength),
                 ]

@@ -195,6 +195,40 @@ public sealed class ScenarioStartTest
     }
 
     [Fact]
+    public void StateOf_WhenTheGameWasDealtToPromoteAtTheSide_ReplaysItSo()
+    {
+        // Arrange - a deal of seed 4 asked to promote at the side, one not, and a game not dealt
+        ImmutableList<ActionDescriptor> sided = [ScenarioStart.Dealt(new LoadedDice(4), promotesAtSide: true)];
+        ImmutableList<ActionDescriptor> unsided = [ScenarioStart.Dealt(new LoadedDice(4))];
+        ImmutableList<ActionDescriptor> scenario = [ScenarioStart.Describe(Tiny())];
+        TinyRules rules = new(6, isDealt: true);
+
+        // Act
+        (bool Sided, bool Unsided, bool Scenario, bool None) promoting = (
+            ScenarioStart.StateOf(sided, rules).PromotesAtSide,
+            ScenarioStart.StateOf(unsided, rules).PromotesAtSide,
+            ScenarioStart.PromotesAtSide(scenario),
+            ScenarioStart.PromotesAtSide([])
+        );
+
+        // Assert
+        Assert.Equal((true, false, false, false), promoting);
+    }
+
+    [Fact]
+    public void StateFrom_WhenTheScenarioPromotesAtTheSide_StartsSo()
+    {
+        // Arrange
+        Scenario scenario = Tiny() with { PromotesAtSide = true };
+
+        // Act
+        GameState state = ScenarioStart.StateFrom(scenario, this._rules);
+
+        // Assert
+        Assert.True(state.PromotesAtSide);
+    }
+
+    [Fact]
     public void StateOf_WhenTheGameIsDrafted_DealsItThenHasItsArmiesDraftedBySeed()
     {
         // Arrange

@@ -157,6 +157,7 @@ public static class GrandLegionsRules
             Game = game.Game,
             Heavies = Heavies,
             Promotables = Promotables,
+            MayPromoteAtSide = true,
             OwnPromotions = OwnPromotionsOn(QuickTerrain.BoardOf(game, 0)),
             Marks = GrandLegionsPieces.Marks,
             Guides = Guides,

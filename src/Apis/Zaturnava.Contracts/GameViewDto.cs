@@ -103,6 +103,12 @@ public sealed record GameViewDto(
     public BoardSizeDto? Board { get; init; }
 
     /// <summary>
+    /// Whether pieces promoted at the far edge are promoted at the edge to their right too, as their army faces, as
+    /// its creator asked (<see cref="CreateGameRequest.PromotesAtSide"/>).
+    /// </summary>
+    public bool PromotesAtSide { get; init; }
+
+    /// <summary>
     /// While the armies are drafted, what each seat has left to spend, seat by seat (null for a seat drafting in
     /// secret from the one asking, <see cref="IsDraftSecret"/>); null once play has begun, or in a game never drafted.
     /// </summary>

@@ -1,0 +1,18 @@
+{
+  "rulesetId": "grand-legions-medium",
+  "name": "Back to back",
+  "description": "Black has rolled 5 (infantry) and 3 (heavy). Every piece that moves forward only may swap with another back to back, whatever their kinds: Black's Makruk Pawn on d3 with Green's Western Pawn on d4 (the 5), and Black's Shogi Lance on f3 with Green's Shogi Pawn on f4 (the 3).",
+  "turn": "Black",
+  "edition": 7,
+  "dice": [5, 3],
+  "pieces": {
+    "d3": "Black Pawn (Makruk)",
+    "d4": "Green Pawn (Western)",
+    "f3": "Black Lance (Shogi)",
+    "f4": "Green Pawn (Shogi)",
+    "a1": "Black Gold General (Shogi)",
+    "h8": "Green Gold General (Shogi)",
+    "a8": "Yellow King (Western)",
+    "h1": "Red Silver General (Shogi)"
+  }
+}

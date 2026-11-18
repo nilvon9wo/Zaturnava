@@ -92,6 +92,12 @@ public sealed record Chaturaji2027Variant(
         init;
     }
 
+    /// <summary>
+    /// Whether a game's creator may have the <see cref="Promotables"/> promoted at the edge to their right too, as at
+    /// the far edge (<see cref="GameState.PromotesAtSide"/>): not, unless set.
+    /// </summary>
+    public bool MayPromoteAtSide { get; init; }
+
     /// <summary>Each kind's own promotion, as a Western Pawn's into a Queen: none, unless set.</summary>
     public ImmutableDictionary<PieceKindId, OwnPromotion> OwnPromotions { get; init; } = [];
 

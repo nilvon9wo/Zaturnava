@@ -34,6 +34,12 @@ public sealed record RulesetDto(string Id, string Name, int SeatCount)
     public bool IsDraftable { get; init; }
 
     /// <summary>
+    /// Whether a game's creator may have pieces promoted at the far edge promoted at the edge to their right too
+    /// (<see cref="CreateGameRequest.PromotesAtSide"/>).
+    /// </summary>
+    public bool MayPromoteAtSide { get; init; }
+
+    /// <summary>
     /// For a game whose players may draft: what each has to spend, unless the game's creator sets another
     /// (<see cref="CreateGameRequest.DraftBudget"/>); null, for a game whose players may not.
     /// </summary>

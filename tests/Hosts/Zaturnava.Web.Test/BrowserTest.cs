@@ -208,6 +208,7 @@ public sealed class BrowserTest : IDisposable
     [InlineData("strength", nameof(SetupMode.Custom))]
     [InlineData("seats", nameof(SetupMode.Custom))]
     [InlineData("quick", nameof(SetupMode.Quick))]
+    [InlineData("scenarios", nameof(SetupMode.Scenarios))]
     [InlineData(null, nameof(SetupMode.Quick))]
     public async Task Setup_WhenRead_IsTheOneLastChosenElseQuick(string? remembered, string expected)
     {
@@ -224,6 +225,7 @@ public sealed class BrowserTest : IDisposable
     [Theory]
     [InlineData(nameof(SetupMode.Custom), "strength")]
     [InlineData(nameof(SetupMode.Quick), "quick")]
+    [InlineData(nameof(SetupMode.Scenarios), "scenarios")]
     public async Task SetSetup_WhenSet_RemembersIt(string mode, string expected)
     {
         // Arrange - nothing beyond the browser

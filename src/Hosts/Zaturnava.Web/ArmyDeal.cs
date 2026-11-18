@@ -25,4 +25,9 @@ internal sealed record ArmyDeal(bool AreAlike, string? Of = null)
 
     /// <summary>The board's size, in a game whose creator may set it; the ruleset's own, if none.</summary>
     public BoardSizeDto? Board { get; init; }
+
+    /// <summary>
+    /// Whether pieces promoted at the far edge are promoted at the edge to their right too, in a game that offers it.
+    /// </summary>
+    public bool PromotesAtSide { get; init; }
 }

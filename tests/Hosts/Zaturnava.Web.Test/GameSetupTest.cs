@@ -1,3 +1,5 @@
+using Net.NowhereAtAll.Zaturnava.Contracts;
+
 namespace Net.NowhereAtAll.Zaturnava.Web.Test;
 
 public sealed class GameSetupTest
@@ -22,6 +24,49 @@ public sealed class GameSetupTest
                 string.Join(',', parsed?.Picks ?? [])
             )
         );
+    }
+
+    [Fact]
+    public void Text_WhenItsOtherChoicesAreMade_KeepsThemToParseBack()
+    {
+        // Arrange
+        GameSetup setup = new("grand-legions-custom", 0, [1, 1, 1, 1], ["", "", "", ""])
+        {
+            Armies = "draft-own",
+            Budget = 150,
+            IsSecret = true,
+            IsHiddenFromAllies = true,
+            IsForPlayers = true,
+            PromotesAtSide = true,
+            Board = new BoardSizeDto(12, 10, 4, 3),
+        };
+
+        // Act
+        GameSetup? parsed = GameSetup.Parse(setup.Text);
+
+        // Assert
+        Assert.Equal(
+            (
+                "grand-legions-custom;0;1,1,1,1;,,,;armies=draft-own,budget=150,secret=1,hidden=1,players=1,side=1,"
+                    + "board=12x10x4x3",
+                setup with { Levels = parsed!.Levels, Picks = parsed.Picks }
+            ),
+            (setup.Text, parsed)
+        );
+    }
+
+    [Theory]
+    [InlineData("a;0;1;;board=12x10x4")]
+    [InlineData("a;0;1;;board=12x0x4x4")]
+    [InlineData("a;0;1;;board")]
+    [InlineData("a;0;1;;budget=many")]
+    public void Parse_WhenAChoiceCannotBeRead_LeavesItUnmade(string text)
+    {
+        // Act
+        GameSetup? parsed = GameSetup.Parse(text);
+
+        // Assert
+        Assert.Equal((null, null), (parsed?.Board, parsed?.Budget));
     }
 
     [Theory]

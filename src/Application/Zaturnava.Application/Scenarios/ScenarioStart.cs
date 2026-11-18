@@ -51,6 +51,7 @@ public static class ScenarioStart
     private const string AllAtOnceArgument = "all-at-once";
     private const string SideArgument = "side";
     private const string HeightArgument = "height";
+    private const string SidePromotionArgument = "side-promotion";
     private const string KingdomWidthArgument = "kingdom-width";
     private const string KingdomDepthArgument = "kingdom-depth";
 
@@ -69,13 +70,16 @@ public static class ScenarioStart
     /// dealt from (<see cref="Edition"/>), which one dealt before there was another never says. Its
     /// armies drafted by its players, not dealt, if <paramref name="drafting"/> says how
     /// (<see cref="IRulesApplying.Drafted"/>): its budget and its one drafter, if it sets them. On a board of
-    /// <paramref name="board"/>'s size, if its creator set one (<see cref="IRulesApplying.Sized"/>).
+    /// <paramref name="board"/>'s size, if its creator set one (<see cref="IRulesApplying.Sized"/>). Its pieces
+    /// promoted at the far edge promoted at the edge to their right too, if <paramref name="promotesAtSide"/>
+    /// (<see cref="GameState.PromotesAtSide"/>).
     /// </summary>
     public static ActionDescriptor Dealt(
         [Required] IDiceRolling dice,
         bool areAlike = false,
         DraftSettings? drafting = null,
-        BoardSize? board = null
+        BoardSize? board = null,
+        bool promotesAtSide = false
     )
     {
         ImmutableSortedDictionary<string, string> seeded = ImmutableSortedDictionary<string, string>.Empty
@@ -87,7 +91,9 @@ public static class ScenarioStart
             .Add(EditionArgument, Edition.ToString(CultureInfo.InvariantCulture));
         ImmutableSortedDictionary<string, string> alike =
             areAlike ? seeded.Add(AlikeArgument, ActionDescriptor.Flag(true)) : seeded;
-        ImmutableSortedDictionary<string, string> sized = board is null ? alike : Sizing(alike, board);
+        ImmutableSortedDictionary<string, string> sided =
+            promotesAtSide ? alike.Add(SidePromotionArgument, ActionDescriptor.Flag(true)) : alike;
+        ImmutableSortedDictionary<string, string> sized = board is null ? sided : Sizing(sided, board);
         return new ActionDescriptor(DealKind, drafting is null ? sized : Drafting(sized, drafting));
     }
 
@@ -234,9 +240,19 @@ public static class ScenarioStart
             actions[0].Arguments.TryGetValue(EditionArgument, out string? edition)
                 ? int.Parse(edition, CultureInfo.InvariantCulture)
                 : 0
-        );
+        ) with
+        {
+            PromotesAtSide = PromotesAtSide(actions),
+        };
         return DraftingOf(actions) is { } drafting ? rules.Drafted(dealt, seed, drafting) : dealt;
     }
+
+    /// <summary>
+    /// Whether the first of <paramref name="actions"/> had pieces promoted at the far edge promoted at the edge to
+    /// their right too.
+    /// </summary>
+    public static bool PromotesAtSide([Required] ImmutableList<ActionDescriptor> actions) =>
+        actions.FirstOrDefault() is { Kind: DealKind } first && first.Arguments.ContainsKey(SidePromotionArgument);
 
     /// <summary>
     /// A new game of the ruleset, set up as the scenario says. Each piece is given the id of a piece of its seat
@@ -273,6 +289,7 @@ public static class ScenarioStart
             AwaitedDice = null,
             Dice = scenario.Dice,
             Edition = scenario.Edition,
+            PromotesAtSide = scenario.PromotesAtSide,
         };
     }
 
