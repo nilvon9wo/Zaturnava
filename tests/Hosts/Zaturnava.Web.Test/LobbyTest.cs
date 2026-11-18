@@ -666,7 +666,7 @@ public sealed class LobbyTest : IDisposable
         // Assert
         Assert.Equal(
             shown,
-            lobby.Find(".panel:not(.awaited) ul.games li :is(button.join, span.for-players)").TextContent.Trim()
+            lobby.Find(".games-table tbody tr :is(button.join, span.for-players)").TextContent.Trim()
         );
     }
 
@@ -1274,8 +1274,8 @@ public sealed class LobbyTest : IDisposable
     }
 
     [Theory]
-    [InlineData(12, "12 moves")]
-    [InlineData(1, "1 move")]
+    [InlineData(12, "12")]
+    [InlineData(1, "1")]
     public void Render_WhenGamesAreListed_SaysWhoPlaysAndHowFarAlongEachIs(int moves, string expected)
     {
         // Arrange
@@ -1759,6 +1759,73 @@ public sealed class LobbyTest : IDisposable
 
         // Assert
         Assert.Equal("created 3 h ago, last change 5 min ago", lobby.Find("span.state").TextContent);
+    }
+
+    [Fact]
+    public void Render_WhenGamesAreListed_ShowsThePlayersOwnFirstThenTheLongestWaitingEachInARow()
+    {
+        // Arrange - Ada's game changed last; of the others, one waited an hour, one ten minutes, one never told
+        // (playtest 2026-11-15, H4)
+        DateTimeOffset now = DateTimeOffset.UtcNow;
+        GameSummaryDto game = this._page.Server.Games[0];
+        this.SignInAsAdaAtYellow();
+        this._page.Server.Games =
+        [
+            game with { Id = "recent", PlayerIds = [], LastChanged = now.AddMinutes(-10) },
+            game with { Id = "untold", PlayerIds = [], LastChanged = null },
+            game with { Id = "adas", PlayerIds = [null, "ada", null, null], LastChanged = now },
+            game with { Id = "oldest", PlayerIds = [], LastChanged = now.AddHours(-1) },
+        ];
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Assert
+        Assert.Equal(
+            ("adas|oldest|recent|untold", "1 h ago"),
+            (
+                string.Join('|', lobby.FindAll(".games-table tbody span.game").Select(id => id.TextContent)),
+                lobby.FindAll(".games-table tbody span.waiting")[1].TextContent.Trim()
+            )
+        );
+    }
+
+    [Theory]
+    [InlineData(new[] { "game" }, "a|b|c", "ascending")]
+    [InlineData(new[] { "game", "game" }, "c|b|a", "descending")]
+    [InlineData(new[] { "moves" }, "c|a|b", "ascending")]
+    [InlineData(new[] { "ruleset", "players" }, "b|a|c", "ascending")]
+    [InlineData(new[] { "waiting", "moves" }, "c|a|b", "ascending")]
+    public void Sort_WhenAHeadingIsClicked_SortsByItAndAgainTheOtherWay(
+        string[] clicked,
+        string expected,
+        string sort
+    )
+    {
+        // Arrange - three games, a with 5 moves, b with 9, c with 1, alike otherwise, so kept in order on a tie
+        GameSummaryDto game = this._page.Server.Games[0];
+        this._page.Server.Games =
+        [
+            game with { Id = "b", Moves = 9 },
+            game with { Id = "a", Moves = 5 },
+            game with { Id = "c", Moves = 1 },
+        ];
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Act
+        foreach (string column in clicked)
+        {
+            lobby.Find($"th button.sort.{column}").Click();
+        }
+
+        // Assert
+        Assert.Equal(
+            (expected, sort),
+            (
+                string.Join('|', lobby.FindAll(".games-table tbody span.game").Select(id => id.TextContent)),
+                lobby.Find($"th:has(button.sort.{clicked[^1]})").GetAttribute("aria-sort")
+            )
+        );
     }
 
     [Fact]

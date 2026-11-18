@@ -20,6 +20,7 @@
    (<see cref="Leaderboard"/>). One choice of game, at the top, with the choice to show previews, serves the whole
    lobby (Stated): the game to start, the games listed and the leaderboard; the games waiting for the player's
    move are listed whatever their game. *@
+@using System.Globalization
 @inject IGameServing Games
 @inject Browser Browser
 @inject TimeProvider Clock
@@ -404,15 +405,39 @@
             {
                 <p class="no-games">No games like that.</p>
             }
-            <ul class="games">
-                @foreach (GameSummaryDto game in this._games)
+            else
+            {
+                <table class="games-table">
+                    <thead>
+                        <tr>
+                            @foreach ((GameColumn column, string heading) in Columns)
+                            {
+                                <th scope="col" aria-sort="@this.AriaSortOf(column)">
+                                    <button class="sort @column.ToString().ToLowerInvariant()"
+                                            @onclick="() => this.SortBy(column)">
+                                        @heading@this.ArrowOf(column)
+                                    </button>
+                                </th>
+                            }
+                            <th scope="col">Status</th>
+                            <th scope="col"><span class="visually-hidden">Actions</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                @foreach (GameSummaryDto game in this.Sorted(catalog))
                 {
-                    <li>
-                        <span class="game">@game.Id[..Math.Min(8, game.Id.Length)]</span>
-                        <span class="ruleset">@NameOf(catalog, game.RulesetId)</span>
-                        <span class="players">@Players(game)</span>
-                        <span class="moves">@Moves(game)</span>
-                        <span class="state">@this.StateOf(game)</span>
+                    <tr>
+                        <td><span class="game">@game.Id[..Math.Min(8, game.Id.Length)]</span></td>
+                        <td><span class="ruleset">@NameOf(catalog, game.RulesetId)</span></td>
+                        <td><span class="players">@Players(game)</span></td>
+                        <td><span class="moves">@game.Moves</span></td>
+                        <td>
+                            <span class="waiting" title="Since the last move or seat taken">
+                                @(game.LastChanged is { } last ? TimeAgo.Since(last, this.Clock.GetUtcNow()) : "-")
+                            </span>
+                        </td>
+                        <td><span class="state">@this.StateOf(game)</span></td>
+                        <td class="game-actions">
                         @if (game.IsOver)
                         {
                             <span class="over">Over</span>
@@ -448,9 +473,12 @@
                                 Watch
                             </button>
                         }
-                    </li>
+                        </td>
+                    </tr>
                 }
-            </ul>
+                    </tbody>
+                </table>
+            }
             @if (this._pages > 1)
             {
                 <div class="pages">
@@ -478,6 +506,8 @@
     private const string Mine = "mine";
 
     private ImmutableList<GameSummaryDto> _games = [];
+    private GameColumn _sortBy = GameColumn.Default;
+    private bool _isDescending;
 
     /// <summary>Which games the list shows: those waiting for players, until the player asks otherwise.</summary>
     private GameListQuery _filter = new(Open: true, Over: false);
@@ -761,7 +791,68 @@
     private static string RoleOf(RulesetDto ruleset, int you, int seat) =>
         IsAlly(ruleset, you, seat) ? "Your ally" : "Enemy";
 
-    private static string Moves(GameSummaryDto game) => game.Moves == 1 ? "1 move" : $"{game.Moves} moves";
+    /// <summary>The games list's sortable columns, by their headings (playtest 2026-11-15, H4).</summary>
+    private static readonly ImmutableList<(GameColumn Column, string Heading)> Columns =
+    [
+        (GameColumn.Game, "Game"),
+        (GameColumn.Ruleset, "Ruleset"),
+        (GameColumn.Players, "Players"),
+        (GameColumn.Moves, "Moves"),
+        (GameColumn.Waiting, "Waiting"),
+    ];
+
+    /// <summary>
+    /// The games on this page in the order chosen: by a column, either way; else, until a heading is clicked, the
+    /// player's own first, then those waiting longest.
+    /// </summary>
+    private IEnumerable<GameSummaryDto> Sorted(CatalogDto catalog)
+    {
+        Func<GameSummaryDto, string>? key = this._sortBy switch
+        {
+            GameColumn.Game => game => game.Id,
+            GameColumn.Ruleset => game => NameOf(catalog, game.RulesetId),
+            GameColumn.Players => Players,
+            GameColumn.Moves => game => game.Moves.ToString("D9", CultureInfo.InvariantCulture),
+            GameColumn.Waiting => WaitingKeyOf,
+            _ => null,
+        };
+        return key is null
+            ? this._games.OrderBy(game => this.IsMine(game) ? 0 : 1).ThenBy(WaitingKeyOf, StringComparer.Ordinal)
+            : this._isDescending
+                ? this._games.OrderByDescending(key, StringComparer.Ordinal)
+                : this._games.OrderBy(key, StringComparer.Ordinal);
+    }
+
+    /// <summary>When the game last changed, to order by: the longest waiting first; one never told of, last.</summary>
+    private static string WaitingKeyOf(GameSummaryDto game) =>
+        game.LastChanged is { } last ? last.UtcDateTime.ToString("o", CultureInfo.InvariantCulture) : "~";
+
+    /// <summary>Whether the player holds a seat at the game, in this browser or signed in.</summary>
+    private bool IsMine(GameSummaryDto game) => this._held.ContainsKey(game.Id) || this.MySeat(game) is not null;
+
+    /// <summary>Sorts by <paramref name="column"/>; by it again, the other way.</summary>
+    private void SortBy(GameColumn column)
+    {
+        this._isDescending = this._sortBy == column && !this._isDescending;
+        this._sortBy = column;
+    }
+
+    private string ArrowOf(GameColumn column) =>
+        this._sortBy != column ? string.Empty : this._isDescending ? " ▼" : " ▲";
+
+    private string AriaSortOf(GameColumn column) =>
+        this._sortBy != column ? "none" : this._isDescending ? "descending" : "ascending";
+
+    /// <summary>A column the games list sorts by; none chosen, the player's own and the longest waiting first.</summary>
+    private enum GameColumn
+    {
+        Default,
+        Game,
+        Ruleset,
+        Players,
+        Moves,
+        Waiting,
+    }
 
     /// <summary>
     /// "Waiting for a player; created 3 h ago, last change 5 min ago", "Yellow away; ...": whether it waits for a seat
