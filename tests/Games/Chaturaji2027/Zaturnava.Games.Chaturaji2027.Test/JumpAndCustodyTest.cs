@@ -99,6 +99,28 @@ public sealed class JumpAndCustodyTest
     }
 
     [Fact]
+    public void ApplyLegal_WhenGivenALegalMove_LeadsWhereApplyDoes()
+    {
+        // Arrange - Black's Boat on c1 jumping Yellow's Horses on d2 and d4
+        GameState state = BlackToMove(
+            BoatDie,
+            (Cell(2, 0), BlackBoat),
+            (Cell(3, 1), FirstHorse),
+            (Cell(3, 3), SecondHorse)
+        );
+        MoveAction jump = new(Black, Cell(2, 0), Cell(2, 4));
+
+        // Act
+        Transition applied = this._rules.ApplyLegal(state, jump);
+
+        // Assert
+        Assert.Equal(
+            this._rules.Apply(state, jump).State.Position.Occupants.OrderBy(occupant => occupant.Key.Value),
+            applied.State.Position.Occupants.OrderBy(occupant => occupant.Key.Value)
+        );
+    }
+
+    [Fact]
     public void LegalActions_WhenAPieceMayJump_OffersEachJumpOfTheChainAsAMove()
     {
         // Arrange

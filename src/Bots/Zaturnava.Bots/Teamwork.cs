@@ -59,5 +59,5 @@ internal static class Teamwork
             .ToLookup(attack => attack.Target);
 
     private static GameState After(DecisionRequest request, GameAction action) =>
-        request.Rules.Apply(request.State, action).State;
+        request.Rules.ApplyLegal(request.State, action).State;
 }

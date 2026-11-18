@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using System.ComponentModel.DataAnnotations;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Decisions;
+using Net.NowhereAtAll.Zaturnava.Engine.Rules;
 
 namespace Net.NowhereAtAll.Zaturnava.Bots.FairyStockfish;
 
@@ -50,6 +51,9 @@ public sealed class FairyStockfishBot(UciEngine engine, IBotPlaying fallback) : 
             + "as drafting or ransom, it leaves to Athena. A plain algorithm: no AI.",
         UsesAi: false
     );
+
+    /// <summary>A game whose board Fairy-Stockfish can hold, so that it, not Athena, makes the moves (D1).</summary>
+    public bool Knows([Required] IRulesApplying rules) => FairyPosition.Fits(rules.Topology);
 
     public async Task<GameAction> Decide([Required] DecisionRequest request, CancellationToken cancellationToken)
     {

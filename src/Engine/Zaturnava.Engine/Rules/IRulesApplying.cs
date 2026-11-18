@@ -157,6 +157,14 @@ public interface IRulesApplying
     Transition Apply([Required] GameState state, [Required] GameAction action);
 
     /// <summary>
+    /// As <see cref="Apply"/>, for an action known to be among <see cref="LegalActions"/> of the same state, or
+    /// one the deciding seat's dice: the ruleset may skip working out the legal actions again to check it, as one
+    /// searching ahead, who has just asked for them, needs it not to (playtest 2026-11-15, D3). An action that is not
+    /// legal leads anywhere.
+    /// </summary>
+    Transition ApplyLegal([Required] GameState state, [Required] GameAction action) => this.Apply(state, action);
+
+    /// <summary>
     /// Whether the deciding seat may offer a ransom now. Offers are not among the legal actions:
     /// there are too many; <see cref="Apply"/> refuses one that may not be made.
     /// </summary>

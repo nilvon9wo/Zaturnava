@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.ComponentModel.DataAnnotations;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Decisions;
@@ -37,6 +38,47 @@ public sealed class DecidingTest
 
         // Assert
         _ = await Assert.ThrowsAnyAsync<OperationCanceledException>(() => seizing);
+    }
+
+    [Theory]
+    [InlineData(false, "grand-legions-small", true)]
+    [InlineData(true, "chaturaji-2027", true)]
+    [InlineData(true, "grand-legions-small", false)]
+    public void Plays_WhenTheProfileTellsTheRulesetsOrNot_SaysWhetherTheBotIsOfferedForOne(
+        bool isTold,
+        string rulesetId,
+        bool expected
+    )
+    {
+        // Arrange
+        BotProfile profile = new("athena", "Athena", "Learned.", UsesAi: true)
+        {
+            Rulesets = isTold ? ["chaturaji-2027"] : null,
+        };
+
+        // Act
+        bool plays = profile.Plays(rulesetId);
+
+        // Assert
+        Assert.Equal(expected, plays);
+    }
+
+    [Theory]
+    [InlineData(false, null)]
+    [InlineData(true, "chaturaji-2027,grand-legions-small")]
+    public void RulesetsInOrder_WhenToldOrNot_ListsThemByIdOrNone(bool isTold, string? expected)
+    {
+        // Arrange
+        BotProfile profile = new("sage", "Sage", "Sensible.", UsesAi: false)
+        {
+            Rulesets = isTold ? ["grand-legions-small", "chaturaji-2027"] : null,
+        };
+
+        // Act
+        ImmutableList<string>? known = profile.RulesetsInOrder;
+
+        // Assert
+        Assert.Equal(expected, known is null ? null : string.Join(',', known));
     }
 
     private static Task<GameAction?> SeizeOf<TDeciding>(

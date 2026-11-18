@@ -14,23 +14,27 @@ namespace Net.NowhereAtAll.Zaturnava.Bots;
 /// the look ahead ends, the position is worth what <paramref name="valuing"/> says (Sage's
 /// <see cref="Appraisal"/>, say), the enemy's reply weighed only as that counts it. To keep it quick, only
 /// the <paramref name="beam"/> most promising actions at each step are followed further. Among actions
-/// worth the same, it would rather do something than pass, and picks at random.
+/// worth the same, it would rather do something than pass, and picks at random. Once <paramref name="limit"/>
+/// (<see cref="Deadline.Limit"/>, if none) has passed, it looks no further: each position not yet looked into is
+/// worth what <paramref name="valuing"/> says of it as it stands.
 /// </summary>
-internal sealed class Foresight(IPositionValuing valuing, int depth, int beam)
+internal sealed class Foresight(IPositionValuing valuing, int depth, int beam, TimeSpan? limit = null)
 {
     private const double Tolerance = 1e-9;
 
     private readonly IPositionValuing _valuing = valuing;
     private readonly int _depth = depth;
     private readonly int _beam = beam;
+    private readonly TimeSpan _limit = limit ?? Deadline.Limit;
 
     public GameAction Choose(DecisionRequest request, Random random)
     {
+        Deadline deadline = new(this._limit);
         ImmutableList<(GameAction Action, double Worth)> worths =
         [
             .. Playable.Of(request).Select(action => (
                 action,
-                this.WorthOf(request, Apply(request, request.State, action), this._depth - 1)
+                this.WorthOf(request, Apply(request, request.State, action), this._depth - 1, deadline)
             )),
         ];
         double best = worths.Max(worth => worth.Worth);
@@ -64,26 +68,31 @@ internal sealed class Foresight(IPositionValuing valuing, int depth, int beam)
 
     /// <summary>
     /// What the state is worth to the bot: while an enemy holding its throne moves its army for it, the worst
-    /// that enemy could do with it; once its turn has passed (or the game is over), its value; the average over
-    /// the dice, if it waits on the bot's; else the best the bot could make of it.
+    /// that enemy could do with it; once its turn has passed (or the game is over), or the time is up, its value; the
+    /// average over the dice, if it waits on the bot's; else the best the bot could make of it.
     /// </summary>
-    private double WorthOf(DecisionRequest request, GameState state, int stepsLeft) =>
-        (state.DecidingSeat == request.Seat, state.AwaitedDice) switch
+    private double WorthOf(DecisionRequest request, GameState state, int stepsLeft, Deadline deadline) =>
+        (state.DecidingSeat == request.Seat && !deadline.IsPast, state.AwaitedDice) switch
         {
-            (false, _) when state.ActingFor == request.Seat => this.WorstReplyOf(request, state),
+            (false, _) when state.ActingFor == request.Seat && !deadline.IsPast => this.WorstReplyOf(request, state),
             (false, _) => this._valuing.ValueOf(request, state),
             (_, { } dice) => Outcomes(dice).Sum(outcome =>
                 outcome.Chance
-                * this.WorthOf(request, Apply(request, state, new DiceAction(request.Seat, outcome.Values)), stepsLeft)
+                * this.WorthOf(
+                    request,
+                    Apply(request, state, new DiceAction(request.Seat, outcome.Values)),
+                    stepsLeft,
+                    deadline
+                )
             ),
-            _ => this.BestOf(request, state, stepsLeft),
+            _ => this.BestOf(request, state, stepsLeft, deadline),
         };
 
     /// <summary>
     /// The best the bot could make of the state, stopping there or taking any of its next actions, each
     /// worth its value - but the most promising followed further, while steps are left.
     /// </summary>
-    private double BestOf(DecisionRequest request, GameState state, int stepsLeft)
+    private double BestOf(DecisionRequest request, GameState state, int stepsLeft, Deadline deadline)
     {
         DecisionRequest now = request with { State = state, LegalActions = request.Rules.LegalActions(state) };
         ImmutableList<(GameState After, double Worth)> next =
@@ -94,7 +103,7 @@ internal sealed class Foresight(IPositionValuing valuing, int depth, int beam)
                 .OrderByDescending(step => step.Item2),
         ];
         IEnumerable<double> further = stepsLeft > 1
-            ? next.Take(this._beam).Select(step => this.WorthOf(request, step.After, stepsLeft - 1))
+            ? next.Take(this._beam).Select(step => this.WorthOf(request, step.After, stepsLeft - 1, deadline))
             : [];
         return next
             .Select(step => step.Worth)
@@ -115,5 +124,5 @@ internal sealed class Foresight(IPositionValuing valuing, int depth, int beam)
             .Min();
 
     private static GameState Apply(DecisionRequest request, GameState state, GameAction action) =>
-        request.Rules.Apply(state, action).State;
+        request.Rules.ApplyLegal(state, action).State;
 }

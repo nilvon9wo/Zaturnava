@@ -17,9 +17,10 @@ namespace Net.NowhereAtAll.Zaturnava.Bots;
 /// it finished says. Past the first step, only the <paramref name="width"/> most promising actions at each
 /// decision are followed. A position at the end of the look, or one in which the game is over, is worth what
 /// <paramref name="valuing"/> says (Sage's <see cref="Appraisal"/>, say). Among actions worth the same, it
-/// would rather do something than pass, and picks at random.
+/// would rather do something than pass, and picks at random. Time counts as the budget does: once
+/// <paramref name="limit"/> (<see cref="Deadline.Limit"/>, if none) has passed, the budget is spent.
 /// </summary>
-internal sealed class Tactics(IPositionValuing valuing, int budget, int width)
+internal sealed class Tactics(IPositionValuing valuing, int budget, int width, TimeSpan? limit = null)
 {
     private const double Tolerance = 1e-9;
 
@@ -32,6 +33,7 @@ internal sealed class Tactics(IPositionValuing valuing, int budget, int width)
     private readonly IPositionValuing _valuing = valuing;
     private readonly int _budget = budget;
     private readonly int _width = width;
+    private readonly TimeSpan _limit = limit ?? Deadline.Limit;
 
     public GameAction Choose(DecisionRequest request, Random random)
     {
@@ -43,7 +45,7 @@ internal sealed class Tactics(IPositionValuing valuing, int budget, int width)
 
     private GameAction Searched(DecisionRequest request, ImmutableList<GameAction> playable, Random random)
     {
-        Search search = new(request, this._valuing, this._budget, this._width);
+        Search search = new(request, this._valuing, this._budget, this._width, new Deadline(this._limit));
         ImmutableList<(GameAction Action, GameState After)> children =
         [
             .. playable.Select(action => (action, search.Apply(request.State, action))),
@@ -72,7 +74,13 @@ internal sealed class Tactics(IPositionValuing valuing, int budget, int width)
     }
 
     /// <summary>One decision's search: what it has spent, and whether its last look stopped short anywhere.</summary>
-    private sealed class Search(DecisionRequest request, IPositionValuing valuing, int budget, int width)
+    private sealed class Search(
+        DecisionRequest request,
+        IPositionValuing valuing,
+        int budget,
+        int width,
+        Deadline deadline
+    )
     {
         /// <summary>The actions not looked into: offers, proposals and votes, playing nothing on the board.</summary>
         private static readonly ImmutableHashSet<Type> NotPlay =
@@ -85,10 +93,11 @@ internal sealed class Tactics(IPositionValuing valuing, int budget, int width)
         private readonly IPositionValuing _valuing = valuing;
         private readonly int _budget = budget;
         private readonly int _width = width;
+        private readonly Deadline _deadline = deadline;
         private int _spent;
         private int _forced;
 
-        public bool IsSpent => this._spent >= this._budget;
+        public bool IsSpent => this._spent >= this._budget || this._deadline.IsPast;
 
         /// <summary>Whether the last look stopped anywhere the game was not over.</summary>
         public bool IsCut { get; private set; }
@@ -126,7 +135,7 @@ internal sealed class Tactics(IPositionValuing valuing, int budget, int width)
         public GameState Apply(GameState state, GameAction action)
         {
             this._spent++;
-            return this._request.Rules.Apply(state, action).State;
+            return this._request.Rules.ApplyLegal(state, action).State;
         }
 
         /// <summary>What the state is worth to the bot, as it stands.</summary>

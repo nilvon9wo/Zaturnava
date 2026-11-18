@@ -133,6 +133,7 @@ public sealed class WireFormatTest
                 new BotDto("random", "Random", "Any move.", UsesAi: false)
                 {
                     Ratings = ImmutableDictionary<string, int>.Empty.Add("chaturaji-2027", 1000),
+                    Rulesets = ["chaturaji-2027"],
                 },
             ]
         )
@@ -145,6 +146,28 @@ public sealed class WireFormatTest
 
         // Assert
         Assert.Equivalent(catalog, arrived, strict: true);
+    }
+
+    [Theory]
+    [InlineData(null, true)]
+    [InlineData("chaturaji-2027", true)]
+    [InlineData("grand-legions-small", false)]
+    public void Plays_WhenTheBotKnowsSomeRulesetsOrIsNotSaid_SaysWhetherItIsOfferedForOne(
+        string? known,
+        bool expected
+    )
+    {
+        // Arrange - the bot knows only the ruleset given, or, none given, every one
+        BotDto bot = new("athena", "Athena", "Learned.", UsesAi: true)
+        {
+            Rulesets = known is null ? null : ["chaturaji-2027"],
+        };
+
+        // Act
+        bool plays = bot.Plays(known ?? "grand-legions-small");
+
+        // Assert
+        Assert.Equal(expected, plays);
     }
 
     [Fact]

@@ -14,4 +14,12 @@ public sealed record BotDto(string Id, string Name, string Description, bool Use
     /// ten games in eleven. None for a ruleset it has not been rated at.
     /// </summary>
     public ImmutableDictionary<string, int> Ratings { get; init; } = [];
+
+    /// <summary>
+    /// The rulesets, by id, it knows how to play, and is offered for; null, from a server that does not say, every one.
+    /// </summary>
+    public ImmutableList<string>? Rulesets { get; init; }
+
+    /// <summary>Whether it is offered for the ruleset of <paramref name="rulesetId"/>.</summary>
+    public bool Plays(string rulesetId) => this.Rulesets?.Contains(rulesetId) ?? true;
 }

@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.ComponentModel.DataAnnotations;
 using Net.NowhereAtAll.Zaturnava.Engine.Decisions;
+using Net.NowhereAtAll.Zaturnava.Engine.Rules;
 
 namespace Net.NowhereAtAll.Zaturnava.Application.Bots;
 
@@ -35,6 +36,10 @@ public sealed class BotCatalog(
 
     public IDeciding Find([Required] string botId) =>
         this._bots.GetValueOrDefault(botId) ?? throw new UnknownBotException(botId);
+
+    /// <summary>Whether the bot knows the ruleset, as it says; no unknown bot knows any.</summary>
+    public bool Knows([Required] string botId, [Required] IRulesApplying rules) =>
+        this._bots.GetValueOrDefault(botId)?.Knows(rules) ?? false;
 
     /// <summary>
     /// Rates the bots <paramref name="ratings"/> name at <paramref name="ruleset"/> anew, as it says; the others keep

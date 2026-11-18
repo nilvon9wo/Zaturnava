@@ -387,7 +387,11 @@ internal static class GameViews
         board is null ? null : new BoardSizeDto(board.Width, board.Height, board.KingdomWidth, board.KingdomDepth);
 
     private static BotDto BotOf(BotProfile bot) =>
-        new(bot.Id, bot.Name, bot.Description, bot.UsesAi, bot.IsPaid) { Ratings = bot.Ratings };
+        new(bot.Id, bot.Name, bot.Description, bot.UsesAi, bot.IsPaid)
+        {
+            Ratings = bot.Ratings,
+            Rulesets = bot.RulesetsInOrder,
+        };
 
     private static CellDto CellOf(
         ICellNavigating topology,

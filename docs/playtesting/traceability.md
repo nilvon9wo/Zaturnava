@@ -33,9 +33,9 @@ Statuses (the specification's P1): **Done** (implemented and tested), **Done, pa
 
 | Id | Item | Status | Notes |
 |---|---|---|---|
-| D1 | A bot not knowing a game is not offered for it | To do | |
+| D1 | A bot not knowing a game is not offered for it | Done | Each bot says which games it knows (`IBotPlaying.Knows`). The catalog sends each bot's rulesets (`BotDto.Rulesets`); the lobby's strengths and the server's seat filling skip a bot that doesn't know the game. Reviewed: Athena, with no network for a game, played just as Sage, so it is offered only for Chaturaji 2027. Fairy-Stockfish only where it can hold the board. Pythia keeps its own search with Sage's judgement, and the rest use generic, rules-driven logic, so they know every game. Tests: `AthenaBotTest`, `FairyStockfishBotTest`, `GameServiceTest`, `BotCatalogTest`. |
 | D2 | Three or more non-random bots below 1200 | To do | Keep every past measurement. |
-| D3 | 30-second cap, best move so far; slow with Checkers and Swedes; both hypotheses investigated | To do | |
+| D3 | 30-second cap, best move so far; slow with Checkers and Swedes; both hypotheses investigated | Done | Every search stops at 30 seconds (`Deadline`) and plays its best so far. Tactician's look counts as spent; Pythia stops passing and plays the most-tried action; Sage values unexplored positions as they stand. Tests: `DeadlineTest`. Found: every `Apply` worked out all legal actions again to check the move, so a search paid for move generation twice at every step. Bots now use `ApplyLegal`, which skips that check. Hypothesis 1: since edition 6 each jump is a move of its own, linear to generate; only games dealt before edition 6 enumerate every chain, which can grow exponentially on a crowded board. Hypothesis 2: no Grand Legions logic runs in Chaturaji 2027. Custody, palaces and rivers are configured per variant and return at once when absent. |
 | D4 | Grand Legions bots by family: Western, Xiangqi, Janggi, Shogi, Makruk, Checkers, Tafl, Fairy | To do | |
 
 ## E. Army selection

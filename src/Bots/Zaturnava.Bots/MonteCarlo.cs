@@ -18,9 +18,16 @@ namespace Net.NowhereAtAll.Zaturnava.Bots;
 /// play for the most its team can make of a position, its enemies for the least; untried actions are tried in a
 /// random order, so that a pass costs one judgement. Values are scaled to those seen so far, so that UCT's
 /// <paramref name="exploration"/> means the same whatever the game's scale. It plays the action it tried most,
-/// rather than pass, and at random among equals.
+/// rather than pass, and at random among equals. Should <paramref name="limit"/> (<see cref="Deadline.Limit"/>, if
+/// none) pass first, it stops passing and plays as the passes so far say.
 /// </summary>
-internal sealed class MonteCarlo(IPositionValuing valuing, int iterations, int horizon, double exploration)
+internal sealed class MonteCarlo(
+    IPositionValuing valuing,
+    int iterations,
+    int horizon,
+    double exploration,
+    TimeSpan? limit = null
+)
 {
     /// <summary>The actions not tried: offers, proposals and votes, playing nothing on the board.</summary>
     private static readonly ImmutableHashSet<Type> NotPlay =
@@ -36,6 +43,7 @@ internal sealed class MonteCarlo(IPositionValuing valuing, int iterations, int h
     private readonly int _iterations = iterations;
     private readonly int _horizon = horizon;
     private readonly double _exploration = exploration;
+    private readonly TimeSpan _limit = limit ?? Deadline.Limit;
 
     public GameAction Choose(DecisionRequest request, Random random)
     {
@@ -49,7 +57,8 @@ internal sealed class MonteCarlo(IPositionValuing valuing, int iterations, int h
     {
         Tree tree = new(request, this._valuing, random, this._exploration);
         Node root = Tree.Root(playable);
-        for (int pass = 0; pass < this._iterations; pass++)
+        Deadline deadline = new(this._limit);
+        for (int pass = 0; pass < this._iterations && (pass == 0 || !deadline.IsPast); pass++)
         {
             tree.Pass(root, this._horizon);
         }
@@ -216,6 +225,6 @@ internal sealed class MonteCarlo(IPositionValuing valuing, int iterations, int h
             this._request with { State = state, Seat = seat, LegalActions = this._request.Rules.LegalActions(state) };
 
         private GameState Apply(GameState state, GameAction action) =>
-            this._request.Rules.Apply(state, action).State;
+            this._request.Rules.ApplyLegal(state, action).State;
     }
 }

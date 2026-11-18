@@ -30,6 +30,15 @@ public sealed record FairyPosition(string Name, string Definition, string Fen)
 
     private const string Letters = "abcdefghijklmnopqrstuvwxy";
 
+    /// <summary>Whether Fairy-Stockfish can hold <paramref name="board"/>: a small rectangle of squares.</summary>
+    public static bool Fits([Required] ICellNavigating board)
+    {
+        ImmutableList<CellLayout> cells = [.. board.Cells.Select(board.LayoutOf)];
+        int files = (int)cells.Max(cell => cell.X) + 1;
+        int ranks = (int)cells.Max(cell => cell.Y) + 1;
+        return files <= MostFiles && ranks <= MostRanks && cells.Count == files * ranks;
+    }
+
     /// <summary>
     /// The game from <paramref name="seat"/>'s side; none, if Fairy-Stockfish cannot see it so: a board not a
     /// rectangle of squares it can hold, a piece it cannot define, or too many kinds of piece.
@@ -40,7 +49,7 @@ public sealed record FairyPosition(string Name, string Definition, string Fen)
         ImmutableList<CellLayout> cells = [.. board.Cells.Select(board.LayoutOf)];
         int files = (int)cells.Max(cell => cell.X) + 1;
         int ranks = (int)cells.Max(cell => cell.Y) + 1;
-        if (files > MostFiles || ranks > MostRanks || cells.Count != files * ranks)
+        if (!Fits(board))
         {
             return null;
         }

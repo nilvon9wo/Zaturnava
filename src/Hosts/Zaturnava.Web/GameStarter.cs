@@ -130,14 +130,15 @@ internal static class GameStarter
     }
 
     /// <summary>
-    /// The bots never paid for each use: those rated at the ruleset, easiest first; and those not, as they come.
+    /// The bots never paid for each use that know the ruleset (D1): those rated at it, easiest first; and those not, as
+    /// they come.
     /// </summary>
     private static (ImmutableList<BotDto> Rated, ImmutableList<BotDto> Unrated) Ranked(
         CatalogDto catalog,
         string rulesetId
     )
     {
-        ImmutableList<BotDto> unpaid = [.. catalog.Bots.Where(bot => !bot.IsPaid)];
+        ImmutableList<BotDto> unpaid = [.. catalog.Bots.Where(bot => !bot.IsPaid && bot.Plays(rulesetId))];
         return (
             [.. unpaid.Where(bot => bot.Ratings.ContainsKey(rulesetId)).OrderBy(bot => bot.Ratings[rulesetId])],
             [.. unpaid.Where(bot => !bot.Ratings.ContainsKey(rulesetId))]
