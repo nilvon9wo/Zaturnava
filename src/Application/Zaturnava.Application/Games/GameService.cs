@@ -47,7 +47,14 @@ public sealed class GameService(
 
     public ImmutableList<IRulesApplying> Rulesets => this._rulesets.All;
 
-    public ImmutableList<BotProfile> Bots => this._bots.Bots;
+    /// <summary>Every bot, each with the rulesets it knows how to play, and so is offered for (D1).</summary>
+    public ImmutableList<BotProfile> Bots =>
+    [
+        .. this._bots.Bots.Select(bot => bot with
+        {
+            Rulesets = [.. this.Rulesets.Where(rules => this._bots.Knows(bot.Id, rules)).Select(rules => rules.Id)],
+        }),
+    ];
 
     public ImmutableList<Scenario> Scenarios => this._scenarios.All;
 
@@ -838,11 +845,14 @@ public sealed class GameService(
         );
     }
 
-    /// <summary>The bots not yet seated at the game, at random, never one paid for each use.</summary>
+    /// <summary>
+    /// The bots not yet seated at the game, at random, never one paid for each use, nor one that does not know the
+    /// game (D1).
+    /// </summary>
     private Queue<string> FreeBots(GameRecord record) =>
         new(
             this._bots.Bots
-                .Where(bot => !bot.IsPaid)
+                .Where(bot => !bot.IsPaid && this._bots.Knows(bot.Id, this._rulesets.Find(record.RulesetId)))
                 .Select(bot => bot.Id)
                 .Except(record.Controllers.OfType<BotSeat>().Select(seated => seated.BotId))
                 .OrderBy(_ => Random.Shared.Next())

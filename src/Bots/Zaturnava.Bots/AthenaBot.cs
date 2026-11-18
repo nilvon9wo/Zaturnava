@@ -13,8 +13,8 @@ namespace Net.NowhereAtAll.Zaturnava.Bots;
 /// judged by a neural network trained on games played (<see cref="NetworkValuing"/>): how the game will end for
 /// its team, and by how much. Asked to end the game, it agrees when ending it now, points deciding, is worth as
 /// much as playing on, as the network judges playing on. Deals in prisoners as Sage does, by the position a
-/// trade leaves, as the network judges it (<see cref="ByPosition"/>). For a ruleset it
-/// has no network for (or one that cannot judge the ruleset's positions), it plays as Sage does.
+/// trade leaves, as the network judges it (<see cref="ByPosition"/>). It knows only the rulesets it has a network
+/// for (<see cref="Knows"/>); asked to play another anyway, it plays as Sage does.
 /// </summary>
 public sealed class AthenaBot(Random random, ImmutableDictionary<string, ValueNetworkData> networks) : IBotPlaying
 {
@@ -37,10 +37,15 @@ public sealed class AthenaBot(Random random, ImmutableDictionary<string, ValueNe
             + "each position (who will win, and by how much), and it thinks through the rest of its turn as Sage "
             + "does. It agrees to end a game when ending it now is worth as much as playing on. Trades prisoners when "
             + "the board would be better for it. Uses AI of its own, run on the server at no cost to anyone: "
-            + "no AI service. Only Chaturaji 2027 has a network of its own so far; at any other game, it plays as "
-            + "Sage does.",
+            + "no AI service. Offered only for games it has a network for: so far, Chaturaji 2027.",
         UsesAi: true
     );
+
+    /// <summary>
+    /// Only a game it has a network for, that can judge the game's positions: at any other, it would play just as Sage
+    /// does (D1).
+    /// </summary>
+    public bool Knows([Required] IRulesApplying rules) => this.LearnedFor(rules) is not null;
 
     /// <summary>A chance that gains its team points (<see cref="Chances"/>).</summary>
     public Task<GameAction?> Seize([Required] DecisionRequest request, CancellationToken cancellationToken) =>

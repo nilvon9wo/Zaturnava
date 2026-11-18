@@ -1945,6 +1945,48 @@ public sealed class GameServiceTest
     }
 
     [Fact]
+    public async Task FillOpenSeats_WhenTheOnlyBotLeftDoesNotKnowTheGame_LeavesTheSeatOpen()
+    {
+        // Arrange - the one bot knows only the other ruleset (playtest 2026-11-15, D1)
+        GameService service = this.Service(
+            GameServiceSettings.Default,
+            bots: [new FirstChoiceBot(known: [RollingRules.RulesetId])]
+        );
+        GameId id = await service.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
+        string token = await service.Claim(id, First, this._cancellation);
+        _ = await service.Get(id, this._cancellation);
+        this._time.Pass(GameServiceSettings.DefaultFillWait);
+
+        // Act
+        GameSnapshot filled = await service.FillOpenSeats(id, token, this._cancellation);
+
+        // Assert
+        Assert.True(filled.Record.Controllers[1].IsOpen);
+    }
+
+    [Fact]
+    public void Bots_WhenOneKnowsOnlySomeRulesets_SayWhichEachKnows()
+    {
+        // Arrange
+        GameService service = this.Service(
+            GameServiceSettings.Default,
+            bots: [new FirstChoiceBot(), new FirstChoiceBot("rolling", [RollingRules.RulesetId])]
+        );
+
+        // Act
+        ImmutableList<BotProfile> bots = service.Bots;
+
+        // Assert
+        Assert.Equal(
+            ($"{RollingRules.RulesetId},{TinyRules.RulesetId}", RollingRules.RulesetId),
+            (
+                string.Join(',', bots.Single(bot => bot.Id == FirstChoiceBot.BotId).Rulesets!.Order()),
+                string.Join(',', bots.Single(bot => bot.Id == "rolling").Rulesets!)
+            )
+        );
+    }
+
+    [Fact]
     public async Task ReplaceAway_WhenNoBotIsLeftToSeat_LeavesTheGameAsItIs()
     {
         // Arrange - the second seat arrived first; the first, deciding, is away

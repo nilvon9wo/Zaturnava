@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.ComponentModel.DataAnnotations;
 using Net.NowhereAtAll.Zaturnava.Application.Bots;
+using Net.NowhereAtAll.Zaturnava.Application.Test.Fakes;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Decisions;
 
@@ -67,6 +68,37 @@ public sealed class BotCatalogTest
         );
     }
 
+    [Theory]
+    [InlineData("zebra", true)]
+    [InlineData("genius", false)]
+    public void Knows_WhenAskedOfABotOrNone_SaysWhatTheBotSays(string botId, bool expected)
+    {
+        // Arrange - the catalog's bots know every game
+
+        // Act
+        bool knows = this._catalog.Knows(botId, new RollingRules(4));
+
+        // Assert
+        Assert.Equal(expected, knows);
+    }
+
+    [Fact]
+    public void Knows_WhenTheLocatorSaysNoOther_IsTrueOfEveryBot()
+    {
+        // Arrange
+        SilentLocator locator = new();
+
+        // Act
+        bool knows = KnowsOf(locator, "anyone");
+
+        // Assert
+        Assert.True(knows);
+    }
+
+    private static bool KnowsOf<TLocating>(TLocating locator, string botId)
+        where TLocating : IBotLocating =>
+        locator.Knows(botId, new RollingRules(4));
+
     private static string Ratings(BotProfile bot) =>
         string.Join(
             ",",
@@ -74,6 +106,14 @@ public sealed class BotCatalogTest
                 .OrderBy(rating => rating.Key, StringComparer.Ordinal)
                 .Select(rating => $"{rating.Key}={rating.Value}")
         );
+}
+
+/// <summary>A locator of no bots, that says nothing of what they know.</summary>
+file sealed class SilentLocator : IBotLocating
+{
+    public ImmutableList<BotProfile> Bots => [];
+
+    public IDeciding Find([Required] string botId) => throw new UnknownBotException(botId);
 }
 
 /// <summary>A bot known only by its id; it never decides.</summary>

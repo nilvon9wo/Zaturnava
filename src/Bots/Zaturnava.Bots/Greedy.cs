@@ -90,7 +90,7 @@ internal static class Greedy
             : -request.Rules.WorthOf(piece.Kind);
 
     private static GameState After(DecisionRequest request, GameAction action) =>
-        request.Rules.Apply(request.State, action).State;
+        request.Rules.ApplyLegal(request.State, action).State;
 
     private static int ScoreOf(GameState state, SeatId seat) => state.Scores.GetValueOrDefault(seat);
 }

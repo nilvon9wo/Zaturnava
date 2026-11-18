@@ -325,6 +325,21 @@ public sealed class PalaceTest
     }
 
     [Fact]
+    public void ApplyLegal_WhileTheArmiesAreDrafted_DraftsAsApplyDoes()
+    {
+        // Arrange - Black's palace placed about b2
+        Chaturaji2027Rules rules = RulesOf(3, 4, [Chaturaji2027Pieces.Horse]);
+        GameState begun = rules.Drafted(rules.Deal(rules.CreateInitialState(), 4, dealsPalaces: true), 7);
+        PalaceAction palace = new(Black, B2);
+
+        // Act
+        Transition applied = rules.ApplyLegal(begun, palace);
+
+        // Assert
+        Assert.Equal(rules.Apply(begun, palace).State.Palaces![Black], applied.State.Palaces![Black]);
+    }
+
+    [Fact]
     public void LegalActions_WhenTheGameHasNoPalaces_DoesNotOfferAPalaceBoundKind()
     {
         // Arrange

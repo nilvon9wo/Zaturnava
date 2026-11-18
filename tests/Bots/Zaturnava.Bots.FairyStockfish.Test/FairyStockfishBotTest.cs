@@ -53,6 +53,21 @@ public sealed class FairyStockfishBotTest
         Assert.Equal((KingMoves[0], 1, 0), (action, fallback.Asked, channel.Sent.Count));
     }
 
+    [Theory]
+    [InlineData(8, true)]
+    [InlineData(13, false)]
+    public void Knows_WhenTheEngineCanHoldTheBoardOrNot_SaysSo(int side, bool expected)
+    {
+        // Arrange - a board it cannot hold would leave every move to the fallback (playtest 2026-11-15, D1)
+        FairyStockfishBot bot = new(new UciEngine(new ScriptedChannel(), Path.GetTempPath()), new StubBot());
+
+        // Act
+        bool knows = bot.Knows(new GridRules(Kinds, side));
+
+        // Assert
+        Assert.Equal(expected, knows);
+    }
+
     [Fact]
     public async Task Decide_WhenTheEngineNamesAMove_MakesIt()
     {

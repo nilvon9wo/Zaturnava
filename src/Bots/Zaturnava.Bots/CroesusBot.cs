@@ -61,7 +61,7 @@ public sealed class CroesusBot(Random random) : IBotPlaying
         return
         [
             .. choices.Where(action =>
-                Careful.Exposure(request, request.Rules.Apply(request.State, action).State) <= now
+                Careful.Exposure(request, request.Rules.ApplyLegal(request.State, action).State) <= now
             ),
         ];
     }

@@ -15,6 +15,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- So that each search's time limit can be tested set to nothing (Deadline). -->
+    <InternalsVisibleTo Include="Net.NowhereAtAll.Zaturnava.Bots.Test" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\Engine\Zaturnava.Engine\Zaturnava.Engine.csproj" />
   </ItemGroup>
 

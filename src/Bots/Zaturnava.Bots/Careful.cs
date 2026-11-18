@@ -44,7 +44,7 @@ internal static class Careful
     /// </summary>
     private static int WorthOf(DecisionRequest request, GameAction action, int allied)
     {
-        GameState after = request.Rules.Apply(request.State, action).State;
+        GameState after = request.Rules.ApplyLegal(request.State, action).State;
         return (2 * (Greedy.Gain(request, action, after) - Exposure(request, after)))
             + Teamwork.ThreatOf(request, after)
             - allied;

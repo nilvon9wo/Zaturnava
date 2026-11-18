@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using System.ComponentModel.DataAnnotations;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Boards;
+using Net.NowhereAtAll.Zaturnava.Engine.Decisions;
 using Net.NowhereAtAll.Zaturnava.Engine.Moves;
 using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
 using Net.NowhereAtAll.Zaturnava.Engine.Positions;
@@ -206,6 +207,40 @@ public sealed class RulesApplyingTest
         Assert.False(mayPromoteAtSide);
     }
 
+    [Fact]
+    public void ApplyLegal_WhenTheRulesSayNothing_AppliesAsApplyDoes()
+    {
+        // Arrange
+        OneSizeRules rules = new();
+
+        // Act
+        Transition applied = ApplyLegalOf(rules, OneSizeRules.State, new PassAction(Seat));
+
+        // Assert
+        Assert.Equal(OneSizeRules.State.TurnNumber + 1, applied.State.TurnNumber);
+    }
+
+    [Fact]
+    public void Knows_WhenTheBotSaysNoOther_KnowsEveryGame()
+    {
+        // Arrange
+        PassingBot bot = new();
+
+        // Act
+        bool knows = KnowsOf(bot, new OneSizeRules());
+
+        // Assert
+        Assert.True(knows);
+    }
+
+    private static bool KnowsOf<TBot>(TBot bot, IRulesApplying rules)
+        where TBot : IBotPlaying =>
+        bot.Knows(rules);
+
+    private static Transition ApplyLegalOf<TRules>(TRules rules, GameState state, GameAction action)
+        where TRules : IRulesApplying =>
+        rules.ApplyLegal(state, action);
+
     private static bool MayPromoteAtSideOf<TRules>(TRules rules)
         where TRules : IRulesApplying =>
         rules.MayPromoteAtSide;
@@ -273,6 +308,15 @@ public sealed class RulesApplyingTest
         (rules.GameId, rules.GameName, rules.Size, rules.IsPreview);
 }
 
+/// <summary>A bot that always passes, and says nothing of the games it knows.</summary>
+file sealed class PassingBot : IBotPlaying
+{
+    public BotProfile Profile { get; } = new("passer", "Passer", "Passes.", UsesAi: false);
+
+    public Task<GameAction> Decide([Required] DecisionRequest request, CancellationToken cancellationToken) =>
+        Task.FromResult<GameAction>(new PassAction(request.Seat));
+}
+
 /// <summary>Rules of a game played at one size, by one seat with its throne on cell 0, asked little else.</summary>
 file sealed class OneSizeRules : IRulesApplying
 {
@@ -300,8 +344,9 @@ file sealed class OneSizeRules : IRulesApplying
 
     public ImmutableList<GameAction> LegalActions([Required] GameState state) => throw new NotSupportedException();
 
+    /// <summary>The game as it was, its seat's turn counted on: so that it can be told this applied.</summary>
     public Transition Apply([Required] GameState state, [Required] GameAction action) =>
-        throw new NotSupportedException();
+        new(state with { TurnNumber = state.TurnNumber + 1 }, []);
 
     public bool MayOffer([Required] GameState state) => throw new NotSupportedException();
 

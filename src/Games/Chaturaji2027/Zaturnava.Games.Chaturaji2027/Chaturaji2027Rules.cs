@@ -356,12 +356,16 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     /// end or count.
     /// </summary>
     public Transition Apply([Required] GameState state, [Required] GameAction action) =>
-        this.DraftingOf(state) is { } drafting ? drafting.Applied(state, action) : this.Played(state, action);
+        this.DraftingOf(state) is { } drafting ? drafting.Applied(state, action) : this.Played(state, action, false);
+
+    /// <summary>As <see cref="Apply"/>, but not working out the legal actions again to check a decision.</summary>
+    public Transition ApplyLegal([Required] GameState state, [Required] GameAction action) =>
+        this.DraftingOf(state) is { } drafting ? drafting.Applied(state, action) : this.Played(state, action, true);
 
     /// <summary>The draft, while the game's armies are being drafted.</summary>
     private ArmyDrafting? DraftingOf(GameState state) => state.Draft is null ? null : this._drafting;
 
-    private Transition Played(GameState state, GameAction action) =>
+    private Transition Played(GameState state, GameAction action, bool isKnownLegal) =>
         this._command.Told(
             state,
             this._everyPiece.Scored(
@@ -370,7 +374,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
                         GameEnd.AfterRepeats(
                             GameEnd.AfterQuietTurns(
                                 state,
-                                GameEnd.Unidled(state, this.Acted(state, action)),
+                                GameEnd.Unidled(state, this.Acted(state, action, isKnownLegal)),
                                 this._quietRounds
                             ),
                             this._repeatRounds
@@ -382,7 +386,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         );
 
     /// <summary>The action itself, before the counts and endings that follow any action.</summary>
-    private Transition Acted(GameState state, GameAction action) =>
+    private Transition Acted(GameState state, GameAction action, bool isKnownLegal) =>
         Attended(
             action,
             action switch
@@ -395,6 +399,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
                 PassAwayAction pass => this.PassedAway(state, pass),
                 FaceOffAction faceOff => this.FacedOff(state, faceOff),
                 MoveAction move when state.DecidingSeat != move.Actor => this.TakenInPassing(state, move),
+                _ when isKnownLegal => this.Act(state, action),
                 _ => this.Decided(state, action),
             }
         );

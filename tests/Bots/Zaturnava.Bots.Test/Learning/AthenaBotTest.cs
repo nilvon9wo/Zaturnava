@@ -30,6 +30,23 @@ public sealed class AthenaBotTest
         Assert.Equal(Take, action);
     }
 
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(true, true)]
+    public void Knows_WhenItHasANetworkForTheRulesetOrNot_SaysSo(bool hasNetwork, bool expected)
+    {
+        // Arrange - without one, it would only play as Sage does (playtest 2026-11-15, D1)
+        DecisionRequest request = Free();
+        ValueNetworkData network = Taught.Network(request.Rules, (request.State, LineRules.Seat, 1));
+        AthenaBot athena = hasNetwork ? Athena(network) : new AthenaBot(new Random(Seed), []);
+
+        // Act
+        bool knows = athena.Knows(request.Rules);
+
+        // Assert
+        Assert.Equal(expected, knows);
+    }
+
     [Fact]
     public async Task Decide_WhenItsNetworkIsOfAnotherSize_PlaysAsSageDoes()
     {
