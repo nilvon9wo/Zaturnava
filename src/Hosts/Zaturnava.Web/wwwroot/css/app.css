@@ -720,19 +720,25 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
     justify-content: flex-end;
     gap: 8px;
 }
-/* Passing, neutral; handing the turn to an ally, in the ally's colour (playtest X1). */
-.end-area .action.pass { background: transparent; color: var(--ink); border: 1px solid var(--panel-edge); }
+/* Passing, neutral, unless it is the way on, then the call to action; handing the turn to an ally, in the ally's
+   colour (playtest X1, and 2026-11-19). */
+.end-area .action.pass:not(.primary) {
+    background: transparent;
+    color: var(--ink);
+    border: 1px solid var(--panel-edge);
+}
 .end-area .action.hand-over.seat-0 { background: var(--seat-0); color: var(--seat-0-ink); border-color: var(--muted); }
 .end-area .action.hand-over.seat-1 { background: var(--seat-1); color: var(--seat-1-ink); border-color: var(--seat-1); }
 .end-area .action.hand-over.seat-2 { background: var(--seat-2); color: var(--seat-2-ink); border-color: var(--seat-2); }
 .end-area .action.hand-over.seat-3 { background: var(--seat-3); color: var(--seat-3-ink); border-color: var(--seat-3); }
+/* Ending the game: always there and plain to see, but a muted red, never the call to action (2026-11-19). */
 .end-game {
-    background: var(--danger);
-    color: var(--danger-ink);
-    border-color: var(--danger);
-    font-weight: 700;
+    background: color-mix(in srgb, var(--danger) 35%, var(--panel));
+    color: var(--ink);
+    border-color: color-mix(in srgb, var(--danger) 60%, var(--panel));
+    font-weight: 600;
 }
-.end-game:hover { border-color: var(--danger-ink); }
+.end-game:hover { border-color: var(--danger); }
 
 /* The safety off, so that the player may take their own team's pieces: red, and said at the table too. */
 button.safety.off {

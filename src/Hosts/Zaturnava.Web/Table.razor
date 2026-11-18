@@ -501,6 +501,7 @@
                 @if (this.Seating.Claim is { } mine)
                 {
                     ImmutableList<ActionDto> closing = this.Closing(view);
+                    bool isPassUrged = this._turn is { } current && IsPassUrged(current.Actions);
                     SeatDto own = view.Seats[mine.Seat];
                     bool mayRejoin = own is { MayProposeEnd: false, MayRejoin: true, TurnsMissed: 0 };
                     @if (own.MayProposeEnd || mayRejoin || !closing.IsEmpty)
@@ -508,7 +509,7 @@
                         <div class="end-area">
                             @foreach (ActionDto action in closing)
                             {
-                                <button class="@ClosingClassOf(action)" @onclick="() => this.Submit(mine, action)">
+                                <button class="@ClosingClassOf(action, isPassUrged)" @onclick="() => this.Submit(mine, action)">
                                     @this.Named(ActionLabels.LabelOf(action))
                                 </button>
                             }
@@ -949,11 +950,24 @@
             ? [.. turn.Actions.OffBoard.Where(IsClosing).OrderBy(action => action.Kind == PassKind)]
             : [];
 
-    /// <summary>Passing, as plainly as can be; handing the turn over, in the colour of the ally taking it.</summary>
-    private static string ClosingClassOf(ActionDto action) =>
-        action.Kind == PassKind
-            ? "action pass"
-            : $"action hand-over seat-{action.Arguments.GetValueOrDefault(RegentArgument)}";
+    /// <summary>
+    /// Passing, plainly, unless it is the way on (<paramref name="isPassUrged"/>), then the one call to action;
+    /// handing the turn over, in the colour of the ally taking it.
+    /// </summary>
+    private static string ClosingClassOf(ActionDto action, bool isPassUrged) =>
+        (action.Kind == PassKind, isPassUrged) switch
+        {
+            (true, true) => "action pass primary urged",
+            (true, false) => "action pass",
+            _ => $"action hand-over seat-{action.Arguments.GetValueOrDefault(RegentArgument)}",
+        };
+
+    /// <summary>
+    /// Whether passing is the way on, the one thing to call for (playtest 2026-11-19): nothing to move on the board,
+    /// nothing to choose, nothing else to do but hand the turn over or offer prisoners - "Done offering" after a move.
+    /// </summary>
+    private static bool IsPassUrged(BoardActions actions) =>
+        actions.Origins.IsEmpty && actions.Choices.IsEmpty && actions.OffBoard.All(IsClosing);
 
     /// <summary>Rolling, when the player may do nothing else for an enemy leader on their throne.</summary>
     private static bool IsUrged(GameViewDto view, ActionDto action) =>
@@ -1329,15 +1343,25 @@
     /// <summary>Chooses a prisoner to give back, or no longer, showing its card (J2).</summary>
     private void GiveOne(int receiver, PrisonerDto prisoner)
     {
-        this._offBoardShown = prisoner;
+        this.ShowOffBoard(prisoner);
         this.Give(receiver, [prisoner.Id]);
     }
 
     /// <summary>Chooses a prisoner to ask for, or no longer, showing its card (J2).</summary>
     private void AskOne(PrisonerDto prisoner)
     {
-        this._offBoardShown = prisoner;
+        this.ShowOffBoard(prisoner);
         this.Ask(prisoner.Id);
+    }
+
+    /// <summary>
+    /// Shows the card of a piece off the board, in place of any piece on it looked at: the one just moved, most often,
+    /// whose card would otherwise hide it (playtest 2026-11-19, T3).
+    /// </summary>
+    private void ShowOffBoard(PrisonerDto? piece)
+    {
+        this._inspected = piece is null ? this._inspected : null;
+        this._offBoardShown = piece;
     }
 
     /// <summary>
@@ -1348,7 +1372,7 @@
     {
         bool isSame = this._hireChosen == prisoner.Id;
         this._hireChosen = isSame ? null : prisoner.Id;
-        this._offBoardShown = isSame ? null : prisoner;
+        this.ShowOffBoard(isSame ? null : prisoner);
     }
 
     private void PutAwayOffBoard()
@@ -1366,8 +1390,7 @@
 
     private void About(PrisonerDto piece)
     {
-        this._inspected = null;
-        this._offBoardShown = piece;
+        this.ShowOffBoard(piece);
         this._isAboutAsked = true;
     }
 

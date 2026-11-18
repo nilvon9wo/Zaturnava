@@ -179,7 +179,10 @@ and placed knowing where they stand.)
   to start with).
 - **Stated.** A player may draft any pieces the budget allows: several leaders, and several of one
   kind, leaders included.
-- **Q5.** May a player buy a second palace, on a board large enough, and at what price? Left open.
+- **Q5.** *Answered (2026-11-19):* yes, later, as a game option, by settling a piece
+  ([playtest N](../playtesting/2026-11-15-specification.md#n-future-roadmap-secondary-palaces-oq7));
+  not before promotions and lifts can be bought. *Proposed* price: the settler, consumed, and as many
+  points again as it was worth. What follows is why it waited.
   A palace without a throne gives little (a few more moves for few pieces, and a cage for others);
   a palace is worth its place as the seat of a leader, which its throne gives pieces a reason to
   guard. A second throne would raise who rules when two thrones of one army are held by different
@@ -433,8 +436,7 @@ The numbers stay as they are; answered questions are marked so.
 2. **Q2** *Answered:* rivers and a corner kingdom; no river at all (§2).
 3. **Q3** *Answered:* start rows, and a piece placed beyond them (§3).
 4. **Q4** *Answered:* an army may have no leader, and pieces may be drafted more than once (§3).
-5. **Q5** A second palace: may it be bought, and at what price? Left open (§3) until the rest of the game is
-   playable (2026-11-06).
+5. **Q5** *Answered:* a second palace, later, by settling a piece; its price *Proposed* (§3).
 6. **Q6** *Answered:* forward is away from the kingdom's back rank (§3).
 7. **Q7** *Answered:* the Chaturaji 2027 pieces do not join the catalogue, for now (§4).
 8. **Q8** *Answered:* a step along a palace line (§5).
