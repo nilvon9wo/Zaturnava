@@ -25,4 +25,11 @@ public sealed record ActionDto(
     /// </summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Choice { get; init; }
+
+    /// <summary>
+    /// The piece the action brings onto the board, an escaping prisoner or a piece hired, for a client to show it
+    /// as a piece rather than in words; none, for any other action.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public PrisonerDto? Coming { get; init; }
 }

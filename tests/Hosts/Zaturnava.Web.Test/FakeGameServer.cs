@@ -477,6 +477,7 @@ internal sealed class FakeGameServer : IGameServing
         {
             Label = $"Escape Black's Boat, held by Yellow, to {home}",
             Choice = "Escape Black's Boat, held by Yellow",
+            Coming = new PrisonerDto(7, "boat", "Boat", 0),
         };
 
     private static ActionDto Action(string kind, params (string Name, int Cell)[] cells) =>

@@ -40,7 +40,7 @@ you can watch it, or play with it.
 
 ## Our bots
 
-The server's own bots are listed by `GET api/catalog`, and described in the game under "The bots":
+The server's own bots are listed by `GET api/catalog`, and described in the game by clicking a bot's name, on the leaderboard or at a table:
 Random, Echo and Icarus (for beginners: Midas a quarter and half of the time, else Random), Midas (greedy),
 Croesus (greedy, but leaving no piece newly open when nothing scores), Solomon (careful), Argus (watchful), Sage (looks ahead through the dice,
 its weights tuned by self-play), Tactician (Sage's judgement, but looking past its own turn, through its enemies'

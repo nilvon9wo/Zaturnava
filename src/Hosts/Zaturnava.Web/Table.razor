@@ -380,8 +380,41 @@
                     else
                     {
                         <p class="hint">@this.Hint(turn.Actions)</p>
+                        ImmutableList<string> coming = [.. turn.Actions.Choices.Where(choice => ComingOf(view, choice) is not null)];
+                        ImmutableList<ActionDto> hires = [.. turn.Actions.OffBoard.Where(action => action.Coming is not null)];
+                        @if (!hires.IsEmpty)
+                        {
+                            <div class="coming hiring">
+                                <span class="name">Hire:</span>
+                                @foreach (ActionDto hire in hires)
+                                {
+                                    PrisonerDto piece = hire.Coming!;
+                                    <button class="prisoner"
+                                            title="@this.Named(ActionLabels.LabelOf(hire))"
+                                            @onclick="() => this.Submit(turn.Claim, hire)">
+                                        <PieceIcon Kind="@piece.Kind" Name="@piece.Name" Owner="piece.Owner" Mark="piece.Mark" Pieces="this.PiecesShown" />
+                                    </button>
+                                }
+                            </div>
+                        }
+                        @if (!coming.IsEmpty)
+                        {
+                            <div class="coming">
+                                <span class="name">Onto the board:</span>
+                                @foreach (string choice in coming)
+                                {
+                                    PrisonerDto piece = ComingOf(view, choice)!;
+                                    <button class="@(this._selection.Choice == choice ? "prisoner chosen" : "prisoner")"
+                                            title="@this.Named(choice)"
+                                            aria-pressed="@(this._selection.Choice == choice ? "true" : "false")"
+                                            @onclick="() => this.Choose(choice)">
+                                        <PieceIcon Kind="@piece.Kind" Name="@piece.Name" Owner="piece.Owner" Mark="piece.Mark" Pieces="this.PiecesShown" />
+                                    </button>
+                                }
+                            </div>
+                        }
                         <div class="actions">
-                            @foreach (string choice in turn.Actions.Choices)
+                            @foreach (string choice in turn.Actions.Choices.Except(coming))
                             {
                                 <button class="action primary choose"
                                         aria-pressed="@(this._selection.Choice == choice ? "true" : "false")"
@@ -389,7 +422,7 @@
                                     @this.Named(choice)
                                 </button>
                             }
-                            @foreach (ActionDto action in turn.Actions.OffBoard)
+                            @foreach (ActionDto action in turn.Actions.OffBoard.Except(hires))
                             {
                                 <button class="action primary @(IsUrged(view, action) ? "urged" : null)"
                                         @onclick="() => this.Submit(turn.Claim, action)">
@@ -1056,7 +1089,7 @@
             ({ } turn, not null) => view.DraftKinds.Find(kind => kind.Kind == this._draftPick) is { } drafted
                 ? (new PieceDto(-1, drafted.Kind, drafted.Name, turn.Claim.Seat, -1) { Mark = drafted.Mark }, drafted)
                 : null,
-            _ => (view.Returning ?? EscapingOf(view, this._selection.Choice)) is { } going
+            _ => (view.Returning ?? ComingOf(view, this._selection.Choice)) is { } going
                 ? (
                     new PieceDto(going.Id, going.Kind, going.Name, going.Owner, -1) { Mark = going.Mark },
                     view.Kinds.Find(kind => kind.Kind == going.Kind)
@@ -1064,13 +1097,12 @@
                 : null,
         };
 
-    /// <summary>The prisoner <paramref name="choice"/> lets escape; none, if it chooses none.</summary>
-    private static PrisonerDto? EscapingOf(GameViewDto view, string? choice) =>
-        view.LegalActions.FirstOrDefault(action => action.Kind == EscapeKind && action.Choice == choice) is { } escape
-            ? view.Seats.SelectMany(seat => seat.Prisoners)
-                .FirstOrDefault(prisoner => prisoner.Id.ToString(CultureInfo.InvariantCulture)
-                    == escape.Arguments.GetValueOrDefault(PieceArgument))
-            : null;
+    /// <summary>
+    /// The piece <paramref name="choice"/> brings onto the board: a prisoner escaping, a piece fled coming back, or one
+    /// hired (J1); none, if it brings none.
+    /// </summary>
+    private static PrisonerDto? ComingOf(GameViewDto view, string? choice) =>
+        view.LegalActions.FirstOrDefault(action => action.Choice == choice && action.Coming is not null)?.Coming;
 
     /// <summary>
     /// The same game again: its ruleset, its bots in the same seats, the player at the same seat, its seats for people

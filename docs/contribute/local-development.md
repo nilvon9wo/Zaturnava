@@ -116,7 +116,7 @@ dotnet run --project src/Bots/Zaturnava.BotRunner -- --train 2 --games 40 --out 
 
 The bots' Elo ratings, from games between every pair of them (here 50 games a pair with each side
 first; how each pair did is written to standard error). They go in `src/Bots/Zaturnava.Bots/Ratings/`,
-and "The bots" shows them:
+and the leaderboard and each bot's profile show them:
 
 ```shell
 python3 scripts/rate-bots.py path/to/Net.NowhereAtAll.Zaturnava.BotRunner --games 50     --out src/Bots/Zaturnava.Bots/Ratings/chaturaji-2027.json

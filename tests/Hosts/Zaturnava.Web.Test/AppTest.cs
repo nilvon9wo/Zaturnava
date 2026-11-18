@@ -126,21 +126,6 @@ public sealed class AppTest : IDisposable
     }
 
     [Fact]
-    public void TheBots_WhenClicked_OpensTheGuideToTheBotsUntilClosed()
-    {
-        // Arrange
-        IRenderedComponent<App> app = this._page.Render<App>();
-
-        // Act
-        app.Find("button.the-bots").Click();
-        string title = app.Find(".bot-guide h2").TextContent;
-        app.Find(".bot-guide button.close").Click();
-
-        // Assert
-        Assert.Equal(("The bots", 0), (title, app.FindAll(".bot-guide").Count));
-    }
-
-    [Fact]
     public void Leaderboard_WhenInTheLobbyAndThenAtATable_IsAPanelOfTheLobbyAndNotOfTheTable()
     {
         // Arrange
@@ -165,7 +150,7 @@ public sealed class AppTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ("leave,brand", "how-to-play,the-bots", "safety,theme,pieces,cards,sound"),
+            ("leave,brand", "how-to-play", "safety,theme,pieces,cards,sound"),
             (
                 string.Join(",", app.FindAll(".table-nav > *").Select(part => part.ClassName)),
                 string.Join(",", app.FindAll(".table-bar .where > *").Select(part => part.ClassName)),

@@ -797,6 +797,31 @@ public sealed class LobbyTest : IDisposable
         );
     }
 
+    [Theory]
+    [InlineData("8", true)]
+    [InlineData("7", false)]
+    public void Play_WhenTheKingdomsWouldOverlapOrNot_SaysSoAndAsksForNoGameOrPlays(string width, bool isWrong)
+    {
+        // Arrange - a 10 x 10 board, kingdoms 3 deep (playtest 2026-11-15, H3)
+        this._page.Server.IsDealt = true;
+        this._page.Server.SizableBoard = new BoardSizeDto(10, 10, 4, 3);
+        IRenderedComponent<Lobby> lobby = this.ByStrength();
+
+        // Act
+        lobby.Find("input.kingdom-width").Change(width);
+
+        // Assert
+        Assert.Equal(
+            (isWrong, isWrong, isWrong),
+            (
+                lobby.FindAll(".board-problem").Count == 1,
+                lobby.Find("button.create").HasAttribute("disabled"),
+                lobby.FindAll(".board-problem")
+                    .Any(problem => problem.TextContent.Contains("(11)", StringComparison.Ordinal))
+            )
+        );
+    }
+
     [Fact]
     public void Play_WhenTheKingdomsAreSetInAGameNotDrafted_AsksForNoBudget()
     {

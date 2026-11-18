@@ -780,7 +780,7 @@ public sealed class TableTest : IDisposable
         IRenderedComponent<Table> table = this.Render(SeatZero);
 
         // Act
-        table.Find("button.choose").Click();
+        table.Find(ComingPiece).Click();
 
         // Assert
         const string hint =
@@ -788,8 +788,8 @@ public sealed class TableTest : IDisposable
         Assert.Equal(
             (1, "true", false, true, true, "mark placing|mark capture placing", hint),
             (
-                table.FindAll("button.choose").Count,
-                table.Find("button.choose").GetAttribute("aria-pressed"),
+                table.FindAll(ComingPiece).Count,
+                table.Find(ComingPiece).GetAttribute("aria-pressed"),
                 Cell(table, 1).ClassList.Contains("target"),
                 Cell(table, 2).ClassList.Contains("target"),
                 Cell(table, 3).ClassList.Contains("target"),
@@ -805,7 +805,7 @@ public sealed class TableTest : IDisposable
         // Arrange
         this.Escapable();
         IRenderedComponent<Table> table = this.Render(SeatZero);
-        table.Find("button.choose").Click();
+        table.Find(ComingPiece).Click();
 
         // Act
         Cell(table, 3).Click();
@@ -826,12 +826,12 @@ public sealed class TableTest : IDisposable
         // Arrange
         this.Escapable();
         IRenderedComponent<Table> table = this.Render(SeatZero);
-        table.Find("button.choose").Click();
+        table.Find(ComingPiece).Click();
 
         // Act
         if (isButton)
         {
-            table.Find("button.choose").Click();
+            table.Find(ComingPiece).Click();
         }
         else
         {
@@ -843,7 +843,7 @@ public sealed class TableTest : IDisposable
             (null, "false", 0),
             (
                 this._page.Server.Submitted,
-                table.Find("button.choose").GetAttribute("aria-pressed"),
+                table.Find(ComingPiece).GetAttribute("aria-pressed"),
                 table.FindAll("circle.mark").Count
             )
         );
@@ -2063,10 +2063,64 @@ public sealed class TableTest : IDisposable
         IRenderedComponent<Table> table = this.Render(SeatZero);
 
         // Act
-        table.Find("button.choose").Click();
+        table.Find(ComingPiece).Click();
 
         // Assert
         Assert.Equal(("Boat", 0), (table.Find("aside.piece-card h2").TextContent, table.FindAll("dd.square").Count));
+    }
+
+    [Fact]
+    public void Click_WhenAPrisonerMayBeHired_ListsItAsAPieceAndHiresIt()
+    {
+        // Arrange - Yellow's Horse 9, Black's prisoner, for hire (playtest 2026-11-15, J1)
+        ActionDto hire = new(
+            "hire",
+            ImmutableSortedDictionary<string, string>.Empty.Add(ActionArguments.Actor, "0").Add("piece", "9")
+        )
+        {
+            Label = "Hire Yellow's Horse, your prisoner, for 4 points: it becomes yours",
+            Coming = new PrisonerDto(9, "horse", "Horse", 1),
+        };
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with { LegalActions = [hire, FakeGameServer.Pass] };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        int buttons = table.FindAll(".actions button").Count;
+
+        // Act
+        table.Find(".hiring button.prisoner").Click();
+
+        // Assert
+        Assert.Equal((1, hire.Label), (buttons, this._page.Server.Submitted?.Action.Label));
+    }
+
+    [Theory]
+    [InlineData(true, ".coming button.prisoner", "Escape Black's Boat, held by Yellow")]
+    [InlineData(false, ".actions button.choose", null)]
+    public void Choose_WhenAChoiceBringsAPieceOrNot_ShowsThePieceOrItsWordsPressed(
+        bool isComing,
+        string selector,
+        string? title
+    )
+    {
+        // Arrange - a piece listed as ransoms are, not a large button (playtest 2026-11-15, J1)
+        ActionDto escape = FakeGameServer.Escape(2);
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            LegalActions = [isComing ? escape : escape with { Coming = null }, FakeGameServer.Pass],
+        };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Act
+        table.Find(selector).Click();
+
+        // Assert
+        Assert.Equal(
+            (1, title, "true"),
+            (
+                table.FindAll(selector).Count,
+                table.Find(selector).GetAttribute("title"),
+                table.Find(selector).GetAttribute("aria-pressed")
+            )
+        );
     }
 
     [Fact]
@@ -2316,6 +2370,9 @@ public sealed class TableTest : IDisposable
 
     private static IEnumerable<string> Played(PageContext page) =>
         page.JSInterop.Invocations["zaturnava.play"].SelectMany(call => call.Arguments.Select(sound => (string)sound!));
+
+    /// <summary>The button choosing a piece to bring onto the board.</summary>
+    private const string ComingPiece = ".coming button.prisoner";
 
     /// <summary>Black to move, whose Boat, held by Yellow, may escape to cell 2, or 3, taking Yellow's Pawn.</summary>
     private void Escapable() =>
