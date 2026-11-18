@@ -70,7 +70,7 @@ Statuses (the specification's P1): **Done** (implemented and tested), **Done, pa
 | I | Placement previews, desaturated and blinking | To do | |
 | J1 | Escape and hire as a list, as ransom is | Done | Pieces that may escape, come back from fleeing, or be placed once hired show as a row of piece icons ("Onto the board"), and prisoners for hire as another ("Hire"). They look like the ransom list, each named in its tooltip; the large yellow buttons are gone for them. The server says which piece each such action brings (`ActionDto.Coming`). Tests: `TableTest`, `GameViewsTest`. |
 | J2 | Clicking a listed piece shows its card | Done | With cards on, choosing a piece to escape, to give back or to ask for in a ransom shows its card. A prisoner for hire is now picked first, showing its card, then hired with a button that names the price; picking it again lets it go. Tests: `TableTest`. |
-| J3 | Promotion choices inspectable | To do | |
+| J3 | Promotion choices inspectable | Done | A small "?" beside each promotion choice, its own or a captured piece, opens that piece's card, even with cards off, without promoting. Tests: `TableTest`. |
 | K | Loading progress on itch.io | To do | |
 | L | Remove "The bots" button | Done | Gone, with its dialog. A bot's name opens its profile, on the leaderboard and at a table; "How to play" still links to the bots' documentation for developers. The quick-game hint points to the leaderboard. Test: `AppTest`. |
 | M1–M5 | Offline tournaments, resumable, ratings for every bot, results into the repository | To do | |
@@ -81,7 +81,7 @@ Statuses (the specification's P1): **Done** (implemented and tested), **Done, pa
 
 | Id | Item | Status | Notes |
 |---|---|---|---|
-| X1 | Face-off flashy; Pass neutral, left of End game; Let Green take over left of Pass, in the ally's colour | To do | |
+| X1 | Face-off flashy; Pass neutral, left of End game; Let Green take over left of Pass, in the ally's colour | Done | The face-off chance is a large red-to-gold button that pulses and glows; with reduced motion it is outlined instead. Passing and handing the turn over now sit at the foot of the panel, left of End game (or Rejoin): the hand-over first, in the ally's colour, then Pass, plain. Tests: `TableTest`. |
 | X2 | Palace-bound pieces put back outside a palace not full | Done | From edition 8, a palace-bound piece going home (ransom, gift or escape), with its own and its kind's squares taken, goes to the free palace squares nearest its own; outside only when the palace is full. Tests: `PalaceTest`, `GrandLegionsRulesTest`. |
 | X3 | Meandering on near-empty boards | To do | |
 | X4 | Ransoms offered and accepted when hopeless or harmful | To do | |
