@@ -147,7 +147,8 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             this._grid,
             this._variant.InitialPosition(this._grid),
             this._variant.Leaders,
-            this._variant.Scoring
+            this._variant.Scoring,
+            this._variant.Drafting?.PalaceBound ?? []
         );
         this._measures = new ArmyMeasures(
             this._grid,
@@ -600,8 +601,11 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
                     "Promoted, on reaching the far edge, into a captured piece."),
                 (this._variant.Promotables.Contains(kind) && isHeld,
                     "Promoted, should it ever leave its palace and reach the far edge, into a captured piece."),
-                (this._variant.Pawns.Contains(kind),
+                (this._variant.Swappers.Contains(kind) && this._variant.Swappers.SetEquals(this._variant.Pawns),
                     "Swaps places with an allied Pawn straight ahead of it, the two back to back."),
+                (this._variant.Swappers.Contains(kind) && !this._variant.Swappers.SetEquals(this._variant.Pawns),
+                    "Swaps places with an ally's piece straight ahead of it that moves only forward too, the two back "
+                        + "to back."),
             }
             .Where(power => power.Has)
             .Select(power => power.Power);
@@ -997,9 +1001,9 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     private bool IsSwap(GameState state, CellId cell, Piece piece, CellId? target)
     {
         Piece? other = target is { } ahead ? state.Position.PieceAt(ahead) : null;
-        return this.IsPawn(piece)
+        return this._variant.Swappers.Contains(piece.Kind)
             && other is { } facing
-            && this.IsPawn(facing)
+            && this._variant.Swappers.Contains(facing.Kind)
             && facing.Owner != piece.Owner
             && state.Teams.AreAllied(facing.Owner, piece.Owner)
             && this.Ahead(state, target.GetValueOrDefault(), facing) is { } behind

@@ -15,6 +15,14 @@ namespace Net.NowhereAtAll.Zaturnava.Games.GrandLegions;
 public static class RiverCrossing
 {
     /// <summary>
+    /// The edition from which a Xiangqi Elephant's river is the one between where it stands and where it would go, so
+    /// that one dealt across a river from its kingdom's corner moves about on that side (playtest 2026-11-15: "Movement
+    /// restrictions must be defined relative to the actual river"); before it, the Elephant could go nowhere across a
+    /// river from its kingdom's corner, and so, dealt there, only back over the river.
+    /// </summary>
+    public const int RiverWhereItStandsEdition = 8;
+
+    /// <summary>
     /// The rivers of <paramref name="game"/>, as each game of it was dealt them (<see cref="QuickTerrain"/>).
     /// </summary>
     public static MoveAllowing On([Required] QuickGame game) =>
@@ -24,8 +32,11 @@ public static class RiverCrossing
     {
         Kingdom home = board.Kingdoms[move.Mover.Owner.Value];
         (int column, int row) = (grid.ColumnOf(move.To), grid.RowOf(move.To));
+        bool isAcross = state.Edition >= RiverWhereItStandsEdition
+            ? board.Crosses((grid.ColumnOf(move.From), grid.RowOf(move.From)), (column, row))
+            : board.IsAcrossRiver(home, column, row);
         return move.Mover.Kind == GrandLegionsPieces.XiangqiElephant
-            ? !(board.IsInRiver(column, row) || board.IsAcrossRiver(home, column, row))
+            ? !(board.IsInRiver(column, row) || isAcross)
             : move.Mover.Kind != GrandLegionsPieces.XiangqiSoldier
                 || !IsSideways(state.SeatOf(move.Mover.Owner).Forward, grid, move)
                 || board.IsAcrossRiver(home, grid.ColumnOf(move.From), grid.RowOf(move.From));

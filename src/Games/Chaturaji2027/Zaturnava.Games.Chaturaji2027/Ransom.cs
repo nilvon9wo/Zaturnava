@@ -20,15 +20,25 @@ namespace Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
 /// back prisoners of its own team (§8): its own, at once, or an ally's, at once unless an enemy holds the
 /// ally's throne; but only once every seat has had a turn since they were taken. No piece going home takes
 /// anything. Accepting scores as <paramref name="scoring"/> says. Starting squares are where the game was dealt
-/// its pieces, if it was; else <paramref name="start"/>.
+/// its pieces, if it was; else <paramref name="start"/>. A piece of a kind bound to its palace
+/// (<paramref name="palaceBound"/>) goes, failing its own and its kind's starting squares, to the free squares of
+/// its palace nearest its own, and outside only when the palace is full (playtest 2026-11-15).
 /// </summary>
 internal sealed class Ransom(
     SquareGridTopology grid,
     Position start,
     ImmutableHashSet<PieceKindId> leaders,
-    Scoring scoring
+    Scoring scoring,
+    ImmutableHashSet<PieceKindId> palaceBound
 )
 {
+    /// <summary>
+    /// The edition from which a palace-bound piece going home stays in its palace while it has room; before it, it
+    /// went to the free squares nearest its own, in the palace or not.
+    /// </summary>
+    public const int PalaceFirstEdition = 8;
+
+    private readonly ImmutableHashSet<PieceKindId> _palaceBound = palaceBound;
     private readonly SquareGridTopology _grid = grid;
     private readonly ImmutableHashSet<PieceKindId> _leaders = leaders;
     private readonly Scoring _scoring = scoring;
@@ -257,11 +267,17 @@ internal sealed class Ransom(
         Direction forward = state.SeatOf(prisoner.Piece.Owner).Forward;
         ImmutableList<CellId> free = [.. this._grid.Cells.Where(cell => state.Position.PieceAt(cell) is null)];
         ImmutableList<CellId> kin = [.. homes.Kin[prisoner.Piece.Id].Where(free.Contains)];
+        ImmutableList<CellId> palace = this._palaceBound.Contains(prisoner.Piece.Kind)
+            && state.Edition >= PalaceFirstEdition
+                ? state.Palaces?.GetValueOrDefault(prisoner.Piece.Owner) ?? []
+                : [];
+        ImmutableList<CellId> roomInPalace = [.. free.Where(palace.Contains)];
+        ImmutableList<CellId> room = roomInPalace.IsEmpty ? free : roomInPalace;
         IEnumerable<CellId> places = (kin.Contains(home), kin.IsEmpty) switch
         {
             (true, _) => [home],
             (_, false) => kin,
-            _ => free.Where(cell => this.Distance(home, cell) == free.Min(near => this.Distance(home, near))),
+            _ => room.Where(cell => this.Distance(home, cell) == room.Min(near => this.Distance(home, near))),
         };
         return
         [

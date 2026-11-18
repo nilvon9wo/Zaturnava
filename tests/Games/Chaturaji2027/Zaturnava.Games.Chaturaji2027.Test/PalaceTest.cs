@@ -3,6 +3,7 @@ using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Boards;
 using Net.NowhereAtAll.Zaturnava.Engine.Events;
 using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
+using Net.NowhereAtAll.Zaturnava.Engine.Positions;
 using Net.NowhereAtAll.Zaturnava.Engine.Rules;
 using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 
@@ -273,6 +274,54 @@ public sealed class PalaceTest
                 choices.OfType<DraftAction>().Count(draft => draft.Piece == Chaturaji2027Pieces.Pawn)
             )
         );
+    }
+
+    [Theory]
+    [InlineData(8, "own", true)]
+    [InlineData(7, "own", false)]
+    [InlineData(8, "full", false)]
+    [InlineData(8, "none", false)]
+    [InlineData(8, "another's", false)]
+    public void Apply_WhenAPalaceBoundPieceGoesHomeWithItsSquareTaken_GoesToItsPalaceIfItHasRoom(
+        int edition,
+        string palaces,
+        bool isPlacedOnC3
+    )
+    {
+        // Arrange - Black's Horse, bound to the palace about b2, started on b1, now taken; the palace full but for
+        // c3 (or full), which is as near b1 as d1, d2 and d3 outside it
+        Chaturaji2027Rules rules = RulesOf(3, 4, [Chaturaji2027Pieces.Horse]);
+        Piece horse = new(new PieceId(5), Chaturaji2027Pieces.Horse, Black);
+        ImmutableList<CellId> palace = [.. AboutB2.Split(',').Select(cell => new CellId(int.Parse(cell, null)))];
+        Position position = palace
+            .Where(cell => palaces == "full" || cell.Value != 18)
+            .Aggregate(
+                Position.Empty.Place(new CellId(63), new Piece(new PieceId(9), Chaturaji2027Pieces.Raja, Yellow)),
+                (board, cell) =>
+                    board.Place(cell, new Piece(new PieceId(20 + cell.Value), Chaturaji2027Pieces.Pawn, Black))
+            );
+        GameState state = rules.CreateInitialState() with
+        {
+            RollOff = [],
+            AwaitedDice = null,
+            DecidingSeat = Black,
+            Edition = edition,
+            Position = position,
+            Start = Position.Empty.Place(new CellId(1), horse),
+            Prisoners = [new Prisoner(horse, Black)],
+            Palaces = palaces switch
+            {
+                "none" => null,
+                "another's" => ImmutableDictionary<SeatId, ImmutableList<CellId>>.Empty.Add(Yellow, palace),
+                _ => ImmutableDictionary<SeatId, ImmutableList<CellId>>.Empty.Add(Black, palace),
+            },
+        };
+
+        // Act
+        GameState given = rules.Apply(state, new OfferAction(Black, Black, [horse.Id], [])).State;
+
+        // Assert
+        Assert.Equal(isPlacedOnC3, given.Position.PieceAt(new CellId(18)) == horse);
     }
 
     [Fact]

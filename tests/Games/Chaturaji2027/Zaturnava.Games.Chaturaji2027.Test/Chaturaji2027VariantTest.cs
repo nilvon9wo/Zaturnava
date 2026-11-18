@@ -76,6 +76,23 @@ public sealed class Chaturaji2027VariantTest
     }
 
     [Fact]
+    public void Swappers_WhenSetOrNot_AreThoseSetElseThePawns()
+    {
+        // Arrange
+        Chaturaji2027Variant standard = Chaturaji2027Variant.Standard;
+        Chaturaji2027Variant set = standard with { Swappers = [Chaturaji2027Pieces.Horse] };
+
+        // Act
+        (string Unset, string Set) swappers = (
+            string.Join(" ", standard.Swappers.Select(kind => kind.Value)),
+            string.Join(" ", set.Swappers.Select(kind => kind.Value))
+        );
+
+        // Assert
+        Assert.Equal(("pawn", "horse"), swappers);
+    }
+
+    [Fact]
     public void Game_WhenTheVariantIsOneSizeOfAGame_IsThatGameAtThatSize()
     {
         // Arrange

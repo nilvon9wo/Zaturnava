@@ -61,6 +61,17 @@ public sealed record GrandBoard(
         || (this.Rivers.HasFlag(Rivers.EastWest) && this.SouthNorthOf(column, row) == -SideOf(kingdom.IsSouth));
 
     /// <summary>
+    /// Whether going from one cell to another crosses a river: the two on its opposite sides, whichever side the
+    /// piece's kingdom lies on (playtest 2026-11-15: "relative to the actual river"). From a cell a river cuts, either
+    /// side is reached without crossing it.
+    /// </summary>
+    public bool Crosses((int Column, int Row) from, (int Column, int Row) to) =>
+        (this.Rivers.HasFlag(Rivers.NorthSouth)
+            && (this.WestEastOf(from.Column, from.Row) * this.WestEastOf(to.Column, to.Row)) < 0)
+        || (this.Rivers.HasFlag(Rivers.EastWest)
+            && (this.SouthNorthOf(from.Column, from.Row) * this.SouthNorthOf(to.Column, to.Row)) < 0);
+
+    /// <summary>
     /// Whether a river cuts (<paramref name="column"/>, <paramref name="row"/>) in half: only on an odd side, and
     /// never in a kingdom the river goes around. A piece that may not cross a river may not enter such a cell.
     /// </summary>
