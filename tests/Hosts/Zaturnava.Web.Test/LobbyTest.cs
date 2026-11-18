@@ -571,7 +571,7 @@ public sealed class LobbyTest : IDisposable
 
     [Theory]
     [InlineData("armies=draft-one,budget=9999,side=1", "random-each", 0)]
-    [InlineData("armies=random-one", "random-one", 0)]
+    [InlineData("armies=random-one,board=12x10x4x3", "random-one", 0)]
     [InlineData("armies=nonsense,players=1", "random-each", 0)]
     public void Render_WhenAChoiceRememberedIsNoLongerOffered_LeavesItAsTheGameHasIt(
         string choices,

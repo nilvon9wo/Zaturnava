@@ -649,9 +649,8 @@
     private void RestoreChoices(CatalogDto catalog, GameSetup setup)
     {
         RulesetDto ruleset = this.Ruleset(catalog);
-        bool isOffered = setup.Armies is RandomEach or RandomOne
-            || (setup.Armies is DraftOwn or DraftOne && ruleset.IsDraftable);
-        this._armies = isOffered ? setup.Armies! : this._armies;
+        string[] offered = ruleset.IsDraftable ? [DraftOwn, DraftOne, RandomEach, RandomOne] : [RandomEach, RandomOne];
+        this._armies = offered.Contains(setup.Armies) ? setup.Armies! : this._armies;
         this._budget = setup.Budget is { } budget && budget <= this.BudgetLimit(catalog) ? budget : this._budget;
         this._isSecret = setup.IsSecret;
         this._isHiddenFromAllies = setup.IsHiddenFromAllies;
