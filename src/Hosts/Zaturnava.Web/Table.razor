@@ -133,7 +133,7 @@
                     <div class="chances">
                         @foreach (ActionDto chance in view.Seats[caller.Seat].Chances)
                         {
-                            <button class="action chance flashing" @onclick="() => this.Seize(caller, chance)">
+                            <button class="action chance flashing @chance.Kind" @onclick="() => this.Seize(caller, chance)">
                                 @chance.Label
                             </button>
                         }
@@ -275,13 +275,16 @@
                                     @foreach (ActionDto action in own)
                                     {
                                         PieceKindDto becomes = BecomingOf(view, action);
-                                        <button class="choice"
-                                                title="@this.Named(ActionLabels.LabelOf(action))"
-                                                @onclick="() => this.Submit(turn.Claim, action)">
-                                            <PieceIcon Kind="@becomes.Kind" Name="@becomes.Name" Owner="owner" Mark="becomes.Mark" Pieces="this.PiecesShown" />
-                                            <span class="name">@this.Named(becomes.Name)</span>
-                                            <span class="holder">its own promotion</span>
-                                        </button>
+                                        <span class="choice-and-about">
+                                            <button class="choice"
+                                                    title="@this.Named(ActionLabels.LabelOf(action))"
+                                                    @onclick="() => this.Submit(turn.Claim, action)">
+                                                <PieceIcon Kind="@becomes.Kind" Name="@becomes.Name" Owner="owner" Mark="becomes.Mark" Pieces="this.PiecesShown" />
+                                                <span class="name">@this.Named(becomes.Name)</span>
+                                                <span class="holder">its own promotion</span>
+                                            </button>
+                                            @this.AboutButton(new PrisonerDto(-1, becomes.Kind, becomes.Name, owner) { Mark = becomes.Mark })
+                                        </span>
                                     }
                                 </div>
                             }
@@ -291,13 +294,16 @@
                                     @foreach (ActionDto action in army)
                                     {
                                         (SeatDto holder, PrisonerDto into) = IntoOf(view, action);
-                                        <button class="choice"
-                                                title="@this.Named(ActionLabels.LabelOf(action))"
-                                                @onclick="() => this.Submit(turn.Claim, action)">
-                                            <PieceIcon Kind="@into.Kind" Name="@into.Name" Owner="into.Owner" Mark="into.Mark" Pieces="this.PiecesShown" />
-                                            <span class="name">@this.Named(Owned(view, into))</span>
-                                            <span class="holder">@HeldBy(holder, turn.Claim.Seat)</span>
-                                        </button>
+                                        <span class="choice-and-about">
+                                            <button class="choice"
+                                                    title="@this.Named(ActionLabels.LabelOf(action))"
+                                                    @onclick="() => this.Submit(turn.Claim, action)">
+                                                <PieceIcon Kind="@into.Kind" Name="@into.Name" Owner="into.Owner" Mark="into.Mark" Pieces="this.PiecesShown" />
+                                                <span class="name">@this.Named(Owned(view, into))</span>
+                                                <span class="holder">@HeldBy(holder, turn.Claim.Seat)</span>
+                                            </button>
+                                            @this.AboutButton(into)
+                                        </span>
                                     }
                                 </div>
                             }
@@ -429,7 +435,7 @@
                                     @this.Named(choice)
                                 </button>
                             }
-                            @foreach (ActionDto action in turn.Actions.OffBoard.Except(hires))
+                            @foreach (ActionDto action in turn.Actions.OffBoard.Except(hires).Where(action => !IsClosing(action)))
                             {
                                 <button class="action primary @(IsUrged(view, action) ? "urged" : null)"
                                         @onclick="() => this.Submit(turn.Claim, action)">
@@ -492,20 +498,32 @@
                         </div>
                     }
                 }
-                @if (this.Seating.Claim is { } mine && view.Seats[mine.Seat].MayProposeEnd)
+                @if (this.Seating.Claim is { } mine)
                 {
-                    <div class="end-area">
-                        <button class="end-game" @onclick="this.AskToEnd">End game</button>
-                    </div>
-                }
-                else if (this.Seating.Claim is { } back && view.Seats[back.Seat].MayRejoin
-                         && view.Seats[back.Seat].TurnsMissed == 0)
-                {
-                    <div class="end-area">
-                        <button class="rejoin" @onclick="() => this.Submit(back, EndProposalDto.RejoinActionOf(back.Seat))">
-                            Rejoin game
-                        </button>
-                    </div>
+                    ImmutableList<ActionDto> closing = this.Closing(view);
+                    SeatDto own = view.Seats[mine.Seat];
+                    bool mayRejoin = own is { MayProposeEnd: false, MayRejoin: true, TurnsMissed: 0 };
+                    @if (own.MayProposeEnd || mayRejoin || !closing.IsEmpty)
+                    {
+                        <div class="end-area">
+                            @foreach (ActionDto action in closing)
+                            {
+                                <button class="@ClosingClassOf(action)" @onclick="() => this.Submit(mine, action)">
+                                    @this.Named(ActionLabels.LabelOf(action))
+                                </button>
+                            }
+                            @if (own.MayProposeEnd)
+                            {
+                                <button class="end-game" @onclick="this.AskToEnd">End game</button>
+                            }
+                            else if (mayRejoin)
+                            {
+                                <button class="rejoin" @onclick="() => this.Submit(mine, EndProposalDto.RejoinActionOf(mine.Seat))">
+                                    Rejoin game
+                                </button>
+                            }
+                        </div>
+                    }
                 }
             </div>
 
@@ -555,7 +573,7 @@
                            Turn="this._boardTurn"
                            OnClose="this.PutAway" />
             }
-            else if (this.AreCardsShown && this._offBoardShown is { } offBoard)
+            else if ((this.AreCardsShown || this._isAboutAsked) && this._offBoardShown is { } offBoard)
             {
                 <PieceCard Piece="new PieceDto(offBoard.Id, offBoard.Kind, offBoard.Name, offBoard.Owner, -1) { Mark = offBoard.Mark }"
                            Kind="view.Kinds.Find(kind => kind.Kind == offBoard.Kind)"
@@ -639,6 +657,8 @@
     private const string PalaceKind = "palace";
     private const string DraftKind = "draft";
     private const string PassKind = "pass";
+    private const string HandOverKind = "hand-over";
+    private const string RegentArgument = "regent";
     private const string PieceArgument = "piece";
     private const string Alarm = "alarm";
     private const string Rescued = "rescued";
@@ -683,6 +703,9 @@
 
     /// <summary>A piece off the board whose card is shown: a prisoner picked to give back, ask for, or hire (J2).</summary>
     private PrisonerDto? _offBoardShown;
+
+    /// <summary>Whether the card off the board was asked for by its own button, so shown even with cards off.</summary>
+    private bool _isAboutAsked;
 
     /// <summary>The prisoner picked to hire, by id, hired with its own button once the player has seen the piece.</summary>
     private int? _hireChosen;
@@ -913,6 +936,24 @@
             : ": you move first";
         return this.Named($"{holders}'s {leader} holds {whose} throne{roll}; {holders} moves second.");
     }
+
+    /// <summary>Whether the action ends the player's say in the turn: handing it over to an ally, or passing.</summary>
+    private static bool IsClosing(ActionDto action) => action.Kind is PassKind or HandOverKind;
+
+    /// <summary>
+    /// What ends the player's turn, at its foot beside End game (playtest X1): handing it to an ally first, then
+    /// passing; none while they draft or promote, where those are asked about apart, or when it is not their turn.
+    /// </summary>
+    private ImmutableList<ActionDto> Closing(GameViewDto view) =>
+        this._turn is { } turn && view.DraftLeft is null && this.AtSelection(turn).IsEmpty
+            ? [.. turn.Actions.OffBoard.Where(IsClosing).OrderBy(action => action.Kind == PassKind)]
+            : [];
+
+    /// <summary>Passing, as plainly as can be; handing the turn over, in the colour of the ally taking it.</summary>
+    private static string ClosingClassOf(ActionDto action) =>
+        action.Kind == PassKind
+            ? "action pass"
+            : $"action hand-over seat-{action.Arguments.GetValueOrDefault(RegentArgument)}";
 
     /// <summary>Rolling, when the player may do nothing else for an enemy leader on their throne.</summary>
     private static bool IsUrged(GameViewDto view, ActionDto action) =>
@@ -1310,7 +1351,25 @@
         this._offBoardShown = isSame ? null : prisoner;
     }
 
-    private void PutAwayOffBoard() => this._offBoardShown = null;
+    private void PutAwayOffBoard()
+    {
+        this._offBoardShown = null;
+        this._isAboutAsked = false;
+    }
+
+    /// <summary>
+    /// A small button beside a promotion's choice, showing the card of the piece it would make, cards on or off, for
+    /// the player to look before choosing (J3).
+    /// </summary>
+    private RenderFragment AboutButton(PrisonerDto piece) =>
+        @<button class="about" title="About the @this.Named(piece.Name)" @onclick="() => this.About(piece)">?</button>;
+
+    private void About(PrisonerDto piece)
+    {
+        this._inspected = null;
+        this._offBoardShown = piece;
+        this._isAboutAsked = true;
+    }
 
     private void AskToEnd() => this._isProposing = true;
 
@@ -1585,6 +1644,7 @@
         this._given = isNew ? [] : this._given;
         this._asked = isNew ? [] : this._asked;
         this._offBoardShown = isNew ? null : this._offBoardShown;
+        this._isAboutAsked = !isNew && this._isAboutAsked;
         this._hireChosen = isNew ? null : this._hireChosen;
         this._offersMade = view.TurnNumber == this._offersTurn ? this._offersMade : [];
         this._offersTurn = view.TurnNumber;

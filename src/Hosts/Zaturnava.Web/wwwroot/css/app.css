@@ -661,7 +661,20 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
 }
 
 /* Ending the game: red, and as far from the turn's usual buttons as the panel allows. */
-.end-area { margin-top: auto; padding-top: 16px; display: flex; justify-content: flex-end; }
+.end-area {
+    margin-top: auto;
+    padding-top: 16px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+}
+/* Passing, neutral; handing the turn to an ally, in the ally's colour (playtest X1). */
+.end-area .action.pass { background: transparent; color: var(--ink); border: 1px solid var(--panel-edge); }
+.end-area .action.hand-over.seat-0 { background: var(--seat-0); color: var(--seat-0-ink); border-color: var(--muted); }
+.end-area .action.hand-over.seat-1 { background: var(--seat-1); color: var(--seat-1-ink); border-color: var(--seat-1); }
+.end-area .action.hand-over.seat-2 { background: var(--seat-2); color: var(--seat-2-ink); border-color: var(--seat-2); }
+.end-area .action.hand-over.seat-3 { background: var(--seat-3); color: var(--seat-3-ink); border-color: var(--seat-3); }
 .end-game {
     background: var(--danger);
     color: var(--danger-ink);
@@ -716,6 +729,31 @@ button.safety.off {
 @keyframes flash { from { opacity: 1; } to { opacity: 0.45; } }
 @media (prefers-reduced-motion: reduce) {
     .flashing { animation: none; outline: 3px solid var(--go-ink); }
+}
+
+/* A chance, seized or lost at once: a leader face-off, above all, is something special (playtest X1). */
+.chances .chance {
+    font-weight: bold;
+    border: 2px solid var(--accent);
+    border-radius: 8px;
+    padding: 6px 14px;
+}
+.chances .chance.face-off {
+    font-size: 1.15rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #fff;
+    background: linear-gradient(135deg, #b3122e, #e8590c 50%, #f2b33d);
+    border-color: #f2b33d;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+    animation: face-off 0.9s ease-in-out infinite alternate;
+}
+@keyframes face-off {
+    from { transform: scale(1); box-shadow: 0 0 4px 1px rgba(242, 179, 61, 0.5); }
+    to { transform: scale(1.06); box-shadow: 0 0 18px 6px rgba(232, 89, 12, 0.7); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .chances .chance.face-off { animation: none; outline: 3px solid #f2b33d; outline-offset: 2px; }
 }
 
 /* The others' vote on waiting for a player who is taking long. */
@@ -826,6 +864,9 @@ button.safety.off {
 .promotion .choice .holder { color: var(--muted); font-size: 0.8rem; }
 .promotion .choice .name, .promotion .choice .holder { text-align: left; }
 .promotion .choice { flex-wrap: wrap; column-gap: 4px; row-gap: 0; }
+.promotion .choice-and-about { display: flex; align-items: stretch; gap: 2px; min-width: 0; }
+.promotion .choice-and-about .choice { flex: 1; min-width: 0; }
+.promotion .about { padding: 0 6px; font-size: 0.8rem; color: var(--muted); }
 
 /* The dice side by side, as many as fit a row: the turn panel stays short. */
 .dice { list-style: none; padding: 0; margin: 4px 0; display: flex; flex-wrap: wrap; column-gap: 20px; }

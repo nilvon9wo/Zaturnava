@@ -2087,7 +2087,7 @@ public sealed class TableTest : IDisposable
 
         // Assert
         Assert.Equal(
-            (1, "Horse", ("true", (string?)null), hire.Label),
+            (0, "Horse", ("true", (string?)null), hire.Label),
             (buttons, card, before, this._page.Server.Submitted?.Action.Label)
         );
     }
@@ -2136,6 +2136,40 @@ public sealed class TableTest : IDisposable
 
         // Assert
         Assert.Equal((0, 1), (table.FindAll("aside.piece-card").Count, table.FindAll("button.action.hire").Count));
+    }
+
+    [Fact]
+    public void Render_WhenThePlayerMayHandOverOrPass_ShowsThemBesideEndGameTheAllyInItsColourThenPassingPlainly()
+    {
+        // Arrange - Black may let Green take over, or pass (playtest 2026-11-15, X1)
+        ActionDto handOver = new(
+            "hand-over",
+            ImmutableSortedDictionary<string, string>.Empty.Add(ActionArguments.Actor, "0").Add("regent", "2")
+        )
+        {
+            Label = "Let Green take over",
+        };
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            LegalActions = [FakeGameServer.Pass, handOver],
+            Seats =
+            [
+                FakeGameServer.SeatZeroToMove.Seats[0] with { MayProposeEnd = true },
+                .. FakeGameServer.SeatZeroToMove.Seats.Skip(1),
+            ],
+        };
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Assert
+        Assert.Equal(
+            ("action hand-over seat-2|action pass|end-game", 0),
+            (
+                string.Join('|', table.FindAll(".end-area button").Select(button => button.ClassName)),
+                table.FindAll(".actions button").Count
+            )
+        );
     }
 
     [Theory]
@@ -3742,6 +3776,35 @@ public sealed class TableTest : IDisposable
                 string.Join('|', table.FindAll(".promotion-choices.own .choice").Select(Choice)),
                 table.FindAll(".promotion-choices").Count
             )
+        );
+    }
+
+    [Theory]
+    [InlineData(true, "Queen (Western)")]
+    [InlineData(false, "Boat")]
+    public void About_WhenAPromotionChoiceIsAskedAboutWithCardsOff_ShowsItsCardUntilClosed(bool isOwn, string expected)
+    {
+        // Arrange - a promotion due; the Pawn may become a Queen, or a captured piece, a Boat first (J3)
+        GameViewDto promotions = Promotions();
+        this._page.Server.View = promotions with
+        {
+            PromotionDue = 2,
+            Kinds = [new PieceKindDto("queen", "Queen (Western)", 9)],
+            LegalActions = [.. promotions.LegalActions, OwnPromotion("queen")],
+        };
+        IRenderedComponent<Table> table = this._page.Render<Table>(parameters =>
+            parameters.Add(x => x.Seating, SeatZero).Add(x => x.AreCardsShown, false)
+        );
+
+        // Act
+        table.Find(isOwn ? ".promotion-choices.own button.about" : ".promotion-choices:not(.own) button.about").Click();
+        string shown = table.Find("aside.piece-card h2").TextContent;
+        table.Find("aside.piece-card button.close").Click();
+
+        // Assert
+        Assert.Equal(
+            (expected, 0, (string?)null),
+            (shown, table.FindAll("aside.piece-card").Count, this._page.Server.Submitted?.Action.Kind)
         );
     }
 
