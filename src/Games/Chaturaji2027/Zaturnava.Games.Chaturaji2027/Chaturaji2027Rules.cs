@@ -339,6 +339,9 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     /// <summary>Every game is played with dice, unless its creator turns them off.</summary>
     public bool HasDice => true;
 
+    /// <summary>How many idle rounds end a game, as the server sets it, unless its creator sets another.</summary>
+    public int? IdleRounds => this._idleRounds;
+
     /// <summary>
     /// The game played without dice: no one rolling to see who goes first, the first seat opening, as it opens any
     /// turn, with no die (the user's request of 2026-11-19; Proposed: the first seat, Black, as the seats are
@@ -1567,18 +1570,20 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     }
 
     /// <summary>
-    /// A turn passed without moving: enough of those in a row end the game. Having passed it
-    /// when it <paramref name="mayHaveOffered"/>, the seat gets no window to offer ransoms.
+    /// A turn passed without moving: enough of those in a row end the game, as many rounds as the game's creator set
+    /// (<see cref="GameState.IdleRounds"/>), else the server's own. Having passed it when it
+    /// <paramref name="mayHaveOffered"/>, the seat gets no window to offer ransoms.
     /// </summary>
     private Transition IdlePass(Transition transition, bool mayHaveOffered)
     {
         GameState state = transition.State;
         SeatId seat = (state.ActingFor ?? state.DecidingSeat)!.Value; // someone just took a turn
+        int rounds = state.IdleRounds ?? this._idleRounds;
         Transition counted = transition with { State = state with { IdlePasses = state.IdlePasses + 1 } };
-        return GameEnd.AfterIdlePass(counted, this._idleRounds) ?? Warned(
+        return GameEnd.AfterIdlePass(counted, rounds) ?? Warned(
             this.Ending(counted, mayHaveOffered),
-            GameEnd.IsLastIdleRound(counted.State, this._idleRounds),
-            new IdleWarned(seat, this._idleRounds - 1)
+            GameEnd.IsLastIdleRound(counted.State, rounds),
+            new IdleWarned(seat, rounds - 1)
         );
     }
 

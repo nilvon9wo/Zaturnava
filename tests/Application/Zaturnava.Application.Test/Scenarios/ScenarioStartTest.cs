@@ -321,20 +321,38 @@ public sealed class ScenarioStartTest
     }
 
     [Theory]
-    [InlineData(true, true)]
-    [InlineData(true, false)]
-    [InlineData(false, true)]
-    [InlineData(false, false)]
-    public void WithDiceOff_WhateverTheDealSaid_SaysAsAsked(bool wasOff, bool isAsked)
+    [InlineData(true, 4, true, 6)]
+    [InlineData(true, null, false, 6)]
+    [InlineData(false, 4, true, null)]
+    [InlineData(false, null, false, null)]
+    public void Chosen_WhateverTheDealSaid_SaysAsAsked(bool wasOff, int? wasIdle, bool isAsked, int? idleAsked)
     {
         // Arrange
-        ActionDescriptor deal = ScenarioStart.Dealt(new LoadedDice(4), areDiceOff: wasOff);
+        ActionDescriptor deal = ScenarioStart.Dealt(new LoadedDice(4), areDiceOff: wasOff, idleRounds: wasIdle);
 
         // Act
-        ActionDescriptor again = ScenarioStart.WithDiceOff(deal, isAsked);
+        ActionDescriptor again = ScenarioStart.Chosen(deal, isAsked, idleAsked);
 
         // Assert
-        Assert.Equal(isAsked, ScenarioStart.AreDiceOff([again]));
+        Assert.Equal((isAsked, idleAsked), (ScenarioStart.AreDiceOff([again]), ScenarioStart.IdleRoundsOf([again])));
+    }
+
+    [Fact]
+    public void SetUp_WhenNothingIsSet_IsNoneButWhenIdleRoundsAreReplaysThem()
+    {
+        // Arrange
+        TinyRules rules = new(6);
+
+        // Act
+        (ActionDescriptor? None, int? Idle, bool AreDiceOff) set = (
+            ScenarioStart.SetUp(areDiceOff: false, idleRounds: null),
+            ScenarioStart.StateOf([ScenarioStart.SetUp(areDiceOff: false, idleRounds: 7)!], rules).IdleRounds,
+            ScenarioStart.StateOf([ScenarioStart.SetUp(areDiceOff: false, idleRounds: 7)!], rules).AreDiceOff
+        );
+
+        // Assert
+        (ActionDescriptor? None, int? Idle, bool AreDiceOff) expected = (null, 7, false);
+        Assert.Equal(expected, set);
     }
 
     [Fact]

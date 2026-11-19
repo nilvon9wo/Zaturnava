@@ -115,6 +115,12 @@ public sealed record GameViewDto(
     public bool AreDiceOff { get; init; }
 
     /// <summary>
+    /// How many rounds in a row no one may move before the game ends on points, as its creator set it
+    /// (<see cref="CreateGameRequest.IdleRounds"/>); null, for the server's own.
+    /// </summary>
+    public int? IdleRounds { get; init; }
+
+    /// <summary>
     /// While the armies are drafted, what each seat has left to spend, seat by seat (null for a seat drafting in
     /// secret from the one asking, <see cref="IsDraftSecret"/>); null once play has begun, or in a game never drafted.
     /// </summary>

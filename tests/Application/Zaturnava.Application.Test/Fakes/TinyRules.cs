@@ -88,6 +88,9 @@ internal sealed class TinyRules(int length, bool isDealt = false, Exception? fai
     /// <summary>Whether its games roll dice, so that a game's creator may turn them off; not, unless set.</summary>
     public bool HasDice { get; init; }
 
+    /// <summary>How many idle rounds end a game, unless its creator sets others; none may, unless set.</summary>
+    public int? IdleRounds { get; init; }
+
     /// <summary>What having a seat's army filled at random makes of the game; unless set, it is not allowed.</summary>
     public Func<GameState, GameState>? Filled { get; init; }
 

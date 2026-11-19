@@ -33,4 +33,7 @@ internal sealed record ArmyDeal(bool AreAlike, string? Of = null)
 
     /// <summary>Whether the game is played without dice, in a game that rolls them; dealt or not.</summary>
     public bool AreDiceOff { get; init; }
+
+    /// <summary>How many idle rounds end the game, if its creator may say; the server's own, if none.</summary>
+    public int? IdleRounds { get; init; }
 }

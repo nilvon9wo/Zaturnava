@@ -390,7 +390,7 @@ html { scrollbar-gutter: stable; }
 .army-choices select.armies { grid-column: 2 / span 2; }
 /* A game's checkbox options, each a line of its own. */
 label.alike, label.drafted, label.for-players, label.secret, label.secret-from-allies, label.side-promotion,
-label.dice-off {
+label.dice-off, label.idle-rounds {
     display: block;
     margin-top: 6px;
 }

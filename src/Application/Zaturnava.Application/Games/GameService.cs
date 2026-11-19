@@ -105,10 +105,11 @@ public sealed class GameService(
     {
         IRulesApplying offered = this._rulesets.Find(rulesetId);
         bool areDiceOff = dealing.AreDiceOff && offered.HasDice;
-        ImmutableList<ActionDescriptor> start = (scenarioId, offered.IsDealt, areDiceOff) switch
+        int? idleRounds = offered.IdleRounds is null ? null : IdleRoundsOf(dealing);
+        ImmutableList<ActionDescriptor> start = (scenarioId, offered.IsDealt) switch
         {
-            ({ } scenario, _, _) => [ScenarioStart.Describe(this.ScenarioFor(offered, scenario))],
-            (null, true, _) => await this.DealFor(
+            ({ } scenario, _) => [ScenarioStart.Describe(this.ScenarioFor(offered, scenario))],
+            (null, true) => await this.DealFor(
                 offered,
                 dealing with
                 {
@@ -119,11 +120,11 @@ public sealed class GameService(
                         ? throw new InvalidGameSetupException("An army's budget is at least 1.")
                         : dealing.Budget,
                     AreDiceOff = areDiceOff,
+                    IdleRounds = idleRounds,
                 },
                 cancellationToken
             ),
-            (null, false, true) => [ScenarioStart.WithoutDice()],
-            _ => [],
+            _ => ScenarioStart.SetUp(areDiceOff, idleRounds) is { } setUp ? [setUp] : [],
         };
         IRulesApplying rules = ScenarioStart.RulesOf(start, offered);
         GameState initial = start.Skip(1).Aggregate(
@@ -156,7 +157,7 @@ public sealed class GameService(
         return previous is { Actions: [{ Kind: ScenarioStart.DealKind } first, ..] }
             ?
             [
-                ScenarioStart.WithDiceOff(first, dealing.AreDiceOff),
+                ScenarioStart.Chosen(first, dealing.AreDiceOff, dealing.IdleRounds),
                 .. DraftOf(previous.Actions, ScenarioStart.RulesOf(previous.Actions, offered)),
             ]
             :
@@ -168,10 +169,18 @@ public sealed class GameService(
                     dealing.Board,
                     dealing.PromotesAtSide,
                     dealing.Budget,
-                    dealing.AreDiceOff
+                    dealing.AreDiceOff,
+                    dealing.IdleRounds
                 ),
             ];
     }
+
+    /// <summary>The idle rounds the creator set, if any: at least 1.</summary>
+    /// <exception cref="InvalidGameSetupException">They are fewer.</exception>
+    private static int? IdleRoundsOf(Dealing dealing) =>
+        dealing.IdleRounds is < 1
+            ? throw new InvalidGameSetupException("A game ends after at least 1 idle round.")
+            : dealing.IdleRounds;
 
     /// <summary>The board's size, if the ruleset may be played on it.</summary>
     /// <exception cref="InvalidGameSetupException">It may not.</exception>

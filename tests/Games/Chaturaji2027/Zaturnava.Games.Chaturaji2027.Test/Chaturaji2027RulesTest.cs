@@ -1225,6 +1225,24 @@ public sealed class Chaturaji2027RulesTest
     }
 
     [Theory]
+    [InlineData(null, false)]
+    [InlineData(2, true)]
+    public void Apply_WhenTheGamesCreatorSetTheIdleRounds_EndsTheGameAfterThemRatherThanTheServers(
+        int? rounds,
+        bool isOver
+    )
+    {
+        // Arrange - four seats playing, seven passes made: the eighth ends two rounds, but not the server's three
+        GameState state = this.Later() with { IdlePasses = 7, IdleRounds = rounds };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new PassAction(Black));
+
+        // Assert
+        Assert.Equal((isOver, 3), (transition.State.Outcome is not null, this._rules.IdleRounds));
+    }
+
+    [Theory]
     [InlineData(2, 11, true, 12)]
     [InlineData(2, 4, false, 5)]
     [InlineData(1, 11, false, 0)]

@@ -46,6 +46,12 @@ public sealed record RulesetDto(string Id, string Name, int SeatCount)
     public bool HasDice { get; init; }
 
     /// <summary>
+    /// How many rounds in a row no one may move before a game ends on points, unless its creator sets another number
+    /// (<see cref="CreateGameRequest.IdleRounds"/>); null, if they may not.
+    /// </summary>
+    public int? IdleRounds { get; init; }
+
+    /// <summary>
     /// For a game whose players may draft: what each has to spend, unless the game's creator sets another
     /// (<see cref="CreateGameRequest.DraftBudget"/>); null, for a game whose players may not.
     /// </summary>
