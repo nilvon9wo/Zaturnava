@@ -921,19 +921,98 @@ public sealed class GrandLegionsRulesTest
     }
 
     [Theory]
-    [InlineData("xiangqi-horse", "31,39,41,49")]
-    [InlineData("xiangqi-elephant", "30,32")]
-    [InlineData("alfil", "")]
-    public void GuideOf_WhenAPieceInTheWayBlocksALeap_MarksWhereSuchAPieceWouldStand(string leaper, string blockers)
+    [InlineData("xiangqi-horse", "39,49", "29,47,57,59")]
+    [InlineData("xiangqi-elephant", "30,32", "20,24")]
+    [InlineData("rook", "39,49", "36,37,38,58,67,76")]
+    [InlineData("alfil", "", "")]
+    [InlineData("western-king", "", "")]
+    public void GuideOf_WhenPiecesInItsWayStopAKind_PutsThemWhereTheyStopItMostAndSaysWhatTheyStop(
+        string kind,
+        string obstacles,
+        string obstructed
+    )
     {
-        // Arrange - the Xiangqi Horse's leg, and the Xiangqi Elephant's eye short of the river; the Alfil leaps over
+        // Arrange - from the centre, 40: the Xiangqi Horse's legs, the foremost first, then the leftmost; the Xiangqi
+        // Elephant's eyes short of the river; the Rook's slides; the Alfil leaps over anything, the King only steps
         Chaturaji2027Rules rules = GrandLegionsRules.RulesOf(QuickGame.Small);
 
         // Act
-        MoveDiagram diagram = rules.GuideOf(new PieceKindId(leaper)).Diagram;
+        MoveDiagram diagram = rules.GuideOf(new PieceKindId(kind)).Diagram;
 
         // Assert
-        Assert.Equal(blockers, string.Join(",", diagram.Blockers));
+        Assert.Equal(
+            (obstacles, obstructed),
+            (string.Join(",", diagram.Obstacles), string.Join(",", diagram.Obstructed))
+        );
+    }
+
+    [Theory]
+    [InlineData("tafl-king", 58, 67, 76)]
+    [InlineData("swede", 58, 67, 76)]
+    public void GuideOf_WhenAKindTakesByCustody_DrawsACaptureWithThePieceThatHoldsTheEnemyBeyond(
+        string kind,
+        int landing,
+        int taken,
+        int partner
+    )
+    {
+        // Arrange - from the centre, 40, it slides two squares forward, next to the enemy, its partner beyond
+        Chaturaji2027Rules rules = GrandLegionsRules.RulesOf(QuickGame.Small);
+
+        // Act
+        MoveDiagram diagram = rules.GuideOf(new PieceKindId(kind)).Diagram;
+
+        // Assert
+        Assert.Equal(new CustodyExample(landing, taken, partner), diagram.Custody);
+    }
+
+    [Fact]
+    public void GuideOf_WhenARiverHoldsAKindBack_DrawsItOnAnOpenBoardToo()
+    {
+        // Arrange - the Xiangqi Elephant leaps two squares diagonally, never across its river
+        Chaturaji2027Rules rules = GrandLegionsRules.RulesOf(QuickGame.Small);
+
+        // Act
+        MoveDiagram diagram = rules.GuideOf(GrandLegionsPieces.XiangqiElephant).Diagram;
+
+        // Assert - by the river, only back; on an open board, every way
+        MoveDiagram open = Assert.IsType<MoveDiagram>(diagram.Elsewhere);
+        Assert.Equal(
+            ("20,24", true, "20,24,56,60", false, "48,50"),
+            (
+                string.Join(",", diagram.Moves),
+                diagram.RiverRow is not null,
+                string.Join(",", open.Moves),
+                open.RiverRow is not null,
+                string.Join(",", open.Obstacles)
+            )
+        );
+    }
+
+    [Fact]
+    public void GuideOf_WhenAKindStepsAlongAPalacesLines_DrawsItOnAnOpenBoardToo()
+    {
+        // Arrange
+        Chaturaji2027Rules rules = GrandLegionsRules.RulesOf(QuickGame.Small);
+
+        // Act
+        MoveDiagram diagram = rules.GuideOf(GrandLegionsPieces.JanggiGuard).Diagram;
+
+        // Assert - in its palace, and out of any
+        Assert.Equal((9, 0), (diagram.Palace.Count, diagram.Elsewhere?.Palace.Count));
+    }
+
+    [Fact]
+    public void GuideOf_WhenNeitherRiverNorPalaceHoldsAKind_DrawsItOnAnOpenBoardAlone()
+    {
+        // Arrange
+        Chaturaji2027Rules rules = GrandLegionsRules.RulesOf(QuickGame.Small);
+
+        // Act
+        MoveDiagram diagram = rules.GuideOf(GrandLegionsPieces.Rook).Diagram;
+
+        // Assert
+        Assert.Null(diagram.Elsewhere);
     }
 
     [Theory]

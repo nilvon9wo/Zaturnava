@@ -289,21 +289,24 @@ internal static class GameViews
             PromotesWhere = guide.PromotesWhere,
             Restrictions = guide.Restrictions,
             Mark = MarkOf(rules, kind),
-            Diagram = new MoveDiagramDto(
-                guide.Diagram.Side,
-                guide.Diagram.Moves,
-                guide.Diagram.Captures,
-                guide.Diagram.Screens
-            )
-            {
-                RiverRow = guide.Diagram.RiverRow,
-                Blockers = guide.Diagram.Blockers,
-                Leaps = guide.Diagram.Leaps,
-                Jumps = guide.Diagram.Jumps,
-                Palace = guide.Diagram.Palace,
-            },
+            Diagram = DiagramOf(guide.Diagram),
         };
     }
+
+    private static MoveDiagramDto DiagramOf(MoveDiagram diagram) =>
+        new(diagram.Side, diagram.Moves, diagram.Captures, diagram.Screens)
+        {
+            RiverRow = diagram.RiverRow,
+            Obstacles = diagram.Obstacles,
+            Obstructed = diagram.Obstructed,
+            Custody = diagram.Custody is { } custody
+                ? new CustodyDto(custody.Landing, custody.Taken, custody.Partner)
+                : null,
+            Elsewhere = diagram.Elsewhere is { } elsewhere ? DiagramOf(elsewhere) : null,
+            Leaps = diagram.Leaps,
+            Jumps = diagram.Jumps,
+            Palace = diagram.Palace,
+        };
 
     private static ImmutableList<string> TextOf(
         IEnumerable<MovementRule> movement,

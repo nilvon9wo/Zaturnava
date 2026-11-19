@@ -133,7 +133,8 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             this._variant.Kinds,
             this._variant.RiverBound,
             this._variant.PalaceSteppers,
-            this._variant.ForwardPalaceSteppers
+            this._variant.ForwardPalaceSteppers,
+            this._variant.Custodians
         );
         this._dice = dice;
         this._idleRounds = idleRounds;

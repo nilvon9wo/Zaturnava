@@ -21,10 +21,25 @@ public sealed record MoveDiagramDto(
     public int? RiverRow { get; init; }
 
     /// <summary>
-    /// The cells a piece on which would block one of its leaps, as a Xiangqi Horse's leg does; none, for a piece
-    /// nothing blocks so.
+    /// For a piece other pieces in its way stop: one or two cells pieces put on would stop it most, to draw them
+    /// there when the player asks; none, for a piece nothing in its way stops.
     /// </summary>
-    public ImmutableList<int> Blockers { get; init; } = [];
+    public ImmutableList<int> Obstacles { get; init; } = [];
+
+    /// <summary>The cells of its moves it may no longer move to, pieces on <see cref="Obstacles"/>.</summary>
+    public ImmutableList<int> Obstructed { get; init; } = [];
+
+    /// <summary>
+    /// For a piece that takes by custody, as a Tafl King does: one such capture, to draw with the piece of its own
+    /// side that must stand beyond; none, for any other.
+    /// </summary>
+    public CustodyDto? Custody { get; init; }
+
+    /// <summary>
+    /// For a piece drawn by a river or in a palace: the same piece on an open board, to draw when the player asks;
+    /// none, for any other.
+    /// </summary>
+    public MoveDiagramDto? Elsewhere { get; init; }
 
     /// <summary>
     /// The cells it moves to farther than the next cell by leaping, over anything between, as a Knight does; every
