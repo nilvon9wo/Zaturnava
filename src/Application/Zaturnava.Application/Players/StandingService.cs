@@ -127,6 +127,7 @@ public sealed class StandingService(
                             .Select(rating => (double)rating.Value)
                             .DefaultIfEmpty(Standing.FirstElo)
                             .Average(),
+                        UsesAi = profile.UsesAi,
                     },
                 StringComparer.Ordinal
             ),

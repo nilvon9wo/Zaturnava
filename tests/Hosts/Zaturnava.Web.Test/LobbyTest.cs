@@ -615,6 +615,36 @@ public sealed class LobbyTest : IDisposable
     }
 
     [Theory]
+    [InlineData(false, "", 0, null)]
+    [InlineData(true, "", 1, null)]
+    [InlineData(true, "2", 1, 2)]
+    public void Play_WhenWithoutDice_AsksForTheOpenerChosenOrNoneForOneAtRandom(
+        bool isOff,
+        string chosen,
+        int shown,
+        int? expected
+    )
+    {
+        // Arrange - the user's request of 2026-11-19
+        this._page.Server.HasDice = true;
+        IRenderedComponent<Lobby> lobby = this.ByStrength();
+        lobby.Find("input.no-dice").Change(isOff);
+        if (isOff)
+        {
+            lobby.Find("select.opener").Change(chosen);
+        }
+
+        // Act
+        lobby.Find("button.create").Click();
+
+        // Assert
+        Assert.Equal(
+            (shown, expected),
+            (lobby.FindAll("select.opener").Count, this._page.Server.Created?.Opener)
+        );
+    }
+
+    [Theory]
     [InlineData(null, "", 0, null)]
     [InlineData(3, "", 1, null)]
     [InlineData(3, "5", 1, 5)]
@@ -661,6 +691,25 @@ public sealed class LobbyTest : IDisposable
 
         // Assert
         Assert.Equal(expected, this._page.Server.Created?.IdleRounds);
+    }
+
+    [Theory]
+    [InlineData("2", 2)]
+    [InlineData("9", null)]
+    public void Render_WhenAnOpenerWasChosenBefore_ChoosesItAgainIfTheGameHasTheSeat(string seat, int? expected)
+    {
+        // Arrange
+        this._page.Server.HasDice = true;
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.setup").SetResult("strength");
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.setup-of.chaturaji-2027")
+            .SetResult($"chaturaji-2027;0;-1,1,1,1;,,,;dice-off=1,opener={seat}");
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.Render();
+        lobby.Find("button.create").Click();
+
+        // Assert
+        Assert.Equal(expected, this._page.Server.Created?.Opener);
     }
 
     [Theory]

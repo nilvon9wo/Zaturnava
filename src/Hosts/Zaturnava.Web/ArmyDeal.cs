@@ -36,4 +36,7 @@ internal sealed record ArmyDeal(bool AreAlike, string? Of = null)
 
     /// <summary>How many idle rounds end the game, if its creator may say; the server's own, if none.</summary>
     public int? IdleRounds { get; init; }
+
+    /// <summary>In a game without dice, the seat chosen to open it; none, for one drawn at random.</summary>
+    public int? Opener { get; init; }
 }

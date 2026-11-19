@@ -45,6 +45,11 @@ public sealed record Dealing(bool AreAlike = false, GameId? ArmiesOf = null)
     /// </summary>
     public int? IdleRounds { get; init; }
 
+    /// <summary>
+    /// For a game without dice, the seat its creator chose to open it; none, for one drawn at random.
+    /// </summary>
+    public int? Opener { get; init; }
+
     /// <summary>Each seat its own army, dealt anew.</summary>
     public static Dealing Anew { get; } = new();
 }

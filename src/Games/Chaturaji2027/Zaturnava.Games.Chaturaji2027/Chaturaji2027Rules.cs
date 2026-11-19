@@ -343,23 +343,23 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     public int? IdleRounds => this._idleRounds;
 
     /// <summary>
-    /// The game played without dice: no one rolling to see who goes first, the first seat opening, as it opens any
-    /// turn, with no die (the user's request of 2026-11-19; Proposed: the first seat, Black, as the seats are
-    /// ordered); a game still drafting its armies opens so once they are drafted.
+    /// The game played without dice: no one rolling to see who goes first, its opener opening, as it opens any
+    /// turn, with no die (<see cref="GameState.Opener"/>, the first seat, if none); a game still drafting its armies
+    /// opens so once they are drafted.
     /// </summary>
     public GameState WithoutDice([Required] GameState state) =>
         state.RollOff.IsEmpty
             ? state with { AreDiceOff = true }
             : Opened(state with { AreDiceOff = true });
 
-    /// <summary>A game without dice, its first seat to open it, with no die.</summary>
+    /// <summary>A game without dice, its opener to open it (the first seat, if none), with no die.</summary>
     internal static GameState Opened(GameState state) =>
         state with
         {
             RollOff = [],
             AwaitedDice = null,
             Dice = [],
-            DecidingSeat = state.Seats[0].Id,
+            DecidingSeat = state.Opener ?? state.Seats[0].Id,
             TurnNumber = OpeningTurn,
         };
 

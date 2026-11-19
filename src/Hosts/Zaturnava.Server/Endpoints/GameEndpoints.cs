@@ -159,6 +159,7 @@ internal static class GameEndpoints
                 DrawnAgainstPeople = leader.Standing.DrawnAgainstPeople,
                 BotId = leader.Standing.BotId,
                 Elo = (int)Math.Round(leader.Elo, MidpointRounding.AwayFromZero),
+                UsesAi = leader.UsesAi,
             }
         ),
     ];
@@ -264,6 +265,7 @@ internal static class GameEndpoints
             Budget = request.IsDrafted ? null : request.DraftBudget,
             AreDiceOff = request.AreDiceOff,
             IdleRounds = request.IdleRounds,
+            Opener = request.Opener,
         };
         GameId id = await games.Create(request.RulesetId, seats, request.Scenario, dealing, cancellationToken);
         if (request.Continuing is { } previous)

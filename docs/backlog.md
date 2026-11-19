@@ -9,6 +9,15 @@ own number (**25**, **N29**), the [2026-11-15 specification](playtesting/2026-11
 
 ## 1. Now: asked for and not yet done
 
+- **Itch frame** (asked 2026-11-19): in itch.io's frame the page looks broken, worst with the New game panel open.
+  Keep that panel closed by default when framed, and make every style fit a small frame or device.
+- **Rivers as chosen** (asked 2026-11-19): in a custom Grand Legions game, the creator chooses whether rivers
+  bisect or quarter the board, and whether they flow through or around kingdoms; random stays a choice.
+- **Shogi mercenaries** (asked 2026-11-19): mercenaries to include every Shogi piece, leaders too.
+- **Restriction or weakness** (asked 2026-11-19): a piece's card tells a restriction (may not leave its palace,
+  may not cross a river), which the game's rules impose and a lift may remove, from a weakness (bound to squares
+  of one colour), which is the piece's own movement and never lifted.
+
 - **D2** At least three non-random bots below 1200 Elo, a real progression of difficulty; Icarus sits only a few
   points below Midas. Keep every past measurement. *Begun* (2026-11-19): Narcissus and Epimetheus judge each move
   as Sage does, looking no further than the move, and play any of their better half or best third at random.
@@ -113,6 +122,8 @@ From the specification's observations of the bots in play (F, X) and the Sage pl
 
 ## 8. Later
 
+- *(Stated 2026-11-19, low priority, to consider)* Whether a mercenary's liabilities, or a berserk piece's, should
+  lower its price.
 - *(Stated 2026-11-19, very low priority, an idea)* **Combat by dice**, as in Loka: a capture is not certain, but
   rolled for, the odds weighed by such things as who attacks and whether the square has defenders. Optional, and
   only in games with dice (not with **Dice off**); what weighs, and how, still to be worked out.

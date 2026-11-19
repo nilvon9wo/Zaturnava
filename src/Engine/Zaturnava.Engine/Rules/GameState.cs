@@ -61,6 +61,13 @@ public sealed record GameState(
     public bool AreDiceOff { get; init; }
 
     /// <summary>
+    /// In a game without dice, the seat that opens it, as its creator chose or as the program drew at random when the
+    /// game was made (the user's request of 2026-11-19: never always the first seat, which would favour a creator
+    /// sitting there); the first seat, if none.
+    /// </summary>
+    public SeatId? Opener { get; init; }
+
+    /// <summary>
     /// How many rounds in a row no one may move before the game ends on points, as the game's creator set it, for a
     /// ruleset that lets them (<see cref="IRulesApplying.IdleRounds"/>; the playtest's 21, 22 and 26); none,
     /// for the server's own.

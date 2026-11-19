@@ -213,6 +213,51 @@ public sealed class GameServiceTest
     }
 
     [Theory]
+    [InlineData(null, 1)]
+    [InlineData(0, 0)]
+    [InlineData(1, 1)]
+    public async Task Create_WhenWithoutDice_RecordsTheOpenerChosenOrElseOneDrawnAtRandom(int? asked, int expected)
+    {
+        // Arrange - the dice loaded to 4, so seat 1 of 2 drawn (the user's request of 2026-11-19)
+        GameService service = this.Service(GameServiceSettings.Default, hasDice: true);
+
+        // Act
+        GameId id = await service.Create(
+            TinyRules.RulesetId,
+            [SeatPlan.Open, SeatPlan.Open],
+            null,
+            new Dealing { AreDiceOff = true, Opener = asked },
+            this._cancellation
+        );
+
+        // Assert
+        GameSnapshot snapshot = await service.Get(id, this._cancellation);
+        Assert.Equal(
+            (expected, new SeatId(expected)),
+            (ScenarioStart.OpenerOf(snapshot.Record.Actions), snapshot.State.Opener)
+        );
+    }
+
+    [Fact]
+    public async Task Create_WhenTheOpenerIsNoSeatOfTheGame_Refuses()
+    {
+        // Arrange
+        GameService service = this.Service(GameServiceSettings.Default, hasDice: true);
+
+        // Act
+        Task<GameId> creating = service.Create(
+            TinyRules.RulesetId,
+            [SeatPlan.Open, SeatPlan.Open],
+            null,
+            new Dealing { AreDiceOff = true, Opener = 2 },
+            this._cancellation
+        );
+
+        // Assert
+        _ = await Assert.ThrowsAsync<InvalidGameSetupException>(() => creating);
+    }
+
+    [Theory]
     [InlineData(true, 3, 5, 5)]
     [InlineData(false, 3, 5, 5)]
     [InlineData(false, null, 5, null)]

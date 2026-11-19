@@ -93,4 +93,10 @@ public sealed record CreateGameRequest([Required] string RulesetId, [Required] I
     /// Null, for the server's own.
     /// </summary>
     public int? IdleRounds { get; init; }
+
+    /// <summary>
+    /// For a game played without dice (<see cref="AreDiceOff"/>): the seat, from 0, that opens it. Null, for one the
+    /// server draws at random.
+    /// </summary>
+    public int? Opener { get; init; }
 }

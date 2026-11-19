@@ -105,7 +105,11 @@ public sealed class GameService(
     {
         IRulesApplying offered = this._rulesets.Find(rulesetId);
         bool areDiceOff = dealing.AreDiceOff && offered.HasDice;
-        int? idleRounds = offered.IdleRounds is null ? null : IdleRoundsOf(dealing);
+        GameChoices choices = new(
+            areDiceOff,
+            offered.IdleRounds is null ? null : IdleRoundsOf(dealing),
+            areDiceOff ? this.OpenerOf(dealing, seats.Count) : null
+        );
         ImmutableList<ActionDescriptor> start = (scenarioId, offered.IsDealt) switch
         {
             ({ } scenario, _) => [ScenarioStart.Describe(this.ScenarioFor(offered, scenario))],
@@ -119,12 +123,11 @@ public sealed class GameService(
                     Budget = dealing.Budget is < 1
                         ? throw new InvalidGameSetupException("An army's budget is at least 1.")
                         : dealing.Budget,
-                    AreDiceOff = areDiceOff,
-                    IdleRounds = idleRounds,
                 },
+                choices,
                 cancellationToken
             ),
-            _ => ScenarioStart.SetUp(areDiceOff, idleRounds) is { } setUp ? [setUp] : [],
+            _ => ScenarioStart.SetUp(choices) is { } setUp ? [setUp] : [],
         };
         IRulesApplying rules = ScenarioStart.RulesOf(start, offered);
         GameState initial = start.Skip(1).Aggregate(
@@ -150,6 +153,7 @@ public sealed class GameService(
     private async Task<ImmutableList<ActionDescriptor>> DealFor(
         IRulesApplying offered,
         Dealing dealing,
+        GameChoices choices,
         CancellationToken cancellationToken
     )
     {
@@ -157,7 +161,7 @@ public sealed class GameService(
         return previous is { Actions: [{ Kind: ScenarioStart.DealKind } first, ..] }
             ?
             [
-                ScenarioStart.Chosen(first, dealing.AreDiceOff, dealing.IdleRounds),
+                ScenarioStart.Chosen(first, choices),
                 .. DraftOf(previous.Actions, ScenarioStart.RulesOf(previous.Actions, offered)),
             ]
             :
@@ -169,11 +173,24 @@ public sealed class GameService(
                     dealing.Board,
                     dealing.PromotesAtSide,
                     dealing.Budget,
-                    dealing.AreDiceOff,
-                    dealing.IdleRounds
+                    choices
                 ),
             ];
     }
+
+    /// <summary>
+    /// The seat that opens a game without dice: the one its creator chose, if any; else one drawn at random, so that
+    /// the first seat has no advantage of its own (the user's request of 2026-11-19).
+    /// </summary>
+    /// <exception cref="InvalidGameSetupException">The creator chose no seat of the game.</exception>
+    private int OpenerOf(Dealing dealing, int seats) =>
+        dealing.Opener switch
+        {
+            { } seat when seat < 0 || seat >= seats =>
+                throw new InvalidGameSetupException($"The game has no seat {seat} to open it."),
+            { } seat => seat,
+            null => (this._dice.Roll(new DiceRequest(1, seats))[0] - 1) % seats,
+        };
 
     /// <summary>The idle rounds the creator set, if any: at least 1.</summary>
     /// <exception cref="InvalidGameSetupException">They are fewer.</exception>

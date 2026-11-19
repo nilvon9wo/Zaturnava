@@ -20,6 +20,7 @@ internal sealed record GameSetup(string RulesetId, int Colour, ImmutableList<int
     private const string BoardKey = "board";
     private const string DiceOffKey = "dice-off";
     private const string IdleKey = "idle";
+    private const string OpenerKey = "opener";
 
     /// <summary>How the armies come to be, as the lobby names its choices; the game's default, if none.</summary>
     public string? Armies { get; init; }
@@ -44,6 +45,9 @@ internal sealed record GameSetup(string RulesetId, int Colour, ImmutableList<int
 
     /// <summary>How many idle rounds end the game; the server's own, if none.</summary>
     public int? IdleRounds { get; init; }
+
+    /// <summary>Without dice, the seat chosen to open the game; none, for one drawn at random.</summary>
+    public int? Opener { get; init; }
 
     /// <summary>The board's size, for a game whose creator may set it; the game's own, if none.</summary>
     public BoardSizeDto? Board { get; init; }
@@ -76,6 +80,7 @@ internal sealed record GameSetup(string RulesetId, int Colour, ImmutableList<int
             this.PromotesAtSide ? $"{SideKey}=1" : null,
             this.AreDiceOff ? $"{DiceOffKey}=1" : null,
             this.IdleRounds is { } idle ? $"{IdleKey}={idle.ToString(CultureInfo.InvariantCulture)}" : null,
+            this.Opener is { } opener ? $"{OpenerKey}={opener.ToString(CultureInfo.InvariantCulture)}" : null,
             this.Board is { } board
                 ? $"{BoardKey}=" + string.Join(
                     'x',
@@ -112,6 +117,9 @@ internal sealed record GameSetup(string RulesetId, int Colour, ImmutableList<int
                 AreDiceOff = choices.ContainsKey(DiceOffKey),
                 IdleRounds = choices.TryGetValue(IdleKey, out string? idle) && Number(idle) is > 0 and var rounds
                     ? rounds
+                    : null,
+                Opener = choices.TryGetValue(OpenerKey, out string? opener) && Number(opener) is >= 0 and var seat
+                    ? seat
                     : null,
                 Board = choices.TryGetValue(BoardKey, out string? board) ? BoardOf(board) : null,
             }

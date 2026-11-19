@@ -8,4 +8,7 @@ namespace Net.NowhereAtAll.Zaturnava.Application.Players;
 public sealed record BotLeader(string Name, BotStanding Standing)
 {
     public double Elo { get; init; } = Players.Standing.FirstElo;
+
+    /// <summary>Whether the bot plays by an AI, as its profile says, not by a plain algorithm.</summary>
+    public bool UsesAi { get; init; }
 }
