@@ -299,9 +299,11 @@ html { scrollbar-gutter: stable; }
 
 .panel h2 { margin-top: 0; }
 
-/* The games, the leaderboard to their right: those waiting for the player above the rest (playtest H1). */
+/* The games, the leaderboard to their right: those waiting for the player above the rest (playtest H1). The
+   games take two shares of the room left and the leaderboard one, from a base wide enough for its columns: the
+   games no wider than they need, the leaderboard not squeezed (2026-11-19). */
 .games-column {
-    flex: 3 1 520px;
+    flex: 2 1 560px;
     min-width: 0;
     display: flex;
     flex-direction: column;
@@ -310,6 +312,9 @@ html { scrollbar-gutter: stable; }
 .games-column .panel { flex: none; }
 .games-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
 .games-head .new-game-toggle[aria-expanded="true"] { opacity: 0.7; }
+/* The games' filters wrap between filters, never within one: each name stays with its box (2026-11-19). */
+.game-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin: 6px 0; }
+.game-filters label { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
 /* New game floats over the games, near the top of the window, rather than pushing them aside (Stated, 2026-11-19):
    wherever the player last dragged it, else across the middle; it scrolls within itself if the window is short. */
 .panel.new-game {
@@ -373,6 +378,8 @@ html { scrollbar-gutter: stable; }
     min-width: 0;
     box-sizing: border-box;
 }
+/* How the armies come to be: nothing beside it to choose, so its long names take both columns (2026-11-19). */
+.army-choices select.armies { grid-column: 2 / span 2; }
 /* A game's checkbox options, each a line of its own. */
 label.alike, label.drafted, label.for-players, label.secret, label.secret-from-allies, label.side-promotion {
     display: block;
@@ -446,7 +453,7 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
 .quick-games { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; }
 .quick-hint { color: var(--muted); font-size: 0.9em; }
 /* A panel of the lobby: its widest board (the bots', eight columns) scrolls within it rather than widening the page. */
-.panel.leaderboard { overflow-x: auto; }
+.panel.leaderboard { overflow-x: auto; flex: 1 1 420px; }
 .leaderboard .choice { display: flex; gap: 8px; align-items: center; margin: 8px 0; }
 .leaderboard .leaders th.kind, .leaderboard .leaders td.kind { text-align: center; }
 .leaderboard .against { color: var(--muted); font-size: 0.85em; margin-left: 4px; white-space: nowrap; }
