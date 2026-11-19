@@ -37,6 +37,9 @@ public static class ScenarioStart
     /// <summary>The argument of a game's first action saying how many idle rounds end it.</summary>
     private const string IdleRoundsArgument = "idle-rounds";
 
+    /// <summary>The argument of a game's first action saying which seat opens a game without dice.</summary>
+    private const string OpenerArgument = "opener";
+
     /// <summary>
     /// The edition of a ruleset's pieces and rules a game dealt now is dealt from (<see cref="GameState.Edition"/>): 1,
     /// since Grand Legions gained the Checkers and Tafl pieces (2026-11-13); 2, since it gained mercenaries (the same
@@ -84,39 +87,54 @@ public static class ScenarioStart
     public static bool IsStart([Required] ActionDescriptor action) => action.Kind is Kind or DealKind or SetupKind;
 
     /// <summary>The first action of a game begun as its ruleset begins every game, but without dice.</summary>
-    public static ActionDescriptor WithoutDice() => SetUp(areDiceOff: true, idleRounds: null)!;
+    public static ActionDescriptor WithoutDice() => SetUp(new GameChoices(AreDiceOff: true))!;
 
     /// <summary>
-    /// The first action of a game begun as its ruleset begins every game, but as its creator set it: without dice, if
-    /// <paramref name="areDiceOff"/>; ending after <paramref name="idleRounds"/> idle rounds, if set. None, if they
-    /// set neither, for a game begun as every game is.
+    /// The first action of a game begun as its ruleset begins every game, but as its creator set it
+    /// (<paramref name="choices"/>). None, if they set nothing, for a game begun as every game is.
     /// </summary>
-    public static ActionDescriptor? SetUp(bool areDiceOff, int? idleRounds) =>
-        areDiceOff || idleRounds is not null
-            ? Chosen(
-                new ActionDescriptor(SetupKind, ImmutableSortedDictionary<string, string>.Empty),
-                areDiceOff,
-                idleRounds
-            )
-            : null;
+    public static ActionDescriptor? SetUp([Required] GameChoices choices) =>
+        choices.IsNone
+            ? null
+            : Chosen(new ActionDescriptor(SetupKind, ImmutableSortedDictionary<string, string>.Empty), choices);
 
     /// <summary>
-    /// The game's first action, dealing it as <paramref name="deal"/> did, but played without dice, or with them, as
-    /// <paramref name="areDiceOff"/> says, and ending after <paramref name="idleRounds"/> idle rounds, if set, whatever
-    /// the game it dealt chose.
+    /// The game's first action, dealing it as <paramref name="deal"/> did, but set up as <paramref name="choices"/>
+    /// say, whatever the game it dealt chose: without dice, or with them; ending after so many idle rounds, if set; and
+    /// opened by the seat they name, if any, without dice.
     /// </summary>
-    public static ActionDescriptor Chosen([Required] ActionDescriptor deal, bool areDiceOff, int? idleRounds)
-    {
-        ImmutableSortedDictionary<string, string> diced = areDiceOff
-            ? deal.Arguments.SetItem(DiceOffArgument, ActionDescriptor.Flag(true))
-            : deal.Arguments.Remove(DiceOffArgument);
-        return deal with
+    public static ActionDescriptor Chosen([Required] ActionDescriptor deal, [Required] GameChoices choices) =>
+        deal with
         {
-            Arguments = idleRounds is { } rounds
-                ? diced.SetItem(IdleRoundsArgument, rounds.ToString(CultureInfo.InvariantCulture))
-                : diced.Remove(IdleRoundsArgument),
+            Arguments = Set(
+                Set(
+                    Set(deal.Arguments, DiceOffArgument, choices.AreDiceOff ? ActionDescriptor.Flag(true) : null),
+                    IdleRoundsArgument,
+                    choices.IdleRounds?.ToString(CultureInfo.InvariantCulture)
+                ),
+                OpenerArgument,
+                choices.AreDiceOff ? choices.Opener?.ToString(CultureInfo.InvariantCulture) : null
+            ),
         };
-    }
+
+    /// <summary>
+    /// The arguments with <paramref name="name"/> set to <paramref name="value"/>, or without it, if none.
+    /// </summary>
+    private static ImmutableSortedDictionary<string, string> Set(
+        ImmutableSortedDictionary<string, string> arguments,
+        string name,
+        string? value
+    ) =>
+        value is null ? arguments.Remove(name) : arguments.SetItem(name, value);
+
+    /// <summary>
+    /// The seat that opens the game the first of <paramref name="actions"/> began without dice, if it says.
+    /// </summary>
+    public static int? OpenerOf([Required] ImmutableList<ActionDescriptor> actions) =>
+        actions.FirstOrDefault() is { Kind: DealKind or SetupKind } first
+        && first.Arguments.TryGetValue(OpenerArgument, out string? seat)
+            ? int.Parse(seat, CultureInfo.InvariantCulture)
+            : null;
 
     /// <summary>Whether the first of <paramref name="actions"/> began the game without dice.</summary>
     public static bool AreDiceOff([Required] ImmutableList<ActionDescriptor> actions) =>
@@ -144,8 +162,7 @@ public static class ScenarioStart
     /// <paramref name="board"/>'s size, if its creator set one (<see cref="IRulesApplying.Sized"/>). Its pieces
     /// promoted at the far edge promoted at the edge to their right too, if <paramref name="promotesAtSide"/>
     /// (<see cref="GameState.PromotesAtSide"/>). Its armies dealt, not drafted, each spending
-    /// <paramref name="budget"/>, if its creator set one. Played without dice, if <paramref name="areDiceOff"/>; ending
-    /// after <paramref name="idleRounds"/> idle rounds, if set.
+    /// <paramref name="budget"/>, if its creator set one. Set up otherwise as <paramref name="choices"/> say, if any.
     /// </summary>
     public static ActionDescriptor Dealt(
         [Required] IDiceRolling dice,
@@ -154,10 +171,12 @@ public static class ScenarioStart
         BoardSize? board = null,
         bool promotesAtSide = false,
         int? budget = null,
-        bool areDiceOff = false,
-        int? idleRounds = null
+        GameChoices? choices = null
     ) =>
-        Chosen(DealtWithDice(dice, areAlike, drafting, board, promotesAtSide, budget), areDiceOff, idleRounds);
+        Chosen(
+            DealtWithDice(dice, areAlike, drafting, board, promotesAtSide, budget),
+            choices ?? GameChoices.None
+        );
 
     private static ActionDescriptor DealtWithDice(
         IDiceRolling dice,
@@ -339,7 +358,8 @@ public static class ScenarioStart
             _ => rules.CreateInitialState(),
         };
         GameState idled = IdleRoundsOf(actions) is { } rounds ? state with { IdleRounds = rounds } : state;
-        return AreDiceOff(actions) ? rules.WithoutDice(idled) : idled;
+        GameState opened = OpenerOf(actions) is { } opener ? idled with { Opener = new SeatId(opener) } : idled;
+        return AreDiceOff(actions) ? rules.WithoutDice(opened) : opened;
     }
 
     /// <summary>

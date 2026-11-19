@@ -465,6 +465,23 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
 .quick-hint { color: var(--muted); font-size: 0.9em; }
 /* A panel of the lobby: its widest board (the bots', eight columns) scrolls within it rather than widening the page. */
 .panel.leaderboard { overflow-x: auto; flex: 1 1 560px; }
+/* In a window or frame too narrow for the games and the leaderboard side by side, at half each (itch.io's frame, a
+   tablet), each takes the whole width, the leaderboard below (the user's report of 2026-11-19). */
+@media (max-width: 1150px) {
+    .games-column, .panel.leaderboard { flex-basis: 100%; }
+}
+/* In a short window or frame, New game floats from near the top, using all the height there is. */
+@media (max-height: 720px) {
+    .panel.new-game { top: 8px; max-height: calc(100dvh - 16px); }
+}
+/* On a phone, or a frame as narrow: panels as wide as the screen, and each choice's name above its choices rather
+   than in a column of its own, which would leave the choices no room. */
+@media (max-width: 640px) {
+    .panel { min-width: 0; padding: 10px 12px; }
+    .panel.new-game { left: 8px; width: calc(100vw - 16px); }
+    .choices, .army-choices, .panel label.scenario, .plans.strengths li { grid-template-columns: minmax(0, 1fr); }
+    .game-filters label { white-space: normal; }
+}
 .leaderboard .leaders th, .leaderboard .leaders td.name, .leaderboard .leaders td.name button { white-space: nowrap; }
 .leaderboard .choice { display: flex; gap: 8px; align-items: center; margin: 8px 0; }
 .leaderboard .leaders th.kind, .leaderboard .leaders td.kind { text-align: center; }

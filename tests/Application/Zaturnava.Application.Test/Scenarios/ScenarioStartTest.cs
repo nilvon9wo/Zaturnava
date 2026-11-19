@@ -300,7 +300,8 @@ public sealed class ScenarioStartTest
     public void StateOf_WhenTheGameBeganWithoutDice_ReplaysItSo()
     {
         // Arrange - dealt without dice, dealt with them, begun without them undealt, and from a scenario
-        ImmutableList<ActionDescriptor> dealt = [ScenarioStart.Dealt(new LoadedDice(4), areDiceOff: true)];
+        ImmutableList<ActionDescriptor> dealt =
+            [ScenarioStart.Dealt(new LoadedDice(4), choices: new GameChoices(AreDiceOff: true))];
         ImmutableList<ActionDescriptor> withDice = [ScenarioStart.Dealt(new LoadedDice(4))];
         ImmutableList<ActionDescriptor> setUp = [ScenarioStart.WithoutDice()];
         ImmutableList<ActionDescriptor> scenario = [ScenarioStart.Describe(Tiny())];
@@ -328,13 +329,18 @@ public sealed class ScenarioStartTest
     public void Chosen_WhateverTheDealSaid_SaysAsAsked(bool wasOff, int? wasIdle, bool isAsked, int? idleAsked)
     {
         // Arrange
-        ActionDescriptor deal = ScenarioStart.Dealt(new LoadedDice(4), areDiceOff: wasOff, idleRounds: wasIdle);
+        ActionDescriptor deal =
+            ScenarioStart.Dealt(new LoadedDice(4), choices: new GameChoices(wasOff, wasIdle, wasOff ? 2 : null));
 
         // Act
-        ActionDescriptor again = ScenarioStart.Chosen(deal, isAsked, idleAsked);
+        ActionDescriptor again = ScenarioStart.Chosen(deal, new GameChoices(isAsked, idleAsked, isAsked ? 1 : null));
 
-        // Assert
-        Assert.Equal((isAsked, idleAsked), (ScenarioStart.AreDiceOff([again]), ScenarioStart.IdleRoundsOf([again])));
+        // Assert - an opener said only of a game without dice
+        int? opener = isAsked ? 1 : null;
+        Assert.Equal(
+            (isAsked, idleAsked, opener),
+            (ScenarioStart.AreDiceOff([again]), ScenarioStart.IdleRoundsOf([again]), ScenarioStart.OpenerOf([again]))
+        );
     }
 
     [Fact]
@@ -345,9 +351,9 @@ public sealed class ScenarioStartTest
 
         // Act
         (ActionDescriptor? None, int? Idle, bool AreDiceOff) set = (
-            ScenarioStart.SetUp(areDiceOff: false, idleRounds: null),
-            ScenarioStart.StateOf([ScenarioStart.SetUp(areDiceOff: false, idleRounds: 7)!], rules).IdleRounds,
-            ScenarioStart.StateOf([ScenarioStart.SetUp(areDiceOff: false, idleRounds: 7)!], rules).AreDiceOff
+            ScenarioStart.SetUp(GameChoices.None),
+            ScenarioStart.StateOf([ScenarioStart.SetUp(new GameChoices(IdleRounds: 7))!], rules).IdleRounds,
+            ScenarioStart.StateOf([ScenarioStart.SetUp(new GameChoices(IdleRounds: 7))!], rules).AreDiceOff
         );
 
         // Assert

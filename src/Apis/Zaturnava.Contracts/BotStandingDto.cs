@@ -21,4 +21,9 @@ public sealed record BotStandingDto(int Place, string Name, int Points, int Won,
     /// sizes (<see cref="BotDto.Ratings"/>), or 1500, the rating everyone starts at, if it is rated at none.
     /// </summary>
     public int Elo { get; init; } = 1500;
+
+    /// <summary>
+    /// Whether the bot plays by an AI, as its profile says (<see cref="BotDto.UsesAi"/>), not by a plain algorithm.
+    /// </summary>
+    public bool UsesAi { get; init; }
 }

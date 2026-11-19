@@ -68,7 +68,7 @@
                                 <td class="kind">
                                     <span role="img"
                                           aria-label="@KindOf(row)"
-                                          title="@KindOf(row)">@(row.BotId is null ? "🧑" : "🤖")</span>
+                                          title="@KindOf(row)">@IconOf(row)</span>
                                 </td>
                             }
                             <td class="name">
@@ -176,7 +176,8 @@
         "everyone",
         "Player or bot",
         "No one has finished a game of it yet.",
-        "Players signed in and the server's bots together, 🧑 a person, 🤖 a bot. A player's Elo comes from the games "
+        "Players signed in and the server's bots together, 🧑 a person, 🤖 a bot playing by a plain algorithm, 🧠 a "
+            + "bot playing by an AI. A player's Elo comes from the games "
             + "they finished; a bot's, from its games against the other bots. Points are the points each scored "
             + "itself, in every game finished, won or lost.",
         [
@@ -270,7 +271,26 @@
     private string ArrowOf(Column column) =>
         this.Columns.All.IndexOf(column) != this._sort ? string.Empty : this._isAscending ? " ▲" : " ▼";
 
-    private static string KindOf(Row row) => row.BotId is null ? "Person" : "Bot";
+    /// <summary>
+    /// What a row is: a person; a bot playing by a plain algorithm; or a bot playing by an AI (the user's request of
+    /// 2026-11-19).
+    /// </summary>
+    private static string KindOf(Row row) =>
+        (row.BotId, row.UsesAi) switch
+        {
+            (null, _) => "Person",
+            (_, false) => "Bot, a plain algorithm",
+            _ => "Bot, an AI",
+        };
+
+    /// <summary>A row's kind as an icon: 🧑 a person, 🤖 a bot by a plain algorithm, 🧠 a bot by an AI.</summary>
+    private static string IconOf(Row row) =>
+        (row.BotId, row.UsesAi) switch
+        {
+            (null, _) => "🧑",
+            (_, false) => "🤖",
+            _ => "🧠",
+        };
 
     private async Task Show(string game)
     {
@@ -312,6 +332,7 @@
                     new Row(bot.Name, [bot.Elo, bot.Points, bot.Won, bot.Lost, bot.Drawn])
                     {
                         BotId = bot.BotId,
+                        UsesAi = bot.UsesAi,
                     }
                 ),
             ],
@@ -372,6 +393,9 @@
         public string? PlayerId { get; init; }
 
         public string? BotId { get; init; }
+
+        /// <summary>For a bot, whether it plays by an AI rather than a plain algorithm.</summary>
+        public bool UsesAi { get; init; }
 
         /// <summary>Beside each number, by column, the mean Elo it was won against, if it is a streak with one.</summary>
         public ImmutableList<int?> Against { get; init; } = [];

@@ -142,7 +142,7 @@ only in part, what is left is in the backlog, and its history here. The playtest
   any ruleset that rolls dice (`HasDice`), remembered as last set, and kept by Play again. The setting is recorded
   in the game's first action (`dice-off`, on a deal, or on a `setup` action of its own for a game not dealt), so
   the game replays as played; a game from a scenario keeps the scenario's dice. The state says it
-  (`AreDiceOff`), and the rules ask that one place: no roll-off (the first seat, Black, opens; *Proposed*), no
+  (`AreDiceOff`), and the rules ask that one place: no roll-off (its opener opens, see below), no
   roll offered at a turn's start (while an enemy leader holds the seat's throne, a pass instead of the roll), so
   no doubles and no escapes; a game still drafting opens so once drafted. The games list marks such games **No
   dice**; the guide and the AI tools' description say what changes; bots need no telling, since they choose among
@@ -153,8 +153,25 @@ only in part, what is left is in the backlog, and its history here. The playtest
   is typed, remembered as last set and kept by Play again. It is recorded in the game's first action
   (`idle-rounds`, on a deal or a `setup` action), so the game replays as played, and the rules count to it in place
   of the server's own; a game from a scenario keeps the server's.
+- **Dice off: who opens** (asked 2026-11-19): not always Black, which would favour a creator playing Black. *Done*:
+  under **Play without dice**, **Who opens** offers *At random* (the default) or any seat by its colour, remembered
+  as last set. The server draws a random opener when the game is made, by its own dice, and records the seat in the
+  game's first action (`opener`), so the game replays as played; the rules open with it (`GameState.Opener`), a
+  drafted game once its draft is done. Play again draws anew. *(Stated)* While an enemy leader holds a seat's throne,
+  a game without dice passes instead of rolling: acceptable for now, to be playtested.
+- **Bots' kinds on the leaderboard** (asked 2026-11-19). *Done*: the board of players and bots together marks 🧑 a
+  person, 🤖 a bot playing by a plain algorithm, 🧠 a bot playing by an AI, as its profile says (`UsesAi`, now on
+  each bot's standing too); today Athena and Pythia.
 
 ## Look and feel
+
+- **Itch frame** (asked 2026-11-19): in itch.io's frame (about 1040 by 630), the New game dialog opened over
+  everything, and the games and the leaderboard each got half of a width too small for either. *Done*: in any frame,
+  New game starts closed until asked for (the player's own choice still rules after). The lobby is sized by the room
+  it has, in a frame or on a device alike: under 1150 wide, the games and the leaderboard each take the whole
+  width, the leaderboard below; under 720 high, New game floats from the top and takes all the height; under 640
+  wide (a phone), panels fill the screen and each choice's name stands above its choices. The table already fits
+  its window by its own widths.
 
 - *(Stated 2026-11-12)* A piece card makes plain how each move is made. *Done*: a square the piece leaps to, over
   anything between (a Knight's move, say), has a hollow dot, a ring, and the key says so; any other dot farther

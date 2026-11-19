@@ -342,6 +342,19 @@
                     <input type="checkbox" class="no-dice" @bind="this._areDiceOff" />
                     Play without dice: nothing is rolled for, not who goes first, nor more moves, nor an escape
                 </label>
+                @if (this._areDiceOff)
+                {
+                    <label class="opener">
+                        Who opens
+                        <select class="opener" @bind="this._opener">
+                            <option value="">At random</option>
+                            @foreach (int seat in Enumerable.Range(0, this.Ruleset(catalog).SeatCount))
+                            {
+                                <option value="@seat">@SeatName(this.Ruleset(catalog).SeatNames, seat)</option>
+                            }
+                        </select>
+                    </label>
+                }
             }
             @if (mode == SetupMode.Custom && this.Ruleset(catalog).IdleRounds is { } idleRounds)
             {
@@ -508,7 +521,10 @@
     private string _sortBy = string.Empty;
     private bool _isDescending;
 
-    /// <summary>Whether the player chose to show the New game panel, or to hide it; none, until they choose.</summary>
+    /// <summary>
+    /// Whether the player chose to show the New game panel, or to hide it; none, until they choose. Hidden at first in
+    /// a frame, as itch.io shows the page, where it would cover the little there is (the user's report of 2026-11-19).
+    /// </summary>
     private bool? _isNewGameShown;
 
     /// <summary>
@@ -622,6 +638,12 @@
     private bool _areDiceOff;
 
     /// <summary>
+    /// For a game without dice, the seat chosen to open it; none, for one drawn at random (the user's request of
+    /// 2026-11-19: random by default, so a creator at the first seat gains nothing).
+    /// </summary>
+    private int? _opener;
+
+    /// <summary>
     /// For a game that lets its creator say, how many idle rounds end it on points; the server's own, if none (the
     /// playtest's 21, 22 and 26; Proposed: remembered as last set).
     /// </summary>
@@ -684,6 +706,7 @@
             PromotesAtSide = this._promotesAtSide,
             AreDiceOff = this._areDiceOff,
             IdleRounds = this._idleRounds,
+            Opener = this._opener,
             Board = this.BoardAsked(catalog),
         };
 
@@ -753,6 +776,7 @@
         this._promotesAtSide = setup.PromotesAtSide && ruleset.MayPromoteAtSide;
         this._areDiceOff = setup.AreDiceOff && ruleset.HasDice;
         this._idleRounds = ruleset.IdleRounds is null ? null : setup.IdleRounds;
+        this._opener = setup.Opener < ruleset.SeatCount ? setup.Opener : null;
     }
 
     /// <summary>The seats as <paramref name="setup"/> has them; a bot it chose that is no longer offered, any.</summary>
@@ -1119,6 +1143,7 @@
             : [];
         await this.Recall(this._awaited.Select(awaited => awaited.Game));
         this._arePreviewsShown = await this.Browser.ArePreviewsShown();
+        this._isNewGameShown = await this.Browser.IsFramed() ? false : this._isNewGameShown;
         foreach (RulesetDto game in AllGamesOf(catalog))
         {
             this._setups = await this.Browser.SetupOf(game.Game) is { } setup
@@ -1332,6 +1357,7 @@
         this._promotesAtSide = false;
         this._areDiceOff = false;
         this._idleRounds = null;
+        this._opener = null;
     }
 
     /// <summary>
@@ -1500,6 +1526,7 @@
             PromotesAtSide = this._promotesAtSide && this.Ruleset(catalog).MayPromoteAtSide,
             AreDiceOff = this._areDiceOff && this.Ruleset(catalog).HasDice,
             IdleRounds = this.Ruleset(catalog).IdleRounds is null || this._idleRounds is < 1 ? null : this._idleRounds,
+            Opener = this._areDiceOff ? this._opener : null,
         };
 
     /// <summary>How each seat set up by strength is played: the player's own, and a person's, by no bot.</summary>

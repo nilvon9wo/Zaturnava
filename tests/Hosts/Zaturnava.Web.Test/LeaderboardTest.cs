@@ -161,6 +161,7 @@ public sealed class LeaderboardTest : IDisposable
             [
                 new BotStandingDto(1, "Random", 2, 0, 6, 1) { BotId = "random", Elo = 1000 },
                 new BotStandingDto(2, "Sage", 40, 5, 0, 1) { BotId = "sage", Elo = 2600 },
+                new BotStandingDto(3, "Athena", 38, 6, 0, 1) { BotId = "athena", Elo = 2650, UsesAi = true },
             ]
         );
         IRenderedComponent<Leaderboard> board = this.Render();
@@ -168,11 +169,11 @@ public sealed class LeaderboardTest : IDisposable
         // Act
         board.Find("select.leaderboard-board").Change("everyone");
 
-        // Assert
+        // Assert - a bot by an AI marked apart from one by a plain algorithm (the user's request of 2026-11-19)
         Assert.Equal(
             (
-                "1 🤖 Sage 2600 40 5 0 1|2 🧑 Ada 1700 25 4 1 0|3 🤖 Random 1000 2 0 6 1",
-                "Bot,Person,Bot",
+                "1 🧠 Athena 2650 38 6 0 1|2 🤖 Sage 2600 40 5 0 1|3 🧑 Ada 1700 25 4 1 0|4 🤖 Random 1000 2 0 6 1",
+                "Bot, an AI,Bot, a plain algorithm,Person,Bot, a plain algorithm",
                 "Kind"
             ),
             (

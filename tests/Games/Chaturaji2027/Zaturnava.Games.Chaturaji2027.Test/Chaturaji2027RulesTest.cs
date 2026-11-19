@@ -362,6 +362,19 @@ public sealed class Chaturaji2027RulesTest
     }
 
     [Fact]
+    public void WithoutDice_WhenAnOpenerIsSet_LetsItOpenRatherThanTheFirstSeat()
+    {
+        // Arrange - the user's request of 2026-11-19
+        GameState initial = this._rules.CreateInitialState() with { Opener = Yellow };
+
+        // Act
+        GameState state = this._rules.WithoutDice(initial);
+
+        // Assert
+        Assert.Equal((Yellow, true), (state.DecidingSeat, state.AwaitedDice is null));
+    }
+
+    [Fact]
     public void WithoutDice_WhenTheGameHasBegunAlready_OnlySaysSo()
     {
         // Arrange
