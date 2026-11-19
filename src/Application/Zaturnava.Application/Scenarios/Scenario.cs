@@ -25,6 +25,14 @@ public sealed record Scenario(string RulesetId, string Name, string Description)
 
     public ImmutableList<ScenarioPrisoner> Prisoners { get; init; } = [];
 
+    /// <summary>
+    /// Each seat's palace, by seat, as the cell at its centre, "Black": "b2": that cell and those about it
+    /// (<see cref="Engine.Rules.GameState.Palaces"/>); none, if it gives none (the user's report of 2026-11-19: the
+    /// Mercenaries scenario had no palace to place a mercenary in).
+    /// </summary>
+    public ImmutableSortedDictionary<string, string> Palaces { get; init; } =
+        ImmutableSortedDictionary<string, string>.Empty;
+
     /// <summary>The dice the turn has rolled and not used yet; none, if it is still to roll.</summary>
     public ImmutableList<int> Dice { get; init; } = [];
 

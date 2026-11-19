@@ -765,7 +765,16 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
         );
 
         // Assert
-        Assert.Contains(hired.LegalActions, action => action.Kind == "deploy");
+        // Assert - on the free squares of Black's palace, a1 to c3, its Rook on a1 and Gold General on c1
+        Assert.Equal(
+            "a2,a3,b1,b2,b3,c2,c3",
+            string.Join(
+                ",",
+                hired.LegalActions.Where(action => action.Kind == "deploy")
+                    .Select(action => hired.Cells.Single(cell => $"{cell.Id}" == action.Arguments["home"]).Name)
+                    .Order(StringComparer.Ordinal)
+            )
+        );
     }
 
     [Fact]

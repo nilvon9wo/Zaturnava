@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using System.Text.Json;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
+using Net.NowhereAtAll.Zaturnava.Engine.Boards;
 using Net.NowhereAtAll.Zaturnava.Engine.Chance;
 using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
 using Net.NowhereAtAll.Zaturnava.Engine.Positions;
@@ -315,8 +316,23 @@ public static class ScenarioStart
             Dice = scenario.Dice,
             Edition = scenario.Edition,
             PromotesAtSide = scenario.PromotesAtSide,
+            Palaces = scenario.Palaces.IsEmpty
+                ? initial.Palaces
+                : scenario.Palaces.ToImmutableDictionary(
+                    palace => names.SeatOf(palace.Key),
+                    palace => PalaceAbout(rules.Topology, names.CellOf(palace.Value))
+                ),
         };
     }
+
+    /// <summary>The cell <paramref name="centre"/> and those about it on the board: a palace about it.</summary>
+    private static ImmutableList<CellId> PalaceAbout(ICellNavigating topology, CellId centre) =>
+    [
+        .. Enumerable.Range(-1, 3)
+            .SelectMany(rows => Enumerable.Range(-1, 3).Select(columns => new Direction(columns, rows)))
+            .Select(way => way == new Direction(0, 0) ? centre : topology.Step(centre, way))
+            .OfType<CellId>(),
+    ];
 
     private static Scenario ScenarioOf(ActionDescriptor start) =>
         JsonSerializer.Deserialize<Scenario>(start.Arguments[Argument], JsonSerializerOptions.Web)!;

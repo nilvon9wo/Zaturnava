@@ -172,5 +172,27 @@ runner ([self-play](../bots/self-play.md#learning)):
 wsl -d Ubuntu -- bash scripts/wsl-athena.sh --rounds 6
 ```
 
+To leave the machine training and rating the bots unattended, run both in turn, for every ruleset, cycle
+after cycle, until stopped with Ctrl+C:
+
+```shell
+wsl -d Ubuntu -- bash scripts/wsl-overnight.sh
+```
+
+Each cycle runs, for each ruleset, rounds of Athena's learning and then an Elo tournament of every
+bot. Athena's networks are kept in `artifacts/overnight/athena/<ruleset>/`, so each run carries on
+from the last. Each tournament's ratings go to `artifacts/overnight/<started>/<ruleset>-<cycle>.json`.
+
+Options:
+
+| Option | Meaning | Default |
+| --- | --- | --- |
+| `--cycles N` | how many cycles to run | 0: until stopped |
+| `--rulesets a,b` | which rulesets | `chaturaji-2027` and the three Grand Legions sizes |
+| `--rounds N` | Athena's rounds per ruleset each cycle | 2 |
+| `--games N` | games per round, and per pairing in the tournament | 100 |
+
+A failed stage is reported, and the run goes on.
+
 The static gates (`dotnet format`, `check-line-layout.py`, `inspect-code.py`) run no test host
 and work on Windows directly.

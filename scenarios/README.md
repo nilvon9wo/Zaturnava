@@ -46,6 +46,9 @@ any case: cells as `d4`, seats as `Black`, pieces as the seat then the kind,
   with its roll. The dice are otherwise random.
 - `prisoners`: pieces captured, and who holds them.
 - `scores`: points so far; none for a seat left out.
+- `palaces`: each seat's palace, by the square at its centre (`"Black": "b2"`):
+  that square and the eight about it, where a mercenary is placed and palace
+  pieces stay; none, if left out.
 - `edition`: the edition of the ruleset's pieces and rules it is played by
   (Grand Legions: 6 plays a chain of jumps jump by jump); the first, 0, if left
   out.

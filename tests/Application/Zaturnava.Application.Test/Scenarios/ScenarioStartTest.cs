@@ -57,6 +57,26 @@ public sealed class ScenarioStartTest
     }
 
     [Fact]
+    public void StateFrom_WhenItGivesPalaces_SetsEachAboutItsCentreOnTheBoard()
+    {
+        // Arrange - the first seat's palace about b1, on the tiny board, where no step leads anywhere: b1 alone (the
+        // user's report of 2026-11-19: the Mercenaries scenario had no palace to place a mercenary in)
+        Scenario scenario = Tiny() with
+        {
+            Palaces = ImmutableSortedDictionary<string, string>.Empty.Add("Seat 0", "b1"),
+        };
+
+        // Act
+        GameState state = ScenarioStart.StateFrom(scenario, this._rules);
+
+        // Assert
+        Assert.Equal(
+            ("1", 1),
+            (string.Join(",", state.Palaces![First].Select(cell => cell.Value)), state.Palaces.Count)
+        );
+    }
+
+    [Fact]
     public void StateFrom_WhenItSaysLittle_StartsTheFirstSeatOnAnEmptyBoard()
     {
         // Arrange - nothing but its name

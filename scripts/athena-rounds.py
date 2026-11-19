@@ -27,11 +27,13 @@ import os
 import shutil
 import subprocess
 import sys
-from concurrent.futures import ThreadPoolExecutor
+import time
+from concurrent.futures import ThreadPoolExecutor, wait
 
 rate_bots = importlib.import_module("rate-bots")
 
 BAR = 0.55
+HEARTBEAT = 30
 SIDES = ((("athena", "sage", "athena", "sage"), (0, 2)), (("sage", "athena", "sage", "athena"), (1, 3)))
 CHATURAJI = "chaturaji-2027"
 
@@ -82,8 +84,17 @@ def measure(runner, folder, number, network, options):
             games = share + (job < rest)
             if games:
                 parts.append((seats, games, os.path.join(folder, f"part-{number}-{side}-{job}.jsonl")))
+    total = sum(games for _, games, _ in parts)
+    print(f"round {number}: Athena plays Sage {total} games, in {len(parts)} processes", flush=True)
+    started = time.monotonic()
     with ThreadPoolExecutor(len(parts)) as pool:
-        list(pool.map(lambda part: play(runner, network, part[0], part[1], options.max_steps, part[2]), parts))
+        running = [pool.submit(play, runner, network, seats, games, options.max_steps, out)
+                   for seats, games, out in parts]
+        while not wait(running, timeout=HEARTBEAT).done == set(running):
+            minutes = (time.monotonic() - started) / 60
+            print(f"  ... {played(parts)} of {total} games played, {minutes:.0f} min so far", flush=True)
+        for future in running:
+            future.result()
     won = lost = drawn = 0
     with open(os.path.join(folder, f"games-{number}.jsonl"), "w", encoding="utf-8", newline="\n") as kept:
         for seats, _, path in parts:
@@ -99,6 +110,16 @@ def measure(runner, folder, number, network, options):
                     drawn += mine == theirs
             os.remove(path)
     return won, lost, drawn
+
+
+def played(parts):
+    """How many games the parts' files hold so far."""
+    count = 0
+    for _, _, path in parts:
+        if os.path.exists(path):
+            with open(path, encoding="utf-8") as lines:
+                count += sum(1 for line in lines if line.strip())
+    return count
 
 
 def best_share(folder):
@@ -130,6 +151,7 @@ def main():
     runner = [options.runner, "--ruleset", options.ruleset]
     for _ in range(options.rounds):
         number = rounds_done(options.folder) + 1
+        print(f"round {number}: Athena learns from the games played so far", flush=True)
         network = learn(runner, options.folder, number, options)
         won, lost, drawn = measure(runner, options.folder, number, network, options)
         share = (won + drawn / 2) / max(1, won + lost + drawn)
