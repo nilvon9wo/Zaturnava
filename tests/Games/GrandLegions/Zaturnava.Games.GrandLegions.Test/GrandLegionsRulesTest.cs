@@ -1178,6 +1178,48 @@ public sealed class GrandLegionsRulesTest
         Assert.Equal((9, openPalace), (diagram.Palace.Count, diagram.Elsewhere?.Palace.Count));
     }
 
+    [Theory]
+    [InlineData(QuickArmy.PalacesAnywhereEdition, true)]
+    [InlineData(QuickArmy.PalacesAnywhereEdition - 1, false)]
+    public void Deal_WhenAWideKingdomIsDealtPalaces_PlacesThemAnywhereTheThroneAndHeldPiecesIn(int edition, bool isAway)
+    {
+        // Arrange - kingdoms 18 x 6, Black's along the bottom of a 26 x 26 board (the user's words of 2026-11-19: a
+        // palace need not stand against any edge of the board; the palace placed, then the throne in it)
+        Chaturaji2027Rules rules = GrandLegionsRules.RulesOf(QuickGame.CustomOf(new BoardSize(26, 26, 18, 6))!);
+        SeatId black = new(0);
+
+        // Act
+        ImmutableList<GameState> dealt =
+        [
+            .. Enumerable.Range(0, 30).Select(seed =>
+                rules.Deal(
+                    rules.CreateInitialState(),
+                    seed,
+                    dealsPalaces: true,
+                    dealsPalacePieces: true,
+                    edition: edition
+                )
+            ),
+        ];
+
+        // Assert - some of Black's palaces off the board's edge, then; every throne and piece a palace holds in its
+        // palace, always
+        Assert.Equal(
+            (isAway, true),
+            (
+                dealt.Any(state => state.Palaces![black].All(cell => cell.Value / 26 > 0 && cell.Value % 26 > 0)),
+                dealt.All(state => state.Palaces!.All(palace => IsHeldIn(state, palace.Key, palace.Value)))
+            )
+        );
+    }
+
+    /// <summary>Whether <paramref name="seat"/>'s throne and every piece of its a palace confines are in it.</summary>
+    private static bool IsHeldIn(GameState state, SeatId seat, ImmutableList<CellId> palace) =>
+        palace.Contains(state.Thrones![seat])
+        && state.Position.Occupants
+            .Where(placed => placed.Value.Owner == seat && PalaceConfinement.Confined.Contains(placed.Value.Kind))
+            .All(placed => palace.Contains(placed.Key));
+
     [Fact]
     public void GuideOf_WhenNeitherRiverNorPalaceHoldsAKind_DrawsItOnAnOpenBoardAlone()
     {

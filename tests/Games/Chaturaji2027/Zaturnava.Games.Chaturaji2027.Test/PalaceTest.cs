@@ -49,6 +49,29 @@ public sealed class PalaceTest
         );
     }
 
+    [Theory]
+    [InlineData(true, AboutB2)]
+    [InlineData(false, AboutC2)]
+    public void Deal_WhenTheDealerPlacesThePalaces_SetsEachWhereItPlacedItElseAboutTheThrone(
+        bool isPlaced,
+        string black
+    )
+    {
+        // Arrange - the dealer placing Black's palace about b2, though its throne, d1, is nearest c2 (the user's word
+        // of 2026-11-19: the palace placed first, then the throne in it); or placing none
+        Chaturaji2027Rules rules = RulesOf(
+            3,
+            4,
+            placed: isPlaced ? [new ArmySquare(1, 1), .. Enumerable.Repeat(new ArmySquare(2, 1), 3)] : []
+        );
+
+        // Act
+        GameState dealt = rules.Deal(rules.CreateInitialState(), 4, dealsPalaces: true);
+
+        // Assert
+        Assert.Equal((black, 4), (Text(dealt.Palaces![Black]), dealt.Palaces.Count));
+    }
+
     [Fact]
     public void Deal_WhenNotDealtWithPalacesOrTheKingdomHasNoRoomOrNoneDrafts_GivesNoPalaces()
     {
@@ -587,7 +610,8 @@ public sealed class PalaceTest
         int width,
         ImmutableHashSet<PieceKindId>? palaceBound = null,
         List<ArmyDealing>? dealt = null,
-        List<ArmyFill>? filled = null
+        List<ArmyFill>? filled = null,
+        ImmutableList<ArmySquare>? placed = null
     ) =>
         new(
             DiceProfile.WeightedSixSided,
@@ -600,6 +624,7 @@ public sealed class PalaceTest
                     dealt?.Add(dealing);
                     return Chaturaji2027Setup.Start;
                 },
+                PalaceDealer = placed is null ? null : _ => placed,
                 Drafting = new Drafting(
                     6,
                     [

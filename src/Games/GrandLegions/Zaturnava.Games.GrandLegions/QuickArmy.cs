@@ -66,6 +66,16 @@ public static class QuickArmy
     /// </summary>
     public const int HeldLeadersEdition = 12;
 
+    /// <summary>
+    /// The edition (<see cref="QuickGame.Edition"/>) from which an army dealt a palace has it placed first, anywhere
+    /// in its kingdom it may stand, at random (<see cref="PalacesDealt"/>), then its throne on any square of it, as an
+    /// army filled at random in a palace placed before is (the user's words of 2026-11-19: in a kingdom wide or deep
+    /// enough, a palace need not stand against any edge of the board; the palace first, then the throne in it);
+    /// before it, the throne was laid out on the back rank, and the palace about it stood against the board's edge. A
+    /// game dealt before replays as it was.
+    /// </summary>
+    public const int PalacesAnywhereEdition = 13;
+
     /// <summary>How much of its kingdom, in hundredths, an army aims to fill (Stated, E2: at least 80%).</summary>
     public const int OccupiedPercent = 80;
 
@@ -221,11 +231,40 @@ public static class QuickArmy
     {
         game = game with { Budget = budget ?? BudgetOf(game) };
         Random random = new(seed);
+        ImmutableList<ArmySquare> palaces = PalacesDealt(game, seed, areAlike);
         ImmutableList<ImmutableList<ArmyPiece>> armies =
         [
-            .. Enumerable.Range(0, Pinwheel.SeatCount).Select(_ => Layout(game, Pick(game, random), random)),
+            .. Enumerable.Range(0, Pinwheel.SeatCount).Select(seat =>
+                Layout(
+                    game,
+                    Pick(game, random),
+                    random,
+                    palaces.IsEmpty ? null : PalaceSquares.Window(palaces[seat])
+                )
+            ),
         ];
         return Pinwheel.EachOwn(game.Width, game.Height, areAlike ? [.. armies.Select(_ => armies[0])] : armies);
+    }
+
+    /// <summary>
+    /// The centre of each seat's palace, in seat order, as seat 0 sees its kingdom, as <paramref name="seed"/> deals
+    /// them from <see cref="PalacesAnywhereEdition"/> on: any square of the kingdom a palace may stand about, at
+    /// random, the first seat's for every seat if <paramref name="areAlike"/>; none, in a game dealt no palaces, or
+    /// before.
+    /// Drawn apart from the armies, so that the rules find the same palaces the armies were laid out in.
+    /// </summary>
+    public static ImmutableList<ArmySquare> PalacesDealt([Required] QuickGame game, int seed, bool areAlike)
+    {
+        if (!game.HasPalaces || game.Edition < PalacesAnywhereEdition)
+        {
+            return [];
+        }
+
+        Random random = new(~seed);
+        ImmutableList<ArmySquare> centres = Centres(game);
+        ImmutableList<ArmySquare> drawn =
+            [.. Enumerable.Range(0, Pinwheel.SeatCount).Select(_ => centres[random.Next(centres.Count)])];
+        return areAlike ? [.. drawn.Select(_ => drawn[0])] : drawn;
     }
 
     public static ImmutableList<GrandPiece> Pick([Required] QuickGame game, [Required] Random random)

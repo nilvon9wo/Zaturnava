@@ -121,6 +121,15 @@ internal sealed class ArmyDrafting
             throne => this.Around(throne.Key, this._kingdoms[throne.Key][throne.Value], this.Centres(atEdge))
         );
 
+    /// <summary>
+    /// Each seat's palace about its square of <paramref name="centres"/>, in seat order, as the dealer placed them
+    /// (<see cref="Chaturaji2027Variant.PalaceDealer"/>).
+    /// </summary>
+    public ImmutableDictionary<SeatId, ImmutableList<CellId>> PalacesAbout(ImmutableList<ArmySquare> centres) =>
+        centres
+            .Select((centre, seat) => (Seat: new SeatId(seat), Centre: centre))
+            .ToImmutableDictionary(placed => placed.Seat, placed => this.PalaceOf(placed.Seat, placed.Centre));
+
     private ImmutableList<ArmySquare> Centres(bool atEdge) => atEdge ? this._edgeCentres : this._centres;
 
     /// <summary>The squares a palace may stand about in the game.</summary>

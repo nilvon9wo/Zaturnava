@@ -446,6 +446,33 @@ public sealed class QuickArmyTest
         );
     }
 
+    [Theory]
+    [InlineData(false, false, 0)]
+    [InlineData(true, false, 4)]
+    [InlineData(true, true, 1)]
+    public void PalacesDealt_FromItsEdition_PlacesEachSeatsAtRandomOrNoneWithoutPalaces(
+        bool hasPalaces,
+        bool areAlike,
+        int distinct
+    )
+    {
+        // Arrange - kingdoms 18 x 6, with room for a palace about 64 squares
+        QuickGame game = QuickGame.CustomOf(new BoardSize(26, 26, 18, 6))! with
+        {
+            HasPalaces = hasPalaces,
+            Edition = QuickArmy.PalacesAnywhereEdition,
+        };
+
+        // Act
+        ImmutableList<ArmySquare> dealt = QuickArmy.PalacesDealt(game, 5, areAlike);
+
+        // Assert
+        Assert.Equal(
+            (hasPalaces ? 4 : 0, distinct, true),
+            (dealt.Count, dealt.Distinct().Count(), dealt.All(PalaceSquares.Centres(game.Kingdom).Contains))
+        );
+    }
+
     private static bool IsLeader(ArmyPiece piece) => GrandLegionsRules.Leaders.Contains(piece.Kind);
 
     [Fact]

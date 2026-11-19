@@ -35,10 +35,11 @@ public static class ScenarioStart
     /// Tafl custodians hold with allies and go berserk (2026-11-18); 9, since an army filled at random keeps the palace
     /// its player placed (2026-11-19); 10, since an army aims at a composition and a budget for it, its pieces drawn
     /// the rarer the further their price from their class's commonest (the same day); 11, since it gained the
-    /// Evangelist (the same day); 12, since a second leader a palace holds starts in its palace (the same day). A game
-    /// dealt before says none, and is 0.
+    /// Evangelist (the same day); 12, since a second leader a palace holds starts in its palace (the same day); 13,
+    /// since an army's palace is dealt anywhere in its kingdom, not always against the board's edge (the same day). A
+    /// game dealt before says none, and is 0.
     /// </summary>
-    public const int Edition = 12;
+    public const int Edition = 13;
 
     private const string Argument = "scenario";
     private const string SeedArgument = "seed";
