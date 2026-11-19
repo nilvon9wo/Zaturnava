@@ -106,6 +106,11 @@ public sealed record QuickGame(
     public bool HasEdgePalaces { get; init; }
 
     /// <summary>
+    /// Whether its armies are dealt palaces: not unless a game is dealt them (<see cref="ArmyDealing.HasPalaces"/>).
+    /// </summary>
+    public bool HasPalaces { get; init; }
+
+    /// <summary>
     /// The edition of the catalogue its armies are picked from (<see cref="GrandPiece.Edition"/>): the first, 0,
     /// unless a game is dealt another (<see cref="ArmyDealing.Edition"/>).
     /// </summary>

@@ -204,6 +204,13 @@ public sealed record Chaturaji2027Variant(
     public Func<ArmyDealing, ImmutableList<Placement>>? Dealer { get; init; }
 
     /// <summary>
+    /// Where <see cref="Dealer"/> placed each seat's palace, as the same dealing deals it: the centre of each, in seat
+    /// order, as seat 0 sees its kingdom; none, where the palaces stand about the thrones dealt
+    /// (<see cref="ArmyDrafting.PalacesAround"/>), as they always did before. None, unless set.
+    /// </summary>
+    public Func<ArmyDealing, ImmutableList<ArmySquare>>? PalaceDealer { get; init; }
+
+    /// <summary>
     /// The terrain a game dealt by a seed is dealt (<see cref="GameState.Terrain"/>), as the variant numbers its
     /// terrains; null, if every game is played on the board as it is.
     /// </summary>

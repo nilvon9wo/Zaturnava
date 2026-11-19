@@ -153,11 +153,22 @@ public static class GrandLegionsRules
                     Rivers = QuickTerrain.RiversOf(dealing.Terrain),
                     HasPalacePieces = dealing.HasPalacePieces,
                     HasEdgePalaces = dealing.HasEdgePalaces,
+                    HasPalaces = dealing.HasPalaces,
                     Edition = dealing.Edition,
                 },
                 dealing.Seed,
                 dealing.AreAlike,
                 dealing.Budget
+            ),
+            PalaceDealer = dealing => QuickArmy.PalacesDealt(
+                game with
+                {
+                    HasPalaces = dealing.HasPalaces,
+                    HasEdgePalaces = dealing.HasEdgePalaces,
+                    Edition = dealing.Edition,
+                },
+                dealing.Seed,
+                dealing.AreAlike
             ),
             TerrainDealer = QuickTerrain.Dealt,
             Drafting = QuickDraft.Of(game),

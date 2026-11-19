@@ -17,6 +17,12 @@ public sealed record ArmyDealing(int Seed, bool AreAlike, int Terrain, bool HasP
     /// </summary>
     public bool HasEdgePalaces { get; init; }
 
+    /// <summary>
+    /// Whether each army is dealt a palace, about its throne (<see cref="GameState.Palaces"/>), so that its dealer may
+    /// place the palace first, and the throne in it.
+    /// </summary>
+    public bool HasPalaces { get; init; }
+
     /// <summary>The edition of the pieces its armies are drawn from (<see cref="GameState.Edition"/>).</summary>
     public int Edition { get; init; }
 

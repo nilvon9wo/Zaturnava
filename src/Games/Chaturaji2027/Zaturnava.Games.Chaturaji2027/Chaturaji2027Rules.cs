@@ -298,24 +298,24 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             ? drafting
             : null;
         bool hasPalacePieces = dealsPalacePieces && palaced is not null;
-        Chaturaji2027Variant dealt = this._variant with
+        ArmyDealing dealing = new(seed, areAlike, terrain, hasPalacePieces)
         {
-            Start = dealer(
-                new ArmyDealing(seed, areAlike, terrain, hasPalacePieces)
-                {
-                    HasEdgePalaces = palaced is not null && dealsEdgePalaces,
-                    Edition = edition,
-                    Budget = budget,
-                }
-            ),
+            HasEdgePalaces = palaced is not null && dealsEdgePalaces,
+            HasPalaces = palaced is not null,
+            Edition = edition,
+            Budget = budget,
         };
+        Chaturaji2027Variant dealt = this._variant with { Start = dealer(dealing) };
         Position position = dealt.InitialPosition(this._grid);
         ImmutableDictionary<SeatId, CellId> thrones = dealt.Thrones(this._grid);
+        ImmutableList<ArmySquare> placed = this._variant.PalaceDealer?.Invoke(dealing) ?? [];
         return initial with
         {
             Position = position,
             Thrones = thrones,
-            Palaces = palaced?.PalacesAround(thrones, dealsEdgePalaces),
+            Palaces = palaced is null ? null
+                : placed.IsEmpty ? palaced.PalacesAround(thrones, dealsEdgePalaces)
+                : palaced.PalacesAbout(placed),
             HasPalacePieces = hasPalacePieces,
             HasEdgePalaces = palaced is not null && dealsEdgePalaces,
             Edition = edition,
