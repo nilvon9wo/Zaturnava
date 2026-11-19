@@ -87,6 +87,29 @@ internal static class Ransoms
     }
 
     /// <summary>
+    /// Seat 0's turn, with its Pawn 40 on cell 7, which it may promote into any of the <paramref name="captured"/>,
+    /// each a piece it holds, numbered from 80; or not at all (a pass).
+    /// </summary>
+    public static DecisionRequest PromotingInto(params (string Kind, SeatId Owner)[] captured)
+    {
+        ImmutableList<Prisoner> held =
+        [
+            .. captured.Select((piece, index) => Held(80 + index, piece.Kind, piece.Owner, Black)),
+        ];
+        ImmutableDictionary<GameAction, int> actions = held.Aggregate(
+            ImmutableDictionary<GameAction, int>.Empty.Add(new PassAction(Black), 0),
+            (added, prisoner) => added.Add(new PromoteAction(Black, new CellId(7), prisoner.Piece.Id), 0)
+        );
+        ScoringRules rules = new(actions);
+        GameState state = Request().State with
+        {
+            Position = Position.Empty.Place(new CellId(7), new Piece(Id(40), new PieceKindId("pawn"), Black)),
+            Prisoners = held,
+        };
+        return new DecisionRequest(rules, state, Black, rules.LegalActions(state));
+    }
+
+    /// <summary>
     /// Seat 0's turn, with its Pawn 40 on cell 7, which its own promotion may make a Horse or an Elephant, or not
     /// at all (a pass).
     /// </summary>
