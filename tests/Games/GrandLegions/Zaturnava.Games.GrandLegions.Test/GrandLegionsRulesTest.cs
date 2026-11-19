@@ -1028,7 +1028,8 @@ public sealed class GrandLegionsRulesTest
     [InlineData("western-king", "Castling")]
     [InlineData("janggi-general", "Off the throne,Face-off")]
     [InlineData("evangelist", "Converting")]
-    [InlineData("tafl-king", "Escape")]
+    [InlineData("tafl-king", "Escape,Berserk")]
+    [InlineData("swede", "Berserk")]
     [InlineData("knight", "")]
     public void GuideOf_WhenAKindHasSpecialPowers_DrawsEachAtWork(string kind, string names)
     {
@@ -1120,12 +1121,16 @@ public sealed class GrandLegionsRulesTest
         // Act
         MoveDiagram diagram = rules.GuideOf(new PieceKindId(kind)).Diagram;
 
-        // Assert - and gone berserk, the same, with another held just to its right (the user's report of 2026-11-19)
+        // Assert - and gone berserk, drawn apart: an enemy on its throne, a piece of its own side taken with an enemy
+        // (the user's report of 2026-11-19: berserk only seemed to repeat its capture)
+        MoveDiagram berserk = diagram.Alternates.Single(other => other.Name == "Berserk").Diagram;
         Assert.Equal(
-            (new CustodyExample(landing, taken, partner), "58:67:76,58:59:60"),
+            (new CustodyExample(landing, taken, partner), "13", "67", "67,59"),
             (
                 diagram.Custody,
-                string.Join(",", diagram.Berserk.Select(held => $"{held.Landing}:{held.Taken}:{held.Partner}"))
+                string.Join(",", berserk.Marks.Single(mark => mark.Mark == CellMark.OnThrone).Cells),
+                string.Join(",", berserk.Marks.Single(mark => mark.Mark == CellMark.TakenFriend).Cells),
+                string.Join(",", berserk.Example?.Taken ?? [])
             )
         );
     }

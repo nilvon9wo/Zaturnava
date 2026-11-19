@@ -7,8 +7,10 @@ namespace Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
 /// Each special power a kind has, drawn at work beside its moves (the user's report of 2026-11-19: "all pieces with
 /// special powers need their powers illustrated"), on the same <see cref="MoveDiagrams.Side"/>-cell board, the piece
 /// on its centre, facing up: the two-cell first move and <i>en passant</i>, castling, the flying general, the
-/// face-off, converting, escape and the back-to-back swap. Each is one example, its cells marked with what they mean;
-/// where the piece goes in it, played. Capture by custody, and its berserk, the kind's captures show already.
+/// face-off, converting, escape, the back-to-back swap, and berserk - a drawback, not a power, drawn apart from its
+/// captures, its own side's pieces and its enemies in their colours (the user's report of 2026-11-19: berserk drawn
+/// with its captures only seemed to repeat them). Each is one example, its cells marked with what they mean; where
+/// the piece goes in it, played.
 /// </summary>
 internal sealed class PowerDiagrams(Chaturaji2027Variant variant, Func<PieceKindId, string> nameOf)
 {
@@ -99,6 +101,17 @@ internal sealed class PowerDiagrams(Chaturaji2027Variant variant, Func<PieceKind
                 + "where no one can take it, to come back on doubles.",
             null,
             new CellMark(CellMark.Lands, "its own far corner: from here it may leave the board", [At(Middle, Middle)])
+        ));
+        yield return (variant.Custodians.Contains(kind), Power(
+            "Berserk",
+            "While an enemy holds its throne, it goes berserk: landing, it takes every piece held between it and "
+                + "any other piece, friend or foe, its own side's too.",
+            new PlayedExample(At(0, 2), [At(0, 3), At(1, 2)]),
+            new CellMark(CellMark.OnThrone, "an enemy on its throne", [At(0, -3)]),
+            new CellMark(CellMark.Lands, "it lands here", [At(0, 2)]),
+            new CellMark(CellMark.TakenFriend, "a piece of its own side, held: taken", [At(0, 3)]),
+            new CellMark(CellMark.Taken, "an enemy, held: taken", [At(1, 2)]),
+            new CellMark(CellMark.StandingFoe, "enemies holding them with it", [At(0, 4), At(2, 2)])
         ));
         yield return (variant.Swappers.Contains(kind), Power(
             "Swap",

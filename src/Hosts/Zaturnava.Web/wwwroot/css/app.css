@@ -726,7 +726,7 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
     border-radius: 50%;
 }
 .move-diagram .move::before, .diagram-key .move::before { inset: 34%; background: var(--mark); }
-.move-diagram .capture::after, .diagram-key .capture::after { inset: 8%; border: 2px solid var(--danger); }
+.move-diagram .capture::after, .diagram-key .capture::after { inset: 8%; border: 2px solid var(--foe, var(--danger)); }
 .move-diagram .screen::before, .diagram-key .screen::before { inset: 14%; background: var(--muted); }
 /* A square it leaps to, over anything between: its dot hollow, a ring, where a square it slides to has a full dot. */
 .move-diagram .move.leap::before, .diagram-key .move.leap::before {
@@ -783,11 +783,25 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
 .move-diagram .move.obstructed::before { animation: fade-out 0.6s ease-in; }
 .move-diagram .capture.obstructed::after, .diagram-key .capture.obstructed::after { opacity: 0.2; }
 .move-diagram .capture.obstructed::after { animation: fade-out 0.6s ease-in; }
-/* A capture by custody: the enemy taken, a disc in the danger colour that fades and comes back, over and over; the
-   piece of its side beyond, in the mark colour. */
-.move-diagram .taken::before, .diagram-key .taken::before { background: var(--danger); }
+/* A capture by custody: the enemy taken, a disc in an enemy seat's colour that fades and comes back, over and over;
+   the piece of its side beyond, in its own seat's colour (the user's report of 2026-11-19: not red whoever captures).
+   Gone berserk, a piece of its own side taken, in its colour; an enemy holding it, in the enemy's; an enemy on its
+   throne, ringed. Each disc edged, for a Black one on a dark board. */
+.move-diagram .taken::before, .diagram-key .taken::before { background: var(--foe, var(--danger)); }
 .move-diagram .taken::before { animation: taken 2.4s ease-in-out infinite; }
-.move-diagram .partner::before, .diagram-key .partner::before { background: var(--mark); }
+.move-diagram .partner::before, .diagram-key .partner::before { background: var(--own, var(--mark)); }
+.move-diagram .taken.friend::before, .diagram-key .taken.friend::before { background: var(--own, var(--mark)); }
+.move-diagram .partner.foe::before, .diagram-key .partner.foe::before { background: var(--foe, var(--danger)); }
+.move-diagram .taken::before, .diagram-key .taken::before,
+.move-diagram .partner::before, .diagram-key .partner::before,
+.move-diagram .example-taken::before { box-shadow: 0 0 0 1px var(--muted); }
+.move-diagram .on-throne::after, .diagram-key .on-throne::after {
+    content: "";
+    position: absolute;
+    inset: 4%;
+    border: 2px solid var(--accent);
+    border-radius: 3px;
+}
 /* A power at work: the way a piece went, a dashed ring; an enemy won over, a disc in the danger colour ringed in the
    mark colour. */
 .move-diagram .trail::after, .diagram-key .trail::after,
@@ -799,8 +813,8 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
 }
 .move-diagram .trail::after, .diagram-key .trail::after { border: 2px dashed var(--muted); }
 .move-diagram .converted::before, .diagram-key .converted::before {
-    background: var(--danger);
-    box-shadow: 0 0 0 3px var(--mark);
+    background: var(--foe, var(--danger));
+    box-shadow: 0 0 0 3px var(--own, var(--mark));
 }
 .diagram-key .told { flex-basis: 100%; }
 /* An example played (C3): the piece where it stands, then moving, then where it ends, staying there; an enemy it
@@ -824,8 +838,9 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
     width: 72%;
     height: 72%;
     border-radius: 50%;
-    background: var(--danger);
+    background: var(--foe, var(--danger));
 }
+.move-diagram .example-taken.friend::before { background: var(--own, var(--mark)); }
 .move-diagram .example-taken { animation: example-taken 1.8s ease-in forwards; }
 @keyframes example-move {
     0%, 25% { transform: none; }
