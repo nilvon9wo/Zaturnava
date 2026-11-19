@@ -47,15 +47,94 @@ public static class QuickArmy
     /// </summary>
     public const int ThroneKeptEdition = 9;
 
+    /// <summary>
+    /// The edition (<see cref="QuickGame.Edition"/>) from which an army aims at a composition (playtest 2026-11-15,
+    /// E1 to E3; <see cref="TargetOf"/>): a leader for each <see cref="PiecesPerLeader"/> pieces, about half infantry,
+    /// the rest even among heavies, cavalry and artillery, filling at least <see cref="OccupiedPercent"/> of its
+    /// kingdom; its budget what that composition costs at its classes' average prices
+    /// (<see cref="CompositionBudget"/>); and each piece of a class drawn the less often the further its price lies
+    /// from the class's commonest (<see cref="WeightOf"/>): dear pieces seldom, the cheapest seldom too. A game dealt
+    /// before replays as it was.
+    /// </summary>
+    public const int CompositionEdition = 10;
+
+    /// <summary>How much of its kingdom, in hundredths, an army aims to fill (Stated, E2: at least 80%).</summary>
+    public const int OccupiedPercent = 80;
+
+    /// <summary>How many pieces an army has for each leader, at least one (Stated, E1).</summary>
+    public const int PiecesPerLeader = 20;
+
+    /// <summary>
+    /// Where, as a part of its class's median price, a piece is drawn most often (Proposed: a little under the median,
+    /// so that the dearer a piece the rarer, past it).
+    /// </summary>
+    private const double CommonestShare = 0.8;
+
+    /// <summary>
+    /// How fast a piece grows rarer as its price leaves the commonest, in the log of their ratio (Proposed: a piece at
+    /// twice or half the commonest price drawn about three times less often).
+    /// </summary>
+    private const double Spread = 0.45;
+
     /// <summary>The bit left over, past the formula's sum, in hundredths of it (Proposed: a tenth).</summary>
     public const int LeftOverPercent = 10;
 
     /// <summary>
-    /// What each army of the game may spend: from <see cref="FormulaEdition"/> on, <see cref="FormulaBudget"/>;
-    /// before, the game's own budget.
+    /// What each army of the game may spend: from <see cref="CompositionEdition"/> on, <see cref="CompositionBudget"/>;
+    /// from <see cref="FormulaEdition"/>, <see cref="FormulaBudget"/>; before, the game's own budget.
     /// </summary>
     public static int BudgetOf([Required] QuickGame game) =>
-        game.Edition >= FormulaEdition ? FormulaBudget(game) : game.Budget;
+        game.Edition switch
+        {
+            >= CompositionEdition => CompositionBudget(game),
+            >= FormulaEdition => FormulaBudget(game),
+            _ => game.Budget,
+        };
+
+    /// <summary>
+    /// How many pieces an army aims at (E2): <see cref="OccupiedPercent"/> of its kingdom, rounded up; or, if more,
+    /// the game's minimums.
+    /// </summary>
+    public static int AimOf([Required] QuickGame game) =>
+        Math.Max(game.Minimums.Values.Sum(), ((game.Cells * OccupiedPercent) + 99) / 100);
+
+    /// <summary>
+    /// How many of each class an army of <paramref name="count"/> pieces aims at (E1): a leader for each
+    /// <see cref="PiecesPerLeader"/>, rounded up; half infantry, rounded up; the rest even among heavies, cavalry and
+    /// artillery, any odd one to the heavies first, then the cavalry; and never fewer than the game's minimums.
+    /// </summary>
+    public static ImmutableDictionary<PieceClass, int> TargetOf([Required] QuickGame game, int count)
+    {
+        int leaders = (count + PiecesPerLeader - 1) / PiecesPerLeader;
+        int infantry = (count + 1) / 2;
+        int rest = Math.Max(0, count - leaders - infantry);
+        PieceClass[] others = [Heavy, Cavalry, Artillery];
+        return Classes.ToImmutableDictionary(
+            pieceClass => pieceClass,
+            pieceClass => Math.Max(
+                game.Minimums.GetValueOrDefault(pieceClass),
+                pieceClass switch
+                {
+                    Leader => leaders,
+                    Infantry => infantry,
+                    _ => (rest / others.Length) + (Array.IndexOf(others, pieceClass) < rest % others.Length ? 1 : 0),
+                }
+            )
+        );
+    }
+
+    /// <summary>
+    /// What the composition an army aims at (<see cref="TargetOf"/>, of <see cref="AimOf"/> pieces) costs, each piece
+    /// at its class's average price (with no rivers, nor pieces a palace holds; at the board's prices), and
+    /// <see cref="LeftOverPercent"/> more, to the nearest point (E2).
+    /// </summary>
+    public static int CompositionBudget([Required] QuickGame game)
+    {
+        ImmutableList<GrandPiece> eligible =
+            Eligible(game with { Rivers = Rivers.None, HasPalacePieces = false, HasEdgePalaces = false });
+        double sum = TargetOf(game, AimOf(game)).Sum(target => target.Value * Average(eligible, target.Key));
+        return (int)Math.Round(sum * (100 + LeftOverPercent) / 100, MidpointRounding.AwayFromZero);
+    }
 
     /// <summary>
     /// The designer's formula: for each class, the average price of the pieces a quick army of the game may have of it
@@ -144,6 +223,11 @@ public static class QuickArmy
     public static ImmutableList<GrandPiece> Pick([Required] QuickGame game, [Required] Random random)
     {
         ImmutableList<GrandPiece> eligible = Eligible(game);
+        if (game.Edition >= CompositionEdition)
+        {
+            return Composed(game, eligible, [], random);
+        }
+
         int room = RoomOf(game);
         PieceClass[] order =
         [
@@ -169,6 +253,149 @@ public static class QuickArmy
                 )
             );
         return Filled(eligible, drawn, game, random);
+    }
+
+    /// <summary>
+    /// <paramref name="army"/>, and the pieces <see cref="Next"/> adds to it, one at a time, while it adds one.
+    /// </summary>
+    private static ImmutableList<GrandPiece> Composed(
+        QuickGame game,
+        ImmutableList<GrandPiece> eligible,
+        ImmutableList<GrandPiece> army,
+        Random random
+    ) =>
+        Next(game, eligible, army, game.Budget - army.Sum(each => each.Value), random) is { } next
+            ? Composed(game, eligible, army.Add(next), random)
+            : army;
+
+    /// <summary>
+    /// The next piece for <paramref name="army"/>, from <see cref="CompositionEdition"/> on, with
+    /// <paramref name="left"/> still to spend; none, once its kingdom is full or nothing more fits. While the army
+    /// falls
+    /// short of the composition it aims at (<see cref="TargetOf"/> of <see cref="AimOf"/>), a class it lacks, drawn
+    /// as often as it is lacking; past that, a class it lacks for a kingdom full. The piece may cost what is left once
+    /// the classes still lacking are paid for at their cheapest, and no more than its class's share of what is left,
+    /// in proportion to the classes' average prices; past the aim, no more than its class's average and the bit left
+    /// over. Among the pieces of the class that fit, one drawn by <see cref="WeightOf"/>; if none fits, another class
+    /// lacking; the class's cheapest, whatever it costs, while the army has fewer than the game's minimum of it.
+    /// </summary>
+    internal static GrandPiece? Next(
+        [Required] QuickGame game,
+        [Required] ImmutableList<GrandPiece> eligible,
+        [Required] ImmutableList<GrandPiece> army,
+        int left,
+        [Required] Random random
+    )
+    {
+        ImmutableList<GrandPiece> fitting = Fitting(eligible, army, RoomOf(game));
+        ImmutableList<PieceClass> aimed = Lacking(game, fitting, army, AimOf(game));
+        bool isPast = aimed.IsEmpty;
+        ImmutableList<PieceClass> wanted = isPast ? Lacking(game, fitting, army, game.Cells) : aimed;
+        if (army.Count >= game.Cells || wanted.IsEmpty)
+        {
+            return null;
+        }
+
+        PieceClass drawn = wanted[random.Next(wanted.Count)];
+        double prices = wanted.Sum(each => Math.Max(1, Average(eligible, each)));
+        return wanted
+            .Distinct()
+            .OrderBy(each => each != drawn)
+            .Select(Of)
+            .FirstOrDefault(found => found is not null);
+
+        GrandPiece? Of(PieceClass pieceClass)
+        {
+            ImmutableList<PieceClass> later = wanted.Remove(pieceClass);
+            int reserve = isPast ? 0 : later.Sum(each => Cheapest(fitting, each).Value);
+            int share = (int)Math.Round(
+                left * Math.Max(1, Average(eligible, pieceClass)) / prices,
+                MidpointRounding.AwayFromZero
+            );
+            int most = Math.Min(left - reserve, Math.Max(Cheapest(fitting, pieceClass).Value, share));
+            ImmutableList<GrandPiece> fits =
+            [
+                .. fitting.Where(piece =>
+                    piece.Class == pieceClass
+                    && piece.Value <= most
+                    && (!isPast || piece.Value <= MostAdded(eligible, pieceClass))
+                ),
+            ];
+            bool isWanting =
+                army.Count(piece => piece.Class == pieceClass) < game.Minimums.GetValueOrDefault(pieceClass);
+            return (fits.IsEmpty, isWanting) switch
+            {
+                (false, _) => Weighed(fits, Typical(eligible, pieceClass), random),
+                (true, true) => Cheapest(fitting, pieceClass),
+                _ => null,
+            };
+        }
+    }
+
+    /// <summary>
+    /// Each piece <paramref name="army"/> lacks of the composition of <paramref name="count"/> it aims at, a class
+    /// once for each piece of it lacking, in the order of <see cref="Classes"/>; but no class none of whose pieces it
+    /// may still be given.
+    /// </summary>
+    private static ImmutableList<PieceClass> Lacking(
+        QuickGame game,
+        ImmutableList<GrandPiece> fitting,
+        ImmutableList<GrandPiece> army,
+        int count
+    ) =>
+    [
+        .. TargetOf(game, count)
+            .OrderBy(target => Classes.IndexOf(target.Key))
+            .Where(target => fitting.Any(piece => piece.Class == target.Key))
+            .SelectMany(target => Enumerable.Repeat(
+                target.Key,
+                Math.Max(0, target.Value - army.Count(piece => piece.Class == target.Key))
+            )),
+    ];
+
+    /// <summary>
+    /// The median price of the class's pieces among <paramref name="eligible"/>, those that may promote into a leader
+    /// aside (<see cref="Average"/>), as the outliers would skew an average (E3); 1, if none.
+    /// </summary>
+    private static double Typical(ImmutableList<GrandPiece> eligible, PieceClass pieceClass)
+    {
+        ImmutableList<int> prices =
+        [
+            .. eligible
+                .Where(piece => piece.Class == pieceClass && !IsLeaderBound(piece))
+                .Select(piece => piece.Value)
+                .Order()
+                .DefaultIfEmpty(1),
+        ];
+        return (prices[(prices.Count - 1) / 2] + prices[prices.Count / 2]) / 2.0;
+    }
+
+    /// <summary>
+    /// How often, relatively, a piece is drawn among its class (E3): most often at <see cref="CommonestShare"/> of the
+    /// class's <paramref name="typical"/> price, less often the further its price lies from that, either way, by the
+    /// ratio of the two - so that dear pieces are seldom drawn, and the cheapest seldom too.
+    /// </summary>
+    internal static double WeightOf([Required] GrandPiece piece, double typical)
+    {
+        double away = Math.Log(Math.Max(1, piece.Value) / (typical * CommonestShare));
+        return Math.Exp(-(away * away) / (2 * Spread * Spread));
+    }
+
+    /// <summary>One of <paramref name="pieces"/>, drawn by <see cref="WeightOf"/>.</summary>
+    private static GrandPiece Weighed(ImmutableList<GrandPiece> pieces, double typical, Random random)
+    {
+        ImmutableList<double> weights = [.. pieces.Select(piece => WeightOf(piece, typical))];
+        double at = random.NextDouble() * weights.Sum();
+        for (int index = 0; index < pieces.Count - 1; index++)
+        {
+            at -= weights[index];
+            if (at < 0)
+            {
+                return pieces[index];
+            }
+        }
+
+        return pieces[^1];
     }
 
     /// <summary>
@@ -237,8 +464,11 @@ public static class QuickArmy
     )
     {
         ImmutableList<ArmySquare> backToFront = game.Kingdom;
-        ImmutableList<GrandPiece> others =
-            Shuffled(army.Where(piece => piece.Class is not Infantry and not Leader && !IsHeld(piece)), random);
+        int crowned = army.FindIndex(piece => piece.Class == Leader);
+        ImmutableList<GrandPiece> others = Shuffled(
+            army.Where((piece, index) => index != crowned && piece.Class != Infantry && !IsHeld(piece)),
+            random
+        );
         ArmySquare? kept = placed is null ? null : ThroneIn(placed, game, random);
         int dealt = kept is null && game.HasNeutralZone
             ? random.Next(Math.Min(game.KingdomWidth - 1, others.Count) + 1)
@@ -256,7 +486,7 @@ public static class QuickArmy
                 others.Count,
                 backToFront.TakeWhile(square => square != seat).Count(square => !palace.Contains(square))
             );
-        ImmutableList<GrandPiece> rear = others.Insert(throne, army.Single(piece => piece.Class == Leader));
+        ImmutableList<GrandPiece> rear = others.Insert(throne, army[crowned]);
         ImmutableList<ArmySquare> squares =
         [
             .. backToFront.Where(square => square != seat && !palace.Contains(square)).Take(throne),
@@ -269,12 +499,23 @@ public static class QuickArmy
             .. infantry.Select((piece, index) => At(piece, squares[squares.Count - 1 - index])),
             .. held.Zip(palace).Select(inPalace => At(inPalace.First, inPalace.Second)),
         ];
-        return Enumerable.Range(0, laid.Count).Aggregate(
+        ImmutableList<ArmyPiece> balanced = Enumerable.Range(0, laid.Count).Aggregate(
             laid,
             (spread, index) => game.Edition >= ThroneKeptEdition && ClassOf(spread[index]) == Leader
                 ? spread
                 : Balanced(spread, index)
         );
+        return game.Edition >= CompositionEdition ? Crowned(balanced, seat) : balanced;
+    }
+
+    /// <summary>
+    /// The army, the leader on <paramref name="seat"/> first: the throne is where an army's first leader starts, and
+    /// from <see cref="CompositionEdition"/> on an army may have several.
+    /// </summary>
+    private static ImmutableList<ArmyPiece> Crowned(ImmutableList<ArmyPiece> army, ArmySquare seat)
+    {
+        int at = army.FindIndex(piece => piece.Column == seat.Column && piece.Row == seat.Row);
+        return [army[at], .. army.RemoveAt(at)];
     }
 
     /// <summary>The palace about <paramref name="seat"/>, as the program would place it.</summary>

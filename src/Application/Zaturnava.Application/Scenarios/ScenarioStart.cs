@@ -33,9 +33,11 @@ public static class ScenarioStart
     /// is played jump by jump (the same day); 7, since the Guard is priced as the Minister (the same day); 8, since a
     /// Xiangqi Elephant's river is the one where it stands, palace-bound pieces go home within their palace, and the
     /// Tafl custodians hold with allies and go berserk (2026-11-18); 9, since an army filled at random keeps the palace
-    /// its player placed (2026-11-19). A game dealt before says none, and is 0.
+    /// its player placed (2026-11-19); 10, since an army aims at a composition and a budget for it, its pieces drawn
+    /// the rarer the further their price from their class's commonest (the same day). A game dealt before says none,
+    /// and is 0.
     /// </summary>
-    public const int Edition = 9;
+    public const int Edition = 10;
 
     private const string Argument = "scenario";
     private const string SeedArgument = "seed";

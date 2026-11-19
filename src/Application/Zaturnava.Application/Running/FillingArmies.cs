@@ -71,7 +71,8 @@ public sealed class FillingArmies([Required] IDeciding bot) : IDeciding
 
     /// <summary>
     /// The <paramref name="piece"/> the fill would buy, or, on any square but the throne (its leader's), a stronger
-    /// one there that the budget can pay for, keeping enough for the rest of the fill's army (Proposed; the user's
+    /// one of its class there (so that the army keeps the composition the fill aims at: playtest 2026-11-15, E1) that
+    /// the budget can pay for, keeping enough for the rest of the fill's army (Proposed; the user's
     /// reports of 2026-11-12, of bots buying cheap pieces with a large budget, and that the dearest piece is not
     /// always the strongest: a Shogi Pawn is dear for the leader it may become). Strength is what the piece does on
     /// the board, its reach (<see cref="ReachOf"/>), not its price; and, so that armies differ, it is drawn at random
@@ -89,10 +90,15 @@ public sealed class FillingArmies([Required] IDeciding bot) : IDeciding
             .Where(entry => entry.Value.Owner == request.Seat && request.State.Position.PieceAt(entry.Key) is null)
             .Sum(entry => rules.WorthOf(entry.Value.Kind));
         int most = rules.WorthOf(piece.Piece) + request.State.Draft!.Left[request.Seat] - spent;
+        string? pieceClass = rules.GuideOf(piece.Piece).Class;
         ImmutableList<(DraftAction Action, int Reach)> affordable =
         [
             .. request.LegalActions.OfType<DraftAction>()
-                .Where(action => action.Cell == piece.Cell && rules.WorthOf(action.Piece) <= most)
+                .Where(action =>
+                    action.Cell == piece.Cell
+                    && rules.WorthOf(action.Piece) <= most
+                    && rules.GuideOf(action.Piece).Class == pieceClass
+                )
                 .Select(action => (action, ReachOf(rules, action.Piece))),
         ];
         int strongest = affordable.Max(each => each.Reach);

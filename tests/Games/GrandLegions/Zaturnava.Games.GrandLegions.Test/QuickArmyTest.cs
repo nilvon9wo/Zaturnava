@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
+using Net.NowhereAtAll.Zaturnava.Engine.Rules;
 using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 using Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
 using static Net.NowhereAtAll.Zaturnava.Games.GrandLegions.GrandLegionsPieces;
@@ -99,6 +100,177 @@ public sealed class QuickArmyTest
             Assert.True(army.Sum(piece => piece.Value) <= budget);
             _ = Assert.Single(army, piece => piece.Class == Leader);
         });
+    }
+
+    [Theory]
+    [InlineData("grand-legions-small", 8)]
+    [InlineData("grand-legions-medium", 8)]
+    [InlineData("grand-legions-large", 16)]
+    [InlineData("grand-legions-custom", 10)]
+    public void AimOf_ForEachQuickGame_IsFourFifthsOfItsKingdomRoundedUpOrItsMinimumsIfMore(string id, int expected)
+    {
+        // Arrange - kingdoms of 9, 8, 18 and 12 squares, with 6, 8, 16 and 9 pieces at least (playtest 2026-11-15, E2)
+        QuickGame game = QuickGame.All.Single(quick => quick.Id == id);
+
+        // Act
+        int aim = QuickArmy.AimOf(game);
+
+        // Assert
+        Assert.Equal(expected, aim);
+    }
+
+    [Theory]
+    [InlineData(8, "1,1,1,1,4")]
+    [InlineData(21, "2,3,3,2,11")]
+    [InlineData(30, "2,5,4,4,15")]
+    public void TargetOf_ACount_IsALeaderPerTwentyHalfInfantryAndTheRestEvenlyButNeverBelowTheMinimums(
+        int count,
+        string expected
+    )
+    {
+        // Arrange - the small game, at least a leader, a heavy, a cavalry and three infantry (E1)
+        QuickGame game = QuickGame.Small;
+
+        // Act
+        ImmutableDictionary<PieceClass, int> target = QuickArmy.TargetOf(game, count);
+
+        // Assert - leaders, heavies, cavalry, artillery, infantry
+        Assert.Equal(
+            expected,
+            string.Join(",", new[] { Leader, Heavy, Cavalry, Artillery, Infantry }.Select(each => target[each]))
+        );
+    }
+
+    [Fact]
+    public void TargetOf_WhenTheMinimumsAskForMore_KeepsTheMinimums()
+    {
+        // Arrange - the large game, at least 3 heavies, 2 cavalry, 2 artillery and 8 infantry
+        QuickGame game = QuickGame.Large;
+
+        // Act
+        ImmutableDictionary<PieceClass, int> target = QuickArmy.TargetOf(game, 4);
+
+        // Assert
+        Assert.Equal(
+            "1,3,2,2,8",
+            string.Join(",", new[] { Leader, Heavy, Cavalry, Artillery, Infantry }.Select(each => target[each]))
+        );
+    }
+
+    [Theory]
+    [MemberData(nameof(Games))]
+    public void BudgetOf_FromTheCompositionEdition_IsWhatItsCompositionCostsAtAveragePrices(string id)
+    {
+        // Arrange
+        QuickGame game = QuickGame.All.Single(quick => quick.Id == id) with { Edition = QuickArmy.CompositionEdition };
+
+        // Act
+        int budget = QuickArmy.BudgetOf(game);
+
+        // Assert - at least the formula's, as the composition has at least the minimums
+        Assert.Equal(QuickArmy.CompositionBudget(game), budget);
+        Assert.True(budget >= QuickArmy.FormulaBudget(game));
+    }
+
+    [Theory]
+    [MemberData(nameof(Games))]
+    public void Pick_FromTheCompositionEdition_FillsFourFifthsOfTheKingdomInTheCompositionAimedAtWithinTheBudget(
+        string id
+    )
+    {
+        // Arrange
+        QuickGame game = QuickGame.All.Single(quick => quick.Id == id) with { Edition = QuickArmy.CompositionEdition };
+        game = game with { Budget = QuickArmy.BudgetOf(game) };
+        ImmutableDictionary<PieceClass, int> target = QuickArmy.TargetOf(game, QuickArmy.AimOf(game));
+
+        // Act
+        ImmutableList<ImmutableList<GrandPiece>> armies = [.. Seeds.Select(seed => QuickArmy.Pick(game, new(seed)))];
+
+        // Assert
+        Assert.All(armies, army =>
+        {
+            Assert.InRange(army.Count, QuickArmy.AimOf(game), game.Cells);
+            Assert.All(target, aim => Assert.True(army.Count(piece => piece.Class == aim.Key) >= aim.Value));
+            Assert.True(army.Sum(piece => piece.Value) <= game.Budget);
+            Assert.All(army, piece => Assert.Contains(piece, QuickArmy.Eligible(game)));
+        });
+    }
+
+    [Theory]
+    [InlineData(Infantry)]
+    [InlineData(Heavy)]
+    [InlineData(Cavalry)]
+    public void Pick_FromTheCompositionEdition_DrawsTheDearestAndTheCheapestOfAClassSeldom(PieceClass pieceClass)
+    {
+        // Arrange - the large game: its class's pieces, by price (E3)
+        QuickGame game = QuickGame.Large with { Edition = QuickArmy.CompositionEdition };
+        game = game with { Budget = QuickArmy.BudgetOf(game) };
+        ImmutableList<int> prices =
+        [
+            .. QuickArmy.Eligible(game)
+                .Where(piece => piece.Class == pieceClass)
+                .Select(piece => piece.Value)
+                .Order(),
+        ];
+
+        // Act
+        ImmutableDictionary<int, int> counts = Enumerable.Range(0, 300)
+            .SelectMany(seed => QuickArmy.Pick(game, new(seed)))
+            .Where(piece => piece.Class == pieceClass)
+            .GroupBy(piece => piece.Value)
+            .ToImmutableDictionary(price => price.Key, price => price.Count());
+
+        // Assert - the price drawn most often lies strictly between the cheapest and the dearest
+        int commonest = counts.MaxBy(price => price.Value).Key;
+        Assert.InRange(commonest, prices[0] + 1, prices[^1] - 1);
+        Assert.True(counts.GetValueOrDefault(prices[^1]) < counts[commonest] / 4);
+    }
+
+    [Fact]
+    public void Pick_FromTheCompositionEditionForAKingdomOfMoreThanTwentyPieces_GivesALeaderForEachTwenty()
+    {
+        // Arrange - a custom game of kingdoms 8 × 4: 26 pieces aimed at, so 2 leaders
+        QuickGame game = QuickGame.CustomOf(new BoardSize(20, 20, 8, 4))! with
+        {
+            Edition = QuickArmy.CompositionEdition,
+        };
+        game = game with { Budget = QuickArmy.BudgetOf(game) };
+        ImmutableList<GrandPiece> army = QuickArmy.Pick(game, new(4));
+
+        // Act
+        ImmutableList<ArmyPiece> laid = QuickArmy.Layout(game, army, new(4));
+
+        // Assert - the throne the first leader's square, in the back rank
+        Assert.True(army.Count(piece => piece.Class == Leader) >= 2);
+        Assert.Equal(Leader, GrandLegionsPieces.ById[laid[0].Kind].Class);
+        Assert.Equal(0, laid[0].Row);
+    }
+
+    [Fact]
+    public void Pick_FromTheCompositionEditionWhenTheBudgetIsTight_KeepsTheMinimumsCheapestAndStops()
+    {
+        // Arrange - the cheapest leader and heavy cost 65 and 12, and only 10 to spend
+        QuickGame game = Tight(10) with { Edition = QuickArmy.CompositionEdition };
+
+        // Act
+        ImmutableList<GrandPiece> army = QuickArmy.Pick(game, new(3));
+
+        // Assert
+        Assert.Equal([Bishop, SilverGeneral], army.Select(piece => piece.Id).OrderBy(Name));
+    }
+
+    [Fact]
+    public void Pick_FromTheCompositionEditionWhenTheBudgetIsLarge_FillsTheKingdomPastTheAim()
+    {
+        // Arrange - the small game, ten times its budget
+        QuickGame game = QuickGame.Small with { Edition = QuickArmy.CompositionEdition };
+        game = game with { Budget = QuickArmy.BudgetOf(game) * 10 };
+
+        // Act
+        ImmutableList<GrandPiece> army = QuickArmy.Pick(game, new(2));
+
+        // Assert
+        Assert.Equal(game.Cells, army.Count);
     }
 
     [Theory]

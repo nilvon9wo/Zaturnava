@@ -193,10 +193,14 @@ internal sealed class TinyRules(int length, bool isDealt = false, Exception? fai
     /// <summary>How many squares each kind's card shows it reaching; none, for a kind not here.</summary>
     public ImmutableDictionary<PieceKindId, int> Reaches { get; init; } = [];
 
+    /// <summary>The class of each kind that has one, as its guide tells it; none, for any other.</summary>
+    public ImmutableDictionary<PieceKindId, string> Classes { get; init; } = [];
+
     public PieceGuide GuideOf(PieceKindId kind) =>
         new(new PieceKind(kind, []))
         {
             Diagram = new MoveDiagram(9, [.. Enumerable.Range(0, this.Reaches.GetValueOrDefault(kind))], [], []),
+            Class = this.Classes.GetValueOrDefault(kind),
         };
 
     /// <summary>What a King is worth; every other kind is worth 1.</summary>

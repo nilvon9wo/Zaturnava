@@ -83,6 +83,25 @@ public sealed class FillingArmiesTest
     }
 
     [Fact]
+    public async Task Decide_WhenTheStrongerPieceIsOfAnotherClass_KeepsTheClassTheFillChose()
+    {
+        // Arrange - the fill would add a Pawn, infantry; the King, stronger and paid for, is a leader (playtest
+        // 2026-11-15, E1: the army keeps the composition the fill aims at)
+        TinyRules rules = Strengths(
+            Free,
+            8,
+            1,
+            ImmutableDictionary<PieceKindId, string>.Empty.Add(TinyRules.King, "Leader").Add(TinyRules.Pawn, "Infantry")
+        );
+
+        // Act
+        GameAction action = await this.Decided(rules, Throned(rules, 5), Offered(Free));
+
+        // Assert
+        Assert.Equal("Pawn", ((DraftAction)action).Piece.Value);
+    }
+
+    [Fact]
     public async Task Decide_WhenSeveralItPaysForAreNearlyAsStrong_DraftsNowOneNowAnother()
     {
         // Arrange - a King (5) reaching 8 squares, a Pawn (1) reaching 7: nearly as strong
@@ -99,10 +118,19 @@ public sealed class FillingArmiesTest
         Assert.Equal(["King", "Pawn"], drafted.Order(StringComparer.Ordinal));
     }
 
-    /// <summary>The fill adding a Pawn on <paramref name="cell"/>, a King worth 5, each reaching as given.</summary>
-    private static TinyRules Strengths(CellId cell, int kingReach, int pawnReach) =>
+    /// <summary>
+    /// The fill adding a Pawn on <paramref name="cell"/>, a King worth 5, each reaching as given, of the
+    /// <paramref name="classes"/> given; of none, if none are.
+    /// </summary>
+    private static TinyRules Strengths(
+        CellId cell,
+        int kingReach,
+        int pawnReach,
+        ImmutableDictionary<PieceKindId, string>? classes = null
+    ) =>
         new(5)
         {
+            Classes = classes ?? [],
             Filled = state => state with
             {
                 Position = state.Position.Place(cell, new Piece(new PieceId(9), TinyRules.Pawn, First)),

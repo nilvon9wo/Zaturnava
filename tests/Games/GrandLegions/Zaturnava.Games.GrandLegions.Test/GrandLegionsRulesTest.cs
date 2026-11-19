@@ -57,7 +57,7 @@ public sealed class GrandLegionsRulesTest
                 "grand-legions-custom",
                 "Grand Legions (12 × 10, kingdoms 4 × 4)",
                 120,
-                (int?)197,
+                (int?)226,
                 (BoardSize?)board,
                 true
             ),
