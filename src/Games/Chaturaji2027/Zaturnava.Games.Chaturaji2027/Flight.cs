@@ -17,7 +17,8 @@ namespace Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
 /// standing on its own army's far corner, the board's corner across from its kingdom's, may flee the board, as a move
 /// of it, using a die that moves it, or none at the start of a turn, as any move (Proposed). It is then no one's
 /// prisoner, so none may ransom it, nor take it, nor promote into it, and it scores nothing; it comes back as a
-/// prisoner escapes, on doubles that free its kind.
+/// prisoner escapes, on doubles that free its kind. From <see cref="Chaturaji2027Rules.FleeOnArrivalEdition"/> on, a
+/// piece just come to its far corner may flee at once, using no die, or stay.
 /// </summary>
 internal sealed class Flight(SquareGridTopology grid, int width, int height, ImmutableHashSet<PieceKindId> fleers)
 {
@@ -48,6 +49,18 @@ internal sealed class Flight(SquareGridTopology grid, int width, int height, Imm
             .Where(occupant => armies.Contains(occupant.Value.Owner) && !state.Retired.Contains(occupant.Value.Owner))
             .Where(occupant => occupant.Key == this._corners[occupant.Value.Owner.Value])
             .Select(occupant => new FleeAction(seat, occupant.Key));
+
+    /// <summary>
+    /// Whether the piece on <paramref name="cell"/> may flee from it at once, having just come there: a piece that may
+    /// flee, on its own army's far corner, its army not retired, in a game of
+    /// <see cref="Chaturaji2027Rules.FleeOnArrivalEdition"/> on.
+    /// </summary>
+    public bool IsArrived(GameState state, CellId cell) =>
+        state.Edition >= Chaturaji2027Rules.FleeOnArrivalEdition
+        && state.Position.PieceAt(cell) is { } piece
+        && this._fleers.Contains(piece.Kind)
+        && !state.Retired.Contains(piece.Owner)
+        && cell == this._corners[piece.Owner.Value];
 
     /// <summary>The piece leaves the board, for no one to take.</summary>
     public static Transition Fled(GameState state, FleeAction flee)

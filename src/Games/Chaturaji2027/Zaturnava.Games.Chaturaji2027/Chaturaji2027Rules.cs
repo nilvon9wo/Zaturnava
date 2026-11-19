@@ -36,6 +36,14 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     public const int DefaultIdleRounds = 3;
 
     /// <summary>
+    /// The edition (<see cref="GameState.Edition"/>) from which a piece just come to its far corner may leave the
+    /// board at once, with no die, without waiting for a turn or a die that moves it (the user's report of 2026-11-19:
+    /// "It should be possible for King (Tafl) to escape immediately once it reaches the escape square"). A game played
+    /// before replays as it was played.
+    /// </summary>
+    public const int FleeOnArrivalEdition = 15;
+
+    /// <summary>
     /// How many rounds may pass with no piece taken before the game ends on points: fifty, each seat's fifty
     /// turns, as chess counts fifty moves (Stated 2026-11-06).
     /// </summary>
@@ -458,6 +466,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         && state.AwaitedDice is null
         && state.PromotionDue is null
         && state.Jumping is null
+        && state.Fleeing is null
         && state.Returning is null
         && state.Offer is null
         && state.Proposal is null
@@ -702,8 +711,8 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
                     + "Knight on d5 and d4: moving to d3, it converts both. Only its own move converts."),
                 (this._variant.Fleers.Contains(kind),
                     "Escape: on its own far corner, the board's corner across from its army's, it may leave the board "
-                    + "as its move, where no one can take it. It comes back only on doubles that let a captured "
-                    + "piece of its kind escape, as one would."),
+                    + "as its move, where no one can take it; or at once, with no die, on the move it gets there. It "
+                    + "comes back only on doubles that let a captured piece of its kind escape, as one would."),
             }
             .Where(power => power.Has)
             .Select(power => power.Power);
@@ -721,9 +730,12 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             : [new AnswerEndAction(seat, true), new AnswerEndAction(seat, false)];
 
     private ImmutableList<GameAction> PlayChoicesOf(GameState state, SeatId seat) =>
-        state.Jumping is { } jumping
-            ? [new PassAction(seat), .. this.JumpsOn(state, jumping, seat)]
-            : this.TurnPlayChoicesOf(state, seat);
+        (state.Jumping, state.Fleeing) switch
+        {
+            ({ } jumping, _) => [new PassAction(seat), .. this.JumpsOn(state, jumping, seat)],
+            (_, { } fleeing) => [new PassAction(seat), new FleeAction(seat, fleeing)],
+            _ => this.TurnPlayChoicesOf(state, seat),
+        };
 
     /// <summary>Whether a chain of jumps is played jump by jump in the game.</summary>
     private bool IsJumpByJump(GameState state) => state.Edition >= this._variant.JumpByJumpEdition;
@@ -855,12 +867,14 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     }
 
     /// <summary>
-    /// The piece flees, using a die that moves it, if any was rolled; the turn goes on, unless the game is over.
+    /// The piece flees, using a die that moves it, if any was rolled, but for one just come there; the turn goes on,
+    /// unless the game is over.
     /// </summary>
     private Transition AfterFlight(GameState state, FleeAction flee)
     {
         PieceKindId kind = state.Position.PieceAt(flee.Cell)!.Kind; // the flight is legal, so a piece stands there
-        Transition used = this.WithoutDieFor(Flight.Fled(state, flee), kind);
+        Transition fled = Flight.Fled(state with { Fleeing = null }, flee);
+        Transition used = state.Fleeing is null ? this.WithoutDieFor(fled, kind) : fled;
         return GameEnd.AfterMove(used, this._variant) ?? this.GoneOn(used);
     }
 
@@ -1094,6 +1108,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             PlaceAction place => this._ransom.Placed(state, place),
             DeclineAction => Ransom.Declined(state),
             _ when state.Jumping is not null => this.GoneOn(new Transition(state with { Jumping = null }, [])),
+            _ when state.Fleeing is not null => this.GoneOn(new Transition(state with { Fleeing = null }, [])),
             _ when state.PromotionDue is not null =>
                 this.GoneOn(new Transition(state with { PromotionDue = null }, [])),
             _ when state.IsRansomWindow => this.Handed(new Transition(state, [])),
@@ -1369,6 +1384,8 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     /// A deliberate move ends the turn; a rolled one uses up its die. A Pawn come to the far edge, if it
     /// may be promoted, waits on that first (rules.md §8). A piece that has jumped, where a chain is played jump by
     /// jump, may go on jumping, with no die, while it can, or stop; a jump that goes on from one uses no die either.
+    /// A piece just come to where it may leave the board may leave at once, with no die, or stay
+    /// (<see cref="FleeOnArrivalEdition"/>).
     /// </summary>
     private Transition AfterMove(GameState state, MoveAction move)
     {
@@ -1382,11 +1399,13 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         bool isDue = this.PromotionsOf(due, move.Actor).Any(promotion => promotion.Cell == move.To);
         GameState jumping = used.State with { Jumping = move.To };
         bool goesOn = hasJumped && this.JumpsOn(jumping, move.To, move.Actor).Any();
-        return (GameEnd.AfterMove(moved, this._variant), isDue, goesOn) switch
+        bool isArrived = this._flight.IsArrived(used.State, move.To);
+        return (GameEnd.AfterMove(moved, this._variant), isDue, goesOn, isArrived) switch
         {
-            ({ } over, _, _) => over,
-            (_, true, _) => used with { State = due },
-            (_, _, true) => used with { State = jumping },
+            ({ } over, _, _, _) => over,
+            (_, true, _, _) => used with { State = due },
+            (_, _, true, _) => used with { State = jumping },
+            (_, _, _, true) => used with { State = used.State with { Fleeing = move.To } },
             _ => this.GoneOn(used),
         };
     }

@@ -38,10 +38,11 @@ public static class ScenarioStart
     /// the rarer the further their price from their class's commonest (the same day); 11, since it gained the
     /// Evangelist (the same day); 12, since a second leader a palace holds starts in its palace (the same day); 13,
     /// since an army's palace is dealt anywhere in its kingdom, not always against the board's edge (the same day);
-    /// 14, since a palace standing partly outside its kingdom keeps clear of where another army's could (the same day).
+    /// 14, since a palace standing partly outside its kingdom leaves out the squares another army's could share (the
+    /// same day); 15, since the Tafl King may leave the board on the move it reaches its far corner (the same day).
     /// A game dealt before says none, and is 0.
     /// </summary>
-    public const int Edition = 14;
+    public const int Edition = 15;
 
     private const string Argument = "scenario";
     private const string SeedArgument = "seed";
@@ -223,6 +224,13 @@ public static class ScenarioStart
     /// <summary>Whether the first of <paramref name="actions"/> dealt every army alike.</summary>
     public static bool AreAlike([Required] ImmutableList<ActionDescriptor> actions) =>
         actions.FirstOrDefault() is { Kind: DealKind } first && first.Arguments.ContainsKey(AlikeArgument);
+
+    /// <summary>
+    /// The id of the scenario the first of <paramref name="actions"/> starts from, so that it may be played again;
+    /// null if it starts from none, or from one set up before scenarios had ids.
+    /// </summary>
+    public static string? ScenarioIdOf([Required] ImmutableList<ActionDescriptor> actions) =>
+        actions.FirstOrDefault() is { Kind: Kind } first && ScenarioOf(first).Id is { Length: > 0 } id ? id : null;
 
     public static ActionDescriptor Describe([Required] Scenario scenario) =>
         new(

@@ -153,6 +153,69 @@ public sealed class FlightTest
         );
     }
 
+    [Theory]
+    [InlineData(Chaturaji2027Rules.FleeOnArrivalEdition, "Pass,Flee")]
+    [InlineData(Chaturaji2027Rules.FleeOnArrivalEdition - 1, "")]
+    public void Apply_WhenAPieceThatMayFleeComesToItsFarCorner_LetsItFleeAtOnceOrStay(int edition, string expected)
+    {
+        // Arrange - Black's Raja a step from h8, its last die moving it there (the user's report of 2026-11-19: "It
+        // should be possible for King (Tafl) to escape immediately once it reaches the escape square")
+        GameState state = BlackToMove([RajaDie], Grid.CellAt(7, 6), YellowCorner) with { Edition = edition };
+        MoveAction move = new(Black, Grid.CellAt(7, 6), BlackCorner);
+
+        // Act
+        Transition transition = this._rules.Apply(state, move);
+
+        // Assert - before, the turn went on to Yellow
+        GameState after = transition.State;
+        IEnumerable<GameAction> choices = after.DecidingSeat == Black ? this._rules.LegalActions(after) : [];
+        Assert.Equal(expected, string.Join(",", choices.Select(choice => choice.GetType().Name.Replace("Action", ""))));
+    }
+
+    [Theory]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    public void Apply_WhenAPieceJustComeToItsFarCornerFleesOrStays_GoesOnToTheNextSeat(bool flees, bool isOnBoard)
+    {
+        // Arrange - Black's Raja just come to h8, with no die left
+        GameState arrived = this._rules.Apply(
+            BlackToMove([RajaDie], Grid.CellAt(7, 6), YellowCorner) with
+            {
+                Edition = Chaturaji2027Rules.FleeOnArrivalEdition,
+            },
+            new MoveAction(Black, Grid.CellAt(7, 6), BlackCorner)
+        ).State;
+        GameAction choice = flees ? new FleeAction(Black, BlackCorner) : new PassAction(Black);
+
+        // Act
+        GameState after = this._rules.Apply(arrived, choice).State;
+
+        // Assert
+        Assert.Equal(
+            (isOnBoard, (CellId?)null, true),
+            (after.Position.PieceAt(BlackCorner) is not null, after.Fleeing, after.DecidingSeat != Black)
+        );
+    }
+
+    [Fact]
+    public void ChancesOf_WhileAPieceJustComeToItsFarCornerMayFlee_OffersNoOneAnythingOutOfTurn()
+    {
+        // Arrange - Black's Raja just come to h8, Black deciding whether it flees
+        GameState arrived = this._rules.Apply(
+            BlackToMove([RajaDie], Grid.CellAt(7, 6), YellowCorner) with
+            {
+                Edition = Chaturaji2027Rules.FleeOnArrivalEdition,
+            },
+            new MoveAction(Black, Grid.CellAt(7, 6), BlackCorner)
+        ).State;
+
+        // Act
+        ImmutableList<GameAction> chances = this._rules.ChancesOf(arrived, Yellow);
+
+        // Assert
+        Assert.Empty(chances);
+    }
+
     [Fact]
     public void GuideOf_WhenTheKindMayFlee_TellsSo()
     {

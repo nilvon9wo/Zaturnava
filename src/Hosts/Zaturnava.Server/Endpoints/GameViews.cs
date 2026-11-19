@@ -184,6 +184,7 @@ internal static class GameViews
                 : null,
             DraftKinds = [.. snapshot.Rules.DraftOffered(snapshot.State).Select(kind => KindOf(snapshot.Rules, kind))],
             IsForPlayers = snapshot.Record.Controllers.Any(controller => controller.IsForPlayers),
+            Scenario = ScenarioStart.ScenarioIdOf(snapshot.Record.Actions),
         };
     }
 
@@ -629,6 +630,7 @@ internal static class GameViews
             (PassAction, _, _) when snapshot.State.Draft is { } draft =>
                 $"Done drafting: keep the {draft.Left[action.Actor]} points left as my score",
             (PassAction, _, _) when snapshot.State.Jumping is not null => "Stop jumping",
+            (PassAction, _, _) when snapshot.State.Fleeing is not null => "Stay on the board",
             (PassAction, true, _) => "Done offering",
             (PassAction, _, { }) => "Promote later",
             (MoveAction move, _, _) => SwapOf(snapshot, move),

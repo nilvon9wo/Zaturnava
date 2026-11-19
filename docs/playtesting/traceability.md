@@ -110,6 +110,8 @@ Statuses (the specification's P1): **Done** (implemented and tested), **Done, pa
 | T11 | The Evangelist's card is missing the illustration of converting | Done | The card drew the converting example, but playing it moved the Evangelist without turning the bracketed pieces. They now take its side's colour once it lands, each time it is played. |
 | T12 | Back to back still not working in the scenarios | Done | Not reproduced on the current code: the local game was a build from before #307. Every swap scenario now has a server test that the swap is offered, labelled, as the page needs with the safety on. Tests: `GameApiTest`. |
 | T13 | Castling: hovering the King's landing should show the Rook where it lands too | Done | The server says which other piece a move takes along (`ActionDto.Partner`), and the board's preview draws it there, greyed and blinking, beside the King. Tests: `GameApiTest`, `BoardActionsTest`, `TableTest`. |
+| T14 | The Tafl King should escape at once on reaching its far corner, not wait for the next turn | Done | From edition 15, a piece that may flee, come to its own far corner, may leave the board at once, with no die, or stay ("Stay on the board"), whatever dice are left. The `tafl-escape` scenario now starts the King on h4. Games played before replay as played. Tests: `FlightTest`, `GameApiTest`. |
+| T15 | "Play again" on a scenario should replay the scenario | Done | The game says which scenario it started from (`GameViewDto.Scenario`), and playing it again starts from that scenario, with the same seats. Tests: `ScenarioStartTest`, `GameApiTest`, `TableTest`. |
 
 ## Said while playing (2026-11-13)
 

@@ -1286,7 +1286,8 @@
     /// The same game again: its ruleset, its bots in the same seats, the player at the same seat, its seats for people
     /// only for players signed in if they were; for a game dealt its armies, armies alike if they were, and the very
     /// same armies if <paramref name="isSameArmies"/>; for armies drafted, drafted anew as they were, with the same
-    /// budget and drafter (Stated, 2026-11-12), unless the very same armies are asked for.
+    /// budget and drafter (Stated, 2026-11-12), unless the very same armies are asked for. A game started from a
+    /// scenario starts from it again (the user's report of 2026-11-19).
     /// </summary>
     private Task PlayAgain(GameViewDto view, bool isSameArmies = false) =>
         this.SitAgain(async () => await GameStarter.Start(
@@ -1294,7 +1295,7 @@
             view.RulesetId,
             [.. view.Seats.Select(seat => seat.BotId)],
             this.Seating.Claim is { } claim ? claim.Seat : -1,
-            null,
+            view.Scenario,
             await this.Browser.Claimant(),
             view.Id,
             new ArmyDeal(view.AreArmiesAlike, isSameArmies ? view.Id : null)
