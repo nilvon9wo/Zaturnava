@@ -39,4 +39,12 @@ public sealed record ActionDto(
     /// </summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public PartnerMoveDto? Partner { get; init; }
+
+    /// <summary>
+    /// Sent with a roll, in a game started from a scenario on a development server only: the faces its dice are to
+    /// come up as, each null to be rolled (<see cref="GameViewDto.Scenario"/>). The server refuses them anywhere
+    /// else.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public ImmutableList<int?>? Faked { get; init; }
 }

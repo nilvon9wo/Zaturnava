@@ -31,7 +31,8 @@ internal sealed class RollingRules(int length) : IRulesApplying
     /// <summary>A preview, for a lobby to keep out of sight unless asked: Tiny is not.</summary>
     public bool IsPreview => true;
 
-    public ICellNavigating Topology => throw new NotSupportedException("Rolling has no board.");
+    /// <summary>Tiny's board, on which no piece ever stands, for a scenario to start from.</summary>
+    public ICellNavigating Topology { get; } = new TinyBoard();
 
     public ImmutableDictionary<SeatId, CellId> Thrones => [];
 

@@ -4149,6 +4149,50 @@ public sealed class TableTest : IDisposable
         );
     }
 
+    [Theory]
+    [InlineData("tafl-escape", "6", "", "Use as dice", "6,")]
+    [InlineData("tafl-escape", "", "", "Roll the dice", "")]
+    [InlineData("tafl-escape", "x", "3", "Use as dice", ",3")]
+    [InlineData(null, null, null, "Roll the dice", "")]
+    public void Roll_WhenFacesAreTypedInAScenario_UsesThemAsTheDice(
+        string? scenario,
+        string? first,
+        string? second,
+        string label,
+        string expected
+    )
+    {
+        // Arrange - the user's request of 2026-11-19: in a scenario, to "roll" a double 6, say, to test a return
+        ActionDto roll = new("roll", ImmutableSortedDictionary<string, string>.Empty.Add(ActionArguments.Actor, "0"))
+        {
+            Label = "Roll the dice",
+        };
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with { LegalActions = [roll], Scenario = scenario };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        int dice = table.FindAll("input.faked-die").Count;
+        if (first is not null)
+        {
+            table.FindAll("input.faked-die")[0].Input(first);
+            table.FindAll("input.faked-die")[1].Input(second!);
+        }
+
+        // Act
+        string shown = table.Find(".actions button.primary").TextContent.Trim();
+        table.Find(".actions button.primary").Click();
+
+        // Assert - and the faces cleared for the next roll
+        ImmutableList<int?>? faked = this._page.Server.Submitted?.Action.Faked;
+        Assert.Equal(
+            (scenario is null ? 0 : 2, label, expected, 0),
+            (
+                dice,
+                shown,
+                faked is null ? string.Empty : string.Join(',', faked),
+                table.FindAll("input.faked-die").Count(die => die.GetAttribute("value") is { Length: > 0 })
+            )
+        );
+    }
+
     [Fact]
     public void Status_WhenAnEnemyLeaderHoldsTheThroneOfTheAllyThePlayerActsFor_SaysWhose()
     {

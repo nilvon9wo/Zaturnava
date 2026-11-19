@@ -142,6 +142,10 @@ button.urged {
     button.urged { animation: none; outline: 3px solid var(--accent); outline-offset: 2px; }
 }
 
+/* In a scenario, on a development server: the faces the next roll is to come up as, beside the roll. */
+.faked-dice { display: inline-flex; gap: 4px; align-items: center; }
+.faked-dice .faked-die { width: 3.5em; }
+
 button.primary {
     background: var(--accent);
     color: var(--accent-ink);

@@ -612,10 +612,33 @@ public sealed class GameService(
     /// <exception cref="IllegalActionException">
     /// The rules do not allow the action now, or it is how dice came up, which only chance decides.
     /// </exception>
+    public Task<GameSnapshot> Submit(
+        GameId id,
+        [Required] string token,
+        [Required] ActionDescriptor descriptor,
+        CancellationToken cancellationToken
+    ) =>
+        this.Submit(id, token, descriptor, null, cancellationToken);
+
+    /// <summary>
+    /// The action, a roll coming up as <paramref name="faked"/> says, if given: each face given, the rest rolled (the
+    /// user's request of 2026-11-19, to test scenarios).
+    /// </summary>
+    /// <exception cref="GameNotFoundException">There is no such game.</exception>
+    /// <exception cref="MalformedActionException">The descriptor describes no action.</exception>
+    /// <exception cref="NotYourTurnException">The token does not hold the seat that must decide.</exception>
+    /// <exception cref="IllegalActionException">
+    /// The rules do not allow the action now, or it is how dice came up, which only chance decides.
+    /// </exception>
+    /// <exception cref="FakedDiceRefusedException">
+    /// Dice were faked other than on a server offering scenarios, in a game started from one, for a roll, each a face
+    /// the die has.
+    /// </exception>
     public async Task<GameSnapshot> Submit(
         GameId id,
         [Required] string token,
         [Required] ActionDescriptor descriptor,
+        ImmutableList<int?>? faked,
         CancellationToken cancellationToken
     )
     {
@@ -625,11 +648,36 @@ public sealed class GameService(
         Transition transition = snapshot.MayAct(action, token)
             ? snapshot.Rules.Apply(snapshot.State, action)
             : throw new NotYourTurnException(id, action.Actor);
+        IDiceRolling dice = faked is null ? this._dice : this.Faked(snapshot, action, transition.State, faked);
         Played acted = new(transition.State, snapshot.Record.Actions.Add(action.Describe()));
-        Played played = await this.PlayBots(snapshot.Rules, snapshot.Record, acted, cancellationToken);
+        Played played = await this.PlayBots(snapshot.Rules, snapshot.Record, acted, cancellationToken, dice);
         GameRecord updated = snapshot.Record.Next() with { Actions = played.Actions };
         return await this.Saved(updated, snapshot.Rules, cancellationToken);
     }
+
+    /// <summary>
+    /// The dice <paramref name="faked"/>, for the roll <paramref name="action"/> asks for, only on a server offering
+    /// scenarios, in a game started from one, each face one the die has; refused otherwise, so that no other game can
+    /// ever be played with dice of the player's choosing.
+    /// </summary>
+    /// <exception cref="FakedDiceRefusedException">They may not be faked so.</exception>
+    private FakedDice Faked(GameSnapshot snapshot, GameAction action, GameState rolling, ImmutableList<int?> faked) =>
+        (
+            this._scenarios.All.IsEmpty,
+            ScenarioStart.ScenarioIdOf(snapshot.Record.Actions) is null,
+            action is RollAction ? rolling.AwaitedDice : null
+        ) switch
+        {
+            (true, _, _) => throw new FakedDiceRefusedException("Dice may be faked only on a development server."),
+            (_, true, _) => throw new FakedDiceRefusedException("Dice may be faked only in a scenario."),
+            (_, _, null) => throw new FakedDiceRefusedException("Only a roll's dice may be faked."),
+            (_, _, { } awaited) when faked.Count > awaited.Count
+                || faked.Any(face => face is < 1 || face > awaited.Sides) =>
+                throw new FakedDiceRefusedException(
+                    $"At most {awaited.Count} dice may be faked, each from 1 to {awaited.Sides}."
+                ),
+            _ => new FakedDice(this._dice, faked),
+        };
 
     /// <summary>
     /// The game replayed; none, if its rules have changed since so that its actions no longer replay, so that one such
@@ -923,13 +971,14 @@ public sealed class GameService(
         IRulesApplying rules,
         GameRecord record,
         Played played,
-        CancellationToken cancellationToken
+        CancellationToken cancellationToken,
+        IDiceRolling? dice = null
     ) =>
         DecisionLoop.PlayWhile(
             rules,
             played,
             this.DecidersOf(record),
-            this._dice,
+            dice ?? this._dice,
             this._settings.MaximumBotSteps,
             cancellationToken
         );
