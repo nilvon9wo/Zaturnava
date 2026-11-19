@@ -279,6 +279,194 @@ public sealed class TableTest : IDisposable
         );
     }
 
+    [Theory]
+    [InlineData(1, "--side: 3; --column: 1; --row: 1; --across: 0; --down: -1", "Play another move")]
+    [InlineData(2, "--side: 3; --column: 1; --row: 1; --across: 0; --down: 1", "Play another move")]
+    [InlineData(3, "--side: 3; --column: 1; --row: 1; --across: 0; --down: -1", "Play another move")]
+    public void Click_WhenThePlayerPlaysAMove_MovesThePieceFromItsSquareToTheNextItMayMoveTo(
+        int plays,
+        string expected,
+        string button
+    )
+    {
+        // Arrange - on a 3 x 3 diagram, the Raja on cell 4 moves up to 7 or down to 1 (playtest 2026-11-15, C3)
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Kinds = [new PieceKindDto("raja", "Raja", 5) { Diagram = new MoveDiagramDto(3, [7, 1], [6, 7], []) }],
+        };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        Cell(table, 0).Click();
+        string before = table.Find(".diagram-play .play-example").TextContent.Trim();
+
+        // Act
+        for (int play = 0; play < plays; play++)
+        {
+            table.Find(".diagram-play .play-example").Click();
+        }
+
+        // Assert
+        Assert.Equal(
+            ("Play move", expected, button, 0, 0),
+            (
+                before,
+                table.Find(".move-diagram .example-piece").GetAttribute("style"),
+                table.Find(".diagram-play .play-example").TextContent.Trim(),
+                Square(table, 4).QuerySelectorAll(".piece-icon").Length,
+                table.FindAll(".move-diagram .example-taken").Count
+            )
+        );
+    }
+
+    [Theory]
+    [InlineData(
+        3,
+        "6",
+        "",
+        "",
+        "--side: 3; --column: 0; --row: 0; --across: 1; --down: 1",
+        "--side: 3; --column: 1; --row: 1; --across: -1; --down: -1"
+    )]
+    [InlineData(
+        5,
+        "",
+        "22",
+        "",
+        "--side: 5; --column: 2; --row: 1; --across: 0; --down: 1",
+        "--side: 5; --column: 2; --row: 2; --across: 0; --down: -2"
+    )]
+    [InlineData(
+        5,
+        "",
+        "",
+        "17,22,7",
+        "--side: 5; --column: 2; --row: 0; --across: 0; --down: 2",
+        "--side: 5; --column: 2; --row: 2; --across: 0; --down: -1"
+    )]
+    public void Click_WhenThePlayerPlaysACapture_MovesThePieceAndTakesTheEnemy(
+        int side,
+        string captures,
+        string jumps,
+        string custody,
+        string taken,
+        string moving
+    )
+    {
+        // Arrange - the Raja on the centre takes: on 6 of a 3 x 3 diagram; or, on a 5 x 5, by jumping from 12 to 22
+        // over the enemy on 17; or by moving to 17, holding the enemy on 22 with the piece of its side on 7
+        static int[] Cells(string text) =>
+            text.Length == 0 ? [] : [.. text.Split(',').Select(cell => int.Parse(cell, CultureInfo.InvariantCulture))];
+        int[] held = Cells(custody);
+        MoveDiagramDto diagram = new(side, [1], [.. Cells(captures)], [])
+        {
+            Jumps = [.. Cells(jumps)],
+            Custody = held.Length == 0 ? null : new CustodyDto(held[0], held[1], held[2]),
+        };
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Kinds = [new PieceKindDto("raja", "Raja", 5) { Diagram = diagram }],
+        };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        Cell(table, 0).Click();
+        table.Find(".diagram-toggles .show-captures").Click();
+
+        // Act
+        table.Find(".diagram-play .play-example").Click();
+
+        // Assert
+        Assert.Equal(
+            (taken, moving),
+            (
+                table.Find(".move-diagram .example-taken").GetAttribute("style"),
+                table.Find(".move-diagram .example-piece").GetAttribute("style")
+            )
+        );
+    }
+
+    [Fact]
+    public void Click_WhenThePlayerSwitchesWhatIsDrawn_StopsTheExamplePlaying()
+    {
+        // Arrange - a move played
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Kinds = [new PieceKindDto("raja", "Raja", 5) { Diagram = new MoveDiagramDto(3, [7], [6, 7], []) }],
+        };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        Cell(table, 0).Click();
+        table.Find(".diagram-play .play-example").Click();
+
+        // Act
+        table.Find(".diagram-toggles .show-captures").Click();
+
+        // Assert
+        Assert.Equal(
+            (0, 1, "Play capture"),
+            (
+                table.FindAll(".move-diagram .example-piece").Count,
+                Square(table, 4).QuerySelectorAll(".piece-icon").Length,
+                table.Find(".diagram-play .play-example").TextContent.Trim()
+            )
+        );
+    }
+
+    [Fact]
+    public void Click_WhenPiecesAreInTheWay_PlaysOnlyMovesStillReached()
+    {
+        // Arrange - the Raja on 4 slides up to 7 or down to 1, a piece put on 7, in its way
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Kinds =
+            [
+                new PieceKindDto("raja", "Raja", 5)
+                {
+                    Diagram = new MoveDiagramDto(3, [7, 1], [], []) { Obstacles = [7] },
+                },
+            ],
+        };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        Cell(table, 0).Click();
+        table.Find(".diagram-toggles .show-obstacles").Click();
+
+        // Act
+        table.Find(".diagram-play .play-example").Click();
+
+        // Assert
+        Assert.Equal(
+            "--side: 3; --column: 1; --row: 1; --across: 0; --down: 1",
+            table.Find(".move-diagram .example-piece").GetAttribute("style")
+        );
+    }
+
+    [Fact]
+    public void Click_WhenAnotherPiecesCardWithNothingToPlayReplacesOne_PlaysNothing()
+    {
+        // Arrange - the Raja's move played; Yellow's piece on cell 1 neither moves nor captures
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Pieces = [new PieceDto(0, "raja", "Raja", 0, 0), new PieceDto(1, "stone", "Stone", 1, 1)],
+            Kinds =
+            [
+                new PieceKindDto("raja", "Raja", 5) { Diagram = new MoveDiagramDto(3, [7], [], []) },
+                new PieceKindDto("stone", "Stone", 1) { Diagram = new MoveDiagramDto(3, [], [], []) },
+            ],
+        };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        Cell(table, 0).Click();
+        table.Find(".diagram-play .play-example").Click();
+
+        // Act
+        Cell(table, 1).Click();
+
+        // Assert
+        Assert.Equal(
+            ("Stone", 0, 1),
+            (
+                table.Find(".piece-card h2").TextContent,
+                table.FindAll(".move-diagram .example-piece").Count,
+                Square(table, 4).QuerySelectorAll(".piece-icon").Length
+            )
+        );
+    }
+
     [Fact]
     public void Click_WhenTheKindTakesByCustodyAndItsCapturesAreAskedFor_DrawsOneWithThePartnerBeyondTheEnemy()
     {
