@@ -249,6 +249,68 @@ public sealed class QuickDraftTest
     }
 
     [Fact]
+    public void Filled_FromTheCompositionEditionWithAThrone_FillsFourFifthsOfTheKingdomInTheCompositionAimedAt()
+    {
+        // Arrange - the small game; a throne on b1, nothing bought yet, the whole budget left (playtest 2026-11-15, E1)
+        QuickGame game = QuickGame.Small with { Edition = QuickArmy.CompositionEdition };
+        int budget = QuickArmy.BudgetOf(game);
+        ArmySquare throne = new(1, 0);
+        ImmutableDictionary<PieceClass, int> target = QuickArmy.TargetOf(game, QuickArmy.AimOf(game));
+
+        // Act
+        ImmutableList<ArmyFilled> filled =
+        [
+            .. Seeds.Select(seed => QuickDraft.Filled(
+                game,
+                new ArmyFill(0, budget, [], throne, new(seed)) { Edition = QuickArmy.CompositionEdition }
+            )),
+        ];
+
+        // Assert
+        Assert.All(
+            filled,
+            army =>
+            {
+                Assert.Contains(
+                    army.Added,
+                    piece => ById[piece.Kind].Class == Leader && piece is { Row: 0, Column: 1 }
+                );
+                Assert.All(
+                    target,
+                    aim => Assert.True(army.Added.Count(piece => ById[piece.Kind].Class == aim.Key) >= aim.Value)
+                );
+            }
+        );
+    }
+
+    [Fact]
+    public void Filled_FromTheCompositionEditionWhenAPieceStandsOnTheThrone_PutsALeaderElsewhere()
+    {
+        // Arrange - a custom game of kingdoms 8 × 4, wanting two leaders; a King on b2, a Rook on its throne b1
+        QuickGame game = QuickGame.CustomOf(new BoardSize(20, 20, 8, 4))! with
+        {
+            Edition = QuickArmy.CompositionEdition,
+        };
+        ArmyFill fill = new(
+            0,
+            QuickArmy.BudgetOf(game),
+            [new ArmyPiece(WesternKing, 1, 1), new ArmyPiece(Rook, 1, 0)],
+            new ArmySquare(1, 0),
+            new(5)
+        )
+        {
+            Edition = QuickArmy.CompositionEdition,
+        };
+
+        // Act
+        ArmyFilled filled = QuickDraft.Filled(game, fill);
+
+        // Assert
+        Assert.Contains(filled.Added, piece => ById[piece.Kind].Class == Leader);
+        Assert.DoesNotContain(filled.Added, piece => piece is { Row: 0, Column: 1 });
+    }
+
+    [Fact]
     public void Filled_WhenNothingIsLeftToSpend_AddsNothing()
     {
         // Arrange

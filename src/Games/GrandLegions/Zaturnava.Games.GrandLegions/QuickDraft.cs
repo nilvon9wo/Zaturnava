@@ -62,21 +62,27 @@ public static class QuickDraft
             return new ArmyFilled(dealt, new ArmySquare(leader.Column, leader.Row));
         }
 
-        return new ArmyFilled(Added(QuickArmy.Eligible(played), fill, Of(game).Kingdom, throne, []), throne);
+        return new ArmyFilled(Added(played, QuickArmy.Eligible(played), fill, throne, []), throne);
     }
 
     private static QuickGame GameOn(QuickGame game, int terrain) =>
         game with { Rivers = QuickTerrain.RiversOf(terrain) };
 
-    /// <summary>The pieces added at random, after <paramref name="added"/>, while any fits.</summary>
+    /// <summary>
+    /// The pieces added at random, after <paramref name="added"/>, while any fits: from
+    /// <see cref="QuickArmy.CompositionEdition"/> on, each the piece <see cref="QuickArmy.Next"/> gives the army
+    /// toward the composition it aims at, a leader too while the army has none and its throne is free, or once it has
+    /// one; before, any piece it can pay for, a leader first.
+    /// </summary>
     private static ImmutableList<ArmyPiece> Added(
+        QuickGame game,
         ImmutableList<GrandPiece> eligible,
         ArmyFill fill,
-        ImmutableList<ArmySquare> kingdom,
         ArmySquare throne,
         ImmutableList<ArmyPiece> added
     )
     {
+        ImmutableList<ArmySquare> kingdom = game.Kingdom;
         ImmutableList<ArmyPiece> army = fill.Army.AddRange(added);
         ImmutableHashSet<ArmySquare> taken = [.. army.Select(piece => new ArmySquare(piece.Column, piece.Row))];
         ImmutableList<ArmySquare> free = [.. kingdom.Where(square => !taken.Contains(square))];
@@ -90,32 +96,54 @@ public static class QuickDraft
         ];
         bool hasLeader = army.Any(piece => GrandLegionsPieces.ById[piece.Kind].Class == Leader);
         int left = fill.Left - added.Sum(piece => eligible.First(each => each.Id == piece.Kind).Value);
-        ImmutableList<GrandPiece> affordable =
+        bool isComposed = fill.Edition >= QuickArmy.CompositionEdition;
+        ImmutableList<GrandPiece> placeable =
         [
             .. eligible
-                .Where(piece => piece.Value <= left)
-                .Where(piece => piece.Class != Leader || (!hasLeader && !taken.Contains(throne)))
+                .Where(piece =>
+                    piece.Class != Leader || (isComposed && hasLeader) || (!hasLeader && !taken.Contains(throne))
+                )
                 .Where(piece => !QuickArmy.IsHeld(piece) || !palace.IsEmpty),
         ];
-        if (affordable.IsEmpty || free.IsEmpty)
+        GrandPiece? piece = free.IsEmpty
+            ? null
+            : isComposed
+                ? QuickArmy.Next(
+                    game,
+                    placeable,
+                    [.. army.Select(each => GrandLegionsPieces.ById[each.Kind])],
+                    left,
+                    fill.Random
+                )
+                : LeaderFirst(placeable.Where(each => each.Value <= left), fill.Random);
+        if (piece is null)
         {
             return added;
         }
 
-        ImmutableList<GrandPiece> leaders = [.. affordable.Where(each => each.Class == Leader)];
-        GrandPiece piece = Drawn(leaders.IsEmpty ? affordable : leaders, fill.Random);
         ArmySquare square = QuickArmy.IsHeld(piece) ? palace[0] : SquareFor(piece, free, throne);
-        return Added(eligible, fill, kingdom, throne, added.Add(new ArmyPiece(piece.Id, square.Column, square.Row)));
+        return Added(game, eligible, fill, throne, added.Add(new ArmyPiece(piece.Id, square.Column, square.Row)));
     }
 
     /// <summary>
-    /// Where a piece drawn goes, if not one a palace holds: a leader on the throne; infantry on the free square
-    /// furthest forward; any other on the free square furthest back, sparing the throne while another is free.
+    /// A piece among <paramref name="affordable"/>, at random, a leader first, if one is among them; none, if none is.
+    /// </summary>
+    private static GrandPiece? LeaderFirst(IEnumerable<GrandPiece> affordable, Random random)
+    {
+        ImmutableList<GrandPiece> choices = [.. affordable];
+        ImmutableList<GrandPiece> leaders = [.. choices.Where(each => each.Class == Leader)];
+        return choices.IsEmpty ? null : Drawn(leaders.IsEmpty ? choices : leaders, random);
+    }
+
+    /// <summary>
+    /// Where a piece drawn goes, if not one a palace holds: a leader on the throne, while it is free; infantry on the
+    /// free square furthest forward; any other on the free square furthest back, sparing the throne while another is
+    /// free.
     /// </summary>
     private static ArmySquare SquareFor(GrandPiece piece, ImmutableList<ArmySquare> free, ArmySquare throne) =>
         piece.Class switch
         {
-            Leader => throne,
+            Leader when free.Contains(throne) => throne,
             Infantry => free.OrderByDescending(square => square.Row).ThenBy(square => square.Column).First(),
             _ => free.OrderBy(square => square == throne).ThenBy(square => square.Row).ThenBy(square => square.Column)
                 .First(),

@@ -42,9 +42,9 @@ Statuses (the specification's P1): **Done** (implemented and tested), **Done, pa
 
 | Id | Item | Status | Notes |
 |---|---|---|---|
-| E1 | Default mix: a leader per 20, half infantry, the rest even | To do | |
-| E2 | Budget assumes 80% of kingdom and palace filled; no palace-bound preference | To do | |
-| E3 | Cost inversely related to frequency | To do | |
+| E1 | Default mix: a leader per 20, half infantry, the rest even | Done | From edition 10, an army dealt or filled at random (and so a bot's draft, which follows the fill) aims at a leader for each 20 pieces, half infantry, the rest even among heavies, cavalry and artillery, never below the game's minimums. A bot upgrading a piece keeps to its class. Past 20 pieces, a second leader, the throne the first's. Tests: `QuickArmyTest`, `QuickDraftTest`, `FillingArmiesTest`. |
+| E2 | Budget assumes 80% of kingdom and palace filled; no palace-bound preference | Done | From edition 10, an army aims at 80% of its kingdom (the palace is in it), rounded up, and its budget is what that composition costs at its classes' average prices, plus a tenth; with more to spend, it fills the kingdom. Pieces a palace holds are drawn like any other of their class. |
+| E3 | Cost inversely related to frequency | Done | From edition 10, each piece of a class is drawn most often a little under the class's median price (the median, so outliers do not skew it), and the rarer the further its price lies from that, either way: dear pieces seldom, the cheapest seldom too. |
 | E4 | Several strategies; clever bots respond to others' picks | To do | |
 | E5 | Budget settable for random armies too | Done | See T8. |
 
