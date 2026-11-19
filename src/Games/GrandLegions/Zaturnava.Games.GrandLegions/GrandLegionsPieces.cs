@@ -72,6 +72,7 @@ public static class GrandLegionsPieces
     public static readonly PieceKindId BerolinaPawn = new("berolina-pawn");
     public static readonly PieceKindId ManchuChariot = new("manchu-chariot");
     public static readonly PieceKindId Courier = new("courier");
+    public static readonly PieceKindId Evangelist = new("evangelist");
 
     /// <summary>The edition of the catalogue the Checkers and Tafl pieces came with (2026-11-13).</summary>
     private const int CheckersAndTafl = 1;
@@ -96,6 +97,9 @@ public static class GrandLegionsPieces
     /// pieces.md, The Guard's palace lines); before it, 7.
     /// </summary>
     public const int GuardRepriced = 7;
+
+    /// <summary>The edition of the catalogue the Evangelist came with (2026-11-19).</summary>
+    public const int EvangelistAdded = 11;
 
     /// <summary>
     /// What each piece is worth, its price and what taking it scores, as the game's table of values has it
@@ -138,6 +142,10 @@ public static class GrandLegionsPieces
             .Restricted(ColourBound(OneColour))
             .Since(CheckersAndTafl)
             .ValuedBefore(MultipleCapturesRepriced, 64),
+        // Steps as the Western King does, but never takes: after it moves, it converts the enemy lines it brackets
+        // against another of its player's pieces, as in Othello (Stated, 2026-11-19, the designer's sheet).
+        Piece(Evangelist, "Evangelist", Leader, Fairy, Step(DirectionSets.Any).MoveOnly())
+            .Since(EvangelistAdded),
 
         // Infantry
         // Unlike the Western Pawn, it takes the piece directly ahead, as it moves (Stated, 2026-11-12): nothing ahead
@@ -335,7 +343,8 @@ public static class GrandLegionsPieces
             .Add(Swede, "viking-helmet")
             .Add(BerolinaPawn, "pawn")
             .Add(ManchuChariot, "manchu-chariot")
-            .Add(Courier, "winged-hat");
+            .Add(Courier, "winged-hat")
+            .Add(Evangelist, "cross");
 
     /// <summary>
     /// The abbreviation every piece bears beneath its symbol, beside its class's emblem, each its own (Stated: an
@@ -390,7 +399,8 @@ public static class GrandLegionsPieces
             .Add(Swede, "Sw")
             .Add(BerolinaPawn, "Be")
             .Add(ManchuChariot, "MC")
-            .Add(Courier, "Co");
+            .Add(Courier, "Co")
+            .Add(Evangelist, "Ev");
 
     /// <summary>
     /// What sort of beast each Cavalry piece is, for people sorting them (Proposed): the Knight's kin, horses; the

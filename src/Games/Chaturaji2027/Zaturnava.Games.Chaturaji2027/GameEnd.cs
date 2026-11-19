@@ -94,14 +94,14 @@ internal static class GameEnd
     }
 
     /// <summary>
-    /// The transition, with the turns since a piece was last taken counted: the game ends on points once no piece
-    /// has been taken for <paramref name="rounds"/> rounds, its players warned as each of
-    /// <see cref="QuietWarnings"/> rounds are left.
+    /// The transition, with the turns since a piece was last taken (or converted, which counts as taking it)
+    /// counted: the game ends on points once no piece has been taken for <paramref name="rounds"/> rounds, its
+    /// players warned as each of <see cref="QuietWarnings"/> rounds are left.
     /// </summary>
     public static Transition AfterQuietTurns(GameState before, Transition transition, int rounds)
     {
         GameState state = transition.State;
-        int turns = transition.Events.Any(happened => happened is PieceCaptured)
+        int turns = transition.Events.Any(happened => happened is PieceCaptured or PieceConverted)
             ? 0
             : before.TurnsSinceCapture + transition.Events.Count(happened => happened is TurnPassed);
         Transition counted = transition with { State = state with { TurnsSinceCapture = turns } };

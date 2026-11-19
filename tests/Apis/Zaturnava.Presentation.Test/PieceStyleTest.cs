@@ -39,6 +39,7 @@ public sealed class PieceStyleTest
         [
             "star", "shield", "fan", "scroll", "tiara", "plumed-cap", "sword", "lance", "camel", "elephant", "giraffe",
             "dots", "catapult", "cannon", "grasshopper", "checker", "viking-helmet", "winged-hat",
+            "cross",
         ];
         string[] glyphs = ["king", "queen", "rook", "bishop", "knight", "pawn"];
         string[] both =

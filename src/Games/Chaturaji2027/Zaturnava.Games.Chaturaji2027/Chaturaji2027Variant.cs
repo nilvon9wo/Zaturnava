@@ -162,6 +162,9 @@ public sealed record Chaturaji2027Variant(
     /// <summary>The kinds that take by custody (the Tafl King, the Swede): none, unless set.</summary>
     public ImmutableHashSet<PieceKindId> Custodians { get; init; } = [];
 
+    /// <summary>The kinds that convert the enemy lines they bracket (the Evangelist): none, unless set.</summary>
+    public ImmutableHashSet<PieceKindId> Converters { get; init; } = [];
+
     /// <summary>
     /// The kinds that may flee the board from their own army's far corner (the Tafl King): none, unless set
     /// (<see cref="Flight"/>).
