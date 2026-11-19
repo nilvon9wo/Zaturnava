@@ -1,0 +1,20 @@
+{
+  "rulesetId": "grand-legions-medium",
+  "name": "Evangelist",
+  "description": "Black has rolled 5 and 6 (leader). Black's Evangelist on c4 never captures: it converts. Step it to d4, and Yellow's Pawns on e4 and f4, between it and Black's Rook on g4, become Black's, as does Red's Pawn on e5, between it and Black's Pawn on f6. Yellow's King on d5 stays Yellow's, though Black's Gold General closes its line: a leader is never converted.",
+  "turn": "Black",
+  "edition": 13,
+  "dice": [5, 6],
+  "pieces": {
+    "c4": "Black Evangelist",
+    "g4": "Black Rook (Western)",
+    "f6": "Black Pawn (Western)",
+    "d6": "Black Gold General (Shogi)",
+    "e4": "Yellow Pawn (Western)",
+    "f4": "Yellow Pawn (Western)",
+    "d5": "Yellow King (Western)",
+    "e5": "Red Pawn (Western)",
+    "a8": "Red Silver General (Shogi)",
+    "h1": "Green Gold General (Shogi)"
+  }
+}

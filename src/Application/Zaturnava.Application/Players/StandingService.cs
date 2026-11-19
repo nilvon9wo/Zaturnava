@@ -61,12 +61,18 @@ public sealed class StandingService(
         ImmutableList<GameRecord> finished = await this._games.Unrated(MostRatedAtOnce, cancellationToken);
         foreach (GameRecord game in finished)
         {
-            if (this.Replayed(game) is { State.Outcome: { } outcome } snapshot)
+            try
             {
-                await this.Rate(snapshot, outcome, cancellationToken);
+                if (this.Replayed(game) is { State.Outcome: { } outcome } snapshot)
+                {
+                    await this.Rate(snapshot, outcome, cancellationToken);
+                }
             }
-
-            await this._games.MarkRated(game.Id, cancellationToken);
+            finally
+            {
+                // marked even when counting it failed, so that one game can never hold back every game after it
+                await this._games.MarkRated(game.Id, cancellationToken);
+            }
         }
 
         return finished.Count;

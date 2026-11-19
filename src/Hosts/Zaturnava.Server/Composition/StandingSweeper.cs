@@ -49,9 +49,12 @@ internal sealed class StandingSweeper : IHostedService, IDisposable
         }
     }
 
-    /// <summary>How often games over are looked for.</summary>
+    /// <summary>
+    /// How often games over are looked for: often enough that a player back in the lobby finds their game counted (the
+    /// user's report of 2026-11-19: a minute's wait left every leaderboard saying no one had finished a game).
+    /// </summary>
     public sealed record Interval(TimeSpan Every)
     {
-        public static readonly TimeSpan Default = TimeSpan.FromMinutes(1);
+        public static readonly TimeSpan Default = TimeSpan.FromSeconds(5);
     }
 }

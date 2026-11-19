@@ -426,6 +426,37 @@ public sealed class StandingServiceTest
     }
 
     [Fact]
+    public async Task RateFinished_WhenCountingAGameFails_LetsItBeSoThatTheGamesAfterItAreCountedNextTime()
+    {
+        // Arrange - the first game over seats two of the rules' four, which counting it fails on
+        HumanSeat ada = new("ada", Ada);
+        HumanSeat bea = new("bea", Bea);
+        await this._games.Add(Record("a broken one", ada, bea), this._cancellation);
+        await this._games.Add(
+            Record("b", ada, bea, new HumanSeat("x"), new HumanSeat("y")) with
+            {
+                LastChanged = DateTimeOffset.UnixEpoch.AddSeconds(1),
+            },
+            this._cancellation
+        );
+        StandingService service = this.Service(new EndedRules(EndedRules.State([Black])), null);
+        _ = await Assert.ThrowsAnyAsync<ArgumentException>(() => service.RateFinished(this._cancellation));
+
+        // Act
+        int rated = await service.RateFinished(this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            (1, 0, 1),
+            (
+                rated,
+                (await this._games.Unrated(10, this._cancellation)).Count,
+                (await this._players.Standings(EndedRules.RulesetId, [Ada], this._cancellation))[Ada].Won
+            )
+        );
+    }
+
+    [Fact]
     public async Task Leaders_WhenSomeoneStandingIsNoLongerKnown_NamesTheRestBestFirst()
     {
         // Arrange

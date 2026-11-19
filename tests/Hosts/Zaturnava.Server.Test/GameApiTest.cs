@@ -764,7 +764,6 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
             this._cancellation
         );
 
-        // Assert
         // Assert - on the free squares of Black's palace, a1 to c3, its Rook on a1 and Gold General on c1
         Assert.Equal(
             "a2,a3,b1,b2,b3,c2,c3",
@@ -775,6 +774,36 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
                     .Order(StringComparer.Ordinal)
             )
         );
+    }
+
+    [Fact]
+    public async Task Submit_WhenTheEvangelistStepsInItsScenario_ConvertsTheLinesItClosesButNotTheLeader()
+    {
+        // Arrange - Black's Evangelist on c4 (the user's report of 2026-11-19: no scenario tried it)
+        CreateGameRequest request = new("grand-legions-medium", ZaturnavaServer.OneOpenSeat)
+        {
+            Scenario = "evangelist",
+        };
+        GameCreatedDto created = await this._client.Create(request, this._cancellation);
+        string black = (await this._client.Claim(created.GameId, 0, null, null, this._cancellation)).Token;
+        GameViewDto view = await this._client.Get(created.GameId, black, this._cancellation);
+        string CellOf(string name) => $"{view.Cells.Single(cell => cell.Name == name).Id}";
+
+        // Act
+        GameViewDto stepped = await this._client.Submit(
+            created.GameId,
+            black,
+            view.LegalActions.First(action =>
+                action.Kind == "move"
+                && action.Arguments["from"] == CellOf("c4")
+                && action.Arguments["to"] == CellOf("d4")
+            ),
+            this._cancellation
+        );
+
+        // Assert - Yellow's Pawns on e4 and f4 and Red's on e5 Black's, Yellow's King on d5 still Yellow's
+        int OwnerAt(string name) => stepped.Pieces.Single(piece => $"{piece.Cell}" == CellOf(name)).Owner;
+        Assert.Equal((0, 0, 0, 1), (OwnerAt("e4"), OwnerAt("f4"), OwnerAt("e5"), OwnerAt("d5")));
     }
 
     [Fact]
