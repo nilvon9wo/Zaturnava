@@ -297,10 +297,36 @@ public sealed class Chaturaji2027VariantTest
         // Act
         MoveDiagram diagram = rules.GuideOf(Chaturaji2027Pieces.Horse).Diagram;
 
+        // Assert - its captures stopped as its moves are
+        Assert.Equal(
+            ("39,49", "29,47,57,59", "39,49", "29,47,57,59"),
+            (
+                string.Join(",", diagram.Obstacles),
+                string.Join(",", diagram.Obstructed),
+                string.Join(",", diagram.CaptureObstacles),
+                string.Join(",", diagram.CaptureObstructed)
+            )
+        );
+    }
+
+    [Fact]
+    public void GuideOf_WhenAKindStepsSidewaysOnlyAcrossARiver_DrawsItOnItsOwnSideWithoutThemAndAcrossWithThem()
+    {
+        // Arrange - a Raja, stepping every way, sideways only across a river, as a Xiangqi Soldier does
+        Chaturaji2027Rules rules = new(
+            DiceProfile.WeightedSixSided,
+            Chaturaji2027Rules.DefaultIdleRounds,
+            PawnPromotion.OtherArmies,
+            variant: Fenced with { SidewaysAcrossRiver = [Chaturaji2027Pieces.Raja] }
+        );
+
+        // Act
+        MoveDiagram diagram = rules.GuideOf(Chaturaji2027Pieces.Raja).Diagram;
+
         // Assert
         Assert.Equal(
-            ("39,49", "29,47,57,59"),
-            (string.Join(",", diagram.Obstacles), string.Join(",", diagram.Obstructed))
+            ("30,31,32,48,49,50", "30,31,32,39,41,48,49,50"),
+            (string.Join(",", diagram.Moves), string.Join(",", diagram.Across?.Moves ?? []))
         );
     }
 

@@ -30,16 +30,40 @@ public sealed record MoveDiagramDto(
     public ImmutableList<int> Obstructed { get; init; } = [];
 
     /// <summary>
+    /// As <see cref="Obstacles"/>, for its captures: one or two cells pieces put on would stop it capturing most;
+    /// none, for a piece nothing in its way stops capturing.
+    /// </summary>
+    public ImmutableList<int> CaptureObstacles { get; init; } = [];
+
+    /// <summary>
+    /// The cells of its captures it may no longer capture on, pieces on <see cref="CaptureObstacles"/>.
+    /// </summary>
+    public ImmutableList<int> CaptureObstructed { get; init; } = [];
+
+    /// <summary>
     /// For a piece that takes by custody, as a Tafl King does: one such capture, to draw with the piece of its own
     /// side that must stand beyond; none, for any other.
     /// </summary>
     public CustodyDto? Custody { get; init; }
 
     /// <summary>
+    /// For a piece that takes by custody, its captures gone berserk, as while an enemy holds its throne: landing where
+    /// <see cref="Custody"/> does, every piece, friend or foe, held between it and any other piece taken at once; none,
+    /// for any other.
+    /// </summary>
+    public ImmutableList<CustodyDto> Berserk { get; init; } = [];
+
+    /// <summary>
     /// For a piece drawn by a river or in a palace: the same piece on an open board, to draw when the player asks;
     /// none, for any other.
     /// </summary>
     public MoveDiagramDto? Elsewhere { get; init; }
+
+    /// <summary>
+    /// For a piece that steps sideways only once across a river from its kingdom, drawn on its own side: the same
+    /// piece across a river, stepping sideways too, to draw when the player asks; none, for any other.
+    /// </summary>
+    public MoveDiagramDto? Across { get; init; }
 
     /// <summary>
     /// The cells it moves to farther than the next cell by leaping, over anything between, as a Knight does; every

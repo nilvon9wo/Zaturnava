@@ -934,7 +934,8 @@ public sealed class GrandLegionsRulesTest
     )
     {
         // Arrange - from the centre, 40: the Xiangqi Horse's legs, the foremost first, then the leftmost; the Xiangqi
-        // Elephant's eyes short of the river; the Rook's slides; the Alfil leaps over anything, the King only steps
+        // Elephant's eyes short of the river; the Rook's slides; the Alfil leaps over anything, the King only steps.
+        // Each captures where it moves, and is stopped capturing as moving (the user's report of 2026-11-19)
         Chaturaji2027Rules rules = GrandLegionsRules.RulesOf(QuickGame.Small);
 
         // Act
@@ -942,9 +943,54 @@ public sealed class GrandLegionsRulesTest
 
         // Assert
         Assert.Equal(
-            (obstacles, obstructed),
-            (string.Join(",", diagram.Obstacles), string.Join(",", diagram.Obstructed))
+            (obstacles, obstructed, obstacles, obstructed),
+            (
+                string.Join(",", diagram.Obstacles),
+                string.Join(",", diagram.Obstructed),
+                string.Join(",", diagram.CaptureObstacles),
+                string.Join(",", diagram.CaptureObstructed)
+            )
         );
+    }
+
+    [Fact]
+    public void GuideOf_WhenAKindStepsSidewaysOnlyAcrossARiver_DrawsItOnItsOwnSideAndAcross()
+    {
+        // Arrange - the Xiangqi Soldier, from the centre, 40: forward to 49; once across a river, to 39 and 41 too
+        Chaturaji2027Rules rules = GrandLegionsRules.RulesOf(QuickGame.Small);
+
+        // Act
+        MoveDiagram diagram = rules.GuideOf(GrandLegionsPieces.XiangqiSoldier).Diagram;
+
+        // Assert
+        MoveDiagram across = Assert.IsType<MoveDiagram>(diagram.Across);
+        Assert.Equal(
+            ("49", "49", "39,41,49", "39,41,49", false),
+            (
+                string.Join(",", diagram.Moves),
+                string.Join(",", diagram.Captures),
+                string.Join(",", across.Moves),
+                string.Join(",", across.Captures),
+                rules.GuideOf(GrandLegionsPieces.JanggiSoldier).Diagram.Across is not null
+            )
+        );
+    }
+
+    [Theory]
+    [InlineData("xiangqi-cannon")]
+    [InlineData("grasshopper")]
+    [InlineData("xiangqi-horse")]
+    public void GuideOf_WhenPiecesInItsWayStopAKindsCaptures_PutsThemThereForItsCaptures(string kind)
+    {
+        // Arrange - a hopper's capture stopped by a piece where it would land, or between it and its screen; a Xiangqi
+        // Horse's, by a piece on its leg (the user's reports of 2026-11-19)
+        Chaturaji2027Rules rules = GrandLegionsRules.RulesOf(QuickGame.Small);
+
+        // Act
+        MoveDiagram diagram = rules.GuideOf(new PieceKindId(kind)).Diagram;
+
+        // Assert
+        Assert.Equal((false, false), (diagram.CaptureObstacles.IsEmpty, diagram.CaptureObstructed.IsEmpty));
     }
 
     [Theory]
@@ -963,8 +1009,14 @@ public sealed class GrandLegionsRulesTest
         // Act
         MoveDiagram diagram = rules.GuideOf(new PieceKindId(kind)).Diagram;
 
-        // Assert
-        Assert.Equal(new CustodyExample(landing, taken, partner), diagram.Custody);
+        // Assert - and gone berserk, the same, with another held just to its right (the user's report of 2026-11-19)
+        Assert.Equal(
+            (new CustodyExample(landing, taken, partner), "58:67:76,58:59:60"),
+            (
+                diagram.Custody,
+                string.Join(",", diagram.Berserk.Select(held => $"{held.Landing}:{held.Taken}:{held.Partner}"))
+            )
+        );
     }
 
     [Fact]

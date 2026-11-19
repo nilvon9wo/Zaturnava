@@ -16,7 +16,10 @@
    the next: the piece where it stands, moving, and where it ends, any enemy it takes then gone (C3). *@
 @using System.Globalization
 
-@if (this.Diagram.Elsewhere is not null || this.MayShowCaptures || !this.Shown.Obstacles.IsEmpty)
+@if (this.Diagram.Elsewhere is not null
+     || this.Diagram.Across is not null
+     || this.MayShowCaptures
+     || !this.ObstaclesShown.IsEmpty)
 {
     <div class="diagram-toggles" role="group" aria-label="What the drawing shows">
         @if (this.MayShowCaptures)
@@ -26,11 +29,16 @@
             <button type="button" class="show-captures" aria-pressed="@Pressed(this.IsCapturing)"
                     @onclick="() => this.Switch(() => this._isCapturing = true)">Captures</button>
         }
-        @if (!this.IsCapturing && !this.Shown.Obstacles.IsEmpty)
+        @if (!this.ObstaclesShown.IsEmpty)
         {
             <button type="button" class="show-obstacles" aria-pressed="@Pressed(this.IsObstructed)"
                     @onclick="() => this.Switch(() => this._isObstructed = !this._isObstructed)"
                 >Pieces in the way</button>
+        }
+        @if (this.IsCapturing && !this.Shown.Berserk.IsEmpty)
+        {
+            <button type="button" class="show-berserk" aria-pressed="@Pressed(this.IsBerserk)"
+                    @onclick="() => this.Switch(() => this._isBerserk = !this._isBerserk)">Berserk</button>
         }
         @if (this.Diagram.Elsewhere is not null)
         {
@@ -38,6 +46,11 @@
                     @onclick="() => this.Switch(() => this._isElsewhere = !this._isElsewhere)">
                 @(this.Diagram.RiverRow is null ? "In its palace" : "By a river")
             </button>
+        }
+        @if (this.Diagram.Across is not null)
+        {
+            <button type="button" class="show-across" aria-pressed="@Pressed(this._isAcross)"
+                    @onclick="() => this.Switch(() => this._isAcross = !this._isAcross)">Across a river</button>
         }
     </div>
 }
@@ -82,7 +95,7 @@
         }
         @if (this.Playing is { } example)
         {
-            @if (example.Taken is { } taken)
+            @foreach (int taken in example.Taken)
             {
                 <span @key="(this._plays, taken)" class="example-taken" style="@this.PlacedAt(taken, this.Centre)"></span>
             }
@@ -109,11 +122,22 @@
         {
             <span class="key-item"><span class="key jump"></span>lands here, empty, having jumped and taken the piece before it; and may jump on again</span>
         }
-        @if (this.Shown.Custody is not null)
+        @if (this.IsBerserk)
+        {
+            <span class="key-item"><span class="key move"></span>moves here</span>
+            <span class="key-item"><span class="key taken capture"></span>any piece, friend or foe, taken: berserk, while an enemy holds its throne, it takes every piece held between it and another at once</span>
+            <span class="key-item"><span class="key partner"></span>any piece, friend or foe, holding it with it</span>
+        }
+        else if (this.Shown.Custody is not null)
         {
             <span class="key-item"><span class="key move"></span>moves here</span>
             <span class="key-item"><span class="key taken capture"></span>an enemy, taken</span>
             <span class="key-item"><span class="key partner"></span>a piece of its side, holding the enemy with it</span>
+        }
+        @if (this.IsObstructed)
+        {
+            <span class="key-item"><span class="key obstacle"></span>a piece in its way</span>
+            <span class="key-item"><span class="key capture obstructed"></span>no longer captured on</span>
         }
     }
     else
@@ -158,6 +182,8 @@
     private bool _isCapturing;
     private bool _isObstructed;
     private bool _isElsewhere;
+    private bool _isAcross;
+    private bool _isBerserk;
 
     /// <summary>How many examples the player has played since the drawing last changed; none, none playing.</summary>
     private int _plays;
@@ -183,8 +209,14 @@
     [Parameter]
     public bool IsOnDark { get; set; }
 
-    /// <summary>The diagram drawn: on an open board, if the player put its river or palace away.</summary>
-    private MoveDiagramDto Shown => (this._isElsewhere ? this.Diagram.Elsewhere : null) ?? this.Diagram;
+    /// <summary>
+    /// The diagram drawn: on an open board, if the player put its river or palace away; across a river, if the player
+    /// asked to see it there (a Xiangqi Soldier, stepping sideways once across).
+    /// </summary>
+    private MoveDiagramDto Shown =>
+        (this._isElsewhere ? this.Diagram.Elsewhere : null)
+        ?? (this._isAcross ? this.Diagram.Across : null)
+        ?? this.Diagram;
 
     private bool HasCaptures =>
         !this.Shown.Captures.IsEmpty || !this.Shown.Jumps.IsEmpty || this.Shown.Custody is not null;
@@ -195,8 +227,33 @@
     /// <summary>Whether its captures are drawn: asked for, or all it has.</summary>
     private bool IsCapturing => this.HasCaptures && (this._isCapturing || this.Shown.Moves.IsEmpty);
 
-    /// <summary>Whether pieces are drawn in its way: asked for, while its moves are drawn.</summary>
-    private bool IsObstructed => !this.IsCapturing && this._isObstructed && !this.Shown.Obstacles.IsEmpty;
+    /// <summary>
+    /// Whether pieces are drawn in its way: asked for, where any would stop what is drawn, its moves or its captures
+    /// (the user's report of 2026-11-19: a Xiangqi Horse's captures are blocked as its moves are).
+    /// </summary>
+    private bool IsObstructed => this._isObstructed && !this.ObstaclesShown.IsEmpty;
+
+    /// <summary>
+    /// Whether its captures are drawn gone berserk, as while an enemy holds its throne: asked for, while its captures
+    /// are drawn, for a piece that takes by custody (the user's report of 2026-11-19).
+    /// </summary>
+    private bool IsBerserk => this.IsCapturing && this._isBerserk && !this.Shown.Berserk.IsEmpty;
+
+    /// <summary>Its captures by custody drawn: gone berserk, if asked; else its one, if it takes so.</summary>
+    private ImmutableList<CustodyDto> Holds =>
+        this.IsBerserk ? this.Shown.Berserk : [.. new[] { this.Shown.Custody }.OfType<CustodyDto>()];
+
+    /// <summary>Where pieces would stop what is drawn most: its captures', or its moves'.</summary>
+    private ImmutableList<int> ObstaclesShown =>
+        this.IsCapturing ? this.Shown.CaptureObstacles : this.Shown.Obstacles;
+
+    /// <summary>What those pieces stop it reaching: where it captures, or where it moves.</summary>
+    private ImmutableList<int> ObstructedShown =>
+        this.IsCapturing ? this.Shown.CaptureObstructed : this.Shown.Obstructed;
+
+    /// <summary>Whether <paramref name="cell"/> is shown out of reach: a piece in the way on it, or stopped by one.</summary>
+    private bool IsStopped(int cell) =>
+        this.IsObstructed && (this.ObstaclesShown.Contains(cell) || this.ObstructedShown.Contains(cell));
 
     /// <summary>
     /// Whether it moves alike forward and back, with no river ahead: which way is forward does not matter.
@@ -245,22 +302,23 @@
     /// the way; or capturing - on each square it captures on, the enemy there taken; landing on each it jumps to, the
     /// enemy before it taken; or, by custody, moving on, the enemy held taken.
     /// </summary>
-    private ImmutableList<(int To, int? Taken)> Examples
+    private ImmutableList<(int To, ImmutableList<int> Taken)> Examples
     {
         get
         {
             MoveDiagramDto shown = this.Shown;
             return this.IsCapturing
                 ? [
-                    .. shown.Captures.Select(cell => (cell, (int?)cell)),
-                    .. shown.Jumps.Select(cell => (cell, (int?)this.Between(cell))),
-                    .. new[] { shown.Custody }.OfType<CustodyDto>().Select(held => (held.Landing, (int?)held.Taken)),
+                    .. shown.Captures
+                        .Where(cell => !this.IsStopped(cell))
+                        .Select(cell => (cell, ImmutableList.Create(cell))),
+                    .. shown.Jumps.Select(cell => (cell, ImmutableList.Create(this.Between(cell)))),
+                    .. this.Holds
+                        .GroupBy(held => held.Landing)
+                        .Select(held => (held.Key, held.Select(each => each.Taken).ToImmutableList())),
                 ]
                 : [
-                    .. shown.Moves
-                        .Where(cell => !this.IsObstructed
-                            || !(shown.Obstacles.Contains(cell) || shown.Obstructed.Contains(cell)))
-                        .Select(cell => (cell, (int?)null)),
+                    .. shown.Moves.Where(cell => !this.IsStopped(cell)).Select(cell => (cell, ImmutableList<int>.Empty)),
                 ];
         }
     }
@@ -269,11 +327,11 @@
     /// The example playing, if one is: each played in turn, again from the first after the last; none, if the piece
     /// shown has none, as when another's card replaced its own.
     /// </summary>
-    private (int To, int? Taken)? Playing =>
+    private (int To, ImmutableList<int> Taken)? Playing =>
         this._plays == 0
             ? null
             : this.Examples
-                .Select(example => ((int To, int? Taken)?)example)
+                .Select(example => ((int To, ImmutableList<int> Taken)?)example)
                 .ElementAtOrDefault((this._plays - 1) % Math.Max(1, this.Examples.Count));
 
     /// <summary>A change to what is drawn, the example playing stopped.</summary>
@@ -328,7 +386,7 @@
     {
         MoveDiagramDto shown = this.Shown;
         bool isMoving = !this.IsCapturing;
-        bool isInTheWay = this.IsObstructed && shown.Obstacles.Contains(cell);
+        bool isInTheWay = this.IsObstructed && this.ObstaclesShown.Contains(cell);
         return string.Join(
             ' ',
             new[]
@@ -336,15 +394,18 @@
                 "square",
                 int.IsEvenInteger(row + column) == this.IsOnDark ? "dark" : "light",
                 (isMoving && shown.Moves.Contains(cell) && !isInTheWay)
-                || (!isMoving && shown.Custody?.Landing == cell)
+                || (!isMoving && this.Holds.Any(held => held.Landing == cell))
                     ? "move"
                     : null,
                 isMoving && shown.Leaps.Contains(cell) ? "leap" : null,
-                this.IsObstructed && shown.Obstructed.Contains(cell) ? "obstructed" : null,
+                this.IsObstructed && this.ObstructedShown.Contains(cell) ? "obstructed" : null,
                 isInTheWay ? "obstacle" : null,
-                !isMoving && shown.Custody?.Taken == cell ? "taken" : null,
-                !isMoving && (shown.Captures.Contains(cell) || shown.Custody?.Taken == cell) ? "capture" : null,
-                !isMoving && shown.Custody?.Partner == cell ? "partner" : null,
+                !isMoving && this.Holds.Any(held => held.Taken == cell) ? "taken" : null,
+                !isMoving && !isInTheWay
+                && (shown.Captures.Contains(cell) || this.Holds.Any(held => held.Taken == cell))
+                    ? "capture"
+                    : null,
+                !isMoving && this.Holds.Any(held => held.Partner == cell) ? "partner" : null,
                 !isMoving && shown.Jumps.Contains(cell) ? "jump" : null,
                 shown.Screens.Contains(cell) ? "screen" : null,
                 row == shown.RiverRow ? "river-bank" : null,

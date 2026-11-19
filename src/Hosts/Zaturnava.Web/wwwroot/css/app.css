@@ -779,6 +779,8 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
 .move-diagram .obstacle::before { animation: settle 0.4s ease-out; }
 .move-diagram .move.obstructed::before, .diagram-key .move.obstructed::before { opacity: 0.2; }
 .move-diagram .move.obstructed::before { animation: fade-out 0.6s ease-in; }
+.move-diagram .capture.obstructed::after, .diagram-key .capture.obstructed::after { opacity: 0.2; }
+.move-diagram .capture.obstructed::after { animation: fade-out 0.6s ease-in; }
 /* A capture by custody: the enemy taken, a disc in the danger colour that fades and comes back, over and over; the
    piece of its side beyond, in the mark colour. */
 .move-diagram .taken::before, .diagram-key .taken::before { background: var(--danger); }
@@ -817,7 +819,8 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
 @keyframes fade-out { from { opacity: 1; } }
 @keyframes taken { 0%, 40% { opacity: 1; } 60%, 85% { opacity: 0.1; } }
 @media (prefers-reduced-motion: reduce) {
-    .move-diagram .obstacle::before, .move-diagram .move.obstructed::before, .move-diagram .taken::before {
+    .move-diagram .obstacle::before, .move-diagram .move.obstructed::before, .move-diagram .taken::before,
+    .move-diagram .capture.obstructed::after {
         animation: none;
     }
     /* Still, the example shows only where it ends, the enemy gone. */

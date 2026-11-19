@@ -203,6 +203,7 @@ public static class GrandLegionsRules
             DieNames = dice.Classes.ToImmutableDictionary(face => face.Key, face => NameOf(face.Value)),
             MayMove = MayMoveOn(game),
             RiverBound = [GrandLegionsPieces.XiangqiElephant],
+            SidewaysAcrossRiver = [GrandLegionsPieces.XiangqiSoldier],
         };
 
     /// <summary>What the board lets a piece do in <paramref name="game"/>: cross a river, and leave a palace.</summary>
