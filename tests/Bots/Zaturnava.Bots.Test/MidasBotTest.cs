@@ -78,6 +78,32 @@ public sealed class MidasBotTest
     }
 
     [Fact]
+    public async Task Decide_WhenAPawnMayBecomeAnAllysRajaOrItsElephant_MakesItTheElephant()
+    {
+        // Arrange - a Raja is worth 5 and an Elephant 4, but a leader brought back counts for half
+        DecisionRequest request = Ransoms.PromotingInto(("raja", Ransoms.Green), ("elephant", Ransoms.Green));
+
+        // Act
+        ImmutableHashSet<GameAction> chosen = await Choices(request);
+
+        // Assert
+        Assert.Equal([new PromoteAction(Seat, new CellId(7), new PieceId(81))], chosen);
+    }
+
+    [Fact]
+    public async Task Decide_WhenAPawnMayBecomeAHorseOfAnAllysOrOfItsOwn_MakesItItsOwn()
+    {
+        // Arrange - each worth 3; its own moves on its own turns
+        DecisionRequest request = Ransoms.PromotingInto(("horse", Ransoms.Green), ("horse", Ransoms.Black));
+
+        // Act
+        ImmutableHashSet<GameAction> chosen = await Choices(request);
+
+        // Assert
+        Assert.Equal([new PromoteAction(Seat, new CellId(7), new PieceId(81))], chosen);
+    }
+
+    [Fact]
     public async Task Decide_WhenAPieceMayBePromotedByItsOwnPromotion_MakesItTheBestItMayBecome()
     {
         // Arrange - its Pawn 40 may become a Horse (3) or an Elephant (4)

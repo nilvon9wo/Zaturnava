@@ -8,6 +8,8 @@
     --muted: #9aa3b2;
     --accent: #f2b33d;
     --accent-ink: #1a1405;
+    --button: #3a4150;
+    --button-edge: #576072;
     --board-light: #4a5263;
     --board-dark: #3b4252;
     --last: rgba(242, 179, 61, 0.28);
@@ -39,6 +41,8 @@
     --muted: #5f6672;
     --accent: #c9821a;
     --accent-ink: #ffffff;
+    --button: #ebe5d9;
+    --button-edge: #c4bba9;
     --board-light: #e9dcc3;
     --board-dark: #d6c4a3;
     --last: rgba(201, 130, 26, 0.3);
@@ -107,11 +111,13 @@ body {
     .spinner { animation-duration: 3s; }
 }
 
+/* A button stands out from the panel it is on, never panel-coloured: dark buttons on a dark page read as holes
+   (playtest 2026-11-19). */
 button {
     font: inherit;
     color: var(--ink);
-    background: var(--panel);
-    border: 1px solid var(--panel-edge);
+    background: var(--button);
+    border: 1px solid var(--button-edge);
     border-radius: 6px;
     padding: 6px 12px;
     margin: 4px 4px 4px 0;

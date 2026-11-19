@@ -12,7 +12,8 @@ namespace Net.NowhereAtAll.Zaturnava.Bots;
 /// most at once, at random among equals; when nothing gains, any action that does something and loses
 /// nothing, passing only when nothing else is left. An action gains what it scores, and a promotion
 /// what it puts on the board for the bot's team, less what it takes off: so a Pawn is promoted into
-/// the team's best piece, and never into an enemy's, and a piece by its own promotion into the best it may become.
+/// the team's best piece, and never into an enemy's, and a piece by its own promotion into the best it may become;
+/// a leader counts for half, and among equals the bot's own army's piece comes first.
 /// An escape, likewise, gains what it puts back.
 /// </summary>
 internal static class Greedy
@@ -36,7 +37,7 @@ internal static class Greedy
             [.. Playable.Of(request).Select(action => (action, Gain(request, action, After(request, action))))];
         int best = gains.Max(gain => gain.Gain);
         return best > 0
-            ? ([.. gains.Where(gain => gain.Gain == best).Select(gain => gain.Action)], true)
+            ? (Preferred(request, [.. gains.Where(gain => gain.Gain == best).Select(gain => gain.Action)]), true)
             : (Active(gains), false);
     }
 
@@ -67,15 +68,36 @@ internal static class Greedy
     {
         GameState state = request.State;
         Piece pawn = state.Position.PieceAt(promotion.Cell)!; // a legal promotion has a Pawn to promote
-        return SideOf(request, PrisonerOf(request, promotion.Into)) - SideOf(request, pawn);
+        return PromotedOf(request, PrisonerOf(request, promotion.Into)) - SideOf(request, pawn);
     }
 
     /// <summary>What the piece becomes is worth to the bot's team, less what it was.</summary>
     private static int OwnPromotionGain(DecisionRequest request, PromoteOwnAction promotion)
     {
         Piece piece = request.State.Position.PieceAt(promotion.Cell)!; // a legal promotion has a piece to promote
-        return SideOf(request, piece with { Kind = promotion.Becomes }) - SideOf(request, piece);
+        return PromotedOf(request, piece with { Kind = promotion.Becomes }) - SideOf(request, piece);
     }
+
+    /// <summary>
+    /// What a piece a promotion puts on the board is worth to the bot's team: a leader half its worth (Proposed;
+    /// the playtest of 2026-11-15, F2 and F3, where a Pawn became a Raja, not the Rook that would have won). A
+    /// leader is slow, needs guarding, and, back on the board, takes its army back from whoever commanded it.
+    /// </summary>
+    private static int PromotedOf(DecisionRequest request, Piece piece) =>
+        request.Rules.IsLeader(piece.Kind) ? SideOf(request, piece) / 2 : SideOf(request, piece);
+
+    /// <summary>
+    /// Of the actions that gain as much, a promotion into a piece of the bot's own army first (the playtest of
+    /// 2026-11-15, F2): it moves on the bot's own turns, as an ally's does not.
+    /// </summary>
+    private static ImmutableList<GameAction> Preferred(DecisionRequest request, ImmutableList<GameAction> equals)
+    {
+        ImmutableList<GameAction> own = [.. equals.Where(action => IsIntoOwn(request, action))];
+        return own.IsEmpty ? equals : own;
+    }
+
+    private static bool IsIntoOwn(DecisionRequest request, GameAction action) =>
+        action is PromoteAction promotion && PrisonerOf(request, promotion.Into).Owner == request.Seat;
 
     /// <summary>The captured piece; or one that fled the board, which comes back as a prisoner escapes.</summary>
     private static Piece PrisonerOf(DecisionRequest request, PieceId piece) =>
