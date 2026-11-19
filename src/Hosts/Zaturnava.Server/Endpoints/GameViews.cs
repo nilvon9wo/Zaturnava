@@ -595,8 +595,19 @@ internal static class GameViews
                 _ => null,
             },
             Coming = ComingOf(snapshot, action),
+            Partner = action is MoveAction move ? PartnerOf(snapshot, move) : null,
         };
     }
+
+    /// <summary>
+    /// The other piece a move onto an empty cell takes along, as castling takes the Rook (the user's report of
+    /// 2026-11-19: hovering the King's landing, the Rook should show where it lands too); the rules say.
+    /// </summary>
+    private static PartnerMoveDto? PartnerOf(GameSnapshot snapshot, MoveAction move) =>
+        snapshot.State.Position.PieceAt(move.To) is null
+        && snapshot.Rules.Apply(snapshot.State, move).Events.OfType<PieceMoved>().Skip(1).FirstOrDefault() is { } also
+            ? new PartnerMoveDto(also.From.Value, also.To.Value)
+            : null;
 
     /// <summary>
     /// What a button says that its kind alone cannot: which Pawn becomes what; which prisoner escapes, and

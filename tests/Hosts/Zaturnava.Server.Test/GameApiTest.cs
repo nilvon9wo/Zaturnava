@@ -743,6 +743,61 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
         Assert.Equal((true, true), (IsSwap("d3", "d4"), IsSwap("f3", "f4")));
     }
 
+    [Theory]
+    [InlineData("chaturaji-2027", "back-to-back", "d4", "d5")]
+    [InlineData("grand-legions-medium", "pawns", "f3", "f4")]
+    [InlineData("grand-legions-medium", "forward-only-swaps", "d3", "d4")]
+    public async Task Create_WhenFromAScenarioOfPiecesBackToBack_OffersTheirSwap(
+        string ruleset,
+        string scenario,
+        string from,
+        string to
+    )
+    {
+        // Arrange - the user's report of 2026-11-19: back to back still not working in the scenarios
+        CreateGameRequest request = new(ruleset, ZaturnavaServer.OneOpenSeat) { Scenario = scenario };
+        GameCreatedDto created = await this._client.Create(request, this._cancellation);
+        string black = (await this._client.Claim(created.GameId, 0, null, null, this._cancellation)).Token;
+
+        // Act
+        GameViewDto view = await this._client.Get(created.GameId, black, this._cancellation);
+
+        // Assert - labelled, as the page keeps no other move onto its own team's piece while the safety is on
+        string CellOf(string name) => $"{view.Cells.Single(cell => cell.Name == name).Id}";
+        Assert.Contains(
+            view.LegalActions,
+            action => action.Kind == "move"
+                && action.Arguments["from"] == CellOf(from)
+                && action.Arguments["to"] == CellOf(to)
+                && action.Label is not null
+        );
+    }
+
+    [Fact]
+    public async Task Get_WhenTheKingMayCastle_SaysWhereItsRookGoesWithIt()
+    {
+        // Arrange - Black's King on d1 may castle to b1, its Rook from a1 to c1 (the user's report of 2026-11-19:
+        // hovering the King's landing, the Rook should show where it lands too)
+        CreateGameRequest request = new("grand-legions-medium", ZaturnavaServer.OneOpenSeat) { Scenario = "castling" };
+        GameCreatedDto created = await this._client.Create(request, this._cancellation);
+        string black = (await this._client.Claim(created.GameId, 0, null, null, this._cancellation)).Token;
+
+        // Act
+        GameViewDto view = await this._client.Get(created.GameId, black, this._cancellation);
+
+        // Assert
+        int CellOf(string name) => view.Cells.Single(cell => cell.Name == name).Id;
+        ActionDto castle = view.LegalActions.Single(action =>
+            action.Kind == "move"
+            && action.Arguments["from"] == $"{CellOf("d1")}"
+            && action.Arguments["to"] == $"{CellOf("b1")}"
+        );
+        Assert.Equal(
+            (new PartnerMoveDto(CellOf("a1"), CellOf("c1")), 1),
+            (castle.Partner, view.LegalActions.Count(action => action.Partner is not null))
+        );
+    }
+
     [Fact]
     public async Task Submit_WhenAMercenaryIsHiredInTheScenario_OffersItsPlacing()
     {

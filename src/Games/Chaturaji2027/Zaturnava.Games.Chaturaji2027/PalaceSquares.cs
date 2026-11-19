@@ -13,8 +13,8 @@ public static class PalaceSquares
 {
     /// <summary>
     /// The edition (<see cref="Engine.Rules.GameState.Edition"/>) from which a palace standing partly outside its
-    /// kingdom keeps clear of where any other army's could (the user's words of 2026-11-19: "when palaces overflow
-    /// kingdoms, it should be impossible for palaces to overlap"); a game dealt before replays as it was dealt.
+    /// kingdom leaves out the squares another army's could stand on too (<see cref="Contested"/>); a game dealt
+    /// before replays as it was dealt.
     /// </summary>
     public const int ApartEdition = 14;
 
@@ -37,26 +37,46 @@ public static class PalaceSquares
     /// 4 × 2 kingdom, 6 squares in, 3 out), none of it beside the kingdom's sides, and none of it in another army's
     /// kingdom, each seat's placed on a board <paramref name="width"/> squares across and <paramref name="height"/>
     /// up, as the pinwheel places them: where a palace may stand for every seat, each seeing the board from its own
-    /// corner (<see cref="Pinwheel.FrameOf"/>), so that every army has the same choice. From
-    /// <see cref="ApartEdition"/> on, nor any of it where another army's palace could stand partly outside its kingdom,
-    /// so that no two palaces can ever share a square.
+    /// corner (<see cref="Pinwheel.FrameOf"/>), so that every army has the same choice. Where another army's palace
+    /// could stand on a square of it too, that square is not the palace's (<see cref="Contested"/>).
     /// </summary>
     public static ImmutableList<ArmySquare> EdgeCentres(
         [Required] ImmutableList<ArmySquare> kingdom,
         int width,
-        int height,
-        int edition = ApartEdition
+        int height
+    )
+    {
+        ImmutableHashSet<ArmySquare> kingdoms = Others(kingdom, width, height);
+        return EdgeCentres(kingdom, square => !kingdoms.Contains(square));
+    }
+
+    /// <summary>
+    /// The squares outside <paramref name="kingdom"/> on which both its palace and another army's, each standing
+    /// partly outside its kingdom (<see cref="EdgeCentres(ImmutableList{ArmySquare}, int, int)"/>), could stand: from
+    /// <see cref="ApartEdition"/> on, no palace's, so that no two palaces ever share a square, and none is lost for it
+    /// (the user's words of 2026-11-19: "it should be impossible for palaces to overlap"; and, as a palace removed
+    /// leaves nowhere to place a mercenary, "non-square palaces with squares removed from the palace so it can fit").
+    /// </summary>
+    public static ImmutableHashSet<ArmySquare> Contested(
+        [Required] ImmutableList<ArmySquare> kingdom,
+        int width,
+        int height
     )
     {
         ImmutableHashSet<ArmySquare> all = [.. kingdom];
-        ImmutableHashSet<ArmySquare> OthersOf(IEnumerable<ArmySquare> own) => Others(own, width, height);
-        ImmutableHashSet<ArmySquare> kingdoms = OthersOf(kingdom);
-        ImmutableList<ArmySquare> apart = EdgeCentres(kingdom, square => !kingdoms.Contains(square));
-        ImmutableHashSet<ArmySquare> overflows = edition >= ApartEdition
-            ? OthersOf(apart.SelectMany(Window).Where(square => !all.Contains(square)))
-            : [];
-        return EdgeCentres(kingdom, square => !kingdoms.Contains(square) && !overflows.Contains(square));
+        ImmutableHashSet<ArmySquare> reached =
+            [.. EdgeCentres(kingdom, width, height).SelectMany(Window).Where(square => !all.Contains(square))];
+        return reached.Intersect(Others(reached, width, height));
     }
+
+    /// <summary>
+    /// The squares of the palace about <paramref name="centre"/>: its nine, but any <paramref name="contested"/>.
+    /// </summary>
+    public static ImmutableList<ArmySquare> Shape(
+        [Required] ArmySquare centre,
+        [Required] ImmutableHashSet<ArmySquare> contested
+    ) =>
+        [.. Window(centre).Where(square => !contested.Contains(square))];
 
     /// <summary>
     /// Where <paramref name="own"/>, squares as seat 0 sees them, stand for every other seat, on a board
@@ -76,7 +96,7 @@ public static class PalaceSquares
     }
 
     /// <summary>
-    /// As <see cref="EdgeCentres(ImmutableList{ArmySquare}, int, int, int)"/> says, a square outside the kingdom free
+    /// As <see cref="EdgeCentres(ImmutableList{ArmySquare}, int, int)"/> says, a square outside the kingdom free
     /// if <paramref name="isFree"/> says so.
     /// </summary>
     public static ImmutableList<ArmySquare> EdgeCentres(

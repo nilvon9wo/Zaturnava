@@ -80,6 +80,15 @@ public sealed class BoardActions([Required] ImmutableList<ActionDto> legal)
             .Select(move => move.Action.Label)
             .FirstOrDefault();
 
+    /// <summary>
+    /// The other piece the action from <paramref name="from"/> to <paramref name="to"/> takes along, as castling takes
+    /// the Rook; null if it takes none, or there is none.
+    /// </summary>
+    public PartnerMoveDto? PartnerBetween(int from, int to) =>
+        this._moves.Where(move => move.From == from && move.To == to)
+            .Select(move => move.Action.Partner)
+            .FirstOrDefault();
+
     private static IEnumerable<(int From, int To, ActionDto Action)> MoveOf(ActionDto action) =>
         CellsOf(action) is { } cells ? [(cells.From, cells.To, action)] : [];
 

@@ -81,7 +81,8 @@
     {
         <span class="forward-arrow" aria-hidden="true">&#x25B2;</span>
     }
-    <div class="move-diagram@(this.Playing is null ? string.Empty : " playing")" style="--side: @this.Shown.Side; @this.Colours" role="img" aria-label="@this.Described">
+    @* Drawn anew each play, so that what changes on its squares, as an enemy won over, plays again too. *@
+    <div @key="this._plays" class="move-diagram@(this.Playing is null ? string.Empty : " playing")" style="--side: @this.Shown.Side; @this.Colours" role="img" aria-label="@this.Described">
         @for (int row = this.Shown.Side - 1; row >= 0; row--)
         {
             @for (int column = 0; column < this.Shown.Side; column++)

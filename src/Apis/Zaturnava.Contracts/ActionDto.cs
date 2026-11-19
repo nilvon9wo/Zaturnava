@@ -32,4 +32,11 @@ public sealed record ActionDto(
     /// </summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public PrisonerDto? Coming { get; init; }
+
+    /// <summary>
+    /// Another piece the move takes along, as castling takes the Rook, for a client to show where it goes too; none,
+    /// for any other action.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public PartnerMoveDto? Partner { get; init; }
 }

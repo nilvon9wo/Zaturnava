@@ -213,7 +213,8 @@ only in part, what is left is in the backlog, and its history here. The playtest
   the width and the height its columns (*Stated*). Each seat's army stands in its own corner, facing across the
   board or up it (`Pinwheel.At`); a game set before keeps its square board. A palace that may stand partly outside
   a kingdom too small for one stands only where it may for every seat (*Proposed*), and, from edition 14
-  (2026-11-19), never where another army's could. Bots are rated as at the game's own size nearest in width and
+  (2026-11-19), without any square another army's could stand on too, so that no two overlap and every army keeps
+  one (*Stated*). Bots are rated as at the game's own size nearest in width and
   height together (*Proposed*).
 - A custom game's pieces chosen by hand and placed into each kingdom, rather than only dealt (*Stated
   2026-11-07*): the other of the two most noticeable gaps. *Done* by the army draft, in turn or in secret, with
