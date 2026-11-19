@@ -299,12 +299,12 @@ html { scrollbar-gutter: stable; }
 
 .panel h2 { margin-top: 0; }
 
-/* The games, the leaderboard to their right: those waiting for the player above the rest (playtest H1). The
-   games, compact, their filters wrapping, take one share of the room left and the leaderboard, with its many
-   columns, two (the user's reports of 2026-11-19: the leaderboard was squeezed, its player's name broken over
-   three lines). */
+/* The games, the leaderboard to their right: those waiting for the player above the rest (playtest H1). The two
+   share the room evenly, half each (the user's reports of 2026-11-19: first the leaderboard was squeezed, its
+   player's name broken over three lines; then, given two shares, it crowded the games: "Aim for 50/50"); a board too
+   wide for its half scrolls within it. */
 .games-column {
-    flex: 1 1 480px;
+    flex: 1 1 560px;
     min-width: 0;
     display: flex;
     flex-direction: column;
@@ -454,7 +454,7 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
 .quick-games { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; }
 .quick-hint { color: var(--muted); font-size: 0.9em; }
 /* A panel of the lobby: its widest board (the bots', eight columns) scrolls within it rather than widening the page. */
-.panel.leaderboard { overflow-x: auto; flex: 2 1 640px; }
+.panel.leaderboard { overflow-x: auto; flex: 1 1 560px; }
 .leaderboard .leaders th, .leaderboard .leaders td.name, .leaderboard .leaders td.name button { white-space: nowrap; }
 .leaderboard .choice { display: flex; gap: 8px; align-items: center; margin: 8px 0; }
 .leaderboard .leaders th.kind, .leaderboard .leaders td.kind { text-align: center; }
@@ -1099,6 +1099,11 @@ button.safety.off {
     padding: 18px 22px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
     position: relative;
+    /* Opened from within a table's cell (a leaderboard's name, which never wraps), it wraps and reads as any page
+       does (the user's report of 2026-11-19: a bot's description ran out of its card). */
+    white-space: normal;
+    text-align: left;
+    font-weight: 400;
 }
 .dialog h2 { margin: 0 0 10px; padding-right: 32px; font-size: 1.2rem; }
 /* Every dialog that can be closed is closed by a cross in its top right corner, and nothing else. */

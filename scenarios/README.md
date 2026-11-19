@@ -80,7 +80,8 @@ names them: `Black King (Checkers)`, `Red Rook (Western)`, `Black Man`. Dice:
 | `tafl-custody` | Custody: three pieces taken at once |
 | `tafl-escape` | The Tafl King leaving the board from its far corner |
 | `promotions` | A Pawn's own promotion, the far edge's, and the Shogi far three rows |
-| `mercenaries` | Hiring a captured Shogi piece |
+| `mercenaries` | Hiring a captured Shogi piece, and placing it in the palace |
+| `evangelist` | The Evangelist converting the lines it closes, but never a leader |
 | `leapers` | Blocked leaps (Xiangqi Horse, Janggi Elephant) and the Grasshopper |
 | `pawns` | The Berolina Pawn, and Pawns back to back swapping |
 | `forward-only-swaps` | Forward-only pieces of different kinds swapping back to back |
