@@ -1,0 +1,117 @@
+using System.Collections.Concurrent;
+using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
+
+namespace Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
+
+/// <summary>
+/// Each special power a kind has, drawn at work beside its moves (the user's report of 2026-11-19: "all pieces with
+/// special powers need their powers illustrated"), on the same <see cref="MoveDiagrams.Side"/>-cell board, the piece
+/// on its centre, facing up: the two-cell first move and <i>en passant</i>, castling, the flying general, the
+/// face-off, converting, escape and the back-to-back swap. Each is one example, its cells marked with what they mean;
+/// where the piece goes in it, played. Capture by custody, and its berserk, the kind's captures show already.
+/// </summary>
+internal sealed class PowerDiagrams(Chaturaji2027Variant variant, Func<PieceKindId, string> nameOf)
+{
+    private const int Side = MoveDiagrams.Side;
+    private const int Middle = Side / 2;
+
+    /// <summary>
+    /// The cell <paramref name="right"/> cells to the centre's right and <paramref name="ahead"/> ahead.
+    /// </summary>
+    private static int At(int right, int ahead) => ((Middle + ahead) * Side) + Middle + right;
+
+    private readonly ConcurrentDictionary<PieceKindId, MoveDiagram> _drawn = new();
+
+    /// <summary>
+    /// <paramref name="drawn"/>, with each special power of <paramref name="kind"/> drawn beside it, drawn once.
+    /// </summary>
+    public MoveDiagram Of(PieceKindId kind, MoveDiagram drawn) =>
+        this._drawn.GetOrAdd(
+            kind,
+            _ => drawn with
+            {
+                Alternates =
+                [
+                    .. drawn.Alternates,
+                    .. this.PowersOf(kind, drawn).Where(power => power.Has).Select(power => power.Drawn),
+                ],
+            }
+        );
+
+    private IEnumerable<(bool Has, NamedDiagram Drawn)> PowersOf(PieceKindId kind, MoveDiagram drawn)
+    {
+        string rooks = string.Join(" or ", variant.CastlingRooks.Select(nameOf).Order(StringComparer.Ordinal));
+        int ahead = At(0, 1);
+        int leader = At(0, Middle);
+        yield return (variant.StartRowPowers.Contains(kind), Power(
+            "First move",
+            "From its start rows, its first move may go two cells straight ahead.",
+            new PlayedExample(At(0, 2), []),
+            new CellMark(CellMark.Lands, "its first move may land here", [At(0, 2)])
+        ));
+        yield return (variant.StartRowPowers.Contains(kind), Power(
+            "En passant",
+            "An enemy that just went two cells past it, it may take as it lands on the cell passed, even out of "
+                + "turn, until its own turn ends.",
+            new PlayedExample(At(1, 1), [At(1, 0)]),
+            new CellMark(CellMark.Trail, "where the enemy came from, two cells past it", [At(1, 2)]),
+            new CellMark(CellMark.Taken, "the enemy, taken", [At(1, 0)]),
+            new CellMark(CellMark.Lands, "it lands on the cell the enemy passed", [At(1, 1)])
+        ));
+        yield return (variant.Castlers.Contains(kind), Power(
+            "Castling",
+            $"Castles with its own {rooks}: two cells towards it, the {rooks} jumping over to its other side.",
+            new PlayedExample(At(2, 0), []),
+            new CellMark(CellMark.Standing, $"its own {rooks}", [At(3, 0)]),
+            new CellMark(CellMark.Lands, "it lands here", [At(2, 0)]),
+            new CellMark(CellMark.Trail, $"the {rooks} lands here, over it", [At(1, 0)])
+        ));
+        yield return (variant.FlyingCapturers.Contains(kind), new NamedDiagram(
+            "Flying general",
+            Plain(new PlayedExample(leader, [leader])) with
+            {
+                Told = "An enemy leader in its row or column, with nothing between, however far: it flies the whole "
+                    + "way and takes it, as its move, out of its palace if need be.",
+                Marks = [new CellMark(CellMark.Taken, "an enemy leader, nothing between: flown to, taken", [leader])],
+                Palace = drawn.Palace,
+                IsPalaceLined = drawn.IsPalaceLined,
+            }
+        ));
+        yield return (variant.FaceOffCallers.Contains(kind), Power(
+            "Face-off",
+            "Facing an enemy leader in its row or column, nothing between, its player may call a face-off, even out "
+                + "of turn: both leaders are taken at once, and both sides score. Neither moves.",
+            null,
+            new CellMark(CellMark.Taken, "it and the enemy leader facing it, both taken", [At(0, 0), leader])
+        ));
+        yield return (variant.Converters.Contains(kind), Power(
+            "Converting",
+            "It takes nothing: after it moves, every unbroken line of one enemy's pieces, none a leader, from next to "
+                + "it up to another of its player's pieces, becomes its player's.",
+            new PlayedExample(ahead, []),
+            new CellMark(CellMark.Lands, "it moves here", [ahead]),
+            new CellMark(CellMark.Converted, "an enemy's pieces, won over", [At(0, 2), At(0, 3)]),
+            new CellMark(CellMark.Standing, "another of its player's pieces", [leader])
+        ));
+        yield return (variant.Fleers.Contains(kind), Power(
+            "Escape",
+            "On its own far corner, the board's corner across from its army's, it may leave the board as its move, "
+                + "where no one can take it, to come back on doubles.",
+            null,
+            new CellMark(CellMark.Lands, "its own far corner: from here it may leave the board", [At(Middle, Middle)])
+        ));
+        yield return (variant.Swappers.Contains(kind), Power(
+            "Swap",
+            "Swaps places with an ally's piece straight ahead of it that moves only forward too, the two back to back.",
+            new PlayedExample(ahead, []),
+            new CellMark(CellMark.Standing, "an ally's piece straight ahead: the two swap places", [ahead])
+        ));
+    }
+
+    /// <summary>A power at work, named, told, its example played and its cells marked.</summary>
+    private static NamedDiagram Power(string name, string told, PlayedExample? example, params CellMark[] marks) =>
+        new(name, Plain(example) with { Told = told, Marks = [.. marks] });
+
+    /// <summary>The board alone, the piece on its centre, no move nor capture drawn but the example's.</summary>
+    private static MoveDiagram Plain(PlayedExample? example) => new(Side, [], [], []) { Example = example };
+}

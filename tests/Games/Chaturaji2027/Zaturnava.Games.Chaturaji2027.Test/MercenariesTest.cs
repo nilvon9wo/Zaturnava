@@ -234,16 +234,13 @@ public sealed class MercenariesTest
         // Arrange - nothing beyond the rules
 
         // Act
-        ImmutableList<string> horse = this._rules.GuideOf(Chaturaji2027Pieces.Horse).SpecialPowers;
-        ImmutableList<string> raja = this._rules.GuideOf(Chaturaji2027Pieces.Raja).SpecialPowers;
+        PieceGuide horse = this._rules.GuideOf(Chaturaji2027Pieces.Horse);
+        PieceGuide raja = this._rules.GuideOf(Chaturaji2027Pieces.Raja);
 
-        // Assert
+        // Assert - a mercenary is what it is, not a power (the user's word of 2026-11-19)
         Assert.Equal(
-            (true, false),
-            (
-                horse.Any(power => power.StartsWith("Mercenary: ", StringComparison.Ordinal)),
-                raja.Any(power => power.StartsWith("Mercenary: ", StringComparison.Ordinal))
-            )
+            (true, false, true),
+            (horse.IsMercenary, raja.IsMercenary, horse.SpecialPowers.IsEmpty)
         );
     }
 

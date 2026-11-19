@@ -963,15 +963,126 @@ public sealed class GrandLegionsRulesTest
         MoveDiagram diagram = rules.GuideOf(GrandLegionsPieces.XiangqiSoldier).Diagram;
 
         // Assert
-        MoveDiagram across = Assert.IsType<MoveDiagram>(diagram.Across);
+        NamedDiagram across = Assert.Single(diagram.Alternates);
         Assert.Equal(
-            ("49", "49", "39,41,49", "39,41,49", false),
+            ("49", "49", "Across a river", "39,41,49", "39,41,49"),
             (
                 string.Join(",", diagram.Moves),
                 string.Join(",", diagram.Captures),
-                string.Join(",", across.Moves),
-                string.Join(",", across.Captures),
-                rules.GuideOf(GrandLegionsPieces.JanggiSoldier).Diagram.Across is not null
+                across.Name,
+                string.Join(",", across.Diagram.Moves),
+                string.Join(",", across.Diagram.Captures)
+            )
+        );
+    }
+
+    [Fact]
+    public void GuideOf_WhenAKindStepsAlongAPalacesLines_DrawsItOnItsPalacesCornerToo()
+    {
+        // Arrange - the Janggi Soldier, on its palace's back left corner, 40, the throne diagonally ahead on 50
+        Chaturaji2027Rules rules = GrandLegionsRules.RulesOf(QuickGame.Small);
+
+        // Act
+        MoveDiagram diagram = rules.GuideOf(GrandLegionsPieces.JanggiSoldier).Diagram;
+
+        // Assert - forward, sideways, and along the diagonal to the throne
+        NamedDiagram corner = Assert.Single(diagram.Alternates);
+        Assert.Equal(
+            ("On its palace's corner", "39,41,49,50", 50, true),
+            (
+                corner.Name,
+                string.Join(",", corner.Diagram.Moves),
+                corner.Diagram.Throne,
+                corner.Diagram.IsPalaceLined
+            )
+        );
+    }
+
+    [Fact]
+    public void GuideOf_WhenAPalaceHoldsAKind_DrawsItInItsPalaceUnlinedAndItsFlyingGeneralOutOfIt()
+    {
+        // Arrange - the Xiangqi General steps orthogonally, in its palace; its flying general takes a leader on 76
+        Chaturaji2027Rules rules = GrandLegionsRules.RulesOf(QuickGame.Small);
+
+        // Act
+        MoveDiagram diagram = rules.GuideOf(GrandLegionsPieces.XiangqiGeneral).Diagram;
+
+        // Assert
+        NamedDiagram flying = Assert.Single(diagram.Alternates);
+        Assert.Equal(
+            ("31,39,41,49", false, 9, "Flying general", 76, "76", 9),
+            (
+                string.Join(",", diagram.Moves),
+                diagram.IsPalaceLined,
+                diagram.Palace.Count,
+                flying.Name,
+                flying.Diagram.Example?.To,
+                string.Join(",", flying.Diagram.Example?.Taken ?? []),
+                flying.Diagram.Palace.Count
+            )
+        );
+    }
+
+    [Theory]
+    [InlineData("western-pawn", "First move,En passant,Swap")]
+    [InlineData("western-king", "Castling")]
+    [InlineData("janggi-general", "On its palace's corner,Face-off")]
+    [InlineData("evangelist", "Converting")]
+    [InlineData("tafl-king", "Escape")]
+    [InlineData("knight", "")]
+    public void GuideOf_WhenAKindHasSpecialPowers_DrawsEachAtWork(string kind, string names)
+    {
+        // Arrange
+        Chaturaji2027Rules rules = GrandLegionsRules.RulesOf(QuickGame.Small);
+
+        // Act
+        MoveDiagram diagram = rules.GuideOf(new PieceKindId(kind)).Diagram;
+
+        // Assert - each told, its cells marked
+        Assert.Equal(
+            (names, true),
+            (
+                string.Join(",", diagram.Alternates.Select(other => other.Name)),
+                diagram.Alternates
+                    .Where(other => other.Diagram.Told is not null)
+                    .All(other => !other.Diagram.Marks.IsEmpty)
+            )
+        );
+    }
+
+    [Fact]
+    public void GuideOf_WhenAKindIsAMercenary_SaysSoApartFromItsPowers()
+    {
+        // Arrange - Shogi's pieces are mercenaries
+        Chaturaji2027Rules rules = GrandLegionsRules.RulesOf(QuickGame.Small);
+
+        // Act
+        PieceGuide guide = rules.GuideOf(GrandLegionsPieces.ShogiPawn);
+
+        // Assert
+        Assert.Equal(
+            (true, false),
+            (guide.IsMercenary, guide.SpecialPowers.Any(power => power.Contains("ercenary", StringComparison.Ordinal)))
+        );
+    }
+
+    [Theory]
+    [InlineData("tafl-king")]
+    [InlineData("swede")]
+    public void GuideOf_WhenAKindMayGoBerserk_SaysSoAmongItsDrawbacksNotItsPowers(string kind)
+    {
+        // Arrange - going berserk helps no one use it (the user's word of 2026-11-19)
+        Chaturaji2027Rules rules = GrandLegionsRules.RulesOf(QuickGame.Small);
+
+        // Act
+        PieceGuide guide = rules.GuideOf(new PieceKindId(kind));
+
+        // Assert
+        Assert.Equal(
+            (true, false),
+            (
+                guide.Drawbacks.Any(drawback => drawback.StartsWith("Berserk", StringComparison.Ordinal)),
+                guide.SpecialPowers.Any(power => power.Contains("Berserk", StringComparison.Ordinal))
             )
         );
     }

@@ -326,7 +326,7 @@ public sealed class Chaturaji2027VariantTest
         // Assert
         Assert.Equal(
             ("30,31,32,48,49,50", "30,31,32,39,41,48,49,50"),
-            (string.Join(",", diagram.Moves), string.Join(",", diagram.Across?.Moves ?? []))
+            (string.Join(",", diagram.Moves), string.Join(",", Assert.Single(diagram.Alternates).Diagram.Moves))
         );
     }
 

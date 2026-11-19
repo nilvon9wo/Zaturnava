@@ -71,6 +71,23 @@
         }
         @this.Listed("powers", "Common powers", kind.Powers)
         @this.Listed("special-powers", "Special powers", kind.SpecialPowers)
+        @if (kind.IsMercenary || !kind.Drawbacks.IsEmpty)
+        {
+            <h3>Drawbacks</h3>
+            <ul class="drawbacks">
+                @if (kind.IsMercenary)
+                {
+                    <li class="mercenary">
+                        <a href="@DocsLinks.Mercenaries" target="_blank" rel="noopener">Mercenary</a>: whoever holds it
+                        prisoner may hire it
+                    </li>
+                }
+                @foreach (string drawback in kind.Drawbacks)
+                {
+                    <li>@this.Named(drawback)</li>
+                }
+            </ul>
+        }
         @this.Listed("restrictions", "Restrictions", kind.Restrictions)
     }
 </aside>

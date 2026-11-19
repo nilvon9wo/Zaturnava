@@ -287,6 +287,8 @@ internal static class GameViews
             Captures = TextOf(guide.Kind.Movement.Where(rule => rule.CanCapture), rules.NameOf),
             Powers = guide.Powers,
             SpecialPowers = guide.SpecialPowers,
+            IsMercenary = guide.IsMercenary,
+            Drawbacks = guide.Drawbacks,
             PromotesTo = [.. guide.PromotesTo.Select(rules.NameOf)],
             IsPromotionPlayed = guide.IsPromotionPlayed,
             PromotesWhere = guide.PromotesWhere,
@@ -308,7 +310,14 @@ internal static class GameViews
                 ? new CustodyDto(custody.Landing, custody.Taken, custody.Partner)
                 : null,
             Elsewhere = diagram.Elsewhere is { } elsewhere ? DiagramOf(elsewhere) : null,
-            Across = diagram.Across is { } across ? DiagramOf(across) : null,
+            Alternates =
+            [
+                .. diagram.Alternates.Select(other => new NamedDiagramDto(other.Name, DiagramOf(other.Diagram))),
+            ],
+            Told = diagram.Told,
+            Marks = [.. diagram.Marks.Select(mark => new CellMarkDto(mark.Mark, mark.Meaning, mark.Cells))],
+            Example = diagram.Example is { } example ? new PlayedExampleDto(example.To, example.Taken) : null,
+            IsPalaceLined = diagram.IsPalaceLined,
             Berserk = [.. diagram.Berserk.Select(held => new CustodyDto(held.Landing, held.Taken, held.Partner))],
             Leaps = diagram.Leaps,
             Jumps = diagram.Jumps,

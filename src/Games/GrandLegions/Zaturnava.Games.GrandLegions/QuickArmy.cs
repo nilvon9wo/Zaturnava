@@ -58,6 +58,14 @@ public static class QuickArmy
     /// </summary>
     public const int CompositionEdition = 10;
 
+    /// <summary>
+    /// The edition (<see cref="QuickGame.Edition"/>) from which a leader a palace holds, as a Xiangqi or Janggi
+    /// General, starts in its palace when its army has another leader on the throne already; before it, one started
+    /// anywhere, outside the palace that should hold it (the user's report of 2026-11-19, of flying generals starting
+    /// outside the palace). A game dealt before replays as it was.
+    /// </summary>
+    public const int HeldLeadersEdition = 12;
+
     /// <summary>How much of its kingdom, in hundredths, an army aims to fill (Stated, E2: at least 80%).</summary>
     public const int OccupiedPercent = 80;
 
@@ -244,7 +252,7 @@ public static class QuickArmy
                 (army, slot) => army.Add(
                     Drawn(
                         Within(
-                            Fitting(eligible, army, room),
+                            Fitting(eligible, army, room, game.Edition),
                             slot.Class,
                             LeftFor(game, eligible, army, slot.Class, [.. slot.Later])
                         ),
@@ -287,7 +295,7 @@ public static class QuickArmy
         [Required] Random random
     )
     {
-        ImmutableList<GrandPiece> fitting = Fitting(eligible, army, RoomOf(game));
+        ImmutableList<GrandPiece> fitting = Fitting(eligible, army, RoomOf(game), game.Edition);
         ImmutableList<PieceClass> aimed = Lacking(game, fitting, army, AimOf(game));
         bool isPast = aimed.IsEmpty;
         ImmutableList<PieceClass> wanted = isPast ? Lacking(game, fitting, army, game.Cells) : aimed;
@@ -465,8 +473,9 @@ public static class QuickArmy
     {
         ImmutableList<ArmySquare> backToFront = game.Kingdom;
         int crowned = army.FindIndex(piece => piece.Class == Leader);
+        bool Held(GrandPiece piece, int index) => IsHeld(piece, game.Edition, index != crowned);
         ImmutableList<GrandPiece> others = Shuffled(
-            army.Where((piece, index) => index != crowned && piece.Class != Infantry && !IsHeld(piece)),
+            army.Where((piece, index) => index != crowned && piece.Class != Infantry && !Held(piece, index)),
             random
         );
         ArmySquare? kept = placed is null ? null : ThroneIn(placed, game, random);
@@ -475,7 +484,7 @@ public static class QuickArmy
             : 0;
         ImmutableList<GrandPiece> infantry =
             Shuffled(army.Where(piece => piece.Class == Infantry && !IsHeld(piece)), random);
-        ImmutableList<GrandPiece> held = Shuffled(army.Where(IsHeld), random);
+        ImmutableList<GrandPiece> held = Shuffled(army.Where(Held), random);
         ArmySquare seat = kept ?? backToFront[dealt];
         ImmutableList<ArmySquare> palace = held.IsEmpty
             ? []
@@ -548,14 +557,33 @@ public static class QuickArmy
         piece.Class != Leader && PalaceConfinement.Confined.Contains(piece.Id);
 
     /// <summary>
+    /// Whether the piece is one a palace holds, in an army that has <paramref name="hasLeader"/> a leader on its throne
+    /// already: from <see cref="HeldLeadersEdition"/> on, a leader a palace holds too, but for the first, which holds
+    /// the throne.
+    /// </summary>
+    internal static bool IsHeld(GrandPiece piece, int edition, bool hasLeader) =>
+        IsHeld(piece)
+        || (edition >= HeldLeadersEdition
+            && hasLeader
+            && piece.Class == Leader
+            && PalaceConfinement.Confined.Contains(piece.Id));
+
+    /// <summary>
     /// The pieces <paramref name="army"/> may still be given: those a palace holds only while its palace has room.
     /// </summary>
     private static ImmutableList<GrandPiece> Fitting(
         ImmutableList<GrandPiece> eligible,
         ImmutableList<GrandPiece> army,
-        int room
-    ) =>
-        army.Count(IsHeld) < room ? eligible : [.. eligible.Where(piece => !IsHeld(piece))];
+        int room,
+        int edition
+    )
+    {
+        int held = army
+            .Where((piece, index) => IsHeld(piece, edition, army.Take(index).Any(each => each.Class == Leader)))
+            .Count();
+        bool hasLeader = army.Any(piece => piece.Class == Leader);
+        return held < room ? eligible : [.. eligible.Where(piece => !IsHeld(piece, edition, hasLeader))];
+    }
 
     /// <summary>
     /// The army with the piece at <paramref name="index"/>, if one kept to the colour of square it starts on, moved
@@ -639,7 +667,7 @@ public static class QuickArmy
         ImmutableList<GrandPiece> affordable = army.Count < game.Cells
             ?
             [
-                .. Fitting(eligible, army, RoomOf(game))
+                .. Fitting(eligible, army, RoomOf(game), game.Edition)
                     .Where(piece => piece.Class != Leader && piece.Value <= left)
                     .Where(piece => game.Edition < FormulaEdition || piece.Value <= MostAdded(eligible, piece.Class)),
             ]

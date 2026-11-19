@@ -786,6 +786,21 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
 .move-diagram .taken::before, .diagram-key .taken::before { background: var(--danger); }
 .move-diagram .taken::before { animation: taken 2.4s ease-in-out infinite; }
 .move-diagram .partner::before, .diagram-key .partner::before { background: var(--mark); }
+/* A power at work: the way a piece went, a dashed ring; an enemy won over, a disc in the danger colour ringed in the
+   mark colour. */
+.move-diagram .trail::after, .diagram-key .trail::after,
+.move-diagram .converted::before, .diagram-key .converted::before {
+    content: "";
+    position: absolute;
+    inset: 14%;
+    border-radius: 50%;
+}
+.move-diagram .trail::after, .diagram-key .trail::after { border: 2px dashed var(--muted); }
+.move-diagram .converted::before, .diagram-key .converted::before {
+    background: var(--danger);
+    box-shadow: 0 0 0 3px var(--mark);
+}
+.diagram-key .told { flex-basis: 100%; }
 /* An example played (C3): the piece where it stands, then moving, then where it ends, staying there; an enemy it
    takes, a disc in the danger colour, gone as it arrives. */
 .move-diagram .example-piece, .move-diagram .example-taken {
