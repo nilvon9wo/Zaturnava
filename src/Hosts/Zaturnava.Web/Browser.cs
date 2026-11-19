@@ -41,6 +41,7 @@ internal sealed class Browser(IJSRuntime js, IGameServing games)
     private const string GamesListKey = "zaturnava.games-list";
     private const string LeaderboardKey = "zaturnava.leaderboard";
     private const string NewGamePlaceKey = "zaturnava.new-game-place";
+    private const string ScenarioKey = "zaturnava.scenario";
     private const string Custom = "strength";
     private const string SeatBySeat = "seats";
     private const string Scenarios = "scenarios";
@@ -148,6 +149,11 @@ internal sealed class Browser(IJSRuntime js, IGameServing games)
     public async ValueTask<ListView?> GamesList() => ListView.Parse(await this.Load(GamesListKey));
 
     public ValueTask SetGamesList(ListView view) => this.Save(GamesListKey, view.Text);
+
+    /// <summary>The id of the scenario the player last started, if they have.</summary>
+    public async ValueTask<string?> LastScenario() => await this.Load(ScenarioKey) is { Length: > 0 } id ? id : null;
+
+    public ValueTask SetLastScenario(string id) => this.Save(ScenarioKey, id);
 
     /// <summary>The leaderboard the player last looked at, and how they sorted it, if they chose.</summary>
     public async ValueTask<ListView?> Leaderboard() => ListView.Parse(await this.Load(LeaderboardKey));

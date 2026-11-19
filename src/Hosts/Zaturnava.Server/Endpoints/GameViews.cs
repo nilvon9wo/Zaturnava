@@ -317,7 +317,13 @@ internal static class GameViews
             Told = diagram.Told,
             Marks = [.. diagram.Marks.Select(mark => new CellMarkDto(mark.Mark, mark.Meaning, mark.Cells))],
             Example = diagram.Example is { } example
-                ? new PlayedExampleDto(example.To, example.Taken) { EnemyFrom = example.EnemyFrom }
+                ? new PlayedExampleDto(example.To, example.Taken)
+                {
+                    EnemyFrom = example.EnemyFrom,
+                    PartnerFrom = example.PartnerFrom,
+                    PartnerTo = example.PartnerTo,
+                    Via = example.Via,
+                }
                 : null,
             IsPalaceLined = diagram.IsPalaceLined,
             Leaps = diagram.Leaps,

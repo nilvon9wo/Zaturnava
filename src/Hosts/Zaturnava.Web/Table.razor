@@ -282,7 +282,19 @@
                 }
                 @if (this._turn is { } turn)
                 {
-                    ImmutableList<ActionDto> promotions = this.AtSelection(turn);
+                    ImmutableList<ActionDto> promotions = [.. this.AtSelection(turn).Where(IsPromotion)];
+                    ImmutableList<ActionDto> atPiece = [.. this.AtSelection(turn).Where(action => !IsPromotion(action))];
+                    @if (!atPiece.IsEmpty)
+                    {
+                        <div class="at-piece">
+                            @foreach (ActionDto action in atPiece)
+                            {
+                                <button class="action at-cell" @onclick="() => this.Submit(turn.Claim, action)">
+                                    @this.Named(ActionLabels.LabelOf(action))
+                                </button>
+                            }
+                        </div>
+                    }
                     @if (!promotions.IsEmpty)
                     {
                         ImmutableList<ActionDto> own = [.. promotions.Where(IsOwnPromotion)];
@@ -897,8 +909,13 @@
             )
         );
 
+    /// <summary>
+    /// Whether the move takes a piece of the player's own team: goes onto one, but for a swap back to back, which takes
+    /// nothing (the user's report of 2026-11-19: with the safety on, no swap was offered), and is the only move onto a
+    /// piece the server says anything of.
+    /// </summary>
     private static bool TakesOwnTeam(GameViewDto view, int seat, ActionDto action) =>
-        action.Kind == MoveKind
+        action is { Kind: MoveKind, Label: null }
         && view.Pieces.FirstOrDefault(piece =>
             piece.Cell == int.Parse(action.Arguments[ActionArguments.To], CultureInfo.InvariantCulture)
         ) is { } taken
@@ -1129,6 +1146,13 @@
         string name = view.Cells.First(at => at.Id == cell).Name;
         return $"Promote {view.Seats[pawn.Owner].Name}'s {pawn.Name} on {name} to:";
     }
+
+    /// <summary>
+    /// Whether the action taken at a piece promotes it, into a kind or a captured piece; not, as an escape off the
+    /// board is (the user's report of 2026-11-19: a Tafl King on its corner had nothing to click to escape).
+    /// </summary>
+    private static bool IsPromotion(ActionDto action) =>
+        action.Arguments.ContainsKey(ActionArguments.Becomes) || action.Arguments.ContainsKey(ActionArguments.Into);
 
     /// <summary>Whether the promotion is the piece's own, into a kind, rather than into a captured piece.</summary>
     private static bool IsOwnPromotion(ActionDto promotion) => promotion.Arguments.ContainsKey(ActionArguments.Becomes);

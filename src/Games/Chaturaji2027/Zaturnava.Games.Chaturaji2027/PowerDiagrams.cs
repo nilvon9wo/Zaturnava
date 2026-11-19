@@ -62,9 +62,10 @@ internal sealed class PowerDiagrams(Chaturaji2027Variant variant, Func<PieceKind
         ));
         yield return (variant.Castlers.Contains(kind), Power(
             "Castling",
-            $"Castles with its own {rooks}: two cells towards it, the {rooks} jumping over to its other side.",
-            new PlayedExample(At(2, 0), []),
-            new CellMark(CellMark.Standing, $"its own {rooks}", [At(3, 0)]),
+            Castling.Told(rooks),
+            new PlayedExample(At(2, 0), []) { PartnerFrom = At(Middle, 0), PartnerTo = At(1, 0) },
+            new CellMark(CellMark.Standing, $"its own {rooks}, however far, moved or not", [At(Middle, 0)]),
+            new CellMark(CellMark.Unattacked, "no enemy may be able to capture here", [At(0, 0), At(1, 0), At(2, 0)]),
             new CellMark(CellMark.Lands, "it lands here", [At(2, 0)]),
             new CellMark(CellMark.Trail, $"the {rooks} lands here, over it", [At(1, 0)])
         ));
@@ -112,6 +113,15 @@ internal sealed class PowerDiagrams(Chaturaji2027Variant variant, Func<PieceKind
             new CellMark(CellMark.TakenFriend, "a piece of its own side, held: taken", [At(0, 3)]),
             new CellMark(CellMark.Taken, "an enemy, held: taken", [At(1, 2)]),
             new CellMark(CellMark.StandingFoe, "enemies holding them with it", [At(0, 4), At(2, 2)])
+        ));
+        yield return (!drawn.Jumps.IsEmpty, Power(
+            "Chain of jumps",
+            "Having jumped an enemy, taking it, it may jump again from where it landed, and again, with no die, while "
+                + "it can, each jump picked on its own, in any way it jumps; or stop.",
+            new PlayedExample(At(-2, 4), [At(-1, 1), At(-1, 3)]) { Via = At(-2, 2) },
+            new CellMark(CellMark.Taken, "enemies jumped: each taken", [At(-1, 1), At(-1, 3)]),
+            new CellMark(CellMark.Trail, "it lands, then jumps on", [At(-2, 2)]),
+            new CellMark(CellMark.Lands, "it ends here, or jumps on, if it can", [At(-2, 4)])
         ));
         yield return (variant.Swappers.Contains(kind), Power(
             "Swap",

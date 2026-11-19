@@ -770,7 +770,7 @@ public sealed class GrandLegionsRulesTest
     }
 
     [Theory]
-    [InlineData("western-king", "Castles with its own Rook (Western): two cells towards it")]
+    [InlineData("western-king", "Castles with its own Rook (Western) anywhere in its row or column, nothing between")]
     [InlineData("xiangqi-general", "Flying general: ")]
     [InlineData("janggi-general", "Face-off: ")]
     [InlineData("tafl-king", "Takes by custody, ")]
@@ -1033,6 +1033,8 @@ public sealed class GrandLegionsRulesTest
     [InlineData("tafl-king", "Escape,Berserk")]
     [InlineData("swede", "Berserk")]
     [InlineData("knight", "")]
+    [InlineData("man", "Chain of jumps,Swap")]
+    [InlineData("checkers-king", "Chain of jumps")]
     public void GuideOf_WhenAKindHasSpecialPowers_DrawsEachAtWork(string kind, string names)
     {
         // Arrange
