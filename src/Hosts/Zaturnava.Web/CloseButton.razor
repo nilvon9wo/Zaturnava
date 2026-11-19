@@ -1,0 +1,12 @@
+@* How every dialog that can be closed is closed (Stated, 2026-11-19: an "X" in its upper right corner, never a Close
+   button elsewhere): a cross, in the dialog's top right corner, named Close for those who cannot see it. *@
+<button class="dialog-close @this.Class" aria-label="Close" title="Close" @onclick="this.OnClose">&#x2715;</button>
+
+@code {
+    /// <summary>A class of its own besides, to tell which dialog's it is; none, unless given.</summary>
+    [Parameter]
+    public string? Class { get; set; }
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+}

@@ -4,8 +4,11 @@
    the server's bots, by their rating, with their points and how they did, all told and against people alone; or
    everyone, players and bots together, each marked as a person or a bot. Each board sorts by any of its columns,
    its header clicked (again, the other way), and shows ten at a time, page by page. Of the game the lobby has chosen,
-   at every size. Each name opens the player's, or the bot's, profile. *@
+   at every size. Each name opens the player's, or the bot's, profile. Everyone's board says whether each is a person
+   or a bot in a column of its own (Stated, 2026-11-19: not in the name's). The board chosen, and how it is sorted, are
+   remembered (Stated, the same day). *@
 @inject IGameServing Games
+@inject Browser Browser
 
 <div class="panel leaderboard">
     <h2>Leaderboard</h2>
@@ -38,7 +41,11 @@
                 <thead>
                     <tr>
                         <th>#</th>
-                        <th>@this.Columns.Who</th>
+                        @if (this._board == EveryoneBoard)
+                        {
+                            <th class="kind">Kind</th>
+                        }
+                        <th class="name">@this.Columns.Who</th>
                         @foreach (Column column in this.Columns.All)
                         {
                             <th title="@column.Title" aria-sort="@this.SortOf(column)">
@@ -56,14 +63,15 @@
                     {
                         <tr>
                             <td class="place">@(index + 1)</td>
-                            <td class="name">
-                                @if (this._board == EveryoneBoard)
-                                {
-                                    <span class="kind"
-                                          role="img"
+                            @if (this._board == EveryoneBoard)
+                            {
+                                <td class="kind">
+                                    <span role="img"
                                           aria-label="@KindOf(row)"
                                           title="@KindOf(row)">@(row.BotId is null ? "🧑" : "🤖")</span>
-                                }
+                                </td>
+                            }
+                            <td class="name">
                                 <SeatPlayer Text="@row.Name"
                                             PlayerId="@row.PlayerId"
                                             BotId="@row.BotId"
@@ -109,6 +117,9 @@
     private const string PlayersBoard = "players";
     private const string BotsBoard = "bots";
     private const string EveryoneBoard = "everyone";
+
+    /// <summary>The name the board chosen is remembered by.</summary>
+    private const string BoardChoice = "board";
 
     private const string PointsTitle = "The points scored at the board, in every game finished, won or lost";
 
@@ -199,6 +210,20 @@
             _ => Players,
         };
 
+    /// <summary>The board, and how it is sorted, as the player last left it; the players', by Elo, until they choose.</summary>
+    protected override async Task OnInitializedAsync()
+    {
+        if (await this.Browser.Leaderboard() is not { } view)
+        {
+            return;
+        }
+
+        this._board = view[BoardChoice] is BotsBoard or EveryoneBoard ? view[BoardChoice]! : PlayersBoard;
+        int sort = this.Columns.All.FindIndex(column => column.Key == view.Sort);
+        this._sort = Math.Max(0, sort);
+        this._isAscending = sort >= 0 && !view.IsDescending;
+    }
+
     /// <summary>The leaderboard of the game, once it is another; told why not, if the server cannot give it.</summary>
     protected override async Task OnParametersSetAsync() =>
         this._problem = this.Game == this._game ? this._problem : await Requests.Attempt(() => this.Show(this.Game));
@@ -209,17 +234,29 @@
         this._board = $"{change.Value}";
         this._sort = 0;
         this._isAscending = false;
+        await this.Remember();
         this._problem = await Requests.Attempt(() => this.Show(this.Game));
     }
 
     /// <summary>Sorted by the column, most first; by the same column again, the other way; from the first page.</summary>
-    private void SortBy(Column column)
+    private async Task SortBy(Column column)
     {
         int chosen = this.Columns.All.IndexOf(column);
         this._isAscending = chosen == this._sort && !this._isAscending;
         this._sort = chosen;
         this._page = 0;
+        await this.Remember();
     }
+
+    /// <summary>Remembers the board shown, and how it is sorted, to show it so again.</summary>
+    private ValueTask Remember() =>
+        this.Browser.SetLeaderboard(
+            new ListView(
+                ImmutableDictionary<string, string>.Empty.Add(BoardChoice, this._board),
+                this.Columns.All[this._sort].Key,
+                !this._isAscending
+            )
+        );
 
     /// <summary>The rows by the column chosen; rows alike, in the order the server ranked them.</summary>
     private ImmutableList<Row> Sorted(ImmutableList<Row> rows) =>

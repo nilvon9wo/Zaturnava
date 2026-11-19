@@ -38,6 +38,9 @@ internal sealed class Browser(IJSRuntime js, IGameServing games)
     private const string SetupKey = "zaturnava.setup";
     private const string LastGameKey = "zaturnava.last-game";
     private const string SetupOfKey = "zaturnava.setup-of.";
+    private const string GamesListKey = "zaturnava.games-list";
+    private const string LeaderboardKey = "zaturnava.leaderboard";
+    private const string NewGamePlaceKey = "zaturnava.new-game-place";
     private const string Custom = "strength";
     private const string SeatBySeat = "seats";
     private const string Scenarios = "scenarios";
@@ -53,6 +56,7 @@ internal sealed class Browser(IJSRuntime js, IGameServing games)
     private static readonly ImmutableHashSet<string> Kept =
     [
         ThemeKey, SoundKey, SafetyKey, PiecesKey, CardsKey, LogKey, ChatOrderKey, AiTalkKey, PreviewKey, SetupKey,
+        GamesListKey, LeaderboardKey,
     ];
 
     private readonly IJSRuntime _js = js;
@@ -132,6 +136,23 @@ internal sealed class Browser(IJSRuntime js, IGameServing games)
     /// </summary>
     public ValueTask MakeDraggable(ElementReference card) =>
         this._js.InvokeVoidAsync("zaturnava.draggable", card, CardPlaceKey);
+
+    /// <summary>
+    /// Lets the player drag the lobby's New game dialog by its header wherever they like; it opens where they last put
+    /// it, else where the stylesheet floats it, over the games.
+    /// </summary>
+    public ValueTask MakeNewGameDraggable(ElementReference dialog) =>
+        this._js.InvokeVoidAsync("zaturnava.draggable", dialog, NewGamePlaceKey);
+
+    /// <summary>How the player last left the lobby's games list, filtered and sorted, if they changed it.</summary>
+    public async ValueTask<ListView?> GamesList() => ListView.Parse(await this.Load(GamesListKey));
+
+    public ValueTask SetGamesList(ListView view) => this.Save(GamesListKey, view.Text);
+
+    /// <summary>The leaderboard the player last looked at, and how they sorted it, if they chose.</summary>
+    public async ValueTask<ListView?> Leaderboard() => ListView.Parse(await this.Load(LeaderboardKey));
+
+    public ValueTask SetLeaderboard(ListView view) => this.Save(LeaderboardKey, view.Text);
 
     /// <summary>The pieces as the player last chose to see them: chaturaji, unless they chose chess.</summary>
     public async ValueTask<PieceSet> Pieces() =>

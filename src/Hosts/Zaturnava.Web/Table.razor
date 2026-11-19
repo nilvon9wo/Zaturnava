@@ -618,13 +618,13 @@
     {
         <div class="backdrop">
             <div class="dialog proposing" role="dialog" aria-modal="true" aria-labelledby="proposing-title">
+                <CloseButton Class="cancel" OnClose="this.KeepPlaying" />
                 <h2 id="proposing-title">End the game?</h2>
                 <p>The other players will be asked to agree. If all of them do, the game ends now, and points decide: @Totals(asked).</p>
                 <p>Meanwhile, will you wait for their answers, or pass on all your remaining turns?</p>
                 <div class="actions">
                     <button class="action wait" @onclick="() => this.ProposeEnd(proposer, false)">Wait for them to agree</button>
                     <button class="action resign" @onclick="() => this.ProposeEnd(proposer, true)">Pass on all my turns</button>
-                    <button class="action cancel" @onclick="this.KeepPlaying">Cancel</button>
                 </div>
             </div>
         </div>
@@ -634,13 +634,11 @@
     {
         <div class="backdrop">
             <div class="dialog reporting" role="dialog" aria-modal="true" aria-labelledby="reporting-title">
+                <CloseButton Class="close-report" OnClose="this.CloseReport" />
                 <h2 id="reporting-title">Report a bug</h2>
                 @if (this._bugReported is { } reported)
                 {
                     <p class="reported">Thank you. It is kept as report <code>@reported</code>.</p>
-                    <div class="actions">
-                        <button class="action close-report" @onclick="this.CloseReport">Close</button>
-                    </div>
                 }
                 else
                 {
@@ -656,7 +654,6 @@
                     }
                     <div class="actions">
                         <button class="action primary send-report" @onclick="this.SendReport">Send</button>
-                        <button class="action cancel" @onclick="this.CloseReport">Cancel</button>
                     </div>
                 }
             </div>

@@ -104,7 +104,9 @@ public sealed class LobbyTest : IDisposable
                 string.Join('|', lobby.FindAll("select.game option").Select(option => option.TextContent)),
                 lobby.Find("select.game").GetAttribute("value"),
                 this._page.Server.Listed?.Preview,
-                $"{this._page.JSInterop.Invocations["zaturnava.save"][^1].Arguments[1]}"
+                $"{this._page.JSInterop.Invocations["zaturnava.save"]
+                    .Last(saved => $"{saved.Arguments[0]}" == "zaturnava.previews")
+                    .Arguments[1]}"
             )
         );
     }
@@ -1838,6 +1840,147 @@ public sealed class LobbyTest : IDisposable
         Assert.Equal(
             (expected, sort),
             (GameIds(lobby), lobby.Find($"th:has(button.sort-{clicked[^1]})").GetAttribute("aria-sort"))
+        );
+    }
+
+    [Theory]
+    [InlineData("seat-0", "c|d|a|b")]
+    [InlineData("seat-1", "b|c|d|a")]
+    [InlineData("seat-2", "a|b|c|d")]
+    [InlineData("size", "a|d|c|b")]
+    public void Sort_WhenASizeOrASeatHeadingIsClicked_SortsBySizeOrByWhoHoldsTheSeatOpenSeatsFirst(
+        string column,
+        string expected
+    )
+    {
+        // Arrange - Black held by Bob at a, Zed at b, Ada at c, Al at d; Yellow open at b, and at d, over, so held by
+        // no one, listed as Open; a and d of Chaturaji 2027, c small, b large; d of two seats, so last by the third
+        this._page.Server.MoreRulesets = GrandSizes;
+        GameSummaryDto game = this._page.Server.Games[0];
+        this._page.Server.Games =
+        [
+            game with { Id = "a", Players = ["Bob", "Yan", "x", "y"], OpenSeats = [] },
+            game with
+            {
+                Id = "b",
+                RulesetId = "grand-legions-large",
+                Players = ["Zed", GameSummaryDto.Open, "x", "y"],
+                OpenSeats = [1],
+            },
+            game with
+            {
+                Id = "c",
+                RulesetId = "grand-legions-small",
+                Players = ["ada", "Kim", "x", "y"],
+                OpenSeats = [],
+            },
+            game with { Id = "d", Players = ["Al", GameSummaryDto.Open], OpenSeats = [1], IsOver = true },
+        ];
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Act
+        lobby.Find($"th button.sort-{column}").Click();
+
+        // Assert
+        Assert.Equal(expected, GameIds(lobby));
+    }
+
+    [Fact]
+    public void FilterAndSort_WhenChanged_AreRememberedAsTheyAreLeft()
+    {
+        // Arrange
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Act
+        lobby.Find("select.filter-state").Change("in-progress");
+        lobby.Find("input.filter-people").Change(true);
+        lobby.Find("input.filter-players").Change("Bob, open");
+        lobby.Find("th button.sort-moves").Click();
+        lobby.Find("th button.sort-moves").Click();
+
+        // Assert
+        Assert.Equal(
+            "desc=1&people=1&players=Bob%2C%20open&sort=moves&state=in-progress",
+            $"{this._page.JSInterop.Invocations["zaturnava.save"]
+                .Last(saved => $"{saved.Arguments[0]}" == "zaturnava.games-list")
+                .Arguments[1]}"
+        );
+    }
+
+    [Theory]
+    [InlineData("state=in-progress&people=1&players=Bob&size=chaturaji-2027", null, false, true, "Bob", true)]
+    [InlineData("state=mine&size=grand-legions-small", null, true, null, null, false)]
+    [InlineData("state=mine", "player", null, null, null, false)]
+    public void Render_WhenTheListWasLeftFilteredSo_ListsItSoAgain(
+        string remembered,
+        string? player,
+        bool? open,
+        bool? peopleOnly,
+        string? players,
+        bool isSized
+    )
+    {
+        // Arrange - a size of the game chosen, or of another; Mine, signed in or not (then, waiting for players)
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.games-list").SetResult(remembered);
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.player").SetResult(player);
+        this._page.Server.Players = this._page.Server.Players.SetItem("player", new PlayerDto("ada", "Ada"));
+        this._page.Server.MoreRulesets = GrandSizes;
+
+        // Act
+        _ = this.Render();
+
+        // Assert
+        Assert.Equal(
+            (open, peopleOnly, players, isSized ? "chaturaji-2027" : null, player is null ? null : "ada"),
+            (
+                this._page.Server.Listed?.Open,
+                this._page.Server.Listed?.PeopleOnly,
+                this._page.Server.Listed?.Players,
+                this._page.Server.Listed?.Ruleset,
+                this._page.Server.Listed?.Player
+            )
+        );
+    }
+
+    [Theory]
+    [InlineData("sort=moves&desc=1", "b|a", "descending")]
+    [InlineData("sort=seat-x", "a|b", "none")]
+    public void Render_WhenTheListWasLeftSorted_SortsItSoAgain(string remembered, string expected, string sort)
+    {
+        // Arrange - a with 5 moves, b with 9; by moves, or by a column there is not
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.games-list").SetResult(remembered);
+        GameSummaryDto game = this._page.Server.Games[0];
+        this._page.Server.Games = [game with { Id = "a", Moves = 5 }, game with { Id = "b", Moves = 9 }];
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Assert
+        Assert.Equal(
+            (expected, sort),
+            (GameIds(lobby), lobby.Find("th:has(button.sort-moves)").GetAttribute("aria-sort"))
+        );
+    }
+
+    [Fact]
+    public void NewGame_WhenShown_FloatsAsADialogToDragThatItsCrossCloses()
+    {
+        // Arrange - no game to join, so New game is shown
+        this._page.Server.Games = [];
+        IRenderedComponent<Lobby> lobby = this.RenderAsIs();
+        (string? Role, object? Key) shown = (
+            lobby.Find(".panel.new-game").GetAttribute("role"),
+            this._page.JSInterop.Invocations["zaturnava.draggable"].Single().Arguments[1]
+        );
+
+        // Act
+        lobby.Find("button.close-new-game").Click();
+        lobby.Find("button.new-game-toggle").Click();
+
+        // Assert
+        Assert.Equal(
+            ("dialog", "zaturnava.new-game-place", 2),
+            (shown.Role, shown.Key, this._page.JSInterop.Invocations["zaturnava.draggable"].Count)
         );
     }
 

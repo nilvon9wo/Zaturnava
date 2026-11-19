@@ -49,6 +49,7 @@
         ImmutableList<string> others = [.. this._providers.Except(services)];
         <div class="backdrop">
             <div class="dialog profile-dialog" role="dialog" aria-modal="true" aria-labelledby="profile-title">
+                <CloseButton Class="close-profile" OnClose="this.CloseProfile" />
                 <h2 id="profile-title">Your profile</h2>
                 <p class="autosave">
                     Each change is saved as you make it: your username and description once you leave their field.
@@ -110,9 +111,6 @@
                 {
                     <p class="saved" role="status">@saved</p>
                 }
-                <div class="actions">
-                    <button class="close-profile" @onclick="this.CloseProfile">Close</button>
-                </div>
             </div>
         </div>
     }
@@ -138,6 +136,7 @@ else
     {
         <div class="backdrop">
             <div class="dialog sign-in-dialog" role="dialog" aria-modal="true" aria-labelledby="sign-in-title">
+                <CloseButton Class="cancel" OnClose="() => this._isChoosing = false" />
                 <h2 id="sign-in-title">Who are you?</h2>
                 <p>Play as a guest, by a name for this visit, shown to the others as "Name (guest)": no one else's, so
                     if it is taken, the next free one ("Ada 2"). A guest may play, and read what is said at the
@@ -167,9 +166,6 @@ else
                         }
                     </div>
                 }
-                <div class="actions">
-                    <button class="cancel" @onclick="() => this._isChoosing = false">Cancel</button>
-                </div>
             </div>
         </div>
     }

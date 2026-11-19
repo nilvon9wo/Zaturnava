@@ -171,12 +171,17 @@ public sealed class LeaderboardTest : IDisposable
         // Assert
         Assert.Equal(
             (
-                "1 🤖Sage 2600 40 5 0 1|2 🧑Ada 1700 25 4 1 0|3 🤖Random 1000 2 0 6 1",
-                "Bot,Person,Bot"
+                "1 🤖 Sage 2600 40 5 0 1|2 🧑 Ada 1700 25 4 1 0|3 🤖 Random 1000 2 0 6 1",
+                "Bot,Person,Bot",
+                "Kind"
             ),
             (
                 Rows(board),
-                string.Join(",", board.FindAll(".everyone .kind").Select(kind => kind.GetAttribute("aria-label")))
+                string.Join(
+                    ",",
+                    board.FindAll(".everyone td.kind span").Select(kind => kind.GetAttribute("aria-label"))
+                ),
+                board.Find(".everyone th.kind").TextContent
             )
         );
     }
@@ -206,6 +211,60 @@ public sealed class LeaderboardTest : IDisposable
         Assert.Equal(
             ("Ada,Bea,Cy", "Bea,Ada,Cy Lost ▼", "Cy,Ada,Bea Lost ▲", "1,2,3"),
             (before, once, twice, string.Join(",", board.FindAll("td.place").Select(cell => cell.TextContent)))
+        );
+    }
+
+    [Fact]
+    public void SortByAndChooseBoard_WhenChosen_AreRememberedAsTheyAreLeft()
+    {
+        // Arrange
+        this._page.Server.BotLeaderboards = this._page.Server.BotLeaderboards.Add(
+            "chaturaji-2027",
+            [new BotStandingDto(1, "Sage", 40, 5, 0, 1) { BotId = "sage", Elo = 2600 }]
+        );
+        IRenderedComponent<Leaderboard> board = this.Render();
+        board.Find("select.leaderboard-board").Change("bots");
+
+        // Act
+        board.Find("button.sort.points").Click();
+        board.Find("button.sort.points").Click();
+
+        // Assert
+        Assert.Equal(
+            "board=bots&sort=points",
+            $"{this._page.JSInterop.Invocations["zaturnava.save"]
+                .Last(saved => $"{saved.Arguments[0]}" == "zaturnava.leaderboard")
+                .Arguments[1]}"
+        );
+    }
+
+    [Theory]
+    [InlineData("board=bots&sort=points", "bots", "Points ▲")]
+    [InlineData("board=everyone&sort=won&desc=1", "everyone", "Won ▼")]
+    [InlineData("board=nonsense&sort=gone&desc=1", "players", "Elo ▼")]
+    public void Render_WhenABoardWasLeftSortedSo_ShowsItSoAgain(string remembered, string shown, string sorted)
+    {
+        // Arrange - a board and a column it has, or neither
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.leaderboard").SetResult(remembered);
+        this._page.Server.Leaderboards = this._page.Server.Leaderboards.Add(
+            "chaturaji-2027",
+            [new StandingDto(1, "Ada", 1516, 0, 1, 0, 0) { PlayerId = "ada" }]
+        );
+        this._page.Server.BotLeaderboards = this._page.Server.BotLeaderboards.Add(
+            "chaturaji-2027",
+            [new BotStandingDto(1, "Sage", 40, 5, 0, 1) { BotId = "sage", Elo = 2600 }]
+        );
+
+        // Act
+        IRenderedComponent<Leaderboard> board = this.Render();
+
+        // Assert
+        Assert.Equal(
+            (shown, sorted),
+            (
+                board.Find("select.leaderboard-board").GetAttribute("value"),
+                board.Find("th[aria-sort=ascending], th[aria-sort=descending]").TextContent.Trim()
+            )
         );
     }
 
