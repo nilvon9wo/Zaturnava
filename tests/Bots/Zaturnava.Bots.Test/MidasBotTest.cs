@@ -80,7 +80,8 @@ public sealed class MidasBotTest
     [Fact]
     public async Task Decide_WhenAPawnMayBecomeAnAllysRajaOrItsElephant_MakesItTheElephant()
     {
-        // Arrange - a Raja is worth 5 and an Elephant 4, but a leader brought back counts for half
+        // Arrange - a Raja is worth 5 and an Elephant 4, but the Raja steps to 8 squares, the Elephant slides to 16
+        // (the user's word of 2026-11-19: mobility, not just points)
         DecisionRequest request = Ransoms.PromotingInto(("raja", Ransoms.Green), ("elephant", Ransoms.Green));
 
         // Act
