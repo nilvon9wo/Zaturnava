@@ -1913,7 +1913,7 @@ public sealed class TableTest : IDisposable
 
         // Assert
         Assert.Equal(
-            (GameCode.InvitationTo(FakeGameServer.GameId, "Chaturaji 2027"), 0),
+            (GameCode.InvitationTo(FakeGameServer.GameId, "Chaturaji 2027", PageContext.ServerUri), 0),
             (table.Find(".invite input.invitation").GetAttribute("value"), table.FindAll(".invite .copied").Count)
         );
     }
@@ -1933,7 +1933,7 @@ public sealed class TableTest : IDisposable
 
         // Assert
         Assert.Equal(
-            (said.Trim(), GameCode.InvitationTo(FakeGameServer.GameId, "Chaturaji 2027")),
+            (said.Trim(), GameCode.InvitationTo(FakeGameServer.GameId, "Chaturaji 2027", PageContext.ServerUri)),
             (
                 table.Find(".invite .copied").TextContent.Trim(),
                 (string)this._page.JSInterop.Invocations["zaturnava.copy"].Single().Arguments[0]!

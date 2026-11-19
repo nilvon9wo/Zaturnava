@@ -14,7 +14,7 @@ to connect, and what the server does and does not let anyone do.
 | Every route, as [OpenAPI](https://www.openapis.org/) | <https://zaturnava.runasp.net/openapi/v1.json>, to generate a client from |
 | Every route, to try from the browser | <https://zaturnava.runasp.net/reference/v1> |
 | The hosted MCP server, for an AI assistant | `https://zaturnava.runasp.net/mcp` ([MCP](mcp.md)) |
-| The page, to watch your program play, or play against it | <https://nilvon9wo.itch.io/zaturnava> |
+| The page, to watch your program play, or play against it | <https://nilvon9wo.itch.io/zaturnava>, or the server's own, <https://zaturnava.runasp.net/play/> |
 
 You need no account and no key. JSON over HTTPS is all there is.
 

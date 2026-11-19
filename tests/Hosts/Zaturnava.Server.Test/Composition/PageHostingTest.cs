@@ -54,6 +54,24 @@ public sealed class PageHostingTest
     }
 
     [Fact]
+    public void AddPageHosting_WhenTheProviderIsNamedAndOriginsListedToo_AllowsBoth()
+    {
+        // Arrange - the page on itch.io, and served by the game server itself (Stated 2026-11-19, OQ9)
+        using ServiceProvider services = Services(
+            [
+                (PageHosting.ProviderKey, PageHosting.Itch),
+                (PageHosting.OriginsKey + ":Server", "https://games.example"),
+            ]
+        );
+
+        // Act
+        IPageHosting host = services.GetRequiredService<IPageHosting>();
+
+        // Assert
+        Assert.Equal([ItchPageHost.ClassicOrigin, ItchPageHost.Origin, "https://games.example"], host.Origins);
+    }
+
+    [Fact]
     public void AddPageHosting_WhenTheProviderIsUnknown_ThrowsInvalidOperationException()
     {
         // Arrange

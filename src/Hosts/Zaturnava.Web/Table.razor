@@ -19,6 +19,7 @@
 @inject TableSettings Settings
 @inject Browser Browser
 @inject TimeProvider Clock
+@inject ServerAddress Server
 @using System.Globalization
 
 <section class="table">
@@ -152,7 +153,7 @@
                             <input id="invitation"
                                    class="invitation"
                                    readonly
-                                   value="@GameCode.InvitationTo(this.Seating.GameId, view.RulesetName)" />
+                                   value="@GameCode.InvitationTo(this.Seating.GameId, view.RulesetName, this.Server.Value)" />
                             <button class="copy-invitation"
                                     @onclick="() => this.CopyInvitation(view)">Copy</button>
                         </div>
@@ -1486,7 +1487,7 @@
     /// <summary>Puts the invitation to the game on the clipboard, saying whether the page could.</summary>
     private async Task CopyInvitation(GameViewDto view) =>
         this._isInvitationCopied =
-            await this.Browser.Copy(GameCode.InvitationTo(this.Seating.GameId, view.RulesetName));
+            await this.Browser.Copy(GameCode.InvitationTo(this.Seating.GameId, view.RulesetName, this.Server.Value));
 
     private async Task SendReport()
     {

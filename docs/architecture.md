@@ -424,6 +424,15 @@ workflow writes it into the published `appsettings.Production.json`, with `Stora
 sets `AllowedHosts` to the site's host, so the server answers for its own name alone, and `Mcp:SelfAddress`
 to its address, so the hosted MCP server calls the API there, never at a host a request names.
 
+The game server serves the page too, at <https://zaturnava.runasp.net/play/> (*Stated* 2026-11-19: itch.io is
+for being found). On itch.io the page runs in a frame never told the address around it, so no link can open a
+game there; on the server's own page, `play/?game=<code>` opens the lobby at that game, and an invitation is such
+a link, with the itch.io address and the game code beside it. The workflow publishes the page into the server's
+`page` folder (`Page:Folder`) and lists the site's own origin under `PageHosting:Origins` beside itch.io's, so
+the page may sign in from either: every sign-in, itch.io's too, goes through the server's own callback, whichever
+page asked. What a browser keeps (who is signed in, its seats, its settings) is kept per origin, so a player
+signs in once on each; signed in with the same account, they are the same player.
+
 Nothing in the code depends on the host: the server reads its storage, page
 host and limits from configuration, and the clients read the server's address
 from theirs. The game server's host gets an adapter of its own for whatever it

@@ -1,5 +1,7 @@
 using System.Collections.Immutable;
 using Bunit;
+using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.DependencyInjection;
 using Net.NowhereAtAll.Zaturnava.Contracts;
 
 namespace Net.NowhereAtAll.Zaturnava.Web.Test;
@@ -2142,6 +2144,22 @@ public sealed class LobbyTest : IDisposable
 
         // Assert
         Assert.Equal(new GameListQuery(Code: "3fa2c9d1"), this._page.Server.Listed);
+    }
+
+    [Fact]
+    public void Render_WhenThePageIsOpenedByAnInvitationsLink_ListsOnlyItsGameAndShowsItsCode()
+    {
+        // Arrange - the page served by the game server, opened at a game (Stated 2026-11-19, OQ9)
+        this._page.Services.GetRequiredService<NavigationManager>().NavigateTo("play/?game=3fa2c9d1");
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Assert
+        Assert.Equal(
+            (new GameListQuery(Code: "3fa2c9d1"), "3fa2c9d1"),
+            (this._page.Server.Listed, lobby.Find("input.filter-code").GetAttribute("value"))
+        );
     }
 
     [Fact]
