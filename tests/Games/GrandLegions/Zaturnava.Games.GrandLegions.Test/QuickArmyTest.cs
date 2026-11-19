@@ -404,7 +404,7 @@ public sealed class QuickArmyTest
     }
 
     [Fact]
-    public void Layout_WithSeveralLeadersAPalaceHolds_PutsEachButTheOneOnTheThroneInThePalace()
+    public void Layout_WithSeveralLeaders_PutsOnlyThoseAPalaceHoldsInThePalaceAndDispersesTheRest()
     {
         // Arrange - a game of large kingdoms, as dealt now, with several leaders each (the user's report of 2026-11-19,
         // of flying generals starting outside the palace)
@@ -422,23 +422,28 @@ public sealed class QuickArmyTest
             ),
         ];
 
-        // Assert - among them, armies with a leader a palace holds beside the one on the throne; each such leader in
-        // the palace about the throne
+        // Assert - among them, armies with a leader a palace holds beside the one on the throne, each such leader in
+        // the palace about the throne; and armies with other leaders beside the throne's, some of them outside it
+        // (the user's word of 2026-11-19: most leaders start anywhere; only those restricted to the palace may not)
         static bool IsConfined(ArmyPiece piece) => PalaceConfinement.Confined.Contains(piece.Kind);
-        Assert.Contains(armies, army => army.Skip(1).Any(piece => IsConfined(piece) && IsLeader(piece)));
-        Assert.All(armies, army =>
-        {
-            ImmutableList<ArmySquare> palace = PalaceSquares.Window(
+        ImmutableList<ArmySquare> PalaceOf(ImmutableList<ArmyPiece> army) =>
+            PalaceSquares.Window(
                 PalaceSquares.CentreAbout(
                     PalaceSquares.Centres(game.Kingdom),
                     new ArmySquare(army[0].Column, army[0].Row)
                 )
             );
-            Assert.All(
-                army.Skip(1).Where(IsConfined),
-                held => Assert.Contains(new ArmySquare(held.Column, held.Row), palace)
-            );
-        });
+        bool IsInPalace(ArmyPiece piece, ImmutableList<ArmyPiece> army) =>
+            PalaceOf(army).Contains(new ArmySquare(piece.Column, piece.Row));
+        Assert.Contains(armies, army => army.Skip(1).Any(piece => IsConfined(piece) && IsLeader(piece)));
+        Assert.Contains(
+            armies,
+            army => army.Skip(1).Any(piece => IsLeader(piece) && !IsConfined(piece) && !IsInPalace(piece, army))
+        );
+        Assert.All(
+            armies,
+            army => Assert.All(army.Skip(1).Where(IsConfined), held => Assert.True(IsInPalace(held, army)))
+        );
     }
 
     private static bool IsLeader(ArmyPiece piece) => GrandLegionsRules.Leaders.Contains(piece.Kind);

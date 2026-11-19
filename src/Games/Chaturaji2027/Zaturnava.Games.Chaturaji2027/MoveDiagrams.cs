@@ -132,7 +132,7 @@ internal sealed class MoveDiagrams(
                     ?
                     [
                         new NamedDiagram(
-                            "On its palace's corner",
+                            "Off the throne",
                             this.InPalace(kind, Cornered, (1, 1)) with { Elsewhere = null }
                         ),
                     ]
