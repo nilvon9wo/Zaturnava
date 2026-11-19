@@ -41,7 +41,9 @@ you can watch it, or play with it.
 ## Our bots
 
 The server's own bots are listed by `GET api/catalog`, and described in the game by clicking a bot's name, on the leaderboard or at a table:
-Random, Echo and Icarus (for beginners: Midas a quarter and half of the time, else Random), Midas (greedy),
+Random, Echo and Icarus (for beginners: Midas a quarter and half of the time, else Random), Narcissus and
+Epimetheus (for beginners: Sage's judgement of each move alone, then any of its better half or best third at random),
+Midas (greedy),
 Croesus (greedy, but leaving no piece newly open when nothing scores), Solomon (careful), Argus (watchful), Sage (looks ahead through the dice,
 its weights tuned by self-play), Tactician (Sage's judgement, but looking past its own turn, through its enemies'
 replies and its allies' turns), Athena (learned) and Pythia (Monte Carlo tree search guided by Athena's network).

@@ -181,6 +181,8 @@ internal static class ZaturnavaServices
                 new SolomonBot(Random.Shared),
                 NoviceBot.Icarus(Random.Shared),
                 NoviceBot.Echo(Random.Shared),
+                StumblerBot.Epimetheus(Random.Shared),
+                StumblerBot.Narcissus(Random.Shared),
                 new RandomBot(Random.Shared),
             ],
             BotRatings.Rated

@@ -29,14 +29,7 @@ internal sealed class Foresight(IPositionValuing valuing, int depth, int beam, T
 
     public GameAction Choose(DecisionRequest request, Random random)
     {
-        Deadline deadline = new(this._limit);
-        ImmutableList<(GameAction Action, double Worth)> worths =
-        [
-            .. Playable.Of(request).Select(action => (
-                action,
-                this.WorthOf(request, Apply(request, request.State, action), this._depth - 1, deadline)
-            )),
-        ];
+        ImmutableList<(GameAction Action, double Worth)> worths = this.Worths(request);
         double best = worths.Max(worth => worth.Worth);
         ImmutableList<GameAction> top =
             [.. worths.Where(worth => worth.Worth >= best - Tolerance).Select(worth => worth.Action)];
@@ -45,6 +38,19 @@ internal sealed class Foresight(IPositionValuing valuing, int depth, int beam, T
             ? top
             : active;
         return choices[random.Next(choices.Count)];
+    }
+
+    /// <summary>Each action the bot may play, with what it is worth, as this looks ahead.</summary>
+    internal ImmutableList<(GameAction Action, double Worth)> Worths(DecisionRequest request)
+    {
+        Deadline deadline = new(this._limit);
+        return
+        [
+            .. Playable.Of(request).Select(action => (
+                action,
+                this.WorthOf(request, Apply(request, request.State, action), this._depth - 1, deadline)
+            )),
+        ];
     }
 
     /// <summary>Each way the dice could fall, its values in order, with how likely it is.</summary>

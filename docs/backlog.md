@@ -10,9 +10,10 @@ own number (**25**, **N29**), the [2026-11-15 specification](playtesting/2026-11
 ## 1. Now: asked for and not yet done
 
 - **D2** At least three non-random bots below 1200 Elo, a real progression of difficulty; Icarus sits only a few
-  points below Midas. Keep every past measurement. *Proposed*, still to try: a bot playing one of its top few
-  moves at random, by Sage's or Athena's judgement, how often it errs its strength; one looking no further than
-  its own move, missing what the enemy can take back.
+  points below Midas. Keep every past measurement. *Begun* (2026-11-19): Narcissus and Epimetheus judge each move
+  as Sage does, looking no further than the move, and play any of their better half or best third at random.
+  Still to do: once the bot-rating job has rated them, check they fall below 1200 and between Random and Midas,
+  and adjust their shares if not.
 - **M1–M5** Offline tournaments and training. *Begun* (2026-11-19): `scripts/wsl-overnight.sh` trains Athena and
   rates every bot, cycle after cycle, until stopped, each round kept as it ends
   ([local-development](contribute/local-development.md#smart-app-control-windows)). Still to do: resuming a
