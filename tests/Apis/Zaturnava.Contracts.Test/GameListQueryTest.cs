@@ -19,7 +19,8 @@ public sealed class GameListQueryTest
     public void QueryString_WhenItAsksEverything_NamesEachFilterAndThePage()
     {
         // Arrange
-        GameListQuery query = new("a&b", true, false, true, 3, 50, "grand legions", false, "Bob, Jo*", "ada1");
+        GameListQuery query =
+            new("a&b", true, false, true, 3, 50, "grand legions", false, "Bob, Jo*", "ada1", "3f a");
 
         // Act
         string asked = query.QueryString();
@@ -27,7 +28,7 @@ public sealed class GameListQueryTest
         // Assert
         Assert.Equal(
             "?game=grand%20legions&ruleset=a%26b&open=true&peopleOnly=false&over=true&preview=false"
-            + "&players=Bob%2C%20Jo%2A&player=ada1&page=3&pageSize=50",
+            + "&players=Bob%2C%20Jo%2A&player=ada1&code=3f%20a&page=3&pageSize=50",
             asked
         );
     }

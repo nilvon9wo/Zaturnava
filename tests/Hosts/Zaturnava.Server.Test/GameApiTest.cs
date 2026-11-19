@@ -95,6 +95,23 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
         );
     }
 
+    [Fact]
+    public async Task List_WhenAskedForAGameByItsCode_ListsItAloneWhateverTheCaseAndSpacesAround()
+    {
+        // Arrange
+        string game = await this.CreateGame();
+        _ = await this.CreateGame();
+
+        // Act
+        GamePageDto page = await this._client.List(
+            new GameListQuery(Code: $" {game[..8].ToUpperInvariant()} "),
+            this._cancellation
+        );
+
+        // Assert
+        Assert.Equal(game, Assert.Single(page.Games).Id);
+    }
+
     [Theory]
     [InlineData(false, true, false)]
     [InlineData(true, false, true)]

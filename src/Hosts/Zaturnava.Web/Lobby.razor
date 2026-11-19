@@ -406,6 +406,15 @@
                            value="@this._filter.Players"
                            @onchange="this.FilterPlayers" />
                 </label>
+                <label class="code-filter">
+                    Game code
+                    <input type="search"
+                           class="filter-code"
+                           placeholder="from an invitation"
+                           title="The code someone sent you: that game alone is listed, whatever else is chosen"
+                           value="@this._code"
+                           @onchange="this.FindByCode" />
+                </label>
             </div>
             @if (this._games.IsEmpty)
             {
@@ -461,6 +470,12 @@
 
     /// <summary>Which games the list shows: those waiting for players, until the player asks otherwise.</summary>
     private GameListQuery _filter = new(Open: true, Over: false);
+
+    /// <summary>
+    /// The code of a game someone sent the player (H2): while set, that game alone is listed, whatever else the
+    /// filters ask; none, else.
+    /// </summary>
+    private string? _code;
     private int _pageNumber = 1;
     private int _pages = 1;
     private int _total;
@@ -1011,7 +1026,8 @@
     /// <summary>The page of games the filter asks for, and the seats this browser holds at them.</summary>
     private async Task ListGames()
     {
-        GamePageDto page = await this.Games.List(this._filter, CancellationToken.None);
+        GameListQuery asked = this._code is { } code ? new GameListQuery(Code: code) : this._filter;
+        GamePageDto page = await this.Games.List(asked, CancellationToken.None);
         this._games = page.Games;
         this._total = page.Total;
         this._pageNumber = page.Page;
@@ -1069,6 +1085,14 @@
     /// </summary>
     private Task FilterPlayers(ChangeEventArgs change) =>
         this.Filter(this._filter with { Players = Chosen(change) });
+
+    /// <summary>The game whose code the player entered, alone; the list the filters ask for, once it is cleared.</summary>
+    private async Task FindByCode(ChangeEventArgs change)
+    {
+        string code = $"{change.Value}".Trim();
+        this._code = code.Length > 0 ? code : null;
+        this._problem = await Requests.Attempt(this.ListGames);
+    }
 
     /// <summary>The page <paramref name="by"/> pages on (or back).</summary>
     private async Task Turn(int by)

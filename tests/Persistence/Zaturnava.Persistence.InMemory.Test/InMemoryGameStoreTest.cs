@@ -77,6 +77,21 @@ public sealed class InMemoryGameStoreTest
         Assert.Equal(expected, string.Join(",", page.Games.Select(game => game.Id.Value)));
     }
 
+    [Theory]
+    [InlineData("b", "b")]
+    [InlineData("d", "")]
+    public async Task Page_WhenAskedForAGameByItsCode_ListsTheGamesWhoseIdsStartSo(string code, string expected)
+    {
+        // Arrange
+        await this.AddListed();
+
+        // Act
+        GamePage page = await this._store.Page(new GameQuery(Code: code), Tiny, this._cancellation);
+
+        // Assert
+        Assert.Equal(expected, string.Join(",", page.Games.Select(game => game.Id.Value)));
+    }
+
     [Fact]
     public async Task Page_WhenAskedForALaterPage_ListsItsGamesAndCountsThemAll()
     {

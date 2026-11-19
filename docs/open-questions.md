@@ -11,4 +11,10 @@ asked here instead (checked, every *Proposed* in the documents, on 2026-11-06).
 Anything to be built is in the [backlog](backlog.md) or the [roadmap](grand/roadmap.md), and anything left to
 playtesting is marked so where it is written.
 
-None open.
+## OQ9. A link straight to a game
+
+On itch.io the page runs in a frame that is never told the address of the page around it, so no link can open a
+particular game there. For now (H2) a table with open seats offers an invitation: the itch.io address and a game
+code, which the lobby finds the game by. Should the page also be served from the game server
+(`zaturnava.runasp.net`), so that an invitation can be a link that opens the game itself? It costs nothing more to
+host, but makes a second front door beside itch.io.

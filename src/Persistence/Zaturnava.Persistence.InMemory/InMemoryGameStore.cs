@@ -36,6 +36,7 @@ public sealed class InMemoryGameStore : IGamePersisting
                 .Where(game => query.HasOpenSeats is not { } open || game.IsWaiting == open)
                 .Where(game => query.PeopleOnly is not { } people || !game.Controllers.Any(IsBot) == people)
                 .Where(game => query.IsOver is not { } over || (game.IsOver ?? false) == over)
+                .Where(game => query.Code is not { } code || game.Id.Value.StartsWith(code, StringComparison.Ordinal))
                 .OrderByDescending(game => game.LastChanged)
                 .ThenBy(game => game.Id.Value, StringComparer.Ordinal),
         ];

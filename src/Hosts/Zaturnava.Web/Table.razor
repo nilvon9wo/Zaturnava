@@ -142,6 +142,26 @@
                 <p class="status">@this.Status(view)</p>
                 @if (view.Outcome is null && OpenSeatsOf(view) is not null)
                 {
+                    <div class="invite">
+                        <label class="hint" for="invitation">
+                            Invite others to the open seats: send them this. They open the page, enter the code in
+                            the lobby, and join.
+                        </label>
+                        <div class="invite-row">
+                            <input id="invitation"
+                                   class="invitation"
+                                   readonly
+                                   value="@GameCode.InvitationTo(this.Seating.GameId, view.RulesetName)" />
+                            <button class="copy-invitation"
+                                    @onclick="() => this.CopyInvitation(view)">Copy</button>
+                        </div>
+                        @if (this._isInvitationCopied is { } isCopied)
+                        {
+                            <p class="copied" role="status">
+                                @(isCopied ? "Copied: paste it wherever you like." : "The page may not copy here: select the text and copy it yourself.")
+                            </p>
+                        }
+                    </div>
                     <p class="hint ai-join">
                         An AI of your own may take an open seat: give it this game's id,
                         <code class="game-id">@this.Seating.GameId</code>, and an AI token from your profile.
@@ -764,6 +784,9 @@
     /// kept; and why it was not, if it was not.
     /// </summary>
     private bool _isReporting;
+
+    /// <summary>Whether the invitation to the game was copied, once the player asked: none, until they do.</summary>
+    private bool? _isInvitationCopied;
     private string _bugText = string.Empty;
     private string? _bugReported;
     private string? _bugProblem;
@@ -1458,6 +1481,11 @@
     /// Sends the report, with what the page shows: the game's version it last had, the cell selected and the piece
     /// whose card is open; the server keeps the game as it stands beside them. If the sign-in has lapsed, says so.
     /// </summary>
+    /// <summary>Puts the invitation to the game on the clipboard, saying whether the page could.</summary>
+    private async Task CopyInvitation(GameViewDto view) =>
+        this._isInvitationCopied =
+            await this.Browser.Copy(GameCode.InvitationTo(this.Seating.GameId, view.RulesetName));
+
     private async Task SendReport()
     {
         string token = this._playerToken!; // the button shows only to a player signed in, beside the game shown
