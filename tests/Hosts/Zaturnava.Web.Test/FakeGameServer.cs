@@ -319,6 +319,29 @@ internal sealed class FakeGameServer : IGameServing
             }
         );
 
+    /// <summary>The bug reports sent, each with its game and token, the earliest first.</summary>
+    public ImmutableList<(string GameId, string Token, ReportBugRequest Request)> Reported { get; private set; } = [];
+
+    /// <summary>
+    /// Keeps the bug report, numbered, for a token standing for a player; none, for one standing for no one.
+    /// </summary>
+    public Task<BugReportedDto?> ReportBug(
+        [Required] string gameId,
+        [Required] string token,
+        [Required] ReportBugRequest request,
+        CancellationToken cancellationToken
+    ) =>
+        this.SignedIn<BugReportedDto?>(() =>
+        {
+            if (!this.Players.ContainsKey(token))
+            {
+                return null;
+            }
+
+            this.Reported = this.Reported.Add((gameId, token, request));
+            return new BugReportedDto($"report-{this.Reported.Count.ToString(CultureInfo.InvariantCulture)}");
+        });
+
     /// <summary>The services offered to sign in with: none, unless a test sets some.</summary>
     public ImmutableList<string> Providers { get; set; } = [];
 

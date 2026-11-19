@@ -4,9 +4,13 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.DependencyInjection;
 using Net.NowhereAtAll.Zaturnava.Application.Players;
+using Net.NowhereAtAll.Zaturnava.Application.Ports;
+using Net.NowhereAtAll.Zaturnava.Application.Reports;
 using Net.NowhereAtAll.Zaturnava.Client;
 using Net.NowhereAtAll.Zaturnava.Contracts;
+using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 
 namespace Net.NowhereAtAll.Zaturnava.Server.Test;
 
@@ -254,6 +258,57 @@ public sealed partial class SignInApiTest(SigningInServer server) : IClassFixtur
             (true, Refusal.Forbidden, "Ada Players"),
             (listed, refused.Refusal, (await client.Get(created.GameId, this._cancellation)).Seats[0].Player)
         );
+    }
+
+    [Fact]
+    public async Task ReportBug_WhenAPlayerSeatedReports_KeepsWhatTheySayWithTheGameAndTheirSeat()
+    {
+        // Arrange
+        string token = TokenOf(await this.Done("GitHub|reports|Ada Reports", SigningInServer.Page));
+        HttpGameClient client = server.GameClient();
+        GameCreatedDto created = await client.Create(
+            new CreateGameRequest(ZaturnavaServer.Chaturaji2027, ZaturnavaServer.OneOpenSeat),
+            this._cancellation
+        );
+        _ = await client.Claim(created.GameId, 0, token, null, this._cancellation);
+        ReportBugRequest request = new("The Guard is outside!") { ViewVersion = 2, SelectedCell = 7 };
+
+        // Act
+        BugReportedDto? reported = await client.ReportBug(created.GameId, token, request, this._cancellation);
+
+        // Assert
+        BugReport kept = (await server.Services.GetRequiredService<IBugReportPersisting>().All(this._cancellation))
+            .Single(report => report.Id == reported?.Id);
+        Assert.Equal(
+            (created.GameId, ZaturnavaServer.Chaturaji2027, "The Guard is outside!", new SeatId(0), 2, 7, null),
+            (
+                kept.Game.Value,
+                kept.RulesetId,
+                kept.Description,
+                kept.Seat,
+                kept.Seen.ViewVersion,
+                kept.Seen.SelectedCell,
+                kept.Seen.InspectedPiece
+            )
+        );
+    }
+
+    [Fact]
+    public async Task ReportBug_WhenTheTokenStandsForNoOne_IsNoOne()
+    {
+        // Arrange
+        HttpGameClient client = server.GameClient();
+        GameCreatedDto created = await client.Create(
+            new CreateGameRequest(ZaturnavaServer.Chaturaji2027, ZaturnavaServer.OneOpenSeat),
+            this._cancellation
+        );
+
+        // Act
+        BugReportedDto? reported =
+            await client.ReportBug(created.GameId, "no one", new ReportBugRequest("Hi."), this._cancellation);
+
+        // Assert
+        Assert.Null(reported);
     }
 
     [Fact]

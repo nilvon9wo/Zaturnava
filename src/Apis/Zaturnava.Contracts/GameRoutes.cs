@@ -114,6 +114,12 @@ public static class GameRoutes
     /// <summary>Where to say something at a game's table.</summary>
     public static string Chat([Required] string gameId) => $"{Game(gameId)}/chat";
 
+    /// <summary>
+    /// Where a signed-in player reports that something at a game may be going wrong (<see cref="ReportBugRequest"/>,
+    /// <see cref="BugReportedDto"/>).
+    /// </summary>
+    public static string BugReports([Required] string gameId) => $"{Game(gameId)}/bug-reports";
+
     /// <summary>What was said at a game's table after message number <paramref name="after"/>.</summary>
     public static string Chat([Required] string gameId, int after) =>
         $"{Chat(gameId)}?after={after.ToString(CultureInfo.InvariantCulture)}";

@@ -841,6 +841,27 @@ button.safety.off {
 .dialog h2 { margin: 0 0 10px; font-size: 1.2rem; }
 .dialog .countdown { color: var(--accent); font-variant-numeric: tabular-nums; }
 .dialog .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+
+/* Reporting a bug: a quiet button at the panel's foot, for players signed in (playtest T4). */
+button.report-bug {
+    align-self: flex-end;
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    font-size: 0.85rem;
+    text-decoration: underline;
+    padding: 4px 0;
+}
+.dialog textarea.bug-description {
+    width: 100%;
+    box-sizing: border-box;
+    font: inherit;
+    color: var(--ink);
+    background: var(--panel);
+    border: 1px solid var(--panel-edge);
+    border-radius: 6px;
+    padding: 6px 8px;
+}
 .sign-in-dialog .nickname { display: flex; align-items: center; gap: 8px; }
 .sign-in-dialog .nickname input { flex: 1; }
 .profile-dialog label.description { display: flex; flex-direction: column; gap: 4px; margin-top: 10px; }

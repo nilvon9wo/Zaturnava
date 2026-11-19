@@ -526,6 +526,10 @@
                         </div>
                     }
                 }
+                @if (this._playerToken is not null)
+                {
+                    <button class="report-bug" @onclick="this.AskToReport">Report a bug</button>
+                }
             </div>
 
             <TableTalk Seating="this.Seating" Seats="view.Seats">
@@ -600,6 +604,39 @@
                     <button class="action resign" @onclick="() => this.ProposeEnd(proposer, true)">Pass on all my turns</button>
                     <button class="action cancel" @onclick="this.KeepPlaying">Cancel</button>
                 </div>
+            </div>
+        </div>
+    }
+
+    @if (this._isReporting)
+    {
+        <div class="backdrop">
+            <div class="dialog reporting" role="dialog" aria-modal="true" aria-labelledby="reporting-title">
+                <h2 id="reporting-title">Report a bug</h2>
+                @if (this._bugReported is { } reported)
+                {
+                    <p class="reported">Thank you. It is kept as report <code>@reported</code>.</p>
+                    <div class="actions">
+                        <button class="action close-report" @onclick="this.CloseReport">Close</button>
+                    </div>
+                }
+                else
+                {
+                    <p>What went wrong, or seems to? The game as it stands is kept with what you say.</p>
+                    <textarea class="bug-description"
+                              rows="5"
+                              maxlength="@ReportBugRequest.MaximumLength"
+                              aria-labelledby="reporting-title"
+                              @bind="this._bugText"></textarea>
+                    @if (this._bugProblem is { } unsent)
+                    {
+                        <p class="problem" role="alert">@unsent</p>
+                    }
+                    <div class="actions">
+                        <button class="action primary send-report" @onclick="this.SendReport">Send</button>
+                        <button class="action cancel" @onclick="this.CloseReport">Cancel</button>
+                    </div>
+                }
             </div>
         </div>
     }
@@ -720,6 +757,15 @@
     /// </summary>
     private string? _playerToken;
     private bool _isProposing;
+
+    /// <summary>
+    /// Whether the player signed in is reporting a bug (playtest 2026-11-19, T4); what they say; the report's id, once
+    /// kept; and why it was not, if it was not.
+    /// </summary>
+    private bool _isReporting;
+    private string _bugText = string.Empty;
+    private string? _bugReported;
+    private string? _bugProblem;
     private DateTimeOffset? _deadline;
     private int? _receiver;
     private ImmutableHashSet<int> _given = [];
@@ -1365,14 +1411,16 @@
     }
 
     /// <summary>
-    /// Chooses a prisoner to hire, showing its card and the price, for the player to hire it then (J2); chosen again,
-    /// lets it go.
+    /// Chooses a prisoner to hire, showing its card and the price, for the player to hire it then (J2), even with cards
+    /// off, as it was asked for; chosen again while its card shows, lets it go. Chosen with its card closed, shows the
+    /// card again (the user's report of 2026-11-19, of a Dragon Horse whose card would not open).
     /// </summary>
     private void ChooseHire(PrisonerDto prisoner)
     {
-        bool isSame = this._hireChosen == prisoner.Id;
-        this._hireChosen = isSame ? null : prisoner.Id;
-        this.ShowOffBoard(isSame ? null : prisoner);
+        bool isLetGo = this._hireChosen == prisoner.Id && this._offBoardShown?.Id == prisoner.Id;
+        this._hireChosen = isLetGo ? null : prisoner.Id;
+        this.ShowOffBoard(isLetGo ? null : prisoner);
+        this._isAboutAsked = !isLetGo;
     }
 
     private void PutAwayOffBoard()
@@ -1395,6 +1443,37 @@
     }
 
     private void AskToEnd() => this._isProposing = true;
+
+    private void AskToReport()
+    {
+        this._isReporting = true;
+        this._bugText = string.Empty;
+        this._bugReported = null;
+        this._bugProblem = null;
+    }
+
+    private void CloseReport() => this._isReporting = false;
+
+    /// <summary>
+    /// Sends the report, with what the page shows: the game's version it last had, the cell selected and the piece
+    /// whose card is open; the server keeps the game as it stands beside them. If the sign-in has lapsed, says so.
+    /// </summary>
+    private async Task SendReport()
+    {
+        string token = this._playerToken!; // the button shows only to a player signed in, beside the game shown
+        ReportBugRequest request = new(this._bugText)
+        {
+            ViewVersion = this._view!.Version,
+            SelectedCell = this._selection.Selected,
+            InspectedPiece = this._inspected,
+        };
+        BugReportedDto? reported = null;
+        this._bugProblem = await Requests.Attempt(async () =>
+            reported = await this.Games.ReportBug(this.Seating.GameId, token, request, CancellationToken.None)
+        );
+        this._bugProblem ??= reported is null ? "Your sign-in has lapsed: sign in again to report this." : null;
+        this._bugReported = reported?.Id;
+    }
 
     private void KeepPlaying() => this._isProposing = false;
 

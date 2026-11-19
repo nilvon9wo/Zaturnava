@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Net.NowhereAtAll.Zaturnava.Application.Players;
+using Net.NowhereAtAll.Zaturnava.Application.Reports;
 using Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Entities;
 
 namespace Net.NowhereAtAll.Zaturnava.Persistence.EfCore;
@@ -35,8 +36,12 @@ public sealed class GameDbContext(DbContextOptions<GameDbContext> options) : DbC
     // how the server's bots have done against each other, in the games played to rate them
     public DbSet<BotMatchupEntity> BotMatchups => this.Set<BotMatchupEntity>();
 
+    // what players have reported may be going wrong, each with the game as it stood
+    public DbSet<BugReportEntity> BugReports => this.Set<BugReportEntity>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        _ = modelBuilder.Entity<BugReportEntity>(MapBugReport);
         _ = modelBuilder.Entity<BotMatchupEntity>(MapBotMatchup);
         _ = modelBuilder.Entity<GameEntity>(MapGame);
         _ = modelBuilder.Entity<SeatEntity>(MapSeat);
@@ -47,6 +52,19 @@ public sealed class GameDbContext(DbContextOptions<GameDbContext> options) : DbC
         _ = modelBuilder.Entity<SessionEntity>(MapSession);
         _ = modelBuilder.Entity<StandingEntity>(MapStanding);
         _ = modelBuilder.Entity<BotStandingEntity>(MapBotStanding);
+    }
+
+    private static void MapBugReport(EntityTypeBuilder<BugReportEntity> report)
+    {
+        _ = report.HasKey(entity => entity.Id);
+        _ = report.Property(entity => entity.Id).HasMaxLength(IdLength);
+        _ = report.Property(entity => entity.ReporterId).HasMaxLength(IdLength);
+        _ = report.Property(entity => entity.GameId).HasMaxLength(GameIdLength);
+        _ = report.Property(entity => entity.RulesetId).HasMaxLength(GameIdLength);
+        _ = report.Property(entity => entity.Description).HasMaxLength(BugReportService.MaximumLength);
+        // reports are read the earliest first, and looked up by game
+        _ = report.HasIndex(entity => entity.At);
+        _ = report.HasIndex(entity => entity.GameId);
     }
 
     private static void MapBotMatchup(EntityTypeBuilder<BotMatchupEntity> matchup)

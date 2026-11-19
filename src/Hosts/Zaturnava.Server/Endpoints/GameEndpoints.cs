@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Net.NowhereAtAll.Zaturnava.Application.Chat;
 using Net.NowhereAtAll.Zaturnava.Application.Games;
 using Net.NowhereAtAll.Zaturnava.Application.Players;
+using Net.NowhereAtAll.Zaturnava.Application.Reports;
 using Net.NowhereAtAll.Zaturnava.Contracts;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Rules;
@@ -40,7 +41,39 @@ internal static class GameEndpoints
         _ = routes.MapPost(GameRoute + "/replace", Replace);
         _ = routes.MapGet(GameRoute + "/chat", Chat);
         _ = routes.MapPost(GameRoute + "/chat", Say);
+        _ = routes.MapPost(GameRoute + "/bug-reports", ReportBug);
         return routes;
+    }
+
+    /// <summary>
+    /// A bug report from the player the token stands for, kept with the game as it stands; unauthorized, for anyone
+    /// not signed in (playtest 2026-11-19, T4).
+    /// </summary>
+    private static async Task<Results<Ok<BugReportedDto>, UnauthorizedHttpResult>> ReportBug(
+        string gameId,
+        ReportBugRequest reporting,
+        HttpRequest request,
+        PlayerService players,
+        BugReportService reports,
+        CancellationToken cancellationToken
+    )
+    {
+        if (
+            SeatToken.OrNull(request) is not { } token
+            || await players.Find(token, cancellationToken) is not { } player
+        )
+        {
+            return TypedResults.Unauthorized();
+        }
+
+        BugReport report = await reports.Report(
+            new GameId(gameId),
+            player.Id,
+            reporting.Description,
+            new BugReportSeen(reporting.ViewVersion, reporting.SelectedCell, reporting.InspectedPiece),
+            cancellationToken
+        );
+        return TypedResults.Ok(new BugReportedDto(report.Id));
     }
 
     private static CatalogDto Catalog(GameService games) =>

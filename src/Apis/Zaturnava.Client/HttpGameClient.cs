@@ -192,6 +192,20 @@ public sealed class HttpGameClient(HttpClient http) : IGameServing
     ) =>
         this.Send<ChatMessageDto>(HttpMethod.Post, GameRoutes.Chat(gameId), request, token, cancellationToken);
 
+    public Task<BugReportedDto?> ReportBug(
+        [Required] string gameId,
+        [Required] string token,
+        [Required] ReportBugRequest request,
+        CancellationToken cancellationToken
+    ) =>
+        this.IfSomeone<BugReportedDto>(
+            HttpMethod.Post,
+            GameRoutes.BugReports(gameId),
+            request,
+            token,
+            cancellationToken
+        );
+
     public Task<ImmutableList<string>> SignInProviders(CancellationToken cancellationToken) =>
         this.Send<ImmutableList<string>>(HttpMethod.Get, GameRoutes.SignInProviders, null, null, cancellationToken);
 
