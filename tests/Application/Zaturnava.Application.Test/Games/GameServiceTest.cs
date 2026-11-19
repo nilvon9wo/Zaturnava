@@ -1427,6 +1427,86 @@ public sealed class GameServiceTest
         );
     }
 
+    [Theory]
+    [InlineData(6, 6)]
+    [InlineData(null, 4)]
+    public async Task Submit_WhenThePlayerRollsInAScenarioWithDiceFaked_RollsThemAsFaked(int? face, int expected)
+    {
+        // Arrange - the user's request of 2026-11-19: in a scenario, on a development server, to "roll" a face; the
+        // loaded dice roll 4s
+        GameId id = await this._service.Create(
+            RollingRules.RulesetId,
+            [SeatPlan.Open, SeatPlan.Open],
+            Rolling,
+            this._cancellation
+        );
+        string token = await Sit(this._service, id, First, this._cancellation);
+        ActionDescriptor roll = new RollAction(First).Describe();
+
+        // Act
+        GameSnapshot snapshot = await this._service.Submit(id, token, roll, [face], this._cancellation);
+
+        // Assert
+        Assert.Equal(expected, snapshot.State.Scores[First]);
+    }
+
+    [Theory]
+    [InlineData("no scenarios", "Dice may be faked only on a development server.")]
+    [InlineData("not a scenario", "Dice may be faked only in a scenario.")]
+    [InlineData("not a roll", "Only a roll's dice may be faked.")]
+    [InlineData("too many", "At most 1 dice may be faked, each from 1 to 6.")]
+    [InlineData("too high", "At most 1 dice may be faked, each from 1 to 6.")]
+    [InlineData("too low", "At most 1 dice may be faked, each from 1 to 6.")]
+    public async Task Submit_WhenDiceAreFakedOtherThanForARollInAScenarioOnADevelopmentServer_RefusesThem(
+        string where,
+        string expected
+    )
+    {
+        // Arrange - the user's request of 2026-11-19: the server must never take faked dice anywhere else
+        GameService service = where == "no scenarios"
+            ? this.Service(GameServiceSettings.Default, offersScenarios: false)
+            : this._service;
+        GameId id = where switch
+        {
+            "no scenarios" or "not a scenario" =>
+                await service.Create(RollingRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation),
+            "not a roll" => await service.Create(
+                TinyRules.RulesetId,
+                [SeatPlan.Open, SeatPlan.Open],
+                SecondFirst,
+                this._cancellation
+            ),
+            _ => await service.Create(
+                RollingRules.RulesetId,
+                [SeatPlan.Open, SeatPlan.Open],
+                Rolling,
+                this._cancellation
+            ),
+        };
+        SeatId seat = where == "not a roll" ? Second : First;
+        string token = await Sit(service, id, seat, this._cancellation);
+        ActionDescriptor action = where == "not a roll" ? Pass(Second) : new RollAction(First).Describe();
+        ImmutableList<int?> faked = where switch
+        {
+            "too many" => [6, 6],
+            "too high" => [7],
+            "too low" => [0],
+            _ => [6],
+        };
+
+        // Act
+        Task<GameSnapshot> submitting = service.Submit(id, token, action, faked, this._cancellation);
+
+        // Assert
+        FakedDiceRefusedException exception = await Assert.ThrowsAsync<FakedDiceRefusedException>(() => submitting);
+        Assert.Equal(
+            (expected, GameRequestFailure.Invalid, 0),
+            (exception.Message, exception.Failure, (await service.Get(id, this._cancellation)).Record.Actions.Count(
+                recorded => recorded.Kind is "roll" or "pass"
+            ))
+        );
+    }
+
     [Fact]
     public async Task Submit_WhenTheActionIsHowDiceCameUp_ThrowsIllegalActionException()
     {
@@ -2183,7 +2263,8 @@ public sealed class GameServiceTest
         bool isDraftable = true,
         Func<GameState, GameState>? filled = null,
         BoardSize? sizable = null,
-        bool mayPromoteAtSide = false
+        bool mayPromoteAtSide = false,
+        bool offersScenarios = true
     ) =>
         new(
             new RulesetCatalog(
@@ -2199,16 +2280,7 @@ public sealed class GameServiceTest
                 ]
             ),
             new BotCatalog(bots ?? [new FirstChoiceBot()]),
-            new ScenarioCatalog(
-                [
-                    new Scenario(TinyRules.RulesetId, "Second first", "The second seat starts.")
-                    {
-                        Id = SecondFirst,
-                        Turn = "Seat 1",
-                    },
-                    new Scenario(RollingRules.RulesetId, "Rolling", "Another ruleset's.") { Id = Rolling },
-                ]
-            ),
+            offersScenarios ? Scenarios() : ScenarioCatalog.None,
             store ?? new InMemoryGameStore(),
             this._notifier,
             new LoadedDice(4),
@@ -2216,5 +2288,17 @@ public sealed class GameServiceTest
             settings,
             this._players,
             this._gate
+        );
+
+    private static ScenarioCatalog Scenarios() =>
+        new(
+            [
+                new Scenario(TinyRules.RulesetId, "Second first", "The second seat starts.")
+                {
+                    Id = SecondFirst,
+                    Turn = "Seat 1",
+                },
+                new Scenario(RollingRules.RulesetId, "Rolling", "Another ruleset's.") { Id = Rolling },
+            ]
         );
 }

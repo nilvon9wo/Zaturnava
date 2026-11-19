@@ -15,6 +15,12 @@ own number (**25**, **N29**), the [2026-11-15 specification](playtesting/2026-11
 - **Scenario games on a development server** (asked 2026-11-19): an optional filter hiding them from **Waiting for
   your move** and the games list; and a way to be rid of them, a button deleting them all, or each deleted as the
   player leaves it.
+- **Dice off** (asked 2026-11-19): when creating a game, of Chaturaji 2027 or Grand Legions, its creator may turn
+  the dice off, making an impure abstract strategy game a pure one. With dice off, nothing can be rolled for:
+  no extra moves, no escapes, nor anything else a player may roll for now or later. *Accepted* (2026-11-19): a
+  setting recorded with the game, so that it replays as played and the lobby can show it; every action that
+  rolls, or waits on dice, offered by no rule while it is set (the rules asking one place, so that a future roll
+  is covered too); bots and the move guide told, so neither counts on a roll; rated apart from games with dice.
 - **D2** At least three non-random bots below 1200 Elo, a real progression of difficulty; Icarus sits only a few
   points below Midas. Keep every past measurement. *Proposed*, still to try: a bot playing one of its top few
   moves at random, by Sage's or Athena's judgement, how often it errs its strength; one looking no further than

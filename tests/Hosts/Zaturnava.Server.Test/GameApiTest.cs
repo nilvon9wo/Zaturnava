@@ -1000,6 +1000,20 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
     }
 
     [Fact]
+    public async Task Submit_WhenDiceAreFakedInAGameNotStartedFromAScenario_IsRefusedAsInvalid()
+    {
+        // Arrange - the user's request of 2026-11-19: faked dice, taken in scenarios only, sent with another game's
+        (string gameId, string token, GameViewDto view) = await this.ClaimedGame();
+        ActionDto faked = view.LegalActions[0] with { Faked = [6, 6] };
+
+        // Act
+        Task<GameViewDto> submitting = this._client.Submit(gameId, token, faked, this._cancellation);
+
+        // Assert
+        await AssertRefused(Refusal.Invalid, submitting);
+    }
+
+    [Fact]
     public async Task Submit_WhenTheActionIsOfNoKnownKind_IsRefusedAsInvalid()
     {
         // Arrange

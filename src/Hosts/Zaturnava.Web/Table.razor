@@ -471,9 +471,25 @@
                             }
                             @foreach (ActionDto action in turn.Actions.OffBoard.Except(hires).Where(action => !IsClosing(action)))
                             {
+                                bool mayFake = action.Kind == RollKind && view.Scenario is not null;
+                                @if (mayFake)
+                                {
+                                    @* Dice of the player's choosing, in a scenario only, on a development server only;
+                                       the server refuses them anywhere else. *@
+                                    <span class="faked-dice">
+                                        @for (int die = 0; die < this._faked.Count; die++)
+                                        {
+                                            int index = die;
+                                            <input type="number" min="1" class="faked-die"
+                                                   aria-label="@($"Die {index + 1}, as it is to come up")"
+                                                   value="@this._faked[index]"
+                                                   @oninput="change => this.Fake(index, change)" />
+                                        }
+                                    </span>
+                                }
                                 <button class="action primary @(IsUrged(view, action) ? "urged" : null)"
-                                        @onclick="() => this.Submit(turn.Claim, action)">
-                                    @this.Named(ActionLabels.LabelOf(action))
+                                        @onclick="() => this.Submit(turn.Claim, mayFake ? this.Faked(action) : action)">
+                                    @(mayFake && this.IsFaking ? "Use as dice" : this.Named(ActionLabels.LabelOf(action)))
                                 </button>
                             }
                         </div>
@@ -1058,6 +1074,34 @@
         actions.Origins.IsEmpty
         && actions.Choices.IsEmpty
         && actions.OffBoard.All(action => IsClosing(action) || action.Coming is not null);
+
+    /// <summary>
+    /// The faces typed for the dice of a roll in a scenario, each blank to be rolled (the user's request of 2026-11-19:
+    /// to "roll" a double 6, say, to test a return).
+    /// </summary>
+    private ImmutableList<string> _faked = [string.Empty, string.Empty];
+
+    /// <summary>Whether any face is typed, so that the roll uses them.</summary>
+    private bool IsFaking => this._faked.Any(face => face.Length > 0);
+
+    private void Fake(int die, ChangeEventArgs change) =>
+        this._faked = this._faked.SetItem(die, $"{change.Value}");
+
+    /// <summary>
+    /// The roll, with the faces typed, if any, each blank or not a number rolled; the faces cleared for the next.
+    /// </summary>
+    private ActionDto Faked(ActionDto roll)
+    {
+        ImmutableList<int?> faces =
+        [
+            .. this._faked.Select(face =>
+                int.TryParse(face, NumberStyles.Integer, CultureInfo.InvariantCulture, out int value) ? (int?)value : null
+            ),
+        ];
+        bool isFaking = this.IsFaking;
+        this._faked = [string.Empty, string.Empty];
+        return isFaking ? roll with { Faked = faces } : roll;
+    }
 
     /// <summary>Rolling, when the player may do nothing else for an enemy leader on their throne.</summary>
     private static bool IsUrged(GameViewDto view, ActionDto action) =>

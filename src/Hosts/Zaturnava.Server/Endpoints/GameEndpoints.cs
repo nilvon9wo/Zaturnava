@@ -486,7 +486,7 @@ internal static class GameEndpoints
         GameId id = new(gameId);
         ActionDescriptor descriptor = new(action.Kind, action.Arguments);
         string token = SeatToken.From(request, id);
-        GameSnapshot snapshot = await games.Submit(id, token, descriptor, cancellationToken);
+        GameSnapshot snapshot = await games.Submit(id, token, descriptor, action.Faked, cancellationToken);
         return await ViewOf(snapshot, token, games, players, cancellationToken);
     }
 
