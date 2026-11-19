@@ -109,8 +109,11 @@ internal sealed class FakeGameServer : IGameServing
     /// <summary>The alias token the last seat was claimed with; null, if none was given.</summary>
     public string? ClaimedWith { get; private set; }
 
+    /// <summary>While set, the catalog is answered only once this is: a server slow to wake.</summary>
+    public TaskCompletionSource<CatalogDto>? HeldCatalog { get; set; }
+
     public Task<CatalogDto> Catalog(CancellationToken cancellationToken) =>
-        this.Answer(
+        this.HeldCatalog?.Task ?? this.Answer(
             "catalog",
             new CatalogDto(
                 [

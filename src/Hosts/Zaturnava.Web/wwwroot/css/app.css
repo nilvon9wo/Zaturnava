@@ -62,6 +62,51 @@ body {
     background: var(--page);
 }
 
+/* The page loading (K): a bar filling as the runtime downloads it, and how much in words; the runtime sets the two
+   variables, and nothing else need run. */
+.starting {
+    display: grid;
+    justify-items: center;
+    gap: 10px;
+    max-width: 360px;
+    margin: 18vh auto 0;
+    color: var(--muted);
+}
+.starting .starting-name { margin: 0; font-size: 1.6rem; color: var(--accent); letter-spacing: 0.05em; }
+.starting .starting-bar {
+    width: 100%;
+    height: 8px;
+    overflow: hidden;
+    background: var(--panel);
+    border: 1px solid var(--panel-edge);
+    border-radius: 999px;
+}
+.starting .starting-bar span {
+    display: block;
+    width: var(--blazor-load-percentage, 0%);
+    height: 100%;
+    background: var(--accent);
+    transition: width 0.2s ease-out;
+}
+.starting .starting-text { margin: 0; }
+.starting .starting-percent::after { content: var(--blazor-load-percentage-text, "starting"); }
+/* The lobby reaching the server: a spinner, and why it may wait. */
+.reaching { display: flex; align-items: center; gap: 12px; max-width: 640px; margin: 24px auto; color: var(--muted); }
+.reaching p { margin: 0; }
+.spinner {
+    flex: none;
+    width: 22px;
+    height: 22px;
+    border: 3px solid var(--panel-edge);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.9s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+    .spinner { animation-duration: 3s; }
+}
+
 button {
     font: inherit;
     color: var(--ink);
@@ -403,6 +448,8 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
     vertical-align: middle;
     white-space: nowrap;
 }
+/* A cell still, though the table's seats (.seat) are rows of their own: else each seat's column stacks under one. */
+.games-table th.seat, .games-table td.seat { display: table-cell; }
 .games-table th.seat { border-bottom: 3px solid var(--seat-edge); }
 .games-table .seat-0 { --seat-edge: var(--seat-0); }
 .games-table .seat-1 { --seat-edge: var(--seat-1); }
@@ -528,6 +575,12 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
 @keyframes placing { 50% { opacity: 0.15; } }
 @media (prefers-reduced-motion: reduce) {
     .mark.placing { animation: none; stroke: var(--promotable); stroke-width: 0.06; }
+}
+/* What a click on the square hovered over would put there (I): greyed and blinking, as only a preview. */
+.board .preview { filter: grayscale(0.8); animation: previewing 1.2s ease-in-out infinite; }
+@keyframes previewing { 0%, 100% { opacity: 0.65; } 50% { opacity: 0.3; } }
+@media (prefers-reduced-motion: reduce) {
+    .board .preview { animation: none; opacity: 0.5; }
 }
 
 .piece.seat-0 circle { fill: var(--seat-0); }

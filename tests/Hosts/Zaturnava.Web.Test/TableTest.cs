@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using System.Globalization;
 using Bunit;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 using Net.NowhereAtAll.Zaturnava.Contracts;
 using Net.NowhereAtAll.Zaturnava.Presentation;
 
@@ -2133,6 +2134,141 @@ public sealed class TableTest : IDisposable
                 table.FindAll("button.build-palace").Count
             )
         );
+    }
+
+    [Fact]
+    public void Hover_WhenAPickedUpPieceMayGoThere_ShowsItThereAsAPreview()
+    {
+        // Arrange - Black's Raja picked up, to go to cell 1 or 3 (the user's report of 2026-11-15, I)
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        table.Find("svg.board rect[data-cell='0']").Click();
+
+        // Act
+        table.Find("svg.board rect[data-cell='3']").TriggerEvent("onmouseenter", new MouseEventArgs());
+
+        // Assert
+        Assert.Equal("piece seat-0", table.Find("svg.board .preview g").GetAttribute("class"));
+    }
+
+    [Theory]
+    [InlineData("2", 0)]
+    [InlineData("3", 1)]
+    public void Hover_ShowsAPreviewOnlyWhereAClickWouldPutSomething(string cell, int expected)
+    {
+        // Arrange - Black's Raja picked up, to go to cell 1 or 3, but not 2
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        table.Find("svg.board rect[data-cell='0']").Click();
+
+        // Act
+        table.Find($"svg.board rect[data-cell='{cell}']").TriggerEvent("onmouseenter", new MouseEventArgs());
+
+        // Assert
+        Assert.Equal(expected, table.FindAll("svg.board .preview").Count);
+    }
+
+    [Theory]
+    [InlineData("3", 0)]
+    [InlineData("1", 1)]
+    public void Leave_WhenThePointerLeavesASquare_TakesItsPreviewAwayUnlessItWentOnToAnother(
+        string left,
+        int expected
+    )
+    {
+        // Arrange - the pointer gone from cell 1 onto cell 3
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        table.Find("svg.board rect[data-cell='0']").Click();
+        table.Find("svg.board rect[data-cell='1']").TriggerEvent("onmouseenter", new MouseEventArgs());
+        table.Find("svg.board rect[data-cell='3']").TriggerEvent("onmouseenter", new MouseEventArgs());
+
+        // Act
+        table.Find($"svg.board rect[data-cell='{left}']").TriggerEvent("onmouseleave", new MouseEventArgs());
+
+        // Assert
+        Assert.Equal(expected, table.FindAll("svg.board .preview").Count);
+    }
+
+    [Fact]
+    public void Hover_WhenAPieceDraftedMayBePlacedThere_ShowsThatPieceThere()
+    {
+        // Arrange - the Boat picked, to be placed on cell 1
+        this.Drafting(left: 3, throne: false);
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        table.FindAll("button.pick")[0].Click();
+
+        // Act
+        table.Find("svg.board rect[data-cell='1']").TriggerEvent("onmouseenter", new MouseEventArgs());
+
+        // Assert
+        Assert.Equal("Boat", table.Find("svg.board .preview g.piece title").TextContent);
+    }
+
+    [Theory]
+    [InlineData(true, 1)]
+    [InlineData(false, 0)]
+    public void Hover_WhenAPieceComingBackMayBePlacedThere_ShowsThatPieceThereIfItIsKnown(bool isKnown, int expected)
+    {
+        // Arrange - Black's Boat escaping, to come back onto cell 2; or something coming, the table knows not what
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Returning = isKnown ? new PrisonerDto(7, "boat", "Boat", 0) : null,
+            LegalActions =
+            [
+                new ActionDto(
+                    "return",
+                    ImmutableSortedDictionary<string, string>.Empty
+                        .Add(ActionArguments.Actor, "0")
+                        .Add(ActionArguments.To, "2")
+                ),
+            ],
+        };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Act
+        table.Find("svg.board rect[data-cell='2']").TriggerEvent("onmouseenter", new MouseEventArgs());
+
+        // Assert
+        Assert.Equal(expected, table.FindAll("svg.board .preview g.piece").Count);
+    }
+
+    [Fact]
+    public void Hover_WhenTheThroneMayBeSetThere_ShowsThePlayersThroneThere()
+    {
+        // Arrange
+        this.Drafting(left: 3, throne: true);
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Act
+        table.Find("svg.board rect[data-cell='2']").TriggerEvent("onmouseenter", new MouseEventArgs());
+
+        // Assert
+        _ = Assert.Single(table.FindAll("svg.board .preview rect.throne.seat-0"));
+    }
+
+    [Fact]
+    public void Hover_WhenThePalaceMayBePlacedAboutIt_ShowsItsWall()
+    {
+        // Arrange
+        this.PlacingPalace();
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Act
+        table.Find("svg.board rect[data-cell='2']").TriggerEvent("onmouseenter", new MouseEventArgs());
+
+        // Assert
+        Assert.NotEmpty(table.FindAll("svg.board .preview path.line.palace"));
+    }
+
+    [Fact]
+    public void Hover_WhenNothingIsBeingPlacedOrMoved_ShowsNothing()
+    {
+        // Arrange - nothing picked up: the Raja's own square may be clicked, but puts nothing there
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Act
+        table.Find("svg.board rect[data-cell='0']").TriggerEvent("onmouseenter", new MouseEventArgs());
+
+        // Assert
+        Assert.Empty(table.FindAll("svg.board .preview"));
     }
 
     /// <summary>The player drafting, their palace to be placed about cell 1 or 2.</summary>

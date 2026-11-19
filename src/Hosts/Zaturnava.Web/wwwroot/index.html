@@ -11,7 +11,14 @@
 </head>
 
 <body>
-    <div id="app">Loading...</div>
+    <!-- Until the page has loaded: how much of it has, as the runtime tells it while downloading (K). -->
+    <div id="app">
+        <div class="starting" role="status">
+            <p class="starting-name">Zaturnava</p>
+            <div class="starting-bar" aria-hidden="true"><span></span></div>
+            <p class="starting-text">Loading the page: <span class="starting-percent"></span></p>
+        </div>
+    </div>
     <script src="js/zaturnava.js"></script>
     <script src="_framework/blazor.webassembly.js"></script>
 </body>

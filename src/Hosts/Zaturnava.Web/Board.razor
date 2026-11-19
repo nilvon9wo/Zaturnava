@@ -6,7 +6,9 @@
    so that the player sees the board waits for them to pick one. Each cell's name is written small in its top left corner, as the board is turned, so that
    the log's "from c2 to c3" can be found. The whole board turns by Turn, a board other than square framed on its side as it turns a quarter; the pieces'
    symbols and the names stay upright.
-   Hovering over a piece names it, its owner and its class: the cell under it, which takes the clicks, says so. *@
+   Hovering over a piece names it, its owner and its class: the cell under it, which takes the clicks, says so.
+   Hovering over a square the player may click to move or place something there shows what would be put there - the
+   piece, a palace's wall, a throne - greyed and blinking, as only a preview (I). *@
 
 <svg class="board" viewBox="@this.Turn.Framing(this._frame).ViewBox" role="grid">
     <g transform="@this.Turn.Transform(this._frame)">
@@ -18,6 +20,8 @@
                   width="1"
                   height="1"
                   data-cell="@cell.Id"
+                  @onmouseenter="() => this._hovered = cell.Id"
+                  @onmouseleave="() => this.Leave(cell.Id)"
                   @onclick="() => this.OnCellClicked.InvokeAsync(cell.Id)">
                 @if (this._pieces.GetValueOrDefault(cell.Id) is { } occupant)
                 {
@@ -47,55 +51,27 @@
         }
         @foreach (PieceDto piece in this.View.Pieces)
         {
-            CellDto cell = this._cells[piece.Cell];
-            double x = cell.X;
-            double y = BoardFrame.ScreenY(cell.Y);
-            <g class="@this.PieceClass(piece)" pointer-events="none">
-                <title>@PieceStyle.Named(piece.Name, this.Pieces)</title>
-                <circle cx="@Svg.Number(x)" cy="@Svg.Number(y)" r="0.4" />
-                @if (piece.Mark is { } mark)
+            @this.Drawn(piece, this.PieceClass(piece))
+        }
+        @if (this.Preview is { } preview)
+        {
+            <g class="preview" pointer-events="none">
+                @foreach (LineDto line in preview.Lines)
                 {
-                    @if (PieceStyle.EmblemOf(mark.Emblem) is { } emblem)
-                    {
-                        <path d="@emblem" transform="@Placed(this.Turn, x, y, PieceStyle.EmblemPlacement)" />
-                    }
-                    @if (PieceStyle.EmblemGlyphOf(mark.Emblem) is { } glyph)
-                    {
-                        <g>
-                            <text class="symbol"
-                                  x="@Svg.Number(x)"
-                                  y="@Svg.Number(y - PieceStyle.GlyphRise)"
-                                  transform="@this.Turn.Upright(x, y)"
-                                >@glyph</text>
-                        </g>
-                    }
-                    @if (mark.Class is { } pieceClass && PieceStyle.ClassEmblemOf(pieceClass) is { } classEmblem)
-                    {
-                        <path class="class-emblem"
-                              d="@classEmblem"
-                              transform="@Placed(this.Turn, x, y, PieceStyle.ClassPlacementBeside(mark.Letters))" />
-                    }
-                    @if (mark.Letters.Length > 0)
-                    {
-                        <g>
-                            <text class="letters"
-                                  x="@Svg.Number(x + PieceStyle.LettersShift)"
-                                  y="@Svg.Number(y + PieceStyle.LettersDrop)"
-                                  transform="@this.Turn.Upright(x, y)"
-                                >@mark.Letters</text>
-                        </g>
-                    }
+                    <path class="line @line.Kind" d="@PathOf(line)" />
                 }
-                else if (PieceStyle.ShapeOf(piece.Kind, this.Pieces) is { } shape)
+                @if (preview.ThroneOf is { } owner)
                 {
-                    <path d="@shape" transform="@ShapeTransform(this.Turn, x, y)" />
+                    CellDto at = this._cells[this._hovered!.Value];
+                    <rect class="throne seat-@owner"
+                          x="@Svg.Number(at.X - BoardFrame.HalfCell + ThroneInset)"
+                          y="@Svg.Number(BoardFrame.ScreenY(at.Y) - BoardFrame.HalfCell + ThroneInset)"
+                          width="@Svg.Number(1 - (2 * ThroneInset))"
+                          height="@Svg.Number(1 - (2 * ThroneInset))" />
                 }
-                else
+                @if (preview.Piece is { } placed)
                 {
-                    <g>
-                        <text x="@Svg.Number(x)" y="@Svg.Number(y)" transform="@this.Turn.Upright(x, y)"
-                            >@PieceStyle.GlyphOf(piece, this.Pieces)</text>
-                    </g>
+                    @this.Drawn(placed, $"piece seat-{placed.Owner}")
                 }
             </g>
         }
@@ -144,6 +120,88 @@
 
     [Parameter]
     public EventCallback<int> OnCellClicked { get; set; }
+
+    /// <summary>
+    /// What placing on a square would put there, the piece picked up aside: a piece, a palace or a throne; none, if
+    /// nothing, or the table does not say.
+    /// </summary>
+    [Parameter]
+    public Func<int, BoardPreview?> PreviewAt { get; set; } = _ => null;
+
+    /// <summary>The square the pointer is over, if any.</summary>
+    private int? _hovered;
+
+    /// <summary>
+    /// What a click on the square hovered over would put there, if it may be clicked so: the piece picked up, moved
+    /// there; else what the table says placing there puts (I).
+    /// </summary>
+    private BoardPreview? Preview =>
+        this._hovered is { } at && this.Targets.Contains(at)
+            ? this.Selection.Selected is { } from
+                ? new BoardPreview(this._pieces[from] with { Cell = at })
+                : this.PreviewAt(at)
+            : null;
+
+    /// <summary>The pointer gone from <paramref name="cell"/>: none hovered over, unless it went to another.</summary>
+    private void Leave(int cell) => this._hovered = this._hovered == cell ? null : this._hovered;
+
+    private double XOf(PieceDto piece) => this._cells[piece.Cell].X;
+
+    private double YOf(PieceDto piece) => BoardFrame.ScreenY(this._cells[piece.Cell].Y);
+
+    /// <summary>A piece, on its cell, its symbol upright, in the classes given.</summary>
+    private RenderFragment Drawn(PieceDto piece, string classes) =>
+        @<g class="@classes" pointer-events="none">
+            <title>@PieceStyle.Named(piece.Name, this.Pieces)</title>
+            <circle cx="@Svg.Number(this.XOf(piece))" cy="@Svg.Number(this.YOf(piece))" r="0.4" />
+            @if (piece.Mark is { } mark)
+            {
+                @if (PieceStyle.EmblemOf(mark.Emblem) is { } emblem)
+                {
+                    <path d="@emblem"
+                          transform="@Placed(this.Turn, this.XOf(piece), this.YOf(piece), PieceStyle.EmblemPlacement)" />
+                }
+                @if (PieceStyle.EmblemGlyphOf(mark.Emblem) is { } glyph)
+                {
+                    <g>
+                        <text class="symbol"
+                              x="@Svg.Number(this.XOf(piece))"
+                              y="@Svg.Number(this.YOf(piece) - PieceStyle.GlyphRise)"
+                              transform="@this.Turn.Upright(this.XOf(piece), this.YOf(piece))"
+                            >@glyph</text>
+                    </g>
+                }
+                @if (mark.Class is { } pieceClass && PieceStyle.ClassEmblemOf(pieceClass) is { } classEmblem)
+                {
+                    <path class="class-emblem"
+                          d="@classEmblem"
+                          transform="@Placed(this.Turn, this.XOf(piece), this.YOf(piece), PieceStyle.ClassPlacementBeside(mark.Letters))" />
+                }
+                @if (mark.Letters.Length > 0)
+                {
+                    <g>
+                        <text class="letters"
+                              x="@Svg.Number(this.XOf(piece) + PieceStyle.LettersShift)"
+                              y="@Svg.Number(this.YOf(piece) + PieceStyle.LettersDrop)"
+                              transform="@this.Turn.Upright(this.XOf(piece), this.YOf(piece))"
+                            >@mark.Letters</text>
+                    </g>
+                }
+            }
+            else if (PieceStyle.ShapeOf(piece.Kind, this.Pieces) is { } shape)
+            {
+                <path d="@shape" transform="@ShapeTransform(this.Turn, this.XOf(piece), this.YOf(piece))" />
+            }
+            else
+            {
+                <g>
+                    <text x="@Svg.Number(this.XOf(piece))"
+                          y="@Svg.Number(this.YOf(piece))"
+                          transform="@this.Turn.Upright(this.XOf(piece), this.YOf(piece))"
+                        >@PieceStyle.GlyphOf(piece, this.Pieces)</text>
+                </g>
+            }
+        </g>;
 
     private ImmutableHashSet<int> Targets =>
         (this.Selection.Choice, this.Selection.Selected) switch
