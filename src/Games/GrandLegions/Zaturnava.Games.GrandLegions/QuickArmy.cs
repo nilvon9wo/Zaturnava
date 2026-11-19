@@ -483,7 +483,7 @@ public static class QuickArmy
     /// <summary>Every square of the game's kingdom a palace may stand about.</summary>
     private static ImmutableList<ArmySquare> Centres(QuickGame game) =>
         game.HasEdgePalaces
-            ? PalaceSquares.EdgeCentres(game.Kingdom, game.Width, game.Height)
+            ? PalaceSquares.EdgeCentres(game.Kingdom, game.Width, game.Height, game.Edition)
             : PalaceSquares.Centres(game.Kingdom);
 
     /// <summary>

@@ -11,6 +11,13 @@ namespace Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
 /// </summary>
 public static class PalaceSquares
 {
+    /// <summary>
+    /// The edition (<see cref="Engine.Rules.GameState.Edition"/>) from which a palace standing partly outside its
+    /// kingdom keeps clear of where any other army's could (the user's words of 2026-11-19: "when palaces overflow
+    /// kingdoms, it should be impossible for palaces to overlap"); a game dealt before replays as it was dealt.
+    /// </summary>
+    public const int ApartEdition = 14;
+
     /// <summary>A palace's width, and its depth.</summary>
     private const int Width = 3;
 
@@ -30,29 +37,47 @@ public static class PalaceSquares
     /// 4 × 2 kingdom, 6 squares in, 3 out), none of it beside the kingdom's sides, and none of it in another army's
     /// kingdom, each seat's placed on a board <paramref name="width"/> squares across and <paramref name="height"/>
     /// up, as the pinwheel places them: where a palace may stand for every seat, each seeing the board from its own
-    /// corner (<see cref="Pinwheel.FrameOf"/>), so that every army has the same choice.
+    /// corner (<see cref="Pinwheel.FrameOf"/>), so that every army has the same choice. From
+    /// <see cref="ApartEdition"/> on, nor any of it where another army's palace could stand partly outside its kingdom,
+    /// so that no two palaces can ever share a square.
     /// </summary>
     public static ImmutableList<ArmySquare> EdgeCentres(
         [Required] ImmutableList<ArmySquare> kingdom,
         int width,
-        int height
+        int height,
+        int edition = ApartEdition
     )
     {
-        ImmutableList<ArmyPiece> squares =
-            [.. kingdom.Select(square => new ArmyPiece(Square, square.Column, square.Row))];
+        ImmutableHashSet<ArmySquare> all = [.. kingdom];
+        ImmutableHashSet<ArmySquare> OthersOf(IEnumerable<ArmySquare> own) => Others(own, width, height);
+        ImmutableHashSet<ArmySquare> kingdoms = OthersOf(kingdom);
+        ImmutableList<ArmySquare> apart = EdgeCentres(kingdom, square => !kingdoms.Contains(square));
+        ImmutableHashSet<ArmySquare> overflows = edition >= ApartEdition
+            ? OthersOf(apart.SelectMany(Window).Where(square => !all.Contains(square)))
+            : [];
+        return EdgeCentres(kingdom, square => !kingdoms.Contains(square) && !overflows.Contains(square));
+    }
+
+    /// <summary>
+    /// Where <paramref name="own"/>, squares as seat 0 sees them, stand for every other seat, on a board
+    /// <paramref name="width"/> squares across and <paramref name="height"/> up or the other way round, as the pinwheel
+    /// places them.
+    /// </summary>
+    private static ImmutableHashSet<ArmySquare> Others(IEnumerable<ArmySquare> own, int width, int height)
+    {
+        ImmutableList<ArmyPiece> squares = [.. own.Select(square => new ArmyPiece(Square, square.Column, square.Row))];
         ImmutableHashSet<ArmySquare> OthersOn(int across, int up) =>
         [
             .. Pinwheel
                 .EachOwn(across, up, [[], .. Enumerable.Repeat(squares, Pinwheel.SeatCount - 1)])
                 .Select(placed => new ArmySquare(placed.Column, placed.Row)),
         ];
-        ImmutableHashSet<ArmySquare> others = OthersOn(width, height).Union(OthersOn(height, width));
-        return EdgeCentres(kingdom, square => !others.Contains(square));
+        return OthersOn(width, height).Union(OthersOn(height, width));
     }
 
     /// <summary>
-    /// As <see cref="EdgeCentres(ImmutableList{ArmySquare}, int, int)"/> says, a square outside the kingdom free if
-    /// <paramref name="isFree"/> says so.
+    /// As <see cref="EdgeCentres(ImmutableList{ArmySquare}, int, int, int)"/> says, a square outside the kingdom free
+    /// if <paramref name="isFree"/> says so.
     /// </summary>
     public static ImmutableList<ArmySquare> EdgeCentres(
         [Required] ImmutableList<ArmySquare> kingdom,

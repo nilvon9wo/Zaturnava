@@ -1,102 +1,134 @@
 # Backlog
 
-What is still to be done, sorted by kind. Numbers are the playtests' own, so that each item can be traced to the
-note it came from. What has been done, and the choices made doing it, is in [done.md](done.md); an item moves
-there with the change that finishes it. Questions waiting on an answer are gathered in
-[open-questions.md](open-questions.md). The playtest of 2026-11-15 is tracked apart, in
-[playtesting/traceability.md](playtesting/traceability.md); the grand game's stages in its
-[roadmap](grand/roadmap.md).
+Everything still to be done, in one place, most pressing first. Each item names where it came from: a playtest's
+own number (**25**, **N29**), the [2026-11-15 specification](playtesting/2026-11-15-specification.md)'s id (**D2**,
+**X4**, tracked row by row in [traceability.md](playtesting/traceability.md)), a stage of the grand game's
+[roadmap](grand/roadmap.md), or the date it was asked. What has been done, and the choices made doing it, is in
+[done.md](done.md); an item moves there with the change that finishes it. Questions waiting on an answer are in
+[open-questions.md](open-questions.md). The order is *Proposed*: the user may reorder it.
 
-## Players and identity
+## 1. Now: asked for and not yet done
 
+- **Swap or capture** (asked 2026-11-19): with Safety off, a move onto an ally that could also swap with it asks
+  "Swap or capture?" rather than assuming the swap. Needs the rules to offer capturing a swappable ally as an
+  action of its own, beside the swap.
+- **Scenario games on a development server** (asked 2026-11-19): an optional filter hiding them from **Waiting for
+  your move** and the games list; and a way to be rid of them, a button deleting them all, or each deleted as the
+  player leaves it.
+- **D2** At least three non-random bots below 1200 Elo, a real progression of difficulty; Icarus sits only a few
+  points below Midas. Keep every past measurement. *Proposed*, still to try: a bot playing one of its top few
+  moves at random, by Sage's or Athena's judgement, how often it errs its strength; one looking no further than
+  its own move, missing what the enemy can take back.
+- **M1–M5** Offline tournaments and training. *Begun* (2026-11-19): `scripts/wsl-overnight.sh` trains Athena and
+  rates every bot, cycle after cycle, until stopped, each round kept as it ends
+  ([local-development](contribute/local-development.md#smart-app-control-windows)). Still to do: resuming a
+  tournament mid-way, not only from the last whole round (M2); the results into the repository, and through it
+  the live site's ratings, by a second documented command (M4); every bot rated at every ruleset, with past
+  measurements kept beside new ones (M5).
+
+## 2. Bots that play well
+
+From the specification's observations of the bots in play (F, X) and the Sage plan:
+
+- **X5** Safe captures of leaders and strong pieces, above all those threatening an ally, ignored; perhaps from
+  misjudging which way infantry move, and so what is safe.
+- **X6, F1** Rooks sacrificed for Pawns; a Raja left blocking an allied Pawn, which could neither promote nor
+  escape attackers.
+- **F2, F3, F4** Promotion chosen badly: into a Raja of another army rather than the Rook that wins, losing
+  control of an ally's pieces. Bots should weigh the promoted piece's owner, mobility and effect on coordination,
+  head for the throne that matters, see an enemy's chance to seize control, use Rooks, push Pawns, and turn a
+  winning position into a win.
+- **X3** Meandering on a near-empty board with nothing left but to clean up, except for the weakest bots.
+- **X4** Ransoms offered or accepted when hopeless or harmful: prolonging a decided game, bringing back a piece
+  that is at once taken or in the way, offering what no one sensible would accept.
+- **F6** Resigning a hopeless endgame: a strategic judgement, not a points comparison, each bot by its own
+  threshold.
+- Sage, next: command and empires (thrones and leaders weigh them only in part), and the enemy's reply. With the
+  reply weighed, Sage may take its own team's pieces (rules §6.4) when that saves a better one (*Stated*
+  2026-10-29).
+- Sage's newer measures (the pieces' promotion, reach and retreat; leaders attacked, thrones in danger, armies
+  commanded; `under-escapes`) start at no weight: tune them, and teach Athena them.
+- *(Stated 2026-11-05)* Trusting the ally by how well it plays. *(Proposed)*: the ally's rating as a feature, so
+  the ally-side weights can grow with a strong ally and shrink with a weak one.
+- *(Stated 2026-11-05, 2026-11-06)* Shared command: handing the turn to a regent ally when it would play the rest
+  better; giving up the leader on purpose so that an ally commands the army; passing up a ransom or escape that
+  would bring the leader home, so the ally keeps command. *(Proposed)*: learned rather than written in.
+- Athena, then: the kind of ending as a third prediction, so that agreeing to end becomes a move it can judge; the
+  board square by square, turned to each seat's own view, once there are hundreds of thousands of games; people's
+  games mixed in as they accumulate (*Proposed*).
+
+## 3. Grand Legions: bots and armies
+
+- **D4** Strong Grand Legions bots by family, each preferring its game's pieces while playing well: Western,
+  Xiangqi, Janggi, Shogi, Makruk, Checkers, Tafl, and Fairy (pieces none of the others use). Where a family lacks a
+  piece, decide whether to add it or use the nearest.
+- **E4** Several army-selection strategies (many cheap pieces, a few dear ones, a balance across the classes),
+  shared or not; clever bots answering what the others pick and place. Stage 4: Random at random, Midas by value,
+  Solomon evenly. Later, bots of their own leanings: one origin, sliders, infantry; an army of different bots.
+- *(Stated 2026-11-12)* Fairy-Stockfish as a bot. *Begun*: it plays
+  ([self-play](bots/self-play.md#fairy-stockfish-as-a-bot)); its rating is still to come. In the BotRunner only,
+  in an adapter project of its own so its GPL-3 licence stays with it.
+- *(Stated 2026-11-12)* Evaluate an OpenSpiel adapter: any number of players and chance, and MCTS,
+  AlphaZero-style self-play and CFR to make bots with; weigh porting the rules against a bridge to ours.
+
+## 4. Grand Legions: rules still to come
+
+- Stage 5: upgrades and promotions bought in play, in a palace with the player's own leader on its throne,
+  lowering the score; lifts bought in the draft, and kept in the game; the four-throne bonus, once for each set
+  of leaders; bots that spend.
+- Stage 3: several leaders in one army, with everything the rules say of "the Raja" said of leaders, and throne
+  control by any of them; scoring by piece value, the Chaturaji 2027 bonuses times 10, until playtesting says
+  otherwise (**Q14**). Check what of this the composition edition already does.
+- Stage 6: start rows as a setting; the face-off's optional pause when it first opens.
+- Stage 2: choosing a quick setup for one's own kingdom in a game set up by hand.
+- Stage 2: saved settings, named, shared and copied to edit ([specification §2.1](grand/specification.md#21-saved-settings)).
+- *(Stated 2026-11-12)* **Kingdoms placed by the players**, as a setting of the game's creator, before their
+  palace, throne and pieces; probably still keeping to the board's corners, more or less, so that no later player
+  is left without room.
+- **3** Variant pieces: two Chinese-chess-like elephants, one confined by two rivers dividing the board in four,
+  a dearer one that may cross them; the boat to be replaced.
+- **21, 22, 26** (rest) The idle-rounds safety net as a per-game setting.
+- Boat triumph (§9): a nice-to-have; the condition is so unlikely that no one may miss it.
+- Stage 7: playtest, and act on what it asks: the Chaturaji 2027 bonuses, the leader bonus of 60, the Pawns'
+  promotion premiums ([pieces](grand/pieces.md#still-open)) (**Q14**).
+
+## 5. Look, feel and players
+
+- Grand Legions' lifts (**N25**, Stage 7): a badge above a piece's symbol for each kind of restriction lifted,
+  once lifts are kept in the game.
 - A player's card (*Stated* 2026-11-12): beyond their standing at the game, which it shows, their other games.
 - **29** One person, one identity: a person may play several seats of one team when the game allows it, without
   pretending to be several people.
+- *(Stated 2026-11-12, low priority)* The table's panels (the draft's list of pieces, the turn's panel, the log
+  and talk) resized and placed by each player, as a piece card already may be dragged.
+- **2** Pieces drawn as pictures of their own; for now chess glyphs, and the boat a drawn sailing boat.
+- **N29** (low) An encyclopedia of pieces: each piece's names, the games it comes from and that use it here, its
+  variants, and how it moves, captures and what else it may do.
 
-## Look and feel
+## 6. For developers and outside AIs
 
-- Grand Legions' lifts (**N25**): as small badges above a piece's symbol, one per kind of restriction lifted, once
-  a piece's lifted restrictions are kept in the game.
-- *(Stated 2026-11-12, low priority, a nice-to-have)* The table's panels (the draft's list of pieces, the turn's
-  panel, the log and talk) resized and placed by each player as they like, as a piece card already may be dragged.
-- **2** Pieces drawn as pictures of their own; for now they are chess glyphs, and the boat a drawn sailing boat.
-- **N29** (low) An encyclopedia of pieces: each piece's name here, its other names, the games it comes from
-  (Chess, Xiangqi...), the games here that use it, its variants (kinds of Pawn, of Elephant...), and how it
-  moves, captures and what else it may do.
+- Bring your own AI, next: a push channel, so a program need not poll; the engine and the bot interface as
+  packages, so a bot need not reference the repository's projects (*Proposed*: Athena's network among them, so
+  the sample bots, in repositories of their own, may play by it); replaying a history without .NET.
 
-## Rules not yet played
+## 7. Research and writing
 
-- **21, 22, 26** (rest) The idle-rounds safety net as a per-game setting.
-- Boat triumph (§9): a nice-to-have; the condition is so unlikely that no one may miss it.
-- *(Stated 2026-11-12)* **Kingdoms placed by the players**, as a setting of the game's creator: today every kingdom
-  stands in a corner of the board, whatever its size; with it, each player would place their kingdom before their
-  palace, throne and pieces. How free to make it is still to be worked out. Placing it anywhere could leave a later
-  player no room for theirs, so kingdoms should probably still keep to the board's corners, more or less.
-- **3** Variant pieces: two Chinese-chess-like elephants, one confined by two "rivers" that divide the board in
-  four, and a dearer one that may cross them; the boat is to be replaced.
+- **O1–O5** An article on AI in Zaturnava, following the first on LinkedIn: what was tried, why, and what worked;
+  other and hybrid approaches; what differs between an AI for Chaturaji 2027 and one for Grand Legions; chess's
+  tactics, backgammon's dice and Go's negotiated endings as paradigms; whether the game could ever be solved.
 
-## Bots
+## 8. Later
 
-- *(Stated 2026-11-12)* More weak bots, for beginners, between 800 and 1200 Elo; Echo, Icarus and Croesus are done
-  ([done](done.md#bots)). *Proposed*, still to try: one that plays one of its top few moves at random, by Sage's or
-  Athena's judgement, with how often it errs as its strength; one that looks no further than its own move, missing
-  what the enemy can take back. Each is rated by the bot-rating job like the rest.
-- Sage, next: command and empires (thrones and leaders weigh them only in part), and the enemy's reply. With the
-  enemy's reply weighed, Sage may take its own team's pieces (rules §6.4) when that saves a better one
-  (*Stated* 2026-10-29); until then no bot does.
-- Sage's newer measures (the pieces' promotion, reach and retreat; leaders attacked, thrones in danger, armies
-  commanded; `under-escapes`) start at no weight: tune them, and teach Athena them.
-- *(Stated 2026-11-05)* Trusting the ally: how far to rely on the ally's pieces should depend on how well the ally
-  plays. *(Proposed)*: the ally's rating as a feature, so the ally-side weights can grow with a strong ally and
-  shrink with a weak one; learned by Athena, or tuned in Sage against allies of several strengths.
-- *(Stated 2026-11-05, 2026-11-06)* Shared command: a bot that hands its turn to a regent ally (no bot does yet)
-  when the ally would play the rest of it better; giving up the leader on purpose, so that an ally commands the
-  army, which needs Sage to look past the enemy's taking it; passing up a ransom or an escape that would bring the
-  leader home, so that the ally keeps command. *(Proposed)*: learned rather than written in.
-- *(Stated 2026-11-05)* Private team chat, and how well bots plan through it; moot while our bots do not talk, and
-  not with bots that spend tokens.
-- Athena, then: the kind of ending as a third prediction, so that agreeing to end becomes a move it can judge, and
-  the board square by square, turned to each seat's own view, once there are hundreds of thousands of games. People's
-  games mixed in as they accumulate (*Proposed*).
-- Bring your own AI, next: a push channel, so that a program need not poll; the engine and the bot interface as
-  packages, so that a bot need not reference the repository's projects (*Proposed*: Athena's value network among
-  them, so that the sample bots, moved to repositories of their own, may play by it); replaying a history without
-  .NET.
-- Drafting (*Stated* 2026-11-12): each bot drafting by a plan of its own (many cheap pieces, a few dear ones, a
-  balance across the classes), rather than all following the random fill; ideally, in an open draft, the stronger
-  bots answering what the others are drafting. Later, once the game is more settled: bots of their own leanings,
-  such as one preferring pieces of one origin (Western, Shogi...), or sliders, or infantry; an army of different
-  bots to play against.
-- *(Stated 2026-11-12)* Fairy-Stockfish as a bot. *Begun*: it plays, see
-  [Fairy-Stockfish, as a bot](bots/self-play.md#fairy-stockfish-as-a-bot); its rating is still to come. It advises
-  one seat at a time, its pieces in Betza notation, limited to the seat's legal moves for the roll, in an adapter
-  project of its own, so its GPL-3 licence stays with it; in the BotRunner only, before any thought of hosting it.
-- *(Stated 2026-11-12)* Evaluate an OpenSpiel adapter. *(Proposed)*: DeepMind's OpenSpiel, whose games may have any
-  number of players and chance (the dice), and whose algorithms (MCTS, AlphaZero-style self-play, CFR) could make
-  bots without Fairy-Stockfish's blind spots. It is C++ and Python: weigh porting the rules against a bridge to
-  ours. An internal tool for bots, not a public interface.
-- *(Stated 2026-11-12, not a priority)* Fold into Grand Legions the pieces Fairy-Stockfish's built-in variants have
-  that it lacks: list each piece not already in `docs/Other Potential Pieces.xlsx` or the game, and add them there
-  and to the game, each with its own symbol.
-- A mechanical bot that likes to roll, rather than always moving without dice (not a priority).
-
-## Later
-
-- *(Stated 2026-11-12, not a priority)* Upgrade to .NET 11, once MonsterASP hosts it (itch.io serves only the
-  page's static files, so its side is the WebAssembly build). The SDK CI and the deploys build with is pinned
-  (`scripts/pin-sdk.py`, and each workflow's setup-dotnet version): moving to a newer SDK means moving the pin.
-- *(Stated 2026-10-31, low priority, an idea)* **Games made by others, as data alone.** Anyone may describe a game
-  of their own (its board, pieces, how each moves, the dice, the setup, how it is scored and ends) in JSON or XML,
-  and play it on the live server. No one may send code: every structure, movement and rule a description names
-  must already exist in the engine. *(Proposed)* What it would take, roughly:
-  - a published schema for a description, versioned, checked on upload, with a clear refusal naming what is
-    unknown or out of bounds;
-  - the engine's building blocks (topologies, movement patterns, dice faces, promotions, captures, scoring and
-    endings) named and parameterised, so a description refers to them by name, the way Grand Legions' pieces
-    already combine rider, leaper and hopper parts ([pieces](grand/pieces.md));
-  - limits on size (cells, pieces, seats) and on the work a turn's legal moves may take, so that no description
-    can slow the server for everyone else;
-  - an upload tied to a signed-in player, and a listing of others' games apart from the house ones, which the
-    house may take down;
-  - the dumb bots (Random, Midas) able to play any described game, as they play any ruleset through its legal
-    actions.
+- **N1–N5** Secondary palaces: not to be built before promotions and lifts can be bought
+  ([roadmap](grand/roadmap.md#later)).
+- More kingdoms than four, or of unequal size; more pieces; games without palaces.
+- *(Stated 2026-11-12, not a priority)* Fold into Grand Legions the pieces Fairy-Stockfish's variants have that it
+  lacks, each into `docs/Other Potential Pieces.xlsx` and the game, with its own symbol.
+- A mechanical bot that likes to roll, rather than always moving without dice.
+- *(Stated 2026-11-05)* Private team chat, and how well bots plan through it; moot while our bots do not talk.
+- *(Stated 2026-11-12)* Upgrade to .NET 11, once MonsterASP hosts it; the SDK is pinned (`scripts/pin-sdk.py`,
+  and each workflow's setup-dotnet version).
+- *(Stated 2026-10-31, an idea)* **Games made by others, as data alone**, described in JSON or XML and played on
+  the live server, combining only what the engine has, no code. *(Proposed)*: a versioned, checked schema; the
+  engine's building blocks named and parameterised; limits on size and on a turn's work; uploads tied to a
+  signed-in player, listed apart from the house's; the dumb bots able to play any described game.
