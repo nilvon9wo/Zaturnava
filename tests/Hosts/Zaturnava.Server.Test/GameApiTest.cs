@@ -832,6 +832,41 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
     }
 
     [Fact]
+    public async Task Submit_WhenTheTaflKingComesToItsFarCornerInItsScenario_OffersItsEscapeAtOnceOrToStay()
+    {
+        // Arrange - Black's Tafl King on h4, its 5 taking it to h8 (the user's report of 2026-11-19: it should escape
+        // as soon as it gets there)
+        CreateGameRequest request = new("grand-legions-medium", ZaturnavaServer.OneOpenSeat)
+        {
+            Scenario = "tafl-escape",
+        };
+        GameCreatedDto created = await this._client.Create(request, this._cancellation);
+        string black = (await this._client.Claim(created.GameId, 0, null, null, this._cancellation)).Token;
+        GameViewDto view = await this._client.Get(created.GameId, black, this._cancellation);
+        string CellOf(string name) => $"{view.Cells.Single(cell => cell.Name == name).Id}";
+
+        // Act
+        GameViewDto arrived = await this._client.Submit(
+            created.GameId,
+            black,
+            view.LegalActions.First(action =>
+                action.Kind == "move"
+                && action.Arguments["from"] == CellOf("h4")
+                && action.Arguments["to"] == CellOf("h8")
+            ),
+            this._cancellation
+        );
+
+        // Assert - and the scenario it came from, to play again
+        string choices = string.Join("|", arrived.LegalActions.Select(action => $"{action.Kind}: {action.Label}"));
+        Assert.Equal(
+            ("pass: Stay on the board|flee: Escape the board with Black's King (Tafl), from h8: no one can take it "
+                + "until it comes back", "tafl-escape"),
+            (choices, arrived.Scenario)
+        );
+    }
+
+    [Fact]
     public async Task Submit_WhenTheEvangelistStepsInItsScenario_ConvertsTheLinesItClosesButNotTheLeader()
     {
         // Arrange - Black's Evangelist on c4 (the user's report of 2026-11-19: no scenario tried it)

@@ -2899,6 +2899,20 @@ public sealed class TableTest : IDisposable
     }
 
     [Fact]
+    public void PlayAgain_WhenTheGameStartedFromAScenario_StartsFromItAgain()
+    {
+        // Arrange - the user's report of 2026-11-19: playing a scenario again should replay the scenario
+        this._page.Server.View = Over() with { Scenario = "tafl-escape" };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Act
+        table.Find("button.again").Click();
+
+        // Assert
+        Assert.Equal("tafl-escape", this._page.Server.Created!.Scenario);
+    }
+
+    [Fact]
     public void Render_WhileTheArmiesAreDrafted_TellsWhoDraftsAndThatTheScoresArePointsLeftToSpend()
     {
         // Arrange

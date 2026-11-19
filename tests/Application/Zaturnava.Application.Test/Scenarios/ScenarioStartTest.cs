@@ -16,6 +16,31 @@ public sealed class ScenarioStartTest
 
     private readonly TinyRules _rules = new(6);
 
+    [Theory]
+    [InlineData("tiny-start", "tiny-start")]
+    [InlineData("", null)]
+    [InlineData("no id", null)]
+    [InlineData("another kind", null)]
+    [InlineData("none", null)]
+    public void ScenarioIdOf_WhenTheGameStartsFromAScenario_SaysWhichIfItHasAnId(string start, string? expected)
+    {
+        // Arrange - the user's report of 2026-11-19: playing a scenario again should replay the scenario; or a game
+        // started anew
+        ImmutableList<ActionDescriptor> actions = start switch
+        {
+            "none" => [],
+            "another kind" => [new ActionDescriptor("pass", ImmutableSortedDictionary<string, string>.Empty)],
+            "no id" => [ScenarioStart.Describe(Tiny() with { Id = null! })],
+            _ => [ScenarioStart.Describe(Tiny() with { Id = start })],
+        };
+
+        // Act
+        string? scenario = ScenarioStart.ScenarioIdOf(actions);
+
+        // Assert
+        Assert.Equal(expected, scenario);
+    }
+
     [Fact]
     public void StateFrom_WhenGivenPiecesTurnScoresPrisonersAndDice_SetsThemUpWithTheirStartingIds()
     {

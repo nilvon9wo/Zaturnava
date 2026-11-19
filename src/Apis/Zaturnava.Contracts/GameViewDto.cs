@@ -125,4 +125,10 @@ public sealed record GameViewDto(
     /// whether still open or since taken; so the game played again is too.
     /// </summary>
     public bool IsForPlayers { get; init; }
+
+    /// <summary>
+    /// The scenario it started from (<see cref="CatalogDto.Scenarios"/>), so that playing it again starts there
+    /// again; null for a game started anew.
+    /// </summary>
+    public string? Scenario { get; init; }
 }

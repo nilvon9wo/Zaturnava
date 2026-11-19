@@ -161,6 +161,12 @@ public sealed record GameState(
     public CellId? Jumping { get; init; }
 
     /// <summary>
+    /// The cell of a piece just come to where it may leave the board (the Tafl King on its far corner), which the
+    /// deciding seat may make leave at once, using no die, or let stay; null if none.
+    /// </summary>
+    public CellId? Fleeing { get; init; }
+
+    /// <summary>
     /// The moves straight ahead of two cells or more that may still be taken <i>en passant</i>: each by a seat until
     /// its own turn ends (<see cref="Passage.Closed"/>), or the piece moves on.
     /// </summary>

@@ -288,7 +288,8 @@ Their values, by the sheet's columns:
   (67 less 54), over 7 rows: 2.
 - The sheet also says the Tafl King "can permanently escape the game". **Escape**, *Stated* (2026-11-13): on its
   own army's far corner (the right-hand corner of the far row, as the army faces; z26 for Black on the largest board),
-  and only there, the Tafl King may leave the board, by a deliberate move or on a die that moves it. Off the board
+  and only there, the Tafl King may leave the board, by a deliberate move or on a die that moves it; and, *Stated*
+  (2026-11-19), at once, with no die, on the move it gets there (edition 15). Off the board
   no one can take it. It comes back only as a prisoner escapes, on doubles that move it, to its home.
   *Proposed*: while it is away its army plays on as one whose leader was taken, and a fled King, like a prisoner,
   holds no ground: if it was its team's last piece on the board, the game ends as when a team is left alone.
