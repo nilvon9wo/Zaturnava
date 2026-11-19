@@ -154,6 +154,15 @@ window.zaturnava = (() => {
         theme(name) {
             document.documentElement.dataset.theme = name;
         },
+        // Whether the page is shown in a frame of another page (itch.io's); a frame the browser keeps the page from
+        // looking out of is one too.
+        isFramed() {
+            try {
+                return window.self !== window.top;
+            } catch {
+                return true;
+            }
+        },
         // Text put on the clipboard, if the page may: true if it was; false where the frame the page is in forbids it.
         async copy(text) {
             try {

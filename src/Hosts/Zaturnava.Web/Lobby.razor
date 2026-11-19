@@ -521,7 +521,10 @@
     private string _sortBy = string.Empty;
     private bool _isDescending;
 
-    /// <summary>Whether the player chose to show the New game panel, or to hide it; none, until they choose.</summary>
+    /// <summary>
+    /// Whether the player chose to show the New game panel, or to hide it; none, until they choose. Hidden at first in
+    /// a frame, as itch.io shows the page, where it would cover the little there is (the user's report of 2026-11-19).
+    /// </summary>
     private bool? _isNewGameShown;
 
     /// <summary>
@@ -1140,6 +1143,7 @@
             : [];
         await this.Recall(this._awaited.Select(awaited => awaited.Game));
         this._arePreviewsShown = await this.Browser.ArePreviewsShown();
+        this._isNewGameShown = await this.Browser.IsFramed() ? false : this._isNewGameShown;
         foreach (RulesetDto game in AllGamesOf(catalog))
         {
             this._setups = await this.Browser.SetupOf(game.Game) is { } setup

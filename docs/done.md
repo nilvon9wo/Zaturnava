@@ -165,6 +165,14 @@ only in part, what is left is in the backlog, and its history here. The playtest
 
 ## Look and feel
 
+- **Itch frame** (asked 2026-11-19): in itch.io's frame (about 1040 by 630), the New game dialog opened over
+  everything, and the games and the leaderboard each got half of a width too small for either. *Done*: in any frame,
+  New game starts closed until asked for (the player's own choice still rules after). The lobby is sized by the room
+  it has, in a frame or on a device alike: under 1150 wide, the games and the leaderboard each take the whole
+  width, the leaderboard below; under 720 high, New game floats from the top and takes all the height; under 640
+  wide (a phone), panels fill the screen and each choice's name stands above its choices. The table already fits
+  its window by its own widths.
+
 - *(Stated 2026-11-12)* A piece card makes plain how each move is made. *Done*: a square the piece leaps to, over
   anything between (a Knight's move, say), has a hollow dot, a ring, and the key says so; any other dot farther
   off, it slides to, up to the first piece in the way; a step to the next square is neither. The Shogi Pawn

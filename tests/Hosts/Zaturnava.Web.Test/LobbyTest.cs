@@ -2267,6 +2267,22 @@ public sealed class LobbyTest : IDisposable
     }
 
     [Fact]
+    public void Render_WhenThePageIsInAFrame_HidesNewGameUntilAsked()
+    {
+        // Arrange - no game to join, which would show New game, but in itch.io's frame (reported 2026-11-19)
+        this._page.Server.Games = [];
+        _ = this._page.JSInterop.Setup<bool>("zaturnava.isFramed").SetResult(true);
+        IRenderedComponent<Lobby> lobby = this.RenderAsIs();
+        int before = lobby.FindAll(".panel.new-game").Count;
+
+        // Act
+        lobby.Find("button.new-game-toggle").Click();
+
+        // Assert
+        Assert.Equal((0, 1), (before, lobby.FindAll(".panel.new-game").Count));
+    }
+
+    [Fact]
     public void NewGame_WhenShown_FloatsAsADialogToDragThatItsCrossCloses()
     {
         // Arrange - no game to join, so New game is shown

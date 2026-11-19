@@ -9,8 +9,6 @@ own number (**25**, **N29**), the [2026-11-15 specification](playtesting/2026-11
 
 ## 1. Now: asked for and not yet done
 
-- **Itch frame** (asked 2026-11-19): in itch.io's frame the page looks broken, worst with the New game panel open.
-  Keep that panel closed by default when framed, and make every style fit a small frame or device.
 - **Rivers as chosen** (asked 2026-11-19): in a custom Grand Legions game, the creator chooses whether rivers
   bisect or quarter the board, and whether they flow through or around kingdoms; random stays a choice.
 - **Shogi mercenaries** (asked 2026-11-19): mercenaries to include every Shogi piece, leaders too.

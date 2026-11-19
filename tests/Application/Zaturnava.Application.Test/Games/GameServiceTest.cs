@@ -238,8 +238,10 @@ public sealed class GameServiceTest
         );
     }
 
-    [Fact]
-    public async Task Create_WhenTheOpenerIsNoSeatOfTheGame_Refuses()
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(2)]
+    public async Task Create_WhenTheOpenerIsNoSeatOfTheGame_Refuses(int opener)
     {
         // Arrange
         GameService service = this.Service(GameServiceSettings.Default, hasDice: true);
@@ -249,7 +251,7 @@ public sealed class GameServiceTest
             TinyRules.RulesetId,
             [SeatPlan.Open, SeatPlan.Open],
             null,
-            new Dealing { AreDiceOff = true, Opener = 2 },
+            new Dealing { AreDiceOff = true, Opener = opener },
             this._cancellation
         );
 

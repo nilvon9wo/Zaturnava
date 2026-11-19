@@ -89,6 +89,9 @@ internal sealed class Browser(IJSRuntime js, IGameServing games)
     /// <summary>Whether <paramref name="text"/> was put on the clipboard: not, where the frame forbids it.</summary>
     public ValueTask<bool> Copy(string text) => this._js.InvokeAsync<bool>("zaturnava.copy", text);
 
+    /// <summary>Whether the page is shown in a frame of another page, as itch.io shows it.</summary>
+    public ValueTask<bool> IsFramed() => this._js.InvokeAsync<bool>("zaturnava.isFramed");
+
     /// <summary>Has the table told (its <c>Shown</c>) whenever the page is shown again, after being hidden.</summary>
     public ValueTask Watch<TTable>(DotNetObjectReference<TTable> table)
         where TTable : class =>
