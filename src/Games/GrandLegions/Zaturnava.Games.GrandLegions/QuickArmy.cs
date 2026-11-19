@@ -38,6 +38,15 @@ public static class QuickArmy
     /// </summary>
     public const int FormulaEdition = GrandLegionsPieces.MultipleCapturesRepriced;
 
+    /// <summary>
+    /// The edition (<see cref="QuickGame.Edition"/>) from which a leader kept to one colour of square stays on the
+    /// throne it was laid out on, not spread over both colours with the rest: the palace is placed about its throne, so
+    /// moving it left the pieces a palace holds outside (the user's report of 2026-11-19, of a Guard on d2 outside the
+    /// palace a1:c3); and from which an army filled at random keeps the palace placed before
+    /// (<see cref="QuickDraft.PalaceKeptEdition"/>). A game dealt before replays as it was dealt.
+    /// </summary>
+    public const int ThroneKeptEdition = 9;
+
     /// <summary>The bit left over, past the formula's sum, in hundredths of it (Proposed: a tenth).</summary>
     public const int LeftOverPercent = 10;
 
@@ -113,11 +122,17 @@ public static class QuickArmy
     /// <summary>
     /// Every seat's army, as <paramref name="seed"/> deals them, seat by seat; or, if <paramref name="areAlike"/>
     /// (Stated: only if the game's creator asks), the first seat's for every seat, laid out alike, each in its own
-    /// kingdom.
+    /// kingdom. Each army spends <paramref name="budget"/>, if the game's creator set one (Stated 2026-11-19: "I still
+    /// can't set the points to spend without manually drafting the armies"); else <see cref="BudgetOf"/>.
     /// </summary>
-    public static ImmutableList<Placement> Dealt([Required] QuickGame game, int seed, bool areAlike = false)
+    public static ImmutableList<Placement> Dealt(
+        [Required] QuickGame game,
+        int seed,
+        bool areAlike = false,
+        int? budget = null
+    )
     {
-        game = game with { Budget = BudgetOf(game) };
+        game = game with { Budget = budget ?? BudgetOf(game) };
         Random random = new(seed);
         ImmutableList<ImmutableList<ArmyPiece>> armies =
         [
@@ -210,26 +225,38 @@ public static class QuickArmy
     /// <summary>
     /// The army, as seat 0 lays it out in its kingdom, from the bottom-left corner. The pieces a palace holds, but the
     /// leader, stand in the palace about its throne (<see cref="PalaceSquares.CentreAbout"/>), as the draft would
-    /// place it: on its squares furthest back, then nearest the throne's file, then leftmost (Proposed).
+    /// place it: on its squares furthest back, then nearest the throne's file, then leftmost (Proposed). If its palace
+    /// is already <paramref name="placed"/> (a draft's palace, placed before the army is filled at random), the throne
+    /// is any square of that palace, at random, and the pieces a palace holds stand in that palace.
     /// </summary>
     public static ImmutableList<ArmyPiece> Layout(
         [Required] QuickGame game,
         [Required] ImmutableList<GrandPiece> army,
-        [Required] Random random
+        [Required] Random random,
+        ImmutableList<ArmySquare>? placed = null
     )
     {
         ImmutableList<ArmySquare> backToFront = game.Kingdom;
         ImmutableList<GrandPiece> others =
             Shuffled(army.Where(piece => piece.Class is not Infantry and not Leader && !IsHeld(piece)), random);
-        int throne = game.HasNeutralZone
+        ArmySquare? kept = placed is null ? null : ThroneIn(placed, game, random);
+        int dealt = kept is null && game.HasNeutralZone
             ? random.Next(Math.Min(game.KingdomWidth - 1, others.Count) + 1)
             : 0;
-        ImmutableList<GrandPiece> rear = others.Insert(throne, army.Single(piece => piece.Class == Leader));
         ImmutableList<GrandPiece> infantry =
             Shuffled(army.Where(piece => piece.Class == Infantry && !IsHeld(piece)), random);
         ImmutableList<GrandPiece> held = Shuffled(army.Where(IsHeld), random);
-        ArmySquare seat = backToFront[throne];
-        ImmutableList<ArmySquare> palace = held.IsEmpty ? [] : PalaceAbout(game, seat, held.Count);
+        ArmySquare seat = kept ?? backToFront[dealt];
+        ImmutableList<ArmySquare> palace = held.IsEmpty
+            ? []
+            : [.. Nearest(placed ?? PalaceAbout(game, seat), game, seat).Take(held.Count)];
+        int throne = kept is null
+            ? dealt
+            : Math.Min(
+                others.Count,
+                backToFront.TakeWhile(square => square != seat).Count(square => !palace.Contains(square))
+            );
+        ImmutableList<GrandPiece> rear = others.Insert(throne, army.Single(piece => piece.Class == Leader));
         ImmutableList<ArmySquare> squares =
         [
             .. backToFront.Where(square => square != seat && !palace.Contains(square)).Take(throne),
@@ -240,24 +267,40 @@ public static class QuickArmy
         [
             .. rear.Select((piece, index) => At(piece, squares[index])),
             .. infantry.Select((piece, index) => At(piece, squares[squares.Count - 1 - index])),
-            .. held.Zip(palace).Select(placed => At(placed.First, placed.Second)),
+            .. held.Zip(palace).Select(inPalace => At(inPalace.First, inPalace.Second)),
         ];
-        return Enumerable.Range(0, laid.Count).Aggregate(laid, Balanced);
+        return Enumerable.Range(0, laid.Count).Aggregate(
+            laid,
+            (spread, index) => game.Edition >= ThroneKeptEdition && ClassOf(spread[index]) == Leader
+                ? spread
+                : Balanced(spread, index)
+        );
     }
 
+    /// <summary>The palace about <paramref name="seat"/>, as the program would place it.</summary>
+    private static ImmutableList<ArmySquare> PalaceAbout(QuickGame game, ArmySquare seat) =>
+        PalaceSquares.Window(PalaceSquares.CentreAbout(Centres(game), seat));
+
     /// <summary>
-    /// The first <paramref name="count"/> squares of the palace about <paramref name="seat"/> in the kingdom, the
-    /// throne aside: those furthest back, then nearest the throne's file, then leftmost.
+    /// The squares of <paramref name="palace"/> in the kingdom, the throne aside: those furthest back, then nearest the
+    /// throne's file, then leftmost.
     /// </summary>
-    private static ImmutableList<ArmySquare> PalaceAbout(QuickGame game, ArmySquare seat, int count) =>
-    [
-        .. PalaceSquares.Window(PalaceSquares.CentreAbout(Centres(game), seat))
+    private static IEnumerable<ArmySquare> Nearest(IEnumerable<ArmySquare> palace, QuickGame game, ArmySquare seat) =>
+        palace
             .Where(square => square != seat && game.Kingdom.Contains(square))
             .OrderBy(square => square.Row)
             .ThenBy(square => Math.Abs(square.Column - seat.Column))
-            .ThenBy(square => square.Column)
-            .Take(count),
-    ];
+            .ThenBy(square => square.Column);
+
+    /// <summary>
+    /// A square of the palace in the kingdom, at random: the throne, in a palace placed before (Stated 2026-11-19: a
+    /// throne may be anywhere in its palace).
+    /// </summary>
+    private static ArmySquare ThroneIn(ImmutableList<ArmySquare> palace, QuickGame game, Random random)
+    {
+        ImmutableList<ArmySquare> inside = [.. palace.Where(game.Kingdom.Contains)];
+        return inside[random.Next(inside.Count)];
+    }
 
     /// <summary>Whether the piece is one a palace holds, and not the leader, who holds the throne.</summary>
     internal static bool IsHeld(GrandPiece piece) =>

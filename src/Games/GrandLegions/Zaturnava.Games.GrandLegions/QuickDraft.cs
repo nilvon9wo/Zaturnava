@@ -16,6 +16,12 @@ namespace Net.NowhereAtAll.Zaturnava.Games.GrandLegions;
 /// </summary>
 public static class QuickDraft
 {
+    /// <summary>
+    /// The edition (<see cref="ArmyFill.Edition"/>) from which an army filled at random from nothing keeps the palace
+    /// already placed (<see cref="QuickArmy.Layout"/>); a game dealt before replays as it was dealt.
+    /// </summary>
+    public const int PalaceKeptEdition = QuickArmy.ThroneKeptEdition;
+
     public static Drafting Of([Required] QuickGame game) =>
         new(
             game.Budget,
@@ -49,7 +55,9 @@ public static class QuickDraft
         };
         if (fill.Throne is not { } throne)
         {
-            ImmutableList<ArmyPiece> dealt = QuickArmy.Layout(played, QuickArmy.Pick(played, fill.Random), fill.Random);
+            ImmutableList<ArmySquare>? placed = fill.Edition >= PalaceKeptEdition ? fill.Palace : null;
+            ImmutableList<ArmyPiece> dealt =
+                QuickArmy.Layout(played, QuickArmy.Pick(played, fill.Random), fill.Random, placed);
             ArmyPiece leader = dealt.First(piece => GrandLegionsPieces.ById[piece.Kind].Class == Leader);
             return new ArmyFilled(dealt, new ArmySquare(leader.Column, leader.Row));
         }

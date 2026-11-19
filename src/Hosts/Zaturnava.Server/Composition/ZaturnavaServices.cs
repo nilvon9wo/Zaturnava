@@ -4,6 +4,7 @@ using Net.NowhereAtAll.Zaturnava.Application.Chat;
 using Net.NowhereAtAll.Zaturnava.Application.Games;
 using Net.NowhereAtAll.Zaturnava.Application.Players;
 using Net.NowhereAtAll.Zaturnava.Application.Ports;
+using Net.NowhereAtAll.Zaturnava.Application.Reports;
 using Net.NowhereAtAll.Zaturnava.Application.Rulesets;
 using Net.NowhereAtAll.Zaturnava.Application.Running;
 using Net.NowhereAtAll.Zaturnava.Application.Scenarios;
@@ -106,6 +107,7 @@ internal static class ZaturnavaServices
             .AddSingleton(Settings(configuration))
             .AddScoped<GameService>()
             .AddScoped<ChatService>()
+            .AddScoped<BugReportService>()
             .AddScoped<PlayerService>()
             .AddSingleton(TimeProvider.System)
             .AddSingleton(new LinkCodes(TimeProvider.System))

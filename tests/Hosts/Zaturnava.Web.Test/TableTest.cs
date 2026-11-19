@@ -2138,6 +2138,68 @@ public sealed class TableTest : IDisposable
         Assert.Equal((0, 1), (table.FindAll("aside.piece-card").Count, table.FindAll("button.action.hire").Count));
     }
 
+    [Fact]
+    public void Click_WhenAPrisonerForHireIsPickedAgainAfterItsCardWasClosed_ShowsTheCardAgain()
+    {
+        // Arrange - picked, its card closed
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with { LegalActions = [Hire(), FakeGameServer.Pass] };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        table.Find(".hiring button.prisoner").Click();
+        table.Find("aside.piece-card button.close").Click();
+
+        // Act
+        table.Find(".hiring button.prisoner").Click();
+
+        // Assert
+        Assert.Equal(
+            ("Horse", "true"),
+            (
+                table.Find("aside.piece-card h2").TextContent,
+                table.Find(".hiring button.prisoner").GetAttribute("aria-pressed")
+            )
+        );
+    }
+
+    [Theory]
+    [InlineData(true, "Horse")]
+    [InlineData(false, null)]
+    public void Click_WhenAPrisonerForHireIsPickedWhileAnotherCardIsOpen_ShowsItsCardInsteadOnlyWithCardsOn(
+        bool areCardsShown,
+        string? expected
+    )
+    {
+        // Arrange - Black's Boat going home, its card open (the user's report of 2026-11-19, of a Dragon Horse)
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Returning = new PrisonerDto(7, "boat", "Boat", 0),
+            LegalActions = [Hire(), FakeGameServer.Pass],
+        };
+        IRenderedComponent<Table> table = this._page.Render<Table>(parameters =>
+            parameters.Add(x => x.Seating, SeatZero).Add(x => x.AreCardsShown, areCardsShown)
+        );
+
+        // Act
+        table.Find(".hiring button.prisoner").Click();
+
+        // Assert
+        Assert.Equal(expected, table.FindAll("aside.piece-card h2").SingleOrDefault()?.TextContent);
+    }
+
+    [Fact]
+    public void Click_WhenTheBoardIsClickedAfterAPrisonerForHireWasPicked_ShowsTheBoardsCardInstead()
+    {
+        // Arrange - the Horse for hire picked, its card open
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with { LegalActions = [Hire(), FakeGameServer.Pass] };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        table.Find(".hiring button.prisoner").Click();
+
+        // Act
+        table.Find("svg.board rect[data-cell='0']").Click();
+
+        // Assert
+        Assert.NotEqual("Horse", table.Find("aside.piece-card h2").TextContent);
+    }
+
     [Theory]
     [InlineData(false, "action hand-over seat-2|action pass primary urged|end-game")]
     [InlineData(true, "action hand-over seat-2|action pass|end-game")]
@@ -2337,6 +2399,80 @@ public sealed class TableTest : IDisposable
 
         // Assert
         Assert.Empty(table.FindAll("button.take-over"));
+    }
+
+    [Theory]
+    [InlineData("player", 1)]
+    [InlineData(null, 0)]
+    public void ReportBug_WhenSignedInOrNot_IsOfferedOnlyToAPlayerSignedIn(string? token, int expected)
+    {
+        // Arrange
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.player").SetResult(token);
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Assert
+        Assert.Equal(expected, table.FindAll("button.report-bug").Count);
+    }
+
+    [Theory]
+    [InlineData("kept")]
+    [InlineData("lapsed")]
+    [InlineData("failed")]
+    public void ReportBug_WhenSent_KeepsWhatThePlayerSaysWithWhatThePageShowsOrSaysWhyNot(string outcome)
+    {
+        // Arrange - a cell selected; the sign-in lapsed, or the server down, as the case may be
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.player").SetResult("player");
+        this._page.Server.Players = outcome == "lapsed"
+            ? this._page.Server.Players
+            : this._page.Server.Players.SetItem("player", new PlayerDto("ada", "Ada"));
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        table.Find("svg.board rect[data-cell='0']").Click();
+        table.Find("button.report-bug").Click();
+        table.Find("textarea.bug-description").Change("The Guard is outside!");
+        this._page.Server.SignInFailure = outcome == "failed" ? new HttpRequestException("down") : null;
+
+        // Act
+        table.Find("button.send-report").Click();
+
+        // Assert
+        (string GameId, string Token, ReportBugRequest Request)? sent =
+            this._page.Server.Reported.IsEmpty ? null : this._page.Server.Reported[0];
+        Assert.Equal(
+            outcome switch
+            {
+                "kept" => ("The Guard is outside!", 0, true, 0),
+                _ => (null, null, false, 1),
+            },
+            (
+                sent?.Request.Description,
+                sent?.Request.SelectedCell,
+                table.FindAll("p.reported").Count == 1,
+                table.FindAll(".dialog.reporting p.problem").Count
+            )
+        );
+    }
+
+    [Fact]
+    public void ReportBug_WhenClosedAndOpenedAgain_StartsAfresh()
+    {
+        // Arrange - one report sent
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.player").SetResult("player");
+        this._page.Server.Players = this._page.Server.Players.SetItem("player", new PlayerDto("ada", "Ada"));
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        table.Find("button.report-bug").Click();
+        table.Find("textarea.bug-description").Change("Odd.");
+        table.Find("button.send-report").Click();
+        table.Find("button.close-report").Click();
+        int closed = table.FindAll(".dialog.reporting").Count;
+
+        // Act
+        table.Find("button.report-bug").Click();
+
+        // Assert
+        string said = table.Find("textarea.bug-description").GetAttribute("value") ?? string.Empty;
+        Assert.Equal((0, string.Empty, 0), (closed, said, table.FindAll("p.reported").Count));
     }
 
     private static GameViewDto WithRandomAtYellow(GameViewDto view) =>

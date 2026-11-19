@@ -226,6 +226,17 @@ public interface IGameServing
     /// </summary>
     Task<bool> DeleteMe([Required] string token, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Reports, as the player <paramref name="token"/> stands for, that something at the game may be going wrong; the
+    /// report kept, by its id; none, if the token stands for no one.
+    /// </summary>
+    Task<BugReportedDto?> ReportBug(
+        [Required] string gameId,
+        [Required] string token,
+        [Required] ReportBugRequest request,
+        CancellationToken cancellationToken
+    );
+
     /// <summary>Says something at the game's table, as the seat <paramref name="token"/> holds.</summary>
     Task<ChatMessageDto> Say(
         [Required] string gameId,

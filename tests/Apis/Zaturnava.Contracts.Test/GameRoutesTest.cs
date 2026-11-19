@@ -147,6 +147,18 @@ public sealed class GameRoutesTest
     }
 
     [Fact]
+    public void BugReports_WhenGivenAGame_RoutesUnderIt()
+    {
+        // Arrange - nothing beyond the id
+
+        // Act
+        string route = GameRoutes.BugReports("g");
+
+        // Assert
+        Assert.Equal("api/games/g/bug-reports", route);
+    }
+
+    [Fact]
     public void Chat_WhenGivenAMessageToReadAfter_AsksForWhatCameLater()
     {
         // Arrange - nothing beyond the arguments

@@ -111,6 +111,68 @@ namespace Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Sqlite.Migrations
                     b.ToTable("BotStandings");
                 });
 
+            modelBuilder.Entity("Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Entities.BugReportEntity", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(32)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Actions")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("At")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("Deciding")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("GameId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("InspectedPiece")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsOver")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ReporterId")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("RulesetId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("Seat")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("SelectedCell")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("ViewVersion")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("At");
+
+                    b.HasIndex("GameId");
+
+                    b.ToTable("BugReports");
+                });
+
             modelBuilder.Entity("Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Entities.ChatEntity", b =>
                 {
                     b.Property<string>("Id")

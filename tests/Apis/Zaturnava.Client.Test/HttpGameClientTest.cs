@@ -560,6 +560,35 @@ public sealed class HttpGameClientTest
     }
 
     [Theory]
+    [InlineData(HttpStatusCode.OK, """{"id":"r1"}""", "r1")]
+    [InlineData(HttpStatusCode.Unauthorized, "", null)]
+    public async Task ReportBug_WhenAnswered_PostsTheReportWithTheTokenAndIsItsIdIfTheTokenStandsForSomeone(
+        HttpStatusCode status,
+        string body,
+        string? expected
+    )
+    {
+        // Arrange
+        StubServer server = new(status, body);
+        ReportBugRequest request = new("Odd.") { ViewVersion = 3 };
+
+        // Act
+        BugReportedDto? reported = await Client(server).ReportBug("g1", "secret", request, this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            (
+                "POST",
+                "/api/games/g1/bug-reports",
+                "Bearer secret",
+                """{"description":"Odd.","viewVersion":3,"selectedCell":null,"inspectedPiece":null}""",
+                expected
+            ),
+            (server.Method, server.Path, server.Authorization, server.Body, reported?.Id)
+        );
+    }
+
+    [Theory]
     [InlineData(HttpStatusCode.OK, """{"code":"c0de"}""", "c0de")]
     [InlineData(HttpStatusCode.Unauthorized, "", null)]
     public async Task LinkCode_WhenAnswered_IsTheCodeIfTheTokenStandsForSomeone(

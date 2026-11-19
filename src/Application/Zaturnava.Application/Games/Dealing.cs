@@ -26,6 +26,11 @@ public sealed record Dealing(bool AreAlike = false, GameId? ArmiesOf = null)
     /// </summary>
     public bool PromotesAtSide { get; init; }
 
+    /// <summary>
+    /// What each army dealt, not drafted, spends, if its creator set it (at least 1); none, for what the ruleset gives.
+    /// </summary>
+    public int? Budget { get; init; }
+
     /// <summary>Each seat its own army, dealt anew.</summary>
     public static Dealing Anew { get; } = new();
 }

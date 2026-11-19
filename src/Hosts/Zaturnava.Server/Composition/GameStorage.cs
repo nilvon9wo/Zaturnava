@@ -37,7 +37,8 @@ internal static class GameStorage
                 .AddSingleton<IGamePersisting, InMemoryGameStore>()
                 .AddSingleton<IChatPersisting, InMemoryChatStore>()
                 .AddSingleton<IPlayerPersisting, InMemoryPlayerStore>()
-                .AddSingleton<IBotMatchupPersisting, InMemoryBotMatchupStore>(),
+                .AddSingleton<IBotMatchupPersisting, InMemoryBotMatchupStore>()
+                .AddSingleton<IBugReportPersisting, InMemoryBugReportStore>(),
             Sqlite => AddDatabase(services, options => options.UseSqliteGames(Connection(configuration))),
             SqlServer => AddDatabase(services, options => options.UseSqlServerGames(Connection(configuration))),
             _ => throw new InvalidOperationException(
@@ -52,6 +53,7 @@ internal static class GameStorage
             .AddScoped<IChatPersisting, EfChatStore>()
             .AddScoped<IPlayerPersisting, EfPlayerStore>()
             .AddScoped<IBotMatchupPersisting, EfBotMatchupStore>()
+            .AddScoped<IBugReportPersisting, EfBugReportStore>()
             .AddHostedService<SchemaMigrator>();
 
     private static string Connection(IConfiguration configuration) =>

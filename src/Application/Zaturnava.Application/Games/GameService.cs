@@ -114,6 +114,9 @@ public sealed class GameService(
                     Drafting = offered.IsDraftable ? Checked(dealing.Drafting, seats.Count) : null,
                     Board = dealing.Board is { } board ? Sizable(offered, board) : null,
                     PromotesAtSide = dealing.PromotesAtSide && offered.MayPromoteAtSide,
+                    Budget = dealing.Budget is < 1
+                        ? throw new InvalidGameSetupException("An army's budget is at least 1.")
+                        : dealing.Budget,
                 },
                 cancellationToken
             ),
@@ -156,7 +159,8 @@ public sealed class GameService(
                     dealing.AreAlike,
                     dealing.Drafting,
                     dealing.Board,
-                    dealing.PromotesAtSide
+                    dealing.PromotesAtSide,
+                    dealing.Budget
                 ),
             ];
     }

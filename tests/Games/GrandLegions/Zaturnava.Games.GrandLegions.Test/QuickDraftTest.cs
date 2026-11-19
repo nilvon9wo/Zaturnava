@@ -67,6 +67,69 @@ public sealed class QuickDraftTest
     }
 
     [Fact]
+    public void Filled_FromNothingWithItsPalacePlaced_SetsTheThroneAndPutsThePiecesAPalaceHoldsInThatPalace()
+    {
+        // Arrange - the large game; a palace placed about e2, nothing else drafted (the user's report of 2026-11-19)
+        QuickGame game = QuickGame.Large;
+        ImmutableList<ArmySquare> palace = PalaceSquares.Window(new ArmySquare(4, 1));
+
+        // Act
+        ImmutableList<ArmyFilled> filled =
+        [
+            .. Seeds.Select(seed => QuickDraft.Filled(
+                game,
+                new ArmyFill(0, game.Budget, [], null, new(seed))
+                {
+                    Palace = palace,
+                    HasPalacePieces = true,
+                    Edition = QuickDraft.PalaceKeptEdition,
+                }
+            )),
+        ];
+
+        // Assert - its throne in the palace, under its leader; each piece a palace holds in it
+        ImmutableList<ArmyPiece> held = [.. filled.SelectMany(army => army.Added).Where(IsHeld)];
+        Assert.NotEmpty(held);
+        Assert.All(held, piece => Assert.Contains(new ArmySquare(piece.Column, piece.Row), palace));
+        Assert.All(
+            filled,
+            army =>
+            {
+                Assert.Contains(army.Throne, palace);
+                Assert.Equal(
+                    Leader,
+                    ById[army.Added.Single(piece => new ArmySquare(piece.Column, piece.Row) == army.Throne).Kind].Class
+                );
+                Assert.Equal(
+                    army.Added.Count,
+                    army.Added.Select(piece => (piece.Column, piece.Row)).Distinct().Count()
+                );
+            }
+        );
+    }
+
+    [Fact]
+    public void Filled_FromNothingWithItsPalacePlacedInAnEarlierEdition_DealsAsItWasDealt()
+    {
+        // Arrange - a game dealt before an army kept its palace
+        QuickGame game = QuickGame.Large;
+        ArmyFill fill = new(0, game.Budget, [], null, new(5))
+        {
+            HasPalacePieces = true,
+            Edition = QuickDraft.PalaceKeptEdition - 1,
+        };
+
+        // Act
+        ArmyFilled placed =
+            QuickDraft.Filled(game, fill with { Palace = PalaceSquares.Window(new ArmySquare(4, 1)), Random = new(5) });
+        ArmyFilled unplaced = QuickDraft.Filled(game, fill);
+
+        // Assert
+        Assert.Equal(unplaced.Throne, placed.Throne);
+        Assert.Equal(unplaced.Added, placed.Added);
+    }
+
+    [Fact]
     public void Filled_WhenTheArmyHasAThroneButNoLeader_PutsALeaderOnItAndSpendsNoMoreThanIsLeft()
     {
         // Arrange - a throne on b1, nothing bought yet, the whole budget left

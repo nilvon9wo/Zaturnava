@@ -182,10 +182,13 @@
                             </tr>
                         </tbody>
                     </table>
-                    @if (this.BoardProblem(catalog) is { } boardProblem)
-                    {
-                        <p class="problem board-problem" role="alert">@boardProblem</p>
-                    }
+                    @* room kept for what is wrong with the board, across the whole row, so nothing below jumps *@
+                    <div class="board-problem-room">
+                        @if (this.BoardProblem(catalog) is { } boardProblem)
+                        {
+                            <p class="problem board-problem" role="alert">@boardProblem</p>
+                        }
+                    </div>
                 }
             </div>
             @if (mode == SetupMode.Quick)
@@ -276,7 +279,7 @@
                             <option value="@RandomOne">One army at random for everyone</option>
                         </select>
                     </label>
-                    @if (this.IsDrafting)
+                    @if (this.Ruleset(catalog).DraftBudget is not null)
                     {
                         <label class="budget">
                             <span class="choice-name">Points to spend</span>
@@ -573,7 +576,7 @@
         new(this.Ruleset(catalog).Id, this._colour, [.. this._levels], [.. this._picks])
         {
             Armies = this.Ruleset(catalog).IsDealt ? this._armies : null,
-            Budget = this.IsDrafting ? this._budget : null,
+            Budget = this.Ruleset(catalog).IsDealt ? this._budget : null,
             IsSecret = this._isSecret,
             IsHiddenFromAllies = this._isHiddenFromAllies,
             IsForPlayers = this._isForPlayers,
@@ -1253,8 +1256,6 @@
             )
         );
 
-    private bool IsDrafting => this._armies is DraftOwn or DraftOne;
-
     /// <summary>
     /// How the game is asked to have its armies, as chosen, on the board as set; the player drafting for all from their
     /// seat.
@@ -1270,8 +1271,8 @@
                 IsHiddenFromAllies = this._isSecret && this._isHiddenFromAllies,
             },
             DraftOne => new ArmyDeal(false) { IsDrafted = true, Budget = this._budget, Drafter = this._colour },
-            RandomOne => new ArmyDeal(true),
-            _ => new ArmyDeal(false),
+            RandomOne => new ArmyDeal(true) { Budget = this._budget },
+            _ => new ArmyDeal(false) { Budget = this._budget },
         } with
         {
             Board = this.BoardAsked(catalog),
