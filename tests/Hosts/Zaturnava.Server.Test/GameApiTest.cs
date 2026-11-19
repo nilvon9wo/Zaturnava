@@ -717,6 +717,58 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
     }
 
     [Fact]
+    public async Task Create_WhenFromTheGrandLegionsBackToBack_OffersBothSwaps()
+    {
+        // Arrange - Black's Makruk Pawn and Lance, each back to back with a Green Pawn (the user's report of
+        // 2026-11-19: only the leader could move)
+        CreateGameRequest request = new("grand-legions-medium", ZaturnavaServer.OneOpenSeat)
+        {
+            Scenario = "forward-only-swaps",
+        };
+        GameCreatedDto created = await this._client.Create(request, this._cancellation);
+        string black = (await this._client.Claim(created.GameId, 0, null, null, this._cancellation)).Token;
+
+        // Act
+        GameViewDto view = await this._client.Get(created.GameId, black, this._cancellation);
+
+        // Assert
+        string CellOf(string name) => $"{view.Cells.Single(cell => cell.Name == name).Id}";
+        bool IsSwap(string from, string to) =>
+            view.LegalActions.Any(action =>
+                action.Kind == "move"
+                && action.Arguments["from"] == CellOf(from)
+                && action.Arguments["to"] == CellOf(to)
+                && action.Label is not null
+            );
+        Assert.Equal((true, true), (IsSwap("d3", "d4"), IsSwap("f3", "f4")));
+    }
+
+    [Fact]
+    public async Task Submit_WhenAMercenaryIsHiredInTheScenario_OffersItsPlacing()
+    {
+        // Arrange - Black holds Red's Dragon Horse, with the points to hire it (the user's report of 2026-11-19: hiring
+        // it answered 500)
+        CreateGameRequest request = new("grand-legions-medium", ZaturnavaServer.OneOpenSeat)
+        {
+            Scenario = "mercenaries",
+        };
+        GameCreatedDto created = await this._client.Create(request, this._cancellation);
+        string black = (await this._client.Claim(created.GameId, 0, null, null, this._cancellation)).Token;
+        GameViewDto view = await this._client.Get(created.GameId, black, this._cancellation);
+
+        // Act
+        GameViewDto hired = await this._client.Submit(
+            created.GameId,
+            black,
+            view.LegalActions.First(action => action.Kind == "hire"),
+            this._cancellation
+        );
+
+        // Assert
+        Assert.Contains(hired.LegalActions, action => action.Kind == "deploy");
+    }
+
+    [Fact]
     public async Task Create_WhenTheScenarioIsUnknown_IsRefusedAsInvalid()
     {
         // Arrange

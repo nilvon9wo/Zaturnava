@@ -22,6 +22,11 @@ public sealed record CellMark(string Mark, string Meaning, ImmutableList<int> Ce
     /// <summary>An enemy standing there, as one holding a piece with a piece gone berserk.</summary>
     public const string StandingFoe = "partner foe";
 
+    /// <summary>
+    /// A cell no enemy may be able to capture on, as each a castling King starts on, passes and lands on must be.
+    /// </summary>
+    public const string Unattacked = "unattacked";
+
     /// <summary>An enemy standing on the piece's own throne.</summary>
     public const string OnThrone = "partner foe on-throne";
 }

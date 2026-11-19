@@ -678,7 +678,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
                     "Takes en passant any enemy piece, not just a pawn, that just went two cells or more past it, "
                     + "even out of turn, until its own turn ends."),
                 (this._variant.Castlers.Contains(kind),
-                    $"Castles with its own {rooks}: two cells towards it, the {rooks} jumping over to its other side."),
+                    Castling.Told(rooks)),
                 (this._variant.FlyingCapturers.Contains(kind),
                     "Flying general: when it and an enemy leader stand in the same row or column, with nothing "
                     + "between them, however far apart, it may fly the whole way and take that leader, as its move. "

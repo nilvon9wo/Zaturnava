@@ -29,6 +29,15 @@ internal sealed class Castling(
     private static readonly ImmutableList<Direction> Orthogonal =
         [new(1, 0), new(-1, 0), new(0, 1), new(0, -1)];
 
+    /// <summary>
+    /// Castling, for people, with its own <paramref name="rooks"/> (the user's report of 2026-11-19: the card must
+    /// make clear that, unlike in chess, either may have moved, and they may stand anywhere, in line).
+    /// </summary>
+    public static string Told(string rooks) =>
+        $"Castles with its own {rooks} anywhere in its row or column, nothing between them, however often either has "
+        + $"moved: it goes two cells towards the {rooks}, which jumps over to land beside it. Not if an enemy could "
+        + "capture on the cell it starts on, passes or lands on.";
+
     private readonly SquareGridTopology _grid = grid;
     private readonly ImmutableHashSet<PieceKindId> _castlers = castlers;
     private readonly ImmutableHashSet<PieceKindId> _rooks = rooks;

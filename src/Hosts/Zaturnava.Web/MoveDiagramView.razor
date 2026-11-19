@@ -112,11 +112,16 @@
             @foreach (int taken in example.Taken)
             {
                 int? from = taken == example.Taken[0] ? example.EnemyFrom : null;
+                string chained = example.Via is null ? string.Empty : taken == example.Taken[0] ? " jumped-first" : " jumped-last";
                 <span @key="(this._plays, taken)"
-                      class="@this.TakenClassOf(taken, from)"
+                      class="@(this.TakenClassOf(taken, from) + chained)"
                       style="@this.PlacedAt(from ?? taken, from is null ? this.Centre : taken)"></span>
             }
-            <span @key="this._plays" class="example-piece@(example.EnemyFrom is null ? string.Empty : " after-lead")" style="@this.PlacedAt(this.Centre, example.To)">
+            @if (example.PartnerFrom is { } partnerFrom)
+            {
+                <span @key="(this._plays, partnerFrom)" class="example-partner" style="@this.PlacedAt(partnerFrom, example.PartnerTo.GetValueOrDefault(partnerFrom))"></span>
+            }
+            <span @key="this._plays" class="@PieceClassOf(example)" style="@(this.PlacedAt(this.Centre, example.To) + this.ViaOf(example))">
                 <span class="upright" style="transform: rotate(@(-this.Angle)deg)">
                     <PieceIcon Kind="@this.Piece.Kind" Name="@this.Piece.Name" Owner="this.Piece.Owner" Mark="this.Piece.Mark" Pieces="this.Pieces" />
                 </span>
@@ -306,6 +311,30 @@
                 .OfType<string>()
         );
 
+    /// <summary>
+    /// The class of the piece playing <paramref name="example"/>: after an enemy's move, if it answers one; jump by
+    /// jump, if it is a chain.
+    /// </summary>
+    private static string PieceClassOf(PlayedExampleDto example) =>
+        (example.EnemyFrom, example.Via) switch
+        {
+            (not null, _) => "example-piece after-lead",
+            (_, not null) => "example-piece chain",
+            _ => "example-piece",
+        };
+
+    /// <summary>For a chain of jumps, how far the first lands, in squares, across and down, as drawn.</summary>
+    private string ViaOf(PlayedExampleDto example)
+    {
+        int side = this.Shown.Side;
+        return example.Via is { } via
+            ? string.Create(
+                CultureInfo.InvariantCulture,
+                $"; --via-across: {(via % side) - (this.Centre % side)}; --via-down: {(this.Centre / side) - (via / side)}"
+            )
+            : string.Empty;
+    }
+
     /// <summary>Whether <paramref name="cell"/> holds a piece of the drawn piece's own side, to be taken.</summary>
     private bool IsFriend(int cell) =>
         this.Shown.Marks.Any(mark => mark.Cells.Contains(cell) && mark.Mark.Split(' ').Contains("friend"));
@@ -473,6 +502,7 @@
                 !isMoving && shown.Jumps.Contains(cell) ? "jump" : null,
                 shown.Screens.Contains(cell) ? "screen" : null,
                 row == shown.RiverRow ? "river-bank" : null,
+                cell == this.Playing?.PartnerFrom ? "left" : null,
             }
                 .Concat(shown.Marks.Where(mark => mark.Cells.Contains(cell)).Select(mark => mark.Mark))
                 .OfType<string>()

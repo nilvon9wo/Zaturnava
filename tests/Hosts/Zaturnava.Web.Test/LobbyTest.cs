@@ -421,6 +421,51 @@ public sealed class LobbyTest : IDisposable
     }
 
     [Fact]
+    public void Play_WhenAScenarioIsStarted_RemembersIt()
+    {
+        // Arrange
+        this._page.Server.Scenarios =
+        [
+            new ScenarioDto("escape", "chaturaji-2027", "Escape", "Doubles."),
+            new ScenarioDto("back-to-back", "chaturaji-2027", "Back to back", "Two Pawns face each other."),
+        ];
+        IRenderedComponent<Lobby> lobby = this.Render();
+        lobby.Find("button.scenarios").Click();
+        lobby.Find("select.scenario").Change("back-to-back");
+
+        // Act
+        lobby.Find("button.create").Click();
+
+        // Assert
+        Assert.Contains(
+            this._page.JSInterop.Invocations["zaturnava.save"],
+            saved => $"{saved.Arguments[0]}" == "zaturnava.scenario" && $"{saved.Arguments[1]}" == "back-to-back"
+        );
+    }
+
+    [Theory]
+    [InlineData("back-to-back", "Two Pawns face each other.")]
+    [InlineData("gone", "Doubles.")]
+    [InlineData("", "Doubles.")]
+    public void Render_WhenAScenarioWasStartedBefore_ChoosesItAgainIfStillOffered(string last, string described)
+    {
+        // Arrange (Stated 2026-11-19: "the scenario field should remember the last scenario I played")
+        this._page.Server.Scenarios =
+        [
+            new ScenarioDto("escape", "chaturaji-2027", "Escape", "Doubles."),
+            new ScenarioDto("back-to-back", "chaturaji-2027", "Back to back", "Two Pawns face each other."),
+        ];
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.setup").SetResult("scenarios");
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.scenario").SetResult(last);
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Assert
+        Assert.Equal(described, lobby.Find("p.scenario-description").TextContent);
+    }
+
+    [Fact]
     public void Play_WhenTheScenarioIsOfAnotherSize_StartsItAtThatSize()
     {
         // Arrange - a game of two sizes, the scenario at the one not chosen

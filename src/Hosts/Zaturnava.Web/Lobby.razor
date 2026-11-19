@@ -1081,6 +1081,7 @@
         this._code = GameCode.InvitedBy(this.Navigation.Uri);
         await this.ListGames();
         this._mode = await this.Browser.Setup();
+        this._scenario = await this.Browser.LastScenario() ?? string.Empty;
         this._catalog = catalog;
         await this.OnGameChosen.InvokeAsync(first.Game);
     }
@@ -1372,8 +1373,14 @@
             ? $"{scenario.Name} ({size})"
             : scenario.Name;
 
-    /// <summary>Starts the <paramref name="scenario"/> as it is set up, the player at the seat to move.</summary>
-    private async Task TryOut(CatalogDto catalog, ScenarioDto scenario) =>
+    /// <summary>
+    /// Starts the <paramref name="scenario"/> as it is set up, the player at the seat to move; and remembers it, to choose it again when the player comes back to the lobby (Stated 2026-11-19: "the scenario
+    /// field should remember the last scenario I played").
+    /// </summary>
+    private async Task TryOut(CatalogDto catalog, ScenarioDto scenario)
+    {
+        this._scenario = scenario.Id;
+        await this.Browser.SetLastScenario(scenario.Id);
         await this.Sit(async () =>
             await GameStarter.TryOut(
                 this.Games,
@@ -1383,6 +1390,7 @@
                 await this.Browser.Claimant()
             )
         );
+    }
 
     /// <summary>
     /// How the game is asked to have its armies, as chosen, on the board as set; the player drafting for all from their

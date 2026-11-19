@@ -683,6 +683,107 @@ public sealed class TableTest : IDisposable
     }
 
     [Fact]
+    public void Click_WhenAPowerIsAChainOfJumps_PlaysEachJumpItsEnemyGoneInTurn()
+    {
+        // Arrange - a chain, on a 3 x 3 diagram: from 4 it lands on 8, taking 5... then on 2, taking 7 (the user's
+        // report of 2026-11-19: the Checkers pieces drew no chain)
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Kinds =
+            [
+                new PieceKindDto("raja", "Raja", 5)
+                {
+                    Diagram = new MoveDiagramDto(3, [7], [], [])
+                    {
+                        Alternates =
+                        [
+                            new NamedDiagramDto(
+                                "Chain of jumps",
+                                new MoveDiagramDto(3, [], [], [])
+                                {
+                                    Told = "Jumps on.",
+                                    Example = new PlayedExampleDto(2, [5, 7]) { Via = 8 },
+                                }
+                            ),
+                        ],
+                    },
+                },
+            ],
+        };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        Cell(table, 0).Click();
+        table.Find(".diagram-toggles .show-power").Click();
+
+        // Act
+        table.Find(".play-example").Click();
+
+        // Assert - the piece landing first a square right and up, then going on; the enemies gone in turn
+        Assert.Equal(
+            (
+                "example-piece chain",
+                "--via-across: 1; --via-down: -1",
+                "example-taken jumped-first,example-taken jumped-last"
+            ),
+            (
+                table.Find(".move-diagram .example-piece").ClassName,
+                table.Find(".move-diagram .example-piece").GetAttribute("style")?.Split("; ", 6)[5],
+                string.Join(",", table.FindAll(".move-diagram .example-taken").Select(taken => taken.ClassName))
+            )
+        );
+    }
+
+    [Fact]
+    public void Click_WhenAPowerMovesAnotherOfItsOwnSide_PlaysThatPieceJumpingTooItsMarkHidden()
+    {
+        // Arrange - castling, on a 3 x 3 diagram: the piece on 4 goes to 0, its Rook on 2 jumping to 1 (the user's
+        // report of 2026-11-19: the castling drawn showed no Rook moving)
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Kinds =
+            [
+                new PieceKindDto("raja", "Raja", 5)
+                {
+                    Diagram = new MoveDiagramDto(3, [7], [], [])
+                    {
+                        Alternates =
+                        [
+                            new NamedDiagramDto(
+                                "Castling",
+                                new MoveDiagramDto(3, [], [], [])
+                                {
+                                    Told = "Castles.",
+                                    Marks =
+                                    [
+                                        new CellMarkDto("partner", "its own Rook", [2]),
+                                        new CellMarkDto("unattacked", "no enemy may capture here", [0, 1]),
+                                    ],
+                                    Example = new PlayedExampleDto(0, []) { PartnerFrom = 2, PartnerTo = 1 },
+                                }
+                            ),
+                        ],
+                    },
+                },
+            ],
+        };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        Cell(table, 0).Click();
+        table.Find(".diagram-toggles .show-power").Click();
+
+        // Act
+        table.Find(".play-example").Click();
+
+        // Assert - the Rook drawn where it stands, jumping one square to its left; its mark there hidden meanwhile
+        Assert.Equal(
+            ("--column: 2; --row: 2; --across: -1; --down: 0", true, 1),
+            (
+                table.Find(".move-diagram .example-partner").GetAttribute("style")?.Split("; ", 2)[1],
+                table.Find(".move-diagram [data-cell='2']").ClassList.Contains("left"),
+                table.FindAll(".move-diagram .left").Count
+            )
+        );
+    }
+
+    [Fact]
     public void Click_WhenAPowerTakesAPieceOfItsOwnSide_DrawsAndPlaysItInItsOwnColour()
     {
         // Arrange - gone berserk, on a 3 x 3 diagram: an enemy on its throne, 1; landing on 7, it takes its own 8
@@ -1696,6 +1797,69 @@ public sealed class TableTest : IDisposable
                 table.FindAll("p.safety-off").Count
             )
         );
+    }
+
+    [Fact]
+    public void Click_WhenThePiecePickedUpMayDoWhatPromotesNothing_OffersItAsAButton()
+    {
+        // Arrange - the piece on cell 0 may escape off the board, as a Tafl King on its far corner may (the user's
+        // report of 2026-11-19: there was nothing to click to escape)
+        ActionDto flee = new(
+            "flee",
+            ImmutableSortedDictionary.CreateRange(
+                StringComparer.Ordinal,
+                [KeyValuePair.Create("actor", "0"), KeyValuePair.Create("cell", "0")]
+            )
+        )
+        {
+            Label = "Escape off the board",
+        };
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with { LegalActions = [flee] };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        Cell(table, 0).Click();
+
+        // Act
+        table.Find("button.at-cell").Click();
+
+        // Assert
+        Assert.Equal(
+            ("Escape off the board", flee, 0),
+            (
+                table.Find("button.at-cell").TextContent.Trim(),
+                this._page.Server.Submitted?.Action,
+                table.FindAll(".promotion").Count
+            )
+        );
+    }
+
+    [Fact]
+    public void Click_WhenThePiecePickedUpMaySwapWithAnAllysPiece_OffersItWithTheSafetyOn()
+    {
+        // Arrange - Green's Pawn, Black's ally, on cell 1, the move onto it a swap (the user's report of 2026-11-19:
+        // with the safety on, no swap was offered)
+        GameViewDto view = FakeGameServer.SeatZeroToMove;
+        this._page.Server.View = view with
+        {
+            Pieces = [.. view.Pieces, new PieceDto(1, "pawn", "Pawn", 2, 1)],
+            Seats = [.. view.Seats, new SeatDto(2, "Green", 0, 0, "bot", "Midas", [])],
+            LegalActions =
+            [
+                .. view.LegalActions.Select(action =>
+                    action.Arguments.GetValueOrDefault("to") == "1"
+                        ? action with { Label = "Swap places with Green's Pawn" }
+                        : action
+                ),
+            ],
+        };
+        IRenderedComponent<Table> table = this._page.Render<Table>(parameters =>
+            parameters.Add(x => x.Seating, SeatZero).Add(x => x.IsSafetyOn, true)
+        );
+
+        // Act
+        Cell(table, 0).Click();
+
+        // Assert
+        Assert.True(Cell(table, 1).ClassList.Contains("target"));
     }
 
     [Fact]

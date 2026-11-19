@@ -872,6 +872,52 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
     0%, 25% { transform: none; }
     75%, 100% { transform: translate(calc(var(--across) * 100%), calc(var(--down) * 100%)); }
 }
+/* A power moving another piece of its own side too, as castling moves the Rook (the user's report of 2026-11-19):
+   that piece, a disc in its side's colour, jumping once the piece has landed; its mark meanwhile hidden. */
+.move-diagram .example-partner {
+    position: absolute;
+    left: calc(var(--column) * 100% / var(--side));
+    top: calc(var(--row) * 100% / var(--side));
+    width: calc(100% / var(--side));
+    height: calc(100% / var(--side));
+    display: grid;
+    place-items: center;
+    pointer-events: none;
+    animation: example-partner 2.8s ease-in-out forwards;
+}
+.move-diagram .example-partner::before {
+    content: "";
+    width: 72%;
+    height: 72%;
+    border-radius: 50%;
+    background: var(--own, var(--mark));
+    box-shadow: 0 0 0 1px var(--muted);
+}
+.move-diagram .left::before { visibility: hidden; }
+@keyframes example-partner {
+    0%, 65% { transform: none; }
+    95%, 100% { transform: translate(calc(var(--across) * 100%), calc(var(--down) * 100%)); }
+}
+/* A chain of jumps (the user's report of 2026-11-19): the piece landing once, the first enemy gone, then jumping on,
+   the next gone as it lands. */
+.move-diagram .example-piece.chain { animation: example-chain 3.2s ease-in-out forwards; }
+.move-diagram .example-taken.jumped-first { animation: example-jumped-first 3.2s ease-in forwards; }
+.move-diagram .example-taken.jumped-last { animation: example-jumped-last 3.2s ease-in forwards; }
+@keyframes example-chain {
+    0%, 10% { transform: none; }
+    35%, 55% { transform: translate(calc(var(--via-across) * 100%), calc(var(--via-down) * 100%)); }
+    80%, 100% { transform: translate(calc(var(--across) * 100%), calc(var(--down) * 100%)); }
+}
+@keyframes example-jumped-first { 0%, 30% { opacity: 1; } 38%, 100% { opacity: 0; } }
+@keyframes example-jumped-last { 0%, 75% { opacity: 1; } 83%, 100% { opacity: 0; } }
+/* A cell no enemy may be able to capture on, as each a castling King crosses: a dotted frame. */
+.move-diagram .unattacked::after, .diagram-key .unattacked::after {
+    content: "";
+    position: absolute;
+    inset: 6%;
+    border: 2px dotted var(--accent);
+    border-radius: 3px;
+}
 @keyframes example-taken { 0%, 70% { opacity: 1; } 85%, 100% { opacity: 0; } }
 @keyframes settle { from { transform: scale(1.6); opacity: 0; } }
 @keyframes fade-out { from { opacity: 1; } }
@@ -883,7 +929,9 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
     }
     /* Still, the example shows only where it ends, the enemy gone. */
     .move-diagram .example-piece, .move-diagram .example-taken,
-    .move-diagram .example-taken.led, .move-diagram .example-piece.after-lead { animation-duration: 1ms; }
+    .move-diagram .example-taken.led, .move-diagram .example-piece.after-lead,
+    .move-diagram .example-partner, .move-diagram .example-piece.chain,
+    .move-diagram .example-taken.jumped-first, .move-diagram .example-taken.jumped-last { animation-duration: 1ms; }
 }
 /* Each mark kept beside its meaning: a long meaning wraps beside its mark, so the card never scrolls sideways. */
 .diagram-key { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; color: var(--muted); }
