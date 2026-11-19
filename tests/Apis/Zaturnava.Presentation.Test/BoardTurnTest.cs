@@ -15,21 +15,53 @@ public sealed class BoardTurnTest
             .Select(id => new CellDto(id, id % 4, Math.DivRem(id, 4).Quotient, "square", ThroneAt(id), $"{id}")),
     ];
 
+    /// <summary>
+    /// Each seat facing out of its corner, its corner to its left: seat 0 up from the bottom left, 1 right from the top
+    /// left, 2 down from the top right, 3 left from the bottom right.
+    /// </summary>
+    private static readonly ImmutableList<DirectionDto> Forwards = [new(0, 1), new(1, 0), new(0, -1), new(-1, 0)];
+
     [Theory]
     [InlineData(0, 0)]
     [InlineData(1, 3)]
     [InlineData(2, 2)]
     [InlineData(3, 1)]
-    public void HomeOf_WhenTheSeatHasAThrone_TurnsItToTheBottomLeft(int seat, int expected)
+    public void HomeOf_WhenPlaying_TurnsTheSeatsForwardUpItsCornerBottomLeft(int seat, int expected)
     {
         // Arrange
-        GameViewDto view = View(Cells, []);
+        GameViewDto view = View(Cells, Forwards);
 
         // Act
         BoardTurn turn = BoardTurn.HomeOf(seat, view);
 
         // Assert
         Assert.Equal(expected, turn.QuarterTurns);
+    }
+
+    [Fact]
+    public void HomeOf_WhenTheThroneIsFarAlongALongBackRank_StillTurnsBySeatsForward()
+    {
+        // Arrange - seat 0's throne on the bottom row's far right, nearer the bottom right corner than the bottom left
+        ImmutableList<CellDto> cells = [.. Cells.Select(cell => cell with { Throne = cell.Id == 3 ? 0 : null })];
+
+        // Act
+        BoardTurn turn = BoardTurn.HomeOf(0, View(cells, Forwards));
+
+        // Assert
+        Assert.Equal(BoardTurn.None, turn);
+    }
+
+    [Fact]
+    public void HomeOf_WhenForwardIsDiagonal_TurnsItAsNearlyUpAsAQuarterTurnCan()
+    {
+        // Arrange - forward up and to the right, 45 degrees clockwise of up: no turn, or three quarters, as near
+        GameViewDto view = View(Cells, [new DirectionDto(1, 1)]);
+
+        // Act
+        BoardTurn turn = BoardTurn.HomeOf(0, view);
+
+        // Assert
+        Assert.Equal(BoardTurn.None, turn);
     }
 
     [Theory]
@@ -73,31 +105,16 @@ public sealed class BoardTurnTest
     }
 
     [Fact]
-    public void HomeOf_WhenTheSeatHasNoThroneButPieces_TurnsTheirMiddleToTheBottomLeft()
+    public void HomeOf_WhenTheSeatHasNeitherThroneNorPiecesYet_StillTurnsBySeatsForward()
     {
-        // Arrange
+        // Arrange - as while drafting, before any throne is set
         ImmutableList<CellDto> cells = [.. Cells.Select(cell => cell with { Throne = null })];
-        ImmutableList<PieceDto> pieces = [new(0, "pawn", "Pawn", 1, 14), new(1, "pawn", "Pawn", 1, 15)];
-        GameViewDto view = View(cells, pieces);
 
         // Act
-        BoardTurn turn = BoardTurn.HomeOf(1, view);
+        BoardTurn turn = BoardTurn.HomeOf(2, View(cells, Forwards));
 
         // Assert
         Assert.Equal(2, turn.QuarterTurns);
-    }
-
-    [Fact]
-    public void HomeOf_WhenTheSeatHasNeitherThroneNorPieces_DoesNotTurn()
-    {
-        // Arrange
-        ImmutableList<CellDto> cells = [.. Cells.Select(cell => cell with { Throne = null })];
-
-        // Act
-        BoardTurn turn = BoardTurn.HomeOf(1, View(cells, []));
-
-        // Assert
-        Assert.Equal(BoardTurn.None, turn);
     }
 
     [Fact]
@@ -106,7 +123,7 @@ public sealed class BoardTurnTest
         // Arrange - nothing beyond the board
 
         // Act
-        BoardTurn turn = BoardTurn.HomeOf(null, View(Cells, []));
+        BoardTurn turn = BoardTurn.HomeOf(null, View(Cells, Forwards));
 
         // Assert
         Assert.Equal(BoardTurn.None, turn);
@@ -178,6 +195,29 @@ public sealed class BoardTurnTest
             _ => null,
         };
 
-    private static GameViewDto View(ImmutableList<CellDto> cells, ImmutableList<PieceDto> pieces) =>
-        new("g", "test", "Test", 1, 1, 0, null, cells, pieces, [], [], [], [], null, false, null, null, null, false);
+    /// <summary>A game on <paramref name="cells"/>, each seat facing as <paramref name="forwards"/> has it.</summary>
+    private static GameViewDto View(ImmutableList<CellDto> cells, ImmutableList<DirectionDto> forwards) =>
+        new(
+            "g",
+            "test",
+            "Test",
+            1,
+            1,
+            0,
+            null,
+            cells,
+            [],
+            [.. forwards.Select((forward, seat) => SeatOf(seat) with { Forward = forward })],
+            [],
+            [],
+            [],
+            null,
+            false,
+            null,
+            null,
+            null,
+            false
+        );
+
+    private static SeatDto SeatOf(int seat) => new(seat, $"{seat}", seat % 2, 0, "human", null, []);
 }

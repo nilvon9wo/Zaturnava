@@ -19,19 +19,18 @@ public sealed record BoardTurn(int QuarterTurns)
     public int Angle => this.QuarterTurns * Degrees;
 
     /// <summary>
-    /// The turn that brings <paramref name="seat"/>'s home - its throne, else the middle of its pieces -
-    /// closest to the bottom left; no turn for a seat with neither, or when watching.
+    /// The board as <paramref name="seat"/> sees it from its own side: turned so that its army's forward points up
+    /// the screen, or as nearly as a quarter turn can; each army's corner lies to its left, so its own corner is
+    /// bottom left. Not where its throne is: on a board of long kingdoms, a throne far along the back rank lies
+    /// nearer another corner (playtest 2026-11-19, 26 × 26, where Black was turned to the top right). No turn when
+    /// watching.
     /// </summary>
-    public static BoardTurn HomeOf(int? seat, [Required] GameViewDto view)
-    {
-        BoardFrame frame = BoardFrame.Of(view.Cells);
-        (double X, double Y)? home = seat is { } held ? HomeCell(held, view) : null;
-        return home is { } point
+    public static BoardTurn HomeOf(int? seat, [Required] GameViewDto view) =>
+        view.Seats.FirstOrDefault(each => each.Id == seat) is { } own
             ? new BoardTurn(
-                Enumerable.Range(0, Full).MaxBy(turns => TowardsBottomLeft(Turned(Offset(point, frame), turns)))
+                Enumerable.Range(0, Full).MinBy(turns => OffUpright(new BoardTurn(turns).AngleOf(own.Forward)))
             )
             : None;
-    }
 
     public BoardTurn Clockwise() => new((this.QuarterTurns + 1) % Full);
 
@@ -88,25 +87,6 @@ public sealed record BoardTurn(int QuarterTurns)
         return (x + across, y + down);
     }
 
-    private static (double X, double Y)? HomeCell(int seat, GameViewDto view)
-    {
-        CellDto? throne = view.Cells.FirstOrDefault(cell => cell.Throne == seat);
-        ILookup<int, CellDto> cells = view.Cells.ToLookup(cell => cell.Id);
-        CellDto[] occupied =
-            [.. view.Pieces.Where(piece => piece.Owner == seat).SelectMany(piece => cells[piece.Cell])];
-        return throne is not null
-            ? (throne.X, BoardFrame.ScreenY(throne.Y))
-            : occupied.Length > 0
-                ? (occupied.Average(cell => cell.X), occupied.Average(cell => BoardFrame.ScreenY(cell.Y)))
-                : null;
-    }
-
-    private static (double X, double Y) Offset((double X, double Y) point, BoardFrame frame) =>
-        (point.X - (frame.Left + (frame.Width / 2)), point.Y - (frame.Top + (frame.Height / 2)));
-
-    /// <summary>A point turned a quarter clockwise on screen (y down) <paramref name="turns"/> times.</summary>
-    private static (double X, double Y) Turned((double X, double Y) point, int turns) =>
-        Enumerable.Range(0, turns).Aggregate(point, (turned, _) => (-turned.Y, turned.X));
-
-    private static double TowardsBottomLeft((double X, double Y) point) => point.Y - point.X;
+    /// <summary>How far an angle on screen (0 to 359) is from straight up, either way.</summary>
+    private static int OffUpright(int angle) => Math.Min(angle, (Full * Degrees) - angle);
 }
