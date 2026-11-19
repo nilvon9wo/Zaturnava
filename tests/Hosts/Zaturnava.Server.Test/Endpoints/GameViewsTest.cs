@@ -252,10 +252,10 @@ public sealed class GameViewsTest
         // Act
         GameViewDto view = GameViews.ViewOf(Snapshot(grand, state), Bots);
 
-        // Assert
+        // Assert - with no open board beside: its palace holds it (the user's report of 2026-11-19)
         MoveDiagramDto guard = view.Pieces.Single(piece => piece.Id == 4).Diagram!;
         Assert.Equal(
-            (9, true, true, null),
+            (9, true, false, null),
             (
                 guard.Palace.Count,
                 guard.Throne is not null,

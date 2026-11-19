@@ -95,9 +95,16 @@ internal sealed class MoveDiagrams(
             Captures = Held(open.Captures),
             Palace = [.. cells.Select(cell => cell.Value)],
             Throne = At(throne).Value,
-            Elsewhere = open,
+            Elsewhere = this.OpenUnlessHeld(kind),
         };
     }
+
+    /// <summary>
+    /// <paramref name="kind"/> on an open board, to draw beside it by its river or in its palace; none, for a kind its
+    /// palace holds, as the Xiangqi General: out of it only by a power, drawn as that power (the user's report of
+    /// 2026-11-19: outside the palace is the exception, not a toggle).
+    /// </summary>
+    private MoveDiagram? OpenUnlessHeld(PieceKindId kind) => palaceBound.Contains(kind) ? null : this.Open(kind);
 
     /// <summary>
     /// A palace about a piece on its back left corner, its throne diagonally ahead: each cell as far to the piece's
@@ -127,7 +134,7 @@ internal sealed class MoveDiagrams(
         {
             (true, _) => this.Draw(kind, isOnTerrain: true) with
             {
-                Elsewhere = this.Open(kind),
+                Elsewhere = this.OpenUnlessHeld(kind),
                 Alternates = palaceSteppers.Contains(kind)
                     ?
                     [

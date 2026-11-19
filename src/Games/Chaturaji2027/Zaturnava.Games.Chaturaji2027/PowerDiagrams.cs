@@ -53,12 +53,12 @@ internal sealed class PowerDiagrams(Chaturaji2027Variant variant, Func<PieceKind
         ));
         yield return (variant.StartRowPowers.Contains(kind), Power(
             "En passant",
-            "An enemy that just went two cells past it, it may take as it lands on the cell passed, even out of "
-                + "turn, until its own turn ends.",
-            new PlayedExample(At(1, 1), [At(1, 0)]),
+            "Any enemy piece, not just a pawn, that just went two cells or more past it, it may take as it lands "
+                + "on the first cell passed, even out of turn, until its own turn ends.",
+            new PlayedExample(At(1, 1), [At(1, 0)]) { EnemyFrom = At(1, 2) },
             new CellMark(CellMark.Trail, "where the enemy came from, two cells past it", [At(1, 2)]),
-            new CellMark(CellMark.Taken, "the enemy, taken", [At(1, 0)]),
-            new CellMark(CellMark.Lands, "it lands on the cell the enemy passed", [At(1, 1)])
+            new CellMark(CellMark.Taken, "any enemy piece, gone past it: taken", [At(1, 0)]),
+            new CellMark(CellMark.Lands, "it lands on the first cell the enemy passed", [At(1, 1)])
         ));
         yield return (variant.Castlers.Contains(kind), Power(
             "Castling",

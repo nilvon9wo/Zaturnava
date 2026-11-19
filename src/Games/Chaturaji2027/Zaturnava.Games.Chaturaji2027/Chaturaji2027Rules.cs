@@ -675,8 +675,8 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
                 (this._variant.StartRowPowers.Contains(kind),
                     "From its start rows, its first move may go two cells straight ahead."),
                 (this._variant.StartRowPowers.Contains(kind),
-                    "Takes en passant a piece that just went two cells past it, even out of turn, until its own turn "
-                    + "ends."),
+                    "Takes en passant any enemy piece, not just a pawn, that just went two cells or more past it, "
+                    + "even out of turn, until its own turn ends."),
                 (this._variant.Castlers.Contains(kind),
                     $"Castles with its own {rooks}: two cells towards it, the {rooks} jumping over to its other side."),
                 (this._variant.FlyingCapturers.Contains(kind),

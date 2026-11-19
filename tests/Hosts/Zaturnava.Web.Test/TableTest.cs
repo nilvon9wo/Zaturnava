@@ -296,7 +296,7 @@ public sealed class TableTest : IDisposable
         };
         IRenderedComponent<Table> table = this.Render(SeatZero);
         Cell(table, 0).Click();
-        string before = table.Find(".diagram-play .play-example").TextContent.Trim();
+        string? before = table.Find(".diagram-play .play-example").GetAttribute("aria-label");
 
         // Act
         for (int play = 0; play < plays; play++)
@@ -310,7 +310,7 @@ public sealed class TableTest : IDisposable
             (
                 before,
                 table.Find(".move-diagram .example-piece").GetAttribute("style"),
-                table.Find(".diagram-play .play-example").TextContent.Trim(),
+                table.Find(".diagram-play .play-example").GetAttribute("aria-label"),
                 Square(table, 4).QuerySelectorAll(".piece-icon").Length,
                 table.FindAll(".move-diagram .example-taken").Count
             )
@@ -403,7 +403,7 @@ public sealed class TableTest : IDisposable
             (
                 table.FindAll(".move-diagram .example-piece").Count,
                 Square(table, 4).QuerySelectorAll(".piece-icon").Length,
-                table.Find(".diagram-play .play-example").TextContent.Trim()
+                table.Find(".diagram-play .play-example").GetAttribute("aria-label")
             )
         );
     }
@@ -424,7 +424,7 @@ public sealed class TableTest : IDisposable
         };
         IRenderedComponent<Table> table = this.Render(SeatZero);
         Cell(table, 0).Click();
-        table.Find(".diagram-toggles .show-obstacles").Click();
+        table.Find(".diagram-options .show-obstacles").Change(true);
 
         // Act
         table.Find(".diagram-play .play-example").Click();
@@ -532,6 +532,156 @@ public sealed class TableTest : IDisposable
         );
     }
 
+    [Theory]
+    [InlineData("show-moves", "true", "false", "square light move")]
+    [InlineData("show-captures", "false", "true", "square dark capture")]
+    public void Click_WhenAPowerIsDrawnAndThePlayerAsksForMovesOrCaptures_LeavesThePowerForThem(
+        string asked,
+        string isMoving,
+        string isCapturing,
+        string expected
+    )
+    {
+        // Arrange - the user's report of 2026-11-19: a Western Pawn's first move shown, its moves and captures were
+        // gone; on a 3 x 3 diagram, it moves to 7, captures on 6, and its first move lands two ahead
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Kinds =
+            [
+                new PieceKindDto("raja", "Raja", 5)
+                {
+                    Diagram = new MoveDiagramDto(3, [7], [6], [])
+                    {
+                        Alternates =
+                        [
+                            new NamedDiagramDto(
+                                "First move",
+                                new MoveDiagramDto(3, [], [], [])
+                                {
+                                    Told = "Two ahead.",
+                                    Example = new PlayedExampleDto(7, []),
+                                }
+                            ),
+                        ],
+                    },
+                },
+            ],
+        };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        Cell(table, 0).Click();
+        table.Find(".diagram-toggles .show-power").Click();
+        string pressedOnPower =
+            $"{table.Find(".show-moves").GetAttribute("aria-pressed")},"
+            + $"{table.Find(".show-captures").GetAttribute("aria-pressed")}";
+
+        // Act
+        table.Find($".diagram-toggles .{asked}").Click();
+
+        // Assert
+        Assert.Equal(
+            ("false,false", isMoving, isCapturing, "false", expected),
+            (
+                pressedOnPower,
+                table.Find(".show-moves").GetAttribute("aria-pressed"),
+                table.Find(".show-captures").GetAttribute("aria-pressed"),
+                table.Find(".show-power").GetAttribute("aria-pressed"),
+                Square(table, asked == "show-moves" ? 7 : 6).ClassName
+            )
+        );
+    }
+
+    [Fact]
+    public void Click_WhenAKindOnlyCapturesAndHasAPower_OffersItsCapturesAndThePowerAlone()
+    {
+        // Arrange - on a 3 x 3 diagram, it captures on 7 alone, and has a power
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Kinds =
+            [
+                new PieceKindDto("raja", "Raja", 5)
+                {
+                    Diagram = new MoveDiagramDto(3, [], [7], [])
+                    {
+                        Alternates =
+                        [
+                            new NamedDiagramDto("Escape", new MoveDiagramDto(3, [], [], []) { Told = "Off." }),
+                        ],
+                    },
+                },
+            ],
+        };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Act
+        Cell(table, 0).Click();
+
+        // Assert
+        Assert.Equal(
+            ("Captures:true | Escape:false", "square light capture"),
+            (
+                string.Join(
+                    " | ",
+                    table.FindAll(".diagram-toggles button")
+                        .Select(button => $"{button.TextContent}:{button.GetAttribute("aria-pressed")}")
+                ),
+                Square(table, 7).ClassName
+            )
+        );
+    }
+
+    [Fact]
+    public void Click_WhenAPowerAnswersAnEnemysMove_PlaysTheEnemysMoveFirstThenTakesIt()
+    {
+        // Arrange - en passant, on a 3 x 3 diagram: the enemy goes from 8 to 2, past the piece; it lands on 5, taking
+        // it, and, as no power yet does, another on 0, there all along
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Kinds =
+            [
+                new PieceKindDto("raja", "Raja", 5)
+                {
+                    Diagram = new MoveDiagramDto(3, [7], [], [])
+                    {
+                        Alternates =
+                        [
+                            new NamedDiagramDto(
+                                "En passant",
+                                new MoveDiagramDto(3, [], [], [])
+                                {
+                                    Told = "En passant.",
+                                    Marks = [new CellMarkDto("taken capture", "the enemy, taken", [2])],
+                                    Example = new PlayedExampleDto(5, [2, 0]) { EnemyFrom = 8 },
+                                }
+                            ),
+                        ],
+                    },
+                },
+            ],
+        };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        Cell(table, 0).Click();
+        table.Find(".diagram-toggles .show-power").Click();
+
+        // Act
+        table.Find(".play-example").Click();
+
+        // Assert - the enemy drawn where it came from, moving to where it is taken
+        Assert.Equal(
+            (
+                "move-diagram playing",
+                "example-taken led,example-taken",
+                "--column: 2; --row: 0; --across: 0; --down: 2",
+                "example-piece after-lead"
+            ),
+            (
+                table.Find(".move-diagram").ClassName,
+                string.Join(",", table.FindAll(".move-diagram .example-taken").Select(taken => taken.ClassName)),
+                table.Find(".move-diagram .example-taken").GetAttribute("style")?.Split("; ", 2)[1],
+                table.Find(".move-diagram .example-piece").ClassName
+            )
+        );
+    }
+
     [Fact]
     public void Click_WhenAPowerTakesAPieceOfItsOwnSide_DrawsAndPlaysItInItsOwnColour()
     {
@@ -566,7 +716,7 @@ public sealed class TableTest : IDisposable
         };
         IRenderedComponent<Table> table = this.Render(SeatZero);
         Cell(table, 0).Click();
-        table.Find(".diagram-toggles .show-alternate").Click();
+        table.Find(".diagram-toggles .show-power").Click();
 
         // Act
         table.Find(".play-example").Click();
@@ -605,7 +755,7 @@ public sealed class TableTest : IDisposable
         table.Find(".diagram-toggles .show-captures").Click();
 
         // Act
-        table.Find(".diagram-toggles .show-obstacles").Click();
+        table.Find(".diagram-options .show-obstacles").Change(true);
 
         // Assert - with no capture left unstopped, none to play
         Assert.Equal(
@@ -643,18 +793,59 @@ public sealed class TableTest : IDisposable
         Cell(table, 0).Click();
         string before = Square(table, 3).ClassName!;
 
-        // Act
-        table.Find(".diagram-toggles .show-alternate").Click();
+        // Act - where it stands changes how it moves: checked, not chosen (the user's report of 2026-11-19)
+        table.Find(".diagram-options .show-situation").Change(true);
 
         // Assert
         Assert.Equal(
-            ("square light", "square light move", "true", "Across a river"),
+            ("square light", "square light move", true, "Across a river", "square light capture"),
             (
                 before,
                 Square(table, 3).ClassName,
-                table.Find(".diagram-toggles .show-alternate").GetAttribute("aria-pressed"),
-                table.Find(".diagram-toggles .show-alternate").TextContent
+                table.Find(".diagram-options .show-situation").HasAttribute("checked"),
+                table.Find(".diagram-options label").TextContent.Trim(),
+                CapturesOn(table, 3)
             )
+        );
+
+        static string? CapturesOn(IRenderedComponent<Table> table, int cell)
+        {
+            table.Find(".diagram-toggles .show-captures").Click();
+            return Square(table, cell).ClassName;
+        }
+    }
+
+    [Fact]
+    public void Change_WhenThePlayerUnchecksWhereItStands_DrawsItAsBefore()
+    {
+        // Arrange
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Kinds =
+            [
+                new PieceKindDto("raja", "Raja", 5)
+                {
+                    Diagram = new MoveDiagramDto(3, [7], [], [])
+                    {
+                        Alternates =
+                        [
+                            new NamedDiagramDto("Across a river", new MoveDiagramDto(3, [3, 5, 7], [], [])),
+                        ],
+                    },
+                },
+            ],
+        };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        Cell(table, 0).Click();
+        table.Find(".diagram-options .show-situation").Change(true);
+
+        // Act
+        table.Find(".diagram-options .show-situation").Change(false);
+
+        // Assert
+        Assert.Equal(
+            ("square light", false),
+            (Square(table, 3).ClassName, table.Find(".diagram-options .show-situation").HasAttribute("checked"))
         );
     }
 
@@ -697,10 +888,10 @@ public sealed class TableTest : IDisposable
         Cell(table, 0).Click();
 
         // Act
-        table.Find(".diagram-toggles .show-alternate").Click();
+        table.Find(".diagram-toggles .show-power").Click();
         table.Find(".play-example").Click();
 
-        // Assert
+        // Assert - what changes its moves, not shown with a power
         Assert.Equal(
             (
                 "square light trail",
@@ -708,23 +899,23 @@ public sealed class TableTest : IDisposable
                 "Play it",
                 1,
                 "It takes in passing. | forward | where it came from | taken | it lands here",
-                "false"
+                0
             ),
             (
                 Square(table, 7).ClassName,
                 Square(table, 5).ClassName,
-                table.Find(".play-example").TextContent.Trim(),
+                table.Find(".play-example").GetAttribute("aria-label"),
                 table.FindAll(".move-diagram .example-taken").Count,
                 string.Join(" | ", table.FindAll(".diagram-key .key-item").Select(item => item.TextContent.Trim())),
-                table.Find(".diagram-toggles .show-terrain").GetAttribute("aria-pressed")
+                table.FindAll(".diagram-options").Count
             )
         );
     }
 
     [Fact]
-    public void Click_WhenThePlayerTurnsBackFromAPowerToTheTerrain_DrawsItByItsRiverAgain()
+    public void Click_WhenThePlayerTurnsBackFromAPowerToItsMoves_DrawsThemAsCheckedBefore()
     {
-        // Arrange
+        // Arrange - its river unchecked, then a power chosen
         this._page.Server.View = FakeGameServer.SeatZeroToMove with
         {
             Kinds =
@@ -745,18 +936,22 @@ public sealed class TableTest : IDisposable
         };
         IRenderedComponent<Table> table = this.Render(SeatZero);
         Cell(table, 0).Click();
-        table.Find(".diagram-toggles .show-alternate").Click();
+        table.Find(".diagram-options .show-terrain").Change(false);
+        table.Find(".diagram-toggles .show-power").Click();
+        int playsOnPower = table.FindAll(".play-example").Count;
 
         // Act
-        table.Find(".diagram-toggles .show-terrain").Click();
+        table.Find(".diagram-toggles .show-moves").Click();
 
-        // Assert - by its river, its alternate let go, and nothing to play of a power with no example
+        // Assert - on an open board still, the power let go; nothing to play of a power with no example
         Assert.Equal(
-            ("true", "false", "square light move river-bank"),
+            (0, false, "false", "true", "square light move"),
             (
-                table.Find(".diagram-toggles .show-terrain").GetAttribute("aria-pressed"),
-                table.Find(".diagram-toggles .show-alternate").GetAttribute("aria-pressed"),
-                Square(table, 7).ClassName
+                playsOnPower,
+                table.Find(".diagram-options .show-terrain").HasAttribute("checked"),
+                table.Find(".diagram-toggles .show-power").GetAttribute("aria-pressed"),
+                table.Find(".diagram-toggles .show-moves").GetAttribute("aria-pressed"),
+                Square(table, 1).ClassName
             )
         );
     }
@@ -833,7 +1028,7 @@ public sealed class TableTest : IDisposable
 
         // Assert
         Assert.Equal(
-            (0, "its palace, which it may not leave"),
+            (0, "its palace, which confines it but in rare cases"),
             (
                 table.FindAll(".move-diagram .palace-line").Count,
                 table.FindAll(".diagram-key .key-item")[^1].TextContent
@@ -858,20 +1053,20 @@ public sealed class TableTest : IDisposable
         };
         IRenderedComponent<Table> table = this.Render(SeatZero);
         Cell(table, 0).Click();
-        (string Label, string? Pressed) before = (
-            table.Find(".diagram-toggles .show-terrain").TextContent.Trim(),
-            table.Find(".diagram-toggles .show-terrain").GetAttribute("aria-pressed")
+        (string Label, bool IsChecked) before = (
+            table.Find(".diagram-options label").TextContent.Trim(),
+            table.Find(".diagram-options .show-terrain").HasAttribute("checked")
         );
 
         // Act
-        table.Find(".diagram-toggles .show-terrain").Click();
+        table.Find(".diagram-options .show-terrain").Change(false);
 
         // Assert
         Assert.Equal(
-            ((label, "true"), "false", "square light move", 0, "moves"),
+            ((label, true), false, "square light move", 0, "moves"),
             (
                 before,
-                table.Find(".diagram-toggles .show-terrain").GetAttribute("aria-pressed"),
+                table.Find(".diagram-options .show-terrain").HasAttribute("checked"),
                 Square(table, 7).ClassName,
                 table.FindAll(".move-diagram .palace-lines").Count,
                 string.Join(" | ", table.FindAll(".diagram-key .key-item").Select(item => item.TextContent.Trim()))
@@ -1134,7 +1329,7 @@ public sealed class TableTest : IDisposable
         string before = Square(table, 7).ClassName!;
 
         // Act
-        table.Find(".diagram-toggles .show-obstacles").Click();
+        table.Find(".diagram-options .show-obstacles").Change(true);
 
         // Assert
         Assert.Equal(
@@ -1143,14 +1338,14 @@ public sealed class TableTest : IDisposable
                 "square light obstacle",
                 "square dark move obstructed",
                 "a piece in its way | no longer reached",
-                "true"
+                true
             ),
             (
                 before,
                 Square(table, 7).ClassName,
                 Square(table, 6).ClassName,
                 string.Join(" | ", table.FindAll(".diagram-key .key-item").Skip(2).Select(item => item.TextContent)),
-                table.Find(".diagram-toggles .show-obstacles").GetAttribute("aria-pressed")
+                table.Find(".diagram-options .show-obstacles").HasAttribute("checked")
             )
         );
     }
@@ -1171,10 +1366,10 @@ public sealed class TableTest : IDisposable
         };
         IRenderedComponent<Table> table = this.Render(SeatZero);
         Cell(table, 0).Click();
-        table.Find(".diagram-toggles .show-obstacles").Click();
+        table.Find(".diagram-options .show-obstacles").Change(true);
 
         // Act
-        table.Find(".diagram-toggles .show-obstacles").Click();
+        table.Find(".diagram-options .show-obstacles").Change(false);
 
         // Assert
         Assert.Equal(
