@@ -139,7 +139,10 @@ internal static class GameViews
             snapshot.State.ActingFor?.Value,
             [.. snapshot.Rules.Topology.Cells.Select(cell => CellOf(snapshot.Rules.Topology, thrones, cell))],
             [.. shown.Position.Occupants.OrderBy(entry => entry.Key.Value)
-                .Select(entry => PieceOf(snapshot.Rules, entry.Key, entry.Value))],
+                .Select(entry => PieceOf(snapshot.Rules, entry.Key, entry.Value) with
+                {
+                    Diagram = snapshot.Rules.DiagramAt(shown, entry.Key) is { } standing ? DiagramOf(standing) : null,
+                })],
             [.. snapshot.State.Seats.Select(seat => SeatOf(snapshot, bots, seat.Id, names, shown))],
             [.. legal.Select(action => ActionOf(snapshot, action))],
             [.. snapshot.State.Dice.Select(value => DieOf(snapshot, value))],
@@ -306,6 +309,7 @@ internal static class GameViews
             Leaps = diagram.Leaps,
             Jumps = diagram.Jumps,
             Palace = diagram.Palace,
+            Throne = diagram.Throne,
         };
 
     private static ImmutableList<string> TextOf(

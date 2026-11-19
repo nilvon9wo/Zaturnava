@@ -65,4 +65,10 @@ public sealed record MoveDiagram(
     /// the steps along (the user's report of 2026-11-13, of the Guard's card not showing them); none, for any other.
     /// </summary>
     public ImmutableList<int> Palace { get; init; } = [];
+
+    /// <summary>
+    /// The throne of <see cref="Palace"/>, for a piece drawn in its own palace, where it stands; none, for the piece
+    /// drawn on the throne, on the centre cell.
+    /// </summary>
+    public int? Throne { get; init; }
 }

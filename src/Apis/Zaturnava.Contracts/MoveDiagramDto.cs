@@ -58,4 +58,10 @@ public sealed record MoveDiagramDto(
     /// with a line from each to the throne; its moves and captures include the steps along them. None, for any other.
     /// </summary>
     public ImmutableList<int> Palace { get; init; } = [];
+
+    /// <summary>
+    /// The throne of <see cref="Palace"/>, for a piece drawn in its own palace, where it stands; none, for the piece
+    /// drawn on the throne, on the centre cell.
+    /// </summary>
+    public int? Throne { get; init; }
 }

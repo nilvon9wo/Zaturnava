@@ -518,6 +518,50 @@ public sealed class TableTest : IDisposable
     }
 
     [Fact]
+    public void Click_WhenThePieceIsDrawnWhereItStandsInItsPalace_DrawsThatWithItsLinesToTheThroneWhereItIs()
+    {
+        // Arrange - the piece on the board's cell 0 drawn on a 5 x 5 diagram, on 12, in a palace from 6 to 18 whose
+        // throne is 6, behind it and to its left; its kind drawn on a 3 x 3 diagram
+        MoveDiagramDto standing = new(5, [6, 7], [6, 7], [])
+        {
+            Palace = [6, 7, 8, 11, 12, 13, 16, 17, 18],
+            Throne = 6,
+        };
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Pieces =
+            [
+                .. FakeGameServer.SeatZeroToMove.Pieces.Select(piece =>
+                    piece.Cell == 0 ? piece with { Diagram = standing } : piece
+                ),
+            ],
+            Kinds = [new PieceKindDto("raja", "Raja", 5) { Diagram = new MoveDiagramDto(3, [7], [], []) }],
+        };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Act
+        Cell(table, 0).Click();
+
+        // Assert
+        AngleSharp.Dom.IElement line = table.FindAll(".move-diagram .palace-lines line")[0];
+        Assert.Equal(
+            (
+                25,
+                8,
+                "1.5 3.5",
+                "its palace, as it stands in it: along each line through its square to the throne, it moves and "
+                    + "captures, diagonally too"
+            ),
+            (
+                table.FindAll(".move-diagram .square").Count,
+                table.FindAll(".move-diagram .palace-lines line").Count,
+                $"{line.GetAttribute("x2")} {line.GetAttribute("y2")}",
+                table.FindAll(".diagram-key .key-item")[^1].TextContent
+            )
+        );
+    }
+
+    [Fact]
     public void Click_WhenARiverHoldsTheKindBack_DrawsTheRiverAlongTheFirstRowAcrossIt()
     {
         // Arrange - on a 3 x 3 diagram, a river just ahead of the Raja, under the top row

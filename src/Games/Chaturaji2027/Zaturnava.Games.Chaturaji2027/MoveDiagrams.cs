@@ -41,6 +41,9 @@ internal sealed class MoveDiagrams(
     private static readonly SeatId Enemy = new(1);
     private static readonly PieceKindId Stand = new("diagram-stand");
 
+    /// <summary>A palace's lines on the diagram's board, whoever steps along them.</summary>
+    private static readonly PalaceSteps Lines = new(Grid, [], []);
+
     /// <summary>The 3 × 3 palace about the centre, its throne, row by row from the bottom.</summary>
     private static readonly ImmutableList<CellId> Palace =
     [
@@ -51,8 +54,42 @@ internal sealed class MoveDiagrams(
     private readonly ImmutableDictionary<PieceKindId, PieceKind> _kinds = kinds;
     private readonly MoveGenerator _moves = new(Grid, kinds);
     private readonly ConcurrentDictionary<PieceKindId, MoveDiagram> _drawn = new();
+    private readonly ConcurrentDictionary<PieceKindId, MoveDiagram> _open = new();
 
     public MoveDiagram Of(PieceKindId kind) => this._drawn.GetOrAdd(kind, this.DrawWithTerrain);
+
+    /// <summary>
+    /// A kind that steps along a palace's lines drawn in a palace of <paramref name="palace"/>'s cells, its throne on
+    /// <paramref name="throne"/>, each as far to the piece's right and ahead of it as the piece sees it; stepping along
+    /// each line through its cell, as <see cref="PalaceSteps"/> lets it, and moving otherwise as on an open board,
+    /// which it is drawn on too (the user's report of 2026-11-15, B6).
+    /// </summary>
+    public MoveDiagram InPalace(
+        PieceKindId kind,
+        ImmutableList<(int Right, int Ahead)> palace,
+        (int Right, int Ahead) throne
+    )
+    {
+        ImmutableList<CellId> cells = [.. palace.Select(At)];
+        ImmutableList<int> steps =
+        [
+            .. Lines.NeighboursOn(cells, At(throne), Centre)
+                .Where(cell => !forwardPalaceSteppers.Contains(kind) || Grid.RowOf(cell) > Middle)
+                .Select(cell => cell.Value),
+        ];
+        MoveDiagram open = this.Open(kind);
+        return open with
+        {
+            Moves = [.. open.Moves.Concat(steps).Distinct().Order()],
+            Captures = [.. open.Captures.Concat(steps).Distinct().Order()],
+            Palace = [.. cells.Select(cell => cell.Value)],
+            Throne = At(throne).Value,
+            Elsewhere = open,
+        };
+    }
+
+    /// <summary>The cell as far to the right of the centre and ahead of it as <paramref name="seen"/> says.</summary>
+    private static CellId At((int Right, int Ahead) seen) => Grid.CellAt(Middle + seen.Right, Middle + seen.Ahead);
 
     /// <summary>
     /// The kind drawn by its river or in its palace, if either holds it, with the kind drawn on an open board beside;
@@ -60,8 +97,12 @@ internal sealed class MoveDiagrams(
     /// </summary>
     private MoveDiagram DrawWithTerrain(PieceKindId kind) =>
         riverBound.Contains(kind) || palaceSteppers.Contains(kind)
-            ? this.Draw(kind, isOnTerrain: true) with { Elsewhere = this.Draw(kind, isOnTerrain: false) }
-            : this.Draw(kind, isOnTerrain: false);
+            ? this.Draw(kind, isOnTerrain: true) with { Elsewhere = this.Open(kind) }
+            : this.Open(kind);
+
+    /// <summary>The kind drawn on an open board, no river nor palace about it.</summary>
+    private MoveDiagram Open(PieceKindId kind) =>
+        this._open.GetOrAdd(kind, open => this.Draw(open, isOnTerrain: false));
 
     private MoveDiagram Draw(PieceKindId kind, bool isOnTerrain)
     {

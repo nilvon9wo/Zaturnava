@@ -271,6 +271,13 @@ public interface IRulesApplying
     /// </summary>
     PieceGuide GuideOf(PieceKindId kind) => new(new PieceKind(kind, []));
 
+    /// <summary>
+    /// How the piece on <paramref name="cell"/> moves, drawn where it stands, if where it stands changes that, as a
+    /// palace it stands in does a Guard's (the user's report of 2026-11-15, B6); none, else, or where the ruleset says
+    /// nothing of it: its kind's drawing (<see cref="GuideOf"/>) tells all.
+    /// </summary>
+    MoveDiagram? DiagramAt([Required] GameState state, CellId cell) => null;
+
     string NameOf(SeatId seat);
 
     /// <summary>What a die showing <paramref name="value"/> lets its roller do, for people: "Horse".</summary>

@@ -7,7 +7,8 @@
    that holds it. A piece it hops over, for a piece that hops, is a grey disc. The server draws it forward up. A river
    the piece may not cross is drawn along the lower edge of the first row across it; for a piece that steps along a
    palace's lines, a palace about it, as the board draws one: its wall, and a dashed line from each of its squares to
-   the throne the piece stands on; either, the player may put away, to see it on an open board. It is shown turned by
+   the throne - the piece standing on it, or, for a piece drawn where it stands in its own palace, where it is (B6);
+   either, the player may put away, to see it on an open board. It is shown turned by
    Angle, as the board shows the piece's own army - its forward, and the board's turn - with an arrow at its forward
    edge, unless it moves alike forward and back; the piece itself kept upright, on a square shaded as the one it
    stands on on the board (the centre's row and column always sum to an even number). Under it, what each mark shown
@@ -63,9 +64,9 @@
         {
             <svg class="palace-lines" viewBox="0 0 @this.Shown.Side @this.Shown.Side" aria-hidden="true">
                 <rect class="line palace" x="@this.Wall.X" y="@this.Wall.Y" width="@this.Wall.Width" height="@this.Wall.Height" />
-                @foreach (int cell in this.Shown.Palace.Where(cell => cell != this.Centre))
+                @foreach (int cell in this.Shown.Palace.Where(cell => cell != this.Throne))
                 {
-                    <line class="line palace-line" x1="@this.XOf(cell)" y1="@this.YOf(cell)" x2="@this.XOf(this.Centre)" y2="@this.YOf(this.Centre)" />
+                    <line class="line palace-line" x1="@this.XOf(cell)" y1="@this.YOf(cell)" x2="@this.XOf(this.Throne)" y2="@this.YOf(this.Throne)" />
                 }
             </svg>
         }
@@ -121,9 +122,13 @@
     {
         <span class="key-item"><span class="key river"></span>a river it may not cross</span>
     }
-    @if (!this.Shown.Palace.IsEmpty)
+    @if (!this.Shown.Palace.IsEmpty && this.Shown.Throne is null)
     {
         <span class="key-item"><span class="key palace"></span>in a palace, standing on its throne: along each line to the throne it moves and captures, diagonally too</span>
+    }
+    @if (this.Shown.Throne is not null)
+    {
+        <span class="key-item"><span class="key palace"></span>its palace, as it stands in it: along each line through its square to the throne, it moves and captures, diagonally too</span>
     }
 </p>
 
@@ -185,6 +190,9 @@
             .All(cells => cells.Select(this.Flipped).Order().SequenceEqual(cells.Order()));
 
     private int Centre => (this.Shown.Side * this.Shown.Side) / 2;
+
+    /// <summary>The palace's throne: where it is, for a piece drawn where it stands; else the centre it stands on.</summary>
+    private int Throne => this.Shown.Throne ?? this.Centre;
 
     /// <summary>The palace's wall: the box about its cells, in cells, from the top-left, as the SVG draws.</summary>
     private (int X, int Y, int Width, int Height) Wall

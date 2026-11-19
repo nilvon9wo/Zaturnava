@@ -97,6 +97,19 @@ public sealed class RulesApplyingTest
     }
 
     [Fact]
+    public void DiagramAt_WhenTheRulesetSaysNoOther_DrawsNothingButWhatItsKindsTell()
+    {
+        // Arrange
+        OneSizeRules rules = new();
+
+        // Act
+        MoveDiagram? diagram = DiagramAt(rules, OneSizeRules.State, new CellId(0));
+
+        // Assert
+        Assert.Null(diagram);
+    }
+
+    [Fact]
     public void LinesOfAndTerrainOf_WhenTheRulesetSaysNoOther_AreNone()
     {
         // Arrange
@@ -293,6 +306,10 @@ public sealed class RulesApplyingTest
     private static PieceGuide GuideOf<TRules>(TRules rules, PieceKindId kind)
         where TRules : IRulesApplying =>
         rules.GuideOf(kind);
+
+    private static MoveDiagram? DiagramAt<TRules>(TRules rules, GameState state, CellId cell)
+        where TRules : IRulesApplying =>
+        rules.DiagramAt(state, cell);
 
     private static (int Lines, string? Terrain) BoardOf<TRules>(TRules rules, GameState state)
         where TRules : IRulesApplying =>

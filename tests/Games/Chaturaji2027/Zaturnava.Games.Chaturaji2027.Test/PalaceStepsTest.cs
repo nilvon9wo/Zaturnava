@@ -129,6 +129,94 @@ public sealed class PalaceStepsTest
         Assert.DoesNotContain(new MoveAction(Black, Cell(0, 0), Cell(1, 1)), actions);
     }
 
+    [Theory]
+    [InlineData(0, 1, "20,24,50,56,60", 50)]
+    [InlineData(1, 0, "20,24,48,56,60", 48)]
+    public void DiagramAt_WhenAStepperStandsInItsPalace_DrawsThatPalaceAboutItAsItsArmyFacesIt(
+        int forwardColumns,
+        int forwardRows,
+        string moves,
+        int throne
+    )
+    {
+        // Arrange - the throne b2, the Boat on a1, facing up or right: from the centre of the diagram, 40, the throne
+        // is ahead and to the right, 50, or ahead and to the left, 48; the Boat leaps two squares diagonally
+        GameState state = Facing(
+            BlackToMove(Cell(1, 1), (Cell(0, 0), BlackBoat)),
+            new Direction(forwardColumns, forwardRows)
+        );
+
+        // Act
+        MoveDiagram? diagram = this._rules.DiagramAt(state, Cell(0, 0));
+
+        // Assert
+        Assert.Equal(
+            (moves, moves, (int?)throne, 9, "20,24,56,60"),
+            (
+                string.Join(",", diagram!.Moves),
+                string.Join(",", diagram.Captures),
+                diagram.Throne,
+                diagram.Palace.Count,
+                string.Join(",", diagram.Elsewhere!.Moves)
+            )
+        );
+    }
+
+    [Fact]
+    public void DiagramAt_WhenAForwardOnlyStepperStandsOnItsThrone_DrawsItsStepsTowardItsFrontOnly()
+    {
+        // Arrange - the throne b2, the Boat on it, facing up
+        Chaturaji2027Rules forward = RulesWith([Chaturaji2027Pieces.Boat], [Chaturaji2027Pieces.Boat]);
+        GameState state = Facing(BlackToMove(Cell(1, 1), (Cell(1, 1), BlackBoat)), new Direction(0, 1));
+
+        // Act
+        MoveDiagram? diagram = forward.DiagramAt(state, Cell(1, 1));
+
+        // Assert
+        Assert.Equal("20,24,48,49,50,56,60", string.Join(",", diagram!.Moves));
+    }
+
+    public static TheoryData<string, GameState, CellId> NotDrawn =>
+        new()
+        {
+            { "an empty cell", BlackToMove(Cell(1, 1), (Cell(0, 0), BlackBoat)), Cell(2, 2) },
+            { "not a stepper", BlackToMove(Cell(1, 1), (Cell(0, 0), BlackRaja)), Cell(0, 0) },
+            { "outside the palace", BlackToMove(Cell(1, 1), (Cell(4, 4), BlackBoat)), Cell(4, 4) },
+            { "no throne set", BlackToMove(null, (Cell(0, 0), BlackBoat)), Cell(0, 0) },
+            {
+                "no thrones at all",
+                BlackToMove(Cell(1, 1), (Cell(0, 0), BlackBoat)) with { Thrones = null },
+                Cell(0, 0)
+            },
+            {
+                "no palaces",
+                BlackToMove(Cell(1, 1), (Cell(0, 0), BlackBoat)) with { Palaces = null },
+                Cell(0, 0)
+            },
+        };
+
+    [Theory]
+    [MemberData(nameof(NotDrawn), DisableDiscoveryEnumeration = true)]
+    public void DiagramAt_WhenNoStepperStandsInAPalaceWithAThrone_DrawsNothing(
+        string why,
+        GameState state,
+        CellId cell
+    )
+    {
+        // Arrange - as given
+
+        // Act
+        MoveDiagram? diagram = this._rules.DiagramAt(state, cell);
+
+        // Assert
+        Assert.Null(diagram);
+        Assert.NotEmpty(why);
+    }
+
+    /// <summary><paramref name="state"/>, Black's army facing <paramref name="forward"/>.</summary>
+    private static GameState Facing(GameState state, Direction forward) =>
+        state with { Seats = state.Seats.SetItem(Black.Value, state.Seats[Black.Value] with { Forward = forward }) };
+
     /// <summary>
     /// The cells Black's pieces attack under <paramref name="rules"/>, but not without steppers, by name.
     /// </summary>
