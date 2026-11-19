@@ -1,11 +1,12 @@
 {
   "rulesetId": "grand-legions-medium",
   "name": "Mercenaries",
-  "description": "Black has rolled 3 and 4 (heavy) and holds Red's Dragon Horse, a Shogi piece: a mercenary. With 100 points, Black may hire it for 110% of its value, then place it on a later step.",
+  "description": "Black has rolled 3 and 4 (heavy) and holds Red's Dragon Horse, a Shogi piece: a mercenary. With 100 points, Black may hire it for 110% of its value, then place it on a later step, on a free square of Black's palace, a1 to c3.",
   "turn": "Black",
   "edition": 6,
   "dice": [3, 4],
   "scores": { "Black": 100 },
+  "palaces": { "Black": "b2" },
   "pieces": {
     "c1": "Black Gold General (Shogi)",
     "a1": "Black Rook (Western)",

@@ -23,7 +23,7 @@ internal static class PalaceLines
     [
         .. (state.Palaces ?? []).OrderBy(palace => palace.Key.Value).SelectMany(palace => Lines(
             palace.Value,
-            state.Thrones!.TryGetValue(palace.Key, out CellId throne) ? throne : null,
+            (state.Thrones ?? []).TryGetValue(palace.Key, out CellId throne) ? throne : null,
             grid
         )),
     ];

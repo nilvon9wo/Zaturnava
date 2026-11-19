@@ -194,14 +194,21 @@ internal sealed class Ransom(
     /// </summary>
     public ImmutableList<CellId> EscapesFor(GameState state, Prisoner prisoner)
     {
-        CellId home = this.HomeOf(state, prisoner.Piece.Id);
-        return state.Position.PieceAt(home) is { } there && !state.Teams.AreAllied(there.Owner, prisoner.Piece.Owner)
-            ? [home]
+        CellId? home = this.HomeOf(state, prisoner.Piece.Id);
+        return home is { } own
+            && state.Position.PieceAt(own) is { } there
+            && !state.Teams.AreAllied(there.Owner, prisoner.Piece.Owner)
+            ? [own]
             : this.PlacesFor(state, prisoner);
     }
 
-    /// <summary>Where <paramref name="piece"/> started, and lands should it escape (rules.md §7).</summary>
-    public CellId HomeOf(GameState state, PieceId piece) => this.HomesOf(state).Cells[piece];
+    /// <summary>
+    /// Where <paramref name="piece"/> started, and lands should it escape (rules.md §7); none, for a piece a scenario
+    /// set up beyond those a game starts with, as a prisoner it begins with may be (the user's report of 2026-11-19:
+    /// every bot's move in the Mercenaries scenario answered 500).
+    /// </summary>
+    public CellId? HomeOf(GameState state, PieceId piece) =>
+        this.HomesOf(state).Cells.TryGetValue(piece, out CellId home) ? home : null;
 
     /// <summary>The first prisoner waiting goes where its owner chose; the rest follow.</summary>
     public Transition Placed(GameState state, PlaceAction place)
@@ -263,10 +270,10 @@ internal sealed class Ransom(
     private ImmutableList<CellId> PlacesFor(GameState state, Prisoner prisoner)
     {
         Homes homes = this.HomesOf(state);
-        CellId home = homes.Cells[prisoner.Piece.Id];
+        CellId home = homes.HomeOf(prisoner.Piece);
         Direction forward = state.SeatOf(prisoner.Piece.Owner).Forward;
         ImmutableList<CellId> free = [.. this._grid.Cells.Where(cell => state.Position.PieceAt(cell) is null)];
-        ImmutableList<CellId> kin = [.. homes.Kin[prisoner.Piece.Id].Where(free.Contains)];
+        ImmutableList<CellId> kin = [.. homes.KinOf(prisoner.Piece).Where(free.Contains)];
         ImmutableList<CellId> palace = this._palaceBound.Contains(prisoner.Piece.Kind)
             && state.Edition >= PalaceFirstEdition
                 ? state.Palaces?.GetValueOrDefault(prisoner.Piece.Owner) ?? []
@@ -314,10 +321,12 @@ internal sealed class Ransom(
     /// </summary>
     private sealed class Homes(Position start)
     {
+        private readonly Position _start = start;
+
         public ImmutableDictionary<PieceId, CellId> Cells { get; } =
             start.Occupants.ToImmutableDictionary(occupant => occupant.Value.Id, occupant => occupant.Key);
 
-        public ImmutableDictionary<PieceId, ImmutableList<CellId>> Kin { get; } =
+        private ImmutableDictionary<PieceId, ImmutableList<CellId>> Kin { get; } =
             start.Occupants.ToImmutableDictionary(
                 occupant => occupant.Value.Id,
                 occupant => start.Occupants
@@ -327,5 +336,25 @@ internal sealed class Ransom(
                     .Select(other => other.Key)
                     .ToImmutableList()
             );
+
+        /// <summary>
+        /// Where <paramref name="piece"/> started; for one that started nowhere, as a scenario may set up, the first
+        /// square a piece of its army's of its kind started on, else the first any of its army's did.
+        /// </summary>
+        public CellId HomeOf(Piece piece) =>
+            this.Cells.TryGetValue(piece.Id, out CellId home)
+                ? home
+                : this.KinOf(piece).Concat(this.ArmyOf(piece)).FirstOrDefault();
+
+        /// <summary>The starting squares of the pieces of <paramref name="piece"/>'s army of its kind.</summary>
+        public ImmutableList<CellId> KinOf(Piece piece) =>
+            this.Kin.TryGetValue(piece.Id, out ImmutableList<CellId>? kin)
+                ? kin
+                : [.. this.ArmyOf(piece).Where(cell => this._start.PieceAt(cell)!.Kind == piece.Kind)];
+
+        private IEnumerable<CellId> ArmyOf(Piece piece) =>
+            this._start.Occupants
+                .Where(occupant => occupant.Value.Owner == piece.Owner)
+                .Select(occupant => occupant.Key);
     }
 }

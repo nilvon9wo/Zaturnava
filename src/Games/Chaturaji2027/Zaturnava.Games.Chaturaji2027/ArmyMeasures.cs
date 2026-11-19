@@ -35,7 +35,7 @@ internal sealed class ArmyMeasures(
     Func<GameState, CellId, Piece, IEnumerable<Move>> movesFrom,
     Func<GameState, SeatId, IEnumerable<Attack>> attacksOf,
     ThroneControl control,
-    Func<GameState, PieceId, CellId> homeOf,
+    Func<GameState, PieceId, CellId?> homeOf,
     Func<PieceKindId, int> worthOf
 )
 {
@@ -53,7 +53,7 @@ internal sealed class ArmyMeasures(
     private readonly Func<GameState, CellId, Piece, IEnumerable<Move>> _movesFrom = movesFrom;
     private readonly Func<GameState, SeatId, IEnumerable<Attack>> _attacksOf = attacksOf;
     private readonly ThroneControl _control = control;
-    private readonly Func<GameState, PieceId, CellId> _homeOf = homeOf;
+    private readonly Func<GameState, PieceId, CellId?> _homeOf = homeOf;
     private readonly Func<PieceKindId, int> _worthOf = worthOf;
 
     public static ImmutableList<string> Names { get; } =
@@ -93,7 +93,8 @@ internal sealed class ArmyMeasures(
         [
             .. state.Prisoners
                 .Where(prisoner => !state.Teams.AreAllied(prisoner.Piece.Owner, seat))
-                .Select(prisoner => this._homeOf(state, prisoner.Piece.Id)),
+                .Select(prisoner => this._homeOf(state, prisoner.Piece.Id))
+                .OfType<CellId>(),
         ];
         return state.Position.Occupants
             .Where(occupant => occupant.Value.Owner == seat && landings.Contains(occupant.Key))

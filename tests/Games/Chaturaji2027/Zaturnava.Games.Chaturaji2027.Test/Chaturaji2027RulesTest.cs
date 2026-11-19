@@ -407,6 +407,23 @@ public sealed class Chaturaji2027RulesTest
     }
 
     [Fact]
+    public void MeasuresOf_WhenAPrisonerStartedNowhere_MeasuresAndOffersItsEscapesAsAnyOther()
+    {
+        // Arrange - Yellow holds a Pawn of Black's that no game starts with, as a scenario may set one up (the user's
+        // report of 2026-11-19: every bot's move in the Mercenaries scenario answered 500)
+        GameState state = this.Later() with
+        {
+            Prisoners = [new Prisoner(Piece(99, Chaturaji2027Pieces.Pawn, Black), Yellow)],
+        };
+
+        // Act
+        ImmutableList<double> black = this._rules.MeasuresOf(state, Yellow);
+
+        // Assert
+        Assert.Equal(this._rules.Measures.Count, black.Count);
+    }
+
+    [Fact]
     public void MeasuresOf_WhenAPawnIsARowFromPromotingAndARajaIsInMidBoard_CountsTheirPartsWhereTheyStand()
     {
         // Arrange - Black's Pawn on d7, a row short of the far edge, with one move; its Raja on d4, with eight, three
@@ -3158,6 +3175,24 @@ public sealed class Chaturaji2027RulesTest
         // Assert
         GameOutcome won = new([Black, Green], "one-team-left", "only one team has pieces left");
         Assert.Equal((null, won), (transition.State.DecidingSeat, transition.State.Outcome));
+    }
+
+    [Fact]
+    public void LegalActions_WhenAPrisonerStartedNowhere_OffersItsEscapesAsAPieceGoingHomeFromARansom()
+    {
+        // Arrange - Black's Raja held by Yellow is one no game starts with, as a scenario may set up (the user's report
+        // of 2026-11-19: the Mercenaries scenario answered 500)
+        GameState state = this.Escapes() with
+        {
+            Dice = [5, 5],
+            Prisoners = [new Prisoner(Piece(99, Chaturaji2027Pieces.Raja, Black), Yellow)],
+        };
+
+        // Act
+        ImmutableList<GameAction> actions = this._rules.LegalActions(state);
+
+        // Assert
+        Assert.Contains(BlackThrone, actions.OfType<EscapeAction>().Select(escape => escape.Home));
     }
 
     [Fact]
