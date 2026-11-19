@@ -441,6 +441,16 @@
 
         <Leaderboard Game="@this.Game" />
     }
+    else if (this._problem is null)
+    {
+        <div class="reaching" role="status">
+            <span class="spinner" aria-hidden="true"></span>
+            <p>
+                Reaching the game server for the games and who is playing. If no one has played for a while, it may
+                take a few seconds to wake.
+            </p>
+        </div>
+    }
 </section>
 
 @code {

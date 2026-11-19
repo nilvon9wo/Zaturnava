@@ -104,6 +104,7 @@
                    Turn="this._boardTurn"
                    LastMove="this._lastMove"
                    Pieces="this.PiecesShown"
+                   PreviewAt="cell => this.PreviewOf(view, cell)"
                    OnCellClicked="this.Click" />
 
             <div class="@(this._turn is null ? "turn" : "turn yours")">
@@ -1631,6 +1632,21 @@
         this._palace = null;
         return this.Submit(claim, palace);
     }
+
+    /// <summary>
+    /// What placing on <paramref name="cell"/> would put there (I): the palace's wall, the player's throne, or the piece
+    /// coming onto the board; nothing, if nothing would be placed there.
+    /// </summary>
+    private BoardPreview? PreviewOf(GameViewDto view, int cell) =>
+        (this.Selection.Choice is { } choice ? this.Actions.PlacementAt(choice, cell) : null) switch
+        {
+            { Kind: PalaceKind } => new BoardPreview { Lines = [.. PalaceWalls(view, cell)] },
+            { Kind: ThroneKind } throne => new BoardPreview
+            {
+                ThroneOf = int.Parse(throne.Arguments[ActionArguments.Actor], CultureInfo.InvariantCulture),
+            },
+            _ => this.Placing(view) is { } placing ? new BoardPreview(placing.Piece with { Cell = cell }) : null,
+        };
 
     /// <summary>The board as the game has it; and, while the player places their palace, its wall.</summary>
     private GameViewDto Drawn(GameViewDto view) =>

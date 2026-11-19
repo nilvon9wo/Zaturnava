@@ -12,6 +12,15 @@
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.13" PrivateAssets="all" />
   </ItemGroup>
 
+  <!--
+    The page loads without the culture data (ICU) a browser would otherwise download first (playtest 2026-11-15, K:
+    the page slow to load on itch.io): it shows everything in the invariant culture, as it formats it already, but
+    the chat's times, which show as 24-hour times wherever the player is.
+  -->
+  <PropertyGroup>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
   <ItemGroup>
     <InternalsVisibleTo Include="Net.NowhereAtAll.Zaturnava.Web.Test" />
   </ItemGroup>

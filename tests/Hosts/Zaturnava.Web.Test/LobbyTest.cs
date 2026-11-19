@@ -1956,6 +1956,39 @@ public sealed class LobbyTest : IDisposable
     }
 
     [Fact]
+    public void Render_WhileTheServerHasNotAnswered_SaysItIsReachingItAndMayTakeAWhile()
+    {
+        // Arrange
+        this._page.Server.HeldCatalog = new TaskCompletionSource<CatalogDto>();
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Assert
+        Assert.Equal(
+            (1, 1, 0),
+            (
+                lobby.FindAll(".reaching .spinner").Count,
+                lobby.FindAll(".reaching[role='status']").Count,
+                lobby.FindAll("p.problem").Count
+            )
+        );
+    }
+
+    [Fact]
+    public void Render_WhenTheServerCannotBeReached_SaysSoAndNotThatItIsStillReachingIt()
+    {
+        // Arrange
+        this._page.Server.Failure = new HttpRequestException("No server.");
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Assert
+        Assert.Equal((1, 0), (lobby.FindAll("p.problem").Count, lobby.FindAll(".reaching").Count));
+    }
+
+    [Fact]
     public void FindByCode_WhenACodeIsEntered_ListsOnlyTheGameWhoseIdStartsSoWhateverTheFilters()
     {
         // Arrange
