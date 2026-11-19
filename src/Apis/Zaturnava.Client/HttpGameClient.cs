@@ -56,6 +56,9 @@ public sealed class HttpGameClient(HttpClient http) : IGameServing
             cancellationToken
         );
 
+    public Task<ScenarioGamesRemovedDto> RemoveScenarioGames(CancellationToken cancellationToken) =>
+        this.Send<ScenarioGamesRemovedDto>(HttpMethod.Delete, GameRoutes.ScenarioGames, null, null, cancellationToken);
+
     public Task<GameCreatedDto> Create([Required] CreateGameRequest request, CancellationToken cancellationToken) =>
         this.Send<GameCreatedDto>(HttpMethod.Post, GameRoutes.Games, request, null, cancellationToken);
 

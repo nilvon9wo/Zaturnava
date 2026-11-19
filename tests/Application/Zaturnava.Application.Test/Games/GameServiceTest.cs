@@ -1143,6 +1143,61 @@ public sealed class GameServiceTest
     }
 
     [Theory]
+    [InlineData(false, "False")]
+    [InlineData(true, "True")]
+    public async Task Page_WhenAskedForScenarioGamesOrNot_ListsOnlyThoseOrOnlyOthers(bool scenario, string expected)
+    {
+        // Arrange - the user's request of 2026-11-19: to hide scenario games on a development server
+        _ = await this.CreateOpen();
+        _ = await this.CreateSecondFirst();
+
+        // Act
+        GamePage page = await this._service.Page(new GameQuery(IsScenario: scenario), this._cancellation);
+
+        // Assert
+        Assert.Equal(expected, $"{Assert.Single(page.Games).IsScenario}");
+    }
+
+    [Fact]
+    public async Task RemoveScenarioGames_WhenScenariosAreOffered_LetsGoOfEveryGameStartedFromOneAndNoOther()
+    {
+        // Arrange - the user's request of 2026-11-19: to be rid of the games trying scenarios out leaves
+        GameId kept = await this.CreateOpen();
+        _ = await this.CreateSecondFirst();
+        _ = await this._service.Create(
+            RollingRules.RulesetId,
+            [SeatPlan.Open, SeatPlan.Open],
+            Rolling,
+            this._cancellation
+        );
+
+        // Act
+        int removed = await this._service.RemoveScenarioGames(this._cancellation);
+
+        // Assert
+        GamePage left = await this._service.Page(new GameQuery(), this._cancellation);
+        Assert.Equal((2, kept), (removed, Assert.Single(left.Games).Id));
+    }
+
+    [Fact]
+    public async Task RemoveScenarioGames_WhenNoScenariosAreOffered_ThrowsScenariosNotOfferedException()
+    {
+        // Arrange - a live server's
+        GameService service = this.Service(GameServiceSettings.Default, offersScenarios: false);
+        _ = await service.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
+
+        // Act
+        Task<int> removing = service.RemoveScenarioGames(this._cancellation);
+
+        // Assert
+        ScenariosNotOfferedException exception = await Assert.ThrowsAsync<ScenariosNotOfferedException>(() => removing);
+        Assert.Equal(
+            (GameRequestFailure.Forbidden, 1),
+            (exception.Failure, (await service.Page(new GameQuery(), this._cancellation)).Total)
+        );
+    }
+
+    [Theory]
     [InlineData(false, TinyRules.RulesetId)]
     [InlineData(true, RollingRules.RulesetId)]
     public async Task Page_WhenAskedForPreviewsOrNot_ListsOnlyThoseOrOnlyOthers(bool preview, string expected)
@@ -2289,6 +2344,9 @@ public sealed class GameServiceTest
             this._players,
             this._gate
         );
+
+    private Task<GameId> CreateSecondFirst() =>
+        this._service.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], SecondFirst, this._cancellation);
 
     private static ScenarioCatalog Scenarios() =>
         new(

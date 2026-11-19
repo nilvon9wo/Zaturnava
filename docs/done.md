@@ -120,6 +120,13 @@ only in part, what is left is in the backlog, and its history here. The playtest
 - **25** In the lobby, say when each game started (who plays, how many moves and which seats are
   open are shown). *Done*: each game says when it was created and last changed ("created 3 h ago, last change
   5 min ago").
+- **Scenario games on a development server** (asked 2026-11-19): an optional filter hiding them from **Waiting for
+  your move** and the games list; and a way to be rid of them, a button deleting them all, or each deleted as the
+  player leaves it. *Done*: where the server offers scenarios, the lobby offers **Hide games started from
+  scenarios**, hiding them from both lists and remembered with the list's other filters, and **Delete every
+  scenario game**, which lets go of them all at once (*Proposed*: the button, not deleting each as it is left,
+  which would lose a game the player meant to come back to). A server offering no scenarios refuses the deletion
+  as forbidden. Games are told apart by their first action, so no column was added to the database.
 
 ## Look and feel
 

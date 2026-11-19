@@ -72,6 +72,9 @@ internal sealed class StubGameServer : IGameServing
             query
         );
 
+    public Task<ScenarioGamesRemovedDto> RemoveScenarioGames(CancellationToken cancellationToken) =>
+        throw new NotSupportedException("No tool removes scenario games.");
+
     public Task<GameCreatedDto> Create([Required] CreateGameRequest request, CancellationToken cancellationToken) =>
         this.Answer(new GameCreatedDto(GameId), request);
 

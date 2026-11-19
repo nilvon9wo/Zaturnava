@@ -232,6 +232,12 @@ public static class ScenarioStart
     public static string? ScenarioIdOf([Required] ImmutableList<ActionDescriptor> actions) =>
         actions.FirstOrDefault() is { Kind: Kind } first && ScenarioOf(first).Id is { Length: > 0 } id ? id : null;
 
+    /// <summary>
+    /// Whether the first of <paramref name="actions"/> starts the game from a scenario, with an id or not.
+    /// </summary>
+    public static bool IsScenario([Required] ImmutableList<ActionDescriptor> actions) =>
+        actions.FirstOrDefault() is { Kind: Kind };
+
     public static ActionDescriptor Describe([Required] Scenario scenario) =>
         new(
             Kind,

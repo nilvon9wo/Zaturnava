@@ -173,6 +173,15 @@ internal sealed class FakeGameServer : IGameServing
         );
     }
 
+    /// <summary>How many times every scenario game was asked to be let go of.</summary>
+    public int ScenarioGamesRemoved { get; private set; }
+
+    public Task<ScenarioGamesRemovedDto> RemoveScenarioGames(CancellationToken cancellationToken)
+    {
+        this.ScenarioGamesRemoved++;
+        return this.Answer("remove scenario games", new ScenarioGamesRemovedDto(2));
+    }
+
     public Task<GameCreatedDto> Create([Required] CreateGameRequest request, CancellationToken cancellationToken)
     {
         this.Created = request;

@@ -74,6 +74,7 @@ internal static class GameViews
             AwaySeats = [.. game.Away.Select(seat => seat.Value)],
             DecidingSeat = game.Deciding?.Value,
             IsForPlayers = game.Controllers.Any(controller => controller is OpenSeat { IsForPlayers: true }),
+            IsScenario = game.IsScenario,
         };
 
     /// <summary>A game's history, on the wire: the same shape self-play writes it in.</summary>

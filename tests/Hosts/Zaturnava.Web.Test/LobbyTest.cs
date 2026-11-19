@@ -1433,6 +1433,75 @@ public sealed class LobbyTest : IDisposable
     }
 
     [Theory]
+    [InlineData(false, 1, null, "")]
+    [InlineData(true, 0, false, "hidden")]
+    public void HideScenarios_WhenTickedOrNot_HidesGamesStartedFromScenariosFromBothListsAndRemembersIt(
+        bool hidden,
+        int awaited,
+        bool? listed,
+        string remembered
+    )
+    {
+        // Arrange - a development server's, with a scenario game waiting for the player (the user's request of
+        // 2026-11-19)
+        this.SignInAsAdaAtYellow();
+        this._page.Server.Scenarios = [new ScenarioDto("escape", "chaturaji-2027", "Escape", "Doubles.")];
+        this._page.Server.Awaited = this._page.Server.Awaited.SetItem(
+            "player",
+            [new AwaitedGameDto(this._page.Server.Games[0] with { IsScenario = true }, 1)]
+        );
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Act
+        lobby.Find("input.hide-scenarios").Change(hidden);
+
+        // Assert
+        Assert.Equal(
+            (awaited, listed, remembered),
+            (
+                lobby.FindAll(".awaited").Count,
+                this._page.Server.Listed?.Scenario,
+                $"{this._page.JSInterop.Invocations["zaturnava.save"]
+                    .Last(saved => $"{saved.Arguments[0]}" == "zaturnava.games-list")
+                    .Arguments[1]}".Contains("scenarios=hidden", StringComparison.Ordinal)
+                    ? "hidden"
+                    : string.Empty
+            )
+        );
+    }
+
+    [Fact]
+    public void RemoveScenarioGames_WhenClicked_LetsGoOfThemAndListsTheGamesAgain()
+    {
+        // Arrange - a development server's (the user's request of 2026-11-19)
+        this.SignInAsAdaAtYellow();
+        this._page.Server.Scenarios = [new ScenarioDto("escape", "chaturaji-2027", "Escape", "Doubles.")];
+        IRenderedComponent<Lobby> lobby = this.Render();
+        int listings = this._page.Server.Calls.Count(call => call == "list");
+
+        // Act
+        lobby.Find("button.remove-scenario-games").Click();
+
+        // Assert
+        Assert.Equal(
+            (1, listings + 1),
+            (this._page.Server.ScenarioGamesRemoved, this._page.Server.Calls.Count(call => call == "list"))
+        );
+    }
+
+    [Fact]
+    public void Render_WhenTheServerOffersNoScenarios_OffersNeitherToHideNorToDeleteScenarioGames()
+    {
+        // Arrange - a live server's
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Assert
+        Assert.Empty(lobby.FindAll("input.hide-scenarios, button.remove-scenario-games"));
+    }
+
+    [Theory]
     [InlineData(false)]
     [InlineData(true)]
     public void Render_WhenNoGameWaitsForThePlayer_ShowsNoneWaiting(bool isKnown)
@@ -1987,6 +2056,27 @@ public sealed class LobbyTest : IDisposable
                 this._page.Server.Listed?.Player
             )
         );
+    }
+
+    [Theory]
+    [InlineData(true, false)]
+    [InlineData(false, null)]
+    public void Render_WhenScenarioGamesWereLeftHidden_HidesThemAgainWhereScenariosAreOffered(
+        bool offersScenarios,
+        bool? expected
+    )
+    {
+        // Arrange - a development server's, or one no longer offering scenarios
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.games-list").SetResult("scenarios=hidden");
+        this._page.Server.Scenarios = offersScenarios
+            ? [new ScenarioDto("escape", "chaturaji-2027", "Escape", "Doubles.")]
+            : [];
+
+        // Act
+        _ = this.Render();
+
+        // Assert
+        Assert.Equal(expected, this._page.Server.Listed?.Scenario);
     }
 
     [Theory]

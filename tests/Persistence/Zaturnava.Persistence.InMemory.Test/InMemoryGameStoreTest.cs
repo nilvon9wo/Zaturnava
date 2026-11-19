@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using Net.NowhereAtAll.Zaturnava.Application.Games;
 using Net.NowhereAtAll.Zaturnava.Application.Players;
 using Net.NowhereAtAll.Zaturnava.Application.Ports;
+using Net.NowhereAtAll.Zaturnava.Application.Scenarios;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 
@@ -90,6 +91,32 @@ public sealed class InMemoryGameStoreTest
 
         // Assert
         Assert.Equal(expected, string.Join(",", page.Games.Select(game => game.Id.Value)));
+    }
+
+    [Theory]
+    [InlineData(true, "e True")]
+    [InlineData(false, "b False,c False,a False")]
+    public async Task Page_WhenAskedForScenarioGamesOrNot_ListsOnlyThoseOrOnlyOthersSayingWhich(
+        bool scenario,
+        string expected
+    )
+    {
+        // Arrange - and a game started from a scenario (the user's request of 2026-11-19: to hide them)
+        await this.AddListed();
+        await this._store.Add(
+            Record("e") with
+            {
+                Actions = [new ActionDescriptor(ScenarioStart.Kind, Arguments)],
+                LastChanged = DateTimeOffset.UnixEpoch.AddHours(4),
+            },
+            this._cancellation
+        );
+
+        // Act
+        GamePage page = await this._store.Page(new GameQuery(IsScenario: scenario), Tiny, this._cancellation);
+
+        // Assert
+        Assert.Equal(expected, string.Join(",", page.Games.Select(game => $"{game.Id.Value} {game.IsScenario}")));
     }
 
     [Fact]

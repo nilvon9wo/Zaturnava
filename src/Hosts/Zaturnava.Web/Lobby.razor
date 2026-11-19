@@ -64,6 +64,20 @@
                     Show preview games, not yet ready for everyone
                 </label>
             }
+            @if (!catalog.Scenarios.IsEmpty)
+            {
+                @* A development server's: only it offers scenarios. *@
+                <label class="scenario-games">
+                    <input type="checkbox"
+                           class="hide-scenarios"
+                           checked="@this.AreScenariosHidden"
+                           @onchange="this.HideScenarios" />
+                    Hide games started from scenarios
+                </label>
+                <button class="remove-scenario-games" @onclick="this.RemoveScenarioGames">
+                    Delete every scenario game
+                </button>
+            }
         </div>
         @if (this.IsNewGameShown)
         {
@@ -342,7 +356,11 @@
         }
 
         <div class="games-column">
-        @if (this._me is { } me && !this._awaited.IsEmpty)
+        @{
+            ImmutableList<AwaitedGameDto> awaited =
+                [.. this._awaited.Where(waiting => !(this.AreScenariosHidden && waiting.Game.IsScenario))];
+        }
+        @if (this._me is { } me && !awaited.IsEmpty)
         {
             <div class="panel awaited">
                 <h2>Waiting for your move</h2>
@@ -352,7 +370,7 @@
                 </p>
                 @this.GamesTable(
                     catalog,
-                    [.. this._awaited.Select(awaited => awaited.Game)],
+                    [.. awaited.Select(waiting => waiting.Game)],
                     isSortable: false,
                     game => this.AwaitedActions(game, me.Token)
                 )
@@ -1119,6 +1137,29 @@
     private const string PeopleChoice = "people";
     private const string PlayersChoice = "players";
     private const string SizeChoice = "size";
+    private const string ScenariosChoice = "scenarios";
+
+    /// <summary>Whether games started from scenarios are hidden, here and among those waiting for the player.</summary>
+    private bool AreScenariosHidden => this._filter.Scenario == false;
+
+    /// <summary>
+    /// Hides games started from scenarios, or shows them, on a development server (the user's request of 2026-11-19).
+    /// </summary>
+    private Task HideScenarios(ChangeEventArgs change) =>
+        this.Filter(this._filter with { Scenario = true.Equals(change.Value) ? false : null });
+
+    /// <summary>Lets go of every game started from a scenario, and lists the games again without them.</summary>
+    private async Task RemoveScenarioGames()
+    {
+        this._problem = await Requests.Attempt(async () =>
+        {
+            _ = await this.Games.RemoveScenarioGames(CancellationToken.None);
+            this._awaited = this._me is { } me
+                ? await this.Games.Awaiting(me.Token, CancellationToken.None) ?? []
+                : [];
+            await this.ListGames();
+        });
+    }
 
     /// <summary>
     /// Remembers how the games list is filtered and sorted, to show it so again (Stated, 2026-11-19); not the game
@@ -1131,7 +1172,8 @@
                     .Add(StateChoice, StateOf(this._filter))
                     .Add(PeopleChoice, this._filter.PeopleOnly == true ? "1" : string.Empty)
                     .Add(PlayersChoice, this._filter.Players ?? string.Empty)
-                    .Add(SizeChoice, this._filter.Ruleset ?? string.Empty),
+                    .Add(SizeChoice, this._filter.Ruleset ?? string.Empty)
+                    .Add(ScenariosChoice, this._filter.Scenario == false ? "hidden" : string.Empty),
                 this._sortBy,
                 this._isDescending
             )
@@ -1150,6 +1192,7 @@
             PeopleOnly = view[PeopleChoice] is "1" ? true : null,
             Players = view[PlayersChoice],
             Ruleset = SizesOf(catalog, game).Any(size => size.Id == view[SizeChoice]) ? view[SizeChoice] : null,
+            Scenario = view[ScenariosChoice] is "hidden" && !catalog.Scenarios.IsEmpty ? false : null,
         };
         this._sortBy = view.Sort;
         this._isDescending = view.IsDescending;

@@ -22,6 +22,9 @@ namespace Net.NowhereAtAll.Zaturnava.Contracts;
 /// The start of a game's id, as one player gives another to find it by (the user's report of 2026-11-15, H2): the
 /// games whose ids start so; case does not count.
 /// </param>
+/// <param name="Scenario">
+/// Games started from a scenario, or not (the user's request of 2026-11-19: to hide them, on a development server).
+/// </param>
 public sealed record GameListQuery(
     string? Ruleset = null,
     bool? Open = null,
@@ -33,7 +36,8 @@ public sealed record GameListQuery(
     bool? Preview = null,
     string? Players = null,
     string? Player = null,
-    string? Code = null
+    string? Code = null,
+    bool? Scenario = null
 )
 {
     /// <summary>The query as an address's query string, from its "?"; empty, if it asks nothing.</summary>
@@ -50,6 +54,7 @@ public sealed record GameListQuery(
                 ("players", Escaped(this.Players)),
                 ("player", Escaped(this.Player)),
                 ("code", Escaped(this.Code)),
+                ("scenario", Flag(this.Scenario)),
                 ("page", Number(this.Page)),
                 ("pageSize", Number(this.PageSize)),
             }

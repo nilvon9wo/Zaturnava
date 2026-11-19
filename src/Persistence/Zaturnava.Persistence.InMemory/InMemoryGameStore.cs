@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using Net.NowhereAtAll.Zaturnava.Application.Games;
 using Net.NowhereAtAll.Zaturnava.Application.Players;
 using Net.NowhereAtAll.Zaturnava.Application.Ports;
+using Net.NowhereAtAll.Zaturnava.Application.Scenarios;
 using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 
 namespace Net.NowhereAtAll.Zaturnava.Persistence.InMemory;
@@ -37,6 +38,9 @@ public sealed class InMemoryGameStore : IGamePersisting
                 .Where(game => query.PeopleOnly is not { } people || !game.Controllers.Any(IsBot) == people)
                 .Where(game => query.IsOver is not { } over || (game.IsOver ?? false) == over)
                 .Where(game => query.Code is not { } code || game.Id.Value.StartsWith(code, StringComparison.Ordinal))
+                .Where(game => query.IsScenario is not { } scenario
+                    || ScenarioStart.IsScenario(game.Actions) == scenario
+                )
                 .OrderByDescending(game => game.LastChanged)
                 .ThenBy(game => game.Id.Value, StringComparer.Ordinal),
         ];
