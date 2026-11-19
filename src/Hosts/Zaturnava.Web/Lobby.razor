@@ -336,6 +336,13 @@
                     promotes on reaching the edge to its right
                 </label>
             }
+            @if (mode == SetupMode.Custom && this.Ruleset(catalog).HasDice)
+            {
+                <label class="dice-off">
+                    <input type="checkbox" class="no-dice" @bind="this._areDiceOff" />
+                    Play without dice: nothing is rolled for, not who goes first, nor more moves, nor an escape
+                </label>
+            }
             @if (mode == SetupMode.Custom && this._me is not null)
             {
                 <label class="for-players">
@@ -596,6 +603,12 @@
     /// (Stated, 2026-11-13: off by default, and remembered as last set).
     /// </summary>
     private bool _promotesAtSide;
+
+    /// <summary>
+    /// For a game that rolls dice, whether it is played without them (the user's request of 2026-11-19; Proposed: off
+    /// by default, and remembered as last set).
+    /// </summary>
+    private bool _areDiceOff;
     private string? _problem;
 
     /// <summary>How the player last started each game, by the game, as the browser remembers.</summary>
@@ -652,6 +665,7 @@
             IsHiddenFromAllies = this._isHiddenFromAllies,
             IsForPlayers = this._isForPlayers,
             PromotesAtSide = this._promotesAtSide,
+            AreDiceOff = this._areDiceOff,
             Board = this.BoardAsked(catalog),
         };
 
@@ -719,6 +733,7 @@
         this._isHiddenFromAllies = setup.IsHiddenFromAllies;
         this._isForPlayers = setup.IsForPlayers;
         this._promotesAtSide = setup.PromotesAtSide && ruleset.MayPromoteAtSide;
+        this._areDiceOff = setup.AreDiceOff && ruleset.HasDice;
     }
 
     /// <summary>The seats as <paramref name="setup"/> has them; a bot it chose that is no longer offered, any.</summary>
@@ -863,7 +878,13 @@
                             <td class="moves">@game.Moves</td>
                             <td class="created">@this.Ago(game.Created)</td>
                             <td class="changed">@this.Ago(game.LastChanged)</td>
-                            <td class="game-actions">@actions(game)</td>
+                            <td class="game-actions">
+                                @if (game.AreDiceOff)
+                                {
+                                    <span class="no-dice" title="Whoever set it up turned its dice off">No dice</span>
+                                }
+                                @actions(game)
+                            </td>
                         </tr>
                     }
                 </tbody>
@@ -1290,6 +1311,7 @@
         this._armies = this.Ruleset(catalog).IsDraftable ? DraftOwn : RandomEach;
         this._budget = this.Ruleset(catalog).DraftBudget;
         this._promotesAtSide = false;
+        this._areDiceOff = false;
     }
 
     /// <summary>
@@ -1456,6 +1478,7 @@
         {
             Board = this.BoardAsked(catalog),
             PromotesAtSide = this._promotesAtSide && this.Ruleset(catalog).MayPromoteAtSide,
+            AreDiceOff = this._areDiceOff && this.Ruleset(catalog).HasDice,
         };
 
     /// <summary>How each seat set up by strength is played: the player's own, and a person's, by no bot.</summary>

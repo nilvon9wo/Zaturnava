@@ -532,6 +532,38 @@ public sealed class StandingServiceTest
         );
     }
 
+    [Fact]
+    public async Task RateFinished_WhenTheGameWasPlayedWithoutDice_RatesItsPlayersAndBotsApart()
+    {
+        // Arrange - Ada and Bea beat the first-choice bot, rated 1700 at the rules, and one no longer offered, in a
+        // game without dice
+        GameRecord game = Record(
+            "g",
+            new HumanSeat("ada", Ada),
+            new BotSeat(FirstChoiceBot.BotId),
+            new HumanSeat("bea", Bea),
+            new BotSeat("gone")
+        );
+        await this._games.Add(game, this._cancellation);
+        StandingService service =
+            this.Service(new EndedRules(EndedRules.State([Black]) with { AreDiceOff = true }), 1700);
+        string apart = EndedRules.RulesetId + StandingService.WithoutDice;
+
+        // Act
+        _ = await service.RateFinished(this._cancellation);
+
+        // Assert - the bot is rated as it is at the rules' sizes, whatever the dice
+        ImmutableDictionary<PlayerId, Standing> withDice =
+            await this._players.Standings(EndedRules.RulesetId, [Ada], this._cancellation);
+        ImmutableDictionary<PlayerId, Standing> without =
+            await this._players.Standings(apart, [Ada], this._cancellation);
+        ImmutableList<BotLeader> bots = await service.BotLeaders(apart, this._cancellation);
+        Assert.Equal(
+            (0, 1, 1, 1700.0),
+            (withDice.Count, without[Ada].Won, bots.Single().Standing.Lost, bots.Single().Elo)
+        );
+    }
+
     private static GameRecord Record(string id, params SeatController[] seats) =>
         new(new GameId(id), EndedRules.RulesetId, [.. seats], [], 1)
         {

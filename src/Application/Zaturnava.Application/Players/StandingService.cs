@@ -111,7 +111,7 @@ public sealed class StandingService(
         ImmutableList<BotStanding> leaders = await this._players.BotLeaders(game, MostLeaders, cancellationToken);
         ImmutableHashSet<string> sizes =
         [
-            .. this._rulesets.All.Where(ruleset => ruleset.GameId == game).Select(ruleset => ruleset.Id),
+            .. this._rulesets.All.Where(ruleset => ruleset.GameId == GameOf(game)).Select(ruleset => ruleset.Id),
         ];
         return
         [
@@ -153,7 +153,7 @@ public sealed class StandingService(
     /// <summary>The player a game of <paramref name="game"/> waits for, at a seat they play themselves.</summary>
     private PlayerId? AwaitedPlayer(GameRecord record, string game) =>
         this.Replayed(record) is { } snapshot
-        && snapshot.Rules.GameId == game
+        && RatedAs(snapshot) == game
         && snapshot.State.DecidingSeat is { } seat
         && record.Controllers[seat.Value] is HumanSeat { IsAi: false } human
             ? human.Claimant
@@ -164,10 +164,27 @@ public sealed class StandingService(
             ? GameSnapshot.TryOf(game, rules)
             : null;
 
+    /// <summary>
+    /// What a game played without dice is rated as, apart from its game played with them: its game's id, then this
+    /// (the user's request of 2026-11-19).
+    /// </summary>
+    public const string WithoutDice = "-without-dice";
+
+    /// <summary>
+    /// The game <paramref name="snapshot"/>'s players stand at: its game, or, played without dice, that game without
+    /// dice (<see cref="WithoutDice"/>).
+    /// </summary>
+    public static string RatedAs([Required] GameSnapshot snapshot) =>
+        snapshot.State.AreDiceOff ? snapshot.Rules.GameId + WithoutDice : snapshot.Rules.GameId;
+
+    /// <summary>The game whatever <paramref name="game"/> rates is of, with dice or without.</summary>
+    private static string GameOf(string game) =>
+        game.EndsWith(WithoutDice, StringComparison.Ordinal) ? game[..^WithoutDice.Length] : game;
+
     private async Task Rate(GameSnapshot snapshot, GameOutcome outcome, CancellationToken cancellationToken)
     {
         GameState state = snapshot.State;
-        string game = snapshot.Rules.GameId;
+        string game = RatedAs(snapshot);
         ImmutableDictionary<SeatId, PlayerId> rated = state.Seats
             .Select(seat => (seat.Id, Player: RatedPlayer(snapshot.Record.Controllers[seat.Id.Value])))
             .Where(entry => entry.Player is not null)
@@ -199,7 +216,7 @@ public sealed class StandingService(
     /// </summary>
     private async Task RateBots(GameSnapshot snapshot, GameOutcome outcome, CancellationToken cancellationToken)
     {
-        string game = snapshot.Rules.GameId;
+        string game = RatedAs(snapshot);
         ImmutableList<(SeatId Seat, string Bot)> seated =
         [
             .. snapshot.State.Seats

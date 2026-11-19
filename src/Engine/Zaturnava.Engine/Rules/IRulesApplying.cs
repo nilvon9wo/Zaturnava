@@ -109,6 +109,18 @@ public interface IRulesApplying
     bool MayPromoteAtSide => false;
 
     /// <summary>
+    /// Whether the ruleset rolls dice, so that a game's creator may turn them off (<see cref="WithoutDice"/>). None
+    /// does, unless the ruleset says so.
+    /// </summary>
+    bool HasDice => false;
+
+    /// <summary>
+    /// The game <paramref name="state"/> begins, played without dice (<see cref="GameState.AreDiceOff"/>): begun, if
+    /// it waited on dice to see who goes first, by the first seat.
+    /// </summary>
+    GameState WithoutDice([Required] GameState state) => state with { AreDiceOff = true };
+
+    /// <summary>
     /// Whether a game's players may draft their own armies (<see cref="Drafted"/>), rather than have them dealt. None
     /// may, unless the ruleset says so.
     /// </summary>

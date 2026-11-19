@@ -79,7 +79,9 @@ public sealed class GameTools(IGameServing games)
         "A game as it stands: the cells (with where each is drawn), the pieces and their cells, the seats and "
         + "scores, whose decision it is (decidingSeat, null once over), that seat's legal actions, the dice "
         + "it has rolled this turn and not used yet (with what each lets it move), and a log of what has "
-        + "happened lately. While armies are drafted in secret (isDraftSecret), give your token to see what your "
+        + "happened lately. A game played without dice (areDiceOff) never rolls: no roll is ever a legal action, "
+        + "the first seat opens it, and nothing needing doubles, such as an escape, can happen. While armies are "
+        + "drafted in secret (isDraftSecret), give your token to see what your "
         + "team drafted; no other team's is shown, nor an ally's if the game hides them from allies too "
         + "(isDraftHiddenFromAllies)."
     )]

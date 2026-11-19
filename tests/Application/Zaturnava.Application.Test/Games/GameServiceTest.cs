@@ -177,6 +177,71 @@ public sealed class GameServiceTest
     }
 
     [Theory]
+    [InlineData(true, true, true)]
+    [InlineData(false, true, true)]
+    [InlineData(true, false, true)]
+    [InlineData(true, true, false)]
+    public async Task Create_WhenDiceAreAskedOff_PlaysWithoutThemIfTheRulesRollThem(
+        bool isDealt,
+        bool hasDice,
+        bool isAsked
+    )
+    {
+        // Arrange
+        GameService service = this.Service(GameServiceSettings.Default, isDealt: isDealt, hasDice: hasDice);
+        GameId id = await service.Create(
+            TinyRules.RulesetId,
+            [SeatPlan.Open, SeatPlan.Open],
+            null,
+            new Dealing { AreDiceOff = isAsked },
+            this._cancellation
+        );
+
+        // Act
+        GameSnapshot snapshot = await service.Get(id, this._cancellation);
+
+        // Assert
+        bool expected = hasDice && isAsked;
+        Assert.Equal(
+            (expected, expected, isDealt || expected),
+            (
+                ScenarioStart.AreDiceOff(snapshot.Record.Actions),
+                snapshot.State.AreDiceOff,
+                !snapshot.Record.Actions.IsEmpty && ScenarioStart.IsStart(snapshot.Record.Actions[0])
+            )
+        );
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Create_WhenTheSameArmiesArePlayedAgain_HasDiceAsAskedNowWhateverTheGameBefore(bool isAsked)
+    {
+        // Arrange - the game before had its dice off as asked now not
+        GameService service = this.Service(GameServiceSettings.Default, isDealt: true, hasDice: true);
+        GameId before = await service.Create(
+            TinyRules.RulesetId,
+            [SeatPlan.Open, SeatPlan.Open],
+            null,
+            new Dealing { AreDiceOff = !isAsked },
+            this._cancellation
+        );
+        GameId again = await service.Create(
+            TinyRules.RulesetId,
+            [SeatPlan.Open, SeatPlan.Open],
+            null,
+            new Dealing(ArmiesOf: before) { AreDiceOff = isAsked },
+            this._cancellation
+        );
+
+        // Act
+        GameSnapshot snapshot = await service.Get(again, this._cancellation);
+
+        // Assert
+        Assert.Equal(isAsked, snapshot.State.AreDiceOff);
+    }
+
+    [Theory]
     [InlineData(true, true)]
     [InlineData(false, false)]
     public async Task Create_WhenTheArmiesAreAskedToBeDrafted_DraftsThemIfTheRulesLetPlayers(
@@ -2319,7 +2384,8 @@ public sealed class GameServiceTest
         Func<GameState, GameState>? filled = null,
         BoardSize? sizable = null,
         bool mayPromoteAtSide = false,
-        bool offersScenarios = true
+        bool offersScenarios = true,
+        bool hasDice = false
     ) =>
         new(
             new RulesetCatalog(
@@ -2330,6 +2396,7 @@ public sealed class GameServiceTest
                         Filled = filled,
                         SizableBoard = sizable,
                         MayPromoteAtSide = mayPromoteAtSide,
+                        HasDice = hasDice,
                     },
                     new RollingRules(GameLength),
                 ]

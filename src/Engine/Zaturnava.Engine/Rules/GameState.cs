@@ -54,6 +54,13 @@ public sealed record GameState(
     public bool PromotesAtSide { get; init; }
 
     /// <summary>
+    /// Whether the game is played without dice, a pure abstract strategy game (<see cref="IRulesApplying.HasDice"/>):
+    /// nothing is rolled for, not who goes first, nor more moves, nor an escape; only if the game's creator chose so
+    /// (the user's request of 2026-11-19).
+    /// </summary>
+    public bool AreDiceOff { get; init; }
+
+    /// <summary>
     /// The edition of the ruleset's pieces the armies the program deals this game, fills at random, or offers in a
     /// draft, are drawn from (<see cref="IRulesApplying.Deal"/>), and of the rules it is played by, a ruleset's later
     /// rules applying from the edition that brought them: 0, in a game dealt before there was another, so that it

@@ -104,10 +104,11 @@ public sealed class GameService(
     )
     {
         IRulesApplying offered = this._rulesets.Find(rulesetId);
-        ImmutableList<ActionDescriptor> start = (scenarioId, offered.IsDealt) switch
+        bool areDiceOff = dealing.AreDiceOff && offered.HasDice;
+        ImmutableList<ActionDescriptor> start = (scenarioId, offered.IsDealt, areDiceOff) switch
         {
-            ({ } scenario, _) => [ScenarioStart.Describe(this.ScenarioFor(offered, scenario))],
-            (null, true) => await this.DealFor(
+            ({ } scenario, _, _) => [ScenarioStart.Describe(this.ScenarioFor(offered, scenario))],
+            (null, true, _) => await this.DealFor(
                 offered,
                 dealing with
                 {
@@ -117,9 +118,11 @@ public sealed class GameService(
                     Budget = dealing.Budget is < 1
                         ? throw new InvalidGameSetupException("An army's budget is at least 1.")
                         : dealing.Budget,
+                    AreDiceOff = areDiceOff,
                 },
                 cancellationToken
             ),
+            (null, false, true) => [ScenarioStart.WithoutDice()],
             _ => [],
         };
         IRulesApplying rules = ScenarioStart.RulesOf(start, offered);
@@ -151,7 +154,11 @@ public sealed class GameService(
     {
         GameRecord? previous = dealing.ArmiesOf is { } id ? await this._store.Find(id, cancellationToken) : null;
         return previous is { Actions: [{ Kind: ScenarioStart.DealKind } first, ..] }
-            ? [first, .. DraftOf(previous.Actions, ScenarioStart.RulesOf(previous.Actions, offered))]
+            ?
+            [
+                ScenarioStart.WithDiceOff(first, dealing.AreDiceOff),
+                .. DraftOf(previous.Actions, ScenarioStart.RulesOf(previous.Actions, offered)),
+            ]
             :
             [
                 ScenarioStart.Dealt(
@@ -160,7 +167,8 @@ public sealed class GameService(
                     dealing.Drafting,
                     dealing.Board,
                     dealing.PromotesAtSide,
-                    dealing.Budget
+                    dealing.Budget,
+                    dealing.AreDiceOff
                 ),
             ];
     }

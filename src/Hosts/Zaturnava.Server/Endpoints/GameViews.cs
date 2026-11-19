@@ -75,6 +75,7 @@ internal static class GameViews
             DecidingSeat = game.Deciding?.Value,
             IsForPlayers = game.Controllers.Any(controller => controller is OpenSeat { IsForPlayers: true }),
             IsScenario = game.IsScenario,
+            AreDiceOff = game.AreDiceOff,
         };
 
     /// <summary>A game's history, on the wire: the same shape self-play writes it in.</summary>
@@ -180,6 +181,7 @@ internal static class GameViews
             IsDraftHiddenFromAllies = ScenarioStart.DraftingOf(snapshot.Record.Actions)?.IsHiddenFromAllies ?? false,
             Board = SizeOf(ScenarioStart.BoardOf(snapshot.Record.Actions)),
             PromotesAtSide = snapshot.State.PromotesAtSide,
+            AreDiceOff = snapshot.State.AreDiceOff,
             DraftLeft = shown.Draft is { } draft
                 ? [.. snapshot.State.Seats.Select(seat => LeftOf(draft, seat.Id))]
                 : null,
@@ -404,6 +406,7 @@ internal static class GameViews
             IsDealt = rules.IsDealt,
             IsDraftable = rules.IsDraftable,
             MayPromoteAtSide = rules.MayPromoteAtSide,
+            HasDice = rules.HasDice,
             DraftBudget = rules.DraftBudget,
             DraftBudgetLimit = rules.DraftBudgetLimit,
             SizableBoard = SizeOf(rules.SizableBoard),

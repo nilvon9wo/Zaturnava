@@ -284,6 +284,18 @@
                 {
                     ImmutableList<ActionDto> promotions = [.. this.AtSelection(turn).Where(IsPromotion)];
                     ImmutableList<ActionDto> atPiece = [.. this.AtSelection(turn).Where(action => !IsPromotion(action))];
+                    @if (this._eitherOf is { } either)
+                    {
+                        <div class="either-of" role="group" aria-labelledby="either-of-question">
+                            <span id="either-of-question" class="name">Swap or capture?</span>
+                            @foreach (ActionDto action in either)
+                            {
+                                <button class="action either" @onclick="() => this.ChooseEither(turn.Claim, action)">
+                                    @(action.Label is { } label ? this.Named(label) : "Capture it")
+                                </button>
+                            }
+                        </div>
+                    }
                     @if (!atPiece.IsEmpty)
                     {
                         <div class="at-piece">
@@ -908,9 +920,18 @@
 
     private BoardActions Actions => this._turn?.Actions ?? NoActions;
 
-    /// <summary>The safety switched while the player decides changes what they may do at once.</summary>
-    protected override void OnParametersSet() =>
+    /// <summary>
+    /// The safety switched while the player decides changes what they may do at once, and asks again what it asked.
+    /// </summary>
+    protected override void OnParametersSet()
+    {
         this._turn = this._turn is { } turn ? this.TurnOf(turn.Claim, this._view!) : null; // a turn is had in a view
+        this._eitherOf = this.IsSafetyOn == this._wasSafetyOn ? this._eitherOf : null;
+        this._wasSafetyOn = this.IsSafetyOn;
+    }
+
+    /// <summary>Whether the safety was on when the page last looked, so that switching it is seen.</summary>
+    private bool _wasSafetyOn = true;
 
     /// <summary>
     /// The player's turn: what they may do, but, while the safety is on, take a piece of their own team.
@@ -1351,6 +1372,7 @@
                 IsHiddenFromAllies = view.IsDraftHiddenFromAllies,
                 Board = view.Board,
                 PromotesAtSide = view.PromotesAtSide,
+                AreDiceOff = view.AreDiceOff,
             },
             view.IsForPlayers
         ));
@@ -1689,12 +1711,30 @@
     {
         this._inspected = this._view!.Pieces.Find(piece => piece.Cell == cell)?.Id ?? this._inspected;
         this.PutAwayOffBoard(); // a click on the board shows its card, or the one of the piece being placed
+        int? from = this.Selection.Selected;
         (BoardSelection next, ActionDto? chosen) = this.Selection.Click(cell, this.Actions);
         this._selection = next;
         this._palace = chosen is { Kind: PalaceKind } palace ? (cell, palace) : this._palace;
-        return this._turn is { } turn && chosen is { Kind: not PalaceKind } action
+        ImmutableList<ActionDto> either = from is { } start && chosen is not null
+            ? this.Actions.AllBetween(start, cell)
+            : [];
+        this._eitherOf = either.Count > 1 ? either : null;
+        return this._turn is { } turn && chosen is { Kind: not PalaceKind } action && this._eitherOf is null
             ? this.Submit(turn.Claim, action)
             : Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// The moves the player must choose between, onto one piece, as swapping places with an ally or taking it (the
+    /// user's request of 2026-11-19: with Safety off, ask "Swap or capture?"); none, while there is nothing to ask.
+    /// </summary>
+    private ImmutableList<ActionDto>? _eitherOf;
+
+    /// <summary>One of the moves the player had to choose between, chosen.</summary>
+    private Task ChooseEither(SeatClaim claim, ActionDto action)
+    {
+        this._eitherOf = null;
+        return this.Submit(claim, action);
     }
 
     /// <summary>Builds the palace where the player placed it.</summary>
@@ -1873,6 +1913,7 @@
         this._isBotDeciding = view.DecidingSeat is { } seat
             && view.Seats[seat].Controller == BotController
             && OpenSeatsOf(view) is null;
+        this._eitherOf = isNew ? null : this._eitherOf;
         this._selection = (isNew, this._turn, view.PromotionDue) switch
         {
             (false, { }, _) => this._selection,

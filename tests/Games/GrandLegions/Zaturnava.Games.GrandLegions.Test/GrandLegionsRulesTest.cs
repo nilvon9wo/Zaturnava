@@ -707,6 +707,39 @@ public sealed class GrandLegionsRulesTest
     }
 
     [Theory]
+    [InlineData(false, "shogi-pawn lance")]
+    [InlineData(true, " lance")]
+    public void Apply_WhenAnAllyBackToBackMayAlsoBeTaken_OffersBothAndSwapsOrTakesAsChosen(
+        bool captures,
+        string expected
+    )
+    {
+        // Arrange - Black's Lance on d2 and Green's Shogi Pawn on d3, back to back, with Yellow's King on Green's
+        // throne, so that Black may take Green's pieces too (the user's request of 2026-11-19: "Swap or capture?")
+        (Chaturaji2027Rules rules, GameState backToBack, CellId d2, CellId d3) = BackToBack("lance", "shogi-pawn");
+        CellId yellowsKing = new(9);
+        GameState state = backToBack with
+        {
+            Position = backToBack.Position.Relocate(yellowsKing, rules.Thrones[new SeatId(2)]),
+        };
+        MoveAction swap = new(new SeatId(0), d2, d3);
+        MoveAction capture = swap with { Captures = true };
+
+        // Act
+        GameState moved = rules.Apply(state, captures ? capture : swap).State;
+
+        // Assert
+        Assert.Equal(
+            (true, true, expected),
+            (
+                rules.LegalActions(state).Contains(swap),
+                rules.LegalActions(state).Contains(capture),
+                $"{moved.Position.PieceAt(d2)?.Kind.Value} {moved.Position.PieceAt(d3)?.Kind.Value}"
+            )
+        );
+    }
+
+    [Theory]
     [InlineData("rook", "western-pawn")]
     [InlineData("western-pawn", "xiangqi-soldier")]
     public void Apply_WhenEitherPieceBackToBackMayMoveSidewaysOrBack_RefusesTheSwap(string black, string green)

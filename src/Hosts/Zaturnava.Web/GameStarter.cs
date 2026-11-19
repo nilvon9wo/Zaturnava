@@ -247,6 +247,7 @@ internal static class GameStarter
             IsDraftHiddenFromAllies = armies?.IsHiddenFromAllies ?? false,
             Board = armies?.Board,
             PromotesAtSide = armies?.PromotesAtSide ?? false,
+            AreDiceOff = armies?.AreDiceOff ?? false,
             IsForPlayers = isForPlayers,
         };
         GameCreatedDto created = await games.Create(request, CancellationToken.None);

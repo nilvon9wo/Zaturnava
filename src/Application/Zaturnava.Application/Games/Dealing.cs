@@ -31,6 +31,13 @@ public sealed record Dealing(bool AreAlike = false, GameId? ArmiesOf = null)
     /// </summary>
     public int? Budget { get; init; }
 
+    /// <summary>
+    /// Whether the game is played without dice (<see cref="GameState.AreDiceOff"/>), for a ruleset that rolls them
+    /// (<see cref="IRulesApplying.HasDice"/>; it is ignored by one that does not), dealt or not, but never from a
+    /// scenario, which has dice of its own.
+    /// </summary>
+    public bool AreDiceOff { get; init; }
+
     /// <summary>Each seat its own army, dealt anew.</summary>
     public static Dealing Anew { get; } = new();
 }

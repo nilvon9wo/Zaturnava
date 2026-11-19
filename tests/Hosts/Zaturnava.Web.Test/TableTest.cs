@@ -1862,6 +1862,63 @@ public sealed class TableTest : IDisposable
         Assert.True(Cell(table, 1).ClassList.Contains("target"));
     }
 
+    [Theory]
+    [InlineData(false, 0, 2, "true")]
+    [InlineData(false, 1, 2, null)]
+    [InlineData(true, -1, 0, null)]
+    public void Click_WhenAMoveOntoAnAllyMaySwapOrCapture_AsksWhichWithTheSafetyOffAndSubmitsTheAnswer(
+        bool isSafetyOn,
+        int answer,
+        int asked,
+        string? captures
+    )
+    {
+        // Arrange - Green's Pawn, Black's ally, on cell 1: the move onto it a swap, or a capture of it (the user's
+        // request of 2026-11-19: with Safety off, ask "Swap or capture?")
+        GameViewDto view = FakeGameServer.SeatZeroToMove;
+        ActionDto swap = view.LegalActions.First(action => action.Arguments.GetValueOrDefault("to") == "1") with
+        {
+            Label = "Swap places with Green's Pawn",
+        };
+        ActionDto capture = swap with { Arguments = swap.Arguments.Add("captures", "true"), Label = null };
+        this._page.Server.View = view with
+        {
+            Pieces = [.. view.Pieces, new PieceDto(1, "pawn", "Pawn", 2, 1)],
+            Seats = [.. view.Seats, new SeatDto(2, "Green", 0, 0, "bot", "Midas", [])],
+            LegalActions =
+            [
+                .. view.LegalActions.Where(action => action.Arguments.GetValueOrDefault("to") != "1"),
+                swap,
+                capture,
+            ],
+        };
+        IRenderedComponent<Table> table = this._page.Render<Table>(parameters =>
+            parameters.Add(x => x.Seating, SeatZero).Add(x => x.IsSafetyOn, isSafetyOn)
+        );
+        Cell(table, 0).Click();
+
+        // Act
+        Cell(table, 1).Click();
+        int shown = table.FindAll(".either-of button").Count;
+        string labels =
+            string.Join("|", table.FindAll(".either-of button").Select(button => button.TextContent.Trim()));
+        if (answer >= 0)
+        {
+            table.FindAll(".either-of button")[answer == 0 ? 1 : 0].Click();
+        }
+
+        // Assert - with the safety on, the swap alone, at once
+        Assert.Equal(
+            (asked, asked == 0 ? string.Empty : "Swap places with Green's Pawn|Capture it", captures, 0),
+            (
+                shown,
+                labels,
+                this._page.Server.Submitted?.Action.Arguments.GetValueOrDefault("captures"),
+                table.FindAll(".either-of").Count
+            )
+        );
+    }
+
     [Fact]
     public void Click_WhenTheSafetyIsTurnedOffDuringTheTurn_OffersTakingThePiecesOfTheTeam()
     {

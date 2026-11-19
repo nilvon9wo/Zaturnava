@@ -80,4 +80,10 @@ public sealed record CreateGameRequest([Required] string RulesetId, [Required] I
     /// (<see cref="GameSummaryDto.IsForPlayers"/>). Open to anyone, unless asked.
     /// </summary>
     public bool IsForPlayers { get; init; }
+
+    /// <summary>
+    /// For a game that rolls dice (<see cref="RulesetDto.HasDice"/>), not from a scenario: whether it is played without
+    /// them, a pure abstract strategy game (<see cref="GameViewDto.AreDiceOff"/>). With dice, unless asked.
+    /// </summary>
+    public bool AreDiceOff { get; init; }
 }

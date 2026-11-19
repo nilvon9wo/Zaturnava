@@ -26,6 +26,15 @@ public static class ScenarioStart
     public const string DealKind = "deal";
 
     /// <summary>
+    /// The kind of the first action of a game neither dealt nor from a scenario, begun as the ruleset begins every game
+    /// but as its creator set it: without dice (the user's request of 2026-11-19).
+    /// </summary>
+    public const string SetupKind = "setup";
+
+    /// <summary>The argument of a game's first action saying it is played without dice.</summary>
+    public const string DiceOffArgument = "dice-off";
+
+    /// <summary>
     /// The edition of a ruleset's pieces and rules a game dealt now is dealt from (<see cref="GameState.Edition"/>): 1,
     /// since Grand Legions gained the Checkers and Tafl pieces (2026-11-13); 2, since it gained mercenaries (the same
     /// day); 3, since its quick armies spread their budget evenly (the same day); 4, since it gained the Berolina
@@ -69,7 +78,31 @@ public static class ScenarioStart
     private static readonly DiceRequest SeedRoll = new(1, int.MaxValue - 1);
 
     /// <summary>Whether the action begins the game, rather than being played in it.</summary>
-    public static bool IsStart([Required] ActionDescriptor action) => action.Kind is Kind or DealKind;
+    public static bool IsStart([Required] ActionDescriptor action) => action.Kind is Kind or DealKind or SetupKind;
+
+    /// <summary>The first action of a game begun as its ruleset begins every game, but without dice.</summary>
+    public static ActionDescriptor WithoutDice() =>
+        new(
+            SetupKind,
+            ImmutableSortedDictionary<string, string>.Empty.Add(DiceOffArgument, ActionDescriptor.Flag(true))
+        );
+
+    /// <summary>
+    /// The game's first action, dealing it as <paramref name="deal"/> did, played without dice, or with them, as
+    /// <paramref name="areDiceOff"/> says, whatever the game it dealt chose.
+    /// </summary>
+    public static ActionDescriptor WithDiceOff([Required] ActionDescriptor deal, bool areDiceOff) =>
+        deal with
+        {
+            Arguments = areDiceOff
+                ? deal.Arguments.SetItem(DiceOffArgument, ActionDescriptor.Flag(true))
+                : deal.Arguments.Remove(DiceOffArgument),
+        };
+
+    /// <summary>Whether the first of <paramref name="actions"/> began the game without dice.</summary>
+    public static bool AreDiceOff([Required] ImmutableList<ActionDescriptor> actions) =>
+        actions.FirstOrDefault() is { Kind: DealKind or SetupKind } first
+        && first.Arguments.ContainsKey(DiceOffArgument);
 
     /// <summary>
     /// The first action of a game dealt by a seed <paramref name="dice"/> roll, its terrain and palaces too: every army
@@ -83,7 +116,7 @@ public static class ScenarioStart
     /// <paramref name="board"/>'s size, if its creator set one (<see cref="IRulesApplying.Sized"/>). Its pieces
     /// promoted at the far edge promoted at the edge to their right too, if <paramref name="promotesAtSide"/>
     /// (<see cref="GameState.PromotesAtSide"/>). Its armies dealt, not drafted, each spending
-    /// <paramref name="budget"/>, if its creator set one.
+    /// <paramref name="budget"/>, if its creator set one. Played without dice, if <paramref name="areDiceOff"/>.
     /// </summary>
     public static ActionDescriptor Dealt(
         [Required] IDiceRolling dice,
@@ -91,7 +124,23 @@ public static class ScenarioStart
         DraftSettings? drafting = null,
         BoardSize? board = null,
         bool promotesAtSide = false,
-        int? budget = null
+        int? budget = null,
+        bool areDiceOff = false
+    )
+    {
+        ActionDescriptor dealt = DealtWithDice(dice, areAlike, drafting, board, promotesAtSide, budget);
+        return areDiceOff
+            ? dealt with { Arguments = dealt.Arguments.Add(DiceOffArgument, ActionDescriptor.Flag(true)) }
+            : dealt;
+    }
+
+    private static ActionDescriptor DealtWithDice(
+        IDiceRolling dice,
+        bool areAlike,
+        DraftSettings? drafting,
+        BoardSize? board,
+        bool promotesAtSide,
+        int? budget
     )
     {
         ImmutableSortedDictionary<string, string> seeded = ImmutableSortedDictionary<string, string>.Empty
@@ -247,13 +296,14 @@ public static class ScenarioStart
 
     /// <summary>
     /// Where a game of these actions starts: as the scenario its first carries, if any; as dealt by the seed it
-    /// carries, if it is dealt; else as new.
+    /// carries, if it is dealt; else as new; without dice, if it says so.
     /// </summary>
     public static GameState StateOf(
         [Required] ImmutableList<ActionDescriptor> actions,
         [Required] IRulesApplying rules
-    ) =>
-        actions.FirstOrDefault() switch
+    )
+    {
+        GameState state = actions.FirstOrDefault() switch
         {
             { Kind: Kind } first => StateFrom(ScenarioOf(first), rules),
             { Kind: DealKind } first => DealtBy(
@@ -263,6 +313,8 @@ public static class ScenarioStart
             ),
             _ => rules.CreateInitialState(),
         };
+        return AreDiceOff(actions) ? rules.WithoutDice(state) : state;
+    }
 
     /// <summary>
     /// The game dealt by <paramref name="seed"/>, its armies then drafted by its players, if so begun.

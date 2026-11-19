@@ -173,6 +173,30 @@ public sealed class EfGameStoreTest : IDisposable
     }
 
     [Fact]
+    public async Task Page_WhenAGameIsPlayedWithoutDice_ListsItSayingSo()
+    {
+        // Arrange - and a game begun without dice, then played on (the user's request of 2026-11-19)
+        await this.AddListed();
+        await this._store.Add(
+            Record("e") with
+            {
+                Actions = [ScenarioStart.WithoutDice(), new PassAction(new SeatId(0)).Describe()],
+                LastChanged = DateTimeOffset.UnixEpoch.AddHours(4),
+            },
+            this._cancellation
+        );
+
+        // Act
+        GamePage page = await this._store.Page(new GameQuery(), Offered, this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            "e True,b False,c False,a False",
+            string.Join(",", page.Games.Select(game => $"{game.Id.Value} {game.AreDiceOff}"))
+        );
+    }
+
+    [Fact]
     public async Task Page_WhenAskedForALaterPage_ListsItsGamesWithTheirSeatsAndCountsThemAll()
     {
         // Arrange
