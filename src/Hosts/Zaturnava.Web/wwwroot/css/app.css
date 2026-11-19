@@ -345,6 +345,9 @@ label.alike, label.drafted, label.for-players, label.secret, label.secret-from-a
 .choices table.board-size th[scope="col"] { font-weight: 400; opacity: 0.8; }
 .choices table.board-size td { padding: 2px 6px 2px 0; }
 .choices table.board-size input[type="number"] { width: 5em; box-sizing: border-box; }
+/* What is wrong with the board spans the row, in room kept for its longest (three lines), so the dialog keeps still. */
+.choices .board-problem-room { grid-column: 1 / -1; min-height: 4.2em; }
+.choices .board-problem-room p.board-problem { margin: 2px 0 0; line-height: 1.4; }
 .choices select, .panel label.scenario select { width: 100%; min-width: 0; }
 /* A scenario's name is long ("Checkers chain (medium)"): its choice spans both columns after its label. */
 .panel label.scenario select { grid-column: 2 / 4; }

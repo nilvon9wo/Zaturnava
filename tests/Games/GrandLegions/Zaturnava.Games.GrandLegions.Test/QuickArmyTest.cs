@@ -200,6 +200,56 @@ public sealed class QuickArmyTest
     }
 
     [Fact]
+    public void Layout_WithPalacePiecesWhenTheLeaderIsKeptToOneColour_LeavesItOnTheThroneTheirPalaceIsAbout()
+    {
+        // Arrange - the large game, as dealt now (the user's report of 2026-11-19, of a Guard on d2 outside the
+        // palace a1:c3: the Checkers King, spread over both colours, left the palace's pieces outside the palace that
+        // the game placed about its new square)
+        QuickGame game = QuickGame.Large with { HasPalacePieces = true, Edition = QuickArmy.ThroneKeptEdition };
+
+        // Act
+        ImmutableList<ImmutableList<ArmyPiece>> armies =
+        [
+            .. Enumerable.Range(0, 300).Select(seed =>
+                QuickArmy.Layout(game, QuickArmy.Pick(game, new(seed)), new(seed))
+            ),
+        ];
+
+        // Assert - among them, armies led by a leader kept to one colour, with pieces a palace holds; each such
+        // piece in the palace about its leader's square
+        Assert.Contains(armies, army => army.Any(IsHeld) && army.Any(IsColourBoundLeader));
+        Assert.All(armies, army =>
+        {
+            ArmyPiece leader = army.Single(piece => GrandLegionsRules.Leaders.Contains(piece.Kind));
+            ImmutableList<ArmySquare> palace = PalaceSquares.Window(
+                PalaceSquares.CentreAbout(
+                    PalaceSquares.Centres(game.Kingdom),
+                    new ArmySquare(leader.Column, leader.Row)
+                )
+            );
+            Assert.All(army.Where(IsHeld), held => Assert.Contains(new ArmySquare(held.Column, held.Row), palace));
+        });
+    }
+
+    [Fact]
+    public void Dealt_WhenItsCreatorSetsABudget_SpendsItNotTheFormulas()
+    {
+        // Arrange - the small game: kingdoms of 9 squares, 4 seats
+        QuickGame game = QuickGame.Small with { Edition = QuickArmy.ThroneKeptEdition };
+
+        // Act - a budget no army can spend before its kingdom is full, and one too small for more than the least
+        ImmutableList<Placement> rich = QuickArmy.Dealt(game, 3, budget: 100_000);
+        ImmutableList<Placement> poor = QuickArmy.Dealt(game, 3, budget: 1);
+
+        // Assert - every square of every kingdom filled; the least of each class, and no more
+        Assert.Equal((36, 24), (rich.Count, poor.Count));
+    }
+
+    private static bool IsColourBoundLeader(ArmyPiece piece) =>
+        GrandLegionsRules.Leaders.Contains(piece.Kind)
+        && GrandLegionsPieces.ById[piece.Kind].Restrictions.Any(restriction => restriction.IsColourBinding);
+
+    [Fact]
     public void Pick_WithPalacePiecesAndRoomForMany_GivesNoMoreThanThePalaceHasRoomFor()
     {
         // Arrange - a kingdom of a hundred squares, sixty of them infantry, the budget no bound

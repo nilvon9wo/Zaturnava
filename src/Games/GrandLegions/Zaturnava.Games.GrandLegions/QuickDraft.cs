@@ -20,7 +20,7 @@ public static class QuickDraft
     /// The edition (<see cref="ArmyFill.Edition"/>) from which an army filled at random from nothing keeps the palace
     /// already placed (<see cref="QuickArmy.Layout"/>); a game dealt before replays as it was dealt.
     /// </summary>
-    public const int PalaceKeptEdition = 9;
+    public const int PalaceKeptEdition = QuickArmy.ThroneKeptEdition;
 
     public static Drafting Of([Required] QuickGame game) =>
         new(

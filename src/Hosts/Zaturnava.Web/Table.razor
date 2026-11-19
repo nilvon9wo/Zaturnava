@@ -555,7 +555,19 @@
                 </ChildContent>
             </TableTalk>
 
-            @if (this.AreCardsShown && !this._isPlacingCardClosed && this.Placing(view) is { } placing)
+            @if ((this.AreCardsShown || this._isAboutAsked) && this._offBoardShown is { } offBoard)
+            {
+                @* the card last asked for: a piece off the board clicked since any on it (playtest 2026-11-19, T7) *@
+                <PieceCard Piece="new PieceDto(offBoard.Id, offBoard.Kind, offBoard.Name, offBoard.Owner, -1) { Mark = offBoard.Mark }"
+                           Kind="view.Kinds.Find(kind => kind.Kind == offBoard.Kind)"
+                           Owner="@view.Seats[offBoard.Owner].Name"
+                           Cell=""
+                           Pieces="this.PiecesShown"
+                           Forward="view.Seats[offBoard.Owner].Forward"
+                           Turn="this._boardTurn"
+                           OnClose="this.PutAwayOffBoard" />
+            }
+            else if (this.AreCardsShown && !this._isPlacingCardClosed && this.Placing(view) is { } placing)
             {
                 <PieceCard Piece="placing.Piece"
                            Kind="placing.Kind"
@@ -577,17 +589,6 @@
                            Forward="view.Seats[inspected.Owner].Forward"
                            Turn="this._boardTurn"
                            OnClose="this.PutAway" />
-            }
-            else if ((this.AreCardsShown || this._isAboutAsked) && this._offBoardShown is { } offBoard)
-            {
-                <PieceCard Piece="new PieceDto(offBoard.Id, offBoard.Kind, offBoard.Name, offBoard.Owner, -1) { Mark = offBoard.Mark }"
-                           Kind="view.Kinds.Find(kind => kind.Kind == offBoard.Kind)"
-                           Owner="@view.Seats[offBoard.Owner].Name"
-                           Cell=""
-                           Pieces="this.PiecesShown"
-                           Forward="view.Seats[offBoard.Owner].Forward"
-                           Turn="this._boardTurn"
-                           OnClose="this.PutAwayOffBoard" />
             }
         </div>
     }
@@ -1411,16 +1412,15 @@
     }
 
     /// <summary>
-    /// Chooses a prisoner to hire, showing its card and the price, for the player to hire it then (J2), even with cards
-    /// off, as it was asked for; chosen again while its card shows, lets it go. Chosen with its card closed, shows the
-    /// card again (the user's report of 2026-11-19, of a Dragon Horse whose card would not open).
+    /// Chooses a prisoner to hire, showing its card (with cards on) and the price, for the player to hire it then (J2),
+    /// its card in place of any other open; chosen again while its card is up, lets it go. Chosen with its card closed,
+    /// shows the card again (the user's report of 2026-11-19, of a Dragon Horse whose card would not open).
     /// </summary>
     private void ChooseHire(PrisonerDto prisoner)
     {
         bool isLetGo = this._hireChosen == prisoner.Id && this._offBoardShown?.Id == prisoner.Id;
         this._hireChosen = isLetGo ? null : prisoner.Id;
         this.ShowOffBoard(isLetGo ? null : prisoner);
-        this._isAboutAsked = !isLetGo;
     }
 
     private void PutAwayOffBoard()
@@ -1588,6 +1588,7 @@
     private Task Click(int cell)
     {
         this._inspected = this._view!.Pieces.Find(piece => piece.Cell == cell)?.Id ?? this._inspected;
+        this.PutAwayOffBoard(); // a click on the board shows its card, or the one of the piece being placed
         (BoardSelection next, ActionDto? chosen) = this.Selection.Click(cell, this.Actions);
         this._selection = next;
         this._palace = chosen is { Kind: PalaceKind } palace ? (cell, palace) : this._palace;

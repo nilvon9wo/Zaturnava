@@ -156,7 +156,8 @@ public static class GrandLegionsRules
                     Edition = dealing.Edition,
                 },
                 dealing.Seed,
-                dealing.AreAlike
+                dealing.AreAlike,
+                dealing.Budget
             ),
             TerrainDealer = QuickTerrain.Dealt,
             Drafting = QuickDraft.Of(game),

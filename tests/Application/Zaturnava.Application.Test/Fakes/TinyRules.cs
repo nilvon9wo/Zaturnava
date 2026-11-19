@@ -110,11 +110,15 @@ internal sealed class TinyRules(int length, bool isDealt = false, Exception? fai
         bool dealsPalaces = false,
         bool dealsPalacePieces = false,
         bool dealsEdgePalaces = false,
-        int edition = 0
+        int edition = 0,
+        int? budget = null
     ) =>
         initial with
         {
-            Scores = initial.Scores.SetItem(new SeatId(0), seed).SetItem(new SeatId(1), areAlike ? 1 : 0),
+            // the budget dealt, if any, kept as seat 2's score, for tests to see
+            Scores = initial.Scores.SetItem(new SeatId(0), seed)
+                .SetItem(new SeatId(1), areAlike ? 1 : 0)
+                .SetItem(new SeatId(2), budget ?? 0),
             Terrain = dealsTerrain ? 1 : 0,
             Palaces = dealsPalaces ? [] : null,
             HasPalacePieces = dealsPalacePieces,

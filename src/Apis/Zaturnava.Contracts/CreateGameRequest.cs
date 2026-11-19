@@ -37,7 +37,7 @@ public sealed record CreateGameRequest([Required] string RulesetId, [Required] I
     public bool IsDrafted { get; init; }
 
     /// <summary>
-    /// For armies drafted: what each seat has to spend, one value for everyone; the ruleset's own
+    /// What each seat's army has to spend, one value for everyone, drafted or dealt at random; the ruleset's own
     /// (<see cref="RulesetDto.DraftBudget"/>), if null.
     /// </summary>
     [Range(1, 100_000)]

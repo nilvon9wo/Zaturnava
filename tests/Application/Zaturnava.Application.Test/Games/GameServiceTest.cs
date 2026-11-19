@@ -374,6 +374,38 @@ public sealed class GameServiceTest
     }
 
     [Fact]
+    public async Task Create_WhenTheArmiesDealtAreGivenABudget_DealsThemIt()
+    {
+        // Arrange
+        GameService service = this.Service(GameServiceSettings.Default, isDealt: true);
+        Dealing dealing = new() { Budget = 30 };
+
+        // Act
+        ImmutableList<SeatPlan> seats = [SeatPlan.Open, SeatPlan.Open];
+        GameId id = await service.Create(TinyRules.RulesetId, seats, null, dealing, this._cancellation);
+
+        // Assert
+        GameSnapshot snapshot = await service.Get(id, this._cancellation);
+        Assert.Equal(30, ScenarioStart.ArmyBudgetOf(snapshot.Record.Actions));
+    }
+
+    [Fact]
+    public async Task Create_WhenTheArmiesDealtAreGivenNothingToSpend_ThrowsInvalidGameSetupException()
+    {
+        // Arrange
+        GameService service = this.Service(GameServiceSettings.Default, isDealt: true);
+        Dealing dealing = new() { Budget = 0 };
+
+        // Act
+        Task<GameId> creating =
+            service.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], null, dealing, this._cancellation);
+
+        // Assert
+        InvalidGameSetupException exception = await Assert.ThrowsAsync<InvalidGameSetupException>(() => creating);
+        Assert.Equal("An army's budget is at least 1.", exception.Message);
+    }
+
+    [Fact]
     public async Task Create_WhenTheArmiesOfAGameNotDealtOrUnknownAreAskedFor_DealsAnew()
     {
         // Arrange - a rolling game, not dealt, and a game that never was

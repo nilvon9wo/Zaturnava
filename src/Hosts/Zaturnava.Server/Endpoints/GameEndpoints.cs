@@ -248,6 +248,7 @@ internal static class GameEndpoints
                 ? new BoardSize(board.Width, board.Height, board.KingdomWidth, board.KingdomDepth)
                 : null,
             PromotesAtSide = request.PromotesAtSide,
+            Budget = request.IsDrafted ? null : request.DraftBudget,
         };
         GameId id = await games.Create(request.RulesetId, seats, request.Scenario, dealing, cancellationToken);
         if (request.Continuing is { } previous)

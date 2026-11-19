@@ -87,7 +87,7 @@ public sealed class QuickDraftTest
             )),
         ];
 
-        // Assert - its throne on the palace's back row, under its leader; each piece a palace holds in it
+        // Assert - its throne in the palace, under its leader; each piece a palace holds in it
         ImmutableList<ArmyPiece> held = [.. filled.SelectMany(army => army.Added).Where(IsHeld)];
         Assert.NotEmpty(held);
         Assert.All(held, piece => Assert.Contains(new ArmySquare(piece.Column, piece.Row), palace));
@@ -95,7 +95,7 @@ public sealed class QuickDraftTest
             filled,
             army =>
             {
-                Assert.Equal((0, true), (army.Throne.Row, palace.Contains(army.Throne)));
+                Assert.Contains(army.Throne, palace);
                 Assert.Equal(
                     Leader,
                     ById[army.Added.Single(piece => new ArmySquare(piece.Column, piece.Row) == army.Throne).Kind].Class

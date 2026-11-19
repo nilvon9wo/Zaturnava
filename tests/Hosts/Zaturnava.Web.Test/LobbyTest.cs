@@ -678,7 +678,9 @@ public sealed class LobbyTest : IDisposable
     [InlineData(true, true, "draft-own", "30", "1 4 1 False True 30 ")]
     [InlineData(true, true, "draft-one", "30", "1 4 1 False True 30 0")]
     [InlineData(true, true, "draft-own", "", "1 4 1 False True  ")]
-    [InlineData(true, true, "random-each", null, "1 4 0 False False  ")]
+    [InlineData(true, true, "random-each", null, "1 4 1 False False 75 ")]
+    [InlineData(true, true, "random-each", "40", "1 4 1 False False 40 ")]
+    [InlineData(true, true, "random-one", "40", "1 4 1 True False 40 ")]
     public void Play_WhenTheArmiesAreDealt_AsksHowTheyComeToBe(
         bool isDealt,
         bool isDraftable,

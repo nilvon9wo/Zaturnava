@@ -47,6 +47,7 @@ public static class ScenarioStart
     private const string EditionArgument = "edition";
     private const string DraftedArgument = "drafted";
     private const string BudgetArgument = "budget";
+    private const string ArmyBudgetArgument = "army-budget";
     private const string DrafterArgument = "drafter";
     private const string SecretArgument = "secret";
     private const string HiddenFromAlliesArgument = "hidden-from-allies";
@@ -74,14 +75,16 @@ public static class ScenarioStart
     /// (<see cref="IRulesApplying.Drafted"/>): its budget and its one drafter, if it sets them. On a board of
     /// <paramref name="board"/>'s size, if its creator set one (<see cref="IRulesApplying.Sized"/>). Its pieces
     /// promoted at the far edge promoted at the edge to their right too, if <paramref name="promotesAtSide"/>
-    /// (<see cref="GameState.PromotesAtSide"/>).
+    /// (<see cref="GameState.PromotesAtSide"/>). Its armies dealt, not drafted, each spending
+    /// <paramref name="budget"/>, if its creator set one.
     /// </summary>
     public static ActionDescriptor Dealt(
         [Required] IDiceRolling dice,
         bool areAlike = false,
         DraftSettings? drafting = null,
         BoardSize? board = null,
-        bool promotesAtSide = false
+        bool promotesAtSide = false,
+        int? budget = null
     )
     {
         ImmutableSortedDictionary<string, string> seeded = ImmutableSortedDictionary<string, string>.Empty
@@ -96,8 +99,23 @@ public static class ScenarioStart
         ImmutableSortedDictionary<string, string> sided =
             promotesAtSide ? alike.Add(SidePromotionArgument, ActionDescriptor.Flag(true)) : alike;
         ImmutableSortedDictionary<string, string> sized = board is null ? sided : Sizing(sided, board);
-        return new ActionDescriptor(DealKind, drafting is null ? sized : Drafting(sized, drafting));
+        return new ActionDescriptor(
+            DealKind,
+            (drafting, budget) switch
+            {
+                ({ } drafted, _) => Drafting(sized, drafted),
+                (null, { } spent) => sized.Add(ArmyBudgetArgument, spent.ToString(CultureInfo.InvariantCulture)),
+                _ => sized,
+            }
+        );
     }
+
+    /// <summary>What each army dealt by the first of <paramref name="actions"/> spends, if set.</summary>
+    public static int? ArmyBudgetOf([Required] ImmutableList<ActionDescriptor> actions) =>
+        actions.FirstOrDefault() is { Kind: DealKind } first
+        && first.Arguments.TryGetValue(ArmyBudgetArgument, out string? budget)
+            ? int.Parse(budget, CultureInfo.InvariantCulture)
+            : null;
 
     private static ImmutableSortedDictionary<string, string> Sizing(
         ImmutableSortedDictionary<string, string> arguments,
@@ -241,7 +259,8 @@ public static class ScenarioStart
             actions[0].Arguments.ContainsKey(EdgePalacesArgument),
             actions[0].Arguments.TryGetValue(EditionArgument, out string? edition)
                 ? int.Parse(edition, CultureInfo.InvariantCulture)
-                : 0
+                : 0,
+            ArmyBudgetOf(actions)
         ) with
         {
             PromotesAtSide = PromotesAtSide(actions),

@@ -2138,18 +2138,12 @@ public sealed class TableTest : IDisposable
         Assert.Equal((0, 1), (table.FindAll("aside.piece-card").Count, table.FindAll("button.action.hire").Count));
     }
 
-    [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public void Click_WhenAPrisonerForHireIsPickedAgainAfterItsCardWasClosed_ShowsTheCardAgainEvenWithCardsOff(
-        bool areCardsShown
-    )
+    [Fact]
+    public void Click_WhenAPrisonerForHireIsPickedAgainAfterItsCardWasClosed_ShowsTheCardAgain()
     {
-        // Arrange - picked, its card closed (the user's report of 2026-11-19, of a Dragon Horse)
+        // Arrange - picked, its card closed
         this._page.Server.View = FakeGameServer.SeatZeroToMove with { LegalActions = [Hire(), FakeGameServer.Pass] };
-        IRenderedComponent<Table> table = this._page.Render<Table>(parameters =>
-            parameters.Add(x => x.Seating, SeatZero).Add(x => x.AreCardsShown, areCardsShown)
-        );
+        IRenderedComponent<Table> table = this.Render(SeatZero);
         table.Find(".hiring button.prisoner").Click();
         table.Find("aside.piece-card button.close").Click();
 
@@ -2164,6 +2158,46 @@ public sealed class TableTest : IDisposable
                 table.Find(".hiring button.prisoner").GetAttribute("aria-pressed")
             )
         );
+    }
+
+    [Theory]
+    [InlineData(true, "Horse")]
+    [InlineData(false, null)]
+    public void Click_WhenAPrisonerForHireIsPickedWhileAnotherCardIsOpen_ShowsItsCardInsteadOnlyWithCardsOn(
+        bool areCardsShown,
+        string? expected
+    )
+    {
+        // Arrange - Black's Boat going home, its card open (the user's report of 2026-11-19, of a Dragon Horse)
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Returning = new PrisonerDto(7, "boat", "Boat", 0),
+            LegalActions = [Hire(), FakeGameServer.Pass],
+        };
+        IRenderedComponent<Table> table = this._page.Render<Table>(parameters =>
+            parameters.Add(x => x.Seating, SeatZero).Add(x => x.AreCardsShown, areCardsShown)
+        );
+
+        // Act
+        table.Find(".hiring button.prisoner").Click();
+
+        // Assert
+        Assert.Equal(expected, table.FindAll("aside.piece-card h2").SingleOrDefault()?.TextContent);
+    }
+
+    [Fact]
+    public void Click_WhenTheBoardIsClickedAfterAPrisonerForHireWasPicked_ShowsTheBoardsCardInstead()
+    {
+        // Arrange - the Horse for hire picked, its card open
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with { LegalActions = [Hire(), FakeGameServer.Pass] };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        table.Find(".hiring button.prisoner").Click();
+
+        // Act
+        table.Find("svg.board rect[data-cell='0']").Click();
+
+        // Assert
+        Assert.NotEqual("Horse", table.Find("aside.piece-card h2").TextContent);
     }
 
     [Theory]

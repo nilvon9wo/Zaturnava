@@ -86,7 +86,8 @@ public interface IRulesApplying
     /// is too small for a palace, one standing partly outside it (<see cref="GameState.HasEdgePalaces"/>), if
     /// <paramref name="dealsEdgePalaces"/> too, which one dealt before they could never does; its armies drawn from
     /// the ruleset's pieces as they were at <paramref name="edition"/> (<see cref="GameState.Edition"/>), which is 0
-    /// for one dealt before there was another. As it is, for a ruleset that is not dealt.
+    /// for one dealt before there was another; each army spending <paramref name="budget"/>, if its creator set one,
+    /// else what the ruleset gives. As it is, for a ruleset that is not dealt.
     /// </summary>
     GameState Deal(
         [Required] GameState initial,
@@ -96,7 +97,8 @@ public interface IRulesApplying
         bool dealsPalaces = false,
         bool dealsPalacePieces = false,
         bool dealsEdgePalaces = false,
-        int edition = 0
+        int edition = 0,
+        int? budget = null
     ) =>
         initial;
 

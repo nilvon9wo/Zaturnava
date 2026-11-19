@@ -123,6 +123,42 @@ public sealed class ScenarioStartTest
     }
 
     [Fact]
+    public void StateOf_WhenTheArmiesAreDealtABudget_DealsThemIt()
+    {
+        // Arrange - the tiny rules keep the budget dealt as the third seat's score
+        ImmutableList<ActionDescriptor> actions = [ScenarioStart.Dealt(new LoadedDice(4), budget: 40)];
+
+        // Act
+        GameState state = ScenarioStart.StateOf(actions, new TinyRules(6, isDealt: true));
+
+        // Assert
+        Assert.Equal((40, 40), (state.Scores[new SeatId(2)], ScenarioStart.ArmyBudgetOf(actions)));
+    }
+
+    [Theory]
+    [InlineData("none")]
+    [InlineData("played")]
+    [InlineData("unbudgeted")]
+    [InlineData("drafted")]
+    public void ArmyBudgetOf_WhenNoArmyIsDealtABudget_IsNone(string start)
+    {
+        // Arrange - no actions; one played; a deal with no budget; a draft, whose budget is the draft's
+        ImmutableList<ActionDescriptor> actions = start switch
+        {
+            "none" => [],
+            "played" => [new PassAction(First).Describe()],
+            "unbudgeted" => [ScenarioStart.Dealt(new LoadedDice(4))],
+            _ => [ScenarioStart.Dealt(new LoadedDice(4), drafting: new DraftSettings(40), budget: 40)],
+        };
+
+        // Act
+        int? budget = ScenarioStart.ArmyBudgetOf(actions);
+
+        // Assert
+        Assert.Null(budget);
+    }
+
+    [Fact]
     public void StateOf_WhenTheGameWasDealtBeforeTerrainWas_DealsItNone()
     {
         // Arrange - a deal of seed 4 as games were dealt before terrain was, and one dealt now

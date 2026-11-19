@@ -19,4 +19,7 @@ public sealed record ArmyDealing(int Seed, bool AreAlike, int Terrain, bool HasP
 
     /// <summary>The edition of the pieces its armies are drawn from (<see cref="GameState.Edition"/>).</summary>
     public int Edition { get; init; }
+
+    /// <summary>What each army spends, if the game's creator set it; else what the variant gives.</summary>
+    public int? Budget { get; init; }
 }
