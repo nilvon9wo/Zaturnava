@@ -727,8 +727,14 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
 .move-diagram .river-bank { box-shadow: inset 0 -0.3em 0 #2f7fd8; }
 .diagram-key .key.river { background: linear-gradient(transparent 60%, #2f7fd8 60%); }
 /* What the drawing shows, as the player switches: its moves or its captures, pieces in its way, its river or palace. */
-.diagram-toggles { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin: 10px 0 0; }
-.diagram-toggles button { padding: 3px 10px; font-size: 0.85rem; border-radius: 999px; }
+.diagram-toggles, .diagram-play {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+    margin: 10px 0 0;
+}
+.diagram-toggles button, .diagram-play button { padding: 3px 10px; font-size: 0.85rem; border-radius: 999px; }
 .diagram-toggles button[aria-pressed="true"] { background: var(--accent); color: var(--panel); }
 /* A piece put in its way: a grey disc, as one it hops over is, settling in; the dots it takes away fade. */
 .move-diagram .obstacle::before, .diagram-key .obstacle::before,
@@ -748,6 +754,35 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
 .move-diagram .taken::before, .diagram-key .taken::before { background: var(--danger); }
 .move-diagram .taken::before { animation: taken 2.4s ease-in-out infinite; }
 .move-diagram .partner::before, .diagram-key .partner::before { background: var(--mark); }
+/* An example played (C3): the piece where it stands, then moving, then where it ends, staying there; an enemy it
+   takes, a disc in the danger colour, gone as it arrives. */
+.move-diagram .example-piece, .move-diagram .example-taken {
+    position: absolute;
+    left: calc(var(--column) * 100% / var(--side));
+    top: calc(var(--row) * 100% / var(--side));
+    width: calc(100% / var(--side));
+    height: calc(100% / var(--side));
+    display: grid;
+    place-items: center;
+    pointer-events: none;
+}
+.move-diagram .example-piece {
+    z-index: 1;
+    animation: example-move 1.8s ease-in-out forwards;
+}
+.move-diagram .example-taken::before {
+    content: "";
+    width: 72%;
+    height: 72%;
+    border-radius: 50%;
+    background: var(--danger);
+}
+.move-diagram .example-taken { animation: example-taken 1.8s ease-in forwards; }
+@keyframes example-move {
+    0%, 25% { transform: none; }
+    75%, 100% { transform: translate(calc(var(--across) * 100%), calc(var(--down) * 100%)); }
+}
+@keyframes example-taken { 0%, 70% { opacity: 1; } 85%, 100% { opacity: 0; } }
 @keyframes settle { from { transform: scale(1.6); opacity: 0; } }
 @keyframes fade-out { from { opacity: 1; } }
 @keyframes taken { 0%, 40% { opacity: 1; } 60%, 85% { opacity: 0.1; } }
@@ -755,6 +790,8 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
     .move-diagram .obstacle::before, .move-diagram .move.obstructed::before, .move-diagram .taken::before {
         animation: none;
     }
+    /* Still, the example shows only where it ends, the enemy gone. */
+    .move-diagram .example-piece, .move-diagram .example-taken { animation-duration: 1ms; }
 }
 /* Each mark kept beside its meaning: a long meaning wraps beside its mark, so the card never scrolls sideways. */
 .diagram-key { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; color: var(--muted); }

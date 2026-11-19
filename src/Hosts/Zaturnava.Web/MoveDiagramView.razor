@@ -12,7 +12,8 @@
    Angle, as the board shows the piece's own army - its forward, and the board's turn - with an arrow at its forward
    edge, unless it moves alike forward and back; the piece itself kept upright, on a square shaded as the one it
    stands on on the board (the centre's row and column always sum to an even number). Under it, what each mark shown
-   means, each mark kept beside its meaning, and no other (C1). *@
+   means, each mark kept beside its meaning, and no other (C1). The player may play an example, one at a time, each
+   the next: the piece where it stands, moving, and where it ends, any enemy it takes then gone (C3). *@
 @using System.Globalization
 
 @if (this.Diagram.Elsewhere is not null || this.MayShowCaptures || !this.Shown.Obstacles.IsEmpty)
@@ -21,22 +22,31 @@
         @if (this.MayShowCaptures)
         {
             <button type="button" class="show-moves" aria-pressed="@Pressed(!this.IsCapturing)"
-                    @onclick="() => this._isCapturing = false">Moves</button>
+                    @onclick="() => this.Switch(() => this._isCapturing = false)">Moves</button>
             <button type="button" class="show-captures" aria-pressed="@Pressed(this.IsCapturing)"
-                    @onclick="() => this._isCapturing = true">Captures</button>
+                    @onclick="() => this.Switch(() => this._isCapturing = true)">Captures</button>
         }
         @if (!this.IsCapturing && !this.Shown.Obstacles.IsEmpty)
         {
             <button type="button" class="show-obstacles" aria-pressed="@Pressed(this.IsObstructed)"
-                    @onclick="() => this._isObstructed = !this._isObstructed">Pieces in the way</button>
+                    @onclick="() => this.Switch(() => this._isObstructed = !this._isObstructed)"
+                >Pieces in the way</button>
         }
         @if (this.Diagram.Elsewhere is not null)
         {
             <button type="button" class="show-terrain" aria-pressed="@Pressed(!this._isElsewhere)"
-                    @onclick="() => this._isElsewhere = !this._isElsewhere">
+                    @onclick="() => this.Switch(() => this._isElsewhere = !this._isElsewhere)">
                 @(this.Diagram.RiverRow is null ? "In its palace" : "By a river")
             </button>
         }
+    </div>
+}
+@if (!this.Examples.IsEmpty)
+{
+    <div class="diagram-play">
+        <button type="button" class="play-example" @onclick="() => this._plays++">
+            @(this._plays == 0 ? "Play" : "Play another") @(this.IsCapturing ? "capture" : "move")
+        </button>
     </div>
 }
 <div class="move-diagram-turn" style="transform: rotate(@(this.Angle)deg)">
@@ -51,7 +61,7 @@
             {
                 int cell = (row * this.Shown.Side) + column;
                 <span class="@this.ClassOf(cell, row, column)" data-cell="@cell">
-                    @if (cell == this.Centre)
+                    @if (cell == this.Centre && this.Playing is null)
                     {
                         <span class="upright" style="transform: rotate(@(-this.Angle)deg)">
                             <PieceIcon Kind="@this.Piece.Kind" Name="@this.Piece.Name" Owner="this.Piece.Owner" Mark="this.Piece.Mark" Pieces="this.Pieces" />
@@ -69,6 +79,18 @@
                     <line class="line palace-line" x1="@this.XOf(cell)" y1="@this.YOf(cell)" x2="@this.XOf(this.Throne)" y2="@this.YOf(this.Throne)" />
                 }
             </svg>
+        }
+        @if (this.Playing is { } example)
+        {
+            @if (example.Taken is { } taken)
+            {
+                <span @key="(this._plays, taken)" class="example-taken" style="@this.PlacedAt(taken, this.Centre)"></span>
+            }
+            <span @key="this._plays" class="example-piece" style="@this.PlacedAt(this.Centre, example.To)">
+                <span class="upright" style="transform: rotate(@(-this.Angle)deg)">
+                    <PieceIcon Kind="@this.Piece.Kind" Name="@this.Piece.Name" Owner="this.Piece.Owner" Mark="this.Piece.Mark" Pieces="this.Pieces" />
+                </span>
+            </span>
         }
     </div>
 </div>
@@ -136,6 +158,9 @@
     private bool _isCapturing;
     private bool _isObstructed;
     private bool _isElsewhere;
+
+    /// <summary>How many examples the player has played since the drawing last changed; none, none playing.</summary>
+    private int _plays;
 
     [Parameter, EditorRequired]
     public MoveDiagramDto Diagram { get; set; } = null!;
@@ -214,6 +239,68 @@
     private string Described =>
         $"From the centre, it may move to {this.Shown.Moves.Count} squares and capture on "
         + $"{this.Shown.Captures.Count}";
+
+    /// <summary>
+    /// What the piece may be shown doing, one at a time (C3): moving to each square it may move to, as drawn, none in
+    /// the way; or capturing - on each square it captures on, the enemy there taken; landing on each it jumps to, the
+    /// enemy before it taken; or, by custody, moving on, the enemy held taken.
+    /// </summary>
+    private ImmutableList<(int To, int? Taken)> Examples
+    {
+        get
+        {
+            MoveDiagramDto shown = this.Shown;
+            return this.IsCapturing
+                ? [
+                    .. shown.Captures.Select(cell => (cell, (int?)cell)),
+                    .. shown.Jumps.Select(cell => (cell, (int?)this.Between(cell))),
+                    .. new[] { shown.Custody }.OfType<CustodyDto>().Select(held => (held.Landing, (int?)held.Taken)),
+                ]
+                : [
+                    .. shown.Moves
+                        .Where(cell => !this.IsObstructed
+                            || !(shown.Obstacles.Contains(cell) || shown.Obstructed.Contains(cell)))
+                        .Select(cell => (cell, (int?)null)),
+                ];
+        }
+    }
+
+    /// <summary>
+    /// The example playing, if one is: each played in turn, again from the first after the last; none, if the piece
+    /// shown has none, as when another's card replaced its own.
+    /// </summary>
+    private (int To, int? Taken)? Playing =>
+        this._plays == 0
+            ? null
+            : this.Examples
+                .Select(example => ((int To, int? Taken)?)example)
+                .ElementAtOrDefault((this._plays - 1) % Math.Max(1, this.Examples.Count));
+
+    /// <summary>A change to what is drawn, the example playing stopped.</summary>
+    private void Switch(Action change)
+    {
+        change();
+        this._plays = 0;
+    }
+
+    /// <summary>The square halfway from the centre to <paramref name="cell"/>, where the piece jumped over lies.</summary>
+    private int Between(int cell) =>
+        ((((cell / this.Shown.Side) + (this.Centre / this.Shown.Side)) / 2) * this.Shown.Side)
+        + (((cell % this.Shown.Side) + (this.Centre % this.Shown.Side)) / 2);
+
+    /// <summary>
+    /// The style placing a square-sized thing on <paramref name="from"/>, and how far it goes to reach
+    /// <paramref name="to"/>, in squares, across and down, as the drawing shows them.
+    /// </summary>
+    private string PlacedAt(int from, int to)
+    {
+        int side = this.Shown.Side;
+        return string.Create(
+            CultureInfo.InvariantCulture,
+            $"--side: {side}; --column: {from % side}; --row: {side - 1 - (from / side)}; "
+                + $"--across: {(to % side) - (from % side)}; --down: {(from / side) - (to / side)}"
+        );
+    }
 
     private static string Pressed(bool isPressed) => isPressed ? "true" : "false";
 
