@@ -135,7 +135,8 @@ only in part, what is left is in the backlog, and its history here. The playtest
   action of its own, beside the swap. *Done*: where a piece back to back with an ally's may also take it (while an
   enemy leader holds that ally's throne, and the piece takes straight ahead), the rules offer both, the capture a
   move that says so (`captures`, said only then, so every move recorded before means what it did). With Safety
-  off, the page asks **Swap or capture?**, with the swap's own label and **Capture it**; with it on, the capture is
+  off, the page asks **Swap or capture?**, with the swap's own label (green) and **Capture it** (red, 2026-11-20:
+  both had been dark buttons on a dark panel); with it on, the capture is
   kept back as any taking of the team's pieces is, and the swap is made at once.
 - **Dice off** (asked 2026-11-19): a game's creator may turn the dice off, in Chaturaji 2027 or Grand Legions,
   making it a pure abstract strategy game. *Done*, as accepted: a lobby checkbox, **Play without dice**, shown for
@@ -149,7 +150,8 @@ only in part, what is left is in the backlog, and its history here. The playtest
   the legal actions. Players and bots are rated apart, under the game's id plus `-without-dice`; a bot's Elo
   shown there is its rating at the game's sizes.
 - **21, 22, 26** (rest) The idle-rounds safety net as a per-game setting. *Done* (2026-11-19): in a custom game,
-  **Idle rounds that end the game on points** takes any number of 1 or more, the server's own (3) shown until one
+  **All-pass rounds to end** (named **Idle rounds that end the game on points** until 2026-11-20, which was
+  unclear; the whole told on hovering) takes any number of 1 or more, the server's own (3) shown until one
   is typed, remembered as last set and kept by Play again. It is recorded in the game's first action
   (`idle-rounds`, on a deal or a `setup` action), so the game replays as played, and the rules count to it in place
   of the server's own; a game from a scenario keeps the server's.
@@ -161,7 +163,8 @@ only in part, what is left is in the backlog, and its history here. The playtest
   a game without dice passes instead of rolling: acceptable for now, to be playtested.
 - **Bots' kinds on the leaderboard** (asked 2026-11-19). *Done*: the board of players and bots together marks 🧑 a
   person, 🤖 a bot; a bot playing by an AI, as its profile says (`UsesAi`, now on each bot's standing too), the same
-  robot tinted teal (2026-11-20: a brain icon read as a blob, unlike the others); today Athena and Pythia.
+  robot tinted teal (2026-11-20: a brain icon read as a blob, unlike the others); today Athena and Pythia. The
+  board's key is the three icons themselves, as drawn, each named on hover, not words.
 
 ## Look and feel
 

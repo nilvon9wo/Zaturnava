@@ -1954,11 +1954,14 @@ public sealed class TableTest : IDisposable
         // Act
         Cell(table, 1).Click();
         int shown = table.FindAll(".either-of button").Count;
-        string labels =
-            string.Join("|", table.FindAll(".either-of button").Select(button => button.TextContent.Trim()));
+        // the swap green, the capture red (the user, 2026-11-20), by their classes
+        string labels = string.Join(
+            "|",
+            table.FindAll(".either-of .swap, .either-of .capture").Select(button => button.TextContent.Trim())
+        );
         if (answer >= 0)
         {
-            table.FindAll(".either-of button")[answer == 0 ? 1 : 0].Click();
+            table.Find(answer == 0 ? ".either-of button.capture" : ".either-of button.swap").Click();
         }
 
         // Assert - with the safety on, the swap alone, at once

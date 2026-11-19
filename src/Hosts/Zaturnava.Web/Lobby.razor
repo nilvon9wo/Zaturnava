@@ -56,27 +56,44 @@
             }
             @if (catalog.Rulesets.Any(ruleset => ruleset.IsPreview))
             {
-                <label class="previews">
+                <label class="previews" title="Show preview games, not yet ready for everyone">
                     <input type="checkbox"
                            class="show-previews"
                            checked="@this._arePreviewsShown"
                            @onchange="change => this.ShowPreviews(catalog, change)" />
-                    Show preview games, not yet ready for everyone
+                    Show previews
                 </label>
             }
             @if (!catalog.Scenarios.IsEmpty)
             {
                 @* A development server's: only it offers scenarios. *@
-                <label class="scenario-games">
+                <label class="scenario-games" title="Hide games started from scenarios">
                     <input type="checkbox"
                            class="hide-scenarios"
                            checked="@this.AreScenariosHidden"
                            @onchange="this.HideScenarios" />
-                    Hide games started from scenarios
+                    Hide scenario games
                 </label>
-                <button class="remove-scenario-games" @onclick="this.RemoveScenarioGames">
-                    Delete every scenario game
-                </button>
+                @* Shown only while there is one to delete, and asked again before (the user, 2026-11-20). *@
+                @if (this._scenarioGames == 0)
+                {
+                }
+                else if (!this._isRemovingScenarioGames)
+                {
+                    <button class="remove-scenario-games" @onclick="() => this._isRemovingScenarioGames = true">
+                        Delete every scenario game
+                    </button>
+                }
+                else
+                {
+                    <span class="confirm-removal" role="alertdialog" aria-label="Delete every scenario game?">
+                        Delete all @this._scenarioGames games started from scenarios? This cannot be undone.
+                        <button class="removal-confirmed" @onclick="this.RemoveScenarioGames">Delete them</button>
+                        <button class="removal-cancelled" @onclick="() => this._isRemovingScenarioGames = false">
+                            Keep them
+                        </button>
+                    </span>
+                }
             }
         </div>
         @if (this.IsNewGameShown)
@@ -314,33 +331,36 @@
                 </div>
                 @if (this._armies == DraftOwn)
                 {
-                    <label class="secret">
+                    @* Checkboxes named in a few words, the whole told on hovering (the user, 2026-11-20). *@
+                    <label class="secret"
+                           title="Draft in secret, all at once: no one sees another team's army until all are drafted, and each may change their mind until done">
                         <input type="checkbox" class="draft-secret" @bind="this._isSecret" />
-                        Draft in secret, all at once: no one sees another team's army until all are drafted, and
-                        each may change their mind until done
+                        Draft in secret
                     </label>
                     @if (this._isSecret)
                     {
-                        <label class="secret-from-allies">
+                        <label class="secret-from-allies"
+                               title="From allies too: each player sees only their own army until all are drafted">
                             <input type="checkbox" class="draft-hidden-from-allies" @bind="this._isHiddenFromAllies" />
-                            From allies too: each player sees only their own army until all are drafted
+                            From allies too
                         </label>
                     }
                 }
             }
             @if (mode == SetupMode.Custom && this.Ruleset(catalog).MayPromoteAtSide)
             {
-                <label class="side-promotion">
+                <label class="side-promotion"
+                       title="Promote at the right-hand edge too: a piece that would promote on reaching the far edge also promotes on reaching the edge to its right">
                     <input type="checkbox" class="promotes-at-side" @bind="this._promotesAtSide" />
-                    Promote at the right-hand edge too: a piece that would promote on reaching the far edge also
-                    promotes on reaching the edge to its right
+                    Promote at right edge
                 </label>
             }
             @if (mode == SetupMode.Custom && this.Ruleset(catalog).HasDice)
             {
-                <label class="dice-off">
+                <label class="dice-off"
+                       title="Play without dice: nothing is rolled for, not who goes first, nor more moves, nor an escape">
                     <input type="checkbox" class="no-dice" @bind="this._areDiceOff" />
-                    Play without dice: nothing is rolled for, not who goes first, nor more moves, nor an escape
+                    Play without dice
                 </label>
                 @if (this._areDiceOff)
                 {
@@ -358,8 +378,11 @@
             }
             @if (mode == SetupMode.Custom && this.Ruleset(catalog).IdleRounds is { } idleRounds)
             {
-                <label class="idle-rounds">
-                    <span class="choice-name">Idle rounds that end the game on points</span>
+                @* "Idle" was unclear (the user, 2026-11-20): rounds in which every player passes. Rounds with no
+                   capture are another limit, the quiet rounds, 50. *@
+                <label class="idle-rounds"
+                       title="The game ends on points after this many rounds in a row in which every player passed">
+                    <span class="choice-name">All-pass rounds to end</span>
                     <input type="number"
                            class="idle-rounds"
                            min="1"
@@ -369,9 +392,10 @@
             }
             @if (mode == SetupMode.Custom && this._me is not null)
             {
-                <label class="for-players">
+                <label class="for-players"
+                       title="Players signed in only: no guests at the open seats, nor taking over a bot's">
                     <input type="checkbox" class="players-only" @bind="this._isForPlayers" />
-                    Players signed in only: no guests at the open seats, nor taking over a bot's
+                    No anonymous players
                 </label>
             }
             @if (mode == SetupMode.Custom)
@@ -510,6 +534,12 @@
 
 @code {
     private CatalogDto? _catalog;
+
+    /// <summary>How many games started from scenarios there are, to delete; none, on a server offering none.</summary>
+    private int _scenarioGames;
+
+    /// <summary>Whether deleting every scenario game is being asked about once more.</summary>
+    private bool _isRemovingScenarioGames;
     private string _rulesetId = string.Empty;
     private const string NotOver = "not-over";
     private const string Waiting = "waiting";
@@ -1162,16 +1192,21 @@
         }
 
         this._code = GameCode.InvitedBy(this.Navigation.Uri);
+        this._catalog = catalog; // before listing, which asks it whether scenarios are offered
         await this.ListGames();
         this._mode = await this.Browser.Setup();
         this._scenario = await this.Browser.LastScenario() ?? string.Empty;
-        this._catalog = catalog;
         await this.OnGameChosen.InvokeAsync(first.Game);
     }
 
     /// <summary>The page of games the filter asks for, and the seats this browser holds at them.</summary>
     private async Task ListGames()
     {
+        // first, so that the list asked for is the last: how many games started from scenarios there are, shown or
+        // not, on a server offering scenarios
+        this._scenarioGames = !this._catalog!.Scenarios.IsEmpty // set before any listing
+            ? (await this.Games.List(new GameListQuery(Scenario: true), CancellationToken.None)).Total
+            : 0;
         GameListQuery asked = this._code is { } code ? new GameListQuery(Code: code) : this._filter;
         GamePageDto page = await this.Games.List(asked, CancellationToken.None);
         this._games = page.Games;
@@ -1216,6 +1251,7 @@
     /// <summary>Lets go of every game started from a scenario, and lists the games again without them.</summary>
     private async Task RemoveScenarioGames()
     {
+        this._isRemovingScenarioGames = false;
         this._problem = await Requests.Attempt(async () =>
         {
             _ = await this.Games.RemoveScenarioGames(CancellationToken.None);

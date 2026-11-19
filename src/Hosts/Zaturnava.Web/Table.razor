@@ -292,7 +292,8 @@
                             <span id="either-of-question" class="name">Swap or capture?</span>
                             @foreach (ActionDto action in either)
                             {
-                                <button class="action either" @onclick="() => this.ChooseEither(turn.Claim, action)">
+                                <button class="@(action.Label is null ? "action either capture" : "action either swap")"
+                                        @onclick="() => this.ChooseEither(turn.Claim, action)">
                                     @(action.Label is { } label ? this.Named(label) : "Capture it")
                                 </button>
                             }
@@ -486,7 +487,7 @@
                         @if (!coming.IsEmpty)
                         {
                             <div class="coming">
-                                <span class="name">Onto the board:</span>
+                                <span class="name">Return to board:</span>
                                 @foreach (string choice in coming)
                                 {
                                     PrisonerDto piece = ComingOf(view, choice)!;

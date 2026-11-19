@@ -18,6 +18,10 @@ own number (**25**, **N29**), the [2026-11-15 specification](playtesting/2026-11
 - **A mercenary marked on the board** (asked 2026-11-20): a mercenary promoted into another kind (a Shogi Pawn
   become a Western Rook) stays one by the rules, but the page marks mercenaries only by kind, so it cannot be
   seen. Each piece to say whether it is one (`PieceDto`), and its card and the board to show it.
+- **A turn that changes nothing is a pass** (noticed 2026-11-20): a bot moving a Rook c2 to d2 and back, taking
+  nothing, leaves the board as it was, a pass with extra steps, yet it starts the count of rounds of everyone
+  passing again. In a new edition, a turn ending with the board and the prisoners as they began counts as a pass;
+  and the bots never play one when they may pass.
 - **Real AI bots** (asked 2026-11-20): bots that learn to play both games, Grand Legions above all, seeing where
   the pieces stand and how they move, not "backgammon in 2D" as Athena does now (her network ignores positions).
   With no paid tokens: a network trained here on the board square by square, per
