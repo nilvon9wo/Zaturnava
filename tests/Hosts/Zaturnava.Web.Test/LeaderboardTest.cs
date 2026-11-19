@@ -172,7 +172,7 @@ public sealed class LeaderboardTest : IDisposable
         // Assert - a bot by an AI marked apart from one by a plain algorithm (the user's request of 2026-11-19)
         Assert.Equal(
             (
-                "1 🧠 Athena 2650 38 6 0 1|2 🤖 Sage 2600 40 5 0 1|3 🧑 Ada 1700 25 4 1 0|4 🤖 Random 1000 2 0 6 1",
+                "1 🤖 Athena 2650 38 6 0 1|2 🤖 Sage 2600 40 5 0 1|3 🧑 Ada 1700 25 4 1 0|4 🤖 Random 1000 2 0 6 1",
                 "Bot, an AI,Bot, a plain algorithm,Person,Bot, a plain algorithm",
                 "Kind"
             ),

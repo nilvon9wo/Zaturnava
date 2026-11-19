@@ -485,6 +485,8 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
 .leaderboard .leaders th, .leaderboard .leaders td.name, .leaderboard .leaders td.name button { white-space: nowrap; }
 .leaderboard .choice { display: flex; gap: 8px; align-items: center; margin: 8px 0; }
 .leaderboard .leaders th.kind, .leaderboard .leaders td.kind { text-align: center; }
+/* A bot playing by an AI: the robot of every bot, tinted teal, so that it stays one of them (2026-11-20). */
+.leaderboard .leaders td.kind .ai { filter: sepia(1) saturate(5) hue-rotate(130deg); }
 .leaderboard .against { color: var(--muted); font-size: 0.85em; margin-left: 4px; white-space: nowrap; }
 .leaderboard .leaders { border-collapse: collapse; width: 100%; }
 .leaderboard .leaders th, .leaderboard .leaders td {
@@ -1267,6 +1269,10 @@ button.report-bug {
 .promotion .choice-and-about { display: flex; align-items: stretch; gap: 2px; min-width: 0; }
 .promotion .choice-and-about .choice { flex: 1; min-width: 0; }
 .promotion .about { padding: 0 6px; font-size: 0.8rem; color: var(--muted); }
+/* A piece that may leave the board, picked up: asked about as a promotion is, the escape the one call to action and
+   staying beside it, plainly (the user's report of 2026-11-19). */
+.flight { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 4px 0 8px; }
+.flight .hint { flex-basis: 100%; margin: 0; }
 
 /* The dice side by side, as many as fit a row: the turn panel stays short. */
 .dice { list-style: none; padding: 0; margin: 4px 0; display: flex; flex-wrap: wrap; column-gap: 20px; }

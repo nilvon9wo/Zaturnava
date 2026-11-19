@@ -54,10 +54,11 @@ public static class ScenarioStart
     /// Evangelist (the same day); 12, since a second leader a palace holds starts in its palace (the same day); 13,
     /// since an army's palace is dealt anywhere in its kingdom, not always against the board's edge (the same day);
     /// 14, since a palace standing partly outside its kingdom leaves out the squares another army's could share (the
-    /// same day); 15, since the Tafl King may leave the board on the move it reaches its far corner (the same day).
-    /// A game dealt before says none, and is 0.
+    /// same day); 15, since the Tafl King may leave the board on the move it reaches its far corner (the same day); 16,
+    /// since it may leave at any point of its turn, using no die, as a piece is promoted (the same day). A game dealt
+    /// before says none, and is 0.
     /// </summary>
-    public const int Edition = 15;
+    public const int Edition = 16;
 
     private const string Argument = "scenario";
     private const string SeedArgument = "seed";

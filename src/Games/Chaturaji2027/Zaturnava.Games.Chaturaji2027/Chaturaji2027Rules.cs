@@ -44,6 +44,14 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     public const int FleeOnArrivalEdition = 15;
 
     /// <summary>
+    /// The edition from which a piece on its far corner may leave the board as a piece is promoted: at any point of
+    /// its own seat's turn, using no die, the turn going on; staying is the rule, and the game waits on the choice only
+    /// if the piece arrives as the turn would end (the user's report of 2026-11-19: "Stay on the board should be
+    /// default"). A game played before replays as it was played.
+    /// </summary>
+    public const int FreeFlightEdition = 16;
+
+    /// <summary>
     /// How many rounds may pass with no piece taken before the game ends on points: fifty, each seat's fifty
     /// turns, as chess counts fifty moves (Stated 2026-11-06).
     /// </summary>
@@ -789,7 +797,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             [
                 new PassAction(seat),
                 .. this.MovesOf(state, seat, this.RolledKinds(state).Contains),
-                .. this.FleesOf(state, seat, this.RolledKinds(state).Contains),
+                .. this.FleesOf(state, seat, IsFreeFlight(state) ? _ => true : this.RolledKinds(state).Contains),
                 .. this.HiringsOf(state, seat, this.RolledKinds(state).Contains),
                 .. this.PromotionsOf(state, seat),
                 .. this.EscapesOf(state, seat),
@@ -906,16 +914,26 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         return this.GoneOn(this.WithoutDieFor(done, kind));
     }
 
+    /// <summary>Whether a flight uses no die and leaves the turn as it was (<see cref="FreeFlightEdition"/>).</summary>
+    private static bool IsFreeFlight(GameState state) => state.Edition >= FreeFlightEdition;
+
     /// <summary>
     /// The piece flees, using a die that moves it, if any was rolled, but for one just come there; the turn goes on,
-    /// unless the game is over.
+    /// unless the game is over. From <see cref="FreeFlightEdition"/> on, it uses no die, and the turn stays where it
+    /// was, as after a promotion: not yet rolled, at its start; but one waited on as the turn would end ends it.
     /// </summary>
     private Transition AfterFlight(GameState state, FleeAction flee)
     {
         PieceKindId kind = state.Position.PieceAt(flee.Cell)!.Kind; // the flight is legal, so a piece stands there
         Transition fled = Flight.Fled(state with { Fleeing = null }, flee);
-        Transition used = state.Fleeing is null ? this.WithoutDieFor(fled, kind) : fled;
-        return GameEnd.AfterMove(used, this._variant) ?? this.GoneOn(used);
+        bool isFree = IsFreeFlight(state);
+        Transition used = state.Fleeing is null && !isFree ? this.WithoutDieFor(fled, kind) : fled;
+        return (GameEnd.AfterMove(used, this._variant), isFree && state.Fleeing is null && state.Dice.IsEmpty) switch
+        {
+            ({ } over, _) => over,
+            (_, true) => used,
+            _ => this.GoneOn(used),
+        };
     }
 
     /// <summary>
@@ -1428,7 +1446,8 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     /// may be promoted, waits on that first (rules.md §8). A piece that has jumped, where a chain is played jump by
     /// jump, may go on jumping, with no die, while it can, or stop; a jump that goes on from one uses no die either.
     /// A piece just come to where it may leave the board may leave at once, with no die, or stay
-    /// (<see cref="FleeOnArrivalEdition"/>).
+    /// (<see cref="FleeOnArrivalEdition"/>); from <see cref="FreeFlightEdition"/> on, the game waits on that only if
+    /// the turn would end, the piece free to leave at any later point of the turn otherwise.
     /// </summary>
     private Transition AfterMove(GameState state, MoveAction move)
     {
@@ -1442,7 +1461,8 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         bool isDue = this.PromotionsOf(due, move.Actor).Any(promotion => promotion.Cell == move.To);
         GameState jumping = used.State with { Jumping = move.To };
         bool goesOn = hasJumped && this.JumpsOn(jumping, move.To, move.Actor).Any();
-        bool isArrived = this._flight.IsArrived(used.State, move.To);
+        bool isArrived = this._flight.IsArrived(used.State, move.To)
+            && (!IsFreeFlight(state) || used.State.Dice.IsEmpty || !this.HasUsableDie(used.State));
         return (GameEnd.AfterMove(moved, this._variant), isDue, goesOn, isArrived) switch
         {
             ({ } over, _, _, _) => over,

@@ -160,8 +160,8 @@ only in part, what is left is in the backlog, and its history here. The playtest
   drafted game once its draft is done. Play again draws anew. *(Stated)* While an enemy leader holds a seat's throne,
   a game without dice passes instead of rolling: acceptable for now, to be playtested.
 - **Bots' kinds on the leaderboard** (asked 2026-11-19). *Done*: the board of players and bots together marks 🧑 a
-  person, 🤖 a bot playing by a plain algorithm, 🧠 a bot playing by an AI, as its profile says (`UsesAi`, now on
-  each bot's standing too); today Athena and Pythia.
+  person, 🤖 a bot; a bot playing by an AI, as its profile says (`UsesAi`, now on each bot's standing too), the same
+  robot tinted teal (2026-11-20: a brain icon read as a blob, unlike the others); today Athena and Pythia.
 
 ## Look and feel
 

@@ -1800,21 +1800,32 @@ public sealed class TableTest : IDisposable
     }
 
     [Fact]
-    public void Click_WhenThePiecePickedUpMayDoWhatPromotesNothing_OffersItAsAButton()
+    public void Click_WhenThePiecePickedUpMayEscapeTheBoard_AsksAsAPromotionIsTheEscapeTheCallToAction()
     {
         // Arrange - the piece on cell 0 may escape off the board, as a Tafl King on its far corner may (the user's
-        // report of 2026-11-19: there was nothing to click to escape)
-        ActionDto flee = new(
-            "flee",
-            ImmutableSortedDictionary.CreateRange(
-                StringComparer.Ordinal,
-                [KeyValuePair.Create("actor", "0"), KeyValuePair.Create("cell", "0")]
-            )
-        )
-        {
-            Label = "Escape off the board",
-        };
+        // reports of 2026-11-19: nothing to click to escape; then, staying plain and the escape plain to see)
+        ActionDto flee = FleeAt(0);
         this._page.Server.View = FakeGameServer.SeatZeroToMove with { LegalActions = [flee] };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        Cell(table, 0).Click();
+        string shown = $"{table.Find(".flight .hint").TextContent}|{table.Find(".flight button.later").TextContent}";
+
+        // Act
+        table.Find(".flight button.flee").Click();
+
+        // Assert
+        Assert.Equal(
+            ("Black's Raja on c0 may escape the board, or stay:|Stay on the board", flee, 0),
+            (shown, this._page.Server.Submitted?.Action, table.FindAll("button.at-cell").Count)
+        );
+    }
+
+    [Fact]
+    public void Click_WhenThePiecePickedUpMayDoWhatNeitherPromotesNorEscapes_OffersItAsAPlainButton()
+    {
+        // Arrange - an action of a kind the page knows nothing of, taken at the piece on cell 0
+        ActionDto other = FleeAt(0) with { Kind = "anoint", Label = "Anoint it" };
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with { LegalActions = [other] };
         IRenderedComponent<Table> table = this.Render(SeatZero);
         Cell(table, 0).Click();
 
@@ -1822,15 +1833,58 @@ public sealed class TableTest : IDisposable
         table.Find("button.at-cell").Click();
 
         // Assert
-        Assert.Equal(
-            ("Escape off the board", flee, 0),
-            (
-                table.Find("button.at-cell").TextContent.Trim(),
-                this._page.Server.Submitted?.Action,
-                table.FindAll(".promotion").Count
-            )
-        );
+        Assert.Equal((other, 0), (this._page.Server.Submitted?.Action, table.FindAll(".flight").Count));
     }
+
+    [Fact]
+    public void Click_WhenTheEscapeIsPutOff_PutsThePieceDownAsItWas()
+    {
+        // Arrange
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with { LegalActions = [FleeAt(0)] };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        Cell(table, 0).Click();
+
+        // Act
+        table.Find(".flight button.later").Click();
+
+        // Assert
+        Assert.Equal((0, null), (table.FindAll(".flight").Count, this._page.Server.Submitted));
+    }
+
+    [Fact]
+    public void Render_WhenThePieceArrivedWhereItMayEscapeAsTheTurnWouldEnd_PicksItUpToAskAtOnce()
+    {
+        // Arrange - the game waits on whether it leaves, or stays and the turn ends
+        ActionDto stay = FleeAt(0) with
+        {
+            Kind = "pass",
+            Arguments = ImmutableSortedDictionary.CreateRange(
+                StringComparer.Ordinal,
+                [KeyValuePair.Create("actor", "0")]
+            ),
+            Label = "Stay on the board",
+        };
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with { LegalActions = [stay, FleeAt(0)], Fleeing = 0 };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Act
+        table.Find(".flight button.later").Click();
+
+        // Assert
+        Assert.Equal(stay, this._page.Server.Submitted?.Action);
+    }
+
+    private static ActionDto FleeAt(int cell) =>
+        new(
+            "flee",
+            ImmutableSortedDictionary.CreateRange(
+                StringComparer.Ordinal,
+                [KeyValuePair.Create("actor", "0"), KeyValuePair.Create("cell", $"{cell}")]
+            )
+        )
+        {
+            Label = "Escape off the board",
+        };
 
     [Fact]
     public void Click_WhenThePiecePickedUpMaySwapWithAnAllysPiece_OffersItWithTheSafetyOn()

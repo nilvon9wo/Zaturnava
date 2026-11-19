@@ -183,6 +183,7 @@ internal static class GameViews
             PromotesAtSide = snapshot.State.PromotesAtSide,
             AreDiceOff = snapshot.State.AreDiceOff,
             IdleRounds = snapshot.State.IdleRounds,
+            Fleeing = snapshot.State.Fleeing?.Value,
             DraftLeft = shown.Draft is { } draft
                 ? [.. snapshot.State.Seats.Select(seat => LeftOf(draft, seat.Id))]
                 : null,

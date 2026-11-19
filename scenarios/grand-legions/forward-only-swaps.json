@@ -1,7 +1,7 @@
 {
   "rulesetId": "grand-legions-medium",
   "name": "Back to back",
-  "description": "Black has rolled 5 (infantry) and 3 (heavy). Every piece that moves forward only may swap with another back to back, whatever their kinds: Black's Makruk Pawn on d3 with Green's Western Pawn on d4 (the 5), and Black's Shogi Lance on f3 with Green's Shogi Pawn on f4 (the 3).",
+  "description": "Black has rolled 5 (infantry) and 3 (heavy). Every piece that moves forward only may swap with another back to back, whatever their kinds: Black's Makruk Pawn on d3 with Green's Western Pawn on d4 (the 5), and Black's Shogi Lance on f3 with Green's Shogi Pawn on f4 (the 3). Yellow's King holds Green's throne, f8, so the Lance, which takes straight ahead, may instead capture Green's Pawn: turn Safety off to be asked \"Swap or capture?\". The Makruk Pawn takes only diagonally, so it may only swap.",
   "turn": "Black",
   "edition": 7,
   "dice": [5, 3],
@@ -12,7 +12,7 @@
     "f4": "Green Pawn (Shogi)",
     "a1": "Black Gold General (Shogi)",
     "h8": "Green Gold General (Shogi)",
-    "a8": "Yellow King (Western)",
+    "f8": "Yellow King (Western)",
     "h1": "Red Silver General (Shogi)"
   }
 }
