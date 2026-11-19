@@ -988,7 +988,7 @@ public sealed class GrandLegionsRulesTest
         // Assert - forward, sideways, and along the diagonal to the throne
         NamedDiagram corner = Assert.Single(diagram.Alternates);
         Assert.Equal(
-            ("On its palace's corner", "39,41,49,50", 50, true),
+            ("Off the throne", "39,41,49,50", 50, true),
             (
                 corner.Name,
                 string.Join(",", corner.Diagram.Moves),
@@ -1026,7 +1026,7 @@ public sealed class GrandLegionsRulesTest
     [Theory]
     [InlineData("western-pawn", "First move,En passant,Swap")]
     [InlineData("western-king", "Castling")]
-    [InlineData("janggi-general", "On its palace's corner,Face-off")]
+    [InlineData("janggi-general", "Off the throne,Face-off")]
     [InlineData("evangelist", "Converting")]
     [InlineData("tafl-king", "Escape")]
     [InlineData("knight", "")]
