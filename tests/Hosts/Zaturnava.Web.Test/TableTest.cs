@@ -546,7 +546,8 @@ public sealed class TableTest : IDisposable
     [Fact]
     public void Click_WhenTheArmyMovesRightAndTheBoardIsTurned_TurnsTheDiagramAsTheBoardShowsIt()
     {
-        // Arrange - Black's pieces move right; the board is then turned a quarter clockwise, so forward is down
+        // Arrange - Black's pieces move right, so its own view turns the board for forward to point up; the board is
+        // then turned a quarter clockwise, so forward points right on screen
         this._page.Server.View = FakeGameServer.SeatZeroToMove with
         {
             Seats = FakeGameServer.SeatZeroToMove.Seats.SetItem(
@@ -563,7 +564,7 @@ public sealed class TableTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ("transform: rotate(180deg)", "transform: rotate(-180deg)", "forward moves"),
+            ("transform: rotate(90deg)", "transform: rotate(-90deg)", "forward moves"),
             (
                 table.Find(".move-diagram-turn").GetAttribute("style"),
                 table.Find(".move-diagram .upright").GetAttribute("style"),
