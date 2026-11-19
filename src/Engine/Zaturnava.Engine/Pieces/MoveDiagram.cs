@@ -53,13 +53,6 @@ public sealed record MoveDiagram(
     public CustodyExample? Custody { get; init; }
 
     /// <summary>
-    /// For a piece that takes by custody, its captures gone berserk, as while an enemy holds its throne: landing where
-    /// <see cref="Custody"/> does, it takes every piece, friend or foe, held between it and any other piece - one
-    /// ahead, one to its right, at once (the user's report of 2026-11-19); none, for any other.
-    /// </summary>
-    public ImmutableList<CustodyExample> Berserk { get; init; } = [];
-
-    /// <summary>
     /// For a piece drawn by a river or in a palace: the same piece on an open board, to draw instead when the player
     /// asks (the user's report of 2026-11-15, C2); none, for any other.
     /// </summary>

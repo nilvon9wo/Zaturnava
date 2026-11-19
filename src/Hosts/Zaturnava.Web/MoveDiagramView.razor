@@ -35,11 +35,6 @@
                     @onclick="() => this.Switch(() => this._isObstructed = !this._isObstructed)"
                 >Pieces in the way</button>
         }
-        @if (this.IsCapturing && !this.Shown.Berserk.IsEmpty)
-        {
-            <button type="button" class="show-berserk" aria-pressed="@Pressed(this.IsBerserk)"
-                    @onclick="() => this.Switch(() => this._isBerserk = !this._isBerserk)">Berserk</button>
-        }
         @if (this.Diagram.Elsewhere is not null)
         {
             <button type="button" class="show-terrain" aria-pressed="@Pressed(this.Alternate is null && !this._isElsewhere)"
@@ -67,7 +62,7 @@
     {
         <span class="forward-arrow" aria-hidden="true">&#x25B2;</span>
     }
-    <div class="move-diagram" style="--side: @this.Shown.Side" role="img" aria-label="@this.Described">
+    <div class="move-diagram" style="--side: @this.Shown.Side; @this.Colours" role="img" aria-label="@this.Described">
         @for (int row = this.Shown.Side - 1; row >= 0; row--)
         {
             @for (int column = 0; column < this.Shown.Side; column++)
@@ -97,7 +92,7 @@
         {
             @foreach (int taken in example.Taken)
             {
-                <span @key="(this._plays, taken)" class="example-taken" style="@this.PlacedAt(taken, this.Centre)"></span>
+                <span @key="(this._plays, taken)" class="example-taken@(this.IsFriend(taken) ? " friend" : string.Empty)" style="@this.PlacedAt(taken, this.Centre)"></span>
             }
             <span @key="this._plays" class="example-piece" style="@this.PlacedAt(this.Centre, example.To)">
                 <span class="upright" style="transform: rotate(@(-this.Angle)deg)">
@@ -107,7 +102,7 @@
         }
     </div>
 </div>
-<p class="diagram-key">
+<p class="diagram-key" style="@this.Colours">
     @if (this.Shown.Told is { } told)
     {
         <span class="key-item told">@PieceStyle.Named(told, this.Pieces)</span>
@@ -130,13 +125,7 @@
         {
             <span class="key-item"><span class="key jump"></span>lands here, empty, having jumped and taken the piece before it; and may jump on again</span>
         }
-        @if (this.IsBerserk)
-        {
-            <span class="key-item"><span class="key move"></span>moves here</span>
-            <span class="key-item"><span class="key taken capture"></span>any piece, friend or foe, taken: berserk, while an enemy holds its throne, it takes every piece held between it and another at once</span>
-            <span class="key-item"><span class="key partner"></span>any piece, friend or foe, holding it with it</span>
-        }
-        else if (this.Shown.Custody is not null)
+        @if (this.Shown.Custody is not null)
         {
             <span class="key-item"><span class="key move"></span>moves here</span>
             <span class="key-item"><span class="key taken capture"></span>an enemy, taken</span>
@@ -195,7 +184,6 @@
     private bool _isObstructed;
     private bool _isElsewhere;
     private string? _alternate;
-    private bool _isBerserk;
 
     /// <summary>How many examples the player has played since the drawing last changed; none, none playing.</summary>
     private int _plays;
@@ -246,15 +234,20 @@
     /// </summary>
     private bool IsObstructed => this._isObstructed && !this.ObstaclesShown.IsEmpty;
 
-    /// <summary>
-    /// Whether its captures are drawn gone berserk, as while an enemy holds its throne: asked for, while its captures
-    /// are drawn, for a piece that takes by custody (the user's report of 2026-11-19).
-    /// </summary>
-    private bool IsBerserk => this.IsCapturing && this._isBerserk && !this.Shown.Berserk.IsEmpty;
+    /// <summary>Its capture by custody drawn, if it takes so.</summary>
+    private ImmutableList<CustodyDto> Holds => [.. new[] { this.Shown.Custody }.OfType<CustodyDto>()];
 
-    /// <summary>Its captures by custody drawn: gone berserk, if asked; else its one, if it takes so.</summary>
-    private ImmutableList<CustodyDto> Holds =>
-        this.IsBerserk ? this.Shown.Berserk : [.. new[] { this.Shown.Custody }.OfType<CustodyDto>()];
+    /// <summary>
+    /// The colours the drawing gives the other pieces (the user's report of 2026-11-19: captures were drawn red
+    /// whoever captured): its own side's, its own seat's; an enemy's, a seat of the other team - Yellow for Black
+    /// and Green, Green for Yellow and Red.
+    /// </summary>
+    private string Colours =>
+        $"--own: var(--seat-{this.Piece.Owner}); --foe: var(--seat-{(int.IsEvenInteger(this.Piece.Owner) ? 1 : 2)})";
+
+    /// <summary>Whether <paramref name="cell"/> holds a piece of the drawn piece's own side, to be taken.</summary>
+    private bool IsFriend(int cell) =>
+        this.Shown.Marks.Any(mark => mark.Cells.Contains(cell) && mark.Mark.Split(' ').Contains("friend"));
 
     /// <summary>Where pieces would stop what is drawn most: its captures', or its moves'.</summary>
     private ImmutableList<int> ObstaclesShown =>

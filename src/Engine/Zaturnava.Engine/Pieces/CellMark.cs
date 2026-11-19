@@ -15,4 +15,13 @@ public sealed record CellMark(string Mark, string Meaning, ImmutableList<int> Ce
     public const string Standing = "partner";
     public const string Trail = "trail";
     public const string Converted = "converted";
+
+    /// <summary>A piece of its own side, taken, as a piece gone berserk takes one.</summary>
+    public const string TakenFriend = "taken capture friend";
+
+    /// <summary>An enemy standing there, as one holding a piece with a piece gone berserk.</summary>
+    public const string StandingFoe = "partner foe";
+
+    /// <summary>An enemy standing on the piece's own throne.</summary>
+    public const string OnThrone = "partner foe on-throne";
 }

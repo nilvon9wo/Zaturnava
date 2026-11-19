@@ -318,7 +318,6 @@ internal static class GameViews
             Marks = [.. diagram.Marks.Select(mark => new CellMarkDto(mark.Mark, mark.Meaning, mark.Cells))],
             Example = diagram.Example is { } example ? new PlayedExampleDto(example.To, example.Taken) : null,
             IsPalaceLined = diagram.IsPalaceLined,
-            Berserk = [.. diagram.Berserk.Select(held => new CustodyDto(held.Landing, held.Taken, held.Partner))],
             Leaps = diagram.Leaps,
             Jumps = diagram.Jumps,
             Palace = diagram.Palace,

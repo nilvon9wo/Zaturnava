@@ -505,43 +505,79 @@ public sealed class TableTest : IDisposable
         );
     }
 
-    [Fact]
-    public void Click_WhenThePlayerAsksForBerserk_DrawsEveryPieceHeldTakenAtOnceAndPlaysThemTakenTogether()
+    [Theory]
+    [InlineData(0, "--own: var(--seat-0); --foe: var(--seat-1)")]
+    [InlineData(1, "--own: var(--seat-1); --foe: var(--seat-2)")]
+    public void Click_WhenAPiecesCardIsDrawn_ColoursItsSideAndItsEnemiesBySeat(int owner, string colours)
     {
-        // Arrange - on a 7 x 7 diagram, landing on 31, it takes 38, held by 45, and 32, held by 33, friend or foe
+        // Arrange - the user's report of 2026-11-19: captures were drawn red whoever captured; Black and Green take
+        // Yellow, Yellow and Red take Green
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Pieces = [new PieceDto(0, "raja", "Raja", owner, 0)],
+            Kinds = [new PieceKindDto("raja", "Raja", 5) { Diagram = new MoveDiagramDto(3, [7], [7], []) }],
+        };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Act
+        Cell(table, 0).Click();
+
+        // Assert
+        Assert.Equal(
+            ($"--side: 3; {colours}", colours),
+            (
+                table.Find(".move-diagram").GetAttribute("style"),
+                table.Find(".diagram-key").GetAttribute("style")
+            )
+        );
+    }
+
+    [Fact]
+    public void Click_WhenAPowerTakesAPieceOfItsOwnSide_DrawsAndPlaysItInItsOwnColour()
+    {
+        // Arrange - gone berserk, on a 3 x 3 diagram: an enemy on its throne, 1; landing on 7, it takes its own 8
         this._page.Server.View = FakeGameServer.SeatZeroToMove with
         {
             Kinds =
             [
                 new PieceKindDto("raja", "Raja", 5)
                 {
-                    Diagram = new MoveDiagramDto(7, [31, 38, 45], [], [])
+                    Diagram = new MoveDiagramDto(3, [7], [], [])
                     {
-                        Custody = new CustodyDto(31, 38, 45),
-                        Berserk = [new CustodyDto(31, 38, 45), new CustodyDto(31, 32, 33)],
+                        Alternates =
+                        [
+                            new NamedDiagramDto(
+                                "Berserk",
+                                new MoveDiagramDto(3, [], [], [])
+                                {
+                                    Told = "Berserk.",
+                                    Marks =
+                                    [
+                                        new CellMarkDto("partner foe on-throne", "an enemy on its throne", [1]),
+                                        new CellMarkDto("taken capture friend", "its own, taken", [8]),
+                                    ],
+                                    Example = new PlayedExampleDto(7, [8]),
+                                }
+                            ),
+                        ],
                     },
                 },
             ],
         };
         IRenderedComponent<Table> table = this.Render(SeatZero);
         Cell(table, 0).Click();
-        table.Find(".diagram-toggles .show-captures").Click();
-        string before = Square(table, 32).ClassName!;
+        table.Find(".diagram-toggles .show-alternate").Click();
 
         // Act
-        table.Find(".diagram-toggles .show-berserk").Click();
         table.Find(".play-example").Click();
 
         // Assert
         Assert.Equal(
-            ("square dark", "square dark taken capture", "square light partner", "true", 2, 4),
+            ("square light partner foe on-throne", "square dark taken capture friend", "example-taken friend"),
             (
-                before,
-                Square(table, 32).ClassName,
-                Square(table, 33).ClassName,
-                table.Find(".diagram-toggles .show-berserk").GetAttribute("aria-pressed"),
-                table.FindAll(".move-diagram .example-taken").Count,
-                table.FindAll(".diagram-key .key-item").Count
+                Square(table, 1).ClassName,
+                Square(table, 8).ClassName,
+                table.Find(".move-diagram .example-taken").ClassName
             )
         );
     }

@@ -227,7 +227,6 @@ internal sealed class MoveDiagrams(
                 .. reached.Except(obstacles).Except(unobstructed).Select(cell => cell.Value).Order(),
             ],
             Custody = custodians.Contains(kind) ? CustodyOn(reached) : null,
-            Berserk = custodians.Contains(kind) ? BerserkOn(reached) : [],
             Leaps =
             [
                 .. reached.Where(cell => IsFar(cell) && this.IsLeapt(alone, cell)).Select(cell => cell.Value).Order(),
@@ -319,20 +318,6 @@ internal sealed class MoveDiagrams(
                 Grid.CellAt(Middle, Middle + distance + 2).Value
             ))
             .FirstOrDefault();
-
-    /// <summary>
-    /// For a kind that takes by custody, gone berserk: landing where <see cref="CustodyOn"/> does, a piece taken just
-    /// ahead and another just to its right, each held against a piece beyond, whoever's either is; none, if it may
-    /// move forward nowhere.
-    /// </summary>
-    private static ImmutableList<CustodyExample> BerserkOn(ImmutableHashSet<CellId> reached) =>
-    [
-        .. new[] { CustodyOn(reached) }
-            .OfType<CustodyExample>()
-            .SelectMany(custody =>
-                new[] { custody, new CustodyExample(custody.Landing, custody.Landing + 1, custody.Landing + 2) }
-            ),
-    ];
 
     /// <summary>Whether <paramref name="cell"/> is short of the river at <paramref name="riverRow"/>, if any.</summary>
     private static bool IsOnNearBank(CellId cell, int? riverRow) => Grid.RowOf(cell) < (riverRow ?? Side);
