@@ -115,6 +115,12 @@ public interface IRulesApplying
     bool HasDice => false;
 
     /// <summary>
+    /// How many idle rounds end a game unless its creator sets another number (<see cref="GameState.IdleRounds"/>), for
+    /// a ruleset that lets them; none, for one that does not, as none does unless it says so.
+    /// </summary>
+    int? IdleRounds => null;
+
+    /// <summary>
     /// The game <paramref name="state"/> begins, played without dice (<see cref="GameState.AreDiceOff"/>): begun, if
     /// it waited on dice to see who goes first, by the first seat.
     /// </summary>

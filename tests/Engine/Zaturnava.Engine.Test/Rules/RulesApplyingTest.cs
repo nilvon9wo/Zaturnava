@@ -144,10 +144,10 @@ public sealed class RulesApplyingTest
         GameState initial = OneSizeRules.State;
 
         // Act
-        (bool HasDice, GameState Without) dice = WithoutDiceOf(rules, initial);
+        (bool HasDice, GameState Without, int? IdleRounds) dice = WithoutDiceOf(rules, initial);
 
         // Assert
-        Assert.Equal((false, initial with { AreDiceOff = true }), dice);
+        Assert.Equal((false, initial with { AreDiceOff = true }, null as int?), dice);
     }
 
     [Theory]
@@ -301,9 +301,12 @@ public sealed class RulesApplyingTest
         where TRules : IRulesApplying =>
         rules.ThronesOf(state);
 
-    private static (bool HasDice, GameState Without) WithoutDiceOf<TRules>(TRules rules, GameState initial)
+    private static (bool HasDice, GameState Without, int? IdleRounds) WithoutDiceOf<TRules>(
+        TRules rules,
+        GameState initial
+    )
         where TRules : IRulesApplying =>
-        (rules.HasDice, rules.WithoutDice(initial));
+        (rules.HasDice, rules.WithoutDice(initial), rules.IdleRounds);
 
     private static (bool IsDealt, GameState Dealt) DealOf<TRules>(TRules rules, GameState initial)
         where TRules : IRulesApplying =>

@@ -61,6 +61,13 @@ public sealed record GameState(
     public bool AreDiceOff { get; init; }
 
     /// <summary>
+    /// How many rounds in a row no one may move before the game ends on points, as the game's creator set it, for a
+    /// ruleset that lets them (<see cref="IRulesApplying.IdleRounds"/>; the playtest's 21, 22 and 26); none,
+    /// for the server's own.
+    /// </summary>
+    public int? IdleRounds { get; init; }
+
+    /// <summary>
     /// The edition of the ruleset's pieces the armies the program deals this game, fills at random, or offers in a
     /// draft, are drawn from (<see cref="IRulesApplying.Deal"/>), and of the rules it is played by, a ruleset's later
     /// rules applying from the edition that brought them: 0, in a game dealt before there was another, so that it

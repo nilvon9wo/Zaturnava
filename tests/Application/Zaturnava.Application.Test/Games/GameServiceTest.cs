@@ -213,6 +213,59 @@ public sealed class GameServiceTest
     }
 
     [Theory]
+    [InlineData(true, 3, 5, 5)]
+    [InlineData(false, 3, 5, 5)]
+    [InlineData(false, null, 5, null)]
+    [InlineData(false, 3, null, null)]
+    public async Task Create_WhenIdleRoundsAreSet_EndsAfterThemIfTheRulesLetTheCreator(
+        bool isDealt,
+        int? offered,
+        int? asked,
+        int? expected
+    )
+    {
+        // Arrange
+        GameService service = this.Service(GameServiceSettings.Default, isDealt: isDealt, idleRounds: offered);
+        GameId id = await service.Create(
+            TinyRules.RulesetId,
+            [SeatPlan.Open, SeatPlan.Open],
+            null,
+            new Dealing { IdleRounds = asked },
+            this._cancellation
+        );
+
+        // Act
+        GameSnapshot snapshot = await service.Get(id, this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            (expected, expected),
+            (ScenarioStart.IdleRoundsOf(snapshot.Record.Actions), snapshot.State.IdleRounds)
+        );
+    }
+
+    [Fact]
+    public async Task Create_WhenFewerThanOneIdleRoundIsSet_RefusesIt()
+    {
+        // Arrange
+        GameService service = this.Service(GameServiceSettings.Default, idleRounds: 3);
+
+        // Act
+        InvalidGameSetupException refused = await Assert.ThrowsAsync<InvalidGameSetupException>(() =>
+            service.Create(
+                TinyRules.RulesetId,
+                [SeatPlan.Open, SeatPlan.Open],
+                null,
+                new Dealing { IdleRounds = 0 },
+                this._cancellation
+            )
+        );
+
+        // Assert
+        Assert.Contains("idle round", refused.Message, StringComparison.Ordinal);
+    }
+
+    [Theory]
     [InlineData(true)]
     [InlineData(false)]
     public async Task Create_WhenTheSameArmiesArePlayedAgain_HasDiceAsAskedNowWhateverTheGameBefore(bool isAsked)
@@ -2385,7 +2438,8 @@ public sealed class GameServiceTest
         BoardSize? sizable = null,
         bool mayPromoteAtSide = false,
         bool offersScenarios = true,
-        bool hasDice = false
+        bool hasDice = false,
+        int? idleRounds = null
     ) =>
         new(
             new RulesetCatalog(
@@ -2397,6 +2451,7 @@ public sealed class GameServiceTest
                         SizableBoard = sizable,
                         MayPromoteAtSide = mayPromoteAtSide,
                         HasDice = hasDice,
+                        IdleRounds = idleRounds,
                     },
                     new RollingRules(GameLength),
                 ]

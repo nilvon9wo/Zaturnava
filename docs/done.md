@@ -148,6 +148,11 @@ only in part, what is left is in the backlog, and its history here. The playtest
   dice**; the guide and the AI tools' description say what changes; bots need no telling, since they choose among
   the legal actions. Players and bots are rated apart, under the game's id plus `-without-dice`; a bot's Elo
   shown there is its rating at the game's sizes.
+- **21, 22, 26** (rest) The idle-rounds safety net as a per-game setting. *Done* (2026-11-19): in a custom game,
+  **Idle rounds that end the game on points** takes any number of 1 or more, the server's own (3) shown until one
+  is typed, remembered as last set and kept by Play again. It is recorded in the game's first action
+  (`idle-rounds`, on a deal or a `setup` action), so the game replays as played, and the rules count to it in place
+  of the server's own; a game from a scenario keeps the server's.
 
 ## Look and feel
 

@@ -615,6 +615,55 @@ public sealed class LobbyTest : IDisposable
     }
 
     [Theory]
+    [InlineData(null, "", 0, null)]
+    [InlineData(3, "", 1, null)]
+    [InlineData(3, "5", 1, 5)]
+    [InlineData(3, "0", 1, null)]
+    public void Play_WhenTheGameLetsItsCreatorSetIdleRounds_AsksForThoseTyped(
+        int? offered,
+        string typed,
+        int shown,
+        int? expected
+    )
+    {
+        // Arrange
+        this._page.Server.IdleRounds = offered;
+        IRenderedComponent<Lobby> lobby = this.ByStrength();
+        if (typed.Length > 0)
+        {
+            lobby.Find("input.idle-rounds").Change(typed);
+        }
+
+        // Act
+        lobby.Find("button.create").Click();
+
+        // Assert
+        Assert.Equal(
+            (shown, expected),
+            (lobby.FindAll("input.idle-rounds").Count, this._page.Server.Created?.IdleRounds)
+        );
+    }
+
+    [Theory]
+    [InlineData(3, 4)]
+    [InlineData(null, null)]
+    public void Render_WhenIdleRoundsWereSetBefore_SetsThemAgainIfTheGameStillLetsThem(int? offered, int? expected)
+    {
+        // Arrange
+        this._page.Server.IdleRounds = offered;
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.setup").SetResult("strength");
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.setup-of.chaturaji-2027")
+            .SetResult("chaturaji-2027;0;-1,1,1,1;,,,;idle=4");
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.Render();
+        lobby.Find("button.create").Click();
+
+        // Assert
+        Assert.Equal(expected, this._page.Server.Created?.IdleRounds);
+    }
+
+    [Theory]
     [InlineData(true, true)]
     [InlineData(false, false)]
     public void Render_WhenDiceWereTurnedOffBefore_TurnsThemOffAgainIfTheGameStillRollsThem(

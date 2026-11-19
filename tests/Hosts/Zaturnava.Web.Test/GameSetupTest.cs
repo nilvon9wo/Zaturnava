@@ -39,6 +39,7 @@ public sealed class GameSetupTest
             IsForPlayers = true,
             PromotesAtSide = true,
             AreDiceOff = true,
+            IdleRounds = 5,
             Board = new BoardSizeDto(12, 10, 4, 3),
         };
 
@@ -49,7 +50,7 @@ public sealed class GameSetupTest
         Assert.Equal(
             (
                 "grand-legions-custom;0;1,1,1,1;,,,;armies=draft-own,budget=150,secret=1,hidden=1,players=1,side=1,"
-                    + "dice-off=1,board=12x10x4x3",
+                    + "dice-off=1,idle=5,board=12x10x4x3",
                 setup with { Levels = parsed!.Levels, Picks = parsed.Picks }
             ),
             (setup.Text, parsed)
@@ -61,13 +62,15 @@ public sealed class GameSetupTest
     [InlineData("a;0;1;;board=12x0x4x4")]
     [InlineData("a;0;1;;board")]
     [InlineData("a;0;1;;budget=many")]
+    [InlineData("a;0;1;;idle=0")]
+    [InlineData("a;0;1;;idle=many")]
     public void Parse_WhenAChoiceCannotBeRead_LeavesItUnmade(string text)
     {
         // Act
         GameSetup? parsed = GameSetup.Parse(text);
 
         // Assert
-        Assert.Equal((null, null), (parsed?.Board, parsed?.Budget));
+        Assert.Equal((null, null, null), (parsed?.Board, parsed?.Budget, parsed?.IdleRounds));
     }
 
     [Theory]

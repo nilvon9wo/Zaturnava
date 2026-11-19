@@ -343,6 +343,17 @@
                     Play without dice: nothing is rolled for, not who goes first, nor more moves, nor an escape
                 </label>
             }
+            @if (mode == SetupMode.Custom && this.Ruleset(catalog).IdleRounds is { } idleRounds)
+            {
+                <label class="idle-rounds">
+                    <span class="choice-name">Idle rounds that end the game on points</span>
+                    <input type="number"
+                           class="idle-rounds"
+                           min="1"
+                           @bind="this._idleRounds"
+                           placeholder="@idleRounds" />
+                </label>
+            }
             @if (mode == SetupMode.Custom && this._me is not null)
             {
                 <label class="for-players">
@@ -609,6 +620,12 @@
     /// by default, and remembered as last set).
     /// </summary>
     private bool _areDiceOff;
+
+    /// <summary>
+    /// For a game that lets its creator say, how many idle rounds end it on points; the server's own, if none (the
+    /// playtest's 21, 22 and 26; Proposed: remembered as last set).
+    /// </summary>
+    private int? _idleRounds;
     private string? _problem;
 
     /// <summary>How the player last started each game, by the game, as the browser remembers.</summary>
@@ -666,6 +683,7 @@
             IsForPlayers = this._isForPlayers,
             PromotesAtSide = this._promotesAtSide,
             AreDiceOff = this._areDiceOff,
+            IdleRounds = this._idleRounds,
             Board = this.BoardAsked(catalog),
         };
 
@@ -734,6 +752,7 @@
         this._isForPlayers = setup.IsForPlayers;
         this._promotesAtSide = setup.PromotesAtSide && ruleset.MayPromoteAtSide;
         this._areDiceOff = setup.AreDiceOff && ruleset.HasDice;
+        this._idleRounds = ruleset.IdleRounds is null ? null : setup.IdleRounds;
     }
 
     /// <summary>The seats as <paramref name="setup"/> has them; a bot it chose that is no longer offered, any.</summary>
@@ -1312,6 +1331,7 @@
         this._budget = this.Ruleset(catalog).DraftBudget;
         this._promotesAtSide = false;
         this._areDiceOff = false;
+        this._idleRounds = null;
     }
 
     /// <summary>
@@ -1479,6 +1499,7 @@
             Board = this.BoardAsked(catalog),
             PromotesAtSide = this._promotesAtSide && this.Ruleset(catalog).MayPromoteAtSide,
             AreDiceOff = this._areDiceOff && this.Ruleset(catalog).HasDice,
+            IdleRounds = this.Ruleset(catalog).IdleRounds is null || this._idleRounds is < 1 ? null : this._idleRounds,
         };
 
     /// <summary>How each seat set up by strength is played: the player's own, and a person's, by no bot.</summary>

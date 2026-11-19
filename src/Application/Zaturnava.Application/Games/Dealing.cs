@@ -38,6 +38,13 @@ public sealed record Dealing(bool AreAlike = false, GameId? ArmiesOf = null)
     /// </summary>
     public bool AreDiceOff { get; init; }
 
+    /// <summary>
+    /// How many idle rounds end the game (<see cref="GameState.IdleRounds"/>), if its creator set them (at least 1),
+    /// for a ruleset that lets them (<see cref="IRulesApplying.IdleRounds"/>; it is ignored by one that does
+    /// not); dealt or not, but never from a scenario. None, for the server's own.
+    /// </summary>
+    public int? IdleRounds { get; init; }
+
     /// <summary>Each seat its own army, dealt anew.</summary>
     public static Dealing Anew { get; } = new();
 }

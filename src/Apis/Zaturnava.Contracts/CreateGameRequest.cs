@@ -86,4 +86,11 @@ public sealed record CreateGameRequest([Required] string RulesetId, [Required] I
     /// them, a pure abstract strategy game (<see cref="GameViewDto.AreDiceOff"/>). With dice, unless asked.
     /// </summary>
     public bool AreDiceOff { get; init; }
+
+    /// <summary>
+    /// For a game whose creator may set it (<see cref="RulesetDto.IdleRounds"/>), not from a scenario: how many rounds
+    /// in a row no one may move before the game ends on points, at least 1 (<see cref="GameViewDto.IdleRounds"/>).
+    /// Null, for the server's own.
+    /// </summary>
+    public int? IdleRounds { get; init; }
 }

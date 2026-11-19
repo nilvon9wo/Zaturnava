@@ -19,6 +19,7 @@ internal sealed record GameSetup(string RulesetId, int Colour, ImmutableList<int
     private const string SideKey = "side";
     private const string BoardKey = "board";
     private const string DiceOffKey = "dice-off";
+    private const string IdleKey = "idle";
 
     /// <summary>How the armies come to be, as the lobby names its choices; the game's default, if none.</summary>
     public string? Armies { get; init; }
@@ -40,6 +41,9 @@ internal sealed record GameSetup(string RulesetId, int Colour, ImmutableList<int
 
     /// <summary>Whether the game is played without dice.</summary>
     public bool AreDiceOff { get; init; }
+
+    /// <summary>How many idle rounds end the game; the server's own, if none.</summary>
+    public int? IdleRounds { get; init; }
 
     /// <summary>The board's size, for a game whose creator may set it; the game's own, if none.</summary>
     public BoardSizeDto? Board { get; init; }
@@ -71,6 +75,7 @@ internal sealed record GameSetup(string RulesetId, int Colour, ImmutableList<int
             this.IsForPlayers ? $"{PlayersKey}=1" : null,
             this.PromotesAtSide ? $"{SideKey}=1" : null,
             this.AreDiceOff ? $"{DiceOffKey}=1" : null,
+            this.IdleRounds is { } idle ? $"{IdleKey}={idle.ToString(CultureInfo.InvariantCulture)}" : null,
             this.Board is { } board
                 ? $"{BoardKey}=" + string.Join(
                     'x',
@@ -105,6 +110,9 @@ internal sealed record GameSetup(string RulesetId, int Colour, ImmutableList<int
                 IsForPlayers = choices.ContainsKey(PlayersKey),
                 PromotesAtSide = choices.ContainsKey(SideKey),
                 AreDiceOff = choices.ContainsKey(DiceOffKey),
+                IdleRounds = choices.TryGetValue(IdleKey, out string? idle) && Number(idle) is > 0 and var rounds
+                    ? rounds
+                    : null,
                 Board = choices.TryGetValue(BoardKey, out string? board) ? BoardOf(board) : null,
             }
             : null;

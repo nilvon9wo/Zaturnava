@@ -98,6 +98,9 @@ internal sealed class FakeGameServer : IGameServing
     /// <summary>Whether Chaturaji 2027's games roll dice, so that its creator may turn them off.</summary>
     public bool HasDice { get; set; }
 
+    /// <summary>How many idle rounds end Chaturaji 2027's games unless set; null, if its creator may not.</summary>
+    public int? IdleRounds { get; set; }
+
     /// <summary>The scenarios the catalog offers: none, unless a test sets some.</summary>
     public ImmutableList<ScenarioDto> Scenarios { get; set; } = [];
 
@@ -134,6 +137,7 @@ internal sealed class FakeGameServer : IGameServing
                         SizableBoard = this.SizableBoard,
                         MayPromoteAtSide = this.MayPromoteAtSide,
                         HasDice = this.HasDice,
+                        IdleRounds = this.IdleRounds,
                     },
                     .. this.MoreRulesets,
                 ],

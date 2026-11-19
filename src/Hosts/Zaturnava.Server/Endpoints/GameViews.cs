@@ -182,6 +182,7 @@ internal static class GameViews
             Board = SizeOf(ScenarioStart.BoardOf(snapshot.Record.Actions)),
             PromotesAtSide = snapshot.State.PromotesAtSide,
             AreDiceOff = snapshot.State.AreDiceOff,
+            IdleRounds = snapshot.State.IdleRounds,
             DraftLeft = shown.Draft is { } draft
                 ? [.. snapshot.State.Seats.Select(seat => LeftOf(draft, seat.Id))]
                 : null,
@@ -407,6 +408,7 @@ internal static class GameViews
             IsDraftable = rules.IsDraftable,
             MayPromoteAtSide = rules.MayPromoteAtSide,
             HasDice = rules.HasDice,
+            IdleRounds = rules.IdleRounds,
             DraftBudget = rules.DraftBudget,
             DraftBudgetLimit = rules.DraftBudgetLimit,
             SizableBoard = SizeOf(rules.SizableBoard),

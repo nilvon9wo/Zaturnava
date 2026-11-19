@@ -248,6 +248,7 @@ internal static class GameStarter
             Board = armies?.Board,
             PromotesAtSide = armies?.PromotesAtSide ?? false,
             AreDiceOff = armies?.AreDiceOff ?? false,
+            IdleRounds = armies?.IdleRounds,
             IsForPlayers = isForPlayers,
         };
         GameCreatedDto created = await games.Create(request, CancellationToken.None);

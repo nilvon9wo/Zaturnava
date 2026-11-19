@@ -263,6 +263,7 @@ internal static class GameEndpoints
             PromotesAtSide = request.PromotesAtSide,
             Budget = request.IsDrafted ? null : request.DraftBudget,
             AreDiceOff = request.AreDiceOff,
+            IdleRounds = request.IdleRounds,
         };
         GameId id = await games.Create(request.RulesetId, seats, request.Scenario, dealing, cancellationToken);
         if (request.Continuing is { } previous)
