@@ -585,6 +585,57 @@ public sealed class LobbyTest : IDisposable
         );
     }
 
+    [Theory]
+    [InlineData(false, false, 0, false)]
+    [InlineData(true, false, 1, false)]
+    [InlineData(true, true, 1, true)]
+    public void Play_WhenTheGameRollsDice_AsksForItWithoutThemIfChecked(
+        bool hasDice,
+        bool isChecked,
+        int shown,
+        bool expected
+    )
+    {
+        // Arrange
+        this._page.Server.HasDice = hasDice;
+        IRenderedComponent<Lobby> lobby = this.ByStrength();
+        if (isChecked)
+        {
+            lobby.Find("input.no-dice").Change(true);
+        }
+
+        // Act
+        lobby.Find("button.create").Click();
+
+        // Assert
+        Assert.Equal(
+            (shown, expected),
+            (lobby.FindAll("input.no-dice").Count, this._page.Server.Created?.AreDiceOff)
+        );
+    }
+
+    [Theory]
+    [InlineData(true, true)]
+    [InlineData(false, false)]
+    public void Render_WhenDiceWereTurnedOffBefore_TurnsThemOffAgainIfTheGameStillRollsThem(
+        bool hasDice,
+        bool expected
+    )
+    {
+        // Arrange
+        this._page.Server.HasDice = hasDice;
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.setup").SetResult("strength");
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.setup-of.chaturaji-2027")
+            .SetResult("chaturaji-2027;0;-1,1,1,1;,,,;dice-off=1");
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.Render();
+        lobby.Find("button.create").Click();
+
+        // Assert
+        Assert.Equal(expected, this._page.Server.Created?.AreDiceOff);
+    }
+
     [Fact]
     public void Render_WhenTheGamesOtherChoicesWereMadeBefore_MakesThemAgain()
     {
@@ -690,6 +741,24 @@ public sealed class LobbyTest : IDisposable
             (offered, barsGuests),
             (lobby.FindAll("input.players-only").Count, this._page.Server.Created!.IsForPlayers)
         );
+    }
+
+    [Theory]
+    [InlineData(false, 0)]
+    [InlineData(true, 1)]
+    public void Render_WhenAGameIsPlayedWithoutDice_SaysSoBesideIt(bool areDiceOff, int shown)
+    {
+        // Arrange
+        this._page.Server.Games =
+        [
+            this._page.Server.Games[0] with { OpenSeats = [1], AreDiceOff = areDiceOff, PlayerIds = [] },
+        ];
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Assert
+        Assert.Equal(shown, lobby.FindAll(".games-table tbody tr span.no-dice").Count);
     }
 
     [Theory]

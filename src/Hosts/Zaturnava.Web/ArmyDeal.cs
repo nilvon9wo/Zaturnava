@@ -30,4 +30,7 @@ internal sealed record ArmyDeal(bool AreAlike, string? Of = null)
     /// Whether pieces promoted at the far edge are promoted at the edge to their right too, in a game that offers it.
     /// </summary>
     public bool PromotesAtSide { get; init; }
+
+    /// <summary>Whether the game is played without dice, in a game that rolls them; dealt or not.</summary>
+    public bool AreDiceOff { get; init; }
 }

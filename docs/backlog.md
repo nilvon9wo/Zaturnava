@@ -9,15 +9,6 @@ own number (**25**, **N29**), the [2026-11-15 specification](playtesting/2026-11
 
 ## 1. Now: asked for and not yet done
 
-- **Swap or capture** (asked 2026-11-19): with Safety off, a move onto an ally that could also swap with it asks
-  "Swap or capture?" rather than assuming the swap. Needs the rules to offer capturing a swappable ally as an
-  action of its own, beside the swap.
-- **Dice off** (asked 2026-11-19): when creating a game, of Chaturaji 2027 or Grand Legions, its creator may turn
-  the dice off, making an impure abstract strategy game a pure one. With dice off, nothing can be rolled for:
-  no extra moves, no escapes, nor anything else a player may roll for now or later. *Accepted* (2026-11-19): a
-  setting recorded with the game, so that it replays as played and the lobby can show it; every action that
-  rolls, or waits on dice, offered by no rule while it is set (the rules asking one place, so that a future roll
-  is covered too); bots and the move guide told, so neither counts on a roll; rated apart from games with dice.
 - **D2** At least three non-random bots below 1200 Elo, a real progression of difficulty; Icarus sits only a few
   points below Midas. Keep every past measurement. *Proposed*, still to try: a bot playing one of its top few
   moves at random, by Sage's or Athena's judgement, how often it errs its strength; one looking no further than
@@ -122,6 +113,9 @@ From the specification's observations of the bots in play (F, X) and the Sage pl
 
 ## 8. Later
 
+- *(Stated 2026-11-19, very low priority, an idea)* **Combat by dice**, as in Loka: a capture is not certain, but
+  rolled for, the odds weighed by such things as who attacks and whether the square has defenders. Optional, and
+  only in games with dice (not with **Dice off**); what weighs, and how, still to be worked out.
 - **N1–N5** Secondary palaces: not to be built before promotions and lifts can be bought
   ([roadmap](grand/roadmap.md#later)).
 - More kingdoms than four, or of unequal size; more pieces; games without palaces.

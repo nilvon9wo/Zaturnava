@@ -568,7 +568,13 @@ internal sealed class ArmyDrafting
     /// The game begun from the armies drafted: where they stand, where it starts; what each seat kept, its score, as
     /// unspent, earned by no one; and the seats rolling for who goes first.
     /// </summary>
-    private GameState Started(GameState drafted) =>
+    private GameState Started(GameState drafted)
+    {
+        GameState started = this.RollingOff(drafted);
+        return started.AreDiceOff ? Chaturaji2027Rules.Opened(started) : started;
+    }
+
+    private GameState RollingOff(GameState drafted) =>
         drafted with
         {
             Start = drafted.Position,

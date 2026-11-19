@@ -109,7 +109,7 @@ public sealed class HttpGameClientTest
                     + "\"areArmiesAlike\":false,\"armiesOf\":null,\"isDrafted\":false,"
                     + "\"draftBudget\":null,\"drafter\":null,\"isDraftSecret\":false,"
                     + "\"isDraftHiddenFromAllies\":false,\"board\":null,\"promotesAtSide\":false,"
-                    + "\"isForPlayers\":false}",
+                    + "\"isForPlayers\":false,\"areDiceOff\":false}",
                 "g"
             ),
             (server.Method, server.Path, server.Body, created.GameId)

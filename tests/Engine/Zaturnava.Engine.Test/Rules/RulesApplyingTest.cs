@@ -136,6 +136,20 @@ public sealed class RulesApplyingTest
         Assert.Equal((false, initial), dealt);
     }
 
+    [Fact]
+    public void WithoutDice_WhenTheRulesetSaysNoOther_HasNoDiceAndOnlySaysTheGameIsWithoutThem()
+    {
+        // Arrange
+        OneSizeRules rules = new();
+        GameState initial = OneSizeRules.State;
+
+        // Act
+        (bool HasDice, GameState Without) dice = WithoutDiceOf(rules, initial);
+
+        // Assert
+        Assert.Equal((false, initial with { AreDiceOff = true }), dice);
+    }
+
     [Theory]
     [InlineData(false, 0)]
     [InlineData(true, 2)]
@@ -286,6 +300,10 @@ public sealed class RulesApplyingTest
     private static ImmutableDictionary<SeatId, CellId> ThronesOf<TRules>(TRules rules, GameState state)
         where TRules : IRulesApplying =>
         rules.ThronesOf(state);
+
+    private static (bool HasDice, GameState Without) WithoutDiceOf<TRules>(TRules rules, GameState initial)
+        where TRules : IRulesApplying =>
+        (rules.HasDice, rules.WithoutDice(initial));
 
     private static (bool IsDealt, GameState Dealt) DealOf<TRules>(TRules rules, GameState initial)
         where TRules : IRulesApplying =>

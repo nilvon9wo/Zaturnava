@@ -40,6 +40,12 @@ public sealed record RulesetDto(string Id, string Name, int SeatCount)
     public bool MayPromoteAtSide { get; init; }
 
     /// <summary>
+    /// Whether its games roll dice, so that a game's creator may turn them off
+    /// (<see cref="CreateGameRequest.AreDiceOff"/>).
+    /// </summary>
+    public bool HasDice { get; init; }
+
+    /// <summary>
     /// For a game whose players may draft: what each has to spend, unless the game's creator sets another
     /// (<see cref="CreateGameRequest.DraftBudget"/>); null, for a game whose players may not.
     /// </summary>

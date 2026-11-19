@@ -297,6 +297,47 @@ public sealed class ScenarioStartTest
     }
 
     [Fact]
+    public void StateOf_WhenTheGameBeganWithoutDice_ReplaysItSo()
+    {
+        // Arrange - dealt without dice, dealt with them, begun without them undealt, and from a scenario
+        ImmutableList<ActionDescriptor> dealt = [ScenarioStart.Dealt(new LoadedDice(4), areDiceOff: true)];
+        ImmutableList<ActionDescriptor> withDice = [ScenarioStart.Dealt(new LoadedDice(4))];
+        ImmutableList<ActionDescriptor> setUp = [ScenarioStart.WithoutDice()];
+        ImmutableList<ActionDescriptor> scenario = [ScenarioStart.Describe(Tiny())];
+        TinyRules rules = new(6, isDealt: true);
+
+        // Act
+        (bool Dealt, bool WithDice, bool SetUp, bool Scenario, bool None, bool IsStart) off = (
+            ScenarioStart.StateOf(dealt, rules).AreDiceOff,
+            ScenarioStart.StateOf(withDice, rules).AreDiceOff,
+            ScenarioStart.StateOf(setUp, rules).AreDiceOff,
+            ScenarioStart.StateOf(scenario, rules).AreDiceOff,
+            ScenarioStart.AreDiceOff([]),
+            ScenarioStart.IsStart(setUp[0])
+        );
+
+        // Assert
+        Assert.Equal((true, false, true, false, false, true), off);
+    }
+
+    [Theory]
+    [InlineData(true, true)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(false, false)]
+    public void WithDiceOff_WhateverTheDealSaid_SaysAsAsked(bool wasOff, bool isAsked)
+    {
+        // Arrange
+        ActionDescriptor deal = ScenarioStart.Dealt(new LoadedDice(4), areDiceOff: wasOff);
+
+        // Act
+        ActionDescriptor again = ScenarioStart.WithDiceOff(deal, isAsked);
+
+        // Assert
+        Assert.Equal(isAsked, ScenarioStart.AreDiceOff([again]));
+    }
+
+    [Fact]
     public void StateFrom_WhenTheScenarioPromotesAtTheSide_StartsSo()
     {
         // Arrange

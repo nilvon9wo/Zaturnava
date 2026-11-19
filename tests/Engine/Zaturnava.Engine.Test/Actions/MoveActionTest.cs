@@ -21,4 +21,25 @@ public sealed class MoveActionTest
             (descriptor.Kind, descriptor.Arguments["actor"], descriptor.Arguments["from"], descriptor.Arguments["to"])
         );
     }
+
+    [Theory]
+    [InlineData(true, "true")]
+    [InlineData(false, null)]
+    public void Describe_WhenTheMoveCapturesWhereItMightSwapOrNot_SaysSoOnlyThenAndParsesBack(
+        bool captures,
+        string? expected
+    )
+    {
+        // Arrange - the user's request of 2026-11-19: "Swap or capture?"
+        MoveAction move = new(new SeatId(0), new CellId(11), new CellId(19)) { Captures = captures };
+
+        // Act
+        ActionDescriptor described = move.Describe();
+
+        // Assert
+        Assert.Equal(
+            (expected, move),
+            (described.Arguments.GetValueOrDefault(MoveAction.CapturesArgument), MoveAction.Parse(described))
+        );
+    }
 }

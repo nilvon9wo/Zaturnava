@@ -18,6 +18,7 @@ internal sealed record GameSetup(string RulesetId, int Colour, ImmutableList<int
     private const string PlayersKey = "players";
     private const string SideKey = "side";
     private const string BoardKey = "board";
+    private const string DiceOffKey = "dice-off";
 
     /// <summary>How the armies come to be, as the lobby names its choices; the game's default, if none.</summary>
     public string? Armies { get; init; }
@@ -36,6 +37,9 @@ internal sealed record GameSetup(string RulesetId, int Colour, ImmutableList<int
 
     /// <summary>Whether pieces promoted at the far edge are promoted at the edge to their right too.</summary>
     public bool PromotesAtSide { get; init; }
+
+    /// <summary>Whether the game is played without dice.</summary>
+    public bool AreDiceOff { get; init; }
 
     /// <summary>The board's size, for a game whose creator may set it; the game's own, if none.</summary>
     public BoardSizeDto? Board { get; init; }
@@ -66,6 +70,7 @@ internal sealed record GameSetup(string RulesetId, int Colour, ImmutableList<int
             this.IsHiddenFromAllies ? $"{HiddenKey}=1" : null,
             this.IsForPlayers ? $"{PlayersKey}=1" : null,
             this.PromotesAtSide ? $"{SideKey}=1" : null,
+            this.AreDiceOff ? $"{DiceOffKey}=1" : null,
             this.Board is { } board
                 ? $"{BoardKey}=" + string.Join(
                     'x',
@@ -99,6 +104,7 @@ internal sealed record GameSetup(string RulesetId, int Colour, ImmutableList<int
                 IsHiddenFromAllies = choices.ContainsKey(HiddenKey),
                 IsForPlayers = choices.ContainsKey(PlayersKey),
                 PromotesAtSide = choices.ContainsKey(SideKey),
+                AreDiceOff = choices.ContainsKey(DiceOffKey),
                 Board = choices.TryGetValue(BoardKey, out string? board) ? BoardOf(board) : null,
             }
             : null;

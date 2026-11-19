@@ -109,6 +109,12 @@ public sealed record GameViewDto(
     public bool PromotesAtSide { get; init; }
 
     /// <summary>
+    /// Whether the game is played without dice, as its creator asked (<see cref="CreateGameRequest.AreDiceOff"/>):
+    /// nothing is rolled for.
+    /// </summary>
+    public bool AreDiceOff { get; init; }
+
+    /// <summary>
     /// While the armies are drafted, what each seat has left to spend, seat by seat (null for a seat drafting in
     /// secret from the one asking, <see cref="IsDraftSecret"/>); null once play has begun, or in a game never drafted.
     /// </summary>

@@ -66,13 +66,18 @@ public sealed class EfGameStore(GameDbContext context) : IGamePersisting
                 game,
                 game.Seats.ToList(),
                 game.Actions.Count,
-                game.Actions.Any(action => action.Sequence == 0 && action.Kind == ScenarioStart.Kind)
+                game.Actions.Any(action => action.Sequence == 0 && action.Kind == ScenarioStart.Kind),
+                game.Actions.Any(action => action.Sequence == 0 && action.Arguments.Contains(DiceOff))
             ))
             .ToListAsync(cancellationToken);
         return new GamePage(
             [
                 .. rows.Select(row =>
-                    GameRecordMapping.ToListing(row.Game, row.Seats, row.Moves) with { IsScenario = row.IsScenario }
+                    GameRecordMapping.ToListing(row.Game, row.Seats, row.Moves) with
+                    {
+                        IsScenario = row.IsScenario,
+                        AreDiceOff = row.AreDiceOff,
+                    }
                 ),
             ],
             total
@@ -199,7 +204,16 @@ public sealed class EfGameStore(GameDbContext context) : IGamePersisting
     }
 
     /// <summary>A game's row as a lobby lists it: with its seats and how many actions, but not the actions.</summary>
-    private sealed record ListedRow(GameEntity Game, List<SeatEntity> Seats, int Moves, bool IsScenario);
+    private sealed record ListedRow(
+        GameEntity Game,
+        List<SeatEntity> Seats,
+        int Moves,
+        bool IsScenario,
+        bool AreDiceOff
+    );
+
+    /// <summary>A first action's arguments, as stored, saying the game is played without dice.</summary>
+    private const string DiceOff = $"\"{ScenarioStart.DiceOffArgument}\"";
 
     private IQueryable<GameEntity> Games() =>
         this._context.Games

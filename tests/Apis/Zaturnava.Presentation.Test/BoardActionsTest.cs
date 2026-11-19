@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Net.NowhereAtAll.Zaturnava.Contracts;
 
 namespace Net.NowhereAtAll.Zaturnava.Presentation.Test;
@@ -161,6 +162,24 @@ public sealed class BoardActionsTest
 
         // Assert
         Assert.Equal(expected, partner is { } moved ? $"{moved.From} {moved.To}" : string.Empty);
+    }
+
+    [Theory]
+    [InlineData(8, 16, 2)]
+    [InlineData(8, 24, 1)]
+    [InlineData(9, 24, 0)]
+    public void AllBetween_WhenGivenTwoCells_IsEveryActionJoiningThem(int from, int to, int expected)
+    {
+        // Arrange - a swap from 8 to 16, or taking the piece there (the user's request of 2026-11-19)
+        ActionDto swap = Actions.Move(8, 16) with { Label = "Swap" };
+        ActionDto capture = Actions.Move(8, 16) with { Label = null };
+        BoardActions actions = new([swap, capture with { Arguments = capture.Arguments.Add("captures", "true") }, Far]);
+
+        // Act
+        ImmutableList<ActionDto> between = actions.AllBetween(from, to);
+
+        // Assert
+        Assert.Equal(expected, between.Count);
     }
 
     [Fact]

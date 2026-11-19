@@ -142,6 +142,9 @@ button.urged {
     button.urged { animation: none; outline: 3px solid var(--accent); outline-offset: 2px; }
 }
 
+/* A move onto an ally that may swap places with it or take it: the question, and its answers, in a row. */
+.either-of { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 6px 0; }
+
 /* In a scenario, on a development server: the faces the next roll is to come up as, beside the roll. */
 .faked-dice { display: inline-flex; gap: 4px; align-items: center; }
 .faked-dice .faked-die { width: 3.5em; }
@@ -386,10 +389,13 @@ html { scrollbar-gutter: stable; }
 /* How the armies come to be: nothing beside it to choose, so its long names take both columns (2026-11-19). */
 .army-choices select.armies { grid-column: 2 / span 2; }
 /* A game's checkbox options, each a line of its own. */
-label.alike, label.drafted, label.for-players, label.secret, label.secret-from-allies, label.side-promotion {
+label.alike, label.drafted, label.for-players, label.secret, label.secret-from-allies, label.side-promotion,
+label.dice-off {
     display: block;
     margin-top: 6px;
 }
+/* A game listed as played without dice. */
+.game-actions .no-dice { margin-right: 6px; font-size: 0.85em; font-style: italic; }
 /* The pieces to draft: filters over a table that scrolls within the turn's panel, its head kept in view. */
 .draft-catalogue h3 { margin: 4px 0 6px; font-size: 1em; }
 .draft-catalogue .filters { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; margin-bottom: 6px; }

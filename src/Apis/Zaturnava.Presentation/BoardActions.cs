@@ -72,6 +72,13 @@ public sealed class BoardActions([Required] ImmutableList<ActionDto> legal)
         this._moves.Where(move => move.From == from && move.To == to).Select(move => move.Action).FirstOrDefault();
 
     /// <summary>
+    /// Every action from <paramref name="from"/> to <paramref name="to"/>: more than one where the player must say
+    /// which, as when a move onto an ally may swap places with it or take it.
+    /// </summary>
+    public ImmutableList<ActionDto> AllBetween(int from, int to) =>
+        [.. this._moves.Where(move => move.From == from && move.To == to).Select(move => move.Action)];
+
+    /// <summary>
     /// What the action from <paramref name="from"/> to <paramref name="to"/> says of itself, as a swap does; null if
     /// it says nothing, or there is none.
     /// </summary>

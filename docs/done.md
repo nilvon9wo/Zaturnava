@@ -128,6 +128,27 @@ only in part, what is left is in the backlog, and its history here. The playtest
   which would lose a game the player meant to come back to). A server offering no scenarios refuses the deletion
   as forbidden. Games are told apart by their first action, so no column was added to the database.
 
+## Rules, as asked in play
+
+- **Swap or capture** (asked 2026-11-19): with Safety off, a move onto an ally that could also swap with it asks
+  "Swap or capture?" rather than assuming the swap. Needs the rules to offer capturing a swappable ally as an
+  action of its own, beside the swap. *Done*: where a piece back to back with an ally's may also take it (while an
+  enemy leader holds that ally's throne, and the piece takes straight ahead), the rules offer both, the capture a
+  move that says so (`captures`, said only then, so every move recorded before means what it did). With Safety
+  off, the page asks **Swap or capture?**, with the swap's own label and **Capture it**; with it on, the capture is
+  kept back as any taking of the team's pieces is, and the swap is made at once.
+- **Dice off** (asked 2026-11-19): a game's creator may turn the dice off, in Chaturaji 2027 or Grand Legions,
+  making it a pure abstract strategy game. *Done*, as accepted: a lobby checkbox, **Play without dice**, shown for
+  any ruleset that rolls dice (`HasDice`), remembered as last set, and kept by Play again. The setting is recorded
+  in the game's first action (`dice-off`, on a deal, or on a `setup` action of its own for a game not dealt), so
+  the game replays as played; a game from a scenario keeps the scenario's dice. The state says it
+  (`AreDiceOff`), and the rules ask that one place: no roll-off (the first seat, Black, opens; *Proposed*), no
+  roll offered at a turn's start (while an enemy leader holds the seat's throne, a pass instead of the roll), so
+  no doubles and no escapes; a game still drafting opens so once drafted. The games list marks such games **No
+  dice**; the guide and the AI tools' description say what changes; bots need no telling, since they choose among
+  the legal actions. Players and bots are rated apart, under the game's id plus `-without-dice`; a bot's Elo
+  shown there is its rating at the game's sizes.
+
 ## Look and feel
 
 - *(Stated 2026-11-12)* A piece card makes plain how each move is made. *Done*: a square the piece leaps to, over

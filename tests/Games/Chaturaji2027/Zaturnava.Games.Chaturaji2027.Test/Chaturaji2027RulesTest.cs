@@ -323,6 +323,58 @@ public sealed class Chaturaji2027RulesTest
     }
 
     [Fact]
+    public void LegalActions_WhenAnEnemyRajaSitsOnTheThroneOfASeatWithoutDice_OffersOnlyAPass()
+    {
+        // Arrange
+        GameState state = this.SharedTurn() with { Dice = [], AreDiceOff = true };
+
+        // Act
+        ImmutableList<GameAction> actions = this._rules.LegalActions(state);
+
+        // Assert
+        Assert.Equal([new PassAction(Yellow)], actions);
+    }
+
+    [Fact]
+    public void WithoutDice_WhenTheGameIsNew_HasBlackOpenItWithNoRollAtAll()
+    {
+        // Arrange
+        GameState initial = this._rules.CreateInitialState();
+
+        // Act
+        GameState state = this._rules.WithoutDice(initial);
+        ImmutableList<GameAction> actions = this._rules.LegalActions(state);
+
+        // Assert
+        Assert.Equal(
+            (true, true, Black, 1, null, 0, false, true),
+            (
+                this._rules.HasDice,
+                state.AreDiceOff,
+                state.DecidingSeat,
+                state.TurnNumber,
+                state.AwaitedDice,
+                state.RollOff.Count,
+                actions.OfType<RollAction>().Any(),
+                actions.OfType<MoveAction>().Any()
+            )
+        );
+    }
+
+    [Fact]
+    public void WithoutDice_WhenTheGameHasBegunAlready_OnlySaysSo()
+    {
+        // Arrange
+        GameState later = this.Later();
+
+        // Act
+        GameState state = this._rules.WithoutDice(later);
+
+        // Assert
+        Assert.Equal(later with { AreDiceOff = true }, state);
+    }
+
+    [Fact]
     public void Apply_WhenTheActionIsNotLegal_ThrowsIllegalActionException()
     {
         // Arrange
@@ -2415,6 +2467,56 @@ public sealed class Chaturaji2027RulesTest
         // Assert
         Assert.DoesNotContain(new MoveAction(Black, Grid.CellAt(file, 3), Grid.CellAt(file, 4)), actions);
     }
+
+    [Theory]
+    [InlineData(false, "Green Black")]
+    [InlineData(true, " Black")]
+    public void Apply_WhenASwapperBackToBackMayAlsoBeTaken_OffersBothAndSwapsOrTakesAsChosen(
+        bool captures,
+        string expected
+    )
+    {
+        // Arrange - Elephants that swap, Black's facing up and Green's down, Yellow's Raja on Green's throne, so that
+        // Black may take Green's pieces (the user's request of 2026-11-19: "Swap or capture?")
+        Chaturaji2027Rules rules = new(
+            DiceProfile.WeightedSixSided,
+            Chaturaji2027Rules.DefaultIdleRounds,
+            PawnPromotion.OtherArmies,
+            variant: Chaturaji2027Variant.Standard with
+            {
+                Swappers = [Chaturaji2027Pieces.Pawn, Chaturaji2027Pieces.Elephant],
+            }
+        );
+        GameState state = this.StateWith(
+            (Grid.CellAt(3, 3), Piece(1, Chaturaji2027Pieces.Elephant, Black)),
+            (Grid.CellAt(3, 4), Piece(2, Chaturaji2027Pieces.Elephant, Green)),
+            (rules.Thrones[Green], Piece(3, Chaturaji2027Pieces.Raja, Yellow))
+        );
+        MoveAction swap = new(Black, Grid.CellAt(3, 3), Grid.CellAt(3, 4));
+        MoveAction capture = swap with { Captures = true };
+
+        // Act
+        GameState moved = rules.Apply(state, captures ? capture : swap).State;
+
+        // Assert
+        Assert.Equal(
+            (true, true, expected),
+            (
+                rules.LegalActions(state).Contains(swap),
+                rules.LegalActions(state).Contains(capture),
+                $"{OwnerName(moved, Grid.CellAt(3, 3))} {OwnerName(moved, Grid.CellAt(3, 4))}"
+            )
+        );
+    }
+
+    private static string? OwnerName(GameState state, CellId cell) =>
+        state.Position.PieceAt(cell)?.Owner switch
+        {
+            null => null,
+            { } owner when owner == Black => "Black",
+            { } owner when owner == Green => "Green",
+            _ => "another",
+        };
 
     [Fact]
     public void Apply_WhenAPawnSwapsBackToBack_TradesPlacesAndTakesNothing()

@@ -336,6 +336,30 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
 
     public bool MayPromoteAtSide => this._variant.MayPromoteAtSide;
 
+    /// <summary>Every game is played with dice, unless its creator turns them off.</summary>
+    public bool HasDice => true;
+
+    /// <summary>
+    /// The game played without dice: no one rolling to see who goes first, the first seat opening, as it opens any
+    /// turn, with no die (the user's request of 2026-11-19; Proposed: the first seat, Black, as the seats are
+    /// ordered); a game still drafting its armies opens so once they are drafted.
+    /// </summary>
+    public GameState WithoutDice([Required] GameState state) =>
+        state.RollOff.IsEmpty
+            ? state with { AreDiceOff = true }
+            : Opened(state with { AreDiceOff = true });
+
+    /// <summary>A game without dice, its first seat to open it, with no die.</summary>
+    internal static GameState Opened(GameState state) =>
+        state with
+        {
+            RollOff = [],
+            AwaitedDice = null,
+            Dice = [],
+            DecidingSeat = state.Seats[0].Id,
+            TurnNumber = OpeningTurn,
+        };
+
     public int? DraftBudget => this._variant.Drafting?.BudgetIn(int.MaxValue);
 
     public int? DraftBudgetLimit => this._drafting?.Limit;
@@ -810,28 +834,41 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     /// <summary>
     /// At the start of a turn: roll, or move any piece, or promote, or pass - but only roll, or promote,
     /// while an enemy Raja sits on the throne of the seat whose turn it is (rules.md §6.3); or hand the turn
-    /// to a regent (§6.2).
+    /// to a regent (§6.2). Without dice, never roll: while an enemy holds the throne, pass instead
+    /// (<see cref="GameState.AreDiceOff"/>; Proposed, 2026-11-19).
     /// </summary>
     private ImmutableList<GameAction> TurnChoicesOf(GameState state, SeatId seat) =>
-        this._control.OccupierOf(state, state.ActingFor ?? seat) is null
-            ?
+        (this._control.OccupierOf(state, state.ActingFor ?? seat), state.AreDiceOff) switch
+        {
+            (null, false) => this.FreeTurnChoicesOf(state, seat).Insert(1, new RollAction(seat)),
+            (null, true) => this.FreeTurnChoicesOf(state, seat),
+            (_, false) =>
+            [
+                new RollAction(seat),
+                .. this.PromotionsOf(state, seat),
+                .. this.HandOversOf(state, seat),
+                .. this.RetirementsOf(state, seat),
+            ],
+            (_, true) =>
             [
                 new PassAction(seat),
-                new RollAction(seat),
-                .. this.MovesOf(state, seat, _ => true),
-                .. this.FleesOf(state, seat, _ => true),
-                .. this.HiringsOf(state, seat, _ => true),
                 .. this.PromotionsOf(state, seat),
                 .. this.HandOversOf(state, seat),
                 .. this.RetirementsOf(state, seat),
-            ]
-            :
-            [
-                new RollAction(seat),
-                .. this.PromotionsOf(state, seat),
-                .. this.HandOversOf(state, seat),
-                .. this.RetirementsOf(state, seat),
-            ];
+            ],
+        };
+
+    /// <summary>At the start of a turn no enemy's leader holds the throne of: anything but rolling.</summary>
+    private ImmutableList<GameAction> FreeTurnChoicesOf(GameState state, SeatId seat) =>
+    [
+        new PassAction(seat),
+        .. this.MovesOf(state, seat, _ => true),
+        .. this.FleesOf(state, seat, _ => true),
+        .. this.HiringsOf(state, seat, _ => true),
+        .. this.PromotionsOf(state, seat),
+        .. this.HandOversOf(state, seat),
+        .. this.RetirementsOf(state, seat),
+    ];
 
     /// <summary>The flights from the far corner the seat may make (<see cref="Flight"/>), as moves of a kind.</summary>
     private IEnumerable<FleeAction> FleesOf(GameState state, SeatId seat, Func<PieceKindId, bool> isMovable) =>
@@ -1001,7 +1038,10 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
                 !state.Retired.Contains(occupant.Value.Owner) || !this.IsLeader(occupant.Value.Kind)
             )
             .SelectMany(occupant => this.MovesFrom(state, occupant.Key, occupant.Value, seat))
-            .Select(move => new MoveAction(seat, move.From, move.To))
+            .Select(move => new MoveAction(seat, move.From, move.To)
+            {
+                Captures = move.Captured is not null && this.IsSwap(state, move.From, move.Mover, move.To),
+            })
             .Distinct();
     }
 
@@ -1632,7 +1672,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     private Transition Moved(GameState state, MoveAction move)
     {
         Piece mover = state.Position.PieceAt(move.From)!; // the move is legal, so a piece stands there
-        Transition moved = this.IsSwap(state, move.From, mover, move.To)
+        Transition moved = !move.Captures && this.IsSwap(state, move.From, mover, move.To)
             ? Swapped(state, move, mover)
             : this.Displaced(state, move, mover);
         bool MayStop(CellId cell) =>

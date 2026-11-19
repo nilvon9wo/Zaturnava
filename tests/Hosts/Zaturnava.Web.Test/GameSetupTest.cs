@@ -38,6 +38,7 @@ public sealed class GameSetupTest
             IsHiddenFromAllies = true,
             IsForPlayers = true,
             PromotesAtSide = true,
+            AreDiceOff = true,
             Board = new BoardSizeDto(12, 10, 4, 3),
         };
 
@@ -48,7 +49,7 @@ public sealed class GameSetupTest
         Assert.Equal(
             (
                 "grand-legions-custom;0;1,1,1,1;,,,;armies=draft-own,budget=150,secret=1,hidden=1,players=1,side=1,"
-                    + "board=12x10x4x3",
+                    + "dice-off=1,board=12x10x4x3",
                 setup with { Levels = parsed!.Levels, Picks = parsed.Picks }
             ),
             (setup.Text, parsed)

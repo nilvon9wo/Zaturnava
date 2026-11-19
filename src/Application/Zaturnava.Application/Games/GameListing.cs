@@ -32,6 +32,9 @@ public sealed record GameListing(
     /// <summary>Whether the game started from a scenario, as only a development server's do.</summary>
     public bool IsScenario { get; init; }
 
+    /// <summary>Whether the game is played without dice, as its creator chose.</summary>
+    public bool AreDiceOff { get; init; }
+
     /// <summary>The game as a lobby lists it, from the game as stored.</summary>
     public static GameListing Of([Required] GameRecord game) =>
         new(game.Id, game.RulesetId, game.Version, game.Controllers, game.Actions.Count, game.IsOver ?? false)
@@ -41,5 +44,6 @@ public sealed record GameListing(
             Away = game.Away,
             Deciding = game.Deciding,
             IsScenario = ScenarioStart.IsScenario(game.Actions),
+            AreDiceOff = ScenarioStart.AreDiceOff(game.Actions),
         };
 }

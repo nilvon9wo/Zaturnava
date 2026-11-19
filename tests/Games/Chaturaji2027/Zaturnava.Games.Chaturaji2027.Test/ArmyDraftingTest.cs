@@ -372,6 +372,28 @@ public sealed class ArmyDraftingTest
     }
 
     [Fact]
+    public void Apply_WhenTheLastSeatIsDoneInAGameWithoutDice_HasBlackOpenItWithNoRollOff()
+    {
+        // Arrange - Black, Yellow and Green are done, in a game without dice
+        GameState state = this.Begun() with
+        {
+            Thrones = ImmutableDictionary<SeatId, CellId>.Empty.Add(Red, new CellId(7)),
+            Draft = this.Begun().Draft! with { Done = [Black, Yellow, Green] },
+            DecidingSeat = Red,
+            AreDiceOff = true,
+        };
+
+        // Act
+        GameState started = this._rules.Apply(state, new FillArmyAction(Red)).State;
+
+        // Assert
+        Assert.Equal(
+            (null as ArmyDraft, 0, Black, null as DiceRequest, 1),
+            (started.Draft, started.RollOff.Count, started.DecidingSeat!.Value, started.AwaitedDice, started.TurnNumber)
+        );
+    }
+
+    [Fact]
     public void Apply_WhenASeatSetsItsThroneOrBuysAPiece_TellsWhatItDidAndWhere()
     {
         // Arrange

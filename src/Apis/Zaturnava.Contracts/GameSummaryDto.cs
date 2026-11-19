@@ -54,4 +54,9 @@ public sealed record GameSummaryDto(
 
     /// <summary>Whether it started from a scenario, as only a development server's do.</summary>
     public bool IsScenario { get; init; }
+
+    /// <summary>
+    /// Whether it is played without dice, as its creator chose (<see cref="CreateGameRequest.AreDiceOff"/>).
+    /// </summary>
+    public bool AreDiceOff { get; init; }
 }
