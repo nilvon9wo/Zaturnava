@@ -19,7 +19,9 @@
    unless the player chooses to show them (remembered in the browser). Beside them, the leaderboard
    (<see cref="Leaderboard"/>). One choice of game, at the top, with the choice to show previews, serves the whole
    lobby (Stated): the game to start, the games listed and the leaderboard; the games waiting for the player's
-   move are listed whatever their game. *@
+   move are listed whatever their game. New game is a dialog floating over the games, shown at first only if there is
+   no game to join, closed by its cross, and dragged where the player likes (Stated, 2026-11-19). The games list is
+   sorted by any of its headings, and filtered and sorted as the player last left it. *@
 @using System.Globalization
 @inject IGameServing Games
 @inject Browser Browser
@@ -64,8 +66,11 @@
         </div>
         @if (this.IsNewGameShown)
         {
-        <div class="panel new-game">
-            <h2>New game</h2>
+        <div class="panel new-game" role="dialog" aria-labelledby="new-game-title" @ref="this._newGame">
+            <header class="new-game-head">
+                <h2 id="new-game-title">New game</h2>
+                <CloseButton Class="close-new-game" OnClose="() => this._isNewGameShown = false" />
+            </header>
             @{
                 ImmutableList<RulesetDto> sizes = SizesOf(catalog, this.Ruleset(catalog).Game);
                 ImmutableList<ScenarioDto> scenarios = this.ScenariosFor(catalog);
@@ -422,7 +427,7 @@
             }
             else
             {
-                @this.GamesTable(catalog, this.Sorted(), isSortable: true, this.GameActions)
+                @this.GamesTable(catalog, this.Sorted(catalog), isSortable: true, this.GameActions)
             }
             @if (this._pages > 1)
             {
@@ -462,11 +467,33 @@
     private const string Mine = "mine";
 
     private ImmutableList<GameSummaryDto> _games = [];
-    private GameColumn _sortBy = GameColumn.Default;
+    /// <summary>The column the games list is sorted by; none, until the player chooses one.</summary>
+    private string _sortBy = string.Empty;
     private bool _isDescending;
 
     /// <summary>Whether the player chose to show the New game panel, or to hide it; none, until they choose.</summary>
     private bool? _isNewGameShown;
+
+    /// <summary>
+    /// The New game dialog, floating over the games rather than pushing them aside (Stated, 2026-11-19), which the
+    /// player may drag where they like, and finds there again.
+    /// </summary>
+    private ElementReference _newGame;
+
+    /// <summary>Whether the dialog shown now may already be dragged; not, once it is hidden.</summary>
+    private bool _isNewGameDraggable;
+
+    /// <summary>Lets the player drag the New game dialog, each time it is shown anew.</summary>
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        bool isShown = this._catalog is not null && this.IsNewGameShown;
+        if (isShown && !this._isNewGameDraggable)
+        {
+            await this.Browser.MakeNewGameDraggable(this._newGame);
+        }
+
+        this._isNewGameDraggable = isShown;
+    }
 
     /// <summary>
     /// Whether the New game panel shows: as the player chose; else, only if there is no game they could join on this
@@ -779,27 +806,15 @@
                     <tr>
                         @if (HasSizes(games))
                         {
-                            <th scope="col" class="size">Size</th>
+                            @this.Heading(SizeColumn, "Size", "size", isSortable)
                         }
                         @foreach ((string name, int seat) in SeatsOf(games))
                         {
-                            <th scope="col" class="seat seat-@seat">@name</th>
+                            @this.Heading(SeatColumn + seat, name, $"seat seat-{seat}", isSortable)
                         }
-                        @foreach ((GameColumn column, string heading) in Columns)
+                        @foreach ((string column, string heading) in Columns)
                         {
-                            <th scope="col" aria-sort="@(isSortable ? this.AriaSortOf(column) : null)">
-                                @if (isSortable)
-                                {
-                                    <button class="sort sort-@column.ToString().ToLowerInvariant()"
-                                            @onclick="() => this.SortBy(column)">
-                                        @heading@this.ArrowOf(column)
-                                    </button>
-                                }
-                                else
-                                {
-                                    @heading
-                                }
-                            </th>
+                            @this.Heading(column, heading, null, isSortable)
                         }
                         <th scope="col"><span class="visually-hidden">Actions</span></th>
                     </tr>
@@ -835,6 +850,24 @@
                 </tbody>
             </table>
         </div>;
+
+    /// <summary>
+    /// A heading of the games list: if <paramref name="isSortable"/>, a button that sorts by its column (Stated,
+    /// 2026-11-19: "sortable by header"), and again the other way.
+    /// </summary>
+    private RenderFragment Heading(string column, string heading, string? classes, bool isSortable) =>
+        @<th scope="col" class="@classes" aria-sort="@(isSortable ? this.AriaSortOf(column) : null)">
+            @if (isSortable)
+            {
+                <button class="sort sort-@column" @onclick="() => this.SortBy(column)">
+                    @heading@this.ArrowOf(column)
+                </button>
+            }
+            else
+            {
+                @heading
+            }
+        </th>;
 
     /// <summary>
     /// Who holds the seat: their name, and whether they are away; open, a button to join it (or, for players only, a
@@ -935,27 +968,40 @@
     private static int? NextOf(GameSummaryDto game) =>
         game.IsOver || !game.OpenSeats.IsEmpty ? null : game.DecidingSeat;
 
-    /// <summary>The games list's sortable columns, by their headings (playtest 2026-11-15, H4).</summary>
-    private static readonly ImmutableList<(GameColumn Column, string Heading)> Columns =
+    private const string SizeColumn = "size";
+
+    /// <summary>A seat's column, by its number: "seat-0".</summary>
+    private const string SeatColumn = "seat-";
+
+    /// <summary>The games list's columns after its seats', by their headings (playtest 2026-11-15, H4).</summary>
+    private static readonly ImmutableList<(string Column, string Heading)> Columns =
     [
-        (GameColumn.Next, "Next"),
-        (GameColumn.Moves, "Moves"),
-        (GameColumn.Created, "Created"),
-        (GameColumn.Changed, "Last change"),
+        ("next", "Next"),
+        ("moves", "Moves"),
+        ("created", "Created"),
+        ("changed", "Last change"),
     ];
 
     /// <summary>
     /// The games on this page in the order chosen: by a column, either way; else, until a heading is clicked, the
-    /// player's own first, then those waiting longest.
+    /// player's own first, then those waiting longest. By size, smallest first; by a seat, its open seats first, then
+    /// by who holds it, alphabetically.
     /// </summary>
-    private ImmutableList<GameSummaryDto> Sorted()
+    private ImmutableList<GameSummaryDto> Sorted(CatalogDto catalog)
     {
-        Func<GameSummaryDto, string>? key = this._sortBy switch
+        int? seat = this._sortBy.StartsWith(SeatColumn, StringComparison.Ordinal)
+            && int.TryParse(this._sortBy[SeatColumn.Length..], CultureInfo.InvariantCulture, out int number)
+                ? number
+                : null;
+        Func<GameSummaryDto, string>? key = (this._sortBy, seat) switch
         {
-            GameColumn.Next => game => NextOf(game) is { } next ? next.ToString("D3", CultureInfo.InvariantCulture) : "~",
-            GameColumn.Moves => game => game.Moves.ToString("D9", CultureInfo.InvariantCulture),
-            GameColumn.Created => game => TimeKeyOf(game.Created),
-            GameColumn.Changed => game => TimeKeyOf(game.LastChanged),
+            (_, { } at) => game => SeatKeyOf(game, at),
+            (SizeColumn, _) => game => catalog.Rulesets.FindIndex(ruleset => ruleset.Id == game.RulesetId)
+                .ToString("D3", CultureInfo.InvariantCulture),
+            ("next", _) => game => NextOf(game) is { } next ? next.ToString("D3", CultureInfo.InvariantCulture) : "~",
+            ("moves", _) => game => game.Moves.ToString("D9", CultureInfo.InvariantCulture),
+            ("created", _) => game => TimeKeyOf(game.Created),
+            ("changed", _) => game => TimeKeyOf(game.LastChanged),
             _ => null,
         };
         return key is null
@@ -976,28 +1022,27 @@
     /// <summary>Whether the player holds a seat at the game, in this browser or signed in.</summary>
     private bool IsMine(GameSummaryDto game) => this._held.ContainsKey(game.Id) || this.MySeat(game) is not null;
 
-    /// <summary>Sorts by <paramref name="column"/>; by it again, the other way.</summary>
-    private void SortBy(GameColumn column)
+    /// <summary>A seat, to order by: an open one first, then who holds it, alphabetically; a game without it, last.</summary>
+    private static string SeatKeyOf(GameSummaryDto game, int seat) =>
+        seat >= game.Players.Count
+            ? "~"
+            : !game.IsOver && game.OpenSeats.Contains(seat)
+                ? " "
+                : game.Players[seat].ToUpperInvariant();
+
+    /// <summary>Sorts by <paramref name="column"/>; by it again, the other way; and remembers it.</summary>
+    private async Task SortBy(string column)
     {
         this._isDescending = this._sortBy == column && !this._isDescending;
         this._sortBy = column;
+        await this.RememberList();
     }
 
-    private string ArrowOf(GameColumn column) =>
+    private string ArrowOf(string column) =>
         this._sortBy != column ? string.Empty : this._isDescending ? " ▼" : " ▲";
 
-    private string AriaSortOf(GameColumn column) =>
+    private string AriaSortOf(string column) =>
         this._sortBy != column ? "none" : this._isDescending ? "descending" : "ascending";
-
-    /// <summary>A column the games list sorts by; none chosen, the player's own and the longest waiting first.</summary>
-    private enum GameColumn
-    {
-        Default,
-        Next,
-        Moves,
-        Created,
-        Changed,
-    }
 
     /// <summary>What the ruleset calls the seat, "Black"; "seat 2" if it names none.</summary>
     private static string SeatName(ImmutableList<string> names, int seat) =>
@@ -1027,6 +1072,11 @@
         RulesetDto first = games.FirstOrDefault(game => game.Game == last) ?? games[0];
         this.Choose(catalog, first.Game);
         this._filter = this._filter with { Game = first.Game, Preview = this.PreviewFilter };
+        if (await this.Browser.GamesList() is { } view)
+        {
+            this.RestoreList(catalog, view);
+        }
+
         await this.ListGames();
         this._mode = await this.Browser.Setup();
         this._catalog = catalog;
@@ -1054,11 +1104,52 @@
         }
     }
 
-    /// <summary>The list filtered anew, from its first page; told why not, if the server cannot.</summary>
+    /// <summary>The list filtered anew, from its first page, and remembered; told why not, if the server cannot.</summary>
     private async Task Filter(GameListQuery filter)
     {
         this._filter = filter with { Page = null };
+        await this.RememberList();
         this._problem = await Requests.Attempt(this.ListGames);
+    }
+
+    private const string StateChoice = "state";
+    private const string PeopleChoice = "people";
+    private const string PlayersChoice = "players";
+    private const string SizeChoice = "size";
+
+    /// <summary>
+    /// Remembers how the games list is filtered and sorted, to show it so again (Stated, 2026-11-19); not the game
+    /// (remembered as the game last started), nor a game code (an invitation's, for once), nor the page.
+    /// </summary>
+    private ValueTask RememberList() =>
+        this.Browser.SetGamesList(
+            new ListView(
+                ImmutableDictionary<string, string>.Empty
+                    .Add(StateChoice, StateOf(this._filter))
+                    .Add(PeopleChoice, this._filter.PeopleOnly == true ? "1" : string.Empty)
+                    .Add(PlayersChoice, this._filter.Players ?? string.Empty)
+                    .Add(SizeChoice, this._filter.Ruleset ?? string.Empty),
+                this._sortBy,
+                this._isDescending
+            )
+        );
+
+    /// <summary>
+    /// The list as the player last left it: filtered so, but for a size no longer of the game, or Mine with no one
+    /// signed in; sorted so.
+    /// </summary>
+    private void RestoreList(CatalogDto catalog, ListView view)
+    {
+        string game = this.Ruleset(catalog).Game;
+        string state = view[StateChoice] is Mine && this._me is null ? Waiting : view[StateChoice] ?? Waiting;
+        this._filter = WithState(this._filter, state, this._me) with
+        {
+            PeopleOnly = view[PeopleChoice] is "1" ? true : null,
+            Players = view[PlayersChoice],
+            Ruleset = SizesOf(catalog, game).Any(size => size.Id == view[SizeChoice]) ? view[SizeChoice] : null,
+        };
+        this._sortBy = view.Sort;
+        this._isDescending = view.IsDescending;
     }
 
     /// <summary>The list of the chosen game at one size, or at any.</summary>
@@ -1075,16 +1166,17 @@
     /// The games waiting for players to take their open seats, those under way, either, or those of the player signed
     /// in (Mine): at a seat they claimed signed in, whether or not they wait for others.
     /// </summary>
-    private Task FilterState(ChangeEventArgs change) =>
-        this.Filter(
-            $"{change.Value}" switch
-            {
-                Waiting => this._filter with { Open = true, Player = null },
-                InProgress => this._filter with { Open = false, Player = null },
-                Mine => this._filter with { Open = null, Player = this._me.GetValueOrDefault().Id },
-                _ => this._filter with { Open = null, Player = null },
-            }
-        );
+    private Task FilterState(ChangeEventArgs change) => this.Filter(WithState(this._filter, $"{change.Value}", this._me));
+
+    /// <summary><paramref name="filter"/> showing the games <paramref name="state"/> names, as the Show choice does.</summary>
+    private static GameListQuery WithState(GameListQuery filter, string state, (string Id, string Token)? me) =>
+        state switch
+        {
+            Waiting => filter with { Open = true, Player = null },
+            InProgress => filter with { Open = false, Player = null },
+            Mine => filter with { Open = null, Player = me.GetValueOrDefault().Id },
+            _ => filter with { Open = null, Player = null },
+        };
 
     private Task FilterPeople(ChangeEventArgs change) =>
         this.Filter(this._filter with { PeopleOnly = true.Equals(change.Value) ? true : null });

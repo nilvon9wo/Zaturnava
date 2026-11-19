@@ -215,7 +215,7 @@ select {
 }
 .guide-head { display: flex; align-items: center; gap: 12px; }
 .guide-head h2 { margin: 0; }
-.guide-head .close { margin-left: auto; }
+.guide-head .dialog-close { margin-left: auto; align-self: flex-start; }
 .guide h3 { margin: 18px 0 6px; }
 .guide ul { padding-left: 20px; }
 .guide a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
@@ -304,6 +304,22 @@ html { scrollbar-gutter: stable; }
 .games-column .panel { flex: none; }
 .games-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
 .games-head .new-game-toggle[aria-expanded="true"] { opacity: 0.7; }
+/* New game floats over the games, near the top of the window, rather than pushing them aside (Stated, 2026-11-19):
+   wherever the player last dragged it, else across the middle; it scrolls within itself if the window is short. */
+.panel.new-game {
+    position: fixed;
+    z-index: 8;
+    top: 96px;
+    left: max(16px, calc(50% - 320px));
+    width: min(640px, calc(100vw - 32px));
+    max-height: calc(100dvh - 112px);
+    overflow: auto;
+    box-sizing: border-box;
+    border: 2px solid var(--accent);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+}
+.new-game-head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.new-game-head h2 { flex: 1; margin: 0; }
 /* Seat by seat, or by strength: the way chosen filled in, as the log's tabs are. */
 .setup-modes { display: flex; gap: 6px; margin-bottom: 4px; }
 .setup-modes .mode {
@@ -426,13 +442,13 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
 /* A panel of the lobby: its widest board (the bots', eight columns) scrolls within it rather than widening the page. */
 .panel.leaderboard { overflow-x: auto; }
 .leaderboard .choice { display: flex; gap: 8px; align-items: center; margin: 8px 0; }
-.leaderboard .kind { margin-right: 4px; }
+.leaderboard .leaders th.kind, .leaderboard .leaders td.kind { text-align: center; }
 .leaderboard .against { color: var(--muted); font-size: 0.85em; margin-left: 4px; white-space: nowrap; }
 .leaderboard .leaders { border-collapse: collapse; width: 100%; }
 .leaderboard .leaders th, .leaderboard .leaders td {
     text-align: right; padding: 4px 8px; border-bottom: 1px solid var(--panel-edge);
 }
-.leaderboard .leaders th:nth-child(2), .leaderboard .leaders td.name { text-align: left; }
+.leaderboard .leaders th.name, .leaderboard .leaders td.name { text-align: left; }
 .leaderboard .about-standings, .leaderboard .no-leaders { color: var(--muted); }
 .leaderboard .leaders th button.sort {
     background: none; border: none; padding: 0; color: inherit; font: inherit; cursor: pointer;
@@ -639,7 +655,8 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
 }
 .piece-card header { display: flex; align-items: center; gap: 10px; }
 /* The header a player drags the card by. */
-.piece-card header.draggable { cursor: move; touch-action: none; user-select: none; }
+.piece-card header.draggable, .new-game header.draggable { cursor: move; touch-action: none; user-select: none; }
+.piece-card header .dialog-close { align-self: flex-start; }
 .piece-card header .piece-icon { width: 40px; height: 40px; flex: none; }
 .piece-card h2 { flex: 1; margin: 0; font-size: 1.15rem; }
 .piece-card h3 { margin: 12px 0 4px; font-size: 0.95rem; color: var(--accent); }
@@ -958,8 +975,24 @@ button.safety.off {
     border-radius: 12px;
     padding: 18px 22px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+    position: relative;
 }
-.dialog h2 { margin: 0 0 10px; font-size: 1.2rem; }
+.dialog h2 { margin: 0 0 10px; padding-right: 32px; font-size: 1.2rem; }
+/* Every dialog that can be closed is closed by a cross in its top right corner, and nothing else. */
+.dialog-close {
+    flex: none;
+    background: none;
+    border: 0;
+    padding: 2px 6px;
+    color: inherit;
+    font: inherit;
+    font-size: 1.1rem;
+    line-height: 1;
+    cursor: pointer;
+    border-radius: 4px;
+}
+.dialog-close:hover, .dialog-close:focus-visible { background: var(--panel-edge); }
+.dialog > .dialog-close { position: absolute; top: 10px; right: 10px; }
 .dialog .countdown { color: var(--accent); font-variant-numeric: tabular-nums; }
 .dialog .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
 

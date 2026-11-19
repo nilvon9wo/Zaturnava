@@ -25,6 +25,7 @@ else
 {
     <div class="backdrop">
         <div class="dialog public-profile" role="dialog" aria-modal="true" aria-labelledby="public-profile-title">
+            <CloseButton Class="close-public-profile" OnClose="() => this._isOpen = false" />
             @if (this._profile is { } profile)
             {
                 <h2 id="public-profile-title">@profile.Name</h2>
@@ -91,9 +92,6 @@ else
                 <h2 id="public-profile-title">@this.Text</h2>
                 <p class="problem" role="alert">@(this._problem ?? this.Gone)</p>
             }
-            <div class="actions">
-                <button class="close-public-profile" @onclick="() => this._isOpen = false">Close</button>
-            </div>
         </div>
     </div>
 }

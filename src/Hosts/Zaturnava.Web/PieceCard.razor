@@ -13,7 +13,7 @@
     <header>
         <PieceIcon Kind="@this.Piece.Kind" Name="@this.Piece.Name" Owner="this.Piece.Owner" Mark="this.Piece.Mark" Pieces="this.Pieces" />
         <h2>@this.Named(this.Piece.Name)</h2>
-        <button class="close" title="Close" @onclick="this.OnClose">&#x2715;</button>
+        <CloseButton Class="close" OnClose="this.OnClose" />
     </header>
     <dl class="facts">
         <dt>Owner</dt>
