@@ -6,8 +6,9 @@ namespace Net.NowhereAtAll.Zaturnava.Server.Composition;
 
 /// <summary>
 /// Where the web client's page is served from, chosen by configuration: <c>Listed</c> (the
-/// default), whose origins are named under <c>PageHosting:Origins</c>, or <c>Itch</c>. A browser
-/// may call the server from the chosen host's origins only.
+/// default), whose origins are named under <c>PageHosting:Origins</c>, or <c>Itch</c>, beside any
+/// origins listed there too, as the game server's own, where it serves the page as well (Stated
+/// 2026-11-19, OQ9). A browser may call the server, or sign in, from those origins only.
 /// </summary>
 internal static class PageHosting
 {
@@ -25,7 +26,7 @@ internal static class PageHosting
     /// <exception cref="InvalidOperationException">The provider is unknown.</exception>
     public static IServiceCollection AddPageHosting(this IServiceCollection services, IConfiguration configuration)
     {
-        IPageHosting host = Host(configuration, configuration[ProviderKey] ?? Listed);
+        IPageHosting host = AlsoListed(Host(configuration, configuration[ProviderKey] ?? Listed), configuration);
         _ = services.AddOptions<CorsOptions>().Configure(cors => cors.AddDefaultPolicy(policy => Allow(policy, host)));
         return services.AddSingleton(host).AddCors();
     }
@@ -39,6 +40,14 @@ internal static class PageHosting
                 $"There is no '{provider}' page host; {ProviderKey} must be {Listed} or {Itch}."
             ),
         };
+
+    /// <summary>
+    /// <paramref name="host"/>, with the origins listed beside its own, if any are and it does not list them already.
+    /// </summary>
+    private static IPageHosting AlsoListed(IPageHosting host, IConfiguration configuration) =>
+        host is ListedPageHost || !Origins(configuration).Any()
+            ? host
+            : new ListedPageHost([.. host.Origins, .. Origins(configuration)]);
 
     private static IEnumerable<string> Origins(IConfiguration configuration) =>
         configuration.GetSection(OriginsKey).GetChildren().Select(origin => origin.Value).OfType<string>();

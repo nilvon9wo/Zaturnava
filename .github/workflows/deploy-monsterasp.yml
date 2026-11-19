@@ -47,6 +47,16 @@ jobs:
       - name: Publish the server
         run: dotnet publish src/Hosts/Zaturnava.Server -c Release -o publish
 
+      # The page too, served by the server at /play, so that an invitation can be a link that opens a game (Stated
+      # 2026-11-19, OQ9); itch.io still serves it, for being found. It talks to the server its appsettings.json names,
+      # this one; the Development settings (localhost) are left out.
+      - name: Publish the page beside it
+        shell: pwsh
+        run: |
+          dotnet publish src/Hosts/Zaturnava.Web -c Release -o publish-page
+          Remove-Item publish-page/wwwroot/appsettings.Development.json* -ErrorAction SilentlyContinue
+          Move-Item publish-page/wwwroot publish/page
+
       # The site's host, then the database and the sign-in clients, named only in the published settings, never in
       # the repository.
       - name: Give the server its secrets
@@ -64,6 +74,8 @@ jobs:
           $settings = @{
             AllowedHosts = $env:SITE_HOST
             Mcp = @{ SelfAddress = "https://$($env:SITE_HOST)/" }
+            Page = @{ Folder = "page" }
+            PageHosting = @{ Origins = @{ Server = "https://$($env:SITE_HOST)" } }
           }
           if ([string]::IsNullOrWhiteSpace($env:DATABASE)) {
             Write-Host "No MONSTERASP_SQLSERVER_CONNECTION_STRING: games are kept in memory."

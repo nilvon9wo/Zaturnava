@@ -26,6 +26,7 @@
 @inject IGameServing Games
 @inject Browser Browser
 @inject TimeProvider Clock
+@inject NavigationManager Navigation
 
 <section class="lobby">
     @if (this._problem is { } problem)
@@ -1077,6 +1078,7 @@
             this.RestoreList(catalog, view);
         }
 
+        this._code = GameCode.InvitedBy(this.Navigation.Uri);
         await this.ListGames();
         this._mode = await this.Browser.Setup();
         this._catalog = catalog;

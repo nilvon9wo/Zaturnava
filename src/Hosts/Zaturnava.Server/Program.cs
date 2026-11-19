@@ -9,6 +9,7 @@ _ = builder.Services.AddHostedMcp();
 
 WebApplication app = builder.Build();
 _ = app.UseExceptionHandler();
+_ = app.UsePage();
 _ = app.UseCors();
 _ = app.UseRateLimiter();
 _ = app.UseAuthentication();
