@@ -828,6 +828,13 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
     background: var(--foe, var(--danger));
     box-shadow: 0 0 0 3px var(--own, var(--mark));
 }
+/* Played, an enemy won over turns its colour to its own side's once the piece lands (the user's report of 2026-11-19:
+   the card did not show the conversion). */
+.move-diagram.playing .converted::before { animation: example-converted 1.8s ease-in-out forwards; }
+@keyframes example-converted {
+    0%, 75% { background: var(--foe, var(--danger)); }
+    90%, 100% { background: var(--own, var(--mark)); }
+}
 .diagram-key .told { flex-basis: 100%; }
 /* An example played (C3): the piece where it stands, then moving, then where it ends, staying there; an enemy it
    takes, a disc in the danger colour, gone as it arrives. */
@@ -931,7 +938,8 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
     .move-diagram .example-piece, .move-diagram .example-taken,
     .move-diagram .example-taken.led, .move-diagram .example-piece.after-lead,
     .move-diagram .example-partner, .move-diagram .example-piece.chain,
-    .move-diagram .example-taken.jumped-first, .move-diagram .example-taken.jumped-last { animation-duration: 1ms; }
+    .move-diagram .example-taken.jumped-first, .move-diagram .example-taken.jumped-last,
+    .move-diagram.playing .converted::before { animation-duration: 1ms; }
 }
 /* Each mark kept beside its meaning: a long meaning wraps beside its mark, so the card never scrolls sideways. */
 .diagram-key { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; color: var(--muted); }

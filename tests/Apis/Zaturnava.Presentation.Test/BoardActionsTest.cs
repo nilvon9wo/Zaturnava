@@ -143,6 +143,26 @@ public sealed class BoardActionsTest
         Assert.Equal(expected, label);
     }
 
+    [Theory]
+    [InlineData(8, 16, "11 10")]
+    [InlineData(8, 24, "")]
+    [InlineData(9, 24, "")]
+    public void PartnerBetween_WhenGivenTwoCells_SaysWhatOtherPieceTheMoveJoiningThemTakesAlong(
+        int from,
+        int to,
+        string expected
+    )
+    {
+        // Arrange - castling from 8 to 16, its Rook from 11 to 10
+        BoardActions actions = new([Actions.Move(8, 16) with { Partner = new PartnerMoveDto(11, 10) }, Far]);
+
+        // Act
+        PartnerMoveDto? partner = actions.PartnerBetween(from, to);
+
+        // Assert
+        Assert.Equal(expected, partner is { } moved ? $"{moved.From} {moved.To}" : string.Empty);
+    }
+
     [Fact]
     public void Drops_WhenAnActionGoesToACellFromNone_AreThoseCells()
     {

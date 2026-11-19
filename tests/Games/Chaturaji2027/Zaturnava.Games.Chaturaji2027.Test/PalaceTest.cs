@@ -539,10 +539,11 @@ public sealed class PalaceTest
     }
 
     [Fact]
-    public void Deal_WhenEveryEdgePalaceCouldShareASquareWithAnotherArmys_DealsNone()
+    public void Deal_WhenAnEdgePalaceCouldShareASquareWithAnotherArmys_DealsItWithoutThatSquare()
     {
         // Arrange - kingdoms 6 × 2: about d2, a palace could share c3 with Yellow's up the left edge; about e2, f3 with
-        // Red's (the user's words of 2026-11-19: "it should be impossible for palaces to overlap")
+        // Red's (the user's words of 2026-11-19: "it should be impossible for palaces to overlap", and "non-square
+        // palaces with squares removed from the palace so it can fit")
         Chaturaji2027Rules wide = RulesOf(2, 6);
 
         // Act
@@ -554,8 +555,16 @@ public sealed class PalaceTest
             edition: PalaceSquares.ApartEdition
         );
 
-        // Assert
-        Assert.Null(dealt.Palaces);
+        // Assert - every army has a palace of eight squares, and no two share one
+        ImmutableList<ImmutableList<CellId>> palaces = [.. dealt.Palaces!.Values];
+        Assert.Equal(
+            (4, 8, 32),
+            (
+                palaces.Count,
+                palaces.Select(palace => palace.Count).Distinct().Single(),
+                palaces.SelectMany(palace => palace).Distinct().Count()
+            )
+        );
     }
 
     [Theory]

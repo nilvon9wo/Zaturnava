@@ -8,7 +8,8 @@
    symbols and the names stay upright.
    Hovering over a piece names it, its owner and its class: the cell under it, which takes the clicks, says so.
    Hovering over a square the player may click to move or place something there shows what would be put there - the
-   piece, a palace's wall, a throne - greyed and blinking, as only a preview (I). *@
+   piece, a palace's wall, a throne - greyed and blinking, as only a preview (I); and, for a move taking another piece
+   along, as castling takes the Rook, that piece where it lands too. *@
 
 <svg class="board" viewBox="@this.Turn.Framing(this._frame).ViewBox" role="grid">
     <g transform="@this.Turn.Transform(this._frame)">
@@ -72,6 +73,10 @@
                 @if (preview.Piece is { } placed)
                 {
                     @this.Drawn(placed, $"piece seat-{placed.Owner}")
+                }
+                @if (preview.Partner is { } partner)
+                {
+                    @this.Drawn(partner, $"piece seat-{partner.Owner}")
                 }
             </g>
         }
@@ -139,6 +144,12 @@
         this._hovered is { } at && this.Targets.Contains(at)
             ? this.Selection.Selected is { } from
                 ? new BoardPreview(this._pieces[from] with { Cell = at })
+                {
+                    Partner = this.Actions.PartnerBetween(from, at) is { } partner
+                        && this._pieces.GetValueOrDefault(partner.From) is { } other
+                        ? other with { Cell = partner.To }
+                        : null,
+                }
                 : this.PreviewAt(at)
             : null;
 

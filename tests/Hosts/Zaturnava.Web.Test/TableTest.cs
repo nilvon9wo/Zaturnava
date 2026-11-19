@@ -3035,6 +3035,43 @@ public sealed class TableTest : IDisposable
     }
 
     [Theory]
+    [InlineData(2, "Raja,Elephant")]
+    [InlineData(1, "Raja")]
+    public void Hover_WhenTheMoveTakesAnotherPieceAlong_ShowsThatPieceWhereItLandsToo(int from, string expected)
+    {
+        // Arrange - Black's Raja castling from cell 0 to 3, its Elephant on 2 going to 1 (the user's report of
+        // 2026-11-19: the Rook should show where it will be moved to); or a piece the table does not see
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Pieces = [new PieceDto(0, "raja", "Raja", 0, 0), new PieceDto(1, "elephant", "Elephant", 0, 2)],
+            LegalActions =
+            [
+                new ActionDto(
+                    "move",
+                    ImmutableSortedDictionary<string, string>.Empty
+                        .Add(ActionArguments.Actor, "0")
+                        .Add(ActionArguments.From, "0")
+                        .Add(ActionArguments.To, "3")
+                )
+                {
+                    Partner = new PartnerMoveDto(from, 1),
+                },
+            ],
+        };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        table.Find("svg.board rect[data-cell='0']").Click();
+
+        // Act
+        table.Find("svg.board rect[data-cell='3']").TriggerEvent("onmouseenter", new MouseEventArgs());
+
+        // Assert
+        Assert.Equal(
+            expected,
+            string.Join(",", table.FindAll("svg.board .preview g.piece title").Select(title => title.TextContent))
+        );
+    }
+
+    [Theory]
     [InlineData("2", 0)]
     [InlineData("3", 1)]
     public void Hover_ShowsAPreviewOnlyWhereAClickWouldPutSomething(string cell, int expected)

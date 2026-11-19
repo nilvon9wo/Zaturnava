@@ -294,10 +294,9 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         }
 
         int terrain = dealsTerrain && this._variant.TerrainDealer is { } terrains ? terrains(seed) : 0;
-        ArmyDrafting? palaced =
-            dealsPalaces && this._drafting is { } drafting && drafting.HasPalaces(dealsEdgePalaces, edition)
-                ? drafting
-                : null;
+        ArmyDrafting? palaced = dealsPalaces && this._drafting is { } drafting && drafting.HasPalaces(dealsEdgePalaces)
+            ? drafting
+            : null;
         bool hasPalacePieces = dealsPalacePieces && palaced is not null;
         ArmyDealing dealing = new(seed, areAlike, terrain, hasPalacePieces)
         {
@@ -316,7 +315,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             Thrones = thrones,
             Palaces = palaced is null ? null
                 : placed.IsEmpty ? palaced.PalacesAround(thrones, dealsEdgePalaces, edition)
-                : palaced.PalacesAbout(placed),
+                : palaced.PalacesAbout(placed, edition),
             HasPalacePieces = hasPalacePieces,
             HasEdgePalaces = palaced is not null && dealsEdgePalaces,
             Edition = edition,
