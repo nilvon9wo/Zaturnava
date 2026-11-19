@@ -595,7 +595,10 @@ public sealed class TableTest : IDisposable
                 {
                     Diagram = new MoveDiagramDto(3, [7], [7], [])
                     {
-                        Across = new MoveDiagramDto(3, [3, 5, 7], [3, 5, 7], []),
+                        Alternates =
+                        [
+                            new NamedDiagramDto("Across a river", new MoveDiagramDto(3, [3, 5, 7], [3, 5, 7], [])),
+                        ],
                     },
                 },
             ],
@@ -605,15 +608,199 @@ public sealed class TableTest : IDisposable
         string before = Square(table, 3).ClassName!;
 
         // Act
-        table.Find(".diagram-toggles .show-across").Click();
+        table.Find(".diagram-toggles .show-alternate").Click();
 
         // Assert
         Assert.Equal(
-            ("square light", "square light move", "true"),
+            ("square light", "square light move", "true", "Across a river"),
             (
                 before,
                 Square(table, 3).ClassName,
-                table.Find(".diagram-toggles .show-across").GetAttribute("aria-pressed")
+                table.Find(".diagram-toggles .show-alternate").GetAttribute("aria-pressed"),
+                table.Find(".diagram-toggles .show-alternate").TextContent
+            )
+        );
+    }
+
+    [Fact]
+    public void Click_WhenThePlayerAsksForAPowerAtWork_MarksItsCellsTellsItAndPlaysIt()
+    {
+        // Arrange - on a 3 x 3 diagram, a power drawn: a trail on 7, an enemy taken on 5, landing on 8
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Kinds =
+            [
+                new PieceKindDto("raja", "Raja", 5)
+                {
+                    Diagram = new MoveDiagramDto(3, [7], [], [])
+                    {
+                        Elsewhere = new MoveDiagramDto(3, [1, 7], [], []),
+                        RiverRow = 2,
+                        Alternates =
+                        [
+                            new NamedDiagramDto(
+                                "En passant",
+                                new MoveDiagramDto(3, [], [], [])
+                                {
+                                    Told = "It takes in passing.",
+                                    Marks =
+                                    [
+                                        new CellMarkDto("trail", "where it came from", [7]),
+                                        new CellMarkDto("taken capture", "taken", [5]),
+                                        new CellMarkDto("move", "it lands here", [8]),
+                                    ],
+                                    Example = new PlayedExampleDto(8, [5]),
+                                }
+                            ),
+                        ],
+                    },
+                },
+            ],
+        };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        Cell(table, 0).Click();
+
+        // Act
+        table.Find(".diagram-toggles .show-alternate").Click();
+        table.Find(".play-example").Click();
+
+        // Assert
+        Assert.Equal(
+            (
+                "square light trail",
+                "square light taken capture",
+                "Play it",
+                1,
+                "It takes in passing. | forward | where it came from | taken | it lands here",
+                "false"
+            ),
+            (
+                Square(table, 7).ClassName,
+                Square(table, 5).ClassName,
+                table.Find(".play-example").TextContent.Trim(),
+                table.FindAll(".move-diagram .example-taken").Count,
+                string.Join(" | ", table.FindAll(".diagram-key .key-item").Select(item => item.TextContent.Trim())),
+                table.Find(".diagram-toggles .show-terrain").GetAttribute("aria-pressed")
+            )
+        );
+    }
+
+    [Fact]
+    public void Click_WhenThePlayerTurnsBackFromAPowerToTheTerrain_DrawsItByItsRiverAgain()
+    {
+        // Arrange
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Kinds =
+            [
+                new PieceKindDto("raja", "Raja", 5)
+                {
+                    Diagram = new MoveDiagramDto(3, [7], [], [])
+                    {
+                        Elsewhere = new MoveDiagramDto(3, [1, 7], [], []),
+                        RiverRow = 2,
+                        Alternates =
+                        [
+                            new NamedDiagramDto("Escape", new MoveDiagramDto(3, [], [], []) { Told = "Off." }),
+                        ],
+                    },
+                },
+            ],
+        };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        Cell(table, 0).Click();
+        table.Find(".diagram-toggles .show-alternate").Click();
+
+        // Act
+        table.Find(".diagram-toggles .show-terrain").Click();
+
+        // Assert - by its river, its alternate let go, and nothing to play of a power with no example
+        Assert.Equal(
+            ("true", "false", "square light move river-bank"),
+            (
+                table.Find(".diagram-toggles .show-terrain").GetAttribute("aria-pressed"),
+                table.Find(".diagram-toggles .show-alternate").GetAttribute("aria-pressed"),
+                Square(table, 7).ClassName
+            )
+        );
+    }
+
+    [Fact]
+    public void Click_WhenThePieceIsAMercenary_LabelsItSoWithALinkToTheRules()
+    {
+        // Arrange
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Kinds =
+            [
+                new PieceKindDto("raja", "Raja", 5) { IsMercenary = true, Drawbacks = ["Berserk, now and then."] },
+            ],
+        };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Act
+        Cell(table, 0).Click();
+
+        // Assert - among its drawbacks, as is going berserk
+        Assert.Equal(
+            ("Mercenary", DocsLinks.Mercenaries, 2),
+            (
+                table.Find("ul.drawbacks li.mercenary a").TextContent,
+                table.Find("ul.drawbacks li.mercenary a").GetAttribute("href"),
+                table.FindAll("ul.drawbacks li").Count
+            )
+        );
+    }
+
+    [Fact]
+    public void Click_WhenThePieceMayGoBerserkButIsNoMercenary_ListsThatDrawbackAlone()
+    {
+        // Arrange
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Kinds = [new PieceKindDto("raja", "Raja", 5) { Drawbacks = ["Berserk, now and then."] }],
+        };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Act
+        Cell(table, 0).Click();
+
+        // Assert
+        Assert.Equal(
+            ("Berserk, now and then.", 0),
+            (table.Find("ul.drawbacks li").TextContent, table.FindAll("ul.drawbacks li.mercenary").Count)
+        );
+    }
+
+    [Fact]
+    public void Render_WhenAPalaceOnlyHoldsTheKind_DrawsItsWallsWithoutLines()
+    {
+        // Arrange
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Kinds =
+            [
+                new PieceKindDto("raja", "Raja", 5)
+                {
+                    Diagram = new MoveDiagramDto(3, [1, 7], [], [])
+                    {
+                        Palace = [0, 1, 2, 3, 4, 5, 6, 7, 8],
+                        IsPalaceLined = false,
+                    },
+                },
+            ],
+        };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Act
+        Cell(table, 0).Click();
+
+        // Assert
+        Assert.Equal(
+            (0, "its palace, which it may not leave"),
+            (
+                table.FindAll(".move-diagram .palace-line").Count,
+                table.FindAll(".diagram-key .key-item")[^1].TextContent
             )
         );
     }

@@ -28,7 +28,8 @@ internal sealed class MoveDiagrams(
     ImmutableHashSet<PieceKindId> palaceSteppers,
     ImmutableHashSet<PieceKindId> forwardPalaceSteppers,
     ImmutableHashSet<PieceKindId> custodians,
-    ImmutableHashSet<PieceKindId> sidewaysAcrossRiver
+    ImmutableHashSet<PieceKindId> sidewaysAcrossRiver,
+    ImmutableHashSet<PieceKindId> palaceBound
 )
 {
     /// <summary>As wide as the farthest leap of the catalogue, four cells, either side of the centre.</summary>
@@ -79,30 +80,68 @@ internal sealed class MoveDiagrams(
                 .Select(cell => cell.Value),
         ];
         MoveDiagram open = this.Open(kind);
+        ImmutableHashSet<int> inside = [.. cells.Select(cell => cell.Value)];
+        ImmutableList<int> Held(IEnumerable<int> reached) =>
+        [
+            .. reached
+                .Concat(steps)
+                .Distinct()
+                .Where(cell => !palaceBound.Contains(kind) || inside.Contains(cell))
+                .Order(),
+        ];
         return open with
         {
-            Moves = [.. open.Moves.Concat(steps).Distinct().Order()],
-            Captures = [.. open.Captures.Concat(steps).Distinct().Order()],
+            Moves = Held(open.Moves),
+            Captures = Held(open.Captures),
             Palace = [.. cells.Select(cell => cell.Value)],
             Throne = At(throne).Value,
             Elsewhere = open,
         };
     }
 
+    /// <summary>
+    /// A palace about a piece on its back left corner, its throne diagonally ahead: each cell as far to the piece's
+    /// right and ahead as the piece sees it, and its throne.
+    /// </summary>
+    private static readonly ImmutableList<(int Right, int Ahead)> Cornered =
+    [
+        .. Enumerable.Range(0, 3).SelectMany(ahead => Enumerable.Range(0, 3).Select(right => (right, ahead))),
+    ];
+
     /// <summary>The cell as far to the right of the centre and ahead of it as <paramref name="seen"/> says.</summary>
     private static CellId At((int Right, int Ahead) seen) => Grid.CellAt(Middle + seen.Right, Middle + seen.Ahead);
 
     /// <summary>
-    /// The kind drawn by its river or in its palace, if either holds it, with the kind drawn on an open board beside;
-    /// one stepping sideways only across a river (sidewaysAcrossRiver), on its own side, without
-    /// its sideways steps, with the kind across the river beside (the user's report of 2026-11-19, of a Xiangqi
-    /// Soldier's card always stepping sideways); else on an open board alone.
+    /// The kind drawn by its river or in its palace, if either holds it or it steps along a palace's lines, with the
+    /// kind drawn on an open board beside; one stepping along a palace's lines, on a corner of its palace too, stepping
+    /// along the diagonal through the throne (the user's report of 2026-11-19, of the Janggi Soldier's card); one
+    /// stepping sideways only across a river (sidewaysAcrossRiver), on its own side, without its sideways steps, with
+    /// the kind across the river beside (the user's report of 2026-11-19, of a Xiangqi Soldier's card always stepping
+    /// sideways); else on an open board alone.
     /// </summary>
     private MoveDiagram DrawWithTerrain(PieceKindId kind) =>
-        (riverBound.Contains(kind) || palaceSteppers.Contains(kind), sidewaysAcrossRiver.Contains(kind)) switch
+        (
+            riverBound.Contains(kind) || palaceSteppers.Contains(kind) || palaceBound.Contains(kind),
+            sidewaysAcrossRiver.Contains(kind)
+        ) switch
         {
-            (true, _) => this.Draw(kind, isOnTerrain: true) with { Elsewhere = this.Open(kind) },
-            (_, true) => OnOwnSide(this.Open(kind)) with { Across = this.Open(kind) },
+            (true, _) => this.Draw(kind, isOnTerrain: true) with
+            {
+                Elsewhere = this.Open(kind),
+                Alternates = palaceSteppers.Contains(kind)
+                    ?
+                    [
+                        new NamedDiagram(
+                            "On its palace's corner",
+                            this.InPalace(kind, Cornered, (1, 1)) with { Elsewhere = null }
+                        ),
+                    ]
+                    : [],
+            },
+            (_, true) => OnOwnSide(this.Open(kind)) with
+            {
+                Alternates = [new NamedDiagram("Across a river", this.Open(kind))],
+            },
             _ => this.Open(kind),
         };
 
@@ -137,7 +176,9 @@ internal sealed class MoveDiagrams(
         int? riverRow = isOnTerrain && riverBound.Contains(kind) ? Middle + 1 : null;
         ImmutableHashSet<CellId> reached = this.ReachedOn(alone, riverRow);
         ImmutableList<Move> jumps = this.JumpsOn(alone, this._kinds[kind]);
-        ImmutableList<CellId> palace = isOnTerrain && palaceSteppers.Contains(kind) ? Palace : [];
+        ImmutableList<CellId> palace =
+            isOnTerrain && (palaceSteppers.Contains(kind) || palaceBound.Contains(kind)) ? Palace : [];
+        bool isHeld = isOnTerrain && palaceBound.Contains(kind);
         ImmutableList<CellId> obstacles = ObstaclesOn(alone, riverRow, position => this.ReachedOn(position, riverRow));
         ImmutableHashSet<CellId> unobstructed = this.ReachedOn(WithStands(alone, obstacles), riverRow);
         ImmutableHashSet<CellId> captures =
@@ -149,15 +190,18 @@ internal sealed class MoveDiagrams(
         ImmutableList<CellId> captureObstacles = ObstaclesOn(alone, riverRow, CapturesOn);
         ImmutableHashSet<CellId> captureObstructed =
             captures.Except(captureObstacles).Except(CapturesOn(WithStands(alone, captureObstacles)));
-        ImmutableList<CellId> palaceSteps =
-        [
-            .. palace
-                .Where(cell => cell != Centre)
-                .Where(cell => !forwardPalaceSteppers.Contains(kind) || Grid.RowOf(cell) > Middle),
-        ];
+        ImmutableList<CellId> palaceSteps = palaceSteppers.Contains(kind)
+            ?
+            [
+                .. palace
+                    .Where(cell => cell != Centre)
+                    .Where(cell => !forwardPalaceSteppers.Contains(kind) || Grid.RowOf(cell) > Middle),
+            ]
+            : [];
+        bool IsKept(CellId cell) => !isHeld || palace.Contains(cell);
         return new MoveDiagram(
             Side,
-            [.. reached.Concat(palaceSteps).Select(cell => cell.Value).Distinct().Order()],
+            [.. reached.Concat(palaceSteps).Where(IsKept).Select(cell => cell.Value).Distinct().Order()],
             [
                 .. Grid.Cells
                     .Where(cell => alone.PieceAt(cell) is null)
@@ -165,6 +209,7 @@ internal sealed class MoveDiagrams(
                     .Where(cell => this.MayCapture(alone, cell))
                     .Concat(jumps.SelectMany(jump => jump.Jumped))
                     .Concat(palaceSteps)
+                    .Where(IsKept)
                     .Select(cell => cell.Value)
                     .Distinct()
                     .Order(),
@@ -174,6 +219,7 @@ internal sealed class MoveDiagrams(
         {
             Jumps = [.. jumps.Select(jump => jump.To.Value).Distinct().Order()],
             Palace = [.. palace.Select(cell => cell.Value)],
+            IsPalaceLined = palaceSteppers.Contains(kind),
             RiverRow = riverRow,
             Obstacles = [.. obstacles.Select(cell => cell.Value).Order()],
             Obstructed =

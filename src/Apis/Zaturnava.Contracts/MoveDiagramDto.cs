@@ -60,10 +60,22 @@ public sealed record MoveDiagramDto(
     public MoveDiagramDto? Elsewhere { get; init; }
 
     /// <summary>
-    /// For a piece that steps sideways only once across a river from its kingdom, drawn on its own side: the same
-    /// piece across a river, stepping sideways too, to draw when the player asks; none, for any other.
+    /// Other drawings of the piece, each named, to draw instead when the player asks: where it stands changing how it
+    /// moves, and each special power it has, at work. None, for a piece with neither.
     /// </summary>
-    public MoveDiagramDto? Across { get; init; }
+    public ImmutableList<NamedDiagramDto> Alternates { get; init; } = [];
+
+    /// <summary>For a drawing of a power at work: what the power is, in a few words; none, for any other.</summary>
+    public string? Told { get; init; }
+
+    /// <summary>Cells drawn with marks of their own, each mark with what it means here.</summary>
+    public ImmutableList<CellMarkDto> Marks { get; init; } = [];
+
+    /// <summary>The example played of a power at work: where the piece goes, and what it takes; none, else.</summary>
+    public PlayedExampleDto? Example { get; init; }
+
+    /// <summary>Whether <see cref="Palace"/> is drawn with the lines from each cell to its throne.</summary>
+    public bool IsPalaceLined { get; init; } = true;
 
     /// <summary>
     /// The cells it moves to farther than the next cell by leaping, over anything between, as a Knight does; every

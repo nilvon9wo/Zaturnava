@@ -17,7 +17,7 @@
 @using System.Globalization
 
 @if (this.Diagram.Elsewhere is not null
-     || this.Diagram.Across is not null
+     || !this.Diagram.Alternates.IsEmpty
      || this.MayShowCaptures
      || !this.ObstaclesShown.IsEmpty)
 {
@@ -42,15 +42,15 @@
         }
         @if (this.Diagram.Elsewhere is not null)
         {
-            <button type="button" class="show-terrain" aria-pressed="@Pressed(!this._isElsewhere)"
-                    @onclick="() => this.Switch(() => this._isElsewhere = !this._isElsewhere)">
+            <button type="button" class="show-terrain" aria-pressed="@Pressed(this.Alternate is null && !this._isElsewhere)"
+                    @onclick="() => this.Switch(() => (this._isElsewhere, this._alternate) = (this.Alternate is null && !this._isElsewhere, null))">
                 @(this.Diagram.RiverRow is null ? "In its palace" : "By a river")
             </button>
         }
-        @if (this.Diagram.Across is not null)
+        @foreach (NamedDiagramDto other in this.Diagram.Alternates)
         {
-            <button type="button" class="show-across" aria-pressed="@Pressed(this._isAcross)"
-                    @onclick="() => this.Switch(() => this._isAcross = !this._isAcross)">Across a river</button>
+            <button type="button" class="show-alternate" aria-pressed="@Pressed(this.Alternate == other)"
+                    @onclick="() => this.Switch(() => this._alternate = this.Alternate == other ? null : other.Name)">@other.Name</button>
         }
     </div>
 }
@@ -58,7 +58,7 @@
 {
     <div class="diagram-play">
         <button type="button" class="play-example" @onclick="() => this._plays++">
-            @(this._plays == 0 ? "Play" : "Play another") @(this.IsCapturing ? "capture" : "move")
+            @(this.Shown.Told is not null ? "Play it" : $"{(this._plays == 0 ? "Play" : "Play another")} {(this.IsCapturing ? "capture" : "move")}")
         </button>
     </div>
 }
@@ -87,7 +87,7 @@
         {
             <svg class="palace-lines" viewBox="0 0 @this.Shown.Side @this.Shown.Side" aria-hidden="true">
                 <rect class="line palace" x="@this.Wall.X" y="@this.Wall.Y" width="@this.Wall.Width" height="@this.Wall.Height" />
-                @foreach (int cell in this.Shown.Palace.Where(cell => cell != this.Throne))
+                @foreach (int cell in this.Shown.Palace.Where(cell => this.Shown.IsPalaceLined && cell != this.Throne))
                 {
                     <line class="line palace-line" x1="@this.XOf(cell)" y1="@this.YOf(cell)" x2="@this.XOf(this.Throne)" y2="@this.YOf(this.Throne)" />
                 }
@@ -108,9 +108,17 @@
     </div>
 </div>
 <p class="diagram-key">
+    @if (this.Shown.Told is { } told)
+    {
+        <span class="key-item told">@PieceStyle.Named(told, this.Pieces)</span>
+    }
     @if (!this.IsTurnless)
     {
         <span class="key-item"><span class="key arrow"></span>forward</span>
+    }
+    @foreach (CellMarkDto mark in this.Shown.Marks)
+    {
+        <span class="key-item"><span class="key @mark.Mark"></span>@PieceStyle.Named(mark.Meaning, this.Pieces)</span>
     }
     @if (this.IsCapturing)
     {
@@ -168,7 +176,11 @@
     {
         <span class="key-item"><span class="key river"></span>a river it may not cross</span>
     }
-    @if (!this.Shown.Palace.IsEmpty && this.Shown.Throne is null)
+    @if (!this.Shown.Palace.IsEmpty && !this.Shown.IsPalaceLined)
+    {
+        <span class="key-item"><span class="key palace"></span>its palace, which it may not leave</span>
+    }
+    else if (!this.Shown.Palace.IsEmpty && this.Shown.Throne is null)
     {
         <span class="key-item"><span class="key palace"></span>in a palace, standing on its throne: along each line to the throne it moves and captures, diagonally too</span>
     }
@@ -182,7 +194,7 @@
     private bool _isCapturing;
     private bool _isObstructed;
     private bool _isElsewhere;
-    private bool _isAcross;
+    private string? _alternate;
     private bool _isBerserk;
 
     /// <summary>How many examples the player has played since the drawing last changed; none, none playing.</summary>
@@ -210,13 +222,14 @@
     public bool IsOnDark { get; set; }
 
     /// <summary>
-    /// The diagram drawn: on an open board, if the player put its river or palace away; across a river, if the player
-    /// asked to see it there (a Xiangqi Soldier, stepping sideways once across).
+    /// The other drawing the player asked for, if any (the user's reports of 2026-11-19): a Xiangqi Soldier across a
+    /// river, a Janggi piece on its palace's corner, or a special power at work.
     /// </summary>
+    private NamedDiagramDto? Alternate => this.Diagram.Alternates.FirstOrDefault(other => other.Name == this._alternate);
+
+    /// <summary>The diagram drawn: another, if asked for; on an open board, if the player put its river or palace away.</summary>
     private MoveDiagramDto Shown =>
-        (this._isElsewhere ? this.Diagram.Elsewhere : null)
-        ?? (this._isAcross ? this.Diagram.Across : null)
-        ?? this.Diagram;
+        this.Alternate?.Diagram ?? (this._isElsewhere ? this.Diagram.Elsewhere : null) ?? this.Diagram;
 
     private bool HasCaptures =>
         !this.Shown.Captures.IsEmpty || !this.Shown.Jumps.IsEmpty || this.Shown.Custody is not null;
@@ -260,6 +273,7 @@
     /// </summary>
     private bool IsTurnless =>
         this.Shown.RiverRow is null
+        && this.Shown.Marks.IsEmpty
         && ((ImmutableList<int>[])
             [
                 this.Shown.Moves,
@@ -307,7 +321,9 @@
         get
         {
             MoveDiagramDto shown = this.Shown;
-            return this.IsCapturing
+            return shown.Told is not null
+                ? [.. new[] { shown.Example }.OfType<PlayedExampleDto>().Select(played => (played.To, played.Taken))]
+                : this.IsCapturing
                 ? [
                     .. shown.Captures
                         .Where(cell => !this.IsStopped(cell))
@@ -409,7 +425,9 @@
                 !isMoving && shown.Jumps.Contains(cell) ? "jump" : null,
                 shown.Screens.Contains(cell) ? "screen" : null,
                 row == shown.RiverRow ? "river-bank" : null,
-            }.OfType<string>()
+            }
+                .Concat(shown.Marks.Where(mark => mark.Cells.Contains(cell)).Select(mark => mark.Mark))
+                .OfType<string>()
         );
     }
 }

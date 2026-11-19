@@ -86,6 +86,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     private readonly PalaceSteps _palaceSteps;
     private readonly FaceOff _faceOff;
     private readonly MoveDiagrams _diagrams;
+    private readonly PowerDiagrams _powers;
     private readonly ArmyDrafting? _drafting;
 
     /// <summary>The rules on each board size a game has been set to, made once each.</summary>
@@ -136,8 +137,10 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             this._variant.PalaceSteppers,
             this._variant.ForwardPalaceSteppers,
             this._variant.Custodians,
-            this._variant.SidewaysAcrossRiver
+            this._variant.SidewaysAcrossRiver,
+            this._variant.Drafting?.PalaceBound ?? []
         );
+        this._powers = new PowerDiagrams(this._variant, kind => this._variant.Names[kind]);
         this._dice = dice;
         this._idleRounds = idleRounds;
         this._pawnPromotion = pawnPromotion;
@@ -562,7 +565,15 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         {
             Powers = [.. this.PowersOf(kind), .. told.Powers],
             SpecialPowers = [.. this.SpecialPowersOf(kind), .. told.SpecialPowers],
-            Diagram = this._diagrams.Of(kind),
+            IsMercenary = this._variant.Mercenaries.Contains(kind) && !this._variant.Leaders.Contains(kind),
+            Drawbacks = this._variant.Custodians.Contains(kind)
+                ?
+                [
+                    "Berserk while an enemy holds its throne: it takes any piece, friend or foe, held between it and "
+                        + "any other piece.",
+                ]
+                : [],
+            Diagram = this._powers.Of(kind, this._diagrams.Of(kind)),
         };
         return this._variant.OwnPromotions.TryGetValue(kind, out OwnPromotion? own)
             ? drawn with
@@ -682,20 +693,13 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
                     + "enemy piece, in the same row or column, and just beyond that enemy, on the same line, stands "
                     + "any piece of its player's team or of an army they command, that enemy is taken: held between "
                     + "the two. For example, an enemy on d4 and your Pawn on d5: moving to d3, it takes the enemy. "
-                    + "Every enemy held so on its other sides is taken in the same move, up to three at once. "
-                    + "Berserk while an enemy holds its throne: it takes any piece, friend or foe, so held between "
-                    + "it and any other piece."),
+                    + "Every enemy held so on its other sides is taken in the same move, up to three at once."),
                 (this._variant.Converters.Contains(kind),
                     "Converts, as in Othello: it takes nothing. Instead, after it moves, every unbroken line of "
                     + "enemy pieces running from next to it, in any of the eight directions, up to another of its "
                     + "player's pieces becomes its player's, where it stands. A line's pieces must all be one "
                     + "enemy's, and none of them a leader. For example, your Pawn on d6 and an enemy's Rook and "
                     + "Knight on d5 and d4: moving to d3, it converts both. Only its own move converts."),
-                (this._variant.Mercenaries.Contains(kind) && !this._variant.Leaders.Contains(kind),
-                    "Mercenary: whoever holds it prisoner may hire it on their turn, for 110% of what it cost last "
-                    + "(its value, the first time), paid from their points: it becomes theirs. On a later step they "
-                    + "place it on a free square of their palace. Each step is a turn's move, or uses a die that "
-                    + "moves it. It stays a mercenary whatever it is promoted into, and never gets cheaper."),
                 (this._variant.Fleers.Contains(kind),
                     "Escape: on its own far corner, the board's corner across from its army's, it may leave the board "
                     + "as its move, where no one can take it. It comes back only on doubles that let a captured "

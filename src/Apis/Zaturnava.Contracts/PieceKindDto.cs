@@ -31,6 +31,12 @@ public sealed record PieceKindDto(string Kind, string Name, int Value)
     /// <summary>What it may do beyond its moves that is its kind's own: castling, say.</summary>
     public ImmutableList<string> SpecialPowers { get; init; } = [];
 
+    /// <summary>Whether it is a mercenary, which whoever holds it prisoner may hire, as the rules tell.</summary>
+    public bool IsMercenary { get; init; }
+
+    /// <summary>What may turn against its player: going berserk, say; none, for most.</summary>
+    public ImmutableList<string> Drawbacks { get; init; } = [];
+
     /// <summary>
     /// The names of what its own promotion may make it, as a Western Pawn's makes it a Queen: none, for a kind
     /// with none. <see cref="IsPromotionPlayed"/> says whether the game plays it yet.

@@ -103,7 +103,7 @@ public static class QuickDraft
                 .Where(piece =>
                     piece.Class != Leader || (isComposed && hasLeader) || (!hasLeader && !taken.Contains(throne))
                 )
-                .Where(piece => !QuickArmy.IsHeld(piece) || !palace.IsEmpty),
+                .Where(piece => !QuickArmy.IsHeld(piece, fill.Edition, hasLeader) || !palace.IsEmpty),
         ];
         GrandPiece? piece = free.IsEmpty
             ? null
@@ -121,7 +121,8 @@ public static class QuickDraft
             return added;
         }
 
-        ArmySquare square = QuickArmy.IsHeld(piece) ? palace[0] : SquareFor(piece, free, throne);
+        ArmySquare square =
+            QuickArmy.IsHeld(piece, fill.Edition, hasLeader) ? palace[0] : SquareFor(piece, free, throne);
         return Added(game, eligible, fill, throne, added.Add(new ArmyPiece(piece.Id, square.Column, square.Row)));
     }
 

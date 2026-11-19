@@ -404,6 +404,46 @@ public sealed class QuickArmyTest
     }
 
     [Fact]
+    public void Layout_WithSeveralLeadersAPalaceHolds_PutsEachButTheOneOnTheThroneInThePalace()
+    {
+        // Arrange - a game of large kingdoms, as dealt now, with several leaders each (the user's report of 2026-11-19,
+        // of flying generals starting outside the palace)
+        QuickGame game = QuickGame.CustomOf(new BoardSize(20, 20, 8, 4))! with
+        {
+            HasPalacePieces = true,
+            Edition = QuickArmy.HeldLeadersEdition,
+        };
+
+        // Act
+        ImmutableList<ImmutableList<ArmyPiece>> armies =
+        [
+            .. Enumerable.Range(0, 300).Select(seed =>
+                QuickArmy.Layout(game, QuickArmy.Pick(game, new(seed)), new(seed))
+            ),
+        ];
+
+        // Assert - among them, armies with a leader a palace holds beside the one on the throne; each such leader in
+        // the palace about the throne
+        static bool IsConfined(ArmyPiece piece) => PalaceConfinement.Confined.Contains(piece.Kind);
+        Assert.Contains(armies, army => army.Skip(1).Any(piece => IsConfined(piece) && IsLeader(piece)));
+        Assert.All(armies, army =>
+        {
+            ImmutableList<ArmySquare> palace = PalaceSquares.Window(
+                PalaceSquares.CentreAbout(
+                    PalaceSquares.Centres(game.Kingdom),
+                    new ArmySquare(army[0].Column, army[0].Row)
+                )
+            );
+            Assert.All(
+                army.Skip(1).Where(IsConfined),
+                held => Assert.Contains(new ArmySquare(held.Column, held.Row), palace)
+            );
+        });
+    }
+
+    private static bool IsLeader(ArmyPiece piece) => GrandLegionsRules.Leaders.Contains(piece.Kind);
+
+    [Fact]
     public void Dealt_WhenItsCreatorSetsABudget_SpendsItNotTheFormulas()
     {
         // Arrange - the small game: kingdoms of 9 squares, 4 seats

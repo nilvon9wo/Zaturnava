@@ -66,11 +66,35 @@ public sealed record MoveDiagram(
     public MoveDiagram? Elsewhere { get; init; }
 
     /// <summary>
-    /// For a piece that steps sideways only once across a river from its kingdom, as a Xiangqi Soldier does, drawn on
-    /// its own side: the same piece across a river, stepping sideways too, to draw when the player asks (the user's
-    /// report of 2026-11-19); none, for any other.
+    /// Other drawings of the piece, each named, to draw instead when the player asks (the user's reports of
+    /// 2026-11-19): where it stands changing how it moves - a Xiangqi Soldier across a river, stepping sideways too; a
+    /// Janggi piece on a corner of its palace, stepping along the diagonal through the throne - and each special power
+    /// it has, shown at work. None, for a piece with neither.
     /// </summary>
-    public MoveDiagram? Across { get; init; }
+    public ImmutableList<NamedDiagram> Alternates { get; init; } = [];
+
+    /// <summary>
+    /// For a drawing of a power at work: what the power is, in a few words, said first under the drawing; none, for
+    /// a drawing of how the piece moves.
+    /// </summary>
+    public string? Told { get; init; }
+
+    /// <summary>
+    /// Cells drawn with marks of their own, each mark with what it means here: as a power's drawing has.
+    /// </summary>
+    public ImmutableList<CellMark> Marks { get; init; } = [];
+
+    /// <summary>
+    /// The example played of a power at work: where the piece goes, and what it takes on the way; none, for a drawing
+    /// whose examples are its moves and captures, or a power in which the piece goes nowhere.
+    /// </summary>
+    public PlayedExample? Example { get; init; }
+
+    /// <summary>
+    /// Whether <see cref="Palace"/> is drawn with the lines from each cell to the throne, which a piece that steps
+    /// along them follows; a piece a palace only holds, as the Xiangqi General, is drawn in its walls alone.
+    /// </summary>
+    public bool IsPalaceLined { get; init; } = true;
 
     /// <summary>
     /// The cells it moves to farther than the next cell by leaping, over anything between, as a Knight does, rather

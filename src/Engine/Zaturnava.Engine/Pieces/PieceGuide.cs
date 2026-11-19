@@ -34,6 +34,18 @@ public sealed record PieceGuide(PieceKind Kind)
     public ImmutableList<string> SpecialPowers { get; init; } = [];
 
     /// <summary>
+    /// Whether it is a mercenary, which whoever holds it prisoner may hire: not a power, as nothing it helps its
+    /// player do with it, but what it is (the user's word of 2026-11-19); the rules tell how hiring goes.
+    /// </summary>
+    public bool IsMercenary { get; init; }
+
+    /// <summary>
+    /// What may turn against its player, for people: going berserk, say. Not powers, as they help no one use it (the
+    /// user's word of 2026-11-19); none, for most.
+    /// </summary>
+    public ImmutableList<string> Drawbacks { get; init; } = [];
+
+    /// <summary>
     /// What its own promotion may make it, as a Western Pawn's makes it a Queen, Rook, Bishop or Knight: none, for a
     /// kind with no promotion of its own. Whether the rules play it yet is <see cref="IsPromotionPlayed"/>.
     /// </summary>

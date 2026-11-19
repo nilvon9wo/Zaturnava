@@ -11,6 +11,11 @@ public static class DocsLinks
     /// <summary>Every rule, in full.</summary>
     public const string Rules = Docs + "rules.md";
 
+    /// <summary>
+    /// How a mercenary is hired, for its card to link to rather than tell in full (the user's word of 2026-11-19).
+    /// </summary>
+    public const string Mercenaries = Docs + "grand/specification.md#65-mercenaries";
+
     /// <summary>For developers: playing with an AI of one's own, and training it.</summary>
     public const string Bots = Docs + "bots/README.md";
 
