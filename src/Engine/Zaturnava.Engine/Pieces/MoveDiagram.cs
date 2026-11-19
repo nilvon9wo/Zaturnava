@@ -35,16 +35,42 @@ public sealed record MoveDiagram(
     public ImmutableList<int> Obstructed { get; init; } = [];
 
     /// <summary>
+    /// As <see cref="Obstacles"/>, for its captures: one or two cells pieces put on would stop it capturing most, as a
+    /// piece on a Xiangqi Horse's leg stops its capture as its move (the user's report of 2026-11-19); none, for a
+    /// piece nothing in its way stops capturing.
+    /// </summary>
+    public ImmutableList<int> CaptureObstacles { get; init; } = [];
+
+    /// <summary>
+    /// The cells of <see cref="Captures"/> it may no longer capture on, pieces on <see cref="CaptureObstacles"/>.
+    /// </summary>
+    public ImmutableList<int> CaptureObstructed { get; init; } = [];
+
+    /// <summary>
     /// For a piece that takes by custody, as a Tafl King does: one such capture, drawn, with the piece another of its
     /// side must hold beyond (the user's report of 2026-11-15, C2); none, for any other.
     /// </summary>
     public CustodyExample? Custody { get; init; }
 
     /// <summary>
+    /// For a piece that takes by custody, its captures gone berserk, as while an enemy holds its throne: landing where
+    /// <see cref="Custody"/> does, it takes every piece, friend or foe, held between it and any other piece - one
+    /// ahead, one to its right, at once (the user's report of 2026-11-19); none, for any other.
+    /// </summary>
+    public ImmutableList<CustodyExample> Berserk { get; init; } = [];
+
+    /// <summary>
     /// For a piece drawn by a river or in a palace: the same piece on an open board, to draw instead when the player
     /// asks (the user's report of 2026-11-15, C2); none, for any other.
     /// </summary>
     public MoveDiagram? Elsewhere { get; init; }
+
+    /// <summary>
+    /// For a piece that steps sideways only once across a river from its kingdom, as a Xiangqi Soldier does, drawn on
+    /// its own side: the same piece across a river, stepping sideways too, to draw when the player asks (the user's
+    /// report of 2026-11-19); none, for any other.
+    /// </summary>
+    public MoveDiagram? Across { get; init; }
 
     /// <summary>
     /// The cells it moves to farther than the next cell by leaping, over anything between, as a Knight does, rather

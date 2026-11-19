@@ -142,6 +142,12 @@ public sealed record Chaturaji2027Variant(
     public ImmutableHashSet<PieceKindId> RiverBound { get; init; } = [];
 
     /// <summary>
+    /// The kinds that step sideways only once across a river from their kingdom (<see cref="MayMove"/> says how), as
+    /// a Xiangqi Soldier does: drawn on their own side, forward only, and across, sideways too: none, unless set.
+    /// </summary>
+    public ImmutableHashSet<PieceKindId> SidewaysAcrossRiver { get; init; } = [];
+
+    /// <summary>
     /// The kinds with start-row powers, the two-cell first move and <i>en passant</i>, if they start within their
     /// army's <see cref="StartRows"/>: none, unless set.
     /// </summary>

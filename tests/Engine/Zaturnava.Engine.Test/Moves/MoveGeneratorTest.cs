@@ -203,6 +203,24 @@ public sealed class MoveGeneratorTest
     }
 
     [Fact]
+    public void MovesFrom_WhenALameLeapsWayIsBlockedAndAnEnemyLiesBeyond_DoesNotCaptureIt()
+    {
+        // Arrange - a piece on its leg, 3, stops it taking the enemy on 4, as a Xiangqi Horse's capture is stopped
+        // (the user's report of 2026-11-19); with its leg clear, the enemy on 0 it takes
+        Position position = Position.Empty
+            .Place(new CellId(2), Friend(Horse))
+            .Place(new CellId(3), Friend(Stepper))
+            .Place(new CellId(4), Enemy(Stepper))
+            .Place(new CellId(0), Enemy(Stepper));
+
+        // Act
+        ImmutableList<Move> moves = this._generator.MovesFrom(position, new CellId(2), MySeat, IsEnemy);
+
+        // Assert
+        Assert.Equal([0], Targets(moves));
+    }
+
+    [Fact]
     public void MovesFrom_WhenAHopperHasAPieceToHop_ReachesEveryCellBeyondItUpToAndTakingTheNext()
     {
         // Arrange

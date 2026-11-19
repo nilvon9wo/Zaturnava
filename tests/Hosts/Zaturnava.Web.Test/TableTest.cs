@@ -505,6 +505,119 @@ public sealed class TableTest : IDisposable
         );
     }
 
+    [Fact]
+    public void Click_WhenThePlayerAsksForBerserk_DrawsEveryPieceHeldTakenAtOnceAndPlaysThemTakenTogether()
+    {
+        // Arrange - on a 7 x 7 diagram, landing on 31, it takes 38, held by 45, and 32, held by 33, friend or foe
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Kinds =
+            [
+                new PieceKindDto("raja", "Raja", 5)
+                {
+                    Diagram = new MoveDiagramDto(7, [31, 38, 45], [], [])
+                    {
+                        Custody = new CustodyDto(31, 38, 45),
+                        Berserk = [new CustodyDto(31, 38, 45), new CustodyDto(31, 32, 33)],
+                    },
+                },
+            ],
+        };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        Cell(table, 0).Click();
+        table.Find(".diagram-toggles .show-captures").Click();
+        string before = Square(table, 32).ClassName!;
+
+        // Act
+        table.Find(".diagram-toggles .show-berserk").Click();
+        table.Find(".play-example").Click();
+
+        // Assert
+        Assert.Equal(
+            ("square dark", "square dark taken capture", "square light partner", "true", 2, 4),
+            (
+                before,
+                Square(table, 32).ClassName,
+                Square(table, 33).ClassName,
+                table.Find(".diagram-toggles .show-berserk").GetAttribute("aria-pressed"),
+                table.FindAll(".move-diagram .example-taken").Count,
+                table.FindAll(".diagram-key .key-item").Count
+            )
+        );
+    }
+
+    [Fact]
+    public void Click_WhenThePlayerAsksForPiecesInTheWayOfItsCaptures_PutsThemThereAndFadesWhatTheyStop()
+    {
+        // Arrange - on a 3 x 3 diagram, it captures on 6 and 7; a piece on 7 would stop its capture on 6
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Kinds =
+            [
+                new PieceKindDto("raja", "Raja", 5)
+                {
+                    Diagram = new MoveDiagramDto(3, [1], [6, 7], [])
+                    {
+                        CaptureObstacles = [7],
+                        CaptureObstructed = [6],
+                    },
+                },
+            ],
+        };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        Cell(table, 0).Click();
+        table.Find(".diagram-toggles .show-captures").Click();
+
+        // Act
+        table.Find(".diagram-toggles .show-obstacles").Click();
+
+        // Assert - with no capture left unstopped, none to play
+        Assert.Equal(
+            ("square light obstacle", "square dark obstructed capture", "no longer captured on", 0),
+            (
+                Square(table, 7).ClassName,
+                Square(table, 6).ClassName,
+                table.FindAll(".diagram-key .key-item")[^1].TextContent,
+                table.FindAll(".play-example").Count
+            )
+        );
+    }
+
+    [Fact]
+    public void Click_WhenThePlayerAsksToSeeTheKindAcrossARiver_DrawsItSteppingSidewaysToo()
+    {
+        // Arrange - on a 3 x 3 diagram, on its own side forward to 7; across a river, to 3 and 5 too
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Kinds =
+            [
+                new PieceKindDto("raja", "Raja", 5)
+                {
+                    Diagram = new MoveDiagramDto(3, [7], [7], [])
+                    {
+                        Across = new MoveDiagramDto(3, [3, 5, 7], [3, 5, 7], []),
+                    },
+                },
+            ],
+        };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        Cell(table, 0).Click();
+        string before = Square(table, 3).ClassName!;
+
+        // Act
+        table.Find(".diagram-toggles .show-across").Click();
+
+        // Assert
+        Assert.Equal(
+            ("square light", "square light move", "true"),
+            (
+                before,
+                Square(table, 3).ClassName,
+                table.Find(".diagram-toggles .show-across").GetAttribute("aria-pressed")
+            )
+        );
+    }
+
     [Theory]
     [InlineData(true, "By a river")]
     [InlineData(false, "In its palace")]

@@ -302,10 +302,14 @@ internal static class GameViews
             RiverRow = diagram.RiverRow,
             Obstacles = diagram.Obstacles,
             Obstructed = diagram.Obstructed,
+            CaptureObstacles = diagram.CaptureObstacles,
+            CaptureObstructed = diagram.CaptureObstructed,
             Custody = diagram.Custody is { } custody
                 ? new CustodyDto(custody.Landing, custody.Taken, custody.Partner)
                 : null,
             Elsewhere = diagram.Elsewhere is { } elsewhere ? DiagramOf(elsewhere) : null,
+            Across = diagram.Across is { } across ? DiagramOf(across) : null,
+            Berserk = [.. diagram.Berserk.Select(held => new CustodyDto(held.Landing, held.Taken, held.Partner))],
             Leaps = diagram.Leaps,
             Jumps = diagram.Jumps,
             Palace = diagram.Palace,
