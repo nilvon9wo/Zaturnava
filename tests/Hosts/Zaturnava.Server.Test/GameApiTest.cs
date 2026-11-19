@@ -1000,6 +1000,31 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
     }
 
     [Fact]
+    public async Task RemoveScenarioGames_OnADevelopmentServer_LetsGoOfThemAndListsThemNoMore()
+    {
+        // Arrange - the user's request of 2026-11-19: to hide scenario games, and be rid of them
+        CreateGameRequest request = new("grand-legions-medium", ZaturnavaServer.OneOpenSeat)
+        {
+            Scenario = "tafl-escape",
+        };
+        GameCreatedDto created = await this._client.Create(request, this._cancellation);
+        GamePageDto before = await this._client.List(
+            new GameListQuery(Code: created.GameId, Scenario: true),
+            this._cancellation
+        );
+
+        // Act
+        ScenarioGamesRemovedDto removed = await this._client.RemoveScenarioGames(this._cancellation);
+
+        // Assert
+        GamePageDto after = await this._client.List(new GameListQuery(Scenario: true), this._cancellation);
+        Assert.Equal(
+            (true, true, 0),
+            (Assert.Single(before.Games).IsScenario, removed.Removed >= 1, after.Total)
+        );
+    }
+
+    [Fact]
     public async Task Submit_WhenDiceAreFakedInAGameNotStartedFromAScenario_IsRefusedAsInvalid()
     {
         // Arrange - the user's request of 2026-11-19: faked dice, taken in scenarios only, sent with another game's

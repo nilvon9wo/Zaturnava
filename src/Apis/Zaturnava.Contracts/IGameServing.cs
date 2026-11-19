@@ -15,6 +15,11 @@ public interface IGameServing
     Task<GamePageDto> List(GameListQuery? query, CancellationToken cancellationToken);
 
     /// <summary>
+    /// Lets go of every game started from a scenario, on a development server; refused as forbidden on any other.
+    /// </summary>
+    Task<ScenarioGamesRemovedDto> RemoveScenarioGames(CancellationToken cancellationToken);
+
+    /// <summary>
     /// The signed-in players standing highest at <paramref name="game"/>, at any size, by its id
     /// (<see cref="RulesetDto.Game"/>), best first: at most 1000. Each game over counts within a minute or so.
     /// </summary>

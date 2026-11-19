@@ -25,6 +25,7 @@ internal static class GameEndpoints
     {
         _ = routes.MapGet(GameRoutes.Catalog, Catalog);
         _ = routes.MapGet(GameRoutes.Games, List);
+        _ = routes.MapDelete(GameRoutes.ScenarioGames, RemoveScenarioGames);
         _ = routes.MapGet(GameRoutes.Leaderboards + "/{game}", Leaderboard);
         _ = routes.MapGet(GameRoutes.Leaderboards + "/{game}/" + GameRoutes.BotsSegment, BotLeaderboard);
         _ = routes.MapPost(GameRoutes.Games, Create).RequireRateLimiting(RequestLimits.NewGames);
@@ -76,6 +77,16 @@ internal static class GameEndpoints
         return TypedResults.Ok(new BugReportedDto(report.Id));
     }
 
+    /// <summary>
+    /// Lets go of every game started from a scenario, on a development server; forbidden on any other (the user's
+    /// request of 2026-11-19).
+    /// </summary>
+    private static async Task<ScenarioGamesRemovedDto> RemoveScenarioGames(
+        GameService games,
+        CancellationToken cancellationToken
+    ) =>
+        new(await games.RemoveScenarioGames(cancellationToken));
+
     private static CatalogDto Catalog(GameService games) =>
         GameViews.CatalogOf(games.Rulesets, games.Bots, games.Scenarios);
 
@@ -99,7 +110,8 @@ internal static class GameEndpoints
             asked.PageSize ?? GameQuery.DefaultPageSize,
             asked.Game,
             asked.Preview,
-            asked.Code?.Trim().ToLowerInvariant()
+            asked.Code?.Trim().ToLowerInvariant(),
+            asked.Scenario
         ).Bounded();
         ImmutableList<string> wanted = PlayerPatterns.Of(asked.Players);
         GamePage page = wanted.IsEmpty && asked.Player is null

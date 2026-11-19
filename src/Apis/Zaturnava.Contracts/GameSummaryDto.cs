@@ -51,4 +51,7 @@ public sealed record GameSummaryDto(
 
     /// <summary>Whether its open seats are only for players signed in: no guest may take one.</summary>
     public bool IsForPlayers { get; init; }
+
+    /// <summary>Whether it started from a scenario, as only a development server's do.</summary>
+    public bool IsScenario { get; init; }
 }

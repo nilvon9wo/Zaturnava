@@ -12,6 +12,12 @@ public static class GameRoutes
     public const string Catalog = "api/catalog";
     public const string Games = "api/games";
 
+    /// <summary>
+    /// The games started from scenarios, on a development server; deleted, all are let go of
+    /// (<see cref="ScenarioGamesRemovedDto"/>). A server offering no scenarios refuses.
+    /// </summary>
+    public const string ScenarioGames = "api/scenario-games";
+
     /// <summary>The history of every finished game.</summary>
     public const string Histories = "api/history";
     public const string TokenScheme = "Bearer";

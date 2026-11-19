@@ -254,6 +254,20 @@ public sealed class GameService(
     }
 
     /// <summary>
+    /// Lets go of every game started from a scenario, on a server offering scenarios (a development server), so that
+    /// trying them out leaves nothing behind (the user's request of 2026-11-19); how many there were.
+    /// </summary>
+    /// <exception cref="ScenariosNotOfferedException">The server offers no scenarios.</exception>
+    public async Task<int> RemoveScenarioGames(CancellationToken cancellationToken)
+    {
+        ImmutableList<GameId> games = this._scenarios.All.IsEmpty
+            ? throw new ScenariosNotOfferedException()
+            : [.. (await this.All(new GameQuery(IsScenario: true), cancellationToken)).Select(game => game.Id)];
+        await this._store.Remove(games, cancellationToken);
+        return games.Count;
+    }
+
+    /// <summary>
     /// Lets go of the games abandoned, not over and with nothing done: with a person at a seat who never signed in,
     /// for <see cref="GameServiceSettings.GuestGamesKept"/>; or waiting for a signed-in player to decide, for
     /// <see cref="GameServiceSettings.AwaitedGamesKept"/>, who has not signed in for as long. How many there were.

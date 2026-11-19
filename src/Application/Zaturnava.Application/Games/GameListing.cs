@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.ComponentModel.DataAnnotations;
+using Net.NowhereAtAll.Zaturnava.Application.Scenarios;
 using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 
 namespace Net.NowhereAtAll.Zaturnava.Application.Games;
@@ -28,6 +29,9 @@ public sealed record GameListing(
     /// <summary>The seat to decide next, as <see cref="GameRecord.Deciding"/> says.</summary>
     public SeatId? Deciding { get; init; }
 
+    /// <summary>Whether the game started from a scenario, as only a development server's do.</summary>
+    public bool IsScenario { get; init; }
+
     /// <summary>The game as a lobby lists it, from the game as stored.</summary>
     public static GameListing Of([Required] GameRecord game) =>
         new(game.Id, game.RulesetId, game.Version, game.Controllers, game.Actions.Count, game.IsOver ?? false)
@@ -36,5 +40,6 @@ public sealed record GameListing(
             LastChanged = game.LastChanged,
             Away = game.Away,
             Deciding = game.Deciding,
+            IsScenario = ScenarioStart.IsScenario(game.Actions),
         };
 }

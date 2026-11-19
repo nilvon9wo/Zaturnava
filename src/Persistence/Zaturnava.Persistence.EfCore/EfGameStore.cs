@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Net.NowhereAtAll.Zaturnava.Application.Games;
 using Net.NowhereAtAll.Zaturnava.Application.Players;
 using Net.NowhereAtAll.Zaturnava.Application.Ports;
+using Net.NowhereAtAll.Zaturnava.Application.Scenarios;
 using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 using Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Entities;
 
@@ -50,16 +51,30 @@ public sealed class EfGameStore(GameDbContext context) : IGamePersisting
             ? matching.Where(game => (game.IsOver ?? false) == over)
             : matching;
         matching = query.Code is { } code ? matching.Where(game => game.Id.StartsWith(code)) : matching;
+        matching = query.IsScenario is { } scenario
+            ? matching.Where(game =>
+                game.Actions.Any(action => action.Sequence == 0 && action.Kind == ScenarioStart.Kind) == scenario
+            )
+            : matching;
         int total = await matching.CountAsync(cancellationToken);
         List<ListedRow> rows = await matching
             .OrderByDescending(game => game.LastChanged)
             .ThenBy(game => game.Id)
             .Skip(query.Skipped)
             .Take(query.PageSize)
-            .Select(game => new ListedRow(game, game.Seats.ToList(), game.Actions.Count))
+            .Select(game => new ListedRow(
+                game,
+                game.Seats.ToList(),
+                game.Actions.Count,
+                game.Actions.Any(action => action.Sequence == 0 && action.Kind == ScenarioStart.Kind)
+            ))
             .ToListAsync(cancellationToken);
         return new GamePage(
-            [.. rows.Select(row => GameRecordMapping.ToListing(row.Game, row.Seats, row.Moves))],
+            [
+                .. rows.Select(row =>
+                    GameRecordMapping.ToListing(row.Game, row.Seats, row.Moves) with { IsScenario = row.IsScenario }
+                ),
+            ],
             total
         );
     }
@@ -184,7 +199,7 @@ public sealed class EfGameStore(GameDbContext context) : IGamePersisting
     }
 
     /// <summary>A game's row as a lobby lists it: with its seats and how many actions, but not the actions.</summary>
-    private sealed record ListedRow(GameEntity Game, List<SeatEntity> Seats, int Moves);
+    private sealed record ListedRow(GameEntity Game, List<SeatEntity> Seats, int Moves, bool IsScenario);
 
     private IQueryable<GameEntity> Games() =>
         this._context.Games

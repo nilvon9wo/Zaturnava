@@ -78,6 +78,19 @@ public sealed class HttpGameClientTest
     }
 
     [Fact]
+    public async Task RemoveScenarioGames_WhenAsked_DeletesThemAndSaysHowMany()
+    {
+        // Arrange - the user's request of 2026-11-19
+        StubServer server = new(HttpStatusCode.OK, """{"removed":3}""");
+
+        // Act
+        ScenarioGamesRemovedDto removed = await Client(server).RemoveScenarioGames(this._cancellation);
+
+        // Assert
+        Assert.Equal(("DELETE", "/api/scenario-games", 3), (server.Method, server.Path, removed.Removed));
+    }
+
+    [Fact]
     public async Task Create_WhenGivenARequest_PostsItAsJson()
     {
         // Arrange

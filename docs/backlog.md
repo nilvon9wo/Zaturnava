@@ -12,9 +12,6 @@ own number (**25**, **N29**), the [2026-11-15 specification](playtesting/2026-11
 - **Swap or capture** (asked 2026-11-19): with Safety off, a move onto an ally that could also swap with it asks
   "Swap or capture?" rather than assuming the swap. Needs the rules to offer capturing a swappable ally as an
   action of its own, beside the swap.
-- **Scenario games on a development server** (asked 2026-11-19): an optional filter hiding them from **Waiting for
-  your move** and the games list; and a way to be rid of them, a button deleting them all, or each deleted as the
-  player leaves it.
 - **Dice off** (asked 2026-11-19): when creating a game, of Chaturaji 2027 or Grand Legions, its creator may turn
   the dice off, making an impure abstract strategy game a pure one. With dice off, nothing can be rolled for:
   no extra moves, no escapes, nor anything else a player may roll for now or later. *Accepted* (2026-11-19): a
@@ -138,3 +135,11 @@ From the specification's observations of the bots in play (F, X) and the Sage pl
   the live server, combining only what the engine has, no code. *(Proposed)*: a versioned, checked schema; the
   engine's building blocks named and parameterised; limits on size and on a turn's work; uploads tied to a
   signed-in player, listed apart from the house's; the dumb bots able to play any described game.
+- *(Stated 2026-11-19)* **Playable scenarios**, beside the test scenarios there are now (development server only):
+  the game's creator sets up part or all of the board, and it is played as a real game, people joining or bots
+  given any seat. No faked dice in them. They do not count toward a player's Elo, or the scenario has an Elo of its
+  own, so that no one can farm Elo with lopsided setups. Overlaps **Games made by others** above: a playable
+  scenario is a starting position made by a player rather than a whole game. *(Proposed)*: the scenario format
+  shared by both kinds, a playable one marked so; made in the page (pieces placed by hand) as well as uploaded;
+  listed apart from ordinary games. In the games lists they are filtered on their own, apart from test
+  scenarios (Stated 2026-11-19).
