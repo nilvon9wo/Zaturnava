@@ -310,6 +310,22 @@ public sealed class Chaturaji2027VariantTest
     }
 
     [Fact]
+    public void GuideOf_ForTheRajaAndTheElephant_DrawsTheRookReachingTwiceAsFar()
+    {
+        // Arrange - what the bots weigh a promotion by, beside points (the user's word of 2026-11-19, F2)
+        Chaturaji2027Rules rules = new();
+
+        // Act
+        (int Raja, int Elephant) reach = (
+            rules.GuideOf(Chaturaji2027Pieces.Raja).Diagram.Moves.Count,
+            rules.GuideOf(Chaturaji2027Pieces.Elephant).Diagram.Moves.Count
+        );
+
+        // Assert
+        Assert.Equal((8, 16), reach);
+    }
+
+    [Fact]
     public void GuideOf_WhenAKindStepsSidewaysOnlyAcrossARiver_DrawsItOnItsOwnSideWithoutThemAndAcrossWithThem()
     {
         // Arrange - a Raja, stepping every way, sideways only across a river, as a Xiangqi Soldier does

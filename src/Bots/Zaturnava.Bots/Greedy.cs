@@ -13,11 +13,16 @@ namespace Net.NowhereAtAll.Zaturnava.Bots;
 /// nothing, passing only when nothing else is left. An action gains what it scores, and a promotion
 /// what it puts on the board for the bot's team, less what it takes off: so a Pawn is promoted into
 /// the team's best piece, and never into an enemy's, and a piece by its own promotion into the best it may become;
-/// a leader counts for half, and among equals the bot's own army's piece comes first.
+/// a promotion weighed by the mobility of what it makes too, and among equals the bot's own army's piece comes first.
 /// An escape, likewise, gains what it puts back.
 /// </summary>
 internal static class Greedy
 {
+    /// <summary>
+    /// How many squares a piece promoted into must reach on an open board for each point more it is weighed.
+    /// </summary>
+    private const int SquaresPerPoint = 4;
+
     public static GameAction Choose(DecisionRequest request, Random random)
     {
         ImmutableList<GameAction> choices = Choices(request);
@@ -79,12 +84,18 @@ internal static class Greedy
     }
 
     /// <summary>
-    /// What a piece a promotion puts on the board is worth to the bot's team: a leader half its worth (Proposed;
-    /// the playtest of 2026-11-15, F2 and F3, where a Pawn became a Raja, not the Rook that would have won). A
-    /// leader is slow, needs guarding, and, back on the board, takes its army back from whoever commanded it.
+    /// What a piece a promotion puts on the board is worth to the bot's team, to choose among promotions only: its
+    /// worth, and a point for each <see cref="SquaresPerPoint"/> squares it reaches on an open board, its mobility
+    /// (the user's word of 2026-11-19, on the playtest of 2026-11-15, F2: "selection should consider strategy - such
+    /// as piece mobility and player coordination, not just points", where a Pawn became a Raja, worth 5, not the Rook,
+    /// worth 4, that would have won; the Raja steps to 8 squares, the Rook slides to 16). Which army it joins, the
+    /// coordination, settles the rest (<see cref="Preferred"/>). The piece's own worth is unchanged.
     /// </summary>
-    private static int PromotedOf(DecisionRequest request, Piece piece) =>
-        request.Rules.IsLeader(piece.Kind) ? SideOf(request, piece) / 2 : SideOf(request, piece);
+    private static int PromotedOf(DecisionRequest request, Piece piece)
+    {
+        int side = SideOf(request, piece);
+        return side + (Math.Sign(side) * (request.Rules.GuideOf(piece.Kind).Diagram.Moves.Count / SquaresPerPoint));
+    }
 
     /// <summary>
     /// Of the actions that gain as much, a promotion into a piece of the bot's own army first (the playtest of

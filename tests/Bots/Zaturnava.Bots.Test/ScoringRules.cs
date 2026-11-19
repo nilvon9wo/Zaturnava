@@ -40,7 +40,23 @@ internal sealed class ScoringRules(ImmutableDictionary<GameAction, int> points) 
     /// <summary>How each kind moves along the line; not at all, unless set.</summary>
     public ImmutableDictionary<PieceKindId, ImmutableList<MovementRule>> Moves { get; init; } = [];
 
-    public PieceGuide GuideOf(PieceKindId kind) => new(new PieceKind(kind, this.Moves.GetValueOrDefault(kind, [])));
+    /// <summary>
+    /// How many squares each kind reaches on an open board, as its drawing shows: the Raja 8, stepping each way; the
+    /// Elephant, a Rook, 16; the Horse 8; the Boat 4; the Pawn 1.
+    /// </summary>
+    public static readonly ImmutableDictionary<PieceKindId, int> Reach =
+        ImmutableDictionary<PieceKindId, int>.Empty
+            .Add(new PieceKindId("pawn"), 1)
+            .Add(new PieceKindId("horse"), 8)
+            .Add(new PieceKindId("boat"), 4)
+            .Add(new PieceKindId("elephant"), 16)
+            .Add(new PieceKindId("raja"), 8);
+
+    public PieceGuide GuideOf(PieceKindId kind) =>
+        new(new PieceKind(kind, this.Moves.GetValueOrDefault(kind, [])))
+        {
+            Diagram = new MoveDiagram(9, [.. Enumerable.Range(0, Reach.GetValueOrDefault(kind))], [], []),
+        };
 
     /// <summary>How many moves a piece may expect each turn: one, unless set.</summary>
     public double Pace { get; init; } = 1;

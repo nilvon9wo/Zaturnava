@@ -300,10 +300,11 @@ html { scrollbar-gutter: stable; }
 .panel h2 { margin-top: 0; }
 
 /* The games, the leaderboard to their right: those waiting for the player above the rest (playtest H1). The
-   games take two shares of the room left and the leaderboard one, from a base wide enough for its columns: the
-   games no wider than they need, the leaderboard not squeezed (2026-11-19). */
+   games, compact, their filters wrapping, take one share of the room left and the leaderboard, with its many
+   columns, two (the user's reports of 2026-11-19: the leaderboard was squeezed, its player's name broken over
+   three lines). */
 .games-column {
-    flex: 2 1 560px;
+    flex: 1 1 480px;
     min-width: 0;
     display: flex;
     flex-direction: column;
@@ -453,7 +454,8 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
 .quick-games { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; }
 .quick-hint { color: var(--muted); font-size: 0.9em; }
 /* A panel of the lobby: its widest board (the bots', eight columns) scrolls within it rather than widening the page. */
-.panel.leaderboard { overflow-x: auto; flex: 1 1 420px; }
+.panel.leaderboard { overflow-x: auto; flex: 2 1 640px; }
+.leaderboard .leaders th, .leaderboard .leaders td.name, .leaderboard .leaders td.name button { white-space: nowrap; }
 .leaderboard .choice { display: flex; gap: 8px; align-items: center; margin: 8px 0; }
 .leaderboard .leaders th.kind, .leaderboard .leaders td.kind { text-align: center; }
 .leaderboard .against { color: var(--muted); font-size: 0.85em; margin-left: 4px; white-space: nowrap; }
