@@ -46,7 +46,7 @@ Statuses (the specification's P1): **Done** (implemented and tested), **Done, pa
 | E2 | Budget assumes 80% of kingdom and palace filled; no palace-bound preference | To do | |
 | E3 | Cost inversely related to frequency | To do | |
 | E4 | Several strategies; clever bots respond to others' picks | To do | |
-| E5 | Budget settable for random armies too | To do | |
+| E5 | Budget settable for random armies too | Done | See T8. |
 
 ## F. Promotion and strategy
 
@@ -64,7 +64,7 @@ Statuses (the specification's P1): **Done** (implemented and tested), **Done, pa
 |---|---|---|---|
 | G | Evangelist, as the spreadsheet defines it | To do | |
 | H1 | Lobby layout: waiting games above the games, New game hidden behind a button when there are games to join | Done | The games waiting for the player sit above the games list rather than beside it, in the same table form; the leaderboard stays on the right. (#285 had moved the games rightmost, which was not asked; undone.) While the page lists a game the player could join, New game is hidden until the **New game** button at the top of the games list shows it; the button hides it again. Tests: `LobbyTest`, `AppTest`. |
-| H2 | Shareable link to a game with open seats | To do | |
+| H2 | Shareable link to a game with open seats | Done, as a code | itch.io never tells the page's frame its own address, so no link can open a game there. A table with open seats offers an invitation to copy (or select, where the frame forbids the clipboard): the page's address and the game's code, its id's first 8 letters. The lobby's Game code box lists that game alone, whatever else is filtered. A true link is asked in [OQ9](../open-questions.md#oq9-a-link-straight-to-a-game). Tests: `GameCodeTest`, `TableTest`, `LobbyTest`, `GameApiTest`, the stores' tests. |
 | H3 | Kingdom sizes checked before a game is made | Done | As the sizes are typed, the lobby says what is wrong: a board side over 26, a kingdom under 3 × 3, a kingdom longer than the board's shorter side (those at the sides lie turned), or neighbouring kingdoms overlapping (width and depth together over the shorter side). Play and the quick-game buttons are disabled until it fits; the server still refuses any board it cannot play. Tests: `BoardFitTest`, `LobbyTest`. |
 | H4 | Games list as a sortable table, one row each, who is next and how long | Done | One line a game, one fact a cell: a column for each seat (who holds it, "away", or a Join button), Next (the seat to move), Moves, Created and Last change; Size only when the games listed differ in size. No game id, no ruleset (chosen above the list). Next, Moves, Created and Last change sort it, again the other way; by default the player's own games first, then the longest waiting. Sorting is within the page shown. The seat deciding is now stored with each game (migration `AddGameDeciding`; games under way are replayed once at start-up to fill it). Tests: `LobbyTest`, `GameViewsTest`, `GameServiceTest`, `EfGameStoreTest`, `InMemoryGameStoreTest`. |
 | I | Placement previews, desaturated and blinking | To do | |

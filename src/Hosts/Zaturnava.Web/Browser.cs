@@ -81,6 +81,9 @@ internal sealed class Browser(IJSRuntime js, IGameServing games)
 
     public ValueTask Play(ImmutableList<string> sounds) => this._js.InvokeVoidAsync("zaturnava.play", [.. sounds]);
 
+    /// <summary>Whether <paramref name="text"/> was put on the clipboard: not, where the frame forbids it.</summary>
+    public ValueTask<bool> Copy(string text) => this._js.InvokeAsync<bool>("zaturnava.copy", text);
+
     /// <summary>Has the table told (its <c>Shown</c>) whenever the page is shown again, after being hidden.</summary>
     public ValueTask Watch<TTable>(DotNetObjectReference<TTable> table)
         where TTable : class =>

@@ -1956,6 +1956,33 @@ public sealed class LobbyTest : IDisposable
     }
 
     [Fact]
+    public void FindByCode_WhenACodeIsEntered_ListsOnlyTheGameWhoseIdStartsSoWhateverTheFilters()
+    {
+        // Arrange
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Act
+        lobby.Find("input.filter-code").Change("  3fa2c9d1 ");
+
+        // Assert
+        Assert.Equal(new GameListQuery(Code: "3fa2c9d1"), this._page.Server.Listed);
+    }
+
+    [Fact]
+    public void FindByCode_WhenTheCodeIsCleared_ListsTheGamesTheFiltersAskForAgain()
+    {
+        // Arrange
+        IRenderedComponent<Lobby> lobby = this.Render();
+        lobby.Find("input.filter-code").Change("3fa2c9d1");
+
+        // Act
+        lobby.Find("input.filter-code").Change(" ");
+
+        // Assert
+        Assert.Equal(Waiting(), this._page.Server.Listed);
+    }
+
+    [Fact]
     public void Render_WhenNoGameMatches_SaysSo()
     {
         // Arrange

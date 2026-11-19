@@ -49,6 +49,7 @@ public sealed class EfGameStore(GameDbContext context) : IGamePersisting
         matching = query.IsOver is { } over
             ? matching.Where(game => (game.IsOver ?? false) == over)
             : matching;
+        matching = query.Code is { } code ? matching.Where(game => game.Id.StartsWith(code)) : matching;
         int total = await matching.CountAsync(cancellationToken);
         List<ListedRow> rows = await matching
             .OrderByDescending(game => game.LastChanged)

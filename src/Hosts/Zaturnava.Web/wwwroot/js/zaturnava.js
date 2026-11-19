@@ -154,6 +154,15 @@ window.zaturnava = (() => {
         theme(name) {
             document.documentElement.dataset.theme = name;
         },
+        // Text put on the clipboard, if the page may: true if it was; false where the frame the page is in forbids it.
+        async copy(text) {
+            try {
+                await navigator.clipboard.writeText(text);
+                return true;
+            } catch {
+                return false;
+            }
+        },
         // A panel the player may drag by its header wherever they like, kept on the screen; where they last put it
         // is remembered under key, and it opens there again.
         draggable(panel, key) {

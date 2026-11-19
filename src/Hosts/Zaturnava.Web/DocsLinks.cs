@@ -5,6 +5,9 @@ public static class DocsLinks
 {
     private const string Docs = "https://github.com/nilvon9wo/Zaturnava/blob/main/docs/";
 
+    /// <summary>The page itself, where people come to play: the address a player sends others to join a game.</summary>
+    public const string Page = "https://nilvon9wo.itch.io/zaturnava";
+
     /// <summary>Every rule, in full.</summary>
     public const string Rules = Docs + "rules.md";
 

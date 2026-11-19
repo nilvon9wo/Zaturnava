@@ -3,8 +3,9 @@ namespace Net.NowhereAtAll.Zaturnava.Application.Games;
 /// <summary>
 /// Which games a lobby lists, and which page of them (Proposed): of one game at any size, if <see cref="GameId"/> is
 /// given; of one ruleset (one game at one size), if <see cref="RulesetId"/> is; with or without open seats; with no
-/// seat played by a bot (<see cref="PeopleOnly"/>); over or not; of preview games or not (<see cref="IsPreview"/>). A
-/// filter left null leaves the games unfiltered by it. Pages count from 1, newest change first.
+/// seat played by a bot (<see cref="PeopleOnly"/>); over or not; of preview games or not (<see cref="IsPreview"/>);
+/// whose ids start with <see cref="Code"/>, as one player gives another to find a game by. A filter left null leaves
+/// the games unfiltered by it. Pages count from 1, newest change first.
 /// </summary>
 public sealed record GameQuery(
     string? RulesetId = null,
@@ -14,7 +15,8 @@ public sealed record GameQuery(
     int Page = 1,
     int PageSize = GameQuery.DefaultPageSize,
     string? GameId = null,
-    bool? IsPreview = null
+    bool? IsPreview = null,
+    string? Code = null
 )
 {
     public const int DefaultPageSize = 20;

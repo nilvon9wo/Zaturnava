@@ -98,7 +98,8 @@ internal static class GameEndpoints
             asked.Page ?? 1,
             asked.PageSize ?? GameQuery.DefaultPageSize,
             asked.Game,
-            asked.Preview
+            asked.Preview,
+            asked.Code?.Trim().ToLowerInvariant()
         ).Bounded();
         ImmutableList<string> wanted = PlayerPatterns.Of(asked.Players);
         GamePage page = wanted.IsEmpty && asked.Player is null

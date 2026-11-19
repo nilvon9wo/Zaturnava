@@ -18,6 +18,10 @@ namespace Net.NowhereAtAll.Zaturnava.Contracts;
 /// </param>
 /// <param name="Player">A player's id, as <see cref="GameSummaryDto.PlayerIds"/> gives it: their games, a lobby's
 /// Mine.</param>
+/// <param name="Code">
+/// The start of a game's id, as one player gives another to find it by (the user's report of 2026-11-15, H2): the
+/// games whose ids start so; case does not count.
+/// </param>
 public sealed record GameListQuery(
     string? Ruleset = null,
     bool? Open = null,
@@ -28,7 +32,8 @@ public sealed record GameListQuery(
     string? Game = null,
     bool? Preview = null,
     string? Players = null,
-    string? Player = null
+    string? Player = null,
+    string? Code = null
 )
 {
     /// <summary>The query as an address's query string, from its "?"; empty, if it asks nothing.</summary>
@@ -44,6 +49,7 @@ public sealed record GameListQuery(
                 ("preview", Flag(this.Preview)),
                 ("players", Escaped(this.Players)),
                 ("player", Escaped(this.Player)),
+                ("code", Escaped(this.Code)),
                 ("page", Number(this.Page)),
                 ("pageSize", Number(this.PageSize)),
             }

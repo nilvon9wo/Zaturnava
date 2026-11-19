@@ -1182,6 +1182,56 @@ public sealed class TableTest : IDisposable
     }
 
     [Fact]
+    public void Render_WhenSeatsAreStillOpen_OffersAnInvitationWithThePageAndTheGamesCode()
+    {
+        // Arrange
+        this._page.Server.View = WithYellowOpen();
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Assert
+        Assert.Equal(
+            (GameCode.InvitationTo(FakeGameServer.GameId, "Chaturaji 2027"), 0),
+            (table.Find(".invite input.invitation").GetAttribute("value"), table.FindAll(".invite .copied").Count)
+        );
+    }
+
+    [Theory]
+    [InlineData(true, "Copied: paste it wherever you like.")]
+    [InlineData(false, "The page may not copy here: select the text and copy it yourself.")]
+    public void CopyInvitation_WhenAsked_PutsItOnTheClipboardOrSaysToCopyItByHand(bool isAllowed, string said)
+    {
+        // Arrange
+        this._page.Server.View = WithYellowOpen();
+        _ = this._page.JSInterop.Setup<bool>("zaturnava.copy", _ => true).SetResult(isAllowed);
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Act
+        table.Find(".invite button.copy-invitation").Click();
+
+        // Assert
+        Assert.Equal(
+            (said.Trim(), GameCode.InvitationTo(FakeGameServer.GameId, "Chaturaji 2027")),
+            (
+                table.Find(".invite .copied").TextContent.Trim(),
+                (string)this._page.JSInterop.Invocations["zaturnava.copy"].Single().Arguments[0]!
+            )
+        );
+    }
+
+    /// <summary>Seat zero to move, Yellow's seat still open.</summary>
+    private static GameViewDto WithYellowOpen() =>
+        FakeGameServer.SeatZeroToMove with
+        {
+            Seats = FakeGameServer.SeatZeroToMove.Seats.SetItem(
+                1,
+                FakeGameServer.SeatZeroToMove.Seats[1] with { Controller = "open", Bot = null, BotId = null }
+            ),
+            LegalActions = [],
+        };
+
+    [Fact]
     public void Render_WhenSeatsAreStillOpen_WaitsForThemToBeTaken()
     {
         // Arrange

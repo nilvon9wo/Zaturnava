@@ -874,6 +874,11 @@ button.safety.off {
 .dialog .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
 
 /* Reporting a bug: a quiet button at the panel's foot, for players signed in (playtest T4). */
+/* An invitation to a game with open seats: its text, to select or copy, beside the button copying it. */
+.invite { margin: 8px 0 0; }
+.invite .invite-row { display: flex; gap: 6px; margin: 4px 0 0; }
+.invite input.invitation { flex: 1; min-width: 0; font-size: 0.85rem; }
+.invite .copied { margin: 4px 0 0; color: var(--muted); font-size: 0.85rem; }
 button.report-bug {
     align-self: flex-end;
     background: transparent;
