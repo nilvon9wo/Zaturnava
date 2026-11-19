@@ -16,45 +16,64 @@
    the next: the piece where it stands, moving, and where it ends, any enemy it takes then gone (C3). *@
 @using System.Globalization
 
-@if (this.Diagram.Elsewhere is not null
-     || !this.Diagram.Alternates.IsEmpty
-     || this.MayShowCaptures
-     || !this.ObstaclesShown.IsEmpty)
+@* What is drawn, in three kinds of control (the user's report of 2026-11-19: the one row of switches was confusing):
+   buttons choosing the one feature drawn - its moves, its captures, or a special power at work; check boxes for
+   what changes that feature - pieces in its way, its river or palace, where it stands; and a play button, a
+   triangle, playing whatever is drawn. *@
+@if (this.FeatureCount > 1)
 {
     <div class="diagram-toggles" role="group" aria-label="What the drawing shows">
-        @if (this.MayShowCaptures)
+        @if (!this.Moving.Moves.IsEmpty)
         {
-            <button type="button" class="show-moves" aria-pressed="@Pressed(!this.IsCapturing)"
-                    @onclick="() => this.Switch(() => this._isCapturing = false)">Moves</button>
-            <button type="button" class="show-captures" aria-pressed="@Pressed(this.IsCapturing)"
-                    @onclick="() => this.Switch(() => this._isCapturing = true)">Captures</button>
+            <button type="button" class="show-moves" aria-pressed="@Pressed(this.Power is null && !this.IsCapturing)"
+                    @onclick="() => this.Switch(() => (this._power, this._isCapturing) = (null, false))">Moves</button>
         }
+        @if (this.MovingCaptures)
+        {
+            <button type="button" class="show-captures" aria-pressed="@Pressed(this.Power is null && this.IsCapturing)"
+                    @onclick="() => this.Switch(() => (this._power, this._isCapturing) = (null, true))">Captures</button>
+        }
+        @foreach (NamedDiagramDto power in this.Powers)
+        {
+            <button type="button" class="show-power" aria-pressed="@Pressed(this.Power == power)"
+                    @onclick="() => this.Switch(() => this._power = power.Name)">@power.Name</button>
+        }
+    </div>
+}
+@if (this.Power is null && (!this.ObstaclesShown.IsEmpty || this.Diagram.Elsewhere is not null || this.Situations.Any()))
+{
+    <div class="diagram-options" role="group" aria-label="What changes it">
         @if (!this.ObstaclesShown.IsEmpty)
         {
-            <button type="button" class="show-obstacles" aria-pressed="@Pressed(this.IsObstructed)"
-                    @onclick="() => this.Switch(() => this._isObstructed = !this._isObstructed)"
-                >Pieces in the way</button>
+            <label>
+                <input type="checkbox" class="show-obstacles" checked="@this.IsObstructed"
+                       @onchange="change => this.Switch(() => this._isObstructed = IsChecked(change))" />
+                Pieces in the way
+            </label>
         }
         @if (this.Diagram.Elsewhere is not null)
         {
-            <button type="button" class="show-terrain" aria-pressed="@Pressed(this.Alternate is null && !this._isElsewhere)"
-                    @onclick="() => this.Switch(() => (this._isElsewhere, this._alternate) = (this.Alternate is null && !this._isElsewhere, null))">
+            <label>
+                <input type="checkbox" class="show-terrain" checked="@(!this._isElsewhere)"
+                       @onchange="change => this.Switch(() => (this._isElsewhere, this._situation) = IsChecked(change) ? (false, this._situation) : (true, null))" />
                 @(this.Diagram.RiverRow is null ? "In its palace" : "By a river")
-            </button>
+            </label>
         }
-        @foreach (NamedDiagramDto other in this.Diagram.Alternates)
+        @foreach (NamedDiagramDto situation in this.Situations)
         {
-            <button type="button" class="show-alternate" aria-pressed="@Pressed(this.Alternate == other)"
-                    @onclick="() => this.Switch(() => this._alternate = this.Alternate == other ? null : other.Name)">@other.Name</button>
+            <label>
+                <input type="checkbox" class="show-situation" checked="@(this.Situation == situation)"
+                       @onchange="change => this.Switch(() => (this._situation, this._isElsewhere) = IsChecked(change) ? (situation.Name, false) : (null, this._isElsewhere))" />
+                @situation.Name
+            </label>
         }
     </div>
 }
 @if (!this.Examples.IsEmpty)
 {
     <div class="diagram-play">
-        <button type="button" class="play-example" @onclick="() => this._plays++">
-            @(this.Shown.Told is not null ? "Play it" : $"{(this._plays == 0 ? "Play" : "Play another")} {(this.IsCapturing ? "capture" : "move")}")
-        </button>
+        <button type="button" class="play-example" aria-label="@this.PlayLabel" title="@this.PlayLabel"
+                @onclick="() => this._plays++">&#x25B6;</button>
     </div>
 }
 <div class="move-diagram-turn" style="transform: rotate(@(this.Angle)deg)">
@@ -62,7 +81,7 @@
     {
         <span class="forward-arrow" aria-hidden="true">&#x25B2;</span>
     }
-    <div class="move-diagram" style="--side: @this.Shown.Side; @this.Colours" role="img" aria-label="@this.Described">
+    <div class="move-diagram@(this.Playing is null ? string.Empty : " playing")" style="--side: @this.Shown.Side; @this.Colours" role="img" aria-label="@this.Described">
         @for (int row = this.Shown.Side - 1; row >= 0; row--)
         {
             @for (int column = 0; column < this.Shown.Side; column++)
@@ -92,9 +111,12 @@
         {
             @foreach (int taken in example.Taken)
             {
-                <span @key="(this._plays, taken)" class="example-taken@(this.IsFriend(taken) ? " friend" : string.Empty)" style="@this.PlacedAt(taken, this.Centre)"></span>
+                int? from = taken == example.Taken[0] ? example.EnemyFrom : null;
+                <span @key="(this._plays, taken)"
+                      class="@this.TakenClassOf(taken, from)"
+                      style="@this.PlacedAt(from ?? taken, from is null ? this.Centre : taken)"></span>
             }
-            <span @key="this._plays" class="example-piece" style="@this.PlacedAt(this.Centre, example.To)">
+            <span @key="this._plays" class="example-piece@(example.EnemyFrom is null ? string.Empty : " after-lead")" style="@this.PlacedAt(this.Centre, example.To)">
                 <span class="upright" style="transform: rotate(@(-this.Angle)deg)">
                     <PieceIcon Kind="@this.Piece.Kind" Name="@this.Piece.Name" Owner="this.Piece.Owner" Mark="this.Piece.Mark" Pieces="this.Pieces" />
                 </span>
@@ -167,7 +189,7 @@
     }
     @if (!this.Shown.Palace.IsEmpty && !this.Shown.IsPalaceLined)
     {
-        <span class="key-item"><span class="key palace"></span>its palace, which it may not leave</span>
+        <span class="key-item"><span class="key palace"></span>its palace, which confines it but in rare cases</span>
     }
     else if (!this.Shown.Palace.IsEmpty && this.Shown.Throne is null)
     {
@@ -183,7 +205,8 @@
     private bool _isCapturing;
     private bool _isObstructed;
     private bool _isElsewhere;
-    private string? _alternate;
+    private string? _power;
+    private string? _situation;
 
     /// <summary>How many examples the player has played since the drawing last changed; none, none playing.</summary>
     private int _plays;
@@ -209,21 +232,48 @@
     [Parameter]
     public bool IsOnDark { get; set; }
 
-    /// <summary>
-    /// The other drawing the player asked for, if any (the user's reports of 2026-11-19): a Xiangqi Soldier across a
-    /// river, a Janggi piece on its palace's corner, or a special power at work.
-    /// </summary>
-    private NamedDiagramDto? Alternate => this.Diagram.Alternates.FirstOrDefault(other => other.Name == this._alternate);
+    /// <summary>Its special powers, each drawn at work: a feature of its own, chosen by a button.</summary>
+    private IEnumerable<NamedDiagramDto> Powers => this.Diagram.Alternates.Where(other => other.Diagram.Told is not null);
 
-    /// <summary>The diagram drawn: another, if asked for; on an open board, if the player put its river or palace away.</summary>
-    private MoveDiagramDto Shown =>
-        this.Alternate?.Diagram ?? (this._isElsewhere ? this.Diagram.Elsewhere : null) ?? this.Diagram;
+    /// <summary>
+    /// Where it stands changing how it moves - a Xiangqi Soldier across a river, a Janggi piece off its palace's
+    /// throne: each changes its moves and captures, so is checked.
+    /// </summary>
+    private IEnumerable<NamedDiagramDto> Situations =>
+        this.Diagram.Alternates.Where(other => other.Diagram.Told is null);
+
+    /// <summary>The power the player chose to see at work, if any.</summary>
+    private NamedDiagramDto? Power => this.Powers.FirstOrDefault(power => power.Name == this._power);
+
+    /// <summary>Where it stands the player checked, if anywhere.</summary>
+    private NamedDiagramDto? Situation => this.Situations.FirstOrDefault(situation => situation.Name == this._situation);
+
+    /// <summary>
+    /// How the piece moves and captures, as checked: where it stands, if checked; on an open board, if its river or
+    /// palace is unchecked; else as it is.
+    /// </summary>
+    private MoveDiagramDto Moving =>
+        this.Situation?.Diagram ?? (this._isElsewhere ? this.Diagram.Elsewhere : null) ?? this.Diagram;
+
+    /// <summary>The diagram drawn: the power chosen at work, if any; else how it moves and captures.</summary>
+    private MoveDiagramDto Shown => this.Power?.Diagram ?? this.Moving;
 
     private bool HasCaptures =>
         !this.Shown.Captures.IsEmpty || !this.Shown.Jumps.IsEmpty || this.Shown.Custody is not null;
 
-    /// <summary>Whether the player may switch between its moves and its captures: it has both.</summary>
-    private bool MayShowCaptures => !this.Shown.Moves.IsEmpty && this.HasCaptures;
+    /// <summary>Whether it captures, as checked: a feature of its own.</summary>
+    private bool MovingCaptures =>
+        !this.Moving.Captures.IsEmpty || !this.Moving.Jumps.IsEmpty || this.Moving.Custody is not null;
+
+    /// <summary>How many features there are to choose from: its moves, its captures, and its powers.</summary>
+    private int FeatureCount =>
+        (this.Moving.Moves.IsEmpty ? 0 : 1) + (this.MovingCaptures ? 1 : 0) + this.Powers.Count();
+
+    /// <summary>What the play button plays, for those who cannot see its triangle.</summary>
+    private string PlayLabel =>
+        this.Shown.Told is not null ? "Play it" : $"{(this._plays == 0 ? "Play" : "Play another")} {(this.IsCapturing ? "capture" : "move")}";
+
+    private static bool IsChecked(ChangeEventArgs change) => Convert.ToBoolean(change.Value, CultureInfo.InvariantCulture);
 
     /// <summary>Whether its captures are drawn: asked for, or all it has.</summary>
     private bool IsCapturing => this.HasCaptures && (this._isCapturing || this.Shown.Moves.IsEmpty);
@@ -244,6 +294,17 @@
     /// </summary>
     private string Colours =>
         $"--own: var(--seat-{this.Piece.Owner}); --foe: var(--seat-{(int.IsEvenInteger(this.Piece.Owner) ? 1 : 2)})";
+
+    /// <summary>
+    /// The class of a piece taken in an example, on <paramref name="cell"/>: of its own side, or an enemy; and, if it
+    /// came from <paramref name="from"/> first, led there.
+    /// </summary>
+    private string TakenClassOf(int cell, int? from) =>
+        string.Join(
+            ' ',
+            new[] { "example-taken", this.IsFriend(cell) ? "friend" : null, from is null ? null : "led" }
+                .OfType<string>()
+        );
 
     /// <summary>Whether <paramref name="cell"/> holds a piece of the drawn piece's own side, to be taken.</summary>
     private bool IsFriend(int cell) =>
@@ -309,26 +370,24 @@
     /// the way; or capturing - on each square it captures on, the enemy there taken; landing on each it jumps to, the
     /// enemy before it taken; or, by custody, moving on, the enemy held taken.
     /// </summary>
-    private ImmutableList<(int To, ImmutableList<int> Taken)> Examples
+    private ImmutableList<PlayedExampleDto> Examples
     {
         get
         {
             MoveDiagramDto shown = this.Shown;
             return shown.Told is not null
-                ? [.. new[] { shown.Example }.OfType<PlayedExampleDto>().Select(played => (played.To, played.Taken))]
+                ? [.. new[] { shown.Example }.OfType<PlayedExampleDto>()]
                 : this.IsCapturing
                 ? [
                     .. shown.Captures
                         .Where(cell => !this.IsStopped(cell))
-                        .Select(cell => (cell, ImmutableList.Create(cell))),
-                    .. shown.Jumps.Select(cell => (cell, ImmutableList.Create(this.Between(cell)))),
+                        .Select(cell => new PlayedExampleDto(cell, [cell])),
+                    .. shown.Jumps.Select(cell => new PlayedExampleDto(cell, [this.Between(cell)])),
                     .. this.Holds
                         .GroupBy(held => held.Landing)
-                        .Select(held => (held.Key, held.Select(each => each.Taken).ToImmutableList())),
+                        .Select(held => new PlayedExampleDto(held.Key, [.. held.Select(each => each.Taken)])),
                 ]
-                : [
-                    .. shown.Moves.Where(cell => !this.IsStopped(cell)).Select(cell => (cell, ImmutableList<int>.Empty)),
-                ];
+                : [.. shown.Moves.Where(cell => !this.IsStopped(cell)).Select(cell => new PlayedExampleDto(cell, []))];
         }
     }
 
@@ -336,12 +395,8 @@
     /// The example playing, if one is: each played in turn, again from the first after the last; none, if the piece
     /// shown has none, as when another's card replaced its own.
     /// </summary>
-    private (int To, ImmutableList<int> Taken)? Playing =>
-        this._plays == 0
-            ? null
-            : this.Examples
-                .Select(example => ((int To, ImmutableList<int> Taken)?)example)
-                .ElementAtOrDefault((this._plays - 1) % Math.Max(1, this.Examples.Count));
+    private PlayedExampleDto? Playing =>
+        this._plays == 0 ? null : this.Examples.ElementAtOrDefault((this._plays - 1) % Math.Max(1, this.Examples.Count));
 
     /// <summary>A change to what is drawn, the example playing stopped.</summary>
     private void Switch(Action change)

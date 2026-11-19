@@ -1007,11 +1007,13 @@ public sealed class GrandLegionsRulesTest
         // Act
         MoveDiagram diagram = rules.GuideOf(GrandLegionsPieces.XiangqiGeneral).Diagram;
 
-        // Assert
+        // Assert - and no open board to switch to: out of its palace only by its power (the user's report of
+        // 2026-11-19: outside the palace is the exception, not a toggle)
         NamedDiagram flying = Assert.Single(diagram.Alternates);
         Assert.Equal(
-            ("31,39,41,49", false, 9, "Flying general", 76, "76", 9),
+            (true, "31,39,41,49", false, 9, "Flying general", 76, "76", 9),
             (
+                diagram.Elsewhere is null,
                 string.Join(",", diagram.Moves),
                 diagram.IsPalaceLined,
                 diagram.Palace.Count,
@@ -1158,17 +1160,22 @@ public sealed class GrandLegionsRulesTest
         );
     }
 
-    [Fact]
-    public void GuideOf_WhenAKindStepsAlongAPalacesLines_DrawsItOnAnOpenBoardToo()
+    [Theory]
+    [InlineData("janggi-soldier", 0)]
+    [InlineData("janggi-guard", null)]
+    public void GuideOf_WhenAKindStepsAlongAPalacesLines_DrawsItOnAnOpenBoardTooUnlessItsPalaceHoldsIt(
+        string kind,
+        int? openPalace
+    )
     {
-        // Arrange
+        // Arrange - the Janggi Soldier goes anywhere; the Guard, its palace holds (the user's report of 2026-11-19)
         Chaturaji2027Rules rules = GrandLegionsRules.RulesOf(QuickGame.Small);
 
         // Act
-        MoveDiagram diagram = rules.GuideOf(GrandLegionsPieces.JanggiGuard).Diagram;
+        MoveDiagram diagram = rules.GuideOf(new PieceKindId(kind)).Diagram;
 
-        // Assert - in its palace, and out of any
-        Assert.Equal((9, 0), (diagram.Palace.Count, diagram.Elsewhere?.Palace.Count));
+        // Assert - in its palace, and out of any, if it may leave
+        Assert.Equal((9, openPalace), (diagram.Palace.Count, diagram.Elsewhere?.Palace.Count));
     }
 
     [Fact]

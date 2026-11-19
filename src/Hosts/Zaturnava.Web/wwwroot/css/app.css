@@ -758,16 +758,28 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
 /* A river the piece may not cross: blue along the lower edge of the first row across it, as the board's are. */
 .move-diagram .river-bank { box-shadow: inset 0 -0.3em 0 #2f7fd8; }
 .diagram-key .key.river { background: linear-gradient(transparent 60%, #2f7fd8 60%); }
-/* What the drawing shows, as the player switches: its moves or its captures, pieces in its way, its river or palace. */
-.diagram-toggles, .diagram-play {
+/* What the drawing shows: buttons choosing the feature - its moves, its captures, a power at work; check boxes for
+   what changes it - pieces in its way, its river or palace, where it stands; a triangle playing it (the user's
+   report of 2026-11-19). */
+.diagram-toggles, .diagram-options, .diagram-play {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
     gap: 6px;
     margin: 10px 0 0;
 }
-.diagram-toggles button, .diagram-play button { padding: 3px 10px; font-size: 0.85rem; border-radius: 999px; }
+.diagram-options { gap: 4px 14px; font-size: 0.85rem; }
+.diagram-options label { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; cursor: pointer; }
+.diagram-toggles button { padding: 3px 10px; font-size: 0.85rem; border-radius: 999px; }
 .diagram-toggles button[aria-pressed="true"] { background: var(--accent); color: var(--panel); }
+.diagram-play .play-example {
+    width: 2.2rem;
+    height: 2.2rem;
+    padding: 0 0 0 3px;
+    border-radius: 50%;
+    font-size: 0.95rem;
+    line-height: 1;
+}
 /* A piece put in its way: a grey disc, as one it hops over is, settling in; the dots it takes away fade. */
 .move-diagram .obstacle::before, .diagram-key .obstacle::before,
 .move-diagram .taken::before, .diagram-key .taken::before,
@@ -842,6 +854,20 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
 }
 .move-diagram .example-taken.friend::before { background: var(--own, var(--mark)); }
 .move-diagram .example-taken { animation: example-taken 1.8s ease-in forwards; }
+/* A power answering an enemy's move, as en passant does: the enemy's move played first, then the piece's, taking it
+   (the user's report of 2026-11-19); the marks it plays over hidden meanwhile. */
+.move-diagram.playing .taken::before { visibility: hidden; }
+.move-diagram .example-taken.led { animation: example-lead 3.2s ease-in-out forwards; }
+.move-diagram .example-piece.after-lead { animation: example-move-late 3.2s ease-in-out forwards; }
+@keyframes example-lead {
+    0%, 10% { transform: none; opacity: 1; }
+    35%, 82% { transform: translate(calc(var(--across) * 100%), calc(var(--down) * 100%)); opacity: 1; }
+    92%, 100% { transform: translate(calc(var(--across) * 100%), calc(var(--down) * 100%)); opacity: 0; }
+}
+@keyframes example-move-late {
+    0%, 50% { transform: none; }
+    85%, 100% { transform: translate(calc(var(--across) * 100%), calc(var(--down) * 100%)); }
+}
 @keyframes example-move {
     0%, 25% { transform: none; }
     75%, 100% { transform: translate(calc(var(--across) * 100%), calc(var(--down) * 100%)); }
@@ -856,7 +882,8 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
         animation: none;
     }
     /* Still, the example shows only where it ends, the enemy gone. */
-    .move-diagram .example-piece, .move-diagram .example-taken { animation-duration: 1ms; }
+    .move-diagram .example-piece, .move-diagram .example-taken,
+    .move-diagram .example-taken.led, .move-diagram .example-piece.after-lead { animation-duration: 1ms; }
 }
 /* Each mark kept beside its meaning: a long meaning wraps beside its mark, so the card never scrolls sideways. */
 .diagram-key { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; color: var(--muted); }
