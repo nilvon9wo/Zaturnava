@@ -65,6 +65,7 @@ public sealed class GrandLegionsPiecesTest
         { "berolina-pawn", 3 },
         { "manchu-chariot", 22 },
         { "courier", 8 },
+        { "evangelist", 8 },
     };
 
     [Fact]
@@ -132,6 +133,7 @@ public sealed class GrandLegionsPiecesTest
     [InlineData("berolina-pawn", "pawn", "Be", "infantry")]
     [InlineData("manchu-chariot", "manchu-chariot", "MC", "artillery")]
     [InlineData("courier", "winged-hat", "Co", "infantry")]
+    [InlineData("evangelist", "cross", "Ev", "leader")]
     public void Marks_WhenAPieceIsMarked_AreItsSymbolAnyLettersAndItsClass(
         string kind,
         string emblem,
@@ -286,7 +288,7 @@ public sealed class GrandLegionsPiecesTest
 
         // Assert
         Assert.Equal(
-            (46, 9, 12, 9, 11, 5),
+            (47, 10, 12, 9, 11, 5),
             (
                 GrandLegionsPieces.ById.Count,
                 counts[PieceClass.Leader],

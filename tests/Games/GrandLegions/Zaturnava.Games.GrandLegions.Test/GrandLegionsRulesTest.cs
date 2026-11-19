@@ -773,7 +773,8 @@ public sealed class GrandLegionsRulesTest
     [InlineData("western-king", "Castles with its own Rook (Western): two cells towards it")]
     [InlineData("xiangqi-general", "Flying general: ")]
     [InlineData("janggi-general", "Face-off: ")]
-    [InlineData("tafl-king", "Takes by custody: ")]
+    [InlineData("tafl-king", "Takes by custody, ")]
+    [InlineData("evangelist", "Converts, ")]
     public void GuideOf_WhenALeaderWithAPowerOfItsOwn_TellsItAsSpecialApartFromLeading(string leader, string power)
     {
         // Arrange

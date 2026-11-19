@@ -502,6 +502,19 @@ public sealed class GameLogTest
     }
 
     [Fact]
+    public void LatestOf_WhenAPieceIsConverted_TellsWhoseItWasAndWhoseItIsNow()
+    {
+        // Arrange
+        GameSnapshot snapshot = Snapshot(new PieceConverted(Horse, Red, Cell("h4")));
+
+        // Act
+        ImmutableList<EventDto> log = GameLog.LatestOf(snapshot);
+
+        // Assert
+        Assert.Equal(["captured 3: Red converted Black's Horse on h4: it is now theirs."], log.Select(Told));
+    }
+
+    [Fact]
     public void LatestOf_WhenAMercenaryIsHiredThenPlaced_TellsOfEach()
     {
         // Arrange

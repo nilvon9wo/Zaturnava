@@ -23,8 +23,8 @@ public sealed record GrandPiece(
 
     /// <summary>
     /// The edition of the catalogue it came with: 0, the first; 1, the Checkers and Tafl pieces (2026-11-13); 4, the
-    /// Berolina Pawn, the Manchu Chariot and the Courier (the same day). A game dealt from an edition before it never
-    /// holds it, so that it replays as it was dealt.
+    /// Berolina Pawn, the Manchu Chariot and the Courier (the same day); 11, the Evangelist (2026-11-19). A game
+    /// dealt from an edition before it never holds it, so that it replays as it was dealt.
     /// </summary>
     public int Edition { get; init; }
 

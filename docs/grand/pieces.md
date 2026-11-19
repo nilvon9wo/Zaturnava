@@ -164,13 +164,14 @@ The dice name a class, not a piece ([specification §6.1](specification.md#61-th
 |---|---|---|---|---|---|
 | Dragon King (Shogi) | Any distance orthogonally, or one square diagonally | — | — | 78 | — / — |
 | Fairy General (custom) | One square in any direction, or leaps 2+1 | — | — | 76 | — / — |
-| King (Tafl) | Any distance orthogonally; takes only by custody | — | [Custody](#jumping-and-custody) | 74 | — / — |
+| King (Tafl) | Any distance orthogonally; captures by custody, with a second piece | — | [Custody](#jumping-and-custody) | 74 | — / — |
 | King (Western) | One square in any direction | — | Castling | 70 | — / — |
 | General (Xiangqi) | One square orthogonally | Area: its 3 × 3 palace | Flying-general capture | 69 | — / 5 |
 | General (Janggi) | One square orthogonally, or diagonally along palace lines | Area: its 3 × 3 palace | Leader face-off; palace lines | 68 | — / 5 |
 | Gold General (Shogi) | One square orthogonally, or diagonally forward | — | — | 66 | — / — |
 | Silver General (Shogi) | One square diagonally, or straight forward | — | → Gold General in the far three ranks | 65 | — / — |
 | King (Checkers) | One square diagonally; takes only by jumping | One colour (by its move) | [Jump chains](#jumping-and-custody) | 67 | — / — |
+| Evangelist | One square in any direction; never takes | — | [Conversion](#the-evangelist) | 70 | — / — |
 
 ### Infantry
 
@@ -204,7 +205,7 @@ Chaturaji 2027.
 | Dragon Horse (Shogi) | Any distance diagonally, or one square orthogonally | — | — | 17 | — / — |
 | Rook (Western) | Any distance orthogonally | — | — | 14 | — / — |
 | Bishop (Western) | Any distance diagonally | One colour (by its move) | — | 12 | — / — |
-| Swede (Tafl) | Any distance orthogonally; takes only by custody | — | [Custody](#jumping-and-custody) | 14 | — / — |
+| Swede (Tafl) | Any distance orthogonally; captures by custody, with a second piece | — | [Custody](#jumping-and-custody) | 14 | — / — |
 
 ### Cavalry / Leaper
 
@@ -251,10 +252,19 @@ to the empty cell just beyond; from there it may jump again, as often as it can.
   not end where it began;
 - the Man jumps only diagonally forward, as it steps; the King, either way.
 
-**Custody** (the Tafl King and the Swede). The piece takes nothing where it lands. Moving next to an enemy
-piece, orthogonally, with a piece its mover commands just beyond that one, it takes it; every piece so held
-about it at once. *Proposed*: only the custodian's own move takes; a piece that moves between two others is
-not taken, nor is one that another of the mover's pieces comes to stand beyond; an ally's piece is never taken.
+**Custody** (the Tafl King and the Swede). Both capture, though not by landing on the piece taken: each needs a
+second piece to cooperate. Moving next to an enemy piece, orthogonally, with a cooperating piece just beyond that
+one, it captures it; every piece so held about it at once. The cooperating piece may be:
+
+- one of its player's own pieces;
+- a piece of an army they command;
+- from [edition 8](#editions), an ally's piece (*Stated*, playtest 2026-11-15, B7).
+
+**Berserk**, from edition 8 (*Stated*, B7): while an enemy holds the custodian's throne, it captures any piece,
+friend or foe, held so between it and any other piece.
+
+*Proposed*: only the custodian's own move captures. A piece that moves between two others is not taken, nor is
+one that another of the mover's pieces comes to stand beyond. When not berserk, it never takes an ally's piece.
 
 Their values, by the sheet's columns:
 
@@ -271,7 +281,7 @@ Their values, by the sheet's columns:
   for the King, +4 for the Man, which jumps only forward. Custody takes up to the three pieces about the cell
   (+4).
 - Limits: a Checkers piece keeps to one colour (−1, [Binding](#binding)) and takes only by jumping, which
-  needs the cell beyond empty (−1). A custodian takes only by custody, which needs a second piece. That costs
+  needs the cell beyond empty (−1). A custodian captures by custody, which needs a second piece. That costs
   what taking only by hopping costs the Xiangqi Cannon (−4).
 - The Man may promote into the Checkers King, a leader, so it starts from the
   [leader promotion bonus](#leader-promotion-bonus) (50). Its premium is the 13 that promotion would gain
@@ -338,11 +348,54 @@ Their values, by the sheet's columns:
   straight ahead (−1).
 - The Courier's premium is the far edge's, a Rook, over 6 rows ((14 − 8) ÷ 6 = 1).
 
+### The Evangelist
+
+A leader, row 48 of the sheet. The designer added it on 2026-11-19, with its name, class, move and power; the
+program filled in the columns left open (*Proposed*). It steps as the Western King does, one square in any
+direction, but never takes.
+
+**Conversion**, as in Othello. After it moves, each unbroken line of enemy pieces that runs from next to it
+to another of its player's pieces becomes its player's. A line runs in any of the eight directions, and its pieces
+stay where they stand (*Stated*: the sheet). A line converts only if:
+
+- all its pieces belong to one enemy;
+- none of them is a leader (*Stated*).
+
+*Proposed*:
+
+- **Who it converts for:** the pieces become the Evangelist's own player's, whoever moved it (an army's
+  commander, say). The piece that ends the line must also be that player's own: an ally's does not end a line,
+  and neither does a piece of an army they command.
+- **What counts as an enemy:** any seat not on its team. An ally's pieces are never converted.
+- **Only its own move converts**, as in Othello. A line that another of its player's pieces comes to close is not
+  converted.
+- **No points:** a converted piece is no prisoner, and scores no one. It keeps its kind and its promotions. It now
+  faces as its new army does: a converted Pawn moves towards its new player's far edge.
+- **The quiet-game count:** a conversion resets the count of turns without a capture, as taking a piece does.
+
+Its symbol is a cross, its letters "Ev". It came with [edition 11](#editions).
+
+Its value, by the sheet's columns:
+
+| Piece | Leader | Reach | Premium | Powers | Limits | Value |
+|---|---|---|---|---|---|---|
+| Evangelist | 60 | 8 | 0 | +6 | −4 | 70 |
+
+- **Reach:** the Western King's.
+- **Limits:** it never captures at all; conversion is its only way to win pieces. A custodian is held back for
+  needing a second piece to capture (−4). The Evangelist needs one of its player's own pieces to close a line, and
+  cannot capture even then, so it is limited at least as much (−4).
+- **Powers:** worth what [taking several](#jumping-and-custody) is, by the same factors. The chance, in a move, of
+  a line to convert is 1 in 8. The dice let it move 1 time in 2. Its player sees the line 4 times in 5. A line
+  converted averages 15 points, since it is gained as well as lost to the enemy, though it scores nothing. A
+  leader risked so near the enemy has it about 8 times a game. The product is 6.0, so +6.
+
 ### Editions
 
 A game stored before these pieces came must replay as it was played, and an army is dealt or offered from
 the pieces there are. So every piece carries the edition it came in (0 for the catalogue as it was, 1 for
-the four Checkers and Tafl pieces, 4 for the Berolina Pawn, the Manchu Chariot and the Courier), and every
+the four Checkers and Tafl pieces, 4 for the Berolina Pawn, the Manchu Chariot and the Courier, 11 for the
+Evangelist), and every
 game records the edition it was started in. A game deals and offers only the pieces of
 its edition or before; a game started before editions were recorded is of edition 0. New games are of the
 latest edition.

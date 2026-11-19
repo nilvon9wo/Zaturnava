@@ -80,6 +80,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     private readonly Castling _castling;
     private readonly FlyingCapture _flying;
     private readonly Custody _custody;
+    private readonly Conversion _conversion;
     private readonly Flight _flight;
     private readonly Mercenaries _mercenaries;
     private readonly PalaceSteps _palaceSteps;
@@ -174,6 +175,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         );
         this._flying = new FlyingCapture(this._grid, this._variant.FlyingCapturers, this._variant.Leaders);
         this._custody = new Custody(this._grid, this._variant.Custodians);
+        this._conversion = new Conversion(this._grid, this._variant.Converters, this._variant.Leaders);
         this._flight = new Flight(this._grid, this._variant.Width, this._variant.Height, this._variant.Fleers);
         this._mercenaries = new Mercenaries(
             this._grid,
@@ -675,13 +677,19 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
                     + "other: both leaders are taken at once, each by the other's side, and both sides score. "
                     + "Neither piece moves."),
                 (this._variant.Custodians.Contains(kind),
-                    "Takes by custody: it takes nothing where it lands. Instead, when it moves next to an enemy "
-                    + "piece, in the same row or column, and just beyond that enemy, on the same line, stands any "
-                    + "piece of its player's team or of an army they command, that enemy is taken: held between "
+                    "Takes by custody, with a second piece: never by landing on a piece. When it moves next to an "
+                    + "enemy piece, in the same row or column, and just beyond that enemy, on the same line, stands "
+                    + "any piece of its player's team or of an army they command, that enemy is taken: held between "
                     + "the two. For example, an enemy on d4 and your Pawn on d5: moving to d3, it takes the enemy. "
                     + "Every enemy held so on its other sides is taken in the same move, up to three at once. "
                     + "Berserk while an enemy holds its throne: it takes any piece, friend or foe, so held between "
                     + "it and any other piece."),
+                (this._variant.Converters.Contains(kind),
+                    "Converts, as in Othello: it takes nothing. Instead, after it moves, every unbroken line of "
+                    + "enemy pieces running from next to it, in any of the eight directions, up to another of its "
+                    + "player's pieces becomes its player's, where it stands. A line's pieces must all be one "
+                    + "enemy's, and none of them a leader. For example, your Pawn on d6 and an enemy's Rook and "
+                    + "Knight on d5 and d4: moving to d3, it converts both. Only its own move converts."),
                 (this._variant.Mercenaries.Contains(kind) && !this._variant.Leaders.Contains(kind),
                     "Mercenary: whoever holds it prisoner may hire it on their turn, for 110% of what it cost last "
                     + "(its value, the first time), paid from their points: it becomes theirs. On a later step they "
@@ -1649,7 +1657,18 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         ImmutableList<GameEvent> events = castled is { } rookMove
             ? [went, new PieceMoved(state.Position.PieceAt(rookMove.From)!, rookMove.From, rookMove.To, move.Actor)]
             : [went];
-        Transition moved = new(state with { Position = new Position(position.Occupants.RemoveRange(taken)) }, events);
+        Position cleared = new(position.Occupants.RemoveRange(taken));
+        ImmutableList<PieceConverted> converted =
+        [
+            .. this._conversion
+                .ConvertedBy(cleared, move.To, mover, seat => !state.Teams.AreAllied(seat, mover.Owner))
+                .Select(cell => new PieceConverted(cleared.PieceAt(cell)!, mover.Owner, cell)),
+        ];
+        Position after = converted.Aggregate(
+            cleared,
+            (sofar, change) => sofar.Place(change.Cell, change.Piece with { Owner = change.ConvertedTo })
+        );
+        Transition moved = new(state with { Position = after }, [.. events, .. converted]);
         Transition onArrival = captured is null
             ? moved
             : this.Captured(moved, captured, move.Actor, passing?.To ?? move.To);

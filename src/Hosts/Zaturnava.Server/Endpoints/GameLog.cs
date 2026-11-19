@@ -102,6 +102,14 @@ file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bo
             PieceMoved moved => this.Moved(number, moved),
             PawnsSwapped swapped => this.Swapped(number, swapped),
             PieceCaptured captured => this.Captured(number, captured),
+            PieceConverted converted => this.Add(
+                number,
+                EventDto.Captured,
+                converted.ConvertedTo,
+                $"{this.Name(converted.ConvertedTo)} converted {this.Name(converted.Piece.Owner)}'s "
+                    + $"{this.Rules.NameOf(converted.Piece.Kind)} on "
+                    + $"{this.Rules.Topology.NameOf(converted.Cell)}: it is now theirs."
+            ),
             LeadersFacedOff faced => this.Add(
                 number,
                 EventDto.Moved,
