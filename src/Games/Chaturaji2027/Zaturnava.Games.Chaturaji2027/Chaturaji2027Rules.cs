@@ -133,7 +133,8 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             this._variant.Kinds,
             this._variant.RiverBound,
             this._variant.PalaceSteppers,
-            this._variant.ForwardPalaceSteppers
+            this._variant.ForwardPalaceSteppers,
+            this._variant.Custodians
         );
         this._dice = dice;
         this._idleRounds = idleRounds;
@@ -568,6 +569,35 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
                 PromotesWhere = own.Where ?? (own.Ranks == 1 ? "on the last row" : $"in the far {own.Ranks} rows"),
             }
             : drawn;
+    }
+
+    /// <summary>
+    /// For a piece that steps along a palace's lines, standing in a palace whose throne is set: drawn in that palace,
+    /// its throne where it is, turned as its army faces, so that its lines are those it may truly step along (the
+    /// user's report of 2026-11-15, B6: the Guard's card showed diagonals it did not have). None, for any other.
+    /// </summary>
+    public MoveDiagram? DiagramAt([Required] GameState state, CellId cell) =>
+        state.Position.PieceAt(cell) is { } piece && this._variant.PalaceSteppers.Contains(piece.Kind)
+            ? (state.Palaces ?? [])
+                .Where(palace => palace.Value.Contains(cell))
+                .Where(palace => (state.Thrones ?? []).ContainsKey(palace.Key))
+                .Select(palace => this._diagrams.InPalace(
+                    piece.Kind,
+                    [.. palace.Value.Select(inside => this.Seen(cell, inside, state.SeatOf(piece.Owner).Forward))],
+                    this.Seen(cell, state.Thrones![palace.Key], state.SeatOf(piece.Owner).Forward)
+                ))
+                .FirstOrDefault()
+            : null;
+
+    /// <summary>
+    /// How far <paramref name="other"/> is from <paramref name="cell"/>, as a piece there facing
+    /// <paramref name="forward"/> sees it: to its right, and ahead.
+    /// </summary>
+    private (int Right, int Ahead) Seen(CellId cell, CellId other, Direction forward)
+    {
+        int across = this._grid.ColumnOf(other) - this._grid.ColumnOf(cell);
+        int up = this._grid.RowOf(other) - this._grid.RowOf(cell);
+        return ((across * forward.Second) - (up * forward.First), (across * forward.First) + (up * forward.Second));
     }
 
     public string NameOf(SeatId seat) => Chaturaji2027Setup.SeatNames[seat.Value];

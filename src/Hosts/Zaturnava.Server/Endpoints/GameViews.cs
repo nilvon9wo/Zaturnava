@@ -139,7 +139,10 @@ internal static class GameViews
             snapshot.State.ActingFor?.Value,
             [.. snapshot.Rules.Topology.Cells.Select(cell => CellOf(snapshot.Rules.Topology, thrones, cell))],
             [.. shown.Position.Occupants.OrderBy(entry => entry.Key.Value)
-                .Select(entry => PieceOf(snapshot.Rules, entry.Key, entry.Value))],
+                .Select(entry => PieceOf(snapshot.Rules, entry.Key, entry.Value) with
+                {
+                    Diagram = snapshot.Rules.DiagramAt(shown, entry.Key) is { } standing ? DiagramOf(standing) : null,
+                })],
             [.. snapshot.State.Seats.Select(seat => SeatOf(snapshot, bots, seat.Id, names, shown))],
             [.. legal.Select(action => ActionOf(snapshot, action))],
             [.. snapshot.State.Dice.Select(value => DieOf(snapshot, value))],
@@ -289,21 +292,25 @@ internal static class GameViews
             PromotesWhere = guide.PromotesWhere,
             Restrictions = guide.Restrictions,
             Mark = MarkOf(rules, kind),
-            Diagram = new MoveDiagramDto(
-                guide.Diagram.Side,
-                guide.Diagram.Moves,
-                guide.Diagram.Captures,
-                guide.Diagram.Screens
-            )
-            {
-                RiverRow = guide.Diagram.RiverRow,
-                Blockers = guide.Diagram.Blockers,
-                Leaps = guide.Diagram.Leaps,
-                Jumps = guide.Diagram.Jumps,
-                Palace = guide.Diagram.Palace,
-            },
+            Diagram = DiagramOf(guide.Diagram),
         };
     }
+
+    private static MoveDiagramDto DiagramOf(MoveDiagram diagram) =>
+        new(diagram.Side, diagram.Moves, diagram.Captures, diagram.Screens)
+        {
+            RiverRow = diagram.RiverRow,
+            Obstacles = diagram.Obstacles,
+            Obstructed = diagram.Obstructed,
+            Custody = diagram.Custody is { } custody
+                ? new CustodyDto(custody.Landing, custody.Taken, custody.Partner)
+                : null,
+            Elsewhere = diagram.Elsewhere is { } elsewhere ? DiagramOf(elsewhere) : null,
+            Leaps = diagram.Leaps,
+            Jumps = diagram.Jumps,
+            Palace = diagram.Palace,
+            Throne = diagram.Throne,
+        };
 
     private static ImmutableList<string> TextOf(
         IEnumerable<MovementRule> movement,

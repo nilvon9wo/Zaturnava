@@ -278,7 +278,7 @@ public sealed class Chaturaji2027VariantTest
     }
 
     [Fact]
-    public void GuideOf_WhenAPieceInTheWayBlocksALeap_MarksWhereSuchAPieceWouldStand()
+    public void GuideOf_WhenAPieceInTheWayBlocksALeap_PutsPiecesWhereTheyBlockItMost()
     {
         // Arrange - a Horse whose leg a piece blocks, as a Xiangqi Horse's is
         Chaturaji2027Rules rules = new(
@@ -298,7 +298,10 @@ public sealed class Chaturaji2027VariantTest
         MoveDiagram diagram = rules.GuideOf(Chaturaji2027Pieces.Horse).Diagram;
 
         // Assert
-        Assert.Equal("31,39,41,49", string.Join(",", diagram.Blockers));
+        Assert.Equal(
+            ("39,49", "29,47,57,59"),
+            (string.Join(",", diagram.Obstacles), string.Join(",", diagram.Obstructed))
+        );
     }
 
     [Fact]

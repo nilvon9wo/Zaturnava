@@ -167,7 +167,7 @@ public sealed class TableTest : IDisposable
     }
 
     [Fact]
-    public void Click_WhenTheKindIsDrawn_DrawsItsMovesAndCapturesAroundThePieceInsteadOfWords()
+    public void Click_WhenTheKindIsDrawn_DrawsItsMovesAroundThePieceInsteadOfWords()
     {
         // Arrange - on a 3 x 3 diagram, the Raja on cell 4 moves up to 7 and captures on 6 and 7
         this._page.Server.View = FakeGameServer.SeatZeroToMove with
@@ -188,14 +188,168 @@ public sealed class TableTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ("square dark capture", "square light move capture", "square light", 1, 0, "forward moves captures"),
+            ("square dark", "square light move", "square light", 1, 0, "forward moves", "true"),
             (
                 Square(table, 6).ClassName,
                 Square(table, 7).ClassName,
                 Square(table, 1).ClassName,
                 Square(table, 4).QuerySelectorAll(".piece-icon").Length,
                 table.FindAll(".piece-card ul.moves").Count,
-                string.Join(" ", table.Find(".diagram-key").TextContent.Split((char[]?)null, Words))
+                string.Join(" ", table.FindAll(".diagram-key .key-item").Select(item => item.TextContent.Trim())),
+                table.Find(".diagram-toggles .show-moves").GetAttribute("aria-pressed")
+            )
+        );
+    }
+
+    [Fact]
+    public void Click_WhenThePlayerAsksForTheKindsCaptures_DrawsThemInsteadOfItsMoves()
+    {
+        // Arrange - on a 3 x 3 diagram, the Raja on cell 4 moves up to 7 and captures on 6 and 7
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Kinds = [new PieceKindDto("raja", "Raja", 5) { Diagram = new MoveDiagramDto(3, [7], [6, 7], []) }],
+        };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        Cell(table, 0).Click();
+
+        // Act
+        table.Find(".diagram-toggles .show-captures").Click();
+
+        // Assert
+        Assert.Equal(
+            ("square dark capture", "square light capture", "forward captures", "true", "false"),
+            (
+                Square(table, 6).ClassName,
+                Square(table, 7).ClassName,
+                string.Join(" ", table.FindAll(".diagram-key .key-item").Select(item => item.TextContent.Trim())),
+                table.Find(".diagram-toggles .show-captures").GetAttribute("aria-pressed"),
+                table.Find(".diagram-toggles .show-moves").GetAttribute("aria-pressed")
+            )
+        );
+    }
+
+    [Fact]
+    public void Click_WhenThePlayerAsksForTheKindsMovesAgain_DrawsThemInsteadOfItsCaptures()
+    {
+        // Arrange
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Kinds = [new PieceKindDto("raja", "Raja", 5) { Diagram = new MoveDiagramDto(3, [7], [6, 7], []) }],
+        };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        Cell(table, 0).Click();
+        table.Find(".diagram-toggles .show-captures").Click();
+
+        // Act
+        table.Find(".diagram-toggles .show-moves").Click();
+
+        // Assert
+        Assert.Equal(("square dark", "square light move"), (Square(table, 6).ClassName, Square(table, 7).ClassName));
+    }
+
+    [Fact]
+    public void Click_WhenTheKindOnlyLeapsAndMovesAlikeForwardAndBack_ShowsNoForwardNorPlainMoveInTheKey()
+    {
+        // Arrange - on a 5 x 5 diagram, the piece on 12 leaps two squares along each row and column, as a War Engine
+        // does, and captures nothing it does not move to
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Kinds =
+            [
+                new PieceKindDto("raja", "Raja", 5)
+                {
+                    Diagram = new MoveDiagramDto(5, [2, 10, 14, 22], [], []) { Leaps = [2, 10, 14, 22] },
+                },
+            ],
+        };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Act
+        Cell(table, 0).Click();
+
+        // Assert
+        Assert.Equal(
+            ("leaps there, over anything between", 0, 0),
+            (
+                string.Join(" | ", table.FindAll(".diagram-key .key-item").Select(item => item.TextContent.Trim())),
+                table.FindAll(".move-diagram-turn .forward-arrow").Count,
+                table.FindAll(".diagram-toggles").Count
+            )
+        );
+    }
+
+    [Fact]
+    public void Click_WhenTheKindTakesByCustodyAndItsCapturesAreAskedFor_DrawsOneWithThePartnerBeyondTheEnemy()
+    {
+        // Arrange - on a 7 x 7 diagram, the piece on 24 slides forward; it moves to 31, next to the enemy on 38,
+        // which its partner on 45 holds with it
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Kinds =
+            [
+                new PieceKindDto("raja", "Raja", 5)
+                {
+                    Diagram = new MoveDiagramDto(7, [31, 38, 45], [], []) { Custody = new CustodyDto(31, 38, 45) },
+                },
+            ],
+        };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        Cell(table, 0).Click();
+
+        // Act
+        table.Find(".diagram-toggles .show-captures").Click();
+
+        // Assert
+        Assert.Equal(
+            (
+                "square light move",
+                "square dark taken capture",
+                "square light partner",
+                "forward | moves here | an enemy, taken | a piece of its side, holding the enemy with it"
+            ),
+            (
+                Square(table, 31).ClassName,
+                Square(table, 38).ClassName,
+                Square(table, 45).ClassName,
+                string.Join(" | ", table.FindAll(".diagram-key .key-item").Select(item => item.TextContent.Trim()))
+            )
+        );
+    }
+
+    [Theory]
+    [InlineData(true, "By a river")]
+    [InlineData(false, "In its palace")]
+    public void Click_WhenThePlayerPutsTheRiverOrPalaceAway_DrawsTheKindOnAnOpenBoard(bool isRiver, string label)
+    {
+        // Arrange - on a 3 x 3 diagram, a river just ahead of the Raja, or a palace about it; on an open board, it
+        // moves to 1 and 7 alike, forward and back
+        MoveDiagramDto open = new(3, [1, 7], [], []);
+        MoveDiagramDto held = isRiver
+            ? new MoveDiagramDto(3, [1], [], []) { RiverRow = 2, Elsewhere = open }
+            : new MoveDiagramDto(3, [1, 7], [], []) { Palace = [0, 1, 2, 3, 4, 5, 6, 7, 8], Elsewhere = open };
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Kinds = [new PieceKindDto("raja", "Raja", 5) { Diagram = held }],
+        };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        Cell(table, 0).Click();
+        (string Label, string? Pressed) before = (
+            table.Find(".diagram-toggles .show-terrain").TextContent.Trim(),
+            table.Find(".diagram-toggles .show-terrain").GetAttribute("aria-pressed")
+        );
+
+        // Act
+        table.Find(".diagram-toggles .show-terrain").Click();
+
+        // Assert
+        Assert.Equal(
+            ((label, "true"), "false", "square light move", 0, "moves"),
+            (
+                before,
+                table.Find(".diagram-toggles .show-terrain").GetAttribute("aria-pressed"),
+                Square(table, 7).ClassName,
+                table.FindAll(".move-diagram .palace-lines").Count,
+                string.Join(" | ", table.FindAll(".diagram-key .key-item").Select(item => item.TextContent.Trim()))
             )
         );
     }
@@ -220,7 +374,7 @@ public sealed class TableTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ("transform: rotate(180deg)", "transform: rotate(-180deg)", "forward moves captures"),
+            ("transform: rotate(180deg)", "transform: rotate(-180deg)", "forward moves"),
             (
                 table.Find(".move-diagram-turn").GetAttribute("style"),
                 table.Find(".move-diagram .upright").GetAttribute("style"),
@@ -364,6 +518,50 @@ public sealed class TableTest : IDisposable
     }
 
     [Fact]
+    public void Click_WhenThePieceIsDrawnWhereItStandsInItsPalace_DrawsThatWithItsLinesToTheThroneWhereItIs()
+    {
+        // Arrange - the piece on the board's cell 0 drawn on a 5 x 5 diagram, on 12, in a palace from 6 to 18 whose
+        // throne is 6, behind it and to its left; its kind drawn on a 3 x 3 diagram
+        MoveDiagramDto standing = new(5, [6, 7], [6, 7], [])
+        {
+            Palace = [6, 7, 8, 11, 12, 13, 16, 17, 18],
+            Throne = 6,
+        };
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Pieces =
+            [
+                .. FakeGameServer.SeatZeroToMove.Pieces.Select(piece =>
+                    piece.Cell == 0 ? piece with { Diagram = standing } : piece
+                ),
+            ],
+            Kinds = [new PieceKindDto("raja", "Raja", 5) { Diagram = new MoveDiagramDto(3, [7], [], []) }],
+        };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Act
+        Cell(table, 0).Click();
+
+        // Assert
+        AngleSharp.Dom.IElement line = table.FindAll(".move-diagram .palace-lines line")[0];
+        Assert.Equal(
+            (
+                25,
+                8,
+                "1.5 3.5",
+                "its palace, as it stands in it: along each line through its square to the throne, it moves and "
+                    + "captures, diagonally too"
+            ),
+            (
+                table.FindAll(".move-diagram .square").Count,
+                table.FindAll(".move-diagram .palace-lines line").Count,
+                $"{line.GetAttribute("x2")} {line.GetAttribute("y2")}",
+                table.FindAll(".diagram-key .key-item")[^1].TextContent
+            )
+        );
+    }
+
+    [Fact]
     public void Click_WhenARiverHoldsTheKindBack_DrawsTheRiverAlongTheFirstRowAcrossIt()
     {
         // Arrange - on a 3 x 3 diagram, a river just ahead of the Raja, under the top row
@@ -392,37 +590,85 @@ public sealed class TableTest : IDisposable
     }
 
     [Fact]
-    public void Click_WhenAPieceInTheWayWouldBlockALeap_MarksItsSquareAndSaysWhatTheMarkMeans()
+    public void Click_WhenThePlayerAsksForPiecesInTheWay_PutsThemThereAndFadesWhatTheyStopItReaching()
     {
-        // Arrange - on a 3 x 3 diagram, a piece on 7, just ahead of the Raja, would block a leap
+        // Arrange - on a 3 x 3 diagram, a piece on 7, just ahead of the Raja, would stop it reaching 6
         this._page.Server.View = FakeGameServer.SeatZeroToMove with
         {
             Kinds =
             [
-                new PieceKindDto("raja", "Raja", 5) { Diagram = new MoveDiagramDto(3, [], [], []) { Blockers = [7] } },
+                new PieceKindDto("raja", "Raja", 5)
+                {
+                    Diagram = new MoveDiagramDto(3, [1, 6, 7], [], []) { Obstacles = [7], Obstructed = [6] },
+                },
             ],
         };
         IRenderedComponent<Table> table = this.Render(SeatZero);
+        Cell(table, 0).Click();
+        string before = Square(table, 7).ClassName!;
 
         // Act
-        Cell(table, 0).Click();
+        table.Find(".diagram-toggles .show-obstacles").Click();
 
         // Assert
         Assert.Equal(
-            ("square light blocker", "a piece here blocks a leap"),
-            (Square(table, 7).ClassName, table.FindAll(".diagram-key .key-item")[^1].TextContent)
+            (
+                "square light move",
+                "square light obstacle",
+                "square dark move obstructed",
+                "a piece in its way | no longer reached",
+                "true"
+            ),
+            (
+                before,
+                Square(table, 7).ClassName,
+                Square(table, 6).ClassName,
+                string.Join(" | ", table.FindAll(".diagram-key .key-item").Skip(2).Select(item => item.TextContent)),
+                table.Find(".diagram-toggles .show-obstacles").GetAttribute("aria-pressed")
+            )
+        );
+    }
+
+    [Fact]
+    public void Click_WhenThePlayerTakesThePiecesInTheWayAwayAgain_DrawsItsMovesUnstopped()
+    {
+        // Arrange
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Kinds =
+            [
+                new PieceKindDto("raja", "Raja", 5)
+                {
+                    Diagram = new MoveDiagramDto(3, [1, 6, 7], [], []) { Obstacles = [7], Obstructed = [6] },
+                },
+            ],
+        };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        Cell(table, 0).Click();
+        table.Find(".diagram-toggles .show-obstacles").Click();
+
+        // Act
+        table.Find(".diagram-toggles .show-obstacles").Click();
+
+        // Assert
+        Assert.Equal(
+            ("square light move", "square dark move"),
+            (Square(table, 7).ClassName, Square(table, 6).ClassName)
         );
     }
 
     [Fact]
     public void Click_WhenTheKindLeapsToASquare_RingsItAndSaysItLeapsThereAndSlidesElsewhere()
     {
-        // Arrange - on a 3 x 3 diagram, the Raja moves to 6 and 7, leaping to 6
+        // Arrange - on a 5 x 5 diagram, the Raja on 12 moves to 17, next ahead, slides on to 22, and leaps to 21
         this._page.Server.View = FakeGameServer.SeatZeroToMove with
         {
             Kinds =
             [
-                new PieceKindDto("raja", "Raja", 5) { Diagram = new MoveDiagramDto(3, [6, 7], [], []) { Leaps = [6] } },
+                new PieceKindDto("raja", "Raja", 5)
+                {
+                    Diagram = new MoveDiagramDto(5, [17, 21, 22], [], []) { Leaps = [21] },
+                },
             ],
         };
         IRenderedComponent<Table> table = this.Render(SeatZero);
@@ -433,17 +679,42 @@ public sealed class TableTest : IDisposable
         // Assert
         Assert.Equal(
             (
-                "square dark move leap",
-                "square light move",
-                "leaps there, over anything between",
-                "any other dot farther off: slides there, up to the first piece in the way"
+                "square light move leap",
+                "square dark move",
+                "forward | moves | leaps there, over anything between | any other dot farther off: slides there, up to "
+                    + "the first piece in the way"
             ),
             (
-                Square(table, 6).ClassName,
-                Square(table, 7).ClassName,
-                table.FindAll(".diagram-key .key-item")[^2].TextContent,
-                table.FindAll(".diagram-key .key-item")[^1].TextContent
+                Square(table, 21).ClassName,
+                Square(table, 22).ClassName,
+                string.Join(" | ", table.FindAll(".diagram-key .key-item").Select(item => item.TextContent.Trim()))
             )
+        );
+    }
+
+    [Fact]
+    public void Click_WhenTheKindLeapsAndOnlyStepsOtherwise_SaysNothingOfSliding()
+    {
+        // Arrange - on a 5 x 5 diagram, the Raja on 12 steps to 17 and leaps to 21
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Kinds =
+            [
+                new PieceKindDto("raja", "Raja", 5)
+                {
+                    Diagram = new MoveDiagramDto(5, [17, 21], [], []) { Leaps = [21] },
+                },
+            ],
+        };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Act
+        Cell(table, 0).Click();
+
+        // Assert
+        Assert.Equal(
+            "forward | moves | leaps there, over anything between",
+            string.Join(" | ", table.FindAll(".diagram-key .key-item").Select(item => item.TextContent.Trim()))
         );
     }
 

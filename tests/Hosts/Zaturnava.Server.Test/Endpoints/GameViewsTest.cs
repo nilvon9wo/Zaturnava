@@ -230,6 +230,42 @@ public sealed class GameViewsTest
     }
 
     [Fact]
+    public void ViewOf_WhenAGuardStandsInItsPalace_DrawsItThereWithItsThroneAndAnyOtherPieceAsItsKindIs()
+    {
+        // Arrange - a small Grand Legions game, six squares wide: Black's palace a1 to c3, its throne b2; Black's
+        // Janggi Guard on a1, in it, and its Rook on e1, out of it
+        Chaturaji2027Rules grand = GrandLegionsRules.RulesOf(QuickGame.Small);
+        SeatId black = new(0);
+        ImmutableList<CellId> palace = [.. ((int[])[0, 1, 2, 6, 7, 8, 12, 13, 14]).Select(cell => new CellId(cell))];
+        GameState state = grand.CreateInitialState() with
+        {
+            RollOff = [],
+            AwaitedDice = null,
+            DecidingSeat = black,
+            Palaces = ImmutableDictionary<SeatId, ImmutableList<CellId>>.Empty.Add(black, palace),
+            Thrones = ImmutableDictionary<SeatId, CellId>.Empty.Add(black, new CellId(7)),
+            Position = Position.Empty
+                .Place(new CellId(0), new Piece(new PieceId(4), GrandLegionsPieces.JanggiGuard, black))
+                .Place(new CellId(4), new Piece(new PieceId(5), GrandLegionsPieces.Rook, black)),
+        };
+
+        // Act
+        GameViewDto view = GameViews.ViewOf(Snapshot(grand, state), Bots);
+
+        // Assert
+        MoveDiagramDto guard = view.Pieces.Single(piece => piece.Id == 4).Diagram!;
+        Assert.Equal(
+            (9, true, true, null),
+            (
+                guard.Palace.Count,
+                guard.Throne is not null,
+                guard.Elsewhere is not null,
+                view.Pieces.Single(piece => piece.Id == 5).Diagram
+            )
+        );
+    }
+
+    [Fact]
     public void ViewOf_WhenTheGameWasDealtARiver_DrawsItAndTellsWhereItRuns()
     {
         // Arrange - a small Grand Legions game, dealt a north-south river through the kingdoms

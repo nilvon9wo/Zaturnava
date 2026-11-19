@@ -1,24 +1,55 @@
-@* A kind's moves and captures, drawn as the server found them: a small board, the piece on its centre, a dot on each
-   square it may move to, as the board marks one, and a ring, in another colour, on each it may capture on; a square
-   it may do both on has both. A square it leaps to, over anything between, has a hollow dot, a ring, the key
-   saying so; any other dot farther off, it slides to. A piece it hops over, for a piece that hops, is drawn as a grey disc. The server draws
-   it forward up; a cross on each square a piece on which would block one of its leaps; a river the piece may not
-   cross, drawn along the lower edge of the first row across it. It is shown turned by Angle, as the board shows the
-   piece's own army - its forward, and the board's
-   turn - with an arrow at its forward edge, the piece itself kept upright, on a square shaded as the one it stands
-   on on the board (the centre's row and column always sum to an even number). Under it, what each mark means, each
-   mark kept beside its meaning. For a piece that steps along a palace's lines, a palace about it, as the board draws
-   one: its wall, and a dashed line from each of its squares to the throne the piece stands on. *@
+@* A kind's moves and captures, drawn as the server found them: a small board, the piece on its centre, one thing at a
+   time, as the player switches (the user's report of 2026-11-15, C2: showing everything at once was not working).
+   Its moves: a dot on each square it may move to, as the board marks one, hollow where it leaps there, over anything
+   between; and, asked, pieces put in its way, the dots they take from it faded. Its captures: a ring, in another
+   colour, on each square it may capture on; a dashed square where it lands, having jumped, for a piece that jumps; for
+   a piece that takes by custody, one such capture: where it moves, the enemy taken, and the piece of its side beyond
+   that holds it. A piece it hops over, for a piece that hops, is a grey disc. The server draws it forward up. A river
+   the piece may not cross is drawn along the lower edge of the first row across it; for a piece that steps along a
+   palace's lines, a palace about it, as the board draws one: its wall, and a dashed line from each of its squares to
+   the throne - the piece standing on it, or, for a piece drawn where it stands in its own palace, where it is (B6);
+   either, the player may put away, to see it on an open board. It is shown turned by
+   Angle, as the board shows the piece's own army - its forward, and the board's turn - with an arrow at its forward
+   edge, unless it moves alike forward and back; the piece itself kept upright, on a square shaded as the one it
+   stands on on the board (the centre's row and column always sum to an even number). Under it, what each mark shown
+   means, each mark kept beside its meaning, and no other (C1). *@
 @using System.Globalization
 
-<div class="move-diagram-turn" style="transform: rotate(@(this.Angle)deg)">
-    <span class="forward-arrow" aria-hidden="true">&#x25B2;</span>
-    <div class="move-diagram" style="--side: @this.Diagram.Side" role="img" aria-label="@this.Described">
-        @for (int row = this.Diagram.Side - 1; row >= 0; row--)
+@if (this.Diagram.Elsewhere is not null || this.MayShowCaptures || !this.Shown.Obstacles.IsEmpty)
+{
+    <div class="diagram-toggles" role="group" aria-label="What the drawing shows">
+        @if (this.MayShowCaptures)
         {
-            @for (int column = 0; column < this.Diagram.Side; column++)
+            <button type="button" class="show-moves" aria-pressed="@Pressed(!this.IsCapturing)"
+                    @onclick="() => this._isCapturing = false">Moves</button>
+            <button type="button" class="show-captures" aria-pressed="@Pressed(this.IsCapturing)"
+                    @onclick="() => this._isCapturing = true">Captures</button>
+        }
+        @if (!this.IsCapturing && !this.Shown.Obstacles.IsEmpty)
+        {
+            <button type="button" class="show-obstacles" aria-pressed="@Pressed(this.IsObstructed)"
+                    @onclick="() => this._isObstructed = !this._isObstructed">Pieces in the way</button>
+        }
+        @if (this.Diagram.Elsewhere is not null)
+        {
+            <button type="button" class="show-terrain" aria-pressed="@Pressed(!this._isElsewhere)"
+                    @onclick="() => this._isElsewhere = !this._isElsewhere">
+                @(this.Diagram.RiverRow is null ? "In its palace" : "By a river")
+            </button>
+        }
+    </div>
+}
+<div class="move-diagram-turn" style="transform: rotate(@(this.Angle)deg)">
+    @if (!this.IsTurnless)
+    {
+        <span class="forward-arrow" aria-hidden="true">&#x25B2;</span>
+    }
+    <div class="move-diagram" style="--side: @this.Shown.Side" role="img" aria-label="@this.Described">
+        @for (int row = this.Shown.Side - 1; row >= 0; row--)
+        {
+            @for (int column = 0; column < this.Shown.Side; column++)
             {
-                int cell = (row * this.Diagram.Side) + column;
+                int cell = (row * this.Shown.Side) + column;
                 <span class="@this.ClassOf(cell, row, column)" data-cell="@cell">
                     @if (cell == this.Centre)
                     {
@@ -29,50 +60,83 @@
                 </span>
             }
         }
-        @if (!this.Diagram.Palace.IsEmpty)
+        @if (!this.Shown.Palace.IsEmpty)
         {
-            <svg class="palace-lines" viewBox="0 0 @this.Diagram.Side @this.Diagram.Side" aria-hidden="true">
+            <svg class="palace-lines" viewBox="0 0 @this.Shown.Side @this.Shown.Side" aria-hidden="true">
                 <rect class="line palace" x="@this.Wall.X" y="@this.Wall.Y" width="@this.Wall.Width" height="@this.Wall.Height" />
-                @foreach (int cell in this.Diagram.Palace.Where(cell => cell != this.Centre))
+                @foreach (int cell in this.Shown.Palace.Where(cell => cell != this.Throne))
                 {
-                    <line class="line palace-line" x1="@this.XOf(cell)" y1="@this.YOf(cell)" x2="@this.XOf(this.Centre)" y2="@this.YOf(this.Centre)" />
+                    <line class="line palace-line" x1="@this.XOf(cell)" y1="@this.YOf(cell)" x2="@this.XOf(this.Throne)" y2="@this.YOf(this.Throne)" />
                 }
             </svg>
         }
     </div>
 </div>
 <p class="diagram-key">
-    <span class="key-item"><span class="key arrow"></span>forward</span>
-    <span class="key-item"><span class="key move"></span>moves</span>
-    <span class="key-item"><span class="key capture"></span>captures</span>
-    @if (!this.Diagram.Screens.IsEmpty)
+    @if (!this.IsTurnless)
+    {
+        <span class="key-item"><span class="key arrow"></span>forward</span>
+    }
+    @if (this.IsCapturing)
+    {
+        @if (!this.Shown.Captures.IsEmpty)
+        {
+            <span class="key-item"><span class="key capture"></span>captures</span>
+        }
+        @if (!this.Shown.Jumps.IsEmpty)
+        {
+            <span class="key-item"><span class="key jump"></span>lands here, empty, having jumped and taken the piece before it; and may jump on again</span>
+        }
+        @if (this.Shown.Custody is not null)
+        {
+            <span class="key-item"><span class="key move"></span>moves here</span>
+            <span class="key-item"><span class="key taken capture"></span>an enemy, taken</span>
+            <span class="key-item"><span class="key partner"></span>a piece of its side, holding the enemy with it</span>
+        }
+    }
+    else
+    {
+        @if (this.Shown.Moves.Except(this.Shown.Leaps).Any())
+        {
+            <span class="key-item"><span class="key move"></span>moves</span>
+        }
+        @if (!this.Shown.Leaps.IsEmpty)
+        {
+            <span class="key-item"><span class="key move leap"></span>leaps there, over anything between</span>
+        }
+        @if (!this.Shown.Leaps.IsEmpty && this.Shown.Moves.Except(this.Shown.Leaps).Any(this.IsFar))
+        {
+            <span class="key-item">any other dot farther off: slides there, up to the first piece in the way</span>
+        }
+        @if (this.IsObstructed)
+        {
+            <span class="key-item"><span class="key obstacle"></span>a piece in its way</span>
+            <span class="key-item"><span class="key move obstructed"></span>no longer reached</span>
+        }
+    }
+    @if (!this.Shown.Screens.IsEmpty)
     {
         <span class="key-item"><span class="key screen"></span>a piece to hop over: next to it, or further along its line</span>
     }
-    @if (!this.Diagram.Leaps.IsEmpty)
-    {
-        <span class="key-item"><span class="key move leap"></span>leaps there, over anything between</span>
-        <span class="key-item">any other dot farther off: slides there, up to the first piece in the way</span>
-    }
-    @if (!this.Diagram.Jumps.IsEmpty)
-    {
-        <span class="key-item"><span class="key jump"></span>lands here, empty, having jumped and taken the piece before it; and may jump on again</span>
-    }
-    @if (!this.Diagram.Blockers.IsEmpty)
-    {
-        <span class="key-item"><span class="key blocker"></span>a piece here blocks a leap</span>
-    }
-    @if (this.Diagram.RiverRow is not null)
+    @if (this.Shown.RiverRow is not null)
     {
         <span class="key-item"><span class="key river"></span>a river it may not cross</span>
     }
-    @if (!this.Diagram.Palace.IsEmpty)
+    @if (!this.Shown.Palace.IsEmpty && this.Shown.Throne is null)
     {
         <span class="key-item"><span class="key palace"></span>in a palace, standing on its throne: along each line to the throne it moves and captures, diagonally too</span>
+    }
+    @if (this.Shown.Throne is not null)
+    {
+        <span class="key-item"><span class="key palace"></span>its palace, as it stands in it: along each line through its square to the throne, it moves and captures, diagonally too</span>
     }
 </p>
 
 @code {
+    private bool _isCapturing;
+    private bool _isObstructed;
+    private bool _isElsewhere;
+
     [Parameter, EditorRequired]
     public MoveDiagramDto Diagram { get; set; } = null!;
 
@@ -94,52 +158,110 @@
     [Parameter]
     public bool IsOnDark { get; set; }
 
-    private int Centre => (this.Diagram.Side * this.Diagram.Side) / 2;
+    /// <summary>The diagram drawn: on an open board, if the player put its river or palace away.</summary>
+    private MoveDiagramDto Shown => (this._isElsewhere ? this.Diagram.Elsewhere : null) ?? this.Diagram;
+
+    private bool HasCaptures =>
+        !this.Shown.Captures.IsEmpty || !this.Shown.Jumps.IsEmpty || this.Shown.Custody is not null;
+
+    /// <summary>Whether the player may switch between its moves and its captures: it has both.</summary>
+    private bool MayShowCaptures => !this.Shown.Moves.IsEmpty && this.HasCaptures;
+
+    /// <summary>Whether its captures are drawn: asked for, or all it has.</summary>
+    private bool IsCapturing => this.HasCaptures && (this._isCapturing || this.Shown.Moves.IsEmpty);
+
+    /// <summary>Whether pieces are drawn in its way: asked for, while its moves are drawn.</summary>
+    private bool IsObstructed => !this.IsCapturing && this._isObstructed && !this.Shown.Obstacles.IsEmpty;
+
+    /// <summary>
+    /// Whether it moves alike forward and back, with no river ahead: which way is forward does not matter.
+    /// </summary>
+    private bool IsTurnless =>
+        this.Shown.RiverRow is null
+        && ((ImmutableList<int>[])
+            [
+                this.Shown.Moves,
+                this.Shown.Captures,
+                this.Shown.Jumps,
+                this.Shown.Screens,
+                this.Shown.Leaps,
+                this.Shown.Palace,
+            ])
+            .All(cells => cells.Select(this.Flipped).Order().SequenceEqual(cells.Order()));
+
+    private int Centre => (this.Shown.Side * this.Shown.Side) / 2;
+
+    /// <summary>The palace's throne: where it is, for a piece drawn where it stands; else the centre it stands on.</summary>
+    private int Throne => this.Shown.Throne ?? this.Centre;
 
     /// <summary>The palace's wall: the box about its cells, in cells, from the top-left, as the SVG draws.</summary>
     private (int X, int Y, int Width, int Height) Wall
     {
         get
         {
-            ImmutableList<int> columns = [.. this.Diagram.Palace.Select(cell => cell % this.Diagram.Side)];
-            ImmutableList<int> rows = [.. this.Diagram.Palace.Select(cell => cell / this.Diagram.Side)];
+            ImmutableList<int> columns = [.. this.Shown.Palace.Select(cell => cell % this.Shown.Side)];
+            ImmutableList<int> rows = [.. this.Shown.Palace.Select(cell => cell / this.Shown.Side)];
             return (
                 columns.Min(),
-                this.Diagram.Side - 1 - rows.Max(),
+                this.Shown.Side - 1 - rows.Max(),
                 columns.Max() - columns.Min() + 1,
                 rows.Max() - rows.Min() + 1
             );
         }
     }
 
+    /// <summary>For one who cannot see it: how many squares it may move to and capture on.</summary>
+    private string Described =>
+        $"From the centre, it may move to {this.Shown.Moves.Count} squares and capture on "
+        + $"{this.Shown.Captures.Count}";
+
+    private static string Pressed(bool isPressed) => isPressed ? "true" : "false";
+
+    /// <summary>The cell as far behind the centre's row as <paramref name="cell"/> is ahead of it.</summary>
+    private int Flipped(int cell) =>
+        ((this.Shown.Side - 1 - (cell / this.Shown.Side)) * this.Shown.Side) + (cell % this.Shown.Side);
+
+    /// <summary>Whether <paramref name="cell"/> is farther from the centre than the squares around it.</summary>
+    private bool IsFar(int cell)
+    {
+        int middle = this.Shown.Side / 2;
+        return Math.Max(Math.Abs((cell % this.Shown.Side) - middle), Math.Abs((cell / this.Shown.Side) - middle)) > 1;
+    }
+
     private string XOf(int cell) =>
-        ((cell % this.Diagram.Side) + 0.5).ToString(CultureInfo.InvariantCulture);
+        ((cell % this.Shown.Side) + 0.5).ToString(CultureInfo.InvariantCulture);
 
     private string YOf(int cell)
     {
-        int row = cell / this.Diagram.Side;
-        return (this.Diagram.Side - row - 0.5).ToString(CultureInfo.InvariantCulture);
+        int row = cell / this.Shown.Side;
+        return (this.Shown.Side - row - 0.5).ToString(CultureInfo.InvariantCulture);
     }
 
-    /// <summary>For one who cannot see it: how many squares it may move to and capture on.</summary>
-    private string Described =>
-        $"From the centre, it may move to {this.Diagram.Moves.Count} squares and capture on "
-        + $"{this.Diagram.Captures.Count}";
-
-    private string ClassOf(int cell, int row, int column) =>
-        string.Join(
+    private string ClassOf(int cell, int row, int column)
+    {
+        MoveDiagramDto shown = this.Shown;
+        bool isMoving = !this.IsCapturing;
+        bool isInTheWay = this.IsObstructed && shown.Obstacles.Contains(cell);
+        return string.Join(
             ' ',
             new[]
             {
                 "square",
                 int.IsEvenInteger(row + column) == this.IsOnDark ? "dark" : "light",
-                this.Diagram.Moves.Contains(cell) ? "move" : null,
-                this.Diagram.Captures.Contains(cell) ? "capture" : null,
-                this.Diagram.Screens.Contains(cell) ? "screen" : null,
-                row == this.Diagram.RiverRow ? "river-bank" : null,
-                this.Diagram.Blockers.Contains(cell) ? "blocker" : null,
-                this.Diagram.Leaps.Contains(cell) ? "leap" : null,
-                this.Diagram.Jumps.Contains(cell) ? "jump" : null,
+                (isMoving && shown.Moves.Contains(cell) && !isInTheWay)
+                || (!isMoving && shown.Custody?.Landing == cell)
+                    ? "move"
+                    : null,
+                isMoving && shown.Leaps.Contains(cell) ? "leap" : null,
+                this.IsObstructed && shown.Obstructed.Contains(cell) ? "obstructed" : null,
+                isInTheWay ? "obstacle" : null,
+                !isMoving && shown.Custody?.Taken == cell ? "taken" : null,
+                !isMoving && (shown.Captures.Contains(cell) || shown.Custody?.Taken == cell) ? "capture" : null,
+                !isMoving && shown.Custody?.Partner == cell ? "partner" : null,
+                !isMoving && shown.Jumps.Contains(cell) ? "jump" : null,
+                shown.Screens.Contains(cell) ? "screen" : null,
+                row == shown.RiverRow ? "river-bank" : null,
             }.OfType<string>()
         );
+    }
 }

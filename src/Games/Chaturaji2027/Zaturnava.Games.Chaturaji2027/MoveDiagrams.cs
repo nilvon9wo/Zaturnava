@@ -17,14 +17,17 @@ namespace Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
 /// river just ahead of it, and nothing across it (the user's report of 2026-11-12: "Pictures speak 1000 words!").
 /// One that steps along a palace's lines (<paramref name="palaceSteppers"/>) stands on the throne of a palace about it,
 /// stepping along each line to the next cell, as <see cref="PalaceSteps"/> lets it, those of
-/// <paramref name="forwardPalaceSteppers"/> only forward. What else the board or the game's rules add (the two-cell
+/// <paramref name="forwardPalaceSteppers"/> only forward; either is drawn on an open board too, for the player to
+/// switch to. Pieces put in its way, where they stop it most, and, for a kind of <paramref name="custodians"/>, a
+/// capture by custody, are drawn for the player to ask for. What else the board or the game's rules add (the two-cell
 /// first move) is not drawn: the kind's powers and restrictions tell of it.
 /// </summary>
 internal sealed class MoveDiagrams(
     ImmutableDictionary<PieceKindId, PieceKind> kinds,
     ImmutableHashSet<PieceKindId> riverBound,
     ImmutableHashSet<PieceKindId> palaceSteppers,
-    ImmutableHashSet<PieceKindId> forwardPalaceSteppers
+    ImmutableHashSet<PieceKindId> forwardPalaceSteppers,
+    ImmutableHashSet<PieceKindId> custodians
 )
 {
     /// <summary>As wide as the farthest leap of the catalogue, four cells, either side of the centre.</summary>
@@ -38,6 +41,9 @@ internal sealed class MoveDiagrams(
     private static readonly SeatId Enemy = new(1);
     private static readonly PieceKindId Stand = new("diagram-stand");
 
+    /// <summary>A palace's lines on the diagram's board, whoever steps along them.</summary>
+    private static readonly PalaceSteps Lines = new(Grid, [], []);
+
     /// <summary>The 3 × 3 palace about the centre, its throne, row by row from the bottom.</summary>
     private static readonly ImmutableList<CellId> Palace =
     [
@@ -48,20 +54,69 @@ internal sealed class MoveDiagrams(
     private readonly ImmutableDictionary<PieceKindId, PieceKind> _kinds = kinds;
     private readonly MoveGenerator _moves = new(Grid, kinds);
     private readonly ConcurrentDictionary<PieceKindId, MoveDiagram> _drawn = new();
+    private readonly ConcurrentDictionary<PieceKindId, MoveDiagram> _open = new();
 
-    public MoveDiagram Of(PieceKindId kind) => this._drawn.GetOrAdd(kind, this.Draw);
+    public MoveDiagram Of(PieceKindId kind) => this._drawn.GetOrAdd(kind, this.DrawWithTerrain);
 
-    private MoveDiagram Draw(PieceKindId kind)
+    /// <summary>
+    /// A kind that steps along a palace's lines drawn in a palace of <paramref name="palace"/>'s cells, its throne on
+    /// <paramref name="throne"/>, each as far to the piece's right and ahead of it as the piece sees it; stepping along
+    /// each line through its cell, as <see cref="PalaceSteps"/> lets it, and moving otherwise as on an open board,
+    /// which it is drawn on too (the user's report of 2026-11-15, B6).
+    /// </summary>
+    public MoveDiagram InPalace(
+        PieceKindId kind,
+        ImmutableList<(int Right, int Ahead)> palace,
+        (int Right, int Ahead) throne
+    )
+    {
+        ImmutableList<CellId> cells = [.. palace.Select(At)];
+        ImmutableList<int> steps =
+        [
+            .. Lines.NeighboursOn(cells, At(throne), Centre)
+                .Where(cell => !forwardPalaceSteppers.Contains(kind) || Grid.RowOf(cell) > Middle)
+                .Select(cell => cell.Value),
+        ];
+        MoveDiagram open = this.Open(kind);
+        return open with
+        {
+            Moves = [.. open.Moves.Concat(steps).Distinct().Order()],
+            Captures = [.. open.Captures.Concat(steps).Distinct().Order()],
+            Palace = [.. cells.Select(cell => cell.Value)],
+            Throne = At(throne).Value,
+            Elsewhere = open,
+        };
+    }
+
+    /// <summary>The cell as far to the right of the centre and ahead of it as <paramref name="seen"/> says.</summary>
+    private static CellId At((int Right, int Ahead) seen) => Grid.CellAt(Middle + seen.Right, Middle + seen.Ahead);
+
+    /// <summary>
+    /// The kind drawn by its river or in its palace, if either holds it, with the kind drawn on an open board beside;
+    /// else on an open board alone.
+    /// </summary>
+    private MoveDiagram DrawWithTerrain(PieceKindId kind) =>
+        riverBound.Contains(kind) || palaceSteppers.Contains(kind)
+            ? this.Draw(kind, isOnTerrain: true) with { Elsewhere = this.Open(kind) }
+            : this.Open(kind);
+
+    /// <summary>The kind drawn on an open board, no river nor palace about it.</summary>
+    private MoveDiagram Open(PieceKindId kind) =>
+        this._open.GetOrAdd(kind, open => this.Draw(open, isOnTerrain: false));
+
+    private MoveDiagram Draw(PieceKindId kind, bool isOnTerrain)
     {
         ImmutableList<CellId> screens = ScreensFor(this._kinds[kind]);
         Position alone = screens.Aggregate(
             Position.Empty.Place(Centre, new Piece(new PieceId(0), kind, Facing.Id)),
             (position, screen) => position.Place(screen, new Piece(new PieceId(1), Stand, Facing.Id))
         );
-        int? riverRow = riverBound.Contains(kind) ? Middle + 1 : null;
+        int? riverRow = isOnTerrain && riverBound.Contains(kind) ? Middle + 1 : null;
         ImmutableHashSet<CellId> reached = this.ReachedOn(alone, riverRow);
         ImmutableList<Move> jumps = this.JumpsOn(alone, this._kinds[kind]);
-        ImmutableList<CellId> palace = palaceSteppers.Contains(kind) ? Palace : [];
+        ImmutableList<CellId> palace = isOnTerrain && palaceSteppers.Contains(kind) ? Palace : [];
+        ImmutableList<CellId> obstacles = this.ObstaclesOn(alone, riverRow);
+        ImmutableHashSet<CellId> unobstructed = this.ReachedOn(WithStands(alone, obstacles), riverRow);
         ImmutableList<CellId> palaceSteps =
         [
             .. palace
@@ -88,9 +143,12 @@ internal sealed class MoveDiagrams(
             Jumps = [.. jumps.Select(jump => jump.To.Value).Distinct().Order()],
             Palace = [.. palace.Select(cell => cell.Value)],
             RiverRow = riverRow,
-            Blockers = this._kinds[kind].Movement.Any(rule => rule.IsLame)
-                ? [.. this.BlockersOf(alone, riverRow, reached).Select(cell => cell.Value).Order()]
-                : [],
+            Obstacles = [.. obstacles.Select(cell => cell.Value).Order()],
+            Obstructed =
+            [
+                .. reached.Except(obstacles).Except(unobstructed).Select(cell => cell.Value).Order(),
+            ],
+            Custody = custodians.Contains(kind) ? CustodyOn(reached) : null,
             Leaps =
             [
                 .. reached.Where(cell => IsFar(cell) && this.IsLeapt(alone, cell)).Select(cell => cell.Value).Order(),
@@ -124,19 +182,53 @@ internal sealed class MoveDiagrams(
     ];
 
     /// <summary>
-    /// For a kind whose leaps a piece in the way blocks, as a Xiangqi Horse's leg is (the user's report of
-    /// 2026-11-12, of cards not showing what stops a leap): each empty cell a piece on which would stop some move to
-    /// another cell.
+    /// For a kind pieces in its way stop, as a Rook's slide or a Xiangqi Horse's leg is (the user's report of
+    /// 2026-11-15, C2: pieces in the way, not red crosses): the cell a piece on which would stop it reaching the most
+    /// other cells, the foremost of those, then the nearest the middle column, then the leftmost; and a second such
+    /// cell, chosen the same way, if a piece there would stop it reaching yet more. None, for a kind nothing stops.
     /// </summary>
-    private IEnumerable<CellId> BlockersOf(Position alone, int? riverRow, ImmutableHashSet<CellId> reached) =>
-        Grid.Cells
-            .Where(cell => alone.PieceAt(cell) is null)
-            .Where(cell =>
-                !reached.Remove(cell)
-                    .IsSubsetOf(
-                        this.ReachedOn(alone.Place(cell, new Piece(new PieceId(3), Stand, Facing.Id)), riverRow)
-                    )
-            );
+    private ImmutableList<CellId> ObstaclesOn(Position alone, int? riverRow) =>
+        Enumerable.Range(0, 2).Aggregate(
+            ImmutableList<CellId>.Empty,
+            (chosen, _) =>
+            {
+                Position stood = WithStands(alone, chosen);
+                ImmutableHashSet<CellId> before = this.ReachedOn(stood, riverRow);
+                (CellId Cell, int Stopped)? best = Grid.Cells
+                    .Where(cell => stood.PieceAt(cell) is null && IsOnNearBank(cell, riverRow))
+                    .Select(cell => (
+                        Cell: cell,
+                        Stopped: before.Remove(cell).Except(this.ReachedOn(WithStands(stood, [cell]), riverRow)).Count
+                    ))
+                    .Where(candidate => candidate.Stopped > 0)
+                    .OrderByDescending(candidate => candidate.Stopped)
+                    .ThenByDescending(candidate => Grid.RowOf(candidate.Cell))
+                    .ThenBy(candidate => Math.Abs(Grid.ColumnOf(candidate.Cell) - Middle))
+                    .ThenBy(candidate => Grid.ColumnOf(candidate.Cell))
+                    .Select(candidate => ((CellId, int)?)candidate)
+                    .FirstOrDefault();
+                return best is { } found ? chosen.Add(found.Cell) : chosen;
+            }
+        );
+
+    /// <summary><paramref name="position"/>, with a piece of the piece's own side on each of
+    /// <paramref name="cells"/>.</summary>
+    private static Position WithStands(Position position, IEnumerable<CellId> cells) =>
+        cells.Aggregate(position, (stood, cell) => stood.Place(cell, new Piece(new PieceId(3), Stand, Facing.Id)));
+
+    /// <summary>
+    /// For a kind that takes by custody: it moves two cells forward, if it may, else one, next to an enemy just
+    /// beyond, which a piece of its own side beyond that holds with it; none, if it may move forward neither.
+    /// </summary>
+    private static CustodyExample? CustodyOn(ImmutableHashSet<CellId> reached) =>
+        ((int[])[2, 1])
+            .Where(distance => reached.Contains(Grid.CellAt(Middle, Middle + distance)))
+            .Select(distance => new CustodyExample(
+                Grid.CellAt(Middle, Middle + distance).Value,
+                Grid.CellAt(Middle, Middle + distance + 1).Value,
+                Grid.CellAt(Middle, Middle + distance + 2).Value
+            ))
+            .FirstOrDefault();
 
     /// <summary>Whether <paramref name="cell"/> is short of the river at <paramref name="riverRow"/>, if any.</summary>
     private static bool IsOnNearBank(CellId cell, int? riverRow) => Grid.RowOf(cell) < (riverRow ?? Side);

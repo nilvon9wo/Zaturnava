@@ -1,7 +1,8 @@
 @* What a player is told of a piece they clicked on, whether or not they may move it: as labelled facts, whose it
    is, where it stands, and its kind's class, the game it comes from, value (what taking it scores), and what its own promotion may make
    it, if it has one, and where, saying so if the game does not play it yet; then how it moves and captures -
-   drawn (MoveDiagramView), turned as the board shows its army, and in words where the ruleset draws nothing or
+   drawn (MoveDiagramView) - where it stands, if that changes how it moves, as a palace does a Guard's - turned as the
+   board shows its army, and in words where the ruleset draws nothing or
    the drawing has pieces to hop over, which one drawing cannot tell all of (a hop over any gap, say) - its
    powers, those every piece of its sort has (common) apart from its own (special), and what holds it back, each as
    the ruleset tells it. A kind the ruleset tells nothing of shows its owner and square alone. The player may drag
@@ -55,7 +56,7 @@
     </dl>
     @if (this.Kind is { } kind)
     {
-        @if (kind.Diagram is { Side: > 0 } diagram)
+        @if ((this.Piece.Diagram ?? kind.Diagram) is { Side: > 0 } diagram)
         {
             <MoveDiagramView Diagram="diagram"
                              Piece="this.Piece"

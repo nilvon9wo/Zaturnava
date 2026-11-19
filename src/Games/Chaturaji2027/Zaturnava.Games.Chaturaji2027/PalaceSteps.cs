@@ -59,7 +59,7 @@ internal sealed class PalaceSteps(
             : [];
 
     /// <summary>The cells next to <paramref name="cell"/> on any line of the palace, either way.</summary>
-    private IEnumerable<CellId> NeighboursOn(ImmutableList<CellId> palace, CellId throne, CellId cell) =>
+    public IEnumerable<CellId> NeighboursOn(ImmutableList<CellId> palace, CellId throne, CellId cell) =>
         palace
             .Where(start => start != throne)
             .Select(start => this.PathOf(start, throne))

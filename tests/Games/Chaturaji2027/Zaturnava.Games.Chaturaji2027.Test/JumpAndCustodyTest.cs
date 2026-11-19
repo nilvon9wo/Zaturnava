@@ -53,6 +53,21 @@ public sealed class JumpAndCustodyTest
     );
 
     [Fact]
+    public void GuideOf_WhenAKindTakesByCustody_DrawsACaptureWithItsPartnerBeyondAndNoneForAnyOther()
+    {
+        // Arrange - the Elephant slides along rows and columns: from the centre, 40, two squares forward, to 58
+
+        // Act
+        (CustodyExample? Elephant, CustodyExample? Raja) drawn = (
+            this._rules.GuideOf(Chaturaji2027Pieces.Elephant).Diagram.Custody,
+            this._rules.GuideOf(Chaturaji2027Pieces.Raja).Diagram.Custody
+        );
+
+        // Assert
+        Assert.Equal((new CustodyExample(58, 67, 76), null), drawn);
+    }
+
+    [Fact]
     public void Apply_WhenAPieceJumpsTwoEnemiesInTurn_TakesBothAndLandsBeyondTheLast()
     {
         // Arrange - Black's Boat on c1; Yellow's Horses on d2 and d4, with e3 and c5 empty
