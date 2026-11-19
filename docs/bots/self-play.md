@@ -162,7 +162,8 @@ does, so that what it learns corrects Sage; or from a network learned before (`-
 network as JSON; put it in `src/Bots/Zaturnava.Bots/Networks/`, named for the ruleset, and Athena plays by
 it, or give it to `--network` to play her by it without building her again. The positions are given to the
 network as `PositionEncoder` sums them up, which your own learner may use too. What did and did not work is
-in the [backlog](../backlog.md#bots).
+in [done.md](../done.md#bots) and [the AI assessment](ai-assessment.md); what is still to try, in the
+[backlog](../backlog.md#2-bots-that-play-well).
 
 | Option | |
 |---|---|

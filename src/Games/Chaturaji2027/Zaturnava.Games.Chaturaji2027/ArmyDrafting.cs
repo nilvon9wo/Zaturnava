@@ -43,9 +43,15 @@ internal sealed class ArmyDrafting
 
     /// <summary>
     /// Every square of the kingdom a palace may stand about, if it may stand partly outside a kingdom too small for it
-    /// (<see cref="PalaceSquares.EdgeCentres(ImmutableList{ArmySquare}, int, int)"/>).
+    /// (<see cref="PalaceSquares.EdgeCentres(ImmutableList{ArmySquare}, int, int, int)"/>).
     /// </summary>
     private readonly ImmutableList<ArmySquare> _edgeCentres;
+
+    /// <summary>
+    /// As <see cref="_edgeCentres"/>, for a game dealt before <see cref="PalaceSquares.ApartEdition"/>, whose palaces
+    /// might stand where another army's could.
+    /// </summary>
+    private readonly ImmutableList<ArmySquare> _edgeCentresBefore;
 
     public ArmyDrafting(
         Drafting drafting,
@@ -71,8 +77,10 @@ internal sealed class ArmyDrafting
         );
         this._centres = PalaceSquares.Centres(drafting.Kingdom);
         this._edgeCentres = PalaceSquares.EdgeCentres(drafting.Kingdom, width, height);
+        this._edgeCentresBefore =
+            PalaceSquares.EdgeCentres(drafting.Kingdom, width, height, PalaceSquares.ApartEdition - 1);
         ImmutableList<ArmySquare> reached =
-            [.. drafting.Kingdom.Union(this._edgeCentres.SelectMany(PalaceSquares.Window))];
+            [.. drafting.Kingdom.Union(this._edgeCentresBefore.SelectMany(PalaceSquares.Window))];
         this._squares = Enumerable.Range(0, Pinwheel.SeatCount).ToImmutableDictionary(
             seat => new SeatId(seat),
             seat => CellsOf(grid, (width, height), seat, reached)
@@ -103,22 +111,23 @@ internal sealed class ArmyDrafting
     /// <summary>
     /// Whether each army has a palace (specification §5): a 3 × 3 of its kingdom, holding its throne. Only a kingdom
     /// with room for one has (Proposed); one too small (Chaturaji 2027's 4 × 2) has one standing partly outside it, if
-    /// <paramref name="atEdge"/> and it may
-    /// (<see cref="PalaceSquares.EdgeCentres(ImmutableList{ArmySquare}, int, int)"/>), else none.
+    /// <paramref name="atEdge"/> and it may, in a game of <paramref name="edition"/>
+    /// (<see cref="PalaceSquares.EdgeCentres(ImmutableList{ArmySquare}, int, int, int)"/>), else none.
     /// </summary>
-    public bool HasPalaces(bool atEdge) => !this.Centres(atEdge).IsEmpty;
+    public bool HasPalaces(bool atEdge, int edition) => !this.Centres(atEdge, edition).IsEmpty;
 
     /// <summary>
     /// Each seat's palace about its throne in <paramref name="thrones"/> (<see cref="Around"/>), standing partly
-    /// outside a kingdom too small for one, if <paramref name="atEdge"/>.
+    /// outside a kingdom too small for one, if <paramref name="atEdge"/>, as a game of <paramref name="edition"/> may.
     /// </summary>
     public ImmutableDictionary<SeatId, ImmutableList<CellId>> PalacesAround(
         ImmutableDictionary<SeatId, CellId> thrones,
-        bool atEdge
+        bool atEdge,
+        int edition
     ) =>
         thrones.ToImmutableDictionary(
             throne => throne.Key,
-            throne => this.Around(throne.Key, this._kingdoms[throne.Key][throne.Value], this.Centres(atEdge))
+            throne => this.Around(throne.Key, this._kingdoms[throne.Key][throne.Value], this.Centres(atEdge, edition))
         );
 
     /// <summary>
@@ -130,10 +139,16 @@ internal sealed class ArmyDrafting
             .Select((centre, seat) => (Seat: new SeatId(seat), Centre: centre))
             .ToImmutableDictionary(placed => placed.Seat, placed => this.PalaceOf(placed.Seat, placed.Centre));
 
-    private ImmutableList<ArmySquare> Centres(bool atEdge) => atEdge ? this._edgeCentres : this._centres;
+    private ImmutableList<ArmySquare> Centres(bool atEdge, int edition) =>
+        (atEdge, edition >= PalaceSquares.ApartEdition) switch
+        {
+            (false, _) => this._centres,
+            (_, true) => this._edgeCentres,
+            _ => this._edgeCentresBefore,
+        };
 
     /// <summary>The squares a palace may stand about in the game.</summary>
-    private ImmutableList<ArmySquare> CentresIn(GameState state) => this.Centres(state.HasEdgePalaces);
+    private ImmutableList<ArmySquare> CentresIn(GameState state) => this.Centres(state.HasEdgePalaces, state.Edition);
 
     /// <summary>
     /// The seat's palace holding <paramref name="throne"/>, about one of <paramref name="centres"/>, as

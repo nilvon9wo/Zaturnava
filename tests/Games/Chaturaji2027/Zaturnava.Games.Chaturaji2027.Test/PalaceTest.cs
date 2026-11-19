@@ -538,6 +538,26 @@ public sealed class PalaceTest
         Assert.Equal(Text(expected), Text(palaces));
     }
 
+    [Fact]
+    public void Deal_WhenEveryEdgePalaceCouldShareASquareWithAnotherArmys_DealsNone()
+    {
+        // Arrange - kingdoms 6 × 2: about d2, a palace could share c3 with Yellow's up the left edge; about e2, f3 with
+        // Red's (the user's words of 2026-11-19: "it should be impossible for palaces to overlap")
+        Chaturaji2027Rules wide = RulesOf(2, 6);
+
+        // Act
+        GameState dealt = wide.Deal(
+            wide.CreateInitialState(),
+            4,
+            dealsPalaces: true,
+            dealsEdgePalaces: true,
+            edition: PalaceSquares.ApartEdition
+        );
+
+        // Assert
+        Assert.Null(dealt.Palaces);
+    }
+
     [Theory]
     [InlineData(2, "1")]
     [InlineData(0, "")]
