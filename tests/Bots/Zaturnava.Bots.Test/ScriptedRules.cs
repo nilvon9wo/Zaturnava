@@ -17,15 +17,21 @@ namespace Net.NowhereAtAll.Zaturnava.Bots.Test;
 /// throne on the cell of its own number; a piece is worth what <see cref="ScoringRules.Worth"/> says, and
 /// the Raja leads. Where a scripted state has the enemy moving for seat 0 (holding its throne), the enemy may
 /// take any of <paramref name="replies"/>, each leading straight to the state it says. A kind comes from the game
-/// <paramref name="origins"/> says, if any.
+/// <paramref name="origins"/> says, if any, those kinds its kinds; its armies are drafted if
+/// <paramref name="isDraftable"/>.
 /// </summary>
 internal sealed class ScriptedRules(
     ImmutableDictionary<GameAction, GameState> results,
     ImmutableDictionary<GameAction, GameState>? replies = null,
-    ImmutableDictionary<PieceKindId, string>? origins = null
+    ImmutableDictionary<PieceKindId, string>? origins = null,
+    bool isDraftable = false
 ) : IRulesApplying
 {
     private readonly ImmutableDictionary<PieceKindId, string> _origins = origins ?? [];
+
+    public bool IsDraftable { get; } = isDraftable;
+
+    public ImmutableList<PieceKindId> Kinds => [.. this._origins.Keys];
 
     public static readonly SeatId Seat = new(0);
     public static readonly SeatId Enemy = new(1);

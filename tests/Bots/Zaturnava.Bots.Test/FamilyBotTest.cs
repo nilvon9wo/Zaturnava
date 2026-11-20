@@ -37,6 +37,34 @@ public sealed class FamilyBotTest
         Assert.Equal(cell, ((DraftAction)drafted).Cell.Value);
     }
 
+    [Theory]
+    [InlineData("musashi", true, true)]
+    [InlineData("musashi", false, false)]
+    [InlineData("ragnar", true, false)]
+    public void Knows_WhenAskedOfAGame_KnowsOnlyOneDraftedWithPiecesOfItsFamily(
+        string bot,
+        bool isDraftable,
+        bool expected
+    )
+    {
+        // Arrange - a Shogi Pawn and a Western Horse, drafted or dealt: no Tafl piece for Ragnar (the user's word of
+        // 2026-11-20: only the bots that make sense for the game)
+        ScriptedRules rules = new(
+            [],
+            origins: ImmutableDictionary<PieceKindId, string>.Empty
+                .Add(LineRules.Pawn, "Shogi")
+                .Add(LineRules.Horse, "Western"),
+            isDraftable: isDraftable
+        );
+        FamilyBot family = FamilyBot.All(new Random(1)).Single(candidate => candidate.Profile.Id == bot);
+
+        // Act
+        bool knows = family.Knows(rules);
+
+        // Assert
+        Assert.Equal(expected, knows);
+    }
+
     [Fact]
     public async Task Seize_WhenNothingIsOffered_SeizesNothing()
     {
