@@ -581,6 +581,20 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             .Where(attack => this.MayGo(state, new Move(attack.Attacker, attack.From, attack.Target, null))),
     ];
 
+    /// <summary>
+    /// Every move the seat's pieces could make as the board stands, the dice aside, as an attack on the cell each goes
+    /// to: a Pawn's step straight on, which it does not attack, and not its diagonals, unless something stands there
+    /// to take (2026-11-20: so that Sage sees where a threatened piece may really flee).
+    /// </summary>
+    public ImmutableList<Attack> MovesOf([Required] GameState state, SeatId seat) =>
+    [
+        .. state.Position.Occupants
+            .Where(occupant => occupant.Value.Owner == seat)
+            .SelectMany(occupant => this.MovesFrom(state, occupant.Key, occupant.Value, seat))
+            .Select(move => new Attack(move.Mover, move.From, move.To))
+            .Distinct(),
+    ];
+
     /// <summary>The lead that wins by giving up its turns (rules.md §10), as the variant scores it.</summary>
     public int ClearLead => this._variant.Scoring.ClearLead;
 

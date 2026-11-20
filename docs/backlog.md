@@ -43,7 +43,9 @@ From the specification's observations of the bots in play (F, X) and the Sage pl
   by the cells it *attacks*, not those it may *move* to: a Pawn, attacking diagonally but moving straight on, is
   counted as escaping when it has nowhere safe to go, and the threat on it weighs only a quarter of its worth. The
   fix wants the enemies' moves, not just their attacks, which the rules offer only for the seat to move
-  (`IRulesApplying.LegalActions`): a rules method for any seat's moves, then measured over matches.
+  (`IRulesApplying.LegalActions`). *That cause fixed* (2026-11-20): the rules give any seat's moves
+  (`IRulesApplying.MovesOf`), and Sage judges a threatened piece's escape by them. Still to do: see, over the
+  overnight ratings, whether Sage now presses home; weigh a capture made ready and an army beaten down, if not.
 
 - **X5** Safe captures of leaders and strong pieces, above all those threatening an ally, ignored; perhaps from
   misjudging which way infantry move, and so what is safe.
