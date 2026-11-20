@@ -1573,8 +1573,15 @@ public sealed class LobbyTest : IDisposable
         // Act
         lobby.Find("button.watch").Click();
 
-        // Assert
-        Assert.Equal(Seating.Watching(FakeGameServer.GameId), this._seated);
+        // Assert - an icon, the word for a screen reader (the user's word of 2026-11-20)
+        Assert.Equal(
+            (Seating.Watching(FakeGameServer.GameId), "Watch", "\U0001F440"),
+            (
+                this._seated,
+                lobby.Find("button.watch").GetAttribute("aria-label"),
+                lobby.Find("button.watch").TextContent.Trim()
+            )
+        );
     }
 
     [Fact]

@@ -39,6 +39,11 @@ From the specification's observations of the bots in play (F, X) and the Sage pl
   last Pawn, ready to take it: its search counts points over too short a horizon, and a Pawn's 1 point two turns off
   weighs no more than a shuffle. Weigh a capture made ready (a piece lined up on an enemy, unanswered), and an army
   beaten down to its last pieces, so that Sage presses home; game 3b5d749e, turn 22, is the case to test against.
+  *A cause found* (2026-11-20): Sage's threats term (`Appraisal.Threats`) judges whether a threatened piece can flee
+  by the cells it *attacks*, not those it may *move* to: a Pawn, attacking diagonally but moving straight on, is
+  counted as escaping when it has nowhere safe to go, and the threat on it weighs only a quarter of its worth. The
+  fix wants the enemies' moves, not just their attacks, which the rules offer only for the seat to move
+  (`IRulesApplying.LegalActions`): a rules method for any seat's moves, then measured over matches.
 
 - **X5** Safe captures of leaders and strong pieces, above all those threatening an ally, ignored; perhaps from
   misjudging which way infantry move, and so what is safe.

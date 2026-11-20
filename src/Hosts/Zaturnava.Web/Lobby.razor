@@ -1175,8 +1175,11 @@
                         @Returning
                     </button>
                 }
-                <button class="watch" @onclick="() => this.OnSeated.InvokeAsync(Seating.Watching(game.Id))">
-                    Watch
+                @* an icon, not the word (the user's word of 2026-11-20: binoculars "or something"; no emoji draws
+                   binoculars, so eyes), the word on hover and to a screen reader *@
+                <button class="watch" title="Watch" aria-label="Watch"
+                        @onclick="() => this.OnSeated.InvokeAsync(Seating.Watching(game.Id))">
+                    <span aria-hidden="true">&#x1F440;</span>
                 </button>
             }
         </text>;

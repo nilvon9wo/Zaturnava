@@ -175,7 +175,7 @@ public sealed class LeaderboardTest : IDisposable
             (
                 "1 🤖 Athena 2650 38 6 0 1|2 🤖 Sage 2600 40 5 0 1|3 🧑 Ada 1700 25 4 1 0|4 🤖 Random 1000 2 0 6 1",
                 "Bot, an AI,Bot, a plain algorithm,Person,Bot, a plain algorithm",
-                "Kind|🤖*,🤖,🧑,🤖"
+                "Kind|🤖,🤖*,🧑,🤖*"
             ),
             (
                 Rows(board),
@@ -189,8 +189,12 @@ public sealed class LeaderboardTest : IDisposable
         );
     }
 
-    /// <summary>An icon as it is drawn: the AI's robot tinted, by its class (the user, 2026-11-20).</summary>
-    private static string KindShown(IElement kind) => $"{kind.TextContent}{(kind.ClassList.Contains("ai") ? "*" : "")}";
+    /// <summary>
+    /// An icon as it is drawn: a plain algorithm's robot tinted, by its class; the AI's as drawn (the user,
+    /// 2026-11-20).
+    /// </summary>
+    private static string KindShown(IElement kind) =>
+        $"{kind.TextContent}{(kind.ClassList.Contains("mechanical") ? "*" : "")}";
 
     [Fact]
     public void SortBy_WhenAHeaderIsClickedOnceThenTwice_SortsByItMostFirstThenFewestFirst()
