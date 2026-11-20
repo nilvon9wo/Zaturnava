@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.ComponentModel.DataAnnotations;
+using System.Runtime.CompilerServices;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Decisions;
 using Net.NowhereAtAll.Zaturnava.Engine.Rules;
@@ -63,8 +64,19 @@ public sealed class FamilyBot : IBotPlaying
     /// Legions'; not Chaturaji 2027, say, where no Shogi or Tafl piece is to be had (the user's word of 2026-11-20:
     /// "Selecting bots should be limited to the bots which make sense for the game!").
     /// </summary>
-    public bool Knows([Required] IRulesApplying rules) =>
-        rules.IsDraftable && rules.Kinds.Any(kind => rules.GuideOf(kind).Origin == this._family);
+    public bool Knows([Required] IRulesApplying rules) => rules.IsDraftable && FamiliesOf(rules).Contains(this._family);
+
+    /// <summary>
+    /// The families of the ruleset's pieces, found once for each ruleset: a piece's guide draws its moves, too slow to
+    /// ask of every piece each time the bots are listed.
+    /// </summary>
+    private static ImmutableHashSet<string> FamiliesOf(IRulesApplying rules) =>
+        Found.GetValue(
+            rules,
+            each => [.. each.Kinds.Select(kind => each.GuideOf(kind).Origin).OfType<string>()]
+        );
+
+    private static readonly ConditionalWeakTable<IRulesApplying, ImmutableHashSet<string>> Found = [];
 
     public Task<GameAction?> Seize([Required] DecisionRequest request, CancellationToken cancellationToken) =>
         this._sage.Seize(request, cancellationToken);
