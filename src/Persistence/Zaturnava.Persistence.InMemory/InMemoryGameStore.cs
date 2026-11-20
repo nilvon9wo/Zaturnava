@@ -70,6 +70,20 @@ public sealed class InMemoryGameStore : IGamePersisting
         return Task.FromResult(games);
     }
 
+    public Task<ImmutableList<DueGame>> BotsDue(DateTimeOffset since, CancellationToken cancellationToken)
+    {
+        ImmutableList<DueGame> games =
+        [
+            .. this._games.Values
+                .Where(game => game is { IsOver: false, IsWaiting: false, Deciding: { } seat }
+                    && game.LastChanged < since
+                    && game.Controllers[seat.Value] is BotSeat
+                )
+                .Select(game => new DueGame(game.Id, game.RulesetId)),
+        ];
+        return Task.FromResult(games);
+    }
+
     public Task<ImmutableList<GameRecord>> Unrated(int count, CancellationToken cancellationToken)
     {
         ImmutableList<GameRecord> games =

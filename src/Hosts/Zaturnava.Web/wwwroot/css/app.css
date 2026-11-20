@@ -377,6 +377,12 @@ html { scrollbar-gutter: stable; }
     align-items: center;
 }
 .plans.strengths select { width: 100%; min-width: 0; }
+/* A terrain choice with those within it, and the dice with who opens: the second column and the third. */
+.army-choices .terrain-line { grid-column: 2 / span 2; display: flex; gap: 6px; }
+.army-choices .terrain-line select { flex: 1 1 0; width: auto; }
+.game-options label.check { display: flex; align-items: center; gap: 6px; grid-column: 2; margin: 0; }
+.game-options select.opener { grid-column: 3; }
+.game-options input.idle-rounds { width: 5em; justify-self: start; }
 /* The game, its size and where to start from, in the same columns as the seats below them: each choice's name in
    the first, its dropdown in the second, so that every dropdown lines up. */
 .choices, .army-choices, .panel label.scenario {
@@ -490,6 +496,7 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
     .panel { min-width: 0; padding: 10px 12px; }
     .panel.new-game { left: 8px; width: calc(100vw - 16px); }
     .choices, .army-choices, .panel label.scenario, .plans.strengths li { grid-template-columns: minmax(0, 1fr); }
+    .army-choices .terrain-line, .game-options label.check, .game-options select.opener { grid-column: 1; }
     .game-filters label { white-space: normal; }
 }
 /* Each number's heading reads upward, wrapping beyond a few words' length, so that every column, on every board, is
@@ -1271,6 +1278,14 @@ button.report-bug {
 .coming { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin: 4px 0; }
 /* Its label read as fine print (2026-11-20): as large as the turn's own text, and plain to see. */
 .coming .name { margin-right: 6px; font-size: 1.1rem; font-weight: 600; }
+/* And still overlooked (the user's word of 2026-11-20: "make the text ... flash"): it pulses to the accent's yellow
+   and back, slowly, well under three times a second; held yellow, without the pulse, for those who ask for less
+   motion. */
+.coming .name { animation: coming 1.4s ease-in-out infinite; }
+@keyframes coming { 50% { color: var(--accent); } }
+@media (prefers-reduced-motion: reduce) {
+    .coming .name { animation: none; color: var(--accent); }
+}
 .coming .prisoner .piece-icon { width: 34px; height: 34px; }
 .ransom .prisoner, .coming .prisoner {
     padding: 2px;

@@ -119,6 +119,22 @@ public sealed class EfGameStore(GameDbContext context) : IGamePersisting
         return [.. entities.Select(GameRecordMapping.ToRecord)];
     }
 
+    public async Task<ImmutableList<DueGame>> BotsDue(DateTimeOffset since, CancellationToken cancellationToken)
+    {
+        DateTime? utc = GameRecordMapping.ToUtc(since);
+        List<DueGame> due = await this._context.Games
+            .AsNoTracking()
+            .Where(game => game.IsOver == false
+                && game.LastChanged < utc
+                && game.Deciding != null
+                && game.Seats.All(seat => seat.Kind != OpenSeat.KindName)
+                && game.Seats.Any(seat => seat.Seat == game.Deciding && seat.Kind == BotSeat.KindName)
+            )
+            .Select(game => new DueGame(new GameId(game.Id), game.RulesetId))
+            .ToListAsync(cancellationToken);
+        return [.. due];
+    }
+
     public async Task<ImmutableList<GameRecord>> Unrated(int count, CancellationToken cancellationToken)
     {
         List<GameEntity> entities = await this.Games()

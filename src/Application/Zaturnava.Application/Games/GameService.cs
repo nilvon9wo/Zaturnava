@@ -432,12 +432,18 @@ public sealed class GameService(
     {
         ImmutableHashSet<string> offered = [.. this.Rulesets.Select(rules => rules.Id)];
         int moved = 0;
-        foreach (GameRecord due in (await this._store.Idle(this._clock.Now - idle, cancellationToken))
-            .Where(record => offered.Contains(record.RulesetId) && IsBotDue(record)))
+        foreach (DueGame due in (await this._store.BotsDue(this._clock.Now - idle, cancellationToken))
+            .Where(game => offered.Contains(game.RulesetId)))
         {
             using IDisposable entered = await this._gate.Enter(due.Id);
-            // read again, under the gate: a person who has moved since leaves the bots nothing to decide
-            GameSnapshot snapshot = await this.Get(due.Id, cancellationToken);
+            // read again, under the gate: a person who has moved since leaves the bots nothing to decide; a game its
+            // rules no longer replay is left, so that it never keeps the rest waiting
+            GameRecord record = await this.Load(due.Id, cancellationToken);
+            if (GameSnapshot.TryOf(record, this._rulesets.Find(record.RulesetId)) is not { } snapshot)
+            {
+                continue;
+            }
+
             Played played = await DecisionLoop.PlayWhile(
                 snapshot.Rules,
                 new Played(snapshot.State, snapshot.Record.Actions),
@@ -462,10 +468,6 @@ public sealed class GameService(
 
     /// <summary>The most decisions <see cref="PlayIdleBots"/> makes in one game at a time (Proposed).</summary>
     public const int IdleBotSteps = 1000;
-
-    /// <summary>Whether the game, as last saved, has begun and waits for a bot the server plays to decide.</summary>
-    private static bool IsBotDue(GameRecord record) =>
-        record is { IsWaiting: false, Deciding: { } seat } && record.Controllers[seat.Value] is BotSeat;
 
     /// <summary>Claims an open seat for whoever holds the returned token.</summary>
     /// <exception cref="GameNotFoundException">There is no such game.</exception>

@@ -34,6 +34,12 @@ own number (**25**, **N29**), the [2026-11-15 specification](playtesting/2026-11
 
 From the specification's observations of the bots in play (F, X) and the Sage plan:
 
+- **Sage finishes what it starts** (2026-11-20: "she could just directly move her rook behind my pawn and remove it
+  but instead she is dilly-dallying"). With one Elephant move, Sage moved c2 to b2 rather than to d2, behind Black's
+  last Pawn, ready to take it: its search counts points over too short a horizon, and a Pawn's 1 point two turns off
+  weighs no more than a shuffle. Weigh a capture made ready (a piece lined up on an enemy, unanswered), and an army
+  beaten down to its last pieces, so that Sage presses home; game 3b5d749e, turn 22, is the case to test against.
+
 - **X5** Safe captures of leaders and strong pieces, above all those threatening an ally, ignored; perhaps from
   misjudging which way infantry move, and so what is safe.
 - **X6, F1** Rooks sacrificed for Pawns; a Raja left blocking an allied Pawn, which could neither promote nor

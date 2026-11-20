@@ -738,8 +738,32 @@ public sealed class LobbyTest : IDisposable
     private static readonly ImmutableList<TerrainAxisDto> Rivers =
     [
         new("Rivers", 0b011, [new("None", 0), new("↕ Bisect", 0b001), new("✚ Quarter", 0b011)]),
-        new("Rivers flow", 0b100, [new("Through kingdoms", 0), new("Around kingdoms", 0b100)]),
+        new("Rivers flow", 0b100, [new("Through kingdoms", 0), new("Around kingdoms", 0b100)]) { Within = 0b011 },
     ];
+
+    [Fact]
+    public void Play_WhenTheCreatorChoosesNoRivers_LeavesOutHowTheyFlow()
+    {
+        // Arrange - around the kingdoms first, then no rivers at all (the user's word of 2026-11-20)
+        this._page.Server.TerrainAxes = Rivers;
+        IRenderedComponent<Lobby> lobby = this.ByStrength();
+        lobby.FindAll("select.terrain-axis")[1].Change("4");
+        lobby.FindAll("select.terrain-axis")[0].Change("0");
+
+        // Act
+        lobby.Find("button.create").Click();
+
+        // Assert - one list, on one line, and only the rivers asked for
+        Assert.Equal(
+            (1, 1, 0b011, 0),
+            (
+                lobby.FindAll("select.terrain-axis").Count,
+                lobby.FindAll("label.terrain").Count,
+                this._page.Server.Created?.TerrainMask,
+                this._page.Server.Created?.TerrainValue
+            )
+        );
+    }
 
     [Theory]
     [InlineData("", "", 0, 0)]
@@ -2166,13 +2190,14 @@ public sealed class LobbyTest : IDisposable
         // Act
         IRenderedComponent<Lobby> lobby = this.Render();
 
-        // Assert
+        // Assert - and no cell takes the look of the game's own board (the user's report of 2026-11-20)
         Assert.Equal(
-            ("|12x10", "|4x3", "|150"),
+            ("|12x10", "|4x3", "|150", 0),
             (
-                string.Join('|', lobby.FindAll(".games-table td.board").Select(cell => cell.TextContent)),
-                string.Join('|', lobby.FindAll(".games-table td.kingdom").Select(cell => cell.TextContent)),
-                string.Join('|', lobby.FindAll(".games-table td.budget").Select(cell => cell.TextContent))
+                string.Join('|', lobby.FindAll(".games-table td.listed-board").Select(cell => cell.TextContent)),
+                string.Join('|', lobby.FindAll(".games-table td.listed-kingdom").Select(cell => cell.TextContent)),
+                string.Join('|', lobby.FindAll(".games-table td.listed-budget").Select(cell => cell.TextContent)),
+                lobby.FindAll(".games-table .board").Count
             )
         );
     }
