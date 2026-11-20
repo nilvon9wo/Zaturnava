@@ -18,26 +18,28 @@
         <p class="problem" role="alert">@problem</p>
     }
 
-    <label class="choice">
-        <span class="choice-name">Board</span>
-        <select class="leaderboard-board" value="@this._board" @onchange="this.ChooseBoard">
-            @* People, not players: a bot plays too (the user's word of 2026-11-20). *@
-            <option value="@PlayersBoard">People</option>
-            <option value="@BotsBoard">Bots</option>
-            <option value="@EveryoneBoard">Everyone</option>
-        </select>
-    </label>
-    @* Each counted from the same games; each viewer picks one, as a theme (the user's word of 2026-11-20). *@
-    <label class="choice">
-        <span class="choice-name">Rating</span>
-        <select class="leaderboard-rating" value="@this._rating" @onchange="this.ChooseRating">
-            <option value="@EloRating">Elo</option>
-            <option value="@GlickoRating">Glicko-2</option>
-            <option value="@TrueSkillRating">TrueSkill</option>
-        </select>
-    </label>
+    <div class="leaderboard-choices">
+        <label class="choice">
+            <span class="choice-name">Board</span>
+            <select class="leaderboard-board" value="@this._board" @onchange="this.ChooseBoard">
+                @* People, not players: a bot plays too (the user's word of 2026-11-20). *@
+                <option value="@PlayersBoard">People</option>
+                <option value="@BotsBoard">Bots</option>
+                <option value="@EveryoneBoard">Everyone</option>
+            </select>
+        </label>
+        @* Each counted from the same games; each viewer picks one, as a theme (the user's word of 2026-11-20). *@
+        <label class="choice">
+            <span class="choice-name">Rating</span>
+            <select class="leaderboard-rating" value="@this._rating" @onchange="this.ChooseRating">
+                <option value="@EloRating">Elo</option>
+                <option value="@GlickoRating">Glicko-2</option>
+                <option value="@TrueSkillRating">TrueSkill</option>
+            </select>
+        </label>
+    </div>
 
-    @if (this._rows is { } rows)
+    @if (this.Rows is { } rows)
     {
         @if (rows.IsEmpty)
         {
@@ -47,6 +49,7 @@
         {
             ImmutableList<Row> sorted = this.Sorted(rows);
             int pages = ((sorted.Count - 1) / PageSize) + 1;
+            <div class="leaders-scroll">
             <table class="leaders @this.Columns.Class">
                 <thead>
                     <tr>
@@ -60,7 +63,7 @@
                         {
                             <th title="@column.Title" aria-sort="@this.SortOf(column)">
                                 <button class="sort @column.Key" @onclick="() => this.SortBy(column)">
-                                    @column.Header@this.ArrowOf(column)
+                                    @column.Header<span class="arrow">@this.ArrowOf(column)</span>
                                 </button>
                             </th>
                         }
@@ -103,6 +106,7 @@
                     }
                 </tbody>
             </table>
+            </div>
             @if (pages > 1)
             {
                 <nav class="pager" aria-label="Pages">
@@ -140,6 +144,9 @@
     private const string GlickoRating = "glicko";
     private const string TrueSkillRating = "trueskill";
 
+    /// <summary>The first column's key, whatever the rating system.</summary>
+    private const string RatingKey = "rating";
+
     private const string PointsTitle = "The points scored at the board, in every game finished, won or lost";
 
     private const string AgainstTitle = "The mean Elo of the opposing teams the streak was won against";
@@ -158,7 +165,7 @@
             + "since the last loss, a draw neither adding to it nor ending it, beside the mean Elo of the teams it beat: "
             + "of every game; of the rated ones, counting toward Elo; and of those against people alone.",
         [
-            new("elo", "Elo", null),
+            new(RatingKey, "Rating", null),
             new("experience", "Experience", "In each game won, your own points, and as much again times your share of your team's"),
             new("points", "Points", PointsTitle),
             new("won", "Won", null),
@@ -180,7 +187,7 @@
             + "itself, in every game finished, won or lost. Against people counts the games in which every seat not on "
             + "the bot's team was played by a person, signed in or a guest, rather than a bot or an AI.",
         [
-            new("elo", "Elo", "Its rating from games against the other bots, averaged over the game's sizes"),
+            new(RatingKey, "Rating", null),
             new("points", "Points", PointsTitle),
             new("won", "Won", null),
             new("lost", "Lost", null),
@@ -199,7 +206,7 @@
             + "they finished; a bot's, from its games against the other bots. Points are the points each scored "
             + "itself, in every game finished, won or lost.",
         [
-            new("elo", "Elo", null),
+            new(RatingKey, "Rating", null),
             new("points", "Points", PointsTitle),
             new("won", "Won", null),
             new("lost", "Lost", null),
@@ -210,7 +217,7 @@
     private string? _game;
     private string _board = PlayersBoard;
     private string _rating = EloRating;
-    private ImmutableList<Row>? _rows;
+    private Standings? _standings;
 
     /// <summary>The column the board is sorted by: the first, most first, until another is chosen.</summary>
     private int _sort;
@@ -222,8 +229,10 @@
     [Parameter, EditorRequired]
     public string Game { get; set; } = string.Empty;
 
-    /// <summary>The board chosen, its first column the rating system chosen, on every board (the user's report of
-    /// 2026-11-20: no way to switch, the choice having been on the people's board alone).</summary>
+    /// <summary>
+    /// The board chosen, its first column the rating by the system chosen, on every board (the user's report of
+    /// 2026-11-20: no way to switch, the choice having been on the people's board alone).
+    /// </summary>
     private Board Columns =>
         this._board switch
         {
@@ -232,25 +241,26 @@
             _ => this.Rated(Players),
         };
 
-    /// <summary>The board with its first column, its rating, by the system chosen; Elo as the board has it.</summary>
-    private Board Rated(Board board) =>
-        this._rating == EloRating ? board : board with { All = board.All.SetItem(0, this.RatingColumn) };
+    /// <summary>The board with its first column, its rating, by the system chosen.</summary>
+    private Board Rated(Board board) => board with { All = board.All.SetItem(0, this.RatingColumn) };
 
-    /// <summary>The first column, by the rating system chosen other than Elo.</summary>
+    /// <summary>
+    /// The first column: "Rating", whichever system is chosen, the choice above it saying which, so that no other
+    /// column shifts as it changes (the user's word of 2026-11-20); the system told on hovering.
+    /// </summary>
     private Column RatingColumn =>
-        this._rating switch
-        {
-            GlickoRating => new(
-                GlickoRating,
-                "Glicko-2",
-                "Glicko-2, from 1500: like Elo, but surer of a rating the more games are behind it"
-            ),
-            _ => new(
-                TrueSkillRating,
-                "TrueSkill",
-                "TrueSkill, as it ranks: the skill a player very likely has at least, from 0, rising as games show more"
-            ),
-        };
+        new(
+            RatingKey,
+            "Rating",
+            this._rating switch
+            {
+                GlickoRating => "Glicko-2, from 1500: like Elo, but surer of a rating the more games are behind it",
+                TrueSkillRating =>
+                    "TrueSkill, as it ranks: the skill a player very likely has at least, from 0, rising as games show"
+                    + " more",
+                _ => "Elo, from 1500",
+            }
+        );
 
     /// <summary>A player's rating by the system chosen.</summary>
     private double RatingOf(StandingDto player) =>
@@ -289,24 +299,27 @@
     protected override async Task OnParametersSetAsync() =>
         this._problem = this.Game == this._game ? this._problem : await Requests.Attempt(() => this.Show(this.Game));
 
-    /// <summary>The board chosen, of the same game, by its first column; told why not, if the server cannot give it.</summary>
+    /// <summary>The board chosen, of the same game, by its first column, most first, from the first page.</summary>
     private async Task ChooseBoard(ChangeEventArgs change)
     {
         this._board = $"{change.Value}";
-        this._sort = 0;
-        this._isAscending = false;
-        await this.Remember();
-        this._problem = await Requests.Attempt(() => this.Show(this.Game));
+        await this.Resorted();
     }
 
     /// <summary>The rating system chosen, the board by it, most first, from the first page.</summary>
     private async Task ChooseRating(ChangeEventArgs change)
     {
         this._rating = $"{change.Value}";
+        await this.Resorted();
+    }
+
+    /// <summary>The board by its first column, most first, from the first page, remembered.</summary>
+    private ValueTask Resorted()
+    {
         this._sort = 0;
         this._isAscending = false;
-        await this.Remember();
-        this._problem = await Requests.Attempt(() => this.Show(this.Game));
+        this._page = 0;
+        return this.Remember();
     }
 
     /// <summary>Sorted by the column, most first; by the same column again, the other way; from the first page.</summary>
@@ -359,16 +372,30 @@
     /// </summary>
     private static string IconOf(Row row) => row.BotId is null ? "🧑" : "🤖";
 
+    /// <summary>
+    /// The game's people and bots, both asked for at once: a board or a rating chosen is then shown from them at once,
+    /// nothing asked again, so that nothing on the page moves (the user's report of 2026-11-20: the whole lobby jumped
+    /// about at each choice).
+    /// </summary>
     private async Task Show(string game)
     {
         this._game = game;
-        this._rows = null;
+        this._standings = null;
+        Task<ImmutableList<StandingDto>> people = this.Games.Leaderboard(game, CancellationToken.None);
+        Task<ImmutableList<BotStandingDto>> bots = this.Games.BotLeaderboard(game, CancellationToken.None);
+        this._standings = new Standings(await people, await bots);
         this._page = 0;
-        this._rows = this._board switch
+    }
+
+    /// <summary>The board chosen's rows, by the rating chosen; none until the game's standings are in.</summary>
+    private ImmutableList<Row>? Rows =>
+        this._standings is not var (people, bots)
+            ? null
+            : this._board switch
         {
             BotsBoard =>
             [
-                .. (await this.Games.BotLeaderboard(game, CancellationToken.None)).Select(bot =>
+                .. bots.Select(bot =>
                     new Row(
                         bot.Name,
                         [
@@ -389,13 +416,13 @@
             ],
             EveryoneBoard =>
             [
-                .. (await this.Games.Leaderboard(game, CancellationToken.None)).Select(player =>
+                .. people.Select(player =>
                     new Row(player.Name, [this.RatingOf(player), player.Points, player.Won, player.Lost, player.Drawn])
                     {
                         PlayerId = player.PlayerId,
                     }
                 ),
-                .. (await this.Games.BotLeaderboard(game, CancellationToken.None)).Select(bot =>
+                .. bots.Select(bot =>
                     new Row(bot.Name, [this.RatingOf(bot), bot.Points, bot.Won, bot.Lost, bot.Drawn])
                     {
                         BotId = bot.BotId,
@@ -405,7 +432,7 @@
             ],
             _ =>
             [
-                .. (await this.Games.Leaderboard(game, CancellationToken.None)).Select(player =>
+                .. people.Select(player =>
                     new Row(
                         player.Name,
                         [
@@ -440,7 +467,9 @@
                 ),
             ],
         };
-    }
+
+    /// <summary>A game's people and its bots, as the server ranks them.</summary>
+    private sealed record Standings(ImmutableList<StandingDto> People, ImmutableList<BotStandingDto> Robots);
 
     /// <summary>A column a board may be sorted by: its class, header and what it means, if the header says too little.</summary>
     private sealed record Column(string Key, string Header, string? Title);

@@ -315,12 +315,11 @@ html { scrollbar-gutter: stable; }
 
 .panel h2 { margin-top: 0; }
 
-/* The games, the leaderboard to their right: those waiting for the player above the rest (playtest H1). The
-   leaderboard takes what its board needs, up to half (the user's reports of 2026-11-19: first it was squeezed, its
-   player's name broken over three lines; then, given two shares, it crowded the games: "Aim for 50/50"; and of
-   2026-11-20: at half, its columns stood inches apart); the games take the rest. */
+/* The games, the leaderboard to their right: those waiting for the player above the rest (playtest H1). Half each,
+   locked, whatever either holds (the user's word of 2026-11-20: "Keep it locked at 50/50"), so that choosing another
+   board or rating moves nothing else on the page; a table wider than its half scrolls within its own panel. */
 .games-column {
-    flex: 1 1 560px;
+    flex: 1 1 0;
     min-width: 0;
     display: flex;
     flex-direction: column;
@@ -472,15 +471,14 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
 }
 .quick-games { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; }
 .quick-hint { color: var(--muted); font-size: 0.9em; }
-/* A panel of the lobby, as wide as its board and no wider, up to half the room: the games take the rest, rather than
-   the board's columns standing inches apart (the user's report of 2026-11-20). A board wider than its half scrolls
-   within it rather than widening the page. */
-.panel.leaderboard { overflow-x: auto; flex: 0 1 auto; width: min-content; min-width: 320px; max-width: 50%; }
+/* A panel of the lobby, half the room, as the games are: only its table scrolls, if wider than that, never its
+   heading, choices or notes (the user's report of 2026-11-20). */
+.panel.leaderboard { flex: 1 1 0; min-width: 0; }
+.leaderboard .leaders-scroll { overflow-x: auto; }
 /* In a window or frame too narrow for the games and the leaderboard side by side (itch.io's frame, a tablet), each
    takes the whole width, the leaderboard below (the user's report of 2026-11-19). */
 @media (max-width: 1150px) {
     .games-column, .panel.leaderboard { flex-basis: 100%; }
-    .panel.leaderboard { width: auto; max-width: none; }
 }
 /* In a short window or frame, New game floats from near the top, using all the height there is. */
 @media (max-height: 720px) {
@@ -494,15 +492,31 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
     .choices, .army-choices, .panel label.scenario, .plans.strengths li { grid-template-columns: minmax(0, 1fr); }
     .game-filters label { white-space: normal; }
 }
-.leaderboard .leaders th, .leaderboard .leaders td.name, .leaderboard .leaders td.name button { white-space: nowrap; }
-.leaderboard .choice { display: flex; gap: 8px; align-items: center; margin: 8px 0; }
+/* Each number's heading reads upward, wrapping beyond a few words' length, so that every column, on every board, is
+   as wide as its figures rather than its heading (the user's report of 2026-11-20: column after column far too wide,
+   the panel left to scroll); the names never wrap. */
+.leaderboard .leaders th { white-space: normal; vertical-align: bottom; }
+.leaderboard .leaders th[aria-sort] button.sort {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    max-height: 7.5em;
+    text-align: left;
+    line-height: 1.15;
+}
+/* The sort's arrow turned back, so that ▼ still points down, most first, though its heading reads upward. */
+.leaderboard .leaders th[aria-sort] button.sort .arrow { display: inline-block; transform: rotate(180deg); }
+.leaderboard .leaders td.name, .leaderboard .leaders td.name button { white-space: nowrap; }
+/* The board and the rating, short, side by side on one line (the user's word of 2026-11-20). */
+.leaderboard .leaderboard-choices { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 8px 0; }
+.leaderboard .choice { display: inline-flex; gap: 8px; align-items: center; white-space: nowrap; }
 .leaderboard .leaders th.kind, .leaderboard .leaders td.kind { text-align: center; }
 /* A bot playing by an AI: the robot of every bot, tinted teal, so that it stays one of them (2026-11-20). */
 .leaderboard .leaders td.kind .ai { filter: sepia(1) saturate(5) hue-rotate(130deg); }
-.leaderboard .against { color: var(--muted); font-size: 0.85em; margin-left: 4px; white-space: nowrap; }
+/* The mean Elo a streak beat, under its count rather than beside it, keeping its column narrow. */
+.leaderboard .against { display: block; color: var(--muted); font-size: 0.85em; white-space: nowrap; }
 .leaderboard .leaders { border-collapse: collapse; }
 .leaderboard .leaders th, .leaderboard .leaders td {
-    text-align: right; padding: 4px 8px; border-bottom: 1px solid var(--panel-edge);
+    text-align: right; padding: 4px 6px; border-bottom: 1px solid var(--panel-edge);
 }
 .leaderboard .leaders th.name, .leaderboard .leaders td.name { text-align: left; }
 .leaderboard .about-standings, .leaderboard .no-leaders { color: var(--muted); }
