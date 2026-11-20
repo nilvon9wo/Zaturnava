@@ -57,6 +57,19 @@ public sealed class LobbyTest : IDisposable
     }
 
     [Fact]
+    public void SetUp_WhenCustomIsChosen_NoLongerTellsToChooseIt()
+    {
+        // Arrange - the user's word of 2026-11-20
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Act
+        lobby.Find("button.custom").Click();
+
+        // Assert
+        Assert.Empty(lobby.FindAll("p.setup-hint"));
+    }
+
+    [Fact]
     public void Render_WhenAGameIsAPreview_NeitherOffersNorListsIt()
     {
         // Arrange
@@ -2204,10 +2217,11 @@ public sealed class LobbyTest : IDisposable
         // Act
         IRenderedComponent<Lobby> lobby = this.Render();
 
-        // Assert - a game telling no board by its name; no Size column, the board telling it (the user's word of
-        // 2026-11-20); and no cell takes the look of the game's own board (the user's report of 2026-11-20)
+        // Assert - a game telling no board, nothing there, never its name; no Size column, the board telling it (the
+        // user's word of 2026-11-20); and no cell takes the look of the game's own board (the user's report of
+        // 2026-11-20)
         Assert.Equal(
-            ("Chaturaji 2027|12x10", "|4x3", "|150", 0, 0),
+            ("|12x10", "|4x3", "|150", 0, 0),
             (
                 string.Join('|', lobby.FindAll(".games-table td.listed-board").Select(cell => cell.TextContent)),
                 string.Join('|', lobby.FindAll(".games-table td.listed-kingdom").Select(cell => cell.TextContent)),
@@ -2605,6 +2619,33 @@ public sealed class LobbyTest : IDisposable
                 lobby.Find(".lobby").LastElementChild!.ClassList.Contains("leaderboard"),
                 (lobby.FindAll(".awaited td.next").Count, lobby.FindAll(".games-panel td.next").Count)
             )
+        );
+    }
+
+    [Fact]
+    public void Render_WhenGamesOfOtherGamesWaitForThePlayer_ListsOnlyThoseOfTheGameChosen()
+    {
+        // Arrange - Chaturaji 2027 chosen; waiting, a game of it, one of Grand Legions, and one of a ruleset no longer
+        // offered, still to be ended (the user's word of 2026-11-20)
+        this.SignInAsAdaAtYellow();
+        this._page.Server.MoreRulesets = GrandSizes;
+        GameSummaryDto game = this._page.Server.Games[0];
+        this._page.Server.Awaited = this._page.Server.Awaited.SetItem(
+            "player",
+            [
+                new AwaitedGameDto(game with { Id = "chaturaji" }, 1),
+                new AwaitedGameDto(game with { Id = "grand", RulesetId = "grand-legions-large" }, 1),
+                new AwaitedGameDto(game with { Id = "retired", RulesetId = "gone" }, 1),
+            ]
+        );
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Assert
+        Assert.Equal(
+            "chaturaji|retired",
+            string.Join('|', lobby.FindAll(".awaited tbody tr").Select(row => row.GetAttribute("data-game")))
         );
     }
 

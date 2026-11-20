@@ -128,9 +128,13 @@
                     </button>
                 }
             </div>
-            <p class="hint setup-hint">
-                Click <strong>Custom</strong> to play other people.
-            </p>
+            @* not once Custom is chosen (the user's word of 2026-11-20) *@
+            @if (mode != SetupMode.Custom)
+            {
+                <p class="hint setup-hint">
+                    Click <strong>Custom</strong> to play other people.
+                </p>
+            }
             @if (mode == SetupMode.Scenarios)
             {
                 <label class="scenario">
@@ -475,7 +479,11 @@
         <div class="games-column">
         @{
             ImmutableList<AwaitedGameDto> awaited =
-                [.. this._awaited.Where(waiting => !(this.AreScenariosHidden && waiting.Game.IsScenario))];
+            [
+                .. this._awaited.Where(waiting => !(this.AreScenariosHidden && waiting.Game.IsScenario)
+                    && IsOf(catalog, waiting.Game, this.Game)
+                ),
+            ];
         }
         @if (this._me is { } me && !awaited.IsEmpty)
         {
@@ -979,6 +987,15 @@
         await this.OnGameChosen.InvokeAsync(this.Game);
     }
 
+    /// <summary>
+    /// Whether a game listed is one of <paramref name="game"/>'s, at any size, as the games list keeps to it (the
+    /// user's word of 2026-11-20: looking at Grand Legions, no Chaturaji 2027 games waiting); a game of a ruleset no
+    /// longer offered, of no game known, still shown, so that it may be ended.
+    /// </summary>
+    private static bool IsOf(CatalogDto catalog, GameSummaryDto listed, string game) =>
+        catalog.Rulesets.FirstOrDefault(offered => offered.Id == listed.RulesetId) is not { } ruleset
+        || ruleset.Game == game;
+
     /// <summary>The list kept to the game chosen: at the size it was, if it is still that game, else at any.</summary>
     private GameListQuery OfGame(GameListQuery filter) =>
         filter.Game == this.Game ? filter : filter with { Game = this.Game, Ruleset = null };
@@ -1056,8 +1073,8 @@
                             }
                             @if (HasLayout(games))
                             {
-                                @* a game telling no board, as Chaturaji 2027, by its size or name instead *@
-                                <td class="listed-board">@(Across(game.Board, isKingdom: false) ?? SizeOf(catalog, game.RulesetId))</td>
+                                @* the board's size alone, never a game's name (the user's word of 2026-11-20) *@
+                                <td class="listed-board">@Across(game.Board, isKingdom: false)</td>
                                 <td class="listed-kingdom">@Across(game.Board, isKingdom: true)</td>
                                 <td class="listed-budget" title="Points each army has to spend on its pieces">@game.Budget</td>
                             }

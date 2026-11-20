@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using System.ComponentModel.DataAnnotations;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Decisions;
+using Net.NowhereAtAll.Zaturnava.Engine.Rules;
 
 namespace Net.NowhereAtAll.Zaturnava.Bots;
 
@@ -56,6 +57,14 @@ public sealed class FamilyBot : IBotPlaying
         ("Tafl", "ragnar", "Ragnar"),
         ("Fairy", "oberon", "Oberon"),
     ];
+
+    /// <summary>
+    /// Whether it plays the ruleset: only one whose armies may be drafted, and of pieces of its family, as Grand
+    /// Legions'; not Chaturaji 2027, say, where no Shogi or Tafl piece is to be had (the user's word of 2026-11-20:
+    /// "Selecting bots should be limited to the bots which make sense for the game!").
+    /// </summary>
+    public bool Knows([Required] IRulesApplying rules) =>
+        rules.IsDraftable && rules.Kinds.Any(kind => rules.GuideOf(kind).Origin == this._family);
 
     public Task<GameAction?> Seize([Required] DecisionRequest request, CancellationToken cancellationToken) =>
         this._sage.Seize(request, cancellationToken);
