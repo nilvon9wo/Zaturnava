@@ -168,6 +168,15 @@ only in part, what is left is in the backlog, and its history here. The playtest
 
 ## Look and feel
 
+- **Games no one watches no longer wait on a server bot** (2026-11-20: "does it really make sense for the game to be
+  waiting for a bot?"). A server job plays on any game whose next seat is one of the server's own bots and that has
+  sat unchanged for 15 seconds, until a person (or an AI over the API) must decide. A game someone watches still
+  moves at their table's pace, a step at a time.
+- **Every game's board, kingdoms and budget listed** (2026-11-20: "the viewer still would not know what any of these
+  values are"). The lobby's Board, Kingdom and Budget columns show whenever they are known, alike or not; the Size
+  column whenever the game comes in more than one size.
+- **The rating choice on every leaderboard board, and on bots' profiles** (2026-11-20). Bots carry Glicko-2 and
+  TrueSkill ratings from their Elo, as people's games against them count them.
 - **Elo, Glicko-2 and TrueSkill side by side** (2026-11-20: "Could we calculate ELO, TrueSkill, and Glicko-2
   values? Players could then toggle which to view"). *Done in part*: each person's three ratings are counted from
   the same games, every past game counted again by a migration; the People board's **Rating** choice shows one,

@@ -73,6 +73,13 @@ internal static class ZaturnavaServices
     public const string StandingSweepKey = "Standings:SweepSeconds";
 
     /// <summary>
+    /// The configuration keys for how often, in seconds, games waiting for one of the server's bots are looked for, and
+    /// how long, in seconds, one must have waited unchanged to be played on (<see cref="BotSweeper"/>).
+    /// </summary>
+    public const string BotSweepKey = "Games:BotSweepSeconds";
+    public const string BotIdleKey = "Games:BotIdleSeconds";
+
+    /// <summary>
     /// The configuration section giving the limits of the safety nets that end a game on points
     /// (<see cref="SafetyNets"/>), by their names; the rules' own for any not given.
     /// </summary>
@@ -132,6 +139,17 @@ internal static class ZaturnavaServices
                 )
             )
             .AddHostedService<StandingSweeper>()
+            .AddSingleton(
+                new BotSweeper.Interval(
+                    TimeSpan.FromSeconds(
+                        configuration.GetValue(BotSweepKey, BotSweeper.Interval.DefaultEvery.TotalSeconds)
+                    ),
+                    TimeSpan.FromSeconds(
+                        configuration.GetValue(BotIdleKey, BotSweeper.Interval.DefaultIdle.TotalSeconds)
+                    )
+                )
+            )
+            .AddHostedService<BotSweeper>()
             .AddSingleton(BotRatingOf(configuration))
             .AddScoped<BotRatingService>()
             .AddSingleton(

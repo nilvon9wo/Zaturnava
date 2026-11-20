@@ -23,6 +23,23 @@ public sealed record BotStandingDto(int Place, string Name, int Points, int Won,
     public int Elo { get; init; } = 1500;
 
     /// <summary>
+    /// Its Glicko-2 rating, rounded: its Elo, on the same scale, as people's games against it take it.
+    /// </summary>
+    public int Glicko { get; init; } = 1500;
+
+    /// <summary>How unsure its Glicko-2 rating is taken to be: little, its many games making it sure.</summary>
+    public int GlickoDeviation { get; init; }
+
+    /// <summary>Its TrueSkill rating as TrueSkill ranks, the mean less three deviations, from its Elo.</summary>
+    public double TrueSkill { get; init; }
+
+    /// <summary>Its TrueSkill mean, from its Elo, to one place.</summary>
+    public double TrueSkillMean { get; init; }
+
+    /// <summary>How unsure its TrueSkill mean is taken to be, to one place.</summary>
+    public double TrueSkillDeviation { get; init; }
+
+    /// <summary>
     /// Whether the bot plays by an AI, as its profile says (<see cref="BotDto.UsesAi"/>), not by a plain algorithm.
     /// </summary>
     public bool UsesAi { get; init; }

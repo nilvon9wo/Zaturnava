@@ -109,6 +109,38 @@ else
                     <dt>Elo at this game</dt>
                     <dd class="bot-rating">@this.RatingOf(bot)</dd>
                 </dl>
+                @* All three systems, as on a person's profile (the user's report of 2026-11-20: no room for them). *@
+                @if (this._botStanding is { } standing)
+                {
+                    <table class="player-ratings bot-ratings">
+                        <caption title="Each from its Elo, averaged over the game's sizes, as people's games against it take it">
+                            Ratings at this game
+                        </caption>
+                        <thead>
+                            <tr><th>System</th><th>Rating</th><th title="How unsure the rating still is">Unsure by</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><th scope="row">Elo</th><td class="elo">@standing.Elo</td><td>—</td></tr>
+                            <tr>
+                                <th scope="row">Glicko-2</th>
+                                <td class="glicko">@standing.Glicko</td>
+                                <td class="glicko-deviation">± @standing.GlickoDeviation</td>
+                            </tr>
+                            <tr>
+                                <th scope="row" title="As TrueSkill ranks: the mean less three deviations">TrueSkill</th>
+                                <td class="trueskill">@standing.TrueSkill.ToString("0.0", CultureInfo.InvariantCulture)</td>
+                                <td class="trueskill-deviation">
+                                    @standing.TrueSkillMean.ToString("0.0", CultureInfo.InvariantCulture)
+                                    ± @standing.TrueSkillDeviation.ToString("0.0", CultureInfo.InvariantCulture)
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <p class="bot-standing">Not yet on this game's leaderboard.</p>
+                }
             }
             else
             {
@@ -157,6 +189,7 @@ else
     private ProfileDto? _profile;
     private StandingDto? _standing;
     private BotDto? _bot;
+    private BotStandingDto? _botStanding;
     private string _ratedAs = string.Empty;
     private string? _problem;
 
@@ -170,12 +203,19 @@ else
         this._problem = await Requests.Attempt(async () =>
         {
             this._profile = await this.Games.Profile(playerId, CancellationToken.None);
-            string game = this.Game.Length > 0 ? this.Game : await this.GameOfRuleset();
-            this._standing = game.Length > 0
-                ? (await this.Games.Leaderboard(game, CancellationToken.None))
-                    .FirstOrDefault(standing => standing.PlayerId == playerId)
-                : null;
+            this._standing = (await this.AtGame(this.Games.Leaderboard))
+                .FirstOrDefault(standing => standing.PlayerId == playerId);
         });
+    }
+
+    /// <summary>
+    /// The game's leaderboard, by <paramref name="board"/>: of <see cref="Game"/>, else of the game
+    /// <see cref="RulesetId"/> plays; none, if the catalog no longer offers it.
+    /// </summary>
+    private async Task<ImmutableList<T>> AtGame<T>(Func<string, CancellationToken, Task<ImmutableList<T>>> board)
+    {
+        string game = this.Game.Length > 0 ? this.Game : await this.GameOfRuleset();
+        return game.Length > 0 ? await board(game, CancellationToken.None) : [];
     }
 
     /// <summary>The game <see cref="RulesetId"/> plays, by its id; none, if the catalog no longer offers it.</summary>
@@ -187,11 +227,14 @@ else
     {
         this._isOpen = true;
         this._bot = null;
+        this._botStanding = null;
         this._problem = await Requests.Attempt(async () =>
         {
             CatalogDto catalog = await this.Games.Catalog(CancellationToken.None);
             this._ratedAs = GameStarter.RatedAs(catalog, this.RulesetId, this.Board);
             this._bot = catalog.Bots.FirstOrDefault(bot => bot.Id == botId);
+            this._botStanding = (await this.AtGame(this.Games.BotLeaderboard))
+                .FirstOrDefault(standing => standing.BotId == botId);
         });
     }
 
