@@ -123,6 +123,9 @@ public sealed class GameService(
                     Budget = dealing.Budget is < 1
                         ? throw new InvalidGameSetupException("An army's budget is at least 1.")
                         : dealing.Budget,
+                    Terrain = dealing.Terrain is { } terrain
+                        ? terrain with { Mask = terrain.Mask & ChoosableOf(offered) }
+                        : null,
                 },
                 choices,
                 cancellationToken
@@ -173,7 +176,8 @@ public sealed class GameService(
                     dealing.Board,
                     dealing.PromotesAtSide,
                     dealing.Budget,
-                    choices
+                    choices,
+                    dealing.Terrain
                 ),
             ];
     }
@@ -191,6 +195,10 @@ public sealed class GameService(
             { } seat => seat,
             null => (this._dice.Roll(new DiceRequest(1, seats))[0] - 1) % seats,
         };
+
+    /// <summary>The bits of a game's terrain its creator may choose in <paramref name="rules"/>.</summary>
+    private static int ChoosableOf(IRulesApplying rules) =>
+        rules.TerrainAxes.Aggregate(0, (all, axis) => all | axis.Mask);
 
     /// <summary>The idle rounds the creator set, if any: at least 1.</summary>
     /// <exception cref="InvalidGameSetupException">They are fewer.</exception>

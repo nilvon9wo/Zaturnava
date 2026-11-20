@@ -77,6 +77,12 @@ public sealed record RulesetDto(string Id, string Name, int SeatCount)
     /// </summary>
     public BoardSizeDto? Board { get; init; }
 
+    /// <summary>
+    /// What of a dealt game's terrain its creator may choose (<see cref="CreateGameRequest.TerrainMask"/>), each axis
+    /// left to chance unless they do; none, if nothing.
+    /// </summary>
+    public ImmutableList<TerrainAxisDto> TerrainAxes { get; init; } = [];
+
     public ImmutableList<string> SeatNames { get; init; } = [];
 
     /// <summary>Each seat's team, by number: seats of the same number are allies.</summary>

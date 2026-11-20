@@ -216,6 +216,11 @@ public sealed record Chaturaji2027Variant(
     /// </summary>
     public Func<int, int>? TerrainDealer { get; init; }
 
+    /// <summary>
+    /// What of the terrain <see cref="TerrainDealer"/> deals a game's creator may choose instead; nothing, unless set.
+    /// </summary>
+    public ImmutableList<TerrainAxis> TerrainAxes { get; init; } = [];
+
     /// <summary>How a game's players may draft their own armies, not dealt them; null, if they may not.</summary>
     public Drafting? Drafting { get; init; }
 

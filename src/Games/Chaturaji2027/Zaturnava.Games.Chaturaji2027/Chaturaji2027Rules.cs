@@ -300,7 +300,8 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         bool dealsPalacePieces = false,
         bool dealsEdgePalaces = false,
         int edition = 0,
-        int? budget = null
+        int? budget = null,
+        TerrainChoice? terrain = null
     )
     {
         if (this._variant.Dealer is not { } dealer)
@@ -308,12 +309,14 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             return initial;
         }
 
-        int terrain = dealsTerrain && this._variant.TerrainDealer is { } terrains ? terrains(seed) : 0;
+        int dealtTerrain = dealsTerrain && this._variant.TerrainDealer is { } terrains
+            ? terrain?.Applied(terrains(seed)) ?? terrains(seed)
+            : 0;
         ArmyDrafting? palaced = dealsPalaces && this._drafting is { } drafting && drafting.HasPalaces(dealsEdgePalaces)
             ? drafting
             : null;
         bool hasPalacePieces = dealsPalacePieces && palaced is not null;
-        ArmyDealing dealing = new(seed, areAlike, terrain, hasPalacePieces)
+        ArmyDealing dealing = new(seed, areAlike, dealtTerrain, hasPalacePieces)
         {
             HasEdgePalaces = palaced is not null && dealsEdgePalaces,
             HasPalaces = palaced is not null,
@@ -335,9 +338,11 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             HasEdgePalaces = palaced is not null && dealsEdgePalaces,
             Edition = edition,
             Start = position,
-            Terrain = terrain,
+            Terrain = dealtTerrain,
         };
     }
+
+    public ImmutableList<TerrainAxis> TerrainAxes => this._variant.TerrainAxes;
 
     public bool IsDraftable => this._drafting is not null;
 

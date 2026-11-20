@@ -415,6 +415,14 @@ internal static class GameViews
             DraftBudgetLimit = rules.DraftBudgetLimit,
             SizableBoard = SizeOf(rules.SizableBoard),
             Board = SizeOf(rules.Board),
+            TerrainAxes =
+            [
+                .. rules.TerrainAxes.Select(axis => new TerrainAxisDto(
+                    axis.Name,
+                    axis.Mask,
+                    [.. axis.Options.Select(option => new TerrainOptionDto(option.Name, option.Value))]
+                )),
+            ],
             SeatNames = [.. state.Seats.Select(seat => rules.NameOf(seat.Id))],
             SeatTeams = [.. state.Seats.Select(seat => state.Teams.TeamOf(seat.Id))],
         };

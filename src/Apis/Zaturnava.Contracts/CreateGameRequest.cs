@@ -99,4 +99,14 @@ public sealed record CreateGameRequest([Required] string RulesetId, [Required] I
     /// server draws at random.
     /// </summary>
     public int? Opener { get; init; }
+
+    /// <summary>
+    /// For a game whose creator may choose some of its terrain (<see cref="RulesetDto.TerrainAxes"/>), and whose armies
+    /// are dealt: the bits of the terrain's number they chose, each axis's <see cref="TerrainAxisDto.Mask"/> they set;
+    /// 0, for all of it dealt at random.
+    /// </summary>
+    public int TerrainMask { get; init; }
+
+    /// <summary>How they set the bits of <see cref="TerrainMask"/>: the options' values, together.</summary>
+    public int TerrainValue { get; init; }
 }

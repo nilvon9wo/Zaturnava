@@ -80,6 +80,7 @@ public static class ScenarioStart
     private const string SidePromotionArgument = "side-promotion";
     private const string KingdomWidthArgument = "kingdom-width";
     private const string KingdomDepthArgument = "kingdom-depth";
+    private const string ChosenTerrainArgument = "chosen-terrain";
 
     /// <summary>The roll that seeds a game dealt anew: one die of as many sides as a seed may be.</summary>
     private static readonly DiceRequest SeedRoll = new(1, int.MaxValue - 1);
@@ -163,7 +164,8 @@ public static class ScenarioStart
     /// <paramref name="board"/>'s size, if its creator set one (<see cref="IRulesApplying.Sized"/>). Its pieces
     /// promoted at the far edge promoted at the edge to their right too, if <paramref name="promotesAtSide"/>
     /// (<see cref="GameState.PromotesAtSide"/>). Its armies dealt, not drafted, each spending
-    /// <paramref name="budget"/>, if its creator set one. Set up otherwise as <paramref name="choices"/> say, if any.
+    /// <paramref name="budget"/>, if its creator set one. Its terrain, as far as they chose it
+    /// (<paramref name="terrain"/>), the rest dealt. Set up otherwise as <paramref name="choices"/> say, if any.
     /// </summary>
     public static ActionDescriptor Dealt(
         [Required] IDiceRolling dice,
@@ -172,12 +174,25 @@ public static class ScenarioStart
         BoardSize? board = null,
         bool promotesAtSide = false,
         int? budget = null,
-        GameChoices? choices = null
+        GameChoices? choices = null,
+        TerrainChoice? terrain = null
     ) =>
         Chosen(
-            DealtWithDice(dice, areAlike, drafting, board, promotesAtSide, budget),
+            Terrained(DealtWithDice(dice, areAlike, drafting, board, promotesAtSide, budget), terrain),
             choices ?? GameChoices.None
         );
+
+    /// <summary>The deal, its terrain set as far as <paramref name="terrain"/> chose it, if it chose any.</summary>
+    private static ActionDescriptor Terrained(ActionDescriptor deal, TerrainChoice? terrain) =>
+        terrain is { Mask: not 0 } chosen
+            ? deal with
+            {
+                Arguments = deal.Arguments.Add(
+                    ChosenTerrainArgument,
+                    string.Create(CultureInfo.InvariantCulture, $"{chosen.Mask}:{chosen.Value & chosen.Mask}")
+                ),
+            }
+            : deal;
 
     private static ActionDescriptor DealtWithDice(
         IDiceRolling dice,
@@ -210,6 +225,18 @@ public static class ScenarioStart
             }
         );
     }
+
+    /// <summary>
+    /// What of its terrain the creator of the game the first of <paramref name="actions"/> dealt chose, if any.
+    /// </summary>
+    public static TerrainChoice? TerrainOf([Required] ImmutableList<ActionDescriptor> actions) =>
+        actions.FirstOrDefault() is { Kind: DealKind } first
+        && first.Arguments.TryGetValue(ChosenTerrainArgument, out string? chosen)
+            ? new TerrainChoice(
+                int.Parse(chosen.Split(':')[0], CultureInfo.InvariantCulture),
+                int.Parse(chosen.Split(':')[1], CultureInfo.InvariantCulture)
+            )
+            : null;
 
     /// <summary>What each army dealt by the first of <paramref name="actions"/> spends, if set.</summary>
     public static int? ArmyBudgetOf([Required] ImmutableList<ActionDescriptor> actions) =>
@@ -379,7 +406,8 @@ public static class ScenarioStart
             actions[0].Arguments.TryGetValue(EditionArgument, out string? edition)
                 ? int.Parse(edition, CultureInfo.InvariantCulture)
                 : 0,
-            ArmyBudgetOf(actions)
+            ArmyBudgetOf(actions),
+            TerrainOf(actions)
         ) with
         {
             PromotesAtSide = PromotesAtSide(actions),

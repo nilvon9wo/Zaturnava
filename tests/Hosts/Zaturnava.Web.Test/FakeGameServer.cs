@@ -101,6 +101,9 @@ internal sealed class FakeGameServer : IGameServing
     /// <summary>How many idle rounds end Chaturaji 2027's games unless set; null, if its creator may not.</summary>
     public int? IdleRounds { get; set; }
 
+    /// <summary>What of Chaturaji 2027's terrain its creator may choose: nothing, unless a test sets some.</summary>
+    public ImmutableList<TerrainAxisDto> TerrainAxes { get; set; } = [];
+
     /// <summary>The scenarios the catalog offers: none, unless a test sets some.</summary>
     public ImmutableList<ScenarioDto> Scenarios { get; set; } = [];
 
@@ -138,6 +141,7 @@ internal sealed class FakeGameServer : IGameServing
                         MayPromoteAtSide = this.MayPromoteAtSide,
                         HasDice = this.HasDice,
                         IdleRounds = this.IdleRounds,
+                        TerrainAxes = this.TerrainAxes,
                     },
                     .. this.MoreRulesets,
                 ],

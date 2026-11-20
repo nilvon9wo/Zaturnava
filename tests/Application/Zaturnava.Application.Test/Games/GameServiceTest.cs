@@ -177,6 +177,36 @@ public sealed class GameServiceTest
     }
 
     [Theory]
+    [InlineData(0b11, 0b10, 0b11)]
+    [InlineData(0b11, 0b00, 0b01)]
+    [InlineData(0b01, 0b00, 0b01)]
+    public async Task Create_WhenSomeOfTheTerrainIsChosen_DealsThatOfItTheRulesLetTheCreatorChoose(
+        int mask,
+        int value,
+        int expected
+    )
+    {
+        // Arrange - the tiny rules deal terrain 1, and let the creator choose its second bit only
+        GameService service = this.Service(GameServiceSettings.Default, isDealt: true);
+        GameId id = await service.Create(
+            TinyRules.RulesetId,
+            [SeatPlan.Open, SeatPlan.Open],
+            null,
+            new Dealing { Terrain = new TerrainChoice(mask, value) },
+            this._cancellation
+        );
+
+        // Act
+        GameSnapshot snapshot = await service.Get(id, this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            (expected, mask == 0b01 ? null : new TerrainChoice(0b10, value)),
+            (snapshot.State.Terrain, ScenarioStart.TerrainOf(snapshot.Record.Actions))
+        );
+    }
+
+    [Theory]
     [InlineData(true, true, true)]
     [InlineData(false, true, true)]
     [InlineData(true, false, true)]

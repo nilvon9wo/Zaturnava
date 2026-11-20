@@ -87,7 +87,8 @@ public interface IRulesApplying
     /// <paramref name="dealsEdgePalaces"/> too, which one dealt before they could never does; its armies drawn from
     /// the ruleset's pieces as they were at <paramref name="edition"/> (<see cref="GameState.Edition"/>), which is 0
     /// for one dealt before there was another; each army spending <paramref name="budget"/>, if its creator set one,
-    /// else what the ruleset gives. As it is, for a ruleset that is not dealt.
+    /// else what the ruleset gives; its terrain, if dealt, set as <paramref name="terrain"/> chose, if its creator
+    /// chose any of it (<see cref="TerrainAxes"/>). As it is, for a ruleset that is not dealt.
     /// </summary>
     GameState Deal(
         [Required] GameState initial,
@@ -98,9 +99,16 @@ public interface IRulesApplying
         bool dealsPalacePieces = false,
         bool dealsEdgePalaces = false,
         int edition = 0,
-        int? budget = null
+        int? budget = null,
+        TerrainChoice? terrain = null
     ) =>
         initial;
+
+    /// <summary>
+    /// What of a dealt game's terrain its creator may choose (<see cref="TerrainChoice"/>), the rest left to chance;
+    /// nothing, unless the ruleset says.
+    /// </summary>
+    ImmutableList<TerrainAxis> TerrainAxes => [];
 
     /// <summary>
     /// Whether a game's creator may have its pieces promoted at the far edge promoted at the edge to their right too

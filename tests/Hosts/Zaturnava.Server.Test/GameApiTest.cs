@@ -249,6 +249,33 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
     }
 
     [Fact]
+    public async Task Get_WhenTheCreatorChoseTheRivers_PlaysOnThemAndSaysSo()
+    {
+        // Arrange - every axis of the terrain the catalog offers, each set to its first option: no rivers, through
+        // the kingdoms (asked 2026-11-19)
+        CatalogDto catalog = await this._client.Catalog(this._cancellation);
+        ImmutableList<TerrainAxisDto> axes = catalog.Rulesets.Single(ruleset => ruleset.Id == "grand-legions-custom")
+            .TerrainAxes;
+        GameCreatedDto created = await this._client.Create(
+            new CreateGameRequest("grand-legions-custom", [null, "random", "random", "random"])
+            {
+                TerrainMask = axes.Aggregate(0, (all, axis) => all | axis.Mask),
+                TerrainValue = axes.Aggregate(0, (all, axis) => all | axis.Options[0].Value),
+            },
+            this._cancellation
+        );
+
+        // Act
+        GameViewDto view = await this._client.Get(created.GameId, this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            (2, "No rivers.", 0),
+            (axes.Count, view.Terrain, view.Lines.Count(line => line.Kind == "river"))
+        );
+    }
+
+    [Fact]
     public async Task Create_WhenTheBoardIsSetTooSmall_RefusesIt()
     {
         // Arrange - kingdoms of 4 x 4 overlap on a board 6 cells across

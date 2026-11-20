@@ -85,6 +85,10 @@ internal sealed class TinyRules(int length, bool isDealt = false, Exception? fai
     /// <summary>Whether a game's creator may have pieces promoted at the side too; not, unless set.</summary>
     public bool MayPromoteAtSide { get; init; }
 
+    /// <summary>What of the terrain a game's creator may choose: its second bit only, unless set otherwise.</summary>
+    public ImmutableList<TerrainAxis> TerrainAxes { get; init; } =
+        [new("Second", 0b10, [new("Off", 0), new("On", 0b10)])];
+
     /// <summary>Whether its games roll dice, so that a game's creator may turn them off; not, unless set.</summary>
     public bool HasDice { get; init; }
 
@@ -117,7 +121,8 @@ internal sealed class TinyRules(int length, bool isDealt = false, Exception? fai
         bool dealsPalacePieces = false,
         bool dealsEdgePalaces = false,
         int edition = 0,
-        int? budget = null
+        int? budget = null,
+        TerrainChoice? terrain = null
     ) =>
         initial with
         {
@@ -125,7 +130,7 @@ internal sealed class TinyRules(int length, bool isDealt = false, Exception? fai
             Scores = initial.Scores.SetItem(new SeatId(0), seed)
                 .SetItem(new SeatId(1), areAlike ? 1 : 0)
                 .SetItem(new SeatId(2), budget ?? 0),
-            Terrain = dealsTerrain ? 1 : 0,
+            Terrain = dealsTerrain ? terrain?.Applied(1) ?? 1 : 0,
             Palaces = dealsPalaces ? [] : null,
             HasPalacePieces = dealsPalacePieces,
             HasEdgePalaces = dealsEdgePalaces,

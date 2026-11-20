@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.ComponentModel.DataAnnotations;
 using Net.NowhereAtAll.Zaturnava.Engine.Boards;
+using Net.NowhereAtAll.Zaturnava.Engine.Rules;
 
 namespace Net.NowhereAtAll.Zaturnava.Games.GrandLegions;
 
@@ -17,6 +18,26 @@ public static class QuickTerrain
 
     /// <summary>What the terrain's draw is seeded by beside the game's seed, apart from the armies' own draw.</summary>
     private const int Salt = 0x5EED;
+
+    /// <summary>
+    /// What of the terrain a game's creator may choose (asked 2026-11-19): whether its rivers bisect the board or
+    /// quarter it, or there are none; and whether they run through the kingdoms or around them. Either, left
+    /// unchosen, is dealt at random.
+    /// </summary>
+    public static ImmutableList<TerrainAxis> Axes { get; } =
+    [
+        new(
+            "Rivers",
+            (int)Rivers.Both,
+            [
+                new("None", (int)Rivers.None),
+                new("↕ Bisect", (int)Rivers.NorthSouth),
+                new("↔ Bisect", (int)Rivers.EastWest),
+                new("✚ Quarter", (int)Rivers.Both),
+            ]
+        ),
+        new("Rivers flow", Around, [new("Through kingdoms", 0), new("Around kingdoms", Around)]),
+    ];
 
     /// <summary>The terrain a game dealt by <paramref name="seed"/> is played on.</summary>
     public static int Dealt(int seed) => new Random(seed ^ Salt).Next(Layouts);

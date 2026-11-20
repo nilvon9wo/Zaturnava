@@ -250,6 +250,8 @@ internal static class GameStarter
             AreDiceOff = armies?.AreDiceOff ?? false,
             IdleRounds = armies?.IdleRounds,
             Opener = armies?.Opener,
+            TerrainMask = armies?.TerrainMask ?? 0,
+            TerrainValue = armies?.TerrainValue ?? 0,
             IsForPlayers = isForPlayers,
         };
         GameCreatedDto created = await games.Create(request, CancellationToken.None);

@@ -297,6 +297,27 @@ public sealed class ScenarioStartTest
     }
 
     [Fact]
+    public void TerrainOf_WhenTheGameWasDealtOnTerrainChosenOrNot_TellsWhatWasChosen()
+    {
+        // Arrange - a deal whose creator chose a bit of its terrain, one that chose none, and a game not dealt
+        ImmutableList<ActionDescriptor> chosen =
+            [ScenarioStart.Dealt(new LoadedDice(4), terrain: new TerrainChoice(0b10, 0b11))];
+        ImmutableList<ActionDescriptor> unchosen =
+            [ScenarioStart.Dealt(new LoadedDice(4), terrain: new TerrainChoice(0, 0b11))];
+
+        // Act
+        (TerrainChoice? Chosen, TerrainChoice? Unchosen, TerrainChoice? Scenario, TerrainChoice? None) terrains = (
+            ScenarioStart.TerrainOf(chosen),
+            ScenarioStart.TerrainOf(unchosen),
+            ScenarioStart.TerrainOf([ScenarioStart.Describe(Tiny())]),
+            ScenarioStart.TerrainOf([])
+        );
+
+        // Assert
+        Assert.Equal((new TerrainChoice(0b10, 0b10), null, null, null), terrains);
+    }
+
+    [Fact]
     public void StateOf_WhenTheGameBeganWithoutDice_ReplaysItSo()
     {
         // Arrange - dealt without dice, dealt with them, begun without them undealt, and from a scenario

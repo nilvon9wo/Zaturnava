@@ -91,6 +91,9 @@ than a piece, and with points won in play to be spent on upgrades and promotions
   the others: none, one north–south, one east–west, or both; and, either equally likely, through the
   kingdoms or around them. The lobby need not filter games by their rivers, but a game's description
   tells them. Playing again with the same armies keeps the rivers too. *Done* (2026-11-06).
+- **Stated (2026-11-19).** In a custom game the creator may choose the rivers instead: none, one
+  bisecting the board (either way), or both quartering it; and whether they flow through the kingdoms
+  or around them. Either left "At random" is decided as above. *Done* (2026-11-20).
 
 ### 2.1 Saved settings
 

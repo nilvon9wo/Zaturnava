@@ -144,10 +144,31 @@ public sealed class RulesApplyingTest
         GameState initial = OneSizeRules.State;
 
         // Act
-        (bool IsDealt, GameState Dealt) dealt = DealOf(rules, initial);
+        (bool IsDealt, GameState Dealt, int Axes) dealt = DealOf(rules, initial);
 
         // Assert
-        Assert.Equal((false, initial), dealt);
+        Assert.Equal((false, initial, 0), dealt);
+    }
+
+    [Theory]
+    [InlineData(0b101, 0b100, 0b000, 0b001)]
+    [InlineData(0b011, 0b110, 0b111, 0b111)]
+    [InlineData(0b100, 0b100, 0b100, 0b100)]
+    public void Applied_WhenSomeOfTheTerrainIsChosen_SetsThoseBitsAsChosenAndKeepsTheRestDealt(
+        int dealt,
+        int mask,
+        int value,
+        int expected
+    )
+    {
+        // Arrange
+        TerrainChoice choice = new(mask, value);
+
+        // Act
+        int terrain = choice.Applied(dealt);
+
+        // Assert
+        Assert.Equal(expected, terrain);
     }
 
     [Fact]
@@ -322,9 +343,9 @@ public sealed class RulesApplyingTest
         where TRules : IRulesApplying =>
         (rules.HasDice, rules.WithoutDice(initial), rules.IdleRounds);
 
-    private static (bool IsDealt, GameState Dealt) DealOf<TRules>(TRules rules, GameState initial)
+    private static (bool IsDealt, GameState Dealt, int Axes) DealOf<TRules>(TRules rules, GameState initial)
         where TRules : IRulesApplying =>
-        (rules.IsDealt, rules.Deal(initial, 7));
+        (rules.IsDealt, rules.Deal(initial, 7), rules.TerrainAxes.Count);
 
     private static PieceMark? MarkOf<TRules>(TRules rules, PieceKindId kind)
         where TRules : IRulesApplying =>
