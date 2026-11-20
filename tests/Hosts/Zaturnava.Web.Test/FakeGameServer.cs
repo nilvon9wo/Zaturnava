@@ -78,6 +78,9 @@ internal sealed class FakeGameServer : IGameServing
     /// <summary>The rulesets the catalog offers after Chaturaji 2027: none, unless a test sets some.</summary>
     public ImmutableList<RulesetDto> MoreRulesets { get; set; } = [];
 
+    /// <summary>Bots offered besides the five every catalog has: none, unless a test sets some.</summary>
+    public ImmutableList<BotDto> MoreBots { get; set; } = [];
+
     /// <summary>Whether Chaturaji 2027 is a preview too, so that every game the catalog offers is one.</summary>
     public bool ArePreviewsOnly { get; set; }
 
@@ -151,6 +154,7 @@ internal sealed class FakeGameServer : IGameServing
                     new BotDto("oracle", "Oracle", "Asks a model.", UsesAi: true) { Ratings = Rated(1400) },
                     new BotDto("midas", "Midas", "Greedy.", UsesAi: false) { Ratings = Rated(1100) },
                     new BotDto("solomon", "Solomon", "Fair.", UsesAi: false) { Ratings = Rated(1250) },
+                    .. this.MoreBots,
                 ]
             )
             {

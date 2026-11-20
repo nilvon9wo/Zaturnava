@@ -1346,6 +1346,35 @@ public sealed class LobbyTest : IDisposable
         );
     }
 
+    [Theory]
+    [InlineData("random-each", true)]
+    [InlineData("random-one", false)]
+    public void ByStrength_WhenEveryArmyIsAlike_OffersNoBotOfAFamily(string armies, bool expected)
+    {
+        // Arrange - Naresuan, of Makruk's pieces, rated 1500, the only bot so rated; armies dealt each its own, or one
+        // for everyone (the user's word of 2026-11-20: such bots "should not be available for those games")
+        this._page.Server.IsDealt = true;
+        this._page.Server.MoreBots =
+        [
+            new BotDto("naresuan", "Naresuan", "Makruk's.", UsesAi: false)
+            {
+                Family = "Makruk+Western",
+                Ratings = ImmutableDictionary<string, int>.Empty.Add("chaturaji-2027", 1500),
+            },
+        ];
+        IRenderedComponent<Lobby> lobby = this.ByStrength();
+
+        // Act
+        lobby.Find("select.armies").Change(armies);
+
+        // Assert
+        Assert.Equal(
+            expected,
+            lobby.Find("select.strength")
+                .Children.Any(option => option.TextContent.Contains("1500", StringComparison.Ordinal))
+        );
+    }
+
     [Fact]
     public void ByStrength_WhenAStrengthsBotsAllHaveSeats_OffersItToNoOtherSeat()
     {

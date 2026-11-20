@@ -109,11 +109,18 @@ internal static class GameStarter
     /// The bots at the ruleset, never one paid for each use: those rated at it in three strengths - easy, medium and
     /// hard - of as nearly as may be the same number of bots, easiest first, fewer if fewer than three are rated; then
     /// those not yet rated, apart, as <see cref="UnratedName"/> (Proposed), their strength unknown. If none is rated,
-    /// every bot is split into the three strengths as it comes.
+    /// every bot is split into the three strengths as it comes. None that plays its own family's pieces where
+    /// <paramref name="areArmiesAlike"/> (the user's word of 2026-11-20: their armies would not be alike).
     /// </summary>
-    public static ImmutableList<Strength> Strengths(CatalogDto catalog, string rulesetId)
+    public static ImmutableList<Strength> Strengths(CatalogDto catalog, string rulesetId, bool areArmiesAlike = false)
     {
-        (ImmutableList<BotDto> rated, ImmutableList<BotDto> unrated) = Ranked(catalog, rulesetId);
+        (ImmutableList<BotDto> rated, ImmutableList<BotDto> unrated) = Ranked(
+            catalog with
+            {
+                Bots = areArmiesAlike ? [.. catalog.Bots.Where(bot => bot.Family is null)] : catalog.Bots,
+            },
+            rulesetId
+        );
         ImmutableList<BotDto> banded = rated.IsEmpty ? unrated : rated;
         int count = banded.Count;
         int bands = StrengthNames.Length;
