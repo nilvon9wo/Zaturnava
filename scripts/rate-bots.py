@@ -9,7 +9,8 @@ if level. Ratings are fitted to every result at once
 that never loses still gets a finite rating, and anchored with random at 1000, so that a new bot does
 not move the others. They are written as JSON, by bot, for src/Bots/Zaturnava.Bots/Ratings/.
 With --bot-assembly, bots of one's own (the BotRunner's option of that name) may be among --bots. Without --bots,
-every bot the BotRunner says plays the ruleset (its --list bots), but the slow (SLOW).
+every bot the BotRunner says plays the ruleset (its --list bots). A slow bot (SLOW) plays only the other slow ones
+and the strongest of the rest (RIVALS), last.
 With --out, each pair's result is also kept, as it ends, in <out>.pairs.json; run again with the same --out,
 --ruleset, --games and --max-steps, a tournament stopped mid-way plays only the pairs it had not finished.
 
@@ -33,17 +34,30 @@ from concurrent.futures import ThreadPoolExecutor
 ANCHOR = "random"
 ANCHOR_RATING = 1000
 SCALE = 400 / math.log(10)
-# The bots left out unless named: Athena plays by a network of her own; Pythia and Tactician search too slowly for
-# a night's tournament.
+# The bots too slow to play every other (they search, or judge by a network): each plays only the others of them
+# and RIVALS, the strongest of the rest, which is enough for one fit of every result to rate them on the same scale
+# (2026-11-20: the best bots are rated too, not left out); their pairs are played last, so that a tournament
+# stopped early has rated the rest.
 SLOW = {"athena", "pythia", "tactician"}
+RIVALS = {"sage", "argus", "solomon"}
 
 
 def known(runner, ruleset):
     """Every bot the BotRunner says plays the ruleset (--list bots), the weak (D2) as well as the strong, and each
-    family's where its pieces are to be had (2026-11-20: so that they are rated too); but the slow."""
-    listed = subprocess.run([*runner, "--ruleset", ruleset, "--list", "bots"], check=True, capture_output=True,
-                            text=True).stdout.split()
-    return [bot for bot in listed if bot not in SLOW]
+    family's where its pieces are to be had (2026-11-20: so that they are rated too)."""
+    return subprocess.run([*runner, "--ruleset", ruleset, "--list", "bots"], check=True, capture_output=True,
+                          text=True).stdout.split()
+
+
+def pairings(bots):
+    """The pairs to play: every pair of bots, but a slow one only with the other slow ones and the rivals; the
+    pairs with a slow bot last."""
+    def wanted(pair):
+        slow = [bot in SLOW for bot in pair]
+        return not any(slow) or all(slow) or any(bot in RIVALS for bot in pair)
+
+    return sorted((pair for pair in itertools.combinations(bots, 2) if wanted(pair)),
+                  key=lambda pair: any(bot in SLOW for bot in pair))
 
 
 def play(runner, ruleset, seats, games, max_steps):
@@ -147,7 +161,7 @@ def main():
     bots = options.bots.split(",") if options.bots else known(runner, options.ruleset)
     if ANCHOR not in bots:
         sys.exit(f"The bots must include {ANCHOR}, whose rating anchors the others.")
-    pairs = list(itertools.combinations(bots, 2))
+    pairs = pairings(bots)
     # M2: each pair's result, as it ends, is kept beside --out, so that a tournament stopped mid-way goes on from
     # the pairs already played when run again with the same --out, --games and --max-steps
     kept_path = options.out + ".pairs.json" if options.out else None
