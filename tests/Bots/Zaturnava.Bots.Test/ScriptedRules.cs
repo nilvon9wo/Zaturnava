@@ -16,13 +16,17 @@ namespace Net.NowhereAtAll.Zaturnava.Bots.Test;
 /// enemy - or to no one, once the game is over. Seats 0 and 2 are allied against 1 and 3, each with its
 /// throne on the cell of its own number; a piece is worth what <see cref="ScoringRules.Worth"/> says, and
 /// the Raja leads. Where a scripted state has the enemy moving for seat 0 (holding its throne), the enemy may
-/// take any of <paramref name="replies"/>, each leading straight to the state it says.
+/// take any of <paramref name="replies"/>, each leading straight to the state it says. A kind comes from the game
+/// <paramref name="origins"/> says, if any.
 /// </summary>
 internal sealed class ScriptedRules(
     ImmutableDictionary<GameAction, GameState> results,
-    ImmutableDictionary<GameAction, GameState>? replies = null
+    ImmutableDictionary<GameAction, GameState>? replies = null,
+    ImmutableDictionary<PieceKindId, string>? origins = null
 ) : IRulesApplying
 {
+    private readonly ImmutableDictionary<PieceKindId, string> _origins = origins ?? [];
+
     public static readonly SeatId Seat = new(0);
     public static readonly SeatId Enemy = new(1);
     public static readonly SeatId Ally = new(2);
@@ -120,4 +124,7 @@ internal sealed class ScriptedRules(
     public string NameOfDie(int value) => throw new NotSupportedException();
 
     public bool MayUseDie([Required] GameState state, int value) => true;
+
+    public PieceGuide GuideOf(PieceKindId kind) =>
+        new(new PieceKind(kind, [])) { Origin = this._origins.GetValueOrDefault(kind) };
 }

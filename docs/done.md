@@ -168,6 +168,9 @@ only in part, what is left is in the backlog, and its history here. The playtest
 
 ## Look and feel
 
+- **D4 Strong bots by family** (2026-11-20). *Done in part*: eight bots, one per family (Philidor, Sun Tzu,
+  Yi Sun-sin, Musashi, Naresuan, Palamedes, Ragnar, Oberon), play as Sage and draft their family's pieces while
+  they can afford any; the server's rating job rates them as it does any new bot.
 - **Grand Legions out of preview** (2026-11-20: "if/as/when there is nothing left but UI enhancements, bot
   enhancements, rating enhancements, and minor bug fixes ... we can take GL out of preview"). *Done*: every size
   is listed as any game is; what is left of it (the backlog's sections 3 to 5) adds to it rather than completes it.

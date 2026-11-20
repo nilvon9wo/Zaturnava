@@ -32,7 +32,8 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
                 4,
                 "Black,Yellow,Green,Red",
                 "0,1,0,1",
-                "argus,athena,croesus,echo,epimetheus,icarus,midas,narcissus,pythia,random,sage,solomon,tactician",
+                "argus,athena,croesus,echo,epimetheus,icarus,midas,musashi,narcissus,naresuan,oberon,palamedes,"
+                    + "philidor,pythia,ragnar,random,sage,solomon,sun-tzu,tactician,yi-sun-sin",
                 true
             ),
             (

@@ -1,7 +1,6 @@
 # Ratings: Glicko-2 and TrueSkill compared, and a design for Zaturnava
 
-*Proposed* (asked 2026-11-20). This is a design for review, not a description of what runs today. Nothing here is
-built yet; the user asked for the design and its tradeoffs first. What runs today is in
+*Accepted* (asked and answered 2026-11-20; see [§14](#14-decided)). Nothing here is built yet. What runs today is in
 [architecture](architecture.md): an Elo for each person at each game, from the team's result against what the
 teams' ratings led to expect, and an Elo for each bot fitted from bot-only tournaments (`scripts/rate-bots.py`).
 
@@ -303,7 +302,17 @@ A rating system is a predictor; it should be judged as one. Before replacing the
 - The candidate that predicts best on held-out games wins; ties go to the simplest.
 - Bot tournaments give a second check: the bots' true order is known from thousands of games.
 
-## 14. Open for the user
+## 14. Decided
 
-The questions this design leaves (whether it is accepted, the display scale, and whether past games are rated
-again) are in [open-questions](open-questions.md#ratings).
+*Stated* (the user, 2026-11-20):
+
+1. **Accepted in principle**: TrueSkill as recommended.
+2. **All three, side by side**: Elo, Glicko-2 and TrueSkill are each counted for every player, from the same
+   games. Each viewer picks which one the leaderboard shows, as they pick a light or dark theme; a person's or a
+   bot's profile, with room enough, shows all three at once.
+3. **Past games counted at once**: as every finished game is kept, every player's ratings under each system are
+   worked out from all of them, in order, as soon as the systems are built (on the server, by its own code: no AI,
+   and nothing to pay). What is rated is the players; the games are what their ratings are worked out from.
+
+So §13's comparison is no longer a gate before switching: all three run, and the comparison tells which predicts
+best, to say which the leaderboard shows first.

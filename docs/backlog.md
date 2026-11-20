@@ -18,7 +18,9 @@ own number (**25**, **N29**), the [2026-11-15 specification](playtesting/2026-11
   points below Midas. Keep every past measurement. *Begun* (2026-11-19): Narcissus and Epimetheus judge each move
   as Sage does, looking no further than the move, and play any of their better half or best third at random.
   Still to do: once the bot-rating job has rated them, check they fall below 1200 and between Random and Midas,
-  and adjust their shares if not. The overnight tournament rates them, with Icarus and Echo, since 2026-11-20.
+  and adjust their shares if not. The overnight tournament rates them, with Icarus and Echo, since 2026-11-20:
+  each beats Random nearly every game, so all rate far above 1200 (Random being 1000). Bots below 1200 must lose
+  to Random about a quarter of the time: playing a random move most turns, say, and a judged one otherwise.
 - **M1–M5** Offline tournaments and training. *Begun* (2026-11-19): `scripts/wsl-overnight.sh` trains Athena and
   rates every bot, cycle after cycle, until stopped, each round kept as it ends
   ([local-development](contribute/local-development.md#smart-app-control-windows)). A tournament stopped
@@ -59,9 +61,13 @@ From the specification's observations of the bots in play (F, X) and the Sage pl
 
 ## 3. Grand Legions: bots and armies
 
-- **D4** Strong Grand Legions bots by family, each preferring its game's pieces while playing well: Western,
-  Xiangqi, Janggi, Shogi, Makruk, Checkers, Tafl, and Fairy (pieces none of the others use). Where a family lacks a
-  piece, decide whether to add it or use the nearest.
+- **Ratings by three systems** (2026-11-20, [design](ratings-design.md)): Elo, Glicko-2 and TrueSkill each
+  counted for every player from every game kept, past games included at once; the leaderboard shows the one each
+  viewer picks, as with the theme; profiles show all three.
+- **D4** Strong Grand Legions bots by family. *Begun* (2026-11-20): Philidor (Western), Sun Tzu (Xiangqi),
+  Yi Sun-sin (Janggi), Musashi (Shogi), Naresuan (Makruk), Palamedes (Checkers), Ragnar (Tafl) and Oberon (Fairy)
+  play as Sage, drafting their family's pieces while they can afford any. Still to do: their own family in armies
+  dealt, not only drafted; and whether a family lacking a piece should have it added (for now, Sage's choice).
 - **E4** Several army-selection strategies (many cheap pieces, a few dear ones, a balance across the classes),
   shared or not; clever bots answering what the others pick and place. Stage 4: Random at random, Midas by value,
   Solomon evenly. Later, bots of their own leanings: one origin, sliders, infantry; an army of different bots.
