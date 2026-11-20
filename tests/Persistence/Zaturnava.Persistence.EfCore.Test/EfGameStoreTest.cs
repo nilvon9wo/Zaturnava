@@ -445,6 +445,38 @@ public sealed class EfGameStoreTest : IDisposable
     }
 
     [Fact]
+    public async Task KeepDeal_WhenGamesWereDealtKeptOrNot_KeepsTheDealOfTheOneNamedLeavingNoneUnkept()
+    {
+        // Arrange - dealt, not keeping its deal, then played on; dealt, keeping it; and not dealt
+        ImmutableSortedDictionary<string, string> seeded =
+            ImmutableSortedDictionary<string, string>.Empty.Add("seed", "4");
+        ActionDescriptor deal = new(ScenarioStart.DealKind, seeded);
+        ActionDescriptor kept = deal with { Arguments = seeded.Add(ScenarioStart.KeptArgument, "{\"terrain\":3}") };
+        ActionDescriptor pass = new PassAction(new SeatId(0)).Describe();
+        await this._store.Add(Record("dealt") with { Actions = [deal, pass] }, this._cancellation);
+        await this._store.Add(Record("kept") with { Actions = [kept] }, this._cancellation);
+        await this._store.Add(Record("plain"), this._cancellation);
+        ImmutableList<GameRecord> before =
+            await new EfGameStore(this._database.NewContext()).UnkeptDeals(this._cancellation);
+
+        // Act
+        await new EfGameStore(this._database.NewContext()).KeepDeal(new GameId("dealt"), kept, this._cancellation);
+
+        // Assert - kept, and played on as it was
+        EfGameStore reading = new(this._database.NewContext());
+        GameRecord? dealt = await reading.Find(new GameId("dealt"), this._cancellation);
+        Assert.Equal(
+            ("dealt", 0, kept.Arguments[ScenarioStart.KeptArgument], pass.Kind),
+            (
+                string.Join(",", before.Select(game => game.Id.Value)),
+                (await reading.UnkeptDeals(this._cancellation)).Count,
+                dealt!.Actions[0].Arguments[ScenarioStart.KeptArgument],
+                dealt.Actions[1].Kind
+            )
+        );
+    }
+
+    [Fact]
     public async Task Remove_WhenGamesAreNamed_LetsGoOfThemWithTheirSeatsAndActions()
     {
         // Arrange

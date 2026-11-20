@@ -5,6 +5,7 @@ using Net.NowhereAtAll.Zaturnava.Application.Games;
 using Net.NowhereAtAll.Zaturnava.Application.Players;
 using Net.NowhereAtAll.Zaturnava.Application.Ports;
 using Net.NowhereAtAll.Zaturnava.Application.Scenarios;
+using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 
 namespace Net.NowhereAtAll.Zaturnava.Persistence.InMemory;
@@ -82,6 +83,19 @@ public sealed class InMemoryGameStore : IGamePersisting
                 .Select(game => new DueGame(game.Id, game.RulesetId)),
         ];
         return Task.FromResult(games);
+    }
+
+    public Task<ImmutableList<GameRecord>> UnkeptDeals(CancellationToken cancellationToken)
+    {
+        ImmutableList<GameRecord> games = [.. this._games.Values.Where(game => !ScenarioStart.IsKept(game.Actions))];
+        return Task.FromResult(games);
+    }
+
+    public Task KeepDeal(GameId id, [Required] ActionDescriptor deal, CancellationToken cancellationToken)
+    {
+        GameRecord game = this._games[id];
+        this._games[id] = game with { Actions = game.Actions.SetItem(0, deal) };
+        return Task.CompletedTask;
     }
 
     public Task<ImmutableList<GameRecord>> Unrated(int count, CancellationToken cancellationToken)

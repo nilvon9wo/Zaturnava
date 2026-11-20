@@ -4,6 +4,7 @@ using Net.NowhereAtAll.Zaturnava.Application.Test.Fakes;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Boards;
 using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
+using Net.NowhereAtAll.Zaturnava.Engine.Positions;
 using Net.NowhereAtAll.Zaturnava.Engine.Rules;
 using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 
@@ -163,6 +164,109 @@ public sealed class ScenarioStartTest
                 ScenarioStart.IsStart(actions[0]),
                 ScenarioStart.IsStart(new PassAction(First).Describe()),
                 state.Scores[First]
+            )
+        );
+    }
+
+    [Fact]
+    public void StateOf_WhenTheDealKeepsWhatItDealt_StartsFromThatWhateverTheSeedDealsNow()
+    {
+        // Arrange - a deal keeping a piece, a throne, a palace and terrain the tiny rules would never deal (the
+        // user's word of 2026-11-20: a change to dealing must not change a game dealt before it)
+        Piece rook = new(new PieceId(7), new PieceKindId("rook"), First);
+        KeptDeal kept = new(
+            [new KeptPiece(2, 7, "rook", First.Value)],
+            ImmutableSortedDictionary<int, int>.Empty.Add(First.Value, 2),
+            ImmutableSortedDictionary<int, ImmutableList<int>>.Empty.Add(First.Value, [1, 2]),
+            5
+        );
+        ActionDescriptor deal = ScenarioStart.Dealt(new LoadedDice(4));
+        ImmutableList<ActionDescriptor> actions =
+            [deal with { Arguments = deal.Arguments.Add(ScenarioStart.KeptArgument, kept.Serialized()) }];
+
+        // Act
+        GameState state = ScenarioStart.StateOf(actions, new TinyRules(6, isDealt: true));
+
+        // Assert - the seed still scored, and the rest as kept
+        Assert.Equal(
+            (4, rook, rook, new CellId(2), "1,2", 5),
+            (
+                state.Scores[First],
+                state.Position.Occupants[new CellId(2)],
+                state.Start!.Occupants[new CellId(2)],
+                state.Thrones![First],
+                string.Join(",", state.Palaces![First].Select(cell => cell.Value)),
+                state.Terrain
+            )
+        );
+    }
+
+    [Fact]
+    public void Kept_WhenTheGameIsDealtOrNot_KeepsWhatADealDealtOnce()
+    {
+        // Arrange
+        TinyRules rules = new(6, isDealt: true);
+        ActionDescriptor deal = ScenarioStart.Dealt(new LoadedDice(4));
+        ActionDescriptor pass = new PassAction(First).Describe();
+
+        // Act
+        ActionDescriptor kept = ScenarioStart.Kept(deal, rules);
+
+        // Assert - kept as dealt, once; a game not dealt, and one begun no way of its own, keep nothing
+        Assert.Equal(
+            (false, true, kept, pass, true, true),
+            (
+                ScenarioStart.IsKept([deal]),
+                ScenarioStart.IsKept([kept]),
+                ScenarioStart.Kept(kept, rules),
+                ScenarioStart.Kept(pass, rules),
+                ScenarioStart.IsKept([pass]),
+                ScenarioStart.IsKept([])
+            )
+        );
+        GameState fresh = ScenarioStart.StateOf([deal], rules);
+        GameState again = ScenarioStart.StateOf([kept], rules);
+        Assert.Equal(
+            (fresh.Scores[First], fresh.Terrain, fresh.Position.Occupants.Count, fresh.Palaces is null),
+            (again.Scores[First], again.Terrain, again.Position.Occupants.Count, again.Palaces is null)
+        );
+    }
+
+    [Fact]
+    public void KeptDeal_WhenADealHasThronesAndPalacesOrNone_KeepsThemSo()
+    {
+        // Arrange
+        GameState initial = new TinyRules(6).CreateInitialState();
+        GameState dealt = initial with
+        {
+            Position = Position.Empty.Place(new CellId(3), new Piece(new PieceId(1), new PieceKindId("king"), Second)),
+            Thrones = ImmutableDictionary<SeatId, CellId>.Empty.Add(Second, new CellId(3)),
+            Palaces = ImmutableDictionary<SeatId, ImmutableList<CellId>>.Empty.Add(Second, [new CellId(3)]),
+            Terrain = 2,
+        };
+        GameState bare = initial with { Thrones = null, Palaces = null };
+
+        // Act
+        GameState again = KeptDeal.Parsed(KeptDeal.Of(dealt).Serialized()).Applied(initial);
+        GameState bareAgain = KeptDeal.Of(bare).Applied(dealt);
+
+        // Assert
+        Assert.Equal(
+            (
+                dealt.Position.Occupants[new CellId(3)],
+                new CellId(3),
+                new CellId(3),
+                2,
+                (ImmutableDictionary<SeatId, CellId>?)null,
+                (ImmutableDictionary<SeatId, ImmutableList<CellId>>?)null
+            ),
+            (
+                again.Position.Occupants[new CellId(3)],
+                again.Thrones![Second],
+                again.Palaces![Second].Single(),
+                again.Terrain,
+                bareAgain.Thrones,
+                bareAgain.Palaces
             )
         );
     }
