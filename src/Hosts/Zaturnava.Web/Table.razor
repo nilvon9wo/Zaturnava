@@ -283,16 +283,44 @@
                 @if (this._turn is { } turn)
                 {
                     ImmutableList<ActionDto> promotions = [.. this.AtSelection(turn).Where(IsPromotion)];
-                    ImmutableList<ActionDto> atPiece = [.. this.AtSelection(turn).Where(action => !IsPromotion(action))];
+                    ImmutableList<ActionDto> flights = [.. this.AtSelection(turn).Where(IsFlight)];
+                    ImmutableList<ActionDto> atPiece =
+                        [.. this.AtSelection(turn).Where(action => !IsPromotion(action) && !IsFlight(action))];
                     @if (this._eitherOf is { } either)
                     {
                         <div class="either-of" role="group" aria-labelledby="either-of-question">
                             <span id="either-of-question" class="name">Swap or capture?</span>
                             @foreach (ActionDto action in either)
                             {
-                                <button class="action either" @onclick="() => this.ChooseEither(turn.Claim, action)">
+                                <button class="@(action.Label is null ? "action either capture" : "action either swap")"
+                                        @onclick="() => this.ChooseEither(turn.Claim, action)">
                                     @(action.Label is { } label ? this.Named(label) : "Capture it")
                                 </button>
+                            }
+                        </div>
+                    }
+                    @if (!flights.IsEmpty)
+                    {
+                        <div class="flight">
+                            <p class="hint">@this.Named(FlightHeading(view, this._selection.Selected!.Value))</p>
+                            @foreach (ActionDto action in flights)
+                            {
+                                <button class="action primary flee" @onclick="() => this.Submit(turn.Claim, action)">
+                                    @this.Named(ActionLabels.LabelOf(action))
+                                </button>
+                            }
+                            @if (view.Fleeing is null)
+                            {
+                                <button class="action later" @onclick="this.PutDown">Stay on the board</button>
+                            }
+                            else
+                            {
+                                @foreach (ActionDto action in turn.Actions.OffBoard)
+                                {
+                                    <button class="action later" @onclick="() => this.Submit(turn.Claim, action)">
+                                        @this.Named(ActionLabels.LabelOf(action))
+                                    </button>
+                                }
                             }
                         </div>
                     }
@@ -459,7 +487,7 @@
                         @if (!coming.IsEmpty)
                         {
                             <div class="coming">
-                                <span class="name">Onto the board:</span>
+                                <span class="name">Return to board:</span>
                                 @foreach (string choice in coming)
                                 {
                                     PrisonerDto piece = ComingOf(view, choice)!;
@@ -749,6 +777,7 @@
     private const string BotController = "bot";
     private const string OpenController = "open";
     private const string RollKind = "roll";
+    private const string FleeKind = "flee";
     private const string MoveKind = "move";
     private const string EscapeKind = "escape";
     private const string ThroneKind = "throne";
@@ -1218,6 +1247,20 @@
     /// </summary>
     private static bool IsPromotion(ActionDto action) =>
         action.Arguments.ContainsKey(ActionArguments.Becomes) || action.Arguments.ContainsKey(ActionArguments.Into);
+
+    /// <summary>
+    /// Whether the action taken at a piece makes it leave the board (the Tafl King from its far corner): asked about
+    /// as a promotion is, apart and plain to see (the user's report of 2026-11-19).
+    /// </summary>
+    private static bool IsFlight(ActionDto action) => action.Kind == FleeKind;
+
+    /// <summary>"Black's King (Tafl) on h8 may escape the board, or stay:".</summary>
+    private static string FlightHeading(GameViewDto view, int cell)
+    {
+        PieceDto piece = view.Pieces.First(at => at.Cell == cell);
+        string name = view.Cells.First(at => at.Id == cell).Name;
+        return $"{view.Seats[piece.Owner].Name}'s {piece.Name} on {name} may escape the board, or stay:";
+    }
 
     /// <summary>Whether the promotion is the piece's own, into a kind, rather than into a captured piece.</summary>
     private static bool IsOwnPromotion(ActionDto promotion) => promotion.Arguments.ContainsKey(ActionArguments.Becomes);
@@ -1915,7 +1958,7 @@
             && view.Seats[seat].Controller == BotController
             && OpenSeatsOf(view) is null;
         this._eitherOf = isNew ? null : this._eitherOf;
-        this._selection = (isNew, this._turn, view.PromotionDue) switch
+        this._selection = (isNew, this._turn, view.PromotionDue ?? view.Fleeing) switch
         {
             (false, { }, _) => this._selection,
             (_, { }, { } due) => new BoardSelection(due),

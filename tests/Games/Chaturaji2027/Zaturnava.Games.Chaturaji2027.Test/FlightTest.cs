@@ -197,6 +197,57 @@ public sealed class FlightTest
         );
     }
 
+    [Theory]
+    [InlineData(new[] { RajaDie, RajaDie }, false)]
+    [InlineData(new[] { RajaDie, BoatDie }, true)]
+    [InlineData(new[] { RajaDie }, true)]
+    public void Apply_WhenAPieceComesToItsFarCornerAsAPieceIsPromoted_WaitsOnItsFlightOnlyIfTheTurnWouldEnd(
+        int[] dice,
+        bool isWaited
+    )
+    {
+        // Arrange - the user's report of 2026-11-19: "Stay on the board should be default"
+        GameState state = BlackToMove(dice, Grid.CellAt(7, 6), YellowCorner) with
+        {
+            Edition = Chaturaji2027Rules.FreeFlightEdition,
+        };
+
+        // Act
+        GameState after = this._rules.Apply(state, new MoveAction(Black, Grid.CellAt(7, 6), BlackCorner)).State;
+
+        // Assert - flight offered at once, either way
+        Assert.Equal(
+            (isWaited, Black, true),
+            (
+                after.Fleeing is not null,
+                after.DecidingSeat,
+                this._rules.LegalActions(after).Contains(new FleeAction(Black, BlackCorner))
+            )
+        );
+    }
+
+    [Theory]
+    [InlineData(new[] { RajaDie })]
+    [InlineData(new int[0])]
+    public void Apply_WhenAPieceFleesAsAPieceIsPromoted_UsesNoDieAndLeavesTheTurnAsItWas(int[] dice)
+    {
+        // Arrange - a die that the Pawn may use after; or the turn not yet rolled
+        GameState state = BlackToMove(dice, BlackCorner, YellowCorner) with
+        {
+            Edition = Chaturaji2027Rules.FreeFlightEdition,
+        };
+        bool isOffered = this._rules.LegalActions(state).Contains(new FleeAction(Black, BlackCorner));
+
+        // Act
+        GameState after = this._rules.Apply(state, new FleeAction(Black, BlackCorner)).State;
+
+        // Assert
+        Assert.Equal(
+            (true, Black, dice.Length, true),
+            (isOffered, after.DecidingSeat, after.Dice.Count, after.Fled.Contains(BlackRaja))
+        );
+    }
+
     [Fact]
     public void ChancesOf_WhileAPieceJustComeToItsFarCornerMayFlee_OffersNoOneAnythingOutOfTurn()
     {

@@ -174,6 +174,15 @@ internal sealed class FakeGameServer : IGameServing
 
     public Task<GamePageDto> List(GameListQuery? query, CancellationToken cancellationToken)
     {
+        if (query?.Scenario == true)
+        {
+            // how many games started from scenarios there are, as the lobby asks before listing; never the failure
+            // set for the listing after
+            ImmutableList<GameSummaryDto> started = [.. this.Games.Where(game => game.IsScenario)];
+            this.Calls.Enqueue("count-scenario-games");
+            return Task.FromResult(new GamePageDto(started, started.Count, 1, 20));
+        }
+
         this.Listed = query;
         return this.Answer(
             "list",

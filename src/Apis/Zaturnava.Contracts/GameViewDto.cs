@@ -121,6 +121,12 @@ public sealed record GameViewDto(
     public int? IdleRounds { get; init; }
 
     /// <summary>
+    /// The cell of a piece just come to where it may leave the board (the Tafl King on its far corner) as its turn
+    /// would end, the game waiting on whether it leaves or stays; null if none.
+    /// </summary>
+    public int? Fleeing { get; init; }
+
+    /// <summary>
     /// While the armies are drafted, what each seat has left to spend, seat by seat (null for a seat drafting in
     /// secret from the one asking, <see cref="IsDraftSecret"/>); null once play has begun, or in a game never drafted.
     /// </summary>

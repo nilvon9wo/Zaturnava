@@ -67,6 +67,7 @@
                             {
                                 <td class="kind">
                                     <span role="img"
+                                          class="@(row.BotId is not null && row.UsesAi ? "ai" : null)"
                                           aria-label="@KindOf(row)"
                                           title="@KindOf(row)">@IconOf(row)</span>
                                 </td>
@@ -107,6 +108,16 @@
         }
     }
 
+    @if (this._board == EveryoneBoard)
+    {
+        @* The kinds shown as they are, not told in words (the user, 2026-11-20: "HUMANS ARE VISUAL"); hovering names
+           each. *@
+        <p class="kinds">
+            <span role="img" aria-label="@PersonKind" title="@PersonKind">🧑</span>
+            <span role="img" aria-label="@AlgorithmKind" title="@AlgorithmKind">🤖</span>
+            <span role="img" class="ai" aria-label="@AiKind" title="@AiKind">🤖</span>
+        </p>
+    }
     <p class="about-standings">@this.Columns.About</p>
 </div>
 
@@ -176,8 +187,7 @@
         "everyone",
         "Player or bot",
         "No one has finished a game of it yet.",
-        "Players signed in and the server's bots together, 🧑 a person, 🤖 a bot playing by a plain algorithm, 🧠 a "
-            + "bot playing by an AI. A player's Elo comes from the games "
+        "Players signed in and the server's bots together. A player's Elo comes from the games "
             + "they finished; a bot's, from its games against the other bots. Points are the points each scored "
             + "itself, in every game finished, won or lost.",
         [
@@ -278,19 +288,20 @@
     private static string KindOf(Row row) =>
         (row.BotId, row.UsesAi) switch
         {
-            (null, _) => "Person",
-            (_, false) => "Bot, a plain algorithm",
-            _ => "Bot, an AI",
+            (null, _) => PersonKind,
+            (_, false) => AlgorithmKind,
+            _ => AiKind,
         };
 
-    /// <summary>A row's kind as an icon: 🧑 a person, 🤖 a bot by a plain algorithm, 🧠 a bot by an AI.</summary>
-    private static string IconOf(Row row) =>
-        (row.BotId, row.UsesAi) switch
-        {
-            (null, _) => "🧑",
-            (_, false) => "🤖",
-            _ => "🧠",
-        };
+    private const string PersonKind = "Person";
+    private const string AlgorithmKind = "Bot, a plain algorithm";
+    private const string AiKind = "Bot, an AI";
+
+    /// <summary>
+    /// A row's kind as an icon: 🧑 a person, 🤖 a bot; a bot by an AI the same robot, tinted apart by its class (the
+    /// user's report of 2026-11-20: a brain was a blob, unlike the other icons).
+    /// </summary>
+    private static string IconOf(Row row) => row.BotId is null ? "🧑" : "🤖";
 
     private async Task Show(string game)
     {

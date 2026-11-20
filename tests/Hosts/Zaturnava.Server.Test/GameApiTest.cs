@@ -832,10 +832,10 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
     }
 
     [Fact]
-    public async Task Submit_WhenTheTaflKingComesToItsFarCornerInItsScenario_OffersItsEscapeAtOnceOrToStay()
+    public async Task Submit_WhenTheTaflKingComesToItsFarCornerInItsScenario_OffersItsEscapeAtOnceAmongTheTurnsChoices()
     {
-        // Arrange - Black's Tafl King on h4, its 5 taking it to h8 (the user's report of 2026-11-19: it should escape
-        // as soon as it gets there)
+        // Arrange - Black's Tafl King on h4, its 5 taking it to h8 (the user's reports of 2026-11-19: it should escape
+        // as soon as it gets there; staying is the rule, the turn not stopped to ask)
         CreateGameRequest request = new("grand-legions-medium", ZaturnavaServer.OneOpenSeat)
         {
             Scenario = "tafl-escape",
@@ -857,13 +857,59 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
             this._cancellation
         );
 
-        // Assert - and the scenario it came from, to play again
-        string choices = string.Join("|", arrived.LegalActions.Select(action => $"{action.Kind}: {action.Label}"));
-        Assert.Equal(
-            ("pass: Stay on the board|flee: Escape the board with Black's King (Tafl), from h8: no one can take it "
-                + "until it comes back", "tafl-escape"),
-            (choices, arrived.Scenario)
+        // Assert - the 3 still to move the Rook; and the scenario it came from, to play again
+        string flights = string.Join(
+            "|",
+            arrived.LegalActions.Where(action => action.Kind == "flee").Select(action => action.Label)
         );
+        Assert.Equal(
+            (
+                "Escape the board with Black's King (Tafl), from h8: no one can take it until it comes back",
+                true,
+                null,
+                "tafl-escape"
+            ),
+            (flights, arrived.LegalActions.Any(action => action.Kind == "move"), arrived.Fleeing, arrived.Scenario)
+        );
+    }
+
+    [Fact]
+    public async Task Submit_WhenTheTaflKingComesToItsFarCornerOnTheLastDie_WaitsOnItsEscapeOrStaying()
+    {
+        // Arrange - the Rook moved first, with the 3, so the 5 taking the King to h8 would end the turn
+        CreateGameRequest request = new("grand-legions-medium", ZaturnavaServer.OneOpenSeat)
+        {
+            Scenario = "tafl-escape",
+        };
+        GameCreatedDto created = await this._client.Create(request, this._cancellation);
+        string black = (await this._client.Claim(created.GameId, 0, null, null, this._cancellation)).Token;
+        GameViewDto view = await this._client.Get(created.GameId, black, this._cancellation);
+        string CellOf(string name) => $"{view.Cells.Single(cell => cell.Name == name).Id}";
+        GameViewDto rookMoved = await this._client.Submit(
+            created.GameId,
+            black,
+            view.LegalActions.First(action => action.Kind == "move" && action.Arguments["from"] == CellOf("c1")),
+            this._cancellation
+        );
+
+        // Act
+        GameViewDto arrived = await this._client.Submit(
+            created.GameId,
+            black,
+            rookMoved.LegalActions.First(action =>
+                action.Kind == "move"
+                && action.Arguments["from"] == CellOf("h4")
+                && action.Arguments["to"] == CellOf("h8")
+            ),
+            this._cancellation
+        );
+
+        // Assert
+        string choices = string.Join(
+            "|",
+            arrived.LegalActions.Select(action => action.Kind == "pass" ? $"pass: {action.Label}" : action.Kind)
+        );
+        Assert.Equal((CellOf("h8"), "pass: Stay on the board|flee"), ($"{arrived.Fleeing}", choices));
     }
 
     [Fact]

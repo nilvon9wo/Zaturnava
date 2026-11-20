@@ -8,8 +8,8 @@
     --muted: #9aa3b2;
     --accent: #f2b33d;
     --accent-ink: #1a1405;
-    --button: #3a4150;
-    --button-edge: #576072;
+    --button: #4d576b;
+    --button-edge: #7c879c;
     --board-light: #4a5263;
     --board-dark: #3b4252;
     --last: rgba(242, 179, 61, 0.28);
@@ -144,6 +144,13 @@ button.urged {
 
 /* A move onto an ally that may swap places with it or take it: the question, and its answers, in a row. */
 .either-of { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 6px 0; }
+.either-of .name { font-size: 1.1rem; font-weight: 600; }
+/* Putting off a promotion or an escape: the other answer to the call to action, outlined, never a dark hole. */
+button.action.later { border: 2px solid var(--muted); font-weight: 600; }
+/* Swap green, capture red, each plain to see (the user, 2026-11-20). */
+.either-of button.either { font-weight: 600; padding: 10px 18px; font-size: 1.05rem; }
+.either-of button.swap { background: var(--go); color: var(--go-ink); border-color: var(--go); }
+.either-of button.capture { background: var(--danger); color: var(--danger-ink); border-color: var(--danger); }
 
 /* In a scenario, on a development server: the faces the next roll is to come up as, beside the roll. */
 .faked-dice { display: inline-flex; gap: 4px; align-items: center; }
@@ -271,6 +278,8 @@ select {
 }
 .account .account-menu button { text-align: left; }
 .account .account-menu .delete-account { color: var(--problem); }
+.confirm-removal { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.confirm-removal .removal-confirmed { background: var(--danger); color: var(--danger-ink); border-color: var(--danger); }
 .account .confirm-deletion {
     flex-basis: 100%;
     display: flex;
@@ -485,6 +494,9 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
 .leaderboard .leaders th, .leaderboard .leaders td.name, .leaderboard .leaders td.name button { white-space: nowrap; }
 .leaderboard .choice { display: flex; gap: 8px; align-items: center; margin: 8px 0; }
 .leaderboard .leaders th.kind, .leaderboard .leaders td.kind { text-align: center; }
+/* A bot playing by an AI: the robot of every bot, tinted teal, so that it stays one of them (2026-11-20). */
+.leaderboard .leaders td.kind .ai, .leaderboard .kinds .ai { filter: sepia(1) saturate(5) hue-rotate(130deg); }
+.leaderboard .kinds { display: flex; gap: 10px; margin: 6px 0 0; font-size: 1.3rem; }
 .leaderboard .against { color: var(--muted); font-size: 0.85em; margin-left: 4px; white-space: nowrap; }
 .leaderboard .leaders { border-collapse: collapse; width: 100%; }
 .leaderboard .leaders th, .leaderboard .leaders td {
@@ -1019,9 +1031,10 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
 /* Passing, neutral, unless it is the way on, then the call to action; handing the turn to an ally, in the ally's
    colour (playtest X1, and 2026-11-19). */
 .end-area .action.pass:not(.primary) {
-    background: transparent;
+    background: var(--button);
     color: var(--ink);
-    border: 1px solid var(--panel-edge);
+    border: 2px solid var(--muted);
+    font-weight: 600;
 }
 .end-area .action.hand-over.seat-0 { background: var(--seat-0); color: var(--seat-0-ink); border-color: var(--muted); }
 .end-area .action.hand-over.seat-1 { background: var(--seat-1); color: var(--seat-1-ink); border-color: var(--seat-1); }
@@ -1232,7 +1245,9 @@ button.report-bug {
 .ransom-to, .ransom-ask { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin: 4px 0; }
 .ransom-to .name { min-width: 80px; }
 .coming { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin: 4px 0; }
-.coming .name { margin-right: 4px; }
+/* Its label read as fine print (2026-11-20): as large as the turn's own text, and plain to see. */
+.coming .name { margin-right: 6px; font-size: 1.1rem; font-weight: 600; }
+.coming .prisoner .piece-icon { width: 34px; height: 34px; }
 .ransom .prisoner, .coming .prisoner {
     padding: 2px;
     background: transparent;
@@ -1242,7 +1257,7 @@ button.report-bug {
 }
 .ransom .prisoner.chosen, .coming .prisoner.chosen { border-color: var(--accent); }
 .ransom .prisoner.waiting { opacity: 0.4; filter: grayscale(1); cursor: not-allowed; }
-.ransom .prisoner .piece-icon, .coming .prisoner .piece-icon { width: 26px; height: 26px; }
+.ransom .prisoner .piece-icon { width: 26px; height: 26px; }
 .ransom .all { font-size: 0.85rem; }
 .ransom .action.offer { margin-top: 6px; }
 
@@ -1267,6 +1282,10 @@ button.report-bug {
 .promotion .choice-and-about { display: flex; align-items: stretch; gap: 2px; min-width: 0; }
 .promotion .choice-and-about .choice { flex: 1; min-width: 0; }
 .promotion .about { padding: 0 6px; font-size: 0.8rem; color: var(--muted); }
+/* A piece that may leave the board, picked up: asked about as a promotion is, the escape the one call to action and
+   staying beside it, plainly (the user's report of 2026-11-19). */
+.flight { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 4px 0 8px; }
+.flight .hint { flex-basis: 100%; margin: 0; }
 
 /* The dice side by side, as many as fit a row: the turn panel stays short. */
 .dice { list-style: none; padding: 0; margin: 4px 0; display: flex; flex-wrap: wrap; column-gap: 20px; }

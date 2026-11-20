@@ -1638,21 +1638,66 @@ public sealed class LobbyTest : IDisposable
     }
 
     [Fact]
-    public void RemoveScenarioGames_WhenClicked_LetsGoOfThemAndListsTheGamesAgain()
+    public void RemoveScenarioGames_WhenConfirmed_LetsGoOfThemAndListsTheGamesAgain()
     {
-        // Arrange - a development server's (the user's request of 2026-11-19)
+        // Arrange - a development server's, with a scenario game (the user's requests of 2026-11-19, and of
+        // 2026-11-20: asked again before)
         this.SignInAsAdaAtYellow();
-        this._page.Server.Scenarios = [new ScenarioDto("escape", "chaturaji-2027", "Escape", "Doubles.")];
+        this.WithAScenarioGame();
         IRenderedComponent<Lobby> lobby = this.Render();
         int listings = this._page.Server.Calls.Count(call => call == "list");
+        lobby.Find("button.remove-scenario-games").Click();
+        string asked = lobby.Find(".confirm-removal").TextContent;
 
         // Act
-        lobby.Find("button.remove-scenario-games").Click();
+        lobby.Find("button.removal-confirmed").Click();
 
         // Assert
         Assert.Equal(
-            (1, listings + 1),
-            (this._page.Server.ScenarioGamesRemoved, this._page.Server.Calls.Count(call => call == "list"))
+            (true, 1, listings + 1),
+            (
+                asked.Contains("Delete all 1 games started from scenarios?", StringComparison.Ordinal),
+                this._page.Server.ScenarioGamesRemoved,
+                this._page.Server.Calls.Count(call => call == "list")
+            )
+        );
+    }
+
+    [Fact]
+    public void RemoveScenarioGames_WhenKept_DeletesNothingAndOffersItAgain()
+    {
+        // Arrange
+        this.WithAScenarioGame();
+        IRenderedComponent<Lobby> lobby = this.Render();
+        lobby.Find("button.remove-scenario-games").Click();
+
+        // Act
+        lobby.Find("button.removal-cancelled").Click();
+
+        // Assert
+        Assert.Equal(
+            (0, 1, 0),
+            (
+                this._page.Server.ScenarioGamesRemoved,
+                lobby.FindAll("button.remove-scenario-games").Count,
+                lobby.FindAll(".confirm-removal").Count
+            )
+        );
+    }
+
+    [Fact]
+    public void Render_WhenNoGameStartedFromAScenario_OffersNotToDeleteThem()
+    {
+        // Arrange - a development server's, its games none from scenarios
+        this._page.Server.Scenarios = [new ScenarioDto("escape", "chaturaji-2027", "Escape", "Doubles.")];
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Assert - hiding them stays offered
+        Assert.Equal(
+            (1, 0),
+            (lobby.FindAll("input.hide-scenarios").Count, lobby.FindAll("button.remove-scenario-games").Count)
         );
     }
 
@@ -1666,6 +1711,13 @@ public sealed class LobbyTest : IDisposable
 
         // Assert
         Assert.Empty(lobby.FindAll("input.hide-scenarios, button.remove-scenario-games"));
+    }
+
+    /// <summary>A development server's: it offers a scenario, and one of its games started from it.</summary>
+    private void WithAScenarioGame()
+    {
+        this._page.Server.Scenarios = [new ScenarioDto("escape", "chaturaji-2027", "Escape", "Doubles.")];
+        this._page.Server.Games = [.. this._page.Server.Games.Select(game => game with { IsScenario = true })];
     }
 
     [Theory]

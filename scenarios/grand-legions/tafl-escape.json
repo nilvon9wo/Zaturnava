@@ -1,9 +1,9 @@
 {
   "rulesetId": "grand-legions-medium",
   "name": "Tafl King's escape",
-  "description": "Black has rolled 5 (leader) and 3 (heavy). Black's Tafl King on h4 may go up to its army's far corner, h8, with the 5, and leave the board at once, with no die, where no one can take it, coming back only as a prisoner escapes, on doubles; the 3 still moves the Rook.",
+  "description": "Black has rolled 5 (leader) and 3 (heavy). Black's Tafl King on h4 may go up to its army's far corner, h8, with the 5. There it stays, unless Black picks it up and escapes the board with it, at any point of the turn, using no die: then no one can take it, and it comes back only as a prisoner escapes, on doubles. The 3 still moves the Rook.",
   "turn": "Black",
-  "edition": 15,
+  "edition": 16,
   "dice": [5, 3],
   "pieces": {
     "h4": "Black King (Tafl)",
