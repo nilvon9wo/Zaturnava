@@ -844,6 +844,9 @@ both the triumphing player and their ally may move each other's Boat.
       resets the count; to revisit after playtesting. *(Stated 2026-11-06)*
       Anything else that changes the board or the prisoners resets the count
       too: a ransom accepted, an escape, a promotion, a piece going home.
+      *(Stated 2026-11-20)* A turn that ends with the board and the prisoners
+      as it began, a piece moved there and back, is effectively a pass and
+      counts as one.
     - **Three rounds of repetition**: all four players repeat their moves for
       three rounds. Players are warned in the last round. *(Proposed)* A turn
       repeats when it ends in a position the game has been in before since a

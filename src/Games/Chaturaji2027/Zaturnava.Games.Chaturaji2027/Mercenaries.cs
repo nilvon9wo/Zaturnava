@@ -12,9 +12,10 @@ namespace Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
 
 /// <summary>
 /// Mercenaries (Grand Legions specification §6.5, Stated 2026-11-13): every piece that starts as one of
-/// <paramref name="kinds"/> (the Shogi pieces), but a leader, is a mercenary, and stays one whatever it is promoted
-/// into; so does what it is promoted into. The holder of a mercenary prisoner may hire it for points, 110% of what it
-/// cost last (at first, its value), rounded up (Proposed): it becomes the hirer's own, off the board
+/// <paramref name="kinds"/> (the Shogi pieces), leaders too (Stated 2026-11-19), is a mercenary, and stays one
+/// whatever it is promoted into; so does what it is promoted into. The holder of a mercenary prisoner may hire it
+/// for points, 110% of what it cost last (at first, its value), rounded up (Proposed): it becomes the hirer's own,
+/// off the board
 /// (<see cref="GameState.Hired"/>), until they place it on a free square of their palace - or, with none, of the 3 × 3
 /// square about their throne (Proposed). Each step is a turn's deliberate action, or uses a die that moves its kind.
 /// Only in a game dealt from <see cref="Edition"/> on, so that a game stored before replays as it was played.
@@ -22,7 +23,6 @@ namespace Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
 internal sealed class Mercenaries(
     SquareGridTopology grid,
     ImmutableHashSet<PieceKindId> kinds,
-    ImmutableHashSet<PieceKindId> leaders,
     Func<int, ImmutableDictionary<PieceKindId, int>> points,
     Position initial,
     ThroneControl control
@@ -33,7 +33,6 @@ internal sealed class Mercenaries(
 
     private readonly SquareGridTopology _grid = grid;
     private readonly ImmutableHashSet<PieceKindId> _kinds = kinds;
-    private readonly ImmutableHashSet<PieceKindId> _leaders = leaders;
     private readonly Func<int, ImmutableDictionary<PieceKindId, int>> _points = points;
     private readonly Position _initial = initial;
     private readonly ThroneControl _control = control;
@@ -50,7 +49,7 @@ internal sealed class Mercenaries(
     {
         Piece started =
             (state.Start ?? this._initial).Occupants.Values.FirstOrDefault(start => start.Id == piece.Id) ?? piece;
-        return this._kinds.Contains(started.Kind) && !this._leaders.Contains(started.Kind);
+        return this._kinds.Contains(started.Kind);
     }
 
     /// <summary>What hiring the mercenary costs now: 110% of what it cost last, rounded up.</summary>

@@ -1256,21 +1256,27 @@ public sealed class Chaturaji2027RulesTest
     }
 
     [Theory]
-    [InlineData(2, 11, true, 12)]
-    [InlineData(2, 4, false, 5)]
-    [InlineData(1, 11, false, 0)]
+    [InlineData(2, false, 11, true, 12)]
+    [InlineData(2, false, 4, false, 5)]
+    [InlineData(1, true, 11, false, 0)]
+    [InlineData(1, false, 4, false, 5)]
     public void Apply_WhenASeatPassesHavingRolled_CountsItIdleUnlessItMoved(
         int diceLeft,
+        bool isMoved,
         int idlePasses,
         bool isOver,
         int expected
     )
     {
-        // Arrange - Black rolled two dice, of which it has used any not left
-        GameState state = this.Later() with
+        // Arrange - Black rolled two dice, of which it has used any not left; the board moved since the turn began,
+        // or was put back as it was, "effectively a pass" (the user's word of 2026-11-20): with no start given, the
+        // rules take the board as it is for the turn's start
+        GameState later = this.Later();
+        GameState state = later with
         {
             Dice = diceLeft == 2 ? [5, 1] : [5],
-            IdlePasses = idlePasses,
+            IdlePasses = isMoved ? 0 : idlePasses,
+            TurnStart = isMoved ? new TurnStart(later.TurnNumber, 0, idlePasses) : null,
         };
 
         // Act

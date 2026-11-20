@@ -11,15 +11,9 @@ own number (**25**, **N29**), the [2026-11-15 specification](playtesting/2026-11
 
 - **Rivers as chosen** (asked 2026-11-19): in a custom Grand Legions game, the creator chooses whether rivers
   bisect or quarter the board, and whether they flow through or around kingdoms; random stays a choice.
-- **Shogi mercenaries** (asked 2026-11-19): mercenaries to include every Shogi piece, leaders too.
 - **Restriction or weakness** (asked 2026-11-19): a piece's card tells a restriction (may not leave its palace,
   may not cross a river), which the game's rules impose and a lift may remove, from a weakness (bound to squares
   of one colour), which is the piece's own movement and never lifted.
-- **A turn that changes nothing is a pass** (noticed 2026-11-20): a turn ending with the board and the prisoners as
-  they began, a pass with extra steps, starts the count of rounds of everyone passing again. Such turns do count
-  toward the repetition limit (3 rounds of every turn ending where the game has been), which ends the game; and
-  the bots no longer play them (see done). Still to decide: whether, in a new edition, such a turn counts as a
-  pass toward the all-pass limit too.
 - **Real AI bots** (asked 2026-11-20): bots that learn to play both games, Grand Legions above all, seeing where
   the pieces stand and how they move, not "backgammon in 2D" as Athena does now (her network ignores positions).
   With no paid tokens: a network trained here on the board square by square, per
