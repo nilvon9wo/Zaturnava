@@ -33,7 +33,8 @@ ANCHOR = "random"
 ANCHOR_RATING = 1000
 SCALE = 400 / math.log(10)
 # Every bot the BotRunner plays without a network of its own: the weak (D2: below 1200) as well as the strong.
-BOTS = ["argus", "echo", "epimetheus", "icarus", "midas", "narcissus", "random", "sage", "solomon"]
+BOTS = ["argus", "echo", "epimetheus", "icarus", "midas", "morpheus", "narcissus", "phaethon", "random", "sage",
+        "solomon", "tantalus"]
 
 
 def play(runner, ruleset, seats, games, max_steps):

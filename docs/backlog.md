@@ -19,8 +19,10 @@ own number (**25**, **N29**), the [2026-11-15 specification](playtesting/2026-11
   as Sage does, looking no further than the move, and play any of their better half or best third at random.
   Still to do: once the bot-rating job has rated them, check they fall below 1200 and between Random and Midas,
   and adjust their shares if not. The overnight tournament rates them, with Icarus and Echo, since 2026-11-20:
-  each beats Random nearly every game, so all rate far above 1200 (Random being 1000). Bots below 1200 must lose
-  to Random about a quarter of the time: playing a random move most turns, say, and a judged one otherwise.
+  each beats Random nearly every game, so all rate far above 1200 (Random being 1000). So three more (2026-11-20),
+  kept apart from those whose games are kept: Morpheus, Phaethon and Tantalus play at random but for one turn in
+  50, 20 and 10, when they play as Midas. Still to do: once rated, tune those shares so that they fall between
+  1000 and 1200, a step apart.
 - **M1–M5** Offline tournaments and training. *Begun* (2026-11-19): `scripts/wsl-overnight.sh` trains Athena and
   rates every bot, cycle after cycle, until stopped, each round kept as it ends
   ([local-development](contribute/local-development.md#smart-app-control-windows)). A tournament stopped

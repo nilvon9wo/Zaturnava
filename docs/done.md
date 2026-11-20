@@ -168,6 +168,8 @@ only in part, what is left is in the backlog, and its history here. The playtest
 
 ## Look and feel
 
+- **D2 Bots for the very first games** (2026-11-20). *Begun*: Morpheus, Phaethon and Tantalus, Random but for
+  one turn in 50, 20 and 10 played as Midas; the overnight tournament and the server's job rate them.
 - **D4 Strong bots by family** (2026-11-20). *Done in part*: eight bots, one per family (Philidor, Sun Tzu,
   Yi Sun-sin, Musashi, Naresuan, Palamedes, Ragnar, Oberon), play as Sage and draft their family's pieces while
   they can afford any; the server's rating job rates them as it does any new bot.
