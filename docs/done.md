@@ -168,6 +168,15 @@ only in part, what is left is in the backlog, and its history here. The playtest
 
 ## Look and feel
 
+- **The leaderboard reshaped** (2026-11-20: the lobby jumped about at each choice; lopsided; columns far too wide).
+  Games and leaderboard each hold half the lobby, locked. A board or rating chosen is shown from what the server
+  already gave, nothing asked again, so nothing on the page moves. Board and Rating sit on one line; the first column
+  is "Rating" whatever the system. Every number's heading reads upward, so each column is as wide as its figures; a
+  streak's mean Elo beaten sits under its count. Only the table scrolls, if it must, never the panel's text.
+- **Dice audited** (2026-11-20: "Sometimes it seems like the bots, especially Sage, get lucky rolls far too often").
+  `scripts/dice-audit.py` tallies every face rolled in the finished games by who rolled it: over 129 games, Sage's
+  2,949 faces were the most even of anyone's, its doubles below one in six. Bots never roll: the server rolls for
+  every seat.
 - **Games no one watches no longer wait on a server bot** (2026-11-20: "does it really make sense for the game to be
   waiting for a bot?"). A server job plays on any game whose next seat is one of the server's own bots and that has
   sat unchanged for 15 seconds, until a person (or an AI over the API) must decide. A game someone watches still

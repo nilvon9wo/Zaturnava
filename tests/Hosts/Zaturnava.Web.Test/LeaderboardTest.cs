@@ -265,7 +265,7 @@ public sealed class LeaderboardTest : IDisposable
 
         // Assert
         Assert.Equal(
-            (expected, $"board=players&desc=1&rating={rating}&sort={rating}"),
+            (expected, $"board=players&desc=1&rating={rating}&sort=rating"),
             (
                 string.Join(
                     '|',
@@ -279,8 +279,8 @@ public sealed class LeaderboardTest : IDisposable
     }
 
     [Theory]
-    [InlineData("bots", "glicko", "Glicko-2 ▼", "2600|1000")]
-    [InlineData("everyone", "trueskill", "TrueSkill ▼", "44.5|11.5")]
+    [InlineData("bots", "glicko", "Rating ▼", "2600|1000")]
+    [InlineData("everyone", "trueskill", "Rating ▼", "44.5|11.5")]
     public void Render_WhenARatingSystemWasChosen_RanksTheBotsByItOnEveryBoard(
         string shown,
         string rating,
@@ -290,7 +290,7 @@ public sealed class LeaderboardTest : IDisposable
     {
         // Arrange - the choice on every board, a bot's from its Elo (the user's report of 2026-11-20: no way to switch)
         _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.leaderboard")
-            .SetResult($"board={shown}&rating={rating}&sort={rating}&desc=1");
+            .SetResult($"board={shown}&rating={rating}&sort=rating&desc=1");
         this._page.Server.BotLeaderboards = this._page.Server.BotLeaderboards.Add(
             "chaturaji-2027",
             [
@@ -317,10 +317,10 @@ public sealed class LeaderboardTest : IDisposable
     }
 
     [Theory]
-    [InlineData("board=players&rating=glicko&sort=glicko", "players", "Glicko-2 ▲")]
+    [InlineData("board=players&rating=glicko&sort=rating", "players", "Rating ▲")]
     [InlineData("board=bots&sort=points", "bots", "Points ▲")]
     [InlineData("board=everyone&sort=won&desc=1", "everyone", "Won ▼")]
-    [InlineData("board=nonsense&sort=gone&desc=1", "players", "Elo ▼")]
+    [InlineData("board=nonsense&sort=gone&desc=1", "players", "Rating ▼")]
     public void Render_WhenABoardWasLeftSortedSo_ShowsItSoAgain(string remembered, string shown, string sorted)
     {
         // Arrange - a board and a column it has, or neither
@@ -481,11 +481,23 @@ public sealed class LeaderboardTest : IDisposable
     }
 
     [Theory]
-    [InlineData("bots")]
-    [InlineData("everyone")]
-    public void ChooseBoard_WhenTheServerCannotBeReached_SaysWhyAndListsNoOne(string chosen)
+    [InlineData("bots", "Sage")]
+    [InlineData("everyone", "Ada|Sage")]
+    public void ChooseBoard_WhenTheServerCannotBeReachedSince_ShowsTheBoardFromWhatItGaveWithoutAskingAgain(
+        string chosen,
+        string expected
+    )
     {
-        // Arrange
+        // Arrange - the game's people and bots given at once; a board chosen asks nothing more, so nothing jumps (the
+        // user's report of 2026-11-20)
+        this._page.Server.Leaderboards = this._page.Server.Leaderboards.Add(
+            "chaturaji-2027",
+            [new StandingDto(1, "Ada", 1516, 0, 1, 0, 0)]
+        );
+        this._page.Server.BotLeaderboards = this._page.Server.BotLeaderboards.Add(
+            "chaturaji-2027",
+            [new BotStandingDto(1, "Sage", 40, 5, 0, 1) { BotId = "sage", Elo = 1400 }]
+        );
         IRenderedComponent<Leaderboard> board = this.Render();
         this._page.Server.Failure = new HttpRequestException("unreachable");
 
@@ -494,8 +506,11 @@ public sealed class LeaderboardTest : IDisposable
 
         // Assert
         Assert.Equal(
-            (1, 0, 0),
-            (board.FindAll("p.problem").Count, board.FindAll(".leaders").Count, board.FindAll(".no-leaders").Count)
+            (0, expected),
+            (
+                board.FindAll("p.problem").Count,
+                string.Join('|', board.FindAll(".leaders tbody td.name").Select(cell => cell.TextContent.Trim()))
+            )
         );
     }
 
