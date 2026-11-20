@@ -85,9 +85,10 @@ public static class GrandLegionsRules
 
     /// <summary>
     /// What a player is told of each piece of the catalogue beyond its moves: its class, what its own promotion may
-    /// make it, and what holds it back; and, for sorting pieces, which way it goes, what sort of beast a Cavalry
-    /// piece is, and which game it comes from. How much lifting a restriction costs is not told: quick
-    /// games lift none.
+    /// make it, and what holds it back: the restrictions a lift may remove apart from the weaknesses of its own move
+    /// (a binding), which nothing lifts (the user's distinction of 2026-11-19); and, for sorting pieces, which way it
+    /// goes, what sort of beast a Cavalry piece is, and which game it comes from. How much lifting a restriction costs
+    /// is not told: quick games lift none.
     /// </summary>
     public static ImmutableDictionary<PieceKindId, PieceGuide> Guides { get; } =
         GrandLegionsPieces.Catalogue.ToImmutableDictionary(
@@ -99,7 +100,16 @@ public static class GrandLegionsRules
                 Kin = GrandLegionsPieces.Kins.GetValueOrDefault(piece.Id),
                 Origin = piece.Tradition.ToString(),
                 PromotesTo = [.. piece.PromotesTo],
-                Restrictions = [.. piece.Restrictions.Select(restriction => restriction.Description)],
+                Restrictions =
+                [
+                    .. piece.Restrictions.Where(restriction => restriction.Kind != RestrictionKind.Binding)
+                        .Select(restriction => restriction.Description),
+                ],
+                Weaknesses =
+                [
+                    .. piece.Restrictions.Where(restriction => restriction.Kind == RestrictionKind.Binding)
+                        .Select(restriction => restriction.Description),
+                ],
             }
         );
 

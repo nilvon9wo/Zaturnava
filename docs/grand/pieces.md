@@ -439,6 +439,8 @@ as the Minister is; a game of an earlier edition still prices and scores it at 7
   Alfil's lifts are gone. So is the War Engine's, for the same reason.
 - The **Camel**'s and **Threeleaper**'s bindings are listed, without a lift.
 - A bound piece's devaluation is set by the share of the board it can reach ([Binding](#binding)).
+- *(Stated 2026-11-19)* A piece's card tells its bindings as **weaknesses**, its own move's, which
+  nothing lifts, apart from its **restrictions**, which the rules impose and a lift may remove.
 - Direction counts are what the value rests on, and are corrected where the move was mistold: the
   **Silver General** and the **Noble** (the Makruk Khon) step diagonally or straight forward (5;
   the Noble's bonus was 8, its value is now 5); the **Janggi Soldier** steps forward or sideways,
