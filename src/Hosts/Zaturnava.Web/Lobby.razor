@@ -445,16 +445,19 @@
                                    placeholder="@idleRounds" />
                         </label>
                     }
-                    @if (this._me is not null)
-                    {
+                </div>
+                @* who may play, apart from the rules (the user's word of 2026-11-20) *@
+                @if (this._me is not null)
+                {
+                    <div class="army-choices game-options player-options">
                         <span class="choice-name">Players</span>
                         <label class="for-players check"
                                title="Players signed in only: no guests at the open seats, nor taking over a bot's">
                             <input type="checkbox" class="players-only" @bind="this._isForPlayers" />
                             Signed in only
                         </label>
-                    }
-                </div>
+                    </div>
+                }
             }
             @if (mode == SetupMode.Custom)
             {
@@ -485,7 +488,8 @@
                     catalog,
                     [.. awaited.Select(waiting => waiting.Game)],
                     isSortable: false,
-                    game => this.AwaitedActions(game, me.Token)
+                    game => this.AwaitedActions(game, me.Token),
+                    isAwaited: true
                 )
             </div>
         }
@@ -1000,21 +1004,24 @@
         IsAlly(ruleset, you, seat) ? "Your ally" : "Enemy";
 
     /// <summary>
-    /// The games, one a row and one fact a cell (playtest 2026-11-15, H4): its size, board, kingdoms and budget, if its
-    /// game has sizes; who holds each seat, a column a seat, an open one to join; which seat decides next; how many moves; when it
-    /// was created and last changed; then what the player may do. Its headings sort it, if <paramref name="isSortable"/>.
+    /// The games, one a row and one fact a cell (playtest 2026-11-15, H4): its board, kingdoms and budget, if any is
+    /// told, else its size, if its game has sizes; who holds each seat, a column a seat, an open one to join; which seat
+    /// decides next, unless <paramref name="isAwaited"/>, every game the player's to decide; when it last changed; then
+    /// what the player may do. Its headings sort it, if <paramref name="isSortable"/>.
     /// </summary>
     private RenderFragment GamesTable(
         CatalogDto catalog,
         ImmutableList<GameSummaryDto> games,
         bool isSortable,
-        Func<GameSummaryDto, RenderFragment> actions
+        Func<GameSummaryDto, RenderFragment> actions,
+        bool isAwaited = false
     ) =>
         @<div class="games-scroll">
             <table class="games-table">
                 <thead>
                     <tr>
-                        @if (HasSizes(catalog, games))
+                        @* the size only without the board, which tells it (the user's word of 2026-11-20) *@
+                        @if (HasSizes(catalog, games) && !HasLayout(games))
                         {
                             @this.Heading(SizeColumn, "Size", "size", isSortable)
                         }
@@ -1031,7 +1038,7 @@
                         {
                             @this.Heading(SeatColumn + seat, name, $"seat seat-{seat}", isSortable)
                         }
-                        @foreach ((string column, string heading) in Columns)
+                        @foreach ((string column, string heading) in Columns.Where(shown => !isAwaited || shown.Column != NextColumn))
                         {
                             @this.Heading(column, heading, null, isSortable)
                         }
@@ -1042,13 +1049,14 @@
                     @foreach (GameSummaryDto game in games)
                     {
                         <tr data-game="@game.Id">
-                            @if (HasSizes(catalog, games))
+                            @if (HasSizes(catalog, games) && !HasLayout(games))
                             {
                                 <td class="size">@SizeOf(catalog, game.RulesetId)</td>
                             }
                             @if (HasLayout(games))
                             {
-                                <td class="listed-board">@Across(game.Board, isKingdom: false)</td>
+                                @* a game telling no board, as Chaturaji 2027, by its size or name instead *@
+                                <td class="listed-board">@(Across(game.Board, isKingdom: false) ?? SizeOf(catalog, game.RulesetId))</td>
                                 <td class="listed-kingdom">@Across(game.Board, isKingdom: true)</td>
                                 <td class="listed-budget" title="Points each army has to spend on its pieces">@game.Budget</td>
                             }
@@ -1056,18 +1064,19 @@
                             {
                                 <td class="seat seat-@seat">@this.SeatCell(game, seat)</td>
                             }
-                            <td class="next">
-                                @if (NextOf(game) is { } next)
-                                {
-                                    <span class="seat-@next">@SeatName(game.SeatNames, next)</span>
-                                }
-                                else
-                                {
-                                    @("-")
-                                }
-                            </td>
-                            <td class="moves">@game.Moves</td>
-                            <td class="created">@this.Ago(game.Created)</td>
+                            @if (!isAwaited)
+                            {
+                                <td class="next">
+                                    @if (NextOf(game) is { } next)
+                                    {
+                                        <span class="seat-@next">@SeatName(game.SeatNames, next)</span>
+                                    }
+                                    else
+                                    {
+                                        @("-")
+                                    }
+                                </td>
+                            }
                             <td class="changed">@this.Ago(game.LastChanged)</td>
                             <td class="game-actions">
                                 @if (game.AreDiceOff)
@@ -1151,16 +1160,18 @@
             {
                 @if (this._held.GetValueOrDefault(game.Id) is { } claim)
                 {
-                    <button class="resume primary" @onclick="() => this.Resume(game.Id, claim)">
-                        Back to @SeatName(game.SeatNames, claim.Seat)
+                    <button class="resume primary" @onclick="() => this.Resume(game.Id, claim)"
+                            title="@BackTo(game, claim.Seat)" aria-label="@BackTo(game, claim.Seat)">
+                        @Returning
                     </button>
                 }
                 else if (this.MySeat(game) is { } mine)
                 {
                     <button class="take-back primary"
-                            title="Your seat, taken from another device: take it back here"
+                            title="@($"{BackTo(game, mine.Seat)}: your seat, taken from another device, taken back here")"
+                            aria-label="@BackTo(game, mine.Seat)"
                             @onclick="() => this.TakeBack(game.Id, mine.Seat, mine.Token)">
-                        Back to @SeatName(game.SeatNames, mine.Seat)
+                        @Returning
                     </button>
                 }
                 <button class="watch" @onclick="() => this.OnSeated.InvokeAsync(Seating.Watching(game.Id))">
@@ -1174,11 +1185,21 @@
         @<text>
             @if (this._awaited.FirstOrDefault(waiting => waiting.Game.Id == game.Id) is { } awaited)
             {
-                <button class="awaited-resume primary" @onclick="() => this.BackTo(game.Id, awaited.Seat, token)">
-                    Back to @SeatName(game.SeatNames, awaited.Seat)
+                <button class="awaited-resume primary" @onclick="() => this.BackTo(game.Id, awaited.Seat, token)"
+                        title="@BackTo(game, awaited.Seat)" aria-label="@BackTo(game, awaited.Seat)">
+                    @Returning
                 </button>
             }
         </text>;
+
+    /// <summary>
+    /// What a button back to a seat does, "Back to Yellow", told on hover and to a screen reader; the button itself an
+    /// icon (the user's word of 2026-11-20: an icon, not the words).
+    /// </summary>
+    private static string BackTo(GameSummaryDto game, int seat) => $"Back to {SeatName(game.SeatNames, seat)}";
+
+    /// <summary>The icon of going back to a seat: a return arrow.</summary>
+    private static readonly RenderFragment Returning = @<span class="returning" aria-hidden="true">&#x21A9;</span>;
 
     /// <summary>"5 min ago"; "-", for a time not kept.</summary>
     private string Ago(DateTimeOffset? time) =>
@@ -1231,13 +1252,14 @@
     private const string SeatColumn = "seat-";
 
     /// <summary>The games list's columns after its seats', by their headings (playtest 2026-11-15, H4).</summary>
+    /// Moves and Created left out: neither earned its width (the user's word of 2026-11-20).
     private static readonly ImmutableList<(string Column, string Heading)> Columns =
     [
-        ("next", "Next"),
-        ("moves", "Moves"),
-        ("created", "Created"),
+        (NextColumn, "Next"),
         ("changed", "Last change"),
     ];
+
+    private const string NextColumn = "next";
 
     /// <summary>
     /// The games on this page in the order chosen: by a column, either way; else, until a heading is clicked, the
@@ -1255,9 +1277,8 @@
             (_, { } at) => game => SeatKeyOf(game, at),
             (SizeColumn, _) => game => catalog.Rulesets.FindIndex(ruleset => ruleset.Id == game.RulesetId)
                 .ToString("D3", CultureInfo.InvariantCulture),
-            ("next", _) => game => NextOf(game) is { } next ? next.ToString("D3", CultureInfo.InvariantCulture) : "~",
-            ("moves", _) => game => game.Moves.ToString("D9", CultureInfo.InvariantCulture),
-            ("created", _) => game => TimeKeyOf(game.Created),
+            (NextColumn, _) => game =>
+                NextOf(game) is { } next ? next.ToString("D3", CultureInfo.InvariantCulture) : "~",
             ("changed", _) => game => TimeKeyOf(game.LastChanged),
             _ => null,
         };
