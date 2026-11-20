@@ -382,7 +382,7 @@ html { scrollbar-gutter: stable; }
 .army-choices .terrain-line select { flex: 1 1 0; width: auto; }
 .game-options label.check { display: flex; align-items: center; gap: 6px; grid-column: 2; margin: 0; }
 .game-options select.opener { grid-column: 3; }
-.game-options input.idle-rounds { width: 5em; justify-self: start; }
+.army-choices.game-options input.idle-rounds { width: 5em; justify-self: start; }
 /* The new game's choices in groups, a space between: the armies, the board (rivers), how the game is played (dice,
    all-pass rounds), and who may play, not a rule at all (the user's word of 2026-11-20). Every name beside its field,
    the all-pass rounds' too: its label, once a block, had kept its own cell, beside the dice until who opens took it. */
