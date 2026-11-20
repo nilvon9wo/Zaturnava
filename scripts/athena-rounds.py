@@ -44,8 +44,9 @@ def folder_for(ruleset):
 
 
 def rounds_done(folder):
-    """How many rounds the folder holds the networks of."""
-    return len(glob.glob(os.path.join(folder, "round-*.json")))
+    """How many rounds the folder holds the networks of: an empty file, left by a run stopped as it wrote
+    (2026-11-20: round-5.json, which every night after failed to go on from), is no round's, and is learned again."""
+    return len([path for path in glob.glob(os.path.join(folder, "round-*.json")) if os.path.getsize(path) > 0])
 
 
 def learn(runner, folder, number, options):
@@ -58,11 +59,14 @@ def learn(runner, folder, number, options):
     network = os.path.join(folder, f"round-{number}.json")
     previous = os.path.join(folder, f"round-{number - 1}.json")
     start = ["--from", previous] if os.path.exists(previous) else ["--hidden", str(options.hidden)]
+    # written aside, then put in place whole, so that a run stopped as it writes leaves no half a network
+    writing = network + ".part"
     subprocess.run(
         [*runner, "--learn", ",".join(games), *start, "--epochs", str(options.epochs),
-         "--lambda", str(options.lambda_), "--rate", str(options.rate), "--out", network],
+         "--lambda", str(options.lambda_), "--rate", str(options.rate), "--out", writing],
         check=True,
     )
+    os.replace(writing, network)
     return network
 
 
