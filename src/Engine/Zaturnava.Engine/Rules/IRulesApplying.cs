@@ -259,6 +259,13 @@ public interface IRulesApplying
     ImmutableList<Attack> AttacksOf([Required] GameState state, SeatId seat);
 
     /// <summary>
+    /// The cells the pieces of <paramref name="seat"/>'s own army could move to, as it stands, the dice and whose turn
+    /// it is aside: for one weighing where a threatened piece may flee (a Pawn moves straight on, though it attacks
+    /// diagonally). Where it attacks, unless the ruleset says otherwise.
+    /// </summary>
+    ImmutableList<Attack> MovesOf([Required] GameState state, SeatId seat) => this.AttacksOf(state, seat);
+
+    /// <summary>
     /// How far ahead a team is clearly ahead, on points and on what its pieces on the board are worth, as
     /// <see cref="WorthOf"/> counts them: Chaturaji 2027's 10, unless the ruleset says otherwise. For one weighing
     /// whether a game is won or lost.

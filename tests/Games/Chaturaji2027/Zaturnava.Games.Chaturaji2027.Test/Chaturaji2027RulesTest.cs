@@ -2217,6 +2217,20 @@ public sealed class Chaturaji2027RulesTest
     }
 
     [Fact]
+    public void MovesOf_WhenAPawnHasNothingToTake_GoesOnlyStraightAheadWhereItDoesNotAttack()
+    {
+        // Arrange - a Pawn alone, attacking its forward diagonals, empty (2026-11-20: where a threatened piece may
+        // flee is where it moves, not where it attacks)
+        GameState state = this.StateWith((Grid.CellAt(3, 3), Piece(1, Chaturaji2027Pieces.Pawn, Black)));
+
+        // Act
+        ImmutableList<Attack> moves = this._rules.MovesOf(state, Black);
+
+        // Assert
+        Assert.Equal([Grid.CellAt(3, 4)], moves.Select(move => move.Target));
+    }
+
+    [Fact]
     public void AttacksOf_WhenOtherArmiesStandOnTheBoard_CountsOnlyTheSeatsOwnPieces()
     {
         // Arrange

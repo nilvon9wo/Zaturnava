@@ -212,25 +212,40 @@ internal static class Appraisal
                 .SelectMany(occupant => theirs[occupant.Key])
                 .Select(attack => attack.Attacker.Id),
         ];
-        ILookup<PieceId, CellId> reach =
-            theirs.SelectMany(cell => cell).ToLookup(attack => attack.Attacker.Id, attack => attack.Target);
-        ImmutableHashSet<CellId> blocked = [.. ours.Select(cell => cell.Key), .. state.Position.Occupants.Keys];
-        ImmutableList<(int Left, int Saved)> enemies =
+        ImmutableList<(Piece Piece, int Won)> threatened =
         [
             .. state.Position.Occupants
                 .Where(occupant => !state.Teams.AreAllied(occupant.Value.Owner, request.Seat)
                     && !takers.Contains(occupant.Value.Id)
                 )
-                .Select(occupant => (occupant.Value.Owner, Threat: new Threat(
-                    Careful.Exchange(
-                        request.Rules.WorthOf(occupant.Value.Kind),
-                        Careful.WorthsOf(request, ours[occupant.Key]),
-                        Careful.WorthsOf(request, theirs[occupant.Key])
-                    ),
-                    reach[occupant.Value.Id].Any(cell => !blocked.Contains(cell))
+                .Select(occupant => (occupant.Value, Careful.Exchange(
+                    request.Rules.WorthOf(occupant.Value.Kind),
+                    Careful.WorthsOf(request, ours[occupant.Key]),
+                    Careful.WorthsOf(request, theirs[occupant.Key])
                 )))
-                .Where(threat => threat.Threat.Won > 0)
-                .GroupBy(threat => threat.Owner, threat => threat.Threat)
+                .Where(threat => threat.Item2 > 0),
+        ];
+        if (threatened.IsEmpty)
+        {
+            return 0;
+        }
+
+        // where each threatened piece may move, not where it attacks (2026-11-20: a Pawn, attacking diagonally but
+        // moving straight on, was counted as fleeing when it had nowhere to go); counted only for the enemies with a
+        // piece threatened, as moves take longer to count than attacks
+        ILookup<PieceId, CellId> reach = threatened
+            .Select(threat => threat.Piece.Owner)
+            .Distinct()
+            .SelectMany(seat => request.Rules.MovesOf(state, seat))
+            .ToLookup(move => move.Attacker.Id, move => move.Target);
+        ImmutableHashSet<CellId> blocked = [.. ours.Select(cell => cell.Key), .. state.Position.Occupants.Keys];
+        ImmutableList<(int Left, int Saved)> enemies =
+        [
+            .. threatened
+                .GroupBy(
+                    threat => threat.Piece.Owner,
+                    threat => new Threat(threat.Won, reach[threat.Piece.Id].Any(cell => !blocked.Contains(cell)))
+                )
                 .Select(Saving),
         ];
         return enemies.Select(enemy => enemy.Left).Append(0).Max() + (Tempo * enemies.Sum(enemy => enemy.Saved));
@@ -252,7 +267,7 @@ internal static class Appraisal
 
     /// <summary>
     /// What the team could win by starting an exchange where an enemy piece stands, and whether the piece may flee:
-    /// whether it attacks (as where it may go) an empty cell the team does not attack. A cell a piece of the team
+    /// whether it may move to an empty cell the team does not attack. A cell a piece of the team
     /// stands on is no refuge: a piece that could take one is not counted at all.
     /// </summary>
     private sealed record Threat(int Won, bool CanFlee);
