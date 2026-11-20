@@ -238,6 +238,40 @@ public sealed class InMemoryGameStoreTest
     }
 
     [Fact]
+    public async Task BotsDue_WhenGamesWaitOnBotsAndOthers_ReturnsThoseIdleEverySeatHeldWaitingOnABot()
+    {
+        // Arrange - each of a person and a bot, the bot's turn but as told: due; the person's turn; a seat open; over;
+        // changed late; and not yet summarized
+        GameRecord due = Record("due") with
+        {
+            Controllers = [new HumanSeat("HASH"), new BotSeat("random")],
+            Deciding = new SeatId(1),
+            IsOver = false,
+            LastChanged = DateTimeOffset.UnixEpoch,
+        };
+        GameRecord[] games =
+        [
+            due,
+            due with { Id = new GameId("person"), Deciding = new SeatId(0) },
+            due with { Id = new GameId("open"), Controllers = [new OpenSeat(), new BotSeat("random")] },
+            due with { Id = new GameId("over"), IsOver = true },
+            due with { Id = new GameId("recent"), LastChanged = DateTimeOffset.UnixEpoch.AddHours(3) },
+            due with { Id = new GameId("unsummarized"), IsOver = null, Deciding = null },
+        ];
+        foreach (GameRecord game in games)
+        {
+            await this._store.Add(game, this._cancellation);
+        }
+
+        // Act
+        ImmutableList<DueGame> found =
+            await this._store.BotsDue(DateTimeOffset.UnixEpoch.AddHours(2.5), this._cancellation);
+
+        // Assert
+        Assert.Equal([new DueGame(new GameId("due"), "tiny")], found);
+    }
+
+    [Fact]
     public async Task Remove_WhenGamesAreNamed_LetsGoOfThemAlone()
     {
         // Arrange

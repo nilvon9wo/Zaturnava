@@ -39,6 +39,13 @@ public interface IGamePersisting
     Task<ImmutableList<GameRecord>> Idle(DateTimeOffset since, CancellationToken cancellationToken);
 
     /// <summary>
+    /// The games not over, every seat held, unchanged since <paramref name="since"/>, waiting, as last saved, for one
+    /// of the server's bots to decide: each by its id and ruleset alone, nothing else of it read, as the server looks
+    /// for them every few seconds (<see cref="GameService.PlayIdleBots"/>).
+    /// </summary>
+    Task<ImmutableList<DueGame>> BotsDue(DateTimeOffset since, CancellationToken cancellationToken);
+
+    /// <summary>
     /// The first <paramref name="count"/> games over, as last saved, not yet counted in their players' standings: the
     /// one that last changed earliest first, then by id, so that each counts in the order the games ended.
     /// </summary>

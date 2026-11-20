@@ -2494,8 +2494,9 @@ public sealed class GameServiceTest
     public async Task PlayIdleBots_WhenGamesWaitLongForABotTheServerPlays_PlaysThoseOnUntilAPersonMustDecide()
     {
         // Arrange - games left long, the first seat to decide: a bot's; a person's; a bot's, saved as the second's,
-        // which is a person's; a bot's while a seat is open; unsummarized; of a ruleset retired; and one changed just
-        // now (the user's report of 2026-11-20: games days old waiting for bots)
+        // which is a person's; a bot's while a seat is open; unsummarized; of a ruleset retired; one changed just
+        // now; and one its rules no longer replay, left as it is (the user's report of 2026-11-20: games days old
+        // waiting for bots)
         InMemoryGameStore store = new();
         GameService service = this.Service(GameServiceSettings.Default, store);
         DateTimeOffset longAgo = this._time.Now - TimeSpan.FromMinutes(1);
@@ -2515,6 +2516,12 @@ public sealed class GameServiceTest
                 RulesetId = "retired",
             },
             Waiting("recent", "ada", this._time.Now) with { Controllers = [bot, ada], Deciding = First },
+            Waiting("broken", "ada", longAgo) with
+            {
+                Controllers = [bot, ada],
+                Deciding = First,
+                Actions = [new PassAction(Second).Describe()],
+            },
         ];
         foreach (GameRecord game in games)
         {
@@ -2527,7 +2534,7 @@ public sealed class GameServiceTest
         // Assert - the bot passed, and Ada is to decide
         ImmutableList<GameRecord> kept = await store.List(this._cancellation);
         Assert.Equal(
-            (1, "due:1:1,open:0:0,person:0:0,recent:0:0,retired:0:0,stale:0:1,unsummarized:0:0"),
+            (1, "broken:1:0,due:1:1,open:0:0,person:0:0,recent:0:0,retired:0:0,stale:0:1,unsummarized:0:0"),
             (
                 moved,
                 string.Join(

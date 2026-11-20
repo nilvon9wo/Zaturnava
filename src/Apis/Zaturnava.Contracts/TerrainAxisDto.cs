@@ -6,4 +6,11 @@ namespace Net.NowhereAtAll.Zaturnava.Contracts;
 /// One thing about a game's terrain its creator may choose (<see cref="RulesetDto.TerrainAxes"/>): its name, the bits
 /// of the terrain's number it sets, and each way to set them.
 /// </summary>
-public sealed record TerrainAxisDto(string Name, int Mask, ImmutableList<TerrainOptionDto> Options);
+public sealed record TerrainAxisDto(string Name, int Mask, ImmutableList<TerrainOptionDto> Options)
+{
+    /// <summary>
+    /// The mask of the axis this one refines, if any: chosen beside it, on its line, and only while that one is not
+    /// chosen as 0, none.
+    /// </summary>
+    public int? Within { get; init; }
+}

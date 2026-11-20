@@ -385,64 +385,76 @@
                 @* The terrain as its creator chooses it, each part at random unless they do (asked 2026-11-19); in
                    the armies' grid, each name beside its list. *@
                 <div class="army-choices terrain-choices">
-                    @foreach (TerrainAxisDto axis in this.Ruleset(catalog).TerrainAxes)
+                    @foreach (TerrainAxisDto axis in this.Ruleset(catalog).TerrainAxes.Where(axis => axis.Within is null))
                     {
                         <label class="terrain">
                             <span class="choice-name">@axis.Name</span>
-                            <select class="terrain-axis" value="@this.TerrainPicked(axis)"
-                                    @onchange="@(change => this.PickTerrain(axis, change.Value as string))">
-                                <option value="">At random</option>
-                                @foreach (TerrainOptionDto option in axis.Options)
+                            <span class="terrain-line">
+                                @this.TerrainSelect(catalog, axis, "At random")
+                                @* each choice within this one beside it, as a bot beside its strength, and none while
+                                   this one is none (the user's word of 2026-11-20) *@
+                                @if (this.TerrainPicked(axis) != "0")
                                 {
-                                    <option value="@option.Value">@option.Name</option>
+                                    @foreach (TerrainAxisDto within in this.Ruleset(catalog).TerrainAxes
+                                        .Where(inner => inner.Within == axis.Mask))
+                                    {
+                                        @this.TerrainSelect(catalog, within, $"{within.Name}: at random")
+                                    }
                                 }
-                            </select>
+                            </span>
                         </label>
                     }
                 </div>
             }
-            @if (mode == SetupMode.Custom && this.Ruleset(catalog).HasDice)
+            @if (mode == SetupMode.Custom)
             {
-                <label class="dice-off"
-                       title="Play without dice: nothing is rolled for, not who goes first, nor more moves, nor an escape">
-                    <input type="checkbox" class="no-dice" @bind="this._areDiceOff" />
-                    Play without dice
-                </label>
-                @if (this._areDiceOff)
-                {
-                    <label class="opener">
-                        Who opens
-                        <select class="opener" @bind="this._opener">
-                            <option value="">At random</option>
-                            @foreach (int seat in Enumerable.Range(0, this.Ruleset(catalog).SeatCount))
-                            {
-                                <option value="@seat">@SeatName(this.Ruleset(catalog).SeatNames, seat)</option>
-                            }
-                        </select>
-                    </label>
-                }
-            }
-            @if (mode == SetupMode.Custom && this.Ruleset(catalog).IdleRounds is { } idleRounds)
-            {
-                @* "Idle" was unclear (the user, 2026-11-20): rounds in which every player passes. Rounds with no
-                   capture are another limit, the quiet rounds, 50. *@
-                <label class="idle-rounds"
-                       title="The game ends on points after this many rounds in a row in which every player passed">
-                    <span class="choice-name">All-pass rounds to end</span>
-                    <input type="number"
-                           class="idle-rounds"
-                           min="1"
-                           @bind="this._idleRounds"
-                           placeholder="@idleRounds" />
-                </label>
-            }
-            @if (mode == SetupMode.Custom && this._me is not null)
-            {
-                <label class="for-players"
-                       title="Players signed in only: no guests at the open seats, nor taking over a bot's">
-                    <input type="checkbox" class="players-only" @bind="this._isForPlayers" />
-                    No anonymous players
-                </label>
+                @* The game's own options in the grid of the choices above: each name in the first column, what is
+                   chosen in the second, and who opens beside the dice, as a bot beside its strength (the user's word
+                   of 2026-11-20: "messy, crowded, and chaotic") *@
+                <div class="army-choices game-options">
+                    @if (this.Ruleset(catalog).HasDice)
+                    {
+                        <span class="choice-name">Dice</span>
+                        <label class="dice-off check"
+                               title="Play without dice: nothing is rolled for, not who goes first, nor more moves, nor an escape">
+                            <input type="checkbox" class="no-dice" @bind="this._areDiceOff" />
+                            Play without
+                        </label>
+                        @if (this._areDiceOff)
+                        {
+                            <select class="opener" @bind="this._opener" aria-label="Who opens" title="Who opens">
+                                <option value="">Who opens: at random</option>
+                                @foreach (int seat in Enumerable.Range(0, this.Ruleset(catalog).SeatCount))
+                                {
+                                    <option value="@seat">@SeatName(this.Ruleset(catalog).SeatNames, seat) opens</option>
+                                }
+                            </select>
+                        }
+                    }
+                    @if (this.Ruleset(catalog).IdleRounds is { } idleRounds)
+                    {
+                        @* "Idle" was unclear (the user, 2026-11-20): rounds in which every player passes. Rounds with
+                           no capture are another limit, the quiet rounds, 50. *@
+                        <label class="idle-rounds"
+                               title="The game ends on points after this many rounds in a row in which every player passed">
+                            <span class="choice-name">All-pass rounds to end</span>
+                            <input type="number"
+                                   class="idle-rounds"
+                                   min="1"
+                                   @bind="this._idleRounds"
+                                   placeholder="@idleRounds" />
+                        </label>
+                    }
+                    @if (this._me is not null)
+                    {
+                        <span class="choice-name">Players</span>
+                        <label class="for-players check"
+                               title="Players signed in only: no guests at the open seats, nor taking over a bot's">
+                            <input type="checkbox" class="players-only" @bind="this._isForPlayers" />
+                            Signed in only
+                        </label>
+                    }
+                </div>
             }
             @if (mode == SetupMode.Custom)
             {
@@ -805,10 +817,28 @@
         this._terrain.TryGetValue(axis.Mask, out int picked) ? picked.ToString(CultureInfo.InvariantCulture) : "";
 
     /// <summary><paramref name="axis"/> set to the option <paramref name="value"/> holds; at random, if none.</summary>
-    private void PickTerrain(TerrainAxisDto axis, string? value) =>
+    /// <summary>The axis chosen as picked, at random if left; with none, none of the choices within it either.</summary>
+    private void PickTerrain(CatalogDto catalog, TerrainAxisDto axis, string? value) =>
         this._terrain = int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out int picked)
-            ? this._terrain.SetItem(axis.Mask, picked)
+            ? picked == 0
+                ? this._terrain.SetItem(axis.Mask, picked).RemoveRange(
+                    this.Ruleset(catalog).TerrainAxes
+                        .Where(inner => inner.Within == axis.Mask)
+                        .Select(inner => inner.Mask)
+                )
+                : this._terrain.SetItem(axis.Mask, picked)
             : this._terrain.Remove(axis.Mask);
+
+    /// <summary>The list an axis is chosen from, at random first, named <paramref name="random"/>.</summary>
+    private RenderFragment TerrainSelect(CatalogDto catalog, TerrainAxisDto axis, string random) =>
+        @<select class="terrain-axis" value="@this.TerrainPicked(axis)" aria-label="@axis.Name" title="@axis.Name"
+                 @onchange="@(change => this.PickTerrain(catalog, axis, change.Value as string))">
+            <option value="">@random</option>
+            @foreach (TerrainOptionDto option in axis.Options)
+            {
+                <option value="@option.Value">@option.Name</option>
+            }
+        </select>;
 
     /// <summary>
     /// <paramref name="game"/> set up as the player last started it, if they have, and it still can be; else
@@ -991,9 +1021,11 @@
                         @if (HasLayout(games))
                         {
                             @* each game's board, kingdoms and budget told, "8x8" (the user, 2026-11-20) *@
-                            @this.Heading("board", "Board", "board", isSortable: false)
-                            @this.Heading("kingdom", "Kingdom", "kingdom", isSortable: false)
-                            @this.Heading("budget", "Budget", "budget", isSortable: false)
+                            @* "listed-": .board is the game's own board, whose look a cell so named took (the
+                               user's report of 2026-11-20) *@
+                            @this.Heading("listed-board", "Board", "listed-board", isSortable: false)
+                            @this.Heading("listed-kingdom", "Kingdom", "listed-kingdom", isSortable: false)
+                            @this.Heading("listed-budget", "Budget", "listed-budget", isSortable: false)
                         }
                         @foreach ((string name, int seat) in SeatsOf(games))
                         {
@@ -1016,9 +1048,9 @@
                             }
                             @if (HasLayout(games))
                             {
-                                <td class="board">@Across(game.Board, isKingdom: false)</td>
-                                <td class="kingdom">@Across(game.Board, isKingdom: true)</td>
-                                <td class="budget" title="Points each army has to spend on its pieces">@game.Budget</td>
+                                <td class="listed-board">@Across(game.Board, isKingdom: false)</td>
+                                <td class="listed-kingdom">@Across(game.Board, isKingdom: true)</td>
+                                <td class="listed-budget" title="Points each army has to spend on its pieces">@game.Budget</td>
                             }
                             @foreach ((string _, int seat) in SeatsOf(games))
                             {

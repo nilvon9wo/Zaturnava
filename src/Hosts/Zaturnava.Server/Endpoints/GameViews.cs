@@ -427,7 +427,10 @@ internal static class GameViews
                     axis.Name,
                     axis.Mask,
                     [.. axis.Options.Select(option => new TerrainOptionDto(option.Name, option.Value))]
-                )),
+                )
+                {
+                    Within = axis.Within,
+                }),
             ],
             SeatNames = [.. state.Seats.Select(seat => rules.NameOf(seat.Id))],
             SeatTeams = [.. state.Seats.Select(seat => state.Teams.TeamOf(seat.Id))],

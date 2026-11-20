@@ -404,6 +404,47 @@ public sealed class EfGameStoreTest : IDisposable
     }
 
     [Fact]
+    public async Task BotsDue_WhenGamesWaitOnBotsAndOthers_ReturnsThoseIdleEverySeatHeldWaitingOnABot()
+    {
+        // Arrange
+        foreach (GameRecord game in BotGames())
+        {
+            await this._store.Add(game, this._cancellation);
+        }
+
+        // Act
+        ImmutableList<DueGame> due = await new EfGameStore(this._database.NewContext())
+            .BotsDue(DateTimeOffset.UnixEpoch.AddHours(2.5), this._cancellation);
+
+        // Assert
+        Assert.Equal([new DueGame(new GameId("due"), GameRowProvider.DefaultRulesetId)], due);
+    }
+
+    /// <summary>
+    /// Games, each of a person and a bot, the bot's turn but as told: due; the person's turn; a seat open; over;
+    /// changed late; and not yet summarized.
+    /// </summary>
+    private static GameRecord[] BotGames()
+    {
+        GameRecord due = Record("due") with
+        {
+            Controllers = [new HumanSeat("HASH"), new BotSeat("random")],
+            Deciding = new SeatId(1),
+            IsOver = false,
+            LastChanged = DateTimeOffset.UnixEpoch,
+        };
+        return
+        [
+            due,
+            due with { Id = new GameId("person"), Deciding = new SeatId(0) },
+            due with { Id = new GameId("open"), Controllers = [new OpenSeat(), new BotSeat("random")] },
+            due with { Id = new GameId("over"), IsOver = true },
+            due with { Id = new GameId("recent"), LastChanged = DateTimeOffset.UnixEpoch.AddHours(3) },
+            due with { Id = new GameId("unsummarized"), IsOver = null, Deciding = null },
+        ];
+    }
+
+    [Fact]
     public async Task Remove_WhenGamesAreNamed_LetsGoOfThemWithTheirSeatsAndActions()
     {
         // Arrange

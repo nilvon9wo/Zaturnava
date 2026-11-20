@@ -36,7 +36,11 @@ public static class QuickTerrain
                 new("✚ Quarter", (int)Rivers.Both),
             ]
         ),
-        new("Rivers flow", Around, [new("Through kingdoms", 0), new("Around kingdoms", Around)]),
+        // a choice within the rivers', beside it, and gone with no rivers (the user's word of 2026-11-20)
+        new("Rivers flow", Around, [new("Through kingdoms", 0), new("Around kingdoms", Around)])
+        {
+            Within = (int)Rivers.Both,
+        },
     ];
 
     /// <summary>The terrain a game dealt by <paramref name="seed"/> is played on.</summary>
