@@ -163,10 +163,15 @@ only in part, what is left is in the backlog, and its history here. The playtest
   a game without dice passes instead of rolling: acceptable for now, to be playtested.
 - **Bots' kinds on the leaderboard** (asked 2026-11-19). *Done*: the board of players and bots together marks 🧑 a
   person, 🤖 a bot; a bot playing by an AI, as its profile says (`UsesAi`, now on each bot's standing too), the same
-  robot tinted teal (2026-11-20: a brain icon read as a blob, unlike the others); today Athena and Pythia. The
-  board's key is the three icons themselves, as drawn, each named on hover, not words.
+  robot tinted teal (2026-11-20: a brain icon read as a blob, unlike the others); today Athena and Pythia. No key, in
+  words or icons: each icon in the list names itself on hover.
 
 ## Look and feel
+
+- **A mercenary marked on the board** (asked 2026-11-20). *Done*: the rules say of each piece whether it is a
+  mercenary (`IRulesApplying.IsMercenary`), by its kind or as what a mercenary was promoted into (a Shogi Pawn
+  become a Western Rook); the page is told so of each piece (`PieceDto.IsMercenary`), draws a gold coin on its
+  shoulder, and lists it on its card among its drawbacks.
 
 - **Itch frame** (asked 2026-11-19): in itch.io's frame (about 1040 by 630), the New game dialog opened over
   everything, and the games and the leaderboard each got half of a width too small for either. *Done*: in any frame,

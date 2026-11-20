@@ -144,6 +144,7 @@ internal static class GameViews
                 .Select(entry => PieceOf(snapshot.Rules, entry.Key, entry.Value) with
                 {
                     Diagram = snapshot.Rules.DiagramAt(shown, entry.Key) is { } standing ? DiagramOf(standing) : null,
+                    IsMercenary = snapshot.Rules.IsMercenary(shown, entry.Value),
                 })],
             [.. snapshot.State.Seats.Select(seat => SeatOf(snapshot, bots, seat.Id, names, shown))],
             [.. legal.Select(action => ActionOf(snapshot, action))],

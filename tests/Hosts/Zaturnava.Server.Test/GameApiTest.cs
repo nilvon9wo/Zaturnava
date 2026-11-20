@@ -874,6 +874,45 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
     }
 
     [Fact]
+    public async Task Submit_WhenAShogiPawnIsPromotedIntoACapturedWesternRook_ShowsItStillAMercenary()
+    {
+        // Arrange - the promotions scenario: Black's Shogi Pawn on f7, Yellow's Rook held (the user's report of
+        // 2026-11-20: whether it stays a mercenary could not be seen)
+        CreateGameRequest request = new("grand-legions-medium", ZaturnavaServer.OneOpenSeat)
+        {
+            Scenario = "promotions",
+        };
+        GameCreatedDto created = await this._client.Create(request, this._cancellation);
+        string black = (await this._client.Claim(created.GameId, 0, null, null, this._cancellation)).Token;
+        GameViewDto view = await this._client.Get(created.GameId, black, this._cancellation);
+        int CellOf(string name) => view.Cells.Single(cell => cell.Name == name).Id;
+        GameViewDto arrived = await this._client.Submit(
+            created.GameId,
+            black,
+            view.LegalActions.First(action => action.Kind == "move" && action.Arguments["from"] == $"{CellOf("f7")}"),
+            this._cancellation
+        );
+
+        // Act
+        GameViewDto promoted = await this._client.Submit(
+            created.GameId,
+            black,
+            arrived.LegalActions.First(action => action.Kind == "promote"),
+            this._cancellation
+        );
+
+        // Assert - Black's Western Pawn, never a mercenary, stays none
+        Assert.Equal(
+            ("Rook (Western)", true, false),
+            (
+                promoted.Pieces.Single(piece => piece.Cell == CellOf("f8")).Name,
+                promoted.Pieces.Single(piece => piece.Cell == CellOf("f8")).IsMercenary,
+                promoted.Pieces.Single(piece => piece.Cell == CellOf("b7")).IsMercenary
+            )
+        );
+    }
+
+    [Fact]
     public async Task Submit_WhenTheTaflKingComesToItsFarCornerOnTheLastDie_WaitsOnItsEscapeOrStaying()
     {
         // Arrange - the Rook moved first, with the 3, so the 5 taking the King to h8 would end the turn

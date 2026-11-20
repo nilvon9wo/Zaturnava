@@ -160,11 +160,22 @@
 
     private double YOf(PieceDto piece) => BoardFrame.ScreenY(this._cells[piece.Cell].Y);
 
+    /// <summary>How far a mercenary's coin sits from the piece's centre, right and up.</summary>
+    private const double CoinOffset = 0.3;
+
     /// <summary>A piece, on its cell, its symbol upright, in the classes given.</summary>
     private RenderFragment Drawn(PieceDto piece, string classes) =>
         @<g class="@classes" pointer-events="none">
             <title>@PieceStyle.Named(piece.Name, this.Pieces)</title>
             <circle cx="@Svg.Number(this.XOf(piece))" cy="@Svg.Number(this.YOf(piece))" r="0.4" />
+            @if (piece.IsMercenary)
+            {
+                @* a mercenary, whatever its kind: a gold coin on its shoulder (the user's report of 2026-11-20) *@
+                <circle class="mercenary-coin"
+                        cx="@Svg.Number(this.XOf(piece) + CoinOffset)"
+                        cy="@Svg.Number(this.YOf(piece) - CoinOffset)"
+                        r="0.11" />
+            }
             @if (piece.Mark is { } mark)
             {
                 @if (PieceStyle.EmblemOf(mark.Emblem) is { } emblem)

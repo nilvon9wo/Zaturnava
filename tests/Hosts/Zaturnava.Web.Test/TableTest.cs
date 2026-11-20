@@ -1085,6 +1085,27 @@ public sealed class TableTest : IDisposable
     }
 
     [Fact]
+    public void Render_WhenAPieceIsAMercenaryThoughItsKindIsNot_MarksItAndSaysSo()
+    {
+        // Arrange - a mercenary promoted into a kind that is none, as a Shogi Pawn into a Western Rook (the user's
+        // report of 2026-11-20: whether it stays a mercenary could not be seen)
+        GameViewDto view = FakeGameServer.SeatZeroToMove;
+        this._page.Server.View = view with
+        {
+            Pieces = [view.Pieces[0] with { IsMercenary = true }, .. view.Pieces.Skip(1)],
+            Kinds = [new PieceKindDto("raja", "Raja", 5)],
+        };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        int coins = table.FindAll("circle.mercenary-coin").Count;
+
+        // Act
+        Cell(table, 0).Click();
+
+        // Assert - a gold coin on the board; on its card, among its drawbacks
+        Assert.Equal((1, 1), (coins, table.FindAll("ul.drawbacks li.mercenary").Count));
+    }
+
+    [Fact]
     public void Click_WhenThePieceMayGoBerserkButIsNoMercenary_ListsThatDrawbackAlone()
     {
         // Arrange

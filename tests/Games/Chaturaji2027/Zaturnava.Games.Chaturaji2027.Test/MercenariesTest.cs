@@ -224,8 +224,15 @@ public sealed class MercenariesTest
         // Act
         Transition transition = this._rules.Apply(moved, new PromoteAction(Black, Grid.CellAt(2, 7), into.Id));
 
-        // Assert - a Horse is 3, less than the Pawn's 4; an Elephant is 4, more than the Pawn's 2
-        Assert.Equal(lastCost, transition.State.MercenaryCosts[into.Id]);
+        // Assert - a Horse is 3, less than the Pawn's 4; an Elephant is 4, more than the Pawn's 2; either way still a
+        // mercenary, as the page is told of the piece (the user's report of 2026-11-20)
+        Assert.Equal(
+            (lastCost, true),
+            (
+                transition.State.MercenaryCosts[into.Id],
+                this._rules.IsMercenary(transition.State, transition.State.Position.PieceAt(Grid.CellAt(2, 7))!)
+            )
+        );
     }
 
     [Fact]
