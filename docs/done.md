@@ -281,6 +281,9 @@ only in part, what is left is in the backlog, and its history here. The playtest
 
 ## Bots
 
+- **No pass with extra steps** (noticed 2026-11-20: a bot's Rook c2 to d2 and back, taking nothing). *Done*: every
+  bot, the server's and self-play's alike, is offered every legal action but one that would put the board and the
+  prisoners back as they were when its turn began, unless nothing else is left; so it passes, or does something.
 - *(Stated 2026-10-26)* A bot that learns from past games and analyzes the current one.
 - *(Stated 2026-10-29)* Players can play against an AI, and the claim must mean something: a bot that
   has learned the game, measured against the hand-tuned ones, not a language model picking among

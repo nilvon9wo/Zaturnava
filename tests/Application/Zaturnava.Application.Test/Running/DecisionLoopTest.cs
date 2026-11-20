@@ -173,6 +173,26 @@ public sealed class DecisionLoopTest
         Assert.Same(start, played);
     }
 
+    [Theory]
+    [InlineData(true, "move,pass,move,pass")]
+    [InlineData(false, "move,move,move,move")]
+    public async Task PlayAll_WhenABotWouldPutTheBoardBackAsTheTurnBegan_OffersItAnythingElseThereIs(
+        bool mayPass,
+        string expected
+    )
+    {
+        // Arrange - a Rook a1 to b1 and back, taking nothing, is a pass with extra steps (the user's report of
+        // 2026-11-20); the bot takes the first choice, a step, whenever it is offered; with no pass, the step back is
+        // all there is
+        ShuttleRules rules = new(2, mayPass);
+
+        // Act
+        Played played = await DecisionLoop.PlayAll(rules, [new FirstChoiceBot()], this._dice, 100, this._cancellation);
+
+        // Assert
+        Assert.Equal(expected, string.Join(",", played.Actions.Select(action => action.Kind)));
+    }
+
     [Fact]
     public async Task PlayWhile_WhenCancelledWhileDiceAreAwaited_StopsWithoutRolling()
     {
