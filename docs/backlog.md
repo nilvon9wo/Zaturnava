@@ -9,9 +9,6 @@ own number (**25**, **N29**), the [2026-11-15 specification](playtesting/2026-11
 
 ## 1. Now: asked for and not yet done
 
-- **Restriction or weakness** (asked 2026-11-19): a piece's card tells a restriction (may not leave its palace,
-  may not cross a river), which the game's rules impose and a lift may remove, from a weakness (bound to squares
-  of one colour), which is the piece's own movement and never lifted.
 - **Real AI bots** (asked 2026-11-20): bots that learn to play both games, Grand Legions above all, seeing where
   the pieces stand and how they move, not "backgammon in 2D" as Athena does now (her network ignores positions).
   With no paid tokens: a network trained here on the board square by square, per

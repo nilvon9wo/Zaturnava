@@ -168,6 +168,10 @@ only in part, what is left is in the backlog, and its history here. The playtest
 
 ## Look and feel
 
+- **Restriction or weakness** (asked 2026-11-19). *Done*: a piece's card lists its **Restrictions**, which the
+  game's rules impose and a lift may remove (its palace, a river, a path that must be clear), apart from its
+  **Weaknesses**, its own move's limits, which nothing lifts (one colour of square, one cell in nine)
+  (`PieceGuide.Weaknesses`).
 - **Rivers as chosen** (asked 2026-11-19). *Done*: in a custom Grand Legions game the creator chooses the rivers
   (none, ↕ or ↔ bisecting the board, or ✚ quartering it) and how they flow (through the kingdoms or around them),
   each left "At random" unless chosen. The rulesets say what of the terrain may be chosen

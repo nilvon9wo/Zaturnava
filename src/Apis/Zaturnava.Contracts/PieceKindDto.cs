@@ -48,7 +48,11 @@ public sealed record PieceKindDto(string Kind, string Name, int Value)
     /// <summary>Where its own promotion may be taken: "on the last row"; none, if not told.</summary>
     public string? PromotesWhere { get; init; }
 
+    /// <summary>What the game's rules hold it back by, which a lift may remove: "Only its 3 × 3 palace".</summary>
     public ImmutableList<string> Restrictions { get; init; } = [];
+
+    /// <summary>What its own move holds it back by, which nothing lifts: "One colour".</summary>
+    public ImmutableList<string> Weaknesses { get; init; } = [];
 
     public MoveDiagramDto? Diagram { get; init; }
 

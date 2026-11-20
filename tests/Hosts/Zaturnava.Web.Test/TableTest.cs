@@ -146,6 +146,7 @@ public sealed class TableTest : IDisposable
                 {
                     Class = "Leader",
                     Restrictions = ["Never beside another Raja."],
+                    Weaknesses = ["One colour of square"],
                 },
             ],
         };
@@ -156,13 +157,19 @@ public sealed class TableTest : IDisposable
         // Act
         Cell(table, 0).Click();
 
-        // Assert
+        // Assert - the rules' restrictions apart from the move's own weaknesses (the user's distinction of 2026-11-19)
         Assert.Equal(
-            ("King", "Owner Black Square c0 Class Leader Value 5", "Never beside another King."),
+            (
+                "King",
+                "Owner Black Square c0 Class Leader Value 5",
+                "Never beside another King.",
+                "One colour of square"
+            ),
             (
                 table.Find(".piece-card h2").TextContent,
                 Facts(table),
-                table.Find(".piece-card ul.restrictions li").TextContent
+                table.Find(".piece-card ul.restrictions li").TextContent,
+                table.Find(".piece-card ul.weaknesses li").TextContent
             )
         );
     }

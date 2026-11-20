@@ -300,6 +300,7 @@ internal static class GameViews
             IsPromotionPlayed = guide.IsPromotionPlayed,
             PromotesWhere = guide.PromotesWhere,
             Restrictions = guide.Restrictions,
+            Weaknesses = guide.Weaknesses,
             Mark = MarkOf(rules, kind),
             Diagram = DiagramOf(guide.Diagram),
         };

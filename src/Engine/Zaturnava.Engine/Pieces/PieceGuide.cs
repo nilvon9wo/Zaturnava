@@ -57,6 +57,14 @@ public sealed record PieceGuide(PieceKind Kind)
     /// <summary>Where its own promotion may be taken, for people: "on the last row"; none, if not told.</summary>
     public string? PromotesWhere { get; init; }
 
-    /// <summary>What holds it back, for people: "Only its 3 × 3 palace".</summary>
+    /// <summary>
+    /// What the game's rules hold it back by, which a lift may remove, for people: "Only its 3 × 3 palace".
+    /// </summary>
     public ImmutableList<string> Restrictions { get; init; } = [];
+
+    /// <summary>
+    /// What its own move holds it back by, which nothing lifts, for people: "One colour" (the user's distinction of
+    /// 2026-11-19, from <see cref="Restrictions"/>).
+    /// </summary>
+    public ImmutableList<string> Weaknesses { get; init; } = [];
 }

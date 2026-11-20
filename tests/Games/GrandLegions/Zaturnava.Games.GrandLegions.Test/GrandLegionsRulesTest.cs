@@ -414,6 +414,29 @@ public sealed class GrandLegionsRulesTest
         Assert.Equal((bearing, kin, origin), (guide.Bearing, guide.Kin, guide.Origin));
     }
 
+    [Theory]
+    [InlineData("bishop", "", "One colour of square")]
+    [InlineData("lance", "Blocked by pieces in its path", "")]
+    [InlineData("rook", "", "")]
+    public void GuideOf_WhenAPieceIsHeldBack_TellsTheRulesRestrictionsApartFromItsMovesWeaknesses(
+        string kind,
+        string restrictions,
+        string weaknesses
+    )
+    {
+        // Arrange - a restriction a lift may remove; a weakness, nothing (the user's distinction of 2026-11-19)
+        Chaturaji2027Rules rules = GrandLegionsRules.RulesOf(QuickGame.Small);
+
+        // Act
+        PieceGuide guide = rules.GuideOf(new PieceKindId(kind));
+
+        // Assert
+        Assert.Equal(
+            (restrictions, weaknesses),
+            (string.Join(",", guide.Restrictions), string.Join(",", guide.Weaknesses))
+        );
+    }
+
     [Fact]
     public void GuideOf_WhenAWesternPawn_TellsItsClassStartRowPowersAndRestriction()
     {
