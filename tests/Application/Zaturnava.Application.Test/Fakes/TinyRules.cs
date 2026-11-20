@@ -122,12 +122,18 @@ internal sealed class TinyRules(int length, bool isDealt = false, Exception? fai
         bool dealsEdgePalaces = false,
         int edition = 0,
         int? budget = null,
-        TerrainChoice? terrain = null
+        TerrainChoice? terrain = null,
+        ImmutableList<string?>? families = null
     ) =>
         initial with
         {
-            // the budget dealt, if any, kept as seat 2's score, for tests to see
-            Scores = initial.Scores.SetItem(new SeatId(0), seed)
+            // the budget dealt, if any, kept as seat 2's score, and how many seats were dealt a family as seat 3's,
+            // if any were told, for tests to see
+            Scores = (families is null ? initial.Scores : initial.Scores.SetItem(
+                    new SeatId(3),
+                    families.Count(family => family is not null)
+                ))
+                .SetItem(new SeatId(0), seed)
                 .SetItem(new SeatId(1), areAlike ? 1 : 0)
                 .SetItem(new SeatId(2), budget ?? 0),
             Terrain = dealsTerrain ? terrain?.Applied(1) ?? 1 : 0,

@@ -289,7 +289,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     /// (<see cref="ArmyDrafting.HasPalaces"/>), or, if <paramref name="dealsEdgePalaces"/>, room for one standing
     /// partly outside it; and the pieces a palace holds in it, if <paramref name="dealsPalacePieces"/> too; from the
     /// pieces as they were at <paramref name="edition"/>, each army spending <paramref name="budget"/>, if set; else as
-    /// it is.
+    /// it is; each seat's of the family of pieces <paramref name="families"/> names for it, if any.
     /// </summary>
     public GameState Deal(
         [Required] GameState initial,
@@ -301,7 +301,8 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         bool dealsEdgePalaces = false,
         int edition = 0,
         int? budget = null,
-        TerrainChoice? terrain = null
+        TerrainChoice? terrain = null,
+        ImmutableList<string?>? families = null
     )
     {
         if (this._variant.Dealer is not { } dealer)
@@ -322,6 +323,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             HasPalaces = palaced is not null,
             Edition = edition,
             Budget = budget,
+            Families = families,
         };
         Chaturaji2027Variant dealt = this._variant with { Start = dealer(dealing) };
         Position position = dealt.InitialPosition(this._grid);

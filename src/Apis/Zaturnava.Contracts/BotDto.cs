@@ -20,6 +20,12 @@ public sealed record BotDto(string Id, string Name, string Description, bool Use
     /// </summary>
     public ImmutableList<string>? Rulesets { get; init; }
 
+    /// <summary>
+    /// The family of pieces its army is made of ("Makruk", say), so that it is not offered where every army is alike,
+    /// which its family would not be (the user's word of 2026-11-20); none, for a bot that plays any pieces.
+    /// </summary>
+    public string? Family { get; init; }
+
     /// <summary>Whether it is offered for the ruleset of <paramref name="rulesetId"/>.</summary>
     public bool Plays(string rulesetId) => this.Rulesets?.Contains(rulesetId) ?? true;
 }

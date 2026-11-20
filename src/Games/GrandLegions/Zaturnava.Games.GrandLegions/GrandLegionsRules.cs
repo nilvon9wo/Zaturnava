@@ -168,7 +168,8 @@ public static class GrandLegionsRules
                 },
                 dealing.Seed,
                 dealing.AreAlike,
-                dealing.Budget
+                dealing.Budget,
+                dealing.Families
             ),
             PalaceDealer = dealing => QuickArmy.PalacesDealt(
                 game with

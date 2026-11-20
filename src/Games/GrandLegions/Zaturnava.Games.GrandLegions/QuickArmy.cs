@@ -220,13 +220,18 @@ public static class QuickArmy
     /// Every seat's army, as <paramref name="seed"/> deals them, seat by seat; or, if <paramref name="areAlike"/>
     /// (Stated: only if the game's creator asks), the first seat's for every seat, laid out alike, each in its own
     /// kingdom. Each army spends <paramref name="budget"/>, if the game's creator set one (Stated 2026-11-19: "I still
-    /// can't set the points to spend without manually drafting the armies"); else <see cref="BudgetOf"/>.
+    /// can't set the points to spend without manually drafting the armies"); else <see cref="BudgetOf"/>. A seat
+    /// <paramref name="families"/> names a family for (a bot's, which plays that game's pieces) is dealt that family's
+    /// pieces, of each class it has any of (<see cref="OfFamily"/>; the user's report of 2026-11-20: Naresuan dealt
+    /// an army of every game's pieces); but not if the armies are alike, which no bot's family overrides (the user's
+    /// word of 2026-11-20).
     /// </summary>
     public static ImmutableList<Placement> Dealt(
         [Required] QuickGame game,
         int seed,
         bool areAlike = false,
-        int? budget = null
+        int? budget = null,
+        ImmutableList<string?>? families = null
     )
     {
         game = game with { Budget = budget ?? BudgetOf(game) };
@@ -237,7 +242,7 @@ public static class QuickArmy
             .. Enumerable.Range(0, Pinwheel.SeatCount).Select(seat =>
                 Layout(
                     game,
-                    Pick(game, random),
+                    Pick(game, random, areAlike ? null : families?.ElementAtOrDefault(seat)),
                     random,
                     palaces.IsEmpty ? null : PalaceSquares.Window(palaces[seat])
                 )
@@ -267,9 +272,13 @@ public static class QuickArmy
         return areAlike ? [.. drawn.Select(_ => drawn[0])] : drawn;
     }
 
-    public static ImmutableList<GrandPiece> Pick([Required] QuickGame game, [Required] Random random)
+    public static ImmutableList<GrandPiece> Pick(
+        [Required] QuickGame game,
+        [Required] Random random,
+        string? family = null
+    )
     {
-        ImmutableList<GrandPiece> eligible = Eligible(game);
+        ImmutableList<GrandPiece> eligible = OfFamily(Eligible(game), family);
         if (game.Edition >= CompositionEdition)
         {
             return Composed(game, eligible, [], random);
@@ -300,6 +309,29 @@ public static class QuickArmy
                 )
             );
         return Filled(eligible, drawn, game, random);
+    }
+
+    /// <summary>
+    /// Of <paramref name="eligible"/>, for an army of <paramref name="family"/>'s pieces - its families, nearest first,
+    /// joined by "+": "Makruk+Western" - of each class, only those of the first family that has any of it; of a class
+    /// none has, all, so that the army is whole (Proposed, as a family bot drafts, 2026-11-20). All, for no family.
+    /// </summary>
+    public static ImmutableList<GrandPiece> OfFamily([Required] ImmutableList<GrandPiece> eligible, string? family)
+    {
+        if (family is null)
+        {
+            return eligible;
+        }
+
+        ImmutableList<string> nearestFirst = [.. family.Split('+')];
+        return
+        [
+            .. eligible.GroupBy(piece => piece.Class)
+                .SelectMany(pieces =>
+                    nearestFirst.Select(each => pieces.Where(piece => piece.Tradition.ToString() == each).ToList())
+                        .FirstOrDefault(found => found.Count > 0) ?? [.. pieces]
+                ),
+        ];
     }
 
     /// <summary>

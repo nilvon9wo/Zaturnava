@@ -81,6 +81,7 @@ public static class ScenarioStart
     private const string KingdomWidthArgument = "kingdom-width";
     private const string KingdomDepthArgument = "kingdom-depth";
     private const string ChosenTerrainArgument = "chosen-terrain";
+    private const string FamiliesArgument = "families";
 
     /// <summary>The argument of a game's first action keeping what its deal dealt (<see cref="KeptDeal"/>).</summary>
     public const string KeptArgument = "kept";
@@ -168,7 +169,9 @@ public static class ScenarioStart
     /// promoted at the far edge promoted at the edge to their right too, if <paramref name="promotesAtSide"/>
     /// (<see cref="GameState.PromotesAtSide"/>). Its armies dealt, not drafted, each spending
     /// <paramref name="budget"/>, if its creator set one. Its terrain, as far as they chose it
-    /// (<paramref name="terrain"/>), the rest dealt. Set up otherwise as <paramref name="choices"/> say, if any.
+    /// (<paramref name="terrain"/>), the rest dealt. Each seat's army of the family of pieces
+    /// <paramref name="families"/> names for it, by seat, if any (a bot's own). Set up otherwise as
+    /// <paramref name="choices"/> say, if any.
     /// </summary>
     public static ActionDescriptor Dealt(
         [Required] IDiceRolling dice,
@@ -178,12 +181,37 @@ public static class ScenarioStart
         bool promotesAtSide = false,
         int? budget = null,
         GameChoices? choices = null,
-        TerrainChoice? terrain = null
+        TerrainChoice? terrain = null,
+        ImmutableList<string?>? families = null
     ) =>
         Chosen(
-            Terrained(DealtWithDice(dice, areAlike, drafting, board, promotesAtSide, budget), terrain),
+            Familied(
+                Terrained(DealtWithDice(dice, areAlike, drafting, board, promotesAtSide, budget), terrain),
+                families
+            ),
             choices ?? GameChoices.None
         );
+
+    /// <summary>The deal, each seat's family told, by seat, "-" for none, if any seat has one.</summary>
+    private static ActionDescriptor Familied(ActionDescriptor deal, ImmutableList<string?>? families) =>
+        families is { } named && named.Any(family => family is not null)
+            ? deal with
+            {
+                Arguments = deal.Arguments.Add(
+                    FamiliesArgument,
+                    string.Join(',', named.Select(family => family ?? NoFamily))
+                ),
+            }
+            : deal;
+
+    private const string NoFamily = "-";
+
+    /// <summary>Each seat's family of pieces, as the first of <paramref name="actions"/> dealt it, if any.</summary>
+    public static ImmutableList<string?>? FamiliesOf([Required] ImmutableList<ActionDescriptor> actions) =>
+        actions.FirstOrDefault() is { Kind: DealKind } first
+        && first.Arguments.TryGetValue(FamiliesArgument, out string? families)
+            ? [.. families.Split(',').Select(family => family == NoFamily ? null : family)]
+            : null;
 
     /// <summary>The deal, its terrain set as far as <paramref name="terrain"/> chose it, if it chose any.</summary>
     private static ActionDescriptor Terrained(ActionDescriptor deal, TerrainChoice? terrain) =>
@@ -450,7 +478,8 @@ public static class ScenarioStart
                 ? int.Parse(edition, CultureInfo.InvariantCulture)
                 : 0,
             ArmyBudgetOf(actions),
-            TerrainOf(actions)
+            TerrainOf(actions),
+            FamiliesOf(actions)
         ) with
         {
             PromotesAtSide = PromotesAtSide(actions),

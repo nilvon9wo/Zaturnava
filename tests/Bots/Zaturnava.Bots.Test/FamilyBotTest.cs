@@ -37,6 +37,47 @@ public sealed class FamilyBotTest
         Assert.Equal(cell, ((DraftAction)drafted).Cell.Value);
     }
 
+    [Fact]
+    public async Task Decide_WhenDraftingAndNoneOfItsFamilysPiecesIsOffered_BuysItsKinsAndIsDealtSo()
+    {
+        // Arrange - a Western Pawn or a Shogi Horse, the Horse worth more: Naresuan, no Makruk piece offered, takes
+        // the Pawn, Western chess's being most like Makruk's (the user's report of 2026-11-20)
+        DraftAction pawn = new(ScriptedRules.Seat, LineRules.Pawn, new CellId(1));
+        DraftAction horse = new(ScriptedRules.Seat, LineRules.Horse, new CellId(4));
+        ScriptedRules rules = new(
+            ImmutableDictionary<GameAction, GameState>.Empty
+                .Add(pawn, ScriptedRules.State((1, LineRules.Pawn, ScriptedRules.Seat)))
+                .Add(horse, ScriptedRules.State((4, LineRules.Horse, ScriptedRules.Seat))),
+            origins: ImmutableDictionary<PieceKindId, string>.Empty
+                .Add(LineRules.Pawn, "Western")
+                .Add(LineRules.Horse, "Shogi")
+        );
+        FamilyBot naresuan = FamilyBot.All(new Random(1)).Single(candidate => candidate.Profile.Id == "naresuan");
+
+        // Act
+        GameAction drafted = await naresuan.Decide(rules.Request(), this._cancellation);
+
+        // Assert
+        Assert.Equal((1, "Makruk+Western"), (((DraftAction)drafted).Cell.Value, naresuan.Profile.Family));
+    }
+
+    [Fact]
+    public async Task Decide_WhenNothingIsToBeDrafted_DecidesAsSageWould()
+    {
+        // Arrange - only a pass to make
+        PassAction pass = new(ScriptedRules.Seat);
+        ScriptedRules rules = new(
+            ImmutableDictionary<GameAction, GameState>.Empty.Add(pass, ScriptedRules.State())
+        );
+        FamilyBot musashi = FamilyBot.All(new Random(1)).Single(candidate => candidate.Profile.Id == "musashi");
+
+        // Act
+        GameAction decided = await musashi.Decide(rules.Request(), this._cancellation);
+
+        // Assert
+        Assert.Equal(pass, decided);
+    }
+
     [Theory]
     [InlineData("musashi", true, true)]
     [InlineData("musashi", false, false)]

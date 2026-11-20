@@ -128,6 +128,7 @@ public sealed class GameService(
                         : null,
                 },
                 choices,
+                dealing.AreAlike ? [] : this.FamiliesOf(seats),
                 cancellationToken
             ),
             _ => ScenarioStart.SetUp(choices) is { } setUp ? [setUp] : [],
@@ -157,6 +158,7 @@ public sealed class GameService(
         IRulesApplying offered,
         Dealing dealing,
         GameChoices choices,
+        ImmutableList<string?> families,
         CancellationToken cancellationToken
     )
     {
@@ -178,12 +180,26 @@ public sealed class GameService(
                         dealing.PromotesAtSide,
                         dealing.Budget,
                         choices,
-                        dealing.Terrain
+                        dealing.Terrain,
+                        families
                     ),
                     offered
                 ),
             ];
     }
+
+    /// <summary>
+    /// Each seat's family of pieces, by seat: its bot's, if one is seated that plays one family's pieces
+    /// (<see cref="BotProfile.Family"/>), its army dealt of them; else none. None at all where the armies are alike
+    /// (the caller's to see), which no bot's family overrides (the user's word of 2026-11-20).
+    /// </summary>
+    private ImmutableList<string?> FamiliesOf(ImmutableList<SeatPlan> seats) =>
+    [
+        .. seats.Select(plan => plan.BotId is { } bot
+            ? this._bots.Bots.FirstOrDefault(profile => profile.Id == bot)?.Family
+            : null
+        ),
+    ];
 
     /// <summary>The deal, keeping what it dealt, by <paramref name="offered"/> at the size it sets.</summary>
     private static ActionDescriptor Kept(ActionDescriptor deal, IRulesApplying offered) =>

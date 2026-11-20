@@ -516,6 +516,54 @@ public sealed class QuickArmyTest
         Assert.Equal((36, 24), (rich.Count, poor.Count));
     }
 
+    [Fact]
+    public void Dealt_WhenASeatIsNamedAFamily_DealsItThatFamilysPiecesThenItsKinsOfEachClassButNotWhereArmiesAreAlike()
+    {
+        // Arrange - the large game; Black dealt Makruk's pieces, then Western chess's (the user's report of
+        // 2026-11-20: Naresuan dealt every game's pieces); the others any
+        QuickGame game = QuickGame.Large with { Edition = QuickArmy.ThroneKeptEdition };
+        ImmutableList<string?> families = ["Makruk+Western", null, null, null];
+
+        // Act
+        ImmutableList<Placement> dealt = QuickArmy.Dealt(game, 3, families: families);
+        ImmutableList<Placement> alike = QuickArmy.Dealt(game, 3, areAlike: true, families: families);
+
+        // Assert - Black's infantry Makruk's; of a class Makruk has none of, Western, if Western has any; the others'
+        // of other games too; armies alike as if no family were named
+        ImmutableList<GrandPiece> eligible = QuickArmy.Eligible(game);
+        ImmutableList<GrandPiece> black =
+            [.. dealt.Where(placed => placed.Owner == new SeatId(0)).Select(placed => ById[placed.Kind])];
+        Assert.Equal(
+            (true, true, true, true),
+            (
+                black.Where(piece => piece.Class == Infantry).All(piece => piece.Tradition == Tradition.Makruk),
+                black.Where(piece => piece.Class != Infantry
+                        && eligible.Any(other => other.Class == piece.Class && other.Tradition == Tradition.Western)
+                    )
+                    .All(piece => piece.Tradition == Tradition.Western),
+                dealt.Where(placed => placed.Owner != new SeatId(0))
+                    .Any(placed => ById[placed.Kind].Tradition is not (Tradition.Makruk or Tradition.Western)),
+                alike.SequenceEqual(QuickArmy.Dealt(game, 3, areAlike: true))
+            )
+        );
+    }
+
+    [Fact]
+    public void OfFamily_WhenNoFamilyNamedHasAPieceOfAClass_KeepsEveryPieceOfIt()
+    {
+        // Arrange - the large game's pieces; the Tafl family, which has no Artillery
+        ImmutableList<GrandPiece> eligible = QuickArmy.Eligible(QuickGame.Large);
+
+        // Act
+        ImmutableList<GrandPiece> tafl = QuickArmy.OfFamily(eligible, "Tafl");
+
+        // Assert
+        Assert.Equal(
+            eligible.Count(piece => piece.Class == Artillery),
+            tafl.Count(piece => piece.Class == Artillery)
+        );
+    }
+
     private static bool IsColourBoundLeader(ArmyPiece piece) =>
         GrandLegionsRules.Leaders.Contains(piece.Kind)
         && GrandLegionsPieces.ById[piece.Kind].Restrictions.Any(restriction => restriction.IsColourBinding);

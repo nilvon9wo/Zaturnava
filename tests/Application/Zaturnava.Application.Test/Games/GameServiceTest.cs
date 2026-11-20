@@ -123,6 +123,38 @@ public sealed class GameServiceTest
         );
     }
 
+    [Theory]
+    [InlineData(false, 1)]
+    [InlineData(true, 0)]
+    public async Task Create_WhenABotOfAFamilyIsSeatedInADealtGame_DealsItsArmyOfItsFamilyUnlessArmiesAreAlike(
+        bool areAlike,
+        int expected
+    )
+    {
+        // Arrange - a bot of Makruk's pieces at the second seat; every army alike, or not (the user's report of
+        // 2026-11-20: Naresuan dealt every game's pieces; and word: no bot's family overrides armies alike). The tiny
+        // rules score to the fourth seat how many seats were dealt a family, if any were told.
+        GameService service = this.Service(
+            GameServiceSettings.Default,
+            bots: [new FirstChoiceBot(family: "Makruk")],
+            isDealt: true,
+            isDraftable: false
+        );
+        GameId id = await service.Create(
+            TinyRules.RulesetId,
+            [SeatPlan.Open, new SeatPlan(FirstChoiceBot.BotId)],
+            null,
+            new Dealing(areAlike),
+            this._cancellation
+        );
+
+        // Act
+        GameSnapshot snapshot = await service.Get(id, this._cancellation);
+
+        // Assert
+        Assert.Equal(expected, snapshot.State.Scores.GetValueOrDefault(new SeatId(3)));
+    }
+
     [Fact]
     public async Task KeepDeals_WhenGamesWereDealtBeforeDealsWereKept_KeepsTheirsAloneOfThoseStillPlayed()
     {

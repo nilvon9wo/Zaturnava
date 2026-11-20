@@ -8,14 +8,18 @@ namespace Net.NowhereAtAll.Zaturnava.Application.Test.Fakes;
 
 /// <summary>
 /// A predictable bot: always the first legal action; its id, <paramref name="id"/>; knowing only the rulesets of
-/// <paramref name="known"/>, if any are given, else every one.
+/// <paramref name="known"/>, if any are given, else every one; its army of <paramref name="family"/>'s pieces, if any.
 /// </summary>
-internal sealed class FirstChoiceBot(string id = FirstChoiceBot.BotId, ImmutableHashSet<string>? known = null)
-    : IBotPlaying
+internal sealed class FirstChoiceBot(
+    string id = FirstChoiceBot.BotId,
+    ImmutableHashSet<string>? known = null,
+    string? family = null
+) : IBotPlaying
 {
     public const string BotId = "first";
 
-    public BotProfile Profile { get; } = new(id, "First choice", "Always the first legal action.", UsesAi: false);
+    public BotProfile Profile { get; } =
+        new(id, "First choice", "Always the first legal action.", UsesAi: false) { Family = family };
 
     public bool Knows([Required] IRulesApplying rules) => known?.Contains(rules.Id) ?? true;
 

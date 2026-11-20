@@ -445,6 +445,7 @@ internal static class GameViews
         {
             Ratings = bot.Ratings,
             Rulesets = bot.RulesetsInOrder,
+            Family = bot.Family,
         };
 
     private static CellDto CellOf(

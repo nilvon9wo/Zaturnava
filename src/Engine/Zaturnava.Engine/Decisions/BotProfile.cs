@@ -22,6 +22,12 @@ public sealed record BotProfile(string Id, string Name, string Description, bool
     /// </summary>
     public ImmutableHashSet<string>? Rulesets { get; init; }
 
+    /// <summary>
+    /// The family of pieces it plays (<see cref="Pieces.PieceGuide.Origin"/>: "Makruk", say), its army dealt of them in
+    /// a game whose armies are dealt; none, for a bot that plays any.
+    /// </summary>
+    public string? Family { get; init; }
+
     /// <summary><see cref="Rulesets"/> in order of id, as a list to send; null, if not told.</summary>
     public ImmutableList<string>? RulesetsInOrder =>
         this.Rulesets is { } known ? [.. known.Order(StringComparer.Ordinal)] : null;

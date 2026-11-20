@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Net.NowhereAtAll.Zaturnava.Engine.Rules;
 
 namespace Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
@@ -28,4 +29,10 @@ public sealed record ArmyDealing(int Seed, bool AreAlike, int Terrain, bool HasP
 
     /// <summary>What each army spends, if the game's creator set it; else what the variant gives.</summary>
     public int? Budget { get; init; }
+
+    /// <summary>
+    /// The family of pieces each seat's army is dealt from, by seat, where one is named (a bot's own, as Naresuan's
+    /// Makruk pieces); none, for any.
+    /// </summary>
+    public ImmutableList<string?>? Families { get; init; }
 }

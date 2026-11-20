@@ -202,6 +202,28 @@ public sealed class ScenarioStartTest
     }
 
     [Fact]
+    public void FamiliesOf_ADealNamingSeatsFamiliesOrNone_GivesThemBackBySeat()
+    {
+        // Arrange - a bot of Makruk's pieces at the second seat; no seat of any family; no deal at all
+        ActionDescriptor named = ScenarioStart.Dealt(new LoadedDice(4), families: [null, "Makruk+Western"]);
+        ActionDescriptor unnamed = ScenarioStart.Dealt(new LoadedDice(4), families: [null, null]);
+
+        // Act
+        ImmutableList<string?>? families = ScenarioStart.FamiliesOf([named]);
+
+        // Assert
+        Assert.Equal(
+            ("-|Makruk+Western", true, true, true),
+            (
+                string.Join('|', families!.Select(family => family ?? "-")),
+                ScenarioStart.FamiliesOf([unnamed]) is null,
+                ScenarioStart.FamiliesOf([]) is null,
+                ScenarioStart.FamiliesOf([new PassAction(First).Describe()]) is null
+            )
+        );
+    }
+
+    [Fact]
     public void Kept_WhenTheGameIsDealtOrNot_KeepsWhatADealDealtOnce()
     {
         // Arrange
