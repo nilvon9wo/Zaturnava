@@ -71,11 +71,13 @@
         }
         @this.Listed("powers", "Common powers", kind.Powers)
         @this.Listed("special-powers", "Special powers", kind.SpecialPowers)
-        @if (kind.IsMercenary || !kind.Drawbacks.IsEmpty)
+        @* a mercenary by its kind, or by what it was before a promotion (the user's report of 2026-11-20) *@
+        bool isMercenary = this.Piece.IsMercenary || kind.IsMercenary;
+        @if (isMercenary || !kind.Drawbacks.IsEmpty)
         {
             <h3>Drawbacks</h3>
             <ul class="drawbacks">
-                @if (kind.IsMercenary)
+                @if (isMercenary)
                 {
                     <li class="mercenary">
                         <a href="@DocsLinks.Mercenaries" target="_blank" rel="noopener">Mercenary</a>: whoever holds it

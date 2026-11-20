@@ -97,6 +97,20 @@ public sealed class RulesApplyingTest
     }
 
     [Fact]
+    public void IsMercenary_WhenTheRulesetSaysNoOther_IsNever()
+    {
+        // Arrange
+        OneSizeRules rules = new();
+        Piece piece = new(new PieceId(1), new PieceKindId("pawn"), new SeatId(0));
+
+        // Act
+        bool isMercenary = IsMercenaryOf(rules, OneSizeRules.State, piece);
+
+        // Assert
+        Assert.False(isMercenary);
+    }
+
+    [Fact]
     public void DiagramAt_WhenTheRulesetSaysNoOther_DrawsNothingButWhatItsKindsTell()
     {
         // Arrange
@@ -327,6 +341,10 @@ public sealed class RulesApplyingTest
     private static PieceGuide GuideOf<TRules>(TRules rules, PieceKindId kind)
         where TRules : IRulesApplying =>
         rules.GuideOf(kind);
+
+    private static bool IsMercenaryOf<TRules>(TRules rules, GameState state, Piece piece)
+        where TRules : IRulesApplying =>
+        rules.IsMercenary(state, piece);
 
     private static MoveDiagram? DiagramAt<TRules>(TRules rules, GameState state, CellId cell)
         where TRules : IRulesApplying =>

@@ -15,9 +15,6 @@ own number (**25**, **N29**), the [2026-11-15 specification](playtesting/2026-11
 - **Restriction or weakness** (asked 2026-11-19): a piece's card tells a restriction (may not leave its palace,
   may not cross a river), which the game's rules impose and a lift may remove, from a weakness (bound to squares
   of one colour), which is the piece's own movement and never lifted.
-- **A mercenary marked on the board** (asked 2026-11-20): a mercenary promoted into another kind (a Shogi Pawn
-  become a Western Rook) stays one by the rules, but the page marks mercenaries only by kind, so it cannot be
-  seen. Each piece to say whether it is one (`PieceDto`), and its card and the board to show it.
 - **A turn that changes nothing is a pass** (noticed 2026-11-20): a turn ending with the board and the prisoners as
   they began, a pass with extra steps, starts the count of rounds of everyone passing again. Such turns do count
   toward the repetition limit (3 rounds of every turn ending where the game has been), which ends the game; and

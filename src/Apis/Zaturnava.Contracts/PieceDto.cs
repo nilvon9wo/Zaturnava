@@ -11,4 +11,10 @@ public sealed record PieceDto(int Id, string Kind, string Name, int Owner, int C
     /// else none, its kind's drawing telling all.
     /// </summary>
     public MoveDiagramDto? Diagram { get; init; }
+
+    /// <summary>
+    /// Whether it is a mercenary, which whoever takes it may hire: by its kind, or as what a mercenary was promoted
+    /// into, whatever its kind now.
+    /// </summary>
+    public bool IsMercenary { get; init; }
 }

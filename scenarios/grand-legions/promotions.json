@@ -1,7 +1,7 @@
 {
   "rulesetId": "grand-legions-medium",
   "name": "Promotions",
-  "description": "Black has rolled 5 and 6 (infantry or leader), and holds Yellow's Rook. Black's Western Pawn on b7, stepping to b8, becomes a Queen, Rook, Bishop or Knight, or the captured Rook. Black's Minister already stands on the far edge, c8: it may become the captured Rook. Black's Silver General on e5, moving into the far three rows, may become a Gold General. Black's Shogi Pawn on f7, a mercenary as every Shogi piece is, stepping to the far edge, f8, may become a Gold General (its own promotion, in the far three rows) or the captured Rook, a Western piece (the far edge's); whatever it becomes stays a mercenary (the rules keep it one; the board does not mark it yet).",
+  "description": "Black has rolled 5 and 6 (infantry or leader), and holds Yellow's Rook. Black's Western Pawn on b7, stepping to b8, becomes a Queen, Rook, Bishop or Knight, or the captured Rook. Black's Minister already stands on the far edge, c8: it may become the captured Rook. Black's Silver General on e5, moving into the far three rows, may become a Gold General. Black's Shogi Pawn on f7, a mercenary as every Shogi piece is, stepping to the far edge, f8, may become a Gold General (its own promotion, in the far three rows) or the captured Rook, a Western piece (the far edge's); whatever it becomes stays a mercenary: a gold coin on the piece, and its card says so.",
   "turn": "Black",
   "edition": 6,
   "dice": [5, 6],

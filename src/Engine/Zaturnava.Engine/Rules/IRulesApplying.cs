@@ -296,6 +296,13 @@ public interface IRulesApplying
     /// </summary>
     MoveDiagram? DiagramAt([Required] GameState state, CellId cell) => null;
 
+    /// <summary>
+    /// Whether <paramref name="piece"/> is a mercenary, which whoever holds it prisoner may hire: by its kind, or as
+    /// what a mercenary was promoted into, whatever its kind now (the user's report of 2026-11-20); never, where the
+    /// ruleset has none.
+    /// </summary>
+    bool IsMercenary([Required] GameState state, [Required] Piece piece) => false;
+
     string NameOf(SeatId seat);
 
     /// <summary>What a die showing <paramref name="value"/> lets its roller do, for people: "Horse".</summary>

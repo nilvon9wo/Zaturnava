@@ -634,6 +634,9 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     /// its throne where it is, turned as its army faces, so that its lines are those it may truly step along (the
     /// user's report of 2026-11-15, B6: the Guard's card showed diagonals it did not have). None, for any other.
     /// </summary>
+    public bool IsMercenary([Required] GameState state, [Required] Piece piece) =>
+        this._mercenaries.IsMercenary(state, piece);
+
     public MoveDiagram? DiagramAt([Required] GameState state, CellId cell) =>
         state.Position.PieceAt(cell) is { } piece && this._variant.PalaceSteppers.Contains(piece.Kind)
             ? (state.Palaces ?? [])

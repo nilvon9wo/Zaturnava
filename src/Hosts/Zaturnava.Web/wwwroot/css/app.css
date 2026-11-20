@@ -495,8 +495,7 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
 .leaderboard .choice { display: flex; gap: 8px; align-items: center; margin: 8px 0; }
 .leaderboard .leaders th.kind, .leaderboard .leaders td.kind { text-align: center; }
 /* A bot playing by an AI: the robot of every bot, tinted teal, so that it stays one of them (2026-11-20). */
-.leaderboard .leaders td.kind .ai, .leaderboard .kinds .ai { filter: sepia(1) saturate(5) hue-rotate(130deg); }
-.leaderboard .kinds { display: flex; gap: 10px; margin: 6px 0 0; font-size: 1.3rem; }
+.leaderboard .leaders td.kind .ai { filter: sepia(1) saturate(5) hue-rotate(130deg); }
 .leaderboard .against { color: var(--muted); font-size: 0.85em; margin-left: 4px; white-space: nowrap; }
 .leaderboard .leaders { border-collapse: collapse; width: 100%; }
 .leaderboard .leaders th, .leaderboard .leaders td {
@@ -661,6 +660,14 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
 .piece.seat-2 text, .piece.seat-2 path { fill: var(--seat-2-ink); }
 .piece.seat-3 circle { fill: var(--seat-3); }
 .piece.seat-3 text, .piece.seat-3 path { fill: var(--seat-3-ink); }
+/* A mercenary's coin: gold, whoever's it is and however it is picked out (2026-11-20). */
+.piece[class] circle.mercenary-coin {
+    fill: #f5c542;
+    stroke: #7a5200;
+    stroke-width: 0.03;
+    filter: none;
+    animation: none;
+}
 
 .cell-name text {
     font-size: 0.15px;
