@@ -519,7 +519,7 @@ public static class QuickArmy
         );
         ArmySquare? kept = placed is null ? null : ThroneIn(placed, game, random);
         int dealt = kept is null && game.HasNeutralZone
-            ? random.Next(Math.Min(game.KingdomWidth - 1, others.Count) + 1)
+            ? random.Next(Math.Min(game.KingdomWidth - 2, others.Count) + 1) // never the inner side's square
             : 0;
         ImmutableList<GrandPiece> infantry =
             Shuffled(army.Where(piece => piece.Class == Infantry && !IsHeld(piece)), random);
@@ -582,14 +582,24 @@ public static class QuickArmy
             .ThenBy(square => square.Column);
 
     /// <summary>
-    /// A square of the palace in the kingdom, at random: the throne, in a palace placed before (Stated 2026-11-19: a
-    /// throne may be anywhere in its palace).
+    /// A square of the palace in the kingdom, at random, off its borders: the throne, in a palace placed before
+    /// (Stated 2026-11-19: a throne may be anywhere in its palace; the user's word of 2026-11-20: never, as the
+    /// program deals it, on the kingdom's front rank or its inner side, even with the palace there).
     /// </summary>
     private static ArmySquare ThroneIn(ImmutableList<ArmySquare> palace, QuickGame game, Random random)
     {
-        ImmutableList<ArmySquare> inside = [.. palace.Where(game.Kingdom.Contains)];
+        ImmutableList<ArmySquare> inside =
+            [.. palace.Where(square => game.Kingdom.Contains(square) && IsInland(square, game))];
         return inside[random.Next(inside.Count)];
     }
+
+    /// <summary>
+    /// Whether the square, as seat 0 sees its kingdom in the board's corner, is off the kingdom's two borders with
+    /// the rest of the board: its front rank and its inner side. Every kingdom being at least 3 × 3, every palace in
+    /// it has such a square.
+    /// </summary>
+    private static bool IsInland(ArmySquare square, QuickGame game) =>
+        square.Row < game.KingdomDepth - 1 && square.Column < game.KingdomWidth - 1;
 
     /// <summary>Whether the piece is one a palace holds, and not the leader, who holds the throne.</summary>
     internal static bool IsHeld(GrandPiece piece) =>
