@@ -15,6 +15,12 @@ public sealed record Standing(PlayerId Player, string Game)
 
     public double Elo { get; init; } = FirstElo;
 
+    /// <summary>Their Glicko-2 rating, counted from the same games as <see cref="Elo"/>.</summary>
+    public Glicko Glicko { get; init; } = Glicko.First;
+
+    /// <summary>Their TrueSkill rating, counted from the same games as <see cref="Elo"/>.</summary>
+    public TrueSkill TrueSkill { get; init; } = TrueSkill.First;
+
     public int Experience { get; init; }
 
     /// <summary>The points they scored, in all the games of it they finished, since these were counted.</summary>
@@ -43,15 +49,26 @@ public sealed record Standing(PlayerId Player, string Game)
 
     /// <summary>
     /// Where they stand with <paramref name="other"/>'s games too, as one player (Proposed): games, experience and
-    /// points added up, and the Elo ratings averaged, each weighed by the games behind it; each streak the longer of
-    /// the two.
+    /// points added up, and the ratings averaged, each weighed by the games behind it, the surer deviation of the two
+    /// kept; each streak the longer of the two.
     /// </summary>
     public Standing Merged([Required] Standing other)
     {
         int played = this.Played + other.Played;
+        double Weighed(double mine, double theirs) =>
+            played == 0 ? mine : ((mine * this.Played) + (theirs * other.Played)) / played;
         return this with
         {
-            Elo = played == 0 ? this.Elo : ((this.Elo * this.Played) + (other.Elo * other.Played)) / played,
+            Elo = Weighed(this.Elo, other.Elo),
+            Glicko = new Glicko(
+                Weighed(this.Glicko.Rating, other.Glicko.Rating),
+                Math.Min(this.Glicko.Deviation, other.Glicko.Deviation),
+                Weighed(this.Glicko.Volatility, other.Glicko.Volatility)
+            ),
+            TrueSkill = new TrueSkill(
+                Weighed(this.TrueSkill.Mean, other.TrueSkill.Mean),
+                Math.Min(this.TrueSkill.Deviation, other.TrueSkill.Deviation)
+            ),
             Experience = this.Experience + other.Experience,
             Points = this.Points + other.Points,
             Won = this.Won + other.Won,

@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.ComponentModel.DataAnnotations;
+using System.Globalization;
 using Net.NowhereAtAll.Zaturnava.Application.Bots;
 using Net.NowhereAtAll.Zaturnava.Application.Games;
 using Net.NowhereAtAll.Zaturnava.Application.Players;
@@ -312,13 +313,15 @@ public sealed class StandingServiceTest
         // Act
         _ = await service.RateFinished(this._cancellation);
 
-        // Assert
+        // Assert - Glicko-2 and TrueSkill as the next test tells them
         ImmutableDictionary<PlayerId, Standing> standings =
             await this._players.Standings(EndedRules.RulesetId, [Ada, Bea], this._cancellation);
         Assert.Equal(
             [KeyValuePair.Create(Ada, new Standing(Ada, EndedRules.RulesetId)
             {
                 Elo = elo,
+                Glicko = standings[Ada].Glicko,
+                TrueSkill = standings[Ada].TrueSkill,
                 Experience = 20,
                 Points = 10 + 2,
                 Won = 3 + won,
@@ -326,6 +329,43 @@ public sealed class StandingServiceTest
                 Drawn = drawn,
             })],
             standings
+        );
+    }
+
+    [Theory]
+    [InlineData(false, "1330 275 21.0 7.4")]
+    [InlineData(true, "1500 275 25.0 6.8")]
+    public async Task RateFinished_WhenANewPlayerLosesOrDrawsEvenly_MovesTheirGlickoAndTrueSkillAndNarrowsThem(
+        bool isDrawn,
+        string expected
+    )
+    {
+        // Arrange - Ada, new, and a bot no longer offered (taken as new too), against Bea's AI and a bot not rated
+        // here: four seats rated alike, so an even game (the user's word of 2026-11-20: all three systems)
+        GameState ended = EndedRules.State(isDrawn ? [] : [Yellow]);
+        await this._games.Add(
+            Record(
+                "g",
+                new HumanSeat("ada", Ada),
+                new HumanSeat("bea", Bea, IsAi: true),
+                new BotSeat("gone"),
+                new BotSeat(FirstChoiceBot.BotId)
+            ),
+            this._cancellation
+        );
+        StandingService service = this.Service(new EndedRules(ended), null);
+
+        // Act
+        _ = await service.RateFinished(this._cancellation);
+
+        // Assert - lost: lower, and surer; drawn: as even as before, and surer
+        Standing ada = (await this._players.Standings(EndedRules.RulesetId, [Ada], this._cancellation))[Ada];
+        Assert.Equal(
+            expected,
+            string.Create(
+                CultureInfo.InvariantCulture,
+                $"{ada.Glicko.Rating:0} {ada.Glicko.Deviation:0} {ada.TrueSkill.Mean:0.0} {ada.TrueSkill.Deviation:0.0}"
+            )
         );
     }
 

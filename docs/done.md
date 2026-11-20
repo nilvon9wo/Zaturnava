@@ -168,6 +168,11 @@ only in part, what is left is in the backlog, and its history here. The playtest
 
 ## Look and feel
 
+- **Elo, Glicko-2 and TrueSkill side by side** (2026-11-20: "Could we calculate ELO, TrueSkill, and Glicko-2
+  values? Players could then toggle which to view"). *Done in part*: each person's three ratings are counted from
+  the same games, every past game counted again by a migration; the People board's **Rating** choice shows one,
+  remembered; a profile shows all three, each with how unsure it is. Glicko-2 rates a team game by each team's mean
+  against the other's; TrueSkill as published, two sides of summed skills, shown as the mean less three deviations.
 - **D2 Bots for the very first games** (2026-11-20). *Begun*: Morpheus, Phaethon and Tantalus, Random but for
   one turn in 50, 20 and 10 played as Midas; the overnight tournament and the server's job rate them.
 - **D4 Strong bots by family** (2026-11-20). *Done in part*: eight bots, one per family (Philidor, Sun Tzu,

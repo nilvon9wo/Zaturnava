@@ -54,6 +54,29 @@ else
                             </tr>
                         </tbody>
                     </table>
+                    @* All three systems at once, where there is room (the user's word of 2026-11-20). *@
+                    <table class="player-ratings">
+                        <caption>Ratings at this game</caption>
+                        <thead>
+                            <tr><th>System</th><th>Rating</th><th title="How unsure the rating still is">Unsure by</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><th scope="row">Elo</th><td class="elo">@standing.Elo</td><td>—</td></tr>
+                            <tr>
+                                <th scope="row">Glicko-2</th>
+                                <td class="glicko">@standing.Glicko</td>
+                                <td class="glicko-deviation">± @standing.GlickoDeviation</td>
+                            </tr>
+                            <tr>
+                                <th scope="row" title="As TrueSkill ranks: the mean less three deviations">TrueSkill</th>
+                                <td class="trueskill">@standing.TrueSkill.ToString("0.0", CultureInfo.InvariantCulture)</td>
+                                <td class="trueskill-deviation">
+                                    @standing.TrueSkillMean.ToString("0.0", CultureInfo.InvariantCulture)
+                                    ± @standing.TrueSkillDeviation.ToString("0.0", CultureInfo.InvariantCulture)
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
                     <table class="player-streaks">
                         <caption>Winning streaks at this game</caption>
                         <thead>
