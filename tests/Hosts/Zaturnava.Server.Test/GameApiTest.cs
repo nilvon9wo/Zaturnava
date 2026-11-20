@@ -96,6 +96,50 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
     }
 
     [Fact]
+    public async Task List_WhenGamesWereDealtOnBoardsSetOrNot_TellsEachItsBoardAndBudget()
+    {
+        // Arrange - a board set by hand, a size's own, and a game not dealt (the user, 2026-11-20)
+        GameCreatedDto custom = await this._client.Create(
+            new CreateGameRequest("grand-legions-custom", [null, "random", "random", "random"])
+            {
+                Board = new BoardSizeDto(12, 9, 4, 4),
+            },
+            this._cancellation
+        );
+        GameCreatedDto small = await this._client.Create(
+            new CreateGameRequest("grand-legions-small", [null, "random", "random", "random"]),
+            this._cancellation
+        );
+        string chaturaji = await this.CreateGame();
+
+        // Act
+        ImmutableList<GameSummaryDto> listed =
+        [
+            .. await Task.WhenAll(
+                new[] { custom.GameId, small.GameId, chaturaji }.Select(async id =>
+                    Assert.Single(
+                        (await this._client.List(new GameListQuery(Code: id[..8]), this._cancellation)).Games
+                    )
+                )
+            ),
+        ];
+
+        // Assert
+        Assert.Equal(
+            "12x9x4x4/True,6x6x3x3/True,/False",
+            string.Join(
+                ",",
+                listed.Select(game =>
+                    (game.Board is { } board
+                        ? $"{board.Width}x{board.Height}x{board.KingdomWidth}x{board.KingdomDepth}"
+                        : string.Empty)
+                    + $"/{game.Budget is not null}"
+                )
+            )
+        );
+    }
+
+    [Fact]
     public async Task List_WhenAskedForAGameByItsCode_ListsItAloneWhateverTheCaseAndSpacesAround()
     {
         // Arrange
