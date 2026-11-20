@@ -35,10 +35,12 @@ public static class DecisionLoop
         Played current = await Seized(rules, played, deciderFor, cancellationToken);
         int stepsLeft = maximumSteps;
         IDeciding? decider = NextDecider(current.State, deciderFor, dice, stepsLeft);
+        TurnStart? start = null;
         while (decider is not null)
         {
             stepsLeft = current.State.AwaitedDice is null ? stepsLeft - 1 : stepsLeft;
-            Played stepped = await Step(rules, current, decider, cancellationToken);
+            start = start?.TurnNumber == current.State.TurnNumber ? start : TurnStart.Of(current.State);
+            Played stepped = await Step(rules, current, decider, start, cancellationToken);
             current = await Seized(rules, stepped, deciderFor, cancellationToken);
             decider = NextDecider(current.State, deciderFor, dice, stepsLeft);
         }
@@ -151,13 +153,55 @@ public static class DecisionLoop
         IRulesApplying rules,
         Played played,
         IDeciding decider,
+        TurnStart start,
         CancellationToken cancellationToken
     )
     {
         SeatId seat = played.State.DecidingSeat!.Value; // only called once a deciding seat has a decider
-        DecisionRequest request = new(rules, played.State, seat, rules.LegalActions(played.State));
+        ImmutableList<GameAction> legal = rules.LegalActions(played.State);
+        DecisionRequest request = new(rules, played.State, seat, Undoing(rules, played.State, legal, start));
         GameAction action = await decider.Decide(request, cancellationToken);
         Transition transition = rules.Apply(played.State, action);
         return new Played(transition.State, played.Actions.Add(action.Describe()));
+    }
+
+    /// <summary>
+    /// The actions offered: all those <paramref name="legal"/> but any that would put the board and the prisoners
+    /// back as they were when the turn began, such as a Rook stepping c2 to d2 and back, taking nothing: a pass with
+    /// extra steps (the user's report of 2026-11-20); all of them, if that leaves none, or while nothing has changed
+    /// yet, or while dice are awaited.
+    /// </summary>
+    private static ImmutableList<GameAction> Undoing(
+        IRulesApplying rules,
+        GameState state,
+        ImmutableList<GameAction> legal,
+        TurnStart start
+    )
+    {
+        if (state.AwaitedDice is not null || start.IsAt(state))
+        {
+            return legal;
+        }
+
+        ImmutableList<GameAction> kept = [.. legal.Where(action => !start.IsAt(rules.Apply(state, action).State))];
+        return kept.IsEmpty ? legal : kept;
+    }
+
+    /// <summary>The board and the prisoners as a turn began.</summary>
+    private sealed record TurnStart(int TurnNumber, string Key)
+    {
+        public static TurnStart Of(GameState state) => new(state.TurnNumber, KeyOf(state));
+
+        /// <summary>Whether <paramref name="state"/> has its board and prisoners as they were.</summary>
+        public bool IsAt(GameState state) => KeyOf(state) == this.Key;
+
+        /// <summary>The pieces where they stand, in the order of their cells, and the prisoners, as text.</summary>
+        private static string KeyOf(GameState state) =>
+            string.Join(
+                ",",
+                state.Position.Occupants.OrderBy(occupant => occupant.Key.Value)
+                    .Select(occupant => $"{occupant.Key.Value}:{occupant.Value}")
+            )
+            + $"|{string.Join(",", state.Prisoners)}";
     }
 }
