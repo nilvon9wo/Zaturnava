@@ -22,10 +22,11 @@ public sealed class RequestLimitsTest(LimitedServer server) : IClassFixture<Limi
         CreateGameRequest request = new(ZaturnavaServer.Chaturaji2027, ZaturnavaServer.OneOpenSeat);
         _ = await this._client.Create(request, this._cancellation);
 
-        // Act
+        // Act - asking until refused, for as many as two windows allow: the window is fixed, so on a slow machine one
+        // may end mid-way and the count start again (Windows CI, 2026-11-20: the last of the minute's let through)
         Refusal? secondGame = await RefusalOf(() => this._client.Create(request, this._cancellation));
         ImmutableList<Refusal?> asked = [];
-        foreach (int _ in Enumerable.Range(0, LimitedServer.PerMinute))
+        while (asked.Count <= 2 * LimitedServer.PerMinute && (asked.IsEmpty || asked[^1] is null))
         {
             asked = asked.Add(await RefusalOf(() => this._client.Catalog(this._cancellation)));
         }
