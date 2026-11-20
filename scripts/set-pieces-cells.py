@@ -5,7 +5,8 @@
 
 Each argument is one change to docs/Other Potential Pieces.xlsx, on its first sheet:
 
-- `A1=text` or `A1=12` sets a value; `A1==FORMULA` a formula (without its `=`), whose last computed value may follow
+- `A1=text` or `A1=12` sets a value, in a new row if the row before it is there but not its own (its cells styled as
+  those above them); `A1==FORMULA` a formula (without its `=`), whose last computed value may follow
   after `@` (`O15==LeaderPromotionBonus@50`);
 - `A1:v=12` sets only the last computed value of a formula cell, so that what a reader without a spreadsheet program
   sees stays true;
@@ -60,6 +61,22 @@ def style_of(attributes: str) -> str:
     return found.group(1) if found else ""
 
 
+def added_row(sheet: str, row: str) -> str:
+    """The sheet with an empty row `row` after the row before it, which must be there, and its dimension grown (a
+    row of formatting alone may come far below, as row 1048576 does)."""
+    rows = list(re.finditer(r'<row r="(\d+)"[^>]*?(?:/>|>.*?</row>)', sheet, re.S))
+    previous = [found for found in rows if int(found.group(1)) == int(row) - 1]
+    if not previous:
+        raise SystemExit(f"row {row} is not in the sheet, nor the row before it")
+    last = previous[0]
+    sheet = sheet[: last.end()] + f'<row r="{row}"></row>' + sheet[last.end() :]
+    return re.sub(
+        r'(<dimension ref="[A-Z]+\d+:[A-Z]+)(\d+)(")',
+        lambda m: m.group(1) + str(max(int(m.group(2)), int(row))) + m.group(3),
+        sheet,
+    )
+
+
 def set_cell(sheet: str, reference: str, value: str) -> str:
     existing = cell_pattern(reference).search(sheet)
     if existing:
@@ -68,10 +85,15 @@ def set_cell(sheet: str, reference: str, value: str) -> str:
     row = re.sub(r"^[A-Z]+", "", reference)
     found = re.search(rf'<row r="{row}"[^>]*>(?P<cells>.*?)</row>', sheet, re.S)
     if not found:
-        raise SystemExit(f"row {row} is not in the sheet")
+        sheet = added_row(sheet, row)
+        found = re.search(rf'<row r="{row}"[^>]*>(?P<cells>.*?)</row>', sheet, re.S)
+    if found is None:
+        raise SystemExit(f"row {row} could not be added")
     cells = list(re.finditer(r'<c r="(?P<ref>[A-Z]+\d+)"(?P<attributes>[^>]*?)(?:/>|>.*?</c>)', found.group("cells"), re.S))
     before = [cell for cell in cells if column_number(cell.group("ref")) < column_number(reference)]
-    style = style_of(before[-1].group("attributes")) if before else ""
+    # a new cell takes the style of the cell to its left; in a new row, of the cell above it
+    above = cell_pattern(re.sub(r"\d+$", str(int(row) - 1), reference)).search(sheet)
+    style = style_of(before[-1].group("attributes")) if before else style_of(above.group("attributes")) if above else ""
     at = found.start("cells") + (before[-1].end() if before else 0)
     return sheet[:at] + cell_xml(reference, style, value) + sheet[at:]
 

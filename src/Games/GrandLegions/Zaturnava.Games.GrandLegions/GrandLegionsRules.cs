@@ -32,12 +32,14 @@ public static class GrandLegionsRules
     /// Every piece whose every move is forward, swapping back to back with any other such piece of an ally's, whatever
     /// their kinds (specification §6.1, Stated 2026-10-29: "any other piece whose normal move is forward only, such as
     /// the Lance; no piece that may move sideways or back"): the Pawns, the Lance; and, Proposed, as their moves are
-    /// forward only, diagonally, the Berolina Pawn and the Man. Before, only the Pawns swapped (playtest 2026-11-15).
+    /// forward only, diagonally, the Berolina Pawn and the Man, and, leaping, the Shogi Knight. Before, only the Pawns
+    /// swapped (playtest 2026-11-15).
     /// </summary>
     public static ImmutableHashSet<PieceKindId> Swappers { get; } =
     [
         .. Pawns,
         GrandLegionsPieces.Lance,
+        GrandLegionsPieces.ShogiKnight,
         GrandLegionsPieces.BerolinaPawn,
         GrandLegionsPieces.Man,
     ];

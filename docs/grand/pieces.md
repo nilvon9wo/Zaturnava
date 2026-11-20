@@ -70,6 +70,7 @@ and has no such premium.
 | Piece | Promotes to | Premium | Value |
 |---|---|---|---|
 | Lance (Shogi) | Gold General, 12 over 5 rows | 2 | 56 |
+| Knight (Shogi) | Gold General, 14 over 5 rows | 3 | 55 |
 | Pawn (Shogi) | Gold General, 15 over 4 rows | 4 | 55 |
 | Pawn (Western) | Queen, 22 over 6 rows | 4 | 9 |
 | Silver General (Shogi) | Gold General, 1 over 5 rows | 0 | 65 |
@@ -214,6 +215,7 @@ Chaturaji 2027.
 | Knightrider | Repeats 2+1 leaps in one direction | Move: each landing cell short of the last must be empty | 12 | 3 / — |
 | Zebra | Leaps 3+2 | — | 8 | — / — |
 | Knight | Leaps 2+1 | — | 8 | — / — |
+| Knight (Shogi) | Leaps 2+1, only forward: two squares straight forward and one to either side; → Gold General in the far three ranks | — | 55 | — / — |
 | Camel | Leaps 3+1 | One colour (by its move) | 7 | — / — |
 | Horse | Leaps 2+1 | Move: the first square of the two-square leg must be empty | 7 | 2 / — |
 | Elephant (Janggi) | One orthogonal step, then two diagonal steps outward | Move: each cell on the way must be empty | 7 | 2 / — |
@@ -391,6 +393,32 @@ Its value, by the sheet's columns:
   a line to convert is 1 in 8. The dice let it move 1 time in 2. Its player sees the line 4 times in 5. A line
   converted averages 15 points, since it is gained as well as lost to the enemy, though it scores nothing. A
   leader risked so near the enemy has it about 8 times a game. The product is 6.0, so +6.
+
+### The Shogi Knight
+
+Shogi's Keima, row 49 of the sheet, added on 2026-11-20 at the designer's word, the one piece of the families'
+games the catalogue lacked: every other moves as a piece already in it, and counts as that game's own. It leaps as
+the Knight does, but only the two leaps furthest forward, and promotes as Shogi's pieces do, into the Gold
+General, in the far three ranks. The program filled in its columns, by the sheet's rules (*Proposed*):
+
+| Piece | Leader | Reach | Premium | Powers | Limits | Value |
+|---|---|---|---|---|---|---|
+| Knight (Shogi) | 50 | 2 | 3 | 0 | 0 | 55 |
+
+- **Leader:** it may promote into a leader, so it starts from the
+  [leader promotion bonus](#leader-promotion-bonus), as the Lance and the Shogi Pawn do.
+- **Reach:** its two leaps, on any board.
+- **Premium:** the Gold General's 66 less its own 52 is 14, over the 5 rows from row 1 to the far three ranks
+  (it is Cavalry, not Infantry, so counted as the Lance is): 2.8, so 3. On a game's board, from its kingdom's front
+  row: 56 on the medium board (4 rows), 54 on the large, and 66 on the small, where it starts one row from the zone
+  and so costs what the Gold General does.
+- **Limits:** none. That it goes only forward is its move, which reach counts, as the Lance's; its leap cannot be
+  blocked. Like the Lance and the Pawns, it swaps with an ally's forward-only piece that blocks it.
+- **Mercenary:** as every Shogi piece, it is a [mercenary](specification.md#65-mercenaries). No Shogi piece's
+  value counts that, neither as a gain (it may be hired back) nor as a loss (an enemy may hire it), so neither does
+  this one's.
+
+Its symbol is the Knight's, with an arrow pointing ahead; its letters "Ke".
 
 ### Editions
 

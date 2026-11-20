@@ -15,6 +15,9 @@ public static class DirectionSets
     public static readonly DirectionSet Forward = new("forward");
     public static readonly DirectionSet ForwardDiagonals = new("forward-diagonals");
 
+    /// <summary>The Knight's two leaps that go forward the most: two cells forward and one to either side.</summary>
+    public static readonly DirectionSet ForwardKnight = new("forward-knight");
+
     /// <summary>The two directions square to forward: left and right.</summary>
     public static readonly DirectionSet Sideways = new("sideways");
 

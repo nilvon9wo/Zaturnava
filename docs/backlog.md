@@ -90,8 +90,9 @@ From the specification's observations of the bots in play (F, X) and the Sage pl
   Never offered, nor seated at random, where armies are alike or set by a scenario. *(Stated 2026-11-20)* Checkers'
   and Othello's armies stay few and dear at an even budget (3 and 4 pieces): they suit games of much larger
   budgets, where they can lose many pieces while waiting to take several or turn many; nothing else is fair until
-  games with uneven budgets are offered or those pieces' prices are weighed again. Still to do: pieces their games
-  have that the catalogue lacks (see the open questions).
+  games with uneven budgets are offered or those pieces' prices are weighed again. *(Stated 2026-11-20)* The one
+  piece their games had that the catalogue lacked, Shogi's Knight, is in it
+  ([pieces](grand/pieces.md#the-shogi-knight)).
 - **E4** Several army-selection strategies (many cheap pieces, a few dear ones, a balance across the classes),
   shared or not; clever bots answering what the others pick and place. Stage 4: Random at random, Midas by value,
   Solomon evenly. Later, bots of their own leanings: one origin, sliders, infantry; an army of different bots.

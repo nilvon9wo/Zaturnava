@@ -51,6 +51,7 @@ public static class GrandLegionsPieces
     public static readonly PieceKindId Knightrider = new("knightrider");
     public static readonly PieceKindId Zebra = new("zebra");
     public static readonly PieceKindId Knight = new("knight");
+    public static readonly PieceKindId ShogiKnight = new("shogi-knight");
     public static readonly PieceKindId Camel = new("camel");
     public static readonly PieceKindId Horse = new("xiangqi-horse");
     public static readonly PieceKindId JanggiElephant = new("janggi-elephant");
@@ -226,6 +227,10 @@ public static class GrandLegionsPieces
         Piece(Zebra, "Zebra", Cavalry, Fairy, Leaper(3, 2)),
         Piece(Knight, "Knight (Western)", Cavalry, Western, KnightLeap)
             .Also(Makruk),
+        // Shogi's Keima, which the catalogue had lacked (the user's word, 2026-11-20: add it): only the Knight's two
+        // leaps furthest forward, promoting as Shogi's pieces do, into the Gold General, a leader.
+        Piece(ShogiKnight, "Knight (Shogi)", Cavalry, Shogi, MovementRule.Leap(DirectionSets.ForwardKnight, 1))
+            .Promoting(GoldGeneral),
         Piece(Camel, "Camel", Cavalry, Fairy, Leaper(3, 1))
             .Restricted(ColourBound(OneColour)),
         Piece(Horse, "Horse (Xiangqi)", Cavalry, Xiangqi, KnightLeap.Lame())
@@ -338,6 +343,7 @@ public static class GrandLegionsPieces
             .Add(Knightrider, "knightrider")
             .Add(Zebra, "zebra")
             .Add(Knight, "knight")
+            .Add(ShogiKnight, "shogi-knight")
             .Add(Camel, "camel")
             .Add(Horse, "xiangqi-horse")
             .Add(JanggiElephant, "elephant")
@@ -394,6 +400,7 @@ public static class GrandLegionsPieces
             .Add(Knightrider, "KR")
             .Add(Zebra, "Z")
             .Add(Knight, "Kn")
+            .Add(ShogiKnight, "Ke")
             .Add(Camel, "Ca")
             .Add(Horse, "HX")
             .Add(JanggiElephant, "EJ")
@@ -421,6 +428,7 @@ public static class GrandLegionsPieces
     public static readonly ImmutableDictionary<PieceKindId, string> Kins =
         ImmutableDictionary<PieceKindId, string>.Empty
             .Add(Knight, "Horse")
+            .Add(ShogiKnight, "Horse")
             .Add(Horse, "Horse")
             .Add(Knightrider, "Horse")
             .Add(JanggiElephant, "Elephant")

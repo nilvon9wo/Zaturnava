@@ -137,6 +137,30 @@ public sealed class SquareGridTopologyTest
     }
 
     [Fact]
+    public void Resolve_WhenTheForwardKnightFacesUp_ReturnsTheTwoLeapsTwoUpAndOneAcross()
+    {
+        // Arrange - nothing beyond the grid
+
+        // Act
+        ImmutableList<Direction> directions = this._grid.Resolve(DirectionSets.ForwardKnight, Up);
+
+        // Assert
+        Assert.Equal([new Direction(-1, 2), new Direction(1, 2)], directions);
+    }
+
+    [Fact]
+    public void Resolve_WhenTheForwardKnightFacesRight_ReturnsTheTwoLeapsTwoRightAndOneAcross()
+    {
+        // Arrange - nothing beyond the grid
+
+        // Act
+        ImmutableList<Direction> directions = this._grid.Resolve(DirectionSets.ForwardKnight, Right);
+
+        // Assert
+        Assert.Equal([new Direction(2, 1), new Direction(2, -1)], directions);
+    }
+
+    [Fact]
     public void Resolve_WhenSidewaysFacesUp_ReturnsLeftAndRight()
     {
         // Arrange - nothing beyond the grid

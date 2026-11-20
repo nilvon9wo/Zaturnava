@@ -51,6 +51,7 @@ public sealed class GrandLegionsPiecesTest
         { "knightrider", 12 },
         { "zebra", 8 },
         { "knight", 8 },
+        { "shogi-knight", 2 },
         { "camel", 8 },
         { "xiangqi-horse", 8 },
         { "janggi-elephant", 8 },
@@ -128,6 +129,7 @@ public sealed class GrandLegionsPiecesTest
     [InlineData("bishop", "bishop", "B", "heavy")]
     [InlineData("knight", "knight", "Kn", "cavalry")]
     [InlineData("xiangqi-horse", "xiangqi-horse", "HX", "cavalry")]
+    [InlineData("shogi-knight", "shogi-knight", "Ke", "cavalry")]
     [InlineData("alfil", "elephant", "Al", "cavalry")]
     [InlineData("xiangqi-cannon", "cannon", "CX", "artillery")]
     [InlineData("berolina-pawn", "pawn", "Be", "infantry")]
@@ -288,7 +290,7 @@ public sealed class GrandLegionsPiecesTest
 
         // Assert
         Assert.Equal(
-            (47, 10, 12, 9, 11, 5),
+            (48, 10, 12, 9, 12, 5),
             (
                 GrandLegionsPieces.ById.Count,
                 counts[PieceClass.Leader],

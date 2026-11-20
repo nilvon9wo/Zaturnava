@@ -45,7 +45,7 @@ public sealed class PieceStyleTest
         string[] both =
         [
             "dragon-king", "dragon-bishop", "dragon-horse", "amazon", "chancellor", "manchu-chariot", "knightrider",
-            "zebra", "xiangqi-horse",
+            "zebra", "xiangqi-horse", "shogi-knight",
         ];
 
         // Act

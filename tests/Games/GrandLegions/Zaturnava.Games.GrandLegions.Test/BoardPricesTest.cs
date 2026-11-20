@@ -6,10 +6,11 @@ namespace Net.NowhereAtAll.Zaturnava.Games.GrandLegions.Test;
 public sealed class BoardPricesTest
 {
     [Fact]
-    public void On_WhenTheBoardIsEightByEight_IsTheSheetsValuesButTheLances()
+    public void On_WhenTheBoardIsEightByEight_IsTheSheetsValuesButTheLancesAndTheShogiKnights()
     {
         // Arrange - the medium game's board, 8 × 8, its kingdoms' front row the sheet's row 2; the sheet counts the
-        // Lance's promotion from row 1, 5 rows (premium 12 / 5, 2), the board from its front row, 4 (12 / 4, 3)
+        // promotion of a piece not Infantry from row 1, 5 rows, the board from its front row, 4: the Lance's 12 gained,
+        // 2 there, 3 here; the Shogi Knight's 14, 3 there (2.8), 4 here (3.5)
         GrandBoard board = QuickTerrain.BoardOf(QuickGame.Medium, 0);
 
         // Act
@@ -18,9 +19,26 @@ public sealed class BoardPricesTest
         // Assert
         Assert.Equal(
             GrandLegionsPieces.Catalogue.ToImmutableDictionary(piece => piece.Id, piece => piece.Value)
-                .SetItem(GrandLegionsPieces.Lance, 57),
+                .SetItem(GrandLegionsPieces.Lance, 57)
+                .SetItem(GrandLegionsPieces.ShogiKnight, 56),
             prices
         );
+    }
+
+    [Theory]
+    [InlineData("grand-legions-small", 66)]
+    [InlineData("grand-legions-large", 54)]
+    public void On_WhenTheBoardIsLargerOrSmaller_PricesTheShogiKnightsPromotionByHowFarItIs(string game, int expected)
+    {
+        // Arrange - its reach, 2, the same on any board; the Gold General's 14 more over the rows from its kingdom's
+        // front row to the far three: on the small board, one, so it costs what the Gold General does
+        GrandBoard board = QuickTerrain.BoardOf(QuickGame.All.Single(quick => quick.Id == game), 0);
+
+        // Act
+        int price = BoardPrices.On(board)[GrandLegionsPieces.ShogiKnight];
+
+        // Assert
+        Assert.Equal(expected, price);
     }
 
     [Theory]

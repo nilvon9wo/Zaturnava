@@ -67,6 +67,7 @@ public sealed class SquareGridTopology(
             "knight" => KnightDirections,
             "forward" => [forward],
             "forward-diagonals" => ForwardDiagonals(forward),
+            "forward-knight" => ForwardKnight(forward),
             "sideways" => [Left(forward), Right(forward)],
             _ when LeaperOf(set.Name) is { } leaper => Leaps(leaper.First, leaper.Second),
             _ => throw new UnsupportedDirectionSetException(set, TopologyName),
@@ -114,6 +115,9 @@ public sealed class SquareGridTopology(
 
     private static ImmutableList<Direction> ForwardDiagonals(Direction forward) =>
         [Combine(forward, Left(forward)), Combine(forward, Right(forward))];
+
+    private static ImmutableList<Direction> ForwardKnight(Direction forward) =>
+        [Combine(Times(forward, 2), Left(forward)), Combine(Times(forward, 2), Right(forward))];
 
     private static Direction Left(Direction forward) => new(-forward.Second, forward.First);
 
