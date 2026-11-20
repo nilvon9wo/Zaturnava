@@ -84,6 +84,20 @@ public sealed class CroesusBotTest
     }
 
     [Fact]
+    public async Task Decide_WhenAnOfferWaitsThatItMayNotAnswerYet_DoesWhatItMayInstead()
+    {
+        // Arrange - an offer waiting, but only a pass allowed now, something else coming first (overnight,
+        // 2026-11-20: a bot's decline refused as not allowed then, ending the whole run)
+        DecisionRequest offered = Ransoms.Offered([21], [30]) with { LegalActions = [Ransoms.Done] };
+
+        // Act
+        GameAction action = await new CroesusBot(new Random(1)).Decide(offered, this._cancellation);
+
+        // Assert
+        Assert.Equal(Ransoms.Done, action);
+    }
+
+    [Fact]
     public async Task Decide_WhenItsTurnIsOver_OffersTheTradeThatGainsTheMost()
     {
         // Arrange - accepting costs Yellow 2 points a prisoner, so the Horse 11 for its own Horse 20 gains the most

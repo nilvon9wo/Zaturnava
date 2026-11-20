@@ -34,16 +34,24 @@ public sealed class DecisionLoopTest
     [Fact]
     public async Task PlayAll_WhenTheRulesetDealsEachGame_DealsItFirstBySeed()
     {
-        // Arrange - the loaded dice roll the seed, 4, which the tiny rules score to the first seat
+        // Arrange - the loaded dice roll the seed, 4, which the tiny rules score to the first seat; and, to the fourth,
+        // how many seats were dealt a family: a bot of Makruk's pieces at the first, a decider no bot at the second
+        // (so that a bot of a family is rated as it plays, 2026-11-20)
         TinyRules rules = new(GameLength, isDealt: true);
+        ImmutableList<IDeciding> players = [new FirstChoiceBot(family: "Makruk"), new SeizingBot()];
 
         // Act
-        Played played = await DecisionLoop.PlayAll(rules, this._players, this._dice, 100, this._cancellation);
+        Played played = await DecisionLoop.PlayAll(rules, players, this._dice, 100, this._cancellation);
 
         // Assert
         Assert.Equal(
-            ("deal", GameLength + 1, 4),
-            (played.Actions[0].Kind, played.Actions.Count, played.State.Scores[new SeatId(0)])
+            ("deal", GameLength + 1, 4, 1),
+            (
+                played.Actions[0].Kind,
+                played.Actions.Count,
+                played.State.Scores[new SeatId(0)],
+                played.State.Scores[new SeatId(3)]
+            )
         );
     }
 

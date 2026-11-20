@@ -119,15 +119,24 @@ public static class QuickArmy
     /// <summary>
     /// How many of each class an army of <paramref name="count"/> pieces aims at (E1): a leader for each
     /// <see cref="PiecesPerLeader"/>, rounded up; half infantry, rounded up; the rest even among heavies, cavalry and
-    /// artillery, any odd one to the heavies first, then the cavalry; and never fewer than the game's minimums.
+    /// artillery, any odd one to the heavies first, then the cavalry; and never fewer than the game's minimums. For an
+    /// army of a family's pieces, which may lack whole classes (<see cref="OfFamily"/>), only the classes
+    /// <paramref name="present"/>: what the others would have had shared evenly among the classes present but the
+    /// leaders, in the order of <see cref="Classes"/>; among the leaders, if it has nothing else, as an Othello army of
+    /// Evangelists (Proposed, 2026-11-20: so that its army fills its kingdom as another would, the budget allowing; a
+    /// Checkers army, its Kings and a host of Men).
     /// </summary>
-    public static ImmutableDictionary<PieceClass, int> TargetOf([Required] QuickGame game, int count)
+    public static ImmutableDictionary<PieceClass, int> TargetOf(
+        [Required] QuickGame game,
+        int count,
+        ImmutableHashSet<PieceClass>? present = null
+    )
     {
         int leaders = (count + PiecesPerLeader - 1) / PiecesPerLeader;
         int infantry = (count + 1) / 2;
         int rest = Math.Max(0, count - leaders - infantry);
         PieceClass[] others = [Heavy, Cavalry, Artillery];
-        return Classes.ToImmutableDictionary(
+        ImmutableDictionary<PieceClass, int> target = Classes.ToImmutableDictionary(
             pieceClass => pieceClass,
             pieceClass => Math.Max(
                 game.Minimums.GetValueOrDefault(pieceClass),
@@ -138,6 +147,30 @@ public static class QuickArmy
                     _ => (rest / others.Length) + (Array.IndexOf(others, pieceClass) < rest % others.Length ? 1 : 0),
                 }
             )
+        );
+        return present is null ? target : Shared(target, present);
+    }
+
+    /// <summary>
+    /// <paramref name="target"/>, the classes not <paramref name="present"/> none, what they had shared as
+    /// <see cref="TargetOf"/> tells.
+    /// </summary>
+    private static ImmutableDictionary<PieceClass, int> Shared(
+        ImmutableDictionary<PieceClass, int> target,
+        ImmutableHashSet<PieceClass> present
+    )
+    {
+        ImmutableList<PieceClass> others = [.. Classes.Where(each => each != Leader && present.Contains(each))];
+        ImmutableList<PieceClass> takers = others.IsEmpty ? [Leader] : others;
+        int spare = target.Where(each => !present.Contains(each.Key)).Sum(each => each.Value);
+        return target.ToImmutableDictionary(
+            each => each.Key,
+            each => (present.Contains(each.Key), takers.IndexOf(each.Key)) switch
+            {
+                (false, _) => 0,
+                (_, < 0) => each.Value,
+                var (_, at) => each.Value + (spare / takers.Count) + (at < spare % takers.Count ? 1 : 0),
+            }
         );
     }
 
@@ -222,9 +255,8 @@ public static class QuickArmy
     /// kingdom. Each army spends <paramref name="budget"/>, if the game's creator set one (Stated 2026-11-19: "I still
     /// can't set the points to spend without manually drafting the armies"); else <see cref="BudgetOf"/>. A seat
     /// <paramref name="families"/> names a family for (a bot's, which plays that game's pieces) is dealt that family's
-    /// pieces, of each class it has any of (<see cref="OfFamily"/>; the user's report of 2026-11-20: Naresuan dealt
-    /// an army of every game's pieces); but not if the armies are alike, which no bot's family overrides (the user's
-    /// word of 2026-11-20).
+    /// pieces only (<see cref="OfFamily"/>; the user's report of 2026-11-20: Naresuan dealt an army of every game's
+    /// pieces); but not if the armies are alike, which no bot's family overrides (the user's word of 2026-11-20).
     /// </summary>
     public static ImmutableList<Placement> Dealt(
         [Required] QuickGame game,
@@ -278,11 +310,19 @@ public static class QuickArmy
         string? family = null
     )
     {
-        ImmutableList<GrandPiece> eligible = OfFamily(Eligible(game), family);
         if (game.Edition >= CompositionEdition)
         {
-            return Composed(game, eligible, [], random);
+            ImmutableList<GrandPiece> ofFamily = OfFamily(Eligible(game), family);
+            return Composed(
+                game,
+                ofFamily,
+                [],
+                random,
+                family is null ? null : [.. ofFamily.Select(piece => piece.Class)]
+            );
         }
+
+        ImmutableList<GrandPiece> eligible = Eligible(game);
 
         int room = RoomOf(game);
         PieceClass[] order =
@@ -312,27 +352,12 @@ public static class QuickArmy
     }
 
     /// <summary>
-    /// Of <paramref name="eligible"/>, for an army of <paramref name="family"/>'s pieces - its families, nearest first,
-    /// joined by "+": "Makruk+Western" - of each class, only those of the first family that has any of it; of a class
-    /// none has, all, so that the army is whole (Proposed, as a family bot drafts, 2026-11-20). All, for no family.
+    /// Of <paramref name="eligible"/>, for an army of <paramref name="family"/>'s pieces, only that family's game's
+    /// (<see cref="GrandPiece.IsOf"/>), none of a class it has none of: a Western army has no artillery, a Checkers
+    /// army only Kings and Men (the user's word of 2026-11-20: "This game should reflect that"). All, for no family.
     /// </summary>
-    public static ImmutableList<GrandPiece> OfFamily([Required] ImmutableList<GrandPiece> eligible, string? family)
-    {
-        if (family is null)
-        {
-            return eligible;
-        }
-
-        ImmutableList<string> nearestFirst = [.. family.Split('+')];
-        return
-        [
-            .. eligible.GroupBy(piece => piece.Class)
-                .SelectMany(pieces =>
-                    nearestFirst.Select(each => pieces.Where(piece => piece.Tradition.ToString() == each).ToList())
-                        .FirstOrDefault(found => found.Count > 0) ?? [.. pieces]
-                ),
-        ];
-    }
+    public static ImmutableList<GrandPiece> OfFamily([Required] ImmutableList<GrandPiece> eligible, string? family) =>
+        family is null ? eligible : [.. eligible.Where(piece => piece.IsOf(family))];
 
     /// <summary>
     /// <paramref name="army"/>, and the pieces <see cref="Next"/> adds to it, one at a time, while it adds one.
@@ -341,10 +366,11 @@ public static class QuickArmy
         QuickGame game,
         ImmutableList<GrandPiece> eligible,
         ImmutableList<GrandPiece> army,
-        Random random
+        Random random,
+        ImmutableHashSet<PieceClass>? present
     ) =>
-        Next(game, eligible, army, game.Budget - army.Sum(each => each.Value), random) is { } next
-            ? Composed(game, eligible, army.Add(next), random)
+        Next(game, eligible, army, game.Budget - army.Sum(each => each.Value), random, present) is { } next
+            ? Composed(game, eligible, army.Add(next), random, present)
             : army;
 
     /// <summary>
@@ -363,13 +389,16 @@ public static class QuickArmy
         [Required] ImmutableList<GrandPiece> eligible,
         [Required] ImmutableList<GrandPiece> army,
         int left,
-        [Required] Random random
+        [Required] Random random,
+        ImmutableHashSet<PieceClass>? present = null
     )
     {
         ImmutableList<GrandPiece> fitting = Fitting(eligible, army, RoomOf(game), game.Edition);
-        ImmutableList<PieceClass> aimed = Lacking(game, fitting, army, AimOf(game));
-        bool isPast = aimed.IsEmpty;
-        ImmutableList<PieceClass> wanted = isPast ? Lacking(game, fitting, army, game.Cells) : aimed;
+        ImmutableList<PieceClass> aimed = Lacking(game, fitting, army, AimOf(game), present);
+        // an army of a family's pieces, which the budget, reckoned from every class, may not buy a whole aim of, buys
+        // as one past its aim does, keeping nothing back for pieces it may never afford (Proposed, 2026-11-20)
+        bool isPast = aimed.IsEmpty || present is not null;
+        ImmutableList<PieceClass> wanted = isPast ? Lacking(game, fitting, army, game.Cells, present) : aimed;
         if (army.Count >= game.Cells || wanted.IsEmpty)
         {
             return null;
@@ -420,10 +449,11 @@ public static class QuickArmy
         QuickGame game,
         ImmutableList<GrandPiece> fitting,
         ImmutableList<GrandPiece> army,
-        int count
+        int count,
+        ImmutableHashSet<PieceClass>? present
     ) =>
     [
-        .. TargetOf(game, count)
+        .. TargetOf(game, count, present)
             .OrderBy(target => Classes.IndexOf(target.Key))
             .Where(target => fitting.Any(piece => piece.Class == target.Key))
             .SelectMany(target => Enumerable.Repeat(

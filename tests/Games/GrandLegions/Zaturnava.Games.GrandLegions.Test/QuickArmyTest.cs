@@ -516,51 +516,68 @@ public sealed class QuickArmyTest
         Assert.Equal((36, 24), (rich.Count, poor.Count));
     }
 
-    [Fact]
-    public void Dealt_WhenASeatIsNamedAFamily_DealsItThatFamilysPiecesThenItsKinsOfEachClassButNotWhereArmiesAreAlike()
+    [Theory]
+    [InlineData("Makruk", "King (Western)|Noble (Makruk)|Courtier|Pawn (Makruk)|Rook (Western)|Knight (Western)", 18)]
+    [InlineData("Checkers", "King (Checkers)|Man", 3)]
+    [InlineData("Othello", "Evangelist", 4)]
+    public void Dealt_WhenASeatIsNamedAFamily_DealsItOnlyThatGamesPiecesButNotWhereArmiesAreAlike(
+        string family,
+        string expected,
+        int count
+    )
     {
-        // Arrange - the large game; Black dealt Makruk's pieces, then Western chess's (the user's report of
-        // 2026-11-20: Naresuan dealt every game's pieces); the others any
-        QuickGame game = QuickGame.Large with { Edition = QuickArmy.ThroneKeptEdition };
-        ImmutableList<string?> families = ["Makruk+Western", null, null, null];
+        // Arrange - the large game; Black dealt the family's game's pieces only, those it plays under other names
+        // too, none of a class it has none of (the user's word of 2026-11-20: "Western Chess doesn't have
+        // artilary"); the others any; of the newest edition, as a game created now is
+        QuickGame game = QuickGame.Large with { Edition = QuickArmy.PalacesAnywhereEdition };
+        ImmutableList<string?> families = [family, null, null, null];
 
         // Act
         ImmutableList<Placement> dealt = QuickArmy.Dealt(game, 3, families: families);
         ImmutableList<Placement> alike = QuickArmy.Dealt(game, 3, areAlike: true, families: families);
 
-        // Assert - Black's infantry Makruk's; of a class Makruk has none of, Western, if Western has any; the others'
-        // of other games too; armies alike as if no family were named
-        ImmutableList<GrandPiece> eligible = QuickArmy.Eligible(game);
+        // Assert - Black's of the family only, of every kind it may have, as many as its budget buys; the others' of
+        // other games too; armies alike as if no family were named
+        ImmutableList<string> kinds =
+            [.. QuickArmy.OfFamily(QuickArmy.Eligible(game), family).Select(piece => piece.Name)];
         ImmutableList<GrandPiece> black =
             [.. dealt.Where(placed => placed.Owner == new SeatId(0)).Select(placed => ById[placed.Kind])];
         Assert.Equal(
-            (true, true, true, true),
+            (expected, true, count, true, true),
             (
-                black.Where(piece => piece.Class == Infantry).All(piece => piece.Tradition == Tradition.Makruk),
-                black.Where(piece => piece.Class != Infantry
-                        && eligible.Any(other => other.Class == piece.Class && other.Tradition == Tradition.Western)
-                    )
-                    .All(piece => piece.Tradition == Tradition.Western),
-                dealt.Where(placed => placed.Owner != new SeatId(0))
-                    .Any(placed => ById[placed.Kind].Tradition is not (Tradition.Makruk or Tradition.Western)),
+                string.Join('|', kinds),
+                black.All(piece => piece.IsOf(family)),
+                black.Count,
+                dealt.Where(placed => placed.Owner != new SeatId(0)).Any(placed => !ById[placed.Kind].IsOf(family)),
                 alike.SequenceEqual(QuickArmy.Dealt(game, 3, areAlike: true))
             )
         );
     }
 
-    [Fact]
-    public void OfFamily_WhenNoFamilyNamedHasAPieceOfAClass_KeepsEveryPieceOfIt()
+    [Theory]
+    [InlineData("Leader", "Leader:20")]
+    [InlineData("Leader,Artillery", "Leader:1|Artillery:19")]
+    [InlineData("Leader,Infantry,Cavalry", "Leader:1|Infantry:13|Cavalry:6")]
+    public void TargetOf_WhenAnArmyHasPiecesOfSomeClassesOnly_SharesTheOthersAmongThemButTheLeaders(
+        string present,
+        string expected
+    )
     {
-        // Arrange - the large game's pieces; the Tafl family, which has no Artillery
-        ImmutableList<GrandPiece> eligible = QuickArmy.Eligible(QuickGame.Large);
+        // Arrange - an army of 20 pieces: a leader, 10 infantry, 3 each of the rest
+        ImmutableHashSet<PieceClass> classes = [.. present.Split(',').Select(Enum.Parse<PieceClass>)];
 
         // Act
-        ImmutableList<GrandPiece> tafl = QuickArmy.OfFamily(eligible, "Tafl");
+        ImmutableDictionary<PieceClass, int> target = QuickArmy.TargetOf(QuickGame.Large, 20, classes);
 
-        // Assert
+        // Assert - leaders taking the rest only where there is nothing else
         Assert.Equal(
-            eligible.Count(piece => piece.Class == Artillery),
-            tafl.Count(piece => piece.Class == Artillery)
+            expected,
+            string.Join(
+                '|',
+                target.Where(each => each.Value > 0)
+                    .OrderBy(each => each.Key)
+                    .Select(each => $"{each.Key}:{each.Value}")
+            )
         );
     }
 

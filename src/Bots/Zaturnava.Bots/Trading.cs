@@ -31,10 +31,11 @@ internal static class Trading
     /// <summary>
     /// The answer to the offer waiting, if one is: accepted if, as <paramref name="judge"/> weighs it, it gains
     /// the bot no less than nothing, but for <paramref name="leeway"/>, and the bot's team can afford it; null if
-    /// none waits.
+    /// none waits, or if it may not answer it now, something else coming first, as placing a prisoner coming home
+    /// (overnight, 2026-11-20: a bot's decline refused as not allowed then, ending the whole run).
     /// </summary>
     public static GameAction? AnswerTo(DecisionRequest request, double leeway, ITradeJudging judge) =>
-        request.State.Offer is { } offer
+        request.State.Offer is { } offer && request.LegalActions.Any(action => action is DeclineAction)
             ? Answered(request, offer, leeway, judge)
             : null;
 

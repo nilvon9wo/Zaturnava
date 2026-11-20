@@ -131,6 +131,13 @@ internal sealed class ScriptedRules(
 
     public bool MayUseDie([Required] GameState state, int value) => true;
 
-    public PieceGuide GuideOf(PieceKindId kind) =>
-        new(new PieceKind(kind, [])) { Origin = this._origins.GetValueOrDefault(kind) };
+    /// <summary>
+    /// The kind's guide: its game the first the origins name for it, any others ("Western+Makruk") games that play it
+    /// too.
+    /// </summary>
+    public PieceGuide GuideOf(PieceKindId kind)
+    {
+        string[] games = this._origins.GetValueOrDefault(kind)?.Split('+') ?? [];
+        return new(new PieceKind(kind, [])) { Origin = games.FirstOrDefault(), AlsoIn = [.. games.Skip(1)] };
+    }
 }

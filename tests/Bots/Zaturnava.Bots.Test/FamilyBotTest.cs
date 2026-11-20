@@ -13,61 +13,54 @@ public sealed class FamilyBotTest
 
     [Theory]
     [InlineData("musashi", 1)]
-    [InlineData("sun-tzu", 4)]
-    public async Task Decide_WhenDrafting_BuysItsFamilysPiecesWhileItCanElseWhatSageWould(string bot, int cell)
+    [InlineData("naresuan", 4)]
+    [InlineData("sun-tzu", 0)]
+    public async Task Decide_WhenDrafting_BuysOnlyItsFamilysPiecesElseIsDone(string bot, int cell)
     {
-        // Arrange - a Shogi Pawn or a Western Horse to draft, the Horse worth more: Musashi takes the Pawn; Sun Tzu,
-        // no Xiangqi piece offered, takes the Horse, as Sage would
+        // Arrange - a Shogi Pawn, or a Western Horse that Makruk plays too, the Horse worth more; or be done, or have
+        // the rest filled at random: Musashi takes the Pawn; Naresuan the Horse, Makruk's Ma; Sun Tzu, no Xiangqi
+        // piece offered, is done, never taking another's piece, nor any at random (the user's word of 2026-11-20)
         DraftAction pawn = new(ScriptedRules.Seat, LineRules.Pawn, new CellId(1));
         DraftAction horse = new(ScriptedRules.Seat, LineRules.Horse, new CellId(4));
         ScriptedRules rules = new(
             ImmutableDictionary<GameAction, GameState>.Empty
                 .Add(pawn, ScriptedRules.State((1, LineRules.Pawn, ScriptedRules.Seat)))
-                .Add(horse, ScriptedRules.State((4, LineRules.Horse, ScriptedRules.Seat))),
+                .Add(horse, ScriptedRules.State((4, LineRules.Horse, ScriptedRules.Seat)))
+                .Add(new PassAction(ScriptedRules.Seat), ScriptedRules.State())
+                .Add(
+                    new FillArmyAction(ScriptedRules.Seat),
+                    ScriptedRules.State((2, LineRules.Horse, ScriptedRules.Seat))
+                ),
             origins: ImmutableDictionary<PieceKindId, string>.Empty
                 .Add(LineRules.Pawn, "Shogi")
-                .Add(LineRules.Horse, "Western")
+                .Add(LineRules.Horse, "Western+Makruk")
         );
         FamilyBot family = FamilyBot.All(new Random(1)).Single(candidate => candidate.Profile.Id == bot);
 
         // Act
-        GameAction drafted = await family.Decide(rules.Request(), this._cancellation);
+        GameAction decided = await family.Decide(rules.Request(), this._cancellation);
 
-        // Assert
-        Assert.Equal(cell, ((DraftAction)drafted).Cell.Value);
+        // Assert - the cell drafted on; 0, for being done
+        Assert.Equal(cell, (decided as DraftAction)?.Cell.Value ?? (decided is PassAction ? 0 : -1));
     }
 
-    [Fact]
-    public async Task Decide_WhenDraftingAndNoneOfItsFamilysPiecesIsOffered_BuysItsKinsAndIsDealtSo()
+    [Theory]
+    [InlineData("pass", "pass")]
+    [InlineData("fill", "fill")]
+    [InlineData("throne,fill", "throne")]
+    public async Task Decide_WhenNothingIsToBeDrafted_DecidesAsSageWouldButNeverFillsItsArmyIfItMayDoElse(
+        string offered,
+        string expected
+    )
     {
-        // Arrange - a Western Pawn or a Shogi Horse, the Horse worth more: Naresuan, no Makruk piece offered, takes
-        // the Pawn, Western chess's being most like Makruk's (the user's report of 2026-11-20)
-        DraftAction pawn = new(ScriptedRules.Seat, LineRules.Pawn, new CellId(1));
-        DraftAction horse = new(ScriptedRules.Seat, LineRules.Horse, new CellId(4));
+        // Arrange - out of the draft, only a pass to make; only to have the army filled at random, which it would
+        // rather not, but must; or that, or setting its throne, which it does
+        ImmutableDictionary<string, GameAction> actions = ImmutableDictionary<string, GameAction>.Empty
+            .Add("pass", new PassAction(ScriptedRules.Seat))
+            .Add("fill", new FillArmyAction(ScriptedRules.Seat))
+            .Add("throne", new ThroneAction(ScriptedRules.Seat, new CellId(0)));
         ScriptedRules rules = new(
-            ImmutableDictionary<GameAction, GameState>.Empty
-                .Add(pawn, ScriptedRules.State((1, LineRules.Pawn, ScriptedRules.Seat)))
-                .Add(horse, ScriptedRules.State((4, LineRules.Horse, ScriptedRules.Seat))),
-            origins: ImmutableDictionary<PieceKindId, string>.Empty
-                .Add(LineRules.Pawn, "Western")
-                .Add(LineRules.Horse, "Shogi")
-        );
-        FamilyBot naresuan = FamilyBot.All(new Random(1)).Single(candidate => candidate.Profile.Id == "naresuan");
-
-        // Act
-        GameAction drafted = await naresuan.Decide(rules.Request(), this._cancellation);
-
-        // Assert
-        Assert.Equal((1, "Makruk+Western"), (((DraftAction)drafted).Cell.Value, naresuan.Profile.Family));
-    }
-
-    [Fact]
-    public async Task Decide_WhenNothingIsToBeDrafted_DecidesAsSageWould()
-    {
-        // Arrange - only a pass to make
-        PassAction pass = new(ScriptedRules.Seat);
-        ScriptedRules rules = new(
-            ImmutableDictionary<GameAction, GameState>.Empty.Add(pass, ScriptedRules.State())
+            offered.Split(',').ToImmutableDictionary(name => actions[name], _ => ScriptedRules.State())
         );
         FamilyBot musashi = FamilyBot.All(new Random(1)).Single(candidate => candidate.Profile.Id == "musashi");
 
@@ -75,26 +68,27 @@ public sealed class FamilyBotTest
         GameAction decided = await musashi.Decide(rules.Request(), this._cancellation);
 
         // Assert
-        Assert.Equal(pass, decided);
+        Assert.Equal(actions[expected], decided);
     }
 
     [Theory]
     [InlineData("musashi", true, true)]
     [InlineData("musashi", false, false)]
     [InlineData("ragnar", true, false)]
+    [InlineData("desdemona", true, true)]
     public void Knows_WhenAskedOfAGame_KnowsOnlyOneDraftedWithPiecesOfItsFamily(
         string bot,
         bool isDraftable,
         bool expected
     )
     {
-        // Arrange - a Shogi Pawn and a Western Horse, drafted or dealt: no Tafl piece for Ragnar (the user's word of
-        // 2026-11-20: only the bots that make sense for the game)
+        // Arrange - a Shogi Pawn and a fairy Horse that Othello plays too, drafted or dealt: no Tafl piece for Ragnar
+        // (the user's word of 2026-11-20: only the bots that make sense for the game)
         ScriptedRules rules = new(
             [],
             origins: ImmutableDictionary<PieceKindId, string>.Empty
                 .Add(LineRules.Pawn, "Shogi")
-                .Add(LineRules.Horse, "Western"),
+                .Add(LineRules.Horse, "Fairy+Othello"),
             isDraftable: isDraftable
         );
         FamilyBot family = FamilyBot.All(new Random(1)).Single(candidate => candidate.Profile.Id == bot);
@@ -133,7 +127,7 @@ public sealed class FamilyBotTest
         // Assert
         Assert.Equal(
             "philidor:False,sun-tzu:False,yi-sun-sin:False,musashi:False,naresuan:False,palamedes:False,"
-                + "ragnar:False,oberon:False",
+                + "ragnar:False,oberon:False,desdemona:False",
             named
         );
     }

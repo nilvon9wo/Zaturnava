@@ -120,7 +120,13 @@ public static class GrandLegionsPieces
         // Leaders
         Piece(DragonKing, "Dragon King (Shogi)", Leader, Shogi, OrthogonalSlide, DiagonalStep),
         Piece(FairyGeneral, "Fairy General", Leader, Fairy, Step(DirectionSets.Any), KnightLeap),
-        Piece(WesternKing, "King (Western)", Leader, Western, Step(DirectionSets.Any)),
+        // The pieces other games play too, under their own names (Proposed, 2026-11-20, as moving alike; the user's
+        // word: such pieces, left out as redundant, count as those games' own): Makruk's Khun and Shogi's King the
+        // Western King; Makruk's Met the Courtier; Makruk's Ma the Knight; Makruk's Ruea, Shogi's Rook, and the
+        // Chariots of Xiangqi and Janggi (whose palace lines aside) the Rook; Shogi's Bishop the Bishop; Janggi's
+        // Horse Xiangqi's.
+        Piece(WesternKing, "King (Western)", Leader, Western, Step(DirectionSets.Any))
+            .Also(Makruk, Shogi),
         Piece(XiangqiGeneral, "General (Xiangqi)", Leader, Xiangqi, OrthogonalStep)
             .Restricted(Confined(5)),
         Piece(JanggiGeneral, "General (Janggi)", Leader, Janggi, OrthogonalStep)
@@ -145,7 +151,8 @@ public static class GrandLegionsPieces
         // Steps as the Western King does, but never takes: after it moves, it converts the enemy lines it brackets
         // against another of its player's pieces, as in Othello (Stated, 2026-11-19, the designer's sheet).
         Piece(Evangelist, "Evangelist", Leader, Fairy, Step(DirectionSets.Any).MoveOnly())
-            .Since(EvangelistAdded),
+            .Since(EvangelistAdded)
+            .Also(Othello),
 
         // Infantry
         // Unlike the Western Pawn, it takes the piece directly ahead, as it moves (Stated, 2026-11-12): nothing ahead
@@ -166,7 +173,8 @@ public static class GrandLegionsPieces
             ),
         Piece(Minister, "Minister", Infantry, Fairy, OrthogonalStep),
         Piece(Courtier, "Courtier", Infantry, Fairy, DiagonalStep)
-            .Restricted(ColourBound(OneColour)),
+            .Restricted(ColourBound(OneColour))
+            .Also(Makruk),
         Piece(MakrukPawn, "Pawn (Makruk)", Infantry, Makruk, PawnMovement())
             .Restricted(Moves(BlockedAhead, 2))
             .Promoting(Courtier),
@@ -203,9 +211,11 @@ public static class GrandLegionsPieces
         Piece(Chancellor, "Chancellor", Heavy, Fairy, OrthogonalSlide, KnightLeap),
         Piece(DragonBishop, "Dragon Bishop", Heavy, Fairy, DiagonalSlide, KnightLeap),
         Piece(DragonHorse, "Dragon Horse (Shogi)", Heavy, Shogi, DiagonalSlide, OrthogonalStep),
-        Piece(Rook, "Rook (Western)", Heavy, Western, OrthogonalSlide),
+        Piece(Rook, "Rook (Western)", Heavy, Western, OrthogonalSlide)
+            .Also(Makruk, Shogi, Xiangqi, Janggi),
         Piece(Bishop, "Bishop (Western)", Heavy, Western, DiagonalSlide)
-            .Restricted(ColourBound(OneColour)),
+            .Restricted(ColourBound(OneColour))
+            .Also(Shogi),
         Piece(Swede, "Swede", Heavy, Tafl, OrthogonalSlide.MoveOnly())
             .Since(CheckersAndTafl)
             .ValuedBefore(MultipleCapturesRepriced, 11),
@@ -214,11 +224,13 @@ public static class GrandLegionsPieces
         Piece(Knightrider, "Knightrider", Cavalry, Fairy, MovementRule.Slide(DirectionSets.Knight))
             .Restricted(Moves("Each landing short of the last must be empty", 3)),
         Piece(Zebra, "Zebra", Cavalry, Fairy, Leaper(3, 2)),
-        Piece(Knight, "Knight (Western)", Cavalry, Western, KnightLeap),
+        Piece(Knight, "Knight (Western)", Cavalry, Western, KnightLeap)
+            .Also(Makruk),
         Piece(Camel, "Camel", Cavalry, Fairy, Leaper(3, 1))
             .Restricted(ColourBound(OneColour)),
         Piece(Horse, "Horse (Xiangqi)", Cavalry, Xiangqi, KnightLeap.Lame())
-            .Restricted(Moves("The first square of its leg must be empty", 2)),
+            .Restricted(Moves("The first square of its leg must be empty", 2))
+            .Also(Janggi),
         Piece(JanggiElephant, "Elephant (Janggi)", Cavalry, Janggi, Leaper(3, 2).Lame())
             .Restricted(Moves("Each cell on the way must be empty", 2)),
         Piece(Giraffe, "Giraffe", Cavalry, Fairy, Leaper(4, 1)),

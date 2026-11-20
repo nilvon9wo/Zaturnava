@@ -61,11 +61,21 @@ internal static class GameStarter
     /// The bots a quick game seats, <paramref name="count"/> of them, shuffled: of those rated at the ruleset, the
     /// easiest, by their ratings, for an easy game; the hardest, for a hard one; any, for a medium one; and only if
     /// too few are rated, any of those not yet rated, whose strength no one knows (Proposed; the user's report of
-    /// 2026-11-12, of new bots offered as easy at Elo 0). Never one paid for each use.
+    /// 2026-11-12, of new bots offered as easy at Elo 0). Never one paid for each use; nor, unless each army is
+    /// <paramref name="isOwnArmy"/> its seat's own, dealt for it, one that plays its own family's pieces, whatever its
+    /// rating, as in a scenario, whose armies are set (the user's word of 2026-11-20: such bots "should not be selected
+    /// at random" where they cannot have their armies).
     /// </summary>
-    public static IEnumerable<string> QuickBots(CatalogDto catalog, string rulesetId, Difficulty difficulty, int count)
+    public static IEnumerable<string> QuickBots(
+        CatalogDto catalog,
+        string rulesetId,
+        Difficulty difficulty,
+        int count,
+        bool isOwnArmy = true
+    )
     {
-        (ImmutableList<BotDto> rated, ImmutableList<BotDto> unrated) = Ranked(catalog, rulesetId);
+        (ImmutableList<BotDto> rated, ImmutableList<BotDto> unrated) =
+            Ranked(isOwnArmy ? catalog : Familyless(catalog), rulesetId);
         IEnumerable<BotDto> ranked = difficulty switch
         {
             Difficulty.Easy => rated,
@@ -114,13 +124,8 @@ internal static class GameStarter
     /// </summary>
     public static ImmutableList<Strength> Strengths(CatalogDto catalog, string rulesetId, bool areArmiesAlike = false)
     {
-        (ImmutableList<BotDto> rated, ImmutableList<BotDto> unrated) = Ranked(
-            catalog with
-            {
-                Bots = areArmiesAlike ? [.. catalog.Bots.Where(bot => bot.Family is null)] : catalog.Bots,
-            },
-            rulesetId
-        );
+        (ImmutableList<BotDto> rated, ImmutableList<BotDto> unrated) =
+            Ranked(areArmiesAlike ? Familyless(catalog) : catalog, rulesetId);
         ImmutableList<BotDto> banded = rated.IsEmpty ? unrated : rated;
         int count = banded.Count;
         int bands = StrengthNames.Length;
@@ -135,6 +140,10 @@ internal static class GameStarter
         ImmutableList<BotDto> BandOf(int band) =>
             [.. banded.Take((band * count / bands)..((band + 1) * count / bands))];
     }
+
+    /// <summary>The catalog, but for the bots that play their own family's pieces.</summary>
+    private static CatalogDto Familyless(CatalogDto catalog) =>
+        catalog with { Bots = [.. catalog.Bots.Where(bot => bot.Family is null)] };
 
     /// <summary>
     /// The bots never paid for each use that know the ruleset (D1): those rated at it, easiest first; and those not, as
@@ -218,7 +227,8 @@ internal static class GameStarter
             0,
             ruleset.SeatNames.FindIndex(name => string.Equals(name, scenario.Turn, StringComparison.OrdinalIgnoreCase))
         );
-        IEnumerable<string> bots = QuickBots(catalog, ruleset.Id, Difficulty.Medium, ruleset.SeatCount - 1);
+        IEnumerable<string> bots =
+            QuickBots(catalog, ruleset.Id, Difficulty.Medium, ruleset.SeatCount - 1, isOwnArmy: false);
         return Start(games, ruleset.Id, BotsOf(Plans(ruleset.SeatCount, person, bots)), person, scenario.Id, claimant);
     }
 

@@ -80,11 +80,15 @@ From the specification's observations of the bots in play (F, X) and the Sage pl
   board, bots given the other systems' ratings from their Elo, and on their profiles. Still to do: the design's
   extensions (more chance for
   dice and for armies dealt different, a dice offset per player, deviations growing with time away); and the
-  comparison of how well each predicts.
+  comparison of how well each predicts. Also (asked 2026-11-20, not urgent): the rating system chosen on the
+  leaderboard to hold for the whole page, the bots' easy, medium and hard strengths in the New game dialog grouped
+  by that system's ratings, which may order them otherwise.
 - **D4** Strong Grand Legions bots by family. *Begun* (2026-11-20): Philidor (Western), Sun Tzu (Xiangqi),
-  Yi Sun-sin (Janggi), Musashi (Shogi), Naresuan (Makruk), Palamedes (Checkers), Ragnar (Tafl) and Oberon (Fairy)
-  play as Sage, drafting their family's pieces while they can afford any. Still to do: their own family in armies
-  dealt, not only drafted; and whether a family lacking a piece should have it added (for now, Sage's choice).
+  Yi Sun-sin (Janggi), Musashi (Shogi), Naresuan (Makruk), Palamedes (Checkers), Ragnar (Tafl), Oberon (Fairy) and
+  Desdemona (Othello, all Evangelists) play as Sage, their armies, dealt or drafted, of their game's pieces only,
+  those it plays under other names counting as its own (Makruk's Ruea, the Rook); none of a class their game lacks.
+  Never offered, nor seated at random, where armies are alike or set by a scenario. Still to do: pieces their games
+  have that the catalogue lacks (see the open questions).
 - **E4** Several army-selection strategies (many cheap pieces, a few dear ones, a balance across the classes),
   shared or not; clever bots answering what the others pick and place. Stage 4: Random at random, Midas by value,
   Solomon evenly. Later, bots of their own leanings: one origin, sliders, infantry; an army of different bots.

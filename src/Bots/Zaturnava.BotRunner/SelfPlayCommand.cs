@@ -71,13 +71,26 @@ internal static class SelfPlayCommand
         }
 
         await using TextWriter output = Output(options.OutputPath, standardOutput);
-        await ((options.TrainingRounds, options.LearningFrom) switch
+        await ((options.IsListing, options.TrainingRounds, options.LearningFrom) switch
         {
-            ({ } rounds, _) => Train(rules, options, rounds, output, standardError, cancellationToken),
-            (_, { } files) => Learn(rules, options, files, start, output, standardError, cancellationToken),
+            (true, _, _) => List(rules, output),
+            (_, { } rounds, _) => Train(rules, options, rounds, output, standardError, cancellationToken),
+            (_, _, { } files) => Learn(rules, options, files, start, output, standardError, cancellationToken),
             _ => play.Run(options.Games, options.MaximumSteps, output, cancellationToken),
         });
         return Succeeded;
+    }
+
+    /// <summary>
+    /// Writes the id of each of our bots that plays the ruleset (<see cref="IBotPlaying.Knows"/>), one to a line: a
+    /// family's bot only where its pieces are to be had (2026-11-20: so that the tournaments rate them too).
+    /// </summary>
+    private static async Task List(IRulesApplying rules, TextWriter output)
+    {
+        foreach (IBotPlaying bot in Bots.Where(bot => bot.Knows(rules)))
+        {
+            await output.WriteLineAsync(bot.Profile.Id);
+        }
     }
 
     /// <summary>

@@ -60,4 +60,18 @@ public sealed record GrandPiece(
 
     /// <summary>The same piece, come with the catalogue's <paramref name="edition"/>.</summary>
     public GrandPiece Since(int edition) => this with { Edition = edition };
+
+    /// <summary>
+    /// The other games that play it too, under their own names, as Makruk's Ruea is the Western Rook: the catalogue
+    /// holds it once, as its own <see cref="Tradition"/>'s (the user's word of 2026-11-20: pieces left out as
+    /// redundant). None, for most.
+    /// </summary>
+    public IReadOnlyList<Tradition> AlsoIn { get; init; } = [];
+
+    /// <summary>The same piece, played in <paramref name="games"/> too (<see cref="AlsoIn"/>).</summary>
+    public GrandPiece Also(params Tradition[] games) => this with { AlsoIn = [.. games] };
+
+    /// <summary>Whether it is a piece of <paramref name="family"/>'s game: its own, or one also playing it.</summary>
+    public bool IsOf(string family) =>
+        this.Tradition.ToString() == family || this.AlsoIn.Any(game => game.ToString() == family);
 }

@@ -240,9 +240,36 @@ public sealed class SelfPlayCommandTest
     }
 
     [Theory]
+    [InlineData("chaturaji-2027", false)]
+    [InlineData("grand-legions-small", true)]
+    public async Task Run_WhenListingBots_WritesThoseThatPlayTheRulesetOnePerLine(string ruleset, bool hasFamilies)
+    {
+        // Arrange - a family's bot plays Grand Legions only, where its pieces are to be had
+        string[] args = ["--ruleset", ruleset, "--list", "bots"];
+
+        // Act
+        int exitCode = await SelfPlayCommand.Run(args, this._output, this._errors, this._cancellation);
+
+        // Assert
+        string[] ids = this._output.ToString()
+            .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        Assert.Equal(
+            (SelfPlayCommand.Succeeded, true, true, hasFamilies, hasFamilies),
+            (
+                exitCode,
+                ids.Contains("sage"),
+                ids.Contains("random"),
+                ids.Contains("naresuan"),
+                ids.Contains("desdemona")
+            )
+        );
+    }
+
+    [Theory]
     [InlineData("--ruleset", "checkers", "There is no 'checkers' ruleset.")]
     [InlineData("--bots", "random,genius,random,random", "There is no 'genius' bot.")]
     [InlineData("--games", "none", "--games must be a whole number above 0")]
+    [InlineData("--list", "games", "--list lists only bots, not 'games'.")]
     public async Task Run_WhenMisused_SaysWhyAndExitsWithMisused(string name, string value, string expected)
     {
         // Arrange - nothing beyond the arguments
