@@ -9,6 +9,16 @@ public sealed class StandingEntity
 
     public double Elo { get; set; }
 
+    public double GlickoRating { get; set; }
+
+    public double GlickoDeviation { get; set; }
+
+    public double GlickoVolatility { get; set; }
+
+    public double TrueSkillMean { get; set; }
+
+    public double TrueSkillDeviation { get; set; }
+
     public int Experience { get; set; }
 
     public int Points { get; set; }

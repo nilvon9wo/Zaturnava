@@ -28,7 +28,7 @@ public sealed class LeaderboardTest : IDisposable
         // Assert
         Assert.Equal(
             ("1 Ada 1516 14 9 1 0 0 2 0 0 0|2 Bea 1484 0 3 0 1 0 0 0 0 0", 0),
-            (Rows(board), board.FindAll(".leaderboard select:not(.leaderboard-board)").Count)
+            (Rows(board), board.FindAll(".leaderboard select:not(.leaderboard-board, .leaderboard-rating)").Count)
         );
     }
 
@@ -237,7 +237,7 @@ public sealed class LeaderboardTest : IDisposable
 
         // Assert
         Assert.Equal(
-            "board=bots&sort=points",
+            "board=bots&rating=elo&sort=points",
             $"{this._page.JSInterop.Invocations["zaturnava.save"]
                 .Last(saved => $"{saved.Arguments[0]}" == "zaturnava.leaderboard")
                 .Arguments[1]}"
@@ -245,6 +245,41 @@ public sealed class LeaderboardTest : IDisposable
     }
 
     [Theory]
+    [InlineData("elo", "1516|1484")]
+    [InlineData("glicko", "1700|1300")]
+    [InlineData("trueskill", "12.5|3.2")]
+    public void ChooseRating_WhenChosen_ShowsThePeopleByThatSystemAndRemembersIt(string rating, string expected)
+    {
+        // Arrange - Ada and Bea, rated by all three (the user's word of 2026-11-20)
+        this._page.Server.Leaderboards = this._page.Server.Leaderboards.Add(
+            "chaturaji-2027",
+            [
+                new StandingDto(1, "Ada", 1516, 0, 1, 0, 0) { Glicko = 1700, TrueSkill = 12.5 },
+                new StandingDto(2, "Bea", 1484, 0, 0, 1, 0) { Glicko = 1300, TrueSkill = 3.2 },
+            ]
+        );
+        IRenderedComponent<Leaderboard> board = this.Render();
+
+        // Act
+        board.Find("select.leaderboard-rating").Change(rating);
+
+        // Assert
+        Assert.Equal(
+            (expected, $"board=players&desc=1&rating={rating}&sort={rating}"),
+            (
+                string.Join(
+                    '|',
+                    board.FindAll(".leaders tbody td:nth-child(3)").Select(cell => cell.TextContent.Trim())
+                ),
+                $"{this._page.JSInterop.Invocations["zaturnava.save"]
+                    .Last(saved => $"{saved.Arguments[0]}" == "zaturnava.leaderboard")
+                    .Arguments[1]}"
+            )
+        );
+    }
+
+    [Theory]
+    [InlineData("board=players&rating=glicko&sort=glicko", "players", "Glicko-2 ▲")]
     [InlineData("board=bots&sort=points", "bots", "Points ▲")]
     [InlineData("board=everyone&sort=won&desc=1", "everyone", "Won ▼")]
     [InlineData("board=nonsense&sort=gone&desc=1", "players", "Elo ▼")]

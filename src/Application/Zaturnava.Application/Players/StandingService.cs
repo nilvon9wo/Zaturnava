@@ -206,7 +206,17 @@ public sealed class StandingService(
         bool isRated = CountsTowardElo(snapshot.Record);
         ImmutableList<Standing> after =
         [
-            .. before.Select(entry => After(snapshot, outcome, teams, entry.Key, entry.Value, isRated)),
+            .. before.Select(entry =>
+            {
+                Standing counted = After(snapshot, outcome, teams, entry.Key, entry.Value, isRated);
+                return isRated
+                    ? counted with
+                    {
+                        Glicko = this.GlickoAfter(snapshot, outcome, before, entry.Key),
+                        TrueSkill = this.TrueSkillAfter(snapshot, outcome, before, entry.Key),
+                    }
+                    : counted;
+            }),
         ];
         await this._players.Keep(after, cancellationToken);
         await this.RateBots(snapshot, outcome, cancellationToken);
@@ -297,6 +307,81 @@ public sealed class StandingService(
             : snapshot.Record.Controllers[seat.Value] is BotSeat bot
                 ? this.BotRatingOf(bot.BotId, snapshot.Rules.Id)
                 : Standing.FirstElo;
+
+    /// <summary>
+    /// The Glicko-2 rating of the player at <paramref name="seat"/> after the game: their team's mean rating against
+    /// each opposing team's, as <see cref="Glicko"/> rates a team game.
+    /// </summary>
+    private Glicko GlickoAfter(
+        GameSnapshot snapshot,
+        GameOutcome outcome,
+        ImmutableDictionary<SeatId, Standing> rated,
+        SeatId seat
+    )
+    {
+        GameState state = snapshot.State;
+        ImmutableList<IGrouping<int, Seat>> teams = [.. state.Seats.GroupBy(other => state.Teams.TeamOf(other.Id))];
+        int own = state.Teams.TeamOf(seat);
+        double score = (double)ResultOf(state, outcome, seat) / 2;
+        return rated[seat].Glicko.After(
+            teams.Single(team => team.Key == own).Average(member => this.GlickoOf(snapshot, rated, member.Id).Rating),
+            [
+                .. teams
+                    .Where(team => team.Key != own)
+                    .Select(team =>
+                        (Glicko.TeamOf([.. team.Select(member => this.GlickoOf(snapshot, rated, member.Id))]), score)
+                    ),
+            ]
+        );
+    }
+
+    /// <summary>
+    /// The TrueSkill rating of the player at <paramref name="seat"/> after the game: their team against every other
+    /// seat, as <see cref="TrueSkill"/> rates a game.
+    /// </summary>
+    private TrueSkill TrueSkillAfter(
+        GameSnapshot snapshot,
+        GameOutcome outcome,
+        ImmutableDictionary<SeatId, Standing> rated,
+        SeatId seat
+    )
+    {
+        GameState state = snapshot.State;
+        ImmutableList<SeatId> side =
+        [
+            .. state.Seats.Select(other => other.Id).Where(other => state.Teams.AreAllied(other, seat)),
+        ];
+        ImmutableList<SeatId> others =
+        [
+            .. state.Seats.Select(other => other.Id).Where(other => !state.Teams.AreAllied(other, seat)),
+        ];
+        (ImmutableList<TrueSkill> after, _) = TrueSkill.After(
+            [.. side.Select(member => this.TrueSkillOf(snapshot, rated, member))],
+            [.. others.Select(member => this.TrueSkillOf(snapshot, rated, member))],
+            (double)ResultOf(state, outcome, seat) / 2
+        );
+        return after[side.IndexOf(seat)];
+    }
+
+    /// <summary>A seat's Glicko-2 rating: its player's; a bot's Elo at the ruleset, sure; or else the first.</summary>
+    private Glicko GlickoOf(GameSnapshot snapshot, ImmutableDictionary<SeatId, Standing> rated, SeatId seat) =>
+        rated.TryGetValue(seat, out Standing? standing)
+            ? standing.Glicko
+            : snapshot.Record.Controllers[seat.Value] is BotSeat bot
+                ? Glicko.First with
+                {
+                    Rating = this.BotRatingOf(bot.BotId, snapshot.Rules.Id),
+                    Deviation = Glicko.BotDeviation,
+                }
+                : Glicko.First;
+
+    /// <summary>A seat's TrueSkill rating: its player's; a bot's Elo at the ruleset, sure; or else the first.</summary>
+    private TrueSkill TrueSkillOf(GameSnapshot snapshot, ImmutableDictionary<SeatId, Standing> rated, SeatId seat) =>
+        rated.TryGetValue(seat, out Standing? standing)
+            ? standing.TrueSkill
+            : snapshot.Record.Controllers[seat.Value] is BotSeat bot
+                ? TrueSkill.FromElo(this.BotRatingOf(bot.BotId, snapshot.Rules.Id), TrueSkill.BotDeviation)
+                : TrueSkill.First;
 
     private double BotRatingOf(string bot, string ruleset) =>
         this._bots.Bots

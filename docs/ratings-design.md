@@ -1,6 +1,8 @@
 # Ratings: Glicko-2 and TrueSkill compared, and a design for Zaturnava
 
-*Accepted* (asked and answered 2026-11-20; see [§14](#14-decided)). Nothing here is built yet. What runs today is in
+*Accepted* (asked and answered 2026-11-20; see [§14](#14-decided)). *Begun* the same day: the three systems are
+counted side by side (`Glicko`, `TrueSkill` and `StandingService` in Application), without the extensions yet; the
+[backlog](backlog.md) says what is left. What runs today is in
 [architecture](architecture.md): an Elo for each person at each game, from the team's result against what the
 teams' ratings led to expect, and an Elo for each bot fitted from bot-only tournaments (`scripts/rate-bots.py`).
 

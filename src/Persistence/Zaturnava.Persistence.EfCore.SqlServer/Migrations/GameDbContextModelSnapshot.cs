@@ -366,6 +366,15 @@ namespace Net.NowhereAtAll.Zaturnava.Persistence.EfCore.SqlServer.Migrations
                     b.Property<int>("Experience")
                         .HasColumnType("int");
 
+                    b.Property<double>("GlickoDeviation")
+                        .HasColumnType("float");
+
+                    b.Property<double>("GlickoRating")
+                        .HasColumnType("float");
+
+                    b.Property<double>("GlickoVolatility")
+                        .HasColumnType("float");
+
                     b.Property<int>("Lost")
                         .HasColumnType("int");
 
@@ -388,6 +397,12 @@ namespace Net.NowhereAtAll.Zaturnava.Persistence.EfCore.SqlServer.Migrations
                         .HasColumnType("int");
 
                     b.Property<double>("StreakOpponentElo")
+                        .HasColumnType("float");
+
+                    b.Property<double>("TrueSkillDeviation")
+                        .HasColumnType("float");
+
+                    b.Property<double>("TrueSkillMean")
                         .HasColumnType("float");
 
                     b.Property<int>("Won")

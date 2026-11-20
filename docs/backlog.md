@@ -63,9 +63,12 @@ From the specification's observations of the bots in play (F, X) and the Sage pl
 
 ## 3. Grand Legions: bots and armies
 
-- **Ratings by three systems** (2026-11-20, [design](ratings-design.md)): Elo, Glicko-2 and TrueSkill each
-  counted for every player from every game kept, past games included at once; the leaderboard shows the one each
-  viewer picks, as with the theme; profiles show all three.
+- **Ratings by three systems** (2026-11-20, [design](ratings-design.md)). *Begun*: every person's Glicko-2 and
+  TrueSkill are counted beside their Elo, from every game kept (a migration has them all counted again); the
+  People board shows whichever the viewer picks, remembered; a profile shows all three. Still to do: the choice on
+  the Everyone board too, bots there given the other systems' ratings; the design's extensions (more chance for
+  dice and for armies dealt different, a dice offset per player, deviations growing with time away); and the
+  comparison of how well each predicts.
 - **D4** Strong Grand Legions bots by family. *Begun* (2026-11-20): Philidor (Western), Sun Tzu (Xiangqi),
   Yi Sun-sin (Janggi), Musashi (Shogi), Naresuan (Makruk), Palamedes (Checkers), Ragnar (Tafl) and Oberon (Fairy)
   play as Sage, drafting their family's pieces while they can afford any. Still to do: their own family in armies

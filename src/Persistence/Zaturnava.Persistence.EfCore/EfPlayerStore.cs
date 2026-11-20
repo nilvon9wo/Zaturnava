@@ -247,6 +247,9 @@ public sealed class EfPlayerStore(GameDbContext context) : IPlayerPersisting
                 new StandingEntity { PlayerId = standing.Player.Value, Game = standing.Game }
             ).Entity;
             kept.Elo = standing.Elo;
+            (kept.GlickoRating, kept.GlickoDeviation, kept.GlickoVolatility) =
+                (standing.Glicko.Rating, standing.Glicko.Deviation, standing.Glicko.Volatility);
+            (kept.TrueSkillMean, kept.TrueSkillDeviation) = (standing.TrueSkill.Mean, standing.TrueSkill.Deviation);
             kept.Experience = standing.Experience;
             kept.Points = standing.Points;
             kept.Won = standing.Won;
@@ -349,6 +352,8 @@ public sealed class EfPlayerStore(GameDbContext context) : IPlayerPersisting
         new(new PlayerId(entity.PlayerId), entity.Game)
         {
             Elo = entity.Elo,
+            Glicko = new Glicko(entity.GlickoRating, entity.GlickoDeviation, entity.GlickoVolatility),
+            TrueSkill = new TrueSkill(entity.TrueSkillMean, entity.TrueSkillDeviation),
             Experience = entity.Experience,
             Points = entity.Points,
             Won = entity.Won,

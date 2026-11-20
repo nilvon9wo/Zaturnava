@@ -361,6 +361,15 @@ namespace Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Sqlite.Migrations
                     b.Property<int>("Experience")
                         .HasColumnType("INTEGER");
 
+                    b.Property<double>("GlickoDeviation")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("GlickoRating")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("GlickoVolatility")
+                        .HasColumnType("REAL");
+
                     b.Property<int>("Lost")
                         .HasColumnType("INTEGER");
 
@@ -383,6 +392,12 @@ namespace Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Sqlite.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<double>("StreakOpponentElo")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("TrueSkillDeviation")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("TrueSkillMean")
                         .HasColumnType("REAL");
 
                     b.Property<int>("Won")

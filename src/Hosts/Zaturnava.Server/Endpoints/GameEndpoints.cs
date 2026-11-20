@@ -178,6 +178,11 @@ internal static class GameEndpoints
         )
         {
             Points = leader.Standing.Points,
+            Glicko = (int)Math.Round(leader.Standing.Glicko.Rating, MidpointRounding.AwayFromZero),
+            GlickoDeviation = (int)Math.Round(leader.Standing.Glicko.Deviation, MidpointRounding.AwayFromZero),
+            TrueSkill = Math.Round(leader.Standing.TrueSkill.Conservative, 1, MidpointRounding.AwayFromZero),
+            TrueSkillMean = Math.Round(leader.Standing.TrueSkill.Mean, 1, MidpointRounding.AwayFromZero),
+            TrueSkillDeviation = Math.Round(leader.Standing.TrueSkill.Deviation, 1, MidpointRounding.AwayFromZero),
             PlayerId = leader.Standing.Player.Value,
             Streak = ToStreakDto(leader.Standing.WinningStreak),
             RatedStreak = ToStreakDto(leader.Standing.RatedStreak),

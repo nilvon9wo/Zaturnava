@@ -20,6 +20,24 @@ public sealed record StandingDto(
     /// <summary>The points they scored themselves, in all the games of it they finished, won or not.</summary>
     public int Points { get; init; }
 
+    /// <summary>Their Glicko-2 rating, rounded, counted from the same games as their Elo.</summary>
+    public int Glicko { get; init; }
+
+    /// <summary>How unsure their Glicko-2 rating is, rounded: 350 for a player with no games counted.</summary>
+    public int GlickoDeviation { get; init; }
+
+    /// <summary>
+    /// Their TrueSkill rating as TrueSkill ranks: the mean less three deviations, to one place; 0 for a player with no
+    /// games counted.
+    /// </summary>
+    public double TrueSkill { get; init; }
+
+    /// <summary>Their TrueSkill mean, to one place: 25 for a player with no games counted.</summary>
+    public double TrueSkillMean { get; init; }
+
+    /// <summary>How unsure their TrueSkill mean is, to one place.</summary>
+    public double TrueSkillDeviation { get; init; }
+
     /// <summary>The player's id, whose profile anyone may see (<see cref="GameRoutes.Profile"/>).</summary>
     public string? PlayerId { get; init; }
 
