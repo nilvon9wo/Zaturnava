@@ -383,6 +383,10 @@ html { scrollbar-gutter: stable; }
 .game-options label.check { display: flex; align-items: center; gap: 6px; grid-column: 2; margin: 0; }
 .game-options select.opener { grid-column: 3; }
 .game-options input.idle-rounds { width: 5em; justify-self: start; }
+/* The new game's choices in groups, a space between: the armies, the board (rivers), how the game is played (dice,
+   all-pass rounds), and who may play, not a rule at all (the user's word of 2026-11-20). Every name beside its field,
+   the all-pass rounds' too: its label, once a block, had kept its own cell, beside the dice until who opens took it. */
+.army-choices.terrain-choices, .army-choices.game-options, .army-choices.player-options { margin-top: 18px; }
 /* The game, its size and where to start from, in the same columns as the seats below them: each choice's name in
    the first, its dropdown in the second, so that every dropdown lines up. */
 .choices, .army-choices, .panel label.scenario {
@@ -404,7 +408,7 @@ html { scrollbar-gutter: stable; }
 .army-choices select.armies { grid-column: 2 / span 2; }
 /* A game's checkbox options, each a line of its own. */
 label.alike, label.drafted, label.for-players, label.secret, label.secret-from-allies, label.side-promotion,
-label.dice-off, label.idle-rounds {
+label.dice-off {
     display: block;
     margin-top: 6px;
 }
@@ -499,19 +503,23 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
     .army-choices .terrain-line, .game-options label.check, .game-options select.opener { grid-column: 1; }
     .game-filters label { white-space: normal; }
 }
-/* Each number's heading reads upward, wrapping beyond a few words' length, so that every column, on every board, is
-   as wide as its figures rather than its heading (the user's report of 2026-11-20: column after column far too wide,
-   the panel left to scroll); the names never wrap. */
-.leaderboard .leaders th { white-space: normal; vertical-align: bottom; }
+/* Each number's heading slanted up to the right, its letters upright, so that every column, on every board, is as
+   wide as its figures rather than its heading (the user's reports of 2026-11-20: column after column far too wide;
+   then, read sideways bottom-up, "I expected you to keep the letters right side up and just slant the words a
+   bit"). The heading's box stays narrow; the slanted words rise from its bottom left, the headings' row tall enough
+   for the longest, and the table's right margin wide enough for the last to end in. */
+.leaderboard .leaders th { vertical-align: bottom; }
+.leaderboard .leaders th[aria-sort] { height: 6.5em; min-width: 2.6em; white-space: nowrap; }
 .leaderboard .leaders th[aria-sort] button.sort {
-    writing-mode: vertical-rl;
-    transform: rotate(180deg);
-    max-height: 7.5em;
+    display: block;
+    width: 0.9em;
+    margin: 0 auto;
     text-align: left;
-    line-height: 1.15;
+    white-space: nowrap;
+    transform-origin: 0 100%;
+    transform: translateX(0.45em) rotate(-45deg);
 }
-/* The sort's arrow turned back, so that ▼ still points down, most first, though its heading reads upward. */
-.leaderboard .leaders th[aria-sort] button.sort .arrow { display: inline-block; transform: rotate(180deg); }
+.leaderboard .leaders-scroll { padding-right: 5em; }
 .leaderboard .leaders td.name, .leaderboard .leaders td.name button { white-space: nowrap; }
 /* The board and the rating, short, side by side on one line (the user's word of 2026-11-20). */
 .leaderboard .leaderboard-choices { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 8px 0; }

@@ -475,6 +475,29 @@
     private int Flipped(int cell) =>
         ((this.Shown.Side - 1 - (cell / this.Shown.Side)) * this.Shown.Side) + (cell % this.Shown.Side);
 
+    /// <summary>
+    /// Whether, with the enemies <paramref name="capturing"/> takes standing, the piece could move to
+    /// <paramref name="cell"/>: one of its moves, not an enemy taken, nor behind one on the same line from the centre,
+    /// nor cut off by pieces put in its way.
+    /// </summary>
+    private bool IsMovedToWhile(PlayedExampleDto capturing, int cell) =>
+        this.Shown.Moves.Contains(cell)
+        && !capturing.Taken.Contains(cell)
+        && !capturing.Taken.Any(taken => this.IsBehind(cell, taken))
+        && !(this.IsObstructed && this.ObstructedShown.Contains(cell));
+
+    /// <summary>
+    /// Whether <paramref name="cell"/> lies on the line from the centre through <paramref name="taken"/>, past it.
+    /// </summary>
+    private bool IsBehind(int cell, int taken)
+    {
+        int side = this.Shown.Side;
+        (int across, int down) = ((cell % side) - (this.Centre % side), (cell / side) - (this.Centre / side));
+        (int toAcross, int toDown) = ((taken % side) - (this.Centre % side), (taken / side) - (this.Centre / side));
+        return (across * toDown) == (down * toAcross)
+            && (across * toAcross) + (down * toDown) > (toAcross * toAcross) + (toDown * toDown);
+    }
+
     /// <summary>Whether <paramref name="cell"/> is farther from the centre than the squares around it.</summary>
     private bool IsFar(int cell)
     {
@@ -496,6 +519,12 @@
         MoveDiagramDto shown = this.Shown;
         bool isMoving = !this.IsCapturing;
         bool isInTheWay = this.IsObstructed && this.ObstaclesShown.Contains(cell);
+        // a capture playing: only the enemies it takes ringed; every other square it could reach so, a move (the
+        // user's word of 2026-11-20: squares it could only move to were ringed as captures)
+        PlayedExampleDto? capturing = isMoving ? null : this.Playing;
+        bool isRinged = capturing is null
+            ? shown.Captures.Contains(cell) || this.Holds.Any(held => held.Taken == cell)
+            : capturing.Taken.Contains(cell);
         return string.Join(
             ' ',
             new[]
@@ -504,16 +533,14 @@
                 int.IsEvenInteger(row + column) == this.IsOnDark ? "dark" : "light",
                 (isMoving && shown.Moves.Contains(cell) && !isInTheWay)
                 || (!isMoving && this.Holds.Any(held => held.Landing == cell))
+                || (capturing is not null && !isInTheWay && this.IsMovedToWhile(capturing, cell))
                     ? "move"
                     : null,
                 isMoving && shown.Leaps.Contains(cell) ? "leap" : null,
                 this.IsObstructed && this.ObstructedShown.Contains(cell) ? "obstructed" : null,
                 isInTheWay ? "obstacle" : null,
                 !isMoving && this.Holds.Any(held => held.Taken == cell) ? "taken" : null,
-                !isMoving && !isInTheWay
-                && (shown.Captures.Contains(cell) || this.Holds.Any(held => held.Taken == cell))
-                    ? "capture"
-                    : null,
+                !isMoving && !isInTheWay && isRinged ? "capture" : null,
                 !isMoving && this.Holds.Any(held => held.Partner == cell) ? "partner" : null,
                 !isMoving && shown.Jumps.Contains(cell) ? "jump" : null,
                 shown.Screens.Contains(cell) ? "screen" : null,

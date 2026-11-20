@@ -416,6 +416,57 @@ public sealed class TableTest : IDisposable
         );
     }
 
+    [Theory]
+    [InlineData(false, "square move", "square move")]
+    [InlineData(true, "square", "square")]
+    public void Click_WhenACaptureIsPlayed_RingsOnlyTheEnemyTakenAndDotsTheSquaresItCouldStillMoveTo(
+        bool isObstructed,
+        string up,
+        string upFar
+    )
+    {
+        // Arrange - on 5 x 5, a slider on 12 moves and captures left to 11, up to 17 and 22, and right to 13 and 14;
+        // perhaps a piece put in its way on 17, cutting off 22 (the user's word of 2026-11-20: the Dragon Horse's
+        // capture ringed squares it could only move to; the same for every piece)
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Kinds =
+            [
+                new PieceKindDto("raja", "Raja", 5)
+                {
+                    Diagram = new MoveDiagramDto(5, [11, 13, 14, 17, 22], [11, 13, 14, 17, 22], [])
+                    {
+                        CaptureObstacles = [17],
+                        CaptureObstructed = [22],
+                    },
+                },
+            ],
+        };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        Cell(table, 0).Click();
+        table.Find(".diagram-toggles .show-captures").Click();
+        table.Find(".diagram-options .show-obstacles").Change(isObstructed);
+
+        // Act - the second capture, on 13
+        table.Find(".diagram-play .play-example").Click();
+        table.Find(".diagram-play .play-example").Click();
+
+        // Assert - 13 ringed; 14, behind it, neither; 11 a move; 17 and 22 moves, unless in the way or cut off
+        Assert.Equal(
+            ("square capture", "square", "square move", up, upFar),
+            (
+                ClassesOf(Square(table, 13)),
+                ClassesOf(Square(table, 14)),
+                ClassesOf(Square(table, 11)),
+                ClassesOf(Square(table, 17)),
+                ClassesOf(Square(table, 22))
+            )
+        );
+
+        static string ClassesOf(AngleSharp.Dom.IElement square) =>
+            string.Join(' ', square.ClassList.Where(name => name is "square" or "capture" or "move"));
+    }
+
     [Fact]
     public void Click_WhenThePlayerSwitchesWhatIsDrawn_StopsTheExamplePlaying()
     {
