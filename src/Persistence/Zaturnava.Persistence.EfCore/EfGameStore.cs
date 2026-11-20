@@ -5,6 +5,7 @@ using Net.NowhereAtAll.Zaturnava.Application.Games;
 using Net.NowhereAtAll.Zaturnava.Application.Players;
 using Net.NowhereAtAll.Zaturnava.Application.Ports;
 using Net.NowhereAtAll.Zaturnava.Application.Scenarios;
+using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 using Net.NowhereAtAll.Zaturnava.Persistence.EfCore.Entities;
 
@@ -135,6 +136,25 @@ public sealed class EfGameStore(GameDbContext context) : IGamePersisting
         return [.. due];
     }
 
+    public async Task<ImmutableList<GameRecord>> UnkeptDeals(CancellationToken cancellationToken)
+    {
+        List<GameEntity> entities = await this.Games()
+            .AsNoTracking()
+            .Where(game => game.Actions.Any(action =>
+                action.Sequence == 0 && action.Kind == ScenarioStart.DealKind && !action.Arguments.Contains(Kept)
+            ))
+            .ToListAsync(cancellationToken);
+        return [.. entities.Select(GameRecordMapping.ToRecord)];
+    }
+
+    public async Task KeepDeal(GameId id, [Required] ActionDescriptor deal, CancellationToken cancellationToken)
+    {
+        string arguments = GameRecordMapping.ArgumentsOf(deal);
+        _ = await this._context.Set<ActionEntity>()
+            .Where(action => action.GameId == id.Value && action.Sequence == 0)
+            .ExecuteUpdateAsync(set => set.SetProperty(action => action.Arguments, arguments), cancellationToken);
+    }
+
     public async Task<ImmutableList<GameRecord>> Unrated(int count, CancellationToken cancellationToken)
     {
         List<GameEntity> entities = await this.Games()
@@ -233,6 +253,9 @@ public sealed class EfGameStore(GameDbContext context) : IGamePersisting
 
     /// <summary>A first action's arguments, as stored, saying the game is played without dice.</summary>
     private const string DiceOff = $"\"{ScenarioStart.DiceOffArgument}\"";
+
+    /// <summary>A first action's arguments, as stored, keeping what its deal dealt.</summary>
+    private const string Kept = $"\"{ScenarioStart.KeptArgument}\"";
 
     private IQueryable<GameEntity> Games() =>
         this._context.Games

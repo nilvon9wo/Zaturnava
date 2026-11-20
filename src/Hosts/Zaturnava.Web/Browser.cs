@@ -26,6 +26,7 @@ internal sealed class Browser(IJSRuntime js, IGameServing games)
     private const string PiecesKey = "zaturnava.pieces";
     private const string CardsKey = "zaturnava.cards";
     private const string CardPlaceKey = "zaturnava.card-place";
+    private const string CardCapturesKey = "zaturnava.card-captures";
     private const string LogKey = "zaturnava.log";
     private const string ChatOrderKey = "zaturnava.chat-order";
     private const string AiTalkKey = "zaturnava.ai-talk";
@@ -56,8 +57,8 @@ internal sealed class Browser(IJSRuntime js, IGameServing games)
     /// </summary>
     private static readonly ImmutableHashSet<string> Kept =
     [
-        ThemeKey, SoundKey, SafetyKey, PiecesKey, CardsKey, LogKey, ChatOrderKey, AiTalkKey, PreviewKey, SetupKey,
-        GamesListKey, LeaderboardKey,
+        ThemeKey, SoundKey, SafetyKey, PiecesKey, CardsKey, CardCapturesKey, LogKey, ChatOrderKey, AiTalkKey,
+        PreviewKey, SetupKey, GamesListKey, LeaderboardKey,
     ];
 
     private readonly IJSRuntime _js = js;
@@ -134,6 +135,14 @@ internal sealed class Browser(IJSRuntime js, IGameServing games)
     public async ValueTask<bool> AreCardsShown() => await this.Load(CardsKey) != Off;
 
     public ValueTask SetCards(bool isShown) => this.Save(CardsKey, isShown ? "on" : Off);
+
+    /// <summary>
+    /// Whether a piece card opens on its captures, as the player last looked at them, rather than its moves (the
+    /// user's word of 2026-11-20: the cards no longer remembered).
+    /// </summary>
+    public async ValueTask<bool> AreCardCapturesShown() => await this.Load(CardCapturesKey) == Shown;
+
+    public ValueTask SetCardCapturesShown(bool isShown) => this.Save(CardCapturesKey, isShown ? Shown : Hidden);
 
     /// <summary>
     /// Lets the player drag the piece card by its header wherever they like; it opens where they last put it.

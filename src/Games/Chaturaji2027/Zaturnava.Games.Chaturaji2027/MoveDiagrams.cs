@@ -107,8 +107,8 @@ internal sealed class MoveDiagrams(
     private MoveDiagram? OpenUnlessHeld(PieceKindId kind) => palaceBound.Contains(kind) ? null : this.Open(kind);
 
     /// <summary>
-    /// A palace about a piece on its back left corner, its throne diagonally ahead: each cell as far to the piece's
-    /// right and ahead as the piece sees it, and its throne.
+    /// A palace about a piece on its back left corner: each cell as far to the piece's right and ahead as the piece
+    /// sees it.
     /// </summary>
     private static readonly ImmutableList<(int Right, int Ahead)> Cornered =
     [
@@ -120,8 +120,9 @@ internal sealed class MoveDiagrams(
 
     /// <summary>
     /// The kind drawn by its river or in its palace, if either holds it or it steps along a palace's lines, with the
-    /// kind drawn on an open board beside; one stepping along a palace's lines, on a corner of its palace too, stepping
-    /// along the diagonal through the throne (the user's report of 2026-11-19, of the Janggi Soldier's card); one
+    /// kind drawn on an open board beside; one stepping along a palace's lines, on its throne in its palace's corner
+    /// too, every line running to that corner (the user's reports of 2026-11-19 and 2026-11-20, of the Janggi
+    /// Soldier's card); one
     /// stepping sideways only across a river (sidewaysAcrossRiver), on its own side, without its sideways steps, with
     /// the kind across the river beside (the user's report of 2026-11-19, of a Xiangqi Soldier's card always stepping
     /// sideways); else on an open board alone.
@@ -138,9 +139,11 @@ internal sealed class MoveDiagrams(
                 Alternates = palaceSteppers.Contains(kind)
                     ?
                     [
+                        // the throne in its palace's corner, the piece on it, its lines all running to that corner,
+                        // not the centre (the user's word of 2026-11-20: "Off the throne" did not show anything useful)
                         new NamedDiagram(
-                            "Off the throne",
-                            this.InPalace(kind, Cornered, (1, 1)) with { Elsewhere = null }
+                            "Throne in a corner",
+                            this.InPalace(kind, Cornered, (0, 0)) with { Elsewhere = null }
                         ),
                     ]
                     : [],

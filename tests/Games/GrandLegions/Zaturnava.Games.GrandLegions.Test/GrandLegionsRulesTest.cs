@@ -1035,16 +1035,17 @@ public sealed class GrandLegionsRulesTest
     [Fact]
     public void GuideOf_WhenAKindStepsAlongAPalacesLines_DrawsItOnItsPalacesCornerToo()
     {
-        // Arrange - the Janggi Soldier, on its palace's back left corner, 40, the throne diagonally ahead on 50
+        // Arrange - the Janggi Soldier on its throne, 40, in its palace's back left corner (the user's word of
+        // 2026-11-20: a throne off the palace's centre, its lines running otherwise)
         Chaturaji2027Rules rules = GrandLegionsRules.RulesOf(QuickGame.Small);
 
         // Act
         MoveDiagram diagram = rules.GuideOf(GrandLegionsPieces.JanggiSoldier).Diagram;
 
-        // Assert - forward, sideways, and along the diagonal to the throne
+        // Assert - forward, sideways, and along the lines ahead from the throne
         NamedDiagram corner = Assert.Single(diagram.Alternates);
         Assert.Equal(
-            ("Off the throne", "39,41,49,50", 50, true),
+            ("Throne in a corner", "39,41,49,50", 40, true),
             (
                 corner.Name,
                 string.Join(",", corner.Diagram.Moves),
@@ -1084,7 +1085,7 @@ public sealed class GrandLegionsRulesTest
     [Theory]
     [InlineData("western-pawn", "First move,En passant,Swap")]
     [InlineData("western-king", "Castling")]
-    [InlineData("janggi-general", "Off the throne,Face-off")]
+    [InlineData("janggi-general", "Throne in a corner,Face-off")]
     [InlineData("evangelist", "Converting")]
     [InlineData("tafl-king", "Escape,Berserk")]
     [InlineData("swede", "Berserk")]

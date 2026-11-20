@@ -112,10 +112,59 @@ public sealed class GameServiceTest
         // Act
         GameSnapshot snapshot = await service.Get(id, this._cancellation);
 
-        // Assert
+        // Assert - and keeping what it dealt, so that it replays so however dealing changes (2026-11-20)
         Assert.Equal(
-            (ScenarioStart.DealKind, 4),
-            (snapshot.Record.Actions[0].Kind, snapshot.State.Scores[First])
+            (ScenarioStart.DealKind, 4, true),
+            (
+                snapshot.Record.Actions[0].Kind,
+                snapshot.State.Scores[First],
+                ScenarioStart.IsKept(snapshot.Record.Actions)
+            )
+        );
+    }
+
+    [Fact]
+    public async Task KeepDeals_WhenGamesWereDealtBeforeDealsWereKept_KeepsTheirsAloneOfThoseStillPlayed()
+    {
+        // Arrange - dealt before deals were kept: of an offered ruleset; of one retired; one its rules no longer
+        // replay; and one kept already, as is one not dealt
+        InMemoryGameStore store = new();
+        GameService service = this.Service(GameServiceSettings.Default, store, isDealt: true);
+        ActionDescriptor deal = ScenarioStart.Dealt(new LoadedDice(4));
+        GameRecord unkept = new(new GameId("unkept"), TinyRules.RulesetId, [new OpenSeat(), new OpenSeat()], [deal], 0);
+        GameRecord[] games =
+        [
+            unkept,
+            unkept with { Id = new GameId("retired"), RulesetId = "retired" },
+            unkept with { Id = new GameId("broken"), Actions = [deal, new PassAction(Second).Describe()] },
+            unkept with
+            {
+                Id = new GameId("kept"),
+                Actions = [ScenarioStart.Kept(deal, new TinyRules(6, isDealt: true))],
+            },
+            unkept with { Id = new GameId("plain"), Actions = [] },
+        ];
+        foreach (GameRecord game in games)
+        {
+            await store.Add(game, this._cancellation);
+        }
+
+        // Act
+        int kept = await service.KeepDeals(this._cancellation);
+
+        // Assert - the one kept, as it was dealt, and none left to keep but those that cannot be
+        Assert.Equal(
+            (1, true, "broken,retired"),
+            (
+                kept,
+                ScenarioStart.IsKept((await store.Find(new GameId("unkept"), this._cancellation))!.Actions),
+                string.Join(
+                    ",",
+                    (await store.UnkeptDeals(this._cancellation))
+                        .Select(game => game.Id.Value)
+                        .Order(StringComparer.Ordinal)
+                )
+            )
         );
     }
 

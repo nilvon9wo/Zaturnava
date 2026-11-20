@@ -272,6 +272,31 @@ public sealed class InMemoryGameStoreTest
     }
 
     [Fact]
+    public async Task KeepDeal_WhenGamesWereDealtKeptOrNot_KeepsTheDealOfTheOneNamedLeavingNoneUnkept()
+    {
+        // Arrange - dealt, not keeping its deal; dealt, keeping it; and not dealt
+        ActionDescriptor deal = new(ScenarioStart.DealKind, Arguments.Add("seed", "4"));
+        ActionDescriptor kept = deal with { Arguments = deal.Arguments.Add(ScenarioStart.KeptArgument, "{}") };
+        await this._store.Add(Record("dealt") with { Actions = [deal] }, this._cancellation);
+        await this._store.Add(Record("kept") with { Actions = [kept] }, this._cancellation);
+        await this._store.Add(Record("plain"), this._cancellation);
+        ImmutableList<GameRecord> before = await this._store.UnkeptDeals(this._cancellation);
+
+        // Act
+        await this._store.KeepDeal(new GameId("dealt"), kept, this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            ("dealt", 0, kept),
+            (
+                string.Join(",", before.Select(game => game.Id.Value)),
+                (await this._store.UnkeptDeals(this._cancellation)).Count,
+                (await this._store.Find(new GameId("dealt"), this._cancellation))!.Actions[0]
+            )
+        );
+    }
+
+    [Fact]
     public async Task Remove_WhenGamesAreNamed_LetsGoOfThemAlone()
     {
         // Arrange

@@ -164,22 +164,51 @@ public sealed class GameService(
         return previous is { Actions: [{ Kind: ScenarioStart.DealKind } first, ..] }
             ?
             [
-                ScenarioStart.Chosen(first, choices),
+                Kept(ScenarioStart.Chosen(first, choices), offered),
                 .. DraftOf(previous.Actions, ScenarioStart.RulesOf(previous.Actions, offered)),
             ]
             :
             [
-                ScenarioStart.Dealt(
-                    this._dice,
-                    dealing.AreAlike,
-                    dealing.Drafting,
-                    dealing.Board,
-                    dealing.PromotesAtSide,
-                    dealing.Budget,
-                    choices,
-                    dealing.Terrain
+                Kept(
+                    ScenarioStart.Dealt(
+                        this._dice,
+                        dealing.AreAlike,
+                        dealing.Drafting,
+                        dealing.Board,
+                        dealing.PromotesAtSide,
+                        dealing.Budget,
+                        choices,
+                        dealing.Terrain
+                    ),
+                    offered
                 ),
             ];
+    }
+
+    /// <summary>The deal, keeping what it dealt, by <paramref name="offered"/> at the size it sets.</summary>
+    private static ActionDescriptor Kept(ActionDescriptor deal, IRulesApplying offered) =>
+        ScenarioStart.Kept(deal, ScenarioStart.RulesOf([deal], offered));
+
+    /// <summary>
+    /// Keeps, once, in every game dealt before games kept their deals, what its seed deals it now, so that it replays
+    /// so however dealing changes after (the user's word of 2026-11-20); a game of a ruleset no longer offered, or one
+    /// its rules no longer replay, is left as it is. How many it kept.
+    /// </summary>
+    public async Task<int> KeepDeals(CancellationToken cancellationToken)
+    {
+        ImmutableDictionary<string, IRulesApplying> offered = this.Rulesets.ToImmutableDictionary(rules => rules.Id);
+        int kept = 0;
+        foreach (GameRecord record in await this._store.UnkeptDeals(cancellationToken))
+        {
+            if (offered.TryGetValue(record.RulesetId, out IRulesApplying? rules)
+                && Replayable(record, rules) is not null)
+            {
+                await this._store.KeepDeal(record.Id, Kept(record.Actions[0], rules), cancellationToken);
+                kept++;
+            }
+        }
+
+        return kept;
     }
 
     /// <summary>

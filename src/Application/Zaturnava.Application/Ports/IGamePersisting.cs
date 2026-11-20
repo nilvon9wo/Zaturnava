@@ -2,6 +2,8 @@ using System.Collections.Immutable;
 using System.ComponentModel.DataAnnotations;
 using Net.NowhereAtAll.Zaturnava.Application.Games;
 using Net.NowhereAtAll.Zaturnava.Application.Players;
+using Net.NowhereAtAll.Zaturnava.Application.Scenarios;
+using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 
 namespace Net.NowhereAtAll.Zaturnava.Application.Ports;
@@ -44,6 +46,18 @@ public interface IGamePersisting
     /// for them every few seconds (<see cref="GameService.PlayIdleBots"/>).
     /// </summary>
     Task<ImmutableList<DueGame>> BotsDue(DateTimeOffset since, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Every game dealt (<see cref="ScenarioStart.DealKind"/>) whose first action does not yet keep what it dealt
+    /// (<see cref="ScenarioStart.IsKept"/>).
+    /// </summary>
+    Task<ImmutableList<GameRecord>> UnkeptDeals(CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Sets the game's first action to <paramref name="deal"/>, the deal it began with, keeping what it dealt; nothing
+    /// else of it changes, nor its version.
+    /// </summary>
+    Task KeepDeal(GameId id, [Required] ActionDescriptor deal, CancellationToken cancellationToken);
 
     /// <summary>
     /// The first <paramref name="count"/> games over, as last saved, not yet counted in their players' standings: the

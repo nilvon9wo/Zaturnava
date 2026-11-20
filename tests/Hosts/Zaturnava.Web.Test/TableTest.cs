@@ -237,6 +237,33 @@ public sealed class TableTest : IDisposable
     }
 
     [Fact]
+    public void Click_WhenThePlayerLastLookedAtACardsCaptures_OpensTheNextOnItsCapturesAndRemembersMoves()
+    {
+        // Arrange - the browser remembers captures (the user's word of 2026-11-20: the cards no longer remembered)
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.card-captures").SetResult("shown");
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with
+        {
+            Kinds = [new PieceKindDto("raja", "Raja", 5) { Diagram = new MoveDiagramDto(3, [7], [6, 7], []) }],
+        };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Act
+        Cell(table, 0).Click();
+        string opened = table.Find(".diagram-toggles .show-captures").GetAttribute("aria-pressed")!;
+        table.Find(".diagram-toggles .show-moves").Click();
+
+        // Assert
+        Assert.Equal(
+            ("true", true),
+            (
+                opened,
+                this._page.JSInterop.Invocations["zaturnava.save"]
+                    .Any(saved => saved.Arguments.SequenceEqual(["zaturnava.card-captures", "hidden"]))
+            )
+        );
+    }
+
+    [Fact]
     public void Click_WhenThePlayerAsksForTheKindsMovesAgain_DrawsThemInsteadOfItsCaptures()
     {
         // Arrange

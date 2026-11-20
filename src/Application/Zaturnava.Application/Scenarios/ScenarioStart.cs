@@ -82,6 +82,9 @@ public static class ScenarioStart
     private const string KingdomDepthArgument = "kingdom-depth";
     private const string ChosenTerrainArgument = "chosen-terrain";
 
+    /// <summary>The argument of a game's first action keeping what its deal dealt (<see cref="KeptDeal"/>).</summary>
+    public const string KeptArgument = "kept";
+
     /// <summary>The roll that seeds a game dealt anew: one die of as many sides as a seed may be.</summary>
     private static readonly DiceRequest SeedRoll = new(1, int.MaxValue - 1);
 
@@ -405,7 +408,37 @@ public static class ScenarioStart
     /// </summary>
     private static GameState DealtBy(IRulesApplying rules, int seed, ImmutableList<ActionDescriptor> actions)
     {
-        GameState dealt = rules.Deal(
+        GameState dealt = Fresh(rules, seed, actions);
+        GameState kept = actions[0].Arguments.TryGetValue(KeptArgument, out string? deal)
+            ? KeptDeal.Parsed(deal).Applied(dealt)
+            : dealt;
+        return DraftingOf(actions) is { } drafting ? rules.Drafted(kept, seed, drafting) : kept;
+    }
+
+    /// <summary>
+    /// The deal <paramref name="deal"/> began, with what it dealt kept in it (<see cref="KeptDeal"/>), so that the game
+    /// replays as it was dealt however dealing changes; as it is, if it is no deal, or keeps its deal already.
+    /// </summary>
+    public static ActionDescriptor Kept([Required] ActionDescriptor deal, [Required] IRulesApplying rules) =>
+        deal.Kind == DealKind && !deal.Arguments.ContainsKey(KeptArgument)
+            ? deal with
+            {
+                Arguments = deal.Arguments.Add(
+                    KeptArgument,
+                    KeptDeal.Of(
+                        Fresh(rules, int.Parse(deal.Arguments[SeedArgument], CultureInfo.InvariantCulture), [deal])
+                    ).Serialized()
+                ),
+            }
+            : deal;
+
+    /// <summary>Whether the game the first of <paramref name="actions"/> dealt keeps what it dealt.</summary>
+    public static bool IsKept([Required] ImmutableList<ActionDescriptor> actions) =>
+        actions.FirstOrDefault() is not { Kind: DealKind } first || first.Arguments.ContainsKey(KeptArgument);
+
+    /// <summary>The game as <paramref name="seed"/> deals it now, before any draft.</summary>
+    private static GameState Fresh(IRulesApplying rules, int seed, ImmutableList<ActionDescriptor> actions) =>
+        rules.Deal(
             rules.CreateInitialState(),
             seed,
             AreAlike(actions),
@@ -422,8 +455,6 @@ public static class ScenarioStart
         {
             PromotesAtSide = PromotesAtSide(actions),
         };
-        return DraftingOf(actions) is { } drafting ? rules.Drafted(dealt, seed, drafting) : dealt;
-    }
 
     /// <summary>
     /// Whether the first of <paramref name="actions"/> had pieces promoted at the far edge promoted at the edge to

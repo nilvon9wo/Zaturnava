@@ -20,18 +20,19 @@
    buttons choosing the one feature drawn - its moves, its captures, or a special power at work; check boxes for
    what changes that feature - pieces in its way, its river or palace, where it stands; and a play button, a
    triangle, playing whatever is drawn. *@
+@inject Browser Browser
 @if (this.FeatureCount > 1)
 {
     <div class="diagram-toggles" role="group" aria-label="What the drawing shows">
         @if (!this.Moving.Moves.IsEmpty)
         {
             <button type="button" class="show-moves" aria-pressed="@Pressed(this.Power is null && !this.IsCapturing)"
-                    @onclick="() => this.Switch(() => (this._power, this._isCapturing) = (null, false))">Moves</button>
+                    @onclick="() => this.ShowCaptures(false)">Moves</button>
         }
         @if (this.MovingCaptures)
         {
             <button type="button" class="show-captures" aria-pressed="@Pressed(this.Power is null && this.IsCapturing)"
-                    @onclick="() => this.Switch(() => (this._power, this._isCapturing) = (null, true))">Captures</button>
+                    @onclick="() => this.ShowCaptures(true)">Captures</button>
         }
         @foreach (NamedDiagramDto power in this.Powers)
         {
@@ -434,6 +435,20 @@
         change();
         this._plays = 0;
     }
+
+    /// <summary>
+    /// Its captures drawn, or its moves, as every card opens from now on (the user's word of 2026-11-20: the cards
+    /// no longer remembered which).
+    /// </summary>
+    private async Task ShowCaptures(bool isCapturing)
+    {
+        this.Switch(() => (this._power, this._isCapturing) = (null, isCapturing));
+        await this.Browser.SetCardCapturesShown(isCapturing);
+    }
+
+    /// <summary>Opens on its captures if the player last looked at a card's captures.</summary>
+    protected override async Task OnInitializedAsync() =>
+        this._isCapturing = await this.Browser.AreCardCapturesShown();
 
     /// <summary>The square halfway from the centre to <paramref name="cell"/>, where the piece jumped over lies.</summary>
     private int Between(int cell) =>

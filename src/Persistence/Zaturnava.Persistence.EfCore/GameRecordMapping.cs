@@ -88,8 +88,11 @@ internal static class GameRecordMapping
             GameId = id.Value,
             Sequence = sequence,
             Kind = descriptor.Kind,
-            Arguments = JsonSerializer.Serialize(descriptor.Arguments),
+            Arguments = ArgumentsOf(descriptor),
         };
+
+    /// <summary>An action's arguments, as stored.</summary>
+    public static string ArgumentsOf(ActionDescriptor descriptor) => JsonSerializer.Serialize(descriptor.Arguments);
 
     /// <summary>The game as a lobby lists it, from its row, its seats and how many actions it has.</summary>
     public static GameListing ToListing(GameEntity entity, IReadOnlyCollection<SeatEntity> seats, int moves) =>

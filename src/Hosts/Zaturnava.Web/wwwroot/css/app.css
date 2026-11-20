@@ -796,7 +796,9 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
     border-radius: 50%;
 }
 .move-diagram .move::before, .diagram-key .move::before { inset: 34%; background: var(--mark); }
-.move-diagram .capture::after, .diagram-key .capture::after { inset: 8%; border: 2px solid var(--foe, var(--danger)); }
+/* Where it captures, ringed red, whoever captures (the user's word of 2026-11-20: red was much better than the enemy
+   seat's colour); the enemy taken there keeps its seat's. */
+.move-diagram .capture::after, .diagram-key .capture::after { inset: 8%; border: 2px solid var(--danger); }
 .move-diagram .screen::before, .diagram-key .screen::before { inset: 14%; background: var(--muted); }
 /* A square it leaps to, over anything between: its dot hollow, a ring, where a square it slides to has a full dot. */
 .move-diagram .move.leap::before, .diagram-key .move.leap::before {
