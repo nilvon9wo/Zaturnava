@@ -591,7 +591,7 @@
                 @if (this.Seating.Claim is { } mine)
                 {
                     ImmutableList<ActionDto> closing = this.Closing(view);
-                    bool isPassUrged = this._turn is { } current && IsPassUrged(current.Actions);
+                    Passing passing = this._turn is { } current ? PassingOf(current.Actions) : Passing.Plain;
                     SeatDto own = view.Seats[mine.Seat];
                     bool mayRejoin = own is { MayProposeEnd: false, MayRejoin: true, TurnsMissed: 0 };
                     @if (own.MayProposeEnd || mayRejoin || !closing.IsEmpty)
@@ -599,7 +599,7 @@
                         <div class="end-area">
                             @foreach (ActionDto action in closing)
                             {
-                                <button class="@ClosingClassOf(action, isPassUrged)" @onclick="() => this.Submit(mine, action)">
+                                <button class="@ClosingClassOf(action, passing)" @onclick="() => this.Submit(mine, action)">
                                     @this.Named(ActionLabels.LabelOf(action))
                                 </button>
                             }
@@ -1103,27 +1103,44 @@
             : [];
 
     /// <summary>
-    /// Passing, plainly, unless it is the way on (<paramref name="isPassUrged"/>), then the one call to action;
-    /// handing the turn over, in the colour of the ally taking it.
+    /// Passing, the one call to action whenever no other button asks for one, pieces left to move or not (the user's
+    /// word of 2026-11-20: grey, after a roll, was too understated), and urged when it is the only way on; plain
+    /// while a choice waits; handing the turn over, in the colour of the ally taking it.
     /// </summary>
-    private static string ClosingClassOf(ActionDto action, bool isPassUrged) =>
-        (action.Kind == PassKind, isPassUrged) switch
+    private static string ClosingClassOf(ActionDto action, Passing passing) =>
+        (action.Kind == PassKind, passing) switch
         {
-            (true, true) => "action pass primary urged",
-            (true, false) => "action pass",
+            (true, Passing.Urged) => "action pass primary urged",
+            (true, Passing.Called) => "action pass primary",
+            (true, _) => "action pass",
             _ => $"action hand-over seat-{action.Arguments.GetValueOrDefault(RegentArgument)}",
         };
 
+    /// <summary>How Pass looks: plain, the call to action, or that call urged.</summary>
+    private enum Passing
+    {
+        Plain,
+        Called,
+        Urged,
+    }
+
     /// <summary>
-    /// Whether passing is the way on, the one thing to call for (playtest 2026-11-19): nothing to move on the board,
-    /// nothing to choose, nothing else to do but hand the turn over, offer prisoners or hire one, as optional as
-    /// offering (playtest 2026-11-19: just rolled, with prisoners for hire, Pass stayed plain) - "Done offering" after
-    /// a move.
+    /// How Pass looks with <paramref name="actions"/> open: urged when it is the way on, with nothing to move on the
+    /// board (playtest 2026-11-19), and called for whenever nothing but handing over, offering prisoners or hiring
+    /// one, as optional as offering, is left beside it.
     /// </summary>
-    private static bool IsPassUrged(BoardActions actions) =>
-        actions.Origins.IsEmpty
-        && actions.Choices.IsEmpty
-        && actions.OffBoard.All(action => IsClosing(action) || action.Coming is not null);
+    private static Passing PassingOf(BoardActions actions) =>
+        (IsPassCalled(actions), actions.Origins.IsEmpty) switch
+        {
+            (true, true) => Passing.Urged,
+            (true, false) => Passing.Called,
+            _ => Passing.Plain,
+        };
+
+    /// <summary>Whether passing is the one button left to call for: nothing to choose, nothing else to do.</summary>
+    private static bool IsPassCalled(BoardActions actions) =>
+        actions.Choices.IsEmpty && actions.OffBoard.All(action => IsClosing(action) || action.Coming is not null);
+
 
     /// <summary>
     /// The faces typed for the dice of a roll in a scenario, each blank to be rolled (the user's request of 2026-11-19:

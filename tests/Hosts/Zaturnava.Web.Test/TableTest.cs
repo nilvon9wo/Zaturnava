@@ -3737,7 +3737,7 @@ public sealed class TableTest : IDisposable
     [Theory]
     [InlineData(false, false, "action hand-over seat-2|action pass primary urged|end-game")]
     [InlineData(false, true, "action hand-over seat-2|action pass primary urged|end-game")]
-    [InlineData(true, false, "action hand-over seat-2|action pass|end-game")]
+    [InlineData(true, false, "action hand-over seat-2|action pass primary|end-game")]
     public void Render_WhenThePlayerMayHandOverOrPass_ShowsThemBesideEndGamePassingTheCallToActionIfNothingElseIs(
         bool mayMove,
         bool mayHire,
@@ -3745,7 +3745,8 @@ public sealed class TableTest : IDisposable
     )
     {
         // Arrange - Black may let Green take over, or pass, and perhaps move too, or hire, which is a choice, not the
-        // way on (playtest 2026-11-15, X1; and 2026-11-19: one clear call to action, even with prisoners for hire)
+        // way on (playtest 2026-11-15, X1; and 2026-11-19: one clear call to action, even with prisoners for hire);
+        // with pieces to move, still the call, not urged (the user's word of 2026-11-20: grey was too understated)
         ActionDto handOver = new(
             "hand-over",
             ImmutableSortedDictionary<string, string>.Empty.Add(ActionArguments.Actor, "0").Add("regent", "2")

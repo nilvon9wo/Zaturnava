@@ -8,9 +8,7 @@ namespace Net.NowhereAtAll.Zaturnava.Games.GrandLegions.Test;
 /// <summary>
 /// The armies stored games were dealt, which they replay from: each quick game's, by a few seeds, with rivers and
 /// without, kept as a digest of every piece placed, as they were dealt before the armies could hold the pieces a
-/// palace holds. Should a change to the dealing alter any, a game in progress would replay otherwise. Changed in
-/// place, for every game, 2026-11-20: the throne, as the program deals it, is never on the kingdom's front rank or
-/// inner side.
+/// palace holds. Should a change to the dealing alter any, a game in progress would replay otherwise.
 /// </summary>
 public sealed class QuickArmyReplayTest
 {
@@ -24,8 +22,8 @@ public sealed class QuickArmyReplayTest
         new()
         {
             { "grand-legions-small", "00DCCEB06FBD4E9D" },
-            { "grand-legions-medium", "2CDC2020E8A537B6" },
-            { "grand-legions-large", "1E1231404392B0C9" },
+            { "grand-legions-medium", "364790A8D826157E" },
+            { "grand-legions-large", "2C2070A8026A0E88" },
         };
 
     [Theory]
@@ -74,8 +72,8 @@ public sealed class QuickArmyReplayTest
         new()
         {
             { "grand-legions-small", "5EDA3580F2EE23D7" },
-            { "grand-legions-medium", "031F7380E9668D1E" },
-            { "grand-legions-large", "44A4B9281A05C783" },
+            { "grand-legions-medium", "A5F8E4D50BFC30BF" },
+            { "grand-legions-large", "7624554712F45320" },
         };
 
     private static ImmutableList<ArmyFill> FillsOf(

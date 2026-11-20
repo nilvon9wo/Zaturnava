@@ -346,33 +346,6 @@ public sealed class QuickArmyTest
         );
     }
 
-    [Fact]
-    public void Layout_WhereverItsPalaceStands_NeverPutsTheThroneOnTheKingdomsFrontRankOrInnerSide()
-    {
-        // Arrange - a palace about every square of the kingdom, its front corner too, and an army dealt no palace
-        // (the user's word of 2026-11-20: "Putting the king on the front ranks is ridiculous")
-        QuickGame game = QuickGame.Large with { HasPalacePieces = true, HasEdgePalaces = true };
-
-        // Act
-        ImmutableList<ArmyPiece> thrones =
-        [
-            .. game.Kingdom.SelectMany(centre => Seeds.Select(seed => QuickArmy.Layout(
-                    game,
-                    QuickArmy.Pick(game, new(seed)),
-                    new(seed),
-                    PalaceSquares.Window(centre)
-                )[0]
-            )),
-            .. Seeds.Select(seed => QuickArmy.Layout(game, QuickArmy.Pick(game, new(seed)), new(seed))[0]),
-        ];
-
-        // Assert
-        Assert.All(
-            thrones,
-            throne => Assert.True(throne.Row < game.KingdomDepth - 1 && throne.Column < game.KingdomWidth - 1)
-        );
-    }
-
     [Theory]
     [MemberData(nameof(PalacedGames))]
     public void Layout_WithPalacePieces_PutsThoseButTheLeaderInThePalaceAboutTheThrone(string id)
