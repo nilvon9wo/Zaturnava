@@ -99,6 +99,7 @@ public static class GrandLegionsRules
                 Bearing = MovementBearing.Of(piece.Movement),
                 Kin = GrandLegionsPieces.Kins.GetValueOrDefault(piece.Id),
                 Origin = piece.Tradition.ToString(),
+                AlsoIn = [.. piece.AlsoIn.Select(game => game.ToString())],
                 PromotesTo = [.. piece.PromotesTo],
                 Restrictions =
                 [

@@ -21,6 +21,14 @@ public sealed record PieceGuide(PieceKind Kind)
     /// <summary>Which game it comes from: "Shogi"; none, if not told.</summary>
     public string? Origin { get; init; }
 
+    /// <summary>
+    /// The other games that play it too, under their own names, as Makruk plays the Western Rook: none, unless told.
+    /// </summary>
+    public ImmutableList<string> AlsoIn { get; init; } = [];
+
+    /// <summary>Whether it is of <paramref name="family"/>'s game: its <see cref="Origin"/>, or one else.</summary>
+    public bool IsOf(string family) => this.Origin == family || this.AlsoIn.Contains(family);
+
     /// <summary>Where it may move and capture, drawn: none, unless the ruleset draws it.</summary>
     public MoveDiagram Diagram { get; init; } = MoveDiagram.None;
 

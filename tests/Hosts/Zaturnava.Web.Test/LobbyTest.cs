@@ -434,6 +434,39 @@ public sealed class LobbyTest : IDisposable
     }
 
     [Fact]
+    public void Play_WhenAScenarioIsChosen_SeatsNoBotThatPlaysItsOwnFamilysPieces()
+    {
+        // Arrange - twenty bots of families, rated at the game, beside the four plain ones: in a scenario, whose
+        // armies are set, none may have its own (the user's word of 2026-11-20: they "should not be selected at
+        // random")
+        this._page.Server.Scenarios = [new ScenarioDto("escape", "chaturaji-2027", "Escape", "Doubles.")];
+        this._page.Server.MoreBots =
+        [
+            .. Enumerable.Range(0, 20).Select(index =>
+                new BotDto($"family-{index}", $"Family {index}", "Its own.", UsesAi: false)
+                {
+                    Family = "Makruk",
+                    Ratings = ImmutableDictionary<string, int>.Empty.Add("chaturaji-2027", 1200 + index),
+                }
+            ),
+        ];
+        IRenderedComponent<Lobby> lobby = this.Render();
+        lobby.Find("button.scenarios").Click();
+
+        // Act
+        lobby.Find("button.create").Click();
+
+        // Assert
+        Assert.Equal(
+            (3, false),
+            (
+                this._page.Server.Created!.Bots.OfType<string>().Count(),
+                this._page.Server.Created.Bots.Any(bot => bot?.StartsWith("family-", StringComparison.Ordinal) == true)
+            )
+        );
+    }
+
+    [Fact]
     public void Play_WhenAScenarioIsStarted_RemembersIt()
     {
         // Arrange
