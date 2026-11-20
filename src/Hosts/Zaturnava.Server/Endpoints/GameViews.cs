@@ -76,7 +76,12 @@ internal static class GameViews
             IsForPlayers = game.Controllers.Any(controller => controller is OpenSeat { IsForPlayers: true }),
             IsScenario = game.IsScenario,
             AreDiceOff = game.AreDiceOff,
+            Board = SizeOf(ScenarioStart.BoardOf(DealOf(game)) ?? rules.Board),
+            Budget = ScenarioStart.SpentOf(DealOf(game), rules),
         };
+
+    /// <summary>The deal the game began with, alone, as <see cref="ScenarioStart"/> reads a game's actions.</summary>
+    private static ImmutableList<ActionDescriptor> DealOf(GameListing game) => game.Deal is { } deal ? [deal] : [];
 
     /// <summary>A game's history, on the wire: the same shape self-play writes it in.</summary>
     public static GameHistoryDto HistoryOf(GameHistory history) =>

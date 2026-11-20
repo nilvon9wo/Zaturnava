@@ -175,15 +175,15 @@ public sealed class GrandLegionsRulesTest
     }
 
     [Fact]
-    public void Quick_WhenRead_IsAPreviewAtEverySize()
+    public void Quick_WhenRead_IsNoLongerAPreviewAtAnySize()
     {
-        // Arrange - nothing beyond the rules
+        // Arrange - out of preview (the user's word of 2026-11-20)
 
         // Act
         ImmutableList<bool> previews = [.. GrandLegionsRules.Quick.Select(rules => rules.IsPreview)];
 
         // Assert
-        Assert.Equal([true, true, true, true], previews);
+        Assert.Equal([false, false, false, false], previews);
     }
 
     [Fact]

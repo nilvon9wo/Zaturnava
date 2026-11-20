@@ -227,6 +227,31 @@
                         }
                     </div>
                 }
+                else if (mode != SetupMode.Scenarios && this.Ruleset(catalog).Board is { } fixedBoard)
+                {
+                    @* A size chosen tells its board and kingdoms, as a board set by hand does (the user, 2026-11-20). *@
+                    <table class="board-size fixed">
+                        <thead>
+                            <tr>
+                                <td></td>
+                                <th scope="col">Width</th>
+                                <th scope="col">Height</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <th scope="row">Board</th>
+                                <td class="board-width">@fixedBoard.Width</td>
+                                <td class="board-height">@fixedBoard.Height</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Kingdom</th>
+                                <td class="kingdom-width">@fixedBoard.KingdomWidth</td>
+                                <td class="kingdom-depth">@fixedBoard.KingdomDepth</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                }
             </div>
             @if (mode == SetupMode.Quick)
             {
@@ -962,6 +987,10 @@
                         @if (HasSizes(games))
                         {
                             @this.Heading(SizeColumn, "Size", "size", isSortable)
+                            @* each size's board, kingdoms and budget told, "8x8" (the user, 2026-11-20) *@
+                            @this.Heading("board", "Board", "board", isSortable: false)
+                            @this.Heading("kingdom", "Kingdom", "kingdom", isSortable: false)
+                            @this.Heading("budget", "Budget", "budget", isSortable: false)
                         }
                         @foreach ((string name, int seat) in SeatsOf(games))
                         {
@@ -981,6 +1010,9 @@
                             @if (HasSizes(games))
                             {
                                 <td class="size">@SizeOf(catalog, game.RulesetId)</td>
+                                <td class="board">@Across(game.Board, isKingdom: false)</td>
+                                <td class="kingdom">@Across(game.Board, isKingdom: true)</td>
+                                <td class="budget" title="Points each army has to spend on its pieces">@game.Budget</td>
                             }
                             @foreach ((string _, int seat) in SeatsOf(games))
                             {
@@ -1011,6 +1043,12 @@
                 </tbody>
             </table>
         </div>;
+
+    /// <summary>A board's size, or its kingdoms', as people write it, "8x8"; nothing, for no board told.</summary>
+    private static string? Across(BoardSizeDto? board, bool isKingdom) =>
+        board is null ? null
+        : isKingdom ? string.Create(CultureInfo.InvariantCulture, $"{board.KingdomWidth}x{board.KingdomDepth}")
+        : string.Create(CultureInfo.InvariantCulture, $"{board.Width}x{board.Height}");
 
     /// <summary>
     /// A heading of the games list: if <paramref name="isSortable"/>, a button that sorts by its column (Stated,
