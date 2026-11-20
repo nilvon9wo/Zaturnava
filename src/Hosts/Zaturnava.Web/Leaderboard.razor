@@ -27,18 +27,15 @@
             <option value="@EveryoneBoard">Everyone</option>
         </select>
     </label>
-    @if (this._board == PlayersBoard)
-    {
-        @* Each counted from the same games; each viewer picks one, as a theme (the user's word of 2026-11-20). *@
-        <label class="choice">
-            <span class="choice-name">Rating</span>
-            <select class="leaderboard-rating" value="@this._rating" @onchange="this.ChooseRating">
-                <option value="@EloRating">Elo</option>
-                <option value="@GlickoRating">Glicko-2</option>
-                <option value="@TrueSkillRating">TrueSkill</option>
-            </select>
-        </label>
-    }
+    @* Each counted from the same games; each viewer picks one, as a theme (the user's word of 2026-11-20). *@
+    <label class="choice">
+        <span class="choice-name">Rating</span>
+        <select class="leaderboard-rating" value="@this._rating" @onchange="this.ChooseRating">
+            <option value="@EloRating">Elo</option>
+            <option value="@GlickoRating">Glicko-2</option>
+            <option value="@TrueSkillRating">TrueSkill</option>
+        </select>
+    </label>
 
     @if (this._rows is { } rows)
     {
@@ -225,15 +222,21 @@
     [Parameter, EditorRequired]
     public string Game { get; set; } = string.Empty;
 
+    /// <summary>The board chosen, its first column the rating system chosen, on every board (the user's report of
+    /// 2026-11-20: no way to switch, the choice having been on the people's board alone).</summary>
     private Board Columns =>
         this._board switch
         {
-            BotsBoard => Bots,
-            EveryoneBoard => Everyone,
-            _ => Players with { All = Players.All.SetItem(0, this.RatingColumn) },
+            BotsBoard => this.Rated(Bots),
+            EveryoneBoard => this.Rated(Everyone),
+            _ => this.Rated(Players),
         };
 
-    /// <summary>The people's board's first column: the rating system chosen.</summary>
+    /// <summary>The board with its first column, its rating, by the system chosen; Elo as the board has it.</summary>
+    private Board Rated(Board board) =>
+        this._rating == EloRating ? board : board with { All = board.All.SetItem(0, this.RatingColumn) };
+
+    /// <summary>The first column, by the rating system chosen other than Elo.</summary>
     private Column RatingColumn =>
         this._rating switch
         {
@@ -242,12 +245,11 @@
                 "Glicko-2",
                 "Glicko-2, from 1500: like Elo, but surer of a rating the more games are behind it"
             ),
-            TrueSkillRating => new(
+            _ => new(
                 TrueSkillRating,
                 "TrueSkill",
                 "TrueSkill, as it ranks: the skill a player very likely has at least, from 0, rising as games show more"
             ),
-            _ => new(EloRating, "Elo", null),
         };
 
     /// <summary>A player's rating by the system chosen.</summary>
@@ -257,6 +259,15 @@
             GlickoRating => player.Glicko,
             TrueSkillRating => player.TrueSkill,
             _ => player.Elo,
+        };
+
+    /// <summary>A bot's rating by the system chosen, each from its Elo, as people's games against it take it.</summary>
+    private double RatingOf(BotStandingDto bot) =>
+        this._rating switch
+        {
+            GlickoRating => bot.Glicko,
+            TrueSkillRating => bot.TrueSkill,
+            _ => bot.Elo,
         };
 
     /// <summary>The board, and how it is sorted, as the player last left it; the players', by Elo, until they choose.</summary>
@@ -288,7 +299,7 @@
         this._problem = await Requests.Attempt(() => this.Show(this.Game));
     }
 
-    /// <summary>The rating system chosen, by it, most first, from the first page; the people's board again.</summary>
+    /// <summary>The rating system chosen, the board by it, most first, from the first page.</summary>
     private async Task ChooseRating(ChangeEventArgs change)
     {
         this._rating = $"{change.Value}";
@@ -361,7 +372,7 @@
                     new Row(
                         bot.Name,
                         [
-                            bot.Elo,
+                            this.RatingOf(bot),
                             bot.Points,
                             bot.Won,
                             bot.Lost,
@@ -379,13 +390,13 @@
             EveryoneBoard =>
             [
                 .. (await this.Games.Leaderboard(game, CancellationToken.None)).Select(player =>
-                    new Row(player.Name, [player.Elo, player.Points, player.Won, player.Lost, player.Drawn])
+                    new Row(player.Name, [this.RatingOf(player), player.Points, player.Won, player.Lost, player.Drawn])
                     {
                         PlayerId = player.PlayerId,
                     }
                 ),
                 .. (await this.Games.BotLeaderboard(game, CancellationToken.None)).Select(bot =>
-                    new Row(bot.Name, [bot.Elo, bot.Points, bot.Won, bot.Lost, bot.Drawn])
+                    new Row(bot.Name, [this.RatingOf(bot), bot.Points, bot.Won, bot.Lost, bot.Drawn])
                     {
                         BotId = bot.BotId,
                         UsesAi = bot.UsesAi,

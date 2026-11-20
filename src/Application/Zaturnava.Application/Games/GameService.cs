@@ -421,6 +421,52 @@ public sealed class GameService(
             : snapshot;
     }
 
+    /// <summary>
+    /// Plays on every game left waiting for one of the server's own bots, unchanged for <paramref name="idle"/>: its
+    /// bots decide until a person (or an AI over the API) must, or the game is over, at most
+    /// <see cref="IdleBotSteps"/> decisions a game. A game watched advances at its watchers' pace, a step at a time
+    /// (<see cref="Advance"/>); one no one watches no longer waits on a bot the server plays (the user's report of
+    /// 2026-11-20: games days old waiting for Random, Athena and Tactician). How many games were played on.
+    /// </summary>
+    public async Task<int> PlayIdleBots(TimeSpan idle, CancellationToken cancellationToken)
+    {
+        ImmutableHashSet<string> offered = [.. this.Rulesets.Select(rules => rules.Id)];
+        int moved = 0;
+        foreach (GameRecord due in (await this._store.Idle(this._clock.Now - idle, cancellationToken))
+            .Where(record => offered.Contains(record.RulesetId) && IsBotDue(record)))
+        {
+            using IDisposable entered = await this._gate.Enter(due.Id);
+            // read again, under the gate: a person who has moved since leaves the bots nothing to decide
+            GameSnapshot snapshot = await this.Get(due.Id, cancellationToken);
+            Played played = await DecisionLoop.PlayWhile(
+                snapshot.Rules,
+                new Played(snapshot.State, snapshot.Record.Actions),
+                this.DecidersOf(snapshot.Record),
+                this._dice,
+                IdleBotSteps,
+                cancellationToken
+            );
+            if (played.Actions.Count > snapshot.Record.Actions.Count)
+            {
+                _ = await this.Saved(
+                    snapshot.Record.Next() with { Actions = played.Actions },
+                    snapshot.Rules,
+                    cancellationToken
+                );
+                moved++;
+            }
+        }
+
+        return moved;
+    }
+
+    /// <summary>The most decisions <see cref="PlayIdleBots"/> makes in one game at a time (Proposed).</summary>
+    public const int IdleBotSteps = 1000;
+
+    /// <summary>Whether the game, as last saved, has begun and waits for a bot the server plays to decide.</summary>
+    private static bool IsBotDue(GameRecord record) =>
+        record is { IsWaiting: false, Deciding: { } seat } && record.Controllers[seat.Value] is BotSeat;
+
     /// <summary>Claims an open seat for whoever holds the returned token.</summary>
     /// <exception cref="GameNotFoundException">There is no such game.</exception>
     /// <exception cref="SeatUnavailableException">The seat does not exist, or is not open.</exception>

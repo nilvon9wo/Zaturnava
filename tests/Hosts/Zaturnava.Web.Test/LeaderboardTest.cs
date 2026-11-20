@@ -279,6 +279,44 @@ public sealed class LeaderboardTest : IDisposable
     }
 
     [Theory]
+    [InlineData("bots", "glicko", "Glicko-2 ▼", "2600|1000")]
+    [InlineData("everyone", "trueskill", "TrueSkill ▼", "44.5|11.5")]
+    public void Render_WhenARatingSystemWasChosen_RanksTheBotsByItOnEveryBoard(
+        string shown,
+        string rating,
+        string sorted,
+        string expected
+    )
+    {
+        // Arrange - the choice on every board, a bot's from its Elo (the user's report of 2026-11-20: no way to switch)
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.leaderboard")
+            .SetResult($"board={shown}&rating={rating}&sort={rating}&desc=1");
+        this._page.Server.BotLeaderboards = this._page.Server.BotLeaderboards.Add(
+            "chaturaji-2027",
+            [
+                new BotStandingDto(1, "Sage", 40, 5, 0, 1) { BotId = "sage", Glicko = 2600, TrueSkill = 44.5 },
+                new BotStandingDto(2, "Random", 0, 0, 5, 0) { BotId = "random", Glicko = 1000, TrueSkill = 11.5 },
+            ]
+        );
+
+        // Act
+        IRenderedComponent<Leaderboard> board = this.Render();
+
+        // Assert
+        Assert.Equal(
+            (sorted, expected),
+            (
+                board.Find(".leaders th[aria-sort=descending]").TextContent.Trim(),
+                string.Join(
+                    '|',
+                    board.FindAll($".leaders tbody td:nth-child({(shown == "bots" ? 3 : 4)})")
+                        .Select(cell => cell.TextContent.Trim())
+                )
+            )
+        );
+    }
+
+    [Theory]
     [InlineData("board=players&rating=glicko&sort=glicko", "players", "Glicko-2 ▲")]
     [InlineData("board=bots&sort=points", "bots", "Points ▲")]
     [InlineData("board=everyone&sort=won&desc=1", "everyone", "Won ▼")]

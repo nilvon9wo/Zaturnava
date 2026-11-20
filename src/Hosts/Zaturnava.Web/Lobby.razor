@@ -970,8 +970,8 @@
         IsAlly(ruleset, you, seat) ? "Your ally" : "Enemy";
 
     /// <summary>
-    /// The games, one a row and one fact a cell (playtest 2026-11-15, H4): its size, if the games listed differ in
-    /// size; who holds each seat, a column a seat, an open one to join; which seat decides next; how many moves; when it
+    /// The games, one a row and one fact a cell (playtest 2026-11-15, H4): its size, board, kingdoms and budget, if its
+    /// game has sizes; who holds each seat, a column a seat, an open one to join; which seat decides next; how many moves; when it
     /// was created and last changed; then what the player may do. Its headings sort it, if <paramref name="isSortable"/>.
     /// </summary>
     private RenderFragment GamesTable(
@@ -984,10 +984,13 @@
             <table class="games-table">
                 <thead>
                     <tr>
-                        @if (HasSizes(games))
+                        @if (HasSizes(catalog, games))
                         {
                             @this.Heading(SizeColumn, "Size", "size", isSortable)
-                            @* each size's board, kingdoms and budget told, "8x8" (the user, 2026-11-20) *@
+                        }
+                        @if (HasLayout(games))
+                        {
+                            @* each game's board, kingdoms and budget told, "8x8" (the user, 2026-11-20) *@
                             @this.Heading("board", "Board", "board", isSortable: false)
                             @this.Heading("kingdom", "Kingdom", "kingdom", isSortable: false)
                             @this.Heading("budget", "Budget", "budget", isSortable: false)
@@ -1007,9 +1010,12 @@
                     @foreach (GameSummaryDto game in games)
                     {
                         <tr data-game="@game.Id">
-                            @if (HasSizes(games))
+                            @if (HasSizes(catalog, games))
                             {
                                 <td class="size">@SizeOf(catalog, game.RulesetId)</td>
+                            }
+                            @if (HasLayout(games))
+                            {
                                 <td class="board">@Across(game.Board, isKingdom: false)</td>
                                 <td class="kingdom">@Across(game.Board, isKingdom: true)</td>
                                 <td class="budget" title="Points each army has to spend on its pieces">@game.Budget</td>
@@ -1146,9 +1152,29 @@
     private string Ago(DateTimeOffset? time) =>
         time is { } then ? TimeAgo.Since(then, this.Clock.GetUtcNow()) : "-";
 
-    /// <summary>Whether the games listed are of more than one size, so that each says its own.</summary>
-    private static bool HasSizes(ImmutableList<GameSummaryDto> games) =>
-        games.Select(game => game.RulesetId).Distinct().Skip(1).Any();
+    /// <summary>
+    /// Whether each game listed says its size: if any is of a game played at more than one size, by the catalog, even
+    /// when all listed are of one size (the user's report of 2026-11-20: a list of Grand Legions games all of one size
+    /// showed none); or if the games listed are of more than one size.
+    /// </summary>
+    private static bool HasSizes(CatalogDto catalog, ImmutableList<GameSummaryDto> games)
+    {
+        ImmutableHashSet<string> sized =
+        [
+            .. catalog.Rulesets.GroupBy(ruleset => ruleset.Game)
+                .Where(sizes => sizes.Skip(1).Any())
+                .SelectMany(sizes => sizes.Select(ruleset => ruleset.Id)),
+        ];
+        return games.Select(game => game.RulesetId).Distinct().Skip(1).Any()
+            || games.Any(game => sized.Contains(game.RulesetId));
+    }
+
+    /// <summary>
+    /// Whether each game listed says its board, kingdoms and budget: whenever any is known, alike or not, so that a
+    /// viewer knows the game without watching it (the user's word of 2026-11-20).
+    /// </summary>
+    private static bool HasLayout(ImmutableList<GameSummaryDto> games) =>
+        games.Any(game => game.Board is not null || game.Budget is not null);
 
     /// <summary>The size the catalog gives the ruleset; else its name; else, one no longer offered, its id.</summary>
     private static string SizeOf(CatalogDto catalog, string rulesetId) =>

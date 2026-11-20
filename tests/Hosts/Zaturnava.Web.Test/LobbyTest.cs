@@ -2096,21 +2096,30 @@ public sealed class LobbyTest : IDisposable
     }
 
     [Theory]
-    [InlineData("chaturaji-2027", "")]
-    [InlineData("retired", "Chaturaji 2027|retired")]
-    [InlineData("chaturaji-2027-large", "Chaturaji 2027|large")]
-    public void Render_WhenTheGamesListedDifferInSize_GivesEachItsSizeElseNone(string other, string expected)
+    [InlineData(false, "chaturaji-2027", "")]
+    [InlineData(true, "chaturaji-2027", "Chaturaji 2027|Chaturaji 2027")]
+    [InlineData(true, "retired", "Chaturaji 2027|retired")]
+    [InlineData(true, "chaturaji-2027-large", "Chaturaji 2027|large")]
+    public void Render_WhenTheGameHasSizesOrTheGamesListedDiffer_GivesEachItsSizeElseNone(
+        bool hasSizes,
+        string other,
+        string expected
+    )
     {
-        // Arrange - a second game of the same ruleset, of one no longer offered, or of a larger size
-        this._page.Server.MoreRulesets =
-        [
-            new RulesetDto("chaturaji-2027-large", "Chaturaji 2027 (large)", 4)
-            {
-                Game = "chaturaji-2027",
-                GameName = "Chaturaji 2027",
-                Size = "large",
-            },
-        ];
+        // Arrange - a game at one size or more; a second game listed of the same ruleset, of one no longer offered, or
+        // of a larger size: a list all of one size of a game of several sizes still says it (the user's report of
+        // 2026-11-20)
+        this._page.Server.MoreRulesets = hasSizes
+            ?
+            [
+                new RulesetDto("chaturaji-2027-large", "Chaturaji 2027 (large)", 4)
+                {
+                    Game = "chaturaji-2027",
+                    GameName = "Chaturaji 2027",
+                    Size = "large",
+                },
+            ]
+            : [];
         GameSummaryDto game = this._page.Server.Games[0];
         this._page.Server.Games = [game, game with { Id = "other", RulesetId = other }];
 

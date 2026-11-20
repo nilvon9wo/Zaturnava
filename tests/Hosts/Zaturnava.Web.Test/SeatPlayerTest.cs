@@ -158,11 +158,49 @@ public sealed class SeatPlayerTest : IDisposable
         Assert.Equal(
             (about, $"Plays by|{kind}|Elo at this game|{rated ?? "Not yet rated"}"),
             (
-                string.Join('|', bot.FindAll("[role=dialog] h2, [role=dialog] p").Select(line => line.TextContent)),
+                string.Join(
+                    '|',
+                    bot.FindAll("[role=dialog] h2, [role=dialog] p:not(.bot-standing)").Select(line => line.TextContent)
+                ),
                 string.Join('|', bot.FindAll("dl.bot-facts dt, dl.bot-facts dd").Select(line => line.TextContent))
             )
         );
     }
+
+    [Fact]
+    public void OpenBot_WhenTheBotStandsAtTheGame_ShowsItsRatingByEachSystem()
+    {
+        // Arrange - Random on the game's bot leaderboard (the user's report of 2026-11-20: no room for them)
+        this._page.Server.BotLeaderboards = this._page.Server.BotLeaderboards.Add(
+            "chaturaji-2027",
+            [
+                new BotStandingDto(1, "Random", 5, 0, 1, 0)
+                {
+                    BotId = "random",
+                    Elo = 1000,
+                    Glicko = 1000,
+                    GlickoDeviation = 50,
+                    TrueSkill = 11.5,
+                    TrueSkillMean = 14.6,
+                    TrueSkillDeviation = 1,
+                },
+            ]
+        );
+        IRenderedComponent<SeatPlayer> bot = this.RenderedBot("random");
+
+        // Act
+        bot.Find("button.bot-profile").Click();
+
+        // Assert
+        Assert.Equal(
+            "Elo1000—|Glicko-2 1000 ± 50|TrueSkill 11.5 14.6 ± 1.0",
+            string.Join('|', bot.FindAll("table.bot-ratings tbody tr").Select(row => Squeezed(row.TextContent)))
+        );
+    }
+
+    /// <summary>The words of a text, one space apart.</summary>
+    private static string Squeezed(string text) =>
+        string.Join(' ', text.Split((char[])[' ', '\n'], StringSplitOptions.RemoveEmptyEntries));
 
     [Fact]
     public void OpenBot_WhenTheBotIsNoLongerOffered_SaysSo()

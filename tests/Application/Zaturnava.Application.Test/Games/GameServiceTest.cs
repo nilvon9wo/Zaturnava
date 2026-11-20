@@ -2490,6 +2490,55 @@ public sealed class GameServiceTest
     private Task<GameId> CreateOpen() =>
         this._service.Create(TinyRules.RulesetId, [SeatPlan.Open, SeatPlan.Open], this._cancellation);
 
+    [Fact]
+    public async Task PlayIdleBots_WhenGamesWaitLongForABotTheServerPlays_PlaysThoseOnUntilAPersonMustDecide()
+    {
+        // Arrange - games left long, the first seat to decide: a bot's; a person's; a bot's, saved as the second's,
+        // which is a person's; a bot's while a seat is open; unsummarized; of a ruleset retired; and one changed just
+        // now (the user's report of 2026-11-20: games days old waiting for bots)
+        InMemoryGameStore store = new();
+        GameService service = this.Service(GameServiceSettings.Default, store);
+        DateTimeOffset longAgo = this._time.Now - TimeSpan.FromMinutes(1);
+        HumanSeat ada = new("hash", new PlayerId("ada"));
+        BotSeat bot = new(FirstChoiceBot.BotId);
+        GameRecord[] games =
+        [
+            Waiting("due", "ada", longAgo) with { Controllers = [bot, ada], Deciding = First },
+            Waiting("person", "ada", longAgo) with { Controllers = [ada, bot], Deciding = First },
+            Waiting("stale", "ada", longAgo) with { Controllers = [ada, bot], Deciding = Second },
+            Waiting("open", "ada", longAgo) with { Controllers = [bot, new OpenSeat()], Deciding = First },
+            Waiting("unsummarized", "ada", longAgo) with { Controllers = [bot, ada] },
+            Waiting("retired", "ada", longAgo) with
+            {
+                Controllers = [bot, ada],
+                Deciding = First,
+                RulesetId = "retired",
+            },
+            Waiting("recent", "ada", this._time.Now) with { Controllers = [bot, ada], Deciding = First },
+        ];
+        foreach (GameRecord game in games)
+        {
+            await store.Add(game, this._cancellation);
+        }
+
+        // Act
+        int moved = await service.PlayIdleBots(TimeSpan.FromSeconds(15), this._cancellation);
+
+        // Assert - the bot passed, and Ada is to decide
+        ImmutableList<GameRecord> kept = await store.List(this._cancellation);
+        Assert.Equal(
+            (1, "due:1:1,open:0:0,person:0:0,recent:0:0,retired:0:0,stale:0:1,unsummarized:0:0"),
+            (
+                moved,
+                string.Join(
+                    ",",
+                    kept.OrderBy(game => game.Id.Value, StringComparer.Ordinal)
+                        .Select(game => $"{game.Id.Value}:{game.Actions.Count}:{game.Deciding?.Value ?? 0}")
+                )
+            )
+        );
+    }
+
     /// <summary>A game of <see cref="TinyRules"/> not over, its first seat a signed-in player's.</summary>
     private static GameRecord Waiting(string id, string player, DateTimeOffset changed) =>
         new(

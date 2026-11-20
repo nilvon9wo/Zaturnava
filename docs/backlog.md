@@ -65,8 +65,9 @@ From the specification's observations of the bots in play (F, X) and the Sage pl
 
 - **Ratings by three systems** (2026-11-20, [design](ratings-design.md)). *Begun*: every person's Glicko-2 and
   TrueSkill are counted beside their Elo, from every game kept (a migration has them all counted again); the
-  People board shows whichever the viewer picks, remembered; a profile shows all three. Still to do: the choice on
-  the Everyone board too, bots there given the other systems' ratings; the design's extensions (more chance for
+  People board shows whichever the viewer picks, remembered; a profile shows all three. Since: the choice on every
+  board, bots given the other systems' ratings from their Elo, and on their profiles. Still to do: the design's
+  extensions (more chance for
   dice and for armies dealt different, a dice offset per player, deviations growing with time away); and the
   comparison of how well each predicts.
 - **D4** Strong Grand Legions bots by family. *Begun* (2026-11-20): Philidor (Western), Sun Tzu (Xiangqi),

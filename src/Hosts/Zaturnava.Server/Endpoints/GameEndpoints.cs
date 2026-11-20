@@ -145,7 +145,10 @@ internal static class GameEndpoints
     ) =>
     [
         .. (await standings.BotLeaders(game, cancellationToken)).Select((leader, index) =>
-            new BotStandingDto(
+        {
+            // as people's games against it take it (StandingService): its Elo, sure (the user's report of 2026-11-20)
+            TrueSkill trueSkill = TrueSkill.FromElo(leader.Elo, TrueSkill.BotDeviation);
+            return new BotStandingDto(
                 index + 1,
                 leader.Name,
                 leader.Standing.Points,
@@ -159,9 +162,14 @@ internal static class GameEndpoints
                 DrawnAgainstPeople = leader.Standing.DrawnAgainstPeople,
                 BotId = leader.Standing.BotId,
                 Elo = (int)Math.Round(leader.Elo, MidpointRounding.AwayFromZero),
+                Glicko = (int)Math.Round(leader.Elo, MidpointRounding.AwayFromZero),
+                GlickoDeviation = (int)Glicko.BotDeviation,
+                TrueSkill = Math.Round(trueSkill.Conservative, 1, MidpointRounding.AwayFromZero),
+                TrueSkillMean = Math.Round(trueSkill.Mean, 1, MidpointRounding.AwayFromZero),
+                TrueSkillDeviation = trueSkill.Deviation,
                 UsesAi = leader.UsesAi,
-            }
-        ),
+            };
+        }),
     ];
 
     /// <summary>A player in their place on a leaderboard, their Elo rounded.</summary>
