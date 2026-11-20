@@ -8,7 +8,8 @@ if level. Ratings are fitted to every result at once
 (Bradley-Terry, which Elo's expected score is), with one draw added between each pair, so that a bot
 that never loses still gets a finite rating, and anchored with random at 1000, so that a new bot does
 not move the others. They are written as JSON, by bot, for src/Bots/Zaturnava.Bots/Ratings/.
-With --bot-assembly, bots of one's own (the BotRunner's option of that name) may be among --bots.
+With --bot-assembly, bots of one's own (the BotRunner's option of that name) may be among --bots. Without --bots,
+every bot the BotRunner says plays the ruleset (its --list bots), but the slow (SLOW).
 With --out, each pair's result is also kept, as it ends, in <out>.pairs.json; run again with the same --out,
 --ruleset, --games and --max-steps, a tournament stopped mid-way plays only the pairs it had not finished.
 
@@ -32,9 +33,17 @@ from concurrent.futures import ThreadPoolExecutor
 ANCHOR = "random"
 ANCHOR_RATING = 1000
 SCALE = 400 / math.log(10)
-# Every bot the BotRunner plays without a network of its own: the weak (D2: below 1200) as well as the strong.
-BOTS = ["argus", "echo", "epimetheus", "icarus", "midas", "morpheus", "narcissus", "phaethon", "random", "sage",
-        "solomon", "tantalus"]
+# The bots left out unless named: Athena plays by a network of her own; Pythia and Tactician search too slowly for
+# a night's tournament.
+SLOW = {"athena", "pythia", "tactician"}
+
+
+def known(runner, ruleset):
+    """Every bot the BotRunner says plays the ruleset (--list bots), the weak (D2) as well as the strong, and each
+    family's where its pieces are to be had (2026-11-20: so that they are rated too); but the slow."""
+    listed = subprocess.run([*runner, "--ruleset", ruleset, "--list", "bots"], check=True, capture_output=True,
+                            text=True).stdout.split()
+    return [bot for bot in listed if bot not in SLOW]
 
 
 def play(runner, ruleset, seats, games, max_steps):
@@ -126,7 +135,7 @@ def fit(bots, record):
 def main():
     parser = argparse.ArgumentParser(description="Rate the bots, by Elo, from games between each pair.")
     parser.add_argument("runner")
-    parser.add_argument("--bots", default=",".join(BOTS))
+    parser.add_argument("--bots")
     parser.add_argument("--games", type=int, default=50)
     parser.add_argument("--max-steps", type=int, default=2000)
     parser.add_argument("--ruleset", default="chaturaji-2027")
@@ -135,7 +144,7 @@ def main():
     parser.add_argument("--bot-assembly")
     options = parser.parse_args()
     runner = [options.runner] + (["--bot-assembly", options.bot_assembly] if options.bot_assembly else [])
-    bots = options.bots.split(",")
+    bots = options.bots.split(",") if options.bots else known(runner, options.ruleset)
     if ANCHOR not in bots:
         sys.exit(f"The bots must include {ANCHOR}, whose rating anchors the others.")
     pairs = list(itertools.combinations(bots, 2))

@@ -59,13 +59,18 @@ internal static class Ransoms
     }
 
     /// <summary>
-    /// Seat 0 answering Yellow's offer of its <paramref name="given"/> for its <paramref name="asked"/>.
+    /// Seat 0 answering Yellow's offer of its <paramref name="given"/> for its <paramref name="asked"/>: accepting or
+    /// declining it, as the rules allow.
     /// </summary>
     public static DecisionRequest Offered(ImmutableList<int> given, ImmutableList<int> asked)
     {
         DecisionRequest request = Request();
         RansomOffer offer = new(Yellow, Black, [.. given.Select(Id)], [.. asked.Select(Id)]);
-        return request with { State = request.State with { Offer = offer } };
+        return request with
+        {
+            State = request.State with { Offer = offer },
+            LegalActions = [new AcceptAction(Black), new DeclineAction(Black)],
+        };
     }
 
     /// <summary>
