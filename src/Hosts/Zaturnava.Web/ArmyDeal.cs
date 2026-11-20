@@ -39,4 +39,10 @@ internal sealed record ArmyDeal(bool AreAlike, string? Of = null)
 
     /// <summary>In a game without dice, the seat chosen to open it; none, for one drawn at random.</summary>
     public int? Opener { get; init; }
+
+    /// <summary>The bits of the terrain's number its creator chose, in a game that lets them; 0, for none.</summary>
+    public int TerrainMask { get; init; }
+
+    /// <summary>How they set the bits of <see cref="TerrainMask"/>.</summary>
+    public int TerrainValue { get; init; }
 }

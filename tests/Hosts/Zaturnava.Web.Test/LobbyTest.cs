@@ -734,6 +734,68 @@ public sealed class LobbyTest : IDisposable
         Assert.Equal(expected, this._page.Server.Created?.AreDiceOff);
     }
 
+    /// <summary>Rivers parting the board one way or both (bits 1, 2), through the kingdoms or around (bit 4).</summary>
+    private static readonly ImmutableList<TerrainAxisDto> Rivers =
+    [
+        new("Rivers", 0b011, [new("None", 0), new("↕ Bisect", 0b001), new("✚ Quarter", 0b011)]),
+        new("Rivers flow", 0b100, [new("Through kingdoms", 0), new("Around kingdoms", 0b100)]),
+    ];
+
+    [Theory]
+    [InlineData("", "", 0, 0)]
+    [InlineData("3", "", 0b011, 0b011)]
+    [InlineData("3", "4", 0b111, 0b111)]
+    [InlineData("", "0", 0b100, 0)]
+    public void Play_WhenTheCreatorChoosesTheRiversOrLeavesThemToChance_AsksForThemSo(
+        string rivers,
+        string course,
+        int mask,
+        int value
+    )
+    {
+        // Arrange - asked 2026-11-19
+        this._page.Server.TerrainAxes = Rivers;
+        IRenderedComponent<Lobby> lobby = this.ByStrength();
+        IReadOnlyList<AngleSharp.Dom.IElement> axes = lobby.FindAll("select.terrain-axis");
+        axes[0].Change(rivers);
+        lobby.FindAll("select.terrain-axis")[1].Change(course);
+
+        // Act
+        lobby.Find("button.create").Click();
+
+        // Assert
+        Assert.Equal(
+            (2, mask, value),
+            (axes.Count, this._page.Server.Created?.TerrainMask, this._page.Server.Created?.TerrainValue)
+        );
+    }
+
+    [Fact]
+    public void Render_WhenTheRiversWereChosenBefore_ChoosesThemAgain()
+    {
+        // Arrange - quartered, around the kingdoms, then the game set up afresh
+        this._page.Server.IsDealt = true;
+        this._page.Server.TerrainAxes = Rivers;
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.setup").SetResult("strength");
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.setup-of.chaturaji-2027")
+            .SetResult("chaturaji-2027;0;-1,1,1,1;,,,;terrain=7:7");
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.Render();
+        lobby.Find("button.create").Click();
+
+        // Assert
+        Assert.Equal(
+            ("3", "4", 0b111, 0b111),
+            (
+                lobby.FindAll("select.terrain-axis")[0].GetAttribute("value"),
+                lobby.FindAll("select.terrain-axis")[1].GetAttribute("value"),
+                this._page.Server.Created?.TerrainMask,
+                this._page.Server.Created?.TerrainValue
+            )
+        );
+    }
+
     [Fact]
     public void Render_WhenTheGamesOtherChoicesWereMadeBefore_MakesThemAgain()
     {

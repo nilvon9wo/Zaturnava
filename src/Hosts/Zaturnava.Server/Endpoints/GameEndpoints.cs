@@ -266,6 +266,9 @@ internal static class GameEndpoints
             AreDiceOff = request.AreDiceOff,
             IdleRounds = request.IdleRounds,
             Opener = request.Opener,
+            Terrain = request.TerrainMask is not 0
+                ? new TerrainChoice(request.TerrainMask, request.TerrainValue)
+                : null,
         };
         GameId id = await games.Create(request.RulesetId, seats, request.Scenario, dealing, cancellationToken);
         if (request.Continuing is { } previous)

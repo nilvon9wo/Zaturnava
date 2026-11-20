@@ -50,6 +50,12 @@ public sealed record Dealing(bool AreAlike = false, GameId? ArmiesOf = null)
     /// </summary>
     public int? Opener { get; init; }
 
+    /// <summary>
+    /// What of the terrain its creator chose, for a ruleset that lets them (<see cref="IRulesApplying.TerrainAxes"/>;
+    /// any other bits are ignored), the rest dealt at random; none, for all of it dealt.
+    /// </summary>
+    public TerrainChoice? Terrain { get; init; }
+
     /// <summary>Each seat its own army, dealt anew.</summary>
     public static Dealing Anew { get; } = new();
 }

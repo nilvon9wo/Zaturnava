@@ -171,6 +171,7 @@ public static class GrandLegionsRules
                 dealing.AreAlike
             ),
             TerrainDealer = QuickTerrain.Dealt,
+            TerrainAxes = QuickTerrain.Axes,
             Drafting = QuickDraft.Of(game),
             Height = game.Height,
             Board = new BoardSize(game.Width, game.Height, game.KingdomWidth, game.KingdomDepth),

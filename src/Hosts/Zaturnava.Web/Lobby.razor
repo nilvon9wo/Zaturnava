@@ -355,6 +355,24 @@
                     Promote at right edge
                 </label>
             }
+            @if (mode == SetupMode.Custom)
+            {
+                @* The terrain as its creator chooses it, each part at random unless they do (asked 2026-11-19). *@
+                @foreach (TerrainAxisDto axis in this.Ruleset(catalog).TerrainAxes)
+                {
+                    <label class="terrain">
+                        @axis.Name
+                        <select class="terrain-axis" value="@this.TerrainPicked(axis)"
+                                @onchange="@(change => this.PickTerrain(axis, change.Value as string))">
+                            <option value="">At random</option>
+                            @foreach (TerrainOptionDto option in axis.Options)
+                            {
+                                <option value="@option.Value">@option.Name</option>
+                            }
+                        </select>
+                    </label>
+                }
+            }
             @if (mode == SetupMode.Custom && this.Ruleset(catalog).HasDice)
             {
                 <label class="dice-off"
@@ -661,6 +679,9 @@
     /// </summary>
     private bool _promotesAtSide;
 
+    /// <summary>Each axis of the terrain chosen, by its mask, as chosen; any other, dealt at random.</summary>
+    private ImmutableDictionary<int, int> _terrain = ImmutableDictionary<int, int>.Empty;
+
     /// <summary>
     /// For a game that rolls dice, whether it is played without them (the user's request of 2026-11-19; Proposed: off
     /// by default, and remembered as last set).
@@ -738,7 +759,28 @@
             IdleRounds = this._idleRounds,
             Opener = this._opener,
             Board = this.BoardAsked(catalog),
+            TerrainMask = this.TerrainAsked(catalog).Mask,
+            TerrainValue = this.TerrainAsked(catalog).Value,
         };
+
+    /// <summary>The terrain chosen, of what the game lets its creator choose: its bits, and how they are set.</summary>
+    private (int Mask, int Value) TerrainAsked(CatalogDto catalog) =>
+        this.Ruleset(catalog).TerrainAxes
+            .Where(axis => this._terrain.ContainsKey(axis.Mask))
+            .Aggregate(
+                (Mask: 0, Value: 0),
+                (chosen, axis) => (chosen.Mask | axis.Mask, chosen.Value | (this._terrain[axis.Mask] & axis.Mask))
+            );
+
+    /// <summary>The option of <paramref name="axis"/> chosen, as its select holds it; empty, for at random.</summary>
+    private string TerrainPicked(TerrainAxisDto axis) =>
+        this._terrain.TryGetValue(axis.Mask, out int picked) ? picked.ToString(CultureInfo.InvariantCulture) : "";
+
+    /// <summary><paramref name="axis"/> set to the option <paramref name="value"/> holds; at random, if none.</summary>
+    private void PickTerrain(TerrainAxisDto axis, string? value) =>
+        this._terrain = int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out int picked)
+            ? this._terrain.SetItem(axis.Mask, picked)
+            : this._terrain.Remove(axis.Mask);
 
     /// <summary>
     /// <paramref name="game"/> set up as the player last started it, if they have, and it still can be; else
@@ -807,6 +849,9 @@
         this._areDiceOff = setup.AreDiceOff && ruleset.HasDice;
         this._idleRounds = ruleset.IdleRounds is null ? null : setup.IdleRounds;
         this._opener = setup.Opener < ruleset.SeatCount ? setup.Opener : null;
+        this._terrain = ruleset.TerrainAxes
+            .Where(axis => (setup.TerrainMask & axis.Mask) == axis.Mask)
+            .ToImmutableDictionary(axis => axis.Mask, axis => setup.TerrainValue & axis.Mask);
     }
 
     /// <summary>The seats as <paramref name="setup"/> has them; a bot it chose that is no longer offered, any.</summary>
@@ -1394,6 +1439,7 @@
         this._areDiceOff = false;
         this._idleRounds = null;
         this._opener = null;
+        this._terrain = ImmutableDictionary<int, int>.Empty;
     }
 
     /// <summary>
@@ -1563,6 +1609,8 @@
             AreDiceOff = this._areDiceOff && this.Ruleset(catalog).HasDice,
             IdleRounds = this.Ruleset(catalog).IdleRounds is null || this._idleRounds is < 1 ? null : this._idleRounds,
             Opener = this._areDiceOff ? this._opener : null,
+            TerrainMask = this.TerrainAsked(catalog).Mask,
+            TerrainValue = this.TerrainAsked(catalog).Value,
         };
 
     /// <summary>How each seat set up by strength is played: the player's own, and a person's, by no bot.</summary>

@@ -168,6 +168,11 @@ only in part, what is left is in the backlog, and its history here. The playtest
 
 ## Look and feel
 
+- **Rivers as chosen** (asked 2026-11-19). *Done*: in a custom Grand Legions game the creator chooses the rivers
+  (none, ↕ or ↔ bisecting the board, or ✚ quartering it) and how they flow (through the kingdoms or around them),
+  each left "At random" unless chosen. The rulesets say what of the terrain may be chosen
+  (`IRulesApplying.TerrainAxes`), so the lobby draws one list per axis from that data; the choice is kept in the
+  game's first action, so a game replays, and is played again, on the same rivers; and the lobby remembers it.
 - **A turn that changes nothing is a pass** (2026-11-20: "It is effectively a pass and should be treated as a
   pass whenever a pass matters"). *Done*: the rules remember how each turn began (`GameState.TurnStart`); a turn
   ending with the board and the prisoners as it began counts toward the rounds of everyone passing, on from the

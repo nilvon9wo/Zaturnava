@@ -102,6 +102,34 @@ public sealed class DealtGameTest
         );
     }
 
+    [Theory]
+    [InlineData(0b111, 0, 0, 3)]
+    [InlineData(0b010, 0b000, 0b101, 0)]
+    public void Deal_WhenTheCreatorChoseSomeOfTheTerrain_DealsTheRestAndTheArmiesOnIt(
+        int mask,
+        int value,
+        int terrain,
+        int throneColumn
+    )
+    {
+        // Arrange - the seed alone would deal terrain 5 (0b101)
+        GameState initial = this._terrained.CreateInitialState();
+
+        // Act
+        GameState dealt = this._terrained.Deal(
+            initial,
+            4,
+            dealsTerrain: true,
+            terrain: new TerrainChoice(mask, value)
+        );
+
+        // Assert
+        Assert.Equal(
+            (terrain, Grid.CellAt(throneColumn, 0), 0),
+            (dealt.Terrain, this._terrained.ThronesOf(dealt)[Black], this._terrained.TerrainAxes.Count)
+        );
+    }
+
     [Fact]
     public void Deal_WhenAskedForTerrainTheVariantDoesNotDeal_DealsNoneAndTellsNoTerrainNorLines()
     {

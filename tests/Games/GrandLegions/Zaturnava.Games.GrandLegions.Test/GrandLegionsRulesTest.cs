@@ -1248,6 +1248,38 @@ public sealed class GrandLegionsRulesTest
         );
     }
 
+    [Fact]
+    public void Deal_WhenTheCreatorChoseTheRivers_DealsEveryGameOnThem()
+    {
+        // Arrange - rivers quartering the board, around the kingdoms (asked 2026-11-19)
+        Chaturaji2027Rules rules = GrandLegionsRules.RulesOf(QuickGame.Medium);
+        int mask = rules.TerrainAxes.Aggregate(0, (all, axis) => all | axis.Mask);
+        int quartered = rules.TerrainAxes[0].Options.Single(option => option.Name.Contains("Quarter")).Value;
+        int around = rules.TerrainAxes[1].Options.Single(option => option.Name.Contains("Around")).Value;
+
+        // Act
+        ImmutableList<int> terrains =
+        [
+            .. Enumerable.Range(0, 10).Select(seed =>
+                rules.Deal(
+                    rules.CreateInitialState(),
+                    seed,
+                    dealsTerrain: true,
+                    terrain: new TerrainChoice(mask, quartered | around)
+                ).Terrain
+            ),
+        ];
+
+        // Assert
+        Assert.All(
+            terrains,
+            terrain => Assert.Equal(
+                (Rivers.Both, RiverCourse.AroundKingdoms),
+                (QuickTerrain.RiversOf(terrain), QuickTerrain.CourseOf(terrain))
+            )
+        );
+    }
+
     /// <summary>Whether <paramref name="seat"/>'s throne and every piece of its a palace confines are in it.</summary>
     private static bool IsHeldIn(GameState state, SeatId seat, ImmutableList<CellId> palace) =>
         palace.Contains(state.Thrones![seat])

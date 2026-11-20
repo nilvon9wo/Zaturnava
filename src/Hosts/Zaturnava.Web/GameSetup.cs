@@ -21,6 +21,7 @@ internal sealed record GameSetup(string RulesetId, int Colour, ImmutableList<int
     private const string DiceOffKey = "dice-off";
     private const string IdleKey = "idle";
     private const string OpenerKey = "opener";
+    private const string TerrainKey = "terrain";
 
     /// <summary>How the armies come to be, as the lobby names its choices; the game's default, if none.</summary>
     public string? Armies { get; init; }
@@ -52,6 +53,12 @@ internal sealed record GameSetup(string RulesetId, int Colour, ImmutableList<int
     /// <summary>The board's size, for a game whose creator may set it; the game's own, if none.</summary>
     public BoardSizeDto? Board { get; init; }
 
+    /// <summary>The bits of the terrain chosen, for a game whose creator may choose it; 0, for all dealt.</summary>
+    public int TerrainMask { get; init; }
+
+    /// <summary>How the bits of <see cref="TerrainMask"/> were set.</summary>
+    public int TerrainValue { get; init; }
+
     /// <summary>
     /// As the browser keeps it: "chaturaji-2027;0;-1,1,1,1;,athena,,;armies=random-each,secret=1"; the last part, the
     /// other choices, only those made, and none at all in a setup kept before they were.
@@ -81,6 +88,9 @@ internal sealed record GameSetup(string RulesetId, int Colour, ImmutableList<int
             this.AreDiceOff ? $"{DiceOffKey}=1" : null,
             this.IdleRounds is { } idle ? $"{IdleKey}={idle.ToString(CultureInfo.InvariantCulture)}" : null,
             this.Opener is { } opener ? $"{OpenerKey}={opener.ToString(CultureInfo.InvariantCulture)}" : null,
+            this.TerrainMask is not 0
+                ? string.Create(CultureInfo.InvariantCulture, $"{TerrainKey}={this.TerrainMask}:{this.TerrainValue}")
+                : null,
             this.Board is { } board
                 ? $"{BoardKey}=" + string.Join(
                     'x',
@@ -122,8 +132,19 @@ internal sealed record GameSetup(string RulesetId, int Colour, ImmutableList<int
                     ? seat
                     : null,
                 Board = choices.TryGetValue(BoardKey, out string? board) ? BoardOf(board) : null,
+                TerrainMask = TerrainOf(choices).Mask,
+                TerrainValue = TerrainOf(choices).Value,
             }
             : null;
+    }
+
+    /// <summary>The terrain "6:4" keeps, its bits chosen and how they were set; else none chosen.</summary>
+    private static (int Mask, int Value) TerrainOf(ImmutableDictionary<string, string> choices)
+    {
+        ImmutableList<int?> bits = choices.TryGetValue(TerrainKey, out string? terrain)
+            ? [.. terrain.Split(':').Select(Number)]
+            : [];
+        return bits is [{ } mask, { } value] ? (mask, value) : (0, 0);
     }
 
     /// <summary>The board "12x10x4x4" keeps, its width, height, and kingdoms' width and depth; else none.</summary>
