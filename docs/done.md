@@ -168,6 +168,12 @@ only in part, what is left is in the backlog, and its history here. The playtest
 
 ## Look and feel
 
+- **Grand Legions out of preview** (2026-11-20: "if/as/when there is nothing left but UI enhancements, bot
+  enhancements, rating enhancements, and minor bug fixes ... we can take GL out of preview"). *Done*: every size
+  is listed as any game is; what is left of it (the backlog's sections 3 to 5) adds to it rather than completes it.
+- **Board, kingdoms and budget told** (2026-11-20). *Done*: the New game dialog shows a chosen size's board and
+  kingdoms, width and height, as it does a board set by hand; the games list, where games differ in size, gives
+  each its **Board** and **Kingdom** ("8x8") and its **Budget**, the points each army has to spend on its pieces.
 - **Leaderboard: People, and no gaps** (2026-11-20: "the term "Players" is misleading because bots are players";
   "some of the columns seem insanely wide"). *Done*: the people's board is called **People** (its names column
   **Person**; everyone's **Person or bot**); the board's columns stand as close as their figures allow, and its

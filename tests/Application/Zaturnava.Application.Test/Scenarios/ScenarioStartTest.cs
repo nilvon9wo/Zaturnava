@@ -297,6 +297,29 @@ public sealed class ScenarioStartTest
     }
 
     [Fact]
+    public void SpentOf_WhenTheArmiesWereDealtDraftedOrNeither_TellsWhatEachHadToSpend()
+    {
+        // Arrange - none set, so the tiny rules' own, which is none; one set for the deal; one for the draft
+        TinyRules rules = new(6, isDealt: true);
+        ImmutableList<ActionDescriptor> dealt = [ScenarioStart.Dealt(new LoadedDice(4))];
+        ImmutableList<ActionDescriptor> budgeted = [ScenarioStart.Dealt(new LoadedDice(4), budget: 90)];
+        ImmutableList<ActionDescriptor> drafted =
+            [ScenarioStart.Dealt(new LoadedDice(4), drafting: new DraftSettings(70))];
+
+        // Act
+        (int? Dealt, int? Budgeted, int? Drafted, int? Scenario, int? None) spent = (
+            ScenarioStart.SpentOf(dealt, rules),
+            ScenarioStart.SpentOf(budgeted, rules),
+            ScenarioStart.SpentOf(drafted, rules),
+            ScenarioStart.SpentOf([ScenarioStart.Describe(Tiny())], rules),
+            ScenarioStart.SpentOf([], rules)
+        );
+
+        // Assert
+        Assert.Equal(((int?)null, (int?)90, (int?)70, (int?)null, (int?)null), spent);
+    }
+
+    [Fact]
     public void TerrainOf_WhenTheGameWasDealtOnTerrainChosenOrNot_TellsWhatWasChosen()
     {
         // Arrange - a deal whose creator chose a bit of its terrain, one that chose none, and a game not dealt

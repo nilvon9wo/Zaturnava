@@ -113,7 +113,7 @@ internal static class GameRecordMapping
 
     private static SeatController ToController(SeatEntity seat) => SeatController.From(seat.Kind, seat.Detail);
 
-    private static ActionDescriptor ToDescriptor(ActionEntity action)
+    public static ActionDescriptor ToDescriptor(ActionEntity action)
     {
         ImmutableSortedDictionary<string, string> arguments =
             JsonSerializer.Deserialize<ImmutableSortedDictionary<string, string>>(action.Arguments)!;

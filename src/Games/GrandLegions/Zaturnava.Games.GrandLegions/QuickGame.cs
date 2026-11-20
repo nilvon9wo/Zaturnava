@@ -83,11 +83,6 @@ public sealed record QuickGame(
     public static ImmutableList<QuickGame> All { get; } = [Small, Medium, Large, Custom];
 
     /// <summary>
-    /// Whether the game is a preview (Stated: until its own pieces' symbols, thrones and Elephants are done).
-    /// </summary>
-    public const bool IsPreview = true;
-
-    /// <summary>
     /// The rivers across the board its armies are picked for: none, unless a game is dealt rivers
     /// (<see cref="QuickTerrain"/>).
     /// </summary>
@@ -128,8 +123,11 @@ public sealed record QuickGame(
     /// <summary>Whether its creator set the board's size (<see cref="CustomOf"/>).</summary>
     public bool IsSet { get; init; }
 
-    /// <summary>The game and its size, as the rules tell them.</summary>
-    public GameSize Game => new(GameId, GameName, this.Size, IsPreview);
+    /// <summary>
+    /// The game and its size, as the rules tell them: no longer a preview (the user's word of 2026-11-20: out of
+    /// preview once nothing is left but UI, bot and rating enhancements and minor fixes).
+    /// </summary>
+    public GameSize Game => new(GameId, GameName, this.Size);
 
     /// <summary>
     /// What a game of this size is called: "Grand Legions (small)"; "Grand Legions (12 × 10, kingdoms 4 × 3)", if its

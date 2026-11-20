@@ -238,6 +238,16 @@ public static class ScenarioStart
             )
             : null;
 
+    /// <summary>
+    /// What each army of the game the first of <paramref name="actions"/> dealt has to spend on its pieces, by
+    /// <paramref name="rules"/>: the draft's budget, or the deal's, as its creator set it, else the ruleset's at the
+    /// board's size; none, for a game not dealt, or begun from a scenario.
+    /// </summary>
+    public static int? SpentOf([Required] ImmutableList<ActionDescriptor> actions, [Required] IRulesApplying rules) =>
+        actions.FirstOrDefault() is { Kind: DealKind }
+            ? DraftingOf(actions)?.Budget ?? ArmyBudgetOf(actions) ?? RulesOf(actions, rules).DraftBudget
+            : null;
+
     /// <summary>What each army dealt by the first of <paramref name="actions"/> spends, if set.</summary>
     public static int? ArmyBudgetOf([Required] ImmutableList<ActionDescriptor> actions) =>
         actions.FirstOrDefault() is { Kind: DealKind } first

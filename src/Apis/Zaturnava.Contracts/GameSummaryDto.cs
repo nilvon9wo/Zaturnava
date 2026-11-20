@@ -59,4 +59,12 @@ public sealed record GameSummaryDto(
     /// Whether it is played without dice, as its creator chose (<see cref="CreateGameRequest.AreDiceOff"/>).
     /// </summary>
     public bool AreDiceOff { get; init; }
+
+    /// <summary>The board and its kingdoms, for a game played at several sizes; none, for one played at one.</summary>
+    public BoardSizeDto? Board { get; init; }
+
+    /// <summary>
+    /// What each army has to spend on its pieces, for a game whose armies are dealt or drafted; else none.
+    /// </summary>
+    public int? Budget { get; init; }
 }

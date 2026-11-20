@@ -10,7 +10,7 @@ that never loses still gets a finite rating, and anchored with random at 1000, s
 not move the others. They are written as JSON, by bot, for src/Bots/Zaturnava.Bots/Ratings/.
 With --bot-assembly, bots of one's own (the BotRunner's option of that name) may be among --bots.
 
-Usage: rate-bots.py RUNNER [--bots argus,midas,random,sage,solomon] [--games 50] [--max-steps 2000]
+Usage: rate-bots.py RUNNER [--bots argus,echo,...] [--games 50] [--max-steps 2000]
                            [--ruleset chaturaji-2027] [--out ratings.json] [--jobs N]
                            [--bot-assembly MyBots.dll]
 """
@@ -29,6 +29,8 @@ from concurrent.futures import ThreadPoolExecutor
 ANCHOR = "random"
 ANCHOR_RATING = 1000
 SCALE = 400 / math.log(10)
+# Every bot the BotRunner plays without a network of its own: the weak (D2: below 1200) as well as the strong.
+BOTS = ["argus", "echo", "epimetheus", "icarus", "midas", "narcissus", "random", "sage", "solomon"]
 
 
 def play(runner, ruleset, seats, games, max_steps):
@@ -102,7 +104,7 @@ def fit(bots, record):
 def main():
     parser = argparse.ArgumentParser(description="Rate the bots, by Elo, from games between each pair.")
     parser.add_argument("runner")
-    parser.add_argument("--bots", default="argus,midas,random,sage,solomon")
+    parser.add_argument("--bots", default=",".join(BOTS))
     parser.add_argument("--games", type=int, default=50)
     parser.add_argument("--max-steps", type=int, default=2000)
     parser.add_argument("--ruleset", default="chaturaji-2027")

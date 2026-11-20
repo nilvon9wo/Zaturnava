@@ -67,7 +67,8 @@ public sealed class EfGameStore(GameDbContext context) : IGamePersisting
                 game.Seats.ToList(),
                 game.Actions.Count,
                 game.Actions.Any(action => action.Sequence == 0 && action.Kind == ScenarioStart.Kind),
-                game.Actions.Any(action => action.Sequence == 0 && action.Arguments.Contains(DiceOff))
+                game.Actions.Any(action => action.Sequence == 0 && action.Arguments.Contains(DiceOff)),
+                game.Actions.FirstOrDefault(action => action.Sequence == 0 && action.Kind == ScenarioStart.DealKind)
             ))
             .ToListAsync(cancellationToken);
         return new GamePage(
@@ -77,6 +78,7 @@ public sealed class EfGameStore(GameDbContext context) : IGamePersisting
                     {
                         IsScenario = row.IsScenario,
                         AreDiceOff = row.AreDiceOff,
+                        Deal = row.Deal is { } deal ? GameRecordMapping.ToDescriptor(deal) : null,
                     }
                 ),
             ],
@@ -209,7 +211,8 @@ public sealed class EfGameStore(GameDbContext context) : IGamePersisting
         List<SeatEntity> Seats,
         int Moves,
         bool IsScenario,
-        bool AreDiceOff
+        bool AreDiceOff,
+        ActionEntity? Deal
     );
 
     /// <summary>A first action's arguments, as stored, saying the game is played without dice.</summary>

@@ -11,4 +11,12 @@ asked here instead (checked, every *Proposed* in the documents, on 2026-11-06).
 Anything to be built is in the [backlog](backlog.md) or the [roadmap](grand/roadmap.md), and anything left to
 playtesting is marked so where it is written.
 
-None is open now.
+## Ratings
+
+Asked 2026-11-20, of the [ratings design](ratings-design.md).
+
+1. Is the recommendation accepted in principle: TrueSkill with individuals only, per-format noise for dice and
+   army method, and C2027 and Grand Legions as separate pools? Nothing is built until it is.
+2. Should ratings be shown on the familiar Elo scale (1500 and so on), or on TrueSkill's own (25 ± 8.3)?
+3. When the switch is made, should every past game be rated again under the new system, or should the new system
+   start from today's ratings?

@@ -2127,6 +2127,75 @@ public sealed class LobbyTest : IDisposable
         );
     }
 
+    [Fact]
+    public void Render_WhenTheGamesListedDifferInSize_TellsEachBoardKingdomsAndBudget()
+    {
+        // Arrange - a larger game on a 12 by 10 board, its kingdoms 4 by 3, each army spending 150; the other told
+        // nothing of them (the user, 2026-11-20)
+        this._page.Server.MoreRulesets =
+        [
+            new RulesetDto("chaturaji-2027-large", "Chaturaji 2027 (large)", 4)
+            {
+                Game = "chaturaji-2027",
+                GameName = "Chaturaji 2027",
+                Size = "large",
+            },
+        ];
+        GameSummaryDto game = this._page.Server.Games[0];
+        this._page.Server.Games =
+        [
+            game,
+            game with
+            {
+                Id = "other",
+                RulesetId = "chaturaji-2027-large",
+                Board = new BoardSizeDto(12, 10, 4, 3),
+                Budget = 150,
+            },
+        ];
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.Render();
+
+        // Assert
+        Assert.Equal(
+            ("|12x10", "|4x3", "|150"),
+            (
+                string.Join('|', lobby.FindAll(".games-table td.board").Select(cell => cell.TextContent)),
+                string.Join('|', lobby.FindAll(".games-table td.kingdom").Select(cell => cell.TextContent)),
+                string.Join('|', lobby.FindAll(".games-table td.budget").Select(cell => cell.TextContent))
+            )
+        );
+    }
+
+    [Fact]
+    public void Render_WhenASizeOfFixedBoardIsChosen_TellsItsBoardAndKingdoms()
+    {
+        // Arrange - the game at two sizes, the larger on a 12 by 12 board, its kingdoms 4 by 4 (the user, 2026-11-20)
+        this._page.Server.MoreRulesets =
+        [
+            new RulesetDto("chaturaji-2027-large", "Chaturaji 2027 (large)", 4)
+            {
+                Game = "chaturaji-2027",
+                GameName = "Chaturaji 2027",
+                Size = "large",
+                SeatNames = ["Black", "Yellow", "Green", "Red"],
+                SeatTeams = [0, 1, 0, 1],
+                Board = new BoardSizeDto(12, 12, 4, 4),
+            },
+        ];
+        IRenderedComponent<Lobby> lobby = this.ByStrength();
+
+        // Act
+        lobby.Find("select.size").Change("chaturaji-2027-large");
+
+        // Assert
+        Assert.Equal(
+            "12 12 4 4",
+            string.Join(' ', lobby.FindAll("table.board-size.fixed tbody td").Select(cell => cell.TextContent.Trim()))
+        );
+    }
+
     [Theory]
     [InlineData(false, "Ada away|Yellow away")]
     [InlineData(true, "Ada|Yellow")]

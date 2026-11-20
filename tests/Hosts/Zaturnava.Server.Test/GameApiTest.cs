@@ -56,9 +56,9 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
 
         // Assert
         Assert.Equal(
-            "chaturaji-2027/Chaturaji 2027//False,grand-legions/Grand Legions/small/True/6x6x3x3,"
-            + "grand-legions/Grand Legions/medium/True/8x8x4x2,grand-legions/Grand Legions/large/True/12x12x6x3,"
-            + "grand-legions/Grand Legions/custom/True/10x10x4x3/10x10x4x3",
+            "chaturaji-2027/Chaturaji 2027//False,grand-legions/Grand Legions/small/False/6x6x3x3,"
+            + "grand-legions/Grand Legions/medium/False/8x8x4x2,grand-legions/Grand Legions/large/False/12x12x6x3,"
+            + "grand-legions/Grand Legions/custom/False/10x10x4x3/10x10x4x3",
             string.Join(
                 ",",
                 catalog.Rulesets.Select(offered =>
@@ -113,8 +113,8 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
     }
 
     [Theory]
-    [InlineData(false, true, false)]
-    [InlineData(true, false, true)]
+    [InlineData(false, true, true)]
+    [InlineData(true, false, false)]
     [InlineData(null, true, true)]
     public async Task List_WhenAskedForPreviewsOrNot_ListsOnlyThoseOrOnlyOthersOrBoth(
         bool? preview,
@@ -122,7 +122,7 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
         bool listsGrand
     )
     {
-        // Arrange
+        // Arrange - neither game a preview, Grand Legions no longer (the user's word of 2026-11-20)
         string chaturaji = await this.CreateGame();
         GameCreatedDto grand = await this._client.Create(
             new CreateGameRequest("grand-legions-small", [null, "random", "random", "random"]),

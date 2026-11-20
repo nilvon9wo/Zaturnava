@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.ComponentModel.DataAnnotations;
 using Net.NowhereAtAll.Zaturnava.Application.Scenarios;
+using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 
 namespace Net.NowhereAtAll.Zaturnava.Application.Games;
@@ -35,6 +36,12 @@ public sealed record GameListing(
     /// <summary>Whether the game is played without dice, as its creator chose.</summary>
     public bool AreDiceOff { get; init; }
 
+    /// <summary>
+    /// The deal the game began with (<see cref="ScenarioStart.DealKind"/>), which tells its board's size and its
+    /// armies' budget; none, for a game not dealt.
+    /// </summary>
+    public ActionDescriptor? Deal { get; init; }
+
     /// <summary>The game as a lobby lists it, from the game as stored.</summary>
     public static GameListing Of([Required] GameRecord game) =>
         new(game.Id, game.RulesetId, game.Version, game.Controllers, game.Actions.Count, game.IsOver ?? false)
@@ -45,5 +52,6 @@ public sealed record GameListing(
             Deciding = game.Deciding,
             IsScenario = ScenarioStart.IsScenario(game.Actions),
             AreDiceOff = ScenarioStart.AreDiceOff(game.Actions),
+            Deal = game.Actions.Take(1).FirstOrDefault(action => action.Kind == ScenarioStart.DealKind),
         };
 }
