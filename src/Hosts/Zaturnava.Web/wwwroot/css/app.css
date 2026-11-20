@@ -525,8 +525,9 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
 .leaderboard .leaderboard-choices { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 8px 0; }
 .leaderboard .choice { display: inline-flex; gap: 8px; align-items: center; white-space: nowrap; }
 .leaderboard .leaders th.kind, .leaderboard .leaders td.kind { text-align: center; }
-/* A bot playing by an AI: the robot of every bot, tinted teal, so that it stays one of them (2026-11-20). */
-.leaderboard .leaders td.kind .ai { filter: sepia(1) saturate(5) hue-rotate(130deg); }
+/* A bot playing by a plain algorithm: the robot of every bot, tinted teal, so that it stays one of them; a bot by an
+   AI keeps the robot as drawn, as an AI's own seat does elsewhere (the user's word of 2026-11-20). */
+.leaderboard .leaders td.kind .mechanical { filter: sepia(1) saturate(5) hue-rotate(130deg); }
 /* The mean Elo a streak beat, under its count rather than beside it, keeping its column narrow. */
 .leaderboard .against { display: block; color: var(--muted); font-size: 0.85em; white-space: nowrap; }
 .leaderboard .leaders { border-collapse: collapse; }

@@ -80,7 +80,7 @@
                             {
                                 <td class="kind">
                                     <span role="img"
-                                          class="@(row.BotId is not null && row.UsesAi ? "ai" : null)"
+                                          class="@(row.BotId is not null && !row.UsesAi ? "mechanical" : null)"
                                           aria-label="@KindOf(row)"
                                           title="@KindOf(row)">@IconOf(row)</span>
                                 </td>
@@ -367,8 +367,9 @@
         };
 
     /// <summary>
-    /// A row's kind as an icon: 🧑 a person, 🤖 a bot; a bot by an AI the same robot, tinted apart by its class (the
-    /// user's report of 2026-11-20: a brain was a blob, unlike the other icons).
+    /// A row's kind as an icon: 🧑 a person, 🤖 a bot; a bot by an AI the robot as drawn, as Claude's own is
+    /// elsewhere, and a plain algorithm the same robot tinted apart by its class (the user's report of 2026-11-20: a
+    /// brain was a blob, unlike the other icons; then, the untinted robot better the AI's).
     /// </summary>
     private static string IconOf(Row row) => row.BotId is null ? "🧑" : "🤖";
 
