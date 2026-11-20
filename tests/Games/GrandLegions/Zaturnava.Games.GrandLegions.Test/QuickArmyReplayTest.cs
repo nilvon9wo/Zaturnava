@@ -10,7 +10,8 @@ namespace Net.NowhereAtAll.Zaturnava.Games.GrandLegions.Test;
 /// without, kept as a digest of every piece placed, as they were dealt before the armies could hold the pieces a
 /// palace holds. Should a change to the dealing alter any, a game in progress would replay otherwise. Changed in
 /// place, for every game, 2026-11-20: the throne, as the program deals it, is never on the kingdom's front rank or
-/// inner side.
+/// inner side; and the same day, the Shogi Knight added to the catalogue, which a fill on the medium and large boards
+/// may now buy.
 /// </summary>
 public sealed class QuickArmyReplayTest
 {
@@ -74,8 +75,8 @@ public sealed class QuickArmyReplayTest
         new()
         {
             { "grand-legions-small", "5EDA3580F2EE23D7" },
-            { "grand-legions-medium", "031F7380E9668D1E" },
-            { "grand-legions-large", "44A4B9281A05C783" },
+            { "grand-legions-medium", "B66EA92341908CE9" },
+            { "grand-legions-large", "7F64A7FF3158613C" },
         };
 
     private static ImmutableList<ArmyFill> FillsOf(

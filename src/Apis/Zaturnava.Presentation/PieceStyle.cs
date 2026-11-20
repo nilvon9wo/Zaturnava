@@ -72,7 +72,8 @@ public static partial class PieceStyle
     /// piece with more to it has here what it adds (<see cref="SymbolGlyphs"/>): a Dragon its wings; the Amazon and
     /// Chancellor a small horseshoe, as they leap as a Knight does too, and the Manchu Chariot a small cannon
     /// besides, as it also takes as a Cannon does; and the Knight's kin the mark of how they differ: the Knightrider
-    /// speed lines, as it rides on, the Zebra stripes, and the Xiangqi Horse a block, as its leap may be blocked.
+    /// speed lines, as it rides on, the Zebra stripes, the Xiangqi Horse a block, as its leap may be blocked, and the
+    /// Shogi Knight an arrow pointing ahead, as it leaps only forward.
     /// </summary>
     private static readonly ImmutableDictionary<string, string> Symbols =
         ImmutableDictionary<string, string>.Empty
@@ -99,6 +100,7 @@ public static partial class PieceStyle
                     + "M-0.41 -0.2H-0.36L-0.4 0.02H-0.45Z"
             )
             .Add("xiangqi-horse", "M-0.44 -0.06H-0.28V0.1H-0.44Z")
+            .Add("shogi-knight", "M-0.36 -0.22L-0.26 -0.08H-0.33V0.14H-0.39V-0.08H-0.46Z")
             .Add("shield", "M-0.24 -0.28H0.24V0Q0.24 0.18 0 0.3Q-0.24 0.18 -0.24 0Z")
             .Add("fan", "M0 0.2L-0.28 -0.08A0.3 0.3 0 0 1 0.28 -0.08Z" + "M-0.03 0.18H0.03V0.3H-0.03Z")
             .Add(
@@ -247,7 +249,8 @@ public static partial class PieceStyle
             .Add("manchu-chariot", "♜")
             .Add("knightrider", "♞")
             .Add("zebra", "♞")
-            .Add("xiangqi-horse", "♞");
+            .Add("xiangqi-horse", "♞")
+            .Add("shogi-knight", "♞");
 
     private static readonly ImmutableDictionary<string, string> ChaturajiSymbols =
         ImmutableDictionary<string, string>.Empty.Add("pawn", "\u265F");

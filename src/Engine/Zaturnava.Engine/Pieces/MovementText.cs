@@ -46,6 +46,8 @@ public static class MovementText
         (rule.Directions == DirectionSets.Knight, LeaperOf(rule.Directions)) switch
         {
             (true, _) => "Leaps as a Knight: two cells one way and one square to it",
+            _ when rule.Directions == DirectionSets.ForwardKnight =>
+                "Leaps as a Knight, but only forward: two cells straight forward and one to either side",
             (_, ({ } first, 0)) => $"Leaps exactly {first} cells orthogonally",
             (_, ({ } first, { } second)) when first == second => $"Leaps exactly {first} cells diagonally",
             (_, ({ } first, { } second)) => $"Leaps {first} cells one way and {second} square to it",

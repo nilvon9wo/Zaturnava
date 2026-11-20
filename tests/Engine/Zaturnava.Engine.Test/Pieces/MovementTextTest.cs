@@ -21,6 +21,7 @@ public sealed class MovementTextTest
             .Add("one-or-two-forward", new MovementRule(DirectionSets.Forward, 1, 2, false, true, false))
             .Add("leap-knight", MovementRule.Leap(DirectionSets.Knight, 1))
             .Add("leap-knight-lame", MovementRule.Leap(DirectionSets.Knight, 1).Lame())
+            .Add("leap-forward-knight", MovementRule.Leap(DirectionSets.ForwardKnight, 1))
             .Add("leaper-3-2", MovementRule.Leap(DirectionSets.Leaper(3, 2), 1))
             .Add("leaper-2-2", MovementRule.Leap(DirectionSets.Leaper(2, 2), 1))
             .Add("leaper-3-0", MovementRule.Leap(DirectionSets.Leaper(3, 0), 1))
@@ -44,6 +45,10 @@ public sealed class MovementTextTest
     [InlineData(
         "leap-knight-lame",
         "Leaps as a Knight: two cells one way and one square to it, unless a piece blocks the way"
+    )]
+    [InlineData(
+        "leap-forward-knight",
+        "Leaps as a Knight, but only forward: two cells straight forward and one to either side, over anything between"
     )]
     [InlineData("leaper-3-2", "Leaps 3 cells one way and 2 square to it, over anything between")]
     [InlineData("leaper-2-2", "Leaps exactly 2 cells diagonally, over anything between")]

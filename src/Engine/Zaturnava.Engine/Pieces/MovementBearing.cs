@@ -6,8 +6,9 @@ namespace Net.NowhereAtAll.Zaturnava.Engine.Pieces;
 
 /// <summary>
 /// Which way a piece goes, at a glance, for people sorting pieces (Proposed): by the lines it steps, slides or hops
-/// along, its leaps aside. Only forward (a Pawn, a Lance); only orthogonally (a Rook); only diagonally (a Bishop);
-/// every way (a Queen, a King); else, as a piece with only leaps, or lines of both sorts but not all, other.
+/// along, its leaps aside, but the forward ones. Only forward (a Pawn, a Lance, the Shogi Knight); only orthogonally
+/// (a Rook); only diagonally (a Bishop); every way (a Queen, a King); else, as a piece with only leaps, or lines of
+/// both sorts but not all, other.
 /// </summary>
 public static class MovementBearing
 {
@@ -21,7 +22,7 @@ public static class MovementBearing
     public static ImmutableList<string> All { get; } = [Forward, Orthogonal, Diagonal, EveryWay, Other];
 
     private static readonly ImmutableHashSet<DirectionSet> Ahead =
-        [DirectionSets.Forward, DirectionSets.ForwardDiagonals];
+        [DirectionSets.Forward, DirectionSets.ForwardDiagonals, DirectionSets.ForwardKnight];
 
     public static string Of([Required] IEnumerable<MovementRule> movement)
     {
