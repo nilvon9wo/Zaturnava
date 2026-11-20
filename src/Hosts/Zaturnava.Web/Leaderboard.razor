@@ -21,7 +21,8 @@
     <label class="choice">
         <span class="choice-name">Board</span>
         <select class="leaderboard-board" value="@this._board" @onchange="this.ChooseBoard">
-            <option value="@PlayersBoard">Players</option>
+            @* People, not players: a bot plays too (the user's word of 2026-11-20). *@
+            <option value="@PlayersBoard">People</option>
             <option value="@BotsBoard">Bots</option>
             <option value="@EveryoneBoard">Everyone</option>
         </select>
@@ -129,9 +130,9 @@
 
     private static readonly Board Players = new(
         string.Empty,
-        "Player",
+        "Person",
         "No one signed in has finished a game of it yet.",
-        "Each game finished counts for the players signed in at it, but not for a seat their own AI played. Everyone "
+        "Each game finished counts for the people signed in at it, but not for a seat their own AI played. Everyone "
             + "starts at Elo 1500, and gains or loses by how their team did against what the teams' ratings led to "
             + "expect, a bot's team by the bot's own rating. Each win earns as experience your own points, and as "
             + "much again times your share of your team's: carrying a weak ally earns more than being carried by a "
@@ -176,9 +177,9 @@
 
     private static readonly Board Everyone = new(
         "everyone",
-        "Player or bot",
+        "Person or bot",
         "No one has finished a game of it yet.",
-        "Players signed in and the server's bots together. A player's Elo comes from the games "
+        "People signed in and the server's bots together. A person's Elo comes from the games "
             + "they finished; a bot's, from its games against the other bots. Points are the points each scored "
             + "itself, in every game finished, won or lost.",
         [

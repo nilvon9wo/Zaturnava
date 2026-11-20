@@ -315,10 +315,10 @@ html { scrollbar-gutter: stable; }
 
 .panel h2 { margin-top: 0; }
 
-/* The games, the leaderboard to their right: those waiting for the player above the rest (playtest H1). The two
-   share the room evenly, half each (the user's reports of 2026-11-19: first the leaderboard was squeezed, its
-   player's name broken over three lines; then, given two shares, it crowded the games: "Aim for 50/50"); a board too
-   wide for its half scrolls within it. */
+/* The games, the leaderboard to their right: those waiting for the player above the rest (playtest H1). The
+   leaderboard takes what its board needs, up to half (the user's reports of 2026-11-19: first it was squeezed, its
+   player's name broken over three lines; then, given two shares, it crowded the games: "Aim for 50/50"; and of
+   2026-11-20: at half, its columns stood inches apart); the games take the rest. */
 .games-column {
     flex: 1 1 560px;
     min-width: 0;
@@ -472,12 +472,15 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
 }
 .quick-games { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; }
 .quick-hint { color: var(--muted); font-size: 0.9em; }
-/* A panel of the lobby: its widest board (the bots', eight columns) scrolls within it rather than widening the page. */
-.panel.leaderboard { overflow-x: auto; flex: 1 1 560px; }
-/* In a window or frame too narrow for the games and the leaderboard side by side, at half each (itch.io's frame, a
-   tablet), each takes the whole width, the leaderboard below (the user's report of 2026-11-19). */
+/* A panel of the lobby, as wide as its board and no wider, up to half the room: the games take the rest, rather than
+   the board's columns standing inches apart (the user's report of 2026-11-20). A board wider than its half scrolls
+   within it rather than widening the page. */
+.panel.leaderboard { overflow-x: auto; flex: 0 1 auto; width: min-content; min-width: 320px; max-width: 50%; }
+/* In a window or frame too narrow for the games and the leaderboard side by side (itch.io's frame, a tablet), each
+   takes the whole width, the leaderboard below (the user's report of 2026-11-19). */
 @media (max-width: 1150px) {
     .games-column, .panel.leaderboard { flex-basis: 100%; }
+    .panel.leaderboard { width: auto; max-width: none; }
 }
 /* In a short window or frame, New game floats from near the top, using all the height there is. */
 @media (max-height: 720px) {
@@ -497,7 +500,7 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
 /* A bot playing by an AI: the robot of every bot, tinted teal, so that it stays one of them (2026-11-20). */
 .leaderboard .leaders td.kind .ai { filter: sepia(1) saturate(5) hue-rotate(130deg); }
 .leaderboard .against { color: var(--muted); font-size: 0.85em; margin-left: 4px; white-space: nowrap; }
-.leaderboard .leaders { border-collapse: collapse; width: 100%; }
+.leaderboard .leaders { border-collapse: collapse; }
 .leaderboard .leaders th, .leaderboard .leaders td {
     text-align: right; padding: 4px 8px; border-bottom: 1px solid var(--panel-edge);
 }

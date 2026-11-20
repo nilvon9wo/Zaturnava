@@ -355,23 +355,26 @@
                     Promote at right edge
                 </label>
             }
-            @if (mode == SetupMode.Custom)
+            @if (mode == SetupMode.Custom && !this.Ruleset(catalog).TerrainAxes.IsEmpty)
             {
-                @* The terrain as its creator chooses it, each part at random unless they do (asked 2026-11-19). *@
-                @foreach (TerrainAxisDto axis in this.Ruleset(catalog).TerrainAxes)
-                {
-                    <label class="terrain">
-                        @axis.Name
-                        <select class="terrain-axis" value="@this.TerrainPicked(axis)"
-                                @onchange="@(change => this.PickTerrain(axis, change.Value as string))">
-                            <option value="">At random</option>
-                            @foreach (TerrainOptionDto option in axis.Options)
-                            {
-                                <option value="@option.Value">@option.Name</option>
-                            }
-                        </select>
-                    </label>
-                }
+                @* The terrain as its creator chooses it, each part at random unless they do (asked 2026-11-19); in
+                   the armies' grid, each name beside its list. *@
+                <div class="army-choices terrain-choices">
+                    @foreach (TerrainAxisDto axis in this.Ruleset(catalog).TerrainAxes)
+                    {
+                        <label class="terrain">
+                            <span class="choice-name">@axis.Name</span>
+                            <select class="terrain-axis" value="@this.TerrainPicked(axis)"
+                                    @onchange="@(change => this.PickTerrain(axis, change.Value as string))">
+                                <option value="">At random</option>
+                                @foreach (TerrainOptionDto option in axis.Options)
+                                {
+                                    <option value="@option.Value">@option.Name</option>
+                                }
+                            </select>
+                        </label>
+                    }
+                </div>
             }
             @if (mode == SetupMode.Custom && this.Ruleset(catalog).HasDice)
             {

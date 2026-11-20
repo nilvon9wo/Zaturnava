@@ -168,6 +168,12 @@ only in part, what is left is in the backlog, and its history here. The playtest
 
 ## Look and feel
 
+- **Leaderboard: People, and no gaps** (2026-11-20: "the term "Players" is misleading because bots are players";
+  "some of the columns seem insanely wide"). *Done*: the people's board is called **People** (its names column
+  **Person**; everyone's **Person or bot**); the board's columns stand as close as their figures allow, and its
+  panel is as wide as its board and no wider, up to half the lobby, the games taking the rest. Each board keeps
+  its own columns: a bot has no experience or abandoned games, a person no games "against people" apart.
+- The New game dialog's river choices sit in the armies' grid, each name beside its list.
 - **Restriction or weakness** (asked 2026-11-19). *Done*: a piece's card lists its **Restrictions**, which the
   game's rules impose and a lift may remove (its palace, a river, a path that must be clear), apart from its
   **Weaknesses**, its own move's limits, which nothing lifts (one colour of square, one cell in nine)
