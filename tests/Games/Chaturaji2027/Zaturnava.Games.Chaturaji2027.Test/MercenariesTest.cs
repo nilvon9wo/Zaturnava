@@ -51,7 +51,7 @@ public sealed class MercenariesTest
     [InlineData("in a game dealt before mercenaries", false)]
     [InlineData("short of points", false)]
     [InlineData("held by another", false)]
-    [InlineData("a leader", false)]
+    [InlineData("a leader", true)]
     [InlineData("a piece that started as no mercenary", false)]
     [InlineData("hired before, for 4", true)]
     [InlineData("hired before, for 4, with 4 points", false)]
@@ -236,7 +236,7 @@ public sealed class MercenariesTest
     }
 
     [Fact]
-    public void GuideOf_WhenTheKindIsAMercenaryButNotALeader_TellsSo()
+    public void GuideOf_WhenTheKindIsAMercenaryLeaderOrNot_TellsSo()
     {
         // Arrange - nothing beyond the rules
 
@@ -244,9 +244,10 @@ public sealed class MercenariesTest
         PieceGuide horse = this._rules.GuideOf(Chaturaji2027Pieces.Horse);
         PieceGuide raja = this._rules.GuideOf(Chaturaji2027Pieces.Raja);
 
-        // Assert - a mercenary is what it is, not a power (the user's word of 2026-11-19)
+        // Assert - a mercenary is what it is, not a power (the user's word of 2026-11-19); a leader too, as every
+        // Shogi piece is (Stated 2026-11-19)
         Assert.Equal(
-            (true, false, true),
+            (true, true, true),
             (horse.IsMercenary, raja.IsMercenary, horse.SpecialPowers.IsEmpty)
         );
     }

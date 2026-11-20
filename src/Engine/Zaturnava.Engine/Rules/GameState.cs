@@ -126,6 +126,12 @@ public sealed record GameState(
     /// <summary>How many turns in a row have been passed without moving, whether the dice were rolled or not.</summary>
     public int IdlePasses { get; init; }
 
+    /// <summary>
+    /// How the turn under way began, so that one ending as it began counts as a pass (the user's word of 2026-11-20:
+    /// moving a piece there and back is "effectively a pass"); none, before any action.
+    /// </summary>
+    public TurnStart? TurnStart { get; init; }
+
     /// <summary>How many turns have passed since a piece was last taken.</summary>
     public int TurnsSinceCapture { get; init; }
 

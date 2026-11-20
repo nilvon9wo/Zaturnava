@@ -168,6 +168,14 @@ only in part, what is left is in the backlog, and its history here. The playtest
 
 ## Look and feel
 
+- **A turn that changes nothing is a pass** (2026-11-20: "It is effectively a pass and should be treated as a
+  pass whenever a pass matters"). *Done*: the rules remember how each turn began (`GameState.TurnStart`); a turn
+  ending with the board and the prisoners as it began counts toward the rounds of everyone passing, on from the
+  passes before it, whatever dice it used. In place, for every game.
+- **Shogi leaders are mercenaries too** (asked 2026-11-19). *Done*: every Shogi piece, the leaders an army starts
+  with included (a Gold General, say), is a mercenary: it bears the gold coin, and whoever holds it prisoner may
+  hire it. The rule changed in place, for every game.
+
 - **A mercenary marked on the board** (asked 2026-11-20). *Done*: the rules say of each piece whether it is a
   mercenary (`IRulesApplying.IsMercenary`), by its kind or as what a mercenary was promoted into (a Shogi Pawn
   become a Western Rook); the page is told so of each piece (`PieceDto.IsMercenary`), draws a gold coin on its

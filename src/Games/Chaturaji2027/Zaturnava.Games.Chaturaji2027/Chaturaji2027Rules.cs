@@ -200,7 +200,6 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         this._mercenaries = new Mercenaries(
             this._grid,
             this._variant.Mercenaries,
-            this._variant.Leaders,
             this._variant.PointsIn,
             this._variant.InitialPosition(this._grid),
             this._control
@@ -418,8 +417,12 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     /// <summary>The draft, while the game's armies are being drafted.</summary>
     private ArmyDrafting? DraftingOf(GameState state) => state.Draft is null ? null : this._drafting;
 
-    private Transition Played(GameState state, GameAction action, bool isKnownLegal) =>
-        this._command.Told(
+    private Transition Played(GameState given, GameAction action, bool isKnownLegal)
+    {
+        GameState state = given.TurnStart?.TurnNumber == given.TurnNumber
+            ? given
+            : given with { TurnStart = new TurnStart(given.TurnNumber, GameEnd.KeyOf(given), given.IdlePasses) };
+        return this._command.Told(
             state,
             this._everyPiece.Scored(
                 this.Unstalled(
@@ -437,6 +440,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
                 )
             )
         );
+    }
 
     /// <summary>The action itself, before the counts and endings that follow any action.</summary>
     private Transition Acted(GameState state, GameAction action, bool isKnownLegal) =>
@@ -609,7 +613,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         {
             Powers = [.. this.PowersOf(kind), .. told.Powers],
             SpecialPowers = [.. this.SpecialPowersOf(kind), .. told.SpecialPowers],
-            IsMercenary = this._variant.Mercenaries.Contains(kind) && !this._variant.Leaders.Contains(kind),
+            IsMercenary = this._variant.Mercenaries.Contains(kind),
             Drawbacks = this._variant.Custodians.Contains(kind)
                 ?
                 [
@@ -1617,12 +1621,24 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             : transition;
 
     /// <summary>
-    /// The turn passes: idly, if no die rolled was used, as a roll and then a pass is a pass (rules.md §10).
+    /// The turn passes: idly, if no die rolled was used, as a roll and then a pass is a pass (rules.md §10); or if it
+    /// leaves the board and the prisoners as it found them, a piece moved there and back being "effectively a pass"
+    /// (the user's word of 2026-11-20), counted on from the passes before it.
     /// </summary>
-    private Transition PassTurn(Transition transition, bool mayHaveOffered = false) =>
-        transition.State.Dice.Count == TurnDice
-            ? this.IdlePass(transition, mayHaveOffered)
-            : this.Ending(transition with { State = transition.State with { IdlePasses = 0 } }, mayHaveOffered);
+    private Transition PassTurn(Transition transition, bool mayHaveOffered = false)
+    {
+        GameState state = transition.State;
+        TurnStart start = state.TurnStart!; // every action is played from a turn's start
+        return (state.Dice.Count == TurnDice, GameEnd.KeyOf(state) == start.Key) switch
+        {
+            (true, _) => this.IdlePass(transition, mayHaveOffered),
+            (_, true) => this.IdlePass(
+                transition with { State = state with { IdlePasses = start.IdlePasses } },
+                mayHaveOffered
+            ),
+            _ => this.Ending(transition with { State = state with { IdlePasses = 0 } }, mayHaveOffered),
+        };
+    }
 
     /// <summary>
     /// The turn is over. A seat holding prisoners may still offer ransoms (rules.md §8) before it

@@ -368,8 +368,8 @@ commanding every piece, a ransom's point for each prisoner, 2 for a Raja) were r
 
 ### 6.5 Mercenaries
 
-- **Stated (2026-11-13).** Every Shogi piece is a mercenary, except the leaders the armies start
-  with. A player who holds a mercenary prisoner may, on their turn, spend points to hire it: it
+- **Stated (2026-11-13, and 2026-11-19 for leaders).** Every Shogi piece is a mercenary, its leaders
+  too. A player who holds a mercenary prisoner may, on their turn, spend points to hire it: it
   becomes their own piece. Then, on a later step, they place it on a free square of their own
   palace.
 - **Stated.** Hiring costs 110% of what the piece cost last: the first time, 110% of its value (a

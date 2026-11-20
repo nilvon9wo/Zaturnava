@@ -178,7 +178,7 @@ public sealed record Chaturaji2027Variant(
     public ImmutableHashSet<PieceKindId> Fleers { get; init; } = [];
 
     /// <summary>
-    /// The kinds whose pieces, but leaders, start as mercenaries (the Shogi pieces): none, unless set
+    /// The kinds whose pieces, leaders too, start as mercenaries (the Shogi pieces): none, unless set
     /// (<see cref="Mercenaries"/>).
     /// </summary>
     public ImmutableHashSet<PieceKindId> Mercenaries { get; init; } = [];

@@ -178,7 +178,7 @@ internal static class GameEnd
     /// The position, its prisoners and the seat to play, as a key: two hashes of the pieces where they stand, each
     /// alike whatever order they are listed in.
     /// </summary>
-    private static long KeyOf(GameState state)
+    public static long KeyOf(GameState state)
     {
         int prisoners = state.Prisoners.Aggregate(0, (key, prisoner) => key ^ prisoner.GetHashCode());
         int high = state.Position.Occupants.Aggregate(
