@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.ComponentModel.DataAnnotations;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Decisions;
@@ -9,7 +10,9 @@ namespace Net.NowhereAtAll.Zaturnava.Bots;
 /// between Elo 800 and 1200, their details mine; Proposed): at each decision it plays as Midas would some of the time,
 /// and as Random would the rest, its share of Midas its strength. Echo, which only now and then repeats what a
 /// stronger player would do, plays as Midas one decision in four; Icarus, who flew well until he did not, one in two.
-/// The bot-rating job rates each, so the picker shows how strong it turns out.
+/// The bot-rating job rates each, so the picker shows how strong it turns out. Measured at 1430 and 1475, beating
+/// Random nearly every game (2026-11-20), they are not the bots below 1200 the specification's D2 asks for; so three
+/// more play as Midas still more seldom (<see cref="Faint"/>), kept apart from Echo and Icarus, whose games are kept.
 /// </summary>
 public sealed class NoviceBot : IBotPlaying
 {
@@ -67,6 +70,35 @@ public sealed class NoviceBot : IBotPlaying
             IcarusShare,
             random
         );
+
+    /// <summary>
+    /// The bots for the very first games (D2: below 1200, a real progression; Proposed, 2026-11-20, their shares to be
+    /// tuned by what the tournaments measure): Morpheus, half asleep, plays as Midas one decision in fifty; Phaethon,
+    /// who could not hold the reins, one in twenty; Tantalus, whose prize was ever just out of reach, one in ten.
+    /// </summary>
+    public static ImmutableList<NoviceBot> Faint([Required] Random random) =>
+    [
+        .. FaintBots.Select(bot =>
+            new NoviceBot(
+                new BotProfile(
+                    bot.Id,
+                    bot.Name,
+                    $"For your very first games: plays at random, but one turn in {Whole / bot.Share} grabs whatever "
+                        + "scores the most right now, as Midas does. A plain algorithm: no AI.",
+                    UsesAi: false
+                ),
+                bot.Share,
+                random
+            )
+        ),
+    ];
+
+    private static ImmutableList<(string Id, string Name, int Share)> FaintBots { get; } =
+    [
+        ("morpheus", "Morpheus", 2),
+        ("phaethon", "Phaethon", 5),
+        ("tantalus", "Tantalus", 10),
+    ];
 
     public Task<GameAction?> Seize([Required] DecisionRequest request, CancellationToken cancellationToken) =>
         this.Now().Seize(request, cancellationToken);

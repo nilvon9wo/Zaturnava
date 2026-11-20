@@ -9,6 +9,9 @@ namespace Net.NowhereAtAll.Zaturnava.Bots.Test;
 public sealed class NoviceBotTest
 {
     private const int Tries = 400;
+
+    /// <summary>Enough turns that shares a few in a hundred apart show apart.</summary>
+    private const int FaintTries = 20000;
     private static readonly SeatId Seat = ScoringRules.Seat;
     private static readonly GameAction Small = Move(1);
     private static readonly GameAction Big = Move(2);
@@ -33,6 +36,42 @@ public sealed class NoviceBotTest
             echo is > Tries * 2 / 5 and < Tries * 3 / 5 && icarus is > Tries * 3 / 5 and < Tries * 3 / 4,
             $"Echo took the best {echo} times, Icarus {icarus}, of {Tries}"
         );
+    }
+
+    [Fact]
+    public async Task Decide_OverManyTurns_TheFaintTakeTheBestLittleMoreThanRandomAndEachMoreThanTheLast()
+    {
+        // Arrange - Random takes the best a third of the time; Morpheus, Phaethon and Tantalus a little more each
+        DecisionRequest request = Request();
+
+        // Act
+        ImmutableList<int> taken =
+        [
+            .. await Task.WhenAll(
+                NoviceBot.Faint(new Random(1)).Select(bot => this.BestTaken(bot, request, FaintTries))
+            ),
+        ];
+
+        // Assert
+        Assert.True(
+            taken[0] > FaintTries * 3 / 10 && taken[0] < taken[2] && taken[1] < taken[2] && taken[2] < FaintTries / 2,
+            $"Taken: {string.Join(",", taken)} of {FaintTries}"
+        );
+    }
+
+    [Fact]
+    public void Faint_WhenAsked_IsThreePlainAlgorithmsForTheFirstGames()
+    {
+        // Arrange - the bots for the very first games
+
+        // Act
+        string named = string.Join(
+            ",",
+            NoviceBot.Faint(new Random(1)).Select(bot => $"{bot.Profile.Id}:{bot.Profile.UsesAi}")
+        );
+
+        // Assert
+        Assert.Equal("morpheus:False,phaethon:False,tantalus:False", named);
     }
 
     [Fact]
@@ -65,10 +104,10 @@ public sealed class NoviceBotTest
         Assert.Equal("echo:Echo:False,icarus:Icarus:False", named);
     }
 
-    private async Task<int> BestTaken(NoviceBot bot, DecisionRequest request)
+    private async Task<int> BestTaken(NoviceBot bot, DecisionRequest request, int tries = Tries)
     {
         int taken = 0;
-        for (int turn = 0; turn < Tries; turn++)
+        for (int turn = 0; turn < tries; turn++)
         {
             taken += await bot.Decide(request, this._cancellation) == Big ? 1 : 0;
         }
