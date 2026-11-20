@@ -191,8 +191,11 @@ Options:
 | `--rulesets a,b` | which rulesets | `chaturaji-2027` and the three Grand Legions sizes |
 | `--rounds N` | Athena's rounds per ruleset each cycle | 2 |
 | `--games N` | games per round, and per pairing in the tournament | 100 |
+| `--continue DIR` | go on in an earlier run's folder, from the cycle it stopped in | a new folder |
 
-A failed stage is reported, and the run goes on.
+A failed stage is reported, and the run goes on. Each tournament keeps every pairing's result as it
+ends, in `<ruleset>-<cycle>.json.pairs.json`; with `--continue`, a tournament stopped mid-way plays
+only the pairings it had not finished.
 
 The static gates (`dotnet format`, `check-line-layout.py`, `inspect-code.py`) run no test host
 and work on Windows directly.

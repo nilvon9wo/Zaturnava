@@ -9,6 +9,8 @@ if level. Ratings are fitted to every result at once
 that never loses still gets a finite rating, and anchored with random at 1000, so that a new bot does
 not move the others. They are written as JSON, by bot, for src/Bots/Zaturnava.Bots/Ratings/.
 With --bot-assembly, bots of one's own (the BotRunner's option of that name) may be among --bots.
+With --out, each pair's result is also kept, as it ends, in <out>.pairs.json; run again with the same --out,
+--ruleset, --games and --max-steps, a tournament stopped mid-way plays only the pairs it had not finished.
 
 Usage: rate-bots.py RUNNER [--bots argus,echo,...] [--games 50] [--max-steps 2000]
                            [--ruleset chaturaji-2027] [--out ratings.json] [--jobs N]
@@ -23,6 +25,7 @@ import os
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 
@@ -74,6 +77,24 @@ def margin(game, seats):
     return mine, theirs
 
 
+def load_kept(path, settings):
+    """The pairs' results kept by an earlier run of the same tournament, if any; none, if its settings differ."""
+    if not path or not os.path.exists(path):
+        return {}
+    with open(path, encoding="utf-8") as kept:
+        content = json.load(kept)
+    return content["pairs"] if content.get("settings") == settings else {}
+
+
+def save_kept(path, settings, pairs):
+    """The pairs' results so far, written whole each time, so that a stop mid-write loses at most the last."""
+    if not path:
+        return
+    with open(path + ".tmp", "w", encoding="utf-8", newline="\n") as out:
+        json.dump({"settings": settings, "pairs": pairs}, out, indent=2)
+    os.replace(path + ".tmp", path)
+
+
 def fit(bots, record):
     """Bradley-Terry strengths by minorization-maximization, a draw counting half a win each way."""
     wins = {bot: 0.0 for bot in bots}
@@ -117,12 +138,25 @@ def main():
     if ANCHOR not in bots:
         sys.exit(f"The bots must include {ANCHOR}, whose rating anchors the others.")
     pairs = list(itertools.combinations(bots, 2))
+    # M2: each pair's result, as it ends, is kept beside --out, so that a tournament stopped mid-way goes on from
+    # the pairs already played when run again with the same --out, --games and --max-steps
+    kept_path = options.out + ".pairs.json" if options.out else None
+    settings = f"{options.ruleset}/{options.games}/{options.max_steps}"
+    kept = load_kept(kept_path, settings)
+    lock = threading.Lock()
+
+    def played(pair):
+        key = f"{pair[0]}|{pair[1]}"
+        if key in kept:
+            return tuple(kept[key])
+        result = results(runner, options.ruleset, pair[0], pair[1], options.games, options.max_steps)
+        with lock:
+            kept[key] = list(result)
+            save_kept(kept_path, settings, kept)
+        return result
+
     with ThreadPoolExecutor(options.jobs) as pool:
-        played = pool.map(
-            lambda pair: results(runner, options.ruleset, pair[0], pair[1], options.games, options.max_steps),
-            pairs,
-        )
-        record = dict(zip(pairs, played))
+        record = dict(zip(pairs, pool.map(played, pairs)))
     for (a, b), (won, lost, drawn, seconds) in record.items():
         print(f"{a} vs {b}: won {won}, lost {lost}, drawn {drawn}, in {seconds:.0f} s", file=sys.stderr)
     ratings = fit(bots, record)
