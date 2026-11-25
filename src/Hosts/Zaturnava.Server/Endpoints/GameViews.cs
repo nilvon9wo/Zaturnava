@@ -192,6 +192,7 @@ internal static class GameViews
             IdleRounds = snapshot.State.IdleRounds,
             IsLostWithoutLeaders = snapshot.State.IsLostWithoutLeaders,
             IdleSeconds = ScenarioStart.IdleTimeOf(snapshot.Record.Actions) is { } idle ? (int)idle.TotalSeconds : null,
+            StartRows = snapshot.State.StartRows,
             Fleeing = snapshot.State.Fleeing?.Value,
             DraftLeft = shown.Draft is { } draft
                 ? [.. snapshot.State.Seats.Select(seat => LeftOf(draft, seat.Id))]
@@ -420,6 +421,7 @@ internal static class GameViews
             MayPromoteAtSide = rules.MayPromoteAtSide,
             HasDice = rules.HasDice,
             IdleRounds = rules.IdleRounds,
+            StartRows = rules.StartRows,
             DraftBudget = rules.DraftBudget,
             DraftBudgetLimit = rules.DraftBudgetLimit,
             SizableBoard = SizeOf(rules.SizableBoard),

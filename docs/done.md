@@ -8,6 +8,13 @@ only in part, what is left is in the backlog, and its history here. The playtest
 
 ## Asked 2026-11-25
 
+- **Start rows as a setting** (*Stated*, Grand Legions specification §3): how many rows count as start rows (2)
+  may be a setting of the game.
+
+  *Done*: in *New game*, for a game whose armies have start rows (Grand Legions), **Start rows**, from 1 to 6
+  (*Proposed*), the game's own 2 shown until another is typed, and remembered with the rest of the setup. A Western
+  Pawn that starts within that many of its army's rows may make its two-square first move; *Play again* keeps the
+  number.
 - **A player's card, their other games** (*Stated* 2026-11-12): beyond their standing at the game, which it shows,
   their other games.
 

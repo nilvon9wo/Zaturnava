@@ -13,7 +13,8 @@ namespace Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
 
 /// <summary>
 /// The Western Pawn's powers (Grand Legions specification §3), for each piece of <paramref name="kinds"/>. One that
-/// started within its army's first <paramref name="rows"/> rows may, from the cell it started on, step two cells
+/// started within its army's first <paramref name="rows"/> rows (or as many as the game's creator set,
+/// <see cref="GameState.StartRows"/>) may, from the cell it started on, step two cells
 /// straight ahead, over an empty cell onto an empty one; one placed further forward never may. And any of them,
 /// wherever it started or stands, may take <i>en passant</i> an enemy piece that, from two king's steps away, moved
 /// two cells or more in a line against the pawn's forward, whichever way its own army faces, its first step onto a
@@ -117,7 +118,7 @@ internal sealed class StartRowMoves(
         ImmutableList<CellId> ahead = this._grid.Ray(cell, forward);
         bool mayStep = this.StartsOf(state).TryGetValue(piece.Id, out CellId first)
             && first == cell
-            && this.IsWithin(first, Behind(forward), this._rows)
+            && this.IsWithin(first, Behind(forward), state.StartRows ?? this._rows)
             && ahead.Count >= EnPassantDistance
             && ahead.Take(EnPassantDistance).All(next => state.Position.PieceAt(next) is null);
         return mayStep ? [new Move(piece, cell, ahead[1], null)] : [];

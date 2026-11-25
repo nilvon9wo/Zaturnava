@@ -81,6 +81,13 @@ public sealed record GameState(
     public bool IsLostWithoutLeaders { get; init; }
 
     /// <summary>
+    /// How many of an army's rows are its start rows, if the game's creator set it (Grand Legions specification §3:
+    /// "how many rows count as start rows (2) may be a setting of the game"); else the ruleset's own
+    /// (<see cref="IRulesApplying.StartRows"/>).
+    /// </summary>
+    public int? StartRows { get; init; }
+
+    /// <summary>
     /// The edition of the ruleset's pieces the armies the program deals this game, fills at random, or offers in a
     /// draft, are drawn from (<see cref="IRulesApplying.Deal"/>), and of the rules it is played by, a ruleset's later
     /// rules applying from the edition that brought them: 0, in a game dealt before there was another, so that it

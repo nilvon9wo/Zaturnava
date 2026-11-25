@@ -134,6 +134,12 @@ public sealed record GameViewDto(
     public int? IdleSeconds { get; init; }
 
     /// <summary>
+    /// How many of each army's rows are its start rows, as its creator set it
+    /// (<see cref="CreateGameRequest.StartRows"/>); null, for the ruleset's own.
+    /// </summary>
+    public int? StartRows { get; init; }
+
+    /// <summary>
     /// The cell of a piece just come to where it may leave the board (the Tafl King on its far corner) as its turn
     /// would end, the game waiting on whether it leaves or stays; null if none.
     /// </summary>

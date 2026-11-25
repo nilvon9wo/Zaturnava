@@ -46,6 +46,9 @@ internal sealed record ArmyDeal(bool AreAlike, string? Of = null)
     /// <summary>How many seconds each player may be idle on their turn before it passes; none, no limit.</summary>
     public int? IdleSeconds { get; init; }
 
+    /// <summary>How many of each army's rows are start rows, where armies have them; the game's own, if none.</summary>
+    public int? StartRows { get; init; }
+
     /// <summary>The bits of the terrain's number its creator chose, in a game that lets them; 0, for none.</summary>
     public int TerrainMask { get; init; }
 
