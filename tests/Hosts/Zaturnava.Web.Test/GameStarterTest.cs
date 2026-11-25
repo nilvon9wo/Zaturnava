@@ -31,6 +31,34 @@ public sealed class GameStarterTest
         );
     }
 
+    [Theory]
+    [InlineData("elo", "Elo 1000|Elo 1100|Elo 1250–1400", "midas (Elo 1100)")]
+    [InlineData("glicko", "Glicko-2 1000|Glicko-2 1100|Glicko-2 1250–1400", "midas (Glicko-2 1100)")]
+    [InlineData("trueskill", "TrueSkill 22.0|TrueSkill 24.1|TrueSkill 27.2–30.5", "midas (TrueSkill 24.1)")]
+    public void Strengths_WhenARatingSystemIsChosen_ShowEachRatingByIt(string system, string shown, string midas)
+    {
+        // Arrange - the TrueSkill ratings as the server counts them from the bots' Elo
+        BotDto skilledMidas = Midas with { TrueSkills = Skilled(24.1) };
+        CatalogDto catalog = Catalog(
+            Random with { TrueSkills = Skilled(22.0) },
+            skilledMidas,
+            Solomon with { TrueSkills = Skilled(27.2) },
+            Oracle with { TrueSkills = Skilled(30.5) }
+        );
+
+        // Act
+        ImmutableList<Strength> strengths = GameStarter.Strengths(catalog, Ruleset, system: RatingSystems.Of(system));
+
+        // Assert
+        Assert.Equal(
+            (shown, midas),
+            (
+                string.Join("|", strengths.Select(strength => strength.Label[(strength.Label.IndexOf('(') + 1)..^1])),
+                strengths[1].LabelOf(skilledMidas)
+            )
+        );
+    }
+
     [Fact]
     public void Strengths_WhenThereAreFewerBotsThanStrengths_OffersOnlyThoseWithBots()
     {
@@ -198,6 +226,9 @@ public sealed class GameStarterTest
 
     private static ImmutableDictionary<string, int> Rated(int rating) =>
         ImmutableDictionary<string, int>.Empty.Add(Ruleset, rating);
+
+    private static ImmutableDictionary<string, double> Skilled(double skill) =>
+        ImmutableDictionary<string, double>.Empty.Add(Ruleset, skill);
 
     [Theory]
     [InlineData("chaturaji-2027", 0, "chaturaji-2027")]

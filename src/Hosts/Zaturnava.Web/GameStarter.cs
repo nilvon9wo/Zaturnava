@@ -120,9 +120,15 @@ internal static class GameStarter
     /// hard - of as nearly as may be the same number of bots, easiest first, fewer if fewer than three are rated; then
     /// those not yet rated, apart, as <see cref="UnratedName"/> (Proposed), their strength unknown. If none is rated,
     /// every bot is split into the three strengths as it comes. None that plays its own family's pieces where
-    /// <paramref name="areArmiesAlike"/> (the user's word of 2026-11-20: their armies would not be alike).
+    /// <paramref name="areArmiesAlike"/> (the user's word of 2026-11-20: their armies would not be alike). Their
+    /// ratings shown by the <paramref name="system"/> chosen on the leaderboard.
     /// </summary>
-    public static ImmutableList<Strength> Strengths(CatalogDto catalog, string rulesetId, bool areArmiesAlike = false)
+    public static ImmutableList<Strength> Strengths(
+        CatalogDto catalog,
+        string rulesetId,
+        bool areArmiesAlike = false,
+        RatingSystem system = RatingSystem.Elo
+    )
     {
         (ImmutableList<BotDto> rated, ImmutableList<BotDto> unrated) =
             Ranked(areArmiesAlike ? Familyless(catalog) : catalog, rulesetId);
@@ -134,7 +140,8 @@ internal static class GameStarter
             .. StrengthNames
                 .Select((name, band) => new Strength(name, rulesetId, BandOf(band)))
                 .Append(new Strength(UnratedName, rulesetId, rated.IsEmpty ? [] : unrated))
-                .Where(strength => !strength.Bots.IsEmpty),
+                .Where(strength => !strength.Bots.IsEmpty)
+                .Select(strength => strength with { System = system }),
         ];
 
         ImmutableList<BotDto> BandOf(int band) =>

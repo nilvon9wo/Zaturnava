@@ -98,9 +98,10 @@ From the specification's observations of the bots in play (F, X) and the Sage pl
   board, bots given the other systems' ratings from their Elo, and on their profiles. Still to do: the design's
   extensions (more chance for
   dice and for armies dealt different, a dice offset per player, deviations growing with time away); and the
-  comparison of how well each predicts. Also (asked 2026-11-20, not urgent): the rating system chosen on the
-  leaderboard to hold for the whole page, the bots' easy, medium and hard strengths in the New game dialog grouped
-  by that system's ratings, which may order them otherwise.
+  comparison of how well each predicts. The rating system chosen on the leaderboard now holds for the New game
+  dialog too, its strengths and bots labelled by it ([done](done.md#asked-2026-11-25)). Still to do: grouping the
+  strengths by that system's ratings, once a bot's Glicko-2 and TrueSkill are counted from games of their own; now
+  both come from its Elo, and so order the bots alike.
 - **D4** Strong Grand Legions bots by family. *Begun* (2026-11-20): Philidor (Western), Sun Tzu (Xiangqi),
   Yi Sun-sin (Janggi), Musashi (Shogi), Naresuan (Makruk), Palamedes (Checkers), Ragnar (Tafl), Oberon (Fairy) and
   Desdemona (Othello, all Evangelists) play as Sage, their armies, dealt or drafted, of their game's pieces only,

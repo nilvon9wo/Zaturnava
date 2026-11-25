@@ -613,7 +613,7 @@
         </div>
         </div>
 
-        <Leaderboard Game="@this.Game" />
+        <Leaderboard Game="@this.Game" RatingChosen="this.RatingChosen" />
     }
     else if (this._problem is null)
     {
@@ -708,6 +708,9 @@
     private SetupMode _mode;
     private int _colour;
     private ImmutableList<Strength> _strengths = [];
+
+    /// <summary>The rating system chosen on the leaderboard, which the bots' strengths are shown by.</summary>
+    private RatingSystem _rating;
 
     /// <summary>For each seat set up by strength, the index of its strength, or <see cref="PersonLevel"/>.</summary>
     private List<int> _levels = [];
@@ -1408,6 +1411,7 @@
                 : this._setups;
         }
 
+        this._rating = RatingSystems.Of(await this.Browser.Leaderboard());
         string? last = await this.Browser.LastGame();
         ImmutableList<RulesetDto> games = this.GamesOf(catalog);
         RulesetDto first = games.FirstOrDefault(game => game.Game == last) ?? games[0];
@@ -1689,8 +1693,19 @@
         GameStarter.Strengths(
             catalog,
             GameStarter.RatedAs(catalog, this.Ruleset(catalog).Id, this.BoardAsked(catalog)),
-            this.AreArmiesAlike(catalog)
+            this.AreArmiesAlike(catalog),
+            this._rating
         );
+
+    /// <summary>
+    /// The rating system chosen on the leaderboard: the bots' strengths shown by it, as they stand, since a bot's
+    /// ratings by every system order alike (the user's request of 2026-11-20: the choice holds for the whole page).
+    /// </summary>
+    private void RatingChosen(RatingSystem system)
+    {
+        this._rating = system;
+        this._strengths = [.. this._strengths.Select(strength => strength with { System = system })];
+    }
 
     /// <summary>
     /// Whether every army is to be the same: one dealt, or drafted by the player, for everyone; where no bot that plays

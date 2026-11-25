@@ -146,11 +146,11 @@
     private const string BoardChoice = "board";
 
     /// <summary>The name the rating system chosen is remembered by.</summary>
-    private const string RatingChoice = "rating";
+    private const string RatingChoice = RatingSystems.Choice;
 
-    private const string EloRating = "elo";
-    private const string GlickoRating = "glicko";
-    private const string TrueSkillRating = "trueskill";
+    private const string EloRating = RatingSystems.EloKey;
+    private const string GlickoRating = RatingSystems.GlickoKey;
+    private const string TrueSkillRating = RatingSystems.TrueSkillKey;
 
     /// <summary>The first column's key, whatever the rating system.</summary>
     private const string RatingKey = "rating";
@@ -238,6 +238,13 @@
     public string Game { get; set; } = string.Empty;
 
     /// <summary>
+    /// Told the rating system chosen, as it is chosen, so that it holds for the whole page (the user's request of
+    /// 2026-11-20).
+    /// </summary>
+    [Parameter]
+    public EventCallback<RatingSystem> RatingChosen { get; set; }
+
+    /// <summary>
     /// The board chosen, its first column the rating by the system chosen, on every board (the user's report of
     /// 2026-11-20: no way to switch, the choice having been on the people's board alone).
     /// </summary>
@@ -319,6 +326,7 @@
     {
         this._rating = $"{change.Value}";
         await this.Resorted();
+        await this.RatingChosen.InvokeAsync(RatingSystems.Of(this._rating));
     }
 
     /// <summary>The board by its first column, most first, from the first page, remembered.</summary>

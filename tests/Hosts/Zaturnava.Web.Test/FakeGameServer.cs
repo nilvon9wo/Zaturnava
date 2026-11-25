@@ -149,11 +149,27 @@ internal sealed class FakeGameServer : IGameServing
                     .. this.MoreRulesets,
                 ],
                 [
-                    new BotDto("random", "Random", "Any move.", UsesAi: false) { Ratings = Rated(1000) },
+                    new BotDto("random", "Random", "Any move.", UsesAi: false)
+                    {
+                        Ratings = Rated(1000),
+                        TrueSkills = Skilled(11.6),
+                    },
                     new BotDto("claude", "Claude", "Asks Claude.", UsesAi: true, IsPaid: true),
-                    new BotDto("oracle", "Oracle", "Asks a model.", UsesAi: true) { Ratings = Rated(1400) },
-                    new BotDto("midas", "Midas", "Greedy.", UsesAi: false) { Ratings = Rated(1100) },
-                    new BotDto("solomon", "Solomon", "Fair.", UsesAi: false) { Ratings = Rated(1250) },
+                    new BotDto("oracle", "Oracle", "Asks a model.", UsesAi: true)
+                    {
+                        Ratings = Rated(1400),
+                        TrueSkills = Skilled(19.9),
+                    },
+                    new BotDto("midas", "Midas", "Greedy.", UsesAi: false)
+                    {
+                        Ratings = Rated(1100),
+                        TrueSkills = Skilled(13.7),
+                    },
+                    new BotDto("solomon", "Solomon", "Fair.", UsesAi: false)
+                    {
+                        Ratings = Rated(1250),
+                        TrueSkills = Skilled(16.8),
+                    },
                     .. this.MoreBots,
                 ]
             )
@@ -165,6 +181,10 @@ internal sealed class FakeGameServer : IGameServing
     /// <summary>A rating at Chaturaji 2027, the only ruleset this server offers.</summary>
     private static ImmutableDictionary<string, int> Rated(int rating) =>
         ImmutableDictionary<string, int>.Empty.Add("chaturaji-2027", rating);
+
+    /// <summary>A TrueSkill rating at Chaturaji 2027, as the server counts it from the Elo there.</summary>
+    private static ImmutableDictionary<string, double> Skilled(double skill) =>
+        ImmutableDictionary<string, double>.Empty.Add("chaturaji-2027", skill);
 
     /// <summary>Each game's leaderboard, by the game's id: none, unless a test sets one.</summary>
     public ImmutableDictionary<string, ImmutableList<StandingDto>> Leaderboards { get; set; } = [];
