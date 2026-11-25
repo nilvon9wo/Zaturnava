@@ -337,3 +337,10 @@ drawn simply, a shape for its class and a letter for its kind.
   Which pieces may settle, and whether friendly neighbours may stand round the footprint, are left to that time.
 - Kingdoms smaller than 3 × 3, with the palace partly outside the kingdom. *Done* for kingdoms 2 deep (see Stage 2).
 - Games without palaces: bare thrones, and no palace-bound pieces in the draft.
+- Custom pricing (asked 2026-11-25, not needed now): a game's creator sets the pieces' prices, or prices move with
+  how often each piece is bought and how it fares (dynamic pricing).
+- Custom pieces (asked 2026-11-25, not needed now): pieces described in a file (JSON or XML), their moves, powers
+  and promotions, priced by the sheet's rules.
+- **Zaturnine Zphere**, a third game (asked 2026-11-25, not needed now): a board of hexes over an icosahedral sphere,
+  persistent, with many players, alliances made and broken as it goes, and fog of war. Left open: how turns pass
+  among many players (in rounds, or each on their own clock), and what terrain there is and what it does.

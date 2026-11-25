@@ -30,7 +30,25 @@ own number (**25**, **N29**), the [2026-11-15 specification](playtesting/2026-11
   the live site's ratings, by a second documented command (M4); every bot rated at every ruleset, with past
   measurements kept beside new ones (M5).
 
+- **The lobby, faster** (asked 2026-11-25): show the layout at once, each panel (Games, Leaderboard) with its own
+  spinner, and *New game* usable before the rest arrives; returning to the lobby should not wait on everything
+  again; the ratings cached.
+- **Custom game options** (asked 2026-11-25), none on by default: a player whose leaders are all gone is out; a
+  team with no leader left has lost; each player's idle time, set by whoever creates the game, the same for
+  anonymous and signed-in players, after which the turn passes.
+- **Field promotion** (asked 2026-11-25, Grand Legions only): a piece that has stood on an enemy throne for 10
+  turns may, if its player chooses, promote into a Silver General, and the player then also scores the bonus for a
+  leader on an enemy throne.
+- **Janggi Soldier's card** (2026-11-25): the palace's diagonals were not shown as moves or captures. The server's
+  diagram has them (cells 48 and 50 from 39); to check on the live card.
+
 ## 2. Bots that play well
+
+The designer's specification of 2026-11-25 (strategic play, team play, endgames) is mapped against what the bots
+do, with a step-by-step plan and its test positions, in [strategy-plan.md](bots/strategy-plan.md). Its steps:
+whose move is next (a capture judged by who moves before the bot again, and under whose command); promotion with
+eyes open; pieces with a purpose in the endgame (two Rooks mate a lone Raja); room for one's own leader; swaps and
+other powers seen; each bot proposing an end by its own thresholds, playing on if refused.
 
 From the specification's observations of the bots in play (F, X) and the Sage plan:
 
