@@ -99,10 +99,10 @@ public sealed class LeaderboardTest : IDisposable
     }
 
     [Fact]
-    public void Game_WhenAnotherIsChosenBeforeTheFirstsStandingsCome_ShowsOnlyTheOtherGames()
+    public async Task Game_WhenAnotherIsChosenBeforeTheFirstsStandingsCome_ShowsOnlyTheOtherGames()
     {
         // Arrange - the first game's standings slow; the other's, at once
-        TaskCompletionSource<ImmutableList<StandingDto>> held = new();
+        TaskCompletionSource<ImmutableList<StandingDto>> held = new(TaskCreationOptions.RunContinuationsAsynchronously);
         this._page.Server.HeldLeaderboard = held;
         IRenderedComponent<Leaderboard> board = this.Render();
         this._page.Server.HeldLeaderboard = null;
@@ -110,8 +110,9 @@ public sealed class LeaderboardTest : IDisposable
             this._page.Server.Leaderboards.Add("grand-legions", [new StandingDto(1, "Cy", 1530, 40, 2, 0, 0)]);
         board.Render(parameters => parameters.Add(leaderboard => leaderboard.Game, "grand-legions"));
 
-        // Act
-        held.SetResult([new StandingDto(1, "Ada", 1516, 14, 1, 0, 0)]);
+        // Act - on the page's own dispatcher, as the server's answer would come
+        await board.InvokeAsync(() => held.SetResult([new StandingDto(1, "Ada", 1516, 14, 1, 0, 0)]));
+        _ = await held.Task;
 
         // Assert
         board.WaitForAssertion(() => Assert.Equal("Cy", board.Find(".leaders td.name").TextContent.Trim()));

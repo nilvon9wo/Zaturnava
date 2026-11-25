@@ -2979,15 +2979,17 @@ public sealed class LobbyTest : IDisposable
     }
 
     [Fact]
-    public void Render_WhenTheGamesComeAfterTheLobbyIsShown_ListsThemInPlaceOfTheSpinner()
+    public async Task Render_WhenTheGamesComeAfterTheLobbyIsShown_ListsThemInPlaceOfTheSpinner()
     {
         // Arrange
-        TaskCompletionSource<GamePageDto> held = new();
+        TaskCompletionSource<GamePageDto> held = new(TaskCreationOptions.RunContinuationsAsynchronously);
         this._page.Server.HeldList = held;
         IRenderedComponent<Lobby> lobby = this.RenderAsIs();
 
-        // Act
-        held.SetResult(new GamePageDto(this._page.Server.Games, this._page.Server.Games.Count, 1, 20));
+        // Act - on the page's own dispatcher, as the server's answer would come
+        await lobby.InvokeAsync(() =>
+            held.SetResult(new GamePageDto(this._page.Server.Games, this._page.Server.Games.Count, 1, 20))
+        );
 
         // Assert
         lobby.WaitForAssertion(() =>
