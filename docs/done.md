@@ -8,6 +8,12 @@ only in part, what is left is in the backlog, and its history here. The playtest
 
 ## Asked 2026-11-25
 
+- **A player's card, their other games** (*Stated* 2026-11-12): beyond their standing at the game, which it shows,
+  their other games.
+
+  *Done*: a player's profile, opened from their name, adds a table **At other games**: for each other game they
+  stand at, its name, their Elo, experience, and games won, lost and drawn there, from that game's leaderboard;
+  none, if they have played only this one.
 - **One rating system for the whole lobby** (asked 2026-11-20, not urgent): the rating system chosen on the
   leaderboard should hold for the whole page, the New game dialog's bot strengths included.
 

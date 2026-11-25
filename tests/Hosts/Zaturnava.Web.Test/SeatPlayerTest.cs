@@ -125,6 +125,47 @@ public sealed class SeatPlayerTest : IDisposable
     }
 
     [Fact]
+    public void Open_WhenThePlayerStandsAtOtherGames_ShowsEachOnceByName()
+    {
+        // Arrange - Ada on Grand Legions' leaderboard, offered at two sizes, but not on Tafl's; a ruleset of no game
+        this._page.Server.Profiles = this._page.Server.Profiles.Add("p", Ada);
+        this._page.Server.MoreRulesets =
+        [
+            new RulesetDto("grand-legions-small", "Grand Legions, small", 4)
+            {
+                Game = "grand-legions",
+                GameName = "Grand Legions",
+            },
+            new RulesetDto("grand-legions-large", "Grand Legions, large", 4)
+            {
+                Game = "grand-legions",
+                GameName = "Grand Legions",
+            },
+            new RulesetDto("tafl", "Tafl", 2) { Game = "tafl", GameName = "Tafl" },
+            new RulesetDto("old", "Old", 4),
+        ];
+        this._page.Server.Leaderboards = this._page.Server.Leaderboards
+            .Add("chaturaji-2027", [new StandingDto(1, "Ada", 1516, 450, 3, 2, 1) { PlayerId = "p" }])
+            .Add("grand-legions", [new StandingDto(1, "Ada", 1580, 900, 5, 1, 0) { PlayerId = "p" }]);
+        IRenderedComponent<SeatPlayer> player = this._page.Render<SeatPlayer>(parameters =>
+            parameters.Add(x => x.Text, "Ada").Add(x => x.PlayerId, "p").Add(x => x.RulesetId, "chaturaji-2027")
+        );
+
+        // Act
+        player.Find("button.player").Click();
+
+        // Assert
+        Assert.Equal(
+            "Grand Legions|1580|900|5|1|0",
+            string.Join(
+                ';',
+                player.FindAll("table.player-elsewhere tbody tr")
+                    .Select(row => string.Join('|', row.Children.Select(cell => cell.TextContent)))
+            )
+        );
+    }
+
+    [Fact]
     public void Open_WhenThePlayerIsGone_SaysSo()
     {
         // Arrange

@@ -145,7 +145,6 @@ From the specification's observations of the bots in play (F, X) and the Sage pl
 
 - Grand Legions' lifts (**N25**, Stage 7): a badge above a piece's symbol for each kind of restriction lifted,
   once lifts are kept in the game.
-- A player's card (*Stated* 2026-11-12): beyond their standing at the game, which it shows, their other games.
 - **29** One person, one identity: a person may play several seats of one team when the game allows it, without
   pretending to be several people.
 - *(Stated 2026-11-12, low priority)* The table's panels (the draft's list of pieces, the turn's panel, the log
