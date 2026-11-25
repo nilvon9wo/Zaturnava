@@ -227,6 +227,12 @@ public sealed record GameState(
     /// <summary>A proposal to end the game, waiting on the deciding seat's answer; null if none is.</summary>
     public EndProposal? Proposal { get; init; }
 
+    /// <summary>
+    /// The turn on which each seat's last proposal to end the game was refused; a seat never refused is not here. A
+    /// bot waits a while before proposing again.
+    /// </summary>
+    public ImmutableDictionary<SeatId, int> RefusedOn { get; init; } = [];
+
     /// <summary>The seats that have given up their turns, having proposed ending the game.</summary>
     public ImmutableHashSet<SeatId> Resigned { get; init; } = [];
 

@@ -98,6 +98,7 @@ internal static class Agreement
             Proposal = null,
             DecidingSeat = proposal.Resume,
             ActingFor = proposal.ResumeActingFor,
+            RefusedOn = state.RefusedOn.SetItem(proposal.Proposer, state.TurnNumber),
         };
         return new Transition(resumed, [new EndRefused(seat)]);
     }

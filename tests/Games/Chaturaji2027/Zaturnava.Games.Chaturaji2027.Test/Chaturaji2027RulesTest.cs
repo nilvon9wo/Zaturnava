@@ -3578,6 +3578,20 @@ public sealed class Chaturaji2027RulesTest
     }
 
     [Fact]
+    public void Apply_WhenASeatRefusesToEndTheGame_RemembersTheTurnTheProposerWasRefusedOn()
+    {
+        // Arrange - Yellow proposes, on Green's turn
+        GameState state = this.Regency(hasBlackRaja: true, Grid.CellAt(6, 2));
+        GameState proposed = this._rules.Apply(state, new ProposeEndAction(Yellow, Resigns: false)).State;
+
+        // Act
+        Transition transition = this._rules.Apply(proposed, new AnswerEndAction(Green, false));
+
+        // Assert
+        Assert.Equal([(Yellow, state.TurnNumber)], transition.State.RefusedOn.Select(pair => (pair.Key, pair.Value)));
+    }
+
+    [Fact]
     public void Apply_WhenASeatThatGaveUpItsTurnsWouldBeAsked_TakesItsAgreementAsGiven()
     {
         // Arrange - Yellow gave up its turns earlier
