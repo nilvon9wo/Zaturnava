@@ -42,7 +42,8 @@ test position in `tests/Bots/` (the strategic scenarios of §15) before its weig
 2. **Promotion with eyes open.** Judge a promotion by the promoted piece's safety on its cell, its owner, and the
    command it brings. Test: the Pawn promoted into an attacked Raja.
 3. **Pieces with a purpose.** In an endgame, pull each piece towards the enemy leader or its throne, and score the
-   enemy leader's room to move (fewer cells, better). Test: two Rooks against a lone Raja reach mate.
+   enemy leader's room to move (fewer cells, better). Test: two Rooks against a lone Raja reach mate. *Begun*
+   (2026-11-25, with the endgame search below): the leader's room to move, and the leader attacked, are scored.
 4. **Room for one's own leader.** Score the leader's own free cells, so that walling it in costs. Test: the trapped
    Raja.
 5. **Powers seen.** Value a swap by what it opens: a Pawn nearer its promotion, a Lance freed to strike a
@@ -60,4 +61,17 @@ Asked (2026-11-25): could something like chess's endgame tablebases help? Not as
 that choose which piece moves, and armies dealt from a large catalogue make the number of positions far too large
 to list. Small, exact help is within reach: for a few pieces left on the board, an expectimax search over the dice
 to the end of the game, and patterns learned for the common endings (two Rooks, Rook and leader, against a lone
-leader), used by the stronger bots. That comes after step 3.
+leader), used by the stronger bots.
+
+*Asked for* (2026-11-25: "Please do this then"). *Begun* the same day (`Endgame.cs`), every number *Proposed*,
+for the overnight ratings to tune:
+
+| Part | What it does | Who |
+|---|---|---|
+| An endgame | One piece or fewer on the board for every 8 cells (8 pieces on a 64-cell board) | Every bot that weighs a position as Sage does |
+| Looking further | Past its own turn, through the others' and the dice, up to 16,000 positions | Sage (in 5 seconds at most), Tactician |
+| Pressing the leader | Each cell an enemy leader could flee to that the team does not attack: −0.25 of a point of material; the leader attacked: +0.5 | Sage, Tactician, Narcissus, Epimetheus; Athena and Pythia, as far as Sage's judgement counts in theirs |
+
+The pressing is the ladder mate's pattern: no table of positions, but the measure it comes from, for any board and
+any pieces. Still to do: a test of two Rooks against a lone Raja on Chaturaji 2027's board, played to the end; and
+the ratings, before and after, to see the stronger bots finish their won endgames.

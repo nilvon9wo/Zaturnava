@@ -44,7 +44,8 @@ internal sealed class ScriptedRules(
 
     public string Name => "Scripted";
 
-    public ICellNavigating Topology { get; } = new LineTopology();
+    /// <summary>A line counted as no cells: a script has no board to speak of, and so no endgame.</summary>
+    public ICellNavigating Topology { get; } = new LineTopology(0);
 
     public ImmutableDictionary<SeatId, CellId> Thrones =>
         Enumerable.Range(0, 4).ToImmutableDictionary(seat => new SeatId(seat), seat => new CellId(seat));
