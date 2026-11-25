@@ -25,8 +25,10 @@ namespace Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
 /// enemy be able to take that leader;</item>
 /// <item>how many pieces of other armies it commands on its own turns (§6.1): pieces that may move on more
 /// turns of a round than their own army's, so that one may take and then get away;</item>
-/// <item>and what its pieces are worth that stand where an enemy's prisoner would land, should it escape (§7):
-/// its starting square, a throne for a leader, deep in the enemy's kingdom.</item>
+/// <item>what its pieces are worth that stand where an enemy's prisoner would land, should it escape (§7):
+/// its starting square, a throne for a leader, deep in the enemy's kingdom;</item>
+/// <item>and how many of its Pawns, and the like, an ally's piece holds back (<see cref="HeldBackOf"/>): what a swap
+/// back to back would free.</item>
 /// </list>
 /// </summary>
 internal sealed class ArmyMeasures(
@@ -47,6 +49,7 @@ internal sealed class ArmyMeasures(
     public const string ThronesInDanger = "thrones-in-danger";
     public const string Commanded = "commanded";
     public const string UnderEscapes = "under-escapes";
+    public const string HeldBack = "held-back";
 
     private readonly ICellNavigating _grid = grid;
     private readonly ImmutableHashSet<PieceKindId> _promotables = promotables;
@@ -57,7 +60,10 @@ internal sealed class ArmyMeasures(
     private readonly Func<PieceKindId, int> _worthOf = worthOf;
 
     public static ImmutableList<string> Names { get; } =
-        [PawnProgress, NearPromotion, Reach, Retreat, LeadersAttacked, ThronesInDanger, Commanded, UnderEscapes];
+    [
+        PawnProgress, NearPromotion, Reach, Retreat, LeadersAttacked, ThronesInDanger, Commanded, UnderEscapes,
+        HeldBack,
+    ];
 
     public ImmutableList<double> Of(GameState state, SeatId seat)
     {
@@ -81,7 +87,39 @@ internal sealed class ArmyMeasures(
             this._control.CommandedBy(state, seat)
                 .Sum(command => state.Position.Occupants.Values.Count(piece => piece.Owner == command.Army)),
             this.UnderEscapesOf(state, seat),
+            this.HeldBackOf(state, seat, pawnCells, moves, back),
         ];
+    }
+
+    /// <summary>
+    /// How many of the seat's Pawns, and whatever else is promoted at the far edge, an ally's piece holds back: one
+    /// stands on the cell ahead, and it has no move forward to an empty cell. A swap back to back frees them; a
+    /// capture it could make does not count (the user's ruling of 2026-11-25), and a piece that can leap past, as
+    /// the Shogi Knight can, is not held.
+    /// </summary>
+    private int HeldBackOf(
+        GameState state,
+        SeatId seat,
+        ImmutableList<CellId> pawnCells,
+        ImmutableList<Move> moves,
+        Direction back
+    )
+    {
+        Direction forward = new(-back.First, -back.Second);
+        ImmutableHashSet<CellId> free =
+        [
+            .. moves
+                .Where(move => state.Position.PieceAt(move.To) is null
+                    && this.StepsFrom(move.To, back) > this.StepsFrom(move.From, back)
+                )
+                .Select(move => move.From),
+        ];
+        return pawnCells.Count(cell =>
+            !free.Contains(cell)
+            && this._grid.Step(cell, forward) is { } ahead
+            && state.Position.PieceAt(ahead) is { } blocker
+            && state.Teams.AreAllied(blocker.Owner, seat)
+        );
     }
 
     /// <summary>

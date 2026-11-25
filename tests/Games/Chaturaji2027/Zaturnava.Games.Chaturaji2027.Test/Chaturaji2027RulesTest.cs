@@ -506,11 +506,37 @@ public sealed class Chaturaji2027RulesTest
         Assert.Equal(
             [
                 "pawn-progress", "pawns-near-promotion", "reach", "retreat", "leaders-attacked", "thrones-in-danger",
-                "commanded", "under-escapes",
+                "commanded", "under-escapes", "held-back",
             ],
             this._rules.Measures
         );
-        Assert.Equal([5d, 1d, 9d, 3d, 0d, 0d, 0d, 0d], black);
+        Assert.Equal([5d, 1d, 9d, 3d, 0d, 0d, 0d, 0d, 0d], black);
+    }
+
+    [Theory]
+    [InlineData("ally", 1)]
+    [InlineData("enemy", 0)]
+    [InlineData("swapped", 0)]
+    public void MeasuresOf_WhenAPawnFacesAnotherPiece_CountsItHeldBackOnlyByAnAlly(string ahead, int held)
+    {
+        // Arrange - Black's Pawn on d4 faces Green's, its ally's, on d5, or Red's, its enemy's; or the two allies have
+        // swapped, and face away
+        (int blackRow, int otherRow, SeatId other) = ahead switch
+        {
+            "ally" => (3, 4, Green),
+            "enemy" => (3, 4, Red),
+            _ => (4, 3, Green),
+        };
+        GameState state = this.StateWith(
+            (Grid.CellAt(3, blackRow), Piece(1, Chaturaji2027Pieces.Pawn, Black)),
+            (Grid.CellAt(3, otherRow), Piece(2, Chaturaji2027Pieces.Pawn, other))
+        );
+
+        // Act
+        double heldBack = this._rules.MeasuresOf(state, Black)[8];
+
+        // Assert
+        Assert.Equal(held, heldBack);
     }
 
     [Fact]

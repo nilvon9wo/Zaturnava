@@ -13,6 +13,11 @@
   "mobility": 0,
   "measures": {
     "pawn-progress": 0,
+    "held-back": {
+      "own": -0.25,
+      "ally": -0.25,
+      "enemy": 0
+    },
     "pawns-near-promotion": 0,
     "reach": 0,
     "retreat": {
