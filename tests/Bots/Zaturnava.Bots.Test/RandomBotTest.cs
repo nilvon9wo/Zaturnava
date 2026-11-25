@@ -48,14 +48,20 @@ public sealed class RandomBotTest
     [Fact]
     public async Task Decide_WhenItMayTakeAPieceOfItsOwnTeam_LeavesIt()
     {
-        // Arrange - its own Pawn on cell 1; cell 2 empty
+        // Arrange - its own Pawn on cell 1, which moving there takes; cell 2 empty
         GameState state = ScoringRules.State() with
         {
             Position = Position.Empty.Place(new CellId(1), new Piece(new PieceId(1), new PieceKindId("pawn"), Seat)),
             Teams = TeamGraph.FromTeams([[Seat]]),
         };
         MoveAction away = new(Seat, new CellId(0), new CellId(2));
-        DecisionRequest request = new(Rules, state, Seat, [new MoveAction(Seat, new CellId(0), new CellId(1)), away]);
+        MoveAction taking = new(Seat, new CellId(0), new CellId(1));
+        ScoringRules rules = new([])
+        {
+            Results = ImmutableDictionary<GameAction, GameState>.Empty
+                .Add(taking, state with { Position = Position.Empty }),
+        };
+        DecisionRequest request = new(rules, state, Seat, [taking, away]);
         RandomBot bot = new(new Random(Seed));
 
         // Act
@@ -63,6 +69,32 @@ public sealed class RandomBotTest
 
         // Assert
         Assert.Equal(away, action);
+    }
+
+    [Fact]
+    public async Task Decide_WhenItsOnlyMoveOntoItsOwnTeamSwapsWithThePieceThere_PlaysIt()
+    {
+        // Arrange - its own Pawn on cell 1, which moving there swaps back to cell 0, leaving it on the board
+        Piece pawn = new(new PieceId(1), new PieceKindId("pawn"), Seat);
+        GameState state = ScoringRules.State() with
+        {
+            Position = Position.Empty.Place(new CellId(1), pawn),
+            Teams = TeamGraph.FromTeams([[Seat]]),
+        };
+        MoveAction swap = new(Seat, new CellId(0), new CellId(1));
+        ScoringRules rules = new([])
+        {
+            Results = ImmutableDictionary<GameAction, GameState>.Empty
+                .Add(swap, state with { Position = Position.Empty.Place(new CellId(0), pawn) }),
+        };
+        DecisionRequest request = new(rules, state, Seat, [swap]);
+
+        // Act
+        GameAction action =
+            await new RandomBot(new Random(Seed)).Decide(request, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(swap, action);
     }
 
     [Fact]

@@ -57,8 +57,13 @@ test position in `tests/Bots/` (the strategic scenarios of §15) before its weig
    forward (a capture it could make does not count; the Shogi Knight, leaping past, is never held). Each piece
    held weighs −0.25 (*Proposed*) for the bots that weigh measures (Sage, Tactician, Narcissus, Epimetheus) and
    nothing for the weaker ones, which swap as they happen to. A swap that frees two Pawns gains 0.5; the ratings
-   will tune that. What a freed Lance then attacks, the bots already count as chances. Still to do: the test
-   position played by Sage.
+   will tune that. What a freed Lance then attacks, the bots already count as chances. *The test position played
+   by Sage* (2026-11-25, `StrategicPositionsTest`): it would not swap, though it judged the swap half a point
+   better. Every bot, Random included, had been barred from any move onto its own team's piece, so as never to
+   take one, and a swap is just such a move. Now only a move that leaves that piece off the board is barred, so
+   the bots swap. Also found: in an endgame, Sage and Tactician look past their own turn, where a gain now and the
+   same gain a turn later lead to one position; they picked between them at random, and so put gains off. Among
+   actions worth the same looking ahead, they now take the one worth most at once (*Proposed*).
 6. **Proposing an end.** Each bot, by its own thresholds of points and material, proposes to end a game it has won
    or lost, and keeps playing if the people do not agree (asked 2026-11-25). Test: a won position, the bot
    proposes; a refused proposal, it moves on. *Done* (2026-11-25, `Ending.cs`), every bot alike for now: it proposes,
