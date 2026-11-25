@@ -164,6 +164,31 @@ public sealed class BotRatingServiceTest
         Assert.Equal(new BotMatchup("other", "a", "b"), game with { Won = 0, Lost = 0, Drawn = 0 });
     }
 
+    [Fact]
+    public async Task PlayNext_WhenTwoNewBotsHaveEachPlayedTheRatedButNotEachOther_PlaysThemNext()
+    {
+        // Arrange - b rated, a the anchor; c and d, new, have each played both once, but not each other (2026-11-25:
+        // their games together order them, where beating the one and losing to the other rate them alike)
+        await this.Keep(new BotMatchup(EndedRules.RulesetId, "a", "c") { Lost = 1 });
+        await this.Keep(new BotMatchup(EndedRules.RulesetId, "b", "c") { Won = 1 });
+        await this.Keep(new BotMatchup(EndedRules.RulesetId, "a", "d") { Lost = 1 });
+        await this.Keep(new BotMatchup(EndedRules.RulesetId, "b", "d") { Won = 1 });
+        BotRatingService service = this.Service(
+            [new EndedRules(EndedRules.State([Black]))],
+            new BotCatalog(
+                [new FirstChoiceBot("a"), new FirstChoiceBot("b"), new FirstChoiceBot("c"), new FirstChoiceBot("d")],
+                ImmutableDictionary<string, ImmutableDictionary<string, int>>.Empty
+                    .Add(EndedRules.RulesetId, ImmutableDictionary<string, int>.Empty.Add("b", 1200))
+            )
+        );
+
+        // Act
+        BotMatchup game = await service.PlayNext(this._cancellation);
+
+        // Assert
+        Assert.Equal(new BotMatchup(EndedRules.RulesetId, "c", "d"), game with { Won = 0, Lost = 0, Drawn = 0 });
+    }
+
     private static string Listed(BotCatalog bots) =>
         string.Join(
             "; ",

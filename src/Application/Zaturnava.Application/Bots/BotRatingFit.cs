@@ -63,41 +63,91 @@ public static class BotRatingFit
     }
 
     /// <summary>
-    /// The rating of <paramref name="bot"/> that best explains its games in <paramref name="matchups"/> against bots
-    /// rated already, their ratings held as <paramref name="rated"/> says (Proposed, 2026-11-13: so that a new bot is
-    /// rated on the scale the others are, not by a fit of every bot to a few games each, which draws every rating
-    /// toward the anchor); one draw added against each, as <see cref="Fitted"/> adds. Games against bots not rated are
-    /// left out; none, if it played none of the rated.
+    /// Every bot's rating not held in <paramref name="held"/>, fitted together from all of <paramref name="matchups"/>:
+    /// their games against the bots held, whose ratings stay as they are (Proposed, 2026-11-13: so that a new bot is
+    /// rated on the scale the others are), and against each other (2026-11-25: rated against the held alone, a bot that
+    /// beats Random and loses to Midas fits any rating between, so the weakest bots rated out of order). One draw added
+    /// between each pair played, as <see cref="Fitted"/> adds. A bot joined to no held bot, by any chain of games, is
+    /// left out.
     /// </summary>
-    public static int? Against(
-        [Required] string bot,
-        [Required] ImmutableDictionary<string, int> rated,
-        [Required] ImmutableList<BotMatchup> matchups
+    public static ImmutableDictionary<string, int> Around(
+        [Required] ImmutableDictionary<string, int> held,
+        [Required] ImmutableList<BotMatchup> matchups,
+        int mostRounds = MostRounds
     )
     {
-        ImmutableList<(double Wins, int Games, int Opponent)> played =
+        ImmutableList<string> free =
         [
-            .. matchups
-                .Where(matchup => matchup.First == bot || matchup.Second == bot)
-                .Where(matchup => rated.ContainsKey(OtherOf(matchup, bot)))
-                .Select(matchup => (WinsOf(matchup, bot), matchup.Played + 1, rated[OtherOf(matchup, bot)])),
+            .. Connected(held, matchups).Where(bot => !held.ContainsKey(bot)).Order(StringComparer.Ordinal),
         ];
-        if (played.IsEmpty)
+        ImmutableList<BotMatchup> counted =
+            [.. matchups.Where(matchup => IsCounted(matchup.First) && IsCounted(matchup.Second))];
+        ImmutableDictionary<string, double> wins = free.ToImmutableDictionary(
+            bot => bot,
+            bot => counted.Sum(matchup => WinsOf(matchup, bot))
+        );
+        ImmutableDictionary<string, double> strengths = held
+            .ToImmutableDictionary(rating => rating.Key, rating => Math.Exp((rating.Value - AnchorRating) / Scale))
+            .AddRange(free.Select(bot => KeyValuePair.Create(bot, 1.0)));
+        bool isSettled = false;
+        for (int round = 0; round < mostRounds && !isSettled; round++)
         {
-            return null;
+            ImmutableDictionary<string, double> next = NextAround(free, wins, strengths, counted);
+            isSettled = IsSettled(free, strengths, next);
+            strengths = next;
         }
 
-        // The wins expected rise with the rating: halve the range until they meet the wins had.
-        double low = AnchorRating - 4000;
-        double high = AnchorRating + 6000;
-        while (high - low > 0.01)
-        {
-            double middle = (low + high) / 2;
-            double expected = played.Sum(each => each.Games / (1 + Math.Pow(10, (each.Opponent - middle) / 400)));
-            (low, high) = expected < played.Sum(each => each.Wins) ? (middle, high) : (low, middle);
-        }
+        return free.ToImmutableDictionary(
+            bot => bot,
+            bot => (int)Math.Round(AnchorRating + (Scale * Math.Log(strengths[bot])), MidpointRounding.ToEven)
+        );
 
-        return (int)Math.Round((low + high) / 2, MidpointRounding.ToEven);
+        bool IsCounted(string bot) => held.ContainsKey(bot) || free.Contains(bot);
+    }
+
+    /// <summary>One round of fitting around the held: each free bot's strength anew, the held as they were.</summary>
+    private static ImmutableDictionary<string, double> NextAround(
+        ImmutableList<string> free,
+        ImmutableDictionary<string, double> wins,
+        ImmutableDictionary<string, double> strengths,
+        ImmutableList<BotMatchup> counted
+    ) =>
+        strengths.SetItems(
+            free.Select(bot => KeyValuePair.Create(
+                bot,
+                wins[bot] / counted
+                    .Where(matchup => matchup.First == bot || matchup.Second == bot)
+                    .Sum(matchup => (matchup.Played + 1) / (strengths[bot] + strengths[OtherOf(matchup, bot)]))
+            ))
+        );
+
+    /// <summary>Whether no free bot's strength moved by more than a hair, as a share of it.</summary>
+    private static bool IsSettled(
+        ImmutableList<string> free,
+        ImmutableDictionary<string, double> before,
+        ImmutableDictionary<string, double> after
+    ) =>
+        free.All(bot => Math.Abs(after[bot] - before[bot]) < Settled * before[bot]);
+
+    /// <summary>The bots joined to a held bot by a chain of games, the held among them.</summary>
+    private static ImmutableHashSet<string> Connected(
+        ImmutableDictionary<string, int> held,
+        ImmutableList<BotMatchup> matchups
+    ) =>
+        Reached([.. held.Keys], matchups);
+
+    /// <summary>The bots <paramref name="reached"/>, and every bot joined to one of them by a chain of games.</summary>
+    private static ImmutableHashSet<string> Reached(
+        ImmutableHashSet<string> reached,
+        ImmutableList<BotMatchup> matchups
+    )
+    {
+        ImmutableHashSet<string> grown = reached.Union(
+            matchups
+                .Where(matchup => reached.Contains(matchup.First) || reached.Contains(matchup.Second))
+                .SelectMany(matchup => (string[])[matchup.First, matchup.Second])
+        );
+        return grown.Count > reached.Count ? Reached(grown, matchups) : reached;
     }
 
     /// <summary>One round of fitting: each bot's strength anew, the anchor's then 1.</summary>
