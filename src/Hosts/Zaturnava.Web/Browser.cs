@@ -222,8 +222,14 @@ internal sealed class Browser(IJSRuntime js, IGameServing games)
 
     public ValueTask SetPreviewsShown(bool isShown) => this.Save(PreviewKey, isShown ? Shown : Hidden);
 
-    /// <summary>The game the player last started, if they have.</summary>
+    /// <summary>The game the player last chose, started or played, if they have.</summary>
     public ValueTask<string?> LastGame() => this.Load(LastGameKey);
+
+    /// <summary>
+    /// Remembers the game the player chose in the lobby, or is playing, for the lobby to come back to (2026-11-25:
+    /// back from a Chaturaji 2027 game, the lobby showed Grand Legions).
+    /// </summary>
+    public ValueTask RememberGame(string game) => this.Save(LastGameKey, game);
 
     /// <summary>How the player last set up <paramref name="game"/> to start it, if they have.</summary>
     public async ValueTask<GameSetup?> SetupOf(string game) => GameSetup.Parse(await this.Load(SetupOfKey + game));

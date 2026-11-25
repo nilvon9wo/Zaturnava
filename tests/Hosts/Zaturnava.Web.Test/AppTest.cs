@@ -96,6 +96,47 @@ public sealed class AppTest : IDisposable
     }
 
     [Fact]
+    public void Lobby_WhenAGameIsChosenThenAnother_RemembersEachForTheLobbyToComeBackTo()
+    {
+        // Arrange - back from a Chaturaji 2027 game, the lobby showed Grand Legions (2026-11-25)
+        this._page.Server.MoreRulesets =
+        [
+            new RulesetDto("grand-legions-small", "Grand Legions (small)", 4)
+            {
+                Game = "grand-legions",
+                GameName = "Grand Legions",
+                Size = "small",
+            },
+        ];
+        IRenderedComponent<App> app = this._page.Render<App>();
+
+        // Act
+        app.Find("select.game").Change("grand-legions");
+        string chosen = this.LastSaved("zaturnava.last-game");
+        app.Find("select.game").Change("chaturaji-2027");
+
+        // Assert
+        Assert.Equal(("grand-legions", "chaturaji-2027"), (chosen, this.LastSaved("zaturnava.last-game")));
+    }
+
+    [Fact]
+    public void Play_WhenTheTablesGameIsNoLongerOffered_KeepsTheGameLastChosen()
+    {
+        // Arrange - the table's ruleset gone from the catalog
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with { RulesetId = "gone" };
+        IRenderedComponent<App> app = this._page.Render<App>();
+
+        // Act
+        Play(app);
+
+        // Assert
+        Assert.Equal(
+            (1, "chaturaji-2027"),
+            (app.FindAll("section.table").Count, this.LastSaved("zaturnava.last-game"))
+        );
+    }
+
+    [Fact]
     public void HowToPlay_WhenAtAChaturajiTable_GuidesToChaturaji()
     {
         // Arrange
@@ -342,6 +383,12 @@ public sealed class AppTest : IDisposable
     }
 
     /// <summary>Plays a custom game, at the first seat, as the lobby offers it.</summary>
+    /// <summary>What the page last kept under <paramref name="key"/>.</summary>
+    private string LastSaved(string key) =>
+        $"{this._page.JSInterop.Invocations["zaturnava.save"]
+            .Last(save => $"{save.Arguments[0]}" == key)
+            .Arguments[1]}";
+
     private static void Play(IRenderedComponent<App> app)
     {
         if (app.FindAll(".panel.new-game").Count == 0)
