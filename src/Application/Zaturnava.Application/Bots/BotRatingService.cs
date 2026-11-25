@@ -17,9 +17,10 @@ namespace Net.NowhereAtAll.Zaturnava.Application.Bots;
 /// the other at the odd, and change sides each game. A game that ends goes to the team that won it, or is drawn; one
 /// that reaches <see cref="BotRatingSettings.MaximumSteps"/> goes to the side with more points, or is drawn, as the
 /// rating script counts them. A bot not shipped rated at a ruleset (<see cref="BotCatalog.Shipped"/>), once it has
-/// played each shipped bot there <see cref="BotRatingSettings.MinimumGames"/> times, is rated by those games against
-/// their ratings (<see cref="BotRatingFit.Against"/>), anew after every game, so that more games rate it better;
-/// those pairings are played first. A shipped bot keeps the rating it shipped with.
+/// played each shipped bot there <see cref="BotRatingSettings.MinimumGames"/> times, is rated by its games against
+/// them, their ratings held, and against the other bots not shipped (<see cref="BotRatingFit.Around"/>), anew after
+/// every game, so that more games rate it better; the pairings with a bot not shipped are played first. A shipped bot
+/// keeps the rating it shipped with.
 /// </summary>
 public sealed class BotRatingService(
     IRulesetLocating rulesets,
@@ -37,7 +38,8 @@ public sealed class BotRatingService(
 
     /// <summary>
     /// Rates, at each ruleset, each bot not shipped rated there whose every pair with a shipped bot has played enough,
-    /// by all those games, against the shipped ratings held as they are (<see cref="BotRatingFit.Against"/>); where
+    /// by all its games, those against the bots not shipped too, the shipped ratings held as they are
+    /// (<see cref="BotRatingFit.Around"/>); where
     /// only the anchor is, by every bot's games fitted together (<see cref="BotRatingFit.Fitted"/>), once its every
     /// pair has played enough, as against the anchor alone every bot that beats it rates alike; the anchor, if not
     /// shipped, at <see cref="BotRatingFit.AnchorRating"/>. A shipped bot keeps its rating (Proposed, 2026-11-13:
@@ -61,15 +63,14 @@ public sealed class BotRatingService(
                     .All(pairing => PlayedOf(kept, pairing) >= this._settings.MinimumGames);
             ImmutableList<string> ready =
                 [.. this._bots.Bots.Select(bot => bot.Id).Where(bot => !held.ContainsKey(bot) && IsReady(bot))];
-            ImmutableDictionary<string, int> together = isAnchorAlone && !ready.IsEmpty
-                ? BotRatingFit.Fitted(this._settings.Anchor, games)
-                : [];
-            ImmutableDictionary<string, int> fitted = anchor.AddRange(
-                ready.Select(bot => KeyValuePair.Create(
-                    bot,
-                    isAnchorAlone ? together[bot] : BotRatingFit.Against(bot, held, games)!.Value
-                ))
-            );
+            ImmutableDictionary<string, int> together = (isAnchorAlone, ready.IsEmpty) switch
+            {
+                (_, true) => [],
+                (true, _) => BotRatingFit.Fitted(this._settings.Anchor, games),
+                _ => BotRatingFit.Around(held, games),
+            };
+            ImmutableDictionary<string, int> fitted =
+                anchor.AddRange(ready.Select(bot => KeyValuePair.Create(bot, together[bot])));
             if (!fitted.IsEmpty)
             {
                 this._bots.Rate(ruleset, fitted);
@@ -81,9 +82,9 @@ public sealed class BotRatingService(
     }
 
     /// <summary>
-    /// Plays the pairing played least, those that rate a bot not shipped rated at its ruleset first, as only those
-    /// rate it (Proposed): one with a shipped bot, or, where only the anchor is, any; and keeps how it went; that game,
-    /// counted for the first bot.
+    /// Plays the pairing played least, those with a bot not shipped rated at its ruleset first, as only those rate it
+    /// (Proposed): with a shipped bot, or with another not shipped, which orders the two; and keeps how it went; that
+    /// game, counted for the first bot.
     /// </summary>
     public async Task<BotMatchup> PlayNext(CancellationToken cancellationToken)
     {
@@ -91,7 +92,7 @@ public sealed class BotRatingService(
 
         BotMatchup next = this._rulesets.All
             .SelectMany(ruleset => this.Pairings(ruleset.Id))
-            .OrderBy(pairing => !this.RatesANewBot(pairing))
+            .OrderBy(pairing => !this.HasANewBot(pairing))
             .ThenBy(pairing => PlayedOf(kept, pairing))
             .First();
         IRulesApplying rules = this._rulesets.Find(next.Ruleset);
@@ -149,6 +150,16 @@ public sealed class BotRatingService(
     {
         ImmutableDictionary<string, int> held = this.HeldAt(pairing.Ruleset);
         return held.Count == 1 || held.ContainsKey(pairing.First) != held.ContainsKey(pairing.Second);
+    }
+
+    /// <summary>
+    /// Whether the pairing has a bot not held: with one held, or with another not held, whose games against each other
+    /// order them (2026-11-25); or any, where only the anchor is.
+    /// </summary>
+    private bool HasANewBot(BotMatchup pairing)
+    {
+        ImmutableDictionary<string, int> held = this.HeldAt(pairing.Ruleset);
+        return held.Count == 1 || !held.ContainsKey(pairing.First) || !held.ContainsKey(pairing.Second);
     }
 
     private static bool IsOf(BotMatchup pairing, string bot) => pairing.First == bot || pairing.Second == bot;

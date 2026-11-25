@@ -21,8 +21,11 @@ own number (**25**, **N29**), the [2026-11-15 specification](playtesting/2026-11
   and adjust their shares if not. The overnight tournament rates them, with Icarus and Echo, since 2026-11-20:
   each beats Random nearly every game, so all rate far above 1200 (Random being 1000). So three more (2026-11-20),
   kept apart from those whose games are kept: Morpheus, Phaethon and Tantalus play at random but for one turn in
-  50, 20 and 10, when they play as Midas. Still to do: once rated, tune those shares so that they fall between
-  1000 and 1200, a step apart.
+  50, 20 and 10, when they play as Midas. Rated live (2026-11-25): Morpheus 1379, Phaethon 1582, Tantalus 1582,
+  Echo 1432, Icarus 1556 - out of order, as each was rated only against the shipped bots, and one that beats Random
+  and loses to Midas fits any rating between. So the new bots now play each other too, and are rated together, the
+  shipped ratings held. Still to do: once re-rated, tune their shares so that they fall between 1000 and 1200, a
+  step apart.
 - **M1–M5** Offline tournaments and training. *Begun* (2026-11-19): `scripts/wsl-overnight.sh` trains Athena and
   rates every bot, cycle after cycle, until stopped, each round kept as it ends
   ([local-development](contribute/local-development.md#smart-app-control-windows)). A tournament stopped
