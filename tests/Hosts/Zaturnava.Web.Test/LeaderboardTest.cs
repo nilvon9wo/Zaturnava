@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using AngleSharp.Dom;
 using Bunit;
 using Net.NowhereAtAll.Zaturnava.Contracts;
@@ -62,6 +63,60 @@ public sealed class LeaderboardTest : IDisposable
                 board.Find("td.people-streak").TextContent.Trim(),
                 board.FindAll(".leaders .against").Count
             )
+        );
+    }
+
+    [Fact]
+    public void Render_WhenTheStandingsAreStillComing_ShowsASpinner()
+    {
+        // Arrange
+        this._page.Server.HeldLeaderboard = new TaskCompletionSource<ImmutableList<StandingDto>>();
+
+        // Act
+        IRenderedComponent<Leaderboard> board = this.Render();
+
+        // Assert
+        Assert.Equal((1, 0), (board.FindAll(".standings-coming").Count, board.FindAll(".no-leaders").Count));
+    }
+
+    [Fact]
+    public void Render_WhenShownBefore_ShowsTheStandingsHadThenWhileAskingAgain()
+    {
+        // Arrange - shown once, Ada standing; then the server slow to count again
+        this._page.Server.Leaderboards =
+            this._page.Server.Leaderboards.Add("chaturaji-2027", [new StandingDto(1, "Ada", 1516, 14, 1, 0, 0)]);
+        _ = this.Render();
+        this._page.Server.HeldLeaderboard = new TaskCompletionSource<ImmutableList<StandingDto>>();
+
+        // Act
+        IRenderedComponent<Leaderboard> board = this.Render();
+
+        // Assert
+        Assert.Equal(
+            ("Ada", 0),
+            (board.Find(".leaders td.name").TextContent.Trim(), board.FindAll(".standings-coming").Count)
+        );
+    }
+
+    [Fact]
+    public async Task Game_WhenAnotherIsChosenBeforeTheFirstsStandingsCome_ShowsOnlyTheOtherGames()
+    {
+        // Arrange - the first game's standings slow; the other's, at once
+        TaskCompletionSource<ImmutableList<StandingDto>> held = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        this._page.Server.HeldLeaderboard = held;
+        IRenderedComponent<Leaderboard> board = this.Render();
+        this._page.Server.HeldLeaderboard = null;
+        this._page.Server.Leaderboards =
+            this._page.Server.Leaderboards.Add("grand-legions", [new StandingDto(1, "Cy", 1530, 40, 2, 0, 0)]);
+        board.Render(parameters => parameters.Add(leaderboard => leaderboard.Game, "grand-legions"));
+
+        // Act - on the page's own dispatcher, as the server's answer would come
+        await board.InvokeAsync(() => held.SetResult([new StandingDto(1, "Ada", 1516, 14, 1, 0, 0)]));
+        _ = await held.Task;
+
+        // Assert
+        await board.WaitForAssertionAsync(() =>
+            Assert.Equal("Cy", board.Find(".leaders td.name").TextContent.Trim())
         );
     }
 

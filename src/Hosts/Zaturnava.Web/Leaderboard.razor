@@ -9,6 +9,7 @@
    remembered (Stated, the same day). *@
 @inject IGameServing Games
 @inject Browser Browser
+@inject LobbyMemory Memory
 
 <div class="panel leaderboard">
     <h2>Leaderboard</h2>
@@ -39,6 +40,13 @@
         </label>
     </div>
 
+    @if (this.Rows is null && this._problem is null)
+    {
+        <div class="standings-coming" role="status">
+            <span class="spinner" aria-hidden="true"></span>
+            <span class="visually-hidden">Counting the standings</span>
+        </div>
+    }
     @if (this.Rows is { } rows)
     {
         @if (rows.IsEmpty)
@@ -376,16 +384,19 @@
     /// <summary>
     /// The game's people and bots, both asked for at once: a board or a rating chosen is then shown from them at once,
     /// nothing asked again, so that nothing on the page moves (the user's report of 2026-11-20: the whole lobby jumped
-    /// about at each choice).
+    /// about at each choice). As last had, meanwhile, if they were (the user's report of 2026-11-25: returning to the
+    /// lobby took forever), else a spinner.
     /// </summary>
     private async Task Show(string game)
     {
         this._game = game;
-        this._standings = null;
+        this._page = 0;
+        this._standings = this.Memory.Standings.GetValueOrDefault(game);
         Task<ImmutableList<StandingDto>> people = this.Games.Leaderboard(game, CancellationToken.None);
         Task<ImmutableList<BotStandingDto>> bots = this.Games.BotLeaderboard(game, CancellationToken.None);
-        this._standings = new Standings(await people, await bots);
-        this._page = 0;
+        Standings counted = new(await people, await bots);
+        this.Memory.Standings = this.Memory.Standings.SetItem(game, counted);
+        this._standings = this._game == game ? counted : this._standings;
     }
 
     /// <summary>The board chosen's rows, by the rating chosen; none until the game's standings are in.</summary>
@@ -468,9 +479,6 @@
                 ),
             ],
         };
-
-    /// <summary>A game's people and its bots, as the server ranks them.</summary>
-    private sealed record Standings(ImmutableList<StandingDto> People, ImmutableList<BotStandingDto> Robots);
 
     /// <summary>A column a board may be sorted by: its class, header and what it means, if the header says too little.</summary>
     private sealed record Column(string Key, string Header, string? Title);

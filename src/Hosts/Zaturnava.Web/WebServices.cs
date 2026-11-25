@@ -35,6 +35,7 @@ internal static class WebServices
             .AddSingleton(new HttpClient { BaseAddress = server })
             .AddSingleton<IGameServing, HttpGameClient>()
             .AddSingleton<Browser>()
+            .AddSingleton<LobbyMemory>()
             .AddSingleton(TimeProvider.System)
             .AddSingleton(
                 new TableSettings(

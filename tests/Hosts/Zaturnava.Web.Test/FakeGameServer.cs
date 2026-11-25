@@ -170,7 +170,13 @@ internal sealed class FakeGameServer : IGameServing
     public ImmutableDictionary<string, ImmutableList<StandingDto>> Leaderboards { get; set; } = [];
 
     public Task<ImmutableList<StandingDto>> Leaderboard([Required] string game, CancellationToken cancellationToken) =>
-        this.Answer($"leaderboard {game}", this.Leaderboards.GetValueOrDefault(game, []));
+        this.HeldLeaderboard?.Task ?? this.Answer($"leaderboard {game}", this.Leaderboards.GetValueOrDefault(game, []));
+
+    /// <summary>While set, people's leaderboard is answered only once this is: standings slow to count.</summary>
+    public TaskCompletionSource<ImmutableList<StandingDto>>? HeldLeaderboard { get; set; }
+
+    /// <summary>While set, the games are listed only once this is: a list slow to come.</summary>
+    public TaskCompletionSource<GamePageDto>? HeldList { get; set; }
 
     public ImmutableDictionary<string, ImmutableList<BotStandingDto>> BotLeaderboards { get; set; } = [];
 
@@ -192,7 +198,7 @@ internal sealed class FakeGameServer : IGameServing
         }
 
         this.Listed = query;
-        return this.Answer(
+        return this.HeldList?.Task ?? this.Answer(
             "list",
             new GamePageDto(this.Games, this.Total ?? this.Games.Count, query?.Page ?? 1, query?.PageSize ?? 20)
         );
