@@ -271,6 +271,12 @@ on, with what follows in place of the Raja-and-dice parts.
     forward only, such as the Lance; no piece that may move sideways or back.
   - **Stated (2026-10-29).** Any two pieces that may swap back to back may swap with each other,
     whatever their kinds or classes: a Shogi Pawn with a Western Pawn, a Pawn with a Lance.
+  - **Stated (2026-11-25).** By the pieces' normal moves, not by the square: a capture, possible or
+    made, does not count, so a Pawn that could take diagonally still swaps. The Shogi Knight has two
+    landing cells, so two of them do not truly block each other, and do not swap. The Xiangqi Soldier
+    swaps, and keeps the swap once over a river. The swap's worth is strategic: a blocked piece goes
+    forward, a Pawn nearer its promotion, a Lance freed to strike a high-value piece; each bot judges
+    whether and when to swap as its strength allows (backlog §2).
 
 - **Stated — dice.** A die names a **class** of piece (Leader, Cavalry, Heavy, Infantry,
   Artillery), not a kind: the player may move any piece of that class.
