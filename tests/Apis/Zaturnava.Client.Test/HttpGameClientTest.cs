@@ -110,7 +110,7 @@ public sealed class HttpGameClientTest
                     + "\"draftBudget\":null,\"drafter\":null,\"isDraftSecret\":false,"
                     + "\"isDraftHiddenFromAllies\":false,\"board\":null,\"promotesAtSide\":false,"
                     + "\"isForPlayers\":false,\"areDiceOff\":false,\"idleRounds\":null,\"opener\":null,"
-                    + "\"terrainMask\":0,\"terrainValue\":0}",
+                    + "\"isLostWithoutLeaders\":false,\"terrainMask\":0,\"terrainValue\":0}",
                 "g"
             ),
             (server.Method, server.Path, server.Body, created.GameId)
