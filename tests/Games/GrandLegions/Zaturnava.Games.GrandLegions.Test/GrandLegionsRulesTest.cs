@@ -633,6 +633,7 @@ public sealed class GrandLegionsRulesTest
     [InlineData("western-pawn", "western-pawn")]
     [InlineData("lance", "shogi-pawn")]
     [InlineData("makruk-pawn", "western-pawn")]
+    [InlineData("western-pawn", "xiangqi-soldier")]
     public void Apply_WhenBlacksPieceMovesOntoGreensBackToBack_SwapsThemIfBothMoveOnlyStraightForward(
         string black,
         string green
@@ -764,7 +765,7 @@ public sealed class GrandLegionsRulesTest
 
     [Theory]
     [InlineData("rook", "western-pawn")]
-    [InlineData("western-pawn", "xiangqi-soldier")]
+    [InlineData("western-pawn", "janggi-soldier")]
     [InlineData("shogi-knight", "western-pawn")]
     [InlineData("berolina-pawn", "man")]
     public void Apply_WhenEitherPieceBackToBackMayMoveOtherThanStraightOn_RefusesTheSwap(string black, string green)
@@ -1021,7 +1022,7 @@ public sealed class GrandLegionsRulesTest
         MoveDiagram diagram = rules.GuideOf(GrandLegionsPieces.XiangqiSoldier).Diagram;
 
         // Assert
-        NamedDiagram across = Assert.Single(diagram.Alternates);
+        NamedDiagram across = Assert.Single(diagram.Alternates, alternate => alternate.Name == "Across a river");
         Assert.Equal(
             ("49", "49", "Across a river", "39,41,49", "39,41,49"),
             (
