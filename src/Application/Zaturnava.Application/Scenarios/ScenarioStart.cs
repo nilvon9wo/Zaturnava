@@ -43,6 +43,9 @@ public static class ScenarioStart
     /// <summary>The argument of a game's first action saying a team with no leader left has lost.</summary>
     private const string LeadersArgument = "lost-without-leaders";
 
+    /// <summary>The argument of a game's first action saying how many seconds idle pass a player's turn.</summary>
+    private const string IdleTimeArgument = "idle-seconds";
+
     /// <summary>
     /// The edition of a ruleset's pieces and rules a game dealt now is dealt from (<see cref="GameState.Edition"/>): 1,
     /// since Grand Legions gained the Checkers and Tafl pieces (2026-11-13); 2, since it gained mercenaries (the same
@@ -110,7 +113,8 @@ public static class ScenarioStart
     /// <summary>
     /// The game's first action, dealing it as <paramref name="deal"/> did, but set up as <paramref name="choices"/>
     /// say, whatever the game it dealt chose: without dice, or with them; ending after so many idle rounds, if set;
-    /// opened by the seat they name, if any, without dice; and lost by a team with no leader left, if they say so.
+    /// opened by the seat they name, if any, without dice; lost by a team with no leader left, if they say so; and
+    /// each player's turn passing after so many seconds idle, if set.
     /// </summary>
     public static ActionDescriptor Chosen([Required] ActionDescriptor deal, [Required] GameChoices choices) =>
         deal with
@@ -118,17 +122,35 @@ public static class ScenarioStart
             Arguments = Set(
                 Set(
                     Set(
-                        Set(deal.Arguments, DiceOffArgument, choices.AreDiceOff ? ActionDescriptor.Flag(true) : null),
-                        IdleRoundsArgument,
-                        choices.IdleRounds?.ToString(CultureInfo.InvariantCulture)
+                        Set(
+                            Set(
+                                deal.Arguments,
+                                DiceOffArgument,
+                                choices.AreDiceOff ? ActionDescriptor.Flag(true) : null
+                            ),
+                            IdleRoundsArgument,
+                            choices.IdleRounds?.ToString(CultureInfo.InvariantCulture)
+                        ),
+                        OpenerArgument,
+                        choices.AreDiceOff ? choices.Opener?.ToString(CultureInfo.InvariantCulture) : null
                     ),
-                    OpenerArgument,
-                    choices.AreDiceOff ? choices.Opener?.ToString(CultureInfo.InvariantCulture) : null
+                    LeadersArgument,
+                    choices.IsLostWithoutLeaders ? ActionDescriptor.Flag(true) : null
                 ),
-                LeadersArgument,
-                choices.IsLostWithoutLeaders ? ActionDescriptor.Flag(true) : null
+                IdleTimeArgument,
+                choices.IdleSeconds?.ToString(CultureInfo.InvariantCulture)
             ),
         };
+
+    /// <summary>
+    /// How long a player may be idle, deciding, in the game the first of <paramref name="actions"/> began, before
+    /// their turn passes, if its creator set it; none, if not.
+    /// </summary>
+    public static TimeSpan? IdleTimeOf([Required] ImmutableList<ActionDescriptor> actions) =>
+        actions.FirstOrDefault() is { Kind: DealKind or SetupKind } first
+        && first.Arguments.TryGetValue(IdleTimeArgument, out string? seconds)
+            ? TimeSpan.FromSeconds(int.Parse(seconds, CultureInfo.InvariantCulture))
+            : null;
 
     /// <summary>Whether the first of <paramref name="actions"/> began a game a leaderless team loses.</summary>
     public static bool IsLostWithoutLeaders([Required] ImmutableList<ActionDescriptor> actions) =>

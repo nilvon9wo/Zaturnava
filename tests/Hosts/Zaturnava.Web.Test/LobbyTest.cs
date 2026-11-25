@@ -739,6 +739,46 @@ public sealed class LobbyTest : IDisposable
         Assert.Equal(expected, this._page.Server.Created?.IsLostWithoutLeaders);
     }
 
+    [Theory]
+    [InlineData("", null)]
+    [InlineData("90", 90)]
+    [InlineData("3", 10)]
+    [InlineData("999999", 86400)]
+    public void Play_WhenItsCreatorTypesAPlayersIdleTime_AsksForItWithinWhatTheServerAllows(
+        string typed,
+        int? expected
+    )
+    {
+        // Arrange
+        IRenderedComponent<Lobby> lobby = this.ByStrength();
+        if (typed.Length > 0)
+        {
+            lobby.Find("input.idle-seconds").Change(typed);
+        }
+
+        // Act
+        lobby.Find("button.create").Click();
+
+        // Assert
+        Assert.Equal(expected, this._page.Server.Created?.IdleSeconds);
+    }
+
+    [Fact]
+    public void Render_WhenAPlayersIdleTimeWasSetBefore_SetsItAgain()
+    {
+        // Arrange
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.setup").SetResult("strength");
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.setup-of.chaturaji-2027")
+            .SetResult("chaturaji-2027;0;-1,1,1,1;,,,;turn-time=45");
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.Render();
+        lobby.Find("button.create").Click();
+
+        // Assert
+        Assert.Equal(45, this._page.Server.Created?.IdleSeconds);
+    }
+
     [Fact]
     public void Render_WhenATeamWithoutLeadersWasToLoseBefore_ChoosesItAgain()
     {

@@ -109,7 +109,8 @@ public sealed class GameService(
             areDiceOff,
             offered.IdleRounds is null ? null : IdleRoundsOf(dealing),
             areDiceOff ? this.OpenerOf(dealing, seats.Count) : null,
-            dealing.IsLostWithoutLeaders
+            dealing.IsLostWithoutLeaders,
+            IdleSecondsOf(dealing)
         );
         ImmutableList<ActionDescriptor> start = (scenarioId, offered.IsDealt) switch
         {
@@ -252,6 +253,27 @@ public sealed class GameService(
         dealing.IdleRounds is < 1
             ? throw new InvalidGameSetupException("A game ends after at least 1 idle round.")
             : dealing.IdleRounds;
+
+    /// <summary>The fewest seconds a game's creator may let a player be idle before their turn passes.</summary>
+    public const int LeastIdleSeconds = 10;
+
+    /// <summary>The most seconds a game's creator may let a player be idle before their turn passes: a day.</summary>
+    public const int MostIdleSeconds = 24 * 60 * 60;
+
+    /// <summary>
+    /// The seconds the creator let each player be idle before their turn passes, if any: from
+    /// <see cref="LeastIdleSeconds"/> to <see cref="MostIdleSeconds"/>.
+    /// </summary>
+    /// <exception cref="InvalidGameSetupException">They are fewer or more.</exception>
+    private static int? IdleSecondsOf(Dealing dealing) =>
+        dealing.IdleSeconds is < LeastIdleSeconds or > MostIdleSeconds
+            ? throw new InvalidGameSetupException(
+                string.Create(
+                    CultureInfo.InvariantCulture,
+                    $"A player may be idle from {LeastIdleSeconds} to {MostIdleSeconds} seconds."
+                )
+            )
+            : dealing.IdleSeconds;
 
     /// <summary>The board's size, if the ruleset may be played on it.</summary>
     /// <exception cref="InvalidGameSetupException">It may not.</exception>
@@ -917,7 +939,9 @@ public sealed class GameService(
 
     /// <summary>
     /// The snapshot with the time its deciding seat has left, if its decision is timed; else, with who may
-    /// vote to stop waiting for it, and, once they all would, the time it has left before it passes.
+    /// vote to stop waiting for it, and the time it has left before it passes: once they all would, or once it has
+    /// been idle as long as the game's creator let a player be (<see cref="Dealing.IdleSeconds"/>), whichever is
+    /// sooner.
     /// </summary>
     private GameSnapshot Timed(GameSnapshot snapshot)
     {
@@ -928,13 +952,31 @@ public sealed class GameService(
 
         DecisionTimer? timer = snapshot.Rules.TimerOf(snapshot.State);
         AwayVoting? away = this.AwayVotingOf(snapshot, timer is null);
-        return (timer, away) switch
+        ImmutableList<TimeSpan> due =
+        [
+            .. new[] { away is { IsPassing: true } ? away.GraceLeft : null, this.IdleLeft(snapshot) }
+                .OfType<TimeSpan>(),
+        ];
+        return (timer, due) switch
         {
             ({ }, _) => snapshot with { Away = away, TimeLeft = this.TimeLeft(snapshot.Record, timer) },
-            (_, { IsPassing: true }) => snapshot with { Away = away, TimeLeft = away.GraceLeft },
+            (_, { IsEmpty: false }) => snapshot with { Away = away, TimeLeft = due.Min() },
             _ => snapshot with { Away = away },
         };
     }
+
+    /// <summary>
+    /// How long the deciding seat, played by a person (or an AI over the API), not one of the server's bots, has left
+    /// before its turn passes, if the game's creator set how long a player may be idle; it runs from when this host
+    /// first saw the game as it is, so from the seat's last decision, or from its turn's start. None, if not set, or
+    /// if no one is deciding (as no one is in a game over). Dice asked for are rolled at once, so never awaited here.
+    /// </summary>
+    private TimeSpan? IdleLeft(GameSnapshot snapshot) =>
+        ScenarioStart.IdleTimeOf(snapshot.Record.Actions) is { } idle
+        && snapshot.State.DecidingSeat is { } seat
+        && snapshot.Record.Controllers[seat.Value] is not BotSeat
+            ? this.Left(this._clock.Since(snapshot.Record.Id, snapshot.Record.Version) + idle)
+            : null;
 
     /// <summary>
     /// The vote on waiting for a seat a person (or no one yet) plays, while other people still play: one whose turns

@@ -190,6 +190,7 @@ internal static class GameViews
             AreDiceOff = snapshot.State.AreDiceOff,
             IdleRounds = snapshot.State.IdleRounds,
             IsLostWithoutLeaders = snapshot.State.IsLostWithoutLeaders,
+            IdleSeconds = ScenarioStart.IdleTimeOf(snapshot.Record.Actions) is { } idle ? (int)idle.TotalSeconds : null,
             Fleeing = snapshot.State.Fleeing?.Value,
             DraftLeft = shown.Draft is { } draft
                 ? [.. snapshot.State.Seats.Select(seat => LeftOf(draft, seat.Id))]

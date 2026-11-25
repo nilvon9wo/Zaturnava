@@ -127,6 +127,13 @@ public sealed record GameViewDto(
     public bool IsLostWithoutLeaders { get; init; }
 
     /// <summary>
+    /// How many seconds each player may be idle deciding before their turn passes, as its creator set it
+    /// (<see cref="CreateGameRequest.IdleSeconds"/>); null, if they did not. The time left is in the deciding seat's
+    /// timer, as any timed decision's is.
+    /// </summary>
+    public int? IdleSeconds { get; init; }
+
+    /// <summary>
     /// The cell of a piece just come to where it may leave the board (the Tafl King on its far corner) as its turn
     /// would end, the game waiting on whether it leaves or stays; null if none.
     /// </summary>
