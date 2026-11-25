@@ -115,6 +115,13 @@ internal sealed class LineRules(ImmutableList<GameAction> legalActions) : IRules
 
     public int RansomPointsOf([Required] GameState state, [Required] RansomOffer offer) => 0;
 
+    /// <summary>The kinds that attack as any piece does, but may move nowhere: none, unless set.</summary>
+    public ImmutableHashSet<PieceKindId> Rooted { get; init; } = [];
+
+    /// <summary>Where each piece attacks, but none of the <see cref="Rooted"/>.</summary>
+    public ImmutableList<Attack> MovesOf([Required] GameState state, SeatId seat) =>
+        [.. this.AttacksOf(state, seat).Where(attack => !this.Rooted.Contains(attack.Attacker.Kind))];
+
     public ImmutableList<Attack> AttacksOf([Required] GameState state, SeatId seat) =>
     [
         .. state.Position.Occupants

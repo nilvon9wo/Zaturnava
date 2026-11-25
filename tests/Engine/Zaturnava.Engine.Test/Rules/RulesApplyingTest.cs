@@ -230,6 +230,19 @@ public sealed class RulesApplyingTest
     }
 
     [Fact]
+    public void MovesOf_WhenTheRulesetSaysNoOther_IsWhereItsPiecesAttack()
+    {
+        // Arrange
+        OneSizeRules rules = new();
+
+        // Act
+        ImmutableList<Attack> moves = MovesOf(rules);
+
+        // Assert
+        Assert.Equal(OneSizeRules.Attacks, moves);
+    }
+
+    [Fact]
     public void Drafted_WhenTheRulesetSaysNoOther_IsNotDraftableAndLeavesTheGameAsDealtOfferingNothing()
     {
         // Arrange
@@ -323,6 +336,10 @@ public sealed class RulesApplyingTest
         rules.Drafted(dealt, 7),
         rules.DraftOffered(dealt).Count
     );
+
+    private static ImmutableList<Attack> MovesOf<TRules>(TRules rules)
+        where TRules : IRulesApplying =>
+        rules.MovesOf(OneSizeRules.State, Seat);
 
     private static int KeepingWorthOf<TRules>(TRules rules, PieceKindId kind)
         where TRules : IRulesApplying =>
@@ -451,8 +468,11 @@ file sealed class OneSizeRules : IRulesApplying
     public int RansomPointsOf([Required] GameState state, [Required] RansomOffer offer) =>
         throw new NotSupportedException();
 
-    public ImmutableList<Attack> AttacksOf([Required] GameState state, SeatId seat) =>
-        throw new NotSupportedException();
+    /// <summary>The one attack its seat makes, wherever its pieces stand.</summary>
+    public static ImmutableList<Attack> Attacks { get; } =
+        [new(new Piece(new PieceId(1), new PieceKindId("pawn"), new SeatId(0)), new CellId(0), new CellId(1))];
+
+    public ImmutableList<Attack> AttacksOf([Required] GameState state, SeatId seat) => Attacks;
 
     public bool IsLeader(PieceKindId kind) => throw new NotSupportedException();
 

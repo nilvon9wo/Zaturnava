@@ -8,8 +8,8 @@ namespace Net.NowhereAtAll.Zaturnava.Games.GrandLegions;
 
 /// <summary>
 /// Grand Legions played by Chaturaji 2027's rules (Proposed): each leader is what those rules call a Raja, its
-/// start its seat's throne; the Western, Makruk and Shogi Pawns are their Pawns; every piece moving forward only swaps
-/// back to back (<see cref="Swappers"/>); every
+/// start its seat's throne; the Western, Makruk and Shogi Pawns are their Pawns; they and the Lance, moving only
+/// straight forward, swap back to back (<see cref="Swappers"/>); every
 /// Infantry piece is promoted at the far edge into a captured piece; a die names a class, so moves any piece of
 /// it; taking a piece scores its value, priced on the game's board (<see cref="BoardPrices"/>); and each piece's
 /// own promotion is played. Each army has a palace about its throne, where its kingdom has room for one, drawn on the
@@ -29,20 +29,14 @@ public static class GrandLegionsRules
         [GrandLegionsPieces.WesternPawn, GrandLegionsPieces.MakrukPawn, GrandLegionsPieces.ShogiPawn];
 
     /// <summary>
-    /// Every piece whose every move is forward, swapping back to back with any other such piece of an ally's, whatever
-    /// their kinds (specification §6.1, Stated 2026-10-29: "any other piece whose normal move is forward only, such as
-    /// the Lance; no piece that may move sideways or back"): the Pawns, the Lance; and, Proposed, as their moves are
-    /// forward only, diagonally, the Berolina Pawn and the Man, and, leaping, the Shogi Knight. Before, only the Pawns
-    /// swapped (playtest 2026-11-15).
+    /// Every piece that moves only straight forward, swapping back to back with any other such piece of an ally's,
+    /// whatever their kinds (specification §6.1, Stated 2026-10-29: "any other piece whose normal move is forward only,
+    /// such as the Lance; no piece that may move sideways or back"): the Pawns and the Lance. Not the Shogi Knight
+    /// (Stated 2026-11-25: it "can move out of the way, unlike pawns or lances", which "swap squares they would land in
+    /// and which have no other choice(s) where to go"), nor, by the same rule, the Berolina Pawn and the Man, which go
+    /// diagonally forward either way.
     /// </summary>
-    public static ImmutableHashSet<PieceKindId> Swappers { get; } =
-    [
-        .. Pawns,
-        GrandLegionsPieces.Lance,
-        GrandLegionsPieces.ShogiKnight,
-        GrandLegionsPieces.BerolinaPawn,
-        GrandLegionsPieces.Man,
-    ];
+    public static ImmutableHashSet<PieceKindId> Swappers { get; } = [.. Pawns, GrandLegionsPieces.Lance];
 
     /// <summary>Every Infantry piece, promoted at the far edge into a captured piece (specification §6.1).</summary>
     public static ImmutableHashSet<PieceKindId> Promotables { get; } =

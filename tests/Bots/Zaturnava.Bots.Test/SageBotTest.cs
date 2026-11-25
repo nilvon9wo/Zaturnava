@@ -135,6 +135,37 @@ public sealed class SageBotTest
         Assert.Equal(LineRules.Move(3, 5), action);
     }
 
+    [Theory]
+    [InlineData(true, 4)]
+    [InlineData(false, 1)]
+    public async Task Decide_WhenAThreatenedPieceAttacksAnEmptyCellItCannotMoveTo_CountsItAsUnableToFlee(
+        bool isRooted,
+        int chosen
+    )
+    {
+        // Arrange - Sage's Boat may take a Pawn (1), scoring 1, or go where it threatens another Pawn (4) that attacks
+        // cell 7, empty and safe, its own Pawn on 3 in the way; a Pawn that may not move there cannot flee, and the
+        // threat counts in full (the Pawn's 1), not for the tempo alone (a quarter); weighed so that the point scored
+        // counts for a half (2026-11-20: Sage counted a Pawn as fleeing where it attacks, not where it moves)
+        DecisionRequest request = LineRules.Request(
+            [LineRules.Move(2, 1), LineRules.Move(2, 4)],
+            (2, LineRules.Boat, LineRules.Seat),
+            (3, LineRules.Pawn, LineRules.Seat),
+            (1, LineRules.Pawn, LineRules.Enemy),
+            (6, LineRules.Pawn, LineRules.Enemy)
+        );
+        DecisionRequest rooted = isRooted
+            ? request with { Rules = new LineRules(request.LegalActions) { Rooted = [LineRules.Pawn] } }
+            : request;
+        SageWeights weights = Nothing with { Score = 0.5, Chances = 1 };
+
+        // Act
+        GameAction action = await new SageBot(new Random(Seed), weights).Decide(rooted, this._cancellation);
+
+        // Assert
+        Assert.Equal(LineRules.Move(2, chosen), action);
+    }
+
     [Fact]
     public async Task Decide_WhenItCanForkPiecesOfTwoEnemies_ForksThemRatherThanThreatenOne()
     {
