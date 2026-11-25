@@ -502,15 +502,47 @@ public sealed class Chaturaji2027RulesTest
         // Act
         ImmutableList<double> black = this._rules.MeasuresOf(state, Black);
 
-        // Assert - its progress, its nearness to promoting, its reach and its retreats; no danger, no command
+        // Assert - its progress, its nearness to promoting, its reach and its retreats; no danger, no command; its
+        // Raja's eight cells, none attacked
         Assert.Equal(
             [
                 "pawn-progress", "pawns-near-promotion", "reach", "retreat", "leaders-attacked", "thrones-in-danger",
-                "commanded", "under-escapes", "held-back",
+                "commanded", "under-escapes", "held-back", "leader-room",
             ],
             this._rules.Measures
         );
-        Assert.Equal([5d, 1d, 9d, 3d, 0d, 0d, 0d, 0d, 0d], black);
+        Assert.Equal([5d, 1d, 9d, 3d, 0d, 0d, 0d, 0d, 0d, 8d], black);
+    }
+
+    [Theory]
+    [InlineData("open", 3)]
+    [InlineData("walled", 0)]
+    [InlineData("watched", 1)]
+    public void MeasuresOf_WhenItsRajaStandsInItsCorner_CountsTheCellsItCouldStepToThatNoEnemyAttacks(
+        string around,
+        int room
+    )
+    {
+        // Arrange - Black's Raja on a1, with three cells about it: open; walled in by Black's own Pawns; or two of
+        // them, b1 and b2, watched by Red's Elephant down the b-file from b8
+        ImmutableList<(CellId, Piece)> pieces = around switch
+        {
+            "walled" =>
+            [
+                (Grid.CellAt(0, 1), Piece(2, Chaturaji2027Pieces.Pawn, Black)),
+                (Grid.CellAt(1, 0), Piece(3, Chaturaji2027Pieces.Pawn, Black)),
+                (Grid.CellAt(1, 1), Piece(4, Chaturaji2027Pieces.Pawn, Black)),
+            ],
+            "watched" => [(Grid.CellAt(1, 7), Piece(2, Chaturaji2027Pieces.Elephant, Red))],
+            _ => [(Grid.CellAt(7, 7), Piece(2, Chaturaji2027Pieces.Pawn, Yellow))],
+        };
+        GameState state = this.StateWith([(Grid.CellAt(0, 0), Piece(1, Chaturaji2027Pieces.Raja, Black)), .. pieces]);
+
+        // Act
+        double leaderRoom = this._rules.MeasuresOf(state, Black)[9];
+
+        // Assert
+        Assert.Equal(room, leaderRoom);
     }
 
     [Theory]
