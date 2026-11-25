@@ -16,6 +16,14 @@ only in part, what is left is in the backlog, and its history here. The playtest
   each leaderboard show their own spinner until they come, and *New game* works meanwhile. Returning to the lobby
   shows what it showed last at once and then refreshes it. The server keeps each leaderboard for a minute, or
   until a game is rated, instead of working it out again for every request (*Proposed*).
+- **Field promotion** (asked 2026-11-25, Grand Legions only): a piece that has stood on an enemy throne for 10
+  turns may, if its player chooses, promote into a Silver General, and the player then also scores the bonus for a
+  leader on an enemy throne.
+
+  *Done*: as each turn ends, the game counts a turn more for every piece, leaders apart, standing on the throne of
+  a seat not its ally; a piece that leaves, or is taken, starts again from nothing. Once a piece has 10, its player
+  may promote it into a Silver General, free, and scores the throne-entry bonus, as a leader stepping onto that
+  throne does. Every seat's turn counts (*Proposed*; asked in [open-questions](open-questions.md)).
 
 ## Going public (playtest of 2026-11-04)
 

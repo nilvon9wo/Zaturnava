@@ -11,5 +11,15 @@ asked here instead (checked, every *Proposed* in the documents, on 2026-11-06).
 Anything to be built is in the [backlog](backlog.md) or the [roadmap](grand/roadmap.md), and anything left to
 playtesting is marked so where it is written.
 
-None is open now (2026-11-25).
+## Field promotion: whose turns count?
+
+Asked 2026-11-25: "a piece that has stood on an enemy throne for 10 turns". Built (*Proposed*, standing until
+answered) counting every seat's turn, so 10 turns is two and a half rounds of a four-seat game.
+
+| Counting | 10 turns is | A piece must survive |
+|---|---|---|
+| Every seat's turn (as built) | 2½ rounds | 7–8 enemy turns |
+| Its own army's turns only | 10 rounds | about 20 enemy turns |
+
+Which did you mean?
 

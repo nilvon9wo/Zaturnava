@@ -224,6 +224,12 @@ public sealed record GameState(
     /// </summary>
     public ImmutableDictionary<PieceId, int> MercenaryCosts { get; init; } = [];
 
+    /// <summary>
+    /// How many turns of the game together each piece, not a leader, has ended standing on an enemy throne, where
+    /// the rules promote in the field; a piece not on one is not here.
+    /// </summary>
+    public ImmutableDictionary<PieceId, int> ThroneTenure { get; init; } = [];
+
     /// <summary>A proposal to end the game, waiting on the deciding seat's answer; null if none is.</summary>
     public EndProposal? Proposal { get; init; }
 

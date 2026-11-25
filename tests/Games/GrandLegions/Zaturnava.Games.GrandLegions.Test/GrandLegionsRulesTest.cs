@@ -594,6 +594,76 @@ public sealed class GrandLegionsRulesTest
         );
     }
 
+    [Theory]
+    [InlineData(GrandLegionsRules.FieldPromotionTurns - 1, false)]
+    [InlineData(GrandLegionsRules.FieldPromotionTurns, true)]
+    public void LegalActions_WhenAPieceHasStoodOnAnEnemyThrone_OffersItASilverGeneralOnlyOnceItHasStoodLongEnough(
+        int turns,
+        bool isOffered
+    )
+    {
+        // Arrange - Black's Rook on Yellow's throne
+        Chaturaji2027Rules rules = GrandLegionsRules.RulesOf(QuickGame.Small);
+        CellId throne = rules.Thrones[new SeatId(1)];
+        Piece rook = BlackPiece(GrandLegionsPieces.Rook);
+        GameState state = BlackDeciding(rules, (throne, rook)) with { ThroneTenure = [new(rook.Id, turns)] };
+
+        // Act
+        ImmutableList<GameAction> actions = rules.LegalActions(state);
+
+        // Assert
+        Assert.Equal(
+            isOffered,
+            actions.Contains(new PromoteOwnAction(new SeatId(0), throne, GrandLegionsPieces.SilverGeneral))
+        );
+    }
+
+    [Theory]
+    [InlineData("enemy's", 1)]
+    [InlineData("own", 0)]
+    public void Apply_WhenATurnPasses_CountsATurnMoreForEachPieceOnAnEnemysThroneOnly(string whose, int counted)
+    {
+        // Arrange - Black's Rook on Yellow's throne, an enemy's, or on Black's own, three turns there already
+        Chaturaji2027Rules rules = GrandLegionsRules.RulesOf(QuickGame.Small);
+        CellId throne = rules.Thrones[new SeatId(whose == "own" ? 0 : 1)];
+        Piece rook = BlackPiece(GrandLegionsPieces.Rook);
+        GameState state = BlackDeciding(rules, (throne, rook)) with { ThroneTenure = [new(rook.Id, 3)] };
+
+        // Act
+        GameState passed = rules.Apply(state, new PassAction(new SeatId(0))).State;
+
+        // Assert
+        Assert.Equal(counted == 0 ? 0 : 4, passed.ThroneTenure.GetValueOrDefault(rook.Id));
+    }
+
+    [Fact]
+    public void Apply_WhenAPieceIsPromotedInTheField_BecomesASilverGeneralAndScoresAsALeaderEnteringTheThrone()
+    {
+        // Arrange - Black's Rook, ten turns on Yellow's throne
+        Chaturaji2027Rules rules = GrandLegionsRules.RulesOf(QuickGame.Small);
+        CellId throne = rules.Thrones[new SeatId(1)];
+        Piece rook = BlackPiece(GrandLegionsPieces.Rook);
+        GameState state = BlackDeciding(rules, (throne, rook)) with
+        {
+            ThroneTenure = [new(rook.Id, GrandLegionsRules.FieldPromotionTurns)],
+        };
+
+        // Act
+        Transition promoted = rules.Apply(
+            state,
+            new PromoteOwnAction(new SeatId(0), throne, GrandLegionsPieces.SilverGeneral)
+        );
+
+        // Assert
+        Piece general = rook with { Kind = GrandLegionsPieces.SilverGeneral };
+        int bonus = promoted.Events.OfType<ThroneEntered>().Single().Points;
+        Assert.Equal(
+            (general, state.Scores[new SeatId(0)] + bonus),
+            (promoted.State.Position.PieceAt(throne), promoted.State.Scores[new SeatId(0)])
+        );
+        Assert.True(bonus > 0);
+    }
+
     [Fact]
     public void MeasuresOf_WhenAnInfantryPieceNotAPawnIsARowFromTheFarEdge_CountsItNearPromoting()
     {
