@@ -16,6 +16,12 @@ public sealed record BotDto(string Id, string Name, string Description, bool Use
     public ImmutableDictionary<string, int> Ratings { get; init; } = [];
 
     /// <summary>
+    /// Its TrueSkill rating at each ruleset, as TrueSkill ranks (the skill it very likely has at least), from its Elo
+    /// there, sure of it; to one decimal. Its Glicko-2 rating is its Elo. None for a ruleset it has not been rated at.
+    /// </summary>
+    public ImmutableDictionary<string, double> TrueSkills { get; init; } = [];
+
+    /// <summary>
     /// The rulesets, by id, it knows how to play, and is offered for; null, from a server that does not say, every one.
     /// </summary>
     public ImmutableList<string>? Rulesets { get; init; }

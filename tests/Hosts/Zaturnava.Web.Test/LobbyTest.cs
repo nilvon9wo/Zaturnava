@@ -1454,6 +1454,39 @@ public sealed class LobbyTest : IDisposable
         );
     }
 
+    [Fact]
+    public void ByStrength_WhenTheLeaderboardsRatingIsChosen_ShowsTheStrengthsByIt()
+    {
+        // Arrange - the user's request of 2026-11-20: the leaderboard's rating system holds for the whole page
+        IRenderedComponent<Lobby> lobby = this.ByStrength();
+
+        // Act
+        lobby.Find("select.leaderboard-rating").Change("glicko");
+
+        // Assert
+        Assert.Equal(
+            "Person|Your own AI|Easy bot (Glicko-2 1000)|Medium bot (Glicko-2 1100)|Hard bot (Glicko-2 1250–1400)",
+            string.Join('|', lobby.Find("select.strength").Children.Select(option => option.TextContent.Trim()))
+        );
+    }
+
+    [Fact]
+    public void ByStrength_WhenTheLeaderboardWasLastLeftAtARating_ShowsTheStrengthsByIt()
+    {
+        // Arrange - TrueSkill chosen on an earlier visit
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.leaderboard")
+            .SetResult("rating=trueskill");
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.ByStrength();
+
+        // Assert
+        Assert.Equal(
+            "Person|Your own AI|Easy bot (TrueSkill 11.6)|Medium bot (TrueSkill 13.7)|Hard bot (TrueSkill 16.8–19.9)",
+            string.Join('|', lobby.Find("select.strength").Children.Select(option => option.TextContent.Trim()))
+        );
+    }
+
     [Theory]
     [InlineData("random-each", true)]
     [InlineData("random-one", false)]

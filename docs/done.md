@@ -8,6 +8,13 @@ only in part, what is left is in the backlog, and its history here. The playtest
 
 ## Asked 2026-11-25
 
+- **One rating system for the whole lobby** (asked 2026-11-20, not urgent): the rating system chosen on the
+  leaderboard should hold for the whole page, the New game dialog's bot strengths included.
+
+  *Done*: choosing Elo, Glicko-2 or TrueSkill on the leaderboard relabels *New game*'s strengths and bots at once
+  ("Hard bot (TrueSkill 16.8–19.9)"), and the choice is remembered for the next visit. The server sends each bot's
+  TrueSkill at each ruleset, counted from its Elo as its leaderboard row is; its Glicko-2 is its Elo. As both come
+  from its Elo, the strengths group the bots as before.
 - **The lobby, faster** (asked 2026-11-25): show the layout at once, each panel (Games, Leaderboard) with its own
   spinner, and *New game* usable before the rest arrives; returning to the lobby should not wait on everything
   again; the ratings cached.

@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Net.NowhereAtAll.Zaturnava.Application.Games;
+using Net.NowhereAtAll.Zaturnava.Application.Players;
 using Net.NowhereAtAll.Zaturnava.Application.Scenarios;
 using Net.NowhereAtAll.Zaturnava.Contracts;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
@@ -446,6 +447,14 @@ internal static class GameViews
         new(bot.Id, bot.Name, bot.Description, bot.UsesAi, bot.IsPaid)
         {
             Ratings = bot.Ratings,
+            TrueSkills = bot.Ratings.ToImmutableDictionary(
+                rated => rated.Key,
+                rated => Math.Round(
+                    TrueSkill.FromElo(rated.Value, TrueSkill.BotDeviation).Conservative,
+                    1,
+                    MidpointRounding.AwayFromZero
+                )
+            ),
             Rulesets = bot.RulesetsInOrder,
             Family = bot.Family,
         };
