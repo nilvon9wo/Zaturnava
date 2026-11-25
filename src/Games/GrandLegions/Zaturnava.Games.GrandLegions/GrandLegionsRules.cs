@@ -68,6 +68,12 @@ public static class GrandLegionsRules
                     : new OwnPromotion([.. piece.PromotesTo], piece.PromotesOnLastRow ? 1 : 3)
             );
 
+    /// <summary>
+    /// How many turns of the game a piece must have ended on an enemy throne to promote in the field into a Silver
+    /// General (asked 2026-11-25: "10 turns"; Proposed: every seat's turn counts, not only its own army's).
+    /// </summary>
+    public const int FieldPromotionTurns = 10;
+
     public static ImmutableHashSet<PieceKindId> Leaders { get; } =
     [
         .. GrandLegionsPieces.Catalogue
@@ -199,6 +205,7 @@ public static class GrandLegionsRules
             Swappers = Swappers,
             MayPromoteAtSide = true,
             OwnPromotions = OwnPromotionsOn(QuickTerrain.BoardOf(game, 0)),
+            FieldPromotion = new FieldPromotion(GrandLegionsPieces.SilverGeneral, FieldPromotionTurns),
             Marks = GrandLegionsPieces.Marks,
             Guides = Guides,
             Scoring = Scoring,

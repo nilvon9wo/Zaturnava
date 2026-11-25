@@ -1003,7 +1003,9 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             )
             .SelectMany(occupant => (IEnumerable<PromotionAction>)
             [
-                .. this.OwnPromotionsOf(state, seat, occupant.Key, occupant.Value),
+                .. this.OwnPromotionsOf(state, seat, occupant.Key, occupant.Value)
+                    .Concat(this.FieldPromotionsOf(state, seat, occupant.Key, occupant.Value))
+                    .Distinct(),
                 .. this.FarEdgePromotionsOf(state, seat, occupant.Key, occupant.Value, pool),
             ]);
     }
@@ -1186,7 +1188,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             RollAction => new Transition(state with { AwaitedDice = new DiceRequest(TurnDice, this._dice.Sides) }, []),
             MoveAction move => this.AfterMove(state, move),
             PromoteAction promote => this.Promoted(state, promote, FromPrisoner(state, promote)),
-            PromoteOwnAction promote => this.Promoted(state, promote, Become(state, promote)),
+            PromoteOwnAction promote => this.PromotedOwn(state, promote),
             EscapeAction escape => this.Escaped(state, escape),
             FleeAction flee => this.AfterFlight(state, flee),
             HireAction or DeployAction => this.AfterHiring(state, action),
@@ -1707,6 +1709,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             PromotionDue = null,
             IsHandedBack = false,
             Passages = Closed(state, current),
+            ThroneTenure = this.TenureAfterTurn(state),
         };
         SeatId? regent = passed.Resigned.Contains(next)
             ? this._control.RegentsFor(passed, next).Cast<SeatId?>().FirstOrDefault()
@@ -1718,6 +1721,57 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
                 Events = handed.Events.Add(new TurnHandedOver(next, ally)),
             }
             : handed;
+    }
+
+    /// <summary>
+    /// Each piece, not a leader, standing on an enemy throne as a turn ends, one turn longer there than it had
+    /// been; none, unless the rules promote in the field (<see cref="Chaturaji2027Variant.FieldPromotion"/>).
+    /// </summary>
+    private ImmutableDictionary<PieceId, int> TenureAfterTurn(GameState state) =>
+        this._variant.FieldPromotion is null
+            ? state.ThroneTenure
+            :
+            [
+                .. state.Position.Occupants
+                    .Where(occupant => this.IsOnEnemyThrone(state, occupant.Key, occupant.Value))
+                    .Select(occupant => KeyValuePair.Create(
+                        occupant.Value.Id,
+                        state.ThroneTenure.GetValueOrDefault(occupant.Value.Id) + 1
+                    )),
+            ];
+
+    /// <summary>Whether the piece, not a leader, stands on the throne of a seat not its owner's ally.</summary>
+    private bool IsOnEnemyThrone(GameState state, CellId cell, Piece piece) =>
+        !this.IsLeader(piece.Kind)
+        && this._control.OwnerOf(state, cell) is { } throne
+        && !state.Teams.AreAllied(throne, piece.Owner);
+
+    /// <summary>
+    /// A piece that has stood on an enemy throne for as many turns as the rules ask may become the leader they name,
+    /// for its own army (<see cref="Chaturaji2027Variant.FieldPromotion"/>); a retired seat's may not.
+    /// </summary>
+    private IEnumerable<PromoteOwnAction> FieldPromotionsOf(GameState state, SeatId seat, CellId cell, Piece piece) =>
+        this._variant.FieldPromotion is { } field
+        && state.ThroneTenure.GetValueOrDefault(piece.Id) >= field.Turns
+        && this.IsOnEnemyThrone(state, cell, piece)
+        && !state.Retired.Contains(piece.Owner)
+            ? [new PromoteOwnAction(seat, cell, field.Into)]
+            : [];
+
+    /// <summary>
+    /// Promoting in the field scores as a leader entering the enemy's throne would (asked 2026-11-25); any other
+    /// promotion of a piece's own scores nothing of itself.
+    /// </summary>
+    private Transition PromotedOwn(GameState state, PromoteOwnAction promote)
+    {
+        Piece piece = state.Position.PieceAt(promote.Cell)!; // the promotion is legal, so the piece stands there
+        bool isInField = this._variant.FieldPromotion?.Into == promote.Becomes
+            && this.IsOnEnemyThrone(state, promote.Cell, piece);
+        Transition entered = isInField
+            ? this.EnteredThrone(new Transition(state, []), piece with { Kind = promote.Becomes }, promote.Cell)
+            : new Transition(state, []);
+        Transition promoted = this.Promoted(entered.State, promote, Become(entered.State, promote));
+        return promoted with { Events = [.. promoted.Events.Take(1), .. entered.Events, .. promoted.Events.Skip(1)] };
     }
 
     /// <summary>

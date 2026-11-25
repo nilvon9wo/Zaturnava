@@ -323,6 +323,10 @@ on, with what follows in place of the Raja-and-dice parts.
   a player who expects the piece to be captured at once need not hand its captor the dearer score.
 - **Stated.** An Infantry piece with a promotion of its own (a Western Pawn) chooses, at the far
   edge, between that promotion and becoming any captured piece.
+- **Stated (2026-11-25) — promotion in the field.** A piece, not a leader, that has stood on an
+  enemy throne for 10 turns may, if its player chooses, become a Silver General there, free; its
+  player then scores the bonus for a leader entering an enemy throne. *(Proposed)* Every seat's
+  turn counts towards the 10 ([open-questions](../open-questions.md)).
 
 ### 6.3 Other Chaturaji 2027 scores
 
