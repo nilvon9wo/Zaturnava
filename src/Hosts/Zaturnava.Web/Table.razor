@@ -141,13 +141,13 @@
                         }
                     </div>
                 }
-                @if (view is { PausedFor: { } paused, PauseLeft: { } pauseLeft })
+                @if ((view.PausedFor, view.PauseLeft) is ({ } paused, { } pauseLeft))
                 {
-                    @* the face-off's pause (Grand Legions specification §6.4): no one else acts meanwhile *@
-                    <p class="face-off-paused"
-                       role="status"
-                       title="Paused for @this.Player(view.Seats[paused]) to see the leader face-off they may call">
-                        ⏸ @Math.Ceiling(pauseLeft).ToString(CultureInfo.InvariantCulture) s
+                    @* the face-off's pause (Grand Legions specification §6.4): no one else acts meanwhile, so every
+                       player is told why the game waits (the user, 2026-11-26), not only on hovering *@
+                    <p class="face-off-paused" role="status">
+                        <span class="pause-left">⏸ @Math.Ceiling(pauseLeft).ToString(CultureInfo.InvariantCulture) s</span>
+                        <span class="pause-why">@PauseWhy(paused == this.Seating.Claim?.Seat, this.Player(view.Seats[paused]))</span>
                     </p>
                 }
                 <p class="status">@this.Status(view)</p>
@@ -1734,6 +1734,15 @@
     /// <summary>Who plays the seat: you, by name; the bot; the player by name (or a guest); or no one yet ("open").</summary>
     private string Player(SeatDto seat) =>
         seat.Id == this.Seating.Claim?.Seat ? SeatLabels.Mine(seat) : SeatLabels.Person(seat);
+
+    /// <summary>
+    /// Why the game waits, for the player it waits for (<paramref name="isMine"/>) and for everyone else: a General
+    /// facing an enemy leader may call a face-off even out of turn, and the pause gives its player time to.
+    /// </summary>
+    private static string PauseWhy(bool isMine, string player) =>
+        isMine
+            ? "Your General faces an enemy leader: you may call the face-off now, out of turn. The game waits for you."
+            : $"{player}'s General faces an enemy leader: the game waits while they decide on a face-off.";
 
     private void TurnLeft() => this._boardTurn = this._boardTurn.Anticlockwise();
 

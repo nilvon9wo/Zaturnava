@@ -1981,18 +1981,34 @@ public sealed class TableTest : IDisposable
     }
 
     [Theory]
-    [InlineData(0, 24.2, "⏸ 25 s")]
-    [InlineData(null, null, null)]
-    public void Render_WhenTheGameIsPausedForAFaceOff_ShowsTheSecondsLeft(int? seat, double? left, string? expected)
+    [InlineData(true, 0, 24.2, "⏸ 25 s", "Your General faces an enemy leader")]
+    [InlineData(true, 1, 3.0, "⏸ 3 s", "'s General faces an enemy leader: the game waits")]
+    [InlineData(false, 0, 3.0, "⏸ 3 s", "'s General faces an enemy leader: the game waits")]
+    [InlineData(true, 1, null, null, null)]
+    [InlineData(true, null, null, null, null)]
+    public void Render_WhenTheGameIsPausedForAFaceOff_TellsEveryPlayerAndWatcherWhyAndHowLong(
+        bool isSeated,
+        int? seat,
+        double? left,
+        string? seconds,
+        string? why
+    )
     {
         // Arrange
         this._page.Server.View = FakeGameServer.SeatZeroToMove with { PausedFor = seat, PauseLeft = left };
 
         // Act
-        IRenderedComponent<Table> table = this.Render(SeatZero);
+        IRenderedComponent<Table> table = this.Render(isSeated ? SeatZero : Seating.Watching(FakeGameServer.GameId));
 
         // Assert
-        Assert.Equal(expected, table.FindAll("p.face-off-paused").SingleOrDefault()?.TextContent.Trim());
+        string? shownWhy = table.FindAll("p.face-off-paused .pause-why").SingleOrDefault()?.TextContent;
+        Assert.Equal(
+            (seconds, true),
+            (
+                table.FindAll("p.face-off-paused .pause-left").SingleOrDefault()?.TextContent,
+                why is null ? shownWhy is null : shownWhy?.Contains(why, StringComparison.Ordinal) is true
+            )
+        );
     }
 
     private static ActionDto FleeAt(int cell) =>
