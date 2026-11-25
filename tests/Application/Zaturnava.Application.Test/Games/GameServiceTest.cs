@@ -2178,6 +2178,140 @@ public sealed class GameServiceTest
     }
 
     [Fact]
+    public async Task Get_WhenThePlayersIdleTimeIsSet_GivesThePersonDecidingThatLong()
+    {
+        // Arrange
+        GameSnapshot waiting = await this.FirstToDecide(20);
+        this._time.Pass(TimeSpan.FromSeconds(5));
+
+        // Act
+        GameSnapshot snapshot = await this._paced.Get(waiting.Record.Id, this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            (TimeSpan.FromSeconds(20), TimeSpan.FromSeconds(15), TimeSpan.FromSeconds(20)),
+            (waiting.TimeLeft, snapshot.TimeLeft, ScenarioStart.IdleTimeOf(snapshot.Record.Actions))
+        );
+    }
+
+    [Fact]
+    public async Task Get_WhenEveryoneStopsWaitingBeforeTheIdleTimeIsUp_GivesThePersonDecidingTheVotesShorterTime()
+    {
+        // Arrange - a long idle time; the second seat stops waiting for the first once its grace is over
+        (GameSnapshot waiting, string voter) = await this.FirstToDecideWith(600);
+        this._time.Pass(Grace);
+
+        // Act
+        GameSnapshot voted =
+            await this._paced.Submit(waiting.Record.Id, voter, StopWaitingFor(First), this._cancellation);
+
+        // Assert
+        Assert.Equal(TimeSpan.Zero, voted.TimeLeft);
+    }
+
+    [Fact]
+    public async Task Advance_WhenThePersonDecidingHasBeenIdleAsLongAsTheGameLets_PassesForThem()
+    {
+        // Arrange
+        GameSnapshot waiting = await this.FirstToDecide(20);
+        this._time.Pass(TimeSpan.FromSeconds(20));
+
+        // Act
+        GameSnapshot snapshot = await this._paced.Advance(
+            waiting.Record.Id,
+            waiting.Record.Version,
+            this._cancellation
+        );
+
+        // Assert
+        Assert.Equal(
+            (Second, PassAwayAction.Kind),
+            (snapshot.State.DecidingSeat, snapshot.Record.Actions[^1].Kind)
+        );
+    }
+
+    [Fact]
+    public async Task Get_WhenABotDecidesWhereThePlayersIdleTimeIsSet_TimesNoOne()
+    {
+        // Arrange
+        GameId id = await this._paced.Create(
+            TinyRules.RulesetId,
+            [Bot, SeatPlan.Open],
+            null,
+            new Dealing { IdleSeconds = 20 },
+            this._cancellation
+        );
+        _ = await this._paced.Claim(id, Second, this._cancellation);
+
+        // Act
+        GameSnapshot snapshot = await this._paced.Get(id, this._cancellation);
+
+        // Assert
+        Assert.Equal((First, null), (snapshot.State.DecidingSeat, snapshot.TimeLeft));
+    }
+
+    [Fact]
+    public async Task Submit_WhenAGameWhoseIdleTimeIsSetEnds_TimesNoOne()
+    {
+        // Arrange
+        (GameSnapshot waiting, string second) = await this.FirstToDecideWith(20);
+
+        // Act
+        GameSnapshot ended = await this._paced.Submit(
+            waiting.Record.Id,
+            second,
+            new ProposeEndAction(Second, false).Describe(),
+            this._cancellation
+        );
+
+        // Assert
+        Assert.Equal((true, null), (ended.State.Outcome is not null, ended.TimeLeft));
+    }
+
+    [Fact]
+    public async Task Get_WhenNoIdleTimeIsSet_TimesNoOneWhoseDecisionIsNotTimed()
+    {
+        // Arrange
+        GameId id = await this._paced.Create(
+            TinyRules.RulesetId,
+            [SeatPlan.Open, SeatPlan.Open],
+            null,
+            Dealing.Anew,
+            this._cancellation
+        );
+        _ = await this._paced.Claim(id, First, this._cancellation);
+        _ = await this._paced.Claim(id, Second, this._cancellation);
+
+        // Act
+        GameSnapshot snapshot = await this._paced.Get(id, this._cancellation);
+
+        // Assert
+        Assert.Equal((null, null), (ScenarioStart.IdleTimeOf(snapshot.Record.Actions), snapshot.TimeLeft));
+    }
+
+    [Theory]
+    [InlineData(9)]
+    [InlineData(86401)]
+    public async Task Create_WhenThePlayersIdleTimeIsOutOfBounds_RefusesIt(int seconds)
+    {
+        // Arrange - nothing beyond the service
+
+        // Act
+        InvalidGameSetupException refused = await Assert.ThrowsAsync<InvalidGameSetupException>(() =>
+            this._paced.Create(
+                TinyRules.RulesetId,
+                [SeatPlan.Open, SeatPlan.Open],
+                null,
+                new Dealing { IdleSeconds = seconds },
+                this._cancellation
+            )
+        );
+
+        // Assert
+        Assert.Contains("idle", refused.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task Advance_WhenEveryoneHasStoppedWaitingForASeatAway_PassesForIt()
     {
         // Arrange
@@ -2558,6 +2692,27 @@ public sealed class GameServiceTest
         string voter = await this._paced.Claim(id, Second, this._cancellation);
         _ = await this._paced.Get(id, this._cancellation);
         return (id, voter, away);
+    }
+
+    /// <summary>
+    /// A paced game of two people, each of whom may be idle <paramref name="seconds"/> before their turn passes, as the
+    /// first is to decide, without a timer.
+    /// </summary>
+    private async Task<GameSnapshot> FirstToDecide(int seconds) => (await this.FirstToDecideWith(seconds)).Waiting;
+
+    /// <summary>As <see cref="FirstToDecide"/>, with the token of the second seat's player.</summary>
+    private async Task<(GameSnapshot Waiting, string Second)> FirstToDecideWith(int seconds)
+    {
+        GameId id = await this._paced.Create(
+            TinyRules.RulesetId,
+            [SeatPlan.Open, SeatPlan.Open],
+            null,
+            new Dealing { IdleSeconds = seconds },
+            this._cancellation
+        );
+        _ = await this._paced.Claim(id, First, this._cancellation);
+        string second = await this._paced.Claim(id, Second, this._cancellation);
+        return (await this._paced.Get(id, this._cancellation), second);
     }
 
     /// <summary>

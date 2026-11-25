@@ -107,6 +107,19 @@ public sealed record CreateGameRequest([Required] string RulesetId, [Required] I
     public bool IsLostWithoutLeaders { get; init; }
 
     /// <summary>
+    /// Not from a scenario: how many seconds each player, anonymous or signed in, may be idle deciding before their
+    /// turn passes, from <see cref="LeastIdleSeconds"/> to <see cref="MostIdleSeconds"/>
+    /// (<see cref="GameViewDto.IdleSeconds"/>). Null, to wait on them as every game does.
+    /// </summary>
+    public int? IdleSeconds { get; init; }
+
+    /// <summary>The fewest seconds a player may be let idle (<see cref="IdleSeconds"/>).</summary>
+    public const int LeastIdleSeconds = 10;
+
+    /// <summary>The most seconds a player may be let idle (<see cref="IdleSeconds"/>): a day.</summary>
+    public const int MostIdleSeconds = 24 * 60 * 60;
+
+    /// <summary>
     /// For a game whose creator may choose some of its terrain (<see cref="RulesetDto.TerrainAxes"/>), and whose armies
     /// are dealt: the bits of the terrain's number they chose, each axis's <see cref="TerrainAxisDto.Mask"/> they set;
     /// 0, for all of it dealt at random.

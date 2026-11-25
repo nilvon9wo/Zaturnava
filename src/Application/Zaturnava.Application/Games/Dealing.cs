@@ -57,6 +57,13 @@ public sealed record Dealing(bool AreAlike = false, GameId? ArmiesOf = null)
     public bool IsLostWithoutLeaders { get; init; }
 
     /// <summary>
+    /// How many seconds each player, anonymous or signed in, may be idle deciding before their turn passes, if its
+    /// creator set it (from <see cref="GameService.LeastIdleSeconds"/> to <see cref="GameService.MostIdleSeconds"/>);
+    /// dealt or not, but never from a scenario. None, to wait on them as every game does.
+    /// </summary>
+    public int? IdleSeconds { get; init; }
+
+    /// <summary>
     /// What of the terrain its creator chose, for a ruleset that lets them (<see cref="IRulesApplying.TerrainAxes"/>;
     /// any other bits are ignored), the rest dealt at random; none, for all of it dealt.
     /// </summary>

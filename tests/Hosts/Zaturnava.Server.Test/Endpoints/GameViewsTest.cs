@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Net.NowhereAtAll.Zaturnava.Application.Games;
+using Net.NowhereAtAll.Zaturnava.Application.Scenarios;
 using Net.NowhereAtAll.Zaturnava.Contracts;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Boards;
@@ -111,6 +112,24 @@ public sealed class GameViewsTest
 
         // Assert
         Assert.Equal((3, 1), (view.DecidingSeat, view.ActingFor));
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData(45)]
+    public void ViewOf_WhenItsCreatorSetAPlayersIdleTime_ShowsIt(int? seconds)
+    {
+        // Arrange
+        GameSnapshot snapshot = Snapshot(Rules.CreateInitialState());
+        ImmutableList<ActionDescriptor> start = ScenarioStart.SetUp(new GameChoices(IdleSeconds: seconds)) is { } setUp
+            ? [setUp]
+            : [];
+
+        // Act
+        GameViewDto view = GameViews.ViewOf(snapshot with { Record = snapshot.Record with { Actions = start } }, Bots);
+
+        // Assert
+        Assert.Equal(seconds, view.IdleSeconds);
     }
 
     [Fact]

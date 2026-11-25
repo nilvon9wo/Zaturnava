@@ -43,6 +43,9 @@ internal sealed record ArmyDeal(bool AreAlike, string? Of = null)
     /// <summary>Whether a team with no leader left on the board has lost; dealt or not.</summary>
     public bool IsLostWithoutLeaders { get; init; }
 
+    /// <summary>How many seconds each player may be idle on their turn before it passes; none, no limit.</summary>
+    public int? IdleSeconds { get; init; }
+
     /// <summary>The bits of the terrain's number its creator chose, in a game that lets them; 0, for none.</summary>
     public int TerrainMask { get; init; }
 

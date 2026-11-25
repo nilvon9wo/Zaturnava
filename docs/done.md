@@ -23,6 +23,16 @@ only in part, what is left is in the backlog, and its history here. The playtest
   the board, that team wins at once; if a capture leaves no team any, a draw. A leader off the board does not
   count, however it left, held prisoner or fled as the Tafl King may, until it escapes or comes back (*Stated*
   2026-11-25: "if it isn't on the board, it isn't on the board").
+- **Custom game options**, the second (asked 2026-11-25): each player's idle time, set by whoever creates the game,
+  the same for anonymous and signed-in players, after which the turn passes.
+
+  *Done*: **Turn time ⏱** among the game's own options in *New game*, in seconds, from 10 to a day; empty, no
+  limit, as before. Kept with the game's first action and remembered for the next game. A person (or an AI over
+  the API) deciding without a rule's own timer has that long from their last decision, or their turn's start; the
+  table counts it down, and once it is up the host passes for them, as when everyone stops waiting for a player
+  away, and they have missed a turn. If everyone has already stopped waiting, whichever time is shorter passes the
+  turn. The server's bots are never timed. A game no one has open passes the turn once someone opens it
+  (*Proposed*).
 - **Field promotion** (asked 2026-11-25, Grand Legions only): a piece that has stood on an enemy throne for 10
   turns may, if its player chooses, promote into a Silver General, and the player then also scores the bonus for a
   leader on an enemy throne.
