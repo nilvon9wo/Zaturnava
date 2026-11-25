@@ -101,6 +101,12 @@ public sealed record CreateGameRequest([Required] string RulesetId, [Required] I
     public int? Opener { get; init; }
 
     /// <summary>
+    /// Not from a scenario: whether a team with no leader left on the board has lost, at once
+    /// (<see cref="GameViewDto.IsLostWithoutLeaders"/>). Not, unless asked.
+    /// </summary>
+    public bool IsLostWithoutLeaders { get; init; }
+
+    /// <summary>
     /// For a game whose creator may choose some of its terrain (<see cref="RulesetDto.TerrainAxes"/>), and whose armies
     /// are dealt: the bits of the terrain's number they chose, each axis's <see cref="TerrainAxisDto.Mask"/> they set;
     /// 0, for all of it dealt at random.

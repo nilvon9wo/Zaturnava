@@ -121,6 +121,12 @@ public sealed record GameViewDto(
     public int? IdleRounds { get; init; }
 
     /// <summary>
+    /// Whether a team with no leader left on the board has lost, as its creator asked
+    /// (<see cref="CreateGameRequest.IsLostWithoutLeaders"/>).
+    /// </summary>
+    public bool IsLostWithoutLeaders { get; init; }
+
+    /// <summary>
     /// The cell of a piece just come to where it may leave the board (the Tafl King on its far corner) as its turn
     /// would end, the game waiting on whether it leaves or stays; null if none.
     /// </summary>

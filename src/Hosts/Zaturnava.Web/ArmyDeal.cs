@@ -40,6 +40,9 @@ internal sealed record ArmyDeal(bool AreAlike, string? Of = null)
     /// <summary>In a game without dice, the seat chosen to open it; none, for one drawn at random.</summary>
     public int? Opener { get; init; }
 
+    /// <summary>Whether a team with no leader left on the board has lost; dealt or not.</summary>
+    public bool IsLostWithoutLeaders { get; init; }
+
     /// <summary>The bits of the terrain's number its creator chose, in a game that lets them; 0, for none.</summary>
     public int TerrainMask { get; init; }
 

@@ -721,6 +721,41 @@ public sealed class LobbyTest : IDisposable
     }
 
     [Theory]
+    [InlineData(false, false)]
+    [InlineData(true, true)]
+    public void Play_WhenItsCreatorChoosesThatATeamWithoutLeadersLoses_AsksForItOnlyThen(bool isTicked, bool expected)
+    {
+        // Arrange
+        IRenderedComponent<Lobby> lobby = this.ByStrength();
+        if (isTicked)
+        {
+            lobby.Find("input.lost-without-leaders").Change(true);
+        }
+
+        // Act
+        lobby.Find("button.create").Click();
+
+        // Assert
+        Assert.Equal(expected, this._page.Server.Created?.IsLostWithoutLeaders);
+    }
+
+    [Fact]
+    public void Render_WhenATeamWithoutLeadersWasToLoseBefore_ChoosesItAgain()
+    {
+        // Arrange
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.setup").SetResult("strength");
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.setup-of.chaturaji-2027")
+            .SetResult("chaturaji-2027;0;-1,1,1,1;,,,;leaders=1");
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.Render();
+        lobby.Find("button.create").Click();
+
+        // Assert
+        Assert.True(this._page.Server.Created?.IsLostWithoutLeaders);
+    }
+
+    [Theory]
     [InlineData(3, 4)]
     [InlineData(null, null)]
     public void Render_WhenIdleRoundsWereSetBefore_SetsThemAgainIfTheGameStillLetsThem(int? offered, int? expected)

@@ -75,6 +75,12 @@ public sealed record GameState(
     public int? IdleRounds { get; init; }
 
     /// <summary>
+    /// Whether a team with no leader left on the board has lost, at once: only if the game's creator chose so (asked
+    /// 2026-11-25).
+    /// </summary>
+    public bool IsLostWithoutLeaders { get; init; }
+
+    /// <summary>
     /// The edition of the ruleset's pieces the armies the program deals this game, fills at random, or offers in a
     /// draft, are drawn from (<see cref="IRulesApplying.Deal"/>), and of the rules it is played by, a ruleset's later
     /// rules applying from the edition that brought them: 0, in a game dealt before there was another, so that it
@@ -225,7 +231,7 @@ public sealed record GameState(
     public ImmutableDictionary<PieceId, int> MercenaryCosts { get; init; } = [];
 
     /// <summary>
-    /// How many turns of the game together each piece, not a leader, has ended standing on an enemy throne, where
+    /// How many of its own army's turns each piece, not a leader, has ended standing on an enemy throne, where
     /// the rules promote in the field; a piece not on one is not here.
     /// </summary>
     public ImmutableDictionary<PieceId, int> ThroneTenure { get; init; } = [];

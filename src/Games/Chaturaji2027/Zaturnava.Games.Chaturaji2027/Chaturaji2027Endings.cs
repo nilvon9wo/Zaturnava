@@ -15,6 +15,11 @@ public static class Chaturaji2027Endings
     /// </summary>
     public const string OnlyRetiredLeft = "only-retired-left";
 
+    /// <summary>
+    /// A team has no leader left on the board, in a game whose creator chose that it then loses; its enemies win.
+    /// </summary>
+    public const string LeadersLost = "leaders-lost";
+
     /// <summary>Every player still playing agreed to end it; points decide.</summary>
     public const string Agreement = "agreement";
 

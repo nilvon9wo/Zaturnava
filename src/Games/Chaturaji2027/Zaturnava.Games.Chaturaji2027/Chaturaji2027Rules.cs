@@ -1709,7 +1709,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             PromotionDue = null,
             IsHandedBack = false,
             Passages = Closed(state, current),
-            ThroneTenure = this.TenureAfterTurn(state),
+            ThroneTenure = this.TenureAfterTurn(state, current),
         };
         SeatId? regent = passed.Resigned.Contains(next)
             ? this._control.RegentsFor(passed, next).Cast<SeatId?>().FirstOrDefault()
@@ -1724,10 +1724,12 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     }
 
     /// <summary>
-    /// Each piece, not a leader, standing on an enemy throne as a turn ends, one turn longer there than it had
-    /// been; none, unless the rules promote in the field (<see cref="Chaturaji2027Variant.FieldPromotion"/>).
+    /// Each piece, not a leader, standing on an enemy throne as <paramref name="ended"/>'s turn ends: one turn longer
+    /// there than it had been, if it is that seat's own, as only its own army's turns count (Stated 2026-11-25: "the
+    /// piece needs to sit there for awhile to earn the promotion"); as long as it had been, if not. None, unless the
+    /// rules promote in the field (<see cref="Chaturaji2027Variant.FieldPromotion"/>).
     /// </summary>
-    private ImmutableDictionary<PieceId, int> TenureAfterTurn(GameState state) =>
+    private ImmutableDictionary<PieceId, int> TenureAfterTurn(GameState state, SeatId ended) =>
         this._variant.FieldPromotion is null
             ? state.ThroneTenure
             :
@@ -1736,7 +1738,8 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
                     .Where(occupant => this.IsOnEnemyThrone(state, occupant.Key, occupant.Value))
                     .Select(occupant => KeyValuePair.Create(
                         occupant.Value.Id,
-                        state.ThroneTenure.GetValueOrDefault(occupant.Value.Id) + 1
+                        state.ThroneTenure.GetValueOrDefault(occupant.Value.Id)
+                            + (occupant.Value.Owner == ended ? 1 : 0)
                     )),
             ];
 

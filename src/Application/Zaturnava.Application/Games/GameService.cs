@@ -108,7 +108,8 @@ public sealed class GameService(
         GameChoices choices = new(
             areDiceOff,
             offered.IdleRounds is null ? null : IdleRoundsOf(dealing),
-            areDiceOff ? this.OpenerOf(dealing, seats.Count) : null
+            areDiceOff ? this.OpenerOf(dealing, seats.Count) : null,
+            dealing.IsLostWithoutLeaders
         );
         ImmutableList<ActionDescriptor> start = (scenarioId, offered.IsDealt) switch
         {

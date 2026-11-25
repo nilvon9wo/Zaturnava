@@ -40,6 +40,9 @@ public static class ScenarioStart
     /// <summary>The argument of a game's first action saying which seat opens a game without dice.</summary>
     private const string OpenerArgument = "opener";
 
+    /// <summary>The argument of a game's first action saying a team with no leader left has lost.</summary>
+    private const string LeadersArgument = "lost-without-leaders";
+
     /// <summary>
     /// The edition of a ruleset's pieces and rules a game dealt now is dealt from (<see cref="GameState.Edition"/>): 1,
     /// since Grand Legions gained the Checkers and Tafl pieces (2026-11-13); 2, since it gained mercenaries (the same
@@ -106,22 +109,31 @@ public static class ScenarioStart
 
     /// <summary>
     /// The game's first action, dealing it as <paramref name="deal"/> did, but set up as <paramref name="choices"/>
-    /// say, whatever the game it dealt chose: without dice, or with them; ending after so many idle rounds, if set; and
-    /// opened by the seat they name, if any, without dice.
+    /// say, whatever the game it dealt chose: without dice, or with them; ending after so many idle rounds, if set;
+    /// opened by the seat they name, if any, without dice; and lost by a team with no leader left, if they say so.
     /// </summary>
     public static ActionDescriptor Chosen([Required] ActionDescriptor deal, [Required] GameChoices choices) =>
         deal with
         {
             Arguments = Set(
                 Set(
-                    Set(deal.Arguments, DiceOffArgument, choices.AreDiceOff ? ActionDescriptor.Flag(true) : null),
-                    IdleRoundsArgument,
-                    choices.IdleRounds?.ToString(CultureInfo.InvariantCulture)
+                    Set(
+                        Set(deal.Arguments, DiceOffArgument, choices.AreDiceOff ? ActionDescriptor.Flag(true) : null),
+                        IdleRoundsArgument,
+                        choices.IdleRounds?.ToString(CultureInfo.InvariantCulture)
+                    ),
+                    OpenerArgument,
+                    choices.AreDiceOff ? choices.Opener?.ToString(CultureInfo.InvariantCulture) : null
                 ),
-                OpenerArgument,
-                choices.AreDiceOff ? choices.Opener?.ToString(CultureInfo.InvariantCulture) : null
+                LeadersArgument,
+                choices.IsLostWithoutLeaders ? ActionDescriptor.Flag(true) : null
             ),
         };
+
+    /// <summary>Whether the first of <paramref name="actions"/> began a game a leaderless team loses.</summary>
+    public static bool IsLostWithoutLeaders([Required] ImmutableList<ActionDescriptor> actions) =>
+        actions.FirstOrDefault() is { Kind: DealKind or SetupKind } first
+        && first.Arguments.ContainsKey(LeadersArgument);
 
     /// <summary>
     /// The arguments with <paramref name="name"/> set to <paramref name="value"/>, or without it, if none.
@@ -428,7 +440,8 @@ public static class ScenarioStart
         };
         GameState idled = IdleRoundsOf(actions) is { } rounds ? state with { IdleRounds = rounds } : state;
         GameState opened = OpenerOf(actions) is { } opener ? idled with { Opener = new SeatId(opener) } : idled;
-        return AreDiceOff(actions) ? rules.WithoutDice(opened) : opened;
+        GameState led = opened with { IsLostWithoutLeaders = IsLostWithoutLeaders(actions) };
+        return AreDiceOff(actions) ? rules.WithoutDice(led) : led;
     }
 
     /// <summary>

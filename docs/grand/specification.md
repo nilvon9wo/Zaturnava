@@ -277,6 +277,10 @@ on, with what follows in place of the Raja-and-dice parts.
     swaps, and keeps the swap once over a river. The swap's worth is strategic: a blocked piece goes
     forward, a Pawn nearer its promotion, a Lance freed to strike a high-value piece; each bot judges
     whether and when to swap as its strength allows (backlog §2).
+  - **Stated (2026-11-25) — a trap left open.** Two Shogi Knights near the edge may block each
+    other, neither having a landing cell left on the board; they still do not swap. A rare case,
+    with so many pieces and so much freedom where to place them: not worth solving for now, an
+    unlikely trap.
 
 - **Stated — dice.** A die names a **class** of piece (Leader, Cavalry, Heavy, Infantry,
   Artillery), not a kind: the player may move any piece of that class.
@@ -325,8 +329,8 @@ on, with what follows in place of the Raja-and-dice parts.
   edge, between that promotion and becoming any captured piece.
 - **Stated (2026-11-25) — promotion in the field.** A piece, not a leader, that has stood on an
   enemy throne for 10 turns may, if its player chooses, become a Silver General there, free; its
-  player then scores the bonus for a leader entering an enemy throne. *(Proposed)* Every seat's
-  turn counts towards the 10 ([open-questions](../open-questions.md)).
+  player then scores the bonus for a leader entering an enemy throne. *(Stated 2026-11-25)* Only
+  its own army's turns count towards the 10: the piece must sit there a while to earn it.
 
 ### 6.3 Other Chaturaji 2027 scores
 

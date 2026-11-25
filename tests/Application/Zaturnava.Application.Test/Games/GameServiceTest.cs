@@ -402,6 +402,35 @@ public sealed class GameServiceTest
         );
     }
 
+    [Theory]
+    [InlineData(true, true)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    public async Task Create_WhenATeamWithoutLeadersIsToLose_KeepsItInTheGamesFirstActionAndItsState(
+        bool isDealt,
+        bool isAsked
+    )
+    {
+        // Arrange
+        GameService service = this.Service(GameServiceSettings.Default, isDealt: isDealt);
+        GameId id = await service.Create(
+            TinyRules.RulesetId,
+            [SeatPlan.Open, SeatPlan.Open],
+            null,
+            new Dealing { IsLostWithoutLeaders = isAsked },
+            this._cancellation
+        );
+
+        // Act
+        GameSnapshot snapshot = await service.Get(id, this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            (isAsked, isAsked),
+            (ScenarioStart.IsLostWithoutLeaders(snapshot.Record.Actions), snapshot.State.IsLostWithoutLeaders)
+        );
+    }
+
     [Fact]
     public async Task Create_WhenFewerThanOneIdleRoundIsSet_RefusesIt()
     {
