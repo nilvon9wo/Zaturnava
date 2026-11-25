@@ -30,9 +30,6 @@ own number (**25**, **N29**), the [2026-11-15 specification](playtesting/2026-11
   the live site's ratings, by a second documented command (M4); every bot rated at every ruleset, with past
   measurements kept beside new ones (M5).
 
-- **The lobby, faster** (asked 2026-11-25): show the layout at once, each panel (Games, Leaderboard) with its own
-  spinner, and *New game* usable before the rest arrives; returning to the lobby should not wait on everything
-  again; the ratings cached.
 - **Custom game options** (asked 2026-11-25), none on by default: a player whose leaders are all gone is out; a
   team with no leader left has lost; each player's idle time, set by whoever creates the game, the same for
   anonymous and signed-in players, after which the turn passes.
