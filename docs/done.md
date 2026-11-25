@@ -6,6 +6,17 @@ Numbers are the playtests' own, so that each item can be traced to the note it c
 only in part, what is left is in the backlog, and its history here. The playtest of 2026-11-15 is tracked apart, in
 [playtesting/traceability.md](playtesting/traceability.md).
 
+## Asked 2026-11-25
+
+- **The lobby, faster** (asked 2026-11-25): show the layout at once, each panel (Games, Leaderboard) with its own
+  spinner, and *New game* usable before the rest arrives; returning to the lobby should not wait on everything
+  again; the ratings cached.
+
+  *Done* (#348): the lobby lays itself out as soon as it knows the games and who is playing. The games list and
+  each leaderboard show their own spinner until they come, and *New game* works meanwhile. Returning to the lobby
+  shows what it showed last at once and then refreshes it. The server keeps each leaderboard for a minute, or
+  until a game is rated, instead of working it out again for every request (*Proposed*).
+
 ## Going public (playtest of 2026-11-04)
 
 - **N33** The sign-in corner, top right, tidied (*Stated* 2026-11-11, near the top of the list): no more "Signed in
