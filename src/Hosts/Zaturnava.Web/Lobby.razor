@@ -451,6 +451,12 @@
                                    placeholder="@idleRounds" />
                         </label>
                     }
+                    <span class="choice-name">Leaders</span>
+                    <label class="leaders-lost check"
+                           title="A team with no leader left on the board loses at once">
+                        <input type="checkbox" class="lost-without-leaders" @bind="this._isLostWithoutLeaders" />
+                        All gone, team lost
+                    </label>
                 </div>
                 @* who may play, apart from the rules (the user's word of 2026-11-20) *@
                 @if (this._me is not null)
@@ -761,6 +767,9 @@
     /// playtest's 21, 22 and 26; Proposed: remembered as last set).
     /// </summary>
     private int? _idleRounds;
+
+    /// <summary>Whether a team with no leader left on the board has lost (asked 2026-11-25; off by default).</summary>
+    private bool _isLostWithoutLeaders;
     private string? _problem;
 
     /// <summary>How the player last started each game, by the game, as the browser remembers.</summary>
@@ -820,6 +829,7 @@
             AreDiceOff = this._areDiceOff,
             IdleRounds = this._idleRounds,
             Opener = this._opener,
+            IsLostWithoutLeaders = this._isLostWithoutLeaders,
             Board = this.BoardAsked(catalog),
             TerrainMask = this.TerrainAsked(catalog).Mask,
             TerrainValue = this.TerrainAsked(catalog).Value,
@@ -929,6 +939,7 @@
         this._areDiceOff = setup.AreDiceOff && ruleset.HasDice;
         this._idleRounds = ruleset.IdleRounds is null ? null : setup.IdleRounds;
         this._opener = setup.Opener < ruleset.SeatCount ? setup.Opener : null;
+        this._isLostWithoutLeaders = setup.IsLostWithoutLeaders;
         this._terrain = ruleset.TerrainAxes
             .Where(axis => (setup.TerrainMask & axis.Mask) == axis.Mask)
             .ToImmutableDictionary(axis => axis.Mask, axis => setup.TerrainValue & axis.Mask);
@@ -1640,6 +1651,7 @@
         this._areDiceOff = false;
         this._idleRounds = null;
         this._opener = null;
+        this._isLostWithoutLeaders = false;
         this._terrain = ImmutableDictionary<int, int>.Empty;
     }
 
@@ -1836,6 +1848,7 @@
             AreDiceOff = this._areDiceOff && this.Ruleset(catalog).HasDice,
             IdleRounds = this.Ruleset(catalog).IdleRounds is null || this._idleRounds is < 1 ? null : this._idleRounds,
             Opener = this._areDiceOff ? this._opener : null,
+            IsLostWithoutLeaders = this._isLostWithoutLeaders,
             TerrainMask = this.TerrainAsked(catalog).Mask,
             TerrainValue = this.TerrainAsked(catalog).Value,
         };

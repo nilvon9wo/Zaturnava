@@ -24,6 +24,8 @@ internal static class GameEnd
 
     public const string RetiredAndBehind = "a team has only retired Rajas left, and fewer points than its enemies";
     public const string TeamGaveUp = "a whole team gave up their turns, so points decide";
+    public const string LeadersLeft = "only one team has a leader left";
+    public const string NoLeadersLeft = "no team has a leader left: a draw";
 
     /// <summary>
     /// How many rounds before the game would end for want of a capture its players are warned (Proposed).
@@ -52,7 +54,7 @@ internal static class GameEnd
             (1, _, _) => new GameOutcome(TeamOf(state, teams[0]), Chaturaji2027Endings.OneTeamLeft, OneTeamLeft),
             (_, true, _) => new GameOutcome([], Chaturaji2027Endings.OnlyRajasLeft, OnlyRajasLeft),
             (_, _, { } team) => OnlyRetiredLeft(state, team),
-            _ => null,
+            _ => state.IsLostWithoutLeaders ? LeadersLost(state, variant) : null,
         };
         return outcome is null
             ? null
@@ -267,6 +269,27 @@ internal static class GameEnd
         int best = totals.Max(total => total.Points);
         ImmutableList<int> leaders = [.. totals.Where(total => total.Points == best).Select(total => total.Team)];
         return new GameOutcome(leaders.Count == 1 ? TeamOf(state, leaders[0]) : [], ending, reason);
+    }
+
+    /// <summary>
+    /// Where a team with no leader left on the board has lost (<see cref="GameState.IsLostWithoutLeaders"/>): once
+    /// only one team has a leader left, or one that fled the board, it wins; if none has, a draw; otherwise, none yet.
+    /// </summary>
+    private static GameOutcome? LeadersLost(GameState state, Chaturaji2027Variant variant)
+    {
+        ImmutableHashSet<int> led =
+        [
+            .. state.Position.Occupants.Values
+                .Concat(state.Fled)
+                .Where(piece => variant.Leaders.Contains(piece.Kind))
+                .Select(piece => state.Teams.TeamOf(piece.Owner)),
+        ];
+        return led.Count switch
+        {
+            0 => new GameOutcome([], Chaturaji2027Endings.LeadersLost, NoLeadersLeft),
+            1 => new GameOutcome(TeamOf(state, led.Single()), Chaturaji2027Endings.LeadersLost, LeadersLeft),
+            _ => null,
+        };
     }
 
     /// <summary>A team left only retired Rajas: a draw if it is not behind on points, else its enemies win.</summary>

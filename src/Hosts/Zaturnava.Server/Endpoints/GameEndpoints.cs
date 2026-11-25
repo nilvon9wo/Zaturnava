@@ -295,6 +295,7 @@ internal static class GameEndpoints
             AreDiceOff = request.AreDiceOff,
             IdleRounds = request.IdleRounds,
             Opener = request.Opener,
+            IsLostWithoutLeaders = request.IsLostWithoutLeaders,
             Terrain = request.TerrainMask is not 0
                 ? new TerrainChoice(request.TerrainMask, request.TerrainValue)
                 : null,

@@ -22,6 +22,7 @@ internal sealed record GameSetup(string RulesetId, int Colour, ImmutableList<int
     private const string IdleKey = "idle";
     private const string OpenerKey = "opener";
     private const string TerrainKey = "terrain";
+    private const string LeadersKey = "leaders";
 
     /// <summary>How the armies come to be, as the lobby names its choices; the game's default, if none.</summary>
     public string? Armies { get; init; }
@@ -49,6 +50,9 @@ internal sealed record GameSetup(string RulesetId, int Colour, ImmutableList<int
 
     /// <summary>Without dice, the seat chosen to open the game; none, for one drawn at random.</summary>
     public int? Opener { get; init; }
+
+    /// <summary>Whether a team with no leader left on the board has lost.</summary>
+    public bool IsLostWithoutLeaders { get; init; }
 
     /// <summary>The board's size, for a game whose creator may set it; the game's own, if none.</summary>
     public BoardSizeDto? Board { get; init; }
@@ -88,6 +92,7 @@ internal sealed record GameSetup(string RulesetId, int Colour, ImmutableList<int
             this.AreDiceOff ? $"{DiceOffKey}=1" : null,
             this.IdleRounds is { } idle ? $"{IdleKey}={idle.ToString(CultureInfo.InvariantCulture)}" : null,
             this.Opener is { } opener ? $"{OpenerKey}={opener.ToString(CultureInfo.InvariantCulture)}" : null,
+            this.IsLostWithoutLeaders ? $"{LeadersKey}=1" : null,
             this.TerrainMask is not 0
                 ? string.Create(CultureInfo.InvariantCulture, $"{TerrainKey}={this.TerrainMask}:{this.TerrainValue}")
                 : null,
@@ -131,6 +136,7 @@ internal sealed record GameSetup(string RulesetId, int Colour, ImmutableList<int
                 Opener = choices.TryGetValue(OpenerKey, out string? opener) && Number(opener) is >= 0 and var seat
                     ? seat
                     : null,
+                IsLostWithoutLeaders = choices.ContainsKey(LeadersKey),
                 Board = choices.TryGetValue(BoardKey, out string? board) ? BoardOf(board) : null,
                 TerrainMask = TerrainOf(choices).Mask,
                 TerrainValue = TerrainOf(choices).Value,

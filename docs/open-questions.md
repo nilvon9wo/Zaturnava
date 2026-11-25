@@ -23,3 +23,16 @@ answered) counting every seat's turn, so 10 turns is two and a half rounds of a 
 
 Which did you mean?
 
+## A player whose leaders are all gone is out: what of its pieces?
+
+Asked 2026-11-25, as a custom option. Today a leaderless army plays on, and an enemy holding its throne may command
+it (rules.md §6). With the option on, the seat takes no more turns; what should become of its pieces?
+
+| Its pieces | Like |
+|---|---|
+| Stay, never moving, and may be taken for points | Classical Chaturaji |
+| Leave the board | Western chess's "out" |
+| Stay, and whoever commands its throne still moves them | Chaturaji 2027's command, its own turns gone |
+
+And does a leader held prisoner, which may come back by ransom or escape, keep the player in?
+

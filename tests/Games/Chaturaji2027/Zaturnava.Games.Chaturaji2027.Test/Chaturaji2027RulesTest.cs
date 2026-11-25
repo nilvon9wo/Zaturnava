@@ -749,6 +749,62 @@ public sealed class Chaturaji2027RulesTest
     }
 
     [Theory]
+    [InlineData(true, false, true)]
+    [InlineData(false, false, false)]
+    [InlineData(true, true, false)]
+    public void Apply_WhenAnEnemyRajaIsTakenAndATeamLosesWithoutLeaders_EndsTheGameOnlyIfSoChosenAndItWasTheLast(
+        bool isChosen,
+        bool hasRedRaja,
+        bool isOver
+    )
+    {
+        // Arrange - Black's Elephant takes Yellow's Raja, its team's last leader unless Red, its ally, has one;
+        // Yellow's Horse plays on
+        (CellId Cell, Piece Piece)[] pieces =
+        [
+            (Grid.CellAt(0, 0), Piece(1, Chaturaji2027Pieces.Elephant, Black)),
+            (Grid.CellAt(0, 5), Piece(2, Chaturaji2027Pieces.Raja, Yellow)),
+            (Grid.CellAt(7, 7), Piece(3, Chaturaji2027Pieces.Horse, Yellow)),
+            (Grid.CellAt(3, 3), Piece(4, Chaturaji2027Pieces.Raja, Black)),
+        ];
+        (CellId Cell, Piece Piece) redRaja = (Grid.CellAt(5, 1), Piece(5, Chaturaji2027Pieces.Raja, Red));
+        GameState state = this.StateWith(hasRedRaja ? [.. pieces, redRaja] : pieces) with
+        {
+            IsLostWithoutLeaders = isChosen,
+        };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new MoveAction(Black, Grid.CellAt(0, 0), Grid.CellAt(0, 5)));
+
+        // Assert
+        GameOutcome won = new([Black, Green], "leaders-lost", "only one team has a leader left");
+        Assert.Equal(isOver ? won : null, transition.State.Outcome);
+    }
+
+    [Fact]
+    public void Apply_WhenNoTeamHasALeaderLeftAndTheyLoseWithoutLeaders_EndsTheGameInADraw()
+    {
+        // Arrange - Black's Elephant takes Yellow's Raja, the last leader on the board
+        GameState state = this.StateWith(
+            (Grid.CellAt(0, 0), Piece(1, Chaturaji2027Pieces.Elephant, Black)),
+            (Grid.CellAt(0, 5), Piece(2, Chaturaji2027Pieces.Raja, Yellow)),
+            (Grid.CellAt(7, 7), Piece(3, Chaturaji2027Pieces.Horse, Yellow))
+        ) with
+        {
+            IsLostWithoutLeaders = true,
+        };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new MoveAction(Black, Grid.CellAt(0, 0), Grid.CellAt(0, 5)));
+
+        // Assert
+        Assert.Equal(
+            new GameOutcome([], "leaders-lost", "no team has a leader left: a draw"),
+            transition.State.Outcome
+        );
+    }
+
+    [Theory]
     [InlineData(5, 8, 3)]
     [InlineData(4, 12, 5)]
     public void Apply_WhenTheLastEnemyRajaIsTakenByOneCommandingAnAlly_CreatesTheEmpire(

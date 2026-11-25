@@ -51,6 +51,12 @@ public sealed record Dealing(bool AreAlike = false, GameId? ArmiesOf = null)
     public int? Opener { get; init; }
 
     /// <summary>
+    /// Whether a team with no leader left on the board has lost (<see cref="GameState.IsLostWithoutLeaders"/>);
+    /// dealt or not, but never from a scenario.
+    /// </summary>
+    public bool IsLostWithoutLeaders { get; init; }
+
+    /// <summary>
     /// What of the terrain its creator chose, for a ruleset that lets them (<see cref="IRulesApplying.TerrainAxes"/>;
     /// any other bits are ignored), the rest dealt at random; none, for all of it dealt.
     /// </summary>
