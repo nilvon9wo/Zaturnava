@@ -413,7 +413,8 @@ General, in the far three ranks. The program filled in its columns, by the sheet
   row: 56 on the medium board (4 rows), 54 on the large, and 66 on the small, where it starts one row from the zone
   and so costs what the Gold General does.
 - **Limits:** none. That it goes only forward is its move, which reach counts, as the Lance's; its leap cannot be
-  blocked. Like the Lance and the Pawns, it swaps with an ally's forward-only piece that blocks it.
+  blocked. Unlike the Lance and the Pawns, it does not swap back to back: it can leap out of the way (Stated
+  2026-11-25).
 - **Mercenary:** as every Shogi piece, it is a [mercenary](specification.md#65-mercenaries). No Shogi piece's
   value counts that, neither as a gain (it may be hired back) nor as a loss (an enemy may hire it), so neither does
   this one's.

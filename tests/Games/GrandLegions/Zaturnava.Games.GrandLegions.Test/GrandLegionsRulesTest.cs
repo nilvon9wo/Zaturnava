@@ -633,8 +633,7 @@ public sealed class GrandLegionsRulesTest
     [InlineData("western-pawn", "western-pawn")]
     [InlineData("lance", "shogi-pawn")]
     [InlineData("makruk-pawn", "western-pawn")]
-    [InlineData("berolina-pawn", "man")]
-    public void Apply_WhenBlacksPieceMovesOntoGreensBackToBack_SwapsThemIfBothMoveOnlyForward(
+    public void Apply_WhenBlacksPieceMovesOntoGreensBackToBack_SwapsThemIfBothMoveOnlyStraightForward(
         string black,
         string green
     )
@@ -715,9 +714,10 @@ public sealed class GrandLegionsRulesTest
 
     [Theory]
     [InlineData("lance", true)]
-    [InlineData("man", true)]
+    [InlineData("man", false)]
+    [InlineData("shogi-knight", false)]
     [InlineData("rook", false)]
-    public void GuideOf_WhenAPieceMovesOnlyForward_TellsOfTheSwap(string kind, bool isTold)
+    public void GuideOf_WhenAPieceMovesOnlyStraightForward_TellsOfTheSwap(string kind, bool isTold)
     {
         // Arrange
         Chaturaji2027Rules rules = GrandLegionsRules.RulesOf(QuickGame.Medium);
@@ -765,7 +765,9 @@ public sealed class GrandLegionsRulesTest
     [Theory]
     [InlineData("rook", "western-pawn")]
     [InlineData("western-pawn", "xiangqi-soldier")]
-    public void Apply_WhenEitherPieceBackToBackMayMoveSidewaysOrBack_RefusesTheSwap(string black, string green)
+    [InlineData("shogi-knight", "western-pawn")]
+    [InlineData("berolina-pawn", "man")]
+    public void Apply_WhenEitherPieceBackToBackMayMoveOtherThanStraightOn_RefusesTheSwap(string black, string green)
     {
         // Arrange
         (Chaturaji2027Rules rules, GameState state, CellId d2, CellId d3) = BackToBack(black, green);
@@ -1090,7 +1092,7 @@ public sealed class GrandLegionsRulesTest
     [InlineData("tafl-king", "Escape,Berserk")]
     [InlineData("swede", "Berserk")]
     [InlineData("knight", "")]
-    [InlineData("man", "Chain of jumps,Swap")]
+    [InlineData("man", "Chain of jumps")]
     [InlineData("checkers-king", "Chain of jumps")]
     public void GuideOf_WhenAKindHasSpecialPowers_DrawsEachAtWork(string kind, string names)
     {
