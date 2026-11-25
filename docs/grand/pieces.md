@@ -69,28 +69,31 @@ and has no such premium.
 
 | Piece | Promotes to | Premium | Value |
 |---|---|---|---|
-| Lance (Shogi) | Gold General, 12 over 5 rows | 2 | 56 |
-| Knight (Shogi) | Gold General, 14 over 5 rows | 3 | 55 |
-| Pawn (Shogi) | Gold General, 15 over 4 rows | 4 | 55 |
+| Lance (Shogi) | Gold General, 61 over 5 rows | 12 | 16 |
+| Knight (Shogi) | Gold General, 63 over 5 rows | 13 | 15 |
+| Pawn (Shogi) | Gold General, 64 over 4 rows | 16 | 17 |
 | Pawn (Western) | Queen, 22 over 6 rows | 4 | 9 |
 | Silver General (Shogi) | Gold General, 1 over 5 rows | 0 | 65 |
 | Pawn (Makruk) | Courtier, 3 over 4 rows; the far edge pays more | 2 | 4 |
 | Other Infantry, not confined | the far edge (Rook, 14), over 6 rows | 2 | +2 |
 
 The sheet keeps the four settings apart, to be tuned by playtesting: `PremiumFactor` (1),
-`FarEdgeTarget` (the Rook), `FarEdgeDistance` (6) and `LeaderPromotionBonus` (50).
+`FarEdgeTarget` (the Rook), `FarEdgeDistance` (6) and `LeaderPromotionBonus` (0).
+
+The sheet's formulas name what they look up (`PieceNames`, column B; `BaseValues`, column Y) and its settings, so
+that sorting the rows breaks none of them (*Stated* 2026-11-25), and a row added below is found as well.
 
 ### Leader promotion bonus
 
-A piece that is not a leader but may promote into one starts from a leader bonus of **50**, as a
-leader starts from 60 (Stated 2026-10-31); its reach, premium, powers and limitations count on top,
-as for any piece, so two such pieces need not be worth the same. The premium alone undervalued
-them: it assumes the piece has the whole distance to cross, but how far that is depends on how its
-owner arranges the kingdom, and a Lance with an open file may slide into the far three ranks on its
-first move and promote into a Gold General, a leader, at once. With the bonus, promotion gains less,
-so the premium shrinks: the Lance is worth 56 (50 + reach 4 + premium 2), the Shogi Pawn 55
-(50 + 1 + 4). The Silver General is a leader already. The value is what capturing the piece
-scores too.
+None, *Stated* (2026-11-25): "it throws the pieces way out of balance and makes them unplayable". A piece that may
+promote into a leader is priced as any other, its promotion by its premium alone: the Lance is worth 16 (reach 4 +
+premium 12), the Shogi Pawn 17 (1 + 16), the Shogi Knight 15 (2 + 13), the Man 13 (reach 2 + premium 9 + powers 4 −
+limits 2). The setting stays on the sheet, at 0, should it be wanted again.
+
+Before, from 2026-10-31, such a piece started from a bonus of 50, as a leader starts from 60, since the premium
+assumes the whole distance crossed, where a Lance with an open file may reach the far three ranks on its first move.
+It made them the dearest pieces bar the leaders (the Lance 56, dearer than the Amazon). Changed in place: a game
+already dealt keeps the armies it was dealt, but prices and scores them anew.
 
 ### Prices for each game
 
@@ -114,8 +117,9 @@ prices shown in the draft; the sheet stays the reference, on 8 × 8.
 *Done*: a piece's price on a game's board is its sheet value, plus the cells it reaches there less
 those it reaches on 8 × 8, plus its premium there less its sheet premium (kept, as the sheet has it, in
 `Values/grand-legions-premiums.json`). On the medium game's 8 × 8 board, kingdoms 2 deep, the prices are
-the sheet's, but the Lance's: 57, not 56, as the sheet counts its promotion from row 1 (5 rows, premium 2) and
-the board from its kingdom's front row (4 rows, premium 3). *Proposed*: kept, the board's count being the one a
+the sheet's, but for the pieces that promote far from it: the Lance 20, not 16, as the sheet counts its promotion
+from row 1 (5 rows, premium 12) and the board from its kingdom's front row (4 rows, premium 16); the Shogi Knight
+18, not 15; the Man 15, not 13. *Proposed*: kept, the board's count being the one a
 player can use. *Proposed*: a price is never below 1, as a piece that reaches nothing from the centre of a
 small board (the Giraffe on 6 × 6) would otherwise be free, and an army could fill its kingdom with it.
 The price is what the piece costs in a quick army and what taking it scores.
@@ -229,7 +233,7 @@ Chaturaji 2027.
 
 | Piece | Moves | Captures | Restrictions | Value | Lifts |
 |---|---|---|---|---|---|
-| Man (Checkers) | One square diagonally forward | By [jumping](#jumping-and-custody), diagonally forward; → King (Checkers) on the last rank | One colour (by its move) | 56 | — / — |
+| Man (Checkers) | One square diagonally forward | By [jumping](#jumping-and-custody), diagonally forward; → King (Checkers) on the last rank | One colour (by its move) | 13 | — / — |
 | Manchu Chariot | Any distance orthogonally, or leaps 2+1 | Same, or by hopping one piece, at any distance beyond, orthogonally | — | 24 | — / — |
 | Cannon (Xiangqi) | Any distance orthogonally | By hopping one piece, at any distance beyond | — | 10 | — / — |
 | Cannon (Janggi) | Over exactly one piece, to any cell beyond, orthogonally | Same | Move: must hop exactly one piece; may neither hop nor capture a Cannon of either kind | 8 | 3 / — |
@@ -274,7 +278,7 @@ Their values, by the sheet's columns:
 |---|---|---|---|---|---|---|
 | King (Tafl) | 60 | 14 | 0 | +4 | −4 | 74 |
 | King (Checkers) | 60 | 4 | 0 | +5 | −2 | 67 |
-| Man | 50 | 2 | 2 | +4 | −2 | 56 |
+| Man | 0 | 2 | 9 | +4 | −2 | 13 |
 | Swede | 0 | 14 | 0 | +4 | −4 | 14 |
 
 - Reach counts the cells a piece moves to or takes on. A jump takes on the cell next to the jumper, which its
@@ -285,9 +289,9 @@ Their values, by the sheet's columns:
 - Limits: a Checkers piece keeps to one colour (−1, [Binding](#binding)) and takes only by jumping, which
   needs the cell beyond empty (−1). A custodian captures by custody, which needs a second piece. That costs
   what taking only by hopping costs the Xiangqi Cannon (−4).
-- The Man may promote into the Checkers King, a leader, so it starts from the
-  [leader promotion bonus](#leader-promotion-bonus) (50). Its premium is the 13 that promotion would gain
-  (67 less 54), over 7 rows: 2.
+- The Man may promote into the Checkers King, a leader, but with no
+  [leader promotion bonus](#leader-promotion-bonus). Its premium is the 63 that promotion would gain
+  (67 less 4), over 7 rows: 9.
 - The sheet also says the Tafl King "can permanently escape the game". **Escape**, *Stated* (2026-11-13): on its
   own army's far corner (the right-hand corner of the far row, as the army faces; z26 for Black on the largest board),
   and only there, the Tafl King may leave the board, by a deliberate move or on a die that moves it; and, *Stated*
@@ -320,9 +324,10 @@ From [edition 5](#editions):
 | King (Tafl) | 71 | 74 |
 | Swede | 11 | 14 |
 | King (Checkers) | 64 | 67 |
-| Man | 54 | 56 |
+| Man | 54 | 56 (13 since 2026-11-25) |
 
-A game of an earlier edition still prices and scores them as before.
+A game of an earlier edition still prices and scores them as before. The Man's later price, without the
+[leader promotion bonus](#leader-promotion-bonus), was changed in place.
 
 ### The Berolina Pawn, the Manchu Chariot and the Courier
 
@@ -403,15 +408,15 @@ General, in the far three ranks. The program filled in its columns, by the sheet
 
 | Piece | Leader | Reach | Premium | Powers | Limits | Value |
 |---|---|---|---|---|---|---|
-| Knight (Shogi) | 50 | 2 | 3 | 0 | 0 | 55 |
+| Knight (Shogi) | 0 | 2 | 13 | 0 | 0 | 15 |
 
-- **Leader:** it may promote into a leader, so it starts from the
-  [leader promotion bonus](#leader-promotion-bonus), as the Lance and the Shogi Pawn do.
+- **Leader:** it may promote into a leader, but has no [leader promotion bonus](#leader-promotion-bonus), as no
+  piece has since 2026-11-25 (before, 50, and a value of 55).
 - **Reach:** its two leaps, on any board.
-- **Premium:** the Gold General's 66 less its own 52 is 14, over the 5 rows from row 1 to the far three ranks
-  (it is Cavalry, not Infantry, so counted as the Lance is): 2.8, so 3. On a game's board, from its kingdom's front
-  row: 56 on the medium board (4 rows), 54 on the large, and 66 on the small, where it starts one row from the zone
-  and so costs what the Gold General does.
+- **Premium:** the Gold General's 65 less its own 2 is 63, over the 5 rows from row 1 to the far three ranks
+  (it is Cavalry, not Infantry, so counted as the Lance is): 12.6, so 13. On a game's board, from its kingdom's
+  front row: 18 on the medium board (4 rows), 11 on the large, and 66 on the small, where it starts one row from
+  the zone and so costs what the Gold General does.
 - **Limits:** none. That it goes only forward is its move, which reach counts, as the Lance's; its leap cannot be
   blocked. Unlike the Lance and the Pawns, it does not swap back to back: it can leap out of the way (Stated
   2026-11-25).
@@ -493,9 +498,8 @@ as the Minister is; a game of an earlier edition still prices and scores it at 7
 Together, **Q20** of the [specification](specification.md#9-open-questions).
 
 - **Intended (Stated 2026-11-06): the Shogi Pawn costs more than the Western Pawn.** It is the
-  weaker piece on its own, but it may be promoted into a leader (the Gold General), and the
-  [leader promotion bonus](#leader-promotion-bonus) prices it in line with the other pieces that
-  may become leaders. A discrepancy between a piece's price and its strength is not wrong in itself
+  weaker piece on its own, but it may be promoted into a leader (the Gold General), which its premium
+  prices (17 to 9; with the [leader promotion bonus](#leader-promotion-bonus), until 2026-11-25, 55). A discrepancy between a piece's price and its strength is not wrong in itself
   (it may be a good or a bad investment), but it should be intended, not an accident of the formula.
 
 ### Review of the catalogue (2026-11-06)
@@ -504,12 +508,14 @@ The catalogue gone through for other discrepancies between a piece's price and i
 What was found, and what is made of it:
 
 - **Weaker pieces dearer for their promotions.** The Western Pawn (9) costs more than the Noble (7) or the
-  Minister (6), which move better; the Lance (56) more than the Amazon (37), the strongest piece that is not a
+  Minister (6), which move better; the Lance (then 56) more than the Amazon (37), the strongest piece that is not a
   leader. Both are the Shogi Pawn's case: the price is mostly the option to promote (into a Queen; into a Gold
-  General, a leader). *Proposed*: intended, by the same reasoning as the Shogi Pawn's.
-- **What taking such a piece scores.** A piece's value is also what taking it scores, so taking a Lance (56)
-  or a Shogi Pawn (55) scores more than taking a Queen (27). *Proposed*: intended, as it follows from two
-  Stated rules (price is value; value is the score); a player who buys the option puts it at risk.
+  General, a leader). *Proposed*: intended, by the same reasoning as the Shogi Pawn's. The Lance's price was
+  brought down to 16 on 2026-11-25, without the [leader promotion bonus](#leader-promotion-bonus).
+- **What taking such a piece scores.** A piece's value is also what taking it scores, so taking a Lance or a Shogi
+  Pawn (then 56 and 55) scored more than taking a Queen (27); no longer, since 2026-11-25. *Proposed*: intended, as
+  it follows from two Stated rules (price is value; value is the score); a player who buys the option puts it at
+  risk.
 - **The Dragon Bishop was the Archbishop.** Both moved any distance diagonally or leapt 2+1, and both were
   worth 21, perhaps one piece under two games' names. *Stated*: the Dragon Bishop stays, in keeping with the
   other Dragons, and the Archbishop is gone, from the catalogue and the sheet.
