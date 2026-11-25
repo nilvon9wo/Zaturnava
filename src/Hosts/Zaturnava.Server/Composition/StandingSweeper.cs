@@ -41,7 +41,12 @@ internal sealed class StandingSweeper : IHostedService, IDisposable
         try
         {
             using IServiceScope scope = this._scopes.CreateScope();
-            _ = await scope.ServiceProvider.GetRequiredService<StandingService>().RateFinished(CancellationToken.None);
+            int rated = await scope.ServiceProvider.GetRequiredService<StandingService>()
+                .RateFinished(CancellationToken.None);
+            if (rated > 0)
+            {
+                scope.ServiceProvider.GetRequiredService<StandingCache>().Forget();
+            }
         }
         finally
         {

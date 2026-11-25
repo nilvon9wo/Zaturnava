@@ -27,6 +27,7 @@
 @inject Browser Browser
 @inject TimeProvider Clock
 @inject NavigationManager Navigation
+@inject LobbyMemory Memory
 
 <section class="lobby">
     @if (this._problem is { } problem)
@@ -566,7 +567,14 @@
                            @onchange="this.FindByCode" />
                 </label>
             </div>
-            @if (this._games.IsEmpty)
+            @if (this._games.IsEmpty && this._isListing)
+            {
+                <div class="listing" role="status">
+                    <span class="spinner" aria-hidden="true"></span>
+                    <span class="visually-hidden">Listing the games</span>
+                </div>
+            }
+            else if (this._games.IsEmpty)
             {
                 <p class="no-games">No games like that.</p>
             }
@@ -651,9 +659,10 @@
 
     /// <summary>
     /// Whether the New game panel shows: as the player chose; else, only if there is no game they could join on this
-    /// page (playtest 2026-11-15, H1), so that joining comes first.
+    /// page (playtest 2026-11-15, H1), so that joining comes first; not while the games are still being listed, until
+    /// it is known whether there is one, but the player may open it then.
     /// </summary>
-    private bool IsNewGameShown => this._isNewGameShown ?? !this._games.Any(this.IsJoinable);
+    private bool IsNewGameShown => this._isNewGameShown ?? (!this._isListing && !this._games.Any(this.IsJoinable));
 
     /// <summary>Whether the player could join the game: not over, with an open seat they may take.</summary>
     private bool IsJoinable(GameSummaryDto game) =>
@@ -1348,17 +1357,20 @@
     private static string SeatName(ImmutableList<string> names, int seat) =>
         names.ElementAtOrDefault(seat) ?? $"seat {seat + 1}";
 
+    /// <summary>
+    /// The lobby, a piece at a time (the user's report of 2026-11-25: slow to load): the catalog (as last had, if the
+    /// lobby was shown before) and who is signed in, asked at once; then the lobby shown, New game ready, while the
+    /// games are listed and those waiting for the player found, at once, and the leaderboard asks for its own.
+    /// </summary>
     private async Task Load()
     {
-        CatalogDto catalog = await this.Games.Catalog(CancellationToken.None);
-        this._me = await this.Browser.PlayerToken() is { } token
-            && await this.Games.Me(token, CancellationToken.None) is { } player
-                ? (player.Id, token)
-                : null;
-        this._awaited = this._me is { } me
-            ? await this.Games.Awaiting(me.Token, CancellationToken.None) ?? []
-            : [];
-        await this.Recall(this._awaited.Select(awaited => awaited.Game));
+        Task<CatalogDto> asked = this.Memory.Catalog is { } kept
+            ? Task.FromResult(kept)
+            : this.Games.Catalog(CancellationToken.None);
+        Task<(string Id, string Token)?> me = this.Who();
+        CatalogDto catalog = await asked;
+        this.Memory.Catalog = catalog;
+        this._me = await me;
         this._arePreviewsShown = await this.Browser.ArePreviewsShown();
         this._isNewGameShown = await this.Browser.IsFramed() ? false : this._isNewGameShown;
         foreach (RulesetDto game in AllGamesOf(catalog))
@@ -1379,11 +1391,60 @@
         }
 
         this._code = GameCode.InvitedBy(this.Navigation.Uri);
-        this._catalog = catalog; // before listing, which asks it whether scenarios are offered
-        await this.ListGames();
         this._mode = await this.Browser.Setup();
         this._scenario = await this.Browser.LastScenario() ?? string.Empty;
+        this._catalog = catalog; // before listing, which asks it whether scenarios are offered
+        if (this.Memory.Listed is { } listed && listed.Asked == this.Asked)
+        {
+            this.Show(listed.Page);
+            await this.Recall(this._games);
+        }
+
+        this._isListing = true;
+        this.StateHasChanged();
         await this.OnGameChosen.InvokeAsync(first.Game);
+        try
+        {
+            await Task.WhenAll(this.ListGames(), this.FindAwaited());
+        }
+        finally
+        {
+            this._isListing = false;
+        }
+    }
+
+    /// <summary>The player signed in, by id and token; none, if no one is.</summary>
+    private async Task<(string Id, string Token)?> Who() =>
+        await this.Browser.PlayerToken() is { } token
+        && await this.Games.Me(token, CancellationToken.None) is { } player
+            ? (player.Id, token)
+            : null;
+
+    /// <summary>The games waiting for the player signed in, and the seats this browser holds at them.</summary>
+    private async Task FindAwaited()
+    {
+        this._awaited = this._me is { } me
+            ? await this.Games.Awaiting(me.Token, CancellationToken.None) ?? []
+            : [];
+        await this.Recall(this._awaited.Select(awaited => awaited.Game));
+    }
+
+    /// <summary>
+    /// Whether the games are being listed: at first, so that the list says it is coming rather than that there are
+    /// none.
+    /// </summary>
+    private bool _isListing;
+
+    /// <summary>What the list asks the server for: the game an invitation's code names, else the filter's games.</summary>
+    private GameListQuery Asked => this._code is { } code ? new GameListQuery(Code: code) : this._filter;
+
+    /// <summary>A page of games, shown.</summary>
+    private void Show(GamePageDto page)
+    {
+        this._games = page.Games;
+        this._total = page.Total;
+        this._pageNumber = page.Page;
+        this._pages = Math.Max(1, (page.Total + page.PageSize - 1) / page.PageSize);
     }
 
     /// <summary>The page of games the filter asks for, and the seats this browser holds at them.</summary>
@@ -1394,12 +1455,10 @@
         this._scenarioGames = !this._catalog!.Scenarios.IsEmpty // set before any listing
             ? (await this.Games.List(new GameListQuery(Scenario: true), CancellationToken.None)).Total
             : 0;
-        GameListQuery asked = this._code is { } code ? new GameListQuery(Code: code) : this._filter;
+        GameListQuery asked = this.Asked;
         GamePageDto page = await this.Games.List(asked, CancellationToken.None);
-        this._games = page.Games;
-        this._total = page.Total;
-        this._pageNumber = page.Page;
-        this._pages = Math.Max(1, (page.Total + page.PageSize - 1) / page.PageSize);
+        this.Memory.Listed = (asked, page);
+        this.Show(page);
         await this.Recall(this._games);
     }
 

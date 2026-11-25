@@ -131,6 +131,7 @@ internal static class ZaturnavaServices
             )
             .AddHostedService<GameSweeper>()
             .AddScoped<StandingService>()
+            .AddSingleton(provider => new StandingCache(provider.GetRequiredService<TimeProvider>()))
             .AddSingleton(
                 new StandingSweeper.Interval(
                     TimeSpan.FromSeconds(

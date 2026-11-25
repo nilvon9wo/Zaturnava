@@ -16,6 +16,7 @@ internal sealed class PageContext : BunitContext
         this.JSInterop.Mode = JSRuntimeMode.Loose;
         _ = this.Services.AddSingleton<IGameServing>(this.Server);
         _ = this.Services.AddSingleton<Browser>();
+        _ = this.Services.AddSingleton(this.Memory);
         _ = this.Services.AddSingleton(new ServerAddress(ServerUri));
         TimeSpan interval = pollInterval ?? Timeout.InfiniteTimeSpan;
         _ = this.Services.AddSingleton(new TableSettings(interval, interval, interval));
@@ -23,4 +24,7 @@ internal sealed class PageContext : BunitContext
     }
 
     public FakeGameServer Server { get; } = new();
+
+    /// <summary>What the lobby keeps from the server while the page is open.</summary>
+    public LobbyMemory Memory { get; } = new();
 }

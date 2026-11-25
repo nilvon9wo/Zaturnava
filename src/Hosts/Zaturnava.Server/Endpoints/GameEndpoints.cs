@@ -130,15 +130,31 @@ internal static class GameEndpoints
         );
     }
 
-    /// <summary>The players standing highest at the game, each in their place, their Elo rounded.</summary>
-    private static async Task<ImmutableList<StandingDto>> Leaderboard(
+    /// <summary>
+    /// The players standing highest at the game, each in their place, their Elo rounded: as last counted, if within a
+    /// minute (<see cref="StandingCache"/>).
+    /// </summary>
+    private static Task<ImmutableList<StandingDto>> Leaderboard(
         string game,
         StandingService standings,
+        StandingCache cache,
         CancellationToken cancellationToken
-    ) => [.. (await standings.Leaders(game, cancellationToken)).Select(ToStandingDto)];
+    ) =>
+        cache.Of(
+            "people/" + game,
+            async () => (ImmutableList<StandingDto>)
+                [.. (await standings.Leaders(game, cancellationToken)).Select(ToStandingDto)]
+        );
 
-    /// <summary>The server's bots standing highest at the game, each in its place.</summary>
-    private static async Task<ImmutableList<BotStandingDto>> BotLeaderboard(
+    /// <summary>The server's bots standing highest at the game, each in its place: as last counted, if fresh.</summary>
+    private static Task<ImmutableList<BotStandingDto>> BotLeaderboard(
+        string game,
+        StandingService standings,
+        StandingCache cache,
+        CancellationToken cancellationToken
+    ) => cache.Of("bots/" + game, () => BotStandings(game, standings, cancellationToken));
+
+    private static async Task<ImmutableList<BotStandingDto>> BotStandings(
         string game,
         StandingService standings,
         CancellationToken cancellationToken

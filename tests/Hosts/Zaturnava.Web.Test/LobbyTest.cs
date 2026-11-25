@@ -2957,6 +2957,62 @@ public sealed class LobbyTest : IDisposable
     }
 
     /// <summary>The lobby, its New game panel shown, as a player opens it when there are games to join.</summary>
+    [Fact]
+    public void Render_WhenTheGamesAreStillComing_ShowsTheLobbyWithASpinnerWhereTheyGoAndNewGameReady()
+    {
+        // Arrange
+        this._page.Server.HeldList = new TaskCompletionSource<GamePageDto>();
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.RenderAsIs();
+        lobby.Find("button.new-game-toggle").Click();
+
+        // Assert
+        Assert.Equal(
+            (1, 0, 1),
+            (
+                lobby.FindAll(".games-panel .listing").Count,
+                lobby.FindAll(".no-games").Count,
+                lobby.FindAll(".panel.new-game").Count
+            )
+        );
+    }
+
+    [Fact]
+    public void Render_WhenTheGamesComeAfterTheLobbyIsShown_ListsThemInPlaceOfTheSpinner()
+    {
+        // Arrange
+        TaskCompletionSource<GamePageDto> held = new();
+        this._page.Server.HeldList = held;
+        IRenderedComponent<Lobby> lobby = this.RenderAsIs();
+
+        // Act
+        held.SetResult(new GamePageDto(this._page.Server.Games, this._page.Server.Games.Count, 1, 20));
+
+        // Assert
+        lobby.WaitForAssertion(() =>
+            Assert.Equal(
+                (0, FakeGameServer.GameId),
+                (lobby.FindAll(".listing").Count, GameIds(lobby))
+            )
+        );
+    }
+
+    [Fact]
+    public void Render_WhenTheLobbyWasShownBefore_ShowsTheGamesItListedThenWhileAskingAgain()
+    {
+        // Arrange - the lobby shown once, then the server slow to list them again
+        _ = this.RenderAsIs();
+        this._page.Server.HeldList = new TaskCompletionSource<GamePageDto>();
+        this._page.Server.HeldCatalog = new TaskCompletionSource<CatalogDto>();
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.RenderAsIs();
+
+        // Assert - the catalog as last had, not asked again; the games as last listed
+        Assert.Equal((FakeGameServer.GameId, 0), (GameIds(lobby), lobby.FindAll(".reaching").Count));
+    }
+
     private IRenderedComponent<Lobby> Render()
     {
         IRenderedComponent<Lobby> lobby = this.RenderAsIs();
