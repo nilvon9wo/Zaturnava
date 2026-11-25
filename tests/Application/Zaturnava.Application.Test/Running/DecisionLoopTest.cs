@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Net.NowhereAtAll.Zaturnava.Application.Running;
+using Net.NowhereAtAll.Zaturnava.Application.Scenarios;
 using Net.NowhereAtAll.Zaturnava.Application.Test.Fakes;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Boards;
@@ -32,7 +33,7 @@ public sealed class DecisionLoopTest
     }
 
     [Fact]
-    public async Task PlayAll_WhenTheRulesetDealsEachGame_DealsItFirstBySeed()
+    public async Task PlayAll_WhenTheRulesetDealsEachGame_DealsItFirstBySeedKeepingWhatItDealt()
     {
         // Arrange - the loaded dice roll the seed, 4, which the tiny rules score to the first seat; and, to the fourth,
         // how many seats were dealt a family: a bot of Makruk's pieces at the first, a decider no bot at the second
@@ -43,11 +44,12 @@ public sealed class DecisionLoopTest
         // Act
         Played played = await DecisionLoop.PlayAll(rules, players, this._dice, 100, this._cancellation);
 
-        // Assert
+        // Assert - what it dealt kept in the deal, so that the game replays as dealt however dealing changes
         Assert.Equal(
-            ("deal", GameLength + 1, 4, 1),
+            ("deal", true, GameLength + 1, 4, 1),
             (
                 played.Actions[0].Kind,
+                ScenarioStart.IsKept(played.Actions),
                 played.Actions.Count,
                 played.State.Scores[new SeatId(0)],
                 played.State.Scores[new SeatId(3)]

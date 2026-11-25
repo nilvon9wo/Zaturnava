@@ -169,6 +169,10 @@ def main():
     kept = load_kept(kept_path, settings)
     lock = threading.Lock()
 
+    finished = [sum(f"{a}|{b}" in kept for a, b in pairs)]
+    if finished[0]:
+        print(f"   {finished[0]} of {len(pairs)} pairs kept from before", file=sys.stderr, flush=True)
+
     def played(pair):
         key = f"{pair[0]}|{pair[1]}"
         if key in kept:
@@ -177,6 +181,11 @@ def main():
         with lock:
             kept[key] = list(result)
             save_kept(kept_path, settings, kept)
+            # each pair as it ends (2026-11-25: a tournament silent for twelve hours looked frozen)
+            finished[0] += 1
+            won, lost, drawn, seconds = result
+            print(f"   {finished[0]}/{len(pairs)} {pair[0]} vs {pair[1]}: won {won}, lost {lost}, drawn {drawn},"
+                  f" in {seconds / 60:.0f} min", file=sys.stderr, flush=True)
         return result
 
     with ThreadPoolExecutor(options.jobs) as pool:

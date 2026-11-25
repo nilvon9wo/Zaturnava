@@ -2,9 +2,10 @@
 # Train and rate the bots while no one is working, under Linux, from Windows through WSL, in this checkout itself:
 #
 #     wsl -d Ubuntu -- bash scripts/wsl-overnight.sh [--cycles N] [--rulesets a,b] [--rounds N] [--games N]
-#                                                    [--continue artifacts/overnight/<started>]
+#                                                    [--continue [artifacts/overnight/<started>]]
 #
-# With --continue, it writes into that earlier run's folder instead of a new one, and each tournament it had
+# With --continue, it writes into that earlier run's folder (the latest, if none is named) instead of a new one,
+# and each tournament it had
 # stopped mid-way goes on from the pairs of bots it had finished (M2), numbered on from the cycle it stopped in.
 #
 # Run it from the repository's root. Each cycle, for each ruleset in turn: rounds of Athena's learning
@@ -26,7 +27,17 @@ while [ $# -gt 0 ]; do
         --rulesets) rulesets="$2"; shift 2 ;;
         --rounds) rounds="$2"; shift 2 ;;
         --games) games="$2"; shift 2 ;;
-        --continue) out="${2%/}"; shift 2 ;;
+        --continue)
+            if [ $# -gt 1 ] && [ "${2#--}" = "$2" ]; then
+                out="${2%/}"; shift 2
+            else
+                # no folder named: the latest run's (its folders are named by when they started, so sort by name)
+                out="$(find artifacts/overnight -mindepth 1 -maxdepth 1 -type d -name '2*' | sort | tail -n 1)"
+                [ -n "$out" ] || { echo "--continue: no earlier run in artifacts/overnight" >&2; exit 2; }
+                echo "== continuing $out"
+                shift
+            fi
+            ;;
         *) echo "unknown option: $1" >&2; exit 2 ;;
     esac
 done

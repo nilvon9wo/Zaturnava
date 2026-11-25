@@ -97,7 +97,8 @@ public static class DecisionLoop
     /// A whole game in which every seat is played by the decider at its index; dealt anew first, by a seed
     /// <paramref name="dice"/> roll, if the ruleset deals each game its own armies, a bot's of its own family's pieces,
     /// if it plays one (<see cref="BotProfile.Family"/>; so that such a bot is rated as it plays, 2026-11-20, not on an
-    /// army of every game's pieces). It stops between any two
+    /// army of every game's pieces), what it dealt kept in its first action (<see cref="ScenarioStart.Kept"/>). It
+    /// stops between any two
     /// decisions once <paramref name="cancellationToken"/> is cancelled, as when the server stops while rating its
     /// bots (Proposed, 2026-11-13: a deploy found the server still playing, its files held), however its bots decide.
     /// </summary>
@@ -110,7 +111,10 @@ public static class DecisionLoop
     )
     {
         ImmutableList<string?> families = [.. players.Select(player => (player as IBotPlaying)?.Profile.Family)];
-        ImmutableList<ActionDescriptor> dealt = rules.IsDealt ? [ScenarioStart.Dealt(dice, families: families)] : [];
+        // what was dealt kept in the deal, as the server keeps it, so that the game replays as dealt however dealing
+        // changes (2026-11-25: games kept for Athena to learn from were dealt anew, by a catalogue a piece longer)
+        ImmutableList<ActionDescriptor> dealt =
+            rules.IsDealt ? [ScenarioStart.Kept(ScenarioStart.Dealt(dice, families: families), rules)] : [];
         Played start = new(ScenarioStart.StateOf(dealt, rules), dealt);
         IDeciding PlayerOf(SeatId seat)
         {
