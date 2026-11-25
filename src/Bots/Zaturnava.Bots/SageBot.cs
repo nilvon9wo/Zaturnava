@@ -43,8 +43,9 @@ public sealed class SageBot(
         "Sage",
         "Thoughtful: weighs the whole board (points, pieces, Rajas, prisoners, thrones, and what each side "
             + "could take next) and thinks through the rest of its turn, rolling only when it expects more of the "
-            + "dice than of the best move it could make without them. Trades prisoners when the board would be "
-            + "better for it. A plain algorithm: no AI.",
+            + "dice than of the best move it could make without them. With few pieces left, it looks past its own "
+            + "turn and closes in on the enemy's leader. Trades prisoners when the board would be better for it. A "
+            + "plain algorithm: no AI.",
         UsesAi: false
     );
 
@@ -68,7 +69,8 @@ public sealed class SageBot(
     /// Sage's play, with positions judged by <paramref name="valuing"/>: <paramref name="ending"/>, if it has
     /// answered a proposal to end the game; else its answer to an offer, or an offer of its own, if it would
     /// make one, during its turn or once it is over; else what it would most expect of the rest of its turn, as
-    /// <see cref="Foresight"/> sees it. It weighs a ransom by the whole position once it is done
+    /// <see cref="Foresight"/> sees it; in an endgame (<see cref="Endgame"/>), past its own turn, as Tactician looks,
+    /// as few pieces let it. It weighs a ransom by the whole position once it is done
     /// (<see cref="ByPosition"/>), the points accepting scores left out, and only if its team can afford it
     /// (<see cref="Trading"/>): it accepts an offer that leaves it no worse off, and offers its allies' pieces
     /// back, then the trade that would leave it best off, if any leaves it better.
@@ -79,7 +81,14 @@ public sealed class SageBot(
         IPositionValuing valuing,
         Random random
     ) =>
-        Play(request, ending, valuing, deciding => new Foresight(valuing, Depth, Beam).Choose(deciding, random));
+        Play(
+            request,
+            ending,
+            valuing,
+            deciding => Endgame.IsEndgame(deciding.Rules, deciding.State)
+                ? new Tactics(valuing, Endgame.Budget, Endgame.Width, Endgame.SageLimit).Choose(deciding, random)
+                : new Foresight(valuing, Depth, Beam).Choose(deciding, random)
+        );
 
     /// <summary>
     /// Sage's play, but for the board, where it plays as <paramref name="choose"/> does (Tactician's search, say).

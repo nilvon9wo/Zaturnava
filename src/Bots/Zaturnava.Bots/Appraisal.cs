@@ -15,7 +15,8 @@ namespace Net.NowhereAtAll.Zaturnava.Bots;
 /// <see cref="Careful"/> counts it), plus what the team could still win once its enemies have moved (each saving
 /// what it can: <see cref="Threats"/>), and how many cells its pieces attack, and its
 /// enemies'; and of the ruleset's own measures (<see cref="IPositionMeasuring"/>), each side's, as far as the
-/// weights weigh them. A game over is worth its result, by far more than any of that.
+/// weights weigh them; and, in an endgame, how hard the team presses the enemy's leaders (<see cref="Endgame"/>). A
+/// game over is worth its result, by far more than any of that.
 /// </summary>
 internal static class Appraisal
 {
@@ -137,7 +138,10 @@ internal static class Appraisal
             - (weights.Exposure * Careful.Exposure(request, state, theirs, ours))
             + (weights.Chances * Threats(request, state, ours, theirs))
             + weights.Mobility.Weigh(Mobility(request, ours, theirs))
-            + Measured(request, state, weights);
+            + Measured(request, state, weights)
+            + (Endgame.IsEndgame(request.Rules, state)
+                ? Endgame.Pressure(request, state, ours, Endgame.ScaleOf(weights))
+                : 0);
 
     /// <summary>
     /// The ruleset's own measures, each side's, as the weights weigh them; not measured at all when the weights

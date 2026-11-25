@@ -46,7 +46,8 @@ internal sealed class TreeRules(ImmutableDictionary<int, TreeNode> nodes) : IRul
 
     public string Name => "Tree";
 
-    public ICellNavigating Topology { get; } = new LineTopology();
+    /// <summary>A line counted as no cells: a tree of choices has no board to speak of, and so no endgame.</summary>
+    public ICellNavigating Topology { get; } = new LineTopology(0);
 
     public ImmutableDictionary<SeatId, CellId> Thrones => [];
 

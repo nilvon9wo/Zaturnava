@@ -39,7 +39,8 @@ internal sealed class LineRules(ImmutableList<GameAction> legalActions) : IRules
 
     public string Name => "Line";
 
-    public ICellNavigating Topology { get; } = new LineTopology();
+    /// <summary>The line; or, if set, another way about it (as large a board around it, say).</summary>
+    public ICellNavigating Topology { get; init; } = new LineTopology();
 
     public ImmutableDictionary<SeatId, CellId> Thrones => ImmutableDictionary<SeatId, CellId>.Empty.Add(Seat, Throne);
 
@@ -181,13 +182,14 @@ internal sealed class LineRules(ImmutableList<GameAction> legalActions) : IRules
 
 /// <summary>
 /// The cells of a line, 0 up to 7: a step goes along it, and one any other way goes off it; every set of directions
-/// is the line, both ways.
+/// is the line, both ways. Its cells may be counted as more or fewer than they are (<paramref name="counted"/>): a
+/// board of that size, as far as a bot asks its size.
 /// </summary>
-internal sealed class LineTopology : ICellNavigating
+internal sealed class LineTopology(int counted = 8) : ICellNavigating
 {
     private const int Length = 8;
 
-    public ImmutableList<CellId> Cells { get; } = [.. Enumerable.Range(0, Length).Select(cell => new CellId(cell))];
+    public ImmutableList<CellId> Cells { get; } = [.. Enumerable.Range(0, counted).Select(cell => new CellId(cell))];
 
     public CellId? Step(CellId from, Direction direction) =>
         (direction.Second, from.Value + direction.First) switch

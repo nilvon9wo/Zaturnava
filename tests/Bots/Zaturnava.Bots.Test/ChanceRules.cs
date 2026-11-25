@@ -33,7 +33,8 @@ internal sealed class ChanceRules(int deliberate) : IRulesApplying
 
     public string Name => "Chance";
 
-    public ICellNavigating Topology => throw new NotSupportedException();
+    /// <summary>A line counted as no cells: all a bot asks of it is its size, and so it has no endgame.</summary>
+    public ICellNavigating Topology { get; } = new LineTopology(0);
 
     public ImmutableDictionary<SeatId, CellId> Thrones => [];
 

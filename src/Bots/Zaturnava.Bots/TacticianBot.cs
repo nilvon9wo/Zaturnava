@@ -52,7 +52,8 @@ public sealed class TacticianBot(
         "Tactician",
         "Calculating: weighs the board as Sage does, but thinks past its own turn, through the turns of the "
             + "others and the dice, its enemies playing against it and its allies for themselves. So it sees the "
-            + "reply coming, not just what could be taken next. A plain algorithm: no AI.",
+            + "reply coming, not just what could be taken next. With few pieces left, it looks further still, and "
+            + "closes in on the enemy's leader. A plain algorithm: no AI.",
         UsesAi: false
     );
 
@@ -68,7 +69,12 @@ public sealed class TacticianBot(
     private GameAction Chosen(DecisionRequest request)
     {
         Appraiser valuing = new(this._learned.GetValueOrDefault(request.Rules.Id, this._fallback));
-        Tactics tactics = new(valuing, this._budget, this._width);
+        // in an endgame, as far again as few pieces let it look (Endgame)
+        Tactics tactics = new(
+            valuing,
+            Endgame.IsEndgame(request.Rules, request.State) ? Math.Max(this._budget, Endgame.Budget) : this._budget,
+            this._width
+        );
         return SageBot.Play(
             request,
             Ending.AnswerTo(request),
