@@ -11,28 +11,5 @@ asked here instead (checked, every *Proposed* in the documents, on 2026-11-06).
 Anything to be built is in the [backlog](backlog.md) or the [roadmap](grand/roadmap.md), and anything left to
 playtesting is marked so where it is written.
 
-## Field promotion: whose turns count?
-
-Asked 2026-11-25: "a piece that has stood on an enemy throne for 10 turns". Built (*Proposed*, standing until
-answered) counting every seat's turn, so 10 turns is two and a half rounds of a four-seat game.
-
-| Counting | 10 turns is | A piece must survive |
-|---|---|---|
-| Every seat's turn (as built) | 2½ rounds | 7–8 enemy turns |
-| Its own army's turns only | 10 rounds | about 20 enemy turns |
-
-Which did you mean?
-
-## A player whose leaders are all gone is out: what of its pieces?
-
-Asked 2026-11-25, as a custom option. Today a leaderless army plays on, and an enemy holding its throne may command
-it (rules.md §6). With the option on, the seat takes no more turns; what should become of its pieces?
-
-| Its pieces | Like |
-|---|---|
-| Stay, never moving, and may be taken for points | Classical Chaturaji |
-| Leave the board | Western chess's "out" |
-| Stay, and whoever commands its throne still moves them | Chaturaji 2027's command, its own turns gone |
-
-And does a leader held prisoner, which may come back by ransom or escape, keep the player in?
-
+None is open now (2026-11-25). The player out of a game when their leaders are gone is being thought over by the
+designer, and waits in the [backlog](backlog.md).

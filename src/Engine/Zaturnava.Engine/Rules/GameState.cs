@@ -231,7 +231,7 @@ public sealed record GameState(
     public ImmutableDictionary<PieceId, int> MercenaryCosts { get; init; } = [];
 
     /// <summary>
-    /// How many turns of the game together each piece, not a leader, has ended standing on an enemy throne, where
+    /// How many of its own army's turns each piece, not a leader, has ended standing on an enemy throne, where
     /// the rules promote in the field; a piece not on one is not here.
     /// </summary>
     public ImmutableDictionary<PieceId, int> ThroneTenure { get; init; } = [];

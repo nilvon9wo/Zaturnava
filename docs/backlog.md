@@ -33,8 +33,10 @@ own number (**25**, **N29**), the [2026-11-15 specification](playtesting/2026-11
 - **Custom game options** (asked 2026-11-25), none on by default: a player whose leaders are all gone is out; a
   team with no leader left has lost; each player's idle time, set by whoever creates the game, the same for
   anonymous and signed-in players, after which the turn passes. *Begun*: a team with no leader left has lost
-  ([done](done.md#asked-2026-11-25)). Still to do: the player out, once its question is answered
-  ([open-questions](open-questions.md)); the idle time.
+  ([done](done.md#asked-2026-11-25)). Still to do: the idle time; and the player out, which waits while the
+  designer thinks how it can work consistently (*Stated* 2026-11-25). Settled so far: its pieces stay on the
+  board, an ally with leaders commanding them as now. Still open: whether its pieces held prisoner may escape back
+  onto the board, and whether a leader of its brought back, by ransom or escape, brings the player back in.
 - **Janggi Soldier's card** (2026-11-25): the palace's diagonals were not shown as moves or captures. The server's
   diagram has them (cells 48 and 50 from 39); to check on the live card.
 

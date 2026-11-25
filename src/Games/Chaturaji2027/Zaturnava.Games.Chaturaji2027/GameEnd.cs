@@ -273,14 +273,14 @@ internal static class GameEnd
 
     /// <summary>
     /// Where a team with no leader left on the board has lost (<see cref="GameState.IsLostWithoutLeaders"/>): once
-    /// only one team has a leader left, or one that fled the board, it wins; if none has, a draw; otherwise, none yet.
+    /// only one team has a leader on the board, it wins; if none has, a draw; otherwise, none yet. A leader off the
+    /// board, held prisoner or fled, does not count, however it left (Stated 2026-11-25), until it is back.
     /// </summary>
     private static GameOutcome? LeadersLost(GameState state, Chaturaji2027Variant variant)
     {
         ImmutableHashSet<int> led =
         [
             .. state.Position.Occupants.Values
-                .Concat(state.Fled)
                 .Where(piece => variant.Leaders.Contains(piece.Kind))
                 .Select(piece => state.Teams.TeamOf(piece.Owner)),
         ];

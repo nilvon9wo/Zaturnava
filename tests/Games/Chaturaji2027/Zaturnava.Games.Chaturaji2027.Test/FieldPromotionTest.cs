@@ -95,6 +95,24 @@ public sealed class FieldPromotionTest
     }
 
     [Fact]
+    public void Apply_WhenAnotherArmysTurnPasses_CountsNoTurnMoreForAPieceOnAnEnemysThrone()
+    {
+        // Arrange - Green's Boat, Black's ally's, on Red's throne some turns already; Black's turn
+        Piece boat = new(new PieceId(3), Chaturaji2027Pieces.Boat, new SeatId(2));
+        GameState state = this.BlackDeciding(new CellId(0), Chaturaji2027Pieces.Pawn, 0) with
+        {
+            ThroneTenure = [new(boat.Id, Turns)],
+        };
+        GameState placed = state with { Position = state.Position.Place(this.RedThrone, boat) };
+
+        // Act
+        GameState passed = this._rules.Apply(placed, new PassAction(Black)).State;
+
+        // Assert - only its own army's turns count (Stated 2026-11-25)
+        Assert.Equal(Turns, passed.ThroneTenure.GetValueOrDefault(boat.Id));
+    }
+
+    [Fact]
     public void Apply_WhenAPieceIsPromotedInTheField_BecomesTheLeaderAndScoresAsOneEnteringTheThrone()
     {
         // Arrange

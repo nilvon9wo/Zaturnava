@@ -69,8 +69,8 @@ public static class GrandLegionsRules
             );
 
     /// <summary>
-    /// How many turns of the game a piece must have ended on an enemy throne to promote in the field into a Silver
-    /// General (asked 2026-11-25: "10 turns"; Proposed: every seat's turn counts, not only its own army's).
+    /// How many of its own army's turns a piece must have ended on an enemy throne to promote in the field into a
+    /// Silver General (asked 2026-11-25: "10 turns"; Stated the same day: its own army's turns only).
     /// </summary>
     public const int FieldPromotionTurns = 10;
 
