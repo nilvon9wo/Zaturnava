@@ -6,31 +6,43 @@ namespace Net.NowhereAtAll.Zaturnava.Games.GrandLegions.Test;
 public sealed class BoardPricesTest
 {
     [Fact]
-    public void On_WhenTheBoardIsEightByEight_IsTheSheetsValuesButTheLancesAndTheShogiKnights()
+    public void On_WhenTheBoardIsEightByEight_IsTheSheetsValuesButForPromotionsCountedFromTheFrontRow()
     {
         // Arrange - the medium game's board, 8 × 8, its kingdoms' front row the sheet's row 2; the sheet counts the
-        // promotion of a piece not Infantry from row 1, 5 rows, the board from its front row, 4: the Lance's 12 gained,
-        // 2 there, 3 here; the Shogi Knight's 14, 3 there (2.8), 4 here (3.5)
+        // promotion of a piece not Infantry from row 1, 5 rows, the board from its front row, 4: the Lance's premium
+        // 12 there, 16 here; the Shogi Knight's 13 there, 16 here; the Man's, over 7 rows there and 6 here, 9 and 11
+        // (2026-11-25: without the leader promotion bonus, the gain into a leader is large, and the rows count more)
         GrandBoard board = QuickTerrain.BoardOf(QuickGame.Medium, 0);
+        ImmutableHashSet<PieceKindId> repriced =
+            [GrandLegionsPieces.Lance, GrandLegionsPieces.ShogiKnight, GrandLegionsPieces.Man];
 
         // Act
         ImmutableDictionary<PieceKindId, int> prices = BoardPrices.On(board);
 
-        // Assert
+        // Assert - the three, and every other priced as the sheet prices it
         Assert.Equal(
-            GrandLegionsPieces.Catalogue.ToImmutableDictionary(piece => piece.Id, piece => piece.Value)
-                .SetItem(GrandLegionsPieces.Lance, 57)
-                .SetItem(GrandLegionsPieces.ShogiKnight, 56),
-            prices
+            (20, 18, 15, string.Empty),
+            (
+                prices[GrandLegionsPieces.Lance],
+                prices[GrandLegionsPieces.ShogiKnight],
+                prices[GrandLegionsPieces.Man],
+                string.Join(
+                    ",",
+                    GrandLegionsPieces.Catalogue
+                        .Where(piece => !repriced.Contains(piece.Id))
+                        .Where(piece => prices[piece.Id] != piece.Value)
+                        .Select(piece => $"{piece.Id.Value} {prices[piece.Id]}")
+                )
+            )
         );
     }
 
     [Theory]
     [InlineData("grand-legions-small", 66)]
-    [InlineData("grand-legions-large", 54)]
+    [InlineData("grand-legions-large", 11)]
     public void On_WhenTheBoardIsLargerOrSmaller_PricesTheShogiKnightsPromotionByHowFarItIs(string game, int expected)
     {
-        // Arrange - its reach, 2, the same on any board; the Gold General's 14 more over the rows from its kingdom's
+        // Arrange - its reach, 2, the same on any board; the Gold General's 63 more over the rows from its kingdom's
         // front row to the far three: on the small board, one, so it costs what the Gold General does
         GrandBoard board = QuickTerrain.BoardOf(QuickGame.All.Single(quick => quick.Id == game), 0);
 

@@ -11,6 +11,9 @@ Each argument is one change to docs/Other Potential Pieces.xlsx, on its first sh
 - `A1:v=12` sets only the last computed value of a formula cell, so that what a reader without a spreadsheet program
   sees stays true;
 - `name:Name=Sheet1!$A$1` defines (or redefines) a name;
+- `clear:A1` takes the cell away;
+- `formulas:OLD=>NEW` replaces the text OLD by NEW in every formula, keeping each one's last computed value (as
+  `formulas:$Y$2:$Y$47=>BaseValues`, so that a range of rows becomes a name, and a sort of the rows breaks nothing);
 - `row-:14` deletes row 14, moving the rows below it up one, and every reference to them with them (in cells,
   formulas, ranges, comments and names). A range the row was inside shrinks by one;
 - `@artifacts/changes.txt` reads changes from that file (relative to the repository), one to a line, so that long
@@ -108,6 +111,22 @@ def set_cached(sheet: str, reference: str, cached: str) -> str:
     return sheet[: existing.start()] + replacement + sheet[existing.end() :]
 
 
+def cleared(sheet: str, reference: str) -> str:
+    """The sheet without the cell, if it holds one."""
+    existing = cell_pattern(reference).search(sheet)
+    return sheet[: existing.start()] + sheet[existing.end() :] if existing else sheet
+
+
+def formulas_replaced(sheet: str, old: str, new: str) -> str:
+    """Every formula with `old` replaced by `new`, its last computed value kept."""
+    return re.sub(
+        r"(<f[^>]*>)(.*?)(</f>)",
+        lambda m: m.group(1) + m.group(2).replace(escape(old), escape(new)) + m.group(3),
+        sheet,
+        flags=re.S,
+    )
+
+
 def set_name(workbook: str, name: str, reference: str) -> str:
     defined = f'<definedName name="{name}">{escape(reference)}</definedName>'
     existing = re.search(rf'<definedName name="{re.escape(name)}"[^>]*>.*?</definedName>', workbook, re.S)
@@ -201,6 +220,11 @@ def main(changes: list[str]) -> None:
         target, _, value = change.partition("=")
         if target.startswith("name:"):
             workbook = set_name(workbook, target[len("name:") :], value)
+        elif target.startswith("clear:"):
+            sheet = cleared(sheet, target[len("clear:") :])
+        elif change.startswith("formulas:"):
+            old, _, new = change[len("formulas:") :].partition("=>")
+            sheet = formulas_replaced(sheet, old, new)
         elif target.endswith(":v"):
             sheet = set_cached(sheet, target[: -len(":v")], value)
         else:

@@ -341,7 +341,7 @@ public sealed class GrandLegionsPiecesTest
     [InlineData("tafl-king", 71, 74)]
     [InlineData("swede", 11, 14)]
     [InlineData("checkers-king", 64, 67)]
-    [InlineData("man", 54, 56)]
+    [InlineData("man", 54, 13)]
     [InlineData("rook", 14, 14)]
     public void ValueAt_WhenThePieceWasRepricedOrNot_IsItsEarlierValueInAnEarlierGame(
         string kind,
@@ -349,7 +349,8 @@ public sealed class GrandLegionsPiecesTest
         int since
     )
     {
-        // Arrange - the pieces that take several in one move, repriced in edition 5; the Rook, never
+        // Arrange - the pieces that take several in one move, repriced in edition 5; the Rook, never; the Man since
+        // without the leader promotion bonus too (2026-11-25), in place
         GrandPiece piece = GrandLegionsPieces.ById[new PieceKindId(kind)];
 
         // Act
