@@ -8,13 +8,13 @@ namespace Net.NowhereAtAll.Zaturnava.Games.GrandLegions;
 
 /// <summary>
 /// Grand Legions played by Chaturaji 2027's rules (Proposed): each leader is what those rules call a Raja, its
-/// start its seat's throne; the Western, Makruk and Shogi Pawns are their Pawns; they and the Lance, moving only
-/// straight forward, swap back to back (<see cref="Swappers"/>); every
-/// Infantry piece is promoted at the far edge into a captured piece; a die names a class, so moves any piece of
-/// it; taking a piece scores its value, priced on the game's board (<see cref="BoardPrices"/>); and each piece's
-/// own promotion is played. Each army has a palace about its throne, where its kingdom has room for one, drawn on the
-/// board, which holds the pieces confined to one (<see cref="PalaceConfinement"/>), and along whose lines the Janggi
-/// General, Guard and Soldier step (the Soldier only forward). The Tafl King and the Swede take by custody.
+/// start its seat's throne; the Western, Makruk and Shogi Pawns are their Pawns; they, the Lance and the Xiangqi
+/// Soldier, moving only straight forward, swap back to back (<see cref="Swappers"/>); every Infantry piece is
+/// promoted at the far edge into a captured piece; a die names a class, so moves any piece of it; taking a piece
+/// scores its value, priced on the game's board (<see cref="BoardPrices"/>); and each piece's own promotion is played.
+/// Each army has a palace about its throne, where its kingdom has room for one, drawn on the board, which holds the
+/// pieces confined to one (<see cref="PalaceConfinement"/>), and along whose lines the Janggi General, Guard and
+/// Soldier step (the Soldier only forward). The Tafl King and the Swede take by custody.
 /// </summary>
 public static class GrandLegionsRules
 {
@@ -34,9 +34,12 @@ public static class GrandLegionsRules
     /// such as the Lance; no piece that may move sideways or back"): the Pawns and the Lance. Not the Shogi Knight
     /// (Stated 2026-11-25: it "can move out of the way, unlike pawns or lances", which "swap squares they would land in
     /// and which have no other choice(s) where to go"), nor, by the same rule, the Berolina Pawn and the Man, which go
-    /// diagonally forward either way.
+    /// diagonally forward either way. And the Xiangqi Soldier, which moves only straight forward until it crosses a
+    /// river, and keeps the swap once it may step sideways too (Stated 2026-11-25: "I'm not sure they should loose
+    /// that ability when they gain the ability to move sideways"); not the Janggi Soldier, which always may.
     /// </summary>
-    public static ImmutableHashSet<PieceKindId> Swappers { get; } = [.. Pawns, GrandLegionsPieces.Lance];
+    public static ImmutableHashSet<PieceKindId> Swappers { get; } =
+        [.. Pawns, GrandLegionsPieces.Lance, GrandLegionsPieces.XiangqiSoldier];
 
     /// <summary>Every Infantry piece, promoted at the far edge into a captured piece (specification §6.1).</summary>
     public static ImmutableHashSet<PieceKindId> Promotables { get; } =
