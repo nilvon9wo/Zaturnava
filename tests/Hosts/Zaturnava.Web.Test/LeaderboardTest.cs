@@ -115,7 +115,9 @@ public sealed class LeaderboardTest : IDisposable
         _ = await held.Task;
 
         // Assert
-        board.WaitForAssertion(() => Assert.Equal("Cy", board.Find(".leaders td.name").TextContent.Trim()));
+        await board.WaitForAssertionAsync(() =>
+            Assert.Equal("Cy", board.Find(".leaders td.name").TextContent.Trim())
+        );
     }
 
     [Fact]

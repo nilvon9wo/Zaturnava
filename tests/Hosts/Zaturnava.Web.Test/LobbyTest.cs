@@ -2992,7 +2992,7 @@ public sealed class LobbyTest : IDisposable
         );
 
         // Assert
-        lobby.WaitForAssertion(() =>
+        await lobby.WaitForAssertionAsync(() =>
             Assert.Equal(
                 (0, FakeGameServer.GameId),
                 (lobby.FindAll(".listing").Count, GameIds(lobby))
