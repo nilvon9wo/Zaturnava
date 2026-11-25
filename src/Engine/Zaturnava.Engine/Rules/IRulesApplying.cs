@@ -236,6 +236,12 @@ public interface IRulesApplying
     /// </summary>
     ImmutableList<GameAction> ChancesOf([Required] GameState state, SeatId seat) => [];
 
+    /// <summary>
+    /// Whether a piece of the ruleset may call a leader face-off (<see cref="FaceOffAction"/>) among its chances, so
+    /// that a game's creator may have it pause when a person first may; not, unless the ruleset says so.
+    /// </summary>
+    bool HasFaceOff => false;
+
     /// <summary>How the deciding seat's decision is timed; null if it may take as long as it likes.</summary>
     DecisionTimer? TimerOf([Required] GameState state);
 

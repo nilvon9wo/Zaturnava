@@ -202,6 +202,23 @@ public sealed class RulesApplyingTest
         where TRules : IRulesApplying =>
         rules.StartRows;
 
+    [Fact]
+    public void HasFaceOff_WhenTheRulesetSaysNoOther_IsFalse()
+    {
+        // Arrange
+        OneSizeRules rules = new();
+
+        // Act
+        bool hasFaceOff = HasFaceOffOf(rules);
+
+        // Assert
+        Assert.False(hasFaceOff);
+    }
+
+    private static bool HasFaceOffOf<TRules>(TRules rules)
+        where TRules : IRulesApplying =>
+        rules.HasFaceOff;
+
     [Theory]
     [InlineData(false, 0)]
     [InlineData(true, 2)]

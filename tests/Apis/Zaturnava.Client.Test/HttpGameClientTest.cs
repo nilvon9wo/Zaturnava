@@ -110,7 +110,8 @@ public sealed class HttpGameClientTest
                     + "\"draftBudget\":null,\"drafter\":null,\"isDraftSecret\":false,"
                     + "\"isDraftHiddenFromAllies\":false,\"board\":null,\"promotesAtSide\":false,"
                     + "\"isForPlayers\":false,\"areDiceOff\":false,\"idleRounds\":null,\"opener\":null,"
-                    + "\"isLostWithoutLeaders\":false,\"idleSeconds\":null,\"startRows\":null,\"terrainMask\":0,"
+                    + "\"isLostWithoutLeaders\":false,\"idleSeconds\":null,\"startRows\":null,\"faceOffPause\":null,"
+                    + "\"terrainMask\":0,"
                     + "\"terrainValue\":0}",
                 "g"
             ),

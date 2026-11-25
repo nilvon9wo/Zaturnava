@@ -33,6 +33,27 @@ public sealed class DecisionLoopTest
     }
 
     [Fact]
+    public async Task PlayWhile_WhenAStepPausesTheGame_StopsAfterIt()
+    {
+        // Arrange - the second turn's step pauses the game, as a face-off a person may call opening would
+        Played start = new(this._rules.CreateInitialState(), []);
+
+        // Act
+        Played played = await DecisionLoop.PlayWhile(
+            this._rules,
+            start,
+            seat => this._players[seat.Value],
+            this._dice,
+            100,
+            this._cancellation,
+            (_, after) => after.TurnNumber == 3
+        );
+
+        // Assert
+        Assert.Equal(2, played.Actions.Count);
+    }
+
+    [Fact]
     public async Task PlayAll_WhenTheRulesetDealsEachGame_DealsItFirstBySeedKeepingWhatItDealt()
     {
         // Arrange - the loaded dice roll the seed, 4, which the tiny rules score to the first seat; and, to the fourth,

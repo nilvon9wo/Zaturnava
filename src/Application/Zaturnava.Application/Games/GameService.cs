@@ -111,7 +111,8 @@ public sealed class GameService(
             areDiceOff ? this.OpenerOf(dealing, seats.Count) : null,
             dealing.IsLostWithoutLeaders,
             IdleSecondsOf(dealing),
-            offered.StartRows is null ? null : StartRowsOf(dealing)
+            offered.StartRows is null ? null : StartRowsOf(dealing),
+            offered.HasFaceOff ? FaceOffPauseOf(dealing) : null
         );
         ImmutableList<ActionDescriptor> start = (scenarioId, offered.IsDealt) switch
         {
@@ -296,6 +297,27 @@ public sealed class GameService(
                 )
             )
             : dealing.StartRows;
+
+    /// <summary>The fewest seconds a game may pause for a face-off (Proposed).</summary>
+    public const int LeastFaceOffPause = 5;
+
+    /// <summary>The most seconds a game may pause for a face-off (Proposed): two minutes.</summary>
+    public const int MostFaceOffPause = 120;
+
+    /// <summary>
+    /// How many seconds the creator made the game pause for a face-off, if they did: from
+    /// <see cref="LeastFaceOffPause"/> to <see cref="MostFaceOffPause"/>.
+    /// </summary>
+    /// <exception cref="InvalidGameSetupException">They are fewer or more.</exception>
+    private static int? FaceOffPauseOf(Dealing dealing) =>
+        dealing.FaceOffPause is < LeastFaceOffPause or > MostFaceOffPause
+            ? throw new InvalidGameSetupException(
+                string.Create(
+                    CultureInfo.InvariantCulture,
+                    $"A face-off pause is from {LeastFaceOffPause} to {MostFaceOffPause} seconds."
+                )
+            )
+            : dealing.FaceOffPause;
 
     /// <summary>The board's size, if the ruleset may be played on it.</summary>
     /// <exception cref="InvalidGameSetupException">It may not.</exception>
@@ -499,14 +521,15 @@ public sealed class GameService(
     /// the bot whose turn it is make one decision (rolling the dice it asks for). Either only if the
     /// game is still at <paramref name="version"/>; otherwise, or when neither is due, leaves it as it
     /// is. Clients call it to let bots play at a pace people can follow, and once a timer they show
-    /// has run out; the version keeps two watchers from moving one bot twice.
+    /// has run out; the version keeps two watchers from moving one bot twice. Nothing, while the game is paused for a
+    /// face-off (<see cref="GameSnapshot.Pause"/>).
     /// </summary>
     /// <exception cref="GameNotFoundException">There is no such game.</exception>
     public async Task<GameSnapshot> Advance(GameId id, int version, CancellationToken cancellationToken)
     {
         using IDisposable entered = await this._gate.Enter(id);
         GameSnapshot snapshot = await this.Get(id, cancellationToken);
-        return snapshot.Record.Version == version
+        return snapshot.Record.Version == version && snapshot.Pause is null
             ? await this.Advanced(snapshot, cancellationToken)
             : snapshot;
     }
@@ -529,7 +552,8 @@ public sealed class GameService(
             // read again, under the gate: a person who has moved since leaves the bots nothing to decide; a game its
             // rules no longer replay is left, so that it never keeps the rest waiting
             GameRecord record = await this.Load(due.Id, cancellationToken);
-            if (GameSnapshot.TryOf(record, this._rulesets.Find(record.RulesetId)) is not { } snapshot)
+            if (GameSnapshot.TryOf(record, this._rulesets.Find(record.RulesetId)) is not { } snapshot
+                || this.PauseOf(snapshot) is not null)
             {
                 continue;
             }
@@ -540,7 +564,8 @@ public sealed class GameService(
                 this.DecidersOf(snapshot.Record),
                 this._dice,
                 IdleBotSteps,
-                cancellationToken
+                cancellationToken,
+                PausesAt(snapshot.Record, snapshot.Rules)
             );
             if (played.Actions.Count > snapshot.Record.Actions.Count)
             {
@@ -839,12 +864,23 @@ public sealed class GameService(
         using IDisposable entered = await this._gate.Enter(id);
         GameSnapshot snapshot = await this.Get(id, cancellationToken);
         GameAction action = Chosen(snapshot.Rules.Parse(descriptor));
-        Transition transition = snapshot.MayAct(action, token)
-            ? snapshot.Rules.Apply(snapshot.State, action)
-            : throw new NotYourTurnException(id, action.Actor);
+        Transition transition = (snapshot.MayAct(action, token), snapshot.Pause) switch
+        {
+            (false, _) => throw new NotYourTurnException(id, action.Actor),
+            (_, { } pause) when pause.Seat != action.Actor => throw new PausedForFaceOffException(id, pause),
+            _ => snapshot.Rules.Apply(snapshot.State, action),
+        };
         IDiceRolling dice = faked is null ? this._dice : this.Faked(snapshot, action, transition.State, faked);
         Played acted = new(transition.State, snapshot.Record.Actions.Add(action.Describe()));
-        Played played = await this.PlayBots(snapshot.Rules, snapshot.Record, acted, cancellationToken, dice);
+        bool isPausing = PausesAt(snapshot.Record, snapshot.Rules)?.Invoke(snapshot.State, transition.State) is true;
+        Played played = await this.PlayBots(
+            snapshot.Rules,
+            snapshot.Record,
+            acted,
+            cancellationToken,
+            dice,
+            isPausing ? 0 : this._settings.MaximumBotSteps
+        );
         GameRecord updated = snapshot.Record.Next() with { Actions = played.Actions };
         return await this.Saved(updated, snapshot.Rules, cancellationToken);
     }
@@ -899,7 +935,8 @@ public sealed class GameService(
                 this.DecidersOf(snapshot.Record),
                 this._dice,
                 1,
-                cancellationToken
+                cancellationToken,
+                PausesAt(snapshot.Record, snapshot.Rules)
             );
         GameRecord updated = snapshot.Record.Next() with { Actions = played.Actions };
         return played.Actions.Count == snapshot.Record.Actions.Count
@@ -984,8 +1021,32 @@ public sealed class GameService(
             ({ }, _) => snapshot with { Away = away, TimeLeft = this.TimeLeft(snapshot.Record, timer) },
             (_, { IsEmpty: false }) => snapshot with { Away = away, TimeLeft = due.Min() },
             _ => snapshot with { Away = away },
+        } with
+        {
+            Pause = this.PauseOf(snapshot),
         };
     }
+
+    /// <summary>
+    /// The pause for a face-off a person may call, if the game's creator set one and it has time left: it runs from
+    /// when this host first saw the face-off open, however the game is played meanwhile, so that it pauses once for
+    /// each chance (Grand Legions specification §6.4, Stated: "when the chance first comes").
+    /// </summary>
+    private FaceOffPause? PauseOf(GameSnapshot snapshot) =>
+        (ScenarioStart.FaceOffPauseOf(snapshot.Record.Actions), snapshot.FaceOffOpening) is ({ } pause, { } opening)
+        && this.Left(this._clock.PausedSince(snapshot.Record.Id, $"{opening.Seat.Value}/{opening.Index}") + pause) is
+        { Ticks: > 0 } left
+            ? new FaceOffPause(opening.Seat, left)
+            : null;
+
+    /// <summary>
+    /// Whether the bots are to stop after a step taking the game from one state to the next, in a game that pauses
+    /// for a face-off: once it opens one a person may call. Never, in any other game.
+    /// </summary>
+    private static Func<GameState, GameState, bool>? PausesAt(GameRecord record, IRulesApplying rules) =>
+        ScenarioStart.FaceOffPauseOf(record.Actions) is null
+            ? null
+            : (before, after) => FaceOffOpening.Opened(rules, record.Controllers, before, after) is not null;
 
     /// <summary>
     /// How long the deciding seat, played by a person (or an AI over the API), not one of the server's bots, has left
@@ -1186,15 +1247,17 @@ public sealed class GameService(
         GameRecord record,
         Played played,
         CancellationToken cancellationToken,
-        IDiceRolling? dice = null
+        IDiceRolling? dice = null,
+        int? steps = null
     ) =>
         DecisionLoop.PlayWhile(
             rules,
             played,
             this.DecidersOf(record),
             dice ?? this._dice,
-            this._settings.MaximumBotSteps,
-            cancellationToken
+            steps ?? this._settings.MaximumBotSteps,
+            cancellationToken,
+            PausesAt(record, rules)
         );
 
     /// <summary>

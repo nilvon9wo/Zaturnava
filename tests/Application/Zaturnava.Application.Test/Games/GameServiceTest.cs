@@ -2010,6 +2010,185 @@ public sealed class GameServiceTest
         Assert.Null(snapshot.State.Position.PieceAt(new CellId(1)));
     }
 
+    [Theory]
+    [InlineData(true, 30, 30)]
+    [InlineData(false, 30, null)]
+    [InlineData(true, null, null)]
+    public async Task Create_WhenAFaceOffPauseIsSet_KeepsItIfTheRulesHaveFaceOffs(
+        bool hasFaceOff,
+        int? asked,
+        int? expected
+    )
+    {
+        // Arrange
+        GameService service = this.Service(GameServiceSettings.Default, hasFaceOff: hasFaceOff);
+
+        // Act
+        GameId id = await service.Create(
+            TinyRules.RulesetId,
+            [SeatPlan.Open, SeatPlan.Open],
+            null,
+            new Dealing { FaceOffPause = asked },
+            this._cancellation
+        );
+
+        // Assert
+        GameSnapshot snapshot = await service.Get(id, this._cancellation);
+        Assert.Equal(expected, ScenarioStart.FaceOffPauseOf(snapshot.Record.Actions)?.TotalSeconds);
+    }
+
+    [Theory]
+    [InlineData(4)]
+    [InlineData(121)]
+    public async Task Create_WhenAFaceOffPauseIsOutOfBounds_RefusesIt(int seconds)
+    {
+        // Arrange
+        GameService service = this.Service(GameServiceSettings.Default, hasFaceOff: true);
+
+        // Act
+        InvalidGameSetupException refused = await Assert.ThrowsAsync<InvalidGameSetupException>(() =>
+            service.Create(
+                TinyRules.RulesetId,
+                [SeatPlan.Open, SeatPlan.Open],
+                null,
+                new Dealing { FaceOffPause = seconds },
+                this._cancellation
+            )
+        );
+
+        // Assert
+        Assert.Contains("face-off pause", refused.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Submit_WhenAFaceOffOpensForAPerson_PausesTheGameForThem()
+    {
+        // Arrange - the first seat's King may call its face-off from the second turn on
+        (GameService service, GameId id, string first, _) = await this.FaceOffPaused();
+
+        // Act
+        GameSnapshot snapshot = await service.Submit(id, first, Pass(First), this._cancellation);
+
+        // Assert
+        Assert.Equal(new FaceOffPause(First, TimeSpan.FromSeconds(30)), snapshot.Pause);
+    }
+
+    [Fact]
+    public async Task Submit_WhileTheGameIsPausedForAnothersFaceOff_ThrowsPausedForFaceOffException()
+    {
+        // Arrange
+        (GameService service, GameId id, string first, string second) = await this.FaceOffPaused();
+        _ = await service.Submit(id, first, Pass(First), this._cancellation);
+        this._time.Pass(FiveSeconds);
+
+        // Act
+        Task<GameSnapshot> submitting = service.Submit(id, second, Pass(Second), this._cancellation);
+
+        // Assert
+        PausedForFaceOffException paused = await Assert.ThrowsAsync<PausedForFaceOffException>(() => submitting);
+        Assert.Equal(
+            (true, GameRequestFailure.Conflict),
+            (paused.Message.Contains("25 seconds", StringComparison.Ordinal), paused.Failure)
+        );
+    }
+
+    [Fact]
+    public async Task Submit_WhileTheGameIsPausedForTheirOwnFaceOff_LetsThemCallIt()
+    {
+        // Arrange
+        (GameService service, GameId id, string first, _) = await this.FaceOffPaused();
+        _ = await service.Submit(id, first, Pass(First), this._cancellation);
+
+        // Act
+        GameSnapshot snapshot = await service.Submit(id, first, FaceOff, this._cancellation);
+
+        // Assert
+        Assert.Equal((null, null), (snapshot.State.Position.PieceAt(new CellId(1)), snapshot.Pause));
+    }
+
+    [Fact]
+    public async Task Submit_OnceTheFaceOffPauseIsOver_LetsTheOthersPlayOnAndPausesNoMoreForTheSameChance()
+    {
+        // Arrange
+        (GameService service, GameId id, string first, string second) = await this.FaceOffPaused();
+        _ = await service.Submit(id, first, Pass(First), this._cancellation);
+        this._time.Pass(TimeSpan.FromSeconds(30));
+
+        // Act
+        GameSnapshot snapshot = await service.Submit(id, second, Pass(Second), this._cancellation);
+
+        // Assert
+        Assert.Equal((First, null), (snapshot.State.DecidingSeat, snapshot.Pause));
+    }
+
+    [Fact]
+    public async Task Advance_WhileTheGameIsPausedForAFaceOff_LetsNoBotDecideTillItIsOver()
+    {
+        // Arrange - the second seat a bot's, which the face-off's opening keeps from deciding at once
+        GameService service = this.Service(GameServiceSettings.Default, hasFaceOff: true, faceOffFrom: 2);
+        GameId id = await service.Create(
+            TinyRules.RulesetId,
+            [SeatPlan.Open, Bot],
+            null,
+            new Dealing { FaceOffPause = 30 },
+            this._cancellation
+        );
+        string first = await service.Claim(id, First, this._cancellation);
+        GameSnapshot paused = await service.Submit(id, first, Pass(First), this._cancellation);
+
+        // Act
+        GameSnapshot held = await service.Advance(id, paused.Record.Version, this._cancellation);
+        this._time.Pass(TimeSpan.FromSeconds(30));
+        GameSnapshot advanced = await service.Advance(id, paused.Record.Version, this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            (Second, Second, First),
+            (paused.State.DecidingSeat, held.State.DecidingSeat, advanced.State.DecidingSeat)
+        );
+    }
+
+    [Fact]
+    public async Task Submit_WhenABotsMoveOpensAFaceOffForAPerson_PausesTheGameForThem()
+    {
+        // Arrange - the face-off opens from the third turn, the bot's pass of the second opening it
+        GameService service = this.Service(GameServiceSettings.Default, hasFaceOff: true, faceOffFrom: 3);
+        GameId id = await service.Create(
+            TinyRules.RulesetId,
+            [SeatPlan.Open, Bot],
+            null,
+            new Dealing { FaceOffPause = 30 },
+            this._cancellation
+        );
+        string first = await service.Claim(id, First, this._cancellation);
+        GameSnapshot passed = await service.Submit(id, first, Pass(First), this._cancellation);
+
+        // Act
+        GameSnapshot snapshot = await service.Advance(id, passed.Record.Version, this._cancellation);
+
+        // Assert
+        Assert.Equal((First, First), (snapshot.State.DecidingSeat, snapshot.Pause?.Seat));
+    }
+
+    /// <summary>
+    /// A game of two people that pauses 30 seconds for a face-off, which the first seat's King may call from the second
+    /// turn on, the first to decide; the tokens of both.
+    /// </summary>
+    private async Task<(GameService Service, GameId Id, string First, string Second)> FaceOffPaused()
+    {
+        GameService service = this.Service(GameServiceSettings.Default, hasFaceOff: true, faceOffFrom: 2);
+        GameId id = await service.Create(
+            TinyRules.RulesetId,
+            [SeatPlan.Open, SeatPlan.Open],
+            null,
+            new Dealing { FaceOffPause = 30 },
+            this._cancellation
+        );
+        string first = await service.Claim(id, First, this._cancellation);
+        string second = await service.Claim(id, Second, this._cancellation);
+        return (service, id, first, second);
+    }
+
     [Fact]
     public async Task Submit_WhenAFaceOffComesOutOfTurnFromASeatWithoutThatChance_ThrowsNotYourTurnException()
     {
@@ -2893,13 +3072,15 @@ public sealed class GameServiceTest
         bool offersScenarios = true,
         bool hasDice = false,
         int? idleRounds = null,
-        int? startRows = null
+        int? startRows = null,
+        int faceOffFrom = 0
     ) =>
         new(
             new RulesetCatalog(
                 [
                     new TinyRules(GameLength, isDealt, hasFaceOff: hasFaceOff)
                     {
+                        FaceOffFrom = faceOffFrom,
                         IsDraftable = isDealt && isDraftable,
                         Filled = filled,
                         SizableBoard = sizable,

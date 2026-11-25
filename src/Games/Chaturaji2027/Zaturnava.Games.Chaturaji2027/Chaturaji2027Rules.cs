@@ -359,6 +359,9 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     /// <summary>The variant's start rows, if any of its kinds has start-row powers; else none.</summary>
     public int? StartRows => this._variant.StartRowPowers.IsEmpty ? null : this._variant.StartRows;
 
+    /// <summary>Whether any of the variant's kinds may call a leader face-off (the Janggi General).</summary>
+    public bool HasFaceOff => !this._variant.FaceOffCallers.IsEmpty;
+
     /// <summary>
     /// The game played without dice: no one rolling to see who goes first, its opener opening, as it opens any
     /// turn, with no die (<see cref="GameState.Opener"/>, the first seat, if none); a game still drafting its armies

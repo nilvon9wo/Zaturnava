@@ -58,6 +58,12 @@ public sealed record RulesetDto(string Id, string Name, int SeatCount)
     public int? StartRows { get; init; }
 
     /// <summary>
+    /// Whether a piece may call a leader face-off (the Janggi General), so that a game's creator may have the game
+    /// pause when a person first may (<see cref="CreateGameRequest.FaceOffPause"/>).
+    /// </summary>
+    public bool HasFaceOff { get; init; }
+
+    /// <summary>
     /// For a game whose players may draft: what each has to spend, unless the game's creator sets another
     /// (<see cref="CreateGameRequest.DraftBudget"/>); null, for a game whose players may not.
     /// </summary>

@@ -32,6 +32,15 @@ public sealed record GameSnapshot(
     public Vacancy? Vacancy { get; init; }
 
     /// <summary>
+    /// In a game that pauses for a face-off (<see cref="ScenarioStart.FaceOffPauseOf"/>), the one a person may call
+    /// now, by the action that opened it; none, if none, or in any other game.
+    /// </summary>
+    public FaceOffOpening? FaceOffOpening { get; init; }
+
+    /// <summary>The game paused for a person to see the face-off they may call, for how long; null if not.</summary>
+    public FaceOffPause? Pause { get; init; }
+
+    /// <summary>
     /// The game <paramref name="record"/> describes, replayed by <paramref name="offered"/> on the board's size it was
     /// set to, if any (<see cref="ScenarioStart.RulesOf"/>): from the scenario it started from, if any
     /// (<see cref="ScenarioStart"/>), else from a new game.
@@ -39,14 +48,33 @@ public sealed record GameSnapshot(
     public static GameSnapshot Of([Required] GameRecord record, [Required] IRulesApplying offered)
     {
         IRulesApplying rules = ScenarioStart.RulesOf(record.Actions, offered);
-        Transition replayed = record.Actions
-            .Where(descriptor => !ScenarioStart.IsStart(descriptor))
+        bool isPausing = ScenarioStart.FaceOffPauseOf(record.Actions) is not null;
+        (Transition replayed, FaceOffOpening? opening) = record.Actions
+            .Select((descriptor, index) => (Descriptor: descriptor, Index: index))
+            .Where(action => !ScenarioStart.IsStart(action.Descriptor))
             .Aggregate(
-                new Transition(ScenarioStart.StateOf(record.Actions, rules), []),
-                (sofar, descriptor) => Replayed(rules, sofar, descriptor)
+                (
+                    Transition: new Transition(ScenarioStart.StateOf(record.Actions, rules), []),
+                    Opening: null as FaceOffOpening
+                ),
+                (sofar, action) =>
+                {
+                    Transition next = Replayed(rules, sofar.Transition, action.Descriptor);
+                    FaceOffOpening? opening = isPausing
+                        ? FaceOffOpening.Next(
+                            rules,
+                            record.Controllers,
+                            sofar.Opening,
+                            sofar.Transition.State,
+                            next.State,
+                            action.Index
+                        )
+                        : null;
+                    return (next, opening);
+                }
             );
         ImmutableList<GameAction> legal = record.IsWaiting ? [] : rules.LegalActions(replayed.State);
-        return new GameSnapshot(record, rules, replayed.State, replayed.Events, legal);
+        return new GameSnapshot(record, rules, replayed.State, replayed.Events, legal) { FaceOffOpening = opening };
     }
 
     /// <summary>

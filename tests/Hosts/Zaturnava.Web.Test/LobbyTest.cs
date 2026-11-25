@@ -795,6 +795,57 @@ public sealed class LobbyTest : IDisposable
     }
 
     [Theory]
+    [InlineData(true, "", 1, null)]
+    [InlineData(true, "0", 1, null)]
+    [InlineData(true, "30", 1, 30)]
+    [InlineData(true, "2", 1, 5)]
+    [InlineData(true, "999", 1, 120)]
+    [InlineData(false, "", 0, null)]
+    public void Play_WhenItsCreatorTypesAFaceOffPause_AsksForItWithinWhatTheServerAllowsWherePiecesFaceOff(
+        bool hasFaceOff,
+        string typed,
+        int shown,
+        int? expected
+    )
+    {
+        // Arrange
+        this._page.Server.HasFaceOff = hasFaceOff;
+        IRenderedComponent<Lobby> lobby = this.ByStrength();
+        if (typed.Length > 0)
+        {
+            lobby.Find("input.face-off-pause").Change(typed);
+        }
+
+        // Act
+        lobby.Find("button.create").Click();
+
+        // Assert
+        Assert.Equal(
+            (shown, expected),
+            (lobby.FindAll("input.face-off-pause").Count, this._page.Server.Created?.FaceOffPause)
+        );
+    }
+
+    [Theory]
+    [InlineData(true, 45)]
+    [InlineData(false, null)]
+    public void Render_WhenAFaceOffPauseWasSetBefore_SetsItAgainWherePiecesFaceOff(bool hasFaceOff, int? expected)
+    {
+        // Arrange
+        this._page.Server.HasFaceOff = hasFaceOff;
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.setup").SetResult("strength");
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.setup-of.chaturaji-2027")
+            .SetResult("chaturaji-2027;0;-1,1,1,1;,,,;face-off-pause=45");
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.Render();
+        lobby.Find("button.create").Click();
+
+        // Assert
+        Assert.Equal(expected, this._page.Server.Created?.FaceOffPause);
+    }
+
+    [Theory]
     [InlineData(2, 4)]
     [InlineData(null, null)]
     public void Render_WhenTheStartRowsWereSetBefore_SetsThemAgainWhereArmiesHaveThem(int? offered, int? expected)

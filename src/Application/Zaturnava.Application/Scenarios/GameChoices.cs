@@ -6,7 +6,8 @@ namespace Net.NowhereAtAll.Zaturnava.Application.Scenarios;
 /// (the first, if none); ending after <paramref name="IdleRounds"/> idle rounds, if set (the server's own, if not);
 /// a team with no leader left losing, if <paramref name="IsLostWithoutLeaders"/>; and each player's turn passing once
 /// they have been idle <paramref name="IdleSeconds"/> seconds, if set; and <paramref name="StartRows"/> of each army's
-/// rows its start rows, if set (the ruleset's own, if not).
+/// rows its start rows, if set (the ruleset's own, if not); and the game pausing <paramref name="FaceOffPause"/>
+/// seconds when a person first may call a leader face-off, if set.
 /// </summary>
 public sealed record GameChoices(
     bool AreDiceOff = false,
@@ -14,7 +15,8 @@ public sealed record GameChoices(
     int? Opener = null,
     bool IsLostWithoutLeaders = false,
     int? IdleSeconds = null,
-    int? StartRows = null
+    int? StartRows = null,
+    int? FaceOffPause = null
 )
 {
     /// <summary>A game set up as every game is.</summary>

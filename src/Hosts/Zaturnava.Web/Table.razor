@@ -141,6 +141,15 @@
                         }
                     </div>
                 }
+                @if (view is { PausedFor: { } paused, PauseLeft: { } pauseLeft })
+                {
+                    @* the face-off's pause (Grand Legions specification §6.4): no one else acts meanwhile *@
+                    <p class="face-off-paused"
+                       role="status"
+                       title="Paused for @this.Player(view.Seats[paused]) to see the leader face-off they may call">
+                        ⏸ @Math.Ceiling(pauseLeft).ToString(CultureInfo.InvariantCulture) s
+                    </p>
+                }
                 <p class="status">@this.Status(view)</p>
                 @if (view.Outcome is null && OpenSeatsOf(view) is not null)
                 {
@@ -1437,6 +1446,7 @@
                 IsLostWithoutLeaders = view.IsLostWithoutLeaders,
                 IdleSeconds = view.IdleSeconds,
                 StartRows = view.StartRows,
+                FaceOffPause = view.FaceOffPause,
             },
             view.IsForPlayers
         ));

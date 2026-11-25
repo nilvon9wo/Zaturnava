@@ -8,6 +8,14 @@ only in part, what is left is in the backlog, and its history here. The playtest
 
 ## Asked 2026-11-25
 
+- **The face-off's pause** (*Stated* 2026-11-04, Grand Legions specification §6.4): a setting of the game may
+  pause it when the chance first comes, so that the player has it explicitly before anything else happens.
+
+  *Done* (2026-11-26): in *New game*, for a game whose pieces may call a leader face-off, **Face-off ⏸**: seconds,
+  from 5 to 120 (*Proposed*), none by default. When a person's General first faces an enemy leader, the table
+  shows ⏸ and the seconds left; meanwhile only that player may act, the face-off included, and no bot decides. The
+  pause comes once for each chance, however long it then holds; a bot's General decides at once, as before.
+
 - **Start rows as a setting** (*Stated*, Grand Legions specification §3): how many rows count as start rows (2)
   may be a setting of the game.
 

@@ -15,6 +15,7 @@ public sealed class DecisionClock(TimeProvider time)
     private readonly ConcurrentDictionary<GameId, (int Version, DateTimeOffset Since)> _seen = new();
     private readonly ConcurrentDictionary<GameId, (string Wait, DateTimeOffset Since)> _waits = new();
     private readonly ConcurrentDictionary<GameId, (string Absence, DateTimeOffset Since)> _absences = new();
+    private readonly ConcurrentDictionary<GameId, (string Pause, DateTimeOffset Since)> _pauses = new();
 
     public DateTimeOffset Now => this._time.GetUtcNow();
 
@@ -53,5 +54,18 @@ public sealed class DecisionClock(TimeProvider time)
             (_, seen) => seen.Absence == absence
                 ? seen
                 : (absence, this.Now)
+        ).Since;
+
+    /// <summary>
+    /// When the game was first seen paused as <paramref name="pause"/> describes (for whom, opened by which action):
+    /// now, if it has not been. As <see cref="AbsentSince"/>, play meanwhile does not restart it.
+    /// </summary>
+    public DateTimeOffset PausedSince([Required] GameId game, [Required] string pause) =>
+        this._pauses.AddOrUpdate(
+            game,
+            _ => (pause, this.Now),
+            (_, seen) => seen.Pause == pause
+                ? seen
+                : (pause, this.Now)
         ).Since;
 }

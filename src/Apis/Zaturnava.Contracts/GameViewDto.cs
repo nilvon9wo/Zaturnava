@@ -140,6 +140,21 @@ public sealed record GameViewDto(
     public int? StartRows { get; init; }
 
     /// <summary>
+    /// How many seconds the game pauses when a person first may call a leader face-off, as its creator set it
+    /// (<see cref="CreateGameRequest.FaceOffPause"/>); null, for no pause.
+    /// </summary>
+    public int? FaceOffPause { get; init; }
+
+    /// <summary>
+    /// The seat the game is paused for now, to see the leader face-off it may call (<see cref="FaceOffPause"/>):
+    /// meanwhile only it may act, and no bot decides. Null, if the game is not paused.
+    /// </summary>
+    public int? PausedFor { get; init; }
+
+    /// <summary>How many seconds the pause (<see cref="PausedFor"/>) has left; null, if not paused.</summary>
+    public double? PauseLeft { get; init; }
+
+    /// <summary>
     /// The cell of a piece just come to where it may leave the board (the Tafl King on its far corner) as its turn
     /// would end, the game waiting on whether it leaves or stays; null if none.
     /// </summary>

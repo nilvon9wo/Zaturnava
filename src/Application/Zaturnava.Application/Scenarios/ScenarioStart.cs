@@ -50,6 +50,12 @@ public static class ScenarioStart
     private const string StartRowsArgument = "start-rows";
 
     /// <summary>
+    /// The argument of a game's first action saying how many seconds it pauses when a person first may call a leader
+    /// face-off.
+    /// </summary>
+    private const string FaceOffPauseArgument = "face-off-pause";
+
+    /// <summary>
     /// The edition of a ruleset's pieces and rules a game dealt now is dealt from (<see cref="GameState.Edition"/>): 1,
     /// since Grand Legions gained the Checkers and Tafl pieces (2026-11-13); 2, since it gained mercenaries (the same
     /// day); 3, since its quick armies spread their budget evenly (the same day); 4, since it gained the Berolina
@@ -117,8 +123,8 @@ public static class ScenarioStart
     /// The game's first action, dealing it as <paramref name="deal"/> did, but set up as <paramref name="choices"/>
     /// say, whatever the game it dealt chose: without dice, or with them; ending after so many idle rounds, if set;
     /// opened by the seat they name, if any, without dice; lost by a team with no leader left, if they say so;
-    /// each player's turn passing after so many seconds idle, if set; and so many of each army's rows its start rows,
-    /// if set.
+    /// each player's turn passing after so many seconds idle, if set; so many of each army's rows its start rows,
+    /// if set; and pausing so many seconds for a face-off, if set.
     /// </summary>
     public static ActionDescriptor Chosen([Required] ActionDescriptor deal, [Required] GameChoices choices) =>
         deal with
@@ -131,8 +137,19 @@ public static class ScenarioStart
                 (LeadersArgument, choices.IsLostWithoutLeaders ? ActionDescriptor.Flag(true) : null),
                 (IdleTimeArgument, choices.IdleSeconds?.ToString(CultureInfo.InvariantCulture)),
                 (StartRowsArgument, choices.StartRows?.ToString(CultureInfo.InvariantCulture)),
+                (FaceOffPauseArgument, choices.FaceOffPause?.ToString(CultureInfo.InvariantCulture)),
             }.Aggregate(deal.Arguments, (arguments, chosen) => Set(arguments, chosen.Name, chosen.Value)),
         };
+
+    /// <summary>
+    /// How long the game the first of <paramref name="actions"/> began pauses when a person first may call a leader
+    /// face-off, if its creator set it; none, if not.
+    /// </summary>
+    public static TimeSpan? FaceOffPauseOf([Required] ImmutableList<ActionDescriptor> actions) =>
+        actions.FirstOrDefault() is { Kind: DealKind or SetupKind } first
+        && first.Arguments.TryGetValue(FaceOffPauseArgument, out string? seconds)
+            ? TimeSpan.FromSeconds(int.Parse(seconds, CultureInfo.InvariantCulture))
+            : null;
 
     /// <summary>
     /// How many of each army's rows are its start rows in the game the first of <paramref name="actions"/> began, if

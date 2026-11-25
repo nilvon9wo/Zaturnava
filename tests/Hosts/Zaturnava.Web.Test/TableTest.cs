@@ -1980,6 +1980,21 @@ public sealed class TableTest : IDisposable
         Assert.Equal(stay, this._page.Server.Submitted?.Action);
     }
 
+    [Theory]
+    [InlineData(0, 24.2, "⏸ 25 s")]
+    [InlineData(null, null, null)]
+    public void Render_WhenTheGameIsPausedForAFaceOff_ShowsTheSecondsLeft(int? seat, double? left, string? expected)
+    {
+        // Arrange
+        this._page.Server.View = FakeGameServer.SeatZeroToMove with { PausedFor = seat, PauseLeft = left };
+
+        // Act
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Assert
+        Assert.Equal(expected, table.FindAll("p.face-off-paused").SingleOrDefault()?.TextContent.Trim());
+    }
+
     private static ActionDto FleeAt(int cell) =>
         new(
             "flee",
