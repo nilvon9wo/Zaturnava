@@ -6,6 +6,7 @@ using Net.NowhereAtAll.Zaturnava.Application.Games;
 using Net.NowhereAtAll.Zaturnava.Application.Scenarios;
 using Net.NowhereAtAll.Zaturnava.Bots;
 using Net.NowhereAtAll.Zaturnava.Bots.Learning;
+using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Rules;
 using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 
@@ -49,14 +50,31 @@ internal sealed class Learning(IRulesApplying rules, TextWriter progress)
     )
     {
         PositionEncoder encoder = PositionEncoder.Fitting(this._rules, network.Inputs)!; // made, or read, to fit
-        ImmutableList<Sequence> sequences =
+        ImmutableList<(GameHistory History, ImmutableList<GameState>? Positions)> replayed =
         [
             .. histories
                 .Where(line => line.Length > 0)
                 .Select(line => JsonSerializer.Deserialize<GameHistory>(line, JsonSerializerOptions.Web)!)
                 .Where(history => history.RulesetId == this._rules.Id && history.Outcome is not null)
-                .SelectMany(history => this.SequencesOf(encoder, history)),
+                .Select(history => (history, this.Replayed(history))),
         ];
+        ImmutableList<Sequence> sequences =
+        [
+            .. replayed
+                .Where(game => game.Positions is not null)
+                .SelectMany(game => SequencesOf(encoder, game.History, game.Positions!)),
+        ];
+        int unplayable = replayed.Count(game => game.Positions is null);
+        if (unplayable > 0)
+        {
+            await this._progress.WriteLineAsync(
+                string.Create(
+                    CultureInfo.InvariantCulture,
+                    $"{unplayable} games left out: they no longer replay by the rules as they are now"
+                )
+            );
+        }
+
         int positions = sequences.Sum(sequence => sequence.Inputs.Length);
         for (int epoch = 1; epoch <= pace.Epochs; epoch++)
         {
@@ -118,14 +136,32 @@ internal sealed class Learning(IRulesApplying rules, TextWriter progress)
     }
 
     /// <summary>The game as each seat saw it, position by position, with how it went for the seat's team.</summary>
-    private IEnumerable<Sequence> SequencesOf(PositionEncoder encoder, GameHistory history)
-    {
-        ImmutableList<GameState> positions = this.PositionsOf(history);
-        return positions.Take(1).SelectMany(start => start.Seats.Select(seat => new Sequence(
+    private static IEnumerable<Sequence> SequencesOf(
+        PositionEncoder encoder,
+        GameHistory history,
+        ImmutableList<GameState> positions
+    ) =>
+        positions.Take(1).SelectMany(start => start.Seats.Select(seat => new Sequence(
             [.. positions.Select(state => encoder.Encode(state, seat.Id).ToArray())],
             OutcomeFor(start, history.Outcome!, seat.Id),
             LeadOf(start, history, seat.Id) / ValueNetwork.MarginScale
         )));
+
+    /// <summary>
+    /// The game replayed (<see cref="PositionsOf"/>); or none, if the rules no longer allow one of its actions
+    /// (2026-11-25: a night's learning stopped on a game self-played before games kept what they were dealt, dealt
+    /// anew from its seed by a catalogue since grown by the Shogi Knight, and so other armies).
+    /// </summary>
+    private ImmutableList<GameState>? Replayed(GameHistory history)
+    {
+        try
+        {
+            return this.PositionsOf(history);
+        }
+        catch (IllegalActionException)
+        {
+            return null;
+        }
     }
 
     /// <summary>The game replayed: where it stood after each action, while it went on.</summary>

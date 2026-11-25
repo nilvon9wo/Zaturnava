@@ -53,6 +53,33 @@ public sealed class LearningTest
     }
 
     [Fact]
+    public async Task Learn_WhenAGameNoLongerReplays_LeavesItOutAndSaysSo()
+    {
+        // Arrange - a finished game, and it with its first move made twice, which the rules refuse, as they would an
+        // action of a game played before they changed (2026-11-25: a night's learning stopped on one)
+        string finished = (await Played(4, 10000)).First(line => !line.Contains("\"outcome\":null"));
+        GameHistory played = JsonSerializer.Deserialize<GameHistory>(finished, JsonSerializerOptions.Web)!;
+        int firstMove = played.Actions.FindIndex(action => action.Kind == "move");
+        string broken = JsonSerializer.Serialize(
+            played with { Actions = played.Actions.Insert(firstMove, played.Actions[firstMove]) },
+            JsonSerializerOptions.Web
+        );
+        string alone = await this.ProgressOf([finished]);
+
+        // Act
+        string both = await this.ProgressOf([finished, broken]);
+
+        // Assert
+        Assert.Equal(
+            (true, PositionsIn(alone)),
+            (
+                both.StartsWith("1 games left out", StringComparison.Ordinal),
+                PositionsIn(both[(both.IndexOf('\n', StringComparison.Ordinal) + 1)..])
+            )
+        );
+    }
+
+    [Fact]
     public async Task Learn_WhenCancelled_ThrowsOperationCanceledException()
     {
         // Arrange
