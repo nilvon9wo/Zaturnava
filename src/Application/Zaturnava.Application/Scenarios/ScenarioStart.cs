@@ -46,6 +46,9 @@ public static class ScenarioStart
     /// <summary>The argument of a game's first action saying how many seconds idle pass a player's turn.</summary>
     private const string IdleTimeArgument = "idle-seconds";
 
+    /// <summary>The argument of a game's first action saying how many of each army's rows are its start rows.</summary>
+    private const string StartRowsArgument = "start-rows";
+
     /// <summary>
     /// The edition of a ruleset's pieces and rules a game dealt now is dealt from (<see cref="GameState.Edition"/>): 1,
     /// since Grand Legions gained the Checkers and Tafl pieces (2026-11-13); 2, since it gained mercenaries (the same
@@ -113,34 +116,33 @@ public static class ScenarioStart
     /// <summary>
     /// The game's first action, dealing it as <paramref name="deal"/> did, but set up as <paramref name="choices"/>
     /// say, whatever the game it dealt chose: without dice, or with them; ending after so many idle rounds, if set;
-    /// opened by the seat they name, if any, without dice; lost by a team with no leader left, if they say so; and
-    /// each player's turn passing after so many seconds idle, if set.
+    /// opened by the seat they name, if any, without dice; lost by a team with no leader left, if they say so;
+    /// each player's turn passing after so many seconds idle, if set; and so many of each army's rows its start rows,
+    /// if set.
     /// </summary>
     public static ActionDescriptor Chosen([Required] ActionDescriptor deal, [Required] GameChoices choices) =>
         deal with
         {
-            Arguments = Set(
-                Set(
-                    Set(
-                        Set(
-                            Set(
-                                deal.Arguments,
-                                DiceOffArgument,
-                                choices.AreDiceOff ? ActionDescriptor.Flag(true) : null
-                            ),
-                            IdleRoundsArgument,
-                            choices.IdleRounds?.ToString(CultureInfo.InvariantCulture)
-                        ),
-                        OpenerArgument,
-                        choices.AreDiceOff ? choices.Opener?.ToString(CultureInfo.InvariantCulture) : null
-                    ),
-                    LeadersArgument,
-                    choices.IsLostWithoutLeaders ? ActionDescriptor.Flag(true) : null
-                ),
-                IdleTimeArgument,
-                choices.IdleSeconds?.ToString(CultureInfo.InvariantCulture)
-            ),
+            Arguments = new (string Name, string? Value)[]
+            {
+                (DiceOffArgument, choices.AreDiceOff ? ActionDescriptor.Flag(true) : null),
+                (IdleRoundsArgument, choices.IdleRounds?.ToString(CultureInfo.InvariantCulture)),
+                (OpenerArgument, choices.AreDiceOff ? choices.Opener?.ToString(CultureInfo.InvariantCulture) : null),
+                (LeadersArgument, choices.IsLostWithoutLeaders ? ActionDescriptor.Flag(true) : null),
+                (IdleTimeArgument, choices.IdleSeconds?.ToString(CultureInfo.InvariantCulture)),
+                (StartRowsArgument, choices.StartRows?.ToString(CultureInfo.InvariantCulture)),
+            }.Aggregate(deal.Arguments, (arguments, chosen) => Set(arguments, chosen.Name, chosen.Value)),
         };
+
+    /// <summary>
+    /// How many of each army's rows are its start rows in the game the first of <paramref name="actions"/> began, if
+    /// its creator set it; none, if not.
+    /// </summary>
+    public static int? StartRowsOf([Required] ImmutableList<ActionDescriptor> actions) =>
+        actions.FirstOrDefault() is { Kind: DealKind or SetupKind } first
+        && first.Arguments.TryGetValue(StartRowsArgument, out string? rows)
+            ? int.Parse(rows, CultureInfo.InvariantCulture)
+            : null;
 
     /// <summary>
     /// How long a player may be idle, deciding, in the game the first of <paramref name="actions"/> began, before
@@ -462,7 +464,11 @@ public static class ScenarioStart
         };
         GameState idled = IdleRoundsOf(actions) is { } rounds ? state with { IdleRounds = rounds } : state;
         GameState opened = OpenerOf(actions) is { } opener ? idled with { Opener = new SeatId(opener) } : idled;
-        GameState led = opened with { IsLostWithoutLeaders = IsLostWithoutLeaders(actions) };
+        GameState led = opened with
+        {
+            IsLostWithoutLeaders = IsLostWithoutLeaders(actions),
+            StartRows = StartRowsOf(actions),
+        };
         return AreDiceOff(actions) ? rules.WithoutDice(led) : led;
     }
 

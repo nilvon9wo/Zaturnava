@@ -120,6 +120,19 @@ public sealed record CreateGameRequest([Required] string RulesetId, [Required] I
     public const int MostIdleSeconds = 24 * 60 * 60;
 
     /// <summary>
+    /// For a game whose armies have start rows (<see cref="RulesetDto.StartRows"/>), not from a scenario: how many of
+    /// each army's rows, from its back rank, are its start rows, from <see cref="LeastStartRows"/> to
+    /// <see cref="MostStartRows"/> (<see cref="GameViewDto.StartRows"/>). Null, for the ruleset's own.
+    /// </summary>
+    public int? StartRows { get; init; }
+
+    /// <summary>The fewest of an army's rows that may be its start rows (<see cref="StartRows"/>).</summary>
+    public const int LeastStartRows = 1;
+
+    /// <summary>The most of an army's rows that may be its start rows (<see cref="StartRows"/>).</summary>
+    public const int MostStartRows = 6;
+
+    /// <summary>
     /// For a game whose creator may choose some of its terrain (<see cref="RulesetDto.TerrainAxes"/>), and whose armies
     /// are dealt: the bits of the terrain's number they chose, each axis's <see cref="TerrainAxisDto.Mask"/> they set;
     /// 0, for all of it dealt at random.

@@ -763,6 +763,56 @@ public sealed class LobbyTest : IDisposable
         Assert.Equal(expected, this._page.Server.Created?.IdleSeconds);
     }
 
+    [Theory]
+    [InlineData(2, "", 1, null)]
+    [InlineData(2, "3", 1, 3)]
+    [InlineData(2, "0", 1, 1)]
+    [InlineData(2, "9", 1, 6)]
+    [InlineData(null, "", 0, null)]
+    public void Play_WhenItsCreatorTypesTheStartRows_AsksForThemWithinWhatTheServerAllowsWhereArmiesHaveThem(
+        int? offered,
+        string typed,
+        int shown,
+        int? expected
+    )
+    {
+        // Arrange
+        this._page.Server.StartRows = offered;
+        IRenderedComponent<Lobby> lobby = this.ByStrength();
+        if (typed.Length > 0)
+        {
+            lobby.Find("input.start-rows").Change(typed);
+        }
+
+        // Act
+        lobby.Find("button.create").Click();
+
+        // Assert
+        Assert.Equal(
+            (shown, expected),
+            (lobby.FindAll("input.start-rows").Count, this._page.Server.Created?.StartRows)
+        );
+    }
+
+    [Theory]
+    [InlineData(2, 4)]
+    [InlineData(null, null)]
+    public void Render_WhenTheStartRowsWereSetBefore_SetsThemAgainWhereArmiesHaveThem(int? offered, int? expected)
+    {
+        // Arrange
+        this._page.Server.StartRows = offered;
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.setup").SetResult("strength");
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.setup-of.chaturaji-2027")
+            .SetResult("chaturaji-2027;0;-1,1,1,1;,,,;start-rows=4");
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.Render();
+        lobby.Find("button.create").Click();
+
+        // Assert
+        Assert.Equal(expected, this._page.Server.Created?.StartRows);
+    }
+
     [Fact]
     public void Render_WhenAPlayersIdleTimeWasSetBefore_SetsItAgain()
     {

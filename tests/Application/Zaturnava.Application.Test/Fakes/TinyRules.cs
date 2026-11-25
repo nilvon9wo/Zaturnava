@@ -95,6 +95,9 @@ internal sealed class TinyRules(int length, bool isDealt = false, Exception? fai
     /// <summary>How many idle rounds end a game, unless its creator sets others; none may, unless set.</summary>
     public int? IdleRounds { get; init; }
 
+    /// <summary>How many of an army's rows are start rows, unless a creator sets others; none, unless set.</summary>
+    public int? StartRows { get; init; }
+
     /// <summary>What having a seat's army filled at random makes of the game; unless set, it is not allowed.</summary>
     public Func<GameState, GameState>? Filled { get; init; }
 

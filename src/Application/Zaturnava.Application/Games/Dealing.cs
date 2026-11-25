@@ -64,6 +64,14 @@ public sealed record Dealing(bool AreAlike = false, GameId? ArmiesOf = null)
     public int? IdleSeconds { get; init; }
 
     /// <summary>
+    /// How many of each army's rows are its start rows (<see cref="GameState.StartRows"/>), if its creator set it (from
+    /// <see cref="GameService.LeastStartRows"/> to <see cref="GameService.MostStartRows"/>), for a ruleset that has
+    /// them (<see cref="IRulesApplying.StartRows"/>; it is ignored by one that has none); dealt or not, but never from
+    /// a scenario. None, for the ruleset's own.
+    /// </summary>
+    public int? StartRows { get; init; }
+
+    /// <summary>
     /// What of the terrain its creator chose, for a ruleset that lets them (<see cref="IRulesApplying.TerrainAxes"/>;
     /// any other bits are ignored), the rest dealt at random; none, for all of it dealt.
     /// </summary>

@@ -24,6 +24,7 @@ internal sealed record GameSetup(string RulesetId, int Colour, ImmutableList<int
     private const string TerrainKey = "terrain";
     private const string LeadersKey = "leaders";
     private const string TurnTimeKey = "turn-time";
+    private const string StartRowsKey = "start-rows";
 
     /// <summary>How the armies come to be, as the lobby names its choices; the game's default, if none.</summary>
     public string? Armies { get; init; }
@@ -57,6 +58,9 @@ internal sealed record GameSetup(string RulesetId, int Colour, ImmutableList<int
 
     /// <summary>How many seconds each player may be idle on their turn before it passes; none, no limit.</summary>
     public int? IdleSeconds { get; init; }
+
+    /// <summary>How many of each army's rows are its start rows; the game's own, if none.</summary>
+    public int? StartRows { get; init; }
 
     /// <summary>The board's size, for a game whose creator may set it; the game's own, if none.</summary>
     public BoardSizeDto? Board { get; init; }
@@ -100,6 +104,7 @@ internal sealed record GameSetup(string RulesetId, int Colour, ImmutableList<int
             this.IdleSeconds is { } seconds
                 ? $"{TurnTimeKey}={seconds.ToString(CultureInfo.InvariantCulture)}"
                 : null,
+            this.StartRows is { } rows ? $"{StartRowsKey}={rows.ToString(CultureInfo.InvariantCulture)}" : null,
             this.TerrainMask is not 0
                 ? string.Create(CultureInfo.InvariantCulture, $"{TerrainKey}={this.TerrainMask}:{this.TerrainValue}")
                 : null,
@@ -146,6 +151,9 @@ internal sealed record GameSetup(string RulesetId, int Colour, ImmutableList<int
                 IsLostWithoutLeaders = choices.ContainsKey(LeadersKey),
                 IdleSeconds = choices.TryGetValue(TurnTimeKey, out string? time) && Number(time) is > 0 and var seconds
                     ? seconds
+                    : null,
+                StartRows = choices.TryGetValue(StartRowsKey, out string? start) && Number(start) is > 0 and var rows
+                    ? rows
                     : null,
                 Board = choices.TryGetValue(BoardKey, out string? board) ? BoardOf(board) : null,
                 TerrainMask = TerrainOf(choices).Mask,

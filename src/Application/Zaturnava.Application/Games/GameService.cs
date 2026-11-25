@@ -110,7 +110,8 @@ public sealed class GameService(
             offered.IdleRounds is null ? null : IdleRoundsOf(dealing),
             areDiceOff ? this.OpenerOf(dealing, seats.Count) : null,
             dealing.IsLostWithoutLeaders,
-            IdleSecondsOf(dealing)
+            IdleSecondsOf(dealing),
+            offered.StartRows is null ? null : StartRowsOf(dealing)
         );
         ImmutableList<ActionDescriptor> start = (scenarioId, offered.IsDealt) switch
         {
@@ -274,6 +275,27 @@ public sealed class GameService(
                 )
             )
             : dealing.IdleSeconds;
+
+    /// <summary>The fewest of an army's rows a game's creator may make its start rows.</summary>
+    public const int LeastStartRows = 1;
+
+    /// <summary>The most of an army's rows a game's creator may make its start rows (Proposed).</summary>
+    public const int MostStartRows = 6;
+
+    /// <summary>
+    /// How many of each army's rows the creator made its start rows, if they did: from <see cref="LeastStartRows"/> to
+    /// <see cref="MostStartRows"/>.
+    /// </summary>
+    /// <exception cref="InvalidGameSetupException">They are fewer or more.</exception>
+    private static int? StartRowsOf(Dealing dealing) =>
+        dealing.StartRows is < LeastStartRows or > MostStartRows
+            ? throw new InvalidGameSetupException(
+                string.Create(
+                    CultureInfo.InvariantCulture,
+                    $"An army's start rows are from {LeastStartRows} to {MostStartRows} of its rows."
+                )
+            )
+            : dealing.StartRows;
 
     /// <summary>The board's size, if the ruleset may be played on it.</summary>
     /// <exception cref="InvalidGameSetupException">It may not.</exception>

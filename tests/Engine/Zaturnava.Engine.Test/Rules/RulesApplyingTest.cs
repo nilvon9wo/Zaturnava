@@ -185,6 +185,23 @@ public sealed class RulesApplyingTest
         Assert.Equal((false, initial with { AreDiceOff = true }, null as int?), dice);
     }
 
+    [Fact]
+    public void StartRows_WhenTheRulesetSaysNoOther_AreNone()
+    {
+        // Arrange
+        OneSizeRules rules = new();
+
+        // Act
+        int? rows = StartRowsOf(rules);
+
+        // Assert
+        Assert.Null(rows);
+    }
+
+    private static int? StartRowsOf<TRules>(TRules rules)
+        where TRules : IRulesApplying =>
+        rules.StartRows;
+
     [Theory]
     [InlineData(false, 0)]
     [InlineData(true, 2)]

@@ -276,6 +276,7 @@ internal static class GameStarter
             Opener = armies?.Opener,
             IsLostWithoutLeaders = armies?.IsLostWithoutLeaders ?? false,
             IdleSeconds = armies?.IdleSeconds,
+            StartRows = armies?.StartRows,
             TerrainMask = armies?.TerrainMask ?? 0,
             TerrainValue = armies?.TerrainValue ?? 0,
             IsForPlayers = isForPlayers,

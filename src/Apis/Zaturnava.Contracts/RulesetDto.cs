@@ -52,6 +52,12 @@ public sealed record RulesetDto(string Id, string Name, int SeatCount)
     public int? IdleRounds { get; init; }
 
     /// <summary>
+    /// How many of each army's rows are its start rows (a Western Pawn's two-cell first move is from them), unless a
+    /// game's creator sets another number (<see cref="CreateGameRequest.StartRows"/>); null, if its armies have none.
+    /// </summary>
+    public int? StartRows { get; init; }
+
+    /// <summary>
     /// For a game whose players may draft: what each has to spend, unless the game's creator sets another
     /// (<see cref="CreateGameRequest.DraftBudget"/>); null, for a game whose players may not.
     /// </summary>

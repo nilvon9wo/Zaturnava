@@ -467,6 +467,19 @@
                                @bind="this._idleSeconds"
                                placeholder="∞ s" />
                     </label>
+                    @if (this.Ruleset(catalog).StartRows is { } startRows)
+                    {
+                        <label class="start-rows"
+                               title="Rows from each army's back where a Western Pawn may first move two squares">
+                            <span class="choice-name">Start rows</span>
+                            <input type="number"
+                                   class="start-rows"
+                                   min="@CreateGameRequest.LeastStartRows"
+                                   max="@CreateGameRequest.MostStartRows"
+                                   @bind="this._startRows"
+                                   placeholder="@startRows" />
+                        </label>
+                    }
                 </div>
                 @* who may play, apart from the rules (the user's word of 2026-11-20) *@
                 @if (this._me is not null)
@@ -788,6 +801,12 @@
     /// How many seconds each player may be idle on their turn before it passes (asked 2026-11-25); none, no limit.
     /// </summary>
     private int? _idleSeconds;
+
+    /// <summary>
+    /// For a game whose armies have start rows, how many of each army's rows they are (Grand Legions specification §3,
+    /// Stated); the game's own, if none.
+    /// </summary>
+    private int? _startRows;
     private string? _problem;
 
     /// <summary>How the player last started each game, by the game, as the browser remembers.</summary>
@@ -849,6 +868,7 @@
             Opener = this._opener,
             IsLostWithoutLeaders = this._isLostWithoutLeaders,
             IdleSeconds = this.IdleSecondsAsked(),
+            StartRows = this.StartRowsAsked(catalog),
             Board = this.BoardAsked(catalog),
             TerrainMask = this.TerrainAsked(catalog).Mask,
             TerrainValue = this.TerrainAsked(catalog).Value,
@@ -960,6 +980,7 @@
         this._opener = setup.Opener < ruleset.SeatCount ? setup.Opener : null;
         this._isLostWithoutLeaders = setup.IsLostWithoutLeaders;
         this._idleSeconds = setup.IdleSeconds;
+        this._startRows = ruleset.StartRows is null ? null : setup.StartRows;
         this._terrain = ruleset.TerrainAxes
             .Where(axis => (setup.TerrainMask & axis.Mask) == axis.Mask)
             .ToImmutableDictionary(axis => axis.Mask, axis => setup.TerrainValue & axis.Mask);
@@ -1674,6 +1695,7 @@
         this._opener = null;
         this._isLostWithoutLeaders = false;
         this._idleSeconds = null;
+        this._startRows = null;
         this._terrain = ImmutableDictionary<int, int>.Empty;
     }
 
@@ -1891,9 +1913,19 @@
             Opener = this._areDiceOff ? this._opener : null,
             IsLostWithoutLeaders = this._isLostWithoutLeaders,
             IdleSeconds = this.IdleSecondsAsked(),
+            StartRows = this.StartRowsAsked(catalog),
             TerrainMask = this.TerrainAsked(catalog).Mask,
             TerrainValue = this.TerrainAsked(catalog).Value,
         };
+
+    /// <summary>
+    /// For a game whose armies have start rows, how many, as typed, kept within what the server allows; none, if none
+    /// was typed, or the game has none.
+    /// </summary>
+    private int? StartRowsAsked(CatalogDto catalog) =>
+        (this.Ruleset(catalog).StartRows, this._startRows) is ({ }, { } rows)
+            ? Math.Clamp(rows, CreateGameRequest.LeastStartRows, CreateGameRequest.MostStartRows)
+            : null;
 
     /// <summary>How each seat set up by strength is played: the player's own, and a person's, by no bot.</summary>
     private IEnumerable<SeatChoice> ChoicesOfSeats() =>

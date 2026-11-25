@@ -132,6 +132,13 @@ public interface IRulesApplying
     int? IdleRounds => null;
 
     /// <summary>
+    /// How many of an army's rows, from its back rank, are its start rows unless a game's creator sets another number
+    /// (<see cref="GameState.StartRows"/>), for a ruleset whose pieces have start-row powers (a Western Pawn's two-cell
+    /// first move); none, for one whose pieces have none, as none has unless it says so.
+    /// </summary>
+    int? StartRows => null;
+
+    /// <summary>
     /// The game <paramref name="state"/> begins, played without dice (<see cref="GameState.AreDiceOff"/>): begun, if
     /// it waited on dice to see who goes first, by the first seat.
     /// </summary>

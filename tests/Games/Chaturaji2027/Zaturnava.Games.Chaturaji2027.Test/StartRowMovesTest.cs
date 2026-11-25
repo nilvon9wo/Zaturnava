@@ -103,6 +103,42 @@ public sealed class StartRowMovesTest
         Assert.NotEmpty(why);
     }
 
+    [Theory]
+    [InlineData(3, true)]
+    [InlineData(1, false)]
+    public void LegalActions_WhenTheGamesCreatorSetTheStartRows_CountsThemRatherThanTheRulesets(
+        int startRows,
+        bool mayStepTwo
+    )
+    {
+        // Arrange - a Pawn started on the third row, beyond the ruleset's 2 start rows; the game's creator set more,
+        // or fewer
+        GameState state = this.BlackToMove(Cell(3, 2), PawnDie, (Cell(3, 2), BlackPawn)) with
+        {
+            StartRows = startRows,
+        };
+
+        // Act
+        ImmutableList<GameAction> actions = this._rules.LegalActions(state);
+
+        // Assert
+        Assert.Equal(mayStepTwo, actions.Contains(new MoveAction(Black, Cell(3, 2), Cell(3, 4))));
+    }
+
+    [Fact]
+    public void StartRows_WhenAKindHasStartRowPowers_AreTheVariantsAndElseNone()
+    {
+        // Arrange
+        Chaturaji2027Rules standard = new();
+
+        // Act
+        (int?, int?) rows = (this._rules.StartRows, standard.StartRows);
+
+        // Assert
+        (int?, int?) expected = (2, null);
+        Assert.Equal(expected, rows);
+    }
+
     [Fact]
     public void LegalActions_WhenAPawnStartedNowhereTheGameKnows_OffersNoDoubleStep()
     {
