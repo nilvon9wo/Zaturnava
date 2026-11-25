@@ -45,7 +45,11 @@ test position in `tests/Bots/` (the strategic scenarios of §15) before its weig
    enemy leader's room to move (fewer cells, better). Test: two Rooks against a lone Raja reach mate. *Begun*
    (2026-11-25, with the endgame search below): the leader's room to move, and the leader attacked, are scored.
 4. **Room for one's own leader.** Score the leader's own free cells, so that walling it in costs. Test: the trapped
-   Raja.
+   Raja. *Begun* (2026-11-25): a new measure, "leader-room", counts the moves a team's leaders have to cells no
+   enemy attacks; its own leaders' room, and its allies', each weigh +0.05 a cell (*Proposed*) for the bots that
+   weigh measures (Sage, Tactician, Narcissus, Epimetheus); the enemy's room is already pressed in the endgame.
+   A Raja in its corner, walled in by its own Pawns, has none; in the open it has its three. Still to do: the
+   trapped-Raja position played by Sage, and the weight tuned by the overnight ratings.
 5. **Powers seen.** Value a swap by what it opens: a Pawn nearer its promotion, a Lance freed to strike a
    high-value piece, a file for a Rook. Each bot judges whether and when to swap as its strength allows (*Stated*
    2026-11-25). Test: two Pawns back to back, a Lance behind one with a Raja beyond. *Begun* (2026-11-25): a

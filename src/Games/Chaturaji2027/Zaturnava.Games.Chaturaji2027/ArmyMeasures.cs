@@ -27,8 +27,10 @@ namespace Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
 /// turns of a round than their own army's, so that one may take and then get away;</item>
 /// <item>what its pieces are worth that stand where an enemy's prisoner would land, should it escape (§7):
 /// its starting square, a throne for a leader, deep in the enemy's kingdom;</item>
-/// <item>and how many of its Pawns, and the like, an ally's piece holds back (<see cref="HeldBackOf"/>): what a swap
-/// back to back would free.</item>
+/// <item>how many of its Pawns, and the like, an ally's piece holds back (<see cref="HeldBackOf"/>): what a swap
+/// back to back would free;</item>
+/// <item>and its leaders' room: how many moves they have to cells no enemy attacks, so that walling one's own leader
+/// in, where it cannot step out of danger, costs (strategy plan, step 4).</item>
 /// </list>
 /// </summary>
 internal sealed class ArmyMeasures(
@@ -50,6 +52,7 @@ internal sealed class ArmyMeasures(
     public const string Commanded = "commanded";
     public const string UnderEscapes = "under-escapes";
     public const string HeldBack = "held-back";
+    public const string LeaderRoom = "leader-room";
 
     private readonly ICellNavigating _grid = grid;
     private readonly ImmutableHashSet<PieceKindId> _promotables = promotables;
@@ -62,7 +65,7 @@ internal sealed class ArmyMeasures(
     public static ImmutableList<string> Names { get; } =
     [
         PawnProgress, NearPromotion, Reach, Retreat, LeadersAttacked, ThronesInDanger, Commanded, UnderEscapes,
-        HeldBack,
+        HeldBack, LeaderRoom,
     ];
 
     public ImmutableList<double> Of(GameState state, SeatId seat)
@@ -77,17 +80,27 @@ internal sealed class ArmyMeasures(
         ];
         ImmutableList<Move> moves =
             [.. army.SelectMany(occupant => this._movesFrom(state, occupant.Key, occupant.Value))];
+        ImmutableList<Attack> threats =
+        [
+            .. state.Seats
+                .Where(enemy => !state.Teams.AreAllied(enemy.Id, seat))
+                .SelectMany(enemy => this._attacksOf(state, enemy.Id)),
+        ];
+        ImmutableHashSet<CellId> attacked = [.. threats.Select(attack => attack.Target)];
+        ImmutableHashSet<CellId> leaders =
+            [.. army.Where(occupant => this._control.IsLeader(occupant.Value.Kind)).Select(occupant => occupant.Key)];
         return
         [
             pawnCells.Sum(cell => this.StepsFrom(cell, back) - 1),
             pawnCells.Sum(cell => 1d / Math.Max(1, this.StepsFrom(cell, forward))),
             moves.Count,
             moves.Count(move => this.StepsFrom(move.To, back) < this.StepsFrom(move.From, back)),
-            .. this.Danger(state, seat, army),
+            .. this.Danger(state, seat, threats, attacked, leaders),
             this._control.CommandedBy(state, seat)
                 .Sum(command => state.Position.Occupants.Values.Count(piece => piece.Owner == command.Army)),
             this.UnderEscapesOf(state, seat),
             this.HeldBackOf(state, seat, pawnCells, moves, back),
+            moves.Count(move => leaders.Contains(move.From) && !attacked.Contains(move.To)),
         ];
     }
 
@@ -143,19 +156,16 @@ internal sealed class ArmyMeasures(
     /// How many of the seat's leaders an enemy could take next, and how many of the thrones it commands by are in
     /// danger.
     /// </summary>
-    private ImmutableList<double> Danger(GameState state, SeatId seat, ImmutableList<KeyValuePair<CellId, Piece>> army)
+    private ImmutableList<double> Danger(
+        GameState state,
+        SeatId seat,
+        ImmutableList<Attack> threats,
+        ImmutableHashSet<CellId> attacked,
+        ImmutableHashSet<CellId> leaders
+    )
     {
-        ImmutableList<Attack> threats =
-        [
-            .. state.Seats
-                .Where(enemy => !state.Teams.AreAllied(enemy.Id, seat))
-                .SelectMany(enemy => this._attacksOf(state, enemy.Id)),
-        ];
-        ImmutableHashSet<CellId> attacked = [.. threats.Select(attack => attack.Target)];
         ImmutableHashSet<CellId> byLeaders =
             [.. threats.Where(attack => this._control.IsLeader(attack.Attacker.Kind)).Select(attack => attack.Target)];
-        ImmutableHashSet<CellId> leaders =
-            [.. army.Where(occupant => this._control.IsLeader(occupant.Value.Kind)).Select(occupant => occupant.Key)];
         ImmutableHashSet<CellId> thrones =
         [
             this._control.ThronesOf(state)[seat],

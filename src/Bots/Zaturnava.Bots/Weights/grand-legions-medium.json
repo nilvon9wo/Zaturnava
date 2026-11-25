@@ -18,6 +18,11 @@
       "ally": -0.25,
       "enemy": 0
     },
+    "leader-room": {
+      "own": 0.05,
+      "ally": 0.05,
+      "enemy": 0
+    },
     "pawns-near-promotion": 0,
     "reach": 0,
     "retreat": {
