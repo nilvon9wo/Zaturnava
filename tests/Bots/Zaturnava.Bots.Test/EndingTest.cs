@@ -121,18 +121,12 @@ public sealed class EndingTest
     }
 
     [Theory]
-    [InlineData("person", 20, true)]
-    [InlineData("lead", 5, true)]
-    [InlineData("rule", 20, false)]
-    public async Task Decide_WhenAnotherPersonPlaysOrTheLeadIsNotClearOrItMayNotPropose_PlaysOn(
-        string why,
-        int ourPoints,
-        bool mayPropose
-    )
+    [InlineData(5, true)]
+    [InlineData(20, false)]
+    public async Task Decide_WhenTheLeadIsNotClearOrItMayNotPropose_PlaysOn(int ourPoints, bool mayPropose)
     {
-        // Arrange - Green rests; Yellow is a person too, or the lead is too small, or Black may not propose
-        ImmutableHashSet<SeatId> people = why == "person" ? [Green, Yellow] : [Green];
-        DecisionRequest request = Resting(people, ourPoints);
+        // Arrange - Green rests; the lead is too small, or Black may not propose
+        DecisionRequest request = Resting([Green], ourPoints);
         DecisionRequest asked = request with { Rules = new ScoringRules(Points()) { MayPropose = mayPropose } };
 
         // Act
@@ -193,18 +187,46 @@ public sealed class EndingTest
         Assert.Equal(new AnswerEndAction(Black, agrees), action);
     }
 
-    [Fact]
-    public async Task Decide_WhenNoAllyRests_PlaysOn()
+    [Theory]
+    [InlineData("no one rests")]
+    [InlineData("a person plays on")]
+    public async Task Decide_WhenTheGameIsClearlyWonButNoOneRestsBesideIt_ProposesEndingItPlayingOn(string why)
     {
-        // Arrange - a clear lead, but no one rests
-        DecisionRequest request = Resting(people: [], ourPoints: 20);
-        DecisionRequest playing = request with { State = request.State with { Resigned = [] } };
+        // Arrange - a clear lead; no one rests, or Green rests but Yellow, a person, plays on
+        bool isNoOneResting = why == "no one rests";
+        DecisionRequest resting = Resting(people: isNoOneResting ? [] : [Green, Yellow], ourPoints: 20);
+        DecisionRequest request = isNoOneResting
+            ? resting with { State = resting.State with { Resigned = [] } }
+            : resting;
 
         // Act
-        GameAction action = await new MidasBot(new Random(1)).Decide(playing, this._cancellation);
+        GameAction action = await new MidasBot(new Random(1)).Decide(request, this._cancellation);
 
         // Assert
-        Assert.Equal(Pass, action);
+        Assert.Equal(new ProposeEndAction(Black, Resigns: false), action);
+    }
+
+    [Theory]
+    [InlineData(Ending.Patience - 1, false)]
+    [InlineData(Ending.Patience, true)]
+    public async Task Decide_WhenItsLastProposalWasRefused_ProposesAgainOnlyOnceItsPatienceIsOver(
+        int turnsSince,
+        bool proposes
+    )
+    {
+        // Arrange - a clear lead, no one resting; Black's last proposal refused some turns ago
+        DecisionRequest request = Resting(people: [Yellow], ourPoints: 20);
+        GameState state = request.State with { Resigned = [] };
+        DecisionRequest refused = request with
+        {
+            State = state with { RefusedOn = state.RefusedOn.Add(Black, state.TurnNumber - turnsSince) },
+        };
+
+        // Act
+        GameAction action = await new MidasBot(new Random(1)).Decide(refused, this._cancellation);
+
+        // Assert
+        Assert.Equal(proposes ? new ProposeEndAction(Black, Resigns: false) : Pass, action);
     }
 
     /// <summary>

@@ -51,7 +51,9 @@ test position in `tests/Bots/` (the strategic scenarios of §15) before its weig
    2026-11-25). Test: two Pawns back to back, a Lance behind one with a Raja beyond.
 6. **Proposing an end.** Each bot, by its own thresholds of points and material, proposes to end a game it has won
    or lost, and keeps playing if the people do not agree (asked 2026-11-25). Test: a won position, the bot
-   proposes; a refused proposal, it moves on.
+   proposes; a refused proposal, it moves on. *Done* (2026-11-25, `Ending.cs`), every bot alike for now: it proposes,
+   playing on, when its team leads by a clear lead on points and on the board, or trails past hope; once refused,
+   it waits 12 turns (three rounds) before proposing again (*Proposed*). Per-bot thresholds can follow.
 7. **Measuring.** Each step's test position passes, and the overnight ratings do not fall; a step that lowers a
    bot's rating is undone or reweighted.
 

@@ -14,7 +14,8 @@ namespace Net.NowhereAtAll.Zaturnava.Bots;
 /// (Proposed). Otherwise, when an ally has given up its
 /// turns and no one else in the game is a person, it gives up its own as well, ending the game, if its team leads
 /// clearly, or trails clearly (Proposed): an ally that gave up concedes a game it trails, so playing on alone only
-/// keeps everyone waiting for a game already lost.
+/// keeps everyone waiting for a game already lost. Failing that, it proposes to end a game already decided, won or
+/// lost, playing on if anyone refuses (Asked 2026-11-25; its thresholds Proposed).
 /// </summary>
 internal static class Ending
 {
@@ -27,8 +28,14 @@ internal static class Ending
     /// </summary>
     public static GameAction? AnswerTo(DecisionRequest request) =>
         request.State.Proposal is null
-            ? RestingWith(request)
+            ? RestingWith(request) ?? Decided(request)
             : new AnswerEndAction(request.Seat, IsAhead(request) || IsHopeless(request) || IsConceded(request));
+
+    /// <summary>
+    /// How many turns a bot waits, once its proposal was refused, before it proposes again (Proposed): three rounds
+    /// of a four-seat game.
+    /// </summary>
+    public const int Patience = 12;
 
     private static ProposeEndAction? RestingWith(DecisionRequest request)
     {
@@ -37,13 +44,32 @@ internal static class Ending
         bool isAmongBots = request.People.All(person =>
             state.Resigned.Contains(person) && state.Teams.AreAllied(person, seat)
         );
-        int clear = request.Rules.ClearLead;
-        bool isClear = PointsLead(request) >= clear && BoardLead(request) >= clear;
-        return HasRestingAlly(request) && isAmongBots && (isClear || IsConceded(request))
+        return HasRestingAlly(request) && isAmongBots && (IsClearlyAhead(request) || IsConceded(request))
             && request.Rules.MayProposeEnd(state, seat)
             ? new ProposeEndAction(seat, Resigns: true)
             : null;
     }
+
+    /// <summary>
+    /// A proposal to end a game already decided - the team clearly ahead, on points and on the board, or hopeless -
+    /// playing on meanwhile, so that a refusal costs nothing; but not again until <see cref="Patience"/> turns after
+    /// its last was refused.
+    /// </summary>
+    private static ProposeEndAction? Decided(DecisionRequest request)
+    {
+        GameState state = request.State;
+        SeatId seat = request.Seat;
+        bool isPatient = !state.RefusedOn.TryGetValue(seat, out int refused)
+            || state.TurnNumber - refused >= Patience;
+        return isPatient && request.Rules.MayProposeEnd(state, seat)
+            && (IsClearlyAhead(request) || IsHopeless(request))
+            ? new ProposeEndAction(seat, Resigns: false)
+            : null;
+    }
+
+    /// <summary>Whether the team leads by a clear lead both on points and on the board.</summary>
+    private static bool IsClearlyAhead(DecisionRequest request) =>
+        PointsLead(request) >= request.Rules.ClearLead && BoardLead(request) >= request.Rules.ClearLead;
 
     private static bool IsAhead(DecisionRequest request) => PointsLead(request) > 0;
 
