@@ -52,6 +52,7 @@ internal sealed class Tactics(IPositionValuing valuing, int budget, int width, T
         ];
         ImmutableList<(GameAction Action, GameState After, double Worth)> worths =
             [.. children.Select(child => (child.Action, child.After, search.Judge(child.After)))];
+        ImmutableList<(GameAction Action, GameState After, double Worth)> now = worths;
         bool isCut = children.Any(child => child.After.Outcome is null);
         for (int depth = 2; isCut && !search.IsSpent; depth++)
         {
@@ -66,11 +67,28 @@ internal sealed class Tactics(IPositionValuing valuing, int budget, int width, T
         double best = worths.Max(worth => worth.Worth);
         ImmutableList<GameAction> top =
             [.. worths.Where(worth => worth.Worth >= best - Tolerance).Select(worth => worth.Action)];
-        ImmutableList<GameAction> active = [.. top.Where(action => action is not PassAction)];
+        ImmutableList<GameAction> sooner = Sooner(top, now);
+        ImmutableList<GameAction> active = [.. sooner.Where(action => action is not PassAction)];
         ImmutableList<GameAction> choices = active.IsEmpty
-            ? top
+            ? sooner
             : active;
         return choices[random.Next(choices.Count)];
+    }
+
+    /// <summary>
+    /// Of the actions worth the same looking ahead, those worth the most as they stand (<paramref name="now"/>): a
+    /// gain taken now rather than put off, as a later one may never come (Proposed; strategy plan, step 5: Sage
+    /// swapped no Pawns back to back while it could as well swap them a turn later, and so shuffled its Raja).
+    /// </summary>
+    private static ImmutableList<GameAction> Sooner(
+        ImmutableList<GameAction> top,
+        ImmutableList<(GameAction Action, GameState After, double Worth)> now
+    )
+    {
+        ImmutableList<(GameAction Action, double Worth)> tied =
+            [.. top.Select(action => (action, now.First(worth => worth.Action.Equals(action)).Worth))];
+        double soonest = tied.Max(action => action.Worth);
+        return [.. tied.Where(action => action.Worth >= soonest - Tolerance).Select(action => action.Action)];
     }
 
     /// <summary>One decision's search: what it has spent, and whether its last look stopped short anywhere.</summary>

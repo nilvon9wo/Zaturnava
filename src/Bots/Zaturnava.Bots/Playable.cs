@@ -17,8 +17,15 @@ internal static class Playable
             ),
         ];
 
+    /// <summary>
+    /// Whether the action takes a piece of the bot's own team: moves onto it, and it is gone from the board after. Not
+    /// a swap back to back (rules.md §3), which moves onto an ally's piece but leaves it on the board, behind (the
+    /// bots never swapped, every such move counted a taking, till 2026-11-25).
+    /// </summary>
     private static bool TakesOwnTeam(DecisionRequest request, GameAction action) =>
         action is MoveAction move
         && request.State.Position.PieceAt(move.To) is { } taken
-        && request.State.Teams.AreAllied(taken.Owner, request.Seat);
+        && request.State.Teams.AreAllied(taken.Owner, request.Seat)
+        && request.Rules.ApplyLegal(request.State, action).State.Position.Occupants.Values
+            .All(piece => piece.Id != taken.Id);
 }

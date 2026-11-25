@@ -230,6 +230,32 @@ public sealed class TacticianBotTest
     /// <summary>A node where the enemy can do nothing, seat 0 having scored <paramref name="points"/>.</summary>
     private static TreeNode Stuck(int points) => new(TreeRules.Enemy, points, []);
 
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(3)]
+    [InlineData(4)]
+    public async Task Decide_WhenAGainNowOrOnItsNextMoveEndTheSame_TakesItNow(int seed)
+    {
+        // Arrange - moving to 1 scores a point at once, moving to 2 only on its next move; both end with that point
+        TreeRules rules = new(
+            ImmutableDictionary<int, TreeNode>.Empty
+                .Add(0, new TreeNode(TreeRules.Seat, 0, [1, 2]))
+                .Add(1, new TreeNode(TreeRules.Seat, 1, [3]))
+                .Add(2, new TreeNode(TreeRules.Seat, 0, [3]))
+                .Add(3, TreeNode.Over(1))
+        );
+        TacticianBot tactician =
+            new(new Random(seed), TacticianBot.Budget, TacticianBot.Width, Nothing with { Score = 1 });
+
+        // Act
+        GameAction action = await tactician.Decide(rules.Request(), this._cancellation);
+
+        // Assert
+        Assert.Equal(TreeRules.Move(0, 1), action);
+    }
+
     private static TacticianBot Tactician(SageWeights weights) =>
         new(new Random(Seed), TacticianBot.Budget, TacticianBot.Width, weights);
 }
