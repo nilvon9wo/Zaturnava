@@ -8,6 +8,11 @@
   "chances": 0.39,
   "mobility": 0.3,
   "measures": {
-    "pawn-progress": 0
+    "pawn-progress": 0,
+    "held-back": {
+      "own": -0.25,
+      "ally": -0.25,
+      "enemy": 0
+    }
   }
 }

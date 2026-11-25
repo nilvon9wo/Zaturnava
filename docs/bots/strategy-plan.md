@@ -47,7 +47,13 @@ test position in `tests/Bots/` (the strategic scenarios of §15) before its weig
    Raja.
 5. **Powers seen.** Value a swap by what it opens: a Pawn nearer its promotion, a Lance freed to strike a
    high-value piece, a file for a Rook. Each bot judges whether and when to swap as its strength allows (*Stated*
-   2026-11-25). Test: two Pawns back to back, a Lance behind one with a Raja beyond.
+   2026-11-25). Test: two Pawns back to back, a Lance behind one with a Raja beyond. *Begun* (2026-11-25): a
+   new measure, "held-back", counts a team's Pawns and Lances that an ally's piece holds back with no empty cell
+   forward (a capture it could make does not count; the Shogi Knight, leaping past, is never held). Each piece
+   held weighs −0.25 (*Proposed*) for the bots that weigh measures (Sage, Tactician, Narcissus, Epimetheus) and
+   nothing for the weaker ones, which swap as they happen to. A swap that frees two Pawns gains 0.5; the ratings
+   will tune that. What a freed Lance then attacks, the bots already count as chances. Still to do: the test
+   position played by Sage.
 6. **Proposing an end.** Each bot, by its own thresholds of points and material, proposes to end a game it has won
    or lost, and keeps playing if the people do not agree (asked 2026-11-25). Test: a won position, the bot
    proposes; a refused proposal, it moves on.
