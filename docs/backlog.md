@@ -40,8 +40,8 @@ own number (**25**, **N29**), the [2026-11-15 specification](playtesting/2026-11
 
   | Size | Morpheus | Phaethon | Tantalus | Echo | Icarus |
   |---|---|---|---|---|---|
-  | Small | 1042 | 1105 | 1134 | 1391 | 1574 |
-  | Medium | 1004 | 1025 | 1099 | 1401 | 1568 |
+  | Small | 1023 | 1041 | 1106 | 1349 | 1568 |
+  | Medium | 1047 | 1069 | 1126 | 1398 | 1561 |
   | Large | 1066 | 1146 | 1263 | 1408 | 1579 |
 
   At the large size, measured again with 120 games a pair: held around Midas and Solomon, Morpheus came out
@@ -49,7 +49,8 @@ own number (**25**, **N29**), the [2026-11-15 specification](playtesting/2026-11
   their shipped ratings there (1757, 1770) look low, and holding them drags the weak bots down. So the
   faint three are fitted from their games with each other and Random alone (`--free`), and Echo and Icarus,
   who win some games against Midas and Solomon, held around them. Still to do: Midas's and Solomon's
-  large-size ratings measured again (they may be low), and the small and medium sizes with 120 games a pair.
+  large-size ratings measured again (they may be low). The small and medium sizes measured likewise, with 120
+  games a pair, and shipped (2026-11-26).
   *(Proposed, 2026-11-26, from the user's question whether rating bots apart from people skews them)*: a bot's
   rating comes from its games against bots alone, while a person's game against a bot moves only the person's.
   Counting people's games against a bot toward the bot's rating too would rate it by how it plays people, and
