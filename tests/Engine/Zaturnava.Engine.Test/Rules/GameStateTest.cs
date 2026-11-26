@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
 using Net.NowhereAtAll.Zaturnava.Engine.Positions;
 using Net.NowhereAtAll.Zaturnava.Engine.Rules;
 using Net.NowhereAtAll.Zaturnava.Engine.Seats;
@@ -28,6 +29,32 @@ public sealed class GameStateTest
 
         // Assert
         Assert.Equal(right, seat);
+    }
+
+    [Theory]
+    [InlineData("elephant", true)]
+    [InlineData("queen", false)]
+    public void IsLifted_ForAPieceWhoseAreaRestrictionWasBoughtOffAsAnElephant_HoldsOnlyWhileItIsOne(
+        string kind,
+        bool expected
+    )
+    {
+        // Arrange - piece 3's area restriction bought off as an Elephant; the piece maybe since promoted
+        Seat left = new(new SeatId(0), LineTopology.Right);
+        GameState state = new(Position.Empty, [left], TeamGraph.FromTeams([[left.Id]]), left.Id, 1, [], [])
+        {
+            Lifts = [new Lift(new PieceId(3), new PieceKindId("elephant"), LiftKind.Area)],
+        };
+        Piece piece = new(new PieceId(3), new PieceKindId(kind), left.Id);
+
+        // Act
+        (bool Area, bool Movement) lifted = (
+            state.IsLifted(piece, LiftKind.Area),
+            state.IsLifted(piece, LiftKind.Movement)
+        );
+
+        // Assert
+        Assert.Equal((expected, false), lifted);
     }
 
     [Fact]

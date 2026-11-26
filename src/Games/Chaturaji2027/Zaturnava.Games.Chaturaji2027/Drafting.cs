@@ -33,6 +33,12 @@ public sealed record Drafting(
     /// </summary>
     public Func<int, int>? BudgetAt { get; init; }
 
+    /// <summary>
+    /// What buying off a kind's restriction costs while drafting (specification §7); null where it has none to buy, or
+    /// none offered yet. None, if unset.
+    /// </summary>
+    public Func<PieceKindId, LiftKind, int?> LiftPrice { get; init; } = (_, _) => null;
+
     /// <summary>What each army may spend in a game of <paramref name="edition"/> (<see cref="BudgetAt"/>).</summary>
     public int BudgetIn(int edition) => this.BudgetAt?.Invoke(edition) ?? this.Budget;
 }

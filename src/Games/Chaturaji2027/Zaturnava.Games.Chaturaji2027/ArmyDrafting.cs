@@ -283,11 +283,33 @@ internal sealed class ArmyDrafting
                 .SelectMany(kind => (this._drafting.PalaceBound.Contains(kind) ? freeInPalace : free)
                     .Select(cell => (GameAction)new DraftAction(seat, kind, cell))
                 ),
+            .. this.LiftsOf(state, seat, kingdom, left),
             .. state.Draft.IsSimultaneous ? this.ChangesOf(state, seat, kingdom) : [],
             new FillArmyAction(seat),
             new PassAction(seat),
         ];
     }
+
+    /// <summary>
+    /// Every restriction of a piece the seat drafted that it can pay to buy off, and has not yet (specification §7).
+    /// </summary>
+    private IEnumerable<GameAction> LiftsOf(GameState state, SeatId seat, ImmutableList<CellId> kingdom, int left) =>
+        kingdom
+            .Select(cell => (Cell: cell, Piece: state.Position.PieceAt(cell)))
+            .Where(entry => entry.Piece is not null)
+            .SelectMany(entry => Restrictions
+                .Where(restriction =>
+                    !state.IsLifted(entry.Piece!, restriction)
+                    && this._drafting.LiftPrice(entry.Piece!.Kind, restriction) <= left
+                )
+                .Select(restriction => (GameAction)new LiftAction(seat, entry.Cell, restriction))
+            );
+
+    private static ImmutableList<LiftKind> Restrictions { get; } = [LiftKind.Movement, LiftKind.Area];
+
+    /// <summary>What buying off <paramref name="restriction"/> of a <paramref name="kind"/> costs.</summary>
+    private int LiftPriceOf(PieceKindId kind, LiftKind restriction) =>
+        this._drafting.LiftPrice(kind, restriction).GetValueOrDefault();
 
     /// <summary>
     /// How the seat, drafting all at once, may change its mind: take back any piece it drafted; move its throne to any
@@ -371,6 +393,16 @@ internal sealed class ArmyDrafting
                     this.DoneIfSpent(this.Bought(state, seat, draft.Piece, draft.Cell), seat),
                     new PieceDrafted(seat, draft.Piece, draft.Cell, this._priceOf(state.Edition, draft.Piece))
                 ),
+                LiftAction lift => Told(
+                    this.DoneIfSpent(this.Lifted(state, seat, lift), seat),
+                    new RestrictionLifted(
+                        seat,
+                        state.Position.PieceAt(lift.Cell)!.Kind,
+                        lift.Cell,
+                        lift.Restriction,
+                        this.LiftPriceOf(state.Position.PieceAt(lift.Cell)!.Kind, lift.Restriction)
+                    )
+                ),
                 UndraftAction undraft => this.RefundedAndTold(state, seat, undraft.Cell),
                 FillArmyAction => this.FilledAndTold(state, seat),
                 _ => Told(Done(state, seat)),
@@ -402,14 +434,33 @@ internal sealed class ArmyDrafting
         return Told(Done(filled, seat), new ArmyFilledAtRandom(seat, added));
     }
 
-    /// <summary>The piece on <paramref name="cell"/> taken back, its price refunded, telling so.</summary>
+    /// <summary>The restriction bought off, its price spent.</summary>
+    private GameState Lifted(GameState state, SeatId seat, LiftAction lift)
+    {
+        Piece piece = state.Position.PieceAt(lift.Cell)!;
+        int price = this.LiftPriceOf(piece.Kind, lift.Restriction);
+        return state with
+        {
+            Lifts = state.Lifts.Add(new Lift(piece.Id, piece.Kind, lift.Restriction)),
+            Draft = state.Draft! with { Left = state.Draft.Left.SetItem(seat, state.Draft.Left[seat] - price) },
+        };
+    }
+
+    /// <summary>
+    /// The piece on <paramref name="cell"/> taken back, its price refunded, and that of every restriction bought off
+    /// for it, telling so.
+    /// </summary>
     private (GameState State, ImmutableList<GameEvent> Told) RefundedAndTold(GameState state, SeatId seat, CellId cell)
     {
-        PieceKindId kind = state.Position.PieceAt(cell)!.Kind;
-        int price = this._priceOf(state.Edition, kind);
+        Piece piece = state.Position.PieceAt(cell)!;
+        PieceKindId kind = piece.Kind;
+        ImmutableList<Lift> lifts = [.. state.Lifts.Where(lift => lift.Piece == piece.Id)];
+        int price = this._priceOf(state.Edition, kind)
+            + lifts.Sum(lift => this.LiftPriceOf(lift.Kind, lift.Restriction));
         return Told(
             state with
             {
+                Lifts = state.Lifts.Except(lifts),
                 Position = new Position(state.Position.Occupants.Remove(cell)),
                 Draft = state.Draft! with { Left = state.Draft.Left.SetItem(seat, state.Draft.Left[seat] + price) },
             },
@@ -423,7 +474,8 @@ internal sealed class ArmyDrafting
     /// says so.
     /// </summary>
     private GameState DoneIfSpent(GameState state, SeatId seat) =>
-        state.Draft!.IsSimultaneous || this.ChoicesOf(state, seat).OfType<DraftAction>().Any()
+        state.Draft!.IsSimultaneous
+        || this.ChoicesOf(state, seat).Any(choice => choice is DraftAction or LiftAction)
             ? state
             : Done(state, seat);
 
@@ -518,11 +570,11 @@ internal sealed class ArmyDrafting
         }
 
         ImmutableDictionary<CellId, ArmySquare> own = this._kingdoms[drafter];
-        ImmutableList<(ArmySquare Square, PieceKindId Kind)> army =
+        ImmutableList<(ArmySquare Square, Piece Piece)> army =
         [
             .. own.OrderBy(entry => entry.Key.Value)
                 .Where(entry => drafted.Position.PieceAt(entry.Key) is not null)
-                .Select(entry => (entry.Value, drafted.Position.PieceAt(entry.Key)!.Kind)),
+                .Select(entry => (entry.Value, drafted.Position.PieceAt(entry.Key)!)),
         ];
         ArmySquare throne = own[drafted.Thrones![drafter]];
         ArmySquare? centre = drafted.Palaces is { } palaces ? this.CentreOf(drafter, palaces[drafter]) : null;
@@ -534,12 +586,13 @@ internal sealed class ArmyDrafting
     }
 
     /// <summary>
-    /// <paramref name="seat"/> given the army, its throne and palace, and what was kept, in its own kingdom.
+    /// <paramref name="seat"/> given the army, each piece with the restrictions bought off for the drafter's, its
+    /// throne and palace, and what was kept, in its own kingdom.
     /// </summary>
     private GameState Given(
         GameState state,
         SeatId seat,
-        ImmutableList<(ArmySquare Square, PieceKindId Kind)> army,
+        ImmutableList<(ArmySquare Square, Piece Piece)> army,
         (ArmySquare Throne, ArmySquare? Centre) home,
         int left
     )
@@ -554,12 +607,16 @@ internal sealed class ArmyDrafting
                     : state.Palaces,
                 Draft = state.Draft! with { Left = state.Draft.Left.SetItem(seat, left) },
             },
-            (given, piece) => given with
+            (given, piece) =>
             {
-                Position = given.Position.Place(
-                    cells[piece.Square],
-                    new Piece(NextId(given.Position), piece.Kind, seat)
-                ),
+                PieceId id = NextId(given.Position);
+                return given with
+                {
+                    Position = given.Position.Place(cells[piece.Square], new Piece(id, piece.Piece.Kind, seat)),
+                    Lifts = given.Lifts.Union(
+                        given.Lifts.Where(lift => lift.Piece == piece.Piece.Id).Select(lift => lift with { Piece = id })
+                    ),
+                };
             }
         );
     }

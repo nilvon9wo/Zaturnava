@@ -1191,6 +1191,32 @@ public sealed class TableTest : IDisposable
     }
 
     [Fact]
+    public void Render_WhenAPieceHasRestrictionsBoughtOff_BadgesEachAndListsThemOnItsCard()
+    {
+        // Arrange - both its restrictions bought off (specification §8)
+        GameViewDto view = FakeGameServer.SeatZeroToMove;
+        this._page.Server.View = view with
+        {
+            Pieces = [view.Pieces[0] with { Lifted = ["movement", "area"] }, .. view.Pieces.Skip(1)],
+            Kinds = [new PieceKindDto("raja", "Raja", 5)],
+        };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        string badges = string.Join(",", table.FindAll("rect.lift-badge").Select(badge => badge.ClassName));
+
+        // Act
+        Cell(table, 0).Click();
+
+        // Assert
+        Assert.Equal(
+            (
+                "lift-badge lift-movement,lift-badge lift-area",
+                "Its limit on how it moves|Its limit on where it goes"
+            ),
+            (badges, string.Join("|", table.FindAll("ul.lifted li").Select(line => line.TextContent)))
+        );
+    }
+
+    [Fact]
     public void Click_WhenThePieceMayGoBerserkButIsNoMercenary_ListsThatDrawbackAlone()
     {
         // Arrange

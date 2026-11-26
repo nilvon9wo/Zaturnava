@@ -11,6 +11,30 @@ public sealed class QuickDraftTest
 {
     private static readonly ImmutableList<int> Seeds = [.. Enumerable.Range(0, 20)];
 
+    [Theory]
+    [InlineData("xiangqi-elephant", LiftKind.Area, 3)]
+    [InlineData("xiangqi-soldier", LiftKind.Area, 3)]
+    [InlineData("xiangqi-general", LiftKind.Area, 5)]
+    [InlineData("janggi-guard", LiftKind.Area, 5)]
+    [InlineData("janggi-soldier", LiftKind.Area, null)]
+    [InlineData("xiangqi-horse", LiftKind.Movement, null)]
+    [InlineData("rook", LiftKind.Area, null)]
+    public void Of_ForEachRestriction_PricesTheLiftOnlyOfOneABoardHoldsAPieceBy(
+        string kind,
+        LiftKind restriction,
+        int? expected
+    )
+    {
+        // Arrange
+        Drafting drafting = QuickDraft.Of(QuickGame.Medium);
+
+        // Act
+        int? price = drafting.LiftPrice(new PieceKindId(kind), restriction);
+
+        // Assert
+        Assert.Equal(expected, price);
+    }
+
     [Fact]
     public void Of_ForTheSmallGame_GivesItsBudgetAndEverySquareOfItsKingdom()
     {

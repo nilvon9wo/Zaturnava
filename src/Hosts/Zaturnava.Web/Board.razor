@@ -163,6 +163,11 @@
     /// <summary>How far a mercenary's coin sits from the piece's centre, right and up.</summary>
     private const double CoinOffset = 0.3;
 
+    /// <summary>How far left of the piece's centre the first badge for a lift starts, and how far on the next.</summary>
+    private const double LiftBadgeOffset = 0.38;
+
+    private const double LiftBadgeStep = 0.2;
+
     /// <summary>A piece, on its cell, its symbol upright, in the classes given.</summary>
     private RenderFragment Drawn(PieceDto piece, string classes) =>
         @<g class="@classes" pointer-events="none">
@@ -175,6 +180,15 @@
                         cx="@Svg.Number(this.XOf(piece) + CoinOffset)"
                         cy="@Svg.Number(this.YOf(piece) - CoinOffset)"
                         r="0.11" />
+            }
+            @for (int at = 0; at < piece.Lifted.Count; at++)
+            {
+                @* a badge above it for each kind of restriction bought off (specification §8): movement, area *@
+                <rect class="@($"lift-badge lift-{piece.Lifted[at]}")"
+                      x="@Svg.Number(this.XOf(piece) - LiftBadgeOffset + (at * LiftBadgeStep))"
+                      y="@Svg.Number(this.YOf(piece) - CoinOffset - 0.08)"
+                      width="0.16"
+                      height="0.16" />
             }
             @if (piece.Mark is { } mark)
             {

@@ -9,8 +9,8 @@ namespace Net.NowhereAtAll.Zaturnava.Games.GrandLegions;
 /// <summary>
 /// What a palace means to the pieces confined to one (specification §5): such a piece in a palace stays in that
 /// palace, whosever it is. One outside every palace moves freely until it enters one, which then holds it. Only the
-/// Xiangqi General's flying-general capture takes it out (§6.4): onto a leader, wherever that stands. No piece
-/// buys its confinement off yet, as no lifts are bought in the game yet.
+/// Xiangqi General's flying-general capture takes it out (§6.4): onto a leader, wherever that stands. A piece whose
+/// confinement was bought off (§7) goes where it likes.
 /// </summary>
 public static class PalaceConfinement
 {
@@ -25,6 +25,7 @@ public static class PalaceConfinement
     /// <summary>Whether a palace lets <paramref name="move"/> be made, in a game with palaces or without.</summary>
     public static bool MayMove([Required] GameState state, [Required] Move move) =>
         !Confined.Contains(move.Mover.Kind)
+        || state.IsLifted(move.Mover, LiftKind.Area)
         || (state.Palaces ?? []).Values.FirstOrDefault(palace => palace.Contains(move.From)) is not { } held
         || held.Contains(move.To)
         || IsFlyingCapture(state, move);

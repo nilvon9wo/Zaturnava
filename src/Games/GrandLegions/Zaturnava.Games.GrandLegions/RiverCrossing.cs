@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using Net.NowhereAtAll.Zaturnava.Engine.Boards;
 using Net.NowhereAtAll.Zaturnava.Engine.Moves;
+using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
 using Net.NowhereAtAll.Zaturnava.Engine.Rules;
 using Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
 using Net.NowhereAtAll.Zaturnava.Topology.SquareGrid;
@@ -10,7 +11,7 @@ namespace Net.NowhereAtAll.Zaturnava.Games.GrandLegions;
 /// <summary>
 /// What a river means to the pieces (specification §2): a Xiangqi Elephant may neither cross one nor enter a
 /// cell it cuts; a Xiangqi Soldier steps sideways only once it stands across a river from its kingdom, across either
-/// where there are two, and never where there is none.
+/// where there are two, and never where there is none. Neither, once that restriction is bought off (§7).
 /// </summary>
 public static class RiverCrossing
 {
@@ -35,11 +36,12 @@ public static class RiverCrossing
         bool isAcross = state.Edition >= RiverWhereItStandsEdition
             ? board.Crosses((grid.ColumnOf(move.From), grid.RowOf(move.From)), (column, row))
             : board.IsAcrossRiver(home, column, row);
-        return move.Mover.Kind == GrandLegionsPieces.XiangqiElephant
+        return state.IsLifted(move.Mover, LiftKind.Area)
+            || (move.Mover.Kind == GrandLegionsPieces.XiangqiElephant
             ? !(board.IsInRiver(column, row) || isAcross)
             : move.Mover.Kind != GrandLegionsPieces.XiangqiSoldier
                 || !IsSideways(state.SeatOf(move.Mover.Owner).Forward, grid, move)
-                || board.IsAcrossRiver(home, grid.ColumnOf(move.From), grid.RowOf(move.From));
+                || board.IsAcrossRiver(home, grid.ColumnOf(move.From), grid.RowOf(move.From)));
     }
 
     /// <summary>Whether the move goes neither toward nor away from <paramref name="forward"/>.</summary>

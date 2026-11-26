@@ -66,6 +66,20 @@ public sealed class PalaceConfinementTest
     }
 
     [Fact]
+    public void MayMove_WhenAConfinedPiecesConfinementWasBoughtOff_LetsItLeaveItsPalace()
+    {
+        // Arrange - a Janggi Guard in seat 0's palace, its confinement bought off
+        Piece guard = new(new PieceId(1), GrandLegionsPieces.JanggiGuard, new SeatId(0));
+        GameState state = Game(Palaces) with { Lifts = [new Lift(guard.Id, guard.Kind, LiftKind.Area)] };
+
+        // Act
+        bool isAllowed = PalaceConfinement.MayMove(state, new Move(guard, new CellId(4), new CellId(10), null));
+
+        // Assert
+        Assert.True(isAllowed);
+    }
+
+    [Fact]
     public void MayMove_WhenTheGameHasNoPalaces_LetsAConfinedPieceGoAnywhere()
     {
         // Arrange

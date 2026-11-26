@@ -16,6 +16,12 @@ internal static class GameLog
     /// <summary>How many of the latest events a view carries, besides every highlight before them.</summary>
     public const int Length = 40;
 
+    /// <summary>What each kind of restriction limits, for people: "where it goes", "how it moves".</summary>
+    public static ImmutableDictionary<LiftKind, string> LimitOf { get; } =
+        ImmutableDictionary<LiftKind, string>.Empty
+            .Add(LiftKind.Movement, "how it moves")
+            .Add(LiftKind.Area, "where it goes");
+
     /// <summary>
     /// The latest events, and every highlight before them, each told knowing those before it: a move says if
     /// it was rolled for.
@@ -375,6 +381,14 @@ file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bo
                 $"{this.Name(returned.Seat)} took back their {this.Rules.NameOf(returned.Kind)} from "
                     + $"{this.Rules.Topology.NameOf(returned.Cell)}, getting back {Points(returned.Price)}.",
                 returned.Cell
+            ),
+            RestrictionLifted lifted => this.Drafted(
+                number,
+                lifted.Seat,
+                $"{this.Name(lifted.Seat)} lifted their {this.Rules.NameOf(lifted.Kind)}'s limit on "
+                    + $"{GameLog.LimitOf[lifted.Restriction]} on "
+                    + $"{this.Rules.Topology.NameOf(lifted.Cell)}, paying {Points(lifted.Price)}.",
+                lifted.Cell
             ),
             ArmyFilledAtRandom filled => this.Drafted(
                 number,

@@ -255,6 +255,15 @@ drawn simply, a shape for its class and a letter for its kind.
 
 - Upgrades and promotions bought in play, in a palace with the player's own leader on its throne,
   lowering the score.
+- Lifts bought in the draft, and kept in the game. *Begun* (2026-11-26, `LiftAction`, `GameState.Lifts`): while
+  drafting, a player may buy off the **area** restriction of a piece they placed, at its catalogue lift: a palace's
+  confinement (the Generals, the Guard, the Advisor) or a river's (the Xiangqi Elephant, which then crosses rivers
+  and stands in them; the Xiangqi Soldier, which then steps sideways anywhere). The lift stays with the piece while
+  it is that kind; a piece promoted into another has the new kind's restrictions. Taking the piece back refunds its
+  lift too; an army drafted for all gives each copy its lifts. Each lifted restriction is badged on the piece and
+  listed on its card. *Proposed*: a piece a palace holds is still placed in the palace, as it is bought before its
+  lift; the Janggi Soldier's palace lines and every **movement** restriction are not yet offered, since what each
+  piece does without them is still to be settled ([open questions](../open-questions.md)).
 - Promotion by a piece's own condition, free; Infantry promoting at the far edge, into its own
   promotion or any captured piece; every promotion optional, and able to wait while its condition
   holds. *Done* (2026-11-06, `PromoteOwnAction`, `OwnPromotion`): a Western Pawn on the last row may
