@@ -25,7 +25,7 @@ out the work in small steps, each with a test position that shows it done. The s
 | Material, score, leaders, prisoners, thrones | Counted, for the bot's team against the other | `Appraisal.cs` |
 | Threats and escapes | Counted; since 2026-11-25 escapes by the moves a piece may make, not its attacks | `Appraisal.Threats` |
 | Allies | Their pieces count as ours; their turn is not foreseen except by Tactician | `Appraisal`, `Tactician` |
-| Turn order | Sage looks through the dice of its own turn only; Tactician one round on | `Foresight` |
+| Turn order | Sage looks through the dice of its own turn only; Tactician one round on; exposure by when each army moves, its commanders' turns included | `Foresight`, `Careful.Exposure` |
 | Command against ownership | Thrones and leaders weigh it only in part | backlog §2, "Sage, next" |
 | Promotion choice | By the promoted piece's value, not its safety or owner | `Appraisal` |
 | Endgame technique | None beyond the points search; nothing pulls a piece towards a target | — |
@@ -38,7 +38,14 @@ Each step is small, keeps each bot's character (the weakest bots keep their rand
 test position in `tests/Bots/` (the strategic scenarios of §15) before its weight is tuned by self-play.
 
 1. **Whose move is next.** Count a capture as safe or not by who moves before the bot again, ally or enemy, and
-   whose command the piece is under. Test: the Yellow Rook case above.
+   whose command the piece is under. Test: the Yellow Rook case above. *Begun* (2026-11-26): the exposure every
+   bot from Careful up weighs (`Careful.Exposure`) already let an army that moves before its attacker save its
+   dearest piece; but it took each army to move on its own seat's turn only. Now an army moves at the first turn of
+   any seat of its side that commands it (`IRulesApplying.MoversOf`: its own, a Raja on its throne, an ally with a
+   Raja while it has none), so an enemy army commanded by an enemy who moves first threatens at once
+   (`StrategicPositionsTest`: Yellow's Elephant, commanded by Red, who moves before Black). Still to do: the chances
+   the bot sees (`Appraisal.Threats`), which still take every enemy to move before the team's next turn, judged by
+   the turn order too; and, with step 2, the promoted piece's army and its turn.
 2. **Promotion with eyes open.** Judge a promotion by the promoted piece's safety on its cell, its owner, and the
    command it brings. Test: the Pawn promoted into an attacked Raja. *The test position played by Sage*
    (2026-11-26, `StrategicPositionsTest`): a Black Pawn on its far edge may become Green's Raja or Black's own

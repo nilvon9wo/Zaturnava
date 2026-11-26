@@ -279,6 +279,13 @@ public interface IRulesApplying
     ImmutableList<Attack> MovesOf([Required] GameState state, SeatId seat) => this.AttacksOf(state, seat);
 
     /// <summary>
+    /// The seats on whose own turns the pieces of <paramref name="army"/> may move, as the game stands, a turn handed
+    /// to a regent aside: for one weighing whose move comes first (a Raja on an ally's throne moves that ally's army on
+    /// its own turns, say). The army's own seat alone, unless the ruleset says otherwise.
+    /// </summary>
+    ImmutableHashSet<SeatId> MoversOf([Required] GameState state, SeatId army) => [army];
+
+    /// <summary>
     /// How far ahead a team is clearly ahead, on points and on what its pieces on the board are worth, as
     /// <see cref="WorthOf"/> counts them: Chaturaji 2027's 10, unless the ruleset says otherwise. For one weighing
     /// whether a game is won or lost.

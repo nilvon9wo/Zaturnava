@@ -16,8 +16,9 @@ namespace Net.NowhereAtAll.Zaturnava.Bots;
 /// the team's pieces stands, if both sides go on taking while it pays, or, if the bot's throne is
 /// empty, what the enemy leader who could step onto it is worth. A piece on the bot's throne does not
 /// keep an enemy leader off it, but only makes it take that piece to get there: such a taking wins the
-/// piece and the throne both. The dice are left aside, but not whose turn comes next: a seat of the team
-/// that moves before an enemy saves the piece it would lose most to it (<see cref="LossOfSeat"/>). Half
+/// piece and the throne both. The dice are left aside, but not whose turn comes next: an army of the team
+/// that moves before an enemy, on its own seat's turn or on that of an ally commanding it, saves the piece
+/// it would lose most to it (<see cref="LossOfSeat"/>). Half
 /// of what the action leaves its allies to win next, or takes from them (<see cref="Teamwork"/>), counts
 /// too. Among actions worth the same, it would rather do something than pass, and picks at random.
 /// </summary>
@@ -70,7 +71,7 @@ internal static class Careful
         ILookup<CellId, Attack> guards
     )
     {
-        ImmutableDictionary<SeatId, int> turns = TurnsOf(request, after);
+        ImmutableDictionary<SeatId, int> turns = ArmyTurnsOf(request, after, TurnsOf(request, after));
         IEnumerable<int> losses = after.Position.Occupants
             .Where(occupant => after.Teams.AreAllied(occupant.Value.Owner, request.Seat))
             .GroupBy(occupant => occupant.Value.Owner)
@@ -79,11 +80,11 @@ internal static class Careful
     }
 
     /// <summary>
-    /// The worst an enemy could do to the pieces of one seat of the bot's team (<paramref name="pieces"/>), its turn
-    /// coming as <paramref name="turns"/> has it (Proposed; the user's play of 2026-11-12, a Rook sent home beside an
-    /// enemy Raja whose seat plays after its own): an enemy whose turn comes first may start any exchange; but against
-    /// one whose turn comes later, the seat moves first, and saves the piece it would lose most (by moving it, or by
-    /// taking its attacker), so only its second-worst counts.
+    /// The worst an enemy could do to the pieces of one seat of the bot's team (<paramref name="pieces"/>), each army's
+    /// turn coming as <paramref name="turns"/> has it (<see cref="ArmyTurnsOf"/>; Proposed; the user's play of
+    /// 2026-11-12, a Rook sent home beside an enemy Raja whose seat plays after its own): an enemy whose turn comes
+    /// first may start any exchange; but against one whose turn comes later, the seat moves first, and saves the piece
+    /// it would lose most (by moving it, or by taking its attacker), so only its second-worst counts.
     /// </summary>
     private static int LossOfSeat(
         DecisionRequest request,
@@ -133,6 +134,26 @@ internal static class Careful
             ))
             .ToImmutableDictionary(seat => seat.Id, seat => seat.Turn);
     }
+
+    /// <summary>
+    /// When each army's pieces move next, from when each seat moves next (<paramref name="turns"/>): at the first turn
+    /// of a seat that moves them (<see cref="IRulesApplying.MoversOf"/>), of the army's own side, as the other side's
+    /// seats do not move them for it (the designer's case of 2026-11-25: a Yellow Rook, moved on Red's turn by Red's
+    /// Raja, taken by Black, who moved before Yellow, but after Red).
+    /// </summary>
+    private static ImmutableDictionary<SeatId, int> ArmyTurnsOf(
+        DecisionRequest request,
+        GameState after,
+        ImmutableDictionary<SeatId, int> turns
+    ) =>
+        after.Seats.ToImmutableDictionary(
+            army => army.Id,
+            army => request.Rules.MoversOf(after, army.Id)
+                .Where(seat => after.Teams.AreAllied(seat, army.Id))
+                .Select(seat => turns.GetValueOrDefault(seat, int.MaxValue))
+                .Append(turns.GetValueOrDefault(army.Id, int.MaxValue))
+                .Min()
+        );
 
     /// <summary>
     /// What an enemy could win by starting an exchange for a piece worth keeping <paramref name="target"/>; on the
