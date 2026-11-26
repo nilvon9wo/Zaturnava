@@ -168,6 +168,36 @@ public sealed class StrategicPositionsTest
         Assert.Equal(isLost ? this._rules.KeepingWorthOf(Chaturaji2027Pieces.Elephant) : 0, exposure);
     }
 
+    [Fact]
+    public void Chances_WhenAnAllyAttacksAnEnemyPieceBeforeOrAfterItsArmyMoves_CountItTakenOrFled()
+    {
+        // Arrange - plan step 1, whose move is next: Green has just moved, so Red moves next, then Black, then Yellow;
+        // Black's Horse on d2 attacks an Elephant on f3, free to flee, and unable to take the Horse back. Red's
+        // Elephant flees on Red's turn, before Black's; Yellow's is taken on Black's, before Yellow's
+        SageWeights chances = new(0, 0, 0, 0, 0, 0, 1);
+        double ValueWith(SeatId owner)
+        {
+            GameState state = this.Deciding(
+                Green,
+                [
+                    (CellAt(3, 1), new Piece(new PieceId(1), Chaturaji2027Pieces.Horse, Black)),
+                    (CellAt(5, 2), new Piece(new PieceId(2), Chaturaji2027Pieces.Elephant, owner)),
+                    .. new[] { Black, Green, Red, Yellow }.Select((seat, index) => (
+                        this._rules.Thrones[seat],
+                        new Piece(new PieceId(10 + index), Chaturaji2027Pieces.Raja, seat)
+                    )),
+                ]
+            );
+            return Appraisal.ValueOf(new(this._rules, state, Green, []), state, chances);
+        }
+
+        // Act
+        double gained = ValueWith(Yellow) - ValueWith(Red);
+
+        // Assert - taken, its whole worth; fled, only the turn it costs, a quarter of it
+        Assert.Equal(0.75 * this._rules.WorthOf(Chaturaji2027Pieces.Elephant), gained, 6);
+    }
+
     /// <summary>How many decisions, every seat's, the endgame test allows before calling it not converted.</summary>
     private const int MostEndgameDecisions = 120;
 

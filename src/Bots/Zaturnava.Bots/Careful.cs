@@ -71,7 +71,7 @@ internal static class Careful
         ILookup<CellId, Attack> guards
     )
     {
-        ImmutableDictionary<SeatId, int> turns = ArmyTurnsOf(request, after, TurnsOf(request, after));
+        ImmutableDictionary<SeatId, int> turns = ArmyTurnsOf(request, after);
         IEnumerable<int> losses = after.Position.Occupants
             .Where(occupant => after.Teams.AreAllied(occupant.Value.Owner, request.Seat))
             .GroupBy(occupant => occupant.Value.Owner)
@@ -136,12 +136,15 @@ internal static class Careful
     }
 
     /// <summary>
-    /// When each army's pieces move next, from when each seat moves next (<paramref name="turns"/>): at the first turn
+    /// When each army's pieces move next, from when each seat moves next (<see cref="TurnsOf"/>): at the first turn
     /// of a seat that moves them (<see cref="IRulesApplying.MoversOf"/>), of the army's own side, as the other side's
     /// seats do not move them for it (the designer's case of 2026-11-25: a Yellow Rook, moved on Red's turn by Red's
     /// Raja, taken by Black, who moved before Yellow, but after Red).
     /// </summary>
-    private static ImmutableDictionary<SeatId, int> ArmyTurnsOf(
+    internal static ImmutableDictionary<SeatId, int> ArmyTurnsOf(DecisionRequest request, GameState after) =>
+        ArmyTurnsFrom(request, after, TurnsOf(request, after));
+
+    private static ImmutableDictionary<SeatId, int> ArmyTurnsFrom(
         DecisionRequest request,
         GameState after,
         ImmutableDictionary<SeatId, int> turns

@@ -195,9 +195,11 @@ internal static class Appraisal
     /// <summary>
     /// What the team may still win, once its enemies have moved, by starting an exchange where an enemy piece stands
     /// (Proposed; the user's rulings of 2026-11-12, that threatened pieces move before they can be taken, and that a
-    /// fork of two enemies' pieces is worth making). Every enemy moves before the team's next turn, so: a piece
+    /// fork of two enemies' pieces is worth making). Every enemy moves before the bot's next turn, so: a piece
     /// threatened that could itself take one of the team's will take it and be gone, and wins the team nothing; and
-    /// each enemy saves the piece it would lose most that has somewhere safe to flee to (<see cref="Threat"/>), so
+    /// each enemy saves the piece it would lose most that has somewhere safe to flee to (<see cref="Threat"/>), unless
+    /// an ally attacking it moves first, on its own turn or by commanding another's army
+    /// (<see cref="Careful.ArmyTurnsOf"/>), so
     /// its other threats count in full, the most of them over the enemies; but saving it costs the enemy its turn,
     /// so each piece saved counts for <see cref="Tempo"/> of its worth besides. A fork of one enemy's pieces wins
     /// one of them; one of two enemies' wins only their turns, but both.
@@ -216,18 +218,18 @@ internal static class Appraisal
                 .SelectMany(occupant => theirs[occupant.Key])
                 .Select(attack => attack.Attacker.Id),
         ];
-        ImmutableList<(Piece Piece, int Won)> threatened =
+        ImmutableList<(CellId Cell, Piece Piece, int Won)> threatened =
         [
             .. state.Position.Occupants
                 .Where(occupant => !state.Teams.AreAllied(occupant.Value.Owner, request.Seat)
                     && !takers.Contains(occupant.Value.Id)
                 )
-                .Select(occupant => (occupant.Value, Careful.Exchange(
+                .Select(occupant => (occupant.Key, occupant.Value, Careful.Exchange(
                     request.Rules.WorthOf(occupant.Value.Kind),
                     Careful.WorthsOf(request, ours[occupant.Key]),
                     Careful.WorthsOf(request, theirs[occupant.Key])
                 )))
-                .Where(threat => threat.Item2 > 0),
+                .Where(threat => threat.Item3 > 0),
         ];
         if (threatened.IsEmpty)
         {
@@ -243,12 +245,22 @@ internal static class Appraisal
             .SelectMany(seat => request.Rules.MovesOf(state, seat))
             .ToLookup(move => move.Attacker.Id, move => move.Target);
         ImmutableHashSet<CellId> blocked = [.. ours.Select(cell => cell.Key), .. state.Position.Occupants.Keys];
+        // an ally whose army moves before the threatened piece's takes it before it can flee (plan step 1, whose move
+        // is next, 2026-11-26)
+        ImmutableDictionary<SeatId, int> turns = Careful.ArmyTurnsOf(request, state);
         ImmutableList<(int Left, int Saved)> enemies =
         [
             .. threatened
                 .GroupBy(
                     threat => threat.Piece.Owner,
-                    threat => new Threat(threat.Won, reach[threat.Piece.Id].Any(cell => !blocked.Contains(cell)))
+                    threat => new Threat(
+                        threat.Won,
+                        reach[threat.Piece.Id].Any(cell => !blocked.Contains(cell))
+                            && !ours[threat.Cell].Any(attack =>
+                                turns.GetValueOrDefault(attack.Attacker.Owner, int.MaxValue)
+                                < turns.GetValueOrDefault(threat.Piece.Owner, int.MaxValue)
+                            )
+                    )
                 )
                 .Select(Saving),
         ];
