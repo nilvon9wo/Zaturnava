@@ -59,7 +59,7 @@ public sealed class QuickArmyTest
     }
 
     [Theory]
-    [InlineData("grand-legions-small", 110, 127)]
+    [InlineData("grand-legions-small", 110, 124)]
     [InlineData("grand-legions-medium", 125, 151)]
     [InlineData("grand-legions-large", 200, 288)]
     public void BudgetOf_BeforeTheFormulaEditionOrFromIt_IsTheGamesOwnOrTheFormulas(string id, int before, int since)
@@ -103,13 +103,14 @@ public sealed class QuickArmyTest
     }
 
     [Theory]
-    [InlineData("grand-legions-small", 8)]
+    [InlineData("grand-legions-small", 6)]
     [InlineData("grand-legions-medium", 8)]
     [InlineData("grand-legions-large", 16)]
     [InlineData("grand-legions-custom", 10)]
     public void AimOf_ForEachQuickGame_IsFourFifthsOfItsKingdomRoundedUpOrItsMinimumsIfMore(string id, int expected)
     {
-        // Arrange - kingdoms of 9, 8, 18 and 12 squares, with 6, 8, 16 and 9 pieces at least (playtest 2026-11-15, E2)
+        // Arrange - kingdoms of 6, 8, 18 and 12 squares, with 6, 8, 16 and 9 pieces at least (playtest 2026-11-15, E2;
+        // the small game's kingdoms 3 × 2 since 2026-11-26, fewer than the medium's)
         QuickGame game = QuickGame.All.Single(quick => quick.Id == id);
 
         // Act
@@ -505,8 +506,8 @@ public sealed class QuickArmyTest
     [Fact]
     public void Dealt_WhenItsCreatorSetsABudget_SpendsItNotTheFormulas()
     {
-        // Arrange - the small game: kingdoms of 9 squares, 4 seats
-        QuickGame game = QuickGame.Small with { Edition = QuickArmy.ThroneKeptEdition };
+        // Arrange - the small board with kingdoms of 9 squares, more than the least of each class fill, 4 seats
+        QuickGame game = QuickGame.Small with { KingdomDepth = 3, Edition = QuickArmy.ThroneKeptEdition };
 
         // Act - a budget no army can spend before its kingdom is full, and one too small for more than the least
         ImmutableList<Placement> rich = QuickArmy.Dealt(game, 3, budget: 100_000);
@@ -780,9 +781,10 @@ public sealed class QuickArmyTest
     [Fact]
     public void Layout_WhenNoPieceOfItsPartCanMakeWay_LeavesAPieceKeptToOneColourWhereItIs()
     {
-        // Arrange - the small game's leader in its corner, a dark square; a Bishop and a Knight beside it, on a light
-        // square and a dark one; the Courtier, alone among the infantry, on a dark square at the front
-        QuickGame game = QuickGame.Small;
+        // Arrange - the small board with kingdoms 3 × 3: the leader in its corner, a dark square; a Bishop and a Knight
+        // beside it, on a light square and a dark one; the Courtier, alone among the infantry, on a dark square at the
+        // front
+        QuickGame game = QuickGame.Small with { KingdomDepth = 3 };
         ImmutableList<GrandPiece> army =
         [
             ById[GrandLegionsPieces.WesternKing],
@@ -805,8 +807,9 @@ public sealed class QuickArmyTest
     [Fact]
     public void Layout_WhereTheKingdomsTouch_PutsTheLeaderInTheOuterCorner()
     {
-        // Arrange - only the small game's kingdoms touch: 3 + 3 cells fill its side of 6
-        QuickGame game = QuickGame.Small;
+        // Arrange - kingdoms 3 × 3 on the small board touch: 3 + 3 cells fill its side of 6 (the small game's own,
+        // 3 × 2 since 2026-11-26, touch no longer)
+        QuickGame game = QuickGame.Small with { KingdomDepth = 3 };
 
         // Act
         ImmutableList<ArmyPiece> leaders = [.. Seeds.Select(seed => LeaderOf(game, seed))];

@@ -39,6 +39,17 @@ only in part, what is left is in the backlog, and its history here. The playtest
   | Medium | Any | Any |
   | Hard | The hardest | The weakest |
 
+- **The small game's kingdoms 3 × 2** ("the GL small game with a 3x3 (9) kingdom likely gets more pieces than a
+  medium game with 4x2 (8)"): it got as many, both aimed at eight. Now:
+
+  | Game | Kingdom | Cells | Pieces aimed at |
+  |---|---|---|---|
+  | Small | 3 × 2 | 6 | 6, its minimums |
+  | Medium | 4 × 2 | 8 | 8 |
+  | Large | 6 × 3 | 18 | 16 |
+
+  Changed in place: games already dealt keep their armies. The small kingdoms no longer touch (3 + 2 of the
+  side's 6), and the Western Pawn there costs 11, not 12, having further to go.
 - **The custom setup in tabs** ("too long to comfortably fit on the screen"): each group is a tab (Seats, Armies,
   Board, Pieces, Play, Players, as the game has them), one panel shown at a time, the Seats first; *Play* stays below
   them all.

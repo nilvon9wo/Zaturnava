@@ -12,7 +12,8 @@ namespace Net.NowhereAtAll.Zaturnava.Games.GrandLegions.Test;
 /// place, for every game, 2026-11-20: the throne, as the program deals it, is never on the kingdom's front rank or
 /// inner side; and the same day, the Shogi Knight added to the catalogue, which a fill on the medium and large boards
 /// may now buy; and 2026-11-25, the leader promotion bonus taken off the Lance, the Shogi Pawn, the Shogi Knight and
-/// the Man, so much cheaper. Games on the server keep what they were dealt, so replay as dealt whatever this gives.
+/// the Man, so much cheaper; and 2026-11-26, the small game's kingdoms 3 × 2. Games on the server keep what they were
+/// dealt, so replay as dealt whatever this gives.
 /// </summary>
 public sealed class QuickArmyReplayTest
 {
@@ -25,7 +26,7 @@ public sealed class QuickArmyReplayTest
     public static TheoryData<string, string> Deals =>
         new()
         {
-            { "grand-legions-small", "00DCCEB06FBD4E9D" },
+            { "grand-legions-small", "B505F4B1A5CA24F5" },
             { "grand-legions-medium", "8BE83C43E0004B3B" },
             { "grand-legions-large", "E476EE6C077C032C" },
         };
@@ -75,7 +76,7 @@ public sealed class QuickArmyReplayTest
     public static TheoryData<string, string> Fills =>
         new()
         {
-            { "grand-legions-small", "5EDA3580F2EE23D7" },
+            { "grand-legions-small", "C6F85057EB2E8F07" },
             { "grand-legions-medium", "1C19DD6F0928C956" },
             { "grand-legions-large", "94C575914396E584" },
         };

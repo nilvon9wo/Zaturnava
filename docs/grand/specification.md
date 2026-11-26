@@ -49,8 +49,9 @@ than a piece, and with points won in play to be spent on upgrades and promotions
   chosen at random or by the creator; that is a setting, never the default.
 - **Stated.** With the kingdom's size set apart from the board's, the setup can keep every
   army a distance from the enemy, and from any promotion zone.
-- **Stated.** The smallest game is a 6 × 6 board with four 3 × 3 kingdoms, which touch. Kingdoms
-  may not overlap.
+- **Stated.** The smallest game is a 6 × 6 board with four 3 × 2 kingdoms (**Stated** 2026-11-26: a
+  3 × 3 kingdom, of 9 cells, held as many pieces as the medium game's 4 × 2, of 8). Kingdoms may not
+  overlap.
 - **Stated.** There need be no largest board in the rules: some players may want 100 × 100 with
   12 × 12 kingdoms. **Stated:** the first version allows up to 26 × 26 (cells named a to z, and
   the whole board on one screen); larger boards wait for a page that zooms and scrolls, and for

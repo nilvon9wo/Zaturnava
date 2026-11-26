@@ -25,12 +25,16 @@ public sealed record QuickGame(
     public const string GameId = "grand-legions";
     public const string GameName = "Grand Legions";
 
+    /// <summary>
+    /// The small game: kingdoms 3 × 2, smaller than the medium's 4 × 2 (the user, 2026-11-26: a 3 × 3 kingdom "likely
+    /// gets more pieces than a medium game with 4x2"; both aimed at eight).
+    /// </summary>
     public static QuickGame Small { get; } = new(
         "grand-legions-small",
         "small",
         6,
         3,
-        3,
+        2,
         110,
         Counts((Leader, 1), (Heavy, 1), (Cavalry, 1), (Infantry, 3))
     );

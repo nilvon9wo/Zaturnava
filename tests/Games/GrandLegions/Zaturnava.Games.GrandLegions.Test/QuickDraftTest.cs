@@ -22,7 +22,7 @@ public sealed class QuickDraftTest
 
         // Assert - a palace's pieces offered apart, for the game's palaces
         Assert.Equal(
-            (110, 9, true),
+            (110, 6, true),
             (drafting.Budget, drafting.Kingdom.Count, drafting.PalaceBound.SetEquals(PalaceConfinement.Confined))
         );
     }
