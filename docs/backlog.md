@@ -36,7 +36,16 @@ own number (**25**, **N29**), the [2026-11-15 specification](playtesting/2026-11
   cleared by a migration, for the bot-rating job to rate them again at Grand Legions' sizes. Echo and Icarus,
   who sometimes beat Midas, measured locally with the shipped ratings held (`rate-bots.py --hold-shipped`,
   fitted as the server's job fits, 60 games a pair against the weak bots, Midas and Solomon): 1436 and 1553,
-  shipped so. Still to do: the Grand Legions sizes measured and shipped likewise (M4).
+  shipped so. Grand Legions' sizes likewise, 30 games a pair (2026-11-26), shipped:
+
+  | Size | Morpheus | Phaethon | Tantalus | Echo | Icarus |
+  |---|---|---|---|---|---|
+  | Small | 1042 | 1105 | 1134 | 1391 | 1574 |
+  | Medium | 1004 | 1025 | 1099 | 1401 | 1568 |
+  | Large | 930 | 1035 | 1100 | 1375 | 1587 |
+
+  Morpheus below Random at the large size is within the noise of 30 games: one turn in 100 as Midas is
+  almost Random. Still to do: more games a pair (an overnight run) for the Grand Legions sizes.
   *(Proposed, 2026-11-26, from the user's question whether rating bots apart from people skews them)*: a bot's
   rating comes from its games against bots alone, while a person's game against a bot moves only the person's.
   Counting people's games against a bot toward the bot's rating too would rate it by how it plays people, and
