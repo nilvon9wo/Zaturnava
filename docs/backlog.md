@@ -67,8 +67,8 @@ own number (**25**, **N29**), the [2026-11-15 specification](playtesting/2026-11
   repository, and through it the live site's ratings (M4, 2026-11-26): `rate-bots.py --hold-shipped --ship` fits
   the bots measured around those shipped, as the server does, merges them into the shipped ratings, and keeps each
   measurement, its pairs' results with it, in `docs/bots/rating-history.jsonl`, beside every one before it (M5;
-  [local-development](contribute/local-development.md#smart-app-control-windows)). Still to do: the overnight
-  cycle shipping so, and every bot rated at every ruleset.
+  [local-development](contribute/local-development.md#smart-app-control-windows)). The overnight cycle ships so
+  with `--ship` (2026-11-26). Still to do: every bot rated at every ruleset.
 
 - **Custom game options** (asked 2026-11-25), none on by default: a player whose leaders are all gone is out; a
   team with no leader left has lost; each player's idle time, set by whoever creates the game, the same for

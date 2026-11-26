@@ -2,7 +2,12 @@
 # Train and rate the bots while no one is working, under Linux, from Windows through WSL, in this checkout itself:
 #
 #     wsl -d Ubuntu -- bash scripts/wsl-overnight.sh [--cycles N] [--rulesets a,b] [--rounds N] [--games N]
-#                                                    [--continue [artifacts/overnight/<started>]]
+#                                                    [--continue [artifacts/overnight/<started>]] [--ship]
+#
+# With --ship, each tournament holds the bots already shipped at their shipped ratings and ships what it measures of
+# the others (scripts/rate-bots.py --hold-shipped --ship, M4): into src/Bots/Zaturnava.Bots/Ratings/<ruleset>.json,
+# each measurement kept in docs/bots/rating-history.jsonl, for whoever commits them next. Without it, nothing leaves
+# artifacts/.
 #
 # With --continue, it writes into that earlier run's folder (the latest, if none is named) instead of a new one,
 # and each tournament it had
@@ -21,8 +26,10 @@ rulesets="chaturaji-2027,grand-legions-small,grand-legions-medium,grand-legions-
 rounds=2
 games=100
 out=""
+ship=()
 while [ $# -gt 0 ]; do
     case "$1" in
+        --ship) ship=(--hold-shipped --ship); shift ;;
         --cycles) cycles="$2"; shift 2 ;;
         --rulesets) rulesets="$2"; shift 2 ;;
         --rounds) rounds="$2"; shift 2 ;;
@@ -67,7 +74,7 @@ while [ "$cycles" -eq 0 ] || [ "$cycle" -le "$cycles" ]; do
             || echo "   Athena's rounds failed; going on"
         echo "== cycle $cycle, $ruleset: Elo tournament ($games games)"
         python3 scripts/rate-bots.py "$runner" --ruleset "$ruleset" --games "$games" \
-            --out "$out/$ruleset-$cycle.json" \
+            --out "$out/$ruleset-$cycle.json" "${ship[@]}" \
             || echo "   the tournament failed; going on"
     done
     cycle=$((cycle + 1))

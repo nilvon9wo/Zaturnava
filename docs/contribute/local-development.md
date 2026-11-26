@@ -205,6 +205,7 @@ Options:
 | `--rounds N` | Athena's rounds per ruleset each cycle | 2 |
 | `--games N` | games per round, and per pairing in the tournament | 100 |
 | `--continue [DIR]` | go on in an earlier run's folder (the latest, if none is named), from the cycle it stopped in | a new folder |
+| `--ship` | hold the shipped bots at their ratings, and ship what each tournament measures of the others into `src/Bots/Zaturnava.Bots/Ratings/`, each measurement kept in `docs/bots/rating-history.jsonl`, for the next commit | nothing leaves `artifacts/` |
 
 A failed stage is reported, and the run goes on. Each tournament keeps every pairing's result as it
 ends, in `<ruleset>-<cycle>.json.pairs.json`, and prints it (`12/150 sage vs midas: ...`); with
