@@ -63,7 +63,15 @@ test position in `tests/Bots/` (the strategic scenarios of §15) before its weig
    to attack, defend, flee or take, besides what the ally's other pieces may do for it. Exposure takes the enemy to
    move next as if at once, and a promotion's worth as if the piece waited for Black. Both are step 1's question,
    whose move is next, asked of the promoted piece and of the army it joins: to come with step 1, and only for the
-   stronger bots.
+   stronger bots. *Turn order, done* (2026-11-26, with step 1): a promoted piece is judged in the position after
+   the promotion like any other, its exposure and its chances by when its own army moves next
+   (`Careful.ArmyTurnsOf`), so for every promotion alike (*Stated* the same day): the bot's own Pawn or an ally's,
+   into its own piece, an ally's, or, by a throne it holds, an enemy army's. *The test position played by Sage*
+   (`StrategicPositionsTest`): Black's Pawn on c8 may become Green's Elephant or its own; Red's Horse forks c8 and
+   Black's Raja, so Black spends its move on the Raja; Sage promotes into Green's, which moves before Red does, at
+   every seed tried. Found on the way: promoting is not the bot's move, so a piece promoted into its own army may
+   still act this turn, which Sage already counts; where it may, as when the new Elephant can take its attacker at
+   once, promoting into its own is better, and Sage does. Still to do: the command a promotion brings.
 3. **Pieces with a purpose.** In an endgame, pull each piece towards the enemy leader or its throne, and score the
    enemy leader's room to move (fewer cells, better). Test: two Rooks against a lone Raja reach mate. *Begun*
    (2026-11-25, with the endgame search below): the leader's room to move, and the leader attacked, are scored.
