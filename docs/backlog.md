@@ -193,15 +193,11 @@ From the specification's observations of the bots in play (F, X) and the Sage pl
   data knows only which other games play a piece (`PieceGuide.AlsoIn`), not what they call it; only Makruk's Khun,
   Met, Ma and Ruea are named, in a comment. Also to check: pieces left out as redundant that some game plays and are
   not yet marked so, which would leave its bot without them; and pieces kept twice, as each game's own: Makruk's
-  Noble (the Khon) steps as Shogi's Silver General does, the Silver alone promoting. *(Proposed)*: `AlsoIn` becomes each game's name for
-  the piece, with its source; the game's view names
-  each army's pieces by its family, if it has one; the card heads the alias, the piece's own name beneath ("Ruea,
-  Makruk's name for the Rook"). Only the family bots' armies are named so; a person's army keeps the common names.
-
-- **The lobby's own loading** (2026-11-26, after "the lobby is still insanely slow"): the server's answers are
-  timed (`scripts/time-live-api.py`), and its panels now load on their own; not yet measured in the browser: the
-  page's download, and the remembered setups it reads one at a time from the browser's storage before it lists
-  the games. Time them in the live page, and read them at once if they cost.
+  Noble (the Khon) steps as Shogi's Silver General does, the Silver alone promoting. *(Proposed)*: `AlsoIn`
+  becomes each game's name for the piece, with its source; the game's view names each army's pieces by its family,
+  if it has one; the card heads the alias, the piece's own name beneath ("Ruea, Makruk's name for the Rook"). Only
+  the family bots' armies are named so; a person's army keeps the common names. Its size (2026-11-26): the client
+  shows piece names in 13 components, and the server's game log writes them into its lines, each to name by army.
 
 - Grand Legions' lifts (**N25**, Stage 7): a badge above a piece's symbol for each kind of restriction lifted,
   once lifts are kept in the game.

@@ -20,6 +20,15 @@ only in part, what is left is in the backlog, and its history here. The playtest
   count after the server starts, it shows "?" rather than a 0 it does not know. Before this, every uncached request
   replayed every idle game, about 2.7 s.
 
+  The page itself, timed in the browser afterwards (2026-11-26, the itch page's frame):
+
+  | Load | Framework | First API answer | *New game* shown |
+  |---|---|---|---|
+  | First (3 MB downloaded) | 0.2 s | 1.2 s (catalog, sign-in) | 1.8 s after the page |
+  | Again | cached | 0.03 s | 0.5 s |
+
+  The browser's own work is small; a slow first visit is the network's (a DNS lookup took 4 s that time).
+
 - **Start rows, the kingdom's height**: in Grand Legions, the Western Pawn's start rows default to the kingdom's
   depth at every size, unless the game's creator sets others.
 
