@@ -96,5 +96,7 @@ for the overnight ratings to tune:
 | Pressing the leader | Each cell an enemy leader could flee to that the team does not attack: −0.25 of a point of material; the leader attacked: +0.5 | Sage, Tactician, Narcissus, Epimetheus; Athena and Pythia, as far as Sage's judgement counts in theirs |
 
 The pressing is the ladder mate's pattern: no table of positions, but the measure it comes from, for any board and
-any pieces. Still to do: a test of two Rooks against a lone Raja on Chaturaji 2027's board, played to the end; and
-the ratings, before and after, to see the stronger bots finish their won endgames.
+any pieces. *Tested* (2026-11-26, `StrategicPositionsTest`): two Elephants (the Rooks) and a Raja against a lone
+Raja on Chaturaji 2027's board, without dice, Sage playing every side, the lone Raja fleeing as well as Sage can: it
+is taken, and Black's team wins, within 120 decisions. Still to do: the ratings, before and after, to see the
+stronger bots finish their won endgames in real games, with dice.

@@ -100,6 +100,40 @@ public sealed class StrategicPositionsTest
         );
     }
 
+    [Fact]
+    public async Task Sage_WhenTwoElephantsFaceALoneRaja_PlaysItToTheEndAndWins()
+    {
+        // Arrange - the endgame plan's test (docs/bots/strategy-plan.md, "Endgame tables"): Black's two Elephants (the
+        // Rooks) and its Raja against Red's Raja alone in the middle, no one else on the board; Sage plays every side,
+        // so the lone Raja flees as well as Sage can
+        GameState state = this.BlackDeciding(
+            (CellAt(0, 0), new Piece(new PieceId(1), Chaturaji2027Pieces.Elephant, Black)),
+            (CellAt(7, 0), new Piece(new PieceId(2), Chaturaji2027Pieces.Elephant, Black)),
+            (CellAt(4, 0), new Piece(new PieceId(3), Chaturaji2027Pieces.Raja, Black)),
+            (CellAt(3, 4), new Piece(new PieceId(4), Chaturaji2027Pieces.Raja, Red))
+        );
+        SageBot sage = new(new Random(7));
+
+        // Act
+        int decisions = 0;
+        while (state.Outcome is null && decisions < MostEndgameDecisions)
+        {
+            SeatId seat = state.DecidingSeat!.Value;
+            DecisionRequest request = new(this._rules, state, seat, this._rules.LegalActions(state));
+            state = this._rules.Apply(state, await sage.Decide(request, this._cancellation)).State;
+            decisions++;
+        }
+
+        // Assert
+        Assert.Equal(
+            (true, true),
+            (state.Outcome is not null, state.Outcome?.Winners.Contains(Black) == true)
+        );
+    }
+
+    /// <summary>How many decisions, every seat's, the endgame test allows before calling it not converted.</summary>
+    private const int MostEndgameDecisions = 120;
+
     private static CellId CellAt(int column, int row) => new((row * Side) + column);
 
     /// <summary>Black to decide, without dice, with only these pieces on the board.</summary>
