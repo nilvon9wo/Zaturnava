@@ -24,8 +24,13 @@ own number (**25**, **N29**), the [2026-11-15 specification](playtesting/2026-11
   50, 20 and 10, when they play as Midas. Rated live (2026-11-25): Morpheus 1379, Phaethon 1582, Tantalus 1582,
   Echo 1432, Icarus 1556 - out of order, as each was rated only against the shipped bots, and one that beats Random
   and loses to Midas fits any rating between. So the new bots now play each other too, and are rated together, the
-  shipped ratings held. Still to do: once re-rated, tune their shares so that they fall between 1000 and 1200, a
-  step apart.
+  shipped ratings held. Re-rated live (2026-11-26): Morpheus 1696, Phaethon and Tantalus 1700, Echo 1740, still
+  near Midas (1727). The bots were not at fault, but the fit: it added a draw between every pair played, and
+  with two games a pair, a bot that lost every game to the 20 strong bots had half a win against each. Measured
+  locally, 60 games a pair, Random held at 1000: Morpheus 1083, Phaethon 1192, Tantalus 1311, Echo 1574 - a
+  real progression, two below 1200. Now one draw is added for each new bot, against a bot at 1000, so the live
+  ratings should fall in line as they are fitted again. Still to do: check them live; if a third below 1200 is
+  still wanted, a bot of its own (changing Tantalus's share would mix its old games with new ones).
 - **M1–M5** Offline tournaments and training. *Begun* (2026-11-19): `scripts/wsl-overnight.sh` trains Athena and
   rates every bot, cycle after cycle, until stopped, each round kept as it ends
   ([local-development](contribute/local-development.md#smart-app-control-windows)). A tournament stopped

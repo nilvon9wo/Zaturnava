@@ -54,9 +54,10 @@ public sealed class BotRatingFitTest
     }
 
     [Fact]
-    public void Around_WhenTheBotWonAsOftenAsItLostAgainstOneRatedBot_RatesItAsThatBot()
+    public void Around_WhenTheBotWonAsOftenAsItLostAgainstOneRatedBot_RatesItNearThatBotTheAddedDrawPullingDown()
     {
-        // Arrange - sage, as second, won 2 and lost 2 against argus at 1500
+        // Arrange - sage, as second, won 2 and lost 2 against argus at 1500; its one added draw, against a bot at
+        // 1000, pulls it a little below
         ImmutableList<BotMatchup> matchups = [new("chess", "argus", "sage") { Won = 2, Lost = 2 }];
 
         // Act
@@ -64,7 +65,30 @@ public sealed class BotRatingFitTest
             BotRatingFit.Around(ImmutableDictionary<string, int>.Empty.Add("argus", 1500), matchups);
 
         // Assert
-        Assert.Equal(ImmutableDictionary<string, int>.Empty.Add("sage", 1500), ratings);
+        Assert.Equal(ImmutableDictionary<string, int>.Empty.Add("sage", 1426), ratings);
+    }
+
+    [Fact]
+    public void Around_WhenAWeakBotLostEveryGameToManyStrongBots_RatesItByItsGamesNotNearThem()
+    {
+        // Arrange (2026-11-26, live: Morpheus, at random but for one turn in 50, rated 1696, by 2 games against each
+        // of 20 bots near 2400, each pair with a draw added) - morpheus won 1 and lost 1 against random, and lost both
+        // its games to each of the strong
+        ImmutableDictionary<string, int> held = Enumerable.Range(0, 20)
+            .ToImmutableDictionary(index => $"strong{index}", _ => 2400)
+            .Add("random", 1000);
+        ImmutableList<BotMatchup> matchups =
+        [
+            new("chess", "morpheus", "random") { Won = 1, Lost = 1 },
+            .. Enumerable.Range(0, 20)
+                .Select(index => new BotMatchup("chess", "morpheus", $"strong{index}") { Lost = 2 }),
+        ];
+
+        // Act
+        ImmutableDictionary<string, int> ratings = BotRatingFit.Around(held, matchups);
+
+        // Assert - level with random, as its games against it say
+        Assert.InRange(ratings["morpheus"], 950, 1050);
     }
 
     [Theory]
@@ -125,7 +149,7 @@ public sealed class BotRatingFitTest
         // Act
         ImmutableDictionary<string, int> ratings = BotRatingFit.Around(held, matchups);
 
-        // Assert - about the middle of random and midas, as alone each would rate, but tantalus 145 above morpheus
-        Assert.Equal((1291, 1436), (ratings["morpheus"], ratings["tantalus"]));
+        // Assert - between random and midas, as alone each would rate, but tantalus 158 above morpheus
+        Assert.Equal((1250, 1408), (ratings["morpheus"], ratings["tantalus"]));
     }
 }

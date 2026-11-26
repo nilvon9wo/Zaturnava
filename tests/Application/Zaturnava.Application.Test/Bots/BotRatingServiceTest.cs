@@ -111,7 +111,7 @@ public sealed class BotRatingServiceTest
 
         // Assert
         Assert.Equal(
-            (EndedRules.RulesetId, "a ended 1000, other 1000; b ended 1400, other 1400; c ended 1378"),
+            (EndedRules.RulesetId, "a ended 1000, other 1000; b ended 1400, other 1400; c ended 1425"),
             (string.Join(",", rated), Listed(bots))
         );
     }

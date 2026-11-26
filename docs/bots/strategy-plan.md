@@ -46,7 +46,12 @@ test position in `tests/Bots/` (the strategic scenarios of §15) before its weig
    safe, it does, an ally's leader back on the board. Sage already weighs it, through its exposure: a piece put
    where it would be taken counts as lost. The bots that judge a promotion by the piece's value alone (Midas's
    greed, and those weaker) still may, as their character allows. Still to do: the promoted piece's command (whose
-   pieces it brings back under whose control), which exposure does not see.
+   pieces it brings back under whose control), which exposure does not see; and turn order (*Stated* 2026-11-26:
+   "smarter bots won't just consider whether it is safe to promote, but turn order: it might be advantageous for
+   black to promote to green if it can rely on green attacking or defending something before black would get its
+   next move"). Exposure takes the enemy to move next as if at once; a promoted piece whose own army moves before
+   that enemy may act first, take, defend or flee, and so is safer than it looks. This is step 1's question, whose
+   move is next, asked of the promoted piece: to come with step 1, and only for the stronger bots.
 3. **Pieces with a purpose.** In an endgame, pull each piece towards the enemy leader or its throne, and score the
    enemy leader's room to move (fewer cells, better). Test: two Rooks against a lone Raja reach mate. *Begun*
    (2026-11-25, with the endgame search below): the leader's room to move, and the leader attacked, are scored.
