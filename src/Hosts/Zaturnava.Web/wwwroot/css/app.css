@@ -733,6 +733,22 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
     animation: none;
 }
 
+/* a restriction bought off (specification §8): a badge each, teal for where it goes, violet for how it moves */
+.piece[class] rect.lift-badge {
+    stroke: #ffffff;
+    stroke-width: 0.03;
+    filter: none;
+    animation: none;
+}
+
+.piece[class] rect.lift-area {
+    fill: #1a8f8a;
+}
+
+.piece[class] rect.lift-movement {
+    fill: #7b4fc9;
+}
+
 .cell-name text {
     font-size: 0.15px;
     fill: var(--muted);

@@ -173,8 +173,9 @@ From the specification's observations of the bots in play (F, X) and the Sage pl
 ## 4. Grand Legions: rules still to come
 
 - Stage 5: upgrades and promotions bought in play, in a palace with the player's own leader on its throne,
-  lowering the score; lifts bought in the draft, and kept in the game; the four-throne bonus, once for each set
-  of leaders; bots that spend.
+  lowering the score; lifts bought in the draft, and kept in the game (*begun* 2026-11-26: area lifts; movement
+  lifts wait on [Q-L](open-questions.md#q-l-what-does-each-movement-lift-let-a-piece-do-asked-2026-11-26)); the
+  four-throne bonus, once for each set of leaders; bots that spend.
 - Stage 2: saved settings, named, shared and copied to edit ([specification §2.1](grand/specification.md#21-saved-settings)).
 - *(Stated 2026-11-12)* **Kingdoms placed by the players**, as a setting of the game's creator, before their
   palace, throne and pieces; probably still keeping to the board's corners, more or less, so that no later player
@@ -182,8 +183,8 @@ From the specification's observations of the bots in play (F, X) and the Sage pl
 - **3** Variant pieces: two Chinese-chess-like elephants, one confined by two rivers dividing the board in four,
   a dearer one that may cross them; the boat to be replaced. *Found covered* (2026-11-26): the confined one is the
   Xiangqi Elephant (worth 1), which may not cross a river, and a game with both rivers divides the board in four;
-  Grand Legions has no Boat. The dearer one is the same Elephant with its river bought off (its lift, priced in
-  the [catalogue](grand/pieces.md)), which waits on Stage 5's lifts above; the Alfil (worth 2) leaps freely now.
+  Grand Legions has no Boat. The dearer one is the same Elephant with its river bought off (its lift of 3, priced in
+  the [catalogue](grand/pieces.md)), bought in the draft since 2026-11-26; the Alfil (worth 2) leaps freely now.
 - Stage 7: playtest, and act on what it asks: the Chaturaji 2027 bonuses, the leader bonus of 60, the Pawns'
   promotion premiums ([pieces](grand/pieces.md#still-open)) (**Q14**).
 

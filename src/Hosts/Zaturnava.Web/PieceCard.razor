@@ -92,6 +92,7 @@
         }
         @* the rules' limits, which a lift may remove, apart from the move's own, which nothing lifts (2026-11-19) *@
         @this.Listed("restrictions", "Restrictions", kind.Restrictions)
+        @this.Listed("lifted", "Bought off", [.. this.Piece.Lifted.Select(LiftedOf)])
         @this.Listed("weaknesses", "Weaknesses", kind.Weaknesses)
     }
 </aside>
@@ -136,6 +137,10 @@
         await (firstRender ? this.Browser.MakeDraggable(this._card) : ValueTask.CompletedTask);
 
     private string Named(string text) => PieceStyle.Named(text, this.Pieces);
+
+    /// <summary>A restriction bought off, for people: "Its limit on where it goes".</summary>
+    private static string LiftedOf(string lift) =>
+        lift == "area" ? "Its limit on where it goes" : "Its limit on how it moves";
 
     /// <summary>A heading and its list, the list classed <paramref name="name"/>; nothing, for an empty list.</summary>
     private RenderFragment Listed(string name, string heading, ImmutableList<string> lines) =>

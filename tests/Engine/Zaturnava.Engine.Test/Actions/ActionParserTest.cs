@@ -85,6 +85,8 @@ public sealed class ActionParserTest
         new ThroneAction(new SeatId(1), new CellId(2)),
         new DraftAction(new SeatId(1), new PieceKindId("rook"), new CellId(3)),
         new UndraftAction(new SeatId(2), new CellId(4)),
+        new LiftAction(new SeatId(2), new CellId(4), LiftKind.Area),
+        new LiftAction(new SeatId(1), new CellId(5), LiftKind.Movement),
         new FillArmyAction(new SeatId(3)),
     ];
 
@@ -135,6 +137,24 @@ public sealed class ActionParserTest
 
         // Assert
         Assert.Equal("The 'draft' action needs a kind for 'piece'.", exception.Message);
+    }
+
+    [Fact]
+    public void Parse_WhenALiftNamesNoRestrictionItKnows_ThrowsMalformedActionException()
+    {
+        // Arrange
+        ActionDescriptor descriptor = new(
+            LiftAction.Kind,
+            ImmutableSortedDictionary<string, string>.Empty.Add("actor", "1").Add("home", "7").Add("restriction", "x")
+        );
+
+        // Act
+        MalformedActionException exception = Assert.Throws<MalformedActionException>(
+            () => ActionParser.Standard.Parse(descriptor)
+        );
+
+        // Assert
+        Assert.Equal("The 'lift' action needs 'movement' or 'area' for 'restriction'.", exception.Message);
     }
 
     [Fact]

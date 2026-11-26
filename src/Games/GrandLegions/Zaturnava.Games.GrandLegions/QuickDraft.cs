@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.ComponentModel.DataAnnotations;
+using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
 using Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
 using static Net.NowhereAtAll.Zaturnava.Games.GrandLegions.PieceClass;
 
@@ -34,7 +35,23 @@ public static class QuickDraft
             Terrains = [.. Enumerable.Range(0, (int)Rivers.Both + 1)],
             PalaceBound = PalaceConfinement.Confined,
             BudgetAt = edition => QuickArmy.BudgetOf(game with { Edition = edition }),
+            LiftPrice = LiftPriceOf,
         };
+
+    /// <summary>
+    /// What buying off a kind's restriction costs (the catalogue's lift): so far only an area restriction the board
+    /// holds a piece by, a palace's or a river's (<see cref="PalaceConfinement"/>, <see cref="RiverCrossing"/>), as the
+    /// rules know what a piece does without those; a movement restriction, and the Janggi Soldier's palace lines, not
+    /// yet (Proposed, 2026-11-26).
+    /// </summary>
+    public static int? LiftPriceOf([Required] PieceKindId kind, LiftKind restriction) =>
+        restriction == LiftKind.Area
+            ? GrandLegionsPieces.ById[kind].Restrictions
+                .FirstOrDefault(each =>
+                    each.Kind == RestrictionKind.Area && (each.IsConfining || each.Terrain == Terrain.River)
+                )
+                ?.Lift
+            : null;
 
     /// <summary>
     /// The rest of an army, drafted at random. From nothing (a throne is set before any piece), as the program deals

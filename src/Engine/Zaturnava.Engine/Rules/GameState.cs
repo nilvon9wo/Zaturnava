@@ -249,6 +249,16 @@ public sealed record GameState(
     /// </summary>
     public ImmutableHashSet<PieceId> Shared { get; init; } = [];
 
+    /// <summary>
+    /// The restrictions bought off (specification §7): each for one piece, while it is still the kind it was bought
+    /// for; a piece promoted into another kind has the new kind's restrictions, none lifted.
+    /// </summary>
+    public ImmutableHashSet<Lift> Lifts { get; init; } = [];
+
+    /// <summary>Whether <paramref name="piece"/>, as its kind, has <paramref name="restriction"/> lifted.</summary>
+    public bool IsLifted(Piece piece, LiftKind restriction) =>
+        this.Lifts.Contains(new Lift(piece.Id, piece.Kind, restriction));
+
     /// <summary>A proposal to end the game, waiting on the deciding seat's answer; null if none is.</summary>
     public EndProposal? Proposal { get; init; }
 

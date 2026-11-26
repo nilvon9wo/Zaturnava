@@ -42,6 +42,31 @@ public sealed class RiverCrossingTest
         Assert.Equal(mayMove, isAllowed);
     }
 
+    [Fact]
+    public void On_WhenAXiangqiElephantsAreaRestrictionWasBoughtOff_LetsItCrossTheRiver()
+    {
+        // Arrange - as above, on a side of 8, to column 4, across the river: the Elephant's lift bought
+        const int column = 4;
+        QuickGame game = QuickGame.Medium with { Width = 8, KingdomWidth = 3, KingdomDepth = 3 };
+        Piece piece = new(new PieceId(1), GrandLegionsPieces.XiangqiElephant, new SeatId(0));
+        GameState state = new(Position.Empty, [], TeamGraph.FromTeams([]), null, 0, [], [])
+        {
+            Terrain = 1,
+            Lifts = [new Lift(piece.Id, piece.Kind, LiftKind.Area)],
+        };
+        SquareGridTopology grid = new(8, 8);
+
+        // Act
+        bool isAllowed = RiverCrossing.On(game)(
+            state,
+            grid,
+            new Move(piece, grid.CellAt(column - 2, 1), grid.CellAt(column, 3), null)
+        );
+
+        // Assert
+        Assert.True(isAllowed);
+    }
+
     [Theory]
     [InlineData(8, 16, 18, true)]
     [InlineData(8, 16, 10, false)]

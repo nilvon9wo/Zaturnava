@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Globalization;
 using Net.NowhereAtAll.Zaturnava.Client;
 using Net.NowhereAtAll.Zaturnava.Contracts;
 
@@ -477,6 +478,52 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
                 ),
                 buying.Seats.All(seat => seat.Chances.IsEmpty),
                 done.DecidingSeat
+            )
+        );
+    }
+
+    [Fact]
+    public async Task Submit_WhenADrafterBuysOffAGuardsConfinement_ShowsTheLiftOfferedAndThenOnThePiece()
+    {
+        // Arrange - Yellow places its palace, sets its throne in its middle and buys a Janggi Guard, out of turn
+        GameCreatedDto created = await this._client.Create(
+            new CreateGameRequest("grand-legions-large", [null, null, "random", "random"])
+            {
+                IsDrafted = true,
+                IsDraftSecret = true,
+            },
+            this._cancellation
+        );
+        string gameId = created.GameId;
+        _ = await this._client.Claim(gameId, 0, null, null, this._cancellation);
+        string yellow = (await this._client.Claim(gameId, 1, null, null, this._cancellation)).Token;
+        GameViewDto first = await this._client.Get(gameId, yellow, this._cancellation);
+        ActionDto palace = first.LegalActions.First(action => action.Kind == "palace");
+        _ = await this._client.Submit(gameId, yellow, palace, this._cancellation);
+        _ = await this.Decided(
+            gameId,
+            yellow,
+            action => action.Kind == "throne" && action.Arguments["home"] == palace.Arguments["home"]
+        );
+        _ = await this.Decided(
+            gameId,
+            yellow,
+            action => action.Kind == "draft" && action.Arguments["piece"] == "janggi-guard"
+        );
+        GameViewDto buying = await this._client.Get(gameId, yellow, this._cancellation);
+        ActionDto lift = buying.LegalActions.Single(action => action.Kind == "lift");
+        int at = int.Parse(lift.Arguments["home"], CultureInfo.InvariantCulture);
+
+        // Act
+        GameViewDto lifted = await this._client.Submit(gameId, yellow, lift, this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            ("Lift a limit on where it goes", "Guard (Janggi): lift its limit on where it goes, for 5", "area"),
+            (
+                lift.Choice,
+                lift.Label,
+                string.Join(",", lifted.Pieces.Single(piece => piece.Cell == at).Lifted)
             )
         );
     }

@@ -147,7 +147,7 @@ internal static class GameViews
             snapshot.State.ActingFor?.Value,
             [.. snapshot.Rules.Topology.Cells.Select(cell => CellOf(snapshot.Rules.Topology, thrones, cell))],
             [.. shown.Position.Occupants.OrderBy(entry => entry.Key.Value)
-                .Select(entry => PieceOf(snapshot.Rules, entry.Key, entry.Value) with
+                .Select(entry => PieceOf(snapshot.Rules, shown, entry.Key, entry.Value) with
                 {
                     Diagram = snapshot.Rules.DiagramAt(shown, entry.Key) is { } standing ? DiagramOf(standing) : null,
                     IsMercenary = snapshot.Rules.IsMercenary(shown, entry.Value),
@@ -478,11 +478,21 @@ internal static class GameViews
         return new CellDto(cell.Value, layout.X, layout.Y, layout.Shape, throne, topology.NameOf(cell));
     }
 
-    private static PieceDto PieceOf(IRulesApplying rules, CellId cell, Piece piece) =>
+    private static PieceDto PieceOf(IRulesApplying rules, GameState state, CellId cell, Piece piece) =>
         new(piece.Id.Value, piece.Kind.Value, rules.NameOf(piece.Kind), piece.Owner.Value, cell.Value)
         {
             Mark = MarkOf(rules, piece.Kind),
+            Lifted = LiftedOf(state, piece),
         };
+
+    /// <summary>The restrictions bought off for <paramref name="piece"/>, as the kind it is: "area".</summary>
+    private static ImmutableList<string> LiftedOf(GameState state, Piece piece) =>
+    [
+        .. GameLog.LimitOf.Keys
+            .Order()
+            .Where(restriction => state.IsLifted(piece, restriction))
+            .Select(LiftAction.ArgumentOf),
+    ];
 
     private static PieceMarkDto? MarkOf(IRulesApplying rules, PieceKindId kind) =>
         rules.MarkOf(kind) is { } mark ? new PieceMarkDto(mark.Emblem, mark.Letters) { Class = mark.Class } : null;
@@ -637,6 +647,7 @@ internal static class GameViews
                 ThroneAction throne when snapshot.State.Thrones!.ContainsKey(throne.Actor) => "Move your throne",
                 ThroneAction => "Your throne",
                 UndraftAction => "Take back a piece",
+                LiftAction lift => $"Lift a limit on {GameLog.LimitOf[lift.Restriction]}",
                 DraftAction draft => $"{snapshot.Rules.NameOf(draft.Piece)}, {snapshot.Rules.WorthOf(draft.Piece)}",
                 _ => null,
             },
@@ -672,6 +683,7 @@ internal static class GameViews
             (AnswerEndAction { Agrees: true }, _, _) => "Agree to end the game",
             (AnswerEndAction, _, _) => "Keep playing",
             (FillArmyAction, _, _) => "Fill the rest of my army at random, and be done",
+            (LiftAction lift, _, _) => LiftOf(snapshot, lift),
             (PassAction, _, _) when snapshot.State.Draft is { } draft =>
                 $"Done drafting: keep the {draft.Left[action.Actor]} points left as my score",
             (PassAction, _, _) when snapshot.State.Jumping is not null => "Stop jumping",
@@ -687,6 +699,15 @@ internal static class GameViews
                 $"{HiredOf(snapshot, deploy)}, to {snapshot.Rules.Topology.NameOf(deploy.Home)}",
             _ => null,
         };
+
+    /// <summary>"Elephant (Xiangqi): lift its limit on where it goes, for 3".</summary>
+    private static string LiftOf(GameSnapshot snapshot, LiftAction lift)
+    {
+        RestrictionLifted lifted =
+            snapshot.Rules.Apply(snapshot.State, lift).Events.OfType<RestrictionLifted>().First();
+        return $"{snapshot.Rules.NameOf(lifted.Kind)}: lift its limit on {GameLog.LimitOf[lift.Restriction]}, for "
+            + $"{lifted.Price}";
+    }
 
     /// <summary>"Hire Yellow's Dragon Horse (Shogi), your prisoner, for 19 points: it becomes yours".</summary>
     private static string HireOf(GameSnapshot snapshot, HireAction hire)
