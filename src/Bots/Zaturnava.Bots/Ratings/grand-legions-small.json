@@ -1,14 +1,14 @@
 {
+  "phaethon": 947,
+  "morpheus": 968,
   "random": 1000,
-  "morpheus": 1023,
-  "phaethon": 1041,
-  "tantalus": 1106,
-  "echo": 1349,
-  "icarus": 1568,
-  "midas": 1748,
-  "solomon": 1823,
-  "argus": 2131,
-  "athena": 2273,
-  "sage": 2289,
-  "tactician": 2289
+  "tantalus": 1056,
+  "echo": 1241,
+  "icarus": 1395,
+  "solomon": 1667,
+  "midas": 1689,
+  "argus": 1966,
+  "athena": 1968,
+  "tactician": 2000,
+  "sage": 2027
 }
