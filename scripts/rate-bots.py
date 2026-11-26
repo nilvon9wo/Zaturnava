@@ -15,11 +15,12 @@ With --out, each pair's result is also kept, as it ends, in <out>.pairs.json; ru
 --ruleset, --games and --max-steps, a tournament stopped mid-way plays only the pairs it had not finished.
 With --hold-shipped, the bots the server ships rated at the ruleset keep those ratings, and only the others are
 fitted, around them, as the server's bot-rating job fits them: so that local games, more of them than the server
-plays, rate new bots on the scale it ships (M4); only those fitted are written.
+plays, rate new bots on the scale it ships (M4); only those fitted are written. With --free, the bots named are
+fitted afresh though shipped, to measure them again.
 
 Usage: rate-bots.py RUNNER [--bots argus,echo,...] [--games 50] [--max-steps 2000]
                            [--ruleset chaturaji-2027] [--out ratings.json] [--jobs N]
-                           [--bot-assembly MyBots.dll] [--hold-shipped]
+                           [--bot-assembly MyBots.dll] [--hold-shipped [--free morpheus,...]]
 """
 
 import argparse
@@ -201,6 +202,7 @@ def main():
     parser.add_argument("--jobs", type=int, default=os.cpu_count())
     parser.add_argument("--bot-assembly")
     parser.add_argument("--hold-shipped", action="store_true")
+    parser.add_argument("--free")
     options = parser.parse_args()
     runner = [options.runner] + (["--bot-assembly", options.bot_assembly] if options.bot_assembly else [])
     bots = options.bots.split(",") if options.bots else known(runner, options.ruleset)
@@ -237,7 +239,9 @@ def main():
         record = dict(zip(pairs, pool.map(played, pairs)))
     for (a, b), (won, lost, drawn, seconds) in record.items():
         print(f"{a} vs {b}: won {won}, lost {lost}, drawn {drawn}, in {seconds:.0f} s", file=sys.stderr)
-    held = shipped(options.ruleset) if options.hold_shipped else {}
+    freed = set(options.free.split(",")) if options.free else set()
+    held = {bot: rating for bot, rating in shipped(options.ruleset).items() if bot not in freed} \
+        if options.hold_shipped else {}
     ratings = fit_around(bots, record, held) if held else fit(bots, record)
     text = json.dumps(dict(sorted(ratings.items(), key=lambda rating: rating[1])), indent=2) + "\n"
     if options.out:
