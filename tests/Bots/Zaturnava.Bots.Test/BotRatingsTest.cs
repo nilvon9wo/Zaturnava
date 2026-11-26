@@ -14,7 +14,7 @@ public sealed class BotRatingsTest
 
         // Assert
         Assert.Equal(
-            ("argus,athena,midas,morpheus,phaethon,random,sage,solomon,tactician,tantalus", 1000),
+            ("argus,athena,echo,icarus,midas,morpheus,phaethon,random,sage,solomon,tactician,tantalus", 1000),
             (string.Join(",", rated.Keys.Order(StringComparer.Ordinal)), rated[RandomBot.BotId])
         );
     }
