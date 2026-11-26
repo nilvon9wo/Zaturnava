@@ -43,9 +43,10 @@ test position in `tests/Bots/` (the strategic scenarios of §15) before its weig
    dearest piece; but it took each army to move on its own seat's turn only. Now an army moves at the first turn of
    any seat of its side that commands it (`IRulesApplying.MoversOf`: its own, a Raja on its throne, an ally with a
    Raja while it has none), so an enemy army commanded by an enemy who moves first threatens at once
-   (`StrategicPositionsTest`: Yellow's Elephant, commanded by Red, who moves before Black). Still to do: the chances
-   the bot sees (`Appraisal.Threats`), which still take every enemy to move before the team's next turn, judged by
-   the turn order too; and, with step 2, the promoted piece's army and its turn.
+   (`StrategicPositionsTest`: Yellow's Elephant, commanded by Red, who moves before Black). The chances the bot sees
+   (`Appraisal.Threats`) likewise (2026-11-26): an enemy piece an ally attacks, whose army moves after that ally's,
+   is taken before it can flee, and counts in full; Sage against Argus, 260 games each way, won 65% so, 63% before
+   (within the noise: no worse). Still to do, with step 2: the promoted piece's army and its turn.
 2. **Promotion with eyes open.** Judge a promotion by the promoted piece's safety on its cell, its owner, and the
    command it brings. Test: the Pawn promoted into an attacked Raja. *The test position played by Sage*
    (2026-11-26, `StrategicPositionsTest`): a Black Pawn on its far edge may become Green's Raja or Black's own

@@ -75,7 +75,9 @@ own number (**25**, **N29**), the [2026-11-15 specification](playtesting/2026-11
   board, an ally with leaders commanding them as now. Still open: whether its pieces held prisoner may escape back
   onto the board, and whether a leader of its brought back, by ransom or escape, brings the player back in.
 - **Janggi Soldier's card** (2026-11-25): the palace's diagonals were not shown as moves or captures. The server's
-  diagram has them (cells 48 and 50 from 39); to check on the live card.
+  diagram has them (cells 48 and 50 from 39), and the card draws every cell the diagram lists as a move or capture
+  (`MoveDiagramView.ClassOf`, 2026-11-26), so the card should show them. Not seen live: none of the 20 newest live
+  games holds the Soldier (2026-11-26). To check in the next game dealt one.
 
 ## 2. Bots that play well
 
@@ -178,6 +180,20 @@ From the specification's observations of the bots in play (F, X) and the Sage pl
   promotion premiums ([pieces](grand/pieces.md#still-open)) (**Q14**).
 
 ## 5. Look, feel and players
+
+- **Pieces under their own game's names** (asked 2026-11-26, low priority, "nice to have"): a family bot (Naresuan,
+  say) playing an army of its game's pieces shows them by that game's names (the Western Rook as Makruk's Ruea), and
+  the card makes clear the name is an alias. Makruk is only the example (the user, 2026-11-26: "there are likely
+  similar gaps for pieces for other games"): seven pieces are played by other games too (`.Also` in
+  `GrandLegionsPieces`: the Western King by Makruk and Shogi, the Rook by Makruk, Shogi, Xiangqi and Janggi, the
+  Knight, the Courtier, the Xiangqi Horse by Janggi, and others), and every family's names are wanted. The pieces'
+  data knows only which other games play a piece (`PieceGuide.AlsoIn`), not what they call it; only Makruk's Khun,
+  Met, Ma and Ruea are named, in a comment. Also to check: pieces left out as redundant that some game plays and are
+  not yet marked so, which would leave its bot without them; and pieces kept twice, as each game's own: Makruk's
+  Noble (the Khon) steps as Shogi's Silver General does, the Silver alone promoting. *(Proposed)*: `AlsoIn` becomes each game's name for
+  the piece, with its source; the game's view names
+  each army's pieces by its family, if it has one; the card heads the alias, the piece's own name beneath ("Ruea,
+  Makruk's name for the Rook"). Only the family bots' armies are named so; a person's army keeps the common names.
 
 - **The lobby's own loading** (2026-11-26, after "the lobby is still insanely slow"): the server's answers are
   timed (`scripts/time-live-api.py`), and its panels now load on their own; not yet measured in the browser: the
