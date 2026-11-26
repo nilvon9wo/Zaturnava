@@ -51,6 +51,18 @@ public sealed record Chaturaji2027Variant(
     /// </summary>
     public ImmutableHashSet<PieceKindId> Triumphant { get; init; } = [];
 
+    /// <summary>
+    /// How each kind moves once its movement restriction is bought off (specification §7), in place of its own
+    /// movement: none, unless set.
+    /// </summary>
+    public ImmutableDictionary<PieceKindId, ImmutableList<MovementRule>> MovementLifted { get; init; } = [];
+
+    /// <summary>
+    /// The moves a kind gains once its area restriction is bought off, where the board's rules alone do not give them
+    /// (the Janggi Soldier's forward diagonals, off its palace lines): none, unless set.
+    /// </summary>
+    public ImmutableDictionary<PieceKindId, ImmutableList<MovementRule>> AreaLiftAdds { get; init; } = [];
+
     /// <summary>How many cells up the board is: as many as across, a square, unless set.</summary>
     public int Height
     {

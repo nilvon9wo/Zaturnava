@@ -236,6 +236,8 @@ public static class GrandLegionsRules
             MayMove = MayMoveOn(game),
             RiverBound = [GrandLegionsPieces.XiangqiElephant],
             SidewaysAcrossRiver = [GrandLegionsPieces.XiangqiSoldier],
+            MovementLifted = LiftedMoves.Movement,
+            AreaLiftAdds = LiftedMoves.AreaAdds,
         };
 
     /// <summary>What the board lets a piece do in <paramref name="game"/>: cross a river, and leave a palace.</summary>

@@ -170,7 +170,9 @@ public static class GrandLegionsPieces
         Piece(JanggiSoldier, "Soldier (Janggi)", Infantry, Janggi, ForwardStep, Sideways())
             .Restricted(
                 Moves(NeverBack, 2),
-                Area("Diagonally only along palace lines", 2)
+                // lifted, it steps diagonally forward anywhere: two cells' reach more, and a point, as every lift
+                // (2026-11-26)
+                Area("Diagonally only along palace lines", 3)
             ),
         Piece(Minister, "Minister", Infantry, Fairy, OrthogonalStep),
         Piece(Courtier, "Courtier", Infantry, Fairy, DiagonalStep)
@@ -270,7 +272,8 @@ public static class GrandLegionsPieces
             )
             .Restricted(Moves("Must hop exactly one piece, and never a Cannon", 3)),
         Piece(Grasshopper, "Grasshopper", Artillery, Fairy, MovementRule.Hop(DirectionSets.Any, 1))
-            .Restricted(Moves("Must hop, landing just beyond", 3)),
+            // lifted, it steps as the King too: eight cells' reach more, and a point, as every lift (2026-11-26)
+            .Restricted(Moves("Must hop, landing just beyond", 9)),
         Piece(
                 Man,
                 "Man",

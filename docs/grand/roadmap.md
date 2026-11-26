@@ -262,8 +262,10 @@ drawn simply, a shape for its class and a letter for its kind.
   it is that kind; a piece promoted into another has the new kind's restrictions. Taking the piece back refunds its
   lift too; an army drafted for all gives each copy its lifts. Each lifted restriction is badged on the piece and
   listed on its card. *Proposed*: a piece a palace holds is still placed in the palace, as it is bought before its
-  lift; the Janggi Soldier's palace lines and every **movement** restriction are not yet offered, since what each
-  piece does without them is still to be settled ([open questions](../open-questions.md)).
+  lift. *Done* (2026-11-26, *Stated*): every **movement** lift, and the Janggi Soldier's palace lines, each moving as
+  [pieces](pieces.md#catalogue) tables it (`LiftedMoves`; the Lance's through its own pieces by
+  `MovementRule.PassesOwn`); and taking a piece scores its lifts' cost as well as its value. Still to come: lifts
+  bought in play.
 - Promotion by a piece's own condition, free; Infantry promoting at the far edge, into its own
   promotion or any captured piece; every promotion optional, and able to wait while its condition
   holds. *Done* (2026-11-06, `PromoteOwnAction`, `OwnPromotion`): a Western Pawn on the last row may

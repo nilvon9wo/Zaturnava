@@ -18,7 +18,8 @@ public sealed class MoveGenerator(ICellNavigating topology, ImmutableDictionary<
 
     /// <summary>
     /// The moves of the piece on <paramref name="from"/>: a jump, a chain of them, ending wherever it may stop; or, if
-    /// <paramref name="isJumpByJump"/>, one jump alone, as each is played apart.
+    /// <paramref name="isJumpByJump"/>, one jump alone, as each is played apart. It moves as its kind does, or as
+    /// <paramref name="movement"/> says, where a restriction of its is bought off.
     /// </summary>
     /// <exception cref="ArgumentException">No piece stands on <paramref name="from"/>.</exception>
     public ImmutableList<Move> MovesFrom(
@@ -26,7 +27,8 @@ public sealed class MoveGenerator(ICellNavigating topology, ImmutableDictionary<
         CellId from,
         [Required] Seat ownerSeat,
         [Required] Func<Piece, bool> isCapturable,
-        bool isJumpByJump = false
+        bool isJumpByJump = false,
+        ImmutableList<MovementRule>? movement = null
     )
     {
         Piece mover = PieceOn(position, from);
@@ -34,21 +36,27 @@ public sealed class MoveGenerator(ICellNavigating topology, ImmutableDictionary<
         {
             IsJumpByJump = isJumpByJump,
         };
-        return [.. this._pieceKinds[mover.Kind].Movement.SelectMany(search.MovesFor)];
+        return [.. (movement ?? this._pieceKinds[mover.Kind].Movement).SelectMany(search.MovesFor)];
     }
 
     /// <summary>
     /// The cells the piece on <paramref name="from"/> could capture on, were there a piece to take on each:
-    /// those it guards, as well as those it threatens. Whether it may capture what is there is not asked.
+    /// those it guards, as well as those it threatens. Whether it may capture what is there is not asked. It moves
+    /// as its kind does, or as <paramref name="movement"/> says, where a restriction of its is bought off.
     /// </summary>
     /// <exception cref="ArgumentException">No piece stands on <paramref name="from"/>.</exception>
-    public ImmutableList<Attack> AttacksFrom([Required] Position position, CellId from, [Required] Seat ownerSeat)
+    public ImmutableList<Attack> AttacksFrom(
+        [Required] Position position,
+        CellId from,
+        [Required] Seat ownerSeat,
+        ImmutableList<MovementRule>? movement = null
+    )
     {
         Piece attacker = PieceOn(position, from);
         Reach reach = new(this._topology, position, from, ownerSeat);
         return
         [
-            .. this._pieceKinds[attacker.Kind].Movement
+            .. (movement ?? this._pieceKinds[attacker.Kind].Movement)
                 .Where(rule => rule.CanCapture)
                 .SelectMany(rule => rule.IsJumping ? reach.JumpedFor(rule) : reach.CellsFor(rule))
                 .Distinct()
@@ -176,7 +184,7 @@ file sealed record Reach(ICellNavigating Topology, Position Position, CellId Fro
         ray
             .Select((cell, index) => new RayStep(cell, index + 1, ray.Take(index), [this.From, .. ray.Take(index)]))
             .Where(step => step.Distance >= rule.MinimumDistance)
-            .Where(step => rule.IsLeaping || this.IsClear(step.PathBefore))
+            .Where(step => rule.IsLeaping || this.IsClear(step.PathBefore, rule.PassesOwn))
             .Where(step => !rule.IsLame || step.LegStarts.All(start => this.IsLegClear(start, direction)))
             .Select(step => step.Cell);
 
@@ -209,6 +217,12 @@ file sealed record Reach(ICellNavigating Topology, Position Position, CellId Fro
     }
 
     private bool IsClear(IEnumerable<CellId> path) => path.All(cell => this.Position.PieceAt(cell) is null);
+
+    /// <summary>Whether no piece stands on the path, but, if <paramref name="passesOwn"/>, the owner's own.</summary>
+    private bool IsClear(IEnumerable<CellId> path, bool passesOwn) =>
+        path.All(cell =>
+            this.Position.PieceAt(cell) is not { } piece || (passesOwn && piece.Owner == this.OwnerSeat.Id)
+        );
 }
 
 /// <summary>Jumps made one after another: where the last landed, the cells jumped, and what is left standing.</summary>
