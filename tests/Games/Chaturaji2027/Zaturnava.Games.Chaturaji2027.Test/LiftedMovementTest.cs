@@ -67,6 +67,50 @@ public sealed class LiftedMovementTest
         Assert.Equal(expected, moves);
     }
 
+    [Theory]
+    [InlineData(false, false, -1)]
+    [InlineData(true, false, 4)]
+    [InlineData(false, true, 12)]
+    [InlineData(true, true, 8)]
+    public void LiftedDiagramAt_ForAHorseWithLiftsBought_DrawsHowItThenMoves(bool isFreed, bool isLoosed, int expected)
+    {
+        // Arrange
+        ImmutableHashSet<Lift> lifts =
+        [
+            .. isFreed ? [new Lift(Mover, Chaturaji2027Pieces.Horse, LiftKind.Movement)] : Array.Empty<Lift>(),
+            .. isLoosed ? [new Lift(Mover, Chaturaji2027Pieces.Horse, LiftKind.Area)] : Array.Empty<Lift>(),
+        ];
+        GameState state = this.Horse() with { Lifts = lifts };
+
+        // Act
+        MoveDiagram? diagram = this._rules.LiftedDiagramAt(state, D4);
+
+        // Assert - none, without a lift
+        Assert.Equal(expected, diagram?.Moves.Count ?? -1);
+    }
+
+    [Theory]
+    [InlineData(27)]
+    [InlineData(28)]
+    public void LiftedDiagramAt_WhereNoPieceWithAMovementLiftTheVariantTellsOfStands_DrawsNothing(int cell)
+    {
+        // Arrange - a Raja's movement lifted, which the variant gives no move for; and an empty square
+        GameState state = this.Horse() with
+        {
+            Lifts = [new Lift(new PieceId(4), Chaturaji2027Pieces.Raja, LiftKind.Movement)],
+        };
+        state = state with
+        {
+            Position = state.Position.Place(D4, new Piece(new PieceId(4), Chaturaji2027Pieces.Raja, Black)),
+        };
+
+        // Act
+        MoveDiagram? diagram = this._rules.LiftedDiagramAt(state, new CellId(cell));
+
+        // Assert
+        Assert.Null(diagram);
+    }
+
     [Fact]
     public void Apply_WhenAPieceWithALiftIsTaken_ScoresItsWorthAndWhatItsLiftCost()
     {

@@ -103,6 +103,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     private readonly FaceOff _faceOff;
     private readonly MoveDiagrams _diagrams;
     private readonly PowerDiagrams _powers;
+    private readonly LiftedDiagrams _lifted;
     private readonly ArmyDrafting? _drafting;
 
     /// <summary>The rules on each board size a game has been set to, made once each.</summary>
@@ -156,6 +157,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             this._variant.SidewaysAcrossRiver,
             this._variant.Drafting?.PalaceBound ?? []
         );
+        this._lifted = new LiftedDiagrams(this._variant);
         this._powers = new PowerDiagrams(this._variant, kind => this._variant.Names[kind]);
         this._dice = dice;
         this._idleRounds = idleRounds;
@@ -692,6 +694,15 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     /// </summary>
     public bool IsMercenary([Required] GameState state, [Required] Piece piece) =>
         this._mercenaries.IsMercenary(state, piece);
+
+    public MoveDiagram? LiftedDiagramAt([Required] GameState state, CellId cell) =>
+        state.Position.PieceAt(cell) is { } piece
+            ? this._lifted.Of(
+                piece.Kind,
+                state.IsLifted(piece, LiftKind.Movement),
+                state.IsLifted(piece, LiftKind.Area)
+            )
+            : null;
 
     public MoveDiagram? DiagramAt([Required] GameState state, CellId cell) =>
         state.Position.PieceAt(cell) is { } piece && this._variant.PalaceSteppers.Contains(piece.Kind)
@@ -1421,9 +1432,24 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         return (prisoner.Piece, state with { Prisoners = state.Prisoners.Remove(prisoner) });
     }
 
-    /// <summary>The piece becomes the kind its own promotion names, still itself, and its army's.</summary>
-    private static (Piece Into, GameState State) Become(GameState state, PromoteOwnAction promote) =>
-        (state.Position.PieceAt(promote.Cell)! with { Kind = promote.Becomes }, state);
+    /// <summary>
+    /// The piece becomes the kind its own promotion names, still itself, and its army's; keeping each lift bought for
+    /// it that the kind it becomes has one of too (2026-11-26: "If a lifted piece is promoted; the promoted piece can
+    /// keep the lift (only if/as/when it makes sense)"), the rest gone with what it was.
+    /// </summary>
+    private (Piece Into, GameState State) Become(GameState state, PromoteOwnAction promote)
+    {
+        Piece piece = state.Position.PieceAt(promote.Cell)!;
+        Piece into = piece with { Kind = promote.Becomes };
+        ImmutableList<Lift> kept =
+        [
+            .. LiftKinds
+                .Where(restriction => state.IsLifted(piece, restriction))
+                .Where(restriction => this._variant.Drafting!.LiftPrice(into.Kind, restriction) is not null)
+                .Select(restriction => new Lift(into.Id, into.Kind, restriction)),
+        ];
+        return (into, state with { Lifts = [.. state.Lifts.Where(lift => lift.Piece != piece.Id), .. kept] });
+    }
 
     /// <summary>
     /// The piece becomes <paramref name="becoming"/>'s piece - unless that leaves only Rajas on the board.
@@ -1846,7 +1872,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         Transition entered = isInField
             ? this.EnteredThrone(new Transition(state, []), piece with { Kind = promote.Becomes }, promote.Cell)
             : new Transition(state, []);
-        Transition promoted = this.Promoted(entered.State, promote, Become(entered.State, promote));
+        Transition promoted = this.Promoted(entered.State, promote, this.Become(entered.State, promote));
         return promoted with { Events = [.. promoted.Events.Take(1), .. entered.Events, .. promoted.Events.Skip(1)] };
     }
 

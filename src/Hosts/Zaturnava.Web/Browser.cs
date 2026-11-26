@@ -27,6 +27,7 @@ internal sealed class Browser(IJSRuntime js, IGameServing games)
     private const string CardsKey = "zaturnava.cards";
     private const string CardPlaceKey = "zaturnava.card-place";
     private const string CardCapturesKey = "zaturnava.card-captures";
+    private const string CardLiftsKey = "zaturnava.card-lifts";
     private const string LogKey = "zaturnava.log";
     private const string ChatOrderKey = "zaturnava.chat-order";
     private const string AiTalkKey = "zaturnava.ai-talk";
@@ -57,8 +58,8 @@ internal sealed class Browser(IJSRuntime js, IGameServing games)
     /// </summary>
     private static readonly ImmutableHashSet<string> Kept =
     [
-        ThemeKey, SoundKey, SafetyKey, PiecesKey, CardsKey, CardCapturesKey, LogKey, ChatOrderKey, AiTalkKey,
-        PreviewKey, SetupKey, GamesListKey, LeaderboardKey,
+        ThemeKey, SoundKey, SafetyKey, PiecesKey, CardsKey, CardCapturesKey, CardLiftsKey, LogKey, ChatOrderKey,
+        AiTalkKey, PreviewKey, SetupKey, GamesListKey, LeaderboardKey,
     ];
 
     private readonly IJSRuntime _js = js;
@@ -143,6 +144,14 @@ internal sealed class Browser(IJSRuntime js, IGameServing games)
     public async ValueTask<bool> AreCardCapturesShown() => await this.Load(CardCapturesKey) == Shown;
 
     public ValueTask SetCardCapturesShown(bool isShown) => this.Save(CardCapturesKey, isShown ? Shown : Hidden);
+
+    /// <summary>
+    /// Whether a piece card draws a piece with its restrictions bought off as it then moves: so, unless the player
+    /// last chose otherwise (2026-11-26: "defaulted to on, but remember user's last choice").
+    /// </summary>
+    public async ValueTask<bool> AreCardLiftsShown() => await this.Load(CardLiftsKey) != Hidden;
+
+    public ValueTask SetCardLiftsShown(bool isShown) => this.Save(CardLiftsKey, isShown ? Shown : Hidden);
 
     /// <summary>
     /// Lets the player drag the piece card by its header wherever they like; it opens where they last put it.

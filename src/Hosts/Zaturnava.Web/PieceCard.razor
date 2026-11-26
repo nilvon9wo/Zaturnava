@@ -7,6 +7,7 @@
    powers, those every piece of its sort has (common) apart from its own (special), and what holds it back, each as
    the ruleset tells it. A kind the ruleset tells nothing of shows its owner and square alone. The player may drag
    the card by its header wherever they like; it opens where they last put it. *@
+@using System.Globalization
 @inject Browser Browser
 
 <aside class="piece-card" aria-label="About this piece" @ref="this._card">
@@ -56,7 +57,15 @@
     </dl>
     @if (this.Kind is { } kind)
     {
-        @if ((this.Piece.Diagram ?? kind.Diagram) is { Side: > 0 } diagram)
+        @if (this.Piece.LiftedDiagram is not null)
+        {
+            <label class="show-lifts" title="Draw how it moves with the limits bought off for it">
+                <input type="checkbox" checked="@this._isLiftShown" @onchange="this.ShowLifts" />
+                With lifts
+            </label>
+        }
+        @if (((this._isLiftShown ? this.Piece.LiftedDiagram : null) ?? this.Piece.Diagram ?? kind.Diagram)
+             is { Side: > 0 } diagram)
         {
             <MoveDiagramView Diagram="diagram"
                              Piece="this.Piece"
@@ -99,6 +108,7 @@
 
 @code {
     private ElementReference _card;
+    private bool _isLiftShown = true;
 
     [Parameter, EditorRequired]
     public PieceDto Piece { get; set; } = null!;
@@ -135,6 +145,16 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender) =>
         await (firstRender ? this.Browser.MakeDraggable(this._card) : ValueTask.CompletedTask);
+
+    /// <summary>Opens drawing a piece's lifts if the player last left them so, or never chose.</summary>
+    protected override async Task OnInitializedAsync() => this._isLiftShown = await this.Browser.AreCardLiftsShown();
+
+    /// <summary>Its lifts drawn, or not, as every card opens from now on.</summary>
+    private async Task ShowLifts(ChangeEventArgs change)
+    {
+        this._isLiftShown = Convert.ToBoolean(change.Value, CultureInfo.InvariantCulture);
+        await this.Browser.SetCardLiftsShown(this._isLiftShown);
+    }
 
     private string Named(string text) => PieceStyle.Named(text, this.Pieces);
 

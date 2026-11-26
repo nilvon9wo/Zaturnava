@@ -8,6 +8,22 @@ only in part, what is left is in the backlog, and its history here. The playtest
 
 ## Asked 2026-11-26
 
+- **A less neutral End Game** (the user): the button reads Declare Victory, Propose Draw or Concede Defeat, as the
+  team stands on points; pale amber while the game is open, going towards bright green or red as the others are
+  likely to agree, by points and material; flashing for a sure thing; and a player asked is asked "Accept Victory?",
+  "Accept Draw?" or "Accept Defeat?". *Done* ([rules §10](rules.md)): how sure is the stronger side's points and
+  pieces' worth over the weaker's, on a log scale, past doubt at ten times (*Proposed*); a sure thing, ten times the
+  points and ten times the pieces' worth (*Proposed*).
+- **Lifts on the piece cards** (the user): a toggle to draw how a piece moves with its lifts, on unless the player
+  last turned it off. *Done*: "With lifts", above the drawing, for a piece with a lift.
+- **A promoted piece keeps its lift, where it makes sense** (the user). *Done*: where the kind it becomes has a
+  restriction of the same sort to buy off ([specification §6.2](grand/specification.md#62-points-scoring-and-spending)).
+- **Athena's night learning stopped on the small Grand Legions board** (the user's overnight log: the BotRunner's
+  `--learn` exited 2). The network of round 4 no longer fitted the position encoder, which sized a network by the
+  kinds the first seed dealt, so that a rebuild after the catalogue changed what that seed deals made it unreadable;
+  and a network so sized never saw the kinds other deals gave. *Done*: the encoder counts every kind the ruleset
+  plays. The night's Grand Legions networks start again (Chaturaji 2027's, the one shipped, is unchanged).
+
 - Stage 2: choosing a quick setup for one's own kingdom in a game set up by hand. *Found done* (2026-11-26), with
   the draft: a player drafting their own army may have the rest filled at any point; from an empty kingdom, that is
   the army a quick game would deal them ([roadmap](grand/roadmap.md)).

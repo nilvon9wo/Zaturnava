@@ -124,6 +124,19 @@ public sealed class RulesApplyingTest
     }
 
     [Fact]
+    public void LiftedDiagramAt_WhenTheRulesetSaysNoOther_DrawsNothing()
+    {
+        // Arrange
+        OneSizeRules rules = new();
+
+        // Act
+        MoveDiagram? diagram = LiftedDiagramAt(rules, OneSizeRules.State, new CellId(0));
+
+        // Assert
+        Assert.Null(diagram);
+    }
+
+    [Fact]
     public void LinesOfAndTerrainOf_WhenTheRulesetSaysNoOther_AreNone()
     {
         // Arrange
@@ -455,6 +468,10 @@ public sealed class RulesApplyingTest
     private static MoveDiagram? DiagramAt<TRules>(TRules rules, GameState state, CellId cell)
         where TRules : IRulesApplying =>
         rules.DiagramAt(state, cell);
+
+    private static MoveDiagram? LiftedDiagramAt<TRules>(TRules rules, GameState state, CellId cell)
+        where TRules : IRulesApplying =>
+        rules.LiftedDiagramAt(state, cell);
 
     private static (int Lines, string? Terrain) BoardOf<TRules>(TRules rules, GameState state)
         where TRules : IRulesApplying =>

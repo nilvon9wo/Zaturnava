@@ -898,6 +898,17 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
 }
 .diagram-options { gap: 4px 14px; font-size: 0.85rem; }
 .diagram-options label { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; cursor: pointer; }
+/* a piece card's switch to draw its lifts, in the violet of a movement lift's badge */
+.piece-card .show-lifts {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+    margin: 10px 0 0;
+    font-size: 0.85rem;
+    color: #7b4fc9;
+    cursor: pointer;
+}
 .diagram-toggles button { padding: 3px 10px; font-size: 0.85rem; border-radius: 999px; }
 .diagram-toggles button[aria-pressed="true"] { background: var(--accent); color: var(--panel); }
 .diagram-play .play-example {
@@ -1129,14 +1140,27 @@ body:has(> #app > .lobby) { padding-bottom: 0; }
 .end-area .action.hand-over.seat-1 { background: var(--seat-1); color: var(--seat-1-ink); border-color: var(--seat-1); }
 .end-area .action.hand-over.seat-2 { background: var(--seat-2); color: var(--seat-2-ink); border-color: var(--seat-2); }
 .end-area .action.hand-over.seat-3 { background: var(--seat-3); color: var(--seat-3-ink); border-color: var(--seat-3); }
-/* Ending the game: always there and plain to see, but a muted red, never the call to action (2026-11-19). */
+/* Ending the game: always there and plain to see, never the call to action (2026-11-19); pale amber while the game
+   is open, going towards bright green for a victory, red for a defeat, as far as the others are likely to agree
+   (--certainty, set on it), and flashing for a sure thing (2026-11-26). */
 .end-game {
-    background: color-mix(in srgb, var(--danger) 35%, var(--panel));
-    color: var(--ink);
-    border-color: color-mix(in srgb, var(--danger) 60%, var(--panel));
+    --end-open: #f6dfa4;
+    --end-towards: var(--end-open);
+    background: color-mix(in srgb, var(--end-towards) var(--certainty, 0%), var(--end-open));
+    color: #2a2116;
+    border-color: color-mix(in srgb, var(--end-towards) 70%, #8a6a1f);
     font-weight: 600;
 }
-.end-game:hover { border-color: var(--danger); }
+.end-game.victory { --end-towards: #2fd35a; }
+.end-game.defeat { --end-towards: #ef3b3b; }
+.end-game:hover { border-color: #2a2116; }
+.end-game.sure { animation: end-sure 1.2s ease-in-out infinite; }
+@keyframes end-sure {
+    50% { filter: brightness(1.25); box-shadow: 0 0 0 3px color-mix(in srgb, var(--end-towards) 60%, transparent); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .end-game.sure { animation: none; box-shadow: 0 0 0 3px var(--end-towards); }
+}
 
 /* The safety off, so that the player may take their own team's pieces: red, and said at the table too. */
 button.safety.off {

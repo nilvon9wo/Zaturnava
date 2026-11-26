@@ -24,4 +24,10 @@ public sealed record PieceDto(int Id, string Kind, string Name, int Owner, int C
     /// The restrictions bought off for it (specification §7), each "movement" or "area"; none, if none was.
     /// </summary>
     public ImmutableList<string> Lifted { get; init; } = [];
+
+    /// <summary>
+    /// How it moves with those restrictions bought off, drawn, for its card to show if the player likes; none, for a
+    /// piece with none, or a server that draws nothing.
+    /// </summary>
+    public MoveDiagramDto? LiftedDiagram { get; init; }
 }

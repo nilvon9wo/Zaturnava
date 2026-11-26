@@ -15,8 +15,10 @@ namespace Net.NowhereAtAll.Zaturnava.Bots.Learning;
 /// rows from its own edge; the prisoners each seat holds of each army, by kind; the scores; whose decision
 /// it is; the dice rolled and not used, and whether the game waits on more; who has given up their turns,
 /// and who has retired; and what Sage counts (<see cref="Appraisal.FeaturesOf"/>). Most are nothing, so a
-/// position is given as only those that are not, by index, in order. The kinds of piece are those the game
-/// starts with; one it does not start with is not seen.
+/// position is given as only those that are not, by index, in order. The kinds of piece are every kind the
+/// ruleset plays (<see cref="IRulesApplying.Kinds"/>), and those a game starts with: not those of one deal alone
+/// (2026-11-26: a Grand Legions network sized by the armies its first seed dealt saw none of the kinds other deals
+/// gave, and fitted no longer once the catalogue changed what that seed deals, which stopped a night's learning).
 /// </summary>
 /// <remarks>
 /// The board is summed up, not given square by square: a network that weighs each square learns, from the
@@ -56,6 +58,7 @@ public sealed class PositionEncoder
         [
             .. initial.Position.Occupants.Values
                 .Select(piece => piece.Kind)
+                .Concat(rules.Kinds)
                 .Distinct()
                 .OrderBy(kind => kind.Value, StringComparer.Ordinal),
         ];

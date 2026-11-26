@@ -760,7 +760,15 @@ both the triumphing player and their ally may move each other's Boat.
     player who chose not to wait passes on all their turns from then on,
     unless, and until, their ally may be their regent (§6.2), who then takes
     those turns for them.
-  - *(Stated 2026-10-26)* Once they have given up their turns, the End game
+  - *(Stated 2026-11-26)* The button says what ending now would mean for the
+    player's team, by points alone: **Declare Victory**, **Propose Draw** or
+    **Concede Defeat**. It is pale amber while the game is open, going
+    towards bright green for a victory, or red for a defeat, as far as the
+    others are likely to agree, by points and pieces left together; a sure
+    thing (*Proposed*: ten times the points and ten times the pieces' worth)
+    flashes. A player asked is asked as it is for them: **Accept Victory?**,
+    **Accept Draw?** or **Accept Defeat?**
+  - *(Stated 2026-10-26)* Once they have given up their turns, the end
     button becomes a green **Rejoin game** button, which takes their turns
     back: they are in the game again, playing their own turns.
   - *(Stated 2026-11-04)* A player who has given up their turns is still

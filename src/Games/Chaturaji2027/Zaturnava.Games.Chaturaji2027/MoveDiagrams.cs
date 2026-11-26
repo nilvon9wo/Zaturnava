@@ -173,7 +173,7 @@ internal sealed class MoveDiagrams(
     }
 
     /// <summary>The kind drawn on an open board, no river nor palace about it.</summary>
-    private MoveDiagram Open(PieceKindId kind) =>
+    public MoveDiagram Open(PieceKindId kind) =>
         this._open.GetOrAdd(kind, open => this.Draw(open, isOnTerrain: false));
 
     private MoveDiagram Draw(PieceKindId kind, bool isOnTerrain)

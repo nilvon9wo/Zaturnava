@@ -309,7 +309,9 @@ on, with what follows in place of the Raja-and-dice parts.
 
 - **Stated (2026-11-26, replacing "upgrades bought for it add nothing").** Capturing a piece scores its value as
   listed in the catalogue, and what the lifts bought for it cost. A promoted piece scores as what it was promoted
-  into, not what it was, and its lifts no longer count, being the old kind's.
+  into, not what it was. *Stated (2026-11-26)*: a promoted piece keeps a lift where it makes sense, that is, where
+  the kind it becomes has a restriction of the same sort (on how it moves, or on where it goes) to be bought off;
+  the rest go with what it was. *Proposed*: a kept lift is then worth what that kind's lift costs.
 - **Stated.** Points may be spent, in play, on:
   - **upgrades** for an upgradable piece, lifting its restrictions;
   - **promotions** for a promotable piece, at the full value of the piece it becomes (nothing off
@@ -416,6 +418,11 @@ commanding every piece, a ransom's point for each prisoner, 2 for a Raja) were r
   it. Its value shows that, by the share of the board it can reach ([pieces.md](pieces.md#binding)).
 - **Stated.** A piece whose restriction is lifted stays the piece it was: it keeps its kind, and
   only has more legal moves, the restriction no longer applying to it.
+- **Stated (2026-11-26).** Lifts may be bought for pieces they were not first designed for, where they make
+  sense. *Proposed*, as read: a lift belongs to a restriction, not to the kind first given it; any piece whose kind
+  has a restriction of that sort may buy it off, as one promoted into such a kind does (§6.2).
+- **Stated (2026-11-26).** A piece's card draws how it moves with its lifts, unless the player turns that off; the
+  card remembers the player's last choice.
 
 ## 8. The page
 
