@@ -5,10 +5,17 @@ namespace Net.NowhereAtAll.Zaturnava.Server.Composition;
 /// <summary>
 /// Counts the games over in their players' standings (<see cref="StandingService.RateFinished"/>), looking every
 /// <see cref="StandingSweeper.Interval"/> while the server runs: one look at a time, the next timed from the end of
-/// the last, so that no game is counted twice.
+/// the last, so that no game is counted twice; and, every <see cref="AbandonedEvery"/>, the games abandoned
+/// (<see cref="StandingService.CountAbandoned"/>), kept for the leaderboards.
 /// </summary>
 internal sealed class StandingSweeper : IHostedService, IDisposable
 {
+    /// <summary>
+    /// How often the games abandoned are counted again, in the background (Proposed): a game counts as abandoned only
+    /// after a day, so a minute late is nothing, and no leaderboard asked for waits on the count.
+    /// </summary>
+    public static readonly TimeSpan AbandonedEvery = TimeSpan.FromMinutes(1);
+
     private readonly IServiceScopeFactory _scopes;
     private readonly Interval _interval;
     private readonly Timer _timer;
@@ -41,11 +48,18 @@ internal sealed class StandingSweeper : IHostedService, IDisposable
         try
         {
             using IServiceScope scope = this._scopes.CreateScope();
-            int rated = await scope.ServiceProvider.GetRequiredService<StandingService>()
-                .RateFinished(CancellationToken.None);
+            StandingService standings = scope.ServiceProvider.GetRequiredService<StandingService>();
+            StandingCache cache = scope.ServiceProvider.GetRequiredService<StandingCache>();
+            int rated = await standings.RateFinished(CancellationToken.None);
+            if (cache.AbandonedCountedAt is not { } counted
+                || scope.ServiceProvider.GetRequiredService<TimeProvider>().GetUtcNow() - counted >= AbandonedEvery)
+            {
+                cache.KeepAbandoned(await standings.CountAbandoned(CancellationToken.None));
+            }
+
             if (rated > 0)
             {
-                scope.ServiceProvider.GetRequiredService<StandingCache>().Forget();
+                cache.Forget();
             }
         }
         finally

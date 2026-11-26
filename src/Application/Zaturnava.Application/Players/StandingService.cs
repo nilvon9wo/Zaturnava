@@ -81,14 +81,19 @@ public sealed class StandingService(
 
     /// <summary>
     /// The players standing highest at <paramref name="game"/> (a ruleset's game id), each by name, best first, with
-    /// how many of its games they have abandoned: at most <see cref="MostLeaders"/>.
+    /// how many of its games they have abandoned, as <paramref name="abandoned"/> last counted them
+    /// (<see cref="CountAbandoned"/>): at most <see cref="MostLeaders"/>. Only the standings kept as each game ended
+    /// are read, never a game (the user, 2026-11-26: "loading the leaderboard should not need to replay games").
     /// </summary>
-    public async Task<ImmutableList<Leader>> Leaders([Required] string game, CancellationToken cancellationToken)
+    public async Task<ImmutableList<Leader>> Leaders(
+        [Required] string game,
+        [Required] ImmutableDictionary<PlayerId, int> abandoned,
+        CancellationToken cancellationToken
+    )
     {
         ImmutableList<Standing> leaders = await this._players.Leaders(game, MostLeaders, cancellationToken);
         ImmutableDictionary<PlayerId, string> names =
             await this._players.Names([.. leaders.Select(standing => standing.Player)], cancellationToken);
-        ImmutableDictionary<PlayerId, int> abandoned = await this.Abandoned(game, cancellationToken);
         return
         [
             .. leaders
@@ -136,33 +141,41 @@ public sealed class StandingService(
     }
 
     /// <summary>
-    /// How many games of <paramref name="game"/> each player has abandoned, as they stand now (Stated): games not
+    /// How many games each player has abandoned, by what each game is rated as, as they stand now (Stated): games not
     /// over, untouched for <see cref="AbandonedAfter"/>, with no guest at them (such a game is let go instead), waiting
     /// for that player to decide at a seat they play themselves, not their AI. Once they move, it counts no more.
+    /// Counted in the background, from time to time, and kept (<see cref="StandingCache"/>), never as a leaderboard is
+    /// asked for; and from each record's summary, never replaying a game.
     /// </summary>
-    private async Task<ImmutableDictionary<PlayerId, int>> Abandoned(string game, CancellationToken cancellationToken)
+    public async Task<ImmutableDictionary<string, ImmutableDictionary<PlayerId, int>>> CountAbandoned(
+        CancellationToken cancellationToken
+    )
     {
         ImmutableList<GameRecord> idle =
             await this._games.Idle(this._time.GetUtcNow() - AbandonedAfter, cancellationToken);
         return idle
             .Where(record => !record.Controllers.Any(controller => controller.IsGuest))
-            .Select(record => this.AwaitedPlayer(record, game))
-            .OfType<PlayerId>()
-            .GroupBy(player => player)
-            .ToImmutableDictionary(players => players.Key, players => players.Count());
+            .Select(this.Awaited)
+            .OfType<(string Game, PlayerId Player)>()
+            .GroupBy(awaited => awaited.Game, StringComparer.Ordinal)
+            .ToImmutableDictionary(
+                games => games.Key,
+                games => games
+                    .GroupBy(awaited => awaited.Player)
+                    .ToImmutableDictionary(players => players.Key, players => players.Count()),
+                StringComparer.Ordinal
+            );
     }
 
     /// <summary>
-    /// The player a game of <paramref name="game"/> waits for, at a seat they play themselves: by the seat its record
-    /// keeps as deciding, and the game it is rated as by its ruleset and its first action, without replaying it (a
-    /// leaderboard replaying every idle game took seconds, the user's report of 2026-11-26: the lobby slow).
+    /// The game a record is rated as, by its ruleset and its first action, and the player it waits for, at a seat they
+    /// play themselves, by the seat it keeps as deciding.
     /// </summary>
-    private PlayerId? AwaitedPlayer(GameRecord record, string game) =>
-        this._rulesets.All.FirstOrDefault(ruleset => ruleset.Id == record.RulesetId) is { } rules
-        && RatedAs(rules.GameId, ScenarioStart.AreDiceOff(record.Actions)) == game
-        && record.Deciding is { } seat
-        && record.Controllers[seat.Value] is HumanSeat { IsAi: false } human
-            ? human.Claimant
+    private (string Game, PlayerId Player)? Awaited(GameRecord record) =>
+        (this._rulesets.All.FirstOrDefault(ruleset => ruleset.Id == record.RulesetId), record.Deciding) is
+        ({ } rules, { } seat)
+        && record.Controllers[seat.Value] is HumanSeat { IsAi: false, Claimant: { } player }
+            ? (RatedAs(rules.GameId, ScenarioStart.AreDiceOff(record.Actions)), player)
             : null;
 
     private GameSnapshot? Replayed(GameRecord game) =>

@@ -11,8 +11,13 @@ only in part, what is left is in the backlog, and its history here. The playtest
 - **The lobby, insanely slow** (the user): "A player shouldn't need to see the leaderboard to start a new game."
   *Done*: the lobby's panels load each on their own. *New game*, the games list and the leaderboard show as soon
   as the catalog arrives, without first waiting to learn who is signed in or for the games to be listed. Whether
-  *New game* starts open follows the games listed last. A people leaderboard no longer replays every idle game to
-  count the abandoned ones: it reads each game's saved summary. That had cost about 2.7 s cold.
+  *New game* starts open follows the games listed last.
+
+  "The loading the leaderboard should not need to replay games!" *Done*: a leaderboard reads only the ratings stored
+  as each game ended, never a game. Ratings come only from finished games. The abandoned-games count shown beside
+  them (games waiting a day for that player's move) is counted in the background once a minute, from each game's
+  saved summary, without replaying anything, and kept; a leaderboard shows it as last counted. Before this, every
+  uncached request replayed every idle game, about 2.7 s.
 
 - **Start rows, the kingdom's height**: in Grand Legions, the Western Pawn's start rows default to the kingdom's
   depth at every size, unless the game's creator sets others.

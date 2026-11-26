@@ -513,7 +513,7 @@ public sealed class StandingServiceTest
         StandingService service = this.Service(new EndedRules(EndedRules.State([])), null);
 
         // Act
-        ImmutableList<Leader> leaders = await service.Leaders("chess", this._cancellation);
+        ImmutableList<Leader> leaders = await service.Leaders("chess", [], this._cancellation);
 
         // Assert
         Assert.Equal("Bea 1550, Ada 1450", string.Join(", ", leaders.Select(l => $"{l.Name} {l.Standing.Elo}")));
@@ -559,18 +559,41 @@ public sealed class StandingServiceTest
             null
         );
 
-        // Act
-        ImmutableList<Leader> leaders = await service.Leaders(EndedRules.RulesetId, this._cancellation);
-        ImmutableList<Leader> overLeaders = await service.Leaders("over", this._cancellation);
+        StandingCache cache = new(TimeProvider.System);
+
+        // Act - counted in the background, kept, then read by each leaderboard
+        cache.KeepAbandoned(await service.CountAbandoned(this._cancellation));
+        ImmutableList<Leader> leaders =
+            await service.Leaders(EndedRules.RulesetId, cache.AbandonedAt(EndedRules.RulesetId), this._cancellation);
+        ImmutableList<Leader> overLeaders =
+            await service.Leaders("over", cache.AbandonedAt("over"), this._cancellation);
 
         // Assert
         Assert.Equal(
-            ("Ada 2, Bea 0", "Ada 0"),
+            ("Ada 2, Bea 0", "Ada 0", true),
             (
                 string.Join(", ", leaders.Select(leader => $"{leader.Name} {leader.Abandoned}")),
-                string.Join(", ", overLeaders.Select(leader => $"{leader.Name} {leader.Abandoned}"))
+                string.Join(", ", overLeaders.Select(leader => $"{leader.Name} {leader.Abandoned}")),
+                cache.AbandonedCountedAt is not null
             )
         );
+    }
+
+    [Fact]
+    public async Task Leaders_WhenGamesWaitForAPlayer_ReadsNoGameButTheAbandonedAsGiven()
+    {
+        // Arrange - a game waiting on Ada for a day, but the count given says none (the user, 2026-11-26: "loading the
+        // leaderboard should not need to replay games"; eventual consistency is fine)
+        await this._players.Add(new Player(Ada, "Ada", []), this._cancellation);
+        await this._players.Keep([new Standing(Ada, EndedRules.RulesetId) { Elo = 1550 }], this._cancellation);
+        await this._games.Add(Waiting("first", new HumanSeat("ada", Ada)), this._cancellation);
+        StandingService service = this.Service(new EndedRules(EndedRules.State([])), null);
+
+        // Act
+        ImmutableList<Leader> leaders = await service.Leaders(EndedRules.RulesetId, [], this._cancellation);
+
+        // Assert
+        Assert.Equal("Ada 0", string.Join(", ", leaders.Select(leader => $"{leader.Name} {leader.Abandoned}")));
     }
 
     [Fact]
