@@ -12,8 +12,9 @@ only in part, what is left is in the backlog, and its history here. The playtest
   ([rules §9](rules.md#9-boat-triumph)): a Boat moved to make one of every army's Boat on the four cells of a 2 x 2
   square takes the other team's Boats there. *Stated* (the user's answer the same day): it is the capturing Boats,
   the triumphing team's, that the triumphing player and their ally may both move, until each is captured; and the
-  team scores three times what the captured Boats would score taken one by one. *Proposed*: the triumphing player
-  twice, their ally once; only a Boat's move makes a triumph.
+  team scores three times what the captured Boats would score taken one by one, the triumphing player twice and
+  their ally once. *Stated* (the user's next word, the same day): a Boat moved, escaping or promoted onto the square
+  makes a triumph, one ransomed home does not; a freed Boat is no longer shared.
 
   | Boats taken (worth 2 each) | Triumphing player | Ally | Team |
   |---|---|---|---|

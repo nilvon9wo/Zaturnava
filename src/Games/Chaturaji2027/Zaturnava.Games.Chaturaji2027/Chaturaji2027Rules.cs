@@ -1406,7 +1406,11 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             Position = state.Position.Place(promote.Cell, becoming.Into),
             PromotionDue = null,
         };
-        Transition transition = new(promoted, [new PiecePromoted(pawn, becoming.Into, promote.Cell, promote.Actor)]);
+        Transition transition = this.Triumphed(
+            new Transition(promoted, [new PiecePromoted(pawn, becoming.Into, promote.Cell, promote.Actor)]),
+            promote.Actor,
+            promote.Cell
+        );
         bool usesDie = UsesDie(state, promote);
         Transition used = usesDie
             ? this.WithoutDieFor(transition, pawn.Kind)
@@ -1439,9 +1443,13 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             escaped,
             [new PieceEscaped(piece, escape.Home, escape.Actor, captured, prisoner?.Holder)]
         );
-        Transition taken = captured is null
-            ? transition
-            : this.Captured(transition, captured, escape.Actor, escape.Home);
+        Transition taken = this.Triumphed(
+            captured is null
+                ? transition
+                : this.Captured(transition, captured, escape.Actor, escape.Home),
+            escape.Actor,
+            escape.Home
+        );
         return GameEnd.AfterMove(taken, this._variant) ?? this.GoneOn(taken);
     }
 
@@ -1829,40 +1837,42 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         Piece mover = state.Position.PieceAt(move.From)!; // the move is legal, so a piece stands there
         Transition moved = !move.Captures && this.IsSwap(state, move.From, mover, move.To)
             ? Swapped(state, move, mover)
-            : this.Triumphed(this.Displaced(state, move, mover), move, mover);
+            : this.Triumphed(this.Displaced(state, move, mover), move.Actor, move.To);
         bool MayStop(CellId cell) =>
             this.MovesFrom(state, move.From, mover, move.Actor).Any(other => other.To == cell);
         return moved with { State = this._startRows.Passed(moved.State, move, mover, MayStop) };
     }
 
     /// <summary>
-    /// A piece of the triumphant kind (the Boat) moved to make one of every army's on the four cells of a 2 x 2 square
-    /// makes a Boat triumph (rules.md §9): the seat that moved it takes every one there not of its team, each scoring
-    /// as any capture; and then, for them all, it scores as much again, and its ally as much once more (Stated
-    /// 2026-11-26: three times a plain capture's points between them; Proposed: twice the triumpher's, once its
-    /// ally's). Its team's there, the capturing Boats, are shared, either seat moving each, until it is taken.
+    /// A piece of the triumphant kind (the Boat) come to <paramref name="cell"/> - moved, escaped or promoted there,
+    /// but not placed by a ransom (Stated 2026-11-26) - to make one of every army's on the four cells of a 2 x 2
+    /// square makes a Boat triumph (rules.md §9): the seat that brought it, <paramref name="triumpher"/>, takes every
+    /// one there not of its team, each scoring as any capture; and then, for them all, it scores as much again, and
+    /// its ally as much once more (Stated 2026-11-26: three times a plain capture's points between them, twice the
+    /// triumpher's, once its ally's). Its team's there, the capturing Boats, are shared, either seat moving each,
+    /// until it is taken.
     /// </summary>
-    private Transition Triumphed(Transition moved, MoveAction move, Piece mover)
+    private Transition Triumphed(Transition moved, SeatId triumpher, CellId cell)
     {
         GameState state = moved.State;
-        ImmutableList<CellId> square = this._variant.Triumphant.Contains(mover.Kind)
-            ? this.TriumphAt(state, move.To, mover.Kind)
+        PieceKindId kind = state.Position.PieceAt(cell)!.Kind; // the piece just come there
+        ImmutableList<CellId> square = this._variant.Triumphant.Contains(kind)
+            ? this.TriumphAt(state, cell, kind)
             : [];
-        SeatId triumpher = move.Actor;
         ImmutableList<CellId> taken =
-            [.. square.Where(cell => !state.Teams.AreAllied(state.Position.PieceAt(cell)!.Owner, triumpher))];
-        int points = taken.Sum(cell => this._variant.PointsIn(state.Edition)[state.Position.PieceAt(cell)!.Kind]);
+            [.. square.Where(boat => !state.Teams.AreAllied(state.Position.PieceAt(boat)!.Owner, triumpher))];
+        int points = taken.Sum(boat => this._variant.PointsIn(state.Edition)[state.Position.PieceAt(boat)!.Kind]);
         Transition cleared = moved with
         {
             State = state with
             {
                 Position = new Position(state.Position.Occupants.RemoveRange(taken)),
-                Shared = state.Shared.Union(square.Except(taken).Select(cell => state.Position.PieceAt(cell)!.Id)),
+                Shared = state.Shared.Union(square.Except(taken).Select(boat => state.Position.PieceAt(boat)!.Id)),
             },
         };
         Transition captured = taken.Aggregate(
             cleared,
-            (sofar, cell) => this.Captured(sofar, state.Position.PieceAt(cell)!, triumpher, cell)
+            (sofar, boat) => this.Captured(sofar, state.Position.PieceAt(boat)!, triumpher, boat)
         );
         return square.IsEmpty
             ? moved

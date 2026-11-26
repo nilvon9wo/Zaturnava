@@ -786,6 +786,57 @@ public sealed class Chaturaji2027RulesTest
         );
     }
 
+    [Fact]
+    public void Apply_WhenABoatEscapesHomeToCompleteEveryArmysBoatOnOneSquare_MakesATriumph()
+    {
+        // Arrange - Stated 2026-11-26, escaping counts: Black's Boat, held by Yellow, escapes on double Boats home to
+        // a1, beside Yellow's on b1, Green's on a2 and Red's on b2
+        GameState state = this.WithRajas(
+            (Grid.CellAt(1, 0), Piece(2, Chaturaji2027Pieces.Boat, Yellow)),
+            (Grid.CellAt(0, 1), Piece(3, Chaturaji2027Pieces.Boat, Green)),
+            (Grid.CellAt(1, 1), Piece(4, Chaturaji2027Pieces.Boat, Red))
+        ) with
+        {
+            Dice = [1, 1],
+            Prisoners = [new Prisoner(Piece(0, Chaturaji2027Pieces.Boat, Black), Yellow)],
+        };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new EscapeAction(Black, new PieceId(0), Grid.CellAt(0, 0)));
+
+        // Assert - Yellow's and Red's Boats taken and the triumph scored, as by a move
+        Assert.Equal((8, 4), (transition.State.Scores[Black], transition.State.Scores[Green]));
+    }
+
+    [Fact]
+    public void Apply_WhenAPawnIsPromotedIntoABoatCompletingEveryArmysBoatOnOneSquare_MakesATriumph()
+    {
+        // Arrange - Stated 2026-11-26, promoting counts: Black's Pawn on b8, its far edge, becomes Black's Boat, held
+        // by Red, beside Yellow's on c8, Green's on b7 and Red's on c7
+        GameState state = this.WithRajas(
+            (Grid.CellAt(1, 7), Piece(5, Chaturaji2027Pieces.Pawn, Black)),
+            (Grid.CellAt(2, 7), Piece(2, Chaturaji2027Pieces.Boat, Yellow)),
+            (Grid.CellAt(1, 6), Piece(3, Chaturaji2027Pieces.Boat, Green)),
+            (Grid.CellAt(2, 6), Piece(4, Chaturaji2027Pieces.Boat, Red))
+        ) with
+        {
+            Prisoners = [new Prisoner(Piece(1, Chaturaji2027Pieces.Boat, Black), Red)],
+        };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new PromoteAction(Black, Grid.CellAt(1, 7), new PieceId(1)));
+
+        // Assert - the promoted Boat and Green's shared
+        Assert.Equal(
+            (8, 4, "1,3"),
+            (
+                transition.State.Scores[Black],
+                transition.State.Scores[Green],
+                string.Join(",", transition.State.Shared.Select(piece => piece.Value).Order())
+            )
+        );
+    }
+
     [Theory]
     [InlineData(1, 1, 3, 3, false)]
     [InlineData(2, 2, 0, 0, true)]
@@ -4943,15 +4994,23 @@ public sealed class Chaturaji2027RulesTest
     /// throne.
     /// </summary>
     private GameState Triumph(Piece onE5) =>
-        this.StateWith(
+        this.WithRajas(
             (Grid.CellAt(1, 1), Piece(1, Chaturaji2027Pieces.Boat, Black)),
             (Grid.CellAt(4, 3), Piece(2, Chaturaji2027Pieces.Boat, Yellow)),
             (Grid.CellAt(3, 4), Piece(3, Chaturaji2027Pieces.Boat, Green)),
-            (Grid.CellAt(4, 4), onE5),
-            (this._rules.Thrones[Black], Piece(10, Chaturaji2027Pieces.Raja, Black)),
-            (this._rules.Thrones[Yellow], Piece(11, Chaturaji2027Pieces.Raja, Yellow)),
-            (this._rules.Thrones[Green], Piece(12, Chaturaji2027Pieces.Raja, Green)),
-            (this._rules.Thrones[Red], Piece(13, Chaturaji2027Pieces.Raja, Red))
+            (Grid.CellAt(4, 4), onE5)
+        );
+
+    /// <summary>Black's turn, with these pieces, and every Raja on its throne.</summary>
+    private GameState WithRajas(params (CellId Cell, Piece Piece)[] placements) =>
+        this.StateWith(
+            [
+                .. placements,
+                (this._rules.Thrones[Black], Piece(10, Chaturaji2027Pieces.Raja, Black)),
+                (this._rules.Thrones[Yellow], Piece(11, Chaturaji2027Pieces.Raja, Yellow)),
+                (this._rules.Thrones[Green], Piece(12, Chaturaji2027Pieces.Raja, Green)),
+                (this._rules.Thrones[Red], Piece(13, Chaturaji2027Pieces.Raja, Red)),
+            ]
         );
 
     private GameState StateWith(params (CellId Cell, Piece Piece)[] placements) =>

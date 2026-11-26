@@ -30,7 +30,7 @@ Everything else here is specified but not yet played by the engine.
 | §6.4 Taking one's own team's pieces | Implemented: only while an enemy holds that piece's throne; the safety is the page's; bots never do. |
 | §7 Escape | Implemented, as clarified below: the escape takes the place of the double move and ends the turn. |
 | §8 Promotion & ransom | Implemented, as clarified below: promotion into any captured piece (`promotion.pawns` a constructor argument; `promotion.pool` fixed at `unrestricted`), and ransom with its timed protocol, including the receiving player's choice among equidistant squares, and the release of one's own team's pieces. |
-| §9 Boat triumph | Implemented, as stated below: the triumph made by a Boat's move, the other team's Boats taken and scored three times over, the capturing Boats shared. |
+| §9 Boat triumph | Implemented, as stated below: the triumph made by a Boat moved, escaping or promoted (not ransomed) onto the square, the other team's Boats taken and scored three times over, the capturing Boats shared. |
 | §10 Game end | Implemented: elimination (a seat with no pieces, and no prisoners in play, is skipped), Raja retirement and a team left only retired Rajas, honourable peace, team elimination, ending by agreement (as stated and proposed below), a team that has all given up its turns, and the three safety nets (below). |
 | §11 Setup roll-off | Implemented. |
 | §12 Toggles | None per game yet: the defaults are fixed. |
@@ -634,21 +634,23 @@ both the triumphing player and their ally may move each other's Boat.
 
 - *(Stated 2026-11-26)* It is the *capturing* Boats, the triumphing team's
   in the square, that both may move; each until it is captured. *(Proposed)*
-  On either seat's own turn, on a die that moves a Boat, as its own; a Boat
-  captured and later freed (by ransom, escape or promotion) is no longer
-  shared.
+  On either seat's own turn, on a die that moves a Boat, as its own.
+  *(Stated 2026-11-26)* A Boat captured and later freed (by ransom, escape
+  or promotion) is no longer shared.
 - *(Stated 2026-11-26)* So rare a feat scores more than the captures alone:
   between them, the triumphing player and their ally score three times what
-  the captured Boats would score taken one by one. *(Proposed)* The
-  triumphing player scores twice (the captures themselves, and as much
-  again), their ally once.
+  the captured Boats would score taken one by one: the triumphing player
+  twice (the captures themselves, and as much again), their ally once.
 
   | Boats taken (Boat worth 2) | Triumphing player | Ally | Team |
   |---|---|---|---|
   | 2 | 8 | 4 | 12 |
 
-- *(Proposed)* Only a Boat's move makes a triumph: the formation completed
-  any other way (a Boat escaping or promoted onto the square) does not.
+- *(Stated 2026-11-26)* A Boat moved, escaping or promoted onto the square
+  makes a triumph; one placed back by a ransom does not, as a ransom
+  captures nothing. A Boat ransomed home onto the square must be moved out
+  and back in to make it (a player rolling double Boats might ransom one
+  home and then do just that, in one turn).
 
 ## 10. Game End
 
