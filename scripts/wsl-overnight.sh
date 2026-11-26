@@ -2,11 +2,17 @@
 # Train and rate the bots while no one is working, under Linux, from Windows through WSL, in this checkout itself:
 #
 #     wsl -d Ubuntu -- bash scripts/wsl-overnight.sh [--cycles N] [--rulesets a,b] [--rounds N] [--games N]
-#                                                    [--continue [artifacts/overnight/<started>]]
+#                                                    [--continue [artifacts/overnight/<started>]] [--ship]
+#
+# With --ship, each tournament holds the bots already shipped at their shipped ratings and ships what it measures of
+# the others (scripts/rate-bots.py --hold-shipped --ship, M4): into src/Bots/Zaturnava.Bots/Ratings/<ruleset>.json,
+# each measurement kept in docs/bots/rating-history.jsonl, for whoever commits them next. Without it, nothing leaves
+# artifacts/.
 #
 # With --continue, it writes into that earlier run's folder (the latest, if none is named) instead of a new one,
-# and each tournament it had
-# stopped mid-way goes on from the pairs of bots it had finished (M2), numbered on from the cycle it stopped in.
+# numbered on from the cycle it stopped in: a ruleset whose tournament that cycle had finished is done; one whose
+# tournament had begun goes on with it, without Athena's rounds again, from the pairs of bots it had finished (M2)
+# and the games it had played of the others.
 #
 # Run it from the repository's root. Each cycle, for each ruleset in turn: rounds of Athena's learning
 # (scripts/athena-rounds.py, kept in artifacts/overnight/athena/<ruleset>/, so that each run goes on from the last),
@@ -21,8 +27,10 @@ rulesets="chaturaji-2027,grand-legions-small,grand-legions-medium,grand-legions-
 rounds=2
 games=100
 out=""
+ship=()
 while [ $# -gt 0 ]; do
     case "$1" in
+        --ship) ship=(--hold-shipped --ship); shift ;;
         --cycles) cycles="$2"; shift 2 ;;
         --rulesets) rulesets="$2"; shift 2 ;;
         --rounds) rounds="$2"; shift 2 ;;
@@ -61,13 +69,22 @@ mkdir -p "$out"
 
 while [ "$cycles" -eq 0 ] || [ "$cycle" -le "$cycles" ]; do
     for ruleset in ${rulesets//,/ }; do
-        echo "== cycle $cycle, $ruleset: Athena learns ($rounds rounds of $games games)"
-        python3 scripts/athena-rounds.py "$runner" --ruleset "$ruleset" --rounds "$rounds" --games "$games" \
-            --folder "artifacts/overnight/athena/$ruleset" \
-            || echo "   Athena's rounds failed; going on"
+        rated="$out/$ruleset-$cycle.json"
+        if [ -e "$rated" ]; then
+            echo "== cycle $cycle, $ruleset: rated already, in $rated"
+            continue
+        fi
+        if [ -e "$rated.pairs.json" ] || [ -e "$rated.games" ]; then
+            echo "== cycle $cycle, $ruleset: going on with its tournament"
+        else
+            echo "== cycle $cycle, $ruleset: Athena learns ($rounds rounds of $games games)"
+            python3 scripts/athena-rounds.py "$runner" --ruleset "$ruleset" --rounds "$rounds" --games "$games" \
+                --folder "artifacts/overnight/athena/$ruleset" \
+                || echo "   Athena's rounds failed; going on"
+        fi
         echo "== cycle $cycle, $ruleset: Elo tournament ($games games)"
         python3 scripts/rate-bots.py "$runner" --ruleset "$ruleset" --games "$games" \
-            --out "$out/$ruleset-$cycle.json" \
+            --out "$rated" "${ship[@]}" \
             || echo "   the tournament failed; going on"
     done
     cycle=$((cycle + 1))

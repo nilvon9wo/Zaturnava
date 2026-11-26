@@ -12,7 +12,8 @@ With --bot-assembly, bots of one's own (the BotRunner's option of that name) may
 every bot the BotRunner says plays the ruleset (its --list bots). A slow bot (SLOW) plays only the other slow ones
 and the strongest of the rest (RIVALS), last.
 With --out, each pair's result is also kept, as it ends, in <out>.pairs.json; run again with the same --out,
---ruleset, --games and --max-steps, a tournament stopped mid-way plays only the pairs it had not finished.
+--ruleset, --games and --max-steps, a tournament stopped mid-way plays only the pairs it had not finished; and each
+game, as it ends, in <out>.games/, so that a pair stopped mid-way plays only the games it had not.
 With --hold-shipped, the bots the server ships rated at the ruleset keep those ratings, and only the others are
 fitted, around them, as the server's bot-rating job fits them: so that local games, more of them than the server
 plays, rate new bots on the scale it ships (M4); only those fitted are written. With --free, the bots named are
@@ -46,6 +47,13 @@ SCALE = 400 / math.log(10)
 # stopped early has rated the rest.
 SLOW = {"athena", "pythia", "tactician"}
 RIVALS = {"sage", "argus", "solomon"}
+# How often, in seconds, the games each pair playing has finished are told (2026-11-26: a pair of Sage's, two
+# hundred games of a minute, said nothing for hours)
+HEARTBEAT = 300
+# The pairs playing now: each one's games file, with what it is told as, the games it played before that file, and
+# all it is to play
+PLAYING = {}
+PLAYING_LOCK = threading.Lock()
 
 
 def known(runner, ruleset):
@@ -66,28 +74,97 @@ def pairings(bots):
                   key=lambda pair: any(bot in SLOW for bot in pair))
 
 
-def play(runner, ruleset, seats, games, max_steps):
-    """Each game the seats' bots play, as the BotRunner logs it: its seats with their scores, and its outcome."""
-    with tempfile.NamedTemporaryFile(suffix=".jsonl", delete=False) as out:
-        path = out.name
+def play(runner, ruleset, seats, games, max_steps, told=None, keep=None):
+    """Each game the seats' bots play, as the BotRunner logs it: its seats with their scores, and its outcome. While
+    they play, the games file is among those PLAYING, as told says, if it says (its name, games before, all). With
+    keep, each game is kept in that file as it ends, and only those not kept yet are played (2026-11-26: a pair of
+    three hours stopped near its end began again from its first game)."""
+    if keep is None:
+        with tempfile.NamedTemporaryFile(suffix=".jsonl", delete=False) as out:
+            path = out.name
+        try:
+            run_games(runner, ruleset, seats, games, max_steps, path, told)
+            return read_games(path)
+        finally:
+            os.remove(path)
+    part = keep + ".part"
+    absorb(part, keep)
+    done = len(read_games(keep))
+    if done < games:
+        name, before, whole = told or ("", 0, games)
+        run_games(runner, ruleset, seats, games - done, max_steps, part, (name, before + done, whole))
+        absorb(part, keep)
+    return read_games(keep)[:games]
+
+
+def run_games(runner, ruleset, seats, games, max_steps, path, told):
+    """The BotRunner plays the games into path, which is among those PLAYING meanwhile, if told says how."""
+    if told:
+        with PLAYING_LOCK:
+            PLAYING[path] = told
     try:
         subprocess.run(
             [*runner, "--ruleset", ruleset, "--bots", ",".join(seats), "--games", str(games),
              "--max-steps", str(max_steps), "--out", path],
             check=True,
         )
-        with open(path, encoding="utf-8") as lines:
-            return [json.loads(line) for line in lines if line.strip()]
     finally:
-        os.remove(path)
+        with PLAYING_LOCK:
+            PLAYING.pop(path, None)
 
 
-def results(runner, ruleset, a, b, games, max_steps):
-    """A's wins, losses and draws against B, with each team moving first in half the games, and how long they took."""
+def read_games(path):
+    """The games the file holds, each line one; a line cut short, by a run stopped as it wrote it, left out."""
+    games = []
+    if os.path.exists(path):
+        with open(path, encoding="utf-8") as lines:
+            for line in lines:
+                try:
+                    games.append(json.loads(line))
+                except ValueError:
+                    pass
+    return games
+
+
+def absorb(part, keep):
+    """The whole games of a run's file, stopped or not, added to those kept, and the run's file gone."""
+    if os.path.exists(part):
+        with open(keep, "a", encoding="utf-8", newline="\n") as kept:
+            for game in read_games(part):
+                kept.write(json.dumps(game) + "\n")
+        os.remove(part)
+
+
+def games_in(path):
+    """How many games the file holds so far; none, if it cannot be read."""
+    try:
+        with open(path, encoding="utf-8") as lines:
+            return sum(1 for line in lines if line.strip())
+    except OSError:
+        return 0
+
+
+def heartbeat(stopped, finished, total):
+    """Every HEARTBEAT seconds, till stopped: the pairs finished, and each pair playing with its games so far."""
+    while not stopped.wait(HEARTBEAT):
+        with PLAYING_LOCK:
+            playing = list(PLAYING.items())
+        if playing:
+            each = ", ".join(f"{name} {before + games_in(path)}/{whole}"
+                             for path, (name, before, whole) in sorted(playing, key=lambda item: item[1][0]))
+            print(f"   ... {time.strftime('%H:%M')}, {finished[0]}/{total} pairs done; playing {each}",
+                  file=sys.stderr, flush=True)
+
+
+def results(runner, ruleset, a, b, games, max_steps, kept_games=None):
+    """A's wins, losses and draws against B, with each team moving first in half the games, and how long they took;
+    each half's games kept in kept_games, a folder, if given, as they end."""
     won = lost = drawn = 0
     started = time.monotonic()
-    for seats, a_seats in (((a, b, a, b), (0, 2)), ((b, a, b, a), (1, 3))):
-        for game in play(runner, ruleset, seats, games, max_steps):
+    for half, (seats, a_seats) in enumerate((((a, b, a, b), (0, 2)), ((b, a, b, a), (1, 3)))):
+        keep = os.path.join(kept_games, f"{a}-vs-{b}-{half}.jsonl") if kept_games else None
+        told = (f"{a} vs {b}", half * games, 2 * games)
+        for game in play(runner, ruleset, seats, games, max_steps, told, keep):
             mine, theirs = margin(game, a_seats)
             won += mine > theirs
             lost += mine < theirs
@@ -245,6 +322,10 @@ def main():
     # the pairs already played when run again with the same --out, --games and --max-steps
     kept_path = options.out + ".pairs.json" if options.out else None
     settings = f"{options.ruleset}/{options.games}/{options.max_steps}"
+    # and each pair's games, as each ends, so that a pair stopped mid-way goes on from the games it had played
+    kept_games = f"{options.out}.games/{options.ruleset}-{options.games}-{options.max_steps}" if options.out else None
+    if kept_games:
+        os.makedirs(kept_games, exist_ok=True)
     kept = load_kept(kept_path, settings)
     lock = threading.Lock()
 
@@ -256,7 +337,7 @@ def main():
         key = f"{pair[0]}|{pair[1]}"
         if key in kept:
             return tuple(kept[key])
-        result = results(runner, options.ruleset, pair[0], pair[1], options.games, options.max_steps)
+        result = results(runner, options.ruleset, pair[0], pair[1], options.games, options.max_steps, kept_games)
         with lock:
             kept[key] = list(result)
             save_kept(kept_path, settings, kept)
@@ -267,8 +348,13 @@ def main():
                   f" in {seconds / 60:.0f} min", file=sys.stderr, flush=True)
         return result
 
-    with ThreadPoolExecutor(options.jobs) as pool:
-        record = dict(zip(pairs, pool.map(played, pairs)))
+    stopped = threading.Event()
+    threading.Thread(target=heartbeat, args=(stopped, finished, len(pairs)), daemon=True).start()
+    try:
+        with ThreadPoolExecutor(options.jobs) as pool:
+            record = dict(zip(pairs, pool.map(played, pairs)))
+    finally:
+        stopped.set()
     for (a, b), (won, lost, drawn, seconds) in record.items():
         print(f"{a} vs {b}: won {won}, lost {lost}, drawn {drawn}, in {seconds:.0f} s", file=sys.stderr)
     freed = set(options.free.split(",")) if options.free else set()
