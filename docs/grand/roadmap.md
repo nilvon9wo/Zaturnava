@@ -178,8 +178,10 @@ What the program does so far (2026-11-04), and the gaps against the above:
   edge (2026-11-06), as specification §6.1 states. Only the Pawns swap back to back; the bots' measure
   of how far an army's pawns have come counts every piece promoted at the far edge.
 - Pieces are drawn each by a symbol of its own (2026-11-06; see Stage 7).
-- Still to come: choosing a quick setup for one's own kingdom in a game set up by hand, which waits for
-  the draft (Stage 4).
+- Choosing a quick setup for one's own kingdom in a game set up by hand: *done*, with the draft (Stage 4;
+  found so 2026-11-26). A player drafting their own army may, at any point, have the rest filled ("Fill the rest
+  of my army at random, and be done"); from an empty kingdom, that is the army a quick game would deal them
+  (`QuickDraft.Filled`), and from a part-drafted one, what the budget still pays for, toward the same mix.
 
 Saved settings ([specification §2.1](specification.md#21-saved-settings)), named, shared, and copied
 to edit, wait for players to sign in and for storage that lasts.
