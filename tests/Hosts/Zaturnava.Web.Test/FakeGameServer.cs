@@ -107,6 +107,9 @@ internal sealed class FakeGameServer : IGameServing
     /// <summary>How many of each army's rows are start rows in Chaturaji 2027's games; null, if none.</summary>
     public int? StartRows { get; set; }
 
+    /// <summary>Whether Chaturaji 2027's pieces may call a leader face-off; not, unless set.</summary>
+    public bool HasFaceOff { get; set; }
+
     /// <summary>What of Chaturaji 2027's terrain its creator may choose: nothing, unless a test sets some.</summary>
     public ImmutableList<TerrainAxisDto> TerrainAxes { get; set; } = [];
 
@@ -148,6 +151,7 @@ internal sealed class FakeGameServer : IGameServing
                         HasDice = this.HasDice,
                         IdleRounds = this.IdleRounds,
                         StartRows = this.StartRows,
+                        HasFaceOff = this.HasFaceOff,
                         TerrainAxes = this.TerrainAxes,
                     },
                     .. this.MoreRulesets,

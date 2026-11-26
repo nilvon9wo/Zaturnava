@@ -195,9 +195,17 @@ internal sealed class TinyRules(int length, bool isDealt = false, Exception? fai
         voter != absent && state.DecidingSeat is not null;
 
     public ImmutableList<GameAction> ChancesOf([Required] GameState state, SeatId seat) =>
-        hasFaceOff && seat.Value == 0 && state.Position.PieceAt(new CellId(1)) is not null
+        hasFaceOff
+        && seat.Value == 0
+        && state.TurnNumber >= this.FaceOffFrom
+        && state.Position.PieceAt(new CellId(1)) is not null
             ? [new FaceOffAction(seat, new CellId(1), new CellId(3))]
             : [];
+
+    public bool HasFaceOff => hasFaceOff;
+
+    /// <summary>The turn from which the King may call a face-off, if it may: the first, unless set.</summary>
+    public int FaceOffFrom { get; init; }
 
     public DecisionTimer? TimerOf([Required] GameState state) =>
         state.DecidingSeat?.Value == 1

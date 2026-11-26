@@ -25,6 +25,7 @@ internal sealed record GameSetup(string RulesetId, int Colour, ImmutableList<int
     private const string LeadersKey = "leaders";
     private const string TurnTimeKey = "turn-time";
     private const string StartRowsKey = "start-rows";
+    private const string FaceOffPauseKey = "face-off-pause";
 
     /// <summary>How the armies come to be, as the lobby names its choices; the game's default, if none.</summary>
     public string? Armies { get; init; }
@@ -61,6 +62,9 @@ internal sealed record GameSetup(string RulesetId, int Colour, ImmutableList<int
 
     /// <summary>How many of each army's rows are its start rows; the game's own, if none.</summary>
     public int? StartRows { get; init; }
+
+    /// <summary>How many seconds the game pauses when a person first may call a face-off; none, no pause.</summary>
+    public int? FaceOffPause { get; init; }
 
     /// <summary>The board's size, for a game whose creator may set it; the game's own, if none.</summary>
     public BoardSizeDto? Board { get; init; }
@@ -105,6 +109,9 @@ internal sealed record GameSetup(string RulesetId, int Colour, ImmutableList<int
                 ? $"{TurnTimeKey}={seconds.ToString(CultureInfo.InvariantCulture)}"
                 : null,
             this.StartRows is { } rows ? $"{StartRowsKey}={rows.ToString(CultureInfo.InvariantCulture)}" : null,
+            this.FaceOffPause is { } pause
+                ? $"{FaceOffPauseKey}={pause.ToString(CultureInfo.InvariantCulture)}"
+                : null,
             this.TerrainMask is not 0
                 ? string.Create(CultureInfo.InvariantCulture, $"{TerrainKey}={this.TerrainMask}:{this.TerrainValue}")
                 : null,
@@ -155,6 +162,10 @@ internal sealed record GameSetup(string RulesetId, int Colour, ImmutableList<int
                 StartRows = choices.TryGetValue(StartRowsKey, out string? start) && Number(start) is > 0 and var rows
                     ? rows
                     : null,
+                FaceOffPause =
+                    choices.TryGetValue(FaceOffPauseKey, out string? pause) && Number(pause) is > 0 and var paused
+                        ? paused
+                        : null,
                 Board = choices.TryGetValue(BoardKey, out string? board) ? BoardOf(board) : null,
                 TerrainMask = TerrainOf(choices).Mask,
                 TerrainValue = TerrainOf(choices).Value,

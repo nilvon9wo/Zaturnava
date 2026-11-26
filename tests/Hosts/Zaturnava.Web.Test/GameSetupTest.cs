@@ -44,6 +44,7 @@ public sealed class GameSetupTest
             IsLostWithoutLeaders = true,
             IdleSeconds = 90,
             StartRows = 3,
+            FaceOffPause = 30,
             Board = new BoardSizeDto(12, 10, 4, 3),
             TerrainMask = 7,
             TerrainValue = 5,
@@ -56,7 +57,8 @@ public sealed class GameSetupTest
         Assert.Equal(
             (
                 "grand-legions-custom;0;1,1,1,1;,,,;armies=draft-own,budget=150,secret=1,hidden=1,players=1,side=1,"
-                    + "dice-off=1,idle=5,opener=2,leaders=1,turn-time=90,start-rows=3,terrain=7:5,board=12x10x4x3",
+                    + "dice-off=1,idle=5,opener=2,leaders=1,turn-time=90,start-rows=3,face-off-pause=30,terrain=7:5,"
+                    + "board=12x10x4x3",
                 setup with { Levels = parsed!.Levels, Picks = parsed.Picks }
             ),
             (setup.Text, parsed)
@@ -79,6 +81,8 @@ public sealed class GameSetupTest
     [InlineData("a;0;1;;turn-time=many")]
     [InlineData("a;0;1;;start-rows=0")]
     [InlineData("a;0;1;;start-rows=many")]
+    [InlineData("a;0;1;;face-off-pause=0")]
+    [InlineData("a;0;1;;face-off-pause=many")]
     public void Parse_WhenAChoiceCannotBeRead_LeavesItUnmade(string text)
     {
         // Act
@@ -86,9 +90,9 @@ public sealed class GameSetupTest
 
         // Assert
         Assert.Equal(
-            (null, null, null, null, 0, 0, null, null),
+            (null, null, null, null, 0, 0, null, null, null),
             (parsed?.Board, parsed?.Budget, parsed?.IdleRounds, parsed?.Opener, parsed?.TerrainMask,
-                parsed?.TerrainValue, parsed?.IdleSeconds, parsed?.StartRows)
+                parsed?.TerrainValue, parsed?.IdleSeconds, parsed?.StartRows, parsed?.FaceOffPause)
         );
     }
 

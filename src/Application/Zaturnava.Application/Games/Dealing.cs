@@ -72,6 +72,15 @@ public sealed record Dealing(bool AreAlike = false, GameId? ArmiesOf = null)
     public int? StartRows { get; init; }
 
     /// <summary>
+    /// How many seconds the game pauses when a person first may call a leader face-off, so that they see it before
+    /// anything else happens (Grand Legions specification §6.4, Stated), if its creator set it (from
+    /// <see cref="GameService.LeastFaceOffPause"/> to <see cref="GameService.MostFaceOffPause"/>), for a ruleset with
+    /// face-offs (<see cref="IRulesApplying.HasFaceOff"/>; it is ignored by one without); never from a scenario. None,
+    /// for no pause.
+    /// </summary>
+    public int? FaceOffPause { get; init; }
+
+    /// <summary>
     /// What of the terrain its creator chose, for a ruleset that lets them (<see cref="IRulesApplying.TerrainAxes"/>;
     /// any other bits are ignored), the rest dealt at random; none, for all of it dealt.
     /// </summary>

@@ -298,6 +298,7 @@ internal static class GameEndpoints
             IsLostWithoutLeaders = request.IsLostWithoutLeaders,
             IdleSeconds = request.IdleSeconds,
             StartRows = request.StartRows,
+            FaceOffPause = request.FaceOffPause,
             Terrain = request.TerrainMask is not 0
                 ? new TerrainChoice(request.TerrainMask, request.TerrainValue)
                 : null,

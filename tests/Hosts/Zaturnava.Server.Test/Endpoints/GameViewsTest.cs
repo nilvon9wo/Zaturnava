@@ -132,6 +132,31 @@ public sealed class GameViewsTest
         Assert.Equal(seconds, view.IdleSeconds);
     }
 
+    [Theory]
+    [InlineData(null)]
+    [InlineData(30)]
+    public void ViewOf_WhenTheGameIsPausedForAFaceOff_ShowsThePauseForWhomAndHowLongItHasLeft(int? seconds)
+    {
+        // Arrange
+        GameSnapshot snapshot = Snapshot(Rules.CreateInitialState());
+        ImmutableList<ActionDescriptor> start = ScenarioStart.SetUp(new GameChoices(FaceOffPause: seconds)) is { } setUp
+            ? [setUp]
+            : [];
+        FaceOffPause? pause = seconds is null ? null : new FaceOffPause(new SeatId(2), TimeSpan.FromSeconds(12.5));
+
+        // Act
+        GameViewDto view = GameViews.ViewOf(
+            snapshot with { Record = snapshot.Record with { Actions = start }, Pause = pause },
+            Bots
+        );
+
+        // Assert
+        Assert.Equal(
+            (seconds, seconds is null ? null : 2, seconds is null ? null : 12.5),
+            (view.FaceOffPause, view.PausedFor, view.PauseLeft)
+        );
+    }
+
     [Fact]
     public void ViewOf_WhenSeatsHoldPrisoners_ShowsEachWithItsHolder()
     {

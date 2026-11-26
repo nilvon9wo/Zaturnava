@@ -480,6 +480,19 @@
                                    placeholder="@startRows" />
                         </label>
                     }
+                    @if (this.Ruleset(catalog).HasFaceOff)
+                    {
+                        <label class="face-off-pause"
+                               title="Seconds the game waits when a player first may call a leader face-off; empty, no wait">
+                            <span class="choice-name">Face-off ⏸</span>
+                            <input type="number"
+                                   class="face-off-pause"
+                                   min="@CreateGameRequest.LeastFaceOffPause"
+                                   max="@CreateGameRequest.MostFaceOffPause"
+                                   @bind="this._faceOffPause"
+                                   placeholder="0 s" />
+                        </label>
+                    }
                 </div>
                 @* who may play, apart from the rules (the user's word of 2026-11-20) *@
                 @if (this._me is not null)
@@ -807,6 +820,12 @@
     /// Stated); the game's own, if none.
     /// </summary>
     private int? _startRows;
+
+    /// <summary>
+    /// For a game with leader face-offs, how many seconds it pauses when a person first may call one (Grand Legions
+    /// specification §6.4, Stated); none, no pause.
+    /// </summary>
+    private int? _faceOffPause;
     private string? _problem;
 
     /// <summary>How the player last started each game, by the game, as the browser remembers.</summary>
@@ -869,6 +888,7 @@
             IsLostWithoutLeaders = this._isLostWithoutLeaders,
             IdleSeconds = this.IdleSecondsAsked(),
             StartRows = this.StartRowsAsked(catalog),
+            FaceOffPause = this.FaceOffPauseAsked(catalog),
             Board = this.BoardAsked(catalog),
             TerrainMask = this.TerrainAsked(catalog).Mask,
             TerrainValue = this.TerrainAsked(catalog).Value,
@@ -981,6 +1001,7 @@
         this._isLostWithoutLeaders = setup.IsLostWithoutLeaders;
         this._idleSeconds = setup.IdleSeconds;
         this._startRows = ruleset.StartRows is null ? null : setup.StartRows;
+        this._faceOffPause = ruleset.HasFaceOff ? setup.FaceOffPause : null;
         this._terrain = ruleset.TerrainAxes
             .Where(axis => (setup.TerrainMask & axis.Mask) == axis.Mask)
             .ToImmutableDictionary(axis => axis.Mask, axis => setup.TerrainValue & axis.Mask);
@@ -1696,6 +1717,7 @@
         this._isLostWithoutLeaders = false;
         this._idleSeconds = null;
         this._startRows = null;
+        this._faceOffPause = null;
         this._terrain = ImmutableDictionary<int, int>.Empty;
     }
 
@@ -1914,9 +1936,19 @@
             IsLostWithoutLeaders = this._isLostWithoutLeaders,
             IdleSeconds = this.IdleSecondsAsked(),
             StartRows = this.StartRowsAsked(catalog),
+            FaceOffPause = this.FaceOffPauseAsked(catalog),
             TerrainMask = this.TerrainAsked(catalog).Mask,
             TerrainValue = this.TerrainAsked(catalog).Value,
         };
+
+    /// <summary>
+    /// For a game with leader face-offs, how many seconds it pauses for one, as typed, kept within what the server
+    /// allows; none, if none (or 0) was typed, or the game has no face-offs.
+    /// </summary>
+    private int? FaceOffPauseAsked(CatalogDto catalog) =>
+        (this.Ruleset(catalog).HasFaceOff, this._faceOffPause) is (true, > 0 and var seconds)
+            ? Math.Clamp(seconds, CreateGameRequest.LeastFaceOffPause, CreateGameRequest.MostFaceOffPause)
+            : null;
 
     /// <summary>
     /// For a game whose armies have start rows, how many, as typed, kept within what the server allows; none, if none

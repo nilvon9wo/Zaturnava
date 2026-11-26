@@ -296,7 +296,9 @@ drawn simply, a shape for its class and a letter for its kind.
   after every action whether to seize one (`IDeciding.Seize`). *Proposed*: no chance is open while
   the game waits on something else (dice, a promotion, an offer or a proposal, the roll-off), nor
   for a seat retired or against a retired seat's leader; and the bots call a face-off only when it
-  widens their side's lead. Still to come: the optional pause.
+  widens their side's lead. *Done* (2026-11-26): the optional pause, a setting of the game's creator, from 5 to
+  120 seconds (*Proposed*), once for each chance a person's General first has; meanwhile only that player may act,
+  and no bot decides.
 
 ## Stage 7 — Looks
 

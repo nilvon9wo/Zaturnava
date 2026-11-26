@@ -133,6 +133,19 @@ public sealed record CreateGameRequest([Required] string RulesetId, [Required] I
     public const int MostStartRows = 6;
 
     /// <summary>
+    /// For a game with leader face-offs (<see cref="RulesetDto.HasFaceOff"/>), not from a scenario: how many seconds it
+    /// pauses when a person first may call one, from <see cref="LeastFaceOffPause"/> to <see cref="MostFaceOffPause"/>
+    /// (<see cref="GameViewDto.FaceOffPause"/>), so that they see it before anything else happens. Null, for no pause.
+    /// </summary>
+    public int? FaceOffPause { get; init; }
+
+    /// <summary>The fewest seconds a game may pause for a face-off (<see cref="FaceOffPause"/>).</summary>
+    public const int LeastFaceOffPause = 5;
+
+    /// <summary>The most seconds a game may pause for a face-off (<see cref="FaceOffPause"/>).</summary>
+    public const int MostFaceOffPause = 120;
+
+    /// <summary>
     /// For a game whose creator may choose some of its terrain (<see cref="RulesetDto.TerrainAxes"/>), and whose armies
     /// are dealt: the bits of the terrain's number they chose, each axis's <see cref="TerrainAxisDto.Mask"/> they set;
     /// 0, for all of it dealt at random.

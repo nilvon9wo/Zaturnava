@@ -20,8 +20,9 @@ public static class DecisionLoop
     /// Rolls whatever dice the game waits on, then plays on while <paramref name="deciderFor"/> gives the
     /// deciding seat a decider, the game is not over, and fewer than <paramref name="maximumSteps"/>
     /// decisions have been made. Rolling is not deciding, so it is never held back: with no steps
-    /// left, the dice a person just asked for are still rolled. It loops rather than recurses, so a long game
-    /// cannot run out of stack.
+    /// left, the dice a person just asked for are still rolled. It stops, too, after any step from one state to the
+    /// next that <paramref name="pausesAt"/> says pauses the game (a face-off a person may call opened). It loops
+    /// rather than recurses, so a long game cannot run out of stack.
     /// </summary>
     public static async Task<Played> PlayWhile(
         [Required] IRulesApplying rules,
@@ -29,7 +30,8 @@ public static class DecisionLoop
         [Required] Func<SeatId, IDeciding?> deciderFor,
         [Required] IDiceRolling dice,
         int maximumSteps,
-        CancellationToken cancellationToken
+        CancellationToken cancellationToken,
+        Func<GameState, GameState, bool>? pausesAt = null
     )
     {
         Played current = await Seized(rules, played, deciderFor, cancellationToken);
@@ -40,9 +42,12 @@ public static class DecisionLoop
         {
             stepsLeft = current.State.AwaitedDice is null ? stepsLeft - 1 : stepsLeft;
             start = start?.TurnNumber == current.State.TurnNumber ? start : TurnStart.Of(current.State);
+            GameState before = current.State;
             Played stepped = await Step(rules, current, decider, start, cancellationToken);
             current = await Seized(rules, stepped, deciderFor, cancellationToken);
-            decider = NextDecider(current.State, deciderFor, dice, stepsLeft);
+            decider = pausesAt?.Invoke(before, current.State) is true
+                ? null
+                : NextDecider(current.State, deciderFor, dice, stepsLeft);
         }
 
         return current;

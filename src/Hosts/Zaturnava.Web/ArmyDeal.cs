@@ -49,6 +49,9 @@ internal sealed record ArmyDeal(bool AreAlike, string? Of = null)
     /// <summary>How many of each army's rows are start rows, where armies have them; the game's own, if none.</summary>
     public int? StartRows { get; init; }
 
+    /// <summary>How many seconds the game pauses when a person first may call a face-off; none, no pause.</summary>
+    public int? FaceOffPause { get; init; }
+
     /// <summary>The bits of the terrain's number its creator chose, in a game that lets them; 0, for none.</summary>
     public int TerrainMask { get; init; }
 

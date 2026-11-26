@@ -43,6 +43,19 @@ public sealed class FaceOffTest
     );
 
     [Fact]
+    public void HasFaceOff_WhenAKindMayCallOne_IsTrueAndElseFalse()
+    {
+        // Arrange
+        Chaturaji2027Rules standard = new();
+
+        // Act
+        (bool, bool) has = (this._rules.HasFaceOff, standard.HasFaceOff);
+
+        // Assert
+        Assert.Equal((true, false), has);
+    }
+
+    [Fact]
     public void ChancesOf_WhenTheCallerFacesAnEnemyLeaderAlongAnOpenLine_IsTheFaceOffWhoeverDecides()
     {
         // Arrange
