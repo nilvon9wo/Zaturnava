@@ -54,6 +54,52 @@ public sealed class StrategicPositionsTest
         Assert.Equal(new MoveAction(Black, pawn, ahead), action);
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Sage_WhenAPromotionIntoAnAllysRajaWouldStandAttackedOrNot_PromotesOnlyIntoWhatSurvives(
+        bool isAttacked
+    )
+    {
+        // Arrange - plan step 2, "promotion with eyes open" (seen 2026-11-25: a Pawn promoted into a Raja under
+        // attack, taken at once): Black's Pawn on d8, its far edge, may become Green's Raja or Black's own Elephant
+        // (the Rook), both held by Red; Red's Elephant on h8 attacks d8 along the empty row; Black's Raja holds Red's
+        // throne, and Yellow's
+        // Pawns, far off, keep it from being an endgame
+        CellId pawn = CellAt(3, 7);
+        Piece greenRaja = new(new PieceId(4), Chaturaji2027Pieces.Raja, Green);
+        Piece blackRook = new(new PieceId(5), Chaturaji2027Pieces.Elephant, Black);
+        GameState state = this.BlackDeciding(
+            [
+                (pawn, new Piece(new PieceId(1), Chaturaji2027Pieces.Pawn, Black)),
+                (CellAt(7, isAttacked ? 7 : 6), new Piece(new PieceId(2), Chaturaji2027Pieces.Elephant, Red)),
+                (this._rules.Thrones[Red], new Piece(new PieceId(3), Chaturaji2027Pieces.Raja, Black)),
+                (CellAt(7, 1), new Piece(new PieceId(6), Chaturaji2027Pieces.Raja, Red)),
+                .. new[] { (0, 2), (1, 2), (0, 1), (1, 1), (0, 0), (1, 0) }.Select((cell, index) => (
+                    CellAt(cell.Item1, cell.Item2),
+                    new Piece(new PieceId(10 + index), Chaturaji2027Pieces.Pawn, Yellow)
+                )),
+            ]
+        ) with
+        {
+            Prisoners = [new Prisoner(greenRaja, Red), new Prisoner(blackRook, Red)],
+        };
+        DecisionRequest request = new(this._rules, state, Black, this._rules.LegalActions(state));
+
+        // Act
+        GameAction action = await new SageBot(new Random(7)).Decide(request, this._cancellation);
+
+        // Assert - offered either way; the Raja not brought back where it would be taken at once, but promoted into
+        // when safe, an ally's leader back on the board (the Elephant on h7 attacks the seventh row, not d8)
+        Assert.Equal(
+            (true, !isAttacked),
+            (
+                request.LegalActions.Contains(new PromoteAction(Black, pawn, greenRaja.Id)),
+                action == new PromoteAction(Black, pawn, greenRaja.Id)
+            )
+        );
+    }
+
     private static CellId CellAt(int column, int row) => new((row * Side) + column);
 
     /// <summary>Black to decide, without dice, with only these pieces on the board.</summary>

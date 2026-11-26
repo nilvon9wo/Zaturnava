@@ -40,7 +40,13 @@ test position in `tests/Bots/` (the strategic scenarios of §15) before its weig
 1. **Whose move is next.** Count a capture as safe or not by who moves before the bot again, ally or enemy, and
    whose command the piece is under. Test: the Yellow Rook case above.
 2. **Promotion with eyes open.** Judge a promotion by the promoted piece's safety on its cell, its owner, and the
-   command it brings. Test: the Pawn promoted into an attacked Raja.
+   command it brings. Test: the Pawn promoted into an attacked Raja. *The test position played by Sage*
+   (2026-11-26, `StrategicPositionsTest`): a Black Pawn on its far edge may become Green's Raja or Black's own
+   Elephant, both held by Red. With d8 attacked by Red's Elephant, Sage does not bring the Raja back there; with d8
+   safe, it does, an ally's leader back on the board. Sage already weighs it, through its exposure: a piece put
+   where it would be taken counts as lost. The bots that judge a promotion by the piece's value alone (Midas's
+   greed, and those weaker) still may, as their character allows. Still to do: the promoted piece's command (whose
+   pieces it brings back under whose control), which exposure does not see.
 3. **Pieces with a purpose.** In an endgame, pull each piece towards the enemy leader or its throne, and score the
    enemy leader's room to move (fewer cells, better). Test: two Rooks against a lone Raja reach mate. *Begun*
    (2026-11-25, with the endgame search below): the leader's room to move, and the leader attacked, are scored.
