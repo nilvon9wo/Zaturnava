@@ -71,7 +71,14 @@ test position in `tests/Bots/` (the strategic scenarios of §15) before its weig
    Black's Raja, so Black spends its move on the Raja; Sage promotes into Green's, which moves before Red does, at
    every seed tried. Found on the way: promoting is not the bot's move, so a piece promoted into its own army may
    still act this turn, which Sage already counts; where it may, as when the new Elephant can take its attacker at
-   once, promoting into its own is better, and Sage does. Still to do: the command a promotion brings.
+   once, promoting into its own is better, and Sage does. *The command a promotion brings, the F2 case played by
+   Sage* (2026-11-26, `StrategicPositionsTest`): Black's Pawn on d8 may become Green's Raja, taking Green's Horse
+   and Boat back from Black's command, or Black's own Elephant, which takes Red's Raja down the open file that same
+   turn; Sage promotes into the Elephant, its look through its own turn seeing the capture. Still to do: the choice
+   on command alone, with nothing to take. With Red's Raja off the file, Sage does not promote yet, moving Green's
+   Horse first. Which is better there (an ally's leader back, or another army kept under one's own command) is for
+   the ratings to show, not for guessing: the "commanded" measure, already offered, weighs nothing yet in Chaturaji
+   2027.
 3. **Pieces with a purpose.** In an endgame, pull each piece towards the enemy leader or its throne, and score the
    enemy leader's room to move (fewer cells, better). Test: two Rooks against a lone Raja reach mate. *Begun*
    (2026-11-25, with the endgame search below): the leader's room to move, and the leader attacked, are scored.
