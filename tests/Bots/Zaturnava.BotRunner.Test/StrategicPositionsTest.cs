@@ -158,15 +158,13 @@ public sealed class StrategicPositionsTest
         Piece greenRaja = new(new PieceId(4), Chaturaji2027Pieces.Raja, Green);
         Piece blackRook = new(new PieceId(5), Chaturaji2027Pieces.Elephant, Black);
         GameState state = this.BlackDeciding(
-            [
-                (pawn, new Piece(new PieceId(1), Chaturaji2027Pieces.Pawn, Black)),
-                (CellAt(3, 4), new Piece(new PieceId(2), Chaturaji2027Pieces.Raja, Red)),
-                (this._rules.Thrones[Black], new Piece(new PieceId(3), Chaturaji2027Pieces.Raja, Black)),
-                (this._rules.Thrones[Yellow], new Piece(new PieceId(6), Chaturaji2027Pieces.Raja, Yellow)),
-                (CellAt(6, 6), new Piece(new PieceId(7), Chaturaji2027Pieces.Horse, Green)),
-                (CellAt(5, 5), new Piece(new PieceId(8), Chaturaji2027Pieces.Boat, Green)),
-                (CellAt(0, 2), new Piece(new PieceId(9), Chaturaji2027Pieces.Pawn, Yellow)),
-            ]
+            (pawn, new Piece(new PieceId(1), Chaturaji2027Pieces.Pawn, Black)),
+            (CellAt(3, 4), new Piece(new PieceId(2), Chaturaji2027Pieces.Raja, Red)),
+            (this._rules.Thrones[Black], new Piece(new PieceId(3), Chaturaji2027Pieces.Raja, Black)),
+            (this._rules.Thrones[Yellow], new Piece(new PieceId(6), Chaturaji2027Pieces.Raja, Yellow)),
+            (CellAt(6, 6), new Piece(new PieceId(7), Chaturaji2027Pieces.Horse, Green)),
+            (CellAt(5, 5), new Piece(new PieceId(8), Chaturaji2027Pieces.Boat, Green)),
+            (CellAt(0, 2), new Piece(new PieceId(9), Chaturaji2027Pieces.Pawn, Yellow))
         ) with
         {
             Prisoners = [new Prisoner(greenRaja, Red), new Prisoner(blackRook, Red)],
