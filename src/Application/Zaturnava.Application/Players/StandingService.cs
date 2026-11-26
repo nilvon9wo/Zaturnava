@@ -82,12 +82,13 @@ public sealed class StandingService(
     /// <summary>
     /// The players standing highest at <paramref name="game"/> (a ruleset's game id), each by name, best first, with
     /// how many of its games they have abandoned, as <paramref name="abandoned"/> last counted them
-    /// (<see cref="CountAbandoned"/>): at most <see cref="MostLeaders"/>. Only the standings kept as each game ended
-    /// are read, never a game (the user, 2026-11-26: "loading the leaderboard should not need to replay games").
+    /// (<see cref="CountAbandoned"/>), unknown if not yet counted: at most <see cref="MostLeaders"/>. Only the
+    /// standings kept as each game ended are read, never a game (the user, 2026-11-26: "loading the leaderboard should
+    /// not need to replay games").
     /// </summary>
     public async Task<ImmutableList<Leader>> Leaders(
         [Required] string game,
-        [Required] ImmutableDictionary<PlayerId, int> abandoned,
+        ImmutableDictionary<PlayerId, int>? abandoned,
         CancellationToken cancellationToken
     )
     {
@@ -101,7 +102,7 @@ public sealed class StandingService(
                 .Select(standing =>
                     new Leader(names[standing.Player], standing)
                     {
-                        Abandoned = abandoned.GetValueOrDefault(standing.Player),
+                        Abandoned = abandoned?.GetValueOrDefault(standing.Player),
                     }
                 ),
         ];

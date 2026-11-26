@@ -42,10 +42,11 @@ public sealed class StandingCache(TimeProvider time)
 
     /// <summary>
     /// How many games of <paramref name="game"/> each player has abandoned, as last counted in the background
-    /// (<see cref="StandingService.CountAbandoned"/>): none, until first counted.
+    /// (<see cref="StandingService.CountAbandoned"/>): unknown until first counted, as after the server starts, so
+    /// that the page shows "?" rather than a 0 it does not know (the user, 2026-11-26).
     /// </summary>
-    public ImmutableDictionary<PlayerId, int> AbandonedAt([Required] string game) =>
-        this._abandoned.GetValueOrDefault(game) ?? [];
+    public ImmutableDictionary<PlayerId, int>? AbandonedAt([Required] string game) =>
+        this.AbandonedCountedAt is null ? null : this._abandoned.GetValueOrDefault(game) ?? [];
 
     /// <summary>The games abandoned, as just counted, kept for every leaderboard asked for after.</summary>
     public void KeepAbandoned([Required] ImmutableDictionary<string, ImmutableDictionary<PlayerId, int>> abandoned)

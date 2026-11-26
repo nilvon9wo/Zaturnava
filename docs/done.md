@@ -16,8 +16,9 @@ only in part, what is left is in the backlog, and its history here. The playtest
   "The loading the leaderboard should not need to replay games!" *Done*: a leaderboard reads only the ratings stored
   as each game ended, never a game. Ratings come only from finished games. The abandoned-games count shown beside
   them (games waiting a day for that player's move) is counted in the background once a minute, from each game's
-  saved summary, without replaying anything, and kept; a leaderboard shows it as last counted. Before this, every
-  uncached request replayed every idle game, about 2.7 s.
+  saved summary, without replaying anything, and kept; a leaderboard shows it as last counted. Before the first
+  count after the server starts, it shows "?" rather than a 0 it does not know. Before this, every uncached request
+  replayed every idle game, about 2.7 s.
 
 - **Start rows, the kingdom's height**: in Grand Legions, the Western Pawn's start rows default to the kingdom's
   depth at every size, unless the game's creator sets others.

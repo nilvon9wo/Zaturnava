@@ -591,9 +591,16 @@ public sealed class StandingServiceTest
 
         // Act
         ImmutableList<Leader> leaders = await service.Leaders(EndedRules.RulesetId, [], this._cancellation);
+        ImmutableList<Leader> unknown = await service.Leaders(EndedRules.RulesetId, null, this._cancellation);
 
-        // Assert
-        Assert.Equal("Ada 0", string.Join(", ", leaders.Select(leader => $"{leader.Name} {leader.Abandoned}")));
+        // Assert - and, not yet counted, unknown
+        Assert.Equal(
+            ("Ada 0", true),
+            (
+                string.Join(", ", leaders.Select(leader => $"{leader.Name} {leader.Abandoned}")),
+                unknown[0].Abandoned is null
+            )
+        );
     }
 
     [Fact]

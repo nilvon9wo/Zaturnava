@@ -4,7 +4,7 @@ namespace Net.NowhereAtAll.Zaturnava.Contracts;
 /// A player on a game's leaderboard: their place (from 1), name and Elo rating, rounded; their experience, gained in
 /// each game they won, their own points and as much again times their share of their team's; how many games they won,
 /// lost and drew; and how many they have abandoned: games not over, with no guest at them, that have waited a day or
-/// more for their move.
+/// more for their move; null while the server has not yet counted them, as just after it starts.
 /// </summary>
 public sealed record StandingDto(
     int Place,
@@ -14,7 +14,7 @@ public sealed record StandingDto(
     int Won,
     int Lost,
     int Drawn,
-    int Abandoned = 0
+    int? Abandoned = 0
 )
 {
     /// <summary>The points they scored themselves, in all the games of it they finished, won or not.</summary>
