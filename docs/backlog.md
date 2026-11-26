@@ -48,8 +48,13 @@ own number (**25**, **N29**), the [2026-11-15 specification](playtesting/2026-11
   at 950, below Random, though it beats Random 70 to 50; for Random, too, loses all 120 to each of them, so
   their shipped ratings there (1757, 1770) look low, and holding them drags the weak bots down. So the
   faint three are fitted from their games with each other and Random alone (`--free`), and Echo and Icarus,
-  who win some games against Midas and Solomon, held around them. Still to do: Midas's and Solomon's
-  large-size ratings measured again (they may be low). The small and medium sizes measured likewise, with 120
+  who win some games against Midas and Solomon, held around them. Midas and Solomon measured again at the
+  large size (2026-11-26, 120 games a pair, around Random, Tantalus, Echo, Icarus and Argus held): 1960 and
+  2034, against 1757 and 1770 shipped; not shipped, as the large board's games fit no one Elo scale: Echo
+  beats Tantalus (1263) 118 to 2, so stands far above it, yet loses to Midas 119 to 1, which at 1960 would put
+  it near 1130. Between unequal bots the big board's games are near certain, and a logistic scale stretched
+  to fit them can't fit them all. *(Proposed)*: rate by the games nearest in strength (each bot's ratings
+  fitted from its pairs that both sides sometimes win), so that near-certain pairs only bound the order. The small and medium sizes measured likewise, with 120
   games a pair, and shipped (2026-11-26).
   *(Proposed, 2026-11-26, from the user's question whether rating bots apart from people skews them)*: a bot's
   rating comes from its games against bots alone, while a person's game against a bot moves only the person's.
