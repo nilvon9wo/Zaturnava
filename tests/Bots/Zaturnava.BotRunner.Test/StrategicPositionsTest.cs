@@ -100,6 +100,52 @@ public sealed class StrategicPositionsTest
         );
     }
 
+    [Theory]
+    [InlineData(1)]
+    [InlineData(7)]
+    [InlineData(42)]
+    public async Task Sage_WhenAnAllyMovesBeforeTheEnemyAttackingTheCell_PromotesIntoTheAllysPieceNotItsOwn(int seed)
+    {
+        // Arrange - plan step 2, with step 1's turn order (Stated 2026-11-26: "it might be advantageous for black to
+        // promote to green if it can rely on green attacking or defending something before black would get its next
+        // move"): Black's Pawn on c8, its far edge, may become Green's Elephant or its own, both held by Red; Red's
+        // Horse on b6 forks c8 and Black's Raja on d5. Promoting is not Black's move: it still has one, and must spend
+        // it saving its Raja. Then Yellow, Green and Red move before Black does again: Black's own Elephant would wait
+        // for Black's turn, and Red would take it first; Green's moves before Red, and gets away. The other Rajas on
+        // their thrones; Yellow's Pawns, far off, keep it from being an endgame
+        CellId pawn = CellAt(2, 7);
+        Piece greenRook = new(new PieceId(4), Chaturaji2027Pieces.Elephant, Green);
+        Piece blackRook = new(new PieceId(5), Chaturaji2027Pieces.Elephant, Black);
+        GameState state = this.BlackDeciding(
+            [
+                (pawn, new Piece(new PieceId(1), Chaturaji2027Pieces.Pawn, Black)),
+                (CellAt(1, 5), new Piece(new PieceId(2), Chaturaji2027Pieces.Horse, Red)),
+                (CellAt(3, 4), new Piece(new PieceId(6), Chaturaji2027Pieces.Raja, Black)),
+                .. new[] { Yellow, Green, Red }.Select((seat, index) => (
+                    this._rules.Thrones[seat],
+                    new Piece(new PieceId(7 + index), Chaturaji2027Pieces.Raja, seat)
+                )),
+                .. new[] { (0, 2), (1, 2), (0, 1), (1, 1), (0, 0), (1, 0) }.Select((cell, index) => (
+                    CellAt(cell.Item1, cell.Item2),
+                    new Piece(new PieceId(10 + index), Chaturaji2027Pieces.Pawn, Yellow)
+                )),
+            ]
+        ) with
+        {
+            Prisoners = [new Prisoner(blackRook, Red), new Prisoner(greenRook, Red)],
+        };
+        DecisionRequest request = new(this._rules, state, Black, this._rules.LegalActions(state));
+
+        // Act
+        GameAction action = await new SageBot(new Random(seed)).Decide(request, this._cancellation);
+
+        // Assert - both offered; Green's chosen, whatever chance breaks ties
+        Assert.Equal(
+            (true, new PromoteAction(Black, pawn, greenRook.Id)),
+            (request.LegalActions.Contains(new PromoteAction(Black, pawn, blackRook.Id)), action)
+        );
+    }
+
     [Fact]
     public async Task Sage_WhenTwoElephantsFaceALoneRaja_PlaysItToTheEndAndWins()
     {
