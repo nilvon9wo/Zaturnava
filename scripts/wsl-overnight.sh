@@ -10,8 +10,9 @@
 # artifacts/.
 #
 # With --continue, it writes into that earlier run's folder (the latest, if none is named) instead of a new one,
-# and each tournament it had
-# stopped mid-way goes on from the pairs of bots it had finished (M2), numbered on from the cycle it stopped in.
+# numbered on from the cycle it stopped in: a ruleset whose tournament that cycle had finished is done; one whose
+# tournament had begun goes on with it, without Athena's rounds again, from the pairs of bots it had finished (M2)
+# and the games it had played of the others.
 #
 # Run it from the repository's root. Each cycle, for each ruleset in turn: rounds of Athena's learning
 # (scripts/athena-rounds.py, kept in artifacts/overnight/athena/<ruleset>/, so that each run goes on from the last),
@@ -68,13 +69,22 @@ mkdir -p "$out"
 
 while [ "$cycles" -eq 0 ] || [ "$cycle" -le "$cycles" ]; do
     for ruleset in ${rulesets//,/ }; do
-        echo "== cycle $cycle, $ruleset: Athena learns ($rounds rounds of $games games)"
-        python3 scripts/athena-rounds.py "$runner" --ruleset "$ruleset" --rounds "$rounds" --games "$games" \
-            --folder "artifacts/overnight/athena/$ruleset" \
-            || echo "   Athena's rounds failed; going on"
+        rated="$out/$ruleset-$cycle.json"
+        if [ -e "$rated" ]; then
+            echo "== cycle $cycle, $ruleset: rated already, in $rated"
+            continue
+        fi
+        if [ -e "$rated.pairs.json" ] || [ -e "$rated.games" ]; then
+            echo "== cycle $cycle, $ruleset: going on with its tournament"
+        else
+            echo "== cycle $cycle, $ruleset: Athena learns ($rounds rounds of $games games)"
+            python3 scripts/athena-rounds.py "$runner" --ruleset "$ruleset" --rounds "$rounds" --games "$games" \
+                --folder "artifacts/overnight/athena/$ruleset" \
+                || echo "   Athena's rounds failed; going on"
+        fi
         echo "== cycle $cycle, $ruleset: Elo tournament ($games games)"
         python3 scripts/rate-bots.py "$runner" --ruleset "$ruleset" --games "$games" \
-            --out "$out/$ruleset-$cycle.json" "${ship[@]}" \
+            --out "$rated" "${ship[@]}" \
             || echo "   the tournament failed; going on"
     done
     cycle=$((cycle + 1))

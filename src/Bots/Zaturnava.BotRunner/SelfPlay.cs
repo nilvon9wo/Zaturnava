@@ -35,7 +35,12 @@ internal sealed class SelfPlay(
         return Parallel.ForEachAsync(
             Enumerable.Range(0, games),
             cancellationToken,
-            async (_, token) => await lines.WriteLineAsync(await this.PlayOne(maximumSteps, token))
+            async (_, token) =>
+            {
+                // each game's line out as it ends, so that whoever counts them sees the games played so far
+                await lines.WriteLineAsync(await this.PlayOne(maximumSteps, token));
+                await lines.FlushAsync(token);
+            }
         );
     }
 

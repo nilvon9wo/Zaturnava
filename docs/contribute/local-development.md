@@ -204,17 +204,21 @@ Options:
 | `--rulesets a,b` | which rulesets | `chaturaji-2027` and the three Grand Legions sizes |
 | `--rounds N` | Athena's rounds per ruleset each cycle | 2 |
 | `--games N` | games per round, and per pairing in the tournament | 100 |
-| `--continue [DIR]` | go on in an earlier run's folder (the latest, if none is named), from the cycle it stopped in | a new folder |
+| `--continue [DIR]` | go on in an earlier run's folder (the latest, if none is named), from the cycle it stopped in: a ruleset already rated is skipped, and one whose tournament had begun goes straight on with it, without Athena's rounds again | a new folder |
 | `--ship` | hold the shipped bots at their ratings, and ship what each tournament measures of the others into `src/Bots/Zaturnava.Bots/Ratings/`, each measurement kept in `docs/bots/rating-history.jsonl`, for the next commit | nothing leaves `artifacts/` |
 
 A failed stage is reported, and the run goes on. Each tournament keeps every pairing's result as it
 ends, in `<ruleset>-<cycle>.json.pairs.json`, and prints it (`12/150 sage vs midas: ...`); with
-`--continue`, a tournament stopped mid-way plays only the pairings it had not finished. Self-played
+`--continue`, a tournament stopped mid-way plays only the pairings it had not finished, and of those, only the
+games not yet played: each game is kept as it ends, in `<ruleset>-<cycle>.json.games/`, so a stop loses at most
+the games in play. Self-played
 games keep the armies they were dealt, as the server's do, so they replay however the catalogue grows;
 Athena leaves out any game that still does not replay (those kept before 2026-11-25), and says how many.
 
-The Grand Legions tournaments are long: Sage takes about a minute a game there, so each of its
-pairings (twice `--games`) takes hours. A quiet hour is not a hang; each pairing's line shows progress.
+The Grand Legions tournaments are long: Sage takes about a minute a game there, start to finish, so each of its
+pairings (twice `--games`) takes hours. Every five minutes, a line tells the pairings finished and each one playing
+with its games so far (`... 14:05, 12/90 pairs done; playing sage vs midas 37/200, ...`); each pairing's own line
+follows as it ends.
 
 The static gates (`dotnet format`, `check-line-layout.py`, `inspect-code.py`) run no test host
 and work on Windows directly.
