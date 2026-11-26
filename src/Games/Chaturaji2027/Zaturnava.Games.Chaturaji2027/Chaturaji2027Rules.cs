@@ -1105,12 +1105,19 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     private ImmutableHashSet<PieceKindId> RolledKinds(GameState state) =>
         [.. state.Dice.SelectMany(this._dice.KindsOf)];
 
-    /// <summary>The moves of the armies the seat commands, but a retired Raja's: no one moves it (§10).</summary>
+    /// <summary>
+    /// The moves of the armies the seat commands, but a retired Raja's: no one moves it (§10); and, on its own turn,
+    /// of its team's shared pieces (<see cref="GameState.Shared"/>, §9).
+    /// </summary>
     private IEnumerable<GameAction> MovesOf(GameState state, SeatId seat, Func<PieceKindId, bool> isMovable)
     {
         ImmutableHashSet<SeatId> armies = this._control.ArmiesOf(state, seat);
+        bool IsShared(Piece piece) =>
+            state.ActingFor is null && state.Shared.Contains(piece.Id) && state.Teams.AreAllied(piece.Owner, seat);
         return state.Position.Occupants
-            .Where(occupant => armies.Contains(occupant.Value.Owner) && isMovable(occupant.Value.Kind))
+            .Where(occupant =>
+                (armies.Contains(occupant.Value.Owner) || IsShared(occupant.Value)) && isMovable(occupant.Value.Kind)
+            )
             .Where(occupant =>
                 !state.Retired.Contains(occupant.Value.Owner) || !this.IsLeader(occupant.Value.Kind)
             )
@@ -1822,10 +1829,80 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         Piece mover = state.Position.PieceAt(move.From)!; // the move is legal, so a piece stands there
         Transition moved = !move.Captures && this.IsSwap(state, move.From, mover, move.To)
             ? Swapped(state, move, mover)
-            : this.Displaced(state, move, mover);
+            : this.Triumphed(this.Displaced(state, move, mover), move, mover);
         bool MayStop(CellId cell) =>
             this.MovesFrom(state, move.From, mover, move.Actor).Any(other => other.To == cell);
         return moved with { State = this._startRows.Passed(moved.State, move, mover, MayStop) };
+    }
+
+    /// <summary>
+    /// A piece of the triumphant kind (the Boat) moved to make one of every army's on the four cells of a 2 x 2 square
+    /// makes a Boat triumph (rules.md §9): the seat that moved it takes every one there not of its team, each scoring
+    /// as any capture; and then, for them all, it scores as much again, and its ally as much once more (Stated
+    /// 2026-11-26: three times a plain capture's points between them; Proposed: twice the triumpher's, once its
+    /// ally's). Its team's there, the capturing Boats, are shared, either seat moving each, until it is taken.
+    /// </summary>
+    private Transition Triumphed(Transition moved, MoveAction move, Piece mover)
+    {
+        GameState state = moved.State;
+        ImmutableList<CellId> square = this._variant.Triumphant.Contains(mover.Kind)
+            ? this.TriumphAt(state, move.To, mover.Kind)
+            : [];
+        SeatId triumpher = move.Actor;
+        ImmutableList<CellId> taken =
+            [.. square.Where(cell => !state.Teams.AreAllied(state.Position.PieceAt(cell)!.Owner, triumpher))];
+        int points = taken.Sum(cell => this._variant.PointsIn(state.Edition)[state.Position.PieceAt(cell)!.Kind]);
+        Transition cleared = moved with
+        {
+            State = state with
+            {
+                Position = new Position(state.Position.Occupants.RemoveRange(taken)),
+                Shared = state.Shared.Union(square.Except(taken).Select(cell => state.Position.PieceAt(cell)!.Id)),
+            },
+        };
+        Transition captured = taken.Aggregate(
+            cleared,
+            (sofar, cell) => this.Captured(sofar, state.Position.PieceAt(cell)!, triumpher, cell)
+        );
+        return square.IsEmpty
+            ? moved
+            : state.Seats
+                .Select(seat => seat.Id)
+                .Where(seat => state.Teams.AreAllied(seat, triumpher) && !state.Retired.Contains(seat))
+                .OrderBy(seat => seat != triumpher)
+                .ThenBy(seat => seat.Value)
+                .Aggregate(
+                    captured,
+                    (sofar, seat) => Scored(sofar, seat, points, new BoatTriumph(triumpher, seat, points))
+                );
+    }
+
+    /// <summary>
+    /// The four cells of a 2 x 2 square about <paramref name="cell"/> that hold a piece of <paramref name="kind"/> of
+    /// every army, if any do; else none.
+    /// </summary>
+    private ImmutableList<CellId> TriumphAt(GameState state, CellId cell, PieceKindId kind)
+    {
+        int column = this._grid.ColumnOf(cell);
+        int row = this._grid.RowOf(cell);
+        return new[] { (-1, -1), (-1, 0), (0, -1), (0, 0) }
+            .Select(corner => (Column: column + corner.Item1, Row: row + corner.Item2))
+            .Where(corner => corner is { Column: >= 0, Row: >= 0 }
+                && corner.Column + 1 < this._variant.Width
+                && corner.Row + 1 < this._variant.Height
+            )
+            .Select(corner => (ImmutableList<CellId>)
+            [
+                this._grid.CellAt(corner.Column, corner.Row),
+                this._grid.CellAt(corner.Column + 1, corner.Row),
+                this._grid.CellAt(corner.Column, corner.Row + 1),
+                this._grid.CellAt(corner.Column + 1, corner.Row + 1),
+            ])
+            .FirstOrDefault(square =>
+                square.All(inside => state.Position.PieceAt(inside)?.Kind == kind)
+                && square.Select(inside => state.Position.PieceAt(inside)!.Owner).Distinct().Count()
+                    == state.Seats.Count
+            ) ?? [];
     }
 
     /// <summary>Two Pawns back to back trade places; nothing is taken.</summary>
@@ -1938,6 +2015,7 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             State = state with
             {
                 Prisoners = state.Prisoners.Add(new Prisoner(captured, captor)),
+                Shared = state.Shared.Remove(captured.Id),
                 TakenByOwnTeam = isOwnTeam
                     ? state.TakenByOwnTeam.SetItem(captured.Id, state.TurnNumber)
                     : state.TakenByOwnTeam,

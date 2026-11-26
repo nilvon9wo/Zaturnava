@@ -208,6 +208,16 @@ file sealed record Teller(IRulesApplying Rules, ImmutableList<EventDto> Told, bo
                 onThrone.CapturedBy,
                 $"{this.Name(onThrone.CapturedBy)} took that Raja on its own throne (+{Text(onThrone.Points)} more)."
             ),
+            BoatTriumph triumph => this.Add(
+                number,
+                EventDto.Bonus,
+                triumph.Seat,
+                triumph.Seat == triumph.Triumpher
+                    ? $"{this.Name(triumph.Seat)} made a Boat triumph, every army's Boat on one square of four "
+                        + $"(+{Text(triumph.Points)} more)."
+                    : $"{this.Name(triumph.Seat)} scored for {this.Name(triumph.Triumpher)}'s Boat triumph "
+                        + $"(+{Text(triumph.Points)})."
+            ),
             EmpireCreated empire => this.Add(
                 number,
                 EventDto.Empire,

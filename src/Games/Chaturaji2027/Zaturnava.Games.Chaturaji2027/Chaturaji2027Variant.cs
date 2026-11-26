@@ -42,7 +42,14 @@ public sealed record Chaturaji2027Variant(
     {
         Heavies = [Chaturaji2027Pieces.Elephant],
         Keeping = Chaturaji2027Pieces.Keeping,
+        Triumphant = [Chaturaji2027Pieces.Boat],
     };
+
+    /// <summary>
+    /// The kinds whose pieces, one of every army on the four cells of one 2 x 2 square, all of one kind, make a
+    /// triumph (rules.md §9): none, unless set.
+    /// </summary>
+    public ImmutableHashSet<PieceKindId> Triumphant { get; init; } = [];
 
     /// <summary>How many cells up the board is: as many as across, a square, unless set.</summary>
     public int Height

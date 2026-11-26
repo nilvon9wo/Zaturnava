@@ -21,7 +21,7 @@ and written for a *leader* rather than a Raja, so that they carry over unchanged
 - Ending the game by agreement (§10). *Done*.
 
 Not first, and blocking nothing: boat triumph (Chaturaji 2027 only, and a near-impossible condition, so a
-nice-to-have); games that survive a restart, identities, statistics and chat (part of going
+nice-to-have; *done* 2026-11-26, [rules §9](../rules.md#9-boat-triumph)); games that survive a restart, identities, statistics and chat (part of going
 online, not of either game's rules).
 
 The grand game is named **Grand Legions** (chosen 2026-10-31).

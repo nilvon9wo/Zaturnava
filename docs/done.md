@@ -8,6 +8,17 @@ only in part, what is left is in the backlog, and its history here. The playtest
 
 ## Asked 2026-11-26
 
+- **Boat triumph (§9)**: a nice-to-have; the condition is so unlikely that no one may miss it. *Done*
+  ([rules §9](rules.md#9-boat-triumph)): a Boat moved to make one of every army's Boat on the four cells of a 2 x 2
+  square takes the other team's Boats there. *Stated* (the user's answer the same day): it is the capturing Boats,
+  the triumphing team's, that the triumphing player and their ally may both move, until each is captured; and the
+  team scores three times what the captured Boats would score taken one by one. *Proposed*: the triumphing player
+  twice, their ally once; only a Boat's move makes a triumph.
+
+  | Boats taken (worth 2 each) | Triumphing player | Ally | Team |
+  |---|---|---|---|
+  | 2 | 8 | 4 | 12 |
+
 - **The lobby, insanely slow** (the user): "A player shouldn't need to see the leaderboard to start a new game."
   *Done*: the lobby's panels load each on their own. *New game*, the games list and the leaderboard show as soon
   as the catalog arrives, without first waiting to learn who is signed in or for the games to be listed. Whether

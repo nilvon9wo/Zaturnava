@@ -762,6 +762,107 @@ public sealed class Chaturaji2027RulesTest
     }
 
     [Fact]
+    public void Apply_WhenABoatCompletesEveryArmysBoatOnOneSquare_TakesTheEnemiesBoatsAndScoresTheTriumph()
+    {
+        // Arrange - rules.md §9: Black's Boat leaps from b2 to d4, beside Yellow's on e4, Green's on d5 and Red's on
+        // e5; every Raja far off, on its throne
+        GameState state = this.Triumph(Piece(4, Chaturaji2027Pieces.Boat, Red));
+
+        // Act
+        Transition transition = this._rules.Apply(state, new MoveAction(Black, Grid.CellAt(1, 1), Grid.CellAt(3, 3)));
+
+        // Assert - Yellow's and Red's Boats taken, 2 each; Black scores them twice, Green once; the capturing Boats,
+        // Black's and Green's, shared
+        Assert.Equal(
+            (8, 4, "1,3", false, false, new BoatTriumph(Black, Green, 4)),
+            (
+                transition.State.Scores[Black],
+                transition.State.Scores[Green],
+                string.Join(",", transition.State.Shared.Select(piece => piece.Value).Order()),
+                transition.State.Position.Occupants.ContainsKey(Grid.CellAt(4, 3)),
+                transition.State.Position.Occupants.ContainsKey(Grid.CellAt(4, 4)),
+                transition.Events.OfType<BoatTriumph>().Last()
+            )
+        );
+    }
+
+    [Theory]
+    [InlineData(1, 1, 3, 3, false)]
+    [InlineData(2, 2, 0, 0, true)]
+    [InlineData(5, 5, 7, 7, true)]
+    public void Apply_WhenABoatMakesNoSquareOfEveryArmysBoats_MakesNoTriumph(
+        int fromColumn,
+        int fromRow,
+        int toColumn,
+        int toRow,
+        bool hasRedBoat
+    )
+    {
+        // Arrange - a second Black Boat on e5, where Red's would be, so only three armies'; or Black's Boat going to a
+        // corner, nowhere near the others
+        GameState state = this.Triumph(Piece(4, Chaturaji2027Pieces.Boat, hasRedBoat ? Red : Black));
+        GameState moving = state with
+        {
+            Position = state.Position.Relocate(Grid.CellAt(1, 1), Grid.CellAt(fromColumn, fromRow)),
+        };
+
+        // Act
+        Transition transition = this._rules.Apply(
+            moving,
+            new MoveAction(Black, Grid.CellAt(fromColumn, fromRow), Grid.CellAt(toColumn, toRow))
+        );
+
+        // Assert
+        Assert.Equal(
+            (0, true),
+            (transition.State.Scores[Black], transition.State.Shared.IsEmpty)
+        );
+    }
+
+    [Theory]
+    [InlineData(2, true)]
+    [InlineData(1, false)]
+    public void LegalActions_WhenABoatIsShared_LetItsOwnersAllyMoveIt(int seat, bool mayMove)
+    {
+        // Arrange - Black's Boat on b2, shared after a triumph; Green (2), its ally, or Yellow (1), an enemy, to move
+        GameState state = this.Triumph(Piece(4, Chaturaji2027Pieces.Boat, Red)) with
+        {
+            DecidingSeat = new SeatId(seat),
+            Shared = [new PieceId(1)],
+        };
+
+        // Act
+        ImmutableList<GameAction> actions = this._rules.LegalActions(state);
+
+        // Assert
+        Assert.Equal(
+            mayMove,
+            actions.Contains(new MoveAction(new SeatId(seat), Grid.CellAt(1, 1), Grid.CellAt(3, 3)))
+        );
+    }
+
+    [Fact]
+    public void Apply_WhenASharedBoatIsTaken_IsNoLongerShared()
+    {
+        // Arrange - Black's shared Boat on b2; Yellow's Elephant on b8 takes it
+        GameState state = this.StateWith(
+            (Grid.CellAt(1, 1), Piece(1, Chaturaji2027Pieces.Boat, Black)),
+            (Grid.CellAt(1, 7), Piece(2, Chaturaji2027Pieces.Elephant, Yellow)),
+            (Grid.CellAt(7, 7), Piece(3, Chaturaji2027Pieces.Pawn, Green))
+        ) with
+        {
+            DecidingSeat = Yellow,
+            Shared = [new PieceId(1)],
+        };
+
+        // Act
+        Transition transition = this._rules.Apply(state, new MoveAction(Yellow, Grid.CellAt(1, 7), Grid.CellAt(1, 1)));
+
+        // Assert
+        Assert.Empty(transition.State.Shared);
+    }
+
+    [Fact]
     public void Apply_WhenTheLastEnemyPieceIsTaken_EndsTheGameWithThatTeamWinning()
     {
         // Arrange
@@ -4836,6 +4937,22 @@ public sealed class Chaturaji2027RulesTest
             DecidingSeat = Yellow,
             Offer = new RansomOffer(Black, Yellow, [new PieceId(12)], [new PieceId(1)]),
         };
+
+    /// <summary>
+    /// Black's turn: its Boat on b2, Yellow's on e4, Green's on d5, and <paramref name="onE5"/>; every Raja on its
+    /// throne.
+    /// </summary>
+    private GameState Triumph(Piece onE5) =>
+        this.StateWith(
+            (Grid.CellAt(1, 1), Piece(1, Chaturaji2027Pieces.Boat, Black)),
+            (Grid.CellAt(4, 3), Piece(2, Chaturaji2027Pieces.Boat, Yellow)),
+            (Grid.CellAt(3, 4), Piece(3, Chaturaji2027Pieces.Boat, Green)),
+            (Grid.CellAt(4, 4), onE5),
+            (this._rules.Thrones[Black], Piece(10, Chaturaji2027Pieces.Raja, Black)),
+            (this._rules.Thrones[Yellow], Piece(11, Chaturaji2027Pieces.Raja, Yellow)),
+            (this._rules.Thrones[Green], Piece(12, Chaturaji2027Pieces.Raja, Green)),
+            (this._rules.Thrones[Red], Piece(13, Chaturaji2027Pieces.Raja, Red))
+        );
 
     private GameState StateWith(params (CellId Cell, Piece Piece)[] placements) =>
         this.Later() with

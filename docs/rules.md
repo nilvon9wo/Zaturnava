@@ -29,8 +29,8 @@ Everything else here is specified but not yet played by the engine.
 | §6 Throne control | Implemented: the expanded pool (§6.1, both triggers), voluntary regency (§6.2, as stated below) and the forced shared turn (§6.3). |
 | §6.4 Taking one's own team's pieces | Implemented: only while an enemy holds that piece's throne; the safety is the page's; bots never do. |
 | §7 Escape | Implemented, as clarified below: the escape takes the place of the double move and ends the turn. |
-| §9 Boat triumph | Not yet. |
 | §8 Promotion & ransom | Implemented, as clarified below: promotion into any captured piece (`promotion.pawns` a constructor argument; `promotion.pool` fixed at `unrestricted`), and ransom with its timed protocol, including the receiving player's choice among equidistant squares, and the release of one's own team's pieces. |
+| §9 Boat triumph | Implemented, as stated below: the triumph made by a Boat's move, the other team's Boats taken and scored three times over, the capturing Boats shared. |
 | §10 Game end | Implemented: elimination (a seat with no pieces, and no prisoners in play, is skipped), Raja retirement and a team left only retired Rajas, honourable peace, team elimination, ending by agreement (as stated and proposed below), a team that has all given up its turns, and the three safety nets (below). |
 | §11 Setup roll-off | Implemented. |
 | §12 Toggles | None per game yet: the defaults are fixed. |
@@ -629,8 +629,26 @@ square simultaneously, the player who made the move that completed this
 formation captures **every other army's Boat** in that square. (Their own
 Boat, and an ally's Boat if present in the square, are unaffected.)
 
-After a Boat Triumph, until the captured Boat(s) are themselves captured,
+After a Boat Triumph, until the capturing Boat(s) are themselves captured,
 both the triumphing player and their ally may move each other's Boat.
+
+- *(Stated 2026-11-26)* It is the *capturing* Boats, the triumphing team's
+  in the square, that both may move; each until it is captured. *(Proposed)*
+  On either seat's own turn, on a die that moves a Boat, as its own; a Boat
+  captured and later freed (by ransom, escape or promotion) is no longer
+  shared.
+- *(Stated 2026-11-26)* So rare a feat scores more than the captures alone:
+  between them, the triumphing player and their ally score three times what
+  the captured Boats would score taken one by one. *(Proposed)* The
+  triumphing player scores twice (the captures themselves, and as much
+  again), their ally once.
+
+  | Boats taken (Boat worth 2) | Triumphing player | Ally | Team |
+  |---|---|---|---|
+  | 2 | 8 | 4 | 12 |
+
+- *(Proposed)* Only a Boat's move makes a triumph: the formation completed
+  any other way (a Boat escaping or promoted onto the square) does not.
 
 ## 10. Game End
 
