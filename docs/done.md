@@ -29,6 +29,32 @@ only in part, what is left is in the backlog, and its history here. The playtest
 
   The browser's own work is small; a slow first visit is the network's (a DNS lookup took 4 s that time).
 
+- **A quick game's ally the other way about** ("On an easy game, my ally should be a strong bot; on a hard game, my
+  ally might be a weak bot"): `GameStarter.QuickSeats` seats the enemies as hard as asked and each ally from the other
+  end, never one bot twice while there are others.
+
+  | Quick game | Enemies | Ally |
+  |---|---|---|
+  | Easy | The easiest | The strongest |
+  | Medium | Any | Any |
+  | Hard | The hardest | The weakest |
+
+- **The custom setup in tabs** ("too long to comfortably fit on the screen"): each group is a tab (Seats, Armies,
+  Board, Pieces, Play, Players, as the game has them), one panel shown at a time, the Seats first; *Play* stays below
+  them all.
+- **Several leaders in one army** (the grand roadmap's Stage 3; the backlog's "check what the composition edition
+  already does"): *Checked*, and found done. The composition edition deals a leader for every 20 pieces, and every
+  rule that names "the Raja" asks of any leader:
+
+  | Rule | Where | With several leaders |
+  |---|---|---|
+  | Command of an army, by its throne or a leaderless ally | `ThroneControl` | Any leader; tested with two |
+  | A leader taken on its throne; entering a throne | `Chaturaji2027Rules` | Any leader |
+  | The empire | `Chaturaji2027Rules.Empire` | On a team's last leader taken |
+  | A leader ransomed | `Ransom.PointsOf` | Each leader, by its kind |
+  | A team lost with no leader left | `GameEnd.LeadersLost` | Any leader on the board |
+  | Scoring by piece value, the bonuses times 10 | `Scoring/grand-legions.json` | Until playtesting says otherwise (**Q14**) |
+
 - **Start rows, the kingdom's height**: in Grand Legions, the Western Pawn's start rows default to the kingdom's
   depth at every size, unless the game's creator sets others.
 

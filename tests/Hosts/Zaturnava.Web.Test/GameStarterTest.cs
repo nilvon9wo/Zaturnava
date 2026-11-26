@@ -126,6 +126,72 @@ public sealed class GameStarterTest
         Assert.Equal(expected, string.Join(",", bots.Order(StringComparer.Ordinal)));
     }
 
+    [Theory]
+    [InlineData("Easy", "midas,random", "oracle")]
+    [InlineData("Medium", null, null)]
+    [InlineData("Hard", "oracle,solomon", "random")]
+    public void QuickSeats_WhenThePlayerHasAnAlly_SeatsTheEnemiesAsHardAsAskedAndTheAllyTheOtherWayAbout(
+        string difficulty,
+        string? enemies,
+        string? ally
+    )
+    {
+        // Arrange - the player at Black, whose ally is Green (the user's word of 2026-11-26: "on an easy game, my ally
+        // should be a strong bot; on a hard game, my ally might be a weak bot")
+        CatalogDto catalog = Catalog(Random, Midas, Solomon, Oracle);
+        RulesetDto ruleset = new(Ruleset, "Chaturaji 2027", 4) { SeatTeams = [0, 1, 0, 1] };
+
+        // Act
+        ImmutableList<string?> bots = GameStarter.QuickSeats(catalog, ruleset, Enum.Parse<Difficulty>(difficulty), 0);
+
+        // Assert - medium: any three bots, each at one seat
+        Assert.Equal(
+            (null, enemies ?? "*", ally ?? "*", 3),
+            (
+                bots[0],
+                enemies is null ? "*" : string.Join(",", new[] { bots[1], bots[3] }.Order(StringComparer.Ordinal)),
+                ally is null ? "*" : bots[2],
+                bots.Skip(1).Distinct().Count()
+            )
+        );
+    }
+
+    [Fact]
+    public void QuickSeats_WhenTooFewBotsForEverySeat_SeatsOneTwiceRatherThanLeaveTheAllysOpen()
+    {
+        // Arrange - two bots for three seats
+        CatalogDto catalog = Catalog(Random, Oracle);
+        RulesetDto ruleset = new(Ruleset, "Chaturaji 2027", 4) { SeatTeams = [0, 1, 0, 1] };
+
+        // Act
+        ImmutableList<string?> bots = GameStarter.QuickSeats(catalog, ruleset, Difficulty.Easy, 0);
+
+        // Assert
+        Assert.Equal(3, bots.Count(bot => bot is not null));
+    }
+
+    [Theory]
+    [InlineData(true, 0)]
+    [InlineData(false, 3)]
+    public void QuickSeats_WhenTheRulesetHasNoTeamsOrThereAreNoBots_SeatsEveryOtherSeatAsAnEnemyOrLeavesItOpen(
+        bool isBotless,
+        int seated
+    )
+    {
+        // Arrange - a ruleset that names no teams: every other seat an enemy
+        CatalogDto catalog = isBotless ? Catalog() : Catalog(Random, Midas, Solomon, Oracle);
+        RulesetDto ruleset = new(Ruleset, "Chaturaji 2027", 4);
+
+        // Act
+        ImmutableList<string?> bots = GameStarter.QuickSeats(catalog, ruleset, Difficulty.Hard, 1);
+
+        // Assert
+        Assert.Equal(
+            (seated, false),
+            (bots.Count(bot => bot is not null), !isBotless && bots.Contains(Random.Id))
+        );
+    }
+
     [Fact]
     public void ByStrength_WhenEachSeatHasItsOwn_SeatsABotOfThatStrengthAndNoneForAPerson()
     {

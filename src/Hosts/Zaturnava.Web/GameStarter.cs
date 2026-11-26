@@ -90,6 +90,53 @@ internal static class GameStarter
     }
 
     /// <summary>
+    /// The bot at each seat of a quick game but the <paramref name="person"/>'s (null): its enemies as hard as asked
+    /// (<see cref="QuickBots"/>), but its allies the other way about, the strongest in an easy game and the weakest in
+    /// a hard one (the user's word of 2026-11-26: "on an easy game, my ally should be a strong bot; on a hard game, my
+    /// ally might be a weak bot"); never one bot at two seats, while there are others.
+    /// </summary>
+    public static ImmutableList<string?> QuickSeats(
+        CatalogDto catalog,
+        RulesetDto ruleset,
+        Difficulty difficulty,
+        int person
+    )
+    {
+        ImmutableList<int> seats = [.. Enumerable.Range(0, ruleset.SeatCount).Where(seat => seat != person)];
+        ImmutableList<int> allies = [.. seats.Where(seat => IsAlly(ruleset, seat, person))];
+        ImmutableList<int> enemies = [.. seats.Except(allies)];
+        ImmutableList<string> foes = [.. QuickBots(catalog, ruleset.Id, difficulty, enemies.Count)];
+        CatalogDto others = catalog with { Bots = [.. catalog.Bots.Where(bot => !foes.Contains(bot.Id))] };
+        ImmutableList<string> friends =
+        [
+            .. QuickBots(others, ruleset.Id, Opposite(difficulty), allies.Count)
+                .Concat(QuickBots(catalog, ruleset.Id, Opposite(difficulty), allies.Count))
+                .Take(allies.Count),
+        ];
+        return
+        [
+            .. Enumerable.Range(0, ruleset.SeatCount).Select(seat =>
+                enemies.IndexOf(seat) is var enemy and >= 0 && enemy < foes.Count ? foes[enemy]
+                : allies.IndexOf(seat) is var ally and >= 0 && ally < friends.Count ? friends[ally]
+                : null
+            ),
+        ];
+    }
+
+    /// <summary>Whether <paramref name="seat"/> is on <paramref name="person"/>'s team, as the ruleset says.</summary>
+    private static bool IsAlly(RulesetDto ruleset, int seat, int person) =>
+        ruleset.SeatTeams.Count == ruleset.SeatCount && ruleset.SeatTeams[seat] == ruleset.SeatTeams[person];
+
+    /// <summary>How hard an ally is for a game as hard as <paramref name="difficulty"/>: the other way about.</summary>
+    private static Difficulty Opposite(Difficulty difficulty) =>
+        difficulty switch
+        {
+            Difficulty.Easy => Difficulty.Hard,
+            Difficulty.Hard => Difficulty.Easy,
+            _ => Difficulty.Medium,
+        };
+
+    /// <summary>
     /// The ruleset whose bot ratings stand for a game of <paramref name="rulesetId"/> on <paramref name="board"/>: for
     /// a board its creator set, as best guess, the same game's at the size nearest it, by its width and height
     /// together, then by kingdom (Stated, 2026-11-13: "make a best guess as to Elo from the board with the closest
@@ -190,9 +237,9 @@ internal static class GameStarter
     }
 
     /// <summary>
-    /// A game of the <paramref name="ruleset"/> at once, as hard as asked (<see cref="QuickBots"/>): the player at a
-    /// seat chosen at random, the bots among the others. The seat is the <paramref name="claimant"/>'s. On a board of
-    /// <paramref name="board"/>'s size, if set.
+    /// A game of the <paramref name="ruleset"/> at once, as hard as asked (<see cref="QuickSeats"/>): the player at a
+    /// seat chosen at random, the bots at the others, its allies the other way about. The seat is the
+    /// <paramref name="claimant"/>'s. On a board of <paramref name="board"/>'s size, if set.
     /// </summary>
     public static Task<Seating> Quick(
         IGameServing games,
@@ -204,11 +251,10 @@ internal static class GameStarter
     )
     {
         int person = Random.Shared.Next(ruleset.SeatCount);
-        IEnumerable<string> bots = QuickBots(catalog, ruleset.Id, difficulty, ruleset.SeatCount - 1);
         return Start(
             games,
             ruleset.Id,
-            BotsOf(Plans(ruleset.SeatCount, person, bots)),
+            QuickSeats(catalog, ruleset, difficulty, person),
             person,
             null,
             claimant,

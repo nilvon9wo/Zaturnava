@@ -209,9 +209,10 @@ to edit, wait for players to sign in and for storage that lasts.
     more than the palace's eight squares besides the throne, on its squares furthest back, then nearest the throne's
     file (*Proposed*). A pinned digest of earlier deals and fills (`QuickArmyReplayTest`) guards the replays.
 - Several leaders in one army: throne control, and everything the Chaturaji 2027 rules say of "the Raja",
-  said of leaders.
+  said of leaders. *Done* (checked 2026-11-26): every such rule asks of any leader
+  ([done](../done.md#asked-2026-11-26)).
 - Scoring by piece value, with the Chaturaji 2027 bonuses multiplied by 10 until playtesting says
-  otherwise (**Q14**); the game ends as Chaturaji 2027 does, and points decide it.
+  otherwise (**Q14**); the game ends as Chaturaji 2027 does, and points decide it. *Done*, but for the playtest.
 
 ## Playtest — fixed armies
 

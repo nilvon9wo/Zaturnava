@@ -388,15 +388,28 @@ html { scrollbar-gutter: stable; }
 /* The new game's choices in groups, a space between: the armies, the board (rivers), how the game is played (dice,
    all-pass rounds), and who may play, not a rule at all (the user's word of 2026-11-20). Every name beside its field,
    the all-pass rounds' too: its label, once a block, had kept its own cell, beside the dice until who opens took it. */
-/* Each group under its heading, a space and a rule above it; within the pieces', each kind's options under its own
-   smaller heading, across the grid (the user, 2026-11-26). */
-.new-game h3.setup-group {
-    margin: 20px 0 6px;
-    padding-top: 8px;
-    border-top: 1px solid color-mix(in srgb, var(--muted) 40%, transparent);
-    font-size: 1em;
-    font-weight: 600;
+/* Each group a tab, so that the dialog fits the screen (the user, 2026-11-26: "use panels with tabs instead"); within
+   the pieces', each kind's options under its own smaller heading, across the grid. */
+.setup-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    margin: 16px 0 10px;
+    border-bottom: 1px solid color-mix(in srgb, var(--muted) 40%, transparent);
 }
+.setup-tabs button.setup-tab {
+    background: transparent;
+    color: inherit;
+    border: 1px solid transparent;
+    border-bottom: 3px solid transparent;
+    border-radius: 4px 4px 0 0;
+    padding: 4px 10px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.setup-tabs button.setup-tab:hover { border-bottom-color: color-mix(in srgb, var(--muted) 50%, transparent); }
+.setup-tabs button.setup-tab[aria-selected="true"] { border-bottom-color: var(--accent, currentColor); }
+.setup-panel[hidden] { display: none; }
 .army-choices h4.setup-subgroup {
     grid-column: 1 / -1;
     margin: 8px 0 0;
