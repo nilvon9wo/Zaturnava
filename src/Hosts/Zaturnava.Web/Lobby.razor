@@ -279,6 +279,10 @@
             }
             else if (mode == SetupMode.Custom)
             {
+                @* Every option in its group under a heading, a space between: the seats, the armies, the board, the
+                   pieces (the leaders' options together, the infantry's together), how the game is played, and who
+                   may play (the user, 2026-11-26: "organize the setup menu a bit better") *@
+                <h3 class="setup-group">Seats</h3>
                 <ol class="plans strengths">
                     <li>
                         <span class="seat-name">You play</span>
@@ -333,6 +337,7 @@
             }
             @if (mode == SetupMode.Custom && this.Ruleset(catalog).IsDealt)
             {
+                <h3 class="setup-group">Armies</h3>
                 <div class="army-choices">
                     <label class="armies">
                         <span class="choice-name">Armies</span>
@@ -377,18 +382,11 @@
                     }
                 }
             }
-            @if (mode == SetupMode.Custom && this.Ruleset(catalog).MayPromoteAtSide)
-            {
-                <label class="side-promotion"
-                       title="Promote at the right-hand edge too: a piece that would promote on reaching the far edge also promotes on reaching the edge to its right">
-                    <input type="checkbox" class="promotes-at-side" @bind="this._promotesAtSide" />
-                    Promote at right edge
-                </label>
-            }
             @if (mode == SetupMode.Custom && !this.Ruleset(catalog).TerrainAxes.IsEmpty)
             {
                 @* The terrain as its creator chooses it, each part at random unless they do (asked 2026-11-19); in
                    the armies' grid, each name beside its list. *@
+                <h3 class="setup-group">Board</h3>
                 <div class="army-choices terrain-choices">
                     @foreach (TerrainAxisDto axis in this.Ruleset(catalog).TerrainAxes.Where(axis => axis.Within is null))
                     {
@@ -416,6 +414,56 @@
                 @* The game's own options in the grid of the choices above: each name in the first column, what is
                    chosen in the second, and who opens beside the dice, as a bot beside its strength (the user's word
                    of 2026-11-20: "messy, crowded, and chaotic") *@
+                <h3 class="setup-group">Pieces</h3>
+                <div class="army-choices game-options piece-options">
+                    <h4 class="setup-subgroup">Leaders</h4>
+                    <span class="choice-name">All gone</span>
+                    <label class="leaders-lost check"
+                           title="A team with no leader left on the board loses at once">
+                        <input type="checkbox" class="lost-without-leaders" @bind="this._isLostWithoutLeaders" />
+                        Team lost
+                    </label>
+                    @if (this.Ruleset(catalog).HasFaceOff)
+                    {
+                        <label class="face-off-pause"
+                               title="Seconds the game waits when a player first may call a leader face-off; empty, no wait">
+                            <span class="choice-name">Face-off ⏸</span>
+                            <input type="number"
+                                   class="face-off-pause"
+                                   min="@CreateGameRequest.LeastFaceOffPause"
+                                   max="@CreateGameRequest.MostFaceOffPause"
+                                   @bind="this._faceOffPause"
+                                   placeholder="0 s" />
+                        </label>
+                    }
+                    @if (this.Ruleset(catalog).StartRows is not null || this.Ruleset(catalog).MayPromoteAtSide)
+                    {
+                        <h4 class="setup-subgroup">Infantry</h4>
+                    }
+                    @if (this.Ruleset(catalog).StartRows is { } startRows)
+                    {
+                        <label class="start-rows"
+                               title="Rows from each army's back where a Western Pawn may first move two squares">
+                            <span class="choice-name">Start rows</span>
+                            <input type="number"
+                                   class="start-rows"
+                                   min="@CreateGameRequest.LeastStartRows"
+                                   max="@CreateGameRequest.MostStartRows"
+                                   @bind="this._startRows"
+                                   placeholder="@startRows" />
+                        </label>
+                    }
+                    @if (this.Ruleset(catalog).MayPromoteAtSide)
+                    {
+                        <span class="choice-name">Promotion</span>
+                        <label class="side-promotion check"
+                               title="Promote at the right-hand edge too: a piece that would promote on reaching the far edge also promotes on reaching the edge to its right">
+                            <input type="checkbox" class="promotes-at-side" @bind="this._promotesAtSide" />
+                            At right edge too
+                        </label>
+                    }
+                </div>
+                <h3 class="setup-group">Play</h3>
                 <div class="army-choices game-options">
                     @if (this.Ruleset(catalog).HasDice)
                     {
@@ -451,12 +499,6 @@
                                    placeholder="@idleRounds" />
                         </label>
                     }
-                    <span class="choice-name">Leaders</span>
-                    <label class="leaders-lost check"
-                           title="A team with no leader left on the board loses at once">
-                        <input type="checkbox" class="lost-without-leaders" @bind="this._isLostWithoutLeaders" />
-                        All gone, team lost
-                    </label>
                     <label class="idle-time"
                            title="Seconds each player may be idle on their turn before it passes; empty, no limit">
                         <span class="choice-name">Turn time ⏱</span>
@@ -467,38 +509,13 @@
                                @bind="this._idleSeconds"
                                placeholder="∞ s" />
                     </label>
-                    @if (this.Ruleset(catalog).StartRows is { } startRows)
-                    {
-                        <label class="start-rows"
-                               title="Rows from each army's back where a Western Pawn may first move two squares">
-                            <span class="choice-name">Start rows</span>
-                            <input type="number"
-                                   class="start-rows"
-                                   min="@CreateGameRequest.LeastStartRows"
-                                   max="@CreateGameRequest.MostStartRows"
-                                   @bind="this._startRows"
-                                   placeholder="@startRows" />
-                        </label>
-                    }
-                    @if (this.Ruleset(catalog).HasFaceOff)
-                    {
-                        <label class="face-off-pause"
-                               title="Seconds the game waits when a player first may call a leader face-off; empty, no wait">
-                            <span class="choice-name">Face-off ⏸</span>
-                            <input type="number"
-                                   class="face-off-pause"
-                                   min="@CreateGameRequest.LeastFaceOffPause"
-                                   max="@CreateGameRequest.MostFaceOffPause"
-                                   @bind="this._faceOffPause"
-                                   placeholder="0 s" />
-                        </label>
-                    }
                 </div>
                 @* who may play, apart from the rules (the user's word of 2026-11-20) *@
                 @if (this._me is not null)
                 {
+                    <h3 class="setup-group">Players</h3>
                     <div class="army-choices game-options player-options">
-                        <span class="choice-name">Players</span>
+                        <span class="choice-name">Open seats</span>
                         <label class="for-players check"
                                title="Players signed in only: no guests at the open seats, nor taking over a bot's">
                             <input type="checkbox" class="players-only" @bind="this._isForPlayers" />
@@ -673,10 +690,11 @@
     private bool _isDescending;
 
     /// <summary>
-    /// Whether the player chose to show the New game panel, or to hide it; none, until they choose. Hidden at first in
-    /// a frame, as itch.io shows the page, where it would cover the little there is (the user's report of 2026-11-19).
+    /// Whether the New game panel shows, as the lobby first decides it (<see cref="Load"/>) and the player chooses
+    /// after. Hidden at first in a frame, as itch.io shows the page, where it would cover the little there is (the
+    /// user's report of 2026-11-19).
     /// </summary>
-    private bool? _isNewGameShown;
+    private bool _isNewGameShown;
 
     /// <summary>
     /// The New game dialog, floating over the games rather than pushing them aside (Stated, 2026-11-19), which the
@@ -700,11 +718,11 @@
     }
 
     /// <summary>
-    /// Whether the New game panel shows: as the player chose; else, only if there is no game they could join on this
-    /// page (playtest 2026-11-15, H1), so that joining comes first; not while the games are still being listed, until
-    /// it is known whether there is one, but the player may open it then.
+    /// Whether the New game panel shows: as the player chose; else, as <see cref="Load"/> decided, only if there was
+    /// no game they could join among those it listed last (playtest 2026-11-15, H1), so that joining comes first;
+    /// at once, either way (the user, 2026-11-26: a player need not wait on the other panels to start a game).
     /// </summary>
-    private bool IsNewGameShown => this._isNewGameShown ?? (!this._isListing && !this._games.Any(this.IsJoinable));
+    private bool IsNewGameShown => this._isNewGameShown;
 
     /// <summary>Whether the player could join the game: not over, with an open seat they may take.</summary>
     private bool IsJoinable(GameSummaryDto game) =>
@@ -1443,9 +1461,11 @@
         Task<(string Id, string Token)?> me = this.Who();
         CatalogDto catalog = await asked;
         this.Memory.Catalog = catalog;
-        this._me = await me;
         this._arePreviewsShown = await this.Browser.ArePreviewsShown();
-        this._isNewGameShown = await this.Browser.IsFramed() ? false : this._isNewGameShown;
+        // whether New game is open, decided by what is known now, the games the lobby listed last, so that it neither
+        // waits on the list nor closes under the player once it comes (the user, 2026-11-26)
+        this._isNewGameShown = !await this.Browser.IsFramed()
+            && !(this.Memory.Listed?.Page.Games ?? []).Any(this.IsJoinable);
         foreach (RulesetDto game in AllGamesOf(catalog))
         {
             this._setups = await this.Browser.SetupOf(game.Game) is { } setup
@@ -1459,24 +1479,28 @@
         RulesetDto first = games.FirstOrDefault(game => game.Game == last) ?? games[0];
         this.Choose(catalog, first.Game);
         this._filter = this._filter with { Game = first.Game, Preview = this.PreviewFilter };
+        this._code = GameCode.InvitedBy(this.Navigation.Uri);
+        this._mode = await this.Browser.Setup();
+        this._scenario = await this.Browser.LastScenario() ?? string.Empty;
+        this._catalog = catalog; // before listing, which asks it whether scenarios are offered
+        this._isListing = true;
+        // New game, and the leaderboard, each its own, before who plays is known or the games are listed: neither
+        // waits on the others (the user, 2026-11-26)
+        this.StateHasChanged();
+        await this.OnGameChosen.InvokeAsync(first.Game);
+        this._me = await me;
         if (await this.Browser.GamesList() is { } view)
         {
             this.RestoreList(catalog, view);
         }
 
-        this._code = GameCode.InvitedBy(this.Navigation.Uri);
-        this._mode = await this.Browser.Setup();
-        this._scenario = await this.Browser.LastScenario() ?? string.Empty;
-        this._catalog = catalog; // before listing, which asks it whether scenarios are offered
         if (this.Memory.Listed is { } listed && listed.Asked == this.Asked)
         {
             this.Show(listed.Page);
             await this.Recall(this._games);
         }
 
-        this._isListing = true;
         this.StateHasChanged();
-        await this.OnGameChosen.InvokeAsync(first.Game);
         try
         {
             await Task.WhenAll(this.ListGames(), this.FindAwaited());

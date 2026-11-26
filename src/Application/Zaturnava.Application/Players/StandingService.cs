@@ -4,6 +4,7 @@ using Net.NowhereAtAll.Zaturnava.Application.Bots;
 using Net.NowhereAtAll.Zaturnava.Application.Games;
 using Net.NowhereAtAll.Zaturnava.Application.Ports;
 using Net.NowhereAtAll.Zaturnava.Application.Rulesets;
+using Net.NowhereAtAll.Zaturnava.Application.Scenarios;
 using Net.NowhereAtAll.Zaturnava.Engine.Rules;
 using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 
@@ -151,11 +152,15 @@ public sealed class StandingService(
             .ToImmutableDictionary(players => players.Key, players => players.Count());
     }
 
-    /// <summary>The player a game of <paramref name="game"/> waits for, at a seat they play themselves.</summary>
+    /// <summary>
+    /// The player a game of <paramref name="game"/> waits for, at a seat they play themselves: by the seat its record
+    /// keeps as deciding, and the game it is rated as by its ruleset and its first action, without replaying it (a
+    /// leaderboard replaying every idle game took seconds, the user's report of 2026-11-26: the lobby slow).
+    /// </summary>
     private PlayerId? AwaitedPlayer(GameRecord record, string game) =>
-        this.Replayed(record) is { } snapshot
-        && RatedAs(snapshot) == game
-        && snapshot.State.DecidingSeat is { } seat
+        this._rulesets.All.FirstOrDefault(ruleset => ruleset.Id == record.RulesetId) is { } rules
+        && RatedAs(rules.GameId, ScenarioStart.AreDiceOff(record.Actions)) == game
+        && record.Deciding is { } seat
         && record.Controllers[seat.Value] is HumanSeat { IsAi: false } human
             ? human.Claimant
             : null;
@@ -176,7 +181,9 @@ public sealed class StandingService(
     /// dice (<see cref="WithoutDice"/>).
     /// </summary>
     public static string RatedAs([Required] GameSnapshot snapshot) =>
-        snapshot.State.AreDiceOff ? snapshot.Rules.GameId + WithoutDice : snapshot.Rules.GameId;
+        RatedAs(snapshot.Rules.GameId, snapshot.State.AreDiceOff);
+
+    private static string RatedAs(string game, bool areDiceOff) => areDiceOff ? game + WithoutDice : game;
 
     /// <summary>The game whatever <paramref name="game"/> rates is of, with dice or without.</summary>
     private static string GameOf(string game) =>

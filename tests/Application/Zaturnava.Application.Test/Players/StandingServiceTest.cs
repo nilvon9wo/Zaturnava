@@ -522,7 +522,8 @@ public sealed class StandingServiceTest
     [Fact]
     public async Task Leaders_WhenGamesHaveWaitedADayForAPlayersMove_CountsThemAbandonedByThatPlayerAlone()
     {
-        // Arrange - Black to decide in every game of the rules, not over; the games of "over" replay to their end
+        // Arrange - Black to decide in every game of the rules, not over, as each record's summary says; the game of
+        // "over" summarized as no one's to decide
         await this._players.Add(new Player(Ada, "Ada", []), this._cancellation);
         await this._players.Add(new Player(Bea, "Bea", []), this._cancellation);
         await this._players.Keep(
@@ -543,7 +544,7 @@ public sealed class StandingServiceTest
             Waiting("by an AI", new HumanSeat("ada", Ada, IsAi: true)),
             Waiting("a bot's move", new BotSeat(FirstChoiceBot.BotId), new HumanSeat("bea", Bea)),
             Waiting("retired", ada) with { RulesetId = "retired" },
-            Waiting("ended", ada) with { RulesetId = "over" },
+            Waiting("ended", ada) with { RulesetId = "over", Deciding = null },
         ];
         foreach (GameRecord game in games)
         {
@@ -612,8 +613,9 @@ public sealed class StandingServiceTest
         };
 
     /// <summary>A game not over, untouched since long ago.</summary>
+    /// <summary>A game not over, summarized as Black to decide, as every game saved since summaries were is.</summary>
     private static GameRecord Waiting(string id, params SeatController[] seats) =>
-        Record(id, seats) with { IsOver = null };
+        Record(id, seats) with { IsOver = null, Deciding = Black };
 
     /// <summary>The service, the first-choice bot rated <paramref name="botRating"/> at the rules, if at all.</summary>
     private StandingService Service(EndedRules rules, int? botRating) => this.Service([rules], botRating);
