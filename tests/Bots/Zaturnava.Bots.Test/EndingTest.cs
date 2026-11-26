@@ -229,15 +229,130 @@ public sealed class EndingTest
         Assert.Equal(proposes ? new ProposeEndAction(Black, Resigns: false) : Pass, action);
     }
 
+    [Theory]
+    [InlineData(8, "Realist", true)]
+    [InlineData(8, "Even", false)]
+    [InlineData(20, "Even", true)]
+    [InlineData(20, "Dogged", false)]
+    public void AnswerTo_WhenAheadByAsMuchAsTheBotsTemperWants_ProposesEndingIt(
+        int ourPoints,
+        string temper,
+        bool proposes
+    )
+    {
+        // Arrange - no one rests; Black's team leads by 12 on the board, the rules' clear lead 10: Sage and Tactician
+        // want three quarters of it, most bots all of it, Random twice it (F6: "each bot by its own threshold")
+        DecisionRequest request = Resting(people: [], ourPoints);
+        DecisionRequest playing = request with { State = request.State with { Resigned = [] } };
+        Temper own = temper switch
+        {
+            "Realist" => Temper.Realist,
+            "Dogged" => Temper.Dogged,
+            _ => Temper.Even,
+        };
+
+        // Act
+        GameAction? action = Ending.AnswerTo(playing, own);
+
+        // Assert
+        Assert.Equal(proposes ? new ProposeEndAction(Black, Resigns: false) : null, action);
+    }
+
+    [Theory]
+    [InlineData("Even", true)]
+    [InlineData("Dogged", false)]
+    public void AnswerTo_WhenAskedBehindByLittleMoreThanItHopesFor_AgreesUnlessItHopesMoreThanMost(
+        string temper,
+        bool agrees
+    )
+    {
+        // Arrange - as in the first test: Black's Elephant hopes for 4.5, which most bots count at 5.625, Random at 9;
+        // Yellow leads by 6
+        ScoringRules rules = new(Points())
+        {
+            MayPropose = true,
+            Moves = Moving((new PieceKindId("elephant"), MovementRule.Slide(DirectionSets.Orthogonal))),
+        };
+        DecisionRequest asked = Asked(
+            rules,
+            [(0, Black, "elephant"), (1, Yellow, "raja"), (7, Black, "pawn")],
+            theirPoints: 6
+        );
+
+        // Act
+        GameAction? action = Ending.AnswerTo(asked, temper == "Dogged" ? Temper.Dogged : Temper.Even);
+
+        // Assert
+        Assert.Equal(new AnswerEndAction(Black, agrees), action);
+    }
+
+    [Theory]
+    [InlineData("raja", null, true)]
+    [InlineData("elephant", null, true)]
+    [InlineData("pawn", 2, true)]
+    [InlineData("pawn", 3, false)]
+    [InlineData("horse", null, false)]
+    public void AnswerTo_WhenClearlyAheadButTheEnemyStillHasHope_PlaysOnWithoutProposing(
+        string kind,
+        int? stepsToPromotion,
+        bool hasHope
+    )
+    {
+        // Arrange - a clear lead, no one resting; Yellow keeps one more piece beside its Boat: a Raja, a heavy piece,
+        // a Pawn two or three steps from its promotion, or a Horse (the user's word of 2026-11-26)
+        DecisionRequest request = Resting(people: [], ourPoints: 20);
+        GameState state = request.State with { Resigned = [] };
+        CellId cell = new(9);
+        DecisionRequest hoping = request with
+        {
+            Rules = new ScoringRules(Points())
+            {
+                MayPropose = true,
+                ClearLead = 5,
+                PromotionSteps = stepsToPromotion is { } steps
+                    ? ImmutableDictionary<CellId, int>.Empty.Add(cell, steps)
+                    : [],
+            },
+            State = state with
+            {
+                Position = state.Position.Place(cell, new Piece(new PieceId(9), new PieceKindId(kind), Yellow)),
+            },
+        };
+
+        // Act
+        GameAction? action = Ending.AnswerTo(hoping);
+
+        // Assert - whichever it keeps, the lead is clear: 7 or more on the board, the rules' clear lead 5
+        Assert.Equal(hasHope ? null : new ProposeEndAction(Black, Resigns: false), action);
+    }
+
+    [Fact]
+    public void AnswerTo_WhenAnAllysProposalWasRefusedLately_WaitsAsIfItWereItsOwn()
+    {
+        // Arrange - a clear lead; Green's proposal refused a turn ago
+        DecisionRequest request = Resting(people: [], ourPoints: 20);
+        GameState state = request.State with { Resigned = [] };
+        DecisionRequest refused = request with
+        {
+            State = state with { RefusedOn = state.RefusedOn.Add(Green, state.TurnNumber - 1) },
+        };
+
+        // Act
+        GameAction? action = Ending.AnswerTo(refused);
+
+        // Assert
+        Assert.Null(action);
+    }
+
     /// <summary>
-    /// Black's turn, Green resting, people at <paramref name="people"/>: Black's team has four Elephants on
-    /// the board to Yellow's one, and <paramref name="ourPoints"/> points to none; a retired Red's Raja counts
+    /// Black's turn, Green resting, people at <paramref name="people"/>: Black's team has four Elephants on the board
+    /// to Yellow's Boat, worth as much, and <paramref name="ourPoints"/> points to none; a retired Red's Raja counts
     /// for nothing.
     /// </summary>
     private static DecisionRequest Resting(ImmutableHashSet<SeatId> people, int ourPoints)
     {
         DecisionRequest request = Request(
-            [(Black, "elephant"), (Black, "elephant"), (Green, "elephant"), (Green, "elephant"), (Yellow, "elephant"),
+            [(Black, "elephant"), (Black, "elephant"), (Green, "elephant"), (Green, "elephant"), (Yellow, "boat"),
                 (Red, "raja")],
             ourPoints,
             0

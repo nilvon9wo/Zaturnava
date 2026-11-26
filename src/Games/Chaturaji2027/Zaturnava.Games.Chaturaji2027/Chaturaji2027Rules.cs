@@ -624,6 +624,15 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     public bool IsHeavy(PieceKindId kind) => this._variant.Heavies.Contains(kind);
 
     /// <summary>
+    /// For a Pawn (any of the variant's <see cref="Chaturaji2027Variant.Promotables"/>), the rows ahead of it to the
+    /// far edge, as its army faces; the edge to its right, in a game promoting there, not counted.
+    /// </summary>
+    public int? StepsToPromotion([Required] GameState state, CellId cell) =>
+        state.Position.PieceAt(cell) is { } piece && this._variant.Promotables.Contains(piece.Kind)
+            ? this.RowsAhead(cell, state.SeatOf(piece.Owner).Forward)
+            : null;
+
+    /// <summary>
     /// What a bot may weigh beyond what every ruleset has: how far the army's Pawns have come and how near they are
     /// to promoting, its pieces' reach where they stand and how much of it goes back, how safe its leaders and thrones
     /// are, and how many other armies' pieces it commands (<see cref="ArmyMeasures"/>).

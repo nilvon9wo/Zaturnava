@@ -117,7 +117,8 @@ From the specification's observations of the bots in play (F, X) and the Sage pl
 - **X4** Ransoms offered or accepted when hopeless or harmful: prolonging a decided game, bringing back a piece
   that is at once taken or in the way, offering what no one sensible would accept.
 - **F6** Resigning a hopeless endgame: a strategic judgement, not a points comparison, each bot by its own
-  threshold.
+  threshold. *Begun* (2026-11-26): each bot's own threshold (`Temper`; [plan](bots/strategy-plan.md), step 6). Still
+  to do: the strategic judgement, beyond points and hope.
 - Sage, next: command and empires (thrones and leaders weigh them only in part), and the enemy's reply. With the
   reply weighed, Sage may take its own team's pieces (rules §6.4) when that saves a better one (*Stated*
   2026-10-29).

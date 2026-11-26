@@ -290,6 +290,19 @@ public sealed class RulesApplyingTest
     }
 
     [Fact]
+    public void StepsToPromotion_WhenTheRulesetSaysNoOther_IsNone()
+    {
+        // Arrange
+        OneSizeRules rules = new();
+
+        // Act
+        int? steps = StepsToPromotionOf(rules);
+
+        // Assert
+        Assert.Null(steps);
+    }
+
+    [Fact]
     public void Drafted_WhenTheRulesetSaysNoOther_IsNotDraftableAndLeavesTheGameAsDealtOfferingNothing()
     {
         // Arrange
@@ -391,6 +404,10 @@ public sealed class RulesApplyingTest
     private static ImmutableHashSet<SeatId> MoversOf<TRules>(TRules rules)
         where TRules : IRulesApplying =>
         rules.MoversOf(OneSizeRules.State, Seat);
+
+    private static int? StepsToPromotionOf<TRules>(TRules rules)
+        where TRules : IRulesApplying =>
+        rules.StepsToPromotion(OneSizeRules.State, new CellId(0));
 
     private static int KeepingWorthOf<TRules>(TRules rules, PieceKindId kind)
         where TRules : IRulesApplying =>
