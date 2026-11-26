@@ -58,7 +58,7 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
 
         // Assert
         Assert.Equal(
-            "chaturaji-2027/Chaturaji 2027//False,grand-legions/Grand Legions/small/False/6x6x3x3,"
+            "chaturaji-2027/Chaturaji 2027//False,grand-legions/Grand Legions/small/False/6x6x3x2,"
             + "grand-legions/Grand Legions/medium/False/8x8x4x2,grand-legions/Grand Legions/large/False/12x12x6x3,"
             + "grand-legions/Grand Legions/custom/False/10x10x4x3/10x10x4x3",
             string.Join(
@@ -128,7 +128,7 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
 
         // Assert
         Assert.Equal(
-            "12x9x4x4/True,6x6x3x3/True,/False",
+            "12x9x4x4/True,6x6x3x2/True,/False",
             string.Join(
                 ",",
                 listed.Select(game =>

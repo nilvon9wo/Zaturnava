@@ -38,12 +38,12 @@ public sealed class BoardPricesTest
     }
 
     [Theory]
-    [InlineData("grand-legions-small", 66)]
+    [InlineData("grand-legions-small", 34)]
     [InlineData("grand-legions-large", 11)]
     public void On_WhenTheBoardIsLargerOrSmaller_PricesTheShogiKnightsPromotionByHowFarItIs(string game, int expected)
     {
         // Arrange - its reach, 2, the same on any board; the Gold General's 63 more over the rows from its kingdom's
-        // front row to the far three: on the small board, one, so it costs what the Gold General does
+        // front row to the far three: on the small board, two, its kingdoms 3 × 2
         GrandBoard board = QuickTerrain.BoardOf(QuickGame.All.Single(quick => quick.Id == game), 0);
 
         // Act
@@ -54,7 +54,7 @@ public sealed class BoardPricesTest
     }
 
     [Theory]
-    [InlineData("grand-legions-small", 10, 70, 12, 1)]
+    [InlineData("grand-legions-small", 10, 70, 11, 1)]
     [InlineData("grand-legions-medium", 14, 70, 9, 4)]
     [InlineData("grand-legions-large", 22, 70, 7, 8)]
     public void On_WhenTheBoardIsLargerOrSmaller_PricesReachAndPromotionByItsDimensions(

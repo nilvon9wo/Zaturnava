@@ -128,7 +128,7 @@ The price is what the piece costs in a quick army and what taking it scores.
 |---|---|---|---|
 | Rook | 10 | 14 | 22 |
 | King (Western) | 70 | 70 | 70 |
-| Pawn (Western) | 12 | 9 | 7 |
+| Pawn (Western) | 11 | 9 | 7 |
 | Giraffe | 1 | 4 | 8 |
 
 ### Binding
