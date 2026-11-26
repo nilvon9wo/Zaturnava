@@ -16,11 +16,13 @@ With --out, each pair's result is also kept, as it ends, in <out>.pairs.json; ru
 With --hold-shipped, the bots the server ships rated at the ruleset keep those ratings, and only the others are
 fitted, around them, as the server's bot-rating job fits them: so that local games, more of them than the server
 plays, rate new bots on the scale it ships (M4); only those fitted are written. With --free, the bots named are
-fitted afresh though shipped, to measure them again.
+fitted afresh though shipped, to measure them again. With --ship as well, those fitted are merged into the ratings
+the server ships (src/Bots/Zaturnava.Bots/Ratings/<ruleset>.json), for the next deploy to rate them so live, and the
+measurement is kept, beside every one before it, in docs/bots/rating-history.jsonl (M4, M5).
 
 Usage: rate-bots.py RUNNER [--bots argus,echo,...] [--games 50] [--max-steps 2000]
                            [--ruleset chaturaji-2027] [--out ratings.json] [--jobs N]
-                           [--bot-assembly MyBots.dll] [--hold-shipped [--free morpheus,...]]
+                           [--bot-assembly MyBots.dll] [--hold-shipped [--free morpheus,...] [--ship]]
 """
 
 import argparse
@@ -150,13 +152,40 @@ def fit(bots, record):
     return {bot: round(ANCHOR_RATING + SCALE * math.log(strength[bot])) for bot in bots}
 
 
+ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
+HISTORY = os.path.join(ROOT, "docs", "bots", "rating-history.jsonl")
+
+
+def shipped_path(ruleset):
+    """Where the server's ratings at the ruleset are kept."""
+    return os.path.join(ROOT, "src", "Bots", "Zaturnava.Bots", "Ratings", ruleset + ".json")
+
+
 def shipped(ruleset):
     """The ratings the server ships at the ruleset (src/Bots/Zaturnava.Bots/Ratings/), by bot; none, if none."""
-    path = os.path.join(os.path.dirname(__file__), "..", "src", "Bots", "Zaturnava.Bots", "Ratings", ruleset + ".json")
+    path = shipped_path(ruleset)
     if not os.path.exists(path):
         return {}
     with open(path, encoding="utf-8") as kept:
         return json.load(kept)
+
+
+def ship(ruleset, ratings, record, games):
+    """The ratings fitted merged into those the server ships at the ruleset, weakest first, so that the next deploy
+    rates the bots so, live (M4); and the measurement kept, beside every one before it, in HISTORY (M5): when, at
+    what ruleset, how many games a pair, each pair's result, and the ratings fitted."""
+    merged = {**shipped(ruleset), **ratings}
+    with open(shipped_path(ruleset), "w", encoding="utf-8", newline="\n") as out:
+        out.write(json.dumps(dict(sorted(merged.items(), key=lambda rating: rating[1])), indent=2) + "\n")
+    measurement = {
+        "date": time.strftime("%Y-%m-%d"),
+        "ruleset": ruleset,
+        "gamesEachWay": games,
+        "pairs": {f"{a}|{b}": list(result[:3]) for (a, b), result in record.items()},
+        "ratings": ratings,
+    }
+    with open(HISTORY, "a", encoding="utf-8", newline="\n") as out:
+        out.write(json.dumps(measurement) + "\n")
 
 
 def fit_around(bots, record, held):
@@ -203,7 +232,10 @@ def main():
     parser.add_argument("--bot-assembly")
     parser.add_argument("--hold-shipped", action="store_true")
     parser.add_argument("--free")
+    parser.add_argument("--ship", action="store_true")
     options = parser.parse_args()
+    if options.ship and not options.hold_shipped:
+        sys.exit("--ship needs --hold-shipped, so that the bots already shipped keep the scale the server rates on.")
     runner = [options.runner] + (["--bot-assembly", options.bot_assembly] if options.bot_assembly else [])
     bots = options.bots.split(",") if options.bots else known(runner, options.ruleset)
     if ANCHOR not in bots:
@@ -243,6 +275,8 @@ def main():
     held = {bot: rating for bot, rating in shipped(options.ruleset).items() if bot not in freed} \
         if options.hold_shipped else {}
     ratings = fit_around(bots, record, held) if held else fit(bots, record)
+    if options.ship:
+        ship(options.ruleset, ratings, record, options.games)
     text = json.dumps(dict(sorted(ratings.items(), key=lambda rating: rating[1])), indent=2) + "\n"
     if options.out:
         with open(options.out, "w", encoding="utf-8", newline="\n") as out:
