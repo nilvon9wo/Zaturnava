@@ -180,7 +180,10 @@ From the specification's observations of the bots in play (F, X) and the Sage pl
   palace, throne and pieces; probably still keeping to the board's corners, more or less, so that no later player
   is left without room.
 - **3** Variant pieces: two Chinese-chess-like elephants, one confined by two rivers dividing the board in four,
-  a dearer one that may cross them; the boat to be replaced.
+  a dearer one that may cross them; the boat to be replaced. *Found covered* (2026-11-26): the confined one is the
+  Xiangqi Elephant (worth 1), which may not cross a river, and a game with both rivers divides the board in four;
+  Grand Legions has no Boat. The dearer one is the same Elephant with its river bought off (its lift, priced in
+  the [catalogue](grand/pieces.md)), which waits on Stage 5's lifts above; the Alfil (worth 2) leaps freely now.
 - Stage 7: playtest, and act on what it asks: the Chaturaji 2027 bonuses, the leader bonus of 60, the Pawns'
   promotion premiums ([pieces](grand/pieces.md#still-open)) (**Q14**).
 
