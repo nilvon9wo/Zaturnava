@@ -378,6 +378,8 @@ public sealed class GameLogTest
             new PieceCaptured(RedRaja, Black, 5),
             new RajaCapturedOnThrone(RedRaja, Black, 2),
             new EmpireCreated(Black, 5),
+            new BoatTriumph(Black, Black, 4),
+            new BoatTriumph(Black, Green, 4),
             new EveryPieceCommanded(Black, 2),
             new FarmedPointsLost(Yellow, Black, 3, 6),
             new DiceForfeited(Black, [1])
@@ -397,6 +399,8 @@ public sealed class GameLogTest
                 "captured 0: Black took Red's Raja, with Yellow's Pawn, and holds it prisoner (+5).",
                 "bonus 0: Black took that Raja on its own throne (+2 more).",
                 "empire 0: Black created the empire, with no enemy Raja left on the board (+5).",
+                "bonus 0: Black made a Boat triumph, every army's Boat on one square of four (+4 more).",
+                "bonus 2: Green scored for Black's Boat triumph (+4).",
                 "bonus 0: Black commands every piece on the board (+2).",
                 "bonus 0: Yellow's Raja was taken while farming a throne: Yellow loses the 3 it farmed, "
                     + "and Black scores (+6).",

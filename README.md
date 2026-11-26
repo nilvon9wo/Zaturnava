@@ -24,8 +24,8 @@ Playable end to end, online: <https://nilvon9wo.itch.io/zaturnava> is the page, 
 <https://zaturnava.runasp.net/> the game server it plays on. Create a game, seat people and bots, sign in (or
 play as a guest), talk at the table, and play. The `chaturaji-2027` ruleset has nearly all of the rules: the
 board, the pieces' moves and captures, the roll-off, dice, scoring with the throne bonuses and the empire,
-command of other armies through thrones, regency, escape, promotion, ransom and the end of the game; the boat
-triumph and the per-game toggles are still to come
+command of other armies through thrones, regency, escape, promotion, ransom, the Boat triumph and the end of the
+game; the per-game toggles are still to come
 ([rules.md, implementation status](docs/rules.md#implementation-status)). Grand Legions, the grand game, is
 playable as a preview, in its quick games of three sizes, shown in the lobby only to those who ask for previews
 ([its roadmap](docs/grand/roadmap.md)).

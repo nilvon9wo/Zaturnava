@@ -243,6 +243,12 @@ public sealed record GameState(
     /// </summary>
     public ImmutableDictionary<PieceId, int> ThroneTenure { get; init; } = [];
 
+    /// <summary>
+    /// The pieces that its owner's allies may move too, as their own, until each is taken: the Boats that made a Boat
+    /// triumph.
+    /// </summary>
+    public ImmutableHashSet<PieceId> Shared { get; init; } = [];
+
     /// <summary>A proposal to end the game, waiting on the deciding seat's answer; null if none is.</summary>
     public EndProposal? Proposal { get; init; }
 

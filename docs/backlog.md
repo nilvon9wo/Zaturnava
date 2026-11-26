@@ -176,7 +176,6 @@ From the specification's observations of the bots in play (F, X) and the Sage pl
   is left without room.
 - **3** Variant pieces: two Chinese-chess-like elephants, one confined by two rivers dividing the board in four,
   a dearer one that may cross them; the boat to be replaced.
-- Boat triumph (§9): a nice-to-have; the condition is so unlikely that no one may miss it.
 - Stage 7: playtest, and act on what it asks: the Chaturaji 2027 bonuses, the leader bonus of 60, the Pawns'
   promotion premiums ([pieces](grand/pieces.md#still-open)) (**Q14**).
 
