@@ -39,19 +39,15 @@ public static class QuickDraft
         };
 
     /// <summary>
-    /// What buying off a kind's restriction costs (the catalogue's lift): so far only an area restriction the board
-    /// holds a piece by, a palace's or a river's (<see cref="PalaceConfinement"/>, <see cref="RiverCrossing"/>), as the
-    /// rules know what a piece does without those; a movement restriction, and the Janggi Soldier's palace lines, not
-    /// yet (Proposed, 2026-11-26).
+    /// What buying off a kind's restriction costs: the catalogue's lift, of its movement restriction or its area
+    /// restriction (<see cref="LiftedMoves"/>); none, for a kind without one.
     /// </summary>
     public static int? LiftPriceOf([Required] PieceKindId kind, LiftKind restriction) =>
-        restriction == LiftKind.Area
-            ? GrandLegionsPieces.ById[kind].Restrictions
-                .FirstOrDefault(each =>
-                    each.Kind == RestrictionKind.Area && (each.IsConfining || each.Terrain == Terrain.River)
-                )
-                ?.Lift
-            : null;
+        GrandLegionsPieces.ById[kind].Restrictions
+            .FirstOrDefault(each =>
+                each.Kind == (restriction == LiftKind.Area ? RestrictionKind.Area : RestrictionKind.Movement)
+            )
+            ?.Lift;
 
     /// <summary>
     /// The rest of an army, drafted at random. From nothing (a throne is set before any piece), as the program deals

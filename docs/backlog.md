@@ -173,9 +173,8 @@ From the specification's observations of the bots in play (F, X) and the Sage pl
 ## 4. Grand Legions: rules still to come
 
 - Stage 5: upgrades and promotions bought in play, in a palace with the player's own leader on its throne,
-  lowering the score; lifts bought in the draft, and kept in the game (*begun* 2026-11-26: area lifts; movement
-  lifts wait on [Q-L](open-questions.md#q-l-what-does-each-movement-lift-let-a-piece-do-asked-2026-11-26)); the
-  four-throne bonus, once for each set of leaders; bots that spend.
+  lowering the score; lifts bought in the draft, and kept in the game (*done* 2026-11-26, every lift; still to come,
+  in play); the four-throne bonus, once for each set of leaders; bots that spend.
 - Stage 2: saved settings, named, shared and copied to edit ([specification §2.1](grand/specification.md#21-saved-settings)).
 - *(Stated 2026-11-12)* **Kingdoms placed by the players**, as a setting of the game's creator, before their
   palace, throne and pieces; probably still keeping to the board's corners, more or less, so that no later player

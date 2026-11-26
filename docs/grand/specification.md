@@ -307,8 +307,9 @@ on, with what follows in place of the Raja-and-dice parts.
 
 ### 6.2 Points: scoring and spending
 
-- **Stated.** Capturing a piece scores its value as listed in the catalogue: upgrades bought for
-  it add nothing. A promoted piece scores as what it was promoted into, not what it was.
+- **Stated (2026-11-26, replacing "upgrades bought for it add nothing").** Capturing a piece scores its value as
+  listed in the catalogue, and what the lifts bought for it cost. A promoted piece scores as what it was promoted
+  into, not what it was, and its lifts no longer count, being the old kind's.
 - **Stated.** Points may be spent, in play, on:
   - **upgrades** for an upgradable piece, lifting its restrictions;
   - **promotions** for a promotable piece, at the full value of the piece it becomes (nothing off

@@ -161,6 +161,33 @@ capturing it scores ([specification §6.2](specification.md#62-points-scoring-an
 order; "—" means there is none to buy. A restriction that the piece's own move imposes (a piece
 that moves only diagonally never leaves its colour) cannot be bought off, and has no lift.
 
+**What each lift does** (*Stated*, 2026-11-26, the designer accepting every proposal of open question Q-L). A lift
+is priced at what it adds to the piece's value, as the value is counted ([Value](#value)), plus a point: the
+Horse's 2 is its −1 for a blocked leg, plus 1, and makes it a Knight costing a point more than a Knight bought
+outright.
+
+| Piece | Lifted | It then |
+|---|---|---|
+| Horse (Xiangqi) | Movement, 2 | leaps as the Knight |
+| Elephant (Janggi) | Movement, 2 | leaps 3+2 freely, as the Zebra |
+| Elephant (Xiangqi) | Movement, 2 | leaps 2+2 freely, as the Alfil |
+| Elephant (Xiangqi) | Area, 3 | crosses rivers, and stands in them |
+| Knightrider | Movement, 3 | leaps on past an occupied landing |
+| Soldier (Xiangqi), Soldier (Janggi) | Movement, 2 | also steps straight back |
+| Soldier (Xiangqi) | Area, 3 | steps sideways anywhere, not only across a river |
+| Soldier (Janggi) | Area, 3 | steps diagonally forward anywhere, not only along palace lines |
+| Pawn (Western), Pawn (Makruk) | Movement, 2 | also takes the piece straight ahead |
+| Pawn (Berolina) | Movement, 2 | also takes diagonally ahead |
+| Lance (Shogi) | Movement, 2 | slides forward through its own army's pieces, stopping on or before another's |
+| Cannon (Janggi) | Movement, 3 | may hop a Cannon, and take one |
+| Grasshopper | Movement, 9 | also steps one square any way, as the King |
+| Generals, Guard (Janggi), Advisor (Xiangqi) | Area, 5 | leaves its palace |
+
+Two prices changed with these moves (2026-11-26, *Proposed*, by the same count): the Grasshopper's, 3 to 9, as the
+King's steps add eight cells; the Janggi Soldier's area lift, 2 to 3, as its forward diagonals add two. Taking a
+piece scores what its lifts cost, as well as its value (*Stated*, 2026-11-26), so that what was paid for it is
+not lost to its captor.
+
 The dice name a class, not a piece ([specification §6.1](specification.md#61-the-chaturaji-2027-rules)).
 
 ### Leaders
@@ -186,7 +213,7 @@ The dice name a class, not a piece ([specification §6.1](specification.md#61-th
 | Pawn (Western) | One square forward; captures one square diagonally forward | Move: blocked straight ahead | First move two squares; *en passant*, of any enemy piece moving two squares or more against it, past it, from two squares away; → Queen, Rook, Bishop or Knight on the last rank | 9 | 2 / — |
 | Guard (Janggi) | One square orthogonally, or diagonally along palace lines | Area: its 3 × 3 palace | Palace lines | 6 | — / 5 |
 | Noble (Makruk) | One square diagonally, or straight forward | — | — | 7 | — / — |
-| Soldier (Janggi) | One square forward or sideways (diagonally forward along palace lines) | Move: may not go back; Area: palace diagonals only | Palace lines | 7 | 2 / 2 |
+| Soldier (Janggi) | One square forward or sideways (diagonally forward along palace lines) | Move: may not go back; Area: palace diagonals only | Palace lines | 7 | 2 / 3 |
 | Minister | One square orthogonally | — | — | 6 | — / — |
 | Courtier | One square diagonally | One colour (by its move) | — | 5 | — / — |
 | Pawn (Makruk) | One square forward; captures one square diagonally forward | Move: blocked straight ahead | → Courtier on the sixth rank | 4 | 2 / — |
@@ -237,7 +264,7 @@ Chaturaji 2027.
 | Manchu Chariot | Any distance orthogonally, or leaps 2+1 | Same, or by hopping one piece, at any distance beyond, orthogonally | — | 24 | — / — |
 | Cannon (Xiangqi) | Any distance orthogonally | By hopping one piece, at any distance beyond | — | 10 | — / — |
 | Cannon (Janggi) | Over exactly one piece, to any cell beyond, orthogonally | Same | Move: must hop exactly one piece; may neither hop nor capture a Cannon of either kind | 8 | 3 / — |
-| Grasshopper | Along any line, over the first piece met, to the cell just beyond | Same | Move: must hop, landing just beyond | 8 | 3 / — |
+| Grasshopper | Along any line, over the first piece met, to the cell just beyond | Same | Move: must hop, landing just beyond | 8 | 9 / — |
 
 ### Jumping and custody
 

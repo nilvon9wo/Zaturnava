@@ -42,6 +42,12 @@ public sealed record MovementRule(
     /// </summary>
     public bool IsJumping { get; init; }
 
+    /// <summary>
+    /// Whether it slides on through its own army's pieces, as a Lance whose restriction is bought off does, stopped
+    /// only by another's.
+    /// </summary>
+    public bool PassesOwn { get; init; }
+
     /// <summary>One step, moving or capturing.</summary>
     public static MovementRule Step([Required] DirectionSet directions) =>
         new(directions, 1, 1, false, true, true);

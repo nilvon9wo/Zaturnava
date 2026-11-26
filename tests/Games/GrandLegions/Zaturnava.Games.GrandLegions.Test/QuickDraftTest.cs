@@ -16,10 +16,12 @@ public sealed class QuickDraftTest
     [InlineData("xiangqi-soldier", LiftKind.Area, 3)]
     [InlineData("xiangqi-general", LiftKind.Area, 5)]
     [InlineData("janggi-guard", LiftKind.Area, 5)]
-    [InlineData("janggi-soldier", LiftKind.Area, null)]
-    [InlineData("xiangqi-horse", LiftKind.Movement, null)]
+    [InlineData("janggi-soldier", LiftKind.Area, 3)]
+    [InlineData("xiangqi-horse", LiftKind.Movement, 2)]
+    [InlineData("grasshopper", LiftKind.Movement, 9)]
     [InlineData("rook", LiftKind.Area, null)]
-    public void Of_ForEachRestriction_PricesTheLiftOnlyOfOneABoardHoldsAPieceBy(
+    [InlineData("rook", LiftKind.Movement, null)]
+    public void Of_ForEachRestriction_PricesItsLiftAsTheCatalogueDoes(
         string kind,
         LiftKind restriction,
         int? expected

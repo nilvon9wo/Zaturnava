@@ -579,7 +579,12 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     [
         .. state.Position.Occupants
             .Where(occupant => occupant.Value.Owner == seat)
-            .SelectMany(occupant => this._moves.AttacksFrom(state.Position, occupant.Key, state.SeatOf(seat))
+            .SelectMany(occupant => this._moves.AttacksFrom(
+                    state.Position,
+                    occupant.Key,
+                    state.SeatOf(seat),
+                    this.MovementOf(state, occupant.Value)
+                )
                 .Concat(this._flying.AttacksFrom(state, occupant.Key, occupant.Value))
                 .Concat(this._palaceSteps.AttacksFrom(state, occupant.Key, occupant.Value))
             )
@@ -1130,6 +1135,26 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     }
 
     /// <summary>
+    /// How <paramref name="piece"/> moves, where a restriction of its is bought off (specification §7): with its
+    /// movement restriction lifted, as the variant says it then moves; with its area restriction lifted, with the
+    /// moves that adds too; else none, its kind's own.
+    /// </summary>
+    private ImmutableList<MovementRule>? MovementOf(GameState state, Piece piece)
+    {
+        ImmutableList<MovementRule>? freed = state.IsLifted(piece, LiftKind.Movement)
+            ? this._variant.MovementLifted.GetValueOrDefault(piece.Kind)
+            : null;
+        ImmutableList<MovementRule>? added = state.IsLifted(piece, LiftKind.Area)
+            ? this._variant.AreaLiftAdds.GetValueOrDefault(piece.Kind)
+            : null;
+        return (freed, added) switch
+        {
+            (null, null) => null,
+            _ => [.. freed ?? this._variant.Kinds[piece.Kind].Movement, .. added ?? []],
+        };
+    }
+
+    /// <summary>
     /// A piece moves the way its own army faces, as the board lets it, with its start-row powers, castling, the
     /// flying-general capture and steps along palace lines, if it has them; a Pawn may also swap with one back to back.
     /// </summary>
@@ -1137,7 +1162,14 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
     {
         bool MayTake(Piece target) => this.IsCapturable(state, target, mover);
         bool isJumpByJump = this.IsJumpByJump(state);
-        return this._moves.MovesFrom(state.Position, cell, state.SeatOf(piece.Owner), MayTake, isJumpByJump)
+        return this._moves.MovesFrom(
+                state.Position,
+                cell,
+                state.SeatOf(piece.Owner),
+                MayTake,
+                isJumpByJump,
+                this.MovementOf(state, piece)
+            )
             .Concat(this._startRows.MovesFrom(state, cell, piece, mover, MayTake))
             .Concat(this._castling.MovesFrom(state, cell, piece))
             .Concat(this._flying.MovesFrom(state, cell, piece, MayTake))
@@ -2000,15 +2032,27 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             : [];
 
     /// <summary>
-    /// A capture by <paramref name="captor"/> on <paramref name="cell"/> scores by piece, but taking a piece of
-    /// one's own team, or a retired seat's Raja, scores no one (rules.md §10).
+    /// What was paid to buy off the restrictions <paramref name="piece"/> has lifted, as the kind it is: taking it
+    /// scores that too (Stated, 2026-11-26: "the costs should effect the value of the piece if it is taken").
+    /// </summary>
+    private int LiftsPaidFor(GameState state, Piece piece) =>
+        LiftKinds
+            .Where(restriction => state.IsLifted(piece, restriction))
+            .Sum(restriction => this._variant.Drafting!.LiftPrice(piece.Kind, restriction).GetValueOrDefault());
+
+    private static ImmutableList<LiftKind> LiftKinds { get; } = [LiftKind.Movement, LiftKind.Area];
+
+    /// <summary>
+    /// A capture by <paramref name="captor"/> on <paramref name="cell"/> scores by piece, and by the lifts bought for
+    /// it (<see cref="LiftsPaidFor"/>), but taking a piece of one's own team, or a retired seat's Raja, scores no one
+    /// (rules.md §10).
     /// </summary>
     private Transition Captured(Transition moved, Piece captured, SeatId captor, CellId cell)
     {
         bool isEnemy = !moved.State.Teams.AreAllied(captured.Owner, captor)
             && !moved.State.Retired.Contains(captured.Owner);
         int points = isEnemy
-            ? this._variant.PointsIn(moved.State.Edition)[captured.Kind]
+            ? this._variant.PointsIn(moved.State.Edition)[captured.Kind] + this.LiftsPaidFor(moved.State, captured)
             : 0;
         bool isEnemyRaja = isEnemy && this.IsLeader(captured.Kind);
         bool isOnThrone = isEnemyRaja && this._control.IsThroneOf(moved.State, cell, captured.Owner);

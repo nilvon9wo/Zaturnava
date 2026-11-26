@@ -99,6 +99,46 @@ public sealed class MoveGeneratorTest
     }
 
     [Fact]
+    public void MovesFrom_WhenTheSliderMovesAsOneThatPassesItsOwn_SlidesThroughAFriendToAnEnemyBeyond()
+    {
+        // Arrange - a friend on 2, an enemy on 4: the slider's restriction bought off
+        Position position = Position.Empty
+            .Place(new CellId(0), Friend(Slider))
+            .Place(new CellId(2), Friend(Stepper))
+            .Place(new CellId(4), Enemy(Stepper));
+
+        // Act
+        ImmutableList<Move> moves = this._generator.MovesFrom(
+            position,
+            new CellId(0),
+            MySeat,
+            IsEnemy,
+            movement: [MovementRule.Slide(DirectionSets.Orthogonal) with { PassesOwn = true }]
+        );
+
+        // Assert - not onto its friend, but past it
+        Assert.Equal([1, 3, 4], Targets(moves));
+    }
+
+    [Fact]
+    public void AttacksFrom_WhenTheStepperMovesAsALeaper_AttacksWhereTheLeaperWould()
+    {
+        // Arrange
+        Position position = Position.Empty.Place(new CellId(2), Friend(Stepper));
+
+        // Act
+        ImmutableList<Attack> attacks = this._generator.AttacksFrom(
+            position,
+            new CellId(2),
+            MySeat,
+            [MovementRule.Leap(DirectionSets.Orthogonal, 2)]
+        );
+
+        // Assert
+        Assert.Equal([4, 0], attacks.Select(attack => attack.Target.Value));
+    }
+
+    [Fact]
     public void MovesFrom_WhenASliderMeetsAFriend_StopsShortOfIt()
     {
         // Arrange
