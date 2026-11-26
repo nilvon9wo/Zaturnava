@@ -24,12 +24,18 @@ internal static class Ending
 
     /// <summary>
     /// The answer to the proposal waiting, if one is; else giving up its turns beside a resting ally, if it
-    /// would; else null.
+    /// would; else null; each by the bot's own <paramref name="temper"/>, else <see cref="Temper.Even"/>.
     /// </summary>
-    public static GameAction? AnswerTo(DecisionRequest request) =>
-        request.State.Proposal is null
-            ? RestingWith(request) ?? Decided(request)
-            : new AnswerEndAction(request.Seat, IsAhead(request) || IsHopeless(request) || IsConceded(request));
+    public static GameAction? AnswerTo(DecisionRequest request, Temper? temper = null)
+    {
+        Temper own = temper ?? Temper.Even;
+        return request.State.Proposal is null
+            ? RestingWith(request, own) ?? Decided(request, own)
+            : new AnswerEndAction(
+                request.Seat,
+                IsAhead(request) || IsHopeless(request, own) || IsConceded(request)
+            );
+    }
 
     /// <summary>
     /// How many turns a bot waits, once its proposal was refused, before it proposes again (Proposed): three rounds
@@ -37,39 +43,70 @@ internal static class Ending
     /// </summary>
     public const int Patience = 12;
 
-    private static ProposeEndAction? RestingWith(DecisionRequest request)
+    private static ProposeEndAction? RestingWith(DecisionRequest request, Temper temper)
     {
         GameState state = request.State;
         SeatId seat = request.Seat;
         bool isAmongBots = request.People.All(person =>
             state.Resigned.Contains(person) && state.Teams.AreAllied(person, seat)
         );
-        return HasRestingAlly(request) && isAmongBots && (IsClearlyAhead(request) || IsConceded(request))
+        return HasRestingAlly(request) && isAmongBots && (IsClearlyAhead(request, temper) || IsConceded(request))
             && request.Rules.MayProposeEnd(state, seat)
             ? new ProposeEndAction(seat, Resigns: true)
             : null;
     }
 
     /// <summary>
-    /// A proposal to end a game already decided - the team clearly ahead, on points and on the board, or hopeless -
-    /// playing on meanwhile, so that a refusal costs nothing; but not again until <see cref="Patience"/> turns after
-    /// its last was refused.
+    /// A proposal to end a game already decided - the team clearly ahead, on points and on the board, while the enemy
+    /// has no hope left (<see cref="HaveEnemiesHope"/>), or hopeless itself - playing on meanwhile, so that a refusal
+    /// costs nothing; but not until <see cref="Patience"/> turns after the last of its team's was refused (the user's
+    /// word of 2026-11-26: bots "on the same team will wait when proposals made by their teammate have recently been
+    /// rejected").
     /// </summary>
-    private static ProposeEndAction? Decided(DecisionRequest request)
+    private static ProposeEndAction? Decided(DecisionRequest request, Temper temper)
     {
         GameState state = request.State;
         SeatId seat = request.Seat;
-        bool isPatient = !state.RefusedOn.TryGetValue(seat, out int refused)
-            || state.TurnNumber - refused >= Patience;
+        bool isPatient = state.RefusedOn
+            .Where(refusal => refusal.Key == seat || state.Teams.AreAllied(refusal.Key, seat))
+            .All(refusal => state.TurnNumber - refusal.Value >= Patience);
         return isPatient && request.Rules.MayProposeEnd(state, seat)
-            && (IsClearlyAhead(request) || IsHopeless(request))
+            && ((IsClearlyAhead(request, temper) && !HaveEnemiesHope(request)) || IsHopeless(request, temper))
             ? new ProposeEndAction(seat, Resigns: false)
             : null;
     }
 
-    /// <summary>Whether the team leads by a clear lead both on points and on the board.</summary>
-    private static bool IsClearlyAhead(DecisionRequest request) =>
-        PointsLead(request) >= request.Rules.ClearLead && BoardLead(request) >= request.Rules.ClearLead;
+    /// <summary>How near its promotion an enemy Pawn still gives its team hope, in steps (Stated 2026-11-26).</summary>
+    public const int PromotionInReach = 2;
+
+    /// <summary>
+    /// Whether the enemy team, but its retired seats, still has hope, whatever the lead: while it has a leader, or a
+    /// heavy piece (as a Rook is), or a Pawn within <see cref="PromotionInReach"/> steps of its promotion (the user's
+    /// word of 2026-11-26: "a team still has hope while it has at least one raja or one rook between them or a pawn
+    /// just a step or two from promotion").
+    /// </summary>
+    private static bool HaveEnemiesHope(DecisionRequest request)
+    {
+        GameState state = request.State;
+        IRulesApplying rules = request.Rules;
+        return state.Position.Occupants.Any(occupant =>
+            Side(request, occupant.Value.Owner) < 0
+            && !state.Retired.Contains(occupant.Value.Owner)
+            && (rules.IsLeader(occupant.Value.Kind)
+                || rules.IsHeavy(occupant.Value.Kind)
+                || rules.StepsToPromotion(state, occupant.Key) <= PromotionInReach)
+        );
+    }
+
+    /// <summary>
+    /// Whether the team leads both on points and on the board by a clear lead, as the bot's
+    /// <paramref name="temper"/> counts one.
+    /// </summary>
+    private static bool IsClearlyAhead(DecisionRequest request, Temper temper)
+    {
+        double clear = temper.Lead * request.Rules.ClearLead;
+        return PointsLead(request) >= clear && BoardLead(request) >= clear;
+    }
 
     private static bool IsAhead(DecisionRequest request) => PointsLead(request) > 0;
 
@@ -83,11 +120,12 @@ internal static class Ending
         );
 
     /// <summary>
-    /// Whether the team trails by more than it could hope to take back (<see cref="Hope"/>), that hope counted at
-    /// <see cref="Optimism"/> times its face, to err on the side of hope (rules.md §10, Stated 2026-11-06).
+    /// Whether the team trails by more than it could hope to take back (<see cref="Hope"/>), that hope counted at the
+    /// bot's <see cref="Temper.Optimism"/> times its face, to err on the side of hope (rules.md §10, Stated
+    /// 2026-11-06).
     /// </summary>
-    private static bool IsHopeless(DecisionRequest request) =>
-        -PointsLead(request) > Optimism * Hope.Of(request);
+    private static bool IsHopeless(DecisionRequest request, Temper temper) =>
+        -PointsLead(request) > temper.Optimism * Hope.Of(request);
 
     /// <summary>The points of the bot's team, less its enemies'.</summary>
     private static int PointsLead(DecisionRequest request) =>

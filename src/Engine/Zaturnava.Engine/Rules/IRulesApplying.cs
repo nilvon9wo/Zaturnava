@@ -302,6 +302,13 @@ public interface IRulesApplying
     bool IsLeader(PieceKindId kind);
 
     /// <summary>
+    /// How many steps forward the piece on <paramref name="cell"/> has still to go before it is promoted at the far
+    /// edge, as a Pawn is: for one judging whether a team still has hope. None, for a piece not so promoted, or for
+    /// none at all, unless the ruleset says otherwise.
+    /// </summary>
+    int? StepsToPromotion([Required] GameState state, CellId cell) => null;
+
+    /// <summary>
     /// Whether a piece of <paramref name="kind"/>, not leading, is among the most dangerous to let loose, as a
     /// Rook is: for one weighing whether to send it home.
     /// </summary>

@@ -39,6 +39,18 @@ only in part, what is left is in the backlog, and its history here. The playtest
   | Medium | Any | Any |
   | Hard | The hardest | The weakest |
 
+- **Bots proposing an end, each by its own temper, and not while the enemy has hope** (F6; the user's words: "a
+  team still has hope while it has at least one raja or one rook between them or a pawn just a step or two from
+  promotion"; "bots on the same team will wait when proposals made by their teammate have recently been rejected"):
+
+  | Temper | Bots | Clear lead wanted | Hope counted at |
+  |---|---|---|---|
+  | Realist | Sage, Tactician | ¾ | 1.25 × its face |
+  | Even | every other bot | 1 | 1.25 × its face |
+  | Dogged | Random | 2 | 2 × its face |
+
+  Whatever the lead, none proposes while the enemy team has a leader, a heavy piece (Chaturaji's Elephant, Grand
+  Legions' heavies) or a Pawn within two steps of promotion; and a refusal makes the whole team wait 12 turns.
 - **The small game's kingdoms 3 × 2** ("the GL small game with a 3x3 (9) kingdom likely gets more pieces than a
   medium game with 4x2 (8)"): it got as many, both aimed at eight. Now:
 

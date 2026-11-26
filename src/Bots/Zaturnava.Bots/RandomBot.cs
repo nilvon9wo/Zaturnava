@@ -37,6 +37,6 @@ public sealed class RandomBot(Random random) : IBotPlaying
         ImmutableList<GameAction> choices = Playable.Of(request);
         return cancellationToken.IsCancellationRequested
             ? Task.FromCanceled<GameAction>(cancellationToken)
-            : Task.FromResult(Ending.AnswerTo(request) ?? choices[this._random.Next(choices.Count)]);
+            : Task.FromResult(Ending.AnswerTo(request, Temper.Dogged) ?? choices[this._random.Next(choices.Count)]);
     }
 }

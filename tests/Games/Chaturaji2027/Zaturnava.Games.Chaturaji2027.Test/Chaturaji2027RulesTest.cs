@@ -2387,6 +2387,27 @@ public sealed class Chaturaji2027RulesTest
     }
 
     [Fact]
+    public void StepsToPromotion_ForAPawnOrAnotherPieceOrNone_IsTheRowsAheadOfThePawnAlone()
+    {
+        // Arrange - Black's Pawns on d7, a row short of the far edge, and on a2, six short; its Elephant on c3
+        GameState state = this.StateWith(
+            (Grid.CellAt(3, 6), Piece(1, Chaturaji2027Pieces.Pawn, Black)),
+            (Grid.CellAt(0, 1), Piece(2, Chaturaji2027Pieces.Pawn, Black)),
+            (Grid.CellAt(2, 2), Piece(3, Chaturaji2027Pieces.Elephant, Black))
+        );
+
+        // Act
+        ImmutableList<int?> steps =
+        [
+            .. new[] { Grid.CellAt(3, 6), Grid.CellAt(0, 1), Grid.CellAt(2, 2), Grid.CellAt(5, 5) }
+                .Select(cell => this._rules.StepsToPromotion(state, cell)),
+        ];
+
+        // Assert
+        Assert.Equal(new int?[] { 1, 6, null, null }, steps);
+    }
+
+    [Fact]
     public void MoversOf_WhenOneOfTwoLeadersSitsOnAnAllysThrone_CommandsThatAllysArmy()
     {
         // Arrange - Grand Legions' several leaders in one army (roadmap Stage 3: "everything the rules say of the Raja,

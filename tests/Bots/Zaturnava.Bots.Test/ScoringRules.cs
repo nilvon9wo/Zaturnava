@@ -142,6 +142,12 @@ internal sealed class ScoringRules(ImmutableDictionary<GameAction, int> points) 
 
     public bool IsHeavy(PieceKindId kind) => kind == new PieceKindId("elephant");
 
+    /// <summary>How many steps the piece on each cell has to its promotion; none promotes, unless set.</summary>
+    public ImmutableDictionary<CellId, int> PromotionSteps { get; init; } = [];
+
+    public int? StepsToPromotion([Required] GameState state, CellId cell) =>
+        this.PromotionSteps.TryGetValue(cell, out int steps) ? steps : null;
+
     public string NameOf(PieceKindId kind) => throw new NotSupportedException();
 
     public string NameOf(SeatId seat) => throw new NotSupportedException();

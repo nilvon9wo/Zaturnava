@@ -77,7 +77,7 @@ public sealed class TacticianBot(
         );
         return SageBot.Play(
             request,
-            Ending.AnswerTo(request),
+            Ending.AnswerTo(request, Temper.Realist),
             valuing,
             deciding => tactics.Choose(deciding, this._random)
         );

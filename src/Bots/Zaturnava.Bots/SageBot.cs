@@ -65,7 +65,7 @@ public sealed class SageBot(
             : Task.FromResult(
                 Play(
                     request,
-                    Ending.AnswerTo(request),
+                    Ending.AnswerTo(request, Temper.Realist),
                     new Appraiser(this._learned.GetValueOrDefault(request.Rules.Id, this._fallback)),
                     this._random,
                     this.EndgameLimit
