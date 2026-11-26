@@ -165,6 +165,19 @@ takes whatever options `scripts/rate-bots.py` does, but the runner:
 wsl -d Ubuntu -- bash scripts/wsl-rate.sh --bots random,sage,athena --games 50
 ```
 
+To rate new or changed bots on the scale the live site uses, and ship them: `--hold-shipped` keeps the ratings
+already shipped at the ruleset and fits only the other bots around them, as the server's bot-rating job does;
+`--free` names shipped bots to measure again; `--ship` merges the ratings fitted into
+`src/Bots/Zaturnava.Bots/Ratings/<ruleset>.json`, which the next deploy rates them by, and keeps the measurement,
+each pair's results with it, in `docs/bots/rating-history.jsonl`, beside every one before it. Commit both. Local
+games are the same software as the live site's, and far more of them, so they rate a bot better than the live job's
+few games a pair:
+
+```shell
+wsl -d Ubuntu -- bash scripts/wsl-rate.sh --ruleset grand-legions-small --games 60 \
+    --bots random,morpheus,phaethon,tantalus,midas --hold-shipped --free morpheus --ship
+```
+
 Train Athena the same way, in rounds, with whatever options `scripts/athena-rounds.py` takes, but the
 runner ([self-play](../bots/self-play.md#learning)):
 

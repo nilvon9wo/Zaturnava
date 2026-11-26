@@ -63,9 +63,12 @@ own number (**25**, **N29**), the [2026-11-15 specification](playtesting/2026-11
 - **M1–M5** Offline tournaments and training. *Begun* (2026-11-19): `scripts/wsl-overnight.sh` trains Athena and
   rates every bot, cycle after cycle, until stopped, each round kept as it ends
   ([local-development](contribute/local-development.md#smart-app-control-windows)). A tournament stopped
-  mid-way goes on from the pairings it had finished (M2, 2026-11-20: `--continue`). Still to do: the results into the repository, and through it
-  the live site's ratings, by a second documented command (M4); every bot rated at every ruleset, with past
-  measurements kept beside new ones (M5).
+  mid-way goes on from the pairings it had finished (M2, 2026-11-20: `--continue`). The results into the
+  repository, and through it the live site's ratings (M4, 2026-11-26): `rate-bots.py --hold-shipped --ship` fits
+  the bots measured around those shipped, as the server does, merges them into the shipped ratings, and keeps each
+  measurement, its pairs' results with it, in `docs/bots/rating-history.jsonl`, beside every one before it (M5;
+  [local-development](contribute/local-development.md#smart-app-control-windows)). Still to do: the overnight
+  cycle shipping so, and every bot rated at every ruleset.
 
 - **Custom game options** (asked 2026-11-25), none on by default: a player whose leaders are all gone is out; a
   team with no leader left has lost; each player's idle time, set by whoever creates the game, the same for

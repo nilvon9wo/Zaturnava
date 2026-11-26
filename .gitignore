@@ -489,3 +489,5 @@ $RECYCLE.BIN/
 *.db-shm
 *.db-wal
 *.jsonl
+# but the bots' rating measurements, kept with the repository (scripts/rate-bots.py --ship)
+!docs/bots/rating-history.jsonl
