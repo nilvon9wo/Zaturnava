@@ -30,8 +30,16 @@ own number (**25**, **N29**), the [2026-11-15 specification](playtesting/2026-11
   locally, 60 games a pair, Random held at 1000: Morpheus 1083, Phaethon 1192, Tantalus 1311, Echo 1574 - a
   real progression, two below 1200. Now one draw is added for each new bot, against a bot at 1000. And three
   are wanted below 1200, so that a game may be all easy bots (the user, 2026-11-26): the three play as Midas one
-  turn in 100, 50 and 25, measured locally (120 games a pair) at 1046, 1074 and 1142, their old games cleared
-  by a migration for the bot-rating job to play them again. Still to do: check the live ratings once re-rated.
+  turn in 100, 50 and 25, measured locally (120 games a pair) at 1046, 1074 and 1142, and shipped so at
+  Chaturaji 2027 (the user, 2026-11-26: local and live bots play alike, so more local games rate them better):
+  their ratings depend on Random's games, held at 1000, as they lose every game to Midas. Their old games are
+  cleared by a migration, for the bot-rating job to rate them again at Grand Legions' sizes. Echo and Icarus,
+  who sometimes beat Midas, depend on Midas's rating, so are left to the job for now. Still to do: Echo,
+  Icarus and the Grand Legions sizes measured locally with the shipped bots held, and shipped likewise (M4).
+  *(Proposed, 2026-11-26, from the user's question whether rating bots apart from people skews them)*: a bot's
+  rating comes from its games against bots alone, while a person's game against a bot moves only the person's.
+  Counting people's games against a bot toward the bot's rating too would rate it by how it plays people, and
+  keep the two scales one.
 - **M1–M5** Offline tournaments and training. *Begun* (2026-11-19): `scripts/wsl-overnight.sh` trains Athena and
   rates every bot, cycle after cycle, until stopped, each round kept as it ends
   ([local-development](contribute/local-development.md#smart-app-control-windows)). A tournament stopped

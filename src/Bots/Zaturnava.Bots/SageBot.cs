@@ -38,6 +38,12 @@ public sealed class SageBot(
     {
     }
 
+    /// <summary>
+    /// How long its endgame search may take at most (<see cref="Endgame.SageLimit"/>): a test sets it long, so that the
+    /// search ends by its budget alone, and plays alike on any machine, however slow.
+    /// </summary>
+    internal TimeSpan EndgameLimit { get; init; } = Endgame.SageLimit;
+
     public BotProfile Profile { get; } = new(
         BotId,
         "Sage",
@@ -61,7 +67,8 @@ public sealed class SageBot(
                     request,
                     Ending.AnswerTo(request),
                     new Appraiser(this._learned.GetValueOrDefault(request.Rules.Id, this._fallback)),
-                    this._random
+                    this._random,
+                    this.EndgameLimit
                 )
             );
 
@@ -79,14 +86,16 @@ public sealed class SageBot(
         DecisionRequest request,
         GameAction? ending,
         IPositionValuing valuing,
-        Random random
+        Random random,
+        TimeSpan? endgameLimit = null
     ) =>
         Play(
             request,
             ending,
             valuing,
             deciding => Endgame.IsEndgame(deciding.Rules, deciding.State)
-                ? new Tactics(valuing, Endgame.Budget, Endgame.Width, Endgame.SageLimit).Choose(deciding, random)
+                ? new Tactics(valuing, Endgame.Budget, Endgame.Width, endgameLimit ?? Endgame.SageLimit)
+                    .Choose(deciding, random)
                 : new Foresight(valuing, Depth, Beam).Choose(deciding, random)
         );
 

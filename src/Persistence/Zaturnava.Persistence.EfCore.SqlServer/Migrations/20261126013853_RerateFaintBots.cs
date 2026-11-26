@@ -20,9 +20,16 @@ namespace Net.NowhereAtAll.Zaturnava.Persistence.EfCore.SqlServer.Migrations
             );
         }
 
-        /// <summary>The games gone cannot come back; the bot-rating job plays new ones.</summary>
+        /// <summary>
+        /// The games gone cannot come back; but the bots go back to their old shares, so the games they played since,
+        /// as they now are, go too, for the bot-rating job to play them again as they were.
+        /// </summary>
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.Sql(
+                "DELETE FROM BotMatchups WHERE First IN ('morpheus', 'phaethon', 'tantalus') "
+                    + "OR Second IN ('morpheus', 'phaethon', 'tantalus');"
+            );
         }
     }
 }
