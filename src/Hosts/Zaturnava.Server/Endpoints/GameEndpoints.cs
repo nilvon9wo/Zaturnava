@@ -131,8 +131,8 @@ internal static class GameEndpoints
     }
 
     /// <summary>
-    /// The players standing highest at the game, each in their place, their Elo rounded: as last counted, if within a
-    /// minute (<see cref="StandingCache"/>).
+    /// The players standing highest at the game, each in their place, their Elo rounded: as last read, if within a
+    /// minute, with the games abandoned as last counted in the background (<see cref="StandingCache"/>).
     /// </summary>
     private static Task<ImmutableList<StandingDto>> Leaderboard(
         string game,
@@ -143,7 +143,10 @@ internal static class GameEndpoints
         cache.Of(
             "people/" + game,
             async () => (ImmutableList<StandingDto>)
-                [.. (await standings.Leaders(game, cancellationToken)).Select(ToStandingDto)]
+                [
+                    .. (await standings.Leaders(game, cache.AbandonedAt(game), cancellationToken))
+                        .Select(ToStandingDto),
+                ]
         );
 
     /// <summary>The server's bots standing highest at the game, each in its place: as last counted, if fresh.</summary>

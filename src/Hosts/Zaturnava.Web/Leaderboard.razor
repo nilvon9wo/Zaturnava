@@ -103,7 +103,14 @@
                             @foreach ((Column column, int at) in this.Columns.All.Select((column, at) => (column, at)))
                             {
                                 <td class="@column.Key">
-                                    @row.Values[at]
+                                    @if (double.IsNaN(row.Values[at]))
+                                    {
+                                        <span class="unknown" title="@UnknownTitle">?</span>
+                                    }
+                                    else
+                                    {
+                                        @row.Values[at]
+                                    }
                                     @if (row.Against.ElementAtOrDefault(at) is { } against)
                                     {
                                         <span class="against" title="@AgainstTitle">vs @against</span>
@@ -462,7 +469,7 @@
                             player.Won,
                             player.Lost,
                             player.Drawn,
-                            player.Abandoned,
+                            player.Abandoned ?? Unknown,
                             player.Streak.Wins,
                             player.RatedStreak.Wins,
                             player.PeopleStreak.Wins,
@@ -501,6 +508,14 @@
     /// A row of a board: whose, with the player's or bot's id, to see their profile by (a bot's, if it has one, else a
     /// player's); and its numbers, one for each column.
     /// </summary>
+    /// <summary>
+    /// A figure the server does not know yet, shown as "?" rather than a 0 it is not (the user, 2026-11-26): the games
+    /// abandoned, just after the server starts, until it first counts them. Sorted below every known figure.
+    /// </summary>
+    private const double Unknown = double.NaN;
+
+    private const string UnknownTitle = "Not counted yet: the server counts these just after it starts";
+
     private sealed record Row(string Name, ImmutableList<double> Values)
     {
         public string? PlayerId { get; init; }

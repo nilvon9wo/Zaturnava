@@ -34,6 +34,22 @@ public sealed class LeaderboardTest : IDisposable
     }
 
     [Fact]
+    public void Render_WhenTheGamesAbandonedAreNotCountedYet_ShowsAQuestionMarkNotAZero()
+    {
+        // Arrange (the user, 2026-11-26: "show a ? instead of a 0 if we don't know the value")
+        this._page.Server.Leaderboards = this._page.Server.Leaderboards.Add(
+            "chaturaji-2027",
+            [new StandingDto(1, "Ada", 1516, 14, 1, 0, 0, null)]
+        );
+
+        // Act
+        IRenderedComponent<Leaderboard> board = this.Render();
+
+        // Assert
+        Assert.Equal("?", board.Find("td.abandoned").TextContent.Trim());
+    }
+
+    [Fact]
     public void Render_WhenAPlayerIsOnAStreak_ShowsEachStreakWithTheMeanEloItBeat()
     {
         // Arrange

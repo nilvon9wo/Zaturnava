@@ -4,6 +4,7 @@ using Net.NowhereAtAll.Zaturnava.Application.Bots;
 using Net.NowhereAtAll.Zaturnava.Application.Games;
 using Net.NowhereAtAll.Zaturnava.Application.Ports;
 using Net.NowhereAtAll.Zaturnava.Application.Rulesets;
+using Net.NowhereAtAll.Zaturnava.Application.Scenarios;
 using Net.NowhereAtAll.Zaturnava.Engine.Rules;
 using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 
@@ -80,14 +81,20 @@ public sealed class StandingService(
 
     /// <summary>
     /// The players standing highest at <paramref name="game"/> (a ruleset's game id), each by name, best first, with
-    /// how many of its games they have abandoned: at most <see cref="MostLeaders"/>.
+    /// how many of its games they have abandoned, as <paramref name="abandoned"/> last counted them
+    /// (<see cref="CountAbandoned"/>), unknown if not yet counted: at most <see cref="MostLeaders"/>. Only the
+    /// standings kept as each game ended are read, never a game (the user, 2026-11-26: "loading the leaderboard should
+    /// not need to replay games").
     /// </summary>
-    public async Task<ImmutableList<Leader>> Leaders([Required] string game, CancellationToken cancellationToken)
+    public async Task<ImmutableList<Leader>> Leaders(
+        [Required] string game,
+        ImmutableDictionary<PlayerId, int>? abandoned,
+        CancellationToken cancellationToken
+    )
     {
         ImmutableList<Standing> leaders = await this._players.Leaders(game, MostLeaders, cancellationToken);
         ImmutableDictionary<PlayerId, string> names =
             await this._players.Names([.. leaders.Select(standing => standing.Player)], cancellationToken);
-        ImmutableDictionary<PlayerId, int> abandoned = await this.Abandoned(game, cancellationToken);
         return
         [
             .. leaders
@@ -95,7 +102,7 @@ public sealed class StandingService(
                 .Select(standing =>
                     new Leader(names[standing.Player], standing)
                     {
-                        Abandoned = abandoned.GetValueOrDefault(standing.Player),
+                        Abandoned = abandoned?.GetValueOrDefault(standing.Player),
                     }
                 ),
         ];
@@ -135,29 +142,41 @@ public sealed class StandingService(
     }
 
     /// <summary>
-    /// How many games of <paramref name="game"/> each player has abandoned, as they stand now (Stated): games not
+    /// How many games each player has abandoned, by what each game is rated as, as they stand now (Stated): games not
     /// over, untouched for <see cref="AbandonedAfter"/>, with no guest at them (such a game is let go instead), waiting
     /// for that player to decide at a seat they play themselves, not their AI. Once they move, it counts no more.
+    /// Counted in the background, from time to time, and kept (<see cref="StandingCache"/>), never as a leaderboard is
+    /// asked for; and from each record's summary, never replaying a game.
     /// </summary>
-    private async Task<ImmutableDictionary<PlayerId, int>> Abandoned(string game, CancellationToken cancellationToken)
+    public async Task<ImmutableDictionary<string, ImmutableDictionary<PlayerId, int>>> CountAbandoned(
+        CancellationToken cancellationToken
+    )
     {
         ImmutableList<GameRecord> idle =
             await this._games.Idle(this._time.GetUtcNow() - AbandonedAfter, cancellationToken);
         return idle
             .Where(record => !record.Controllers.Any(controller => controller.IsGuest))
-            .Select(record => this.AwaitedPlayer(record, game))
-            .OfType<PlayerId>()
-            .GroupBy(player => player)
-            .ToImmutableDictionary(players => players.Key, players => players.Count());
+            .Select(this.Awaited)
+            .OfType<(string Game, PlayerId Player)>()
+            .GroupBy(awaited => awaited.Game, StringComparer.Ordinal)
+            .ToImmutableDictionary(
+                games => games.Key,
+                games => games
+                    .GroupBy(awaited => awaited.Player)
+                    .ToImmutableDictionary(players => players.Key, players => players.Count()),
+                StringComparer.Ordinal
+            );
     }
 
-    /// <summary>The player a game of <paramref name="game"/> waits for, at a seat they play themselves.</summary>
-    private PlayerId? AwaitedPlayer(GameRecord record, string game) =>
-        this.Replayed(record) is { } snapshot
-        && RatedAs(snapshot) == game
-        && snapshot.State.DecidingSeat is { } seat
-        && record.Controllers[seat.Value] is HumanSeat { IsAi: false } human
-            ? human.Claimant
+    /// <summary>
+    /// The game a record is rated as, by its ruleset and its first action, and the player it waits for, at a seat they
+    /// play themselves, by the seat it keeps as deciding.
+    /// </summary>
+    private (string Game, PlayerId Player)? Awaited(GameRecord record) =>
+        (this._rulesets.All.FirstOrDefault(ruleset => ruleset.Id == record.RulesetId), record.Deciding) is
+        ({ } rules, { } seat)
+        && record.Controllers[seat.Value] is HumanSeat { IsAi: false, Claimant: { } player }
+            ? (RatedAs(rules.GameId, ScenarioStart.AreDiceOff(record.Actions)), player)
             : null;
 
     private GameSnapshot? Replayed(GameRecord game) =>
@@ -176,7 +195,9 @@ public sealed class StandingService(
     /// dice (<see cref="WithoutDice"/>).
     /// </summary>
     public static string RatedAs([Required] GameSnapshot snapshot) =>
-        snapshot.State.AreDiceOff ? snapshot.Rules.GameId + WithoutDice : snapshot.Rules.GameId;
+        RatedAs(snapshot.Rules.GameId, snapshot.State.AreDiceOff);
+
+    private static string RatedAs(string game, bool areDiceOff) => areDiceOff ? game + WithoutDice : game;
 
     /// <summary>The game whatever <paramref name="game"/> rates is of, with dice or without.</summary>
     private static string GameOf(string game) =>

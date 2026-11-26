@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Net.NowhereAtAll.Zaturnava.Application.Players;
 using Net.NowhereAtAll.Zaturnava.Application.Test.Fakes;
 
@@ -30,6 +31,28 @@ public sealed class StandingCacheTest
 
         // Assert
         Assert.Equal(expected, given);
+    }
+
+    [Fact]
+    public void AbandonedAt_BeforeAndAfterTheyAreFirstCounted_IsUnknownThenAsCountedOrNone()
+    {
+        // Arrange (the user, 2026-11-26: "?" rather than 0 while not known)
+        StandingCache cache = new(new SteppedTime());
+        ImmutableDictionary<PlayerId, int>? before = cache.AbandonedAt("chess");
+
+        // Act
+        cache.KeepAbandoned(
+            ImmutableDictionary<string, ImmutableDictionary<PlayerId, int>>.Empty.Add(
+                "chess",
+                ImmutableDictionary<PlayerId, int>.Empty.Add(new PlayerId("ada"), 2)
+            )
+        );
+
+        // Assert
+        Assert.Equal(
+            (true, 2, 0),
+            (before is null, cache.AbandonedAt("chess")?[new PlayerId("ada")], cache.AbandonedAt("go")?.Count)
+        );
     }
 
     [Fact]

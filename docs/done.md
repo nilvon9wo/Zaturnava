@@ -6,6 +6,27 @@ Numbers are the playtests' own, so that each item can be traced to the note it c
 only in part, what is left is in the backlog, and its history here. The playtest of 2026-11-15 is tracked apart, in
 [playtesting/traceability.md](playtesting/traceability.md).
 
+## Asked 2026-11-26
+
+- **The lobby, insanely slow** (the user): "A player shouldn't need to see the leaderboard to start a new game."
+  *Done*: the lobby's panels load each on their own. *New game*, the games list and the leaderboard show as soon
+  as the catalog arrives, without first waiting to learn who is signed in or for the games to be listed. Whether
+  *New game* starts open follows the games listed last.
+
+  "The loading the leaderboard should not need to replay games!" *Done*: a leaderboard reads only the ratings stored
+  as each game ended, never a game. Ratings come only from finished games. The abandoned-games count shown beside
+  them (games waiting a day for that player's move) is counted in the background every 10 minutes, from each game's
+  saved summary, without replaying anything, and kept; a leaderboard shows it as last counted. Before the first
+  count after the server starts, it shows "?" rather than a 0 it does not know. Before this, every uncached request
+  replayed every idle game, about 2.7 s.
+
+- **Start rows, the kingdom's height**: in Grand Legions, the Western Pawn's start rows default to the kingdom's
+  depth at every size, unless the game's creator sets others.
+
+- **The setup menu, organized**: *Custom* groups its options under headings, with a space and a rule between them:
+  Seats, Armies, Board, Pieces, Play and Players. Under Pieces, the leaders' options are together (all gone, team
+  lost; the face-off pause), and so are the infantry's (start rows; promotion at the right edge).
+
 ## Asked 2026-11-25
 
 - **The face-off's pause** (*Stated* 2026-11-04, Grand Legions specification §6.4): a setting of the game may

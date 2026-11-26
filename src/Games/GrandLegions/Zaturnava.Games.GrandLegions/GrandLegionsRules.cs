@@ -210,6 +210,8 @@ public static class GrandLegionsRules
             Guides = Guides,
             Scoring = Scoring,
             StartRowPowers = [GrandLegionsPieces.WesternPawn],
+            // the whole kingdom's depth, unless a game's creator sets other start rows (the user, 2026-11-26)
+            StartRows = game.KingdomDepth,
             Castlers = [GrandLegionsPieces.WesternKing],
             CastlingRooks = [GrandLegionsPieces.Rook],
             FlyingCapturers = [GrandLegionsPieces.XiangqiGeneral],

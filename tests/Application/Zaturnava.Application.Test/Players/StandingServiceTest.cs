@@ -513,7 +513,7 @@ public sealed class StandingServiceTest
         StandingService service = this.Service(new EndedRules(EndedRules.State([])), null);
 
         // Act
-        ImmutableList<Leader> leaders = await service.Leaders("chess", this._cancellation);
+        ImmutableList<Leader> leaders = await service.Leaders("chess", [], this._cancellation);
 
         // Assert
         Assert.Equal("Bea 1550, Ada 1450", string.Join(", ", leaders.Select(l => $"{l.Name} {l.Standing.Elo}")));
@@ -522,7 +522,8 @@ public sealed class StandingServiceTest
     [Fact]
     public async Task Leaders_WhenGamesHaveWaitedADayForAPlayersMove_CountsThemAbandonedByThatPlayerAlone()
     {
-        // Arrange - Black to decide in every game of the rules, not over; the games of "over" replay to their end
+        // Arrange - Black to decide in every game of the rules, not over, as each record's summary says; the game of
+        // "over" summarized as no one's to decide
         await this._players.Add(new Player(Ada, "Ada", []), this._cancellation);
         await this._players.Add(new Player(Bea, "Bea", []), this._cancellation);
         await this._players.Keep(
@@ -543,7 +544,7 @@ public sealed class StandingServiceTest
             Waiting("by an AI", new HumanSeat("ada", Ada, IsAi: true)),
             Waiting("a bot's move", new BotSeat(FirstChoiceBot.BotId), new HumanSeat("bea", Bea)),
             Waiting("retired", ada) with { RulesetId = "retired" },
-            Waiting("ended", ada) with { RulesetId = "over" },
+            Waiting("ended", ada) with { RulesetId = "over", Deciding = null },
         ];
         foreach (GameRecord game in games)
         {
@@ -558,16 +559,46 @@ public sealed class StandingServiceTest
             null
         );
 
-        // Act
-        ImmutableList<Leader> leaders = await service.Leaders(EndedRules.RulesetId, this._cancellation);
-        ImmutableList<Leader> overLeaders = await service.Leaders("over", this._cancellation);
+        StandingCache cache = new(TimeProvider.System);
+
+        // Act - counted in the background, kept, then read by each leaderboard
+        cache.KeepAbandoned(await service.CountAbandoned(this._cancellation));
+        ImmutableList<Leader> leaders =
+            await service.Leaders(EndedRules.RulesetId, cache.AbandonedAt(EndedRules.RulesetId), this._cancellation);
+        ImmutableList<Leader> overLeaders =
+            await service.Leaders("over", cache.AbandonedAt("over"), this._cancellation);
 
         // Assert
         Assert.Equal(
-            ("Ada 2, Bea 0", "Ada 0"),
+            ("Ada 2, Bea 0", "Ada 0", true),
             (
                 string.Join(", ", leaders.Select(leader => $"{leader.Name} {leader.Abandoned}")),
-                string.Join(", ", overLeaders.Select(leader => $"{leader.Name} {leader.Abandoned}"))
+                string.Join(", ", overLeaders.Select(leader => $"{leader.Name} {leader.Abandoned}")),
+                cache.AbandonedCountedAt is not null
+            )
+        );
+    }
+
+    [Fact]
+    public async Task Leaders_WhenGamesWaitForAPlayer_ReadsNoGameButTheAbandonedAsGiven()
+    {
+        // Arrange - a game waiting on Ada for a day, but the count given says none (the user, 2026-11-26: "loading the
+        // leaderboard should not need to replay games"; eventual consistency is fine)
+        await this._players.Add(new Player(Ada, "Ada", []), this._cancellation);
+        await this._players.Keep([new Standing(Ada, EndedRules.RulesetId) { Elo = 1550 }], this._cancellation);
+        await this._games.Add(Waiting("first", new HumanSeat("ada", Ada)), this._cancellation);
+        StandingService service = this.Service(new EndedRules(EndedRules.State([])), null);
+
+        // Act
+        ImmutableList<Leader> leaders = await service.Leaders(EndedRules.RulesetId, [], this._cancellation);
+        ImmutableList<Leader> unknown = await service.Leaders(EndedRules.RulesetId, null, this._cancellation);
+
+        // Assert - and, not yet counted, unknown
+        Assert.Equal(
+            ("Ada 0", true),
+            (
+                string.Join(", ", leaders.Select(leader => $"{leader.Name} {leader.Abandoned}")),
+                unknown[0].Abandoned is null
             )
         );
     }
@@ -612,8 +643,9 @@ public sealed class StandingServiceTest
         };
 
     /// <summary>A game not over, untouched since long ago.</summary>
+    /// <summary>A game not over, summarized as Black to decide, as every game saved since summaries were is.</summary>
     private static GameRecord Waiting(string id, params SeatController[] seats) =>
-        Record(id, seats) with { IsOver = null };
+        Record(id, seats) with { IsOver = null, Deciding = Black };
 
     /// <summary>The service, the first-choice bot rated <paramref name="botRating"/> at the rules, if at all.</summary>
     private StandingService Service(EndedRules rules, int? botRating) => this.Service([rules], botRating);

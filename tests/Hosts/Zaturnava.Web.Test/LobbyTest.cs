@@ -2832,13 +2832,14 @@ public sealed class LobbyTest : IDisposable
     [InlineData("over", false, true)]
     [InlineData("full", false, true)]
     [InlineData("open", true, true)]
-    public void Render_WhenThereAreGamesToJoinOrNot_HidesNewGameUntilAskedOrShowsIt(
+    public void Render_WhenReturningWhereThereWereGamesToJoinOrNot_HidesNewGameUntilAskedOrShowsIt(
         string listed,
         bool isToggled,
         bool isShown
     )
     {
-        // Arrange - the game listed, with open seats, or for players only, over, or full (playtest 2026-11-15, H1)
+        // Arrange - the game listed, with open seats, or for players only, over, or full (playtest 2026-11-15, H1),
+        // as the lobby listed it last, coming back to it
         this._page.Server.Games =
         [
             this._page.Server.Games[0] with
@@ -2848,6 +2849,7 @@ public sealed class LobbyTest : IDisposable
                 IsOver = listed == "over",
             },
         ];
+        _ = this.RenderAsIs();
         IRenderedComponent<Lobby> lobby = this.RenderAsIs();
 
         // Act
@@ -3165,16 +3167,34 @@ public sealed class LobbyTest : IDisposable
         return lobby;
     }
 
-    /// <summary>The lobby, its New game panel shown, as a player opens it when there are games to join.</summary>
     [Fact]
-    public void Render_WhenTheGamesAreStillComing_ShowsTheLobbyWithASpinnerWhereTheyGoAndNewGameReady()
+    public void Render_WhenSettingUpAGame_GroupsTheOptionsUnderHeadingsTheLeadersAndTheInfantrysEachTogether()
     {
-        // Arrange
+        // Arrange (the user, 2026-11-26: "organize the setup menu a bit better")
+        this._page.Server.HasFaceOff = true;
+
+        // Act
+        IRenderedComponent<Lobby> lobby = this.ByStrength();
+
+        // Assert
+        Assert.Equal(
+            ("Seats|Pieces|Play", "Leaders", "lost-without-leaders|face-off-pause"),
+            (
+                string.Join('|', lobby.FindAll("h3.setup-group").Select(heading => heading.TextContent)),
+                string.Join('|', lobby.FindAll(".piece-options h4.setup-subgroup").Select(sub => sub.TextContent)),
+                string.Join('|', lobby.FindAll(".piece-options input").Select(input => input.ClassName))
+            )
+        );
+    }
+
+    [Fact]
+    public void Render_WhenTheGamesAreStillComing_ShowsTheLobbyWithASpinnerWhereTheyGoAndNewGameOpen()
+    {
+        // Arrange - a player need not wait on the other panels to start a game (the user, 2026-11-26)
         this._page.Server.HeldList = new TaskCompletionSource<GamePageDto>();
 
         // Act
         IRenderedComponent<Lobby> lobby = this.RenderAsIs();
-        lobby.Find("button.new-game-toggle").Click();
 
         // Assert
         Assert.Equal(

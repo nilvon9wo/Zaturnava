@@ -438,6 +438,19 @@ public sealed class GrandLegionsRulesTest
     }
 
     [Fact]
+    public void StartRows_AtEverySize_AreTheKingdomsDepthUnlessTheGamesCreatorSetsOthers()
+    {
+        // Arrange (the user, 2026-11-26)
+        ImmutableList<QuickGame> games = QuickGame.All;
+
+        // Act
+        ImmutableList<int?> rows = [.. games.Select(game => GrandLegionsRules.RulesOf(game).StartRows)];
+
+        // Assert
+        Assert.Equal([.. games.Select(game => (int?)game.KingdomDepth)], rows);
+    }
+
+    [Fact]
     public void GuideOf_WhenAWesternPawn_TellsItsClassStartRowPowersAndRestriction()
     {
         // Arrange
