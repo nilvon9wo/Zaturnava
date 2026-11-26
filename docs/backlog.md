@@ -24,8 +24,23 @@ own number (**25**, **N29**), the [2026-11-15 specification](playtesting/2026-11
   50, 20 and 10, when they play as Midas. Rated live (2026-11-25): Morpheus 1379, Phaethon 1582, Tantalus 1582,
   Echo 1432, Icarus 1556 - out of order, as each was rated only against the shipped bots, and one that beats Random
   and loses to Midas fits any rating between. So the new bots now play each other too, and are rated together, the
-  shipped ratings held. Still to do: once re-rated, tune their shares so that they fall between 1000 and 1200, a
-  step apart.
+  shipped ratings held. Re-rated live (2026-11-26): Morpheus 1696, Phaethon and Tantalus 1700, Echo 1740, still
+  near Midas (1727). The bots were not at fault, but the fit: it added a draw between every pair played, and
+  with two games a pair, a bot that lost every game to the 20 strong bots had half a win against each. Measured
+  locally, 60 games a pair, Random held at 1000: Morpheus 1083, Phaethon 1192, Tantalus 1311, Echo 1574 - a
+  real progression, two below 1200. Now one draw is added for each new bot, against a bot at 1000. And three
+  are wanted below 1200, so that a game may be all easy bots (the user, 2026-11-26): the three play as Midas one
+  turn in 100, 50 and 25, measured locally (120 games a pair) at 1046, 1074 and 1142, and shipped so at
+  Chaturaji 2027 (the user, 2026-11-26: local and live bots play alike, so more local games rate them better):
+  their ratings depend on Random's games, held at 1000, as they lose every game to Midas. Their old games are
+  cleared by a migration, for the bot-rating job to rate them again at Grand Legions' sizes. Echo and Icarus,
+  who sometimes beat Midas, measured locally with the shipped ratings held (`rate-bots.py --hold-shipped`,
+  fitted as the server's job fits, 60 games a pair against the weak bots, Midas and Solomon): 1436 and 1553,
+  shipped so. Still to do: the Grand Legions sizes measured and shipped likewise (M4).
+  *(Proposed, 2026-11-26, from the user's question whether rating bots apart from people skews them)*: a bot's
+  rating comes from its games against bots alone, while a person's game against a bot moves only the person's.
+  Counting people's games against a bot toward the bot's rating too would rate it by how it plays people, and
+  keep the two scales one.
 - **M1–M5** Offline tournaments and training. *Begun* (2026-11-19): `scripts/wsl-overnight.sh` trains Athena and
   rates every bot, cycle after cycle, until stopped, each round kept as it ends
   ([local-development](contribute/local-development.md#smart-app-control-windows)). A tournament stopped
@@ -144,6 +159,11 @@ From the specification's observations of the bots in play (F, X) and the Sage pl
   promotion premiums ([pieces](grand/pieces.md#still-open)) (**Q14**).
 
 ## 5. Look, feel and players
+
+- **The lobby's own loading** (2026-11-26, after "the lobby is still insanely slow"): the server's answers are
+  timed (`scripts/time-live-api.py`), and its panels now load on their own; not yet measured in the browser: the
+  page's download, and the remembered setups it reads one at a time from the browser's storage before it lists
+  the games. Time them in the live page, and read them at once if they cost.
 
 - Grand Legions' lifts (**N25**, Stage 7): a badge above a piece's symbol for each kind of restriction lifted,
   once lifts are kept in the game.

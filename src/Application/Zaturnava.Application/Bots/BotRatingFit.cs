@@ -67,8 +67,10 @@ public static class BotRatingFit
     /// their games against the bots held, whose ratings stay as they are (Proposed, 2026-11-13: so that a new bot is
     /// rated on the scale the others are), and against each other (2026-11-25: rated against the held alone, a bot that
     /// beats Random and loses to Midas fits any rating between, so the weakest bots rated out of order). One draw added
-    /// between each pair played, as <see cref="Fitted"/> adds. A bot joined to no held bot, by any chain of games, is
-    /// left out.
+    /// for each bot, against one rated <see cref="AnchorRating"/>, so that a bot that never loses still gets a finite
+    /// rating (2026-11-26: a draw added against every bot it played, with only two games a pair, gave a bot that lost
+    /// every game to the strongest a half win against each, so that the weakest rated near Midas). A bot joined to no
+    /// held bot, by any chain of games, is left out.
     /// </summary>
     public static ImmutableDictionary<string, int> Around(
         [Required] ImmutableDictionary<string, int> held,
@@ -84,7 +86,7 @@ public static class BotRatingFit
             [.. matchups.Where(matchup => IsCounted(matchup.First) && IsCounted(matchup.Second))];
         ImmutableDictionary<string, double> wins = free.ToImmutableDictionary(
             bot => bot,
-            bot => counted.Sum(matchup => WinsOf(matchup, bot))
+            bot => PriorDraw + counted.Sum(matchup => PlayedWinsOf(matchup, bot))
         );
         ImmutableDictionary<string, double> strengths = held
             .ToImmutableDictionary(rating => rating.Key, rating => Math.Exp((rating.Value - AnchorRating) / Scale))
@@ -105,7 +107,18 @@ public static class BotRatingFit
         bool IsCounted(string bot) => held.ContainsKey(bot) || free.Contains(bot);
     }
 
-    /// <summary>One round of fitting around the held: each free bot's strength anew, the held as they were.</summary>
+    /// <summary>The half win of the one draw added for each bot fitted around the held.</summary>
+    private const double PriorDraw = 0.5;
+
+    /// <summary>
+    /// The strength of the one each bot fitted around the held is drawn against: <see cref="AnchorRating"/>'s.
+    /// </summary>
+    private const double PriorStrength = 1;
+
+    /// <summary>
+    /// One round of fitting around the held: each free bot's strength anew, by its games and its one added draw, the
+    /// held as they were.
+    /// </summary>
     private static ImmutableDictionary<string, double> NextAround(
         ImmutableList<string> free,
         ImmutableDictionary<string, double> wins,
@@ -115,11 +128,20 @@ public static class BotRatingFit
         strengths.SetItems(
             free.Select(bot => KeyValuePair.Create(
                 bot,
-                wins[bot] / counted
-                    .Where(matchup => matchup.First == bot || matchup.Second == bot)
-                    .Sum(matchup => (matchup.Played + 1) / (strengths[bot] + strengths[OtherOf(matchup, bot)]))
+                wins[bot] / (
+                    (1 / (strengths[bot] + PriorStrength))
+                    + counted
+                        .Where(matchup => matchup.First == bot || matchup.Second == bot)
+                        .Sum(matchup => matchup.Played / (strengths[bot] + strengths[OtherOf(matchup, bot)]))
+                )
             ))
         );
+
+    /// <summary>The bot's wins in the matchup, a draw half a win, as played.</summary>
+    private static double PlayedWinsOf(BotMatchup matchup, string bot) =>
+        matchup.First == bot ? matchup.Won + (matchup.Drawn / 2.0)
+        : matchup.Second == bot ? matchup.Lost + (matchup.Drawn / 2.0)
+        : 0;
 
     /// <summary>Whether no free bot's strength moved by more than a hair, as a share of it.</summary>
     private static bool IsSettled(

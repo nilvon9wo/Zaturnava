@@ -72,9 +72,11 @@ public sealed class NoviceBot : IBotPlaying
         );
 
     /// <summary>
-    /// The bots for the very first games (D2: below 1200, a real progression; Proposed, 2026-11-20, their shares to be
-    /// tuned by what the tournaments measure): Morpheus, half asleep, plays as Midas one decision in fifty; Phaethon,
-    /// who could not hold the reins, one in twenty; Tantalus, whose prize was ever just out of reach, one in ten.
+    /// The bots for the very first games (D2: at least three below 1200, so that a game may be all easy bots; the
+    /// user, 2026-11-26): Morpheus, half asleep, plays as Midas one decision in a hundred; Phaethon, who could not hold
+    /// the reins, one in fifty; Tantalus, whose prize was ever just out of reach, one in twenty-five. Measured
+    /// locally at one in fifty, twenty and ten (2026-11-26, 60 games a pair, Random at 1000): 1083, 1192 and 1311, so
+    /// the shares halved and more, to fall between 1000 and 1200.
     /// </summary>
     public static ImmutableList<NoviceBot> Faint([Required] Random random) =>
     [
@@ -95,9 +97,9 @@ public sealed class NoviceBot : IBotPlaying
 
     private static ImmutableList<(string Id, string Name, int Share)> FaintBots { get; } =
     [
-        ("morpheus", "Morpheus", 2),
-        ("phaethon", "Phaethon", 5),
-        ("tantalus", "Tantalus", 10),
+        ("morpheus", "Morpheus", 1),
+        ("phaethon", "Phaethon", 2),
+        ("tantalus", "Tantalus", 4),
     ];
 
     public Task<GameAction?> Seize([Required] DecisionRequest request, CancellationToken cancellationToken) =>

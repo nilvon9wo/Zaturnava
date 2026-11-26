@@ -112,7 +112,9 @@ public sealed class StrategicPositionsTest
             (CellAt(4, 0), new Piece(new PieceId(3), Chaturaji2027Pieces.Raja, Black)),
             (CellAt(3, 4), new Piece(new PieceId(4), Chaturaji2027Pieces.Raja, Red))
         );
-        SageBot sage = new(new Random(7));
+        // its endgame search ended by its budget alone, not the clock, so that it plays alike on any machine
+        // (2026-11-26: on CI, the clock cut it short, every decision, and it played on for eight minutes and lost)
+        SageBot sage = new(new Random(7)) { EndgameLimit = TimeSpan.FromMinutes(10) };
 
         // Act
         int decisions = 0;

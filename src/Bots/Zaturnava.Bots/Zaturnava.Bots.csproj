@@ -17,6 +17,8 @@
   <ItemGroup>
     <!-- So that each search's time limit can be tested set to nothing (Deadline). -->
     <InternalsVisibleTo Include="Net.NowhereAtAll.Zaturnava.Bots.Test" />
+    <!-- And so that Sage's endgame search, played to the end on a real board, ends by its budget alone. -->
+    <InternalsVisibleTo Include="Net.NowhereAtAll.Zaturnava.BotRunner.Test" />
   </ItemGroup>
 
   <ItemGroup>
