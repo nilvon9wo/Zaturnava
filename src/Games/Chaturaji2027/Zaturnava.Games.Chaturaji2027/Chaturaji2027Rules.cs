@@ -601,6 +601,17 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             .Distinct(),
     ];
 
+    /// <summary>
+    /// The seats that move <paramref name="army"/>'s pieces on their own turns (rules.md §6.1): its own seat, a seat
+    /// whose Raja sits on its throne, and, while it has no Raja, each ally with one (the designer's case of
+    /// 2026-11-25: a Yellow Rook, moved on Red's turn by Red's Raja).
+    /// </summary>
+    public ImmutableHashSet<SeatId> MoversOf([Required] GameState state, SeatId army)
+    {
+        GameState own = state with { ActingFor = null };
+        return [.. state.Seats.Select(seat => seat.Id).Where(seat => this._control.ArmiesOf(own, seat).Contains(army))];
+    }
+
     /// <summary>The lead that wins by giving up its turns (rules.md §10), as the variant scores it.</summary>
     public int ClearLead => this._variant.Scoring.ClearLead;
 

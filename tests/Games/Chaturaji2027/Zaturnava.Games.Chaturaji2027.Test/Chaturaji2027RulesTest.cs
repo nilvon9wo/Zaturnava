@@ -2362,6 +2362,31 @@ public sealed class Chaturaji2027RulesTest
     }
 
     [Theory]
+    [InlineData(true, "2")]
+    [InlineData(false, "0,2")]
+    public void MoversOf_WhenAnAllyHasARajaAndTheArmyHasOneOrNot_IsItsOwnSeatAndTheCommandingAlly(
+        bool hasGreenRaja,
+        string expected
+    )
+    {
+        // Arrange - Black's Raja off any throne; Green, Black's ally, with or without its own (rules.md §6.1b: an ally
+        // with a Raja moves the army of one without, on its own turns)
+        GameState state = this.StateWith(
+            [
+                (Grid.CellAt(3, 3), Piece(1, Chaturaji2027Pieces.Raja, Black)),
+                (Grid.CellAt(2, 5), Piece(2, Chaturaji2027Pieces.Pawn, Green)),
+                .. new[] { (Grid.CellAt(5, 5), Piece(3, Chaturaji2027Pieces.Raja, Green)) }.Where(_ => hasGreenRaja),
+            ]
+        );
+
+        // Act
+        ImmutableHashSet<SeatId> movers = this._rules.MoversOf(state, Green);
+
+        // Assert
+        Assert.Equal(expected, string.Join(",", movers.Select(seat => seat.Value).Order()));
+    }
+
+    [Theory]
     [InlineData(Chaturaji2027PiecesKind.Elephant, true)]
     [InlineData(Chaturaji2027PiecesKind.Raja, false)]
     [InlineData(Chaturaji2027PiecesKind.Horse, false)]

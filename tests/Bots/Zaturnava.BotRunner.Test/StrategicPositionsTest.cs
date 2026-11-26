@@ -133,19 +133,57 @@ public sealed class StrategicPositionsTest
         );
     }
 
+    [Theory]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    public void Exposure_WhenAnEnemyArmyIsCommandedByAnEnemyWhoMovesFirstOrNot_CountsWhatItCouldTake(
+        bool hasYellowRaja,
+        bool isLost
+    )
+    {
+        // Arrange - plan step 1, whose move is next (seen 2026-11-25: a Yellow Rook, moved on Red's turn by Red's
+        // Raja): Green has just moved, so Red moves next, then Black, then Yellow; Yellow's Elephant on c3 attacks
+        // Black's on f3 along the empty row. While Yellow has its Raja, only Yellow moves its army, after Black, who
+        // saves the Elephant first; without one, Red's Raja commands Yellow's army too, and Red moves before Black
+        CellId blackElephant = CellAt(5, 2);
+        GameState state = this.Deciding(
+            Green,
+            [
+                (CellAt(2, 2), new Piece(new PieceId(1), Chaturaji2027Pieces.Elephant, Yellow)),
+                (blackElephant, new Piece(new PieceId(2), Chaturaji2027Pieces.Elephant, Black)),
+                .. new[] { Black, Green, Red, Yellow }
+                    .Where(seat => hasYellowRaja || seat != Yellow)
+                    .Select((seat, index) => (
+                        this._rules.Thrones[seat],
+                        new Piece(new PieceId(10 + index), Chaturaji2027Pieces.Raja, seat)
+                    )),
+            ]
+        );
+        DecisionRequest request = new(this._rules, state, Green, this._rules.LegalActions(state));
+
+        // Act
+        int exposure = Careful.Exposure(request, state);
+
+        // Assert
+        Assert.Equal(isLost ? this._rules.KeepingWorthOf(Chaturaji2027Pieces.Elephant) : 0, exposure);
+    }
+
     /// <summary>How many decisions, every seat's, the endgame test allows before calling it not converted.</summary>
     private const int MostEndgameDecisions = 120;
 
     private static CellId CellAt(int column, int row) => new((row * Side) + column);
 
     /// <summary>Black to decide, without dice, with only these pieces on the board.</summary>
-    private GameState BlackDeciding(params (CellId Cell, Piece Piece)[] pieces) =>
+    private GameState BlackDeciding(params (CellId Cell, Piece Piece)[] pieces) => this.Deciding(Black, pieces);
+
+    /// <summary><paramref name="seat"/> to decide, without dice, with only these pieces on the board.</summary>
+    private GameState Deciding(SeatId seat, params (CellId Cell, Piece Piece)[] pieces) =>
         this._rules.WithoutDice(
             this._rules.CreateInitialState() with
             {
                 RollOff = [],
                 AwaitedDice = null,
-                DecidingSeat = Black,
+                DecidingSeat = seat,
                 Position = pieces.Aggregate(Position.Empty, (board, placed) => board.Place(placed.Cell, placed.Piece)),
             }
         );

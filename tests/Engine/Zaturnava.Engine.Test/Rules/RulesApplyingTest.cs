@@ -277,6 +277,19 @@ public sealed class RulesApplyingTest
     }
 
     [Fact]
+    public void MoversOf_WhenTheRulesetSaysNoOther_IsTheArmysOwnSeat()
+    {
+        // Arrange
+        OneSizeRules rules = new();
+
+        // Act
+        ImmutableHashSet<SeatId> movers = MoversOf(rules);
+
+        // Assert
+        Assert.Equal([Seat], movers);
+    }
+
+    [Fact]
     public void Drafted_WhenTheRulesetSaysNoOther_IsNotDraftableAndLeavesTheGameAsDealtOfferingNothing()
     {
         // Arrange
@@ -374,6 +387,10 @@ public sealed class RulesApplyingTest
     private static ImmutableList<Attack> MovesOf<TRules>(TRules rules)
         where TRules : IRulesApplying =>
         rules.MovesOf(OneSizeRules.State, Seat);
+
+    private static ImmutableHashSet<SeatId> MoversOf<TRules>(TRules rules)
+        where TRules : IRulesApplying =>
+        rules.MoversOf(OneSizeRules.State, Seat);
 
     private static int KeepingWorthOf<TRules>(TRules rules, PieceKindId kind)
         where TRules : IRulesApplying =>
