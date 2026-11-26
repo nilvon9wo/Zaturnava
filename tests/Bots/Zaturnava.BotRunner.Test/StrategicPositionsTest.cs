@@ -147,6 +147,43 @@ public sealed class StrategicPositionsTest
     }
 
     [Fact]
+    public async Task Sage_WhenItsOwnRookWouldWinWhereAnAllysRajaWouldTakeBackItsArmy_PromotesIntoTheRook()
+    {
+        // Arrange - plan step 2, the command a promotion brings (F2-F4, seen 2026-11-25: "into a Raja of another army
+        // rather than the Rook that wins, losing control of an ally's pieces"): Black's Pawn on d8, its far edge, may
+        // become Green's Raja or Black's own Elephant (the Rook), both held by Red. Green has no Raja, so Black
+        // commands its Horse and Boat; Green's Raja back would take them back. Red's Raja on d5, down the empty file,
+        // is the Rook's to take this very turn; Yellow's Raja on its throne
+        CellId pawn = CellAt(3, 7);
+        Piece greenRaja = new(new PieceId(4), Chaturaji2027Pieces.Raja, Green);
+        Piece blackRook = new(new PieceId(5), Chaturaji2027Pieces.Elephant, Black);
+        GameState state = this.BlackDeciding(
+            [
+                (pawn, new Piece(new PieceId(1), Chaturaji2027Pieces.Pawn, Black)),
+                (CellAt(3, 4), new Piece(new PieceId(2), Chaturaji2027Pieces.Raja, Red)),
+                (this._rules.Thrones[Black], new Piece(new PieceId(3), Chaturaji2027Pieces.Raja, Black)),
+                (this._rules.Thrones[Yellow], new Piece(new PieceId(6), Chaturaji2027Pieces.Raja, Yellow)),
+                (CellAt(6, 6), new Piece(new PieceId(7), Chaturaji2027Pieces.Horse, Green)),
+                (CellAt(5, 5), new Piece(new PieceId(8), Chaturaji2027Pieces.Boat, Green)),
+                (CellAt(0, 2), new Piece(new PieceId(9), Chaturaji2027Pieces.Pawn, Yellow)),
+            ]
+        ) with
+        {
+            Prisoners = [new Prisoner(greenRaja, Red), new Prisoner(blackRook, Red)],
+        };
+        DecisionRequest request = new(this._rules, state, Black, this._rules.LegalActions(state));
+
+        // Act
+        GameAction action = await new SageBot(new Random(7)).Decide(request, this._cancellation);
+
+        // Assert - both offered; the Rook chosen
+        Assert.Equal(
+            (true, new PromoteAction(Black, pawn, blackRook.Id)),
+            (request.LegalActions.Contains(new PromoteAction(Black, pawn, greenRaja.Id)), action)
+        );
+    }
+
+    [Fact]
     public async Task Sage_WhenTwoElephantsFaceALoneRaja_PlaysItToTheEndAndWins()
     {
         // Arrange - the endgame plan's test (docs/bots/strategy-plan.md, "Endgame tables"): Black's two Elephants (the

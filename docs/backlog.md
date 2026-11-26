@@ -112,10 +112,16 @@ From the specification's observations of the bots in play (F, X) and the Sage pl
 - **F2, F3, F4** Promotion chosen badly: into a Raja of another army rather than the Rook that wins, losing
   control of an ally's pieces. Bots should weigh the promoted piece's owner, mobility and effect on coordination,
   head for the throne that matters, see an enemy's chance to seize control, use Rooks, push Pawns, and turn a
-  winning position into a win.
+  winning position into a win. *Begun* (2026-11-26, [plan](bots/strategy-plan.md), step 2): Sage promotes with its
+  eyes open to safety and turn order, and into the Rook that wins rather than an ally's Raja; the choice on command
+  alone is still to come.
 - **X3** Meandering on a near-empty board with nothing left but to clean up, except for the weakest bots.
 - **X4** Ransoms offered or accepted when hopeless or harmful: prolonging a decided game, bringing back a piece
-  that is at once taken or in the way, offering what no one sensible would accept.
+  that is at once taken or in the way, offering what no one sensible would accept. *Checked* (2026-11-26): Argus
+  declines a piece sent home where it would be taken at once (`ArgusBotTest`), and Sage weighs the position a
+  trade leaves, its exposure included; no bot sends a piece home that it would pen in (`Trading.Traps`); a team
+  ahead gives no leader nor heavy piece back. Midas and Solomon weigh worth and fairness alone, as their characters
+  are. Still to do: a decided game prolonged by trades, if one is seen.
 - **F6** Resigning a hopeless endgame: a strategic judgement, not a points comparison, each bot by its own
   threshold. *Begun* (2026-11-26): each bot's own threshold (`Temper`; [plan](bots/strategy-plan.md), step 6). Still
   to do: the strategic judgement, beyond points and hope.
