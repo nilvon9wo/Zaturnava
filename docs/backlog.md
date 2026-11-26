@@ -28,9 +28,10 @@ own number (**25**, **N29**), the [2026-11-15 specification](playtesting/2026-11
   near Midas (1727). The bots were not at fault, but the fit: it added a draw between every pair played, and
   with two games a pair, a bot that lost every game to the 20 strong bots had half a win against each. Measured
   locally, 60 games a pair, Random held at 1000: Morpheus 1083, Phaethon 1192, Tantalus 1311, Echo 1574 - a
-  real progression, two below 1200. Now one draw is added for each new bot, against a bot at 1000, so the live
-  ratings should fall in line as they are fitted again. Still to do: check them live; if a third below 1200 is
-  still wanted, a bot of its own (changing Tantalus's share would mix its old games with new ones).
+  real progression, two below 1200. Now one draw is added for each new bot, against a bot at 1000. And three
+  are wanted below 1200, so that a game may be all easy bots (the user, 2026-11-26): the three play as Midas one
+  turn in 100, 50 and 25, measured locally (120 games a pair) at 1046, 1074 and 1142, their old games cleared
+  by a migration for the bot-rating job to play them again. Still to do: check the live ratings once re-rated.
 - **M1–M5** Offline tournaments and training. *Begun* (2026-11-19): `scripts/wsl-overnight.sh` trains Athena and
   rates every bot, cycle after cycle, until stopped, each round kept as it ends
   ([local-development](contribute/local-development.md#smart-app-control-windows)). A tournament stopped
