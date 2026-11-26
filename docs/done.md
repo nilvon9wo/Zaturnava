@@ -8,6 +8,9 @@ only in part, what is left is in the backlog, and its history here. The playtest
 
 ## Asked 2026-11-26
 
+- Stage 2: choosing a quick setup for one's own kingdom in a game set up by hand. *Found done* (2026-11-26), with
+  the draft: a player drafting their own army may have the rest filled at any point; from an empty kingdom, that is
+  the army a quick game would deal them ([roadmap](grand/roadmap.md)).
 - **Boat triumph (§9)**: a nice-to-have; the condition is so unlikely that no one may miss it. *Done*
   ([rules §9](rules.md#9-boat-triumph)): a Boat moved to make one of every army's Boat on the four cells of a 2 x 2
   square takes the other team's Boats there. *Stated* (the user's answer the same day): it is the capturing Boats,

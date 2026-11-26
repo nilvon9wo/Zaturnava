@@ -175,7 +175,6 @@ From the specification's observations of the bots in play (F, X) and the Sage pl
 - Stage 5: upgrades and promotions bought in play, in a palace with the player's own leader on its throne,
   lowering the score; lifts bought in the draft, and kept in the game; the four-throne bonus, once for each set
   of leaders; bots that spend.
-- Stage 2: choosing a quick setup for one's own kingdom in a game set up by hand.
 - Stage 2: saved settings, named, shared and copied to edit ([specification §2.1](grand/specification.md#21-saved-settings)).
 - *(Stated 2026-11-12)* **Kingdoms placed by the players**, as a setting of the game's creator, before their
   palace, throne and pieces; probably still keeping to the board's corners, more or less, so that no later player
