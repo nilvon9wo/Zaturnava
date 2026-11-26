@@ -1512,11 +1512,15 @@ public sealed class LobbyTest : IDisposable
     }
 
     [Theory]
-    [InlineData("easy", "midas,random,solomon")]
-    [InlineData("hard", "midas,oracle,solomon")]
-    public void Quick_WhenEasyOrHard_SeatsTheEasiestOrHardestBots(string difficulty, string expected)
+    [InlineData("easy", "midas,oracle,random")]
+    [InlineData("hard", "oracle,random,solomon")]
+    public void Quick_WhenEasyOrHard_SeatsTheEasiestOrHardestEnemiesAndTheAllyTheOtherWayAbout(
+        string difficulty,
+        string expected
+    )
     {
-        // Arrange - Random is rated easiest, then Midas, Solomon and Oracle; Claude, paid for, is never seated
+        // Arrange - Random is rated easiest, then Midas, Solomon and Oracle; Claude, paid for, is never seated; an easy
+        // game's enemies are Random and Midas, its ally Oracle, the strongest; a hard game's Solomon and Oracle, Random
         IRenderedComponent<Lobby> lobby = this.Render();
 
         // Act
@@ -3168,9 +3172,9 @@ public sealed class LobbyTest : IDisposable
     }
 
     [Fact]
-    public void Render_WhenSettingUpAGame_GroupsTheOptionsUnderHeadingsTheLeadersAndTheInfantrysEachTogether()
+    public void Render_WhenSettingUpAGame_GroupsTheOptionsInTabsTheLeadersAndTheInfantrysEachTogether()
     {
-        // Arrange (the user, 2026-11-26: "organize the setup menu a bit better")
+        // Arrange (the user, 2026-11-26: "organize the setup menu a bit better", then "use panels with tabs")
         this._page.Server.HasFaceOff = true;
 
         // Act
@@ -3180,12 +3184,51 @@ public sealed class LobbyTest : IDisposable
         Assert.Equal(
             ("Seats|Pieces|Play", "Leaders", "lost-without-leaders|face-off-pause"),
             (
-                string.Join('|', lobby.FindAll("h3.setup-group").Select(heading => heading.TextContent)),
+                string.Join('|', lobby.FindAll("button.setup-tab").Select(tab => tab.TextContent)),
                 string.Join('|', lobby.FindAll(".piece-options h4.setup-subgroup").Select(sub => sub.TextContent)),
                 string.Join('|', lobby.FindAll(".piece-options input").Select(input => input.ClassName))
             )
         );
     }
+
+    [Fact]
+    public void SetupTab_WhenChosen_ShowsItsPanelAloneTheSeatsAtFirst()
+    {
+        // Arrange (the user, 2026-11-26: "the custom setup dialog is getting too long to comfortably fit on the
+        // screen. Let's use panels with tabs")
+        IRenderedComponent<Lobby> lobby = this.ByStrength();
+        string first = ShownSetup(lobby);
+
+        // Act
+        lobby.FindAll("button.setup-tab").Single(tab => tab.TextContent == "Play").Click();
+
+        // Assert
+        Assert.Equal(("seats", "play"), (first, ShownSetup(lobby)));
+    }
+
+    [Fact]
+    public void SetupTab_WhenTheGameChosenHasNoneSuch_ShowsTheSeats()
+    {
+        // Arrange - Chaturaji 2027 dealt, so with an Armies tab; Grand Legions, here, without
+        this._page.Server.IsDealt = true;
+        this._page.Server.MoreRulesets = GrandSizes;
+        IRenderedComponent<Lobby> lobby = this.ByStrength();
+        lobby.FindAll("button.setup-tab").Single(tab => tab.TextContent == "Armies").Click();
+
+        // Act
+        lobby.Find("select.game").Change("grand-legions");
+
+        // Assert
+        Assert.Equal("seats", ShownSetup(lobby));
+    }
+
+    private static string ShownSetup(IRenderedComponent<Lobby> lobby) =>
+        lobby.FindAll(".setup-panel").Single(panel => !panel.HasAttribute("hidden")) switch
+        {
+            var panel when panel.QuerySelector("select.colour") is not null => "seats",
+            var panel when panel.QuerySelector("input.idle-seconds") is not null => "play",
+            _ => "other",
+        };
 
     [Fact]
     public void Render_WhenTheGamesAreStillComing_ShowsTheLobbyWithASpinnerWhereTheyGoAndNewGameOpen()

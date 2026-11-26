@@ -2386,6 +2386,25 @@ public sealed class Chaturaji2027RulesTest
         Assert.Equal(expected, string.Join(",", movers.Select(seat => seat.Value).Order()));
     }
 
+    [Fact]
+    public void MoversOf_WhenOneOfTwoLeadersSitsOnAnAllysThrone_CommandsThatAllysArmy()
+    {
+        // Arrange - Grand Legions' several leaders in one army (roadmap Stage 3: "everything the rules say of the Raja,
+        // said of leaders"): Black's second Raja on Green's throne, its first elsewhere; Green keeps a Raja of its own,
+        // so only the throne gives Black command
+        GameState state = this.StateWith(
+            (Grid.CellAt(3, 3), Piece(1, Chaturaji2027Pieces.Raja, Black)),
+            (this._rules.Thrones[Green], Piece(2, Chaturaji2027Pieces.Raja, Black)),
+            (Grid.CellAt(5, 5), Piece(3, Chaturaji2027Pieces.Raja, Green))
+        );
+
+        // Act
+        ImmutableHashSet<SeatId> movers = this._rules.MoversOf(state, Green);
+
+        // Assert
+        Assert.Equal("0,2", string.Join(",", movers.Select(seat => seat.Value).Order()));
+    }
+
     [Theory]
     [InlineData(Chaturaji2027PiecesKind.Elephant, true)]
     [InlineData(Chaturaji2027PiecesKind.Raja, false)]

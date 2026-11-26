@@ -273,16 +273,28 @@
                             @onclick="() => this.Quick(catalog, Difficulty.Hard)">Hard</button>
                 </div>
                 <p class="quick-hint">
-                    Easy seats the three easiest bots; medium, any three; hard, the three hardest. Click a bot's name
-                    on the leaderboard to see who it is.
+                    Easy seats the easiest bots against you, and the strongest beside you; hard, the hardest against
+                    you, and the weakest beside you; medium, any. Click a bot's name on the leaderboard to see who it
+                    is.
                 </p>
             }
             else if (mode == SetupMode.Custom)
             {
                 @* Every option in its group under a heading, a space between: the seats, the armies, the board, the
                    pieces (the leaders' options together, the infantry's together), how the game is played, and who
-                   may play (the user, 2026-11-26: "organize the setup menu a bit better") *@
-                <h3 class="setup-group">Seats</h3>
+                   may play (the user, 2026-11-26: "organize the setup menu a bit better"); each group a tab, so that
+                   the dialog fits the screen (the user, 2026-11-26: "use panels with tabs instead") *@
+                <div class="setup-tabs" role="tablist">
+                    @foreach ((string name, string tip) in this.SetupTabs(catalog))
+                    {
+                        <button class="setup-tab"
+                                role="tab"
+                                title="@tip"
+                                aria-selected="@(this.SetupTabOf(catalog) == name ? "true" : "false")"
+                                @onclick="() => this._setupTab = name">@name</button>
+                    }
+                </div>
+                <div class="setup-panel" role="tabpanel" hidden="@this.IsTabHidden(catalog, SeatsTab)">
                 <ol class="plans strengths">
                     <li>
                         <span class="seat-name">You play</span>
@@ -334,10 +346,11 @@
                         <a href="@DocsLinks.Bots" target="_blank" rel="noopener noreferrer">How to connect it</a>
                     </p>
                 }
+                </div>
             }
             @if (mode == SetupMode.Custom && this.Ruleset(catalog).IsDealt)
             {
-                <h3 class="setup-group">Armies</h3>
+                <div class="setup-panel" role="tabpanel" hidden="@this.IsTabHidden(catalog, ArmiesTab)">
                 <div class="army-choices">
                     <label class="armies">
                         <span class="choice-name">Armies</span>
@@ -381,12 +394,13 @@
                         </label>
                     }
                 }
+                </div>
             }
             @if (mode == SetupMode.Custom && !this.Ruleset(catalog).TerrainAxes.IsEmpty)
             {
                 @* The terrain as its creator chooses it, each part at random unless they do (asked 2026-11-19); in
                    the armies' grid, each name beside its list. *@
-                <h3 class="setup-group">Board</h3>
+                <div class="setup-panel" role="tabpanel" hidden="@this.IsTabHidden(catalog, BoardTab)">
                 <div class="army-choices terrain-choices">
                     @foreach (TerrainAxisDto axis in this.Ruleset(catalog).TerrainAxes.Where(axis => axis.Within is null))
                     {
@@ -408,13 +422,14 @@
                         </label>
                     }
                 </div>
+                </div>
             }
             @if (mode == SetupMode.Custom)
             {
                 @* The game's own options in the grid of the choices above: each name in the first column, what is
                    chosen in the second, and who opens beside the dice, as a bot beside its strength (the user's word
                    of 2026-11-20: "messy, crowded, and chaotic") *@
-                <h3 class="setup-group">Pieces</h3>
+                <div class="setup-panel" role="tabpanel" hidden="@this.IsTabHidden(catalog, PiecesTab)">
                 <div class="army-choices game-options piece-options">
                     <h4 class="setup-subgroup">Leaders</h4>
                     <span class="choice-name">All gone</span>
@@ -463,7 +478,8 @@
                         </label>
                     }
                 </div>
-                <h3 class="setup-group">Play</h3>
+                </div>
+                <div class="setup-panel" role="tabpanel" hidden="@this.IsTabHidden(catalog, PlayTab)">
                 <div class="army-choices game-options">
                     @if (this.Ruleset(catalog).HasDice)
                     {
@@ -510,10 +526,11 @@
                                placeholder="∞ s" />
                     </label>
                 </div>
+                </div>
                 @* who may play, apart from the rules (the user's word of 2026-11-20) *@
                 @if (this._me is not null)
                 {
-                    <h3 class="setup-group">Players</h3>
+                    <div class="setup-panel" role="tabpanel" hidden="@this.IsTabHidden(catalog, PlayersTab)">
                     <div class="army-choices game-options player-options">
                         <span class="choice-name">Open seats</span>
                         <label class="for-players check"
@@ -521,6 +538,7 @@
                             <input type="checkbox" class="players-only" @bind="this._isForPlayers" />
                             Signed in only
                         </label>
+                    </div>
                     </div>
                 }
             }
@@ -767,6 +785,12 @@
     private const string DraftOne = "draft-one";
     private const string RandomEach = "random-each";
     private const string RandomOne = "random-one";
+    private const string SeatsTab = "Seats";
+    private const string ArmiesTab = "Armies";
+    private const string BoardTab = "Board";
+    private const string PiecesTab = "Pieces";
+    private const string PlayTab = "Play";
+    private const string PlayersTab = "Players";
 
     /// <summary>
     /// How a custom game's armies come to be (Stated, 2026-11-12, a choice of its own, not a checkbox): each player
@@ -797,6 +821,36 @@
     private bool _isForPlayers;
     private bool _isSecret;
     private bool _isHiddenFromAllies;
+    private string _setupTab = SeatsTab;
+
+    /// <summary>
+    /// The setup's tabs for the game chosen, each with what it holds on hovering: the seats, the armies if dealt, the
+    /// board if it has terrain to choose, the pieces, the play, and who may play if signed in (the user, 2026-11-26).
+    /// </summary>
+    private ImmutableList<(string Name, string Tip)> SetupTabs(CatalogDto catalog)
+    {
+        RulesetDto ruleset = this.Ruleset(catalog);
+        return
+        [
+            .. new (string Name, string Tip, bool IsShown)[]
+                {
+                    (SeatsTab, "Your colour, and who plays each other seat", true),
+                    (ArmiesTab, "How the armies are dealt or drafted", ruleset.IsDealt),
+                    (BoardTab, "Rivers and the board's other terrain", !ruleset.TerrainAxes.IsEmpty),
+                    (PiecesTab, "The leaders' and the infantry's rules", true),
+                    (PlayTab, "Dice, rounds and turn time", true),
+                    (PlayersTab, "Who may take the open seats", this._me is not null),
+                }
+                .Where(tab => tab.IsShown)
+                .Select(tab => (tab.Name, tab.Tip)),
+        ];
+    }
+
+    /// <summary>The tab shown: the one chosen, while the game has it; else the seats.</summary>
+    private string SetupTabOf(CatalogDto catalog) =>
+        this.SetupTabs(catalog).Any(tab => tab.Name == this._setupTab) ? this._setupTab : SeatsTab;
+
+    private bool IsTabHidden(CatalogDto catalog, string tab) => this.SetupTabOf(catalog) != tab;
 
     /// <summary>
     /// For a game that offers it, whether pieces promoted at the far edge are promoted at the edge to their right too
