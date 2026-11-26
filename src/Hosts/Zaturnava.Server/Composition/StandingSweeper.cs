@@ -11,10 +11,11 @@ namespace Net.NowhereAtAll.Zaturnava.Server.Composition;
 internal sealed class StandingSweeper : IHostedService, IDisposable
 {
     /// <summary>
-    /// How often the games abandoned are counted again, in the background (Proposed): a game counts as abandoned only
-    /// after a day, so a minute late is nothing, and no leaderboard asked for waits on the count.
+    /// How often the games abandoned are counted again, in the background (Proposed, at the user's discretion of
+    /// 2026-11-26): a game counts as abandoned only after a day, so ten minutes late is nothing, and no leaderboard
+    /// asked for waits on the count. The first count comes with the first look after the server starts.
     /// </summary>
-    public static readonly TimeSpan AbandonedEvery = TimeSpan.FromMinutes(1);
+    public static readonly TimeSpan AbandonedEvery = TimeSpan.FromMinutes(10);
 
     private readonly IServiceScopeFactory _scopes;
     private readonly Interval _interval;
