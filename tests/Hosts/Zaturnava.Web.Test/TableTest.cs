@@ -1217,6 +1217,69 @@ public sealed class TableTest : IDisposable
     }
 
     [Fact]
+    public void Click_WhenAPieceHasLiftsDrawn_DrawsThemUntilThePlayerTurnsThemOffAndRemembersThat()
+    {
+        // Arrange - on a 3 x 3 diagram, the Raja on cell 4 moves up to 7; its lifts let it move down to 1 instead
+        GameViewDto view = FakeGameServer.SeatZeroToMove;
+        this._page.Server.View = view with
+        {
+            Pieces =
+            [
+                view.Pieces[0] with
+                {
+                    Lifted = ["movement"],
+                    LiftedDiagram = new MoveDiagramDto(3, [1], [1], []),
+                },
+                .. view.Pieces.Skip(1),
+            ],
+            Kinds = [new PieceKindDto("raja", "Raja", 5) { Diagram = new MoveDiagramDto(3, [7], [6, 7], []) }],
+        };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        Cell(table, 0).Click();
+        string? lifted = Square(table, 1).ClassName;
+
+        // Act
+        table.Find(".show-lifts input").Change(false);
+
+        // Assert
+        Assert.Equal(
+            ("square light move", "square light move", true),
+            (
+                lifted,
+                Square(table, 7).ClassName,
+                this._page.JSInterop.Invocations["zaturnava.save"]
+                    .Any(saved => saved.Arguments.SequenceEqual(["zaturnava.card-lifts", "hidden"]))
+            )
+        );
+    }
+
+    [Fact]
+    public void Click_WhenThePlayerLastTurnedCardLiftsOff_DrawsHowItsKindMoves()
+    {
+        // Arrange
+        _ = this._page.JSInterop.Setup<string?>("zaturnava.load", "zaturnava.card-lifts").SetResult("hidden");
+        GameViewDto view = FakeGameServer.SeatZeroToMove;
+        this._page.Server.View = view with
+        {
+            Pieces =
+            [
+                view.Pieces[0] with { LiftedDiagram = new MoveDiagramDto(3, [1], [1], []) },
+                .. view.Pieces.Skip(1),
+            ],
+            Kinds = [new PieceKindDto("raja", "Raja", 5) { Diagram = new MoveDiagramDto(3, [7], [6, 7], []) }],
+        };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+
+        // Act
+        Cell(table, 0).Click();
+        string? opened = Square(table, 7).ClassName;
+        table.Find(".show-lifts input").Change(true);
+
+        // Assert - opened without; then with, once asked
+        Assert.Equal(("square light move", "square light move"), (opened, Square(table, 1).ClassName));
+    }
+
+    [Fact]
     public void Click_WhenThePieceMayGoBerserkButIsNoMercenary_ListsThatDrawbackAlone()
     {
         // Arrange
@@ -3870,9 +3933,9 @@ public sealed class TableTest : IDisposable
     }
 
     [Theory]
-    [InlineData(false, false, "action hand-over seat-2|action pass primary urged|end-game")]
-    [InlineData(false, true, "action hand-over seat-2|action pass primary urged|end-game")]
-    [InlineData(true, false, "action hand-over seat-2|action pass primary|end-game")]
+    [InlineData(false, false, "action hand-over seat-2|action pass primary urged|end-game defeat")]
+    [InlineData(false, true, "action hand-over seat-2|action pass primary urged|end-game defeat")]
+    [InlineData(true, false, "action hand-over seat-2|action pass primary|end-game defeat")]
     public void Render_WhenThePlayerMayHandOverOrPass_ShowsThemBesideEndGamePassingTheCallToActionIfNothingElseIs(
         bool mayMove,
         bool mayHire,
@@ -5033,6 +5096,43 @@ public sealed class TableTest : IDisposable
         Assert.Equal(expected, table.FindAll("button.end-game").Count);
     }
 
+    [Theory]
+    [InlineData(0, "Concede Defeat", "end-game defeat", "--certainty: 0%", "Concede Defeat?")]
+    [InlineData(5, "Propose Draw", "end-game draw", "--certainty: 0%", "Propose Draw?")]
+    [InlineData(100, "Declare Victory", "end-game victory sure", "--certainty: 100%", "Declare Victory?")]
+    public void EndGame_ByHowTheGameWouldEndNow_SaysSoAndIsColouredAsSureAsThatIs(
+        int blackScore,
+        string label,
+        string classes,
+        string style,
+        string asked
+    )
+    {
+        // Arrange - Yellow has 5 points and no pieces; Black's Raja is worth 20: behind, Black is the stronger still
+        GameViewDto proposable = Proposable(mayPropose: true);
+        this._page.Server.View = proposable with
+        {
+            Seats = proposable.Seats.SetItem(0, proposable.Seats[0] with { Score = blackScore }),
+            Kinds = [new PieceKindDto("raja", "Raja", 20)],
+        };
+        IRenderedComponent<Table> table = this.Render(SeatZero);
+        string shown = string.Join(
+            "|",
+            table.Find("button.end-game").TextContent.Trim(),
+            table.Find("button.end-game").ClassName,
+            table.Find("button.end-game").GetAttribute("style")
+        );
+
+        // Act
+        table.Find("button.end-game").Click();
+
+        // Assert
+        Assert.Equal(
+            (string.Join("|", label, classes, style), asked),
+            (shown, table.Find(".dialog h2").TextContent)
+        );
+    }
+
     [Fact]
     public void EndGame_WhenClicked_ShowsWaitingInYellowAsTheChoiceToMake()
     {
@@ -5438,9 +5538,11 @@ public sealed class TableTest : IDisposable
         IRenderedComponent<Table> table = this.Render(SeatZero);
 
         // Assert
+        // Assert - Black, behind, is asked to accept defeat
         Assert.Equal(
             (
-                "Random (Yellow) proposes ending the game",
+                "Accept Defeat?",
+                "Random (Yellow) proposes ending the game.",
                 "They have given up their remaining turns.",
                 "60 s left; no answer keeps the game going.",
                 "Random (Yellow) proposes ending the game: do you agree?"
@@ -5448,17 +5550,18 @@ public sealed class TableTest : IDisposable
             (
                 table.Find(".dialog h2").TextContent,
                 table.FindAll(".dialog p")[0].TextContent,
+                table.FindAll(".dialog p")[1].TextContent,
                 table.Find(".dialog .countdown").TextContent,
                 table.Find("p.status").TextContent
             )
         );
-        Assert.Contains("Black 0, Yellow 5", table.FindAll(".dialog p")[1].TextContent, StringComparison.Ordinal);
+        Assert.Contains("Black 0, Yellow 5", table.FindAll(".dialog p")[2].TextContent, StringComparison.Ordinal);
     }
 
     [Fact]
     public void Answer_WhenClicked_SubmitsIt()
     {
-        // Arrange - Yellow waits for the answers, which no clock hurries
+        // Arrange - Yellow waits for the answers, which no clock hurries: who proposed it, and the scores, said
         this._page.Server.View = Proposed(deciding: 0) with
         {
             Proposal = new EndProposalDto(1, Resigns: false),
@@ -5472,7 +5575,7 @@ public sealed class TableTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ("answer-end", "true", 1),
+            ("answer-end", "true", 2),
             (this._page.Server.Submitted?.Action.Kind, this._page.Server.Submitted?.Action.Arguments["agrees"], said)
         );
     }

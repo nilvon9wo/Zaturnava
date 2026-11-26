@@ -50,6 +50,21 @@ public sealed class PositionEncoderTest
         Assert.Equal((4 * 2) + (4 * 4) + 4 + 4 + PositionEncoder.DieFaces + 1 + 4 + 4 + 8, size);
     }
 
+    [Fact]
+    public void Size_WhenTheRulesetPlaysKindsANewGameDoesNotHold_CountsThemToo()
+    {
+        // Arrange - 4 seats, Rajas on the board, and a Pawn the ruleset plays besides
+        PositionEncoder encoder = new(
+            new ScriptedRules([], origins: ImmutableDictionary<PieceKindId, string>.Empty.Add(new("pawn"), "any"))
+        );
+
+        // Act
+        int size = encoder.Size;
+
+        // Assert - each kind's count and progress for every seat, and its prisoners by every seat
+        Assert.Equal((4 * 2 * 2) + (4 * 4 * 2) + 4 + 4 + PositionEncoder.DieFaces + 1 + 4 + 4 + 8, size);
+    }
+
     [Theory]
     [InlineData(0, FeaturesAt + 9)]
     [InlineData(-1, FeaturesAt + 8)]

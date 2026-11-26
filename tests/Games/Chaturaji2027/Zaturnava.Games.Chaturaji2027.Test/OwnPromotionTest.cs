@@ -133,6 +133,49 @@ public sealed class OwnPromotionTest
         );
     }
 
+    [Theory]
+    [InlineData("boat", "boat:Area")]
+    [InlineData("elephant", "")]
+    public void Apply_WhenAPawnWithALiftIsPromoted_KeepsTheLiftOnlyIfWhatItBecomesHasOne(string into, string expected)
+    {
+        // Arrange - a Boat's area restriction may be bought off, an Elephant's not; the Pawn's own, and another's
+        Chaturaji2027Rules rules = new(
+            DiceProfile.WeightedSixSided,
+            Chaturaji2027Rules.DefaultIdleRounds,
+            PawnPromotion.OtherArmies,
+            variant: Promoting with
+            {
+                Drafting = new Drafting(6, [], (_, _) => [], _ => new ArmyFilled([], new ArmySquare(0, 0)))
+                {
+                    LiftPrice = (kind, restriction) =>
+                        restriction == LiftKind.Area && kind != Chaturaji2027Pieces.Elephant ? 1 : null,
+                },
+            }
+        );
+        CellId cell = Ahead(1);
+        Lift other = new(new PieceId(2), Chaturaji2027Pieces.Pawn, LiftKind.Area);
+        GameState state = this.BlackDeciding(cell, Chaturaji2027Pieces.Pawn) with
+        {
+            Lifts = [new Lift(new PieceId(1), Chaturaji2027Pieces.Pawn, LiftKind.Area), other],
+        };
+
+        // Act
+        GameState promoted = rules.Apply(state, new PromoteOwnAction(Black, cell, new PieceKindId(into))).State;
+
+        // Assert
+        Assert.Equal(
+            (expected, true),
+            (
+                string.Join(
+                    ",",
+                    promoted.Lifts.Where(lift => lift.Piece == new PieceId(1))
+                        .Select(lift => $"{lift.Kind.Value}:{lift.Restriction}")
+                ),
+                promoted.Lifts.Contains(other)
+            )
+        );
+    }
+
     /// <summary>The cell of the c-file <paramref name="rows"/> rows short of Black's far edge.</summary>
     private static CellId Ahead(int rows) => new(((7 - rows) * 8) + 2);
 

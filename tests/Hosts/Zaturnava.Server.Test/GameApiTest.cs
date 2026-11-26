@@ -518,13 +518,10 @@ public sealed class GameApiTest(ZaturnavaServer server) : IClassFixture<Zaturnav
         GameViewDto lifted = await this._client.Submit(gameId, yellow, lift, this._cancellation);
 
         // Assert
+        PieceDto guard = lifted.Pieces.Single(piece => piece.Cell == at);
         Assert.Equal(
-            ("Lift a limit on where it goes", "Guard (Janggi): lift its limit on where it goes, for 5", "area"),
-            (
-                lift.Choice,
-                lift.Label,
-                string.Join(",", lifted.Pieces.Single(piece => piece.Cell == at).Lifted)
-            )
+            ("Lift a limit on where it goes", "Guard (Janggi): lift its limit on where it goes, for 5", "area", true),
+            (lift.Choice, lift.Label, string.Join(",", guard.Lifted), guard.LiftedDiagram is { Palace.IsEmpty: true })
         );
     }
 

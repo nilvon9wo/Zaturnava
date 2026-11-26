@@ -342,6 +342,12 @@ public interface IRulesApplying
     MoveDiagram? DiagramAt([Required] GameState state, CellId cell) => null;
 
     /// <summary>
+    /// How the piece on <paramref name="cell"/> moves with the restrictions bought off for it, drawn, for its card to
+    /// show beside how its kind moves; none, for a piece with none, or where the ruleset draws nothing.
+    /// </summary>
+    MoveDiagram? LiftedDiagramAt([Required] GameState state, CellId cell) => null;
+
+    /// <summary>
     /// Whether <paramref name="piece"/> is a mercenary, which whoever holds it prisoner may hire: by its kind, or as
     /// what a mercenary was promoted into, whatever its kind now (the user's report of 2026-11-20); never, where the
     /// ruleset has none.
