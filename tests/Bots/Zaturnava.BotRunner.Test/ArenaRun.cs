@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Text.Json;
+using Net.NowhereAtAll.Zaturnava.Application.Running;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Rules;
 using Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
@@ -66,12 +67,25 @@ public sealed class ArenaRun
     /// games is won by the bot that did better with the same luck. The pairs show a difference sooner than the games
     /// alone.
     /// </remarks>
+    /// <remarks>
+    /// Started from games played before, each start is given to each bot on each side, whoever reached it (the user,
+    /// 2026-11-27: "giving them different endgames - not necessarily endgames they reached on their own - and see how
+    /// well they do or don't finish, including whether they maintain their leads or are self-sabotaging"); so each
+    /// bot's finishing is counted too, by whether its team led at the start (<see cref="Finishing"/>).
+    /// </remarks>
     private static async Task<object> Pair(ArenaRequest request, string first, string second)
     {
         Stopwatch watch = Stopwatch.StartNew();
         int seed = Random.Shared.Next(1, int.MaxValue / 2);
-        ImmutableList<Fared> ahead = await Margins(request, [first, second, first, second], [0, 2], seed);
-        ImmutableList<Fared> behind = await Margins(request, [second, first, second, first], [1, 3], seed);
+        ImmutableList<Played> starts = request.Starts is { } file
+            ? Starts.From(
+                Rules,
+                await File.ReadAllTextAsync(Path.Combine(Root(), file), TestContext.Current.CancellationToken),
+                request.Pieces
+            )
+            : [];
+        ImmutableList<Fared> ahead = await Margins(request, [first, second, first, second], [0, 2], seed, starts);
+        ImmutableList<Fared> behind = await Margins(request, [second, first, second, first], [1, 3], seed, starts);
         ImmutableList<Fared> games = [.. ahead, .. behind];
         ImmutableList<int> pairs =
             [.. ahead.Zip(behind, (one, other) => Math.Sign(one.Margin) + Math.Sign(other.Margin))];
@@ -93,19 +107,46 @@ public sealed class ArenaRun
                 ByFirst = games.Count(game => game.Seized),
                 BySecond = games.Count(game => game.WasSeized),
             },
+            Finishing = starts.IsEmpty
+                ? null
+                : new
+                {
+                    First = Finishing(games),
+                    Second = Finishing(games.Select(game => game with { Lead = -game.Lead, Margin = -game.Margin })),
+                },
             Seconds = Math.Round(watch.Elapsed.TotalSeconds),
         };
     }
 
     /// <summary>
+    /// How a bot finished the games it was given, for its team: of those it began ahead in (on points and on the
+    /// board), how many it won and how many it threw away; of those it began behind in, how many it turned round.
+    /// </summary>
+    private static object Finishing(IEnumerable<Fared> games)
+    {
+        ImmutableList<Fared> given = [.. games];
+        return new
+        {
+            Ahead = given.Count(game => game.Lead > 0),
+            Kept = given.Count(game => game.Lead > 0 && game.Margin > 0),
+            Thrown = given.Count(game => game.Lead > 0 && game.Margin < 0),
+            Behind = given.Count(game => game.Lead < 0),
+            Turned = given.Count(game => game.Lead < 0 && game.Margin > 0),
+        };
+    }
+
+    /// <summary>
     /// How far the <paramref name="seats"/>' team came out ahead in each game the bots played, and whether a leader of
-    /// either team sat on a throne not its team's; each game in order, its dice from the <paramref name="seed"/>.
+    /// either team sat on a throne not its team's once the game was the bots'; each game in order, its dice from the
+    /// <paramref name="seed"/>, and how far the team led as it began, from each of the <paramref name="starts"/> in
+    /// turn.
     /// </summary>
     private static async Task<ImmutableList<Fared>> Margins(
         ArenaRequest request,
         ImmutableList<string> bots,
         ImmutableList<int> seats,
-        int seed
+        int seed,
+        ImmutableList<Played> starts
     )
     {
         await using StringWriter output = new();
@@ -113,8 +154,8 @@ public sealed class ArenaRun
         [
             "--ruleset", request.Ruleset, "--bots", string.Join(',', bots), "--games", $"{request.Games}",
             "--max-steps", $"{request.MaximumSteps}", "--seed", $"{seed}",
-            .. request.Starts is { } starts
-                ? ["--starts", Path.Combine(Root(), starts), "--pieces", $"{request.Pieces}"]
+            .. request.Starts is { } file
+                ? ["--starts", Path.Combine(Root(), file), "--pieces", $"{request.Pieces}"]
                 : (string[])[],
             .. request.BotAssembly switch
             {
@@ -129,27 +170,45 @@ public sealed class ArenaRun
             .. output.ToString()
                 .Split('\n', StringSplitOptions.RemoveEmptyEntries)
                 .Select(line => JsonElement.Parse(line))
-                .Select(game =>
+                .Select((game, at) =>
                 {
-                    ImmutableHashSet<int> usurpers = request.Ruleset == Rules.Id ? Usurpers(game) : [];
+                    Played? start = starts.IsEmpty ? null : starts[at % starts.Count];
+                    int given = start?.Actions.Count ?? 0;
+                    ImmutableHashSet<int> usurpers = request.Ruleset == Rules.Id ? Usurpers(game, given) : [];
                     return new Fared(
                         MarginOf(game, seats),
                         usurpers.Overlaps(seats),
-                        usurpers.Except(seats).Count > 0
+                        usurpers.Except(seats).Count > 0,
+                        start is null ? 0 : LeadOf(start.State, seats)
                     );
                 }),
         ];
     }
 
-    /// <summary>The seats a leader of which sat, at some point of the game, on a throne not its team's.</summary>
-    private static ImmutableHashSet<int> Usurpers(JsonElement game)
+    /// <summary>
+    /// How far the <paramref name="seats"/>' team leads, its points and what its pieces on the board are worth, less
+    /// its enemies'.
+    /// </summary>
+    private static int LeadOf(GameState state, ImmutableList<int> seats) =>
+        state.Scores.Sum(score => (seats.Contains(score.Key.Value) ? 1 : -1) * score.Value)
+            + state.Position.Occupants.Values.Sum(piece =>
+                (seats.Contains(piece.Owner.Value) ? 1 : -1) * Rules.WorthOf(piece.Kind)
+            );
+
+    /// <summary>
+    /// The seats a leader of which sat, after the first <paramref name="given"/> actions (those of a game played
+    /// before, the game started from), on a throne not its team's.
+    /// </summary>
+    private static ImmutableHashSet<int> Usurpers(JsonElement game, int given)
     {
         GameState state = Rules.CreateInitialState();
         ImmutableHashSet<int> usurpers = [];
+        int at = 0;
         foreach (JsonElement action in game.GetProperty("actions").EnumerateArray())
         {
+            at++;
             state = Rules.Apply(state, Rules.Parse(Described(action))).State;
-            usurpers = usurpers.Union(
+            usurpers = at <= given ? usurpers : usurpers.Union(
                 Rules.ThronesOf(state)
                     .Select(throne => (Throne: throne.Key, Occupant: state.Position.PieceAt(throne.Value)))
                     .Where(held => held.Occupant is not null
@@ -219,7 +278,8 @@ public sealed class ArenaRun
 
     /// <summary>
     /// One game, for the first bot's team: how far it came out ahead, whether a leader of its own sat on a throne not
-    /// its team's (<paramref name="Seized"/>), and whether an enemy leader did (<paramref name="WasSeized"/>).
+    /// its team's (<paramref name="Seized"/>), whether an enemy leader did (<paramref name="WasSeized"/>), and how far
+    /// its team led as the game began (<see cref="LeadOf"/>; none, from the beginning).
     /// </summary>
-    private sealed record Fared(int Margin, bool Seized, bool WasSeized);
+    private sealed record Fared(int Margin, bool Seized, bool WasSeized, int Lead);
 }
