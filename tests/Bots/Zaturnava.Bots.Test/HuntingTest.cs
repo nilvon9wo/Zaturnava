@@ -11,20 +11,10 @@ public sealed class HuntingTest
     [Fact]
     public void ValueOf_WhenAlliedThronesAreGuarded_JudgesAnEnemyLeaderBesideAnAllysEmptyThroneWorse()
     {
-        // Arrange - the ally's empty throne on 6, the enemy's Raja on 7 beside it
-        DecisionRequest request = LineRules.Request(
-            [new PassAction(LineRules.Seat)],
-            (7, LineRules.Raja, LineRules.Enemy)
-        );
-        request = request with
-        {
-            Rules = new LineRules([.. request.LegalActions])
-            {
-                Thrones = ImmutableDictionary<SeatId, CellId>.Empty.Add(new SeatId(2), new CellId(6)),
-            },
-        };
+        // Arrange - the ally's empty throne on 6, the enemy's Raja on 7 beside it, the ally's Boat on 1
+        DecisionRequest request = AllysThrone(7);
         SageWeights unguarded = SageWeights.Default;
-        SageWeights guarded = SageWeights.Default with { Hunting = Hunting.OfHeavies };
+        SageWeights guarded = SageWeights.Default with { Hunting = Hunting.OfLeaders with { AlliedThrones = true } };
 
         // Act
         double withoutGuard = Appraisal.ValueOf(request, request.State, unguarded);
@@ -32,6 +22,22 @@ public sealed class HuntingTest
 
         // Assert
         Assert.True(withGuard < withoutGuard, $"{withGuard} should be below {withoutGuard}");
+    }
+
+    [Fact]
+    public void ValueOf_WhenThronesCountByStake_JudgesAnEnemyOnAnAllysThroneWorseTheMoreItControls()
+    {
+        // Arrange - the enemy's Raja on the ally's throne, on 6, the ally's Boat on 1 under its control
+        DecisionRequest request = AllysThrone(6);
+        SageWeights flat = SageWeights.Default;
+        SageWeights byStake = SageWeights.Default with { Hunting = Hunting.OfLeaders with { ThronesByStake = true } };
+
+        // Act
+        double counted = Appraisal.ValueOf(request, request.State, flat);
+        double staked = Appraisal.ValueOf(request, request.State, byStake);
+
+        // Assert
+        Assert.True(staked < counted, $"{staked} should be below {counted}");
     }
 
     [Fact]
@@ -59,5 +65,22 @@ public sealed class HuntingTest
 
         // Assert
         Assert.Equal(Hunting.OfHeavies, changed.Hunting);
+    }
+
+    /// <summary>The ally's throne on 6 and its Boat on 1, and the enemy's Raja on <paramref name="raja"/>.</summary>
+    private static DecisionRequest AllysThrone(int raja)
+    {
+        DecisionRequest request = LineRules.Request(
+            [new PassAction(LineRules.Seat)],
+            (raja, LineRules.Raja, LineRules.Enemy),
+            (1, LineRules.Boat, new SeatId(2))
+        );
+        return request with
+        {
+            Rules = new LineRules([.. request.LegalActions])
+            {
+                Thrones = ImmutableDictionary<SeatId, CellId>.Empty.Add(new SeatId(2), new CellId(6)),
+            },
+        };
     }
 }

@@ -46,6 +46,32 @@ public sealed class HuntingSage(Random random) : Challenger(
 );
 
 /// <summary>
+/// Sage, a usurper: weighing a throne seized by what it controls (the user, 2026-11-27: seizing one seldom matters,
+/// "but when it counts, it really can count"), so that it makes the throne an objective, as a test of guarding needs.
+/// </summary>
+public sealed class UsurpingSage(Random random) : Challenger(
+    new SageBot(random, Fallback(Usurping), Learned(Usurping)),
+    "sage-usurping",
+    "seizing thrones"
+)
+{
+    private static Hunting Usurping => Hunting.OfLeaders with { ThronesByStake = true };
+}
+
+/// <summary>
+/// Sage, guarding its allies' empty thrones by what an enemy leader stepping onto one would take control of: to play
+/// against <see cref="UsurpingSage"/>, beside Sage as it is.
+/// </summary>
+public sealed class GuardingSage(Random random) : Challenger(
+    new SageBot(random, Fallback(Guarding), Learned(Guarding)),
+    "sage-guarding",
+    "guarding allies' thrones"
+)
+{
+    private static Hunting Guarding => Hunting.OfLeaders with { AlliedThrones = true };
+}
+
+/// <summary>
 /// Athena, her network's judgement steadied ten times as much by Sage's (2026-11-27: between quiet moves it swung by
 /// more than a Rook left to be taken counted).
 /// </summary>

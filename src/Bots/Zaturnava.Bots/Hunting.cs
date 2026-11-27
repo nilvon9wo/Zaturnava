@@ -11,11 +11,21 @@ namespace Net.NowhereAtAll.Zaturnava.Bots;
 /// </summary>
 public sealed record Hunting(double Leaders, double Heavies, bool AlliedThrones)
 {
+    /// <summary>The worth that counts as much again as a throne held: a Rook's, about (Proposed).</summary>
+    public const int StakeUnit = 5;
+
     /// <summary>
     /// How many of a hunted piece's escapes count, at most, each as likely as the dice are to let it move: all, and
     /// each for certain, unless set (<see cref="Endgame.Pressure"/>).
     /// </summary>
     public int? Escapes { get; init; }
+
+    /// <summary>
+    /// Whether a throne not an ally's, held by a leader, counts by what it controls: one, and as many again as the
+    /// pieces its owner still has are worth, in <see cref="StakeUnit"/>s; not, it counts one, whatever it controls (the
+    /// user, 2026-11-27: seizing a throne seldom matters, "but when it counts, it really can count").
+    /// </summary>
+    public bool ThronesByStake { get; init; }
 
     /// <summary>As the bots have hunted since the endgame came (2026-11-25): the enemy's leaders alone.</summary>
     public static Hunting OfLeaders { get; } = new(Leaders: 1, Heavies: 0, AlliedThrones: false);

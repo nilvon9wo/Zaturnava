@@ -1,6 +1,9 @@
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Text.Json;
+using Net.NowhereAtAll.Zaturnava.Engine.Actions;
+using Net.NowhereAtAll.Zaturnava.Engine.Rules;
+using Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
 
 namespace Net.NowhereAtAll.Zaturnava.BotRunner.Test;
 
@@ -16,6 +19,8 @@ namespace Net.NowhereAtAll.Zaturnava.BotRunner.Test;
 public sealed class ArenaRun
 {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerOptions.Web) { WriteIndented = true };
+
+    private static readonly Chaturaji2027Rules Rules = new();
 
     [Fact]
     public async Task Play_WhenAnArenaIsRequested_WritesHowEachPairFared()
@@ -47,11 +52,15 @@ public sealed class ArenaRun
         Assert.NotEmpty(results);
     }
 
-    /// <summary>How the first bot fared against the second, and how long their games took.</summary>
+    /// <summary>
+    /// How the first bot fared against the second, and how long their games took; and in how many games a leader of
+    /// each sat on a throne not its team's, in a Chaturaji 2027 arena (the user, 2026-11-27: seizing a throne is rare,
+    /// "but when it counts, it really can count"), so that it is known whether a way of guarding thrones can show.
+    /// </summary>
     private static async Task<object> Pair(ArenaRequest request, string first, string second)
     {
         Stopwatch watch = Stopwatch.StartNew();
-        ImmutableList<int> margins =
+        ImmutableList<Fared> games =
         [
             .. await Margins(request, [first, second, first, second], [0, 2]),
             .. await Margins(request, [second, first, second, first], [1, 3]),
@@ -60,15 +69,23 @@ public sealed class ArenaRun
         {
             First = first,
             Second = second,
-            Won = margins.Count(margin => margin > 0),
-            Lost = margins.Count(margin => margin < 0),
-            Drawn = margins.Count(margin => margin == 0),
+            Won = games.Count(game => game.Margin > 0),
+            Lost = games.Count(game => game.Margin < 0),
+            Drawn = games.Count(game => game.Margin == 0),
+            ThronesSeized = new
+            {
+                ByFirst = games.Count(game => game.Seized),
+                BySecond = games.Count(game => game.WasSeized),
+            },
             Seconds = Math.Round(watch.Elapsed.TotalSeconds),
         };
     }
 
-    /// <summary>How far the <paramref name="seats"/>' team came out ahead in each game the bots played.</summary>
-    private static async Task<ImmutableList<int>> Margins(
+    /// <summary>
+    /// How far the <paramref name="seats"/>' team came out ahead in each game the bots played, and whether a leader of
+    /// either team sat on a throne not its team's.
+    /// </summary>
+    private static async Task<ImmutableList<Fared>> Margins(
         ArenaRequest request,
         ImmutableList<string> bots,
         ImmutableList<int> seats
@@ -91,9 +108,50 @@ public sealed class ArenaRun
         [
             .. output.ToString()
                 .Split('\n', StringSplitOptions.RemoveEmptyEntries)
-                .Select(line => MarginOf(JsonElement.Parse(line), seats)),
+                .Select(line => JsonElement.Parse(line))
+                .Select(game =>
+                {
+                    ImmutableHashSet<int> usurpers = request.Ruleset == Rules.Id ? Usurpers(game) : [];
+                    return new Fared(
+                        MarginOf(game, seats),
+                        usurpers.Overlaps(seats),
+                        usurpers.Except(seats).Count > 0
+                    );
+                }),
         ];
     }
+
+    /// <summary>The seats a leader of which sat, at some point of the game, on a throne not its team's.</summary>
+    private static ImmutableHashSet<int> Usurpers(JsonElement game)
+    {
+        GameState state = Rules.CreateInitialState();
+        ImmutableHashSet<int> usurpers = [];
+        foreach (JsonElement action in game.GetProperty("actions").EnumerateArray())
+        {
+            state = Rules.Apply(state, Rules.Parse(Described(action))).State;
+            usurpers = usurpers.Union(
+                Rules.ThronesOf(state)
+                    .Select(throne => (Throne: throne.Key, Occupant: state.Position.PieceAt(throne.Value)))
+                    .Where(held => held.Occupant is not null
+                        && Rules.IsLeader(held.Occupant.Kind)
+                        && !state.Teams.AreAllied(held.Occupant.Owner, held.Throne)
+                    )
+                    .Select(held => held.Occupant!.Owner.Value)
+            );
+        }
+
+        return usurpers;
+    }
+
+    private static ActionDescriptor Described(JsonElement action) =>
+        new(
+            action.GetProperty("kind").GetString()!,
+            action.GetProperty("arguments").EnumerateObject().ToImmutableSortedDictionary(
+                argument => argument.Name,
+                argument => argument.Value.GetString() ?? string.Empty,
+                StringComparer.Ordinal
+            )
+        );
 
     private static int MarginOf(JsonElement game, ImmutableList<int> seats)
     {
@@ -135,4 +193,10 @@ public sealed class ArenaRun
         int MaximumSteps = 2000,
         string? BotAssembly = null
     );
+
+    /// <summary>
+    /// One game, for the first bot's team: how far it came out ahead, whether a leader of its own sat on a throne not
+    /// its team's (<paramref name="Seized"/>), and whether an enemy leader did (<paramref name="WasSeized"/>).
+    /// </summary>
+    private sealed record Fared(int Margin, bool Seized, bool WasSeized);
 }

@@ -68,17 +68,21 @@ public sealed class CarefulTest
     [InlineData(2, true, false)]
     [InlineData(3, false, false)]
     [InlineData(0, false, false)]
-    public void AlliedThroneThreat_WhenAnEnemyLeaderCouldStepOntoAnAllysEmptyThrone_IsWhatThatLeaderIsWorth(
+    public void AlliedThroneThreat_WhenAnEnemyLeaderCouldStepOntoAnAllysEmptyThrone_IsWhatThatAllysPiecesAreWorth(
         int owner,
         bool isHeld,
         bool isThreat
     )
     {
         // Arrange - a throne on 6, the ally's (2), an enemy's (3) or the bot's own (0, Exposure's to count), with the
-        // enemy's Raja on 7 beside it; empty, or held by a Pawn of the ally's
+        // enemy's Raja on 7 beside it; empty, or held by a Pawn of the ally's; and the ally's last Boat far off, on 1,
+        // which an enemy on the throne would take control of (the user, 2026-11-27)
         DecisionRequest request = LineRules.Request(
             [new PassAction(Mine)],
-            [(7, LineRules.Raja, First), .. isHeld ? [(6, LineRules.Pawn, Ally)] : NoPieces]
+            [
+                (7, LineRules.Raja, First), (1, LineRules.Boat, Ally),
+                .. isHeld ? [(6, LineRules.Pawn, Ally)] : NoPieces,
+            ]
         );
         request = request with
         {
@@ -96,7 +100,7 @@ public sealed class CarefulTest
         );
 
         // Assert
-        Assert.Equal(isThreat ? request.Rules.WorthOf(LineRules.Raja) : 0, threat);
+        Assert.Equal(isThreat ? request.Rules.WorthOf(LineRules.Boat) : 0, threat);
     }
 
     [Fact]

@@ -170,6 +170,18 @@ mean little.
 *Begun* (2026-11-27): `Hunting.OfHeavies`, played by challengers (`sage-hunting`, `tactician-hunting`) against the
 bots as they are, on Chaturaji 2027 first.
 
+**A throne is worth what it controls** (the user, 2026-11-27, after guarding allies' thrones measured no better,
+52 to 48): seizing a throne seldom matters, as it is hard to reach and by then there are few pieces left to control,
+"but when it counts, it really can count", say when the enemy takes control of an ally's last Rook. And a test of
+guarding "really depends upon whether the enemy has made it an objective to obtain the throne and can put it to good
+use". So, to do:
+
+| Step | Now | To be |
+|---|---|---|
+| A throne held | Counted as 1, whatever it controls | Counted by the worth of the pieces its owner still has |
+| A throne threatened | Counted by the enemy leader's worth | Counted by what the ally would lose control of |
+| The test | Against a bot that seldom aims for thrones | Also against a usurper, one that weighs thrones by what they control; and the games counted in which a throne was taken at all |
+
 **Roles beyond the class** (the user, 2026-11-27): the UI gives a piece one class, but the bots may know it by more:
 "Dragon Kings and M Chariots also functioning as heavies, or various other pieces also functioning as cavalry", and
 roles the UI has no class for, "pieces which can do multiple captures in a single move or convert other pieces". To
