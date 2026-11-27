@@ -4,7 +4,7 @@ The designer's specification "Strategic Intelligence and Bot Competence" (2026-1
 play as a team, know whose turn and whose command it is, promote with purpose, finish won endgames, and agree to
 end decided games, while each keeps its own character. This page maps what the bots do now against it, and lays
 out the work in small steps, each with a test position that shows it done. The steps are in the
-[backlog](../backlog.md#2-bots-that-play-well); this page is their reasoning. The earlier
+[backlog](../backlog.md#1-bots-first-of-all); this page is their reasoning. The earlier
 [AI assessment](ai-assessment.md) covers how Sage and Athena are built.
 
 ## What was seen (2026-11-25)

@@ -281,6 +281,38 @@ drawn simply, a shape for its class and a letter for its kind.
   promoted. Greedy bots promote into the most valuable kind; the others weigh it as any action.
 - The four-throne bonus, once for each set of leaders.
 - Bots that spend.
+- *(Stated 2026-11-27)* **Recruiting in play**, a game option, off by default. A player with the points may recruit
+  a fresh piece of any kind in the catalogue, while one of their leaders sits on a throne (anyone's) whose palace
+  has room. Recruiting takes the whole turn and costs the piece's price.
+  - *Infantry*: one, placed at once on an eligible cell the player picks.
+  - *Any other class*: the player names the exact piece (no lifts while it trains), and a marker stands on its cell.
+    The piece is lost, points and all, if the leader leaves the throne or any piece moves onto the marker before it
+    is ready.
+  - *Two at once, by dice*: with two free palace cells (in one palace or two, if several leaders hold thrones) and the
+    points, the player may roll instead, and must name pieces of the classes the dice show; slower or unwanted
+    classes are the risk.
+  - *Rushed training*, instead of a move or a roll: two dice for one piece in training. Both show its class: it is
+    ready and may move now (twice, on doubles). One shows it: it is placed, to move next turn. Neither: it is lost,
+    points and all.
+
+  | Class | Ready on the player's |
+  |---|---|
+  | Infantry | this turn |
+  | Cavalry, Artillery | next turn (2nd) |
+  | Heavy | 3rd turn |
+  | Leader | 4th turn |
+
+  *Stated* (the user, 2026-11-27, answering Q-R):
+
+  | Point | Answer |
+  |---|---|
+  | "Never drafted" | A fresh piece, of any kind in the catalogue: not a prisoner, nor one recycled, escaped, promoted or out of the game for any other reason |
+  | Dice for two trainings show 5 or 6 (Infantry or Leader) | The player picks which |
+  | Who spoils a training by stepping onto its marker | Any piece, the player's own or an enemy's |
+  | The marker on the board | Blocks moves as a piece would; a piece that jumps may jump over it |
+  | The points spent | Lower the score at once, as other purchases in play |
+
+  Bots must recruit, guard trainings and spoil the enemy's (stepping onto a marker, driving a leader off a throne).
 
 ## Stage 6 — Special powers
 
@@ -337,6 +369,20 @@ drawn simply, a shape for its class and a letter for its kind.
   (`MovementText`), for clients that draw nothing; the powers come from the rules the game plays, and
   the restrictions as the catalogue words them, without what lifting them costs, as quick games lift
   none.
+- **Pieces under their own game's names** (asked 2026-11-26, low priority, "nice to have"): a family bot (Naresuan,
+  say) playing an army of its game's pieces shows them by that game's names (the Western Rook as Makruk's Ruea), and
+  the card makes clear the name is an alias. Makruk is only the example (the user, 2026-11-26: "there are likely
+  similar gaps for pieces for other games"): seven pieces are played by other games too (`.Also` in
+  `GrandLegionsPieces`: the Western King by Makruk and Shogi, the Rook by Makruk, Shogi, Xiangqi and Janggi, the
+  Knight, the Courtier, the Xiangqi Horse by Janggi, and others), and every family's names are wanted. The pieces'
+  data knows only which other games play a piece (`PieceGuide.AlsoIn`), not what they call it; only Makruk's Khun,
+  Met, Ma and Ruea are named, in a comment. Also to check: pieces left out as redundant that some game plays and are
+  not yet marked so, which would leave its bot without them; and pieces kept twice, as each game's own: Makruk's
+  Noble (the Khon) steps as Shogi's Silver General does, the Silver alone promoting. *(Proposed)*: `AlsoIn`
+  becomes each game's name for the piece, with its source; the game's view names each army's pieces by its family,
+  if it has one; the card heads the alias, the piece's own name beneath ("Ruea, Makruk's name for the Rook"). Only
+  the family bots' armies are named so; a person's army keeps the common names. Its size (2026-11-26): the client
+  shows piece names in 13 components, and the server's game log writes them into its lines, each to name by army.
 - Playtest, as Chaturaji 2027 was, and act on what it asks for: among other things, the Chaturaji 2027
   bonuses, the leader bonus of 60, and the Pawns' promotion premiums
   ([pieces.md](pieces.md#still-open)) (**Q14**).
