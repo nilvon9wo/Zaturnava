@@ -11,6 +11,6 @@ asked here instead (checked, every *Proposed* in the documents, on 2026-11-06).
 Anything to be built is in the [backlog](backlog.md) or the [roadmap](grand/roadmap.md), and anything left to
 playtesting is marked so where it is written.
 
-None is open now (2026-11-26; Q-L, what each lift lets a piece do, answered the same day, is in
-[pieces](grand/pieces.md#catalogue)). The player out of a game when their leaders are gone is being thought over by
-the designer, and waits in the [backlog](backlog.md).
+None is open now (2026-11-27; Q-R, recruiting in play, answered the same day, is in the [backlog](backlog.md)).
+The player out of a game when their leaders are gone is being thought over by the designer, and waits in the
+[backlog](backlog.md).
