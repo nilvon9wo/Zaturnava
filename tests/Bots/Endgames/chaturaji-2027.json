@@ -1,0 +1,86 @@
+[
+  {
+    "rulesetId": "chaturaji-2027",
+    "id": "throne-in-reach",
+    "name": "A throne in reach",
+    "description": "Red's Raja is two steps from Green's empty throne, and Green's last Elephant is on the board: sat on, the throne gives Red command of it. Black is to roll, and can guard e8 or take the Raja.",
+    "turn": "Black",
+    "pieces": {
+      "d1": "Black Raja",
+      "a3": "Black Elephant",
+      "h7": "Green Elephant",
+      "b6": "Green Pawn",
+      "e6": "Red Raja",
+      "g3": "Red Pawn",
+      "a5": "Yellow Raja",
+      "c4": "Yellow Horse"
+    }
+  },
+  {
+    "rulesetId": "chaturaji-2027",
+    "id": "two-elephants",
+    "name": "Two Elephants against lone Rajas",
+    "description": "Black and Green have an Elephant each besides their Rajas; Yellow and Red, their Rajas alone. Black is to roll: close in, or let them run.",
+    "turn": "Black",
+    "pieces": {
+      "d1": "Black Raja",
+      "c3": "Black Elephant",
+      "e8": "Green Raja",
+      "f6": "Green Elephant",
+      "b5": "Yellow Raja",
+      "g4": "Red Raja"
+    }
+  },
+  {
+    "rulesetId": "chaturaji-2027",
+    "id": "lead-to-keep",
+    "name": "A lead to keep",
+    "description": "Black and Green lead by 14 points, with even pieces on the board. Yellow is to roll: can the leaders keep it, or will they throw it away?",
+    "turn": "Yellow",
+    "pieces": {
+      "d1": "Black Raja",
+      "b2": "Black Horse",
+      "e8": "Green Raja",
+      "g6": "Green Boat",
+      "a5": "Yellow Raja",
+      "c6": "Yellow Horse",
+      "h4": "Red Raja",
+      "f3": "Red Boat"
+    },
+    "scores": { "Black": 20, "Green": 10, "Yellow": 9, "Red": 7 }
+  },
+  {
+    "rulesetId": "chaturaji-2027",
+    "id": "last-rook",
+    "name": "The last Elephant",
+    "description": "Each side has one Elephant left, and Rajas; Red's Raja stands near Black's empty throne. Green is to roll.",
+    "turn": "Green",
+    "pieces": {
+      "c2": "Black Elephant",
+      "e8": "Green Raja",
+      "b7": "Green Pawn",
+      "a5": "Yellow Raja",
+      "d6": "Yellow Elephant",
+      "f2": "Red Raja",
+      "h5": "Red Pawn"
+    }
+  },
+  {
+    "rulesetId": "chaturaji-2027",
+    "id": "behind-on-points",
+    "name": "Behind on points, ahead on the board",
+    "description": "Yellow and Red trail by 11 points but have an Elephant more. Black is to roll: can Yellow and Red turn it round?",
+    "turn": "Black",
+    "pieces": {
+      "d1": "Black Raja",
+      "a2": "Black Pawn",
+      "e8": "Green Raja",
+      "a5": "Yellow Raja",
+      "b4": "Yellow Elephant",
+      "h4": "Red Raja",
+      "g6": "Red Elephant",
+      "f4": "Red Pawn"
+    },
+    "scores": { "Black": 18, "Green": 12, "Yellow": 10, "Red": 9 }
+  }
+]

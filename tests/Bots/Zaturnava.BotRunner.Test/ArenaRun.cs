@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Text.Json;
 using Net.NowhereAtAll.Zaturnava.Application.Running;
+using Net.NowhereAtAll.Zaturnava.Application.Scenarios;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Rules;
 using Net.NowhereAtAll.Zaturnava.Games.Chaturaji2027;
@@ -201,13 +202,14 @@ public sealed class ArenaRun
     /// </summary>
     private static ImmutableHashSet<int> Usurpers(JsonElement game, int given)
     {
-        GameState state = Rules.CreateInitialState();
+        ImmutableList<ActionDescriptor> actions = [.. game.GetProperty("actions").EnumerateArray().Select(Described)];
+        GameState state = ScenarioStart.StateOf(actions, Rules);
         ImmutableHashSet<int> usurpers = [];
-        int at = 0;
-        foreach (JsonElement action in game.GetProperty("actions").EnumerateArray())
+        int at = actions.Count(ScenarioStart.IsStart);
+        foreach (ActionDescriptor action in actions.Where(action => !ScenarioStart.IsStart(action)))
         {
             at++;
-            state = Rules.Apply(state, Rules.Parse(Described(action))).State;
+            state = Rules.Apply(state, Rules.Parse(action)).State;
             usurpers = at <= given ? usurpers : usurpers.Union(
                 Rules.ThronesOf(state)
                     .Select(throne => (Throne: throne.Key, Occupant: state.Position.PieceAt(throne.Value)))

@@ -65,6 +65,63 @@ public sealed class StartsTest
         );
     }
 
+    [Fact]
+    public async Task Run_WhenGivenAScenario_PlaysOnFromWhereItIsSetUp()
+    {
+        // Arrange - a scenario, written over several lines, as scenarios are kept: two Rajas each, Black to roll
+        string file = Path.GetTempFileName();
+        await File.WriteAllTextAsync(
+            file,
+            """
+            {
+              "rulesetId": "chaturaji-2027",
+              "name": "Rajas alone",
+              "description": "Every Raja alone.",
+              "pieces": { "d1": "Black Raja", "a5": "Yellow Raja", "e8": "Green Raja", "h4": "Red Raja" }
+            }
+            """,
+            this._cancellation
+        );
+        string[] args = ["--games", "1", "--max-steps", "2", "--starts", file, "--pieces", "4"];
+
+        // Act
+        int exitCode = await SelfPlayCommand.Run(args, this._output, this._errors, this._cancellation);
+
+        // Assert - it begins from the scenario, and goes on from it
+        File.Delete(file);
+        JsonElement game = JsonElement.Parse(this._output.ToString().Trim());
+        Assert.Equal(
+            (SelfPlayCommand.Succeeded, "scenario", true),
+            (
+                exitCode,
+                game.GetProperty("actions")[0].GetProperty("kind").GetString(),
+                game.GetProperty("actions").GetArrayLength() > 1
+            )
+        );
+    }
+
+    [Fact]
+    public async Task From_WhenGivenTheEndgamesSetByHand_StartsFromEachOfThem()
+    {
+        // Arrange - the endgames the arena may start from, each set by hand (tests/Bots/Endgames)
+        DirectoryInfo root = new(AppContext.BaseDirectory);
+        while (!File.Exists(Path.Combine(root.FullName, "Zaturnava.slnx")))
+        {
+            root = root.Parent!;
+        }
+
+        string text = await File.ReadAllTextAsync(
+            Path.Combine(root.FullName, "tests", "Bots", "Endgames", "chaturaji-2027.json"),
+            this._cancellation
+        );
+
+        // Act
+        int starts = Starts.From(new Games.Chaturaji2027.Chaturaji2027Rules(), text, 8).Count;
+
+        // Assert - none left out: each is a position the rules allow, with no more than 8 pieces
+        Assert.Equal(JsonElement.Parse(text).GetArrayLength(), starts);
+    }
+
     [Theory]
     [InlineData(true, "No chaturaji-2027 game in")]
     [InlineData(false, "There are no games to start from in")]
