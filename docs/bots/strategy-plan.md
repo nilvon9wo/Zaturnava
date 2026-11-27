@@ -241,8 +241,13 @@ pieces' best reachable enemy piece within a few rounds). The user's answer, on a
 - **The button is not the bots**: it shows how likely all would accept, so both reasons make it less green, whatever
   any bot's temper (done, PR #391).
 
+*Done* (2026-11-27), for every bot: one whose own army is mostly whole (more than three quarters of its worth on the
+board, against what enemies hold prisoner; Proposed) neither accepts nor proposes defeat, nor gives up its turns beside
+a resting ally. Not played as challengers: a bot proposes an end only to an enemy with no leader, heavy piece or Pawn
+about to promote, so in games between bots a whole army is never asked, and only people's games show it.
+
 To do: hope measured against the points in play (on the board, held prisoner and ransomable, escapes, bonuses); the
-two reasons as each temper's own; each played as challengers before it is kept.
+second reason (a leader, a heavy piece or a Pawn about to promote) as some tempers' own, beside the points.
 
 ### Points or attrition (asked 2026-11-27)
 
