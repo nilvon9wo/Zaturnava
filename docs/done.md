@@ -878,3 +878,130 @@ After playing against Argus (2026-10-25):
   quick game. The lobby says it costs tokens, and playing again with it is a red button that says so.
 - Two allied Pawns back to back may swap places, as a Pawn's move (rules.md §3); the board marks the
   swap with a dashed ring, and the log tells it.
+
+## Histories moved out of the backlog (2026-11-27)
+
+When the backlog was cut down to what is left to do (the user, 2026-11-27: "very hard to see what is left to do
+verse what is done or 'partially' done"), each item's history moved here, word for word; what is left of each is
+in the [backlog](backlog.md).
+
+- **D2** At least three non-random bots below 1200 Elo, a real progression of difficulty; Icarus sits only a few
+  points below Midas. Keep every past measurement. *Begun* (2026-11-19): Narcissus and Epimetheus judge each move
+  as Sage does, looking no further than the move, and play any of their better half or best third at random.
+  Still to do: once the bot-rating job has rated them, check they fall below 1200 and between Random and Midas,
+  and adjust their shares if not. The overnight tournament rates them, with Icarus and Echo, since 2026-11-20:
+  each beats Random nearly every game, so all rate far above 1200 (Random being 1000). So three more (2026-11-20),
+  kept apart from those whose games are kept: Morpheus, Phaethon and Tantalus play at random but for one turn in
+  50, 20 and 10, when they play as Midas. Rated live (2026-11-25): Morpheus 1379, Phaethon 1582, Tantalus 1582,
+  Echo 1432, Icarus 1556 - out of order, as each was rated only against the shipped bots, and one that beats Random
+  and loses to Midas fits any rating between. So the new bots now play each other too, and are rated together, the
+  shipped ratings held. Re-rated live (2026-11-26): Morpheus 1696, Phaethon and Tantalus 1700, Echo 1740, still
+  near Midas (1727). The bots were not at fault, but the fit: it added a draw between every pair played, and
+  with two games a pair, a bot that lost every game to the 20 strong bots had half a win against each. Measured
+  locally, 60 games a pair, Random held at 1000: Morpheus 1083, Phaethon 1192, Tantalus 1311, Echo 1574 - a
+  real progression, two below 1200. Now one draw is added for each new bot, against a bot at 1000. And three
+  are wanted below 1200, so that a game may be all easy bots (the user, 2026-11-26): the three play as Midas one
+  turn in 100, 50 and 25, measured locally (120 games a pair) at 1046, 1074 and 1142, and shipped so at
+  Chaturaji 2027 (the user, 2026-11-26: local and live bots play alike, so more local games rate them better):
+  their ratings depend on Random's games, held at 1000, as they lose every game to Midas. Their old games are
+  cleared by a migration, for the bot-rating job to rate them again at Grand Legions' sizes. Echo and Icarus,
+  who sometimes beat Midas, measured locally with the shipped ratings held (`rate-bots.py --hold-shipped`,
+  fitted as the server's job fits, 60 games a pair against the weak bots, Midas and Solomon): 1436 and 1553,
+  shipped so. Grand Legions' sizes likewise, 30 games a pair (2026-11-26), shipped:
+
+  | Size | Morpheus | Phaethon | Tantalus | Echo | Icarus |
+  |---|---|---|---|---|---|
+  | Small | 1023 | 1041 | 1106 | 1349 | 1568 |
+  | Medium | 1047 | 1069 | 1126 | 1398 | 1561 |
+  | Large | 1066 | 1146 | 1263 | 1408 | 1579 |
+
+  At the large size, measured again with 120 games a pair: held around Midas and Solomon, Morpheus came out
+  at 950, below Random, though it beats Random 70 to 50; for Random, too, loses all 120 to each of them, so
+  their shipped ratings there (1757, 1770) look low, and holding them drags the weak bots down. So the
+  faint three are fitted from their games with each other and Random alone (`--free`), and Echo and Icarus,
+  who win some games against Midas and Solomon, held around them. Midas and Solomon measured again at the
+  large size (2026-11-26, 120 games a pair, around Random, Tantalus, Echo, Icarus and Argus held): 1960 and
+  2034, against 1757 and 1770 shipped; not shipped, as the large board's games fit no one Elo scale: Echo
+  beats Tantalus (1263) 118 to 2, so stands far above it, yet loses to Midas 119 to 1, which at 1960 would put
+  it near 1130. Between unequal bots the big board's games are near certain, and a logistic scale stretched
+  to fit them can't fit them all. *(Proposed)*: rate by the games nearest in strength (each bot's ratings
+  fitted from its pairs that both sides sometimes win), so that near-certain pairs only bound the order. The small
+  and medium sizes measured likewise, with 120 games a pair, and shipped (2026-11-26).
+  *(Proposed, 2026-11-26, from the user's question whether rating bots apart from people skews them)*: a bot's
+  rating comes from its games against bots alone, while a person's game against a bot moves only the person's.
+  Counting people's games against a bot toward the bot's rating too would rate it by how it plays people, and
+  keep the two scales one.
+- **M1–M5** Offline tournaments and training. *Begun* (2026-11-19): `scripts/wsl-overnight.sh` trains Athena and
+  rates every bot, cycle after cycle, until stopped, each round kept as it ends
+  ([local-development](contribute/local-development.md#smart-app-control-windows)). A tournament stopped
+  mid-way goes on from the pairings it had finished (M2, 2026-11-20: `--continue`). The results into the
+  repository, and through it the live site's ratings (M4, 2026-11-26): `rate-bots.py --hold-shipped --ship` fits
+  the bots measured around those shipped, as the server does, merges them into the shipped ratings, and keeps each
+  measurement, its pairs' results with it, in `docs/bots/rating-history.jsonl`, beside every one before it (M5;
+  [local-development](contribute/local-development.md#smart-app-control-windows)). The overnight cycle ships so
+  with `--ship` (2026-11-26). Still to do: every bot rated at every ruleset.
+- **Custom game options** (asked 2026-11-25), none on by default: a player whose leaders are all gone is out; a
+  team with no leader left has lost; each player's idle time, set by whoever creates the game, the same for
+  anonymous and signed-in players, after which the turn passes. *Begun*: a team with no leader left has lost,
+  and each player's idle time ([done](#asked-2026-11-25)). Still to do: the player out, which waits while the
+  designer thinks how it can work consistently (*Stated* 2026-11-25). Settled so far: its pieces stay on the
+  board, an ally with leaders commanding them as now. Still open: whether its pieces held prisoner may escape back
+  onto the board, and whether a leader of its brought back, by ransom or escape, brings the player back in.
+- **Janggi Soldier's card** (2026-11-25): the palace's diagonals were not shown as moves or captures. The server's
+  diagram has them (cells 48 and 50 from 39), and the card draws every cell the diagram lists as a move or capture
+  (`MoveDiagramView.ClassOf`, 2026-11-26), so the card should show them. Not seen live: none of the 20 newest live
+  games holds the Soldier (2026-11-26). To check in the next game dealt one.
+- **Sage finishes what it starts** (2026-11-20: "she could just directly move her rook behind my pawn and remove it
+  but instead she is dilly-dallying"). With one Elephant move, Sage moved c2 to b2 rather than to d2, behind Black's
+  last Pawn, ready to take it: its search counts points over too short a horizon, and a Pawn's 1 point two turns off
+  weighs no more than a shuffle. Weigh a capture made ready (a piece lined up on an enemy, unanswered), and an army
+  beaten down to its last pieces, so that Sage presses home; game 3b5d749e, turn 22, is the case to test against.
+  *A cause found* (2026-11-20): Sage's threats term (`Appraisal.Threats`) judges whether a threatened piece can flee
+  by the cells it *attacks*, not those it may *move* to: a Pawn, attacking diagonally but moving straight on, is
+  counted as escaping when it has nowhere safe to go, and the threat on it weighs only a quarter of its worth. The
+  fix wants the enemies' moves, not just their attacks, which the rules offer only for the seat to move
+  (`IRulesApplying.LegalActions`). *That cause fixed* (2026-11-20): the rules give any seat's moves
+  (`IRulesApplying.MovesOf`), and Sage judges a threatened piece's escape by them. Still to do: see, over the
+  overnight ratings, whether Sage now presses home; weigh a capture made ready and an army beaten down, if not.
+- **F2, F3, F4** Promotion chosen badly: into a Raja of another army rather than the Rook that wins, losing
+  control of an ally's pieces. Bots should weigh the promoted piece's owner, mobility and effect on coordination,
+  head for the throne that matters, see an enemy's chance to seize control, use Rooks, push Pawns, and turn a
+  winning position into a win. *Begun* (2026-11-26, [plan](bots/strategy-plan.md), step 2): Sage promotes with its
+  eyes open to safety and turn order, and into the Rook that wins rather than an ally's Raja; the choice on command
+  alone is still to come.
+- **X4** Ransoms offered or accepted when hopeless or harmful: prolonging a decided game, bringing back a piece
+  that is at once taken or in the way, offering what no one sensible would accept. *Checked* (2026-11-26): Argus
+  declines a piece sent home where it would be taken at once (`ArgusBotTest`), and Sage weighs the position a
+  trade leaves, its exposure included; no bot sends a piece home that it would pen in (`Trading.Traps`); a team
+  ahead gives no leader nor heavy piece back. Midas and Solomon weigh worth and fairness alone, as their characters
+  are. Still to do: a decided game prolonged by trades, if one is seen.
+- **F6** Resigning a hopeless endgame: a strategic judgement, not a points comparison, each bot by its own
+  threshold. *Begun* (2026-11-26): each bot's own threshold (`Temper`; [plan](bots/strategy-plan.md), step 6). Still
+  to do: the strategic judgement, beyond points and hope.
+- **Ratings by three systems** (2026-11-20, [design](ratings-design.md)). *Begun*: every person's Glicko-2 and
+  TrueSkill are counted beside their Elo, from every game kept (a migration has them all counted again); the
+  People board shows whichever the viewer picks, remembered; a profile shows all three. Since: the choice on every
+  board, bots given the other systems' ratings from their Elo, and on their profiles. Still to do: the design's
+  extensions (more chance for dice and for armies dealt different, a dice offset per player, deviations growing
+  with time away); and the comparison of how well each predicts. The rating system chosen on the leaderboard now
+  holds for the New game dialog too, its strengths and bots labelled by it ([done](#asked-2026-11-25)). Still to
+  do: grouping the strengths by that system's ratings, once a bot's Glicko-2 and TrueSkill are counted from games
+  of their own; now both come from its Elo, and so order the bots alike.
+- **D4** Strong Grand Legions bots by family. *Begun* (2026-11-20): Philidor (Western), Sun Tzu (Xiangqi),
+  Yi Sun-sin (Janggi), Musashi (Shogi), Naresuan (Makruk), Palamedes (Checkers), Ragnar (Tafl), Oberon (Fairy) and
+  Desdemona (Othello, all Evangelists) play as Sage, their armies, dealt or drafted, of their game's pieces only,
+  those it plays under other names counting as its own (Makruk's Ruea, the Rook); none of a class their game lacks.
+  Never offered, nor seated at random, where armies are alike or set by a scenario. *(Stated 2026-11-20)* Checkers'
+  and Othello's armies stay few and dear at an even budget (3 and 4 pieces): they suit games of much larger
+  budgets, where they can lose many pieces while waiting to take several or turn many; nothing else is fair until
+  games with uneven budgets are offered or those pieces' prices are weighed again. *(Stated 2026-11-20)* The one
+  piece their games had that the catalogue lacked, Shogi's Knight, is in it
+  ([pieces](grand/pieces.md#the-shogi-knight)).
+- *(Stated 2026-11-12)* Fairy-Stockfish as a bot. *Begun*: it plays
+  ([self-play](bots/self-play.md#fairy-stockfish-as-a-bot)); its rating is still to come. In the BotRunner only,
+  in an adapter project of its own so its GPL-3 licence stays with it.
+- **3** Variant pieces: two Chinese-chess-like elephants, one confined by two rivers dividing the board in four,
+  a dearer one that may cross them; the boat to be replaced. *Found covered* (2026-11-26): the confined one is the
+  Xiangqi Elephant (worth 1), which may not cross a river, and a game with both rivers divides the board in four;
+  Grand Legions has no Boat. The dearer one is the same Elephant with its river bought off (its lift of 3, priced in
+  the [catalogue](grand/pieces.md)), bought in the draft since 2026-11-26; the Alfil (worth 2) leaps freely now.

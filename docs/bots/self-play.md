@@ -173,7 +173,7 @@ network as JSON; put it in `src/Bots/Zaturnava.Bots/Networks/`, named for the ru
 it, or give it to `--network` to play her by it without building her again. The positions are given to the
 network as `PositionEncoder` sums them up, which your own learner may use too. What did and did not work is
 in [done.md](../done.md#bots) and [the AI assessment](ai-assessment.md); what is still to try, in the
-[backlog](../backlog.md#2-bots-that-play-well).
+[backlog](../backlog.md#1-bots-first-of-all).
 
 | Option | |
 |---|---|
