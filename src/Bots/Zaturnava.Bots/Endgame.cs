@@ -176,7 +176,7 @@ internal static class Endgame
         return (PerAttack * attacked) - (PerEscape * free);
     }
 
-    /// <summary>What the army's piece on <paramref name="from"/> would attack, moved to <paramref name="to"/>.</summary>
+    /// <summary>What the army's piece on <paramref name="from"/> attacks, moved to <paramref name="to"/>.</summary>
     private static IEnumerable<CellId> CoveredFrom(
         DecisionRequest request,
         GameState state,
