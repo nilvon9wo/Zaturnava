@@ -180,6 +180,28 @@ And there is a table for every set: 5 kinds, 4 owners. What it is worth:
 So the tables wait behind the search and judgement work, which also serves the endings: a 4-piece table (minutes to
 build) may come next, as a test of `Endgame` and as its exact answer where it applies.
 
+### When a bot accepts an end (the user, 2026-11-27)
+
+A bot asked to accept defeat agrees today once it trails by more than it could hope to take back (`Hope`: each of its
+pieces' best reachable enemy piece within a few rounds). The user's answer, on a Grand Legions game:
+
+- **"Far behind" is relative to the game**: "In a large GL game, taking a leader and a few heavies already makes a
+  difference of 100+ points, but that's far from unrecoverable. It needs to be considered how many points of material
+  are actually in play, including the possibility that pieces may be ransomed or escape and that other bonuses are
+  available." `Hope` counts none of ransoms, escapes or bonuses, and no absolute lead (`ClearLead`) should decide.
+- **Two reasons to refuse, both valid**: the bot's own army mostly whole; its team keeping a leader, a heavy piece, or
+  a Pawn about to promote. Bots of different tempers may weigh them differently.
+- **The button is not the bots**: it shows how likely all would accept, so both reasons make it less green, whatever
+  any bot's temper (done, PR #391).
+
+*Done* (2026-11-27), for every bot: one whose own army is mostly whole (more than three quarters of its worth on the
+board, against what enemies hold prisoner; Proposed) neither accepts nor proposes defeat, nor gives up its turns beside
+a resting ally. Not played as challengers: a bot proposes an end only to an enemy with no leader, heavy piece or Pawn
+about to promote, so in games between bots a whole army is never asked, and only people's games show it.
+
+To do: hope measured against the points in play (on the board, held prisoner and ransomable, escapes, bonuses); the
+second reason (a leader, a heavy piece or a Pawn about to promote) as some tempers' own, beside the points.
+
 ### Points or attrition (asked 2026-11-27)
 
 - **How a game was won** (points, every enemy leader taken, a defeat proposed and agreed, out of steps), and the

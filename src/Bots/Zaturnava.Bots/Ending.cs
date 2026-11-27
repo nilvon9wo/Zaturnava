@@ -11,7 +11,8 @@ namespace Net.NowhereAtAll.Zaturnava.Bots;
 /// How a bot ends a game, a lead clear by the ruleset's <see cref="IRulesApplying.ClearLead"/>. Asked to end it, it
 /// agrees if its team leads on points, if its game is hopeless - behind by more than it could hope to take back
 /// (<see cref="IsHopeless"/>) - or if an ally has given up its turns while the team trails by a clear lead on points
-/// (Proposed). Otherwise, when an ally has given up its
+/// (Proposed); but never to a defeat while its own army is mostly whole (<see cref="IsArmyWhole"/>). Otherwise, when an
+/// ally has given up its
 /// turns and no one else in the game is a person, it gives up its own as well, ending the game, if its team leads
 /// clearly, or trails clearly (Proposed): an ally that gave up concedes a game it trails, so playing on alone only
 /// keeps everyone waiting for a game already lost. Failing that, it proposes to end a game already decided, won or
@@ -33,8 +34,35 @@ internal static class Ending
             ? RestingWith(request, own) ?? Decided(request, own)
             : new AnswerEndAction(
                 request.Seat,
-                IsAhead(request) || IsHopeless(request, own) || IsConceded(request)
+                IsAhead(request) || (!IsArmyWhole(request) && (IsHopeless(request, own) || IsConceded(request)))
             );
+    }
+
+    /// <summary>
+    /// How much of what its army was worth a bot must keep for it to call its army mostly whole, and refuse defeat
+    /// (Proposed).
+    /// </summary>
+    public const double Whole = 0.75;
+
+    /// <summary>
+    /// Whether the bot's own army is mostly whole: what it has on the board is more than <see cref="Whole"/> of that
+    /// and what enemies hold prisoner of it. Such a bot neither accepts defeat nor proposes it, however its team trails
+    /// (the user, 2026-11-27, of a Grand Legions game: "the red army still has literally all their pieces ... red
+    /// really shouldn't be so willing to concede while it still has its entire army!").
+    /// </summary>
+    private static bool IsArmyWhole(DecisionRequest request)
+    {
+        GameState state = request.State;
+        int left = state.Position.Occupants.Values
+            .Where(piece => piece.Owner == request.Seat)
+            .Sum(piece => request.Rules.WorthOf(piece.Kind));
+        int lost = state.Prisoners
+            .Where(prisoner => prisoner.Piece.Owner == request.Seat
+                && !state.Teams.AreAllied(prisoner.Holder, request.Seat)
+            )
+            .Sum(prisoner => request.Rules.WorthOf(prisoner.Piece.Kind));
+        // strictly more: an army with nothing left, and nothing lost, is not whole
+        return left > Whole * (left + lost);
     }
 
     /// <summary>
@@ -50,7 +78,8 @@ internal static class Ending
         bool isAmongBots = request.People.All(person =>
             state.Resigned.Contains(person) && state.Teams.AreAllied(person, seat)
         );
-        return HasRestingAlly(request) && isAmongBots && (IsClearlyAhead(request, temper) || IsConceded(request))
+        return HasRestingAlly(request) && isAmongBots
+            && (IsClearlyAhead(request, temper) || (IsConceded(request) && !IsArmyWhole(request)))
             && request.Rules.MayProposeEnd(state, seat)
             ? new ProposeEndAction(seat, Resigns: true)
             : null;
@@ -73,7 +102,7 @@ internal static class Ending
             .All(refusal => state.TurnNumber - refusal.Value >= Patience);
         return isPatient && request.Rules.MayProposeEnd(state, seat)
             && ((IsClearlyAhead(request, temper) && !HasHope(request, Enemies))
-                || (IsHopeless(request, temper) && !HasHope(request, Ours)))
+                || (IsHopeless(request, temper) && !HasHope(request, Ours) && !IsArmyWhole(request)))
             ? new ProposeEndAction(seat, Resigns: false)
             : null;
     }
