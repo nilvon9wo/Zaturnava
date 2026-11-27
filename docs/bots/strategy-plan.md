@@ -145,3 +145,48 @@ any pieces. *Tested* (2026-11-26, `StrategicPositionsTest`): two Elephants (the 
 Raja on Chaturaji 2027's board, without dice, Sage playing every side, the lone Raja fleeing as well as Sage can: it
 is taken, and Black's team wins, within 120 decisions. Still to do: the ratings, before and after, to see the
 stronger bots finish their won endgames in real games, with dice.
+
+### Solved without dice? (asked 2026-11-27)
+
+The user asked: leaving out the dice (so no double moves, no escapes) and ransoms, for how many pieces could an 8×8
+game be solved, as chess's last pieces are? Counted for one set of pieces (which kinds, whose), each position a byte:
+
+| Pieces | Positions (cells × seat to move) | Size of one table | Within reach here |
+|---|---|---|---|
+| 4 | 64⁴ × 4 ≈ 67 million | 67 MB | Yes: minutes |
+| 5 | 64⁵ × 4 ≈ 4.3 billion | 4.3 GB | Barely: hours, a set at a time |
+| 6 | 64⁶ × 4 ≈ 275 billion | 275 GB | No |
+
+And there is a table for every set: 5 kinds, 4 owners. What it is worth:
+
+- A deliberate move is open at every turn, so a win without dice is a plan the team can always follow. But it is not
+  a sure win: the enemies may still roll for two moves, or an escape.
+- Games do come down to few pieces. The user (2026-11-27): every game they know of was, in the end, one of
+  attrition. The 132 finished Chaturaji 2027 games on the server that day (people's and the bots' own) bear it out:
+
+  | Pieces left at the end | Games | Share |
+  |---|---|---|
+  | 4 or fewer | 15 | 11% |
+  | 5 or fewer | 29 | 22% |
+  | 8 or fewer | 74 | 56% |
+  | 16 or fewer | 119 | 90% |
+  | At most one team still led | 124 | 94% |
+
+  So endings matter more than first thought here, and `Endgame`'s search, at 8 pieces or fewer, is in play in over
+  half of all games.
+- `Endgame` already searches endings of up to 8 pieces exactly, over the dice as they really fall, which a table
+  without dice cannot do.
+
+So the tables wait behind the search and judgement work, which also serves the endings: a 4-piece table (minutes to
+build) may come next, as a test of `Endgame` and as its exact answer where it applies.
+
+### Points or attrition (asked 2026-11-27)
+
+- **How a game was won** (points, every enemy leader taken, a defeat proposed and agreed, out of steps), and the
+  margin, are worth learning from. Athena's network already learns the margin beside the result. The next learner
+  (Texel tuning: Sage's weights fitted to the outcomes of hundreds of thousands of recorded positions) will be fitted
+  to the margin too, and its games will record how each ended.
+- **Bots that prefer one way of winning** fit the design: the same search, with weights leaning to points (taking
+  and cashing in) or to attrition (hunting leaders, keeping pieces). The draft could choose its army to match. They
+  are not short-sighted, because the look ahead is the same. They come after the base bots stop blundering, as new
+  personalities (bot design is ours to choose).

@@ -392,6 +392,15 @@ Then every bot is a pairing, and the arena measures each pairing.
   took both. Now the second-worst counts for half besides (*Proposed*: a turn's dice may let an enemy take twice).
   The user: "the bots do not adequately
   value position above points", the same fault as "backgammon in 2D" (backlog §1, real AI bots).
+- **Every piece left to be taken counts** (2026-11-27, from the games played: `BlunderRun`). Replaying the server's
+  132 finished Chaturaji 2027 games found each move whose piece an enemy took before the bot's next turn, its team
+  2 points or more worse off by the end of that turn. Most such pieces stood attacked once the bot's turn was over
+  (Sage 75 of 91, Tactician 46 of 55, Athena 76 of 103); the rest an enemy reached in two moves on its dice. Put to
+  the bots as they play now, Sage, Tactician, Athena and Argus still made 77 of those losses. The cause: exposure
+  counted only the team's worst loss and half the next, the worst seat's alone. So once one piece hung, a third,
+  or an ally's, cost nothing, and Yellow's Raja walked into Black's camp to take a Pawn, in six games. Now each
+  enemy army, in the order they move before the team again, takes the most it could from a piece it attacks, and
+  half of its next (*Proposed*).
 
 Uncertain until measured: how fast the engine evaluates, and therefore how deep alpha-beta can reach on 12×12 within
 a move's time. Step 1 settles it before anything is built on it.
