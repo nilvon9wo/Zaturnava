@@ -469,21 +469,22 @@ public sealed class SageBotTest
     }
 
     [Theory]
-    [InlineData(0, true)]
-    [InlineData(2, false)]
-    public async Task Decide_WhenNoGiftIsLeft_OffersATradeOnlyIfItLeavesItBetterOff(double exposure, bool offers)
+    [InlineData(0)]
+    [InlineData(2)]
+    public async Task Decide_WhenNoGiftIsLeftAndTheTradeLeavesAPieceToBeTaken_OffersNoneHoweverLightlyItWeighsExposure(
+        double exposure
+    )
     {
         // Arrange - its Horse back, worth 3 on the board, but where a Pawn may take it, for a Horse, the most
-        // even trade
+        // even trade; a loss next weighs at least what the pieces lost are worth (the user's game of 2026-11-27)
         DecisionRequest request = Ransoms.Exposing(Ransoms.WindowWithout(30), Ransoms.Yellow);
         SageWeights weights = Nothing with { Material = 1, Exposure = exposure };
-        OfferAction first = new(Ransoms.Black, Ransoms.Yellow, [new PieceId(11)], [new PieceId(20)]);
 
         // Act
         GameAction action = await new SageBot(new Random(Seed), weights).Decide(request, this._cancellation);
 
         // Assert
-        Assert.Equal(offers ? first : Ransoms.Done, action);
+        Assert.Equal(Ransoms.Done, action);
     }
 
     [Fact]

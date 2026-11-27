@@ -58,7 +58,8 @@ internal static class Ending
 
     /// <summary>
     /// A proposal to end a game already decided - the team clearly ahead, on points and on the board, while the enemy
-    /// has no hope left (<see cref="HaveEnemiesHope"/>), or hopeless itself - playing on meanwhile, so that a refusal
+    /// has no hope left (<see cref="HasHope"/>), or hopeless itself, with no such hope of its own - playing on
+    /// meanwhile, so that a refusal
     /// costs nothing; but not until <see cref="Patience"/> turns after the last of its team's was refused (the user's
     /// word of 2026-11-26: bots "on the same team will wait when proposals made by their teammate have recently been
     /// rejected").
@@ -71,26 +72,32 @@ internal static class Ending
             .Where(refusal => refusal.Key == seat || state.Teams.AreAllied(refusal.Key, seat))
             .All(refusal => state.TurnNumber - refusal.Value >= Patience);
         return isPatient && request.Rules.MayProposeEnd(state, seat)
-            && ((IsClearlyAhead(request, temper) && !HaveEnemiesHope(request)) || IsHopeless(request, temper))
+            && ((IsClearlyAhead(request, temper) && !HasHope(request, Enemies))
+                || (IsHopeless(request, temper) && !HasHope(request, Ours)))
             ? new ProposeEndAction(seat, Resigns: false)
             : null;
     }
+
+    private const int Ours = 1;
+    private const int Enemies = -1;
 
     /// <summary>How near its promotion an enemy Pawn still gives its team hope, in steps (Stated 2026-11-26).</summary>
     public const int PromotionInReach = 2;
 
     /// <summary>
-    /// Whether the enemy team, but its retired seats, still has hope, whatever the lead: while it has a leader, or a
-    /// heavy piece (as a Rook is), or a Pawn within <see cref="PromotionInReach"/> steps of its promotion (the user's
-    /// word of 2026-11-26: "a team still has hope while it has at least one raja or one rook between them or a pawn
-    /// just a step or two from promotion").
+    /// Whether a team - the bot's own (<see cref="Ours"/>) or the enemy (<see cref="Enemies"/>) - but its retired
+    /// seats, still has hope, whatever the lead: while it has a leader, or a heavy piece (as a Rook is), or a Pawn
+    /// within <see cref="PromotionInReach"/> steps of its promotion (the user's word of 2026-11-26: "a team still has
+    /// hope while it has at least one raja or one rook between them or a pawn just a step or two from promotion"). The
+    /// bot's own team, so counted, proposes no defeat either (the user's games of 2026-11-27: Argus and Sage gave up
+    /// with a Raja and a Rook left).
     /// </summary>
-    private static bool HaveEnemiesHope(DecisionRequest request)
+    private static bool HasHope(DecisionRequest request, int side)
     {
         GameState state = request.State;
         IRulesApplying rules = request.Rules;
         return state.Position.Occupants.Any(occupant =>
-            Side(request, occupant.Value.Owner) < 0
+            Side(request, occupant.Value.Owner) == side
             && !state.Retired.Contains(occupant.Value.Owner)
             && (rules.IsLeader(occupant.Value.Kind)
                 || rules.IsHeavy(occupant.Value.Kind)

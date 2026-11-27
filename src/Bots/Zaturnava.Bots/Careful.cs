@@ -18,7 +18,7 @@ namespace Net.NowhereAtAll.Zaturnava.Bots;
 /// keep an enemy leader off it, but only makes it take that piece to get there: such a taking wins the
 /// piece and the throne both. The dice are left aside, but not whose turn comes next: an army of the team
 /// that moves before an enemy, on its own seat's turn or on that of an ally commanding it, saves the piece
-/// it would lose most to it (<see cref="LossOfSeat"/>). Half
+/// it would lose most to it (<see cref="LossOfSeat"/>); but the team's taking back is only as sure as its dice. Half
 /// of what the action leaves its allies to win next, or takes from them (<see cref="Teamwork"/>), counts
 /// too. Among actions worth the same, it would rather do something than pass, and picks at random.
 /// </summary>
@@ -84,7 +84,8 @@ internal static class Careful
     /// turn coming as <paramref name="turns"/> has it (<see cref="ArmyTurnsOf"/>; Proposed; the user's play of
     /// 2026-11-12, a Rook sent home beside an enemy Raja whose seat plays after its own): an enemy whose turn comes
     /// first may start any exchange; but against one whose turn comes later, the seat moves first, and saves the piece
-    /// it would lose most (by moving it, or by taking its attacker), so only its second-worst counts.
+    /// it would lose most (by moving it, or by taking its attacker), so only its second-worst counts. The worst such
+    /// loss counts in full, and the next for <see cref="SecondShare"/> of it.
     /// </summary>
     private static int LossOfSeat(
         DecisionRequest request,
@@ -102,7 +103,7 @@ internal static class Careful
             {
                 ImmutableList<Attack> all = [.. threats[occupant.Key]];
                 int worth = request.Rules.KeepingWorthOf(occupant.Value.Kind);
-                ImmutableList<int> retakers = WorthsOf(request, guards[occupant.Key]);
+                ImmutableList<Retaker> retakers = RetakersOf(request, guards[occupant.Key]);
                 bool isOnThrone = IsThroneOf(request, after, occupant.Key);
                 ImmutableList<Attack> first =
                     [.. all.Where(attack => turns.GetValueOrDefault(attack.Attacker.Owner) < turn)];
@@ -112,10 +113,26 @@ internal static class Careful
                 );
             }),
         ];
-        return losses.Select(loss => loss.First)
-            .Concat(losses.Select(loss => loss.All).OrderDescending().Skip(1))
-            .Max();
+        int worst = losses.Max(loss => loss.All);
+        int worstOfAll = losses.FindIndex(loss => loss.All == worst);
+        ImmutableList<int> ordered =
+        [
+            .. losses
+                .Select((loss, index) => index == worstOfAll ? loss.First : Math.Max(loss.First, loss.All))
+                .OrderDescending(),
+        ];
+        return (int)Math.Round(
+            ordered[0] + (SecondShare * ordered.ElementAtOrDefault(1)),
+            MidpointRounding.AwayFromZero
+        );
     }
+
+    /// <summary>
+    /// How much of the second piece a seat could lose counts besides the first (Proposed, on the user's game of
+    /// 2026-11-27: Sage's Rook left a Pawn unguarded while another hung already, so that the worst loss stayed as it
+    /// was, and Red's Rook, on a double, took both): a turn's dice may let an enemy take twice, if they fall right.
+    /// </summary>
+    private const double SecondShare = 0.5;
 
     /// <summary>
     /// When each seat moves next, from the state's: first, the seat whose turn it is (or whose decision the game
@@ -161,25 +178,72 @@ internal static class Careful
     /// <summary>
     /// What an enemy could win by starting an exchange for a piece worth keeping <paramref name="target"/>; on the
     /// bot's throne, an enemy leader taking it first also wins the throne, worth as much as that leader (as
-    /// an empty throne's threat counts it).
+    /// an empty throne's threat counts it). The team's retakes are counted as likely as the dice let each retaker
+    /// move (<see cref="Lost"/>).
     /// </summary>
     private static int LossOf(
         DecisionRequest request,
         int target,
         ImmutableList<Attack> threats,
-        ImmutableList<int> retakers,
+        ImmutableList<Retaker> retakers,
         bool isOnThrone
     )
     {
         ImmutableList<int> takers = WorthsOf(request, threats);
-        IEnumerable<int> entries = isOnThrone
+        IEnumerable<double> entries = isOnThrone
             ? threats
                 .Where(attack => request.Rules.IsLeader(attack.Attacker.Kind))
                 .Select(attack => request.Rules.KeepingWorthOf(attack.Attacker.Kind))
-                .Select(leader => Math.Max(0, target + leader - Exchange(leader, retakers, takers.Remove(leader))))
+                .Select(leader => Math.Max(0, target + leader - Retaken(leader, retakers, takers.Remove(leader))))
             : [];
-        return entries.Append(Exchange(target, takers, retakers)).Max();
+        return (int)Math.Round(entries.Append(Lost(target, takers, retakers)).Max(), MidpointRounding.AwayFromZero);
     }
+
+    /// <summary>
+    /// A piece of the bot's team that could take back on a cell: what it is worth keeping, and how likely it is to be
+    /// let move when it must (<see cref="ChanceOf"/>).
+    /// </summary>
+    private sealed record Retaker(int Worth, double Chance);
+
+    /// <summary>
+    /// The team's pieces that could take back, by their <paramref name="attacks"/>: the cheapest first.
+    /// </summary>
+    private static ImmutableList<Retaker> RetakersOf(DecisionRequest request, IEnumerable<Attack> attacks) =>
+    [
+        .. attacks
+            .Select(attack => new Retaker(
+                request.Rules.KeepingWorthOf(attack.Attacker.Kind),
+                ChanceOf(request, attack.Attacker.Kind)
+            ))
+            .OrderBy(retaker => retaker.Worth),
+    ];
+
+    /// <summary>
+    /// How likely a piece of <paramref name="kind"/> is to be let move in its seat's turn: the moves it may expect
+    /// (<see cref="IRulesApplying.MovesPerTurn"/>), but no more than certain (Proposed, on the user's games of
+    /// 2026-11-27: Argus sent the user's Rook among Red's Horses, counting on a Pawn to take back, which needed a
+    /// Pawn's die).
+    /// </summary>
+    private static double ChanceOf(DecisionRequest request, PieceKindId kind) =>
+        Math.Min(1, request.Rules.MovesPerTurn(kind));
+
+    /// <summary>
+    /// What the enemy wins, as <see cref="Exchange"/> counts it, taking <paramref name="target"/> with the cheapest of
+    /// its <paramref name="takers"/>, sure to take whenever it pays, while each of the team's retakes comes only as
+    /// likely as its retaker's dice.
+    /// </summary>
+    private static double Lost(int target, ImmutableList<int> takers, ImmutableList<Retaker> retakers) =>
+        takers.IsEmpty
+            ? 0
+            : Math.Max(0, target - Retaken(takers[0], retakers, takers.RemoveAt(0)));
+
+    /// <summary>
+    /// What the team wins taking back <paramref name="target"/>, as likely as its cheapest retaker's dice.
+    /// </summary>
+    private static double Retaken(int target, ImmutableList<Retaker> retakers, ImmutableList<int> takers) =>
+        retakers.IsEmpty
+            ? 0
+            : retakers[0].Chance * Math.Max(0, target - Lost(retakers[0].Worth, takers, retakers.RemoveAt(0)));
 
     private static bool IsThroneOf(DecisionRequest request, GameState after, CellId cell) =>
         request.Rules.ThronesOf(after).Contains(new KeyValuePair<SeatId, CellId>(request.Seat, cell));

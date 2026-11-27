@@ -381,6 +381,17 @@ Then every bot is a pairing, and the arena measures each pairing.
   fork counted for nothing. Now each enemy saves only the dearest of its threatened pieces that has an empty cell
   to flee to that the team does not attack; one cornered counts in full. And a piece saved still costs its enemy
   its turn, so it counts for a quarter of its worth besides, for every enemy that must flee (*Proposed*).
+- **A Rook is not given for a Horse** (the user's games of 2026-11-27, replayed in `StrategicPositionsTest`). Sage
+  took a Horse two Pawns guarded with its Rook, and the Rook was lost; and left a Pawn of its line unguarded to
+  threaten a Pawn that could not move. Its learned weights counted a piece taken, in points and on the board, at 2.4
+  a point, but a piece left to be taken next at 1.3. A loss next now weighs at least as much as it would cost once
+  made: the enemy's points up and the team's pieces down by as much (*Proposed*). And Careful's exposure, which
+  every bot from Careful up counts, took any retake for certain; now each counts only as likely as the dice let the
+  retaker move (`IRulesApplying.MovesPerTurn`, at most certain; *Proposed*). And exposure counted only a seat's
+  worst loss, so that a second piece left unguarded, while one hung already, cost nothing; Red, on two Rook dice,
+  took both. Now the second-worst counts for half besides (*Proposed*: a turn's dice may let an enemy take twice).
+  The user: "the bots do not adequately
+  value position above points", the same fault as "backgammon in 2D" (backlog §1, real AI bots).
 
 Uncertain until measured: how fast the engine evaluates, and therefore how deep alpha-beta can reach on 12×12 within
 a move's time. Step 1 settles it before anything is built on it.

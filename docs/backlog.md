@@ -9,6 +9,11 @@ own number (**25**, **N29**), the [2026-11-15 specification](playtesting/2026-11
 
 ## 1. Now: asked for and not yet done
 
+- **Buying lifts, made plain** (asked 2026-11-27): the button to buy a lift is understated and says nothing of what
+  it does. A lift should be bought with its piece, in the draft, after seeing what the lift does and what it costs.
+  And on the piece card, "With lifts" sits apart, best beside "Pieces in the way", and the card's contents jump
+  when it is clicked: it should change the drawing only.
+
 - **Real AI bots** (asked 2026-11-20): bots that learn to play both games, Grand Legions above all, seeing where
   the pieces stand and how they move, not "backgammon in 2D" as Athena does now (her network ignores positions).
   With no paid tokens: a network trained here on the board square by square, per

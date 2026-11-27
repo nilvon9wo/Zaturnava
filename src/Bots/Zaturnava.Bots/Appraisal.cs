@@ -12,11 +12,12 @@ namespace Net.NowhereAtAll.Zaturnava.Bots;
 /// What a position is worth to the bot's team, as Sage sees it: a weighted sum (<see cref="SageWeights"/>)
 /// of what any ruleset lets it count - points, pieces, leaders, prisoners and thrones, each the bot's own, its
 /// allies' and its enemies', weighed apart (<see cref="Sided"/>) - less the worst an enemy could win next (as
-/// <see cref="Careful"/> counts it), plus what the team could still win once its enemies have moved (each saving
-/// what it can: <see cref="Threats"/>), and how many cells its pieces attack, and its
-/// enemies'; and of the ruleset's own measures (<see cref="IPositionMeasuring"/>), each side's, as far as the
-/// weights weigh them; and, in an endgame, how hard the team presses the enemy's leaders (<see cref="Endgame"/>). A
-/// game over is worth its result, by far more than any of that.
+/// <see cref="Careful"/> counts it, weighed at least as such a loss would cost: <see cref="ExposureWeight"/>), plus
+/// what the team could still win once its enemies have moved (each saving what it can: <see cref="Threats"/>), and
+/// how many cells its pieces attack, and its enemies'; and of the ruleset's own measures
+/// (<see cref="IPositionMeasuring"/>), each side's, as far as the weights weigh them; and, in an endgame, how hard
+/// the team presses the enemy's leaders (<see cref="Endgame"/>). A game over is worth its result, by far more than
+/// any of that.
 /// </summary>
 internal static class Appraisal
 {
@@ -135,13 +136,22 @@ internal static class Appraisal
             + weights.Leaders.Weigh(Leaders(request, state))
             + weights.Prisoners.Weigh(Prisoners(request, state))
             + weights.Thrones.Weigh(Thrones(request, state))
-            - (weights.Exposure * Careful.Exposure(request, state, theirs, ours))
+            - (ExposureWeight(weights) * Careful.Exposure(request, state, theirs, ours))
             + (weights.Chances * Threats(request, state, ours, theirs))
             + weights.Mobility.Weigh(Mobility(request, ours, theirs))
             + Measured(request, state, weights)
             + (Endgame.IsEndgame(request.Rules, state)
                 ? Endgame.Pressure(request, state, ours, Endgame.ScaleOf(weights))
                 : 0);
+
+    /// <summary>
+    /// How much the worst an enemy could win next weighs: as the weights say, but never less than such a loss would
+    /// cost once made, the enemy's points up and the team's pieces down by as much (Proposed, on the user's game of
+    /// 2026-11-27: Sage's learned weights counted a Horse taken at 2.4 a point, the Rook it left to two Pawns at 1.3,
+    /// so that it gave its Rook for a Horse; "the bots do not adequately value position above points").
+    /// </summary>
+    private static double ExposureWeight(SageWeights weights) =>
+        Math.Max(weights.Exposure, weights.Score.Enemy + Math.Max(weights.Material.Own, weights.Material.Ally));
 
     /// <summary>
     /// The ruleset's own measures, each side's, as the weights weigh them; not measured at all when the weights
