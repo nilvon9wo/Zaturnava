@@ -400,7 +400,10 @@ Then every bot is a pairing, and the arena measures each pairing.
   counted only the team's worst loss and half the next, the worst seat's alone. So once one piece hung, a third,
   or an ally's, cost nothing, and Yellow's Raja walked into Black's camp to take a Pawn, in six games. Now each
   enemy army, in the order they move before the team again, takes the most it could from a piece it attacks, and
-  half of its next (*Proposed*).
+  half of its next (*Proposed*). The four bots' repeated losses fell from 77 to 46: Sage's from 27 to 13, its Raja's
+  walks from 9 to 3. Athena repeats the most of those left (22), as her network does not see where the pieces
+  stand, yet she still beat Sage 26 to 14 in 40 games (`ArenaRun`, after the change); her weighing waits for a network
+  that sees the board.
 
 Uncertain until measured: how fast the engine evaluates, and therefore how deep alpha-beta can reach on 12×12 within
 a move's time. Step 1 settles it before anything is built on it.

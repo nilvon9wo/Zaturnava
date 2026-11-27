@@ -18,10 +18,10 @@ public sealed class CarefulTest
         int exposure
     )
     {
-        // Arrange - Horses on 2 and 5, unguarded, the one attacked by a Pawn of the enemy moving first, the other by one
-        // of the enemy moving second, or of the first again: each enemy may take its own, but one enemy takes twice only
-        // if its dice fall right (the games played, 2026-11-27: with one piece hanging, another cost nothing, and
-        // Yellow's Boat, then its Raja, went)
+        // Arrange - Horses on 2 and 5, unguarded, the one attacked by a Pawn of the enemy moving first, the other by
+        // one of the enemy moving second, or of the first again: each enemy may take its own, but one enemy takes
+        // twice only if its dice fall right (the games played, 2026-11-27: with one piece hanging, another cost
+        // nothing, and Yellow's Boat, then its Raja, went)
         DecisionRequest request = LineRules.Request(
             [new PassAction(Mine)],
             (2, LineRules.Horse, Mine),

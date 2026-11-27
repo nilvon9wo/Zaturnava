@@ -209,7 +209,9 @@ public sealed class BlunderRun
             .Where(other => !state.Teams.AreAllied(other.Id, seat))
             .Any(other => this._rules.AttacksOf(state, other.Id).Any(attack => attack.Target == at.Key));
 
-    /// <summary>The blunder's position put to the bot that made it, as it plays now; whether it plays the same.</summary>
+    /// <summary>
+    /// The blunder's position put to the bot that made it, as it plays now; whether it plays the same.
+    /// </summary>
     private async Task<object> Checked(Blunder blunder, ImmutableDictionary<string, IBotPlaying> bots)
     {
         GameState state = this.StateAfter(blunder.Actions.Take(blunder.At));
@@ -242,7 +244,10 @@ public sealed class BlunderRun
     private static string Told(GameAction action)
     {
         ActionDescriptor described = action.Describe();
-        return string.Join(' ', [described.Kind, .. described.Arguments.Select(argument => $"{argument.Key}={argument.Value}")]);
+        return string.Join(
+            ' ',
+            [described.Kind, .. described.Arguments.Select(argument => $"{argument.Key}={argument.Value}")]
+        );
     }
 
     private GameState StateAfter(IEnumerable<GameAction> actions) =>

@@ -388,7 +388,10 @@ public sealed class StrategicPositionsTest
     [InlineData(SageBot.BotId, 3)]
     [InlineData(TacticianBot.BotId, 1)]
     [InlineData(AthenaBot.BotId, 1)]
-    public async Task Strong_WhenItsRookGuardsAPawnOfALine_DoesNotLeaveItOnlyToThreatenABlockedPawn(string bot, int seed)
+    public async Task Strong_WhenItsRookGuardsAPawnOfALine_DoesNotLeaveItOnlyToThreatenABlockedPawn(
+        string bot,
+        int seed
+    )
     {
         // Arrange - the user's game: Green's Rook on 61 guards its Pawn on 53, while Red's Rook on 47 attacks its
         // Pawn on 55, unguarded, and its Boat on 45; Sage moved the Rook to 59, beside Yellow's Pawn on 50, to
