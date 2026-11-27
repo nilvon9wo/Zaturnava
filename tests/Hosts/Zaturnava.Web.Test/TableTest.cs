@@ -5529,7 +5529,7 @@ public sealed class TableTest : IDisposable
     }
 
     [Fact]
-    public void Render_WhenAskedWhetherToEndTheGame_AsksWithTheScoresAndTheTimeLeft()
+    public void Render_WhenAskedWhetherToEndTheGame_AsksPlainlyWithTheTimeLeft()
     {
         // Arrange - Yellow, with 5 points, proposed, giving up its turns
         this._page.Server.View = Proposed(deciding: 0);
@@ -5537,8 +5537,8 @@ public sealed class TableTest : IDisposable
         // Act
         IRenderedComponent<Table> table = this.Render(SeatZero);
 
-        // Assert
-        // Assert - Black, behind, is asked to accept defeat
+        // Assert - Black, behind, is asked to accept defeat: the outcome said, not the scores to work it out from (the
+        // user, 2026-11-27: "Just use a simple question like 'Accept Victory?'"), which the scoreboard shows anyway
         Assert.Equal(
             (
                 "Accept Defeat?",
@@ -5555,13 +5555,16 @@ public sealed class TableTest : IDisposable
                 table.Find("p.status").TextContent
             )
         );
-        Assert.Contains("Black 0, Yellow 5", table.FindAll(".dialog p")[2].TextContent, StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            table.FindAll(".dialog p"),
+            said => said.TextContent.Contains("Yellow 5", StringComparison.Ordinal)
+        );
     }
 
     [Fact]
     public void Answer_WhenClicked_SubmitsIt()
     {
-        // Arrange - Yellow waits for the answers, which no clock hurries: who proposed it, and the scores, said
+        // Arrange - Yellow waits for the answers, which no clock hurries: who proposed it, alone, said
         this._page.Server.View = Proposed(deciding: 0) with
         {
             Proposal = new EndProposalDto(1, Resigns: false),
@@ -5575,7 +5578,7 @@ public sealed class TableTest : IDisposable
 
         // Assert
         Assert.Equal(
-            ("answer-end", "true", 2),
+            ("answer-end", "true", 1),
             (this._page.Server.Submitted?.Action.Kind, this._page.Server.Submitted?.Action.Arguments["agrees"], said)
         );
     }

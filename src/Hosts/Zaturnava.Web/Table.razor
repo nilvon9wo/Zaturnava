@@ -702,7 +702,7 @@
             <div class="dialog proposing" role="dialog" aria-modal="true" aria-labelledby="proposing-title">
                 <CloseButton Class="cancel" OnClose="this.KeepPlaying" />
                 <h2 id="proposing-title">@EndOutlook.Of(asked, proposer.Seat).Proposal?</h2>
-                <p>The other players will be asked to agree. If all of them do, the game ends now, and points decide: @Totals(asked).</p>
+                <p>The other players will be asked to agree.</p>
                 <p>Meanwhile, will you wait for their answers, or pass on all your remaining turns?</p>
                 <div class="actions">
                     <button class="action wait primary" @onclick="() => this.ProposeEnd(proposer, false)">Wait for them to agree</button>
@@ -752,7 +752,6 @@
                 {
                     <p>They have given up their remaining turns.</p>
                 }
-                <p>If everyone agrees, the game ends now, and points decide: @Totals(this._view).</p>
                 @if (this.Countdown() is { } left)
                 {
                     <p class="countdown">@left; no answer keeps the game going.</p>
@@ -1698,12 +1697,6 @@
     /// </summary>
     private static string EndGameStyleOf(EndOutlook outlook) =>
         string.Create(CultureInfo.InvariantCulture, $"--certainty: {Math.Round(outlook.Certainty * 100)}%");
-
-    private string Totals(GameViewDto view) =>
-        string.Join(
-            ", ",
-            this.TeamsOf(view).Select(team => $"{string.Join(" & ", team.Select(seat => seat.Name))} {team.Sum(seat => seat.Score)}")
-        );
 
     /// <summary>
     /// Makes the offer chosen, unless it was made already this turn: the rules allow an offer only once a turn,
