@@ -404,6 +404,15 @@ Then every bot is a pairing, and the arena measures each pairing.
   walks from 9 to 3. Athena repeats the most of those left (22), as her network does not see where the pieces
   stand, yet she still beat Sage 26 to 14 in 40 games (`ArenaRun`, after the change); her weighing waits for a network
   that sees the board.
+- **A piece behind the taker** (2026-11-27, from `BlunderRun`). Sage's Yellow Horse went beside Green's Raja, guarded
+  by Yellow's Rook; the Raja would not take, it counted, for the Rook would take it back. But Green's Rook stood
+  behind the Raja, and would take back in turn; the Raja took. The exchange count saw only the pieces attacking the
+  cell as the board stood. Now, for a piece of the team attacked and guarded, it sees too what the enemy's cheapest
+  taker would open behind it, once it took (*Proposed*). Repeated losses: 46 to 45, Sage's 13 to 12; that game's
+  Horse now stays.
+- **Not done: a Pawn won back counted as its points.** Counting an enemy piece taken back as the points it scores,
+  not as what it is worth keeping (a Pawn 3), changed nothing measurable (46 to 45, Sage's 13 to 14), and the case
+  that suggested it was sound: Green's Rook took a Pawn that attacked its Raja. Left as it was.
 
 Uncertain until measured: how fast the engine evaluates, and therefore how deep alpha-beta can reach on 12×12 within
 a move's time. Step 1 settles it before anything is built on it.

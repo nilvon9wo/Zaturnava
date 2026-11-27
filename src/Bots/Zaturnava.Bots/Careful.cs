@@ -131,9 +131,12 @@ internal static class Careful
         [
             .. pieces.Select(occupant =>
             {
-                ImmutableList<Attack> all = [.. threats[occupant.Key]];
-                int worth = request.Rules.KeepingWorthOf(occupant.Value.Kind);
                 ImmutableList<Retaker> retakers = RetakersOf(request, guards[occupant.Key]);
+                ImmutableList<Attack> seen = [.. threats[occupant.Key]];
+                ImmutableList<Attack> all = seen.IsEmpty || retakers.IsEmpty
+                    ? seen
+                    : seen.AddRange(Revealed(request, after, occupant.Key, seen));
+                int worth = request.Rules.KeepingWorthOf(occupant.Value.Kind);
                 bool isOnThrone = IsThroneOf(request, after, occupant.Key);
                 ImmutableList<Attack> first =
                     [.. all.Where(attack => turns.GetValueOrDefault(attack.Attacker.Owner) < turn)];
@@ -148,6 +151,29 @@ internal static class Careful
             .MaxBy(loss => loss.Worth)
             .Index;
         return losses.Select((loss, index) => index == worstOfAll ? loss.First : loss.All);
+    }
+
+    /// <summary>
+    /// The enemy's attacks on <paramref name="cell"/> that its cheapest attacker's taking there would open, as of a
+    /// piece behind it on the line it leaves (Proposed, on the games played of 2026-11-27: Sage's Yellow Horse went
+    /// beside Green's Raja, guarded by Yellow's Rook, but Green's Rook stood behind the Raja, and so its Raja took).
+    /// </summary>
+    private static IEnumerable<Attack> Revealed(
+        DecisionRequest request,
+        GameState after,
+        CellId cell,
+        ImmutableList<Attack> attacks
+    )
+    {
+        Attack cheapest = attacks.MinBy(attack => request.Rules.KeepingWorthOf(attack.Attacker.Kind))!;
+        GameState taken = after with { Position = after.Position.Relocate(cheapest.From, cell) };
+        return after.Seats
+            .Where(seat => !after.Teams.AreAllied(seat.Id, request.Seat))
+            .SelectMany(seat => request.Rules.AttacksOf(taken, seat.Id))
+            .Where(attack => attack.Target == cell
+                && attack.From != cell
+                && attacks.TrueForAll(other => other.From != attack.From)
+            );
     }
 
     private static ImmutableHashSet<SeatId> ArmiesOf(IEnumerable<Attack> attacks) =>
