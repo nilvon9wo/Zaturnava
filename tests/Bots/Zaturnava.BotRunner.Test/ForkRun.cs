@@ -1,8 +1,6 @@
 using System.Collections.Immutable;
 using System.Text.Json;
-using Net.NowhereAtAll.Zaturnava.Application.Games;
 using Net.NowhereAtAll.Zaturnava.Application.Running;
-using Net.NowhereAtAll.Zaturnava.Application.Scenarios;
 using Net.NowhereAtAll.Zaturnava.Bots;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Decisions;
@@ -178,7 +176,7 @@ public sealed class ForkRun
                     Forks = scores.Count,
                     Mean = Math.Round(mean, 3),
                     StandardError = Math.Round(spread, 3),
-                    Each = scored,
+                    Each = scored.Select(fork => new { fork.Ours, fork.Theirs, fork.Score }),
                 },
                 Json
             ),

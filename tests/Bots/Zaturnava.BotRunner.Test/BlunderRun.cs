@@ -211,7 +211,7 @@ public sealed class BlunderRun
 
     /// <summary>
     /// The blunder's position put to the bot that made it, as it plays now; whether it plays the same; and whether
-    /// another move, or passing, would have left less to be taken (<see cref="Careful.Exposure"/>): if not, the loss
+    /// another move, or passing, would have left less to be taken (<c>Careful.Exposure</c>): if not, the loss
     /// was coming whatever it did (Athena's, 2026-11-27: of 20 she repeats, those looked at had no better move).
     /// </summary>
     private async Task<object> Checked(Blunder blunder, ImmutableDictionary<string, IBotPlaying> bots)

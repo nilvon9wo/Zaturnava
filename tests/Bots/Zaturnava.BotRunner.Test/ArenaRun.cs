@@ -129,10 +129,10 @@ public sealed class ArenaRun
         return new
         {
             Ahead = given.Count(game => game.Lead > 0),
-            Kept = given.Count(game => game.Lead > 0 && game.Margin > 0),
-            Thrown = given.Count(game => game.Lead > 0 && game.Margin < 0),
+            Kept = given.Count(game => game is { Lead: > 0, Margin: > 0 }),
+            Thrown = given.Count(game => game is { Lead: > 0, Margin: < 0 }),
             Behind = given.Count(game => game.Lead < 0),
-            Turned = given.Count(game => game.Lead < 0 && game.Margin > 0),
+            Turned = given.Count(game => game is { Lead: < 0, Margin: > 0 }),
         };
     }
 
@@ -210,19 +210,21 @@ public sealed class ArenaRun
         {
             at++;
             state = Rules.Apply(state, Rules.Parse(action)).State;
-            usurpers = at <= given ? usurpers : usurpers.Union(
-                Rules.ThronesOf(state)
-                    .Select(throne => (Throne: throne.Key, Occupant: state.Position.PieceAt(throne.Value)))
-                    .Where(held => held.Occupant is not null
-                        && Rules.IsLeader(held.Occupant.Kind)
-                        && !state.Teams.AreAllied(held.Occupant.Owner, held.Throne)
-                    )
-                    .Select(held => held.Occupant!.Owner.Value)
-            );
+            usurpers = at <= given ? usurpers : usurpers.Union(UsurpersIn(state));
         }
 
         return usurpers;
     }
+
+    /// <summary>The seats a leader of which sits on a throne not its team's.</summary>
+    private static IEnumerable<int> UsurpersIn(GameState state) =>
+        Rules.ThronesOf(state)
+            .Select(throne => (Throne: throne.Key, Occupant: state.Position.PieceAt(throne.Value)))
+            .Where(held => held.Occupant is not null
+                && Rules.IsLeader(held.Occupant.Kind)
+                && !state.Teams.AreAllied(held.Occupant.Owner, held.Throne)
+            )
+            .Select(held => held.Occupant!.Owner.Value);
 
     private static ActionDescriptor Described(JsonElement action) =>
         new(

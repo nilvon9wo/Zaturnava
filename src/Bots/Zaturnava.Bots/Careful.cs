@@ -345,7 +345,6 @@ internal static class Careful
             .Append(0)
             .Max();
 
-    /// <summary>What the <paramref name="owner"/>'s pieces on the board are worth: what its throne controls.</summary>
     /// <summary>
     /// The most an enemy could win by a fork it could make before the team moves again (the assessment of 2026-11-27:
     /// "Nothing models an enemy move that creates attacks"): a move of an enemy army whose turn comes before the
@@ -402,6 +401,7 @@ internal static class Careful
         return gains.Count < 2 ? 0 : gains[1] * Math.Min(1, request.Rules.MovesPerTurn(move.Attacker.Kind));
     }
 
+    /// <summary>What the <paramref name="owner"/>'s pieces on the board are worth: what its throne controls.</summary>
     internal static int StakeOf(IRulesApplying rules, GameState state, SeatId owner) =>
         state.Position.Occupants.Values.Where(piece => piece.Owner == owner).Sum(piece => rules.WorthOf(piece.Kind));
 
