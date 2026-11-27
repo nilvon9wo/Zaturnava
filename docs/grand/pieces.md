@@ -232,6 +232,7 @@ Chaturaji 2027.
 | Lance (Shogi) | Any distance straight forward | Move: blocked by pieces in its path | → Gold General in the far three ranks | 56 | 2 / — |
 | Amazon | Any distance in any direction, or leaps 2+1 | — | — | 37 | — / — |
 | Queen (Western) | Any distance in any direction | — | — | 27 | — / — |
+| Manchu Chariot | Any distance orthogonally, or leaps 2+1 | — | Captures also by hopping one piece, at any distance beyond, orthogonally | 24 | — / — |
 | Chancellor | Any distance orthogonally, or leaps 2+1 | — | — | 22 | — / — |
 | Dragon Bishop (custom) | Any distance diagonally, or leaps 2+1 | — | — | 21 | — / — |
 | Dragon Horse (Shogi) | Any distance diagonally, or one square orthogonally | — | — | 17 | — / — |
@@ -261,7 +262,6 @@ Chaturaji 2027.
 | Piece | Moves | Captures | Restrictions | Value | Lifts |
 |---|---|---|---|---|---|
 | Man (Checkers) | One square diagonally forward | By [jumping](#jumping-and-custody), diagonally forward; → King (Checkers) on the last rank | One colour (by its move) | 13 | — / — |
-| Manchu Chariot | Any distance orthogonally, or leaps 2+1 | Same, or by hopping one piece, at any distance beyond, orthogonally | — | 24 | — / — |
 | Cannon (Xiangqi) | Any distance orthogonally | By hopping one piece, at any distance beyond | — | 10 | — / — |
 | Cannon (Janggi) | Over exactly one piece, to any cell beyond, orthogonally | Same | Move: must hop exactly one piece; may neither hop nor capture a Cannon of either kind | 8 | 3 / — |
 | Grasshopper | Along any line, over the first piece met, to the cell just beyond | Same | Move: must hop, landing just beyond | 8 | 9 / — |
@@ -366,7 +366,8 @@ moves; the columns they left open filled in by the program, *Proposed*):
   double first step or *en passant*, which Berolina chess also has.
 - **Manchu Chariot**, from Manchu chess, where it is the one piece of its side that combines three: it moves as a
   Rook, leaps as a Knight (not as a Xiangqi Horse, whose leap may be blocked: the sheet says "Knight-like"), and
-  also takes as the Xiangqi Cannon does, by hopping one piece. Artillery, as the sheet has it.
+  also takes as the Xiangqi Cannon does, by hopping one piece. A heavy piece, as the Chariot it grows from is
+  (the designer, 2026-11-27; artillery before, as the sheet had it).
 - **Courier**: moves exactly as the Western King does, one square in any direction, without a leader's standing
   (*Stated*, 2026-11-13). Its symbol is a winged hat.
 

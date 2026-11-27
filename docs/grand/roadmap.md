@@ -133,6 +133,15 @@ What the program does so far (2026-11-04), and the gaps against the above:
   | Small | 110 | 127 | 9.0 | 12.4 |
   | Medium | 125 | 151 | 13.0 | 17.6 |
   | Large | 200 | 288 | 20.4 | 26.5 |
+
+  The Manchu Chariot counted heavy, not artillery (the designer, 2026-11-27), moves both classes' averages, and so
+  the budgets from then on, measured on the current catalogue:
+
+  | Size | Budget, the Chariot artillery | Budget, the Chariot heavy |
+  |---|---|---|
+  | Small | 124 | 125 |
+  | Medium | 151 | 147 |
+  | Large | 288 | 279 |
 - Pieces confined to a palace are left out, as quick games have no palaces; a piece with powers along
   palace lines, such as the Janggi Soldier, is not (Stated, 2026-11-05). River pieces are left out
   unless the game has rivers (each area restriction says which terrain it is about, `Terrain`, and

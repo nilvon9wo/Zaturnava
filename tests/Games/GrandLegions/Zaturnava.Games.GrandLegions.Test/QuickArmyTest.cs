@@ -59,9 +59,9 @@ public sealed class QuickArmyTest
     }
 
     [Theory]
-    [InlineData("grand-legions-small", 110, 124)]
-    [InlineData("grand-legions-medium", 125, 151)]
-    [InlineData("grand-legions-large", 200, 288)]
+    [InlineData("grand-legions-small", 110, 125)]
+    [InlineData("grand-legions-medium", 125, 147)]
+    [InlineData("grand-legions-large", 200, 279)]
     public void BudgetOf_BeforeTheFormulaEditionOrFromIt_IsTheGamesOwnOrTheFormulas(string id, int before, int since)
     {
         // Arrange
@@ -520,7 +520,7 @@ public sealed class QuickArmyTest
     [Theory]
     [InlineData("Makruk", "King (Western)|Noble (Makruk)|Courtier|Pawn (Makruk)|Rook (Western)|Knight (Western)", 18)]
     [InlineData("Checkers", "King (Checkers)|Man", 3)]
-    [InlineData("Othello", "Evangelist", 4)]
+    [InlineData("Othello", "Evangelist", 3)]
     public void Dealt_WhenASeatIsNamedAFamily_DealsItOnlyThatGamesPiecesButNotWhereArmiesAreAlike(
         string family,
         string expected,

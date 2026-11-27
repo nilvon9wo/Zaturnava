@@ -57,7 +57,7 @@ public sealed class GrandLegionsRulesTest
                 "grand-legions-custom",
                 "Grand Legions (12 × 10, kingdoms 4 × 4)",
                 120,
-                (int?)226,
+                (int?)222,
                 (BoardSize?)board,
                 true
             ),
@@ -1545,7 +1545,7 @@ public sealed class GrandLegionsRulesTest
 
         // Assert
         Assert.Equal(
-            (6, 5),
+            (6, 4),
             (dice.Sides, dice.KindsOf(1).Count)
         );
         Assert.Contains(GrandLegionsPieces.Grasshopper, dice.KindsOf(1));

@@ -287,11 +287,12 @@ public static class GrandLegionsPieces
             .Since(CheckersAndTafl)
             .ValuedBefore(MultipleCapturesRepriced, 54),
         // Manchu chess's Chariot (its Banner): the Chariot's slide, a Knight's leap (unblocked, Proposed, as the
-        // designer's sheet has it), and the Cannon's capture, hopping one piece.
+        // designer's sheet has it), and the Cannon's capture, hopping one piece. A heavy piece, as the Chariot it
+        // grows from is, not artillery (the designer, 2026-11-27); listed here, last, as it came into the catalogue.
         Piece(
                 ManchuChariot,
                 "Manchu Chariot",
-                Artillery,
+                Heavy,
                 Xiangqi,
                 OrthogonalSlide,
                 KnightLeap,
