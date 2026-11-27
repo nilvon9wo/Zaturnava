@@ -114,6 +114,11 @@ internal sealed class LineRules(ImmutableList<GameAction> legalActions) : IRules
 
     public int KeepingWorthOf(PieceKindId kind) => this.Keeping[kind];
 
+    /// <summary>How many moves any piece may expect in a turn: one, unless set.</summary>
+    public double Pace { get; init; } = 1;
+
+    public double MovesPerTurn(PieceKindId kind) => this.Pace;
+
     public int RansomPointsOf([Required] GameState state, [Required] RansomOffer offer) => 0;
 
     /// <summary>The kinds that attack as any piece does, but may move nowhere: none, unless set.</summary>

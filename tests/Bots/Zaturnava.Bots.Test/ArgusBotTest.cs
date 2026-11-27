@@ -79,6 +79,33 @@ public sealed class ArgusBotTest
         Assert.Equal([Pass], chosen);
     }
 
+    [Theory]
+    [InlineData(1, true)]
+    [InlineData(0.25, false)]
+    public async Task Decide_WhenATakingIsEvenOnlyIfItsGuardTakesBack_TakesOnlyIfTheDiceSurelyLetItsGuardMove(
+        double pace,
+        bool takes
+    )
+    {
+        // Arrange - the Elephant on 0 may take the Horse on 2 (3), where the enemy Pawn on 3 would take the Elephant
+        // (4) and the Pawn on 1 take back (1): even, if the Pawn surely may; at a quarter of a move a turn, a loss (the
+        // user's games of 2026-11-27: Argus sent the user's Rook among Red's Horses, counting on a guard's die)
+        DecisionRequest request = LineRules.Request(
+            [Pass, LineRules.Move(0, 2)],
+            (0, LineRules.Elephant, Mine),
+            (1, LineRules.Pawn, Mine),
+            (2, LineRules.Horse, Theirs),
+            (3, LineRules.Pawn, Theirs)
+        );
+        DecisionRequest paced = request with { Rules = new LineRules(request.LegalActions) { Pace = pace } };
+
+        // Act
+        ImmutableHashSet<GameAction> chosen = await Choices(paced);
+
+        // Assert
+        Assert.Equal([takes ? LineRules.Move(0, 2) : Pass], chosen);
+    }
+
     [Fact]
     public async Task Decide_WhenTakingGainsMoreThanItLoses_Takes()
     {

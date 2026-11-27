@@ -6,6 +6,26 @@ Numbers are the playtests' own, so that each item can be traced to the note it c
 only in part, what is left is in the backlog, and its history here. The playtest of 2026-11-15 is tracked apart, in
 [playtesting/traceability.md](playtesting/traceability.md).
 
+## Asked 2026-11-27
+
+- **Argus and Sage give up too soon** (the user: Argus "proposes defeat within the first three moves -- while he
+  still has his raja and rook"; Sage likewise, with the user's Rook left against none). A bot called its game
+  hopeless when it trailed by more than the pieces it could reach in ten rounds were worth, its own pieces standing
+  where they were; boxed in, that is next to nothing. *Done*: a bot proposes no defeat while its team keeps a hope
+  as the user put it for the enemy (2026-11-26): a leader, a heavy piece, or a Pawn a step or two from its promotion.
+- **Sage and Argus waste Rooks** (the user: Argus "like to throw my black rook at red horses where it is
+  invariably taken"; Sage took a Horse two Pawns guarded with its Rook, and left a guarded Pawn to threaten a
+  blocked one; "the bots do not adequately value position above points"). *Done*, as far as weighing goes
+  ([ai-assessment](bots/ai-assessment.md)): a loss next weighs at least what it would cost; a retake counts only as
+  likely as its dice; a second piece left to be taken counts for half besides the first. Both of the user's positions are replayed as tests. Seeing the position itself is the real
+  AI bots' item (backlog §1).
+- **Are the dice fair?** (the user, seeing Yellow's first roll move its Raja and Rook, and Red's two Boats). *Found
+  fair*: each die is the server's shared random generator, 1 to 6 alike; only a development server's scenario fakes
+  them. The faces are weighted by kind: the Rook has two faces of six, the Raja and Pawns two, so Raja and Rook come
+  up together one roll in about four and a half; a double Boat one in thirty-six. Measured on the server's 130
+  finished games (`scripts/dice-check.py`, 12,114 dice): every face within chance of a sixth (chi-square 9.24 on 5),
+  the two dice independent (39.41 on 35), doubles 16.6%, and no two games opening on the same rolls.
+
 ## Asked 2026-11-26
 
 - **A less neutral End Game** (the user): the button reads Declare Victory, Propose Draw or Concede Defeat, as the

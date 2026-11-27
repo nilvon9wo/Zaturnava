@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Net.NowhereAtAll.Zaturnava.Bots;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Boards;
@@ -281,6 +282,127 @@ public sealed class StrategicPositionsTest
 
     /// <summary>How many decisions, every seat's, the endgame test allows before calling it not converted.</summary>
     private const int MostEndgameDecisions = 120;
+
+    [Theory]
+    [InlineData(2)]
+    [InlineData(6)]
+    public void Ending_WhenAFewPointsBehindInTheOpeningWithEveryPieceLeft_DoesNotProposeEndingIt(int behind)
+    {
+        // Arrange - a guard, after the user's games of 2026-11-27, in which Argus proposed its defeat within its first
+        // turns: every army whole, its pieces boxed in, Yellow a few points ahead
+        GameState initial = this._rules.CreateInitialState();
+        GameState state = initial with
+        {
+            RollOff = [],
+            AwaitedDice = null,
+            DecidingSeat = Black,
+            TurnNumber = 6,
+            Dice = [3, 5],
+            Scores = initial.Scores.SetItem(Yellow, behind),
+        };
+        DecisionRequest request = new(this._rules, state, Black, this._rules.LegalActions(state));
+
+        // Act
+        GameAction? action = Ending.AnswerTo(request);
+
+        // Assert
+        Assert.Null(action);
+    }
+
+    /// <summary>
+    /// The user's game 7c2b73f15a3946d59c13c61c7ed8d0bf of 2026-11-27, up to Sage's (Green's) second move on a 4 and a
+    /// 6, each action as its kind, its actor, then its values or its cells from and to.
+    /// </summary>
+    private static readonly string[] SagesRook =
+    [
+        "dice 0 1", "dice 1 2", "dice 2 4", "dice 3 5", "move 3 31 38", "roll 0", "dice 0 3,6", "move 0 3 12",
+        "move 0 2 6", "pass 0", "roll 1", "dice 1 4,6", "move 1 32 25", "move 1 40 8", "pass 1", "roll 2",
+        "dice 2 1,5", "move 2 55 47", "move 2 63 45", "roll 3", "dice 3 5,1", "move 3 7 21", "move 3 38 45", "pass 3",
+        "move 0 10 18", "pass 0", "roll 1", "dice 1 3,6", "move 1 8 0", "move 1 25 26", "pass 1", "move 2 62 45",
+        "pass 2", "roll 3", "dice 3 4,3", "move 3 23 47", "move 3 47 45", "pass 3", "move 0 1 16", "pass 0", "roll 1",
+        "dice 1 3,3", "move 1 0 6", "move 1 45 37", "pass 1", "roll 2", "dice 2 1,6", "move 2 60 51", "pass 2",
+        "move 3 37 53", "pass 3", "move 0 16 26", "pass 0", "roll 1", "dice 1 6,6", "move 1 41 42", "move 1 42 51",
+        "pass 1", "move 2 61 53", "pass 2", "roll 3", "dice 3 1,2", "move 3 21 35", "move 3 15 21", "pass 3", "roll 0",
+        "dice 0 2,3", "move 0 26 20", "move 0 53 61", "pass 0", "roll 1", "dice 1 2,6", "pass 1", "roll 2",
+        "dice 2 4,6", "move 2 54 46",
+    ];
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(3)]
+    public async Task Sage_WhenItsRookCouldTakeAHorseTwoPawnsGuard_LeavesIt(int seed)
+    {
+        // Arrange - the user's game: Green's Rook on 61 could take Red's Horse on 21, which Red's Pawns guard
+        GameState state = SagesRook.Aggregate(
+            this._rules.CreateInitialState(),
+            (sofar, action) => this._rules.Apply(sofar, this._rules.Parse(Described(action))).State
+        );
+        DecisionRequest request = new(this._rules, state, Green, this._rules.LegalActions(state));
+
+        // Act
+        GameAction action = await new SageBot(new Random(seed)).Decide(request, this._cancellation);
+
+        // Assert
+        Assert.NotEqual(new MoveAction(Green, new CellId(61), new CellId(21)), action);
+    }
+
+    /// <summary>
+    /// The user's game dc3893b4ebbd4acfa9d2554461202d67 of 2026-11-27, up to Sage's (Green's) turn on a 2 and a 3; an
+    /// escape as its kind, its actor, its home and its piece.
+    /// </summary>
+    private static readonly string[] SagesGuard =
+    [
+        "dice 0 5", "dice 1 3", "dice 2 2", "dice 3 1", "move 0 8 16", "roll 1", "dice 1 1,5", "move 1 49 50",
+        "move 1 56 42", "move 2 60 51", "roll 3", "dice 3 4,4", "roll 0", "dice 0 3,2", "move 0 1 18", "move 0 2 1",
+        "roll 1", "dice 1 1,4", "move 1 42 28", "roll 2", "dice 2 1,2", "move 2 62 47", "move 2 63 45", "roll 3",
+        "dice 3 6,2", "move 3 31 38", "move 3 15 21", "move 0 18 28", "pass 0", "roll 1", "dice 1 3,3", "move 2 61 57",
+        "pass 2", "roll 3", "dice 3 5,1", "move 3 38 47", "pass 3", "roll 0", "dice 0 5,6", "move 0 10 18",
+        "move 0 3 10", "pass 0", "roll 1", "dice 1 6,6", "move 1 41 42", "move 1 42 51", "pass 1", "move 2 54 47",
+        "pass 2", "roll 3", "dice 3 5,4", "move 3 14 13", "pass 3", "roll 0", "dice 0 4,3", "move 0 57 41",
+        "move 0 41 40", "pass 0", "move 1 32 40", "pass 1", "roll 2", "dice 2 4,4", "escape 2 61 18", "pass 2",
+        "move 3 21 4", "pass 3", "move 0 10 17", "pass 0", "roll 1", "dice 1 3,5", "move 1 23 47", "move 1 22 21",
+        "pass 1", "roll 2", "dice 2 2,3",
+    ];
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(3)]
+    public async Task Sage_WhenItsRookGuardsAPawnOfALine_DoesNotLeaveItOnlyToThreatenABlockedPawn(int seed)
+    {
+        // Arrange - the user's game: Green's Rook on 61 guards its Pawn on 53, while Red's Rook on 47 attacks its
+        // Pawn on 55, unguarded, and its Boat on 45; Sage moved the Rook to 59, beside Yellow's Pawn on 50, to
+        // threaten a Pawn that could not move, and Red, on two Rook dice, took the Boat and the Pawn on 53
+        GameState state = SagesGuard.Aggregate(
+            this._rules.CreateInitialState(),
+            (sofar, action) => this._rules.Apply(sofar, this._rules.Parse(Described(action))).State
+        );
+        DecisionRequest request = new(this._rules, state, Green, this._rules.LegalActions(state));
+
+        // Act
+        GameAction action = await new SageBot(new Random(seed)).Decide(request, this._cancellation);
+
+        // Assert
+        Assert.NotEqual(new MoveAction(Green, new CellId(61), new CellId(59)), action);
+    }
+
+    private static ActionDescriptor Described(string action)
+    {
+        string[] words = action.Split(' ');
+        ImmutableSortedDictionary<string, string> arguments = ImmutableSortedDictionary<string, string>.Empty
+            .Add(ActionDescriptor.ActorArgument, words[1]);
+        return new ActionDescriptor(
+            words[0],
+            (words[0], words.Length) switch
+            {
+                (_, 3) => arguments.Add("values", words[2]),
+                ("escape", 4) => arguments.Add("home", words[2]).Add("piece", words[3]),
+                (_, 4) => arguments.Add("from", words[2]).Add("to", words[3]),
+                _ => arguments,
+            }
+        );
+    }
 
     private static CellId CellAt(int column, int row) => new((row * Side) + column);
 

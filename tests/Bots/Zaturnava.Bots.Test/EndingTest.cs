@@ -326,6 +326,26 @@ public sealed class EndingTest
         Assert.Equal(hasHope ? null : new ProposeEndAction(Black, Resigns: false), action);
     }
 
+    [Theory]
+    [InlineData("elephant", false)]
+    [InlineData("raja", false)]
+    [InlineData("boat", true)]
+    public void AnswerTo_WhenHopelessOnPointsButItsTeamKeepsALeaderOrAHeavyPiece_ProposesNoDefeat(
+        string kind,
+        bool proposes
+    )
+    {
+        // Arrange - Black's one piece, which no move takes anywhere, so hopes for nothing; Yellow leads by 6 (the
+        // user's games of 2026-11-27: Argus and Sage gave up with a Raja and a Rook left)
+        DecisionRequest request = Request([(Black, kind), (Yellow, "boat")], ourPoints: 0, theirPoints: 6);
+
+        // Act
+        GameAction? action = Ending.AnswerTo(request);
+
+        // Assert
+        Assert.Equal(proposes ? new ProposeEndAction(Black, Resigns: false) : null, action);
+    }
+
     [Fact]
     public void AnswerTo_WhenAnAllysProposalWasRefusedLately_WaitsAsIfItWereItsOwn()
     {

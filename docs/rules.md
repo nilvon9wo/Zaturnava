@@ -739,6 +739,11 @@ both the triumphing player and their ally may move each other's Boat.
     are taken as they stand; a piece is reached only by moves that take
     nothing on the way; and two pieces hoping for the same enemy piece both
     count it.
+  - *(Proposed 2026-11-27, on the user's games)* A bot proposes no defeat while its team keeps a
+    hope as the user put it for the enemy (2026-11-26): a leader, a heavy
+    piece, or a Pawn a step or two from its promotion. The weighing above
+    takes pieces where they stand, which in the opening, boxed in, is next to
+    nothing: Argus and Sage proposed defeat with a Raja and a Rook left.
 - **Honourable peace**: if only Rajas remain on the board (across all
   players), the game is a draw.
 - **Team elimination win**: if only one team still has any pieces on the
