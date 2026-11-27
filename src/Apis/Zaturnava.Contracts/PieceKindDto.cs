@@ -12,6 +12,12 @@ public sealed record PieceKindDto(string Kind, string Name, int Value)
 {
     public string? Class { get; init; }
 
+    /// <summary>Whether it leads its army, as a Raja does, whatever its class.</summary>
+    public bool IsLeader { get; init; }
+
+    /// <summary>Whether the game counts it among the most dangerous to let loose, as a Rook, of any class.</summary>
+    public bool IsHeavy { get; init; }
+
     /// <summary>Which way it goes, at a glance: "Forward", "Orthogonal", "Diagonal", "Every way" or "Other".</summary>
     public string? Bearing { get; init; }
 

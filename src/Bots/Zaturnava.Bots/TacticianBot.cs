@@ -50,10 +50,13 @@ public sealed class TacticianBot(
     public BotProfile Profile { get; } = new(
         BotId,
         "Tactician",
-        "Calculating: weighs the board as Sage does, but thinks past its own turn, through the turns of the "
-            + "others and the dice, its enemies playing against it and its allies for themselves. So it sees the "
-            + "reply coming, not just what could be taken next. With few pieces left, it looks further still, and "
-            + "closes in on the enemy's leader. A plain algorithm: no AI.",
+        "Calculating. Weighs the whole board (points, pieces, leaders, prisoners, thrones) and thinks past its "
+            + "own turn, through everyone else's and every way the dice could fall, expecting its enemies to play "
+            + "their best against it; rarely random. With few pieces left, it looks further still and hunts the "
+            + "enemy's last pieces. Trades prisoners when the board would be better for it; calls a game won a "
+            + "little early, but does not give up a close one. As an ally: sees the reply coming and steers clear "
+            + "of traps. As an enemy: hard to bait, and plans captures beyond its own turn. A plain algorithm: no "
+            + "AI.",
         UsesAi: false
     );
 

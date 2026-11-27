@@ -39,11 +39,14 @@ public sealed class AthenaBot(Random random, ImmutableDictionary<string, ValueNe
     public BotProfile Profile { get; } = new(
         BotId,
         "Athena",
-        "Learned: a small neural network, trained on two thousand games of bots playing each other, judges "
-            + "each position (who will win, and by how much), and it thinks through the rest of its turn as Sage "
-            + "does. It agrees to end a game when ending it now is worth as much as playing on. Trades prisoners when "
-            + "the board would be better for it. Uses AI of its own, run on the server at no cost to anyone: "
-            + "no AI service. Offered only for games it has a network for: so far, Chaturaji 2027.",
+        "Learned. A small neural network, trained on thousands of games between bots, judges each position (who "
+            + "will win, and by how much), and it plans the rest of its turn, dice included, by that judgement; "
+            + "rarely random, but its choices can surprise, as it judges by experience rather than by rules of "
+            + "thumb. Agrees to end a game when ending it now is worth as much to its team as playing on; trades "
+            + "prisoners when the board would be better for it. As an ally: plays for the team's result, not its "
+            + "own points. As an enemy: among the strongest, though it can still leave a piece to be taken. Uses "
+            + "AI of its own, run on the server at no cost to anyone: no AI service. Offered only for games it has "
+            + "a network for: so far, Chaturaji 2027.",
         UsesAi: true
     );
 

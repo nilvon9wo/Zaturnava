@@ -50,10 +50,14 @@ public sealed class PythiaBot(
     public BotProfile Profile { get; } = new(
         BotId,
         "Pythia",
-        "Oracular: Monte Carlo tree search, as AlphaZero searches. Plays each promising line out many times over, "
-            + "rolling the dice afresh each time, and judges where each leads by Athena's neural network. Uses AI of "
-            + "its own, run on the server at no cost to anyone: no AI service. Only Chaturaji 2027 has a network so "
-            + "far; at any other game, it judges positions as Sage does.",
+        "Oracular. Tries each promising line of play many times over, rolling the dice afresh each time, and "
+            + "judges where each leads with a neural network trained on games between bots (Monte Carlo tree "
+            + "search, as AlphaZero plays). Because it samples, it may play differently in the same position. "
+            + "Agrees to end a game when ending it now is worth as much to its team as playing on; trades prisoners "
+            + "when the board would be better for it. As an ally: looks deep along the lines that matter. As an "
+            + "enemy: can find a plan many moves long, but may overlook a line it did not sample. Uses AI of its "
+            + "own, run on the server at no cost to anyone: no AI service. Only Chaturaji 2027 has a network so "
+            + "far; at any other game, it judges positions by a weighing of points, pieces, leaders and thrones.",
         UsesAi: true
     );
 

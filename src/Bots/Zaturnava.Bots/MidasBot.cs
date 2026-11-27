@@ -23,9 +23,11 @@ public sealed class MidasBot(Random random) : IBotPlaying
     public BotProfile Profile { get; } = new(
         BotId,
         "Midas",
-        "Greedy and short-sighted: grabs whatever scores the most right now, and otherwise moves at random. "
-            + "Trades prisoners only at a profit, and only in trades the other side might take, so seldom. "
-            + "A plain algorithm: no AI.",
+        "Greedy and short-sighted. Takes whatever scores the most right now, without asking what it might lose "
+            + "for it, and otherwise moves at random. Trades prisoners only at a profit, and only in trades the "
+            + "other side might take, so seldom. As an ally: scores quickly, but leaves pieces open and may trade a "
+            + "strong piece for a weak one. As an enemy: grabs any bait, so a guarded piece left in its reach is a "
+            + "trap it will walk into. A plain algorithm: no AI.",
         UsesAi: false
     );
 

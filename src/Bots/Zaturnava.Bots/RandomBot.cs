@@ -18,8 +18,9 @@ public sealed class RandomBot(Random random) : IBotPlaying
     public BotProfile Profile { get; } = new(
         BotId,
         "Random",
-        "Picks any legal move, roll or pass, at random; agrees to end the game only if its team leads. "
-            + "A plain algorithm: no AI.",
+        "Aimless. Picks any legal move, roll or pass, wholly at random. Agrees to end the game only if its team "
+            + "leads, and plays on long after a game looks lost. As an ally: no help, and may hand the enemy points. "
+            + "As an enemy: no threat but by chance; a gentle first opponent. A plain algorithm: no AI.",
         UsesAi: false
     );
 

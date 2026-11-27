@@ -54,11 +54,65 @@ public sealed record EndOutlook(EndStanding Standing, double Certainty, bool IsS
             .FirstOrDefault();
         return mine.Points.CompareTo(rival?.Points ?? mine.Points) switch
         {
-            > 0 => Decided(EndStanding.Victory, mine, rival!),
+            > 0 => Yielded(Decided(EndStanding.Victory, mine, rival!), WeakestBeaten(view, team), HasHope(view, team)),
             < 0 => Decided(EndStanding.Defeat, rival!, mine),
             _ => new EndOutlook(EndStanding.Draw, 0, false),
         };
     }
+
+    /// <summary>
+    /// A victory, as sure as every enemy army is beaten, each having to agree (the user, 2026-11-27, of a Grand Legions
+    /// game in which Yellow had scored nothing: "the red army still has literally all their pieces but the 'Declare
+    /// Victory' button is already visibly green"): no surer than the share of its worth the least beaten has lost, nor
+    /// past doubt until each has lost all but a tenth (<see cref="Overwhelming"/>). And while the enemy still holds a
+    /// leader or a heavy piece, it has hope, and is less likely to agree: half as sure, and never past doubt (the user,
+    /// the same day: an army mostly whole, and a leader or a heavy piece left, are "both reasons why accepting is not
+    /// so obvious and therefore not so likely and therefore reasons for the button not to be green").
+    /// </summary>
+    private static EndOutlook Yielded(EndOutlook outlook, double beaten, bool isHopeful) =>
+        outlook with
+        {
+            Certainty = Math.Min(outlook.Certainty, beaten) * (isHopeful ? HopefulShare : 1),
+            IsSure = outlook.IsSure && beaten >= 1 - (1 / Overwhelming) && !isHopeful,
+        };
+
+    /// <summary>How much of its certainty a victory keeps while the enemy has hope (Proposed).</summary>
+    public const double HopefulShare = 0.5;
+
+    /// <summary>Whether an enemy of <paramref name="team"/>, still playing, has a leader or heavy left.</summary>
+    private static bool HasHope(GameViewDto view, int team)
+    {
+        HashSet<int> armies =
+            [.. view.Seats.Where(seat => seat.Team != team && !seat.IsRetired).Select(seat => seat.Id)];
+        return view.Pieces.Any(piece =>
+            armies.Contains(piece.Owner)
+            && view.Kinds.Find(each => each.Kind == piece.Kind) is { } kind
+            && (kind.IsLeader || kind.IsHeavy)
+        );
+    }
+
+    /// <summary>
+    /// How beaten the least beaten army not of <paramref name="team"/> is, of those still playing: the share of its
+    /// worth taken prisoner by anyone, against what it has on the board besides; one with nothing either way is beaten
+    /// wholly, as is the game with no such army.
+    /// </summary>
+    private static double WeakestBeaten(GameViewDto view, int team) =>
+        view.Seats
+            .Where(seat => seat.Team != team && !seat.IsRetired)
+            .Select(army =>
+            {
+                int lost = view.Seats
+                    .SelectMany(holder => holder.Prisoners)
+                    .Where(prisoner => prisoner.Owner == army.Id)
+                    .Sum(prisoner => WorthOf(view, prisoner.Kind));
+                int left = view.Pieces.Where(piece => piece.Owner == army.Id).Sum(piece => WorthOf(view, piece.Kind));
+                return lost + left == 0 ? 1 : lost / (double)(lost + left);
+            })
+            .Append(1)
+            .Min();
+
+    private static int WorthOf(GameViewDto view, string kind) =>
+        view.Kinds.Find(each => each.Kind == kind)?.Value ?? 0;
 
     private static EndOutlook Decided(EndStanding standing, Side ahead, Side behind) =>
         new(
@@ -77,7 +131,7 @@ public sealed record EndOutlook(EndStanding Standing, double Certainty, bool IsS
             view.Seats.Where(seat => seats.Contains(seat.Id)).Sum(seat => seat.Score),
             view.Pieces
                 .Where(piece => seats.Contains(piece.Owner))
-                .Sum(piece => view.Kinds.Find(kind => kind.Kind == piece.Kind)?.Value ?? 0)
+                .Sum(piece => WorthOf(view, piece.Kind))
         );
     }
 

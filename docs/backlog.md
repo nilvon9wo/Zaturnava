@@ -182,6 +182,38 @@ From the specification's observations of the bots in play (F, X) and the Sage pl
 - Stage 5: upgrades and promotions bought in play, in a palace with the player's own leader on its throne,
   lowering the score; lifts bought in the draft, and kept in the game (*done* 2026-11-26, every lift; still to come,
   in play); the four-throne bonus, once for each set of leaders; bots that spend.
+- *(Stated 2026-11-27)* **Recruiting in play**, a game option, off by default. A player with the points may recruit
+  a fresh piece of any kind in the catalogue, while one of their leaders sits on a throne (anyone's) whose palace
+  has room. Recruiting takes the whole turn and costs the piece's price.
+  - *Infantry*: one, placed at once on an eligible cell the player picks.
+  - *Any other class*: the player names the exact piece (no lifts while it trains), and a marker stands on its cell.
+    The piece is lost, points and all, if the leader leaves the throne or any piece moves onto the marker before it
+    is ready.
+  - *Two at once, by dice*: with two free palace cells (in one palace or two, if several leaders hold thrones) and the
+    points, the player may roll instead, and must name pieces of the classes the dice show; slower or unwanted
+    classes are the risk.
+  - *Rushed training*, instead of a move or a roll: two dice for one piece in training. Both show its class: it is
+    ready and may move now (twice, on doubles). One shows it: it is placed, to move next turn. Neither: it is lost,
+    points and all.
+
+  | Class | Ready on the player's |
+  |---|---|
+  | Infantry | this turn |
+  | Cavalry, Artillery | next turn (2nd) |
+  | Heavy | 3rd turn |
+  | Leader | 4th turn |
+
+  *Stated* (the user, 2026-11-27, answering Q-R):
+
+  | Point | Answer |
+  |---|---|
+  | "Never drafted" | A fresh piece, of any kind in the catalogue: not a prisoner, nor one recycled, escaped, promoted or out of the game for any other reason |
+  | Dice for two trainings show 5 or 6 (Infantry or Leader) | The player picks which |
+  | Who spoils a training by stepping onto its marker | Any piece, the player's own or an enemy's |
+  | The marker on the board | Blocks moves as a piece would; a piece that jumps may jump over it |
+  | The points spent | Lower the score at once, as other purchases in play |
+
+  Bots must recruit, guard trainings and spoil the enemy's (stepping onto a marker, driving a leader off a throne).
 - Stage 2: saved settings, named, shared and copied to edit ([specification §2.1](grand/specification.md#21-saved-settings)).
 - *(Stated 2026-11-12)* **Kingdoms placed by the players**, as a setting of the game's creator, before their
   palace, throne and pieces; probably still keeping to the board's corners, more or less, so that no later player

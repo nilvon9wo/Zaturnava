@@ -39,7 +39,10 @@ public sealed class FamilyBot : IBotPlaying
                 new BotProfile(
                     family.Id,
                     family.Name,
-                    $"Plays as Sage does, but with an army of {family.Family} pieces only. A plain algorithm: no AI.",
+                    $"A {family.Family} purist: drafts its army only of {family.Family} pieces, then plays "
+                        + "thoughtfully, weighing the whole board (points, pieces, leaders, prisoners, thrones, what "
+                        + "could be taken next) and planning the rest of its turn, dice included. As an ally or an "
+                        + $"enemy: as strong as its {family.Family} pieces are in this game. A plain algorithm: no AI.",
                     UsesAi: false
                 )
                 {

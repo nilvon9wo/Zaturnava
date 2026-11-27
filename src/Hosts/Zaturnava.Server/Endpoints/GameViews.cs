@@ -304,6 +304,8 @@ internal static class GameViews
         return new PieceKindDto(kind.Value, rules.NameOf(kind), rules.WorthOf(kind))
         {
             Class = guide.Class,
+            IsLeader = rules.IsLeader(kind),
+            IsHeavy = rules.IsHeavy(kind),
             Bearing = guide.Bearing,
             Kin = guide.Kin,
             Origin = guide.Origin,
