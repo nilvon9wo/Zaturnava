@@ -144,7 +144,7 @@ internal sealed class LineRules(ImmutableList<GameAction> legalActions) : IRules
     ];
 
     /// <summary>How many cells each way each kind attacks, leaping any between: one, unless set.</summary>
-    public ImmutableDictionary<PieceKindId, int> Reaches { get; init; } = ImmutableDictionary<PieceKindId, int>.Empty;
+    public ImmutableDictionary<PieceKindId, int> Reaches { get; init; } = [];
 
     /// <summary>
     /// The cells a piece attacks one way: the next, or as many as its kind reaches; or, for a Boat, every one up to a

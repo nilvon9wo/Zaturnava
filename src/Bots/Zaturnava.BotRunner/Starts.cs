@@ -68,7 +68,8 @@ internal static class Starts
         {
             GameState state = ScenarioStart.StateOf(history.Actions, rules);
             ImmutableList<ActionDescriptor> sofar = [.. history.Actions.Where(ScenarioStart.IsStart)];
-            if (state.Outcome is null && state.Position.Occupants.Count <= pieces)
+            // a game begins undecided, so a game set up with so few pieces starts where it is set up
+            if (state.Position.Occupants.Count <= pieces)
             {
                 return new Played(state, sofar);
             }

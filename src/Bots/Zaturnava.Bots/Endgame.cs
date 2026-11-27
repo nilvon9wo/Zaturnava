@@ -80,7 +80,7 @@ internal static class Endgame
         ImmutableList<Chaser> chasers = hunting.Timed ? ChasersOf(request, state) : [];
         ImmutableDictionary<SeatId, int> turns = hunting.Timed
             ? Careful.ArmyTurnsOf(request, state)
-            : ImmutableDictionary<SeatId, int>.Empty;
+            : [];
         double pressure = hunting.Escapes is { } most
             ? pressed.Sum(piece => piece.Share
                 * Cornered(request, state, piece.Seat, piece.Cell, ours, most, [
