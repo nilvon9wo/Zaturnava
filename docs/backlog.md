@@ -183,7 +183,7 @@ From the specification's observations of the bots in play (F, X) and the Sage pl
   lowering the score; lifts bought in the draft, and kept in the game (*done* 2026-11-26, every lift; still to come,
   in play); the four-throne bonus, once for each set of leaders; bots that spend.
 - *(Stated 2026-11-27)* **Recruiting in play**, a game option, off by default. A player with the points may recruit
-  a piece of a kind never drafted into the game, while one of their leaders sits on a throne (anyone's) whose palace
+  a fresh piece of any kind in the catalogue, while one of their leaders sits on a throne (anyone's) whose palace
   has room. Recruiting takes the whole turn and costs the piece's price.
   - *Infantry*: one, placed at once on an eligible cell the player picks.
   - *Any other class*: the player names the exact piece (no lifts while it trains), and a marker stands on its cell.
@@ -207,7 +207,7 @@ From the specification's observations of the bots in play (F, X) and the Sage pl
 
   | Point | Answer |
   |---|---|
-  | A kind never drafted | One no army in the game has |
+  | "Never drafted" | A fresh piece, of any kind in the catalogue: not a prisoner, nor one recycled, escaped, promoted or out of the game for any other reason |
   | Dice for two trainings show 5 or 6 (Infantry or Leader) | The player picks which |
   | Who spoils a training by stepping onto its marker | Any piece, the player's own or an enemy's |
   | The marker on the board | Blocks moves as a piece would; a piece that jumps may jump over it |
