@@ -417,9 +417,11 @@ Then every bot is a pairing, and the arena measures each pairing.
   | Challenger | Changed | Won | Lost | Kept? |
   |---|---|---|---|---|
   | `sage-hunting` | Heavies hunted before leaders in an endgame; allies' empty thrones guarded | 52 | 48 | No: no measurable difference |
+  | `athena-steady` | Sage's appraisal counting ten times as much beside her network (0.02, not 0.002) | 44 | 56 | No |
+  | `tactician-hunting` | As `sage-hunting` (1 game drawn) | 43 | 56 | No: leaning worse; a heavy's many escapes may outweigh all else |
 
-  Before challengers, Athena steadied ten times as much by Sage beat Sage 65 to 35, as Athena does (25 to 15 in 40):
-  no measurable difference either; played against Athena herself next.
+  Before challengers, steadier Athena beat Sage 65 to 35, as Athena does (25 to 15 in 40); against Athena herself,
+  she lost. Her network's swings are better left as they are than drowned in Sage's count.
 - **Not done: a Pawn won back counted as its points.** Counting an enemy piece taken back as the points it scores,
   not as what it is worth keeping (a Pawn 3), changed nothing measurable (46 to 45, Sage's 13 to 14), and the case
   that suggested it was sound: Green's Rook took a Pawn that attacked its Raja. Left as it was.

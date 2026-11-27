@@ -44,7 +44,7 @@ public sealed class NetworkValuing(PositionEncoder encoder, ValueNetwork network
     private readonly ValueNetwork _network = network;
     private readonly SageWeights _weights = weights;
 
-    /// <summary>How much Sage's appraisal counts here, for each unit of it: <see cref="Steadiness"/>, unless set.</summary>
+    /// <summary>How much Sage's appraisal counts here, per unit of it: <see cref="Steadiness"/>, unless set.</summary>
     public double Steadied { get; init; } = Steadiness;
 
     public double ValueOf([Required] DecisionRequest request, [Required] GameState state) =>

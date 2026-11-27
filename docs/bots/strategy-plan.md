@@ -156,6 +156,17 @@ So, to do, measured bot against bot as each lands:
 | A leader near a throne | Only an enemy leader beside the bot's own empty throne | Any enemy leader that could reach a throne of the bot's team, at any stage |
 | A piece that could become a leader | Not seen | A piece that could promote into a leader near a throne; one sitting on a throne of the team, the more turns it has sat there (field promotion), the more urgent |
 
+**What makes an escape** (the user, 2026-11-27): the count of a piece's open cells matters little, "it only just
+needs one unguarded square"; what matters is whether there is time to reach it, and whether it is truly safe. And a
+cell is not safe only because nothing attacks it now: "a square which is four steps away from a piece which only moves
+one step at a time could be as little as one turn away if both the enemy and the ally are able to move it twice per
+turn (of course, that involves some lucky dice rolls and the (im)probability should be weighed towards the safety of
+the square)". So, by steps: first, no more than one escape counted, as likely as the dice let the piece move
+(`Hunting.Escapes`, the challenger `tactician-cornering`); then each escape's safety a chance, from how many moves
+each of the team's pieces needs to cover it, the dice giving one move or two, and who moves first, weighed towards
+safety as doubles are rare. Distance, dice and turn order are played together, as one challenger, since apart they
+mean little.
+
 *Begun* (2026-11-27): `Hunting.OfHeavies`, played by challengers (`sage-hunting`, `tactician-hunting`) against the
 bots as they are, on Chaturaji 2027 first.
 
@@ -203,6 +214,23 @@ And there is a table for every set: 5 kinds, 4 owners. What it is worth:
 
 So the tables wait behind the search and judgement work, which also serves the endings: a 4-piece table (minutes to
 build) may come next, as a test of `Endgame` and as its exact answer where it applies.
+
+### When a bot accepts an end (the user, 2026-11-27)
+
+A bot asked to accept defeat agrees today once it trails by more than it could hope to take back (`Hope`: each of its
+pieces' best reachable enemy piece within a few rounds). The user's answer, on a Grand Legions game:
+
+- **"Far behind" is relative to the game**: "In a large GL game, taking a leader and a few heavies already makes a
+  difference of 100+ points, but that's far from unrecoverable. It needs to be considered how many points of material
+  are actually in play, including the possibility that pieces may be ransomed or escape and that other bonuses are
+  available." `Hope` counts none of ransoms, escapes or bonuses, and no absolute lead (`ClearLead`) should decide.
+- **Two reasons to refuse, both valid**: the bot's own army mostly whole; its team keeping a leader, a heavy piece, or
+  a Pawn about to promote. Bots of different tempers may weigh them differently.
+- **The button is not the bots**: it shows how likely all would accept, so both reasons make it less green, whatever
+  any bot's temper (done, PR #391).
+
+To do: hope measured against the points in play (on the board, held prisoner and ransomable, escapes, bonuses); the
+two reasons as each temper's own; each played as challengers before it is kept.
 
 ### Points or attrition (asked 2026-11-27)
 

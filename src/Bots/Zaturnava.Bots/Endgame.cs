@@ -77,12 +77,38 @@ internal static class Endgame
                 ))
                 .Where(piece => piece.Item3 > 0),
         ];
-        double pressure = pressed
-            .GroupBy(piece => (piece.Seat, piece.Share))
-            .Sum(same => same.Key.Share
-                * Pressed(request, state, same.Key.Seat, [.. same.Select(piece => piece.Cell)], ours)
-            );
+        double pressure = hunting.Escapes is { } most
+            ? pressed.Sum(piece => piece.Share * Cornered(request, state, piece.Seat, piece.Cell, ours, most))
+            : pressed
+                .GroupBy(piece => (piece.Seat, piece.Share))
+                .Sum(same => same.Key.Share
+                    * Pressed(request, state, same.Key.Seat, [.. same.Select(piece => piece.Cell)], ours)
+                );
         return scale * pressure;
+    }
+
+    /// <summary>
+    /// How cornered one enemy piece is (the user, 2026-11-27: "it only just needs one unguarded square ... or whether
+    /// there will be time to escape"): attacked, at <see cref="PerAttack"/>; and each cell it could flee to that the
+    /// team does not attack, but no more than <paramref name="most"/> of them, at <see cref="PerEscape"/>, as likely
+    /// to count as the dice are to let it move at all (<see cref="IRulesApplying.MovesPerTurn"/>).
+    /// </summary>
+    private static double Cornered(
+        DecisionRequest request,
+        GameState state,
+        SeatId seat,
+        CellId cell,
+        ILookup<CellId, Attack> ours,
+        int most
+    )
+    {
+        int free = request.Rules.MovesOf(state, seat)
+            .Where(move => move.From == cell)
+            .Select(move => move.Target)
+            .Distinct()
+            .Count(target => !ours.Contains(target));
+        double chance = Math.Min(1, request.Rules.MovesPerTurn(state.Position.PieceAt(cell)!.Kind));
+        return (ours.Contains(cell) ? PerAttack : 0) - (PerEscape * chance * Math.Min(free, most));
     }
 
     /// <summary>How hard one enemy's pieces, at <paramref name="cells"/>, are pressed.</summary>

@@ -55,6 +55,45 @@ public sealed class SteadyAthena(Random random) : Challenger(
     "steadier"
 );
 
+/// <summary>
+/// Tactician, hunting leaders as it does, but guarding its allies' thrones too: the guard apart from the hunt for
+/// heavies (2026-11-27: the two together lost 43 to 56).
+/// </summary>
+public sealed class GuardingTactician(Random random) : Challenger(
+    new TacticianBot(
+        random,
+        TacticianBot.Budget,
+        TacticianBot.Width,
+        Fallback(Guarding),
+        Learned(Guarding)
+    ),
+    "tactician-guarding",
+    "guarding allies' thrones"
+)
+{
+    private static Hunting Guarding => Hunting.OfLeaders with { AlliedThrones = true };
+}
+
+/// <summary>
+/// Tactician, hunting heavy pieces before leaders, but counting no more than one escape of each, and that as likely
+/// as the dice let it move (the user, 2026-11-27: "it only just needs one unguarded square"); its allies' thrones as
+/// it does.
+/// </summary>
+public sealed class CorneringTactician(Random random) : Challenger(
+    new TacticianBot(
+        random,
+        TacticianBot.Budget,
+        TacticianBot.Width,
+        Fallback(Cornering),
+        Learned(Cornering)
+    ),
+    "tactician-cornering",
+    "cornering heavies"
+)
+{
+    private static Hunting Cornering => Hunting.OfHeavies with { AlliedThrones = false, Escapes = 1 };
+}
+
 /// <summary>Tactician, hunting heavy pieces before leaders, and guarding its allies' thrones.</summary>
 public sealed class HuntingTactician(Random random) : Challenger(
     new TacticianBot(

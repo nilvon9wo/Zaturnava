@@ -1,5 +1,7 @@
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Decisions;
+using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
+using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 
 namespace Net.NowhereAtAll.Zaturnava.Bots.Test;
 
@@ -129,6 +131,38 @@ public sealed class EndgameTest
         // Assert
         Assert.Equal(expected, pressure);
     }
+
+    [Theory]
+    [InlineData(1, false, -0.25)]
+    [InlineData(0.5, false, -0.125)]
+    [InlineData(1, true, 0.25)]
+    public void Pressure_WhenOnlyOneEscapeCounts_CountsItAsLikelyAsThePieceMovesAndTheAttackBesides(
+        double pace,
+        bool isAttacked,
+        double expected
+    )
+    {
+        // Arrange - the enemy's Boat, a heavy piece, at the line's end, free to flee to 6 cells or more: one counts,
+        // as likely as the dice let it move; attacked or not by our Boat at the line's start, which covers all between
+        // (the user, 2026-11-27: "it only just needs one unguarded square")
+        DecisionRequest request = LineRules.Request(
+            [],
+            [(7, LineRules.Boat, LineRules.Enemy), .. isAttacked ? [(0, LineRules.Boat, LineRules.Seat)] : Nothing]
+        );
+        request = request with
+        {
+            Rules = new LineRules([.. request.LegalActions]) { Heavies = [LineRules.Boat], Pace = pace },
+        };
+        Hunting hunting = Hunting.OfHeavies with { Escapes = 1 };
+
+        // Act
+        double pressure = Pressure(request, hunting);
+
+        // Assert - attacked, the Boat on 0 covers every cell it could flee to
+        Assert.Equal(expected, pressure);
+    }
+
+    private static readonly (int, PieceKindId, SeatId)[] Nothing = [];
 
     [Fact]
     public void Pressure_WhenHeaviesAreHunted_CountsALeaderAtItsShare()
