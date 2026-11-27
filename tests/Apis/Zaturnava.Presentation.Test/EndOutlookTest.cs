@@ -96,6 +96,39 @@ public sealed class EndOutlookTest
         Assert.Equal((expected, isSure), (Math.Round(outlook.Certainty, 2), outlook.IsSure));
     }
 
+    [Theory]
+    [InlineData(false, false, 0.99, true)]
+    [InlineData(true, false, 0.5, false)]
+    [InlineData(false, true, 0.5, false)]
+    public void Of_WhileTheEnemyHasALeaderOrAHeavyLeft_IsHalfAsSureAndNeverPastDoubt(
+        bool isLeader,
+        bool isHeavy,
+        double expected,
+        bool isSure
+    )
+    {
+        // Arrange - Black's team 100 points to 5, two Rooks against Yellow's last piece, a Pawn, or a leader or heavy
+        // piece as weak (the user, 2026-11-27: a leader or a heavy left is a reason "for the button not to be green")
+        GameViewDto view = View(
+            [100, 5, 0, 0],
+            [("rook", 0), ("rook", 2), ("pawn", 1)],
+            prisoners: YellowsBeaten
+        ) with
+        {
+            Kinds =
+            [
+                new PieceKindDto("rook", "Rook", 5),
+                new PieceKindDto("pawn", "Pawn", 1) { IsLeader = isLeader, IsHeavy = isHeavy },
+            ],
+        };
+
+        // Act
+        EndOutlook outlook = EndOutlook.Of(view, 0);
+
+        // Assert
+        Assert.Equal((expected, isSure), (Math.Round(outlook.Certainty, 2), outlook.IsSure));
+    }
+
     /// <summary>Yellow's 99 Pawns, held by Black.</summary>
     private static readonly ImmutableList<(int Holder, string Kind, int Owner)> YellowsBeaten =
         [.. Enumerable.Repeat((0, "pawn", 1), 99)];
