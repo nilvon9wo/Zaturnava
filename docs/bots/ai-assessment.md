@@ -426,6 +426,11 @@ Then every bot is a pairing, and the arena measures each pairing.
   | `sage-guarding` | Allies' empty thrones guarded by what is at stake (vs Sage) | 49 | 51 | No measurable difference |
   | `sage-guarding` | The same, against `sage-usurping` | 57 | 43 | Not yet: guarding did 12 games better against the usurper than Sage did, but the usurper seized more thrones against it (20 to 14), so the guard is not shown to be why |
   | `tactician-cornering` | Heavies hunted first, but at most one escape counted, as likely as the dice let it move | 57 | 43 | Not yet: promising (as hunting alone lost 43 to 56), to be confirmed in more games |
+  | `tactician-cornering` | The same, from 74 recorded endgames, each played from both sides, each pair of games with the same dice | 74 | 74 | No: pairs 6 won, 6 lost, 62 even; thrones seized 23 each. The 57 to 43 was chance |
+
+  Started from the same endgame with the same dice, 62 of 74 pairs ended alike: in an endgame of eight pieces or fewer
+  the position and the dice decide most games, whichever way a bot hunts. A way of hunting shows only in the few pairs
+  that differ, so endgame matches need many starts, or the forks (`ForkRun`), which play out only where bots differ.
 
   Thrones not a team's own were seized in 11 to 20 of each 100 games, by either side: more often than feared, so a
   difference in guarding them can show, given more games or paired ones.
