@@ -22,7 +22,9 @@ namespace Net.NowhereAtAll.Zaturnava.BotRunner;
 /// <c>--seed</c>, each game rolls dice of its own, from the seed and its number, and the games are written in order
 /// (<see cref="SelfPlay"/>): played again with the same seed, each game rolls the same dice. With <c>--starts</c>, a
 /// file of games played before, each game is played on from one of them, where it first came down to
-/// <c>--pieces</c> pieces or fewer (default 8) as a turn began (<see cref="Starts"/>).
+/// <c>--pieces</c> pieces or fewer (default 8) as a turn began (<see cref="Starts"/>). With <c>--view board</c>, a
+/// network learned afresh sees the board square by square too, not only summed up
+/// (<see cref="Bots.Learning.PositionEncoder.SeesBoard"/>).
 /// </summary>
 internal sealed record SelfPlayOptions(
     string RulesetId,
@@ -42,14 +44,16 @@ internal sealed record SelfPlayOptions(
     bool IsListing = false,
     int? Seed = null,
     string? StartsPath = null,
-    int Pieces = 8
+    int Pieces = 8,
+    bool SeesBoard = false
 )
 {
     public const string Usage =
         "Usage: Zaturnava.BotRunner [--ruleset chaturaji-2027] [--bots random,random,random,random] [--games 100] "
         + "[--max-steps 1000] [--out games.jsonl] [--train rounds] [--bot-assembly MyBots.dll] "
         + "[--network athena.json] [--learn games.jsonl,more.jsonl [--from athena.json] [--hidden 32] "
-        + "[--epochs 8] [--lambda 1] [--rate 0.1]] [--list bots] [--seed 1] [--starts games.jsonl [--pieces 8]]";
+        + "[--epochs 8] [--lambda 1] [--rate 0.1] [--view board]] [--list bots] [--seed 1] "
+        + "[--starts games.jsonl [--pieces 8]]";
 
     private static readonly SelfPlayOptions Defaults = new("chaturaji-2027", null, 100, 1000, null);
 
@@ -85,6 +89,9 @@ internal sealed record SelfPlayOptions(
             "--seed" => this with { Seed = Count(name, value) },
             "--starts" => this with { StartsPath = value },
             "--pieces" => this with { Pieces = Count(name, value) },
+            "--view" when value == "board" => this with { SeesBoard = true },
+            "--view" when value == "summed" => this with { SeesBoard = false },
+            "--view" => throw new ArgumentException($"--view is board or summed, not '{value}'. {Usage}"),
             "--list" when value == "bots" => this with { IsListing = true },
             "--list" => throw new ArgumentException($"--list lists only bots, not '{value}'. {Usage}"),
             _ => throw new ArgumentException($"There is no {name} option. {Usage}"),

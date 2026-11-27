@@ -59,6 +59,7 @@ public sealed class SelfPlayOptionsTest
     [InlineData("--hidden", "-1", "--hidden must be a whole number above 0, not '-1'.")]
     [InlineData("--lambda", "1.5", "--lambda must be a number from 0 to 1, not '1.5'.")]
     [InlineData("--rate", "fast", "--rate must be a number from 0 to 1, not 'fast'.")]
+    [InlineData("--view", "squares", "--view is board or summed, not 'squares'.")]
     public void Parse_WhenAnOptionIsWrong_SaysWhatIsWrongAndHowToUseIt(string name, string value, string expected)
     {
         // Arrange - nothing beyond the arguments
@@ -68,6 +69,20 @@ public sealed class SelfPlayOptionsTest
 
         // Assert
         Assert.Equal($"{expected} {SelfPlayOptions.Usage}", exception.Message);
+    }
+
+    [Theory]
+    [InlineData("board", true)]
+    [InlineData("summed", false)]
+    public void Parse_WhenAViewIsGiven_SeesTheBoardSquareBySquareOrNot(string view, bool expected)
+    {
+        // Arrange - nothing beyond the arguments
+
+        // Act
+        SelfPlayOptions options = SelfPlayOptions.Parse(["--view", view]);
+
+        // Assert
+        Assert.Equal(expected, options.SeesBoard);
     }
 
     [Fact]

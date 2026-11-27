@@ -132,7 +132,7 @@ internal static class SelfPlayCommand
         Learning learning = new(rules, progress);
         ValueNetworkData network = await learning.Learn(
             files.SelectMany(File.ReadLines),
-            start ?? learning.Start(options.Hidden, Random.Shared),
+            start ?? learning.Start(options.Hidden, Random.Shared, options.SeesBoard),
             options.Pace,
             Random.Shared,
             cancellationToken

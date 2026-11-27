@@ -32,11 +32,12 @@ internal sealed class Learning(IRulesApplying rules, TextWriter progress)
 
     /// <summary>
     /// A network that has learned nothing yet but judges as Sage does, by Sage's weights for the ruleset: its
-    /// <paramref name="hidden"/> units change nothing until it learns.
+    /// <paramref name="hidden"/> units change nothing until it learns; seeing the board square by square too, if
+    /// <paramref name="seesBoard"/> (<see cref="PositionEncoder.SeesBoard"/>).
     /// </summary>
-    public ValueNetwork Start([Range(1, int.MaxValue)] int hidden, [Required] Random random)
+    public ValueNetwork Start([Range(1, int.MaxValue)] int hidden, [Required] Random random, bool seesBoard = false)
     {
-        PositionEncoder encoder = new(this._rules);
+        PositionEncoder encoder = new(this._rules, seesBoard);
         SageWeights weights = SageWeights.Learned.GetValueOrDefault(this._rules.Id, SageWeights.Default);
         return ValueNetwork.Judging(encoder.Size, hidden, encoder.Weighing(weights), ValueNetwork.MarginScale, random);
     }
