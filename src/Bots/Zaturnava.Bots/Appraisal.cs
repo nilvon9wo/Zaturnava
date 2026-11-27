@@ -136,12 +136,14 @@ internal static class Appraisal
             + weights.Leaders.Weigh(Leaders(request, state))
             + weights.Prisoners.Weigh(Prisoners(request, state))
             + weights.Thrones.Weigh(Thrones(request, state))
-            - (ExposureWeight(weights) * Careful.Exposure(request, state, theirs, ours))
+            - (ExposureWeight(weights)
+                * (Careful.Exposure(request, state, theirs, ours)
+                    + (weights.Hunting.AlliedThrones ? Careful.AlliedThroneThreat(request, state, theirs) : 0)))
             + (weights.Chances * Threats(request, state, ours, theirs))
             + weights.Mobility.Weigh(Mobility(request, ours, theirs))
             + Measured(request, state, weights)
             + (Endgame.IsEndgame(request.Rules, state)
-                ? Endgame.Pressure(request, state, ours, Endgame.ScaleOf(weights))
+                ? Endgame.Pressure(request, state, ours, Endgame.ScaleOf(weights), weights.Hunting)
                 : 0);
 
     /// <summary>

@@ -16,7 +16,7 @@ public sealed class BotAssemblyTest
 
         // Assert
         Assert.Equal(
-            [PlainOwnBot.BotId, SeededOwnBot.BotId],
+            ["athena-steady", PlainOwnBot.BotId, "sage-hunting", SeededOwnBot.BotId, "tactician-hunting"],
             bots.Select(bot => bot.Profile.Id).Order(StringComparer.Ordinal)
         );
     }

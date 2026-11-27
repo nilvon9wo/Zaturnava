@@ -49,28 +49,43 @@ internal static class Endgame
         && state.Position.Occupants.Values.Count(piece => IsPlaying(state, piece)) <= most;
 
     /// <summary>
-    /// How hard the team presses the enemy's leaders: for each on the board, each cell it could move to that the team
-    /// does not attack counts against, at <see cref="PerEscape"/>; and the leader attacked counts for, at
-    /// <see cref="PerAttack"/>; scaled by <paramref name="scale"/>, the weight of a point of material.
+    /// How hard the team presses the enemy's leaders and heavy pieces, each by its share (<see cref="Hunting"/>): for
+    /// each on the board, each cell it could move to that the team does not attack counts against, at
+    /// <see cref="PerEscape"/>; and the piece attacked counts for, at <see cref="PerAttack"/>; scaled by
+    /// <paramref name="scale"/>, the weight of a point of material.
     /// </summary>
-    public static double Pressure(DecisionRequest request, GameState state, ILookup<CellId, Attack> ours, double scale)
+    public static double Pressure(
+        DecisionRequest request,
+        GameState state,
+        ILookup<CellId, Attack> ours,
+        double scale,
+        Hunting hunting
+    )
     {
-        ImmutableList<(SeatId Seat, CellId Cell)> leaders =
+        ImmutableList<(SeatId Seat, CellId Cell, double Share)> pressed =
         [
             .. state.Position.Occupants
                 .Where(occupant => !state.Teams.AreAllied(occupant.Value.Owner, request.Seat)
                     && IsPlaying(state, occupant.Value)
-                    && request.Rules.IsLeader(occupant.Value.Kind)
                 )
-                .Select(occupant => (occupant.Value.Owner, occupant.Key)),
+                .Select(occupant => (
+                    occupant.Value.Owner,
+                    occupant.Key,
+                    request.Rules.IsLeader(occupant.Value.Kind) ? hunting.Leaders
+                        : request.Rules.IsHeavy(occupant.Value.Kind) ? hunting.Heavies
+                        : 0
+                ))
+                .Where(piece => piece.Item3 > 0),
         ];
-        double pressure = leaders
-            .GroupBy(leader => leader.Seat)
-            .Sum(seat => Pressed(request, state, seat.Key, [.. seat.Select(leader => leader.Cell)], ours));
+        double pressure = pressed
+            .GroupBy(piece => (piece.Seat, piece.Share))
+            .Sum(same => same.Key.Share
+                * Pressed(request, state, same.Key.Seat, [.. same.Select(piece => piece.Cell)], ours)
+            );
         return scale * pressure;
     }
 
-    /// <summary>How hard one enemy's leaders, at <paramref name="cells"/>, are pressed.</summary>
+    /// <summary>How hard one enemy's pieces, at <paramref name="cells"/>, are pressed.</summary>
     private static double Pressed(
         DecisionRequest request,
         GameState state,

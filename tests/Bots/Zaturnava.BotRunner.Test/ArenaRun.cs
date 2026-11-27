@@ -9,7 +9,8 @@ namespace Net.NowhereAtAll.Zaturnava.BotRunner.Test;
 /// allowed to run them: when <c>artifacts/arena/request.json</c> asks for an arena (<see cref="ArenaRequest"/>),
 /// every pair of its bots plays as many games with each team moving first, and how each pair fared, and how long it
 /// took, is written to <c>artifacts/arena/results.json</c>; a game won counts for its team, one that ran out of
-/// steps for the team ahead on points, if either is. With <c>botAssembly</c>, the bots of that assembly may play too.
+/// steps for the team ahead on points, if either is. With <c>botAssembly</c>, the bots of that assembly may play too;
+/// <c>"self"</c> names this one, with its challengers (<see cref="Challenger"/>).
 /// With no request, or one of fewer than two bots, it is skipped, as on CI.
 /// </summary>
 public sealed class ArenaRun
@@ -78,9 +79,12 @@ public sealed class ArenaRun
         [
             "--ruleset", request.Ruleset, "--bots", string.Join(',', bots), "--games", $"{request.Games}",
             "--max-steps", $"{request.MaximumSteps}",
-            .. request.BotAssembly is { } assembly
-                ? (string[])["--bot-assembly", Path.Combine(Root(), assembly)]
-                : [],
+            .. request.BotAssembly switch
+            {
+                null => (string[])[],
+                "self" => ["--bot-assembly", typeof(Challenger).Assembly.Location],
+                { } assembly => ["--bot-assembly", Path.Combine(Root(), assembly)],
+            },
         ];
         _ = await SelfPlayCommand.Run(args, output, TextWriter.Null, TestContext.Current.CancellationToken);
         return

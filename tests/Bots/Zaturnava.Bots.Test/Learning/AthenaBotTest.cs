@@ -48,6 +48,27 @@ public sealed class AthenaBotTest
     }
 
     [Fact]
+    public async Task Decide_WhenSteadiedMostlyBySage_TakesWhatSageWould()
+    {
+        // Arrange - a network, and Sage's judgement counting far more than it
+        DecisionRequest request = Free();
+        ValueNetworkData network = Taught.Network(request.Rules, (request.State, LineRules.Seat, 1));
+        AthenaBot athena = new(
+            new Random(Seed),
+            ImmutableDictionary<string, ValueNetworkData>.Empty.Add(network.RulesetId, network)
+        )
+        {
+            Steadiness = 1,
+        };
+
+        // Act
+        GameAction action = await athena.Decide(request, this._cancellation);
+
+        // Assert
+        Assert.Equal(Take, action);
+    }
+
+    [Fact]
     public async Task Decide_WhenItsNetworkIsOfAnotherSize_PlaysAsSageDoes()
     {
         // Arrange

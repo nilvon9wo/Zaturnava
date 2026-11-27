@@ -111,12 +111,47 @@ public sealed class EndgameTest
         Assert.Equal(LineRules.Move(3, 5), action);
     }
 
-    private static double Pressure(DecisionRequest request) =>
+    [Theory]
+    [InlineData(false, 0)]
+    [InlineData(true, -1.75)]
+    public void Pressure_WhenAnEnemyHeavyIsFree_CountsItsEscapesOnlyIfHeaviesAreHunted(bool isHunted, double expected)
+    {
+        // Arrange - the enemy's Boat alone at the line's end, a heavy piece: it may flee to any of the 7 cells below
+        DecisionRequest request = LineRules.Request([], (7, LineRules.Boat, LineRules.Enemy));
+        request = request with
+        {
+            Rules = new LineRules([.. request.LegalActions]) { Heavies = [LineRules.Boat] },
+        };
+
+        // Act
+        double pressure = Pressure(request, isHunted ? Hunting.OfHeavies : Hunting.OfLeaders);
+
+        // Assert
+        Assert.Equal(expected, pressure);
+    }
+
+    [Fact]
+    public void Pressure_WhenHeaviesAreHunted_CountsALeaderAtItsShare()
+    {
+        // Arrange - the enemy's Raja alone at the line's end: one escape, at half its share
+        DecisionRequest request = LineRules.Request([], (7, LineRules.Raja, LineRules.Enemy));
+
+        // Act
+        double pressure = Pressure(request, Hunting.OfHeavies);
+
+        // Assert
+        Assert.Equal(-0.125, pressure);
+    }
+
+    private static double Pressure(DecisionRequest request) => Pressure(request, Hunting.OfLeaders);
+
+    private static double Pressure(DecisionRequest request, Hunting hunting) =>
         Endgame.Pressure(
             request,
             request.State,
             Careful.AttacksBy(request, request.State, isAllied: true),
-            Endgame.ScaleOf(SageWeights.Default)
+            Endgame.ScaleOf(SageWeights.Default),
+            hunting
         );
 
     /// <summary>The request, its line counted as a board of <paramref name="cells"/> cells.</summary>

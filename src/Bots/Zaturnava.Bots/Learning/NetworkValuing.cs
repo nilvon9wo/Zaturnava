@@ -44,13 +44,16 @@ public sealed class NetworkValuing(PositionEncoder encoder, ValueNetwork network
     private readonly ValueNetwork _network = network;
     private readonly SageWeights _weights = weights;
 
+    /// <summary>How much Sage's appraisal counts here, for each unit of it: <see cref="Steadiness"/>, unless set.</summary>
+    public double Steadied { get; init; } = Steadiness;
+
     public double ValueOf([Required] DecisionRequest request, [Required] GameState state) =>
         state.Outcome is { } ended
             ? (Decided * ResultOf(request.Seat, state, ended))
                 + (MarginWeight * LeadOf(request.Seat, state) / ValueNetwork.MarginScale)
             : this.Judged(request, state)
                 - (Wariness * Careful.Exposure(request, state))
-                + (Steadiness * Appraisal.ValueOf(request, state, this._weights))
+                + (this.Steadied * Appraisal.ValueOf(request, state, this._weights))
                 - (Blocking * Blocked(request, state));
 
     /// <summary>The network's judgement of how a game going on will end.</summary>

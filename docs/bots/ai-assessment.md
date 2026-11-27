@@ -410,6 +410,16 @@ Then every bot is a pairing, and the arena measures each pairing.
   cell as the board stood. Now, for a piece of the team attacked and guarded, it sees too what the enemy's cheapest
   taker would open behind it, once it took (*Proposed*). Repeated losses: 46 to 45, Sage's 13 to 12; that game's
   Horse now stays.
+- **Challengers: one change, the same bot on both sides** (2026-11-27, the user: "proof instead of speculation").
+  A challenger (`Challenger`, in the BotRunner's tests) is one of our bots with a single setting changed, played
+  against the bot as it is (`ArenaRun`, `"botAssembly": "self"`), each on both teams' seats. 100 games each:
+
+  | Challenger | Changed | Won | Lost | Kept? |
+  |---|---|---|---|---|
+  | `sage-hunting` | Heavies hunted before leaders in an endgame; allies' empty thrones guarded | 52 | 48 | No: no measurable difference |
+
+  Before challengers, Athena steadied ten times as much by Sage beat Sage 65 to 35, as Athena does (25 to 15 in 40):
+  no measurable difference either; played against Athena herself next.
 - **Not done: a Pawn won back counted as its points.** Counting an enemy piece taken back as the points it scores,
   not as what it is worth keeping (a Pawn 3), changed nothing measurable (46 to 45, Sage's 13 to 14), and the case
   that suggested it was sound: Green's Rook took a Pawn that attacked its Raja. Left as it was.

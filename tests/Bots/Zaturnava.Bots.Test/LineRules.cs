@@ -42,7 +42,12 @@ internal sealed class LineRules(ImmutableList<GameAction> legalActions) : IRules
     /// <summary>The line; or, if set, another way about it (as large a board around it, say).</summary>
     public ICellNavigating Topology { get; init; } = new LineTopology();
 
-    public ImmutableDictionary<SeatId, CellId> Thrones => ImmutableDictionary<SeatId, CellId>.Empty.Add(Seat, Throne);
+    /// <summary>Seat 0's throne, at the line's start; or, if set, others besides.</summary>
+    public ImmutableDictionary<SeatId, CellId> Thrones { get; init; } =
+        ImmutableDictionary<SeatId, CellId>.Empty.Add(Seat, Throne);
+
+    /// <summary>The kinds counted heavy: none, unless set.</summary>
+    public ImmutableHashSet<PieceKindId> Heavies { get; init; } = [];
 
     /// <summary>Seat 0 deciding, among <paramref name="legalActions"/>, with each piece on its cell.</summary>
     public static DecisionRequest Request(
@@ -156,7 +161,7 @@ internal sealed class LineRules(ImmutableList<GameAction> legalActions) : IRules
 
     public bool IsLeader(PieceKindId kind) => kind == Raja;
 
-    public bool IsHeavy(PieceKindId kind) => false;
+    public bool IsHeavy(PieceKindId kind) => this.Heavies.Contains(kind);
 
     public ImmutableList<string> Measures => ["pawns"];
 

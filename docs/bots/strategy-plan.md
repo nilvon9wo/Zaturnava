@@ -141,7 +141,31 @@ for the overnight ratings to tune:
 | Pressing the leader | Each cell an enemy leader could flee to that the team does not attack: −0.25 of a point of material; the leader attacked: +0.5 | Sage, Tactician, Narcissus, Epimetheus; Athena and Pythia, as far as Sage's judgement counts in theirs |
 
 The pressing is the ladder mate's pattern: no table of positions, but the measure it comes from, for any board and
-any pieces. *Tested* (2026-11-26, `StrategicPositionsTest`): two Elephants (the Rooks) and a Raja against a lone
+any pieces.
+
+**Corrected by the user (2026-11-27):** with few pieces left, the heavy pieces come first, not the leaders. "Eliminating
+in on enemy rooks or other heavies should generally take priority over eliminating enemy leaders since eliminating the
+leaders doesn't necessarily end the game and _most_ of them have limited mobility (but watch out for the exceptions,
+especially the Dragon King)." What a leader threatens is the throne: "The most dangerous thing about the enemy leaders
+in the end game (or at any time, really) is their ability to take the throne and take control of opposing pieces."
+So, to do, measured bot against bot as each lands:
+
+| Part | Now | To be |
+|---|---|---|
+| What the endgame presses | Each enemy leader's escapes | Every enemy piece, the more it is worth and the further it can move, the more (a Rook before a Raja; a Dragon King as the heavy it is) |
+| A leader near a throne | Only an enemy leader beside the bot's own empty throne | Any enemy leader that could reach a throne of the bot's team, at any stage |
+| A piece that could become a leader | Not seen | A piece that could promote into a leader near a throne; one sitting on a throne of the team, the more turns it has sat there (field promotion), the more urgent |
+
+*Begun* (2026-11-27): `Hunting.OfHeavies`, played by challengers (`sage-hunting`, `tactician-hunting`) against the
+bots as they are, on Chaturaji 2027 first.
+
+**Roles beyond the class** (the user, 2026-11-27): the UI gives a piece one class, but the bots may know it by more:
+"Dragon Kings and M Chariots also functioning as heavies, or various other pieces also functioning as cavalry", and
+roles the UI has no class for, "pieces which can do multiple captures in a single move or convert other pieces". To
+do: roles read from how each piece moves and what its rules let it do, not tagged by hand (so a piece added to the
+catalogue gets them too): heavy-like (slides along lines, whatever its class), cavalry-like (leaps), takes several at
+once, converts. Each comes with a bot that uses it and a match that shows it helps; the first, heavy-like, so that
+the hunt counts a Dragon King as the heavy it is, not only as a leader. *Tested* (2026-11-26, `StrategicPositionsTest`): two Elephants (the Rooks) and a Raja against a lone
 Raja on Chaturaji 2027's board, without dice, Sage playing every side, the lone Raja fleeing as well as Sage can: it
 is taken, and Black's team wins, within 120 decisions. Still to do: the ratings, before and after, to see the
 stronger bots finish their won endgames in real games, with dice.

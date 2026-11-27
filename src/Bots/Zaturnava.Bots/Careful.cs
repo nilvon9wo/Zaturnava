@@ -326,6 +326,24 @@ internal static class Careful
                 .Max()
             : 0;
 
+    /// <summary>
+    /// What the enemy leader worth the most, among those that could step onto an empty throne of one of the bot's
+    /// allies, is worth; nothing, if none could (the user, 2026-11-27: "the most dangerous thing about the enemy
+    /// leaders ... is their ability to take the throne and take control of opposing pieces"). The bot's own throne is
+    /// <see cref="ThroneThreat"/>'s.
+    /// </summary>
+    internal static int AlliedThroneThreat(DecisionRequest request, GameState after, ILookup<CellId, Attack> threats) =>
+        request.Rules.ThronesOf(after)
+            .Where(throne => throne.Key != request.Seat
+                && after.Teams.AreAllied(throne.Key, request.Seat)
+                && after.Position.PieceAt(throne.Value) is null
+            )
+            .SelectMany(throne => threats[throne.Value])
+            .Where(attack => request.Rules.IsLeader(attack.Attacker.Kind))
+            .Select(attack => request.Rules.WorthOf(attack.Attacker.Kind))
+            .Append(0)
+            .Max();
+
     /// <summary>The attacks of the bot's team (<paramref name="isAllied"/>) or of its enemies, by target.</summary>
     internal static ILookup<CellId, Attack> AttacksBy(DecisionRequest request, GameState after, bool isAllied) =>
         after.Seats

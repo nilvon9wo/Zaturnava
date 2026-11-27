@@ -1,4 +1,7 @@
+using System.Collections.Immutable;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
+using Net.NowhereAtAll.Zaturnava.Engine.Boards;
+using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
 using Net.NowhereAtAll.Zaturnava.Engine.Decisions;
 using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 
@@ -9,6 +12,8 @@ public sealed class CarefulTest
     private static readonly SeatId Mine = LineRules.Seat;
     private static readonly SeatId First = LineRules.Enemy;
     private static readonly SeatId Second = new(3);
+    private static readonly SeatId Ally = new(2);
+    private static readonly (int, PieceKindId, SeatId)[] NoPieces = [];
 
     [Theory]
     [InlineData(3, 6)]
@@ -56,6 +61,42 @@ public sealed class CarefulTest
 
         // Assert
         Assert.Equal(3, counted);
+    }
+
+    [Theory]
+    [InlineData(2, false, true)]
+    [InlineData(2, true, false)]
+    [InlineData(3, false, false)]
+    [InlineData(0, false, false)]
+    public void AlliedThroneThreat_WhenAnEnemyLeaderCouldStepOntoAnAllysEmptyThrone_IsWhatThatLeaderIsWorth(
+        int owner,
+        bool isHeld,
+        bool isThreat
+    )
+    {
+        // Arrange - a throne on 6, the ally's (2), an enemy's (3) or the bot's own (0, Exposure's to count), with the
+        // enemy's Raja on 7 beside it; empty, or held by a Pawn of the ally's
+        DecisionRequest request = LineRules.Request(
+            [new PassAction(Mine)],
+            [(7, LineRules.Raja, First), .. isHeld ? [(6, LineRules.Pawn, Ally)] : NoPieces]
+        );
+        request = request with
+        {
+            Rules = new LineRules([.. request.LegalActions])
+            {
+                Thrones = ImmutableDictionary<SeatId, CellId>.Empty.Add(new SeatId(owner), new CellId(6)),
+            },
+        };
+
+        // Act
+        int threat = Careful.AlliedThroneThreat(
+            request,
+            request.State,
+            Careful.AttacksBy(request, request.State, isAllied: false)
+        );
+
+        // Assert
+        Assert.Equal(isThreat ? request.Rules.WorthOf(LineRules.Raja) : 0, threat);
     }
 
     [Fact]
