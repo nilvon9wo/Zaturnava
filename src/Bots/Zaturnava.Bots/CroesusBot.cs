@@ -22,8 +22,11 @@ public sealed class CroesusBot(Random random) : IBotPlaying
     public BotProfile Profile { get; } = new(
         BotId,
         "Croesus",
-        "Greedy like Midas, but a little less careless: grabs whatever scores the most right now; otherwise, "
-            + "moves so as to leave no piece newly open to capture, when it can. A plain algorithm: no AI.",
+        "Greedy, a little careful. Takes whatever scores the most right now, without asking what it might lose "
+            + "for it; when nothing scores, it moves at random, but among moves that leave no piece newly open to "
+            + "capture. Trades prisoners only at a profit. As an ally: scores quickly, but may trade a strong piece "
+            + "for a weak one. As an enemy: grabs any bait, so a guarded piece left in its reach is a trap it will "
+            + "walk into. A plain algorithm: no AI.",
         UsesAi: false
     );
 
