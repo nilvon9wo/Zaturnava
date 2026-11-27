@@ -23,6 +23,7 @@ public sealed class SelfPlayOptionsTest
             "--ruleset", "tiny", "--bots", "random, first", "--games", "7", "--max-steps", "50", "--out", "games.jsonl",
             "--train", "3", "--bot-assembly", "MyBots.dll", "--learn", "a.jsonl, b.jsonl", "--epochs", "2",
             "--hidden", "16", "--network", "athena.json", "--from", "start.json", "--lambda", "0.7", "--rate", "1",
+            "--seed", "42",
         ];
 
         // Act
@@ -43,7 +44,8 @@ public sealed class SelfPlayOptionsTest
             "athena.json",
             "start.json",
             0.7,
-            1
+            1,
+            Seed: 42
         );
         Assert.Equivalent(expected, options, strict: true);
         Assert.Equal(new LearningPace(2, 0.7, 1), options.Pace);

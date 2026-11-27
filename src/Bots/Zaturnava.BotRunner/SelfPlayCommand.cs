@@ -155,7 +155,13 @@ internal static class SelfPlayCommand
                 : ours
         );
         ImmutableList<string> botIds = options.Bots ?? [.. Enumerable.Repeat(RandomBot.BotId, SeatCount(rules))];
-        return new SelfPlay(rules, botIds, [.. botIds.Select(bots.Find)], new RandomDice(Random.Shared));
+        return new SelfPlay(
+            rules,
+            botIds,
+            [.. botIds.Select(bots.Find)],
+            new RandomDice(Random.Shared),
+            options.Seed
+        );
     }
 
     /// <summary>Our bots, but Athena playing the ruleset by <paramref name="network"/>.</summary>

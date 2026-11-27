@@ -420,6 +420,7 @@ Then every bot is a pairing, and the arena measures each pairing.
   | `athena-steady` | Sage's appraisal counting ten times as much beside her network (0.02, not 0.002) | 44 | 56 | No |
   | `tactician-hunting` | As `sage-hunting` (1 game drawn) | 43 | 56 | No: leaning worse; a heavy's many escapes may outweigh all else |
   | `tactician-guarding` | Allies' empty thrones guarded, and nothing else | 52 | 48 | No: no measurable difference |
+  | `tactician-cornering` | Heavies hunted first, but at most one escape counted, as likely as the dice let it move | 57 | 43 | Not yet: promising (as hunting alone lost 43 to 56), to be confirmed in more games |
 
   Before challengers, steadier Athena beat Sage 65 to 35, as Athena does (25 to 15 in 40); against Athena herself,
   she lost. Her network's swings are better left as they are than drowned in Sage's count.

@@ -13,7 +13,8 @@ namespace Net.NowhereAtAll.Zaturnava.BotRunner.Test;
 /// every pair of its bots plays as many games with each team moving first, and how each pair fared, and how long it
 /// took, is written to <c>artifacts/arena/results.json</c>; a game won counts for its team, one that ran out of
 /// steps for the team ahead on points, if either is. With <c>botAssembly</c>, the bots of that assembly may play too;
-/// <c>"self"</c> names this one, with its challengers (<see cref="Challenger"/>).
+/// <c>"self"</c> names this one, with its challengers (<see cref="Challenger"/>). Each game is played with the bots
+/// seated both ways, with the same dice, and the pairs of games are counted too.
 /// With no request, or one of fewer than two bots, it is skipped, as on CI.
 /// </summary>
 public sealed class ArenaRun
@@ -57,14 +58,20 @@ public sealed class ArenaRun
     /// each sat on a throne not its team's, in a Chaturaji 2027 arena (the user, 2026-11-27: seizing a throne is rare,
     /// "but when it counts, it really can count"), so that it is known whether a way of guarding thrones can show.
     /// </summary>
+    /// <remarks>
+    /// Each game is played twice, the bots seated one way and then the other, with the same dice (the user's thought of
+    /// 2026-11-27, of testing bots more efficiently): so the luck of the dice falls to each in turn, and a pair of games
+    /// is won by the bot that did better with the same luck. The pairs show a difference sooner than the games alone.
+    /// </remarks>
     private static async Task<object> Pair(ArenaRequest request, string first, string second)
     {
         Stopwatch watch = Stopwatch.StartNew();
-        ImmutableList<Fared> games =
-        [
-            .. await Margins(request, [first, second, first, second], [0, 2]),
-            .. await Margins(request, [second, first, second, first], [1, 3]),
-        ];
+        int seed = Random.Shared.Next(1, int.MaxValue / 2);
+        ImmutableList<Fared> ahead = await Margins(request, [first, second, first, second], [0, 2], seed);
+        ImmutableList<Fared> behind = await Margins(request, [second, first, second, first], [1, 3], seed);
+        ImmutableList<Fared> games = [.. ahead, .. behind];
+        ImmutableList<int> pairs =
+            [.. ahead.Zip(behind, (one, other) => Math.Sign(one.Margin) + Math.Sign(other.Margin))];
         return new
         {
             First = first,
@@ -72,6 +79,12 @@ public sealed class ArenaRun
             Won = games.Count(game => game.Margin > 0),
             Lost = games.Count(game => game.Margin < 0),
             Drawn = games.Count(game => game.Margin == 0),
+            Pairs = new
+            {
+                Won = pairs.Count(pair => pair > 0),
+                Lost = pairs.Count(pair => pair < 0),
+                Even = pairs.Count(pair => pair == 0),
+            },
             ThronesSeized = new
             {
                 ByFirst = games.Count(game => game.Seized),
@@ -83,19 +96,20 @@ public sealed class ArenaRun
 
     /// <summary>
     /// How far the <paramref name="seats"/>' team came out ahead in each game the bots played, and whether a leader of
-    /// either team sat on a throne not its team's.
+    /// either team sat on a throne not its team's; each game in order, its dice from the <paramref name="seed"/>.
     /// </summary>
     private static async Task<ImmutableList<Fared>> Margins(
         ArenaRequest request,
         ImmutableList<string> bots,
-        ImmutableList<int> seats
+        ImmutableList<int> seats,
+        int seed
     )
     {
         await using StringWriter output = new();
         string[] args =
         [
             "--ruleset", request.Ruleset, "--bots", string.Join(',', bots), "--games", $"{request.Games}",
-            "--max-steps", $"{request.MaximumSteps}",
+            "--max-steps", $"{request.MaximumSteps}", "--seed", $"{seed}",
             .. request.BotAssembly switch
             {
                 null => (string[])[],
