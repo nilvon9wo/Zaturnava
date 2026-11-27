@@ -120,6 +120,26 @@ public sealed class CorneringTactician(Random random) : Challenger(
     private static Hunting Cornering => Hunting.OfHeavies with { AlliedThrones = false, Escapes = 1 };
 }
 
+/// <summary>
+/// Tactician, cornering heavy pieces as <see cref="CorneringTactician"/> does, but each escape counted only as safe as
+/// the team's pieces that move first leave it, by distance, the dice and who moves first, together (the user,
+/// 2026-11-27).
+/// </summary>
+public sealed class TimingTactician(Random random) : Challenger(
+    new TacticianBot(
+        random,
+        TacticianBot.Budget,
+        TacticianBot.Width,
+        Fallback(Timing),
+        Learned(Timing)
+    ),
+    "tactician-timing",
+    "cornering heavies, in time"
+)
+{
+    private static Hunting Timing => Hunting.OfHeavies with { AlliedThrones = false, Escapes = 1, Timed = true };
+}
+
 /// <summary>Tactician, hunting heavy pieces before leaders, and guarding its allies' thrones.</summary>
 public sealed class HuntingTactician(Random random) : Challenger(
     new TacticianBot(

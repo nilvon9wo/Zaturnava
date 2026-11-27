@@ -19,6 +19,7 @@ public sealed class BotAssemblyTest
             [
                 "athena-steady", PlainOwnBot.BotId, "sage-guarding", "sage-hunting", "sage-usurping",
                 SeededOwnBot.BotId, "tactician-cornering", "tactician-guarding", "tactician-hunting",
+                "tactician-timing",
             ],
             bots.Select(bot => bot.Profile.Id).Order(StringComparer.Ordinal)
         );

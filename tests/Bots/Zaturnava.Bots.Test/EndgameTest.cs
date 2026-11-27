@@ -162,6 +162,39 @@ public sealed class EndgameTest
         Assert.Equal(expected, pressure);
     }
 
+    [Theory]
+    [InlineData(3, 1, 0)]
+    [InlineData(3, 0.5, -0.0625)]
+    [InlineData(1, 1, -0.25)]
+    [InlineData(1, 0.5, -0.125)]
+    public void Pressure_WhenEscapesAreTimed_CountsACellAsSafeAsTheChasersMovingFirstLeaveIt(
+        int owner,
+        double pace,
+        double expected
+    )
+    {
+        // Arrange - an enemy Raja on 5, of seat 3, which moves after our ally, or of seat 1, which moves before it; it
+        // could flee to 4 or 6, but the ally's Pawn on 7 attacks 6, and its Pawn on 2 could cover 4 in one step: so 4
+        // is as safe as the dice leave it, the Pawn moving first (the user, 2026-11-27: "the (im)probability should be
+        // weighed towards the safety of the square")
+        DecisionRequest request = LineRules.Request(
+            [],
+            (5, LineRules.Raja, new SeatId(owner)),
+            (7, LineRules.Pawn, Ally),
+            (2, LineRules.Pawn, Ally)
+        );
+        request = request with { Rules = new LineRules([.. request.LegalActions]) { Pace = pace } };
+        Hunting hunting = Hunting.OfLeaders with { Escapes = 1, Timed = true };
+
+        // Act
+        double pressure = Pressure(request, hunting);
+
+        // Assert
+        Assert.Equal(expected, pressure);
+    }
+
+    private static readonly SeatId Ally = new(2);
+
     private static readonly (int, PieceKindId, SeatId)[] Nothing = [];
 
     [Fact]
