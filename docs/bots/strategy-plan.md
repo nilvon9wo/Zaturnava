@@ -170,6 +170,20 @@ mean little.
 *Begun* (2026-11-27): `Hunting.OfHeavies`, played by challengers (`sage-hunting`, `tactician-hunting`) against the
 bots as they are, on Chaturaji 2027 first.
 
+**Testing faster** (the user, 2026-11-27: "fork the universe" at a decision; and "giving them different endgames - not
+necessarily endgames they reached on their own - and see how well they do or don't finish, including whether they
+maintain their leads or are self-sabotaging"). Built, in the arena and beside it:
+
+| Way | What it saves |
+|---|---|
+| Each game played with the bots seated both ways, with the same dice; the pairs counted | Luck, which falls to each bot in turn |
+| Games started where recorded games, people's as well as bots', came down to few pieces | The hour of play before an ending, alike for both |
+| Each bot's finishing counted: leads kept, leads thrown away, games turned round | A rating of endgames alone, apart from the opening |
+| Forks: only where two bots would choose differently, each choice played out many times with the same dice | Every decision where they agree, which tells nothing |
+
+To come: endgames from Grand Legions games; endgames set by hand, as the user describes them (a leader two steps from
+an ally's empty throne, the ally's last Rook on the board); and a bot's finishing shown beside its rating.
+
 **A throne is worth what it controls** (the user, 2026-11-27, after guarding allies' thrones measured no better,
 52 to 48): seizing a throne seldom matters, as it is hard to reach and by then there are few pieces left to control,
 "but when it counts, it really can count", say when the enemy takes control of an ally's last Rook. And a test of
