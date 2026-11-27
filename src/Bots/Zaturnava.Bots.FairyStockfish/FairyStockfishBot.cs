@@ -46,9 +46,11 @@ public sealed class FairyStockfishBot(UciEngine engine, IBotPlaying fallback) : 
     public BotProfile Profile { get; } = new(
         BotId,
         "Fairy-Stockfish",
-        "Experimental: asks Fairy-Stockfish, a strong chess engine for many variants, which of the moves the dice "
-            + "allow to make, seeing its own team against the rest as two sides of one board. Anything else, such "
-            + "as drafting or ransom, it leaves to Athena. A plain algorithm: no AI.",
+        "Experimental. Asks Fairy-Stockfish, a strong chess engine for many variants, which of the moves the "
+            + "dice allow to make, seeing its own team against the rest as two sides of one board; it never passes "
+            + "while it has a move. The engine knows chess, not dice, so it plans as if the next moves were sure. "
+            + "Drafting, prisoners and ending the game it decides by weighing the board. As an ally or an enemy: "
+            + "sharp at the moment's tactics, unaware of luck. A plain algorithm: no AI.",
         UsesAi: false
     );
 

@@ -49,8 +49,9 @@ public sealed class NoviceBot : IBotPlaying
             new BotProfile(
                 EchoId,
                 "Echo",
-                "For beginners: one turn in four, grabs whatever scores the most right now, as Midas does; the rest of "
-                    + "the time, plays at random. A plain algorithm: no AI.",
+                "For beginners. Three turns in four it plays wholly at random; the fourth, it takes whatever scores "
+                    + "the most right now, without asking what it might lose for it. As an ally: little help. As an "
+                    + "enemy: now and then snaps up a piece left loose. A plain algorithm: no AI.",
                 UsesAi: false
             ),
             EchoShare,
@@ -63,8 +64,10 @@ public sealed class NoviceBot : IBotPlaying
             new BotProfile(
                 IcarusId,
                 "Icarus",
-                "For beginners: every other turn, grabs whatever scores the most right now, as Midas does; the rest "
-                    + "of the time, plays at random. A plain algorithm: no AI.",
+                "For beginners. Every other turn it plays wholly at random; the rest, it takes whatever scores the "
+                    + "most right now, without asking what it might lose for it. As an ally: scores now and then, "
+                    + "but leaves pieces open. As an enemy: often snaps up a piece left loose. A plain algorithm: "
+                    + "no AI.",
                 UsesAi: false
             ),
             IcarusShare,
@@ -85,8 +88,9 @@ public sealed class NoviceBot : IBotPlaying
                 new BotProfile(
                     bot.Id,
                     bot.Name,
-                    $"For your very first games: plays at random, but one turn in {Whole / bot.Share} grabs whatever "
-                        + "scores the most right now, as Midas does. A plain algorithm: no AI.",
+                    $"For your very first games. Plays wholly at random, but one turn in {Whole / bot.Share} takes "
+                        + "whatever scores the most right now. As an ally: no help. As an enemy: hardly a threat, so "
+                        + "you can learn the moves in peace. A plain algorithm: no AI.",
                     UsesAi: false
                 ),
                 bot.Share,

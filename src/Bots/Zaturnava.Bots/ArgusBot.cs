@@ -25,9 +25,12 @@ public sealed class ArgusBot(Random random) : IBotPlaying
     public BotProfile Profile { get; } = new(
         BotId,
         "Argus",
-        "Watchful: before it moves, it looks at what its opponents could take in reply, and keeps its pieces "
-            + "guarded, its throne safe and its allies' lines of attack open. Trades prisoners close to even, "
-            + "but not for a piece that would come back only to be taken. A plain algorithm: no AI.",
+        "Watchful. Before each move it looks at what its enemies could take in reply, and keeps its pieces "
+            + "guarded, its throne safe and out of its allies' way; it looks only one move ahead and does not count "
+            + "on the dice. Gives its allies' pieces back for nothing, offers trades that gain it something without "
+            + "losing anything, and accepts any offer within a point of even, but not a piece that would come back "
+            + "only to be taken. As an ally: careful and generous. As an enemy: hard to catch with a simple threat, "
+            + "but blind to a lucky double roll. A plain algorithm: no AI.",
         UsesAi: false
     );
 

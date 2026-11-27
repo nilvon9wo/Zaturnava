@@ -48,8 +48,10 @@ public sealed class StumblerBot : IBotPlaying
             new BotProfile(
                 EpimetheusId,
                 "Epimetheus",
-                "For beginners: weighs the board as Sage does, but only as each move leaves it, and then plays any "
-                    + "of its best third of moves, at random. A plain algorithm: no AI.",
+                "For beginners. Weighs the board each move leaves (points, pieces, leaders, thrones, what could be "
+                    + "taken next), then picks at random among its best third of moves: sensible, but rarely the "
+                    + "best. As an ally: seldom throws a piece away. As an enemy: a fair test that forgives mistakes. "
+                    + "A plain algorithm: no AI.",
                 UsesAi: false
             ),
             EpimetheusShare,
@@ -62,8 +64,10 @@ public sealed class StumblerBot : IBotPlaying
             new BotProfile(
                 NarcissusId,
                 "Narcissus",
-                "For beginners: weighs the board as Sage does, but only as each move leaves it, and then plays any "
-                    + "of its better half of moves, at random. A plain algorithm: no AI.",
+                "For beginners. Weighs the board each move leaves (points, pieces, leaders, thrones, what could be "
+                    + "taken next), then picks at random among its better half of moves: often careless. As an ally: "
+                    + "may leave a piece to be taken. As an enemy: gentle, but takes what you leave loose. A plain "
+                    + "algorithm: no AI.",
                 UsesAi: false
             ),
             NarcissusShare,

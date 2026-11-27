@@ -24,8 +24,12 @@ public sealed class SolomonBot(Random random) : IBotPlaying
     public BotProfile Profile { get; } = new(
         BotId,
         "Solomon",
-        "Fair-minded: plays the board greedily, keeping out of its allies' way, gives allies' pieces back, "
-            + "trades prisoners evenly, and accepts any offer close to even. A plain algorithm: no AI.",
+        "Fair-minded. On the board it is greedy: it takes whatever scores the most right now, without asking "
+            + "what it might lose for it, and moves at random when nothing scores, though out of its allies' way. "
+            + "Off the board it is generous: gives its allies' pieces back for nothing, offers even trades, a "
+            + "prisoner for one of the same worth, and accepts any offer within a point of even. As an ally: hands "
+            + "back your captured pieces. As an enemy: easy to bait, and an easy partner for a fair trade. A plain "
+            + "algorithm: no AI.",
         UsesAi: false
     );
 

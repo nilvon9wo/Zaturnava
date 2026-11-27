@@ -47,11 +47,13 @@ public sealed class SageBot(
     public BotProfile Profile { get; } = new(
         BotId,
         "Sage",
-        "Thoughtful: weighs the whole board (points, pieces, Rajas, prisoners, thrones, and what each side "
-            + "could take next) and thinks through the rest of its turn, rolling only when it expects more of the "
-            + "dice than of the best move it could make without them. With few pieces left, it looks past its own "
-            + "turn and closes in on the enemy's leader. Trades prisoners when the board would be better for it. A "
-            + "plain algorithm: no AI.",
+        "Thoughtful. Weighs the whole board (points, pieces, leaders, prisoners, thrones, and what each side "
+            + "could take next) and plans the rest of its turn, dice included, choosing the best it finds; rarely "
+            + "random. With few pieces left, it thinks several turns ahead and hunts the enemy's last pieces. Trades "
+            + "prisoners when the trade leaves the board better for it. Calls a game won a little early, but does "
+            + "not give up a close one. As an ally: steady, seldom leaves a piece to be taken. As an enemy: punishes "
+            + "loose pieces, but sees only what could be taken next, not the reply after that. A plain algorithm: "
+            + "no AI.",
         UsesAi: false
     );
 
