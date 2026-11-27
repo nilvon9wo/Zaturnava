@@ -11,17 +11,6 @@ asked here instead (checked, every *Proposed* in the documents, on 2026-11-06).
 Anything to be built is in the [backlog](backlog.md) or the [roadmap](grand/roadmap.md), and anything left to
 playtesting is marked so where it is written.
 
+None is open now (2026-11-27; Q-R, recruiting in play, answered the same day, is in the [backlog](backlog.md)).
 The player out of a game when their leaders are gone is being thought over by the designer, and waits in the
 [backlog](backlog.md).
-
-## Q-R: Recruiting in play (2026-11-27, [backlog](backlog.md))
-
-Until answered, the *Proposed* answer stands; none blocks the rest of the feature.
-
-| # | Question | Proposed |
-|---|---|---|
-| R1 | "Never previously drafted": a kind no army in the game has, or one the recruiting player's army lacks? | No army has |
-| R2 | When the dice choose two trainings and a die shows 5 or 6 (Infantry or Leader), which is it? | The player's pick |
-| R3 | May an enemy spoil a training by stepping onto its marker, or only the player's own pieces? | Any piece |
-| R4 | Does a marker block moves through or onto its cell, as a piece would? | No; stepping on spoils it |
-| R5 | Do the points spent lower the score at once, as other purchases in play do? | Yes |

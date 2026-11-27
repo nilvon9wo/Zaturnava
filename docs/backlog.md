@@ -203,8 +203,17 @@ From the specification's observations of the bots in play (F, X) and the Sage pl
   | Heavy | 3rd turn |
   | Leader | 4th turn |
 
+  *Stated* (the user, 2026-11-27, answering Q-R):
+
+  | Point | Answer |
+  |---|---|
+  | A kind never drafted | One no army in the game has |
+  | Dice for two trainings show 5 or 6 (Infantry or Leader) | The player picks which |
+  | Who spoils a training by stepping onto its marker | Any piece, the player's own or an enemy's |
+  | The marker on the board | Blocks moves as a piece would; a piece that jumps may jump over it |
+  | The points spent | Lower the score at once, as other purchases in play |
+
   Bots must recruit, guard trainings and spoil the enemy's (stepping onto a marker, driving a leader off a throne).
-  Its open points are in [open questions](open-questions.md).
 - Stage 2: saved settings, named, shared and copied to edit ([specification §2.1](grand/specification.md#21-saved-settings)).
 - *(Stated 2026-11-12)* **Kingdoms placed by the players**, as a setting of the game's creator, before their
   palace, throne and pieces; probably still keeping to the board's corners, more or less, so that no later player
