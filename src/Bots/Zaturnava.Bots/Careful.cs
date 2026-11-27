@@ -19,7 +19,7 @@ namespace Net.NowhereAtAll.Zaturnava.Bots;
 /// keep an enemy leader off it, but only makes it take that piece to get there: such a taking wins the
 /// piece and the throne both. The dice are left aside, but not whose turn comes next: an army of the team
 /// that moves before an enemy, on its own seat's turn or on that of an ally commanding it, saves the piece
-/// it would lose most to it (<see cref="LossOfSeat"/>); but the team's taking back is only as sure as its dice. Half
+/// it would lose most to it (<see cref="LossesOfSeat"/>); but the team's taking back is only as sure as its dice. Half
 /// of what the action leaves its allies to win next, or takes from them (<see cref="Teamwork"/>), counts
 /// too. Among actions worth the same, it would rather do something than pass, and picks at random.
 /// </summary>
@@ -143,8 +143,10 @@ internal static class Careful
                 );
             }),
         ];
-        double worst = losses.Max(loss => loss.All.Worth);
-        int worstOfAll = losses.FindIndex(loss => loss.All.Worth == worst);
+        int worstOfAll = losses
+            .Select((loss, index) => (loss.All.Worth, Index: index))
+            .MaxBy(loss => loss.Worth)
+            .Index;
         return losses.Select((loss, index) => index == worstOfAll ? loss.First : loss.All);
     }
 

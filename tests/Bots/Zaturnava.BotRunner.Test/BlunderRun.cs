@@ -142,11 +142,9 @@ public sealed class BlunderRun
         for (int at = 0; at < steps.Count; at++)
         {
             if (actions[at] is MoveAction move
-                && players.GetValueOrDefault(move.Actor.Value) is { } bot
-                && bot is not ("person" or "open")
+                && players.GetValueOrDefault(move.Actor.Value) is { } bot and not ("person" or "open")
                 && steps[at].Before.Position.PieceAt(move.From) is { } moved
-                && this.LostAfter(steps, actions, at, moved) is { } lost
-                && lost.Net <= -Loss)
+                && this.LostAfter(steps, actions, at, moved) is { Net: <= -Loss } lost)
             {
                 yield return new Blunder(
                     id, at, bot, moved.Kind.Value, move.From.Value, move.To.Value, lost.Net, lost.IsHung, actions
@@ -176,8 +174,9 @@ public sealed class BlunderRun
         int phase = 0; // 0 the mover's turn, 1 the others', 2 the mover's next turn
         for (int next = at; next < actions.Count; next++)
         {
-            SeatId actor = actions[next].Actor;
-            if ((phase is 0 or 2) == (actor != seat))
+            bool isMoversTurn = phase is 0 or 2;
+            bool isOthers = actions[next].Actor != seat;
+            if (isMoversTurn == isOthers)
             {
                 phase++;
                 if (phase == 3)
