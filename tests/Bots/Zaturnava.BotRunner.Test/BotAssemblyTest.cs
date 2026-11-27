@@ -17,7 +17,7 @@ public sealed class BotAssemblyTest
         // Assert
         Assert.Equal(
             [
-                "athena-steady", PlainOwnBot.BotId, "sage-guarding", "sage-hunting", "sage-usurping",
+                "athena-steady", PlainOwnBot.BotId, "sage-guarding", "sage-hunting", "sage-usurping", "sage-wary",
                 SeededOwnBot.BotId, "tactician-cornering", "tactician-guarding", "tactician-hunting",
                 "tactician-timing",
             ],

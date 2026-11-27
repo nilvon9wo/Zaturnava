@@ -138,19 +138,28 @@ internal sealed class LineRules(ImmutableList<GameAction> legalActions) : IRules
         .. state.Position.Occupants
             .Where(occupant => occupant.Value.Owner == seat)
             .SelectMany(occupant => new[] { -1, 1 }
-                .SelectMany(step => Reach(state, occupant.Value, occupant.Key.Value, step))
+                .SelectMany(step => this.Reach(state, occupant.Value, occupant.Key.Value, step))
                 .Select(cell => new Attack(occupant.Value, occupant.Key, new CellId(cell)))
             ),
     ];
 
-    /// <summary>The cells a piece attacks one way: the next, or, for a Boat, every one up to a piece.</summary>
-    private static IEnumerable<int> Reach(GameState state, Piece piece, int from, int step)
+    /// <summary>How many cells each way each kind attacks, leaping any between: one, unless set.</summary>
+    public ImmutableDictionary<PieceKindId, int> Reaches { get; init; } = ImmutableDictionary<PieceKindId, int>.Empty;
+
+    /// <summary>
+    /// The cells a piece attacks one way: the next, or as many as its kind reaches; or, for a Boat, every one up to a
+    /// piece.
+    /// </summary>
+    private IEnumerable<int> Reach(GameState state, Piece piece, int from, int step)
     {
         int cell = from + step;
+        int reach = this.Reaches.GetValueOrDefault(piece.Kind, 1);
         while (cell is >= 0 and < Length)
         {
             yield return cell;
-            if (piece.Kind != Boat || state.Position.PieceAt(new CellId(cell)) is not null)
+            reach--;
+            bool isStopped = piece.Kind == Boat ? state.Position.PieceAt(new CellId(cell)) is not null : reach == 0;
+            if (isStopped)
             {
                 yield break;
             }

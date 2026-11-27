@@ -72,6 +72,19 @@ public sealed class GuardingSage(Random random) : Challenger(
 }
 
 /// <summary>
+/// Sage, foreseeing the forks an enemy could make on its next move (<see cref="Hunting.Forks"/>), and counting them
+/// as it counts a piece left to be taken.
+/// </summary>
+public sealed class WarySage(Random random) : Challenger(
+    new SageBot(random, Fallback(Wary), Learned(Wary)),
+    "sage-wary",
+    "foreseeing forks"
+)
+{
+    private static Hunting Wary => Hunting.OfLeaders with { Forks = true };
+}
+
+/// <summary>
 /// Athena, her network's judgement steadied ten times as much by Sage's (2026-11-27: between quiet moves it swung by
 /// more than a Rook left to be taken counted).
 /// </summary>

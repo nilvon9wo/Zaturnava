@@ -27,6 +27,12 @@ public sealed record Hunting(double Leaders, double Heavies, bool AlliedThrones)
     public bool Timed { get; init; }
 
     /// <summary>
+    /// Whether a fork an enemy could make on its next move counts against the team, as a piece left to be taken does
+    /// (<see cref="Careful.ForkThreat"/>): unset, only attacks already standing count.
+    /// </summary>
+    public bool Forks { get; init; }
+
+    /// <summary>
     /// Whether a throne not an ally's, held by a leader, counts by what it controls: one, and as many again as the
     /// pieces its owner still has are worth, in <see cref="StakeUnit"/>s; not, it counts one, whatever it controls (the
     /// user, 2026-11-27: seizing a throne seldom matters, "but when it counts, it really can count").

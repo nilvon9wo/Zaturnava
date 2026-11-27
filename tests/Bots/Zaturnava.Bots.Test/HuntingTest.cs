@@ -41,6 +41,22 @@ public sealed class HuntingTest
     }
 
     [Fact]
+    public void ValueOf_WhenForksAreForeseen_JudgesAPositionAnEnemyCouldForkWorse()
+    {
+        // Arrange - our Elephants on 2 and 3, which the enemy's long-reaching Horse on 7 could fork from 5
+        DecisionRequest request = CarefulTest.Forkable(1, LineRules.Elephant, 1);
+        SageWeights blind = SageWeights.Default;
+        SageWeights wary = SageWeights.Default with { Hunting = Hunting.OfLeaders with { Forks = true } };
+
+        // Act
+        double unseen = Appraisal.ValueOf(request, request.State, blind);
+        double foreseen = Appraisal.ValueOf(request, request.State, wary);
+
+        // Assert
+        Assert.True(foreseen < unseen, $"{foreseen} should be below {unseen}");
+    }
+
+    [Fact]
     public void Equals_WhenOnlyTheHuntingDiffers_IsFalse()
     {
         // Arrange
