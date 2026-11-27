@@ -19,6 +19,14 @@ public sealed class EndingTest
     private static readonly SeatId Red = new(3);
     private static readonly PassAction Pass = new(Black);
 
+    /// <summary>What Black's army has lost to Yellow, so it is not mostly whole: two Horses and a Boat, 10.</summary>
+    private static readonly ImmutableList<Prisoner> Lost =
+    [
+        new(new Piece(new PieceId(20), new PieceKindId("horse"), Black), Yellow),
+        new(new Piece(new PieceId(21), new PieceKindId("horse"), Black), Yellow),
+        new(new Piece(new PieceId(22), new PieceKindId("boat"), Black), Yellow),
+    ];
+
     private readonly CancellationToken _cancellation = TestContext.Current.CancellationToken;
 
     [Theory]
@@ -143,7 +151,7 @@ public sealed class EndingTest
         DecisionRequest request = Resting(people: [Green], ourPoints: 0);
         DecisionRequest trailing = request with
         {
-            State = request.State with { Scores = request.State.Scores.SetItem(Yellow, 20) },
+            State = request.State with { Scores = request.State.Scores.SetItem(Yellow, 20), Prisoners = Lost },
         };
 
         // Act
@@ -151,6 +159,23 @@ public sealed class EndingTest
 
         // Assert
         Assert.Equal(new ProposeEndAction(Black, Resigns: true), action);
+    }
+
+    [Fact]
+    public void AnswerTo_WhenAnAllyRestsWhileTheTeamTrailsButItsOwnArmyIsWhole_PlaysOn()
+    {
+        // Arrange - as above, but Black has lost nothing
+        DecisionRequest request = Resting(people: [Green], ourPoints: 0);
+        DecisionRequest trailing = request with
+        {
+            State = request.State with { Scores = request.State.Scores.SetItem(Yellow, 20) },
+        };
+
+        // Act
+        GameAction? action = Ending.AnswerTo(trailing);
+
+        // Assert
+        Assert.Null(action);
     }
 
     [Theory]
@@ -177,6 +202,7 @@ public sealed class EndingTest
                 Seats = [new Seat(Black, new Direction(1, 0)), new Seat(Green, new Direction(1, 0))],
                 Scores = request.State.Scores.SetItem(Yellow, 2),
                 Proposal = new EndProposal(Yellow, false, Black, null),
+                Prisoners = Lost,
             },
         };
 
@@ -327,23 +353,55 @@ public sealed class EndingTest
     }
 
     [Theory]
-    [InlineData("elephant", false)]
-    [InlineData("raja", false)]
-    [InlineData("boat", true)]
-    public void AnswerTo_WhenHopelessOnPointsButItsTeamKeepsALeaderOrAHeavyPiece_ProposesNoDefeat(
+    [InlineData("elephant", true, false)]
+    [InlineData("raja", true, false)]
+    [InlineData("boat", true, true)]
+    [InlineData("boat", false, false)]
+    public void AnswerTo_WhenHopelessOnPointsButItsTeamKeepsALeaderOrAHeavyPieceOrAWholeArmy_ProposesNoDefeat(
         string kind,
+        bool hasLost,
         bool proposes
     )
     {
         // Arrange - Black's one piece, which no move takes anywhere, so hopes for nothing; Yellow leads by 6 (the
-        // user's games of 2026-11-27: Argus and Sage gave up with a Raja and a Rook left)
+        // user's games of 2026-11-27: Argus and Sage gave up with a Raja and a Rook left); Black's army beaten, or
+        // whole, if it has lost nothing
         DecisionRequest request = Request([(Black, kind), (Yellow, "boat")], ourPoints: 0, theirPoints: 6);
+        DecisionRequest beaten = request with { State = request.State with { Prisoners = hasLost ? Lost : [] } };
 
         // Act
-        GameAction? action = Ending.AnswerTo(request);
+        GameAction? action = Ending.AnswerTo(beaten);
 
         // Assert
         Assert.Equal(proposes ? new ProposeEndAction(Black, Resigns: false) : null, action);
+    }
+
+    [Theory]
+    [InlineData(0, false)]
+    [InlineData(1, true)]
+    public void AnswerTo_WhenAskedBehindHopelessly_RefusesWhileItsOwnArmyIsMostlyWhole(int horsesLost, bool agrees)
+    {
+        // Arrange - as in the first test, Black far behind, by 60; its Elephant and Pawn, 5, left of an army that has
+        // lost nothing, or a Horse (5 of 8 left: not three quarters) (the user, 2026-11-27: "red really shouldn't be
+        // so willing to concede while it still has its entire army!")
+        DecisionRequest request = Asked(
+            new ScoringRules(Points()) { MayPropose = true },
+            [(0, Black, "elephant"), (1, Yellow, "raja"), (7, Black, "pawn")],
+            theirPoints: 60
+        );
+        DecisionRequest asked = request with
+        {
+            State = request.State with
+            {
+                Prisoners = [.. Lost.Take(horsesLost)],
+            },
+        };
+
+        // Act
+        GameAction? action = Ending.AnswerTo(asked);
+
+        // Assert
+        Assert.Equal(new AnswerEndAction(Black, agrees), action);
     }
 
     [Fact]
@@ -425,6 +483,7 @@ public sealed class EndingTest
             Teams = TeamGraph.FromTeams([[Black, Green], [Yellow, Red]]),
             Scores = ImmutableDictionary<SeatId, int>.Empty.Add(Yellow, theirPoints),
             Proposal = new EndProposal(Yellow, false, Black, null),
+            Prisoners = Lost,
             Position = pieces
                 .Select((piece, index) => (piece, index))
                 .Aggregate(
