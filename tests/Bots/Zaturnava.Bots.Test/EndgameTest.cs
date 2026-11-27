@@ -1,5 +1,7 @@
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Decisions;
+using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
+using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 
 namespace Net.NowhereAtAll.Zaturnava.Bots.Test;
 
@@ -111,12 +113,112 @@ public sealed class EndgameTest
         Assert.Equal(LineRules.Move(3, 5), action);
     }
 
-    private static double Pressure(DecisionRequest request) =>
+    [Theory]
+    [InlineData(false, 0)]
+    [InlineData(true, -1.75)]
+    public void Pressure_WhenAnEnemyHeavyIsFree_CountsItsEscapesOnlyIfHeaviesAreHunted(bool isHunted, double expected)
+    {
+        // Arrange - the enemy's Boat alone at the line's end, a heavy piece: it may flee to any of the 7 cells below
+        DecisionRequest request = LineRules.Request([], (7, LineRules.Boat, LineRules.Enemy));
+        request = request with
+        {
+            Rules = new LineRules([.. request.LegalActions]) { Heavies = [LineRules.Boat] },
+        };
+
+        // Act
+        double pressure = Pressure(request, isHunted ? Hunting.OfHeavies : Hunting.OfLeaders);
+
+        // Assert
+        Assert.Equal(expected, pressure);
+    }
+
+    [Theory]
+    [InlineData(1, false, -0.25)]
+    [InlineData(0.5, false, -0.125)]
+    [InlineData(1, true, 0.25)]
+    public void Pressure_WhenOnlyOneEscapeCounts_CountsItAsLikelyAsThePieceMovesAndTheAttackBesides(
+        double pace,
+        bool isAttacked,
+        double expected
+    )
+    {
+        // Arrange - the enemy's Boat, a heavy piece, at the line's end, free to flee to 6 cells or more: one counts,
+        // as likely as the dice let it move; attacked or not by our Boat at the line's start, which covers all between
+        // (the user, 2026-11-27: "it only just needs one unguarded square")
+        DecisionRequest request = LineRules.Request(
+            [],
+            [(7, LineRules.Boat, LineRules.Enemy), .. isAttacked ? [(0, LineRules.Boat, LineRules.Seat)] : Nothing]
+        );
+        request = request with
+        {
+            Rules = new LineRules([.. request.LegalActions]) { Heavies = [LineRules.Boat], Pace = pace },
+        };
+        Hunting hunting = Hunting.OfHeavies with { Escapes = 1 };
+
+        // Act
+        double pressure = Pressure(request, hunting);
+
+        // Assert - attacked, the Boat on 0 covers every cell it could flee to
+        Assert.Equal(expected, pressure);
+    }
+
+    [Theory]
+    [InlineData(3, 1, 0)]
+    [InlineData(3, 0.5, -0.0625)]
+    [InlineData(1, 1, -0.25)]
+    [InlineData(1, 0.5, -0.125)]
+    public void Pressure_WhenEscapesAreTimed_CountsACellAsSafeAsTheChasersMovingFirstLeaveIt(
+        int owner,
+        double pace,
+        double expected
+    )
+    {
+        // Arrange - an enemy Raja on 5, of seat 3, which moves after our ally, or of seat 1, which moves before it; it
+        // could flee to 4 or 6, but the ally's Pawn on 7 attacks 6, and its Pawn on 2 could cover 4 in one step: so 4
+        // is as safe as the dice leave it, the Pawn moving first (the user, 2026-11-27: "the (im)probability should be
+        // weighed towards the safety of the square")
+        DecisionRequest request = LineRules.Request(
+            [],
+            (5, LineRules.Raja, new SeatId(owner)),
+            (7, LineRules.Pawn, Ally),
+            (2, LineRules.Pawn, Ally)
+        );
+        request = request with { Rules = new LineRules([.. request.LegalActions]) { Pace = pace } };
+        Hunting hunting = Hunting.OfLeaders with { Escapes = 1, Timed = true };
+
+        // Act
+        double pressure = Pressure(request, hunting);
+
+        // Assert
+        Assert.Equal(expected, pressure);
+    }
+
+    private static readonly SeatId Ally = new(2);
+
+    private static readonly (int, PieceKindId, SeatId)[] Nothing = [];
+
+    [Fact]
+    public void Pressure_WhenHeaviesAreHunted_CountsALeaderAtItsShare()
+    {
+        // Arrange - the enemy's Raja alone at the line's end: one escape, at half its share
+        DecisionRequest request = LineRules.Request([], (7, LineRules.Raja, LineRules.Enemy));
+
+        // Act
+        double pressure = Pressure(request, Hunting.OfHeavies);
+
+        // Assert
+        Assert.Equal(-0.125, pressure);
+    }
+
+    private static double Pressure(DecisionRequest request) => Pressure(request, Hunting.OfLeaders);
+
+    private static double Pressure(DecisionRequest request, Hunting hunting) =>
         Endgame.Pressure(
             request,
             request.State,
             Careful.AttacksBy(request, request.State, isAllied: true),
-            Endgame.ScaleOf(SageWeights.Default)
+            Endgame.ScaleOf(SageWeights.Default),
+            hunting
         );
 
     /// <summary>The request, its line counted as a board of <paramref name="cells"/> cells.</summary>

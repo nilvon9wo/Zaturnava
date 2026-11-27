@@ -1,5 +1,9 @@
+using System.Collections.Immutable;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
+using Net.NowhereAtAll.Zaturnava.Engine.Boards;
 using Net.NowhereAtAll.Zaturnava.Engine.Decisions;
+using Net.NowhereAtAll.Zaturnava.Engine.Moves;
+using Net.NowhereAtAll.Zaturnava.Engine.Pieces;
 using Net.NowhereAtAll.Zaturnava.Engine.Seats;
 
 namespace Net.NowhereAtAll.Zaturnava.Bots.Test;
@@ -9,6 +13,8 @@ public sealed class CarefulTest
     private static readonly SeatId Mine = LineRules.Seat;
     private static readonly SeatId First = LineRules.Enemy;
     private static readonly SeatId Second = new(3);
+    private static readonly SeatId Ally = new(2);
+    private static readonly (int, PieceKindId, SeatId)[] NoPieces = [];
 
     [Theory]
     [InlineData(3, 6)]
@@ -37,6 +43,66 @@ public sealed class CarefulTest
         Assert.Equal(exposure, counted);
     }
 
+    [Theory]
+    [InlineData(1, "elephant", 1, true, 1)]
+    [InlineData(1, "elephant", 0.5, true, 0.5)]
+    [InlineData(1, "elephant", 1, false, 4)]
+    [InlineData(1, "pawn", 1, true, 0)]
+    [InlineData(3, "elephant", 1, true, 0)]
+    public void ForkThreat_WhenAnEnemyCouldMoveToAttackTwoPieces_IsTheSecondDearestAsLikelyAsItMoves(
+        int owner,
+        string kind,
+        double pace,
+        bool isGuarded,
+        double expected
+    )
+    {
+        // Arrange - our pieces on 2 and 3, each guarding the other; an enemy Horse on 7 reaching 3 cells each way, of
+        // the enemy moving before our ally (1) or after it (3), which from 5 would attack both: Elephants, worth 4
+        // each, less the Horse (3) it costs to take one guarded, or 4 unguarded; Pawns would cost more than they win;
+        // the other enemy's Raja on 6 is in its way there (the assessment of 2026-11-27: "Nothing models an enemy move
+        // that creates attacks")
+        DecisionRequest request = Forkable(owner, new PieceKindId(kind), pace);
+        ILookup<CellId, Attack> guards = isGuarded
+            ? Careful.AttacksBy(request, request.State, isAllied: true)
+            : Array.Empty<Attack>().ToLookup(attack => attack.Target);
+
+        // Act
+        double threat = Careful.ForkThreat(
+            request,
+            request.State,
+            Careful.AttacksBy(request, request.State, isAllied: false),
+            guards
+        );
+
+        // Assert
+        Assert.Equal(expected, threat);
+    }
+
+    /// <summary>
+    /// Our two pieces of the <paramref name="kind"/> on 2 and 3; a Horse of <paramref name="owner"/>'s on 7, reaching
+    /// 3 cells each way, at the <paramref name="pace"/>; and a Raja of the other enemy's on 6.
+    /// </summary>
+    internal static DecisionRequest Forkable(int owner, PieceKindId kind, double pace)
+    {
+        SeatId forker = new(owner);
+        DecisionRequest request = LineRules.Request(
+            [new PassAction(Mine)],
+            (2, kind, Mine),
+            (3, kind, Mine),
+            (7, LineRules.Horse, forker),
+            (6, LineRules.Raja, forker == First ? Second : First)
+        );
+        return request with
+        {
+            Rules = new LineRules([.. request.LegalActions])
+            {
+                Pace = pace,
+                Reaches = ImmutableDictionary<PieceKindId, int>.Empty.Add(LineRules.Horse, 3),
+            },
+        };
+    }
+
     [Fact]
     public void Exposure_WhenAnEnemyPieceStandsBehindTheTaker_CountsItTakingBackTheRetaker()
     {
@@ -56,6 +122,46 @@ public sealed class CarefulTest
 
         // Assert
         Assert.Equal(3, counted);
+    }
+
+    [Theory]
+    [InlineData(2, false, true)]
+    [InlineData(2, true, false)]
+    [InlineData(3, false, false)]
+    [InlineData(0, false, false)]
+    public void AlliedThroneThreat_WhenAnEnemyLeaderCouldStepOntoAnAllysEmptyThrone_IsWhatThatAllysPiecesAreWorth(
+        int owner,
+        bool isHeld,
+        bool isThreat
+    )
+    {
+        // Arrange - a throne on 6, the ally's (2), an enemy's (3) or the bot's own (0, Exposure's to count), with the
+        // enemy's Raja on 7 beside it; empty, or held by a Pawn of the ally's; and the ally's last Boat far off, on 1,
+        // which an enemy on the throne would take control of (the user, 2026-11-27)
+        DecisionRequest request = LineRules.Request(
+            [new PassAction(Mine)],
+            [
+                (7, LineRules.Raja, First), (1, LineRules.Boat, Ally),
+                .. isHeld ? [(6, LineRules.Pawn, Ally)] : NoPieces,
+            ]
+        );
+        request = request with
+        {
+            Rules = new LineRules([.. request.LegalActions])
+            {
+                Thrones = ImmutableDictionary<SeatId, CellId>.Empty.Add(new SeatId(owner), new CellId(6)),
+            },
+        };
+
+        // Act
+        int threat = Careful.AlliedThroneThreat(
+            request,
+            request.State,
+            Careful.AttacksBy(request, request.State, isAllied: false)
+        );
+
+        // Assert
+        Assert.Equal(isThreat ? request.Rules.WorthOf(LineRules.Boat) : 0, threat);
     }
 
     [Fact]

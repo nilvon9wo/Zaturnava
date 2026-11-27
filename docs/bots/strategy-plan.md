@@ -141,7 +141,68 @@ for the overnight ratings to tune:
 | Pressing the leader | Each cell an enemy leader could flee to that the team does not attack: −0.25 of a point of material; the leader attacked: +0.5 | Sage, Tactician, Narcissus, Epimetheus; Athena and Pythia, as far as Sage's judgement counts in theirs |
 
 The pressing is the ladder mate's pattern: no table of positions, but the measure it comes from, for any board and
-any pieces. *Tested* (2026-11-26, `StrategicPositionsTest`): two Elephants (the Rooks) and a Raja against a lone
+any pieces.
+
+**Corrected by the user (2026-11-27):** with few pieces left, the heavy pieces come first, not the leaders. "Eliminating
+in on enemy rooks or other heavies should generally take priority over eliminating enemy leaders since eliminating the
+leaders doesn't necessarily end the game and _most_ of them have limited mobility (but watch out for the exceptions,
+especially the Dragon King)." What a leader threatens is the throne: "The most dangerous thing about the enemy leaders
+in the end game (or at any time, really) is their ability to take the throne and take control of opposing pieces."
+So, to do, measured bot against bot as each lands:
+
+| Part | Now | To be |
+|---|---|---|
+| What the endgame presses | Each enemy leader's escapes | Every enemy piece, the more it is worth and the further it can move, the more (a Rook before a Raja; a Dragon King as the heavy it is) |
+| A leader near a throne | Only an enemy leader beside the bot's own empty throne | Any enemy leader that could reach a throne of the bot's team, at any stage |
+| A piece that could become a leader | Not seen | A piece that could promote into a leader near a throne; one sitting on a throne of the team, the more turns it has sat there (field promotion), the more urgent |
+
+**What makes an escape** (the user, 2026-11-27): the count of a piece's open cells matters little, "it only just
+needs one unguarded square"; what matters is whether there is time to reach it, and whether it is truly safe. And a
+cell is not safe only because nothing attacks it now: "a square which is four steps away from a piece which only moves
+one step at a time could be as little as one turn away if both the enemy and the ally are able to move it twice per
+turn (of course, that involves some lucky dice rolls and the (im)probability should be weighed towards the safety of
+the square)". So, by steps: first, no more than one escape counted, as likely as the dice let the piece move
+(`Hunting.Escapes`, the challenger `tactician-cornering`); then each escape's safety a chance, from how many moves
+each of the team's pieces needs to cover it, the dice giving one move or two, and who moves first, weighed towards
+safety as doubles are rare. Distance, dice and turn order are played together, as one challenger, since apart they
+mean little.
+
+*Begun* (2026-11-27): `Hunting.OfHeavies`, played by challengers (`sage-hunting`, `tactician-hunting`) against the
+bots as they are, on Chaturaji 2027 first.
+
+**Testing faster** (the user, 2026-11-27: "fork the universe" at a decision; and "giving them different endgames - not
+necessarily endgames they reached on their own - and see how well they do or don't finish, including whether they
+maintain their leads or are self-sabotaging"). Built, in the arena and beside it:
+
+| Way | What it saves |
+|---|---|
+| Each game played with the bots seated both ways, with the same dice; the pairs counted | Luck, which falls to each bot in turn |
+| Games started where recorded games, people's as well as bots', came down to few pieces | The hour of play before an ending, alike for both |
+| Each bot's finishing counted: leads kept, leads thrown away, games turned round | A rating of endgames alone, apart from the opening |
+| Forks: only where two bots would choose differently, each choice played out many times with the same dice | Every decision where they agree, which tells nothing |
+
+To come: endgames from Grand Legions games; endgames set by hand, as the user describes them (a leader two steps from
+an ally's empty throne, the ally's last Rook on the board); and a bot's finishing shown beside its rating.
+
+**A throne is worth what it controls** (the user, 2026-11-27, after guarding allies' thrones measured no better,
+52 to 48): seizing a throne seldom matters, as it is hard to reach and by then there are few pieces left to control,
+"but when it counts, it really can count", say when the enemy takes control of an ally's last Rook. And a test of
+guarding "really depends upon whether the enemy has made it an objective to obtain the throne and can put it to good
+use". So, to do:
+
+| Step | Now | To be |
+|---|---|---|
+| A throne held | Counted as 1, whatever it controls | Counted by the worth of the pieces its owner still has |
+| A throne threatened | Counted by the enemy leader's worth | Counted by what the ally would lose control of |
+| The test | Against a bot that seldom aims for thrones | Also against a usurper, one that weighs thrones by what they control; and the games counted in which a throne was taken at all |
+
+**Roles beyond the class** (the user, 2026-11-27): the UI gives a piece one class, but the bots may know it by more:
+"Dragon Kings and M Chariots also functioning as heavies, or various other pieces also functioning as cavalry", and
+roles the UI has no class for, "pieces which can do multiple captures in a single move or convert other pieces". To
+do: roles read from how each piece moves and what its rules let it do, not tagged by hand (so a piece added to the
+catalogue gets them too): heavy-like (slides along lines, whatever its class), cavalry-like (leaps), takes several at
+once, converts. Each comes with a bot that uses it and a match that shows it helps; the first, heavy-like, so that
+the hunt counts a Dragon King as the heavy it is, not only as a leader. *Tested* (2026-11-26, `StrategicPositionsTest`): two Elephants (the Rooks) and a Raja against a lone
 Raja on Chaturaji 2027's board, without dice, Sage playing every side, the lone Raja fleeing as well as Sage can: it
 is taken, and Black's team wins, within 120 decisions. Still to do: the ratings, before and after, to see the
 stronger bots finish their won endgames in real games, with dice.

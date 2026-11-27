@@ -196,6 +196,84 @@ public sealed class PositionEncoderTest
         );
     }
 
+    // Seeing the board: 8 squares of the line, for each of 4 seats, 4 numbers each, after the 9 Sage counts.
+    private const int SquaresAt = FeaturesAt + 9;
+
+    private static int Square(int seat, int square, int feature) =>
+        SquaresAt + (((seat * 8) + square) * PositionEncoder.PerSquare) + feature;
+
+    [Fact]
+    public void Size_WhenTheBoardIsSeen_CountsEverySquareForEverySeatBesides()
+    {
+        // Arrange
+        PositionEncoder encoder = new(Rules, seesBoard: true);
+
+        // Act
+        int size = encoder.Size;
+
+        // Assert
+        Assert.Equal(SquaresAt + (4 * 8 * PositionEncoder.PerSquare), size);
+    }
+
+    [Theory]
+    [InlineData(0, true)]
+    [InlineData(-1, true)]
+    [InlineData(0, false)]
+    public void Fitting_WhenANetworkSawTheBoardOrNot_GivesPositionsAsItSawThem(int fewer, bool seesBoard)
+    {
+        // Arrange
+        int size = new PositionEncoder(Rules, seesBoard).Size + fewer;
+
+        // Act
+        PositionEncoder? encoder = PositionEncoder.Fitting(Rules, size);
+
+        // Assert
+        Assert.Equal((size, seesBoard), (encoder?.Size, encoder?.SeesBoard));
+    }
+
+    [Theory]
+    [InlineData(0, 1)]
+    [InlineData(1, 3)]
+    public void Encode_WhenTheBoardIsSeen_GivesEachSquareFromTheSeatsOwnEdge(int seat, int other)
+    {
+        // Arrange - seat 0's Raja and Pawn at cells 0 and 1, seat 1's at 7 and 6: each sees its own from its edge,
+        // and the other's, the <paramref name="other"/>th seat on from it, from the far end; a Raja leads, worth 5, and
+        // a Pawn is worth 1; each attacks the cells beside it
+        PositionEncoder encoder = new(Rules, seesBoard: true);
+
+        // Act
+        ImmutableList<(int Index, double Value)> encoded = encoder.Encode(Start, new SeatId(seat));
+
+        // Assert
+        Assert.Equal(
+            [
+                (Square(0, 0, 0), 0.5), (Square(0, 0, 1), 1), (Square(0, 0, 3), 0.25),
+                (Square(0, 1, 0), 0.1), (Square(0, 1, 3), 0.25), (Square(0, 2, 3), 0.25),
+                (Square(other, 5, 3), 0.25), (Square(other, 6, 0), 0.1), (Square(other, 6, 3), 0.25),
+                (Square(other, 7, 0), 0.5), (Square(other, 7, 1), 1), (Square(other, 7, 3), 0.25),
+            ],
+            encoded.Where(entry => entry.Index >= SquaresAt)
+        );
+    }
+
+    [Fact]
+    public void Encode_WhenAHeavyPieceIsSeen_MarksItsSquareHeavy()
+    {
+        // Arrange - the Pawns counted heavy
+        LineRules rules = new([]) { Heavies = [LineRules.Pawn] };
+        PositionEncoder encoder = new(rules, seesBoard: true);
+
+        // Act
+        ImmutableList<(int Index, double Value)> encoded = encoder.Encode(rules.CreateInitialState(), LineRules.Seat);
+
+        // Assert
+        Assert.Equal(
+            [Square(0, 1, 2), Square(1, 6, 2)],
+            encoded.Where(entry => entry.Index >= SquaresAt && (entry.Index - SquaresAt) % 4 == 2)
+                .Select(entry => entry.Index)
+        );
+    }
+
     [Fact]
     public void Encode_WhenAPieceIsOfAKindTheGameDoesNotStartWith_LeavesItOutButForWhatSageCounts()
     {

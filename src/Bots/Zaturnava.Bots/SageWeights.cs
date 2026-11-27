@@ -15,7 +15,7 @@ namespace Net.NowhereAtAll.Zaturnava.Bots;
 /// them; one not named weighs nothing). All but the worst and the most are weighed apart for the bot's own seat,
 /// its allies and its enemies (<see cref="Sided"/>). What each is worth to winning is for playing to show, not for
 /// guessing: <see cref="Default"/> is a starting guess, and <see cref="Learned"/> what Sage, playing itself,
-/// has tuned it to for each ruleset. Two weights are equal when they weigh the same things the same.
+/// has tuned it to for each ruleset. Two weights are equal when they weigh the same things the same, and hunt alike.
 /// </summary>
 public sealed record SageWeights(
     Sided Score,
@@ -47,6 +47,12 @@ public sealed record SageWeights(
     private const int MobilityAt = 17;
 
     public Sided Mobility { get; init; }
+
+    /// <summary>
+    /// What the bot hunts and guards against (<see cref="Bots.Hunting"/>): not a weight, so neither tuned nor kept.
+    /// </summary>
+    [JsonIgnore]
+    public Hunting Hunting { get; init; } = Hunting.OfLeaders;
 
     public ImmutableSortedDictionary<string, Sided> Measures { get; init; } =
         ImmutableSortedDictionary<string, Sided>.Empty.WithComparers(StringComparer.Ordinal);
@@ -86,6 +92,7 @@ public sealed record SageWeights(
         )
         {
             Mobility = Sided.At(values, MobilityAt),
+            Hunting = this.Hunting,
             Measures = this.Measures.SetItems(
                 this.Measures.Keys.Select((name, at) =>
                     KeyValuePair.Create(name, Sided.At(values, MobilityAt + (Sided.Sides.Count * (at + 1))))
@@ -112,7 +119,10 @@ public sealed record SageWeights(
             : this;
 
     public bool Equals(SageWeights? other) =>
-        other is not null && this.Names.SequenceEqual(other.Names) && this.Values.SequenceEqual(other.Values);
+        other is not null
+        && this.Names.SequenceEqual(other.Names)
+        && this.Values.SequenceEqual(other.Values)
+        && this.Hunting == other.Hunting;
 
     public override int GetHashCode() => HashCode.Combine(this.Score, this.Material, this.Measures.Count);
 

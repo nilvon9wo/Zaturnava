@@ -210,7 +210,9 @@ public sealed class BlunderRun
             .Any(other => this._rules.AttacksOf(state, other.Id).Any(attack => attack.Target == at.Key));
 
     /// <summary>
-    /// The blunder's position put to the bot that made it, as it plays now; whether it plays the same.
+    /// The blunder's position put to the bot that made it, as it plays now; whether it plays the same; and whether
+    /// another move, or passing, would have left less to be taken (<c>Careful.Exposure</c>): if not, the loss
+    /// was coming whatever it did (Athena's, 2026-11-27: of 20 she repeats, those looked at had no better move).
     /// </summary>
     private async Task<object> Checked(Blunder blunder, ImmutableDictionary<string, IBotPlaying> bots)
     {
@@ -218,12 +220,14 @@ public sealed class BlunderRun
         GameAction made = blunder.Actions[blunder.At];
         ImmutableList<GameAction> legal = this._rules.LegalActions(state);
         int moves = legal.Count(action => action is MoveAction or EscapeAction);
+        DecisionRequest request = new(this._rules, state, made.Actor, legal);
         GameAction? now = moves > 1 && bots.TryGetValue(blunder.Bot, out IBotPlaying? bot)
-            ? await bot.Decide(
-                new DecisionRequest(this._rules, state, made.Actor, legal),
-                TestContext.Current.CancellationToken
-            )
+            ? await bot.Decide(request, TestContext.Current.CancellationToken)
             : null;
+        int exposed = Careful.Exposure(request, this._rules.ApplyLegal(state, made).State);
+        int least = legal
+            .Where(action => action is MoveAction or EscapeAction or PassAction)
+            .Min(action => Careful.Exposure(request, this._rules.ApplyLegal(state, action).State));
         return new
         {
             blunder.Game,
@@ -237,6 +241,7 @@ public sealed class BlunderRun
             Moves = moves,
             Now = now is null ? null : Told(now),
             Repeated = now?.Equals(made),
+            Avoidable = least < exposed,
         };
     }
 

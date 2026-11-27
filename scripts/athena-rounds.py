@@ -4,8 +4,10 @@
 
 Each round:
 1. learns: a network goes on from the last round's (round-N.json), or starts judging as Sage does, and learns
-   from every game the rounds have played (games-*.jsonl) and any --seed files of games, by temporal
-   differences (--lambda), in --epochs passes, through the BotRunner's --learn;
+   from every game the rounds have played (games-*.jsonl) and any --seed files of games (each may be a pattern,
+   such as artifacts/athena/games-*.jsonl, or a folder, for its games-*.jsonl), by temporal differences (--lambda), in --epochs passes, through the
+   BotRunner's --learn; a network started afresh sees the board as --view says: summed up, or square by square
+   too (board);
 2. measures: Athena, playing by the new network, plays Sage --games games with her team moving first
    (athena,sage,athena,sage) and as many with Sage's, in --jobs processes at once; those games are kept,
    for the rounds after it to learn from;
@@ -15,7 +17,8 @@ Each round:
    her stronger than Sage.
 
 Usage: athena-rounds.py RUNNER [--rounds 1] [--games 200] [--epochs 4] [--lambda 0.8] [--rate 0.1]
-                               [--hidden 32] [--seed games.jsonl,more.jsonl] [--max-steps 2000] [--jobs N]
+                               [--hidden 32] [--view summed|board] [--seed games.jsonl,more-*.jsonl]
+                               [--max-steps 2000] [--jobs N]
                                [--ruleset chaturaji-2027] [--folder artifacts/athena]
 """
 
@@ -52,13 +55,15 @@ def rounds_done(folder):
 def learn(runner, folder, number, options):
     """The round's network, learned from every game played so far, going on from the last round's."""
     games = sorted(glob.glob(os.path.join(folder, "games-*.jsonl")))
-    games += [seed for seed in options.seed.split(",") if seed] if options.seed else []
+    seeds = [seed for seed in options.seed.split(",") if seed] if options.seed else []
+    games += [path for seed in seeds for path in seed_files(seed)]
     if not games:
         games = [os.path.join(folder, "games-0.jsonl")]
         open(games[0], "w", encoding="utf-8").close()
     network = os.path.join(folder, f"round-{number}.json")
     previous = os.path.join(folder, f"round-{number - 1}.json")
-    start = ["--from", previous] if os.path.exists(previous) else ["--hidden", str(options.hidden)]
+    start = (["--from", previous] if os.path.exists(previous)
+             else ["--hidden", str(options.hidden), "--view", options.view])
     # written aside, then put in place whole, so that a run stopped as it writes leaves no half a network
     writing = network + ".part"
     subprocess.run(
@@ -68,6 +73,13 @@ def learn(runner, folder, number, options):
     )
     os.replace(writing, network)
     return network
+
+
+def seed_files(seed):
+    """The files of games a --seed names: a folder's games-*.jsonl; a pattern's matches; or the file itself."""
+    if os.path.isdir(seed):
+        return sorted(glob.glob(os.path.join(seed, "games-*.jsonl")))
+    return sorted(glob.glob(seed)) or [seed]
 
 
 def play(runner, network, seats, games, max_steps, out):
@@ -144,6 +156,7 @@ def main():
     parser.add_argument("--lambda", dest="lambda_", type=float, default=0.8)
     parser.add_argument("--rate", type=float, default=0.1)
     parser.add_argument("--hidden", type=int, default=32)
+    parser.add_argument("--view", choices=("summed", "board"), default="summed")
     parser.add_argument("--seed")
     parser.add_argument("--max-steps", type=int, default=2000)
     parser.add_argument("--jobs", type=int, default=os.cpu_count())

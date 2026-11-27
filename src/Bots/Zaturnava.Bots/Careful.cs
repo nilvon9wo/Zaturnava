@@ -326,6 +326,85 @@ internal static class Careful
                 .Max()
             : 0;
 
+    /// <summary>
+    /// What is at stake on the empty thrones of the bot's allies that an enemy leader could step onto: the most,
+    /// among them, that its owner's pieces on the board are worth, as the enemy would take control of them; nothing,
+    /// if none could (the user, 2026-11-27: "the most dangerous thing about the enemy leaders ... is their ability to
+    /// take the throne and take control of opposing pieces"; and, of seizing one, "when it counts, it really can
+    /// count", as when the enemy takes control of an ally's last Rook). The bot's own throne is
+    /// <see cref="ThroneThreat"/>'s.
+    /// </summary>
+    internal static int AlliedThroneThreat(DecisionRequest request, GameState after, ILookup<CellId, Attack> threats) =>
+        request.Rules.ThronesOf(after)
+            .Where(throne => throne.Key != request.Seat
+                && after.Teams.AreAllied(throne.Key, request.Seat)
+                && after.Position.PieceAt(throne.Value) is null
+                && threats[throne.Value].Any(attack => request.Rules.IsLeader(attack.Attacker.Kind))
+            )
+            .Select(throne => StakeOf(request.Rules, after, throne.Key))
+            .Append(0)
+            .Max();
+
+    /// <summary>
+    /// The most an enemy could win by a fork it could make before the team moves again (the assessment of 2026-11-27:
+    /// "Nothing models an enemy move that creates attacks"): a move of an enemy army whose turn comes before the
+    /// team's next, to an empty cell the team does not attack, from which the piece would attack two or more of the
+    /// team's pieces not attacked already, each unguarded or worth keeping more than it. The team saves the dearest, so
+    /// the enemy wins the second dearest; as likely as the dice are to let the piece move.
+    /// </summary>
+    internal static double ForkThreat(
+        DecisionRequest request,
+        GameState after,
+        ILookup<CellId, Attack> threats,
+        ILookup<CellId, Attack> guards
+    )
+    {
+        ImmutableDictionary<SeatId, int> turns = ArmyTurnsOf(request, after);
+        int next = after.Seats
+            .Where(seat => after.Teams.AreAllied(seat.Id, request.Seat))
+            .Min(seat => turns.GetValueOrDefault(seat.Id, int.MaxValue));
+        return after.Seats
+            .Where(seat => !after.Teams.AreAllied(seat.Id, request.Seat)
+                && turns.GetValueOrDefault(seat.Id, int.MaxValue) < next
+            )
+            .SelectMany(seat => request.Rules.MovesOf(after, seat.Id))
+            .Where(move => after.Position.PieceAt(move.Target) is null && !guards.Contains(move.Target))
+            .Select(move => Forked(request, after, move, threats, guards))
+            .Append(0)
+            .Max();
+    }
+
+    /// <summary>What the enemy would win by the fork the move makes, if it makes one; else nothing.</summary>
+    private static double Forked(
+        DecisionRequest request,
+        GameState after,
+        Attack move,
+        ILookup<CellId, Attack> threats,
+        ILookup<CellId, Attack> guards
+    )
+    {
+        int forker = request.Rules.KeepingWorthOf(move.Attacker.Kind);
+        GameState moved = after with { Position = after.Position.Relocate(move.From, move.Target) };
+        ImmutableList<int> gains =
+        [
+            .. request.Rules.AttacksOf(moved, move.Attacker.Owner)
+                .Where(attack => attack.From == move.Target && !threats.Contains(attack.Target))
+                .Select(attack => (Cell: attack.Target, Piece: after.Position.PieceAt(attack.Target)))
+                .Where(target => target.Piece is not null && after.Teams.AreAllied(target.Piece.Owner, request.Seat))
+                .Select(target => request.Rules.KeepingWorthOf(target.Piece!.Kind) - (guards.Contains(target.Cell)
+                    ? forker
+                    : 0
+                ))
+                .Where(gain => gain > 0)
+                .OrderDescending(),
+        ];
+        return gains.Count < 2 ? 0 : gains[1] * Math.Min(1, request.Rules.MovesPerTurn(move.Attacker.Kind));
+    }
+
+    /// <summary>What the <paramref name="owner"/>'s pieces on the board are worth: what its throne controls.</summary>
+    internal static int StakeOf(IRulesApplying rules, GameState state, SeatId owner) =>
+        state.Position.Occupants.Values.Where(piece => piece.Owner == owner).Sum(piece => rules.WorthOf(piece.Kind));
+
     /// <summary>The attacks of the bot's team (<paramref name="isAllied"/>) or of its enemies, by target.</summary>
     internal static ILookup<CellId, Attack> AttacksBy(DecisionRequest request, GameState after, bool isAllied) =>
         after.Seats

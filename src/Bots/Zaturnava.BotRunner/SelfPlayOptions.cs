@@ -18,7 +18,13 @@ namespace Net.NowhereAtAll.Zaturnava.BotRunner;
 /// units (default 32); in <c>--epochs</c> rounds (default 8), each position taught how the game went by
 /// <c>--lambda</c> (default 1) and what follows it by the rest, in steps of <c>--rate</c> (default 0.1),
 /// shared out over how big each position's numbers are. With <c>--list bots</c>, it writes the id of each of our bots
-/// that plays the ruleset instead, one to a line: those a tournament may rate (scripts/rate-bots.py).
+/// that plays the ruleset instead, one to a line: those a tournament may rate (scripts/rate-bots.py). With
+/// <c>--seed</c>, each game rolls dice of its own, from the seed and its number, and the games are written in order
+/// (<see cref="SelfPlay"/>): played again with the same seed, each game rolls the same dice. With <c>--starts</c>, a
+/// file of games played before, each game is played on from one of them, where it first came down to
+/// <c>--pieces</c> pieces or fewer (default 8) as a turn began (<see cref="Starts"/>). With <c>--view board</c>, a
+/// network learned afresh sees the board square by square too, not only summed up
+/// (<see cref="Bots.Learning.PositionEncoder.SeesBoard"/>).
 /// </summary>
 internal sealed record SelfPlayOptions(
     string RulesetId,
@@ -35,14 +41,19 @@ internal sealed record SelfPlayOptions(
     string? StartPath = null,
     double Lambda = 1,
     double Rate = 0.1,
-    bool IsListing = false
+    bool IsListing = false,
+    int? Seed = null,
+    string? StartsPath = null,
+    int Pieces = 8,
+    bool SeesBoard = false
 )
 {
     public const string Usage =
         "Usage: Zaturnava.BotRunner [--ruleset chaturaji-2027] [--bots random,random,random,random] [--games 100] "
         + "[--max-steps 1000] [--out games.jsonl] [--train rounds] [--bot-assembly MyBots.dll] "
         + "[--network athena.json] [--learn games.jsonl,more.jsonl [--from athena.json] [--hidden 32] "
-        + "[--epochs 8] [--lambda 1] [--rate 0.1]] [--list bots]";
+        + "[--epochs 8] [--lambda 1] [--rate 0.1] [--view board]] [--list bots] [--seed 1] "
+        + "[--starts games.jsonl [--pieces 8]]";
 
     private static readonly SelfPlayOptions Defaults = new("chaturaji-2027", null, 100, 1000, null);
 
@@ -75,6 +86,12 @@ internal sealed record SelfPlayOptions(
             "--hidden" => this with { Hidden = Count(name, value) },
             "--lambda" => this with { Lambda = Share(name, value) },
             "--rate" => this with { Rate = Share(name, value) },
+            "--seed" => this with { Seed = Count(name, value) },
+            "--starts" => this with { StartsPath = value },
+            "--pieces" => this with { Pieces = Count(name, value) },
+            "--view" when value == "board" => this with { SeesBoard = true },
+            "--view" when value == "summed" => this with { SeesBoard = false },
+            "--view" => throw new ArgumentException($"--view is board or summed, not '{value}'. {Usage}"),
             "--list" when value == "bots" => this with { IsListing = true },
             "--list" => throw new ArgumentException($"--list lists only bots, not '{value}'. {Usage}"),
             _ => throw new ArgumentException($"There is no {name} option. {Usage}"),

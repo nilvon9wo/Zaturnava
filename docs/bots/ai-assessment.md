@@ -105,16 +105,18 @@ How the exchange terms work:
   - per relative seat and per kind, a count of pieces and the **total** rows they have advanced;
   - prisoners, scores, whose decision it is, the dice, and who has resigned or retired;
   - Sage's features.
-  - The encoder's remarks say the board is deliberately "summed up, not given square by square". **The network never
-    sees where any individual piece stands.**
+  - The shipped network sees the board summed up only: **it never sees where any individual piece stands.**
+  - *Built, not yet trained (2026-11-27):* `--view board` gives a network learned afresh the board square by square
+    too, as each seat sees it from its own edge. For each square and each seat: what its piece there is worth, whether
+    it leads, whether it is heavy, and how many of its pieces attack the square. Worth, not kind, so that Grand
+    Legions' ever-different armies share what is learned. Networks learned before still fit.
 - **Training** ([Learning.cs](../../src/Bots/Zaturnava.BotRunner/Learning.cs)): offline TD(λ), with λ = 1 by
   default, which is plain Monte Carlo regression to the final result. It learns from recorded games of the existing
   bots.
 - **Coverage:** [Networks/](../../src/Bots/Zaturnava.Bots/Networks) holds only `chaturaji-2027.json`. For every Grand
   Legions size, `AthenaBot.Valuing` returns null, so Athena uses `Appraiser` with Sage's learned weights. The only
   other difference, answering an end-of-game proposal by the network, also needs the network, so it falls back too.
-- **The profile overstates this.** Athena's description says a network trained on two thousand games judges each
-  position, and it is flagged `UsesAi: true`. In Grand Legions that is not what happens.
+- **Offered only where she has a network**: so far, Chaturaji 2027 (`AthenaBot.Knows`), as her profile says.
 
 ### 1.4 Sage's weight training
 
@@ -410,6 +412,34 @@ Then every bot is a pairing, and the arena measures each pairing.
   cell as the board stood. Now, for a piece of the team attacked and guarded, it sees too what the enemy's cheapest
   taker would open behind it, once it took (*Proposed*). Repeated losses: 46 to 45, Sage's 13 to 12; that game's
   Horse now stays.
+- **Challengers: one change, the same bot on both sides** (2026-11-27, the user: "proof instead of speculation").
+  A challenger (`Challenger`, in the BotRunner's tests) is one of our bots with a single setting changed, played
+  against the bot as it is (`ArenaRun`, `"botAssembly": "self"`), each on both teams' seats. 100 games each:
+
+  | Challenger | Changed | Won | Lost | Kept? |
+  |---|---|---|---|---|
+  | `sage-hunting` | Heavies hunted before leaders in an endgame; allies' empty thrones guarded | 52 | 48 | No: no measurable difference |
+  | `athena-steady` | Sage's appraisal counting ten times as much beside her network (0.02, not 0.002) | 44 | 56 | No |
+  | `tactician-hunting` | As `sage-hunting` (1 game drawn) | 43 | 56 | No: leaning worse; a heavy's many escapes may outweigh all else |
+  | `tactician-guarding` | Allies' empty thrones guarded, and nothing else | 52 | 48 | No: no measurable difference |
+  | `sage-usurping` | A throne held counted by what it controls (vs Sage) | 55 | 45 | No: within chance, and it seized no more thrones (13 games to Sage's 14) |
+  | `sage-guarding` | Allies' empty thrones guarded by what is at stake (vs Sage) | 49 | 51 | No measurable difference |
+  | `sage-guarding` | The same, against `sage-usurping` | 57 | 43 | Not yet: guarding did 12 games better against the usurper than Sage did, but the usurper seized more thrones against it (20 to 14), so the guard is not shown to be why |
+  | `tactician-cornering` | Heavies hunted first, but at most one escape counted, as likely as the dice let it move | 57 | 43 | Not yet: promising (as hunting alone lost 43 to 56), to be confirmed in more games |
+  | `tactician-cornering` | The same, from 74 recorded endgames, each played from both sides, each pair of games with the same dice | 74 | 74 | No: pairs 6 won, 6 lost, 62 even; thrones seized 23 each. The 57 to 43 was chance |
+  | `sage-wary` | Forks an enemy could make on its next move counted, as a piece left to be taken is (vs Sage) | 99 | 101 | No: pairs 16 won, 17 lost, 67 even |
+
+  Started from the same endgame with the same dice, 62 of 74 pairs ended alike: in an endgame of eight pieces or fewer
+  the position and the dice decide most games, whichever way a bot hunts. A way of hunting shows only in the few pairs
+  that differ, so endgame matches need many starts, or the forks (`ForkRun`), which play out only where bots differ.
+  From the beginning too, with the same dice, two Sages that differ in one judgement end two thirds of their pairs
+  alike: the dice decide much, and a small change in judgement shows in a third of the games at most.
+
+  Thrones not a team's own were seized in 11 to 20 of each 100 games, by either side: more often than feared, so a
+  difference in guarding them can show, given more games or paired ones.
+
+  Before challengers, steadier Athena beat Sage 65 to 35, as Athena does (25 to 15 in 40); against Athena herself,
+  she lost. Her network's swings are better left as they are than drowned in Sage's count.
 - **Not done: a Pawn won back counted as its points.** Counting an enemy piece taken back as the points it scores,
   not as what it is worth keeping (a Pawn 3), changed nothing measurable (46 to 45, Sage's 13 to 14), and the case
   that suggested it was sound: Green's Rook took a Pawn that attacked its Raja. Left as it was.

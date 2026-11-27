@@ -30,6 +30,12 @@ public sealed class AthenaBot(Random random, ImmutableDictionary<string, ValueNe
     {
     }
 
+    /// <summary>
+    /// How much Sage's appraisal steadies the network's judgement (<see cref="NetworkValuing.Steadied"/>):
+    /// <see cref="NetworkValuing.Steadiness"/>, unless set, as a challenger may.
+    /// </summary>
+    public double Steadiness { get; init; } = NetworkValuing.Steadiness;
+
     public BotProfile Profile { get; } = new(
         BotId,
         "Athena",
@@ -82,7 +88,7 @@ public sealed class AthenaBot(Random random, ImmutableDictionary<string, ValueNe
     private NetworkValuing? Valuing(IRulesApplying rules) =>
         this._networks.TryGetValue(rules.Id, out ValueNetworkData? data)
             && PositionEncoder.Fitting(rules, data.Inputs) is { } encoder
-            ? new NetworkValuing(encoder, ValueNetwork.From(data), WeightsFor(rules))
+            ? new NetworkValuing(encoder, ValueNetwork.From(data), WeightsFor(rules)) { Steadied = this.Steadiness }
             : null;
 
     private static SageWeights WeightsFor(IRulesApplying rules) =>

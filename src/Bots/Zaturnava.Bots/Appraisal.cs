@@ -95,8 +95,11 @@ internal static class Appraisal
                 .Select(prisoner => (prisoner.Holder, (double)request.Rules.WorthOf(prisoner.Piece.Kind)))
         );
 
-    /// <summary>How many thrones not their allies' each side's leaders sit on.</summary>
-    private static Sided Thrones(DecisionRequest request, GameState state) =>
+    /// <summary>
+    /// How many thrones not their allies' each side's leaders sit on; each by what it controls, if
+    /// <paramref name="byStake"/> (<see cref="Hunting.ThronesByStake"/>).
+    /// </summary>
+    private static Sided Thrones(DecisionRequest request, GameState state, bool byStake = false) =>
         Tally(
             request,
             state,
@@ -106,7 +109,10 @@ internal static class Appraisal
                     && request.Rules.IsLeader(held.Occupant.Kind)
                     && !state.Teams.AreAllied(held.Occupant.Owner, held.Throne)
                 )
-                .Select(held => (held.Occupant!.Owner, 1d))
+                .Select(held => (
+                    held.Occupant!.Owner,
+                    byStake ? 1 + (Careful.StakeOf(request.Rules, state, held.Throne) / (double)Hunting.StakeUnit) : 1d
+                ))
         );
 
     /// <summary>
@@ -135,13 +141,16 @@ internal static class Appraisal
             + weights.Material.Weigh(Material(request, state))
             + weights.Leaders.Weigh(Leaders(request, state))
             + weights.Prisoners.Weigh(Prisoners(request, state))
-            + weights.Thrones.Weigh(Thrones(request, state))
-            - (ExposureWeight(weights) * Careful.Exposure(request, state, theirs, ours))
+            + weights.Thrones.Weigh(Thrones(request, state, weights.Hunting.ThronesByStake))
+            - (ExposureWeight(weights)
+                * (Careful.Exposure(request, state, theirs, ours)
+                    + (weights.Hunting.AlliedThrones ? Careful.AlliedThroneThreat(request, state, theirs) : 0)
+                    + (weights.Hunting.Forks ? Careful.ForkThreat(request, state, theirs, ours) : 0)))
             + (weights.Chances * Threats(request, state, ours, theirs))
             + weights.Mobility.Weigh(Mobility(request, ours, theirs))
             + Measured(request, state, weights)
             + (Endgame.IsEndgame(request.Rules, state)
-                ? Endgame.Pressure(request, state, ours, Endgame.ScaleOf(weights))
+                ? Endgame.Pressure(request, state, ours, Endgame.ScaleOf(weights), weights.Hunting)
                 : 0);
 
     /// <summary>

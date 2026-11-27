@@ -49,28 +49,119 @@ internal static class Endgame
         && state.Position.Occupants.Values.Count(piece => IsPlaying(state, piece)) <= most;
 
     /// <summary>
-    /// How hard the team presses the enemy's leaders: for each on the board, each cell it could move to that the team
-    /// does not attack counts against, at <see cref="PerEscape"/>; and the leader attacked counts for, at
-    /// <see cref="PerAttack"/>; scaled by <paramref name="scale"/>, the weight of a point of material.
+    /// How hard the team presses the enemy's leaders and heavy pieces, each by its share (<see cref="Hunting"/>): for
+    /// each on the board, each cell it could move to that the team does not attack counts against, at
+    /// <see cref="PerEscape"/>; and the piece attacked counts for, at <see cref="PerAttack"/>; scaled by
+    /// <paramref name="scale"/>, the weight of a point of material.
     /// </summary>
-    public static double Pressure(DecisionRequest request, GameState state, ILookup<CellId, Attack> ours, double scale)
+    public static double Pressure(
+        DecisionRequest request,
+        GameState state,
+        ILookup<CellId, Attack> ours,
+        double scale,
+        Hunting hunting
+    )
     {
-        ImmutableList<(SeatId Seat, CellId Cell)> leaders =
+        ImmutableList<(SeatId Seat, CellId Cell, double Share)> pressed =
         [
             .. state.Position.Occupants
                 .Where(occupant => !state.Teams.AreAllied(occupant.Value.Owner, request.Seat)
                     && IsPlaying(state, occupant.Value)
-                    && request.Rules.IsLeader(occupant.Value.Kind)
                 )
-                .Select(occupant => (occupant.Value.Owner, occupant.Key)),
+                .Select(occupant => (
+                    occupant.Value.Owner,
+                    occupant.Key,
+                    request.Rules.IsLeader(occupant.Value.Kind) ? hunting.Leaders
+                        : request.Rules.IsHeavy(occupant.Value.Kind) ? hunting.Heavies
+                        : 0
+                ))
+                .Where(piece => piece.Item3 > 0),
         ];
-        double pressure = leaders
-            .GroupBy(leader => leader.Seat)
-            .Sum(seat => Pressed(request, state, seat.Key, [.. seat.Select(leader => leader.Cell)], ours));
+        ImmutableList<Chaser> chasers = hunting.Timed ? ChasersOf(request, state) : [];
+        ImmutableDictionary<SeatId, int> turns = hunting.Timed
+            ? Careful.ArmyTurnsOf(request, state)
+            : [];
+        double pressure = hunting.Escapes is { } most
+            ? pressed.Sum(piece => piece.Share
+                * Cornered(request, state, piece.Seat, piece.Cell, ours, most, [
+                    .. chasers.Where(chaser => chaser.Turn < turns.GetValueOrDefault(piece.Seat, int.MaxValue)),
+                ])
+            )
+            : pressed
+                .GroupBy(piece => (piece.Seat, piece.Share))
+                .Sum(same => same.Key.Share
+                    * Pressed(request, state, same.Key.Seat, [.. same.Select(piece => piece.Cell)], ours)
+                );
         return scale * pressure;
     }
 
-    /// <summary>How hard one enemy's leaders, at <paramref name="cells"/>, are pressed.</summary>
+    /// <summary>
+    /// How cornered one enemy piece is (the user, 2026-11-27: "it only just needs one unguarded square ... or whether
+    /// there will be time to escape"): attacked, at <see cref="PerAttack"/>; and each cell it could flee to that the
+    /// team does not attack, but no more than <paramref name="most"/> of them, at <see cref="PerEscape"/>, as likely
+    /// to count as the dice are to let it move at all (<see cref="IRulesApplying.MovesPerTurn"/>). Each cell counts as
+    /// safe as the <paramref name="chasers"/>, the team's pieces that move before the piece does, leave it: a chaser
+    /// that could cover it in one move takes from its safety as likely as the dice are to let that chaser move (the
+    /// user, 2026-11-27: a cell several steps from a piece "could be as little as one turn away if both the enemy and
+    /// the ally are able to move it twice per turn ... the (im)probability should be weighed towards the safety of the
+    /// square"); with none, each counts whole.
+    /// </summary>
+    private static double Cornered(
+        DecisionRequest request,
+        GameState state,
+        SeatId seat,
+        CellId cell,
+        ILookup<CellId, Attack> ours,
+        int most,
+        ImmutableList<Chaser> chasers
+    )
+    {
+        double safest = request.Rules.MovesOf(state, seat)
+            .Where(move => move.From == cell)
+            .Select(move => move.Target)
+            .Distinct()
+            .Where(target => !ours.Contains(target))
+            .Select(target => chasers
+                .Where(chaser => chaser.Covers.Contains(target))
+                .Aggregate(1d, (safety, chaser) => safety * (1 - chaser.Chance))
+            )
+            .OrderDescending()
+            .Take(most)
+            .Sum();
+        double chance = Math.Min(1, request.Rules.MovesPerTurn(state.Position.PieceAt(cell)!.Kind));
+        return (ours.Contains(cell) ? PerAttack : 0) - (PerEscape * chance * safest);
+    }
+
+    /// <summary>
+    /// One of the team's pieces as it may chase: when its army moves next (<see cref="Careful.ArmyTurnsOf"/>), how
+    /// likely the dice are to let it move, and the cells it would attack after any one move of its.
+    /// </summary>
+    private sealed record Chaser(int Turn, double Chance, ImmutableHashSet<CellId> Covers);
+
+    /// <summary>The team's pieces, each as it may chase.</summary>
+    private static ImmutableList<Chaser> ChasersOf(DecisionRequest request, GameState state)
+    {
+        ImmutableDictionary<SeatId, int> turns = Careful.ArmyTurnsOf(request, state);
+        return
+        [
+            .. state.Seats
+                .Where(army => state.Teams.AreAllied(army.Id, request.Seat) && !state.Retired.Contains(army.Id))
+                .SelectMany(army => request.Rules.MovesOf(state, army.Id)
+                    .GroupBy(move => move.From)
+                    .Select(moves => new Chaser(
+                        turns.GetValueOrDefault(army.Id, int.MaxValue),
+                        Math.Min(1, request.Rules.MovesPerTurn(moves.First().Attacker.Kind)),
+                        [
+                            .. moves.Select(move => move.Target).Distinct().SelectMany(target =>
+                                CoveredFrom(request, state, army.Id, moves.Key, target)
+                            ),
+                        ]
+                    ))
+                ),
+        ];
+    }
+
+    /// <summary>How hard one enemy's pieces, at <paramref name="cells"/>, are pressed.</summary>
     private static double Pressed(
         DecisionRequest request,
         GameState state,
@@ -84,6 +175,18 @@ internal static class Endgame
         int attacked = cells.Count(ours.Contains);
         return (PerAttack * attacked) - (PerEscape * free);
     }
+
+    /// <summary>What the army's piece on <paramref name="from"/> attacks, moved to <paramref name="to"/>.</summary>
+    private static IEnumerable<CellId> CoveredFrom(
+        DecisionRequest request,
+        GameState state,
+        SeatId army,
+        CellId from,
+        CellId to
+    ) =>
+        request.Rules.AttacksOf(state with { Position = state.Position.Relocate(from, to) }, army)
+            .Where(attack => attack.From == to)
+            .Select(attack => attack.Target);
 
     /// <summary>
     /// The weight of a point of material, by <paramref name="weights"/>: none, if they weigh none, so that weights

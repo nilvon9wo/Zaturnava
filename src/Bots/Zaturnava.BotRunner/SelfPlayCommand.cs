@@ -132,7 +132,7 @@ internal static class SelfPlayCommand
         Learning learning = new(rules, progress);
         ValueNetworkData network = await learning.Learn(
             files.SelectMany(File.ReadLines),
-            start ?? learning.Start(options.Hidden, Random.Shared),
+            start ?? learning.Start(options.Hidden, Random.Shared, options.SeesBoard),
             options.Pace,
             Random.Shared,
             cancellationToken
@@ -155,7 +155,33 @@ internal static class SelfPlayCommand
                 : ours
         );
         ImmutableList<string> botIds = options.Bots ?? [.. Enumerable.Repeat(RandomBot.BotId, SeatCount(rules))];
-        return new SelfPlay(rules, botIds, [.. botIds.Select(bots.Find)], new RandomDice(Random.Shared));
+        return new SelfPlay(
+            rules,
+            botIds,
+            [.. botIds.Select(bots.Find)],
+            new RandomDice(Random.Shared),
+            options.Seed,
+            options.StartsPath is { } starts ? StartsIn(starts, rules, options.Pieces) : null
+        );
+    }
+
+    /// <summary>Where the games in the file at <paramref name="path"/> come down to so few pieces.</summary>
+    /// <exception cref="ArgumentException">The file cannot be read, or none of its games does.</exception>
+    private static ImmutableList<Played> StartsIn(string path, IRulesApplying rules, int pieces)
+    {
+        ImmutableList<Played> starts;
+        try
+        {
+            starts = Starts.From(rules, File.ReadAllText(path), pieces);
+        }
+        catch (Exception unread) when (unread is IOException or JsonException)
+        {
+            throw new ArgumentException($"There are no games to start from in {path}: {unread.Message}", unread);
+        }
+
+        return starts.IsEmpty
+            ? throw new ArgumentException($"No {rules.Id} game in {path} comes down to {pieces} pieces.")
+            : starts;
     }
 
     /// <summary>Our bots, but Athena playing the ruleset by <paramref name="network"/>.</summary>

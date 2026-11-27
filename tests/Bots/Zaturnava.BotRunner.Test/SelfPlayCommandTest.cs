@@ -39,6 +39,21 @@ public sealed class SelfPlayCommandTest
     }
 
     [Fact]
+    public async Task Run_WhenSeeded_RollsTheSameDiceInEachGameAsOftenAsItIsPlayed()
+    {
+        // Arrange - random bots, so that only the dice are the same each time: three games, played twice
+        string[] args = ["--games", "3", "--max-steps", "12", "--seed", "7"];
+        StringWriter again = new();
+
+        // Act
+        _ = await SelfPlayCommand.Run(args, this._output, this._errors, this._cancellation);
+        _ = await SelfPlayCommand.Run(args, again, this._errors, this._cancellation);
+
+        // Assert - each game's first roll the same both times, game by game, in order
+        Assert.Equal(FirstRolls(this._output), FirstRolls(again));
+    }
+
+    [Fact]
     public async Task Run_WhenAGameEnds_SaysWhoWonItAndHow()
     {
         // Arrange - Argus ends most games long before ten thousand steps; a win is a team's, a draw no one's
@@ -285,6 +300,18 @@ public sealed class SelfPlayCommandTest
     }
 
     private static string? Player(JsonElement seat) => seat.GetProperty("player").GetString();
+
+    /// <summary>Each game's first roll, as its arguments say, in the order the games were written.</summary>
+    private static string[] FirstRolls(StringWriter games) =>
+    [
+        .. games.ToString()
+            .Split('\n', StringSplitOptions.RemoveEmptyEntries)
+            .Select(line => JsonElement.Parse(line).GetProperty("actions").EnumerateArray()
+                .First(action => action.GetProperty("kind").GetString() == "dice")
+                .GetProperty("arguments")
+                .GetRawText()
+            ),
+    ];
 
     /// <summary>How many numbers a Chaturaji 2027 position is.</summary>
     private static int Size => new PositionEncoder(new Chaturaji2027Rules()).Size;
