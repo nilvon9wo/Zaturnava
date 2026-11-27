@@ -77,11 +77,14 @@ and has no such premium.
 | Pawn (Makruk) | Courtier, 3 over 4 rows; the far edge pays more | 2 | 4 |
 | Other Infantry, not confined | the far edge (Rook, 14), over 6 rows | 2 | +2 |
 
-The sheet keeps the four settings apart, to be tuned by playtesting: `PremiumFactor` (1),
-`FarEdgeTarget` (the Rook), `FarEdgeDistance` (6) and `LeaderPromotionBonus` (0).
+The workbook keeps the four settings apart, on a sheet of their own (Settings), to be tuned by playtesting:
+`PremiumFactor` (1), `FarEdgeTarget` (the Rook), `FarEdgeDistance` (6) and `LeaderPromotionBonus` (0).
 
 The sheet's formulas name what they look up (`PieceNames`, column B; `BaseValues`, column Y) and its settings, so
-that sorting the rows breaks none of them (*Stated* 2026-11-25), and a row added below is found as well.
+that sorting the rows breaks none of them (*Stated* 2026-11-25), and a row added below is found as well. The settings
+once sat beside the first rows of pieces (Z1:AA5), so that a sort carried them off with those rows, and every
+promotion's premium then looked up the wrong cells; on their own sheet, no sort of the pieces reaches them
+(2026-11-27).
 
 ### Leader promotion bonus
 

@@ -3,10 +3,12 @@
     py -3 scripts/set-pieces-cells.py O15==LeaderPromotionBonus Z5=LeaderPromotionBonus AA5=50 Q15:v=4 \
         name:LeaderPromotionBonus=Sheet1!$AA$5
 
-Each argument is one change to docs/Other Potential Pieces.xlsx, on its first sheet:
+Each argument is one change to docs/Other Potential Pieces.xlsx, on its first sheet unless a cell says another
+(`Settings!B2=1`):
 
-- `A1=text` or `A1=12` sets a value, in a new row if the row before it is there but not its own (its cells styled as
-  those above them); `A1==FORMULA` a formula (without its `=`), whose last computed value may follow
+- `sheet+:Settings` adds an empty sheet of that name, after the others, before any other change is made;
+- `A1=text` or `A1=12` sets a value, in a new row if its own is not there (its cells styled as those above them);
+  `A1==FORMULA` a formula (without its `=`), whose last computed value may follow
   after `@` (`O15==LeaderPromotionBonus@50`);
 - `A1:v=12` sets only the last computed value of a formula cell, so that what a reader without a spreadsheet program
   sees stays true;
@@ -65,14 +67,13 @@ def style_of(attributes: str) -> str:
 
 
 def added_row(sheet: str, row: str) -> str:
-    """The sheet with an empty row `row` after the row before it, which must be there, and its dimension grown (a
-    row of formatting alone may come far below, as row 1048576 does)."""
+    """The sheet with an empty row `row` after the last row above it (or first, if none is), and its dimension grown
+    (a row of formatting alone may come far below, as row 1048576 does)."""
     rows = list(re.finditer(r'<row r="(\d+)"[^>]*?(?:/>|>.*?</row>)', sheet, re.S))
-    previous = [found for found in rows if int(found.group(1)) == int(row) - 1]
-    if not previous:
-        raise SystemExit(f"row {row} is not in the sheet, nor the row before it")
-    last = previous[0]
-    sheet = sheet[: last.end()] + f'<row r="{row}"></row>' + sheet[last.end() :]
+    above = [found for found in rows if int(found.group(1)) < int(row)]
+    sheet = sheet.replace("<sheetData/>", "<sheetData></sheetData>", 1)
+    at = above[-1].end() if above else sheet.index("<sheetData>") + len("<sheetData>")
+    sheet = sheet[:at] + f'<row r="{row}"></row>' + sheet[at:]
     return re.sub(
         r'(<dimension ref="[A-Z]+\d+:[A-Z]+)(\d+)(")',
         lambda m: m.group(1) + str(max(int(m.group(2)), int(row))) + m.group(3),
@@ -186,6 +187,57 @@ def delete_row(parts: dict[str, bytes], deleted: int) -> None:
     parts[WORKBOOK] = workbook.encode("utf-8")
 
 
+RELATIONSHIPS = "xl/_rels/workbook.xml.rels"
+CONTENT_TYPES = "[Content_Types].xml"
+WORKSHEET_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"
+WORKSHEET_RELATIONSHIP = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet"
+EMPTY_SHEET = (
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'
+    '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" '
+    'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetData></sheetData></worksheet>'
+)
+
+
+def sheet_parts(parts: dict[str, bytes]) -> dict[str, str]:
+    """Each sheet's part in the file, by the sheet's name."""
+    workbook = parts[WORKBOOK].decode("utf-8")
+    rels = parts[RELATIONSHIPS].decode("utf-8")
+    targets = {
+        found.group("id"): found.group("target")
+        for found in re.finditer(r'<Relationship\b(?=[^>]*\bId="(?P<id>[^"]+)")(?=[^>]*\bTarget="(?P<target>[^"]+)")', rels)
+    }
+    found = {}
+    for sheet in re.finditer(r'<sheet\b(?=[^>]*\bname="(?P<name>[^"]+)")(?=[^>]*:id="(?P<id>[^"]+)")', workbook):
+        target = targets[sheet.group("id")].lstrip("/")
+        found[sheet.group("name")] = target if target.startswith("xl/") else "xl/" + target
+    return found
+
+
+def add_sheet(parts: dict[str, bytes], name: str) -> None:
+    """A new, empty sheet called `name`, after the others."""
+    if name in sheet_parts(parts):
+        raise SystemExit(f"there is a sheet {name} already")
+    number = 1
+    while f"xl/worksheets/sheet{number}.xml" in parts:
+        number += 1
+    part = f"xl/worksheets/sheet{number}.xml"
+    parts[part] = EMPTY_SHEET.encode("utf-8")
+    types = parts[CONTENT_TYPES].decode("utf-8")
+    override = f'<Override PartName="/{part}" ContentType="{WORKSHEET_TYPE}"/>'
+    parts[CONTENT_TYPES] = types.replace("</Types>", override + "</Types>", 1).encode("utf-8")
+    rels = parts[RELATIONSHIPS].decode("utf-8")
+    used = [int(found) for found in re.findall(r'\bId="rId(\d+)"', rels)]
+    relationship = f"rId{max(used, default=0) + 1}"
+    added = f'<Relationship Id="{relationship}" Type="{WORKSHEET_RELATIONSHIP}" Target="worksheets/sheet{number}.xml"/>'
+    parts[RELATIONSHIPS] = rels.replace("</Relationships>", added + "</Relationships>", 1).encode("utf-8")
+    workbook = parts[WORKBOOK].decode("utf-8")
+    ids = [int(found) for found in re.findall(r'<sheet\b[^>]*\bsheetId="(\d+)"', workbook)]
+    prefix = re.search(r'<sheet\b[^>]*\b(\w+):id="', workbook)
+    attribute = f"{prefix.group(1) if prefix else 'r'}:id"
+    entry = f'<sheet name="{escape(name)}" sheetId="{max(ids, default=0) + 1}" {attribute}="{relationship}"/>'
+    parts[WORKBOOK] = workbook.replace("</sheets>", entry + "</sheets>", 1).encode("utf-8")
+
+
 def recalculate_on_load(workbook: str) -> str:
     if "<calcPr" not in workbook:
         return workbook.replace("</workbook>", '<calcPr fullCalcOnLoad="1"/></workbook>', 1)
@@ -214,26 +266,48 @@ def main(changes: list[str]) -> None:
     for change in [change for change in changes if change.startswith("row-:")]:
         delete_row(parts, int(change[len("row-:") :]))
     changes = [change for change in changes if not change.startswith("row-:")]
-    sheet = parts[SHEET].decode("utf-8")
+    for change in [change for change in changes if change.startswith("sheet+:")]:
+        add_sheet(parts, change[len("sheet+:") :])
+    changes = [change for change in changes if not change.startswith("sheet+:")]
+    named = sheet_parts(parts)
+    texts: dict[str, str] = {}
+
+    def on_sheet(reference: str) -> tuple[str, str]:
+        """The part a cell reference's sheet is (the first sheet's, unless it says `Name!A1`), and the cell."""
+        sheet_name, _, cell = reference.rpartition("!")
+        if sheet_name and sheet_name not in named:
+            raise SystemExit(f"there is no sheet {sheet_name}")
+        part = named[sheet_name] if sheet_name else SHEET
+        texts.setdefault(part, parts[part].decode("utf-8"))
+        return part, cell
+
     workbook = parts[WORKBOOK].decode("utf-8")
     for change in changes:
         target, _, value = change.partition("=")
         if target.startswith("name:"):
             workbook = set_name(workbook, target[len("name:") :], value)
         elif target.startswith("clear:"):
-            sheet = cleared(sheet, target[len("clear:") :])
+            part, cell = on_sheet(target[len("clear:") :])
+            texts[part] = cleared(texts[part], cell)
         elif change.startswith("formulas:"):
             old, _, new = change[len("formulas:") :].partition("=>")
-            sheet = formulas_replaced(sheet, old, new)
+            part, _ = on_sheet("A1")
+            texts[part] = formulas_replaced(texts[part], old, new)
         elif target.endswith(":v"):
-            sheet = set_cached(sheet, target[: -len(":v")], value)
+            part, cell = on_sheet(target[: -len(":v")])
+            texts[part] = set_cached(texts[part], cell, value)
         else:
-            sheet = set_cell(sheet, target, value)
-    parts[SHEET] = sheet.encode("utf-8")
+            part, cell = on_sheet(target)
+            texts[part] = set_cell(texts[part], cell, value)
+    for part, text in texts.items():
+        parts[part] = text.encode("utf-8")
     parts[WORKBOOK] = recalculate_on_load(workbook).encode("utf-8")
+    known = {info.filename for info in infos}
     with zipfile.ZipFile(BOOK, "w", zipfile.ZIP_DEFLATED) as book:
         for info in infos:
             book.writestr(info, parts[info.filename])
+        for name in [name for name in parts if name not in known]:
+            book.writestr(name, parts[name])
     print(f"set {len(changes)} change(s) in {BOOK.relative_to(ROOT)}")
 
 
