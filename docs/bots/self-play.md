@@ -86,6 +86,16 @@ BotRunner's tests (`wsl -d Ubuntu -- bash scripts/wsl-test.sh --release Zaturnav
 fared, and how long it took, to `artifacts/arena/results.json`, a pair at a time. With no request, it is skipped,
 as on CI.
 
+### Blunders in games played
+
+`py -3 scripts/fetch-histories.py` downloads the server's finished games to `artifacts/blunders/histories.json`.
+With it there, the BotRunner's tests (`BlunderRun`) replay every Chaturaji 2027 game, and find each move a bot made
+whose piece an enemy took before the bot's next turn, its team losing 2 points or more net meanwhile (*Proposed*
+2026-11-27, after the user's games in which a Rook went for a Horse). Each such position is put to the bot as it
+plays now (Sage, Tactician, Athena, Argus: the partners that matter most), unless it had only one move, and
+`artifacts/blunders/checked.json` tells how many each bot made and whether it still plays the same.
+A blunder still repeated is a test to write (`StrategicPositionsTest`). With no games, it is skipped, as on CI.
+
 ### The server's rating job
 
 The server rates its own bots too, in the background, with no command to run (*Stated 2026-11-12*: every bot,

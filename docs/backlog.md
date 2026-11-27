@@ -9,15 +9,17 @@ own number (**25**, **N29**), the [2026-11-15 specification](playtesting/2026-11
 
 ## 1. Now: asked for and not yet done
 
-- **Buying lifts, made plain** (asked 2026-11-27): the button to buy a lift is understated and says nothing of what
-  it does. A lift should be bought with its piece, in the draft, after seeing what the lift does and what it costs.
-  And on the piece card, "With lifts" sits apart, best beside "Pieces in the way", and the card's contents jump
-  when it is clicked: it should change the drawing only.
+- **Real AI bots** (asked 2026-11-20; first of all, the user 2026-11-27: "Intelligent bots and especially high
+  quality AI bots are MUCH more important than the lifts... the difference between having a playable game or
+  not"): bots that learn to play both games, Grand Legions above all, seeing where the pieces stand and how they
+  move, not "backgammon in 2D" as Athena does now (her network ignores positions). With no paid tokens: a network
+  trained here on the board square by square, per seat's view, by self-play, and run on the server. Meanwhile, the
+  mechanical bots made sound: every blunder the user reports replayed as a test (`StrategicPositionsTest`).
 
-- **Real AI bots** (asked 2026-11-20): bots that learn to play both games, Grand Legions above all, seeing where
-  the pieces stand and how they move, not "backgammon in 2D" as Athena does now (her network ignores positions).
-  With no paid tokens: a network trained here on the board square by square, per
-  seat's view, by self-play, and run on the server.
+- **Buying lifts, made plain** (asked 2026-11-27; a nice-to-have, after the bots): the button to buy a lift is
+  understated and says nothing of what it does. A lift should be bought with its piece, in the draft, after seeing
+  what the lift does and what it costs. And on the piece card, "With lifts" sits apart, best beside "Pieces in the
+  way", and the card's contents jump when it is clicked: it should change the drawing only.
 
 - **D2** At least three non-random bots below 1200 Elo, a real progression of difficulty; Icarus sits only a few
   points below Midas. Keep every past measurement. *Begun* (2026-11-19): Narcissus and Epimetheus judge each move

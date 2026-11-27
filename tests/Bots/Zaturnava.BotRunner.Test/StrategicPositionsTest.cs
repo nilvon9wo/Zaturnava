@@ -328,23 +328,40 @@ public sealed class StrategicPositionsTest
     ];
 
     [Theory]
-    [InlineData(1)]
-    [InlineData(2)]
-    [InlineData(3)]
-    public async Task Sage_WhenItsRookCouldTakeAHorseTwoPawnsGuard_LeavesIt(int seed)
+    [InlineData(SageBot.BotId, 1)]
+    [InlineData(SageBot.BotId, 2)]
+    [InlineData(SageBot.BotId, 3)]
+    [InlineData(TacticianBot.BotId, 1)]
+    [InlineData(AthenaBot.BotId, 1)]
+    public async Task Strong_WhenItsRookCouldTakeAHorseTwoPawnsGuard_LeavesIt(string bot, int seed)
     {
         // Arrange - the user's game: Green's Rook on 61 could take Red's Horse on 21, which Red's Pawns guard
-        GameState state = SagesRook.Aggregate(
-            this._rules.CreateInitialState(),
-            (sofar, action) => this._rules.Apply(sofar, this._rules.Parse(Described(action))).State
-        );
-        DecisionRequest request = new(this._rules, state, Green, this._rules.LegalActions(state));
+        DecisionRequest request = this.GreenDeciding(SagesRook);
 
         // Act
-        GameAction action = await new SageBot(new Random(seed)).Decide(request, this._cancellation);
+        GameAction action = await Strong(bot, seed).Decide(request, this._cancellation);
 
         // Assert
         Assert.NotEqual(new MoveAction(Green, new CellId(61), new CellId(21)), action);
+    }
+
+    /// <summary>The bot of <paramref name="id"/>, one of those strong enough to be a partner, by its seed.</summary>
+    private static IBotPlaying Strong(string id, int seed) =>
+        id switch
+        {
+            TacticianBot.BotId => new TacticianBot(new Random(seed)),
+            AthenaBot.BotId => new AthenaBot(new Random(seed)),
+            _ => new SageBot(new Random(seed)),
+        };
+
+    /// <summary>Green to decide, once the game has gone as <paramref name="actions"/> say.</summary>
+    private DecisionRequest GreenDeciding(string[] actions)
+    {
+        GameState state = actions.Aggregate(
+            this._rules.CreateInitialState(),
+            (sofar, action) => this._rules.Apply(sofar, this._rules.Parse(Described(action))).State
+        );
+        return new DecisionRequest(this._rules, state, Green, this._rules.LegalActions(state));
     }
 
     /// <summary>
@@ -366,22 +383,23 @@ public sealed class StrategicPositionsTest
     ];
 
     [Theory]
-    [InlineData(1)]
-    [InlineData(2)]
-    [InlineData(3)]
-    public async Task Sage_WhenItsRookGuardsAPawnOfALine_DoesNotLeaveItOnlyToThreatenABlockedPawn(int seed)
+    [InlineData(SageBot.BotId, 1)]
+    [InlineData(SageBot.BotId, 2)]
+    [InlineData(SageBot.BotId, 3)]
+    [InlineData(TacticianBot.BotId, 1)]
+    [InlineData(AthenaBot.BotId, 1)]
+    public async Task Strong_WhenItsRookGuardsAPawnOfALine_DoesNotLeaveItOnlyToThreatenABlockedPawn(
+        string bot,
+        int seed
+    )
     {
         // Arrange - the user's game: Green's Rook on 61 guards its Pawn on 53, while Red's Rook on 47 attacks its
         // Pawn on 55, unguarded, and its Boat on 45; Sage moved the Rook to 59, beside Yellow's Pawn on 50, to
         // threaten a Pawn that could not move, and Red, on two Rook dice, took the Boat and the Pawn on 53
-        GameState state = SagesGuard.Aggregate(
-            this._rules.CreateInitialState(),
-            (sofar, action) => this._rules.Apply(sofar, this._rules.Parse(Described(action))).State
-        );
-        DecisionRequest request = new(this._rules, state, Green, this._rules.LegalActions(state));
+        DecisionRequest request = this.GreenDeciding(SagesGuard);
 
         // Act
-        GameAction action = await new SageBot(new Random(seed)).Decide(request, this._cancellation);
+        GameAction action = await Strong(bot, seed).Decide(request, this._cancellation);
 
         // Assert
         Assert.NotEqual(new MoveAction(Green, new CellId(61), new CellId(59)), action);

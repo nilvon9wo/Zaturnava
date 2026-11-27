@@ -11,14 +11,15 @@ namespace Net.NowhereAtAll.Zaturnava.Bots;
 
 /// <summary>
 /// Play on the board that looks at the reply as well as the action: each legal action is worth what it
-/// gains (as <see cref="Greedy"/> counts it), less the worst its opponents could do to the bot's team
-/// once it is done. That is the most an enemy could win by starting an exchange on a cell where one of
-/// the team's pieces stands, if both sides go on taking while it pays, or, if the bot's throne is
+/// gains (as <see cref="Greedy"/> counts it), less what its opponents could do to the bot's team
+/// once it is done. That is what an enemy could win by starting an exchange on each cell where one of
+/// the team's pieces stands, if both sides go on taking while it pays: each enemy army, in the order they move, taking
+/// the most it could, and half of its next (<see cref="SecondShare"/>); and, if the bot's throne is
 /// empty, what the enemy leader who could step onto it is worth. A piece on the bot's throne does not
 /// keep an enemy leader off it, but only makes it take that piece to get there: such a taking wins the
 /// piece and the throne both. The dice are left aside, but not whose turn comes next: an army of the team
 /// that moves before an enemy, on its own seat's turn or on that of an ally commanding it, saves the piece
-/// it would lose most to it (<see cref="LossOfSeat"/>); but the team's taking back is only as sure as its dice. Half
+/// it would lose most to it (<see cref="LossesOfSeat"/>); but the team's taking back is only as sure as its dice. Half
 /// of what the action leaves its allies to win next, or takes from them (<see cref="Teamwork"/>), counts
 /// too. Among actions worth the same, it would rather do something than pass, and picks at random.
 /// </summary>
@@ -72,22 +73,51 @@ internal static class Careful
     )
     {
         ImmutableDictionary<SeatId, int> turns = ArmyTurnsOf(request, after);
-        IEnumerable<int> losses = after.Position.Occupants
-            .Where(occupant => after.Teams.AreAllied(occupant.Value.Owner, request.Seat))
-            .GroupBy(occupant => occupant.Value.Owner)
-            .Select(pieces => LossOfSeat(request, after, turns, pieces, threats, guards));
-        return losses.Append(0).Max() + ThroneThreat(request, after, threats);
+        ImmutableList<Loss> losses =
+        [
+            .. after.Position.Occupants
+                .Where(occupant => after.Teams.AreAllied(occupant.Value.Owner, request.Seat))
+                .GroupBy(occupant => occupant.Value.Owner)
+                .SelectMany(pieces => LossesOfSeat(request, after, turns, pieces, threats, guards))
+                .Where(loss => loss.Worth > 0),
+        ];
+        double total = losses
+            .SelectMany(loss => loss.Takers)
+            .Distinct()
+            .OrderBy(army => turns.GetValueOrDefault(army, int.MaxValue))
+            .Aggregate(
+                (Total: 0d, Left: losses),
+                (sofar, army) =>
+                {
+                    ImmutableList<Loss> taken =
+                    [
+                        .. sofar.Left
+                            .Where(loss => loss.Takers.Contains(army))
+                            .OrderByDescending(loss => loss.Worth)
+                            .Take(2),
+                    ];
+                    return (
+                        sofar.Total + taken.Select((loss, at) => at == 0 ? loss.Worth : SecondShare * loss.Worth).Sum(),
+                        sofar.Left.RemoveRange(taken)
+                    );
+                }
+            )
+            .Total;
+        return (int)Math.Round(total, MidpointRounding.AwayFromZero) + ThroneThreat(request, after, threats);
     }
 
+    /// <summary>What an enemy could win from one piece of the team, and the enemy armies that could start it.</summary>
+    private sealed record Loss(double Worth, ImmutableHashSet<SeatId> Takers);
+
     /// <summary>
-    /// The worst an enemy could do to the pieces of one seat of the bot's team (<paramref name="pieces"/>), each army's
-    /// turn coming as <paramref name="turns"/> has it (<see cref="ArmyTurnsOf"/>; Proposed; the user's play of
-    /// 2026-11-12, a Rook sent home beside an enemy Raja whose seat plays after its own): an enemy whose turn comes
-    /// first may start any exchange; but against one whose turn comes later, the seat moves first, and saves the piece
-    /// it would lose most (by moving it, or by taking its attacker), so only its second-worst counts. The worst such
-    /// loss counts in full, and the next for <see cref="SecondShare"/> of it.
+    /// What an enemy could win from each of the pieces of one seat of the bot's team (<paramref name="pieces"/>), and
+    /// which enemy armies could start it, each army's turn coming as <paramref name="turns"/> has it
+    /// (<see cref="ArmyTurnsOf"/>; Proposed; the user's play of 2026-11-12, a Rook sent home beside an enemy Raja whose
+    /// seat plays after its own): an enemy whose turn comes first may start any exchange; but against one whose turn
+    /// comes later, the seat moves first, and saves the piece it would lose most (by moving it, or by taking its
+    /// attacker), so that only what an earlier enemy could win from that piece counts.
     /// </summary>
-    private static int LossOfSeat(
+    private static IEnumerable<Loss> LossesOfSeat(
         DecisionRequest request,
         GameState after,
         ImmutableDictionary<SeatId, int> turns,
@@ -97,7 +127,7 @@ internal static class Careful
     )
     {
         int turn = turns.GetValueOrDefault(pieces.Key, int.MaxValue);
-        ImmutableList<(int First, int All)> losses =
+        ImmutableList<(Loss First, Loss All)> losses =
         [
             .. pieces.Select(occupant =>
             {
@@ -108,29 +138,27 @@ internal static class Careful
                 ImmutableList<Attack> first =
                     [.. all.Where(attack => turns.GetValueOrDefault(attack.Attacker.Owner) < turn)];
                 return (
-                    LossOf(request, worth, first, retakers, isOnThrone),
-                    LossOf(request, worth, all, retakers, isOnThrone)
+                    new Loss(LossOf(request, worth, first, retakers, isOnThrone), ArmiesOf(first)),
+                    new Loss(LossOf(request, worth, all, retakers, isOnThrone), ArmiesOf(all))
                 );
             }),
         ];
-        int worst = losses.Max(loss => loss.All);
-        int worstOfAll = losses.FindIndex(loss => loss.All == worst);
-        ImmutableList<int> ordered =
-        [
-            .. losses
-                .Select((loss, index) => index == worstOfAll ? loss.First : Math.Max(loss.First, loss.All))
-                .OrderDescending(),
-        ];
-        return (int)Math.Round(
-            ordered[0] + (SecondShare * ordered.ElementAtOrDefault(1)),
-            MidpointRounding.AwayFromZero
-        );
+        int worstOfAll = losses
+            .Select((loss, index) => (loss.All.Worth, Index: index))
+            .MaxBy(loss => loss.Worth)
+            .Index;
+        return losses.Select((loss, index) => index == worstOfAll ? loss.First : loss.All);
     }
 
+    private static ImmutableHashSet<SeatId> ArmiesOf(IEnumerable<Attack> attacks) =>
+        [.. attacks.Select(attack => attack.Attacker.Owner)];
+
     /// <summary>
-    /// How much of the second piece a seat could lose counts besides the first (Proposed, on the user's game of
-    /// 2026-11-27: Sage's Rook left a Pawn unguarded while another hung already, so that the worst loss stayed as it
-    /// was, and Red's Rook, on a double, took both): a turn's dice may let an enemy take twice, if they fall right.
+    /// How much of a second piece an enemy army could take counts besides its first (Proposed, on the user's game of
+    /// 2026-11-27: Sage's Rook left a Pawn unguarded while another hung already, and Red's Rook, on a double, took
+    /// both): a turn's dice may let it take twice, if they fall right. Each enemy army moving before the team again
+    /// takes its own best (the games played of 2026-11-27: with one piece hanging already, a second left to be taken,
+    /// or an ally's, cost nothing, though two enemies move in between, and Yellow's Boat and then its Raja went).
     /// </summary>
     private const double SecondShare = 0.5;
 
