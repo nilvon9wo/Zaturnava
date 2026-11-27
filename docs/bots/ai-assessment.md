@@ -105,16 +105,18 @@ How the exchange terms work:
   - per relative seat and per kind, a count of pieces and the **total** rows they have advanced;
   - prisoners, scores, whose decision it is, the dice, and who has resigned or retired;
   - Sage's features.
-  - The encoder's remarks say the board is deliberately "summed up, not given square by square". **The network never
-    sees where any individual piece stands.**
+  - The shipped network sees the board summed up only: **it never sees where any individual piece stands.**
+  - *Built, not yet trained (2026-11-27):* `--view board` gives a network learned afresh the board square by square
+    too, as each seat sees it from its own edge. For each square and each seat: what its piece there is worth, whether
+    it leads, whether it is heavy, and how many of its pieces attack the square. Worth, not kind, so that Grand
+    Legions' ever-different armies share what is learned. Networks learned before still fit.
 - **Training** ([Learning.cs](../../src/Bots/Zaturnava.BotRunner/Learning.cs)): offline TD(λ), with λ = 1 by
   default, which is plain Monte Carlo regression to the final result. It learns from recorded games of the existing
   bots.
 - **Coverage:** [Networks/](../../src/Bots/Zaturnava.Bots/Networks) holds only `chaturaji-2027.json`. For every Grand
   Legions size, `AthenaBot.Valuing` returns null, so Athena uses `Appraiser` with Sage's learned weights. The only
   other difference, answering an end-of-game proposal by the network, also needs the network, so it falls back too.
-- **The profile overstates this.** Athena's description says a network trained on two thousand games judges each
-  position, and it is flagged `UsesAi: true`. In Grand Legions that is not what happens.
+- **Offered only where she has a network**: so far, Chaturaji 2027 (`AthenaBot.Knows`), as her profile says.
 
 ### 1.4 Sage's weight training
 
