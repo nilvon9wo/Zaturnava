@@ -59,9 +59,10 @@ public sealed class ArenaRun
     /// "but when it counts, it really can count"), so that it is known whether a way of guarding thrones can show.
     /// </summary>
     /// <remarks>
-    /// Each game is played twice, the bots seated one way and then the other, with the same dice (the user's thought of
-    /// 2026-11-27, of testing bots more efficiently): so the luck of the dice falls to each in turn, and a pair of games
-    /// is won by the bot that did better with the same luck. The pairs show a difference sooner than the games alone.
+    /// Each game is played twice, the bots seated one way and then the other, with the same dice (the user's thought
+    /// of 2026-11-27, of testing bots more efficiently): so the luck of the dice falls to each in turn, and a pair of
+    /// games is won by the bot that did better with the same luck. The pairs show a difference sooner than the games
+    /// alone.
     /// </remarks>
     private static async Task<object> Pair(ArenaRequest request, string first, string second)
     {
