@@ -38,6 +38,27 @@ public sealed class CarefulTest
     }
 
     [Fact]
+    public void Exposure_WhenAnEnemyPieceStandsBehindTheTaker_CountsItTakingBackTheRetaker()
+    {
+        // Arrange - a Horse (3) on 4, guarded by a Pawn on 3, attacked by an enemy Pawn on 5, with the enemy's Boat on
+        // 6 behind it: once the Pawn takes, the Boat sees 4, and takes back the Pawn that took back, so the Horse is
+        // lost for a Pawn, not for nothing (the games played, 2026-11-27: Green's Rook behind its Raja)
+        DecisionRequest request = LineRules.Request(
+            [new PassAction(Mine)],
+            (3, LineRules.Pawn, Mine),
+            (4, LineRules.Horse, Mine),
+            (5, LineRules.Pawn, First),
+            (6, LineRules.Boat, First)
+        );
+
+        // Act
+        int counted = Careful.Exposure(request, request.State);
+
+        // Assert
+        Assert.Equal(3, counted);
+    }
+
+    [Fact]
     public void Exposure_WhenAnEnemyCouldTakeOnlyAPieceAnotherHasTaken_CountsItOnce()
     {
         // Arrange - one Horse, on 4, attacked by Pawns of both enemies: it can be taken only once
