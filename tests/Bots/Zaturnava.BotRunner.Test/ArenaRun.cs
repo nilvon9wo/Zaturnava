@@ -14,7 +14,9 @@ namespace Net.NowhereAtAll.Zaturnava.BotRunner.Test;
 /// took, is written to <c>artifacts/arena/results.json</c>; a game won counts for its team, one that ran out of
 /// steps for the team ahead on points, if either is. With <c>botAssembly</c>, the bots of that assembly may play too;
 /// <c>"self"</c> names this one, with its challengers (<see cref="Challenger"/>). Each game is played with the bots
-/// seated both ways, with the same dice, and the pairs of games are counted too.
+/// seated both ways, with the same dice, and the pairs of games are counted too. With <c>starts</c>, a file of games
+/// played before (as <c>artifacts/blunders/histories.json</c>), the games start where those came down to
+/// <c>pieces</c> pieces (<see cref="Starts"/>): for ways of ending a game, each game spent where they show.
 /// With no request, or one of fewer than two bots, it is skipped, as on CI.
 /// </summary>
 public sealed class ArenaRun
@@ -111,6 +113,9 @@ public sealed class ArenaRun
         [
             "--ruleset", request.Ruleset, "--bots", string.Join(',', bots), "--games", $"{request.Games}",
             "--max-steps", $"{request.MaximumSteps}", "--seed", $"{seed}",
+            .. request.Starts is { } starts
+                ? ["--starts", Path.Combine(Root(), starts), "--pieces", $"{request.Pieces}"]
+                : (string[])[],
             .. request.BotAssembly switch
             {
                 null => (string[])[],
@@ -198,15 +203,18 @@ public sealed class ArenaRun
     }
 
     /// <summary>
-    /// The bots to play one another, the ruleset, the games each way, and the most steps in each; and an assembly of
-    /// more bots to seat beside ours, if any, from the repository's root or anywhere (as Fairy-Stockfish's).
+    /// The bots to play one another, the ruleset, the games each way, and the most steps in each; an assembly of
+    /// more bots to seat beside ours, if any, from the repository's root or anywhere (as Fairy-Stockfish's); and games
+    /// to start from, if any, and at how few pieces.
     /// </summary>
     private sealed record ArenaRequest(
         ImmutableList<string> Bots,
         string Ruleset = "chaturaji-2027",
         int Games = 10,
         int MaximumSteps = 2000,
-        string? BotAssembly = null
+        string? BotAssembly = null,
+        string? Starts = null,
+        int Pieces = 8
     );
 
     /// <summary>

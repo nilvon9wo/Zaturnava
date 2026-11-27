@@ -420,7 +420,13 @@ Then every bot is a pairing, and the arena measures each pairing.
   | `athena-steady` | Sage's appraisal counting ten times as much beside her network (0.02, not 0.002) | 44 | 56 | No |
   | `tactician-hunting` | As `sage-hunting` (1 game drawn) | 43 | 56 | No: leaning worse; a heavy's many escapes may outweigh all else |
   | `tactician-guarding` | Allies' empty thrones guarded, and nothing else | 52 | 48 | No: no measurable difference |
+  | `sage-usurping` | A throne held counted by what it controls (vs Sage) | 55 | 45 | No: within chance, and it seized no more thrones (13 games to Sage's 14) |
+  | `sage-guarding` | Allies' empty thrones guarded by what is at stake (vs Sage) | 49 | 51 | No measurable difference |
+  | `sage-guarding` | The same, against `sage-usurping` | 57 | 43 | Not yet: guarding did 12 games better against the usurper than Sage did, but the usurper seized more thrones against it (20 to 14), so the guard is not shown to be why |
   | `tactician-cornering` | Heavies hunted first, but at most one escape counted, as likely as the dice let it move | 57 | 43 | Not yet: promising (as hunting alone lost 43 to 56), to be confirmed in more games |
+
+  Thrones not a team's own were seized in 11 to 20 of each 100 games, by either side: more often than feared, so a
+  difference in guarding them can show, given more games or paired ones.
 
   Before challengers, steadier Athena beat Sage 65 to 35, as Athena does (25 to 15 in 40); against Athena herself,
   she lost. Her network's swings are better left as they are than drowned in Sage's count.
