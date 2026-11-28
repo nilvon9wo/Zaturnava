@@ -27,7 +27,7 @@ them, after pieces).
 | P9 | The program's call, from how often chains happen in real games and in the hands of a bot that seeks them (backlog) |
 | P11 | Correct, for any piece that may swap back to back (Pawns, the Lance from the next square only, some Soldiers: built as Pawns, Lance, Xiangqi Soldier) |
 | P13 | Correct; a piece brought back to the board by an ally's help to escape, or freed by the enemy, counts too (it is a piece on the board) |
-| P14 | Correct, as far as remembered; the lead should be relative to the game, and it only applies to bots: "Humans can always give up" (backlog) |
+| P14 | The point is a leading team forcing a victory the others cannot reasonably turn around; to be judged by points, material, turns without scoring and turns of passing, relative to the game (backlog: "Forcing a won game") |
 | P15 | Correct, with time-outs for players who do not answer, defaulting to the game going on (backlog) |
 | P17 | Correct; a promoted piece keeps a lift where it still means something (backlog) |
 | P18 | Correct; where a palace may move, pieces may also be returned, the palace moved, and bought again |

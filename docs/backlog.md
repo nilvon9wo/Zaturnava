@@ -66,7 +66,7 @@ Detail in the [roadmap](grand/roadmap.md).
 | What taking several is worth | To do | Count chains of captures (Checkers, Tafl) in real games, and in games of a bot that seeks them; price them as an expert would use them, not a layman | 2026-11-28 (P9) |
 | End proposals time out | To do | A proposal to end the game times out for players who do not answer, the answer defaulting to keeping the game going | 2026-11-28 (P15) |
 | A lift kept on promotion | To do | A promoted piece keeps a lift where it still means something for its new kind (lets it do what it could not otherwise) | 2026-11-28 (P17) |
-| Giving up, by game size | To do | For bots only (the user, 2026-11-28: "that only applies to bots: Humans can always give up"): the lead a bot wants before giving up its turns to end a game, relative to the game (size, piece values), not the fixed 10 (Grand Legions: × 10 already); a person may always give up, whatever the lead, and the rules' §10 margin is to be reread so | 2026-11-28 (P14) |
+| Forcing a won game | To do | What rules §10 calls giving up one's turns is the leading team *forcing* its victory, when the other side has no reasonable comeback and could only drag the game out, boring the others and throwing off the ratings (the user, 2026-11-28: "give up" is confusing, it sounds like conceding). Rename it so. Judge it by more than a points lead: points, material on the board, turns without any score changing, and turns where everyone or almost everyone just passes (the idle, quiet and repeat rounds of the safety nets already end some such games). The margins relative to the game: 10 may suit Chaturaji 2027, not alone; Grand Legions' is 100 (× 10), to check against its piece values | 2026-11-28 (P14) |
 
 ## 3. Look, feel and players
 
