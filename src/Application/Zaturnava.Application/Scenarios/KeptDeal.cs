@@ -28,7 +28,7 @@ public sealed record KeptDeal(
     /// </summary>
     public ImmutableSortedDictionary<int, int>? Unspent { get; init; }
 
-    /// <summary>The restrictions the deal bought off, each for a piece by its id; none, in a deal kept before.</summary>
+    /// <summary>The restrictions the deal bought off, each for a piece by its id; none, in one kept before.</summary>
     public ImmutableList<KeptLift>? Lifts { get; init; }
 
     /// <summary>What <paramref name="dealt"/> was dealt.</summary>
