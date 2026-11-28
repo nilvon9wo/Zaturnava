@@ -108,6 +108,22 @@ public sealed class BugReportServiceTest
         );
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Find_WhenAskedByIdOrByOneNeverGiven_IsThatReportOrNone(bool isKnown)
+    {
+        // Arrange
+        GameId id = await this.Seated();
+        BugReport report = await this._reports.Report(id, new PlayerId("ada"), "Odd.", Seen, this._cancellation);
+
+        // Act
+        BugReport? found = await this._reports.Find(isKnown ? report.Id : "never", this._cancellation);
+
+        // Assert
+        Assert.Equal(isKnown ? report : null, found);
+    }
+
     [Fact]
     public async Task Report_WhenTheGameIsUnknown_ThrowsGameNotFoundException()
     {

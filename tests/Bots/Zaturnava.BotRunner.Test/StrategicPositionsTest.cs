@@ -187,13 +187,17 @@ public sealed class StrategicPositionsTest
     {
         // Arrange - the endgame plan's test (docs/bots/strategy-plan.md, "Endgame tables"): Black's two Elephants (the
         // Rooks) and its Raja against Red's Raja alone in the middle, no one else on the board; Sage plays every side,
-        // so the lone Raja flees as well as Sage can
+        // so the lone Raja flees as well as Sage can. Black ahead on points, so that Red's retiring would lose, not
+        // save a draw (Playable: a lone Raja level on points retires for the draw)
         GameState state = this.BlackDeciding(
             (CellAt(0, 0), new Piece(new PieceId(1), Chaturaji2027Pieces.Elephant, Black)),
             (CellAt(7, 0), new Piece(new PieceId(2), Chaturaji2027Pieces.Elephant, Black)),
             (CellAt(4, 0), new Piece(new PieceId(3), Chaturaji2027Pieces.Raja, Black)),
             (CellAt(3, 4), new Piece(new PieceId(4), Chaturaji2027Pieces.Raja, Red))
-        );
+        ) with
+        {
+            Scores = ImmutableDictionary<SeatId, int>.Empty.Add(Black, 5).Add(Yellow, 0).Add(Green, 0).Add(Red, 0),
+        };
         // its endgame search ended by its budget alone, not the clock, so that it plays alike on any machine
         // (2026-11-26: on CI, the clock cut it short, every decision, and it played on for eight minutes and lost)
         SageBot sage = new(new Random(7)) { EndgameLimit = TimeSpan.FromMinutes(10) };
@@ -419,6 +423,59 @@ public sealed class StrategicPositionsTest
                 (_, 4) => arguments.Add("from", words[2]).Add("to", words[3]),
                 _ => arguments,
             }
+        );
+    }
+
+    [Theory]
+    [InlineData(15, true, true)]
+    [InlineData(16, true, false)]
+    [InlineData(15, false, false)]
+    public async Task Tactician_WhenRetiringItsLoneRajaWouldSaveADraw_RetiresAndElsePlaysOn(
+        int yellow,
+        bool isOutnumbered,
+        bool retires
+    )
+    {
+        // Arrange - the user's report of 2026-11-27 (game 078a448e, action 206): Black's Raja retired on Yellow's
+        // throne with the scores level (Black 23 and Green 5, against Yellow 15 and Red 13); Green, Tactician, left
+        // with its Raja alone against Yellow's and Red's Rajas, Elephants and Red's Horse, played on until Yellow
+        // pulled ahead, and lost. Retiring then ends the game in a draw; a point behind, it would lose it; against
+        // Yellow's Raja alone, no stronger on the board, it plays on for the win
+        (CellId, Piece)[] enemies = isOutnumbered
+            ?
+            [
+                (CellAt(3, 0), new Piece(new PieceId(3), Chaturaji2027Pieces.Raja, Yellow)),
+                (CellAt(1, 4), new Piece(new PieceId(4), Chaturaji2027Pieces.Elephant, Yellow)),
+                (CellAt(6, 2), new Piece(new PieceId(5), Chaturaji2027Pieces.Raja, Red)),
+                (CellAt(0, 6), new Piece(new PieceId(6), Chaturaji2027Pieces.Elephant, Red)),
+                (CellAt(6, 3), new Piece(new PieceId(7), Chaturaji2027Pieces.Horse, Red)),
+            ]
+            : [(CellAt(3, 0), new Piece(new PieceId(3), Chaturaji2027Pieces.Raja, Yellow))];
+        GameState state = this.Deciding(
+            Green,
+            [
+                (this._rules.Thrones[Yellow], new Piece(new PieceId(1), Chaturaji2027Pieces.Raja, Black)),
+                (CellAt(6, 6), new Piece(new PieceId(2), Chaturaji2027Pieces.Raja, Green)),
+                .. enemies,
+            ]
+        ) with
+        {
+            Retired = [Black],
+            Scores = ImmutableDictionary<SeatId, int>.Empty
+                .Add(Black, 23)
+                .Add(Yellow, yellow)
+                .Add(Green, 5)
+                .Add(Red, 13),
+        };
+        DecisionRequest request = new(this._rules, state, Green, this._rules.LegalActions(state));
+
+        // Act
+        GameAction action = await new TacticianBot(new Random(7)).Decide(request, this._cancellation);
+
+        // Assert - offered either way
+        Assert.Equal(
+            (true, retires),
+            (request.LegalActions.Contains(new RetireAction(Green)), action == new RetireAction(Green))
         );
     }
 

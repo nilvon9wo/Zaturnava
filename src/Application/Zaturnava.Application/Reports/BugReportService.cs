@@ -61,4 +61,8 @@ public sealed class BugReportService(GameService games, IBugReportPersisting sto
         await this._store.Add(report, cancellationToken);
         return report;
     }
+
+    /// <summary>The report kept under the id, if any.</summary>
+    public async Task<BugReport?> Find([Required] string id, CancellationToken cancellationToken) =>
+        (await this._store.All(cancellationToken)).FirstOrDefault(report => report.Id == id);
 }
