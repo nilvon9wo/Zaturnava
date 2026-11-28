@@ -25,7 +25,7 @@ lifts... the difference between having a playable game or not." The plans:
 
 | Item | Status | What is left | Source |
 |---|---|---|---|
-| Athena for Grand Legions | To do | No network yet for any Grand Legions size: train one, board-seeing, from the tournament games and her own | 2026-11-27 |
+| Athena for Grand Legions | Begun | The small board's network shipped (2026-11-28: three rounds from 4,000 seed games, the last beating Sage 114–83–3, 57.8% over 200 games; confirm over 400). Left: the medium and large boards, and custom sizes, which a network tied to one board cannot play | 2026-11-27 |
 | Athena, further | To do | The kind of ending as a third prediction; people's games mixed in as they accumulate; search with the network (row 4 of the assessment: MCTS, policy + value) | ai-assessment |
 | Sage presses home | Check | See over the ratings whether Sage now finishes off a beaten army (game 3b5d749e, turn 22); if not, weigh a capture made ready | 2026-11-20 |
 | Safe captures taken | To do | Leaders and strong pieces left untaken, above all those threatening an ally | **X5** |
@@ -66,7 +66,7 @@ Detail in the [roadmap](grand/roadmap.md).
 | What taking several is worth | To do | Count chains of captures (Checkers, Tafl) in real games, and in games of a bot that seeks them; price them as an expert would use them, not a layman | 2026-11-28 (P9) |
 | End proposals time out | To do | A proposal to end the game times out for players who do not answer, the answer defaulting to keeping the game going | 2026-11-28 (P15) |
 | A lift kept on promotion | To do | A promoted piece keeps a lift where it still means something for its new kind (lets it do what it could not otherwise) | 2026-11-28 (P17) |
-| Giving up, by game size | To do | For bots only (the user, 2026-11-28: "that only applies to bots: Humans can always give up"): the lead a bot wants before giving up its turns to end a game, relative to the game (size, piece values), not the fixed 10 (Grand Legions: × 10 already); a person may always give up, whatever the lead, and the rules' §10 margin is to be reread so | 2026-11-28 (P14) |
+| Forcing a won game | To do | What rules §10 calls giving up one's turns is the leading team *forcing* its victory, when the other side has no reasonable comeback and could only drag the game out, boring the others and throwing off the ratings (the user, 2026-11-28: "give up" is confusing, it sounds like conceding). Rename it so. Judge it by more than a points lead: points, material on the board, turns without any score changing, and turns where everyone or almost everyone just passes (the idle, quiet and repeat rounds of the safety nets already end some such games). The margins relative to the game: 10 may suit Chaturaji 2027, not alone; Grand Legions' is 100 (× 10), to check against its piece values | 2026-11-28 (P14) |
 
 ## 3. Look, feel and players
 

@@ -32,6 +32,20 @@ only in part, what is left is in the backlog, and its history here. The playtest
   | Dogged | Random | 2 | 3 | 30 |
 - **Athena sees the board** (backlog §1, 2026-11-20, 2026-11-27). *Done*: the board-seeing network beat the shipped
   one 124 to 76 in 200 paired games, and shipped ([ai-assessment](bots/ai-assessment.md) §1.3).
+- **Palamedes dealt a King and two Men of 288 points, and a score of 0** (the user). *Done*: every piece counts in
+  its class's average, whatever it may promote into; every piece eligible but for its price or a bot's own way
+  ("seldom is not never!"), no price cap; once the kingdom is full the dealer makes pieces dearer, then buys
+  lifts; what is left starts the army's score, as a draft's does, and a kept deal keeps it.
+- **The program's proposals reviewed** (the user: "Let me know if you made any other very questionable
+  'proposals' which I should review"). Twenty that change play were listed; all *Stated* as they stand, with these
+  words: dealing's outliers rare, under 10% or even 5%, the peak at 80% of the median "reasonable"; custody only by
+  the custodian's own move, variants perhaps later; a fled Tafl King keeps the enemy from scoring its leader ("fear
+  can be the better part of valour"); back-to-back swaps for any piece that may (Pawns, the Lance from the next
+  square only, the Xiangqi Soldier); a piece brought back by escape or freed by the enemy lets a retired player
+  rejoin; a promoted piece keeps a lift where it still means something; where a palace may move, pieces may be
+  returned, the palace moved, and bought again; what taking several is worth is the program's call. What is left to
+  build of them is in the backlog: dealing's spread measured, what taking several is worth, end proposals timing
+  out, a lift kept on promotion, forcing a won game.
 
 ## Asked 2026-11-27
 
