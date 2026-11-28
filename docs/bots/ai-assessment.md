@@ -105,11 +105,28 @@ How the exchange terms work:
   - per relative seat and per kind, a count of pieces and the **total** rows they have advanced;
   - prisoners, scores, whose decision it is, the dice, and who has resigned or retired;
   - Sage's features.
-  - The shipped network sees the board summed up only: **it never sees where any individual piece stands.**
-  - *Built, not yet trained (2026-11-27):* `--view board` gives a network learned afresh the board square by square
+  - *Shipped (2026-11-28):* the network sees the board square by square, below. The one before saw it summed up
+    only, never where any individual piece stood.
+  - *Built and trained (2026-11-27):* `--view board` gives a network learned afresh the board square by square
     too, as each seat sees it from its own edge. For each square and each seat: what its piece there is worth, whether
     it leads, whether it is heavy, and how many of its pieces attack the square. Worth, not kind, so that Grand
     Legions' ever-different armies share what is learned. Networks learned before still fit.
+    Three rounds, learned from the overnight games and its own (`scripts/athena-rounds.py --view board`), each 400
+    games against Sage:
+
+    | Round | Won | Lost | Share |
+    |---|---|---|---|
+    | 1 | 237 | 163 | 59.2% |
+    | 2 | 279 | 121 | 69.8% |
+    | 3 | 273 | 127 | 68.3% |
+
+    Round 3's network against the one shipped before, 200 games in pairs of the same dice (the arena, 2026-11-28):
+
+    | Games won | Games lost | Pairs won | Pairs lost | Pairs even | Thrones seized | Thrones lost |
+    |---|---|---|---|---|---|---|
+    | 124 | 76 | 39 | 15 | 46 | 80 | 71 |
+
+    So it shipped, as `Networks/chaturaji-2027.json` (`scripts/ship-network.py`), for Athena and Pythia alike.
 - **Training** ([Learning.cs](../../src/Bots/Zaturnava.BotRunner/Learning.cs)): offline TD(λ), with λ = 1 by
   default, which is plain Monte Carlo regression to the final result. It learns from recorded games of the existing
   bots.

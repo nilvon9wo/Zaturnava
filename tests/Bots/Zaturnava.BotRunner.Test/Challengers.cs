@@ -1,6 +1,8 @@
 using System.Collections.Immutable;
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json;
 using Net.NowhereAtAll.Zaturnava.Bots;
+using Net.NowhereAtAll.Zaturnava.Bots.Learning;
 using Net.NowhereAtAll.Zaturnava.Engine.Actions;
 using Net.NowhereAtAll.Zaturnava.Engine.Decisions;
 using Net.NowhereAtAll.Zaturnava.Engine.Rules;
@@ -93,6 +95,35 @@ public sealed class SteadyAthena(Random random) : Challenger(
     "athena-steady",
     "steadier"
 );
+
+/// <summary>
+/// Athena, judging by a network that sees the board square by square (<c>--view board</c>), as trained locally into
+/// <c>artifacts/athena-board/best.json</c> (scripts/athena-rounds.py); with none there, she knows no game. To play
+/// against Athena as she is, before such a network ships.
+/// </summary>
+public sealed class BoardAthena(Random random) : Challenger(
+    new AthenaBot(random, Trained()),
+    "athena-board",
+    "seeing the board"
+)
+{
+    private static ImmutableDictionary<string, ValueNetworkData> Trained()
+    {
+        DirectoryInfo? folder = new(AppContext.BaseDirectory);
+        while (folder is not null && !File.Exists(Path.Combine(folder.FullName, "Zaturnava.slnx")))
+        {
+            folder = folder.Parent;
+        }
+
+        string? path = folder is null ? null : Path.Combine(folder.FullName, "artifacts", "athena-board", "best.json");
+        ValueNetworkData? data = path is not null && File.Exists(path)
+            ? JsonSerializer.Deserialize<ValueNetworkData>(File.ReadAllText(path), JsonSerializerOptions.Web)
+            : null;
+        return data is not null
+            ? ImmutableDictionary<string, ValueNetworkData>.Empty.Add(data.RulesetId, data)
+            : [];
+    }
+}
 
 /// <summary>
 /// Tactician, hunting leaders as it does, but guarding its allies' thrones too: the guard apart from the hunt for
