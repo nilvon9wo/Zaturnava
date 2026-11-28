@@ -95,7 +95,7 @@ internal sealed class Learning(IRulesApplying rules, TextWriter progress)
         {
             cancellationToken.ThrowIfCancellationRequested();
             await Console.Error.WriteLineAsync(
-                string.Create(CultureInfo.InvariantCulture, $"epoch {epoch} of {pace.Epochs}: learning, {DateTime.Now:T}")
+                string.Create(CultureInfo.InvariantCulture, $"epoch {epoch} of {pace.Epochs}, from {DateTime.Now:T}")
             );
             double error = sequences
                 .SelectMany(sequence => TargetsOf(network, sequence, pace.Lambda)
