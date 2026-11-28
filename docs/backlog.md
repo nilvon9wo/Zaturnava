@@ -25,7 +25,6 @@ lifts... the difference between having a playable game or not." The plans:
 
 | Item | Status | What is left | Source |
 |---|---|---|---|
-| Athena sees the board | Begun | A board-seeing network is trained for Chaturaji 2027 (beats Sage 69.8%); measure it against the shipped Athena and ship it if stronger | 2026-11-20, 2026-11-27 |
 | Athena for Grand Legions | To do | No network yet for any Grand Legions size: train one, board-seeing, from the tournament games and her own | 2026-11-27 |
 | Athena, further | To do | The kind of ending as a third prediction; people's games mixed in as they accumulate; search with the network (row 4 of the assessment: MCTS, policy + value) | ai-assessment |
 | Sage presses home | Check | See over the ratings whether Sage now finishes off a beaten army (game 3b5d749e, turn 22); if not, weigh a capture made ready | 2026-11-20 |

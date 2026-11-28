@@ -6,6 +6,20 @@ Numbers are the playtests' own, so that each item can be traced to the note it c
 only in part, what is left is in the backlog, and its history here. The playtest of 2026-11-15 is tracked apart, in
 [playtesting/traceability.md](playtesting/traceability.md).
 
+## Asked 2026-11-28
+
+- **Tactician played on instead of retiring for a draw** (the user's bug report 5d93ea0c, game 078a448e: the user's
+  Black Raja retired on Yellow's throne with the scores level; Green, Tactician, its ally, left with its Raja alone,
+  "should have retired the green raja so it would also be worth no points, still resulting in a tie. Instead, it
+  continued to play until it lost"). Replayed: Green could have retired for the draw on six turns running. *Done*:
+  a bot retires when retiring ends the game at once as a draw and the enemy has more pieces on the board
+  (rules.md §10). The position is a test.
+- **Bug reports could not be read back** (the user: "why would you create a report a bug button and then not be
+  able to retrieve the reports?"). *Done*: `GET api/bug-reports/{id}`, and
+  `py -3 scripts/fetch-histories.py --report ID` saves a report with its game, cut to when it was sent.
+- **Athena sees the board** (backlog §1, 2026-11-20, 2026-11-27). *Done*: the board-seeing network beat the shipped
+  one 124 to 76 in 200 paired games, and shipped ([ai-assessment](bots/ai-assessment.md) §1.3).
+
 ## Asked 2026-11-27
 
 - **Argus and Sage give up too soon** (the user: Argus "proposes defeat within the first three moves -- while he
