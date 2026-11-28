@@ -191,7 +191,12 @@ guarding "really depends upon whether the enemy has made it an objective to obta
 use". Game 078a448e (the user, 2026-11-27) is that case from the other side: Black, the user, its army gone, sat its
 Raja on Yellow's throne and came back on points with Yellow's own pieces, taking Yellow's and Red's, until Red's
 recovered Rook drove it off. Yellow (Sage) and Red (Athena) let a throne be taken that commanded a whole army, and
-were slow to win it back. So, to do:
+were slow to win it back. The same game taught the holder's side a lesson too (the user, 2026-11-28): an enemy leader
+whose throne the team holds is best left on the board, where the holder commands it, than taken; taken, it may escape
+back onto its throne, taking the holder's leader. *Done*: `Careful.EscapeThreat` counts that danger. But "the yellow
+raja needed to be actively moved away from its throne", and taken only if too near to move away; the holder then
+weighs the escape against holding the throne. *Left*: Sage, holding the throne, takes the leader come near rather
+than move it away; and an ally counts on the holder's turn to deal with it, though the dice may not let it. So, to do:
 
 | Step | Now | To be |
 |---|---|---|

@@ -5,7 +5,7 @@
 Each round:
 1. learns: a network goes on from the last round's (round-N.json), or starts judging as Sage does, and learns
    from every game the rounds have played (games-*.jsonl) and any --seed files of games (each may be a pattern,
-   such as artifacts/athena/games-*.jsonl, or a folder, for its games-*.jsonl), by temporal differences (--lambda), in --epochs passes, through the
+   such as artifacts/athena/games-*.jsonl, or a folder, for its games-*.jsonl, else all its .jsonl), by temporal differences (--lambda), in --epochs passes, through the
    BotRunner's --learn; a network started afresh sees the board as --view says: summed up, or square by square
    too (board);
 2. measures: Athena, playing by the new network, plays Sage --games games with her team moving first
@@ -76,9 +76,13 @@ def learn(runner, folder, number, options):
 
 
 def seed_files(seed):
-    """The files of games a --seed names: a folder's games-*.jsonl; a pattern's matches; or the file itself."""
+    """The files of games a --seed names: a folder's games-*.jsonl, or, if it has none, every .jsonl in it (a
+    tournament's, named by its pairings); a pattern's matches; or the file itself. (A pattern given through
+    `wsl -- bash` is expanded by the shell on the way, too long a command line for a tournament's 476 files.)"""
     if os.path.isdir(seed):
-        return sorted(glob.glob(os.path.join(seed, "games-*.jsonl")))
+        return sorted(glob.glob(os.path.join(seed, "games-*.jsonl"))) or sorted(
+            glob.glob(os.path.join(seed, "*.jsonl"))
+        )
     return sorted(glob.glob(seed)) or [seed]
 
 

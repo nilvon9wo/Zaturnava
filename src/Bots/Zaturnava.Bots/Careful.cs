@@ -345,6 +345,42 @@ internal static class Careful
             .Append(0)
             .Max();
 
+    /// <summary>How many rounds <see cref="EscapeThreat"/> counts the chance of an escape over.</summary>
+    internal const int EscapeRounds = 6;
+
+    /// <summary>
+    /// What the team's leaders on enemy thrones stand to lose to an escape. A piece on the board never escapes; but
+    /// where the throne's owner's own leader is a prisoner, its starting square being its throne (rules.md §7), it may
+    /// escape onto the throne, taking the team's leader there: lost then are that leader, the prisoner, back on the
+    /// board, and the throne, with command of its owner's pieces. Each as likely as such doubles over
+    /// <see cref="EscapeRounds"/> rounds, as the danger comes back every round the throne is held: each die showing
+    /// the leader's face half as likely as the moves it may expect each turn
+    /// (<see cref="IRulesApplying.MovesPerTurn"/>, two dice). So an ally of the team does not take that enemy leader,
+    /// either: it is better kept on the board, where it is no danger and the throne's holder commands it (the user,
+    /// 2026-11-28, of game 078a448e: "I didn't want green to capture the yellow raja because I didn't want the yellow
+    /// raja to potentially escape back to the throne", taking the user's Raja there; "It was much better to keep it
+    /// on the board as a weapon").
+    /// </summary>
+    internal static double EscapeThreat(DecisionRequest request, GameState after) =>
+        request.Rules.ThronesOf(after)
+            .Where(throne => !after.Teams.AreAllied(throne.Key, request.Seat))
+            .Select(throne => (Held: after.Position.PieceAt(throne.Value), Owner: throne.Key))
+            .Where(held => held.Held is { } occupant
+                && request.Rules.IsLeader(occupant.Kind)
+                && after.Teams.AreAllied(occupant.Owner, request.Seat)
+            )
+            .SelectMany(held => after.Prisoners
+                .Where(prisoner => prisoner.Piece.Owner == held.Owner && request.Rules.IsLeader(prisoner.Piece.Kind))
+                .Take(1)
+                .Select(prisoner => (
+                    Lost: request.Rules.WorthOf(held.Held!.Kind)
+                        + request.Rules.WorthOf(prisoner.Piece.Kind)
+                        + StakeOf(request.Rules, after, held.Owner),
+                    Face: Math.Min(1, request.Rules.MovesPerTurn(prisoner.Piece.Kind) / 2)
+                ))
+            )
+            .Sum(escape => escape.Lost * (1 - Math.Pow(1 - (escape.Face * escape.Face), EscapeRounds)));
+
     /// <summary>
     /// The most an enemy could win by a fork it could make before the team moves again (the assessment of 2026-11-27:
     /// "Nothing models an enemy move that creates attacks"): a move of an enemy army whose turn comes before the
