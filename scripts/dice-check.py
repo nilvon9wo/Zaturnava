@@ -11,6 +11,7 @@ rolls, as games rolled from one fixed seed would.
 import argparse
 import collections
 import json
+import math
 import urllib.request
 
 # chi-square critical values at 5% and 1%, by degrees of freedom
@@ -27,6 +28,15 @@ def rolls_of(game):
     for action in game["actions"]:
         if action["kind"] == "dice":
             yield [int(value) for value in action["arguments"]["values"].split(",")]
+
+
+def rollers_of(game):
+    """Each roll with who rolled it: a person, or a bot (the seat's player, as the history names it)."""
+    players = {str(seat["id"]): seat["player"] for seat in game["seats"]}
+    for action in game["actions"]:
+        if action["kind"] == "dice":
+            roller = "person" if players.get(action["arguments"]["actor"]) == "person" else "bot"
+            yield roller, [int(value) for value in action["arguments"]["values"].split(",")]
 
 
 def chi_square(counts, expected):
@@ -85,6 +95,30 @@ def main():
               f"{verdict(statistic, 35)}")
         doubles = sum(pairs[(face, face)] for face in range(1, 7))
         print(f"doubles {doubles} ({doubles / rolled:.1%}; fair dice: 16.7%)")
+        # the user, 2026-11-28: "it seems like I'm the only one who can never roll doubles in this game"
+        print()
+        print("rolled by  two-dice rolls  doubles  share   chance of so few or fewer, or so many or more")
+        by_roller = collections.defaultdict(lambda: [0, 0])
+        for game in games:
+            for roller, roll in rollers_of(game):
+                if len(roll) == 2:
+                    by_roller[roller][0] += 1
+                    by_roller[roller][1] += roll[0] == roll[1]
+        for roller, (count, double) in sorted(by_roller.items()):
+            print(f"{roller:>9}  {count:>14}  {double:>7}  {double / count:6.1%}  {tail(count, double, 1 / 6):.1%}")
+
+
+def tail(count, hits, chance):
+    """How likely so few hits, or fewer, if below the expected count; so many, or more, if above: one-sided,
+    binomial."""
+    def probability(k):
+        return math.exp(
+            math.lgamma(count + 1) - math.lgamma(k + 1) - math.lgamma(count - k + 1)
+            + k * math.log(chance) + (count - k) * math.log(1 - chance)
+        )
+    expected = count * chance
+    ks = range(0, hits + 1) if hits <= expected else range(hits, count + 1)
+    return min(1.0, sum(probability(k) for k in ks))
 
     shared = [ids for ids in openings.values() if len(ids) > 1]
     print()
