@@ -22,6 +22,14 @@ only in part, what is left is in the backlog, and its history here. The playtest
   much better to keep it on the board as a weapon"). *Done*: a team leader on an enemy throne whose owner's leader is
   a prisoner counts as exposed, by that leader, the prisoner and the throne's army, as likely as the doubles over six
   rounds; an ally of the holder leaves that leader on the board. The position is a test.
+- **Bots still too eager to end the game** (the user: "Red/yellow is only up 8 points and they don't have that much
+  more material"). *Done*: each temper wants more of the clear lead, on points and on the board alike:
+
+  | Temper | Bots | Clear lead wanted, before | Now | Chaturaji 2027 |
+  |---|---|---|---|---|
+  | Realist | Sage, Tactician | ¾ | 1¼ | 12.5 |
+  | Even | every other bot | 1 | 1½ | 15 |
+  | Dogged | Random | 2 | 3 | 30 |
 - **Athena sees the board** (backlog §1, 2026-11-20, 2026-11-27). *Done*: the board-seeing network beat the shipped
   one 124 to 76 in 200 paired games, and shipped ([ai-assessment](bots/ai-assessment.md) §1.3).
 
