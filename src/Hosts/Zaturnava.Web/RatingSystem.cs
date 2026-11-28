@@ -1,7 +1,7 @@
 namespace Net.NowhereAtAll.Zaturnava.Web;
 
 /// <summary>
-/// A rating system a viewer may see ratings by, chosen on the leaderboard and holding for the whole lobby: the bots'
+/// A rating system a viewer may see ratings by, chosen in the lobby's bar and holding for the whole lobby: the bots'
 /// strengths in the New game dialog are labelled by it too (the user's request of 2026-11-20).
 /// </summary>
 public enum RatingSystem
@@ -32,6 +32,15 @@ internal static class RatingSystems
 
     /// <summary>The system the leaderboard's view keeps; Elo, if it keeps none.</summary>
     public static RatingSystem Of(ListView? view) => Of(view?[Choice]);
+
+    /// <summary>The key a system is kept by.</summary>
+    public static string KeyOf(RatingSystem system) =>
+        system switch
+        {
+            RatingSystem.Glicko => GlickoKey,
+            RatingSystem.TrueSkill => TrueSkillKey,
+            _ => EloKey,
+        };
 
     public static string NameOf(RatingSystem system) =>
         system switch

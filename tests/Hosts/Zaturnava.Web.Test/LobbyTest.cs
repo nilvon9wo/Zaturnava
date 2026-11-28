@@ -1560,13 +1560,14 @@ public sealed class LobbyTest : IDisposable
     }
 
     [Fact]
-    public void ByStrength_WhenTheLeaderboardsRatingIsChosen_ShowsTheStrengthsByIt()
+    public void ByStrength_WhenTheRatingIsChosenInTheLobbysBar_ShowsTheStrengthsByIt()
     {
-        // Arrange - the user's request of 2026-11-20: the leaderboard's rating system holds for the whole page
+        // Arrange - the user's request of 2026-11-20: the rating system holds for the whole page; chosen in the
+        // lobby's bar, not on the leaderboard (2026-11-28)
         IRenderedComponent<Lobby> lobby = this.ByStrength();
 
         // Act
-        lobby.Find("select.leaderboard-rating").Change("glicko");
+        lobby.Find("footer select.rating-choice").Change("glicko");
 
         // Assert
         Assert.Equal(

@@ -29,15 +29,6 @@
                 <option value="@EveryoneBoard">Everyone</option>
             </select>
         </label>
-        @* Each counted from the same games; each viewer picks one, as a theme (the user's word of 2026-11-20). *@
-        <label class="choice">
-            <span class="choice-name">Rating</span>
-            <select class="leaderboard-rating" value="@this._rating" @onchange="this.ChooseRating">
-                <option value="@EloRating">Elo</option>
-                <option value="@GlickoRating">Glicko-2</option>
-                <option value="@TrueSkillRating">TrueSkill</option>
-            </select>
-        </label>
     </div>
 
     @if (this.Rows is null && this._problem is null)
@@ -245,11 +236,14 @@
     public string Game { get; set; } = string.Empty;
 
     /// <summary>
-    /// Told the rating system chosen, as it is chosen, so that it holds for the whole page (the user's request of
-    /// 2026-11-20).
+    /// The rating system chosen in the lobby's bar, which holds for the whole page (the user's requests of 2026-11-20
+    /// and 2026-11-28); the board by it, most first, from the first page, each time another is chosen.
     /// </summary>
     [Parameter]
-    public EventCallback<RatingSystem> RatingChosen { get; set; }
+    public RatingSystem Rating { get; set; }
+
+    /// <summary>The rating system last given, so that another is seen; none, before the first.</summary>
+    private RatingSystem? _given;
 
     /// <summary>
     /// The board chosen, its first column the rating by the system chosen, on every board (the user's report of
@@ -311,29 +305,28 @@
         }
 
         this._board = view[BoardChoice] is BotsBoard or EveryoneBoard ? view[BoardChoice]! : PlayersBoard;
-        this._rating = view[RatingChoice] is GlickoRating or TrueSkillRating ? view[RatingChoice]! : EloRating;
         int sort = this.Columns.All.FindIndex(column => column.Key == view.Sort);
         this._sort = Math.Max(0, sort);
         this._isAscending = sort >= 0 && !view.IsDescending;
     }
 
-    /// <summary>The leaderboard of the game, once it is another; told why not, if the server cannot give it.</summary>
-    protected override async Task OnParametersSetAsync() =>
+    /// <summary>
+    /// The board by the rating system given, resorted when it is another than last given; the leaderboard of the game,
+    /// once it is another; told why not, if the server cannot give it.
+    /// </summary>
+    protected override async Task OnParametersSetAsync()
+    {
+        this._rating = RatingSystems.KeyOf(this.Rating);
+        await (this._given is { } given && given != this.Rating ? this.Resorted() : ValueTask.CompletedTask);
+        this._given = this.Rating;
         this._problem = this.Game == this._game ? this._problem : await Requests.Attempt(() => this.Show(this.Game));
+    }
 
     /// <summary>The board chosen, of the same game, by its first column, most first, from the first page.</summary>
     private async Task ChooseBoard(ChangeEventArgs change)
     {
         this._board = $"{change.Value}";
         await this.Resorted();
-    }
-
-    /// <summary>The rating system chosen, the board by it, most first, from the first page.</summary>
-    private async Task ChooseRating(ChangeEventArgs change)
-    {
-        this._rating = $"{change.Value}";
-        await this.Resorted();
-        await this.RatingChosen.InvokeAsync(RatingSystems.Of(this._rating));
     }
 
     /// <summary>The board by its first column, most first, from the first page, remembered.</summary>
