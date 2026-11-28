@@ -252,10 +252,11 @@ public sealed class AppTest : IDisposable
     }
 
     [Fact]
-    public void SafetyButton_WhenClicked_TurnsTheSafetyOffAndOn()
+    public void SafetyButton_WhenClickedAtATable_TurnsTheSafetyOffAndOn()
     {
-        // Arrange
+        // Arrange - at a table, as it means nothing in the lobby (the user, 2026-11-28)
         IRenderedComponent<App> app = this._page.Render<App>();
+        Play(app);
 
         // Act
         app.Find("button.safety").Click();
@@ -266,6 +267,26 @@ public sealed class AppTest : IDisposable
         Assert.Equal(
             ("Safety: OFF (safety off)", "Safety: on"),
             (afterOne, app.Find("button.safety").TextContent.Trim())
+        );
+    }
+
+    [Fact]
+    public void Render_WhenInTheLobby_ShowsTheRatingChoiceInItsBarAndNoSafety()
+    {
+        // Arrange - the user, 2026-11-28: "The rating selector belongs on the footer of the lobby, not in the
+        // leaderboard"; "The 'Safety:on' however does not belong in the footer of the lobby"
+
+        // Act
+        IRenderedComponent<App> app = this._page.Render<App>();
+
+        // Assert
+        Assert.Equal(
+            (1, 0, 0),
+            (
+                app.FindAll("footer.bar select.rating-choice").Count,
+                app.FindAll("button.safety").Count,
+                app.FindAll(".leaderboard select.rating-choice").Count
+            )
         );
     }
 

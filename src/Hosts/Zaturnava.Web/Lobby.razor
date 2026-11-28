@@ -675,7 +675,7 @@
         </div>
         </div>
 
-        <Leaderboard Game="@this.Game" RatingChosen="this.RatingChosen" />
+        <Leaderboard Game="@this.Game" Rating="this._rating" />
     }
     else if (this._problem is null)
     {
@@ -688,6 +688,27 @@
         </div>
     }
 </section>
+
+@* The lobby's bar: the page's name, the guide, the rating system, which holds for the whole lobby, its leaderboard
+   and the bots' strengths alike (the user, 2026-11-28: "The rating selector belongs on the footer of the lobby, not
+   in the leaderboard"), and the page's settings. *@
+<footer class="bar">
+    <span class="where">
+        <span class="brand">Zaturnava</span>
+        <span class="build" title="Which build of the page this is">@BuildStamp.Current</span>
+        @this.HowToPlay
+    </span>
+    @* Each counted from the same games; each viewer picks one, as a theme (the user's word of 2026-11-20). *@
+    <label class="choice">
+        <span class="choice-name">Rating</span>
+        <select class="rating-choice" value="@RatingSystems.KeyOf(this._rating)" @onchange="this.ChooseRating">
+            <option value="@RatingSystems.EloKey">Elo</option>
+            <option value="@RatingSystems.GlickoKey">Glicko-2</option>
+            <option value="@RatingSystems.TrueSkillKey">TrueSkill</option>
+        </select>
+    </label>
+    @this.PageSettings?.Invoke(false)
+</footer>
 
 @code {
     private CatalogDto? _catalog;
@@ -909,6 +930,14 @@
 
     [Parameter]
     public EventCallback<Seating> OnSeated { get; set; }
+
+    /// <summary>The guide's button, in the lobby's bar.</summary>
+    [Parameter]
+    public RenderFragment? HowToPlay { get; set; }
+
+    /// <summary>The page's settings, in the lobby's bar: told whether the pieces may be switched (not here).</summary>
+    [Parameter]
+    public RenderFragment<bool>? PageSettings { get; set; }
 
     /// <summary>Which game the lobby shows, as it is first shown and whenever the player chooses another.</summary>
     [Parameter]
@@ -1821,11 +1850,14 @@
         );
 
     /// <summary>
-    /// The rating system chosen on the leaderboard: the bots' strengths shown by it, as they stand, since a bot's
-    /// ratings by every system order alike (the user's request of 2026-11-20: the choice holds for the whole page).
+    /// The rating system chosen in the lobby's bar: the leaderboard by it, and the bots' strengths shown by it, as they
+    /// stand, since a bot's ratings by every system order alike (the user's request of 2026-11-20: the choice holds
+    /// for the whole page). Grouping the strengths by the system chosen is still to do (backlog, "Rating systems,
+    /// further").
     /// </summary>
-    private void RatingChosen(RatingSystem system)
+    private void ChooseRating(ChangeEventArgs change)
     {
+        RatingSystem system = RatingSystems.Of($"{change.Value}");
         this._rating = system;
         this._strengths = [.. this._strengths.Select(strength => strength with { System = system })];
     }

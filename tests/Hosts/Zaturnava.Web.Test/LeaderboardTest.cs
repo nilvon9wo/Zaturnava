@@ -29,7 +29,7 @@ public sealed class LeaderboardTest : IDisposable
         // Assert
         Assert.Equal(
             ("1 Ada 1516 14 9 1 0 0 2 0 0 0|2 Bea 1484 0 3 0 1 0 0 0 0 0", 0),
-            (Rows(board), board.FindAll(".leaderboard select:not(.leaderboard-board, .leaderboard-rating)").Count)
+            (Rows(board), board.FindAll(".leaderboard select:not(.leaderboard-board)").Count)
         );
     }
 
@@ -323,9 +323,10 @@ public sealed class LeaderboardTest : IDisposable
     [InlineData("elo", "1516|1484")]
     [InlineData("glicko", "1700|1300")]
     [InlineData("trueskill", "12.5|3.2")]
-    public void ChooseRating_WhenChosen_ShowsThePeopleByThatSystemAndRemembersIt(string rating, string expected)
+    public void Rating_WhenAnotherIsGiven_ShowsThePeopleByThatSystemAndRemembersIt(string rating, string expected)
     {
-        // Arrange - Ada and Bea, rated by all three (the user's word of 2026-11-20)
+        // Arrange - Ada and Bea, rated by all three (the user's word of 2026-11-20); the system chosen in the lobby's
+        // bar (2026-11-28), another before it
         this._page.Server.Leaderboards = this._page.Server.Leaderboards.Add(
             "chaturaji-2027",
             [
@@ -333,10 +334,10 @@ public sealed class LeaderboardTest : IDisposable
                 new StandingDto(2, "Bea", 1484, 0, 0, 1, 0) { Glicko = 1300, TrueSkill = 3.2 },
             ]
         );
-        IRenderedComponent<Leaderboard> board = this.Render();
+        IRenderedComponent<Leaderboard> board = this.Render(rating == "elo" ? RatingSystem.Glicko : RatingSystem.Elo);
 
         // Act
-        board.Find("select.leaderboard-rating").Change(rating);
+        board.Render(parameters => parameters.Add(leaderboard => leaderboard.Rating, SystemOf(rating)));
 
         // Assert
         Assert.Equal(
@@ -375,7 +376,7 @@ public sealed class LeaderboardTest : IDisposable
         );
 
         // Act
-        IRenderedComponent<Leaderboard> board = this.Render();
+        IRenderedComponent<Leaderboard> board = this.Render(SystemOf(rating));
 
         // Assert
         Assert.Equal(
@@ -590,8 +591,20 @@ public sealed class LeaderboardTest : IDisposable
     }
 
     /// <summary>The leaderboard of Chaturaji 2027.</summary>
-    private IRenderedComponent<Leaderboard> Render() =>
-        this._page.Render<Leaderboard>(parameters => parameters.Add(leaderboard => leaderboard.Game, "chaturaji-2027"));
+    private IRenderedComponent<Leaderboard> Render(RatingSystem rating = RatingSystem.Elo) =>
+        this._page.Render<Leaderboard>(parameters => parameters
+            .Add(leaderboard => leaderboard.Game, "chaturaji-2027")
+            .Add(leaderboard => leaderboard.Rating, rating)
+        );
+
+    /// <summary>The rating system a key names, as the page keeps it.</summary>
+    private static RatingSystem SystemOf(string key) =>
+        key switch
+        {
+            "glicko" => RatingSystem.Glicko,
+            "trueskill" => RatingSystem.TrueSkill,
+            _ => RatingSystem.Elo,
+        };
 
     /// <summary>Each row shown, its cells by spaces, the rows by bars.</summary>
     private static string Rows(IRenderedComponent<Leaderboard> board) =>

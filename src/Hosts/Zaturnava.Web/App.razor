@@ -1,6 +1,6 @@
 @* The whole page: the lobby until the player sits at (or watches) a table, under signing in (at the top right, if
-   the server offers it) and over a quiet bar of the page's name, the button opening the guide to the game, and
-   the page's own settings (the safety, beside
+   the server offers it); the lobby shows in its own bar the page's name, the button opening the guide to the game,
+   the rating system, and the page's own settings (at a table only, the safety, beside
    the table's view buttons; how it looks: theme, and pieces at a table whose pieces that changes; at a table, the
    piece cards on or off; then sound); at a
    table, the table shows the guide's button and the settings in its own bar. No URL routing, so the page works from any address it is served at. A seat the player takes is
@@ -27,15 +27,11 @@ else
     <header class="account">
         <PlayerBar OnSignedInOrOut="this.Refresh" />
     </header>
-    <Lobby @key="this._signIns" OnSeated="this.Sit" OnGameChosen="this.ShowGame" />
-    <footer class="bar">
-        <span class="where">
-            <span class="brand">Zaturnava</span>
-            <span class="build" title="Which build of the page this is">@BuildStamp.Current</span>
-            @this.HowToPlay
-        </span>
-        @this.Settings(false)
-    </footer>
+    <Lobby @key="this._signIns"
+           OnSeated="this.Sit"
+           OnGameChosen="this.ShowGame"
+           HowToPlay="this.HowToPlay"
+           PageSettings="this.Settings" />
 }
 
 @if (this._isGuideOpen)
@@ -62,15 +58,21 @@ else
     private RenderFragment HowToPlay =>
         @<button class="how-to-play" @onclick="this.OpenGuide">How to play</button>;
 
-    /// <summary>The page's settings; the choice of pieces only where it changes them, at a table.</summary>
+    /// <summary>
+    /// The page's settings; the choice of pieces only where it changes them, at a table; the safety only at a table,
+    /// as it means nothing in the lobby (the user, 2026-11-28).
+    /// </summary>
     private RenderFragment<bool> Settings =>
         hasPieceSets =>
             @<span class="settings">
-                <button class="@(this._isSafetyOn ? "safety" : "safety off")"
-                        title="While on, you cannot take your own team's pieces, as an enemy army you command could"
-                        @onclick="this.SwitchSafety">
-                    @(this._isSafetyOn ? "Safety: on" : "Safety: OFF")
-                </button>
+                @if (this._seating is not null)
+                {
+                    <button class="@(this._isSafetyOn ? "safety" : "safety off")"
+                            title="While on, you cannot take your own team's pieces, as an enemy army you command could"
+                            @onclick="this.SwitchSafety">
+                        @(this._isSafetyOn ? "Safety: on" : "Safety: OFF")
+                    </button>
+                }
                 <button class="theme" @onclick="this.SwitchTheme">@(this._theme == Browser.Dark ? "Theme: dark" : "Theme: light")</button>
                 @if (hasPieceSets)
                 {
