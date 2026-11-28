@@ -123,10 +123,14 @@ What the program does so far (2026-11-04), and the gaps against the above:
   so that Western Pawns came twice as often as any other infantry.)
   From edition 3, each slot may spend only an even share of what is left. From edition 5 (*Stated*, 2026-11-13),
   the budget is the designer's formula, each class's average price times the least an army has of it, summed,
-  with a tenth more left over (*Proposed*). Pieces that may promote into a leader (the Shogi Pawn, the Lance, the
-  Man) are left out of the averages, as no other piece of their class costs nearly as much. Each slot may then
+  with a tenth more left over (*Proposed*). Every piece of a class counts in its average, whatever it may promote
+  into (the user, 2026-11-28: "Potential for promotion should not disqualify selection"; the Shogi Pawn, the Lance
+  and the Man were left out till then, which left a Checkers army's infantry averaging 0, and Palamedes dealt a
+  King and two Men). What an army dealt leaves of its budget starts its score, as a drafted army's does (the user,
+  2026-11-28: "it is the same game! Points should not magically disappear"). Each slot may then
   spend its class's share of what is left, in proportion to the class's average price. Pieces added past the
-  minimums cost no more than their class's average and a tenth. Measured over 2,000 armies of each size:
+  minimums cost no more than their class's average and a tenth (dropped 2026-11-28, below). Measured over 2,000
+  armies of each size:
 
   | Size | Budget before | Budget from edition 5 | Average heavy before | Average heavy from edition 5 |
   |---|---|---|---|---|
@@ -137,11 +141,16 @@ What the program does so far (2026-11-04), and the gaps against the above:
   The Manchu Chariot counted heavy, not artillery (the designer, 2026-11-27), moves both classes' averages, and so
   the budgets from then on, measured on the current catalogue:
 
-  | Size | Budget, the Chariot artillery | Budget, the Chariot heavy |
-  |---|---|---|
-  | Small | 124 | 125 |
-  | Medium | 151 | 147 |
-  | Large | 288 | 279 |
+  | Size | Budget, the Chariot artillery | Budget, the Chariot heavy | Budget, every piece eligible |
+  |---|---|---|---|
+  | Small | 124 | 125 | 136 |
+  | Medium | 151 | 147 | 152 |
+  | Large | 288 | 279 | 272 |
+
+  Every piece is eligible (the user, 2026-11-28), but for one a palace or a river holds where there is none; the
+  weighting draws dear and cheap pieces seldom, never not at all ("seldom is not never!"), and no price cap bars
+  any. Once the kingdom is full, the dealer spends what is left on making pieces dearer, drawn by the same
+  weighting, then on lifts, dearest first, keeping only the few points no step fits.
 - Pieces confined to a palace are left out, as quick games have no palaces; a piece with powers along
   palace lines, such as the Janggi Soldier, is not (Stated, 2026-11-05). River pieces are left out
   unless the game has rivers (each area restriction says which terrain it is about, `Terrain`, and

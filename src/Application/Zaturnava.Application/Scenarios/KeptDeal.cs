@@ -22,6 +22,15 @@ public sealed record KeptDeal(
     int Terrain
 )
 {
+    /// <summary>
+    /// What each army kept of its budget, by seat (the user, 2026-11-28: dealing "is the same game! Points should
+    /// not magically disappear"); none, in a deal kept before armies dealt kept anything, which started at nothing.
+    /// </summary>
+    public ImmutableSortedDictionary<int, int>? Unspent { get; init; }
+
+    /// <summary>The restrictions the deal bought off, each for a piece by its id; none, in one kept before.</summary>
+    public ImmutableList<KeptLift>? Lifts { get; init; }
+
     /// <summary>What <paramref name="dealt"/> was dealt.</summary>
     public static KeptDeal Of([Required] GameState dealt) =>
         new(
@@ -41,9 +50,22 @@ public sealed record KeptDeal(
                 palace => palace.Value.Select(cell => cell.Value).ToImmutableList()
             ),
             dealt.Terrain
-        );
+        )
+        {
+            Unspent = dealt.Unspent.ToImmutableSortedDictionary(each => each.Key.Value, each => each.Value),
+            Lifts =
+            [
+                .. dealt.Lifts
+                    .OrderBy(lift => lift.Piece.Value)
+                    .ThenBy(lift => lift.Restriction)
+                    .Select(lift => new KeptLift(lift.Piece.Value, lift.Kind.Value, lift.Restriction)),
+            ],
+        };
 
-    /// <summary><paramref name="dealt"/> as this deal dealt it, whatever the seed would deal now.</summary>
+    /// <summary>
+    /// <paramref name="dealt"/> as this deal dealt it, whatever the seed would deal now: its pieces, thrones, palaces,
+    /// terrain, lifts, and what each army kept, its score's start, in place of what the seed's deal kept.
+    /// </summary>
     public GameState Applied([Required] GameState dealt)
     {
         Position position = this.Pieces.Aggregate(
@@ -66,6 +88,18 @@ public sealed record KeptDeal(
                 palace => palace.Value.Select(cell => new CellId(cell)).ToImmutableList()
             ),
             Terrain = this.Terrain,
+            Scores = dealt.Scores.ToImmutableDictionary(
+                each => each.Key,
+                each => each.Value - dealt.Unspent.GetValueOrDefault(each.Key)
+                    + (this.Unspent?.GetValueOrDefault(each.Key.Value) ?? 0)
+            ),
+            Unspent = this.Unspent?.ToImmutableDictionary(each => new SeatId(each.Key), each => each.Value) ?? [],
+            Lifts =
+            [
+                .. (this.Lifts ?? []).Select(lift =>
+                    new Lift(new PieceId(lift.Piece), new PieceKindId(lift.Kind), lift.Restriction)
+                ),
+            ],
         };
     }
 
@@ -77,3 +111,6 @@ public sealed record KeptDeal(
 
 /// <summary>A piece as a deal dealt it: its cell, its id, its kind, and its seat.</summary>
 public sealed record KeptPiece(int Cell, int Id, string Kind, int Owner);
+
+/// <summary>A restriction a deal bought off: the piece's id, its kind, and which restriction.</summary>
+public sealed record KeptLift(int Piece, string Kind, LiftKind Restriction);

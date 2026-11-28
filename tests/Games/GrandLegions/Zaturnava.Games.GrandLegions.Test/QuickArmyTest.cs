@@ -59,9 +59,9 @@ public sealed class QuickArmyTest
     }
 
     [Theory]
-    [InlineData("grand-legions-small", 110, 125)]
-    [InlineData("grand-legions-medium", 125, 147)]
-    [InlineData("grand-legions-large", 200, 279)]
+    [InlineData("grand-legions-small", 110, 136)]
+    [InlineData("grand-legions-medium", 125, 152)]
+    [InlineData("grand-legions-large", 200, 272)]
     public void BudgetOf_BeforeTheFormulaEditionOrFromIt_IsTheGamesOwnOrTheFormulas(string id, int before, int since)
     {
         // Arrange
@@ -292,9 +292,9 @@ public sealed class QuickArmyTest
     }
 
     [Fact]
-    public void Eligible_WithoutRivers_LeavesOutWhatAPalaceConfinesOrARiverHoldsButNotWhatPalaceLinesEmpower()
+    public void Eligible_WithoutRivers_LeavesOutWhatAPalaceConfinesButNotWhatARiverOnlyHindersNorPalaceLinesEmpower()
     {
-        // Arrange - quick games have neither palaces nor rivers
+        // Arrange - no palaces nor rivers; the user, 2026-11-28: "Every piece should be elligible"
         QuickGame game = QuickGame.Medium;
 
         // Act
@@ -304,8 +304,8 @@ public sealed class QuickArmyTest
         Assert.DoesNotContain(XiangqiGeneral, eligible);
         Assert.DoesNotContain(JanggiGuard, eligible);
         Assert.Contains(JanggiSoldier, eligible);
-        Assert.DoesNotContain(XiangqiSoldier, eligible);
-        Assert.DoesNotContain(XiangqiElephant, eligible);
+        Assert.Contains(XiangqiSoldier, eligible);
+        Assert.Contains(XiangqiElephant, eligible);
         Assert.Contains(Lance, eligible);
     }
 
@@ -519,7 +519,8 @@ public sealed class QuickArmyTest
 
     [Theory]
     [InlineData("Makruk", "King (Western)|Noble (Makruk)|Courtier|Pawn (Makruk)|Rook (Western)|Knight (Western)", 18)]
-    [InlineData("Checkers", "King (Checkers)|Man", 3)]
+    // a host of Men, not the two the minimum asks (the user's report of 2026-11-28: Palamedes dealt a King and two Men)
+    [InlineData("Checkers", "King (Checkers)|Man", 18)]
     [InlineData("Othello", "Evangelist", 3)]
     public void Dealt_WhenASeatIsNamedAFamily_DealsItOnlyThatGamesPiecesButNotWhereArmiesAreAlike(
         string family,

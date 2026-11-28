@@ -197,11 +197,17 @@ internal sealed class ArmyDrafting
     /// The game <paramref name="dealt"/> (its terrain), its board emptied for its armies to be drafted, every seat with
     /// the whole budget to spend, the settings' or the variant's, but never above <see cref="Limit"/>; the first seat
     /// to draft first; any army filled at random drawn by <paramref name="seed"/>. If the settings name a drafter, it
-    /// alone drafts, the others done already.
+    /// alone drafts, the others done already. What the deal's armies kept is taken back: the draft keeps its own.
     /// </summary>
     public GameState Begun(GameState dealt, int seed, DraftSettings settings) =>
         dealt with
         {
+            Scores = dealt.Scores.ToImmutableDictionary(
+                each => each.Key,
+                each => each.Value - dealt.Unspent.GetValueOrDefault(each.Key)
+            ),
+            Unspent = [],
+            Lifts = [],
             Position = Position.Empty,
             Thrones = [],
             Palaces = dealt.Palaces is null ? null : this.SolePalaces(dealt),

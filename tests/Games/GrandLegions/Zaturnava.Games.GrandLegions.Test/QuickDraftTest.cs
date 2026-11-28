@@ -54,18 +54,19 @@ public sealed class QuickDraftTest
     }
 
     [Theory]
-    [InlineData(0, false)]
-    [InlineData(1, true)]
-    public void Of_OnEachTerrain_OffersAPieceARiverHoldsOnlyIfThereIsARiver(int terrain, bool isOffered)
+    [InlineData(0)]
+    [InlineData(1)]
+    public void Of_OnEachTerrain_OffersAPieceARiverOnlyHindersRiverOrNot(int terrain)
     {
-        // Arrange
+        // Arrange - the Xiangqi Elephant may not cross a river, but is not held to one (the user, 2026-11-28: "Every
+        // piece should be eligible")
         Drafting drafting = QuickDraft.Of(QuickGame.Medium);
 
         // Act
         ImmutableHashSet<PieceKindId> offered = drafting.Offered(terrain, 0);
 
         // Assert
-        Assert.Equal((isOffered, true), (offered.Contains(XiangqiElephant), offered.Contains(Rook)));
+        Assert.Equal((true, true), (offered.Contains(XiangqiElephant), offered.Contains(Rook)));
     }
 
     [Fact]
