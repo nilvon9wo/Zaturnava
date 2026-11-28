@@ -125,6 +125,27 @@ public sealed class WireFormatTest
     }
 
     [Fact]
+    public void BugReport_WhenSentAsJson_ArrivesUnchanged()
+    {
+        // Arrange
+        BugReportDto report = new("r", "g", "chaturaji-2027", 12, 30, "Tactician played on.", DateTimeOffset.UnixEpoch)
+        {
+            Deciding = 2,
+            IsOver = true,
+            Seat = 0,
+            ViewVersion = 11,
+            SelectedCell = 60,
+            InspectedPiece = 4,
+        };
+
+        // Act
+        BugReportDto? arrived = RoundTrip(report);
+
+        // Assert
+        Assert.Equal(report, arrived);
+    }
+
+    [Fact]
     public void Catalog_WhenSentAsJson_ArrivesUnchanged()
     {
         // Arrange

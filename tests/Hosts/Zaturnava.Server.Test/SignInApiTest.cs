@@ -294,6 +294,42 @@ public sealed partial class SignInApiTest(SigningInServer server) : IClassFixtur
     }
 
     [Fact]
+    public async Task ReadBugReport_WhenAskedByItsId_ShowsTheReportAndElseIsNotFound()
+    {
+        // Arrange - a report sent by a player watching, at no seat, and one never sent
+        string token = TokenOf(await this.Done("GitHub|reads|Ada Reads", SigningInServer.Page));
+        HttpGameClient client = server.GameClient();
+        GameCreatedDto created = await client.Create(
+            new CreateGameRequest(ZaturnavaServer.Chaturaji2027, ZaturnavaServer.OneOpenSeat),
+            this._cancellation
+        );
+        ReportBugRequest request = new("Tactician blundered.") { InspectedPiece = 3 };
+        BugReportedDto reported = (await client.ReportBug(created.GameId, token, request, this._cancellation))!;
+
+        // Act
+        BugReportDto? read = await this._http.GetFromJsonAsync<BugReportDto>(
+            GameRoutes.BugReport(reported.Id),
+            this._cancellation
+        );
+        using HttpResponseMessage missing =
+            await this._http.GetAsync(new Uri(GameRoutes.BugReport("never"), UriKind.Relative), this._cancellation);
+
+        // Assert
+        Assert.Equal(
+            (created.GameId, "Tactician blundered.", null, true, 3, false, HttpStatusCode.NotFound),
+            (
+                read?.GameId,
+                read?.Description,
+                read?.Seat,
+                read?.Deciding is not null,
+                read?.InspectedPiece,
+                read?.IsOver,
+                missing.StatusCode
+            )
+        );
+    }
+
+    [Fact]
     public async Task ReportBug_WhenTheTokenStandsForNoOne_IsNoOne()
     {
         // Arrange

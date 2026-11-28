@@ -43,8 +43,42 @@ internal static class GameEndpoints
         _ = routes.MapGet(GameRoute + "/chat", Chat);
         _ = routes.MapPost(GameRoute + "/chat", Say);
         _ = routes.MapPost(GameRoute + "/bug-reports", ReportBug);
+        _ = routes.MapGet(GameRoutes.BugReport("{id}"), ReadBugReport);
         return routes;
     }
+
+    /// <summary>
+    /// A bug report kept, by its id, for whoever looks into it; not found, if there is none. Who sent it is left out.
+    /// </summary>
+    private static async Task<Results<Ok<BugReportDto>, NotFound>> ReadBugReport(
+        string id,
+        BugReportService reports,
+        CancellationToken cancellationToken
+    ) =>
+        await reports.Find(id, cancellationToken) is { } report
+            ? TypedResults.Ok(
+                new BugReportDto(
+                    report.Id,
+                    report.Game.Value,
+                    report.RulesetId,
+                    report.Version,
+                    report.Actions,
+                    report.Description,
+                    report.At
+                )
+                {
+                    Deciding = NumberOf(report.Deciding),
+                    IsOver = report.IsOver,
+                    Seat = NumberOf(report.Seat),
+                    ViewVersion = report.Seen.ViewVersion,
+                    SelectedCell = report.Seen.SelectedCell,
+                    InspectedPiece = report.Seen.InspectedPiece,
+                }
+            )
+            : TypedResults.NotFound();
+
+    /// <summary>The seat's number, if there is one.</summary>
+    private static int? NumberOf(SeatId? seat) => seat?.Value;
 
     /// <summary>
     /// A bug report from the player the token stands for, kept with the game as it stands; unauthorized, for anyone

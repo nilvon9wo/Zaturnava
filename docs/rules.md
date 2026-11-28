@@ -689,7 +689,12 @@ both the triumphing player and their ally may move each other's Boat.
       does not count for the empire: the empire is created when the last
       enemy Raja that has not retired is taken. A retired player creates no
       empire, and is offered no ransom.
-    - Bots never retire.
+    - A bot retires only to save a draw: when retiring ends the game at once
+      as a draw (below) and the enemies have more pieces on the board than
+      its team. Playing on, a lone Raja could then only lose the draw.
+      (Bots never retired till 2026-11-27, when the user reported Tactician
+      playing on alone, after its ally retired with the scores level, until
+      the enemy pulled ahead on points.)
   - *(Stated 2026-11-04)* Once a team's only pieces left on the board are
     retired Rajas, the game is over, as no one is left to play against: a
     draw if that team has as many points as the other or more, else the

@@ -97,6 +97,52 @@ public sealed class RandomBotTest
         Assert.Equal(swap, action);
     }
 
+    [Theory]
+    [InlineData(2, true, true)]
+    [InlineData(1, true, false)]
+    [InlineData(2, false, false)]
+    [InlineData(2, null, false)]
+    public async Task Decide_WhenRetiringItsLoneRajaWouldSaveADraw_RetiresAndElsePlaysOn(
+        int enemies,
+        bool? isDrawn,
+        bool retires
+    )
+    {
+        // Arrange - the bot's Raja alone on 0, against so many enemy pieces; retiring ends the game, drawn or lost,
+        // or (null) leaves it going on
+        SeatId enemy = new(1);
+        Position board = Enumerable.Range(0, enemies).Aggregate(
+            Position.Empty.Place(new CellId(0), new Piece(new PieceId(0), new PieceKindId("raja"), Seat)),
+            (sofar, index) => sofar.Place(
+                new CellId(4 + index),
+                new Piece(new PieceId(1 + index), new PieceKindId("pawn"), enemy)
+            )
+        );
+        GameState state = ScoringRules.State() with
+        {
+            Position = board,
+            Teams = TeamGraph.FromTeams([[Seat], [enemy]]),
+        };
+        RetireAction retire = new(Seat);
+        GameOutcome? ended = isDrawn is { } drawn
+            ? new(drawn ? [] : [enemy], "only-retired-left", "retired")
+            : null;
+        ScoringRules rules = new(
+            ImmutableDictionary<GameAction, int>.Empty.Add(retire, 0).Add(new PassAction(Seat), 0)
+        )
+        {
+            Results = ImmutableDictionary<GameAction, GameState>.Empty.Add(retire, state with { Outcome = ended }),
+        };
+        DecisionRequest request = new(rules, state, Seat, rules.LegalActions(state));
+        RandomBot bot = new(new Random(Seed));
+
+        // Act
+        GameAction action = await bot.Decide(request, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(retires, action == retire);
+    }
+
     [Fact]
     public async Task Decide_WhenItMayRetire_PlaysOn()
     {

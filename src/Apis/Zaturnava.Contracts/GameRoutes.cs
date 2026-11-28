@@ -126,6 +126,12 @@ public static class GameRoutes
     /// </summary>
     public static string BugReports([Required] string gameId) => $"{Game(gameId)}/bug-reports";
 
+    /// <summary>
+    /// A bug report kept, read back by its id (<see cref="BugReportDto"/>): only by its id, which is hard to guess,
+    /// as no list of them is offered.
+    /// </summary>
+    public static string BugReport([Required] string id) => $"api/bug-reports/{id}";
+
     /// <summary>What was said at a game's table after message number <paramref name="after"/>.</summary>
     public static string Chat([Required] string gameId, int after) =>
         $"{Chat(gameId)}?after={after.ToString(CultureInfo.InvariantCulture)}";

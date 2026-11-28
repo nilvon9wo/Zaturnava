@@ -188,7 +188,10 @@ an ally's empty throne, the ally's last Rook on the board); and a bot's finishin
 52 to 48): seizing a throne seldom matters, as it is hard to reach and by then there are few pieces left to control,
 "but when it counts, it really can count", say when the enemy takes control of an ally's last Rook. And a test of
 guarding "really depends upon whether the enemy has made it an objective to obtain the throne and can put it to good
-use". So, to do:
+use". Game 078a448e (the user, 2026-11-27) is that case from the other side: Black, the user, its army gone, sat its
+Raja on Yellow's throne and came back on points with Yellow's own pieces, taking Yellow's and Red's, until Red's
+recovered Rook drove it off. Yellow (Sage) and Red (Athena) let a throne be taken that commanded a whole army, and
+were slow to win it back. So, to do:
 
 | Step | Now | To be |
 |---|---|---|
