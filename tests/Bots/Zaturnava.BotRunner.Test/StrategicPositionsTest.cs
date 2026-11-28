@@ -479,6 +479,49 @@ public sealed class StrategicPositionsTest
         );
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Sage_WhenAnAllyHoldsTheThroneAnEnemyLeaderWouldEscapeTo_LeavesThatLeaderOnTheBoard(bool isHeld)
+    {
+        // Arrange - the user's game 078a448e (2026-11-28): Black's Raja on Yellow's throne, Yellow's Raja on the board;
+        // "If it was captured and then escaped, it would escape to the throne, capturing my raja". Green's Elephant on
+        // b5 may take Yellow's Raja on f5; Red, Yellow's ally, plays on, to roll the doubles. Black's Raja held at home
+        // instead, nothing is at risk, and Green takes it. Yellow's Pawns, far off, keep it from being an endgame
+        CellId elephant = CellAt(1, 4);
+        CellId raja = CellAt(5, 4);
+        GameState state = this.Deciding(
+            Green,
+            [
+                (elephant, new Piece(new PieceId(1), Chaturaji2027Pieces.Elephant, Green)),
+                (raja, new Piece(new PieceId(2), Chaturaji2027Pieces.Raja, Yellow)),
+                (
+                    this._rules.Thrones[isHeld ? Yellow : Black],
+                    new Piece(new PieceId(3), Chaturaji2027Pieces.Raja, Black)
+                ),
+                (this._rules.Thrones[Red], new Piece(new PieceId(4), Chaturaji2027Pieces.Raja, Red)),
+                (this._rules.Thrones[Green], new Piece(new PieceId(5), Chaturaji2027Pieces.Raja, Green)),
+                .. new[] { (0, 7), (1, 7), (2, 7), (0, 6), (1, 6), (0, 5) }.Select((cell, index) => (
+                    CellAt(cell.Item1, cell.Item2),
+                    new Piece(new PieceId(10 + index), Chaturaji2027Pieces.Pawn, Yellow)
+                )),
+            ]
+        );
+        DecisionRequest request = new(this._rules, state, Green, this._rules.LegalActions(state));
+
+        // Act
+        GameAction action = await new SageBot(new Random(7)).Decide(request, this._cancellation);
+
+        // Assert - offered either way
+        Assert.Equal(
+            (true, !isHeld),
+            (
+                request.LegalActions.Contains(new MoveAction(Green, elephant, raja)),
+                action == new MoveAction(Green, elephant, raja)
+            )
+        );
+    }
+
     private static CellId CellAt(int column, int row) => new((row * Side) + column);
 
     /// <summary>Black to decide, without dice, with only these pieces on the board.</summary>

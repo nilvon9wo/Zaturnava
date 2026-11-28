@@ -144,6 +144,7 @@ internal static class Appraisal
             + weights.Thrones.Weigh(Thrones(request, state, weights.Hunting.ThronesByStake))
             - (ExposureWeight(weights)
                 * (Careful.Exposure(request, state, theirs, ours)
+                    + Careful.EscapeThreat(request, state)
                     + (weights.Hunting.AlliedThrones ? Careful.AlliedThroneThreat(request, state, theirs) : 0)
                     + (weights.Hunting.Forks ? Careful.ForkThreat(request, state, theirs, ours) : 0)))
             + (weights.Chances * Threats(request, state, ours, theirs))

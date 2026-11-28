@@ -17,6 +17,11 @@ only in part, what is left is in the backlog, and its history here. The playtest
 - **Bug reports could not be read back** (the user: "why would you create a report a bug button and then not be
   able to retrieve the reports?"). *Done*: `GET api/bug-reports/{id}`, and
   `py -3 scripts/fetch-histories.py --report ID` saves a report with its game, cut to when it was sent.
+- **Don't take an enemy leader whose throne the team holds** (the user, of the same game: "I didn't want green to
+  capture the yellow raja because I didn't want the yellow raja to potentially escape back to the throne"; "It was
+  much better to keep it on the board as a weapon"). *Done*: a team leader on an enemy throne whose owner's leader is
+  a prisoner counts as exposed, by that leader, the prisoner and the throne's army, as likely as the doubles over six
+  rounds; an ally of the holder leaves that leader on the board. The position is a test.
 - **Athena sees the board** (backlog §1, 2026-11-20, 2026-11-27). *Done*: the board-seeing network beat the shipped
   one 124 to 76 in 200 paired games, and shipped ([ai-assessment](bots/ai-assessment.md) §1.3).
 
