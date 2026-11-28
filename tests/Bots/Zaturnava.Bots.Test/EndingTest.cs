@@ -256,8 +256,9 @@ public sealed class EndingTest
     }
 
     [Theory]
-    [InlineData(8, "Realist", true)]
-    [InlineData(8, "Even", false)]
+    [InlineData(13, "Realist", true)]
+    [InlineData(13, "Even", false)]
+    [InlineData(8, "Realist", false)]
     [InlineData(20, "Even", true)]
     [InlineData(20, "Dogged", false)]
     public void AnswerTo_WhenAheadByAsMuchAsTheBotsTemperWants_ProposesEndingIt(
@@ -423,15 +424,15 @@ public sealed class EndingTest
     }
 
     /// <summary>
-    /// Black's turn, Green resting, people at <paramref name="people"/>: Black's team has four Elephants on the board
-    /// to Yellow's Boat, worth as much, and <paramref name="ourPoints"/> points to none; a retired Red's Raja counts
-    /// for nothing.
+    /// Black's turn, Green resting, people at <paramref name="people"/>: Black's team has six Elephants on the board
+    /// to Yellow's Boat, 20 ahead on the board, and <paramref name="ourPoints"/> points to none; a retired Red's Raja
+    /// counts for nothing.
     /// </summary>
     private static DecisionRequest Resting(ImmutableHashSet<SeatId> people, int ourPoints)
     {
         DecisionRequest request = Request(
-            [(Black, "elephant"), (Black, "elephant"), (Green, "elephant"), (Green, "elephant"), (Yellow, "boat"),
-                (Red, "raja")],
+            [(Black, "elephant"), (Black, "elephant"), (Black, "elephant"), (Green, "elephant"), (Green, "elephant"),
+                (Green, "elephant"), (Yellow, "boat"), (Red, "raja")],
             ourPoints,
             0
         );

@@ -107,8 +107,10 @@ test position in `tests/Bots/` (the strategic scenarios of §15) before its weig
    proposes; a refused proposal, it moves on. *Done* (2026-11-25, `Ending.cs`), every bot alike for now: it proposes,
    playing on, when its team leads by a clear lead on points and on the board, or trails past hope; once refused,
    it waits 12 turns (three rounds) before proposing again (*Proposed*). *Per bot* (2026-11-26, `Temper`,
-   *Proposed*): Sage and Tactician propose ending a won game at three quarters of the clear lead; Random only at
-   twice it, and calls a game hopeless only past twice its hope; every other bot as before. *The enemy's hope*
+   *Proposed*): Sage and Tactician propose ending a won game at a quarter more than the clear lead; every other bot at
+   half as much again; Random only at three times it, and calls a game hopeless only past twice its hope. (Till
+   2026-11-28, three quarters, the clear lead and twice it: the user, "The bots are still too eager to end the game.
+   Red/yellow is only up 8 points and they don't have that much more material".) *The enemy's hope*
    (*Stated* 2026-11-26): whatever the lead, no bot proposes ending a won game while the enemy team, but its retired
    seats, has a leader, a heavy piece (Chaturaji's Elephant; Grand Legions' heavies), or a Pawn within two steps of
    its promotion (`IRulesApplying.StepsToPromotion`). *By team* (*Stated* the same day): a refusal makes the whole
@@ -118,8 +120,9 @@ test position in `tests/Bots/` (the strategic scenarios of §15) before its weig
    |---|---|---|---|---|---|---|
    | An Elephant, a Horse, two Pawns taken | 9 | 7 | Rajas | — | — | — |
    | Most of both enemy armies taken | 25 | 22 | A Raja | — | — | — |
-   | The same | 25 | 22 | Two Boats, Pawns far back | Proposes | Proposes | Proposes |
-   | Less taken | 13 | 9 | A Horse | Proposes | — | — |
+   | The same | 25 | 22 | Two Boats, Pawns far back | Proposes | Proposes | — |
+   | Less taken | 13 | 9 | A Horse | — | — | — |
+   | Up 8, little more material | 8 | 4 | A Horse | — | — | — |
 7. **Measuring.** Each step's test position passes, and the overnight ratings do not fall; a step that lowers a
    bot's rating is undone or reweighted.
 

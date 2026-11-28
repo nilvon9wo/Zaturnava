@@ -31,6 +31,7 @@ lifts... the difference between having a playable game or not." The plans:
 | Safe captures taken | To do | Leaders and strong pieces left untaken, above all those threatening an ally | **X5** |
 | No pointless sacrifices | To do | Rooks given for Pawns; a Raja blocking an allied Pawn | **X6, F1** |
 | Promotion by command | Begun | The choice by who will command the piece, beside safety and worth | **F2–F4** |
+| Promotion races | To do | Take the enemy Pawn about to promote, and the one blocking an ally's Pawn from promoting, before a dearer piece far from anything (the user, 2026-11-28: Green's Rook took a lone Horse instead); the promotion measure weighs nothing yet | 2026-11-28 |
 | No meandering | To do | Clean up a near-empty board rather than wander | **X3** |
 | Trades that prolong | Check | A decided game prolonged by ransoms, if one is seen | **X4** |
 | Resigning by judgement | Begun | Beyond points and hope: hope against the points in play; a second reason (a leader, a heavy, a Pawn about to promote) per temper | **F6**, strategy-plan |
