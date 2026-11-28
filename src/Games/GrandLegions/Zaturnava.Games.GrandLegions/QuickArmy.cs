@@ -240,7 +240,9 @@ public static class QuickArmy
                 && piece.Restrictions.All(restriction => restriction.Terrain switch
                 {
                     Terrain.Palace => !restriction.IsConfining || palaced,
-                    Terrain.River => game.Rivers != Rivers.None,
+                    // a piece the river only hinders plays where there is none (the user, 2026-11-28: "Every piece
+                    // should be eligible"); one the river holds, only where there is one
+                    Terrain.River => !restriction.IsConfining || game.Rivers != Rivers.None,
                     _ => true,
                 })
             ),
@@ -311,13 +313,14 @@ public static class QuickArmy
         if (game.Edition >= CompositionEdition)
         {
             ImmutableList<GrandPiece> ofFamily = OfFamily(Eligible(game), family);
-            return Composed(
+            ImmutableList<GrandPiece> composed = Composed(
                 game,
                 ofFamily,
                 [],
                 random,
                 family is null ? null : [.. ofFamily.Select(piece => piece.Class)]
             );
+            return Upgraded(game.Budget, ofFamily, composed, random);
         }
 
         ImmutableList<GrandPiece> eligible = Eligible(game);
@@ -358,6 +361,54 @@ public static class QuickArmy
         family is null ? eligible : [.. eligible.Where(piece => piece.IsOf(family))];
 
     /// <summary>
+    /// <paramref name="army"/>, its budget spent on pieces as far as it will go once no piece more fits (the user,
+    /// 2026-11-28: "when dealing, only a minimal amount of points should be left over"; "Dealing should maximize spend
+    /// on pieces before buying lifts"): while any piece of it may be swapped for a dearer of its class, for what the
+    /// budget still leaves, one so swapped, drawn by <see cref="WeightOf"/>, so that "normal" pieces come most often
+    /// and the dearest and cheapest seldom, but never not at all (the user, 2026-11-28: "seldom is not never!"); a
+    /// piece a palace holds only for another that a palace holds, and one it does not for another it does not, so
+    /// that the army stands as it would. What is left after buys
+    /// lifts (<see cref="Chaturaji2027Variant.BudgetDealer"/>).
+    /// </summary>
+    internal static ImmutableList<GrandPiece> Upgraded(
+        int budget,
+        [Required] ImmutableList<GrandPiece> eligible,
+        [Required] ImmutableList<GrandPiece> army,
+        [Required] Random random
+    )
+    {
+        int left = budget - army.Sum(each => each.Value);
+        ImmutableList<(int At, GrandPiece Piece)> dearer =
+        [
+            .. army.SelectMany((held, at) => eligible
+                .Where(piece =>
+                    piece.Class == held.Class
+                    && piece.Value > held.Value
+                    && piece.Value - held.Value <= left
+                    && PalaceConfinement.Confined.Contains(piece.Id) == PalaceConfinement.Confined.Contains(held.Id)
+                )
+                .Select(piece => (at, piece))
+            ),
+        ];
+        if (dearer.IsEmpty)
+        {
+            return army;
+        }
+
+        ImmutableList<double> weights =
+            [.. dearer.Select(each => WeightOf(each.Piece, Typical(eligible, each.Piece.Class)))];
+        double drawn = random.NextDouble() * weights.Sum();
+        int chosen = 0;
+        while (chosen < dearer.Count - 1 && (drawn -= weights[chosen]) >= 0)
+        {
+            chosen++;
+        }
+
+        (int at, GrandPiece swapped) = dearer[chosen];
+        return Upgraded(budget, eligible, army.SetItem(at, swapped), random);
+    }
+
+    /// <summary>
     /// <paramref name="army"/>, and the pieces <see cref="Next"/> adds to it, one at a time, while it adds one.
     /// </summary>
     private static ImmutableList<GrandPiece> Composed(
@@ -378,8 +429,8 @@ public static class QuickArmy
     /// short of the composition it aims at (<see cref="TargetOf"/> of <see cref="AimOf"/>), a class it lacks, drawn
     /// as often as it is lacking; past that, a class it lacks for a kingdom full. The piece may cost what is left once
     /// the classes still lacking are paid for at their cheapest, and no more than its class's share of what is left,
-    /// in proportion to the classes' average prices; past the aim, no more than its class's average and the bit left
-    /// over. Among the pieces of the class that fit, one drawn by <see cref="WeightOf"/>; if none fits, another class
+    /// in proportion to the classes' average prices. Among the pieces of the class that fit, one drawn by
+    /// <see cref="WeightOf"/>; if none fits, another class
     /// lacking; the class's cheapest, whatever it costs, while the army has fewer than the game's minimum of it.
     /// </summary>
     internal static GrandPiece? Next(
@@ -419,14 +470,10 @@ public static class QuickArmy
                 MidpointRounding.AwayFromZero
             );
             int most = Math.Min(left - reserve, Math.Max(Cheapest(fitting, pieceClass).Value, share));
+            // no piece barred for its price but what the budget allows: the weighting draws the dear ones seldom (the
+            // user, 2026-11-28: "seldom is not never! ... the pieces should be elligible for draft, not blocked!")
             ImmutableList<GrandPiece> fits =
-            [
-                .. fitting.Where(piece =>
-                    piece.Class == pieceClass
-                    && piece.Value <= most
-                    && (!isPast || piece.Value <= MostAdded(eligible, pieceClass))
-                ),
-            ];
+                [.. fitting.Where(piece => piece.Class == pieceClass && piece.Value <= most)];
             bool isWanting =
                 army.Count(piece => piece.Class == pieceClass) < game.Minimums.GetValueOrDefault(pieceClass);
             return (fits.IsEmpty, isWanting) switch

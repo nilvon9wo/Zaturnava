@@ -207,6 +207,7 @@ internal sealed class ArmyDrafting
                 each => each.Value - dealt.Unspent.GetValueOrDefault(each.Key)
             ),
             Unspent = [],
+            Lifts = [],
             Position = Position.Empty,
             Thrones = [],
             Palaces = dealt.Palaces is null ? null : this.SolePalaces(dealt),

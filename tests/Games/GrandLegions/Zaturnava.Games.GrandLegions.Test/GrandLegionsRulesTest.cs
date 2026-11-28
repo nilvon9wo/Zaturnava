@@ -57,7 +57,7 @@ public sealed class GrandLegionsRulesTest
                 "grand-legions-custom",
                 "Grand Legions (12 × 10, kingdoms 4 × 4)",
                 120,
-                (int?)228,
+                (int?)224,
                 (BoardSize?)board,
                 true
             ),
@@ -290,7 +290,7 @@ public sealed class GrandLegionsRulesTest
         // Act
         GameState dealt = rules.Deal(initial, 9, edition: QuickArmy.PalacesAnywhereEdition, budget: budget);
 
-        // Assert - each army's score what its pieces left of the budget, unspent, earned by no one
+        // Assert - each army's score what its pieces and lifts left of the budget, unspent, earned by no one
         int whole = budget ?? QuickArmy.BudgetOf(QuickGame.Large with { Edition = QuickArmy.PalacesAnywhereEdition });
         ImmutableDictionary<PieceKindId, int> prices =
             BoardPrices.On(QuickTerrain.BoardOf(QuickGame.Large, 0), QuickArmy.PalacesAnywhereEdition);
@@ -298,15 +298,35 @@ public sealed class GrandLegionsRulesTest
             dealt.Seats,
             seat =>
             {
-                int spent = dealt.Position.Occupants.Values.Where(piece => piece.Owner == seat.Id)
-                    .Sum(piece => prices[piece.Kind]);
+                ImmutableList<Piece> own = [.. dealt.Position.Occupants.Values.Where(piece => piece.Owner == seat.Id)];
+                int spent = own.Sum(piece => prices[piece.Kind])
+                    + dealt.Lifts.Where(lift => own.Any(piece => piece.Id == lift.Piece))
+                        .Sum(lift => QuickDraft.LiftPriceOf(lift.Kind, lift.Restriction)!.Value);
                 Assert.Equal(
                     (whole - spent, whole - spent, 0),
                     (dealt.Scores[seat.Id], dealt.Unspent[seat.Id], dealt.EarnedBy(seat.Id))
                 );
             }
         );
-        Assert.Contains(dealt.Seats, seat => dealt.Scores[seat.Id] > 0);
+    }
+
+    [Fact]
+    public void Deal_ForAQuickGamesOwnBudget_LeavesLittleOfItUnspent()
+    {
+        // Arrange - the user, 2026-11-28: "when dealing, only a minimal amount of points should be left over - the
+        // rest should be spent on pieces or uplifts"
+        Chaturaji2027Rules rules = GrandLegionsRules.Quick.Single(quick => quick.Id == "grand-legions-large");
+
+        // Act
+        ImmutableList<int> kept =
+        [
+            .. Enumerable.Range(0, 20)
+                .Select(seed => rules.Deal(rules.CreateInitialState(), seed, edition: QuickArmy.PalacesAnywhereEdition))
+                .SelectMany(dealt => dealt.Unspent.Values),
+        ];
+
+        // Assert - never more than a few points: less than any piece made dearer, or any lift, costs more
+        Assert.InRange(kept.Max(), 0, 3);
     }
 
     [Fact]

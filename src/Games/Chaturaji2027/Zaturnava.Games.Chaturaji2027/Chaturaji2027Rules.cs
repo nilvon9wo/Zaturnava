@@ -331,11 +331,13 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         Position position = dealt.InitialPosition(this._grid);
         ImmutableDictionary<SeatId, CellId> thrones = dealt.Thrones(this._grid);
         ImmutableList<ArmySquare> placed = this._variant.PalaceDealer?.Invoke(dealing) ?? [];
-        ImmutableDictionary<SeatId, int> kept = this._variant.BudgetDealer is { } budgetOf
+        ImmutableDictionary<SeatId, int> left = this._variant.BudgetDealer is { } budgetOf
             ? this.KeptOf(initial, position, budgetOf(dealing), edition)
             : [];
+        (ImmutableHashSet<Lift> lifts, ImmutableDictionary<SeatId, int> kept) = this.LiftsBought(position, left);
         return initial with
         {
+            Lifts = lifts,
             Scores = initial.Scores.SetItems(
                 kept.Select(each =>
                     KeyValuePair.Create(each.Key, initial.Scores.GetValueOrDefault(each.Key) + each.Value)
@@ -370,6 +372,45 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
                     .Where(piece => piece.Owner == seat.Id)
                     .Sum(piece => prices.GetValueOrDefault(piece.Kind))
             )
+        );
+    }
+
+    /// <summary>
+    /// The restrictions each army dealt buys off with what its pieces <paramref name="left"/> of its budget, once its
+    /// pieces have spent all they could (the user, 2026-11-28: "Dealing should maximize spend on pieces before buying
+    /// lifts"): the dearest lift it can still pay for, then the next, its pieces in the order they stand, till none
+    /// fits; and what each army keeps after.
+    /// </summary>
+    private (ImmutableHashSet<Lift> Lifts, ImmutableDictionary<SeatId, int> Kept) LiftsBought(
+        Position position,
+        ImmutableDictionary<SeatId, int> left
+    )
+    {
+        Func<PieceKindId, LiftKind, int?> priceOf = this._variant.Drafting?.LiftPrice ?? ((_, _) => null);
+        ImmutableList<(Lift Lift, int Price)> offered =
+        [
+            .. position.Occupants
+                .OrderBy(occupant => occupant.Key.Value)
+                .SelectMany(occupant =>
+                    LiftKinds.Select(restriction => (Piece: occupant.Value, Restriction: restriction))
+                )
+                .Select(each => (
+                    Lift: new Lift(each.Piece.Id, each.Piece.Kind, each.Restriction),
+                    Price: priceOf(each.Piece.Kind, each.Restriction) ?? 0
+                ))
+                .Where(each => each.Price > 0)
+                .OrderByDescending(each => each.Price),
+        ];
+        return offered.Aggregate(
+            (Lifts: ImmutableHashSet<Lift>.Empty, Kept: left),
+            (bought, each) =>
+            {
+                SeatId owner = position.Occupants.Values.First(piece => piece.Id == each.Lift.Piece).Owner;
+                int keeps = bought.Kept.GetValueOrDefault(owner);
+                return keeps >= each.Price
+                    ? (bought.Lifts.Add(each.Lift), bought.Kept.SetItem(owner, keeps - each.Price))
+                    : bought;
+            }
         );
     }
 

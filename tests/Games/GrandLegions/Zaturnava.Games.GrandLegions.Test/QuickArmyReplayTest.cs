@@ -12,8 +12,10 @@ namespace Net.NowhereAtAll.Zaturnava.Games.GrandLegions.Test;
 /// place, for every game, 2026-11-20: the throne, as the program deals it, is never on the kingdom's front rank or
 /// inner side; and the same day, the Shogi Knight added to the catalogue, which a fill on the medium and large boards
 /// may now buy; and 2026-11-25, the leader promotion bonus taken off the Lance, the Shogi Pawn, the Shogi Knight and
-/// the Man, so much cheaper; and 2026-11-26, the small game's kingdoms 3 × 2. Games on the server keep what they were
-/// dealt, so replay as dealt whatever this gives.
+/// the Man, so much cheaper; and 2026-11-26, the small game's kingdoms 3 × 2; and 2026-11-28, every piece averaged
+/// in its class, the river's hindered pieces offered without rivers, and the budget spent on dearer pieces once no
+/// more fit (the user's words of 2026-11-28: "Every piece should be elligible"). Games on the server keep what they
+/// were dealt, so replay as dealt whatever this gives.
 /// </summary>
 public sealed class QuickArmyReplayTest
 {
@@ -26,9 +28,9 @@ public sealed class QuickArmyReplayTest
     public static TheoryData<string, string> Deals =>
         new()
         {
-            { "grand-legions-small", "B505F4B1A5CA24F5" },
-            { "grand-legions-medium", "8BE83C43E0004B3B" },
-            { "grand-legions-large", "E476EE6C077C032C" },
+            { "grand-legions-small", "CD172271443BA6D5" },
+            { "grand-legions-medium", "DAA59FC353216AA2" },
+            { "grand-legions-large", "E79F14E0A5014B09" },
         };
 
     [Theory]
@@ -76,9 +78,9 @@ public sealed class QuickArmyReplayTest
     public static TheoryData<string, string> Fills =>
         new()
         {
-            { "grand-legions-small", "C6F85057EB2E8F07" },
-            { "grand-legions-medium", "1C19DD6F0928C956" },
-            { "grand-legions-large", "94C575914396E584" },
+            { "grand-legions-small", "FC4091E48601BD03" },
+            { "grand-legions-medium", "75C9D2A70A22F06C" },
+            { "grand-legions-large", "92255E1B07BE001E" },
         };
 
     private static ImmutableList<ArmyFill> FillsOf(
