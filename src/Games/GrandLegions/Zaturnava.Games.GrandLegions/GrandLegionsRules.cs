@@ -150,6 +150,17 @@ public static class GrandLegionsRules
     /// its own (<see cref="QuickTerrain"/>, <see cref="QuickArmy"/>); a game begun before games were dealt starts as
     /// the first seed deals it, one begun before rivers were, with none.
     /// </summary>
+    /// <summary>The quick game as <paramref name="dealing"/> deals it: its rivers, palaces and edition.</summary>
+    private static QuickGame DealtAs(QuickGame game, ArmyDealing dealing) =>
+        game with
+        {
+            Rivers = QuickTerrain.RiversOf(dealing.Terrain),
+            HasPalacePieces = dealing.HasPalacePieces,
+            HasEdgePalaces = dealing.HasEdgePalaces,
+            HasPalaces = dealing.HasPalaces,
+            Edition = dealing.Edition,
+        };
+
     public static Chaturaji2027Variant VariantOf([Required] QuickGame game, [Required] ClassDice dice) =>
         new(
             game.Id,
@@ -164,19 +175,13 @@ public static class GrandLegionsRules
         )
         {
             Dealer = dealing => QuickArmy.Dealt(
-                game with
-                {
-                    Rivers = QuickTerrain.RiversOf(dealing.Terrain),
-                    HasPalacePieces = dealing.HasPalacePieces,
-                    HasEdgePalaces = dealing.HasEdgePalaces,
-                    HasPalaces = dealing.HasPalaces,
-                    Edition = dealing.Edition,
-                },
+                DealtAs(game, dealing),
                 dealing.Seed,
                 dealing.AreAlike,
                 dealing.Budget,
                 dealing.Families
             ),
+            BudgetDealer = dealing => dealing.Budget ?? QuickArmy.BudgetOf(DealtAs(game, dealing)),
             PalaceDealer = dealing => QuickArmy.PalacesDealt(
                 game with
                 {

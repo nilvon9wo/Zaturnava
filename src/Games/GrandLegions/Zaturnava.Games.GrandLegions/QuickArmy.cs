@@ -201,21 +201,17 @@ public static class QuickArmy
     }
 
     /// <summary>
-    /// The average price of the pieces of the class among <paramref name="eligible"/>, but those that may promote into
-    /// a leader, priced as nearly one (the Shogi Pawn, the Lance, the Man; Proposed: they would make a class's average
-    /// what almost none of its pieces costs); of all of them, if the class has no others, as a Checkers army's infantry,
-    /// all Men (the user's report of 2026-11-28: Palamedes dealt a King and two Men of 288 points, a Man's class
-    /// averaging 0, so that no Man past the minimum fitted); 0, if none.
+    /// The average price of the pieces of the class among <paramref name="eligible"/>, every one of them, whatever it
+    /// may promote into (the user, 2026-11-28: "Potential for promotion should not disqualify selection ... Not for any
+    /// reason!"; those that might promote into a leader were left out till then, so that Palamedes was dealt a King and
+    /// two Men of 288 points, a Man's class averaging 0); 0, if none.
     /// </summary>
-    private static double Average(ImmutableList<GrandPiece> eligible, PieceClass pieceClass)
-    {
-        ImmutableList<GrandPiece> ofClass = [.. eligible.Where(piece => piece.Class == pieceClass)];
-        ImmutableList<GrandPiece> priced = [.. ofClass.Where(piece => !IsLeaderBound(piece))];
-        return (priced.IsEmpty ? ofClass : priced).Select(piece => (double)piece.Value).DefaultIfEmpty().Average();
-    }
-
-    private static bool IsLeaderBound(GrandPiece piece) =>
-        piece.PromotesTo.Any(into => GrandLegionsPieces.ById[into].Class == Leader);
+    private static double Average(ImmutableList<GrandPiece> eligible, PieceClass pieceClass) =>
+        eligible
+            .Where(piece => piece.Class == pieceClass)
+            .Select(piece => (double)piece.Value)
+            .DefaultIfEmpty()
+            .Average();
 
     /// <summary>
     /// The most a piece added past the minimums may cost, from <see cref="FormulaEdition"/> on: its class's average
@@ -465,15 +461,15 @@ public static class QuickArmy
     ];
 
     /// <summary>
-    /// The median price of the class's pieces among <paramref name="eligible"/>, those that may promote into a leader
-    /// aside (<see cref="Average"/>), as the outliers would skew an average (E3); 1, if none.
+    /// The median price of the class's pieces among <paramref name="eligible"/>, every one of them
+    /// (<see cref="Average"/>), as the outliers would skew an average (E3); 1, if none.
     /// </summary>
     private static double Typical(ImmutableList<GrandPiece> eligible, PieceClass pieceClass)
     {
         ImmutableList<int> prices =
         [
             .. eligible
-                .Where(piece => piece.Class == pieceClass && !IsLeaderBound(piece))
+                .Where(piece => piece.Class == pieceClass)
                 .Select(piece => piece.Value)
                 .Order()
                 .DefaultIfEmpty(1),

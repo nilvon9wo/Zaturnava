@@ -57,7 +57,7 @@ public sealed class GrandLegionsRulesTest
                 "grand-legions-custom",
                 "Grand Legions (12 × 10, kingdoms 4 × 4)",
                 120,
-                (int?)222,
+                (int?)228,
                 (BoardSize?)board,
                 true
             ),
@@ -274,6 +274,55 @@ public sealed class GrandLegionsRulesTest
                 && rules.IsLeader(leader.Kind)
                 && leader.Owner == throne.Key
             )
+        );
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData(1_000)]
+    public void Deal_WhenAnArmyLeavesSomeOfItsBudget_StartsItsScoreWithWhatItKept(int? budget)
+    {
+        // Arrange - the user, 2026-11-28: "Dealing is just a convenience ... it is the same game! Points should not
+        // magically disappear"; the large game, its own budget or one more than its kingdom holds
+        Chaturaji2027Rules rules = GrandLegionsRules.Quick.Single(quick => quick.Id == "grand-legions-large");
+        GameState initial = rules.CreateInitialState();
+
+        // Act
+        GameState dealt = rules.Deal(initial, 9, edition: QuickArmy.PalacesAnywhereEdition, budget: budget);
+
+        // Assert - each army's score what its pieces left of the budget, unspent, earned by no one
+        int whole = budget ?? QuickArmy.BudgetOf(QuickGame.Large with { Edition = QuickArmy.PalacesAnywhereEdition });
+        ImmutableDictionary<PieceKindId, int> prices =
+            BoardPrices.On(QuickTerrain.BoardOf(QuickGame.Large, 0), QuickArmy.PalacesAnywhereEdition);
+        Assert.All(
+            dealt.Seats,
+            seat =>
+            {
+                int spent = dealt.Position.Occupants.Values.Where(piece => piece.Owner == seat.Id)
+                    .Sum(piece => prices[piece.Kind]);
+                Assert.Equal(
+                    (whole - spent, whole - spent, 0),
+                    (dealt.Scores[seat.Id], dealt.Unspent[seat.Id], dealt.EarnedBy(seat.Id))
+                );
+            }
+        );
+        Assert.Contains(dealt.Seats, seat => dealt.Scores[seat.Id] > 0);
+    }
+
+    [Fact]
+    public void Drafted_AfterADeal_KeepsOnlyWhatTheDraftLeaves()
+    {
+        // Arrange - a deal kept some of its budget, then the game was drafted instead
+        Chaturaji2027Rules rules = GrandLegionsRules.Quick.Single(quick => quick.Id == "grand-legions-large");
+        GameState dealt = rules.Deal(rules.CreateInitialState(), 9, budget: 1_000);
+
+        // Act
+        GameState drafted = rules.Drafted(dealt, 9);
+
+        // Assert
+        Assert.Equal(
+            (true, 0),
+            (drafted.Scores.Values.All(score => score == 0), drafted.Unspent.Count)
         );
     }
 

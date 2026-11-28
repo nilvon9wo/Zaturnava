@@ -59,9 +59,9 @@ public sealed class QuickArmyTest
     }
 
     [Theory]
-    [InlineData("grand-legions-small", 110, 125)]
-    [InlineData("grand-legions-medium", 125, 147)]
-    [InlineData("grand-legions-large", 200, 279)]
+    [InlineData("grand-legions-small", 110, 139)]
+    [InlineData("grand-legions-medium", 125, 154)]
+    [InlineData("grand-legions-large", 200, 276)]
     public void BudgetOf_BeforeTheFormulaEditionOrFromIt_IsTheGamesOwnOrTheFormulas(string id, int before, int since)
     {
         // Arrange

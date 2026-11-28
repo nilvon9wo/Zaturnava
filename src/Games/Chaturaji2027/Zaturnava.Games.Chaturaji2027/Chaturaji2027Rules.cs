@@ -331,8 +331,17 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
         Position position = dealt.InitialPosition(this._grid);
         ImmutableDictionary<SeatId, CellId> thrones = dealt.Thrones(this._grid);
         ImmutableList<ArmySquare> placed = this._variant.PalaceDealer?.Invoke(dealing) ?? [];
+        ImmutableDictionary<SeatId, int> kept = this._variant.BudgetDealer is { } budgetOf
+            ? this.KeptOf(initial, position, budgetOf(dealing), edition)
+            : [];
         return initial with
         {
+            Scores = initial.Scores.SetItems(
+                kept.Select(each =>
+                    KeyValuePair.Create(each.Key, initial.Scores.GetValueOrDefault(each.Key) + each.Value)
+                )
+            ),
+            Unspent = kept,
             Position = position,
             Thrones = thrones,
             Palaces = palaced is null ? null
@@ -344,6 +353,24 @@ public sealed class Chaturaji2027Rules : IRulesApplying, IPositionMeasuring
             Start = position,
             Terrain = dealtTerrain,
         };
+    }
+
+    /// <summary>
+    /// What each seat's army, dealt to <paramref name="position"/>, leaves of <paramref name="budget"/>, at the prices
+    /// of <paramref name="edition"/>; none less than nothing.
+    /// </summary>
+    private ImmutableDictionary<SeatId, int> KeptOf(GameState initial, Position position, int budget, int edition)
+    {
+        ImmutableDictionary<PieceKindId, int> prices = this._variant.PointsIn(edition);
+        return initial.Seats.ToImmutableDictionary(
+            seat => seat.Id,
+            seat => Math.Max(
+                0,
+                budget - position.Occupants.Values
+                    .Where(piece => piece.Owner == seat.Id)
+                    .Sum(piece => prices.GetValueOrDefault(piece.Kind))
+            )
+        );
     }
 
     public ImmutableList<TerrainAxis> TerrainAxes => this._variant.TerrainAxes;

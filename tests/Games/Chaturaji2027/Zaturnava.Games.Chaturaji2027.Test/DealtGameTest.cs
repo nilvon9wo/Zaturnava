@@ -80,6 +80,29 @@ public sealed class DealtGameTest
     }
 
     [Theory]
+    [InlineData(100)]
+    [InlineData(1)]
+    public void Deal_WhenTheVariantSetsABudget_StartsEachScoreWithWhatItsArmyLeftOfIt(int budget)
+    {
+        // Arrange - the user, 2026-11-28: dealing "is the same game! Points should not magically disappear"
+        Chaturaji2027Rules rules = new(
+            DiceProfile.WeightedSixSided,
+            Chaturaji2027Rules.DefaultIdleRounds,
+            PawnPromotion.OtherArmies,
+            variant: Chaturaji2027Variant.Standard with { Dealer = _ => Swapped, BudgetDealer = _ => budget }
+        );
+
+        // Act
+        GameState dealt = rules.Deal(rules.CreateInitialState(), 4);
+
+        // Assert - what each army left, never less than nothing, its score and its unspent alike
+        int spent = dealt.Position.Occupants.Values.Where(piece => piece.Owner == Black)
+            .Sum(piece => rules.WorthOf(piece.Kind));
+        int kept = Math.Max(0, budget - spent);
+        Assert.Equal((kept, kept, 0), (dealt.Scores[Black], dealt.Unspent[Black], dealt.EarnedBy(Black)));
+    }
+
+    [Theory]
     [InlineData(false, 0, 3)]
     [InlineData(true, 5, 0)]
     public void Deal_WhenTheVariantDealsTerrain_DealsItOnlyIfAskedAndTheArmiesOnIt(

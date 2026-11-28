@@ -236,6 +236,13 @@ public sealed record Chaturaji2027Variant(
     public Func<ArmyDealing, ImmutableList<ArmySquare>>? PalaceDealer { get; init; }
 
     /// <summary>
+    /// What each army <see cref="Dealer"/> deals may spend, as the same dealing sets it: what an army leaves of it
+    /// starts its score, as a drafted army's does (the user, 2026-11-28: "Dealing is just a convenience ... it is the
+    /// same game! Points should not magically disappear"). None, unless set: nothing kept.
+    /// </summary>
+    public Func<ArmyDealing, int>? BudgetDealer { get; init; }
+
+    /// <summary>
     /// The terrain a game dealt by a seed is dealt (<see cref="GameState.Terrain"/>), as the variant numbers its
     /// terrains; null, if every game is played on the board as it is.
     /// </summary>
