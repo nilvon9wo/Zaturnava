@@ -316,7 +316,7 @@ public sealed partial class SignInApiTest(SigningInServer server) : IClassFixtur
 
         // Assert
         Assert.Equal(
-            (created.GameId, "Tactician blundered.", null, true, (int?)3, false, HttpStatusCode.NotFound),
+            (created.GameId, "Tactician blundered.", null, true, 3, false, HttpStatusCode.NotFound),
             (
                 read?.GameId,
                 read?.Description,
