@@ -355,10 +355,11 @@ internal static class Careful
     /// board, and the throne, with command of its owner's pieces. Each as likely as such doubles over
     /// <see cref="EscapeRounds"/> rounds, as the danger comes back every round the throne is held: each die showing
     /// the leader's face half as likely as the moves it may expect each turn
-    /// (<see cref="IRulesApplying.MovesPerTurn"/>, two dice). So an ally of the team does not take that enemy leader, either: it is better kept on the board, where
-    /// it is no danger and the throne's holder commands it (the user, 2026-11-28, of game 078a448e: "I didn't want
-    /// green to capture the yellow raja because I didn't want the yellow raja to potentially escape back to the
-    /// throne", taking the user's Raja there; "It was much better to keep it on the board as a weapon").
+    /// (<see cref="IRulesApplying.MovesPerTurn"/>, two dice). So an ally of the team does not take that enemy leader,
+    /// either: it is better kept on the board, where it is no danger and the throne's holder commands it (the user,
+    /// 2026-11-28, of game 078a448e: "I didn't want green to capture the yellow raja because I didn't want the yellow
+    /// raja to potentially escape back to the throne", taking the user's Raja there; "It was much better to keep it
+    /// on the board as a weapon").
     /// </summary>
     internal static double EscapeThreat(DecisionRequest request, GameState after) =>
         request.Rules.ThronesOf(after)

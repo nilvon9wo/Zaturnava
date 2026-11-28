@@ -479,15 +479,60 @@ public sealed class StrategicPositionsTest
         );
     }
 
+    [Fact]
+    public async Task Sage_WhenTheEnemyLeaderWhoseThroneItHoldsComesNear_DoesNotLeaveItThere()
+    {
+        // Arrange - the user's game 078a448e (2026-11-28): Black's Raja on Yellow's throne, a5, commands Yellow's army
+        // on its own turn (rules.md §6.1a); Yellow's Raja on b4, a step away, would retake the throne on Yellow's turn,
+        // next, taking Black's Raja. "The yellow raja needed to be actively moved away from its throne": not left, nor
+        // taken by Black's Elephant on f4, as taken it might escape back onto the throne. Red's and Green's Rajas on
+        // their thrones; Yellow's Pawns, far off, keep it from being an endgame
+        CellId raja = CellAt(1, 3);
+        GameState state = this.BlackDeciding(
+            (CellAt(5, 3), new Piece(new PieceId(1), Chaturaji2027Pieces.Elephant, Black)),
+            (raja, new Piece(new PieceId(2), Chaturaji2027Pieces.Raja, Yellow)),
+            (this._rules.Thrones[Yellow], new Piece(new PieceId(3), Chaturaji2027Pieces.Raja, Black)),
+            (this._rules.Thrones[Red], new Piece(new PieceId(4), Chaturaji2027Pieces.Raja, Red)),
+            (this._rules.Thrones[Green], new Piece(new PieceId(5), Chaturaji2027Pieces.Raja, Green)),
+            (CellAt(7, 7), new Piece(new PieceId(10), Chaturaji2027Pieces.Pawn, Yellow)),
+            (CellAt(6, 7), new Piece(new PieceId(11), Chaturaji2027Pieces.Pawn, Yellow)),
+            (CellAt(7, 6), new Piece(new PieceId(12), Chaturaji2027Pieces.Pawn, Yellow)),
+            (CellAt(6, 6), new Piece(new PieceId(13), Chaturaji2027Pieces.Pawn, Yellow)),
+            (CellAt(5, 7), new Piece(new PieceId(14), Chaturaji2027Pieces.Pawn, Yellow)),
+            (CellAt(5, 6), new Piece(new PieceId(15), Chaturaji2027Pieces.Pawn, Yellow))
+        );
+        DecisionRequest request = new(this._rules, state, Black, this._rules.LegalActions(state));
+
+        // Act
+        GameAction action = await new SageBot(new Random(7)).Decide(request, this._cancellation);
+
+        // Assert - Yellow's Raja out of reach of its throne. Sage takes it, for now, where the user would move it away
+        // and keep it (strategy-plan, "A throne is worth what it controls")
+        GameState after = this._rules.ApplyLegal(state, action).State;
+        Assert.False(this.ReachesThrone(after, Yellow), $"{action} left {raja} by the throne");
+    }
+
+    /// <summary>Whether the seat's Raja is on the board a king's step from its throne.</summary>
+    private bool ReachesThrone(GameState state, SeatId seat)
+    {
+        int throne = this._rules.Thrones[seat].Value;
+        return state.Position.Occupants.Any(placed => placed.Value.Owner == seat
+            && placed.Value.Kind == Chaturaji2027Pieces.Raja
+            && Math.Abs((placed.Key.Value % Side) - (throne % Side)) <= 1
+            && Math.Abs((placed.Key.Value / Side) - (throne / Side)) <= 1
+        );
+    }
+
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
     public async Task Sage_WhenAnAllyHoldsTheThroneAnEnemyLeaderWouldEscapeTo_LeavesThatLeaderOnTheBoard(bool isHeld)
     {
-        // Arrange - the user's game 078a448e (2026-11-28): Black's Raja on Yellow's throne, Yellow's Raja on the board;
-        // "If it was captured and then escaped, it would escape to the throne, capturing my raja". Green's Elephant on
-        // b5 may take Yellow's Raja on f5; Red, Yellow's ally, plays on, to roll the doubles. Black's Raja held at home
-        // instead, nothing is at risk, and Green takes it. Yellow's Pawns, far off, keep it from being an endgame
+        // Arrange - the user's game 078a448e (2026-11-28): Black's Raja on Yellow's throne, a5, Yellow's Raja on the
+        // board; "If it was captured and then escaped, it would escape to the throne, capturing my raja". Green's
+        // Elephant on b5 may take Yellow's Raja on f5: it leaves it, with Black on the throne; with Black's Raja at
+        // home, nothing is at risk, and it takes it. Yellow's Pawns, far off, keep it from being an endgame
+        bool takes = !isHeld;
         CellId elephant = CellAt(1, 4);
         CellId raja = CellAt(5, 4);
         GameState state = this.Deciding(
@@ -514,7 +559,7 @@ public sealed class StrategicPositionsTest
 
         // Assert - offered either way
         Assert.Equal(
-            (true, !isHeld),
+            (true, takes),
             (
                 request.LegalActions.Contains(new MoveAction(Green, elephant, raja)),
                 action == new MoveAction(Green, elephant, raja)
