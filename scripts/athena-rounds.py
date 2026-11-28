@@ -18,6 +18,7 @@ Each round:
 
 Usage: athena-rounds.py RUNNER [--rounds 1] [--games 200] [--epochs 4] [--lambda 0.8] [--rate 0.1]
                                [--hidden 32] [--view summed|board] [--seed games.jsonl,more-*.jsonl]
+                               [--seed-games N]
                                [--max-steps 2000] [--jobs N]
                                [--ruleset chaturaji-2027] [--folder artifacts/athena]
 """
@@ -56,7 +57,8 @@ def learn(runner, folder, number, options):
     """The round's network, learned from every game played so far, going on from the last round's."""
     games = sorted(glob.glob(os.path.join(folder, "games-*.jsonl")))
     seeds = [seed for seed in options.seed.split(",") if seed] if options.seed else []
-    games += [path for seed in seeds for path in seed_files(seed)]
+    seeded = [path for seed in seeds for path in seed_files(seed)]
+    games += [sampled(folder, seeded, options.seed_games)] if options.seed_games and seeded else seeded
     if not games:
         games = [os.path.join(folder, "games-0.jsonl")]
         open(games[0], "w", encoding="utf-8").close()
@@ -73,6 +75,21 @@ def learn(runner, folder, number, options):
     )
     os.replace(writing, network)
     return network
+
+
+def sampled(folder, paths, count):
+    """So many of the files' games, spread evenly over them all, written once to the folder's seed-COUNT.jsonl and
+    learned from in place of them (2026-11-28: a tournament's 47,600 Grand Legions games, some 11 million positions
+    encoded, more than the machine's memory)."""
+    out = os.path.join(folder, f"seed-{count}.jsonl")
+    if os.path.exists(out):
+        return out
+    lines = [line for path in paths for line in open(path, encoding="utf-8") if line.strip()]
+    step = max(1, len(lines) / count)
+    with open(out, "w", encoding="utf-8", newline="\n") as written:
+        written.writelines(lines[int(index * step)] for index in range(min(count, len(lines))))
+    print(f"seeded with {min(count, len(lines))} of {len(lines)} games, in {out}", flush=True)
+    return out
 
 
 def seed_files(seed):
@@ -162,6 +179,7 @@ def main():
     parser.add_argument("--hidden", type=int, default=32)
     parser.add_argument("--view", choices=("summed", "board"), default="summed")
     parser.add_argument("--seed")
+    parser.add_argument("--seed-games", type=int, help="learn from only so many of the seed games, spread evenly")
     parser.add_argument("--max-steps", type=int, default=2000)
     parser.add_argument("--jobs", type=int, default=os.cpu_count())
     parser.add_argument("--ruleset", default=CHATURAJI)
