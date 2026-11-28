@@ -55,6 +55,8 @@ internal sealed class Learning(IRulesApplying rules, TextWriter progress)
         // were replayed, a tournament's 476 Grand Legions games ran the machine out of memory (2026-11-28)
         List<Sequence> sequences = [];
         int unplayable = 0;
+        int games = 0;
+        int encoded = 0;
         foreach (GameHistory history in histories
             .Where(line => line.Length > 0)
             .Select(line => JsonSerializer.Deserialize<GameHistory>(line, JsonSerializerOptions.Web)!)
@@ -62,12 +64,20 @@ internal sealed class Learning(IRulesApplying rules, TextWriter progress)
         {
             if (this.Replayed(history) is { } states)
             {
-                sequences.AddRange(SequencesOf(encoder, history, states));
+                ImmutableList<Sequence> seen = [.. SequencesOf(encoder, history, states)];
+                sequences.AddRange(seen);
+                encoded += seen.Sum(sequence => sequence.Inputs.Length);
             }
             else
             {
                 unplayable++;
             }
+
+            // a heartbeat, apart from the progress the result is read from, so that a long replay is seen to go on
+            games++;
+            await Console.Error.WriteLineAsync(
+                string.Create(CultureInfo.InvariantCulture, $"replayed {games} games, {encoded} positions")
+            );
         }
 
         if (unplayable > 0)
@@ -84,6 +94,9 @@ internal sealed class Learning(IRulesApplying rules, TextWriter progress)
         for (int epoch = 1; epoch <= pace.Epochs; epoch++)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            await Console.Error.WriteLineAsync(
+                string.Create(CultureInfo.InvariantCulture, $"epoch {epoch} of {pace.Epochs}: learning, {DateTime.Now:T}")
+            );
             double error = sequences
                 .SelectMany(sequence => TargetsOf(network, sequence, pace.Lambda)
                     .Select((target, at) => (Input: sequence.Inputs[at], target.Outcome, target.Margin))
