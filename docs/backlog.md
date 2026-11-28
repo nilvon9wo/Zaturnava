@@ -62,6 +62,11 @@ Detail in the [roadmap](grand/roadmap.md).
 | Saved settings | To do | Named, shared and copied to edit ([spec §2.1](grand/specification.md#21-saved-settings)) | Stage 2 |
 | Kingdoms placed by the players | To do | A creator's setting, before palace, throne and pieces, kept near the corners | 2026-11-12 |
 | Playtest | To do | Then act on it: the Chaturaji 2027 bonuses, the leader bonus of 60, the Pawns' promotion premiums | **Q14**, Stage 7 |
+| Dealing's spread measured | To do | Measure how often each piece is dealt: the outliers, dearest and cheapest of a class, under 10% (better under 5%), the rest weighted to the middle; tune `QuickArmy.Spread` to it, keeping the peak at 80% of the median | 2026-11-28 (P4) |
+| What taking several is worth | To do | Count chains of captures (Checkers, Tafl) in real games, and in games of a bot that seeks them; price them as an expert would use them, not a layman | 2026-11-28 (P9) |
+| End proposals time out | To do | A proposal to end the game times out for players who do not answer, the answer defaulting to keeping the game going | 2026-11-28 (P15) |
+| A lift kept on promotion | To do | A promoted piece keeps a lift where it still means something for its new kind (lets it do what it could not otherwise) | 2026-11-28 (P17) |
+| Giving up, by game size | To do | The lead needed to end a game by giving up turns relative to the game (size, piece values), not the fixed 10 (Grand Legions: × 10 already) | 2026-11-28 (P14) |
 
 ## 3. Look, feel and players
 

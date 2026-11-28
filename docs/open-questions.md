@@ -11,14 +11,28 @@ asked here instead (checked, every *Proposed* in the documents, on 2026-11-06).
 Anything to be built is in the [backlog](backlog.md) or the [roadmap](grand/roadmap.md), and anything left to
 playtesting is marked so where it is written.
 
-## Proposals to review (asked 2026-11-28)
+## Proposals reviewed (2026-11-28)
 
-The designer, 2026-11-28, after the class averages were found leaving out pieces that may promote: "Let me know
-if you made any other very questionable 'proposals' which I should review." These are the *Proposed* choices
-that change who gets what, or how the game plays. Bot play and looks are left out: bot design is the program's
-own call. Each stands until answered: keep it, change it, or drop it. Settled the same day, so not listed: the
-price cap on pieces dealt past the aim (dropped), river-hindered pieces left out where there is no river (now
-eligible), and dealing buying no lifts (it buys them, after pieces).
+The designer, 2026-11-28: "Let me know if you made any other very questionable 'proposals' which I should
+review." These were the *Proposed* choices that change who gets what, or how the game plays, each answered the
+same day; all now *Stated*, as answered. What is left to build of them is in the [backlog](backlog.md)
+(P4, P9, P14, P15, P17). Settled before the list: the price cap on pieces dealt past the aim (dropped),
+river-hindered pieces left out where there is no river (now eligible), and dealing buying no lifts (it buys
+them, after pieces).
+
+| # | Answer |
+|---|---|
+| P4 | Outliers rare, under 10% or even 5%; the rest somewhat frequent, weighted to the middle; the peak at 80% "reasonable" (to measure and tune: backlog) |
+| P5, P6, P7, P8, P10, P12, P16, P19, P20 | Correct. P8: variants may later let custody be set, and a Tafl piece already in place capture when another closes the trap. P10: fleeing keeps the enemy from scoring the leader ("fear can be the better part of valour") |
+| P9 | The program's call, from how often chains happen in real games and in the hands of a bot that seeks them (backlog) |
+| P11 | Correct, for any piece that may swap back to back (Pawns, the Lance from the next square only, some Soldiers: built as Pawns, Lance, Xiangqi Soldier) |
+| P13 | Correct; a piece brought back to the board by an ally's help to escape, or freed by the enemy, counts too (it is a piece on the board) |
+| P14 | Correct, as far as remembered; the lead should be relative to the game (backlog) |
+| P15 | Correct, with time-outs for players who do not answer, defaulting to the game going on (backlog) |
+| P17 | Correct; a promoted piece keeps a lift where it still means something (backlog) |
+| P18 | Correct; where a palace may move, pieces may also be returned, the palace moved, and bought again |
+
+What was proposed:
 
 | # | Where | The choice | Why it may matter |
 |---|---|---|---|
@@ -40,7 +54,6 @@ eligible), and dealing buying no lifts (it buys them, after pieces).
 | P19 | specification | Mercenary prices rounded up | Hiring costs |
 | P20 | `GrandLegionsRules` | Grand Legions played by Chaturaji 2027's rules: each leader a Raja, the clear lead × 10 | The base of the whole game |
 
-None is open now (2026-11-27; Q-R, recruiting in play, answered the same day, is in the [backlog](backlog.md)), but
-the proposals above.
+None is open now (2026-11-28; Q-R, recruiting in play, answered 2026-11-27, is in the [backlog](backlog.md)).
 The player out of a game when their leaders are gone is being thought over by the designer, and waits in the
 [backlog](backlog.md).
