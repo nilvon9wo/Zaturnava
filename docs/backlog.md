@@ -66,7 +66,7 @@ Detail in the [roadmap](grand/roadmap.md).
 | What taking several is worth | To do | Count chains of captures (Checkers, Tafl) in real games, and in games of a bot that seeks them; price them as an expert would use them, not a layman | 2026-11-28 (P9) |
 | End proposals time out | To do | A proposal to end the game times out for players who do not answer, the answer defaulting to keeping the game going | 2026-11-28 (P15) |
 | A lift kept on promotion | To do | A promoted piece keeps a lift where it still means something for its new kind (lets it do what it could not otherwise) | 2026-11-28 (P17) |
-| Giving up, by game size | To do | The lead needed to end a game by giving up turns relative to the game (size, piece values), not the fixed 10 (Grand Legions: × 10 already) | 2026-11-28 (P14) |
+| Giving up, by game size | To do | For bots only (the user, 2026-11-28: "that only applies to bots: Humans can always give up"): the lead a bot wants before giving up its turns to end a game, relative to the game (size, piece values), not the fixed 10 (Grand Legions: × 10 already); a person may always give up, whatever the lead, and the rules' §10 margin is to be reread so | 2026-11-28 (P14) |
 
 ## 3. Look, feel and players
 
