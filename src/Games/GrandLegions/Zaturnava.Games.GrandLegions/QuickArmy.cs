@@ -380,14 +380,14 @@ public static class QuickArmy
         int left = budget - army.Sum(each => each.Value);
         ImmutableList<(int At, GrandPiece Piece)> dearer =
         [
-            .. army.SelectMany((held, at) => eligible
+            .. army.SelectMany((held, index) => eligible
                 .Where(piece =>
                     piece.Class == held.Class
                     && piece.Value > held.Value
                     && piece.Value - held.Value <= left
                     && PalaceConfinement.Confined.Contains(piece.Id) == PalaceConfinement.Confined.Contains(held.Id)
                 )
-                .Select(piece => (at, piece))
+                .Select(piece => (index, piece))
             ),
         ];
         if (dearer.IsEmpty)
