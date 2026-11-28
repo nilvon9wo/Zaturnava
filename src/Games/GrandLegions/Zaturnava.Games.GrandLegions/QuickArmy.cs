@@ -203,14 +203,16 @@ public static class QuickArmy
     /// <summary>
     /// The average price of the pieces of the class among <paramref name="eligible"/>, but those that may promote into
     /// a leader, priced as nearly one (the Shogi Pawn, the Lance, the Man; Proposed: they would make a class's average
-    /// what almost none of its pieces costs); 0, if none.
+    /// what almost none of its pieces costs); of all of them, if the class has no others, as a Checkers army's infantry,
+    /// all Men (the user's report of 2026-11-28: Palamedes dealt a King and two Men of 288 points, a Man's class
+    /// averaging 0, so that no Man past the minimum fitted); 0, if none.
     /// </summary>
-    private static double Average(ImmutableList<GrandPiece> eligible, PieceClass pieceClass) =>
-        eligible
-            .Where(piece => piece.Class == pieceClass && !IsLeaderBound(piece))
-            .Select(piece => (double)piece.Value)
-            .DefaultIfEmpty()
-            .Average();
+    private static double Average(ImmutableList<GrandPiece> eligible, PieceClass pieceClass)
+    {
+        ImmutableList<GrandPiece> ofClass = [.. eligible.Where(piece => piece.Class == pieceClass)];
+        ImmutableList<GrandPiece> priced = [.. ofClass.Where(piece => !IsLeaderBound(piece))];
+        return (priced.IsEmpty ? ofClass : priced).Select(piece => (double)piece.Value).DefaultIfEmpty().Average();
+    }
 
     private static bool IsLeaderBound(GrandPiece piece) =>
         piece.PromotesTo.Any(into => GrandLegionsPieces.ById[into].Class == Leader);

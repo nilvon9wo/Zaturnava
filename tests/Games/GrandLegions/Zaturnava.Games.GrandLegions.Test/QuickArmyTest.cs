@@ -519,7 +519,8 @@ public sealed class QuickArmyTest
 
     [Theory]
     [InlineData("Makruk", "King (Western)|Noble (Makruk)|Courtier|Pawn (Makruk)|Rook (Western)|Knight (Western)", 18)]
-    [InlineData("Checkers", "King (Checkers)|Man", 3)]
+    // a host of Men, not the two the minimum asks (the user's report of 2026-11-28: Palamedes dealt a King and two Men)
+    [InlineData("Checkers", "King (Checkers)|Man", 18)]
     [InlineData("Othello", "Evangelist", 3)]
     public void Dealt_WhenASeatIsNamedAFamily_DealsItOnlyThatGamesPiecesButNotWhereArmiesAreAlike(
         string family,
