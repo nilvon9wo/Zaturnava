@@ -51,21 +51,25 @@ internal sealed class Learning(IRulesApplying rules, TextWriter progress)
     )
     {
         PositionEncoder encoder = PositionEncoder.Fitting(this._rules, network.Inputs)!; // made, or read, to fit
-        ImmutableList<(GameHistory History, ImmutableList<GameState>? Positions)> replayed =
-        [
-            .. histories
-                .Where(line => line.Length > 0)
-                .Select(line => JsonSerializer.Deserialize<GameHistory>(line, JsonSerializerOptions.Web)!)
-                .Where(history => history.RulesetId == this._rules.Id && history.Outcome is not null)
-                .Select(history => (history, this.Replayed(history))),
-        ];
-        ImmutableList<Sequence> sequences =
-        [
-            .. replayed
-                .Where(game => game.Positions is not null)
-                .SelectMany(game => SequencesOf(encoder, game.History, game.Positions!)),
-        ];
-        int unplayable = replayed.Count(game => game.Positions is null);
+        // each game encoded as soon as it is replayed, so that its states go at once: kept for every game till all
+        // were replayed, a tournament's 476 Grand Legions games ran the machine out of memory (2026-11-28)
+        List<Sequence> sequences = [];
+        int unplayable = 0;
+        foreach (GameHistory history in histories
+            .Where(line => line.Length > 0)
+            .Select(line => JsonSerializer.Deserialize<GameHistory>(line, JsonSerializerOptions.Web)!)
+            .Where(history => history.RulesetId == this._rules.Id && history.Outcome is not null))
+        {
+            if (this.Replayed(history) is { } states)
+            {
+                sequences.AddRange(SequencesOf(encoder, history, states));
+            }
+            else
+            {
+                unplayable++;
+            }
+        }
+
         if (unplayable > 0)
         {
             await this._progress.WriteLineAsync(
